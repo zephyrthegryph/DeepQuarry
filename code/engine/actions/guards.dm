@@ -7,12 +7,9 @@
 // included) then observers (observe(source, before_op(GUARD_X), listener, handler)), and returns the first refusal.
 // It replaces the om `before/*` veto events (om_emit() == EVENT_VETO).
 //
-//	/mob/living/reactions()
-//		. = ..()
-//		. += before_op(GUARD_STUMBLED_INTO, GLOBAL_PROC_REF(spont_vore_stumble))
-//
-//	if(guard(src, GUARD_STUMBLED_INTO, M))   // stumblevore.dm: somebody ate the stumble
-//		return
+// No entity asks a guard any more: a refusable world event is an action (ACT_TRY(src, stumbled_into, M) with an
+// extend(/datum/act/stumbled_into, instead(...)) in the holder's CAPABILITIES block), and reactions() is a system's.
+// What is left here answers the legacy before_op(GUARD_X) a system or a test fixture still declares.
 //
 // A handler gets the guard context (/datum/guard_ctx: key, target, actor, item, data; pooled, never kept) and returns
 // null to let it proceed or a reason (a /datum/msg type, text, or TRUE) to refuse. A GLOBAL_PROC_REF handler gets the

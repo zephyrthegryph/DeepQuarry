@@ -26,8 +26,8 @@
 
 		inv_box = new /atom/movable/screen/inventory()
 		inv_box.set_icon(HUD.ui_style)
-		inv_box.color = HUD.ui_color
-		inv_box.alpha = HUD.ui_alpha
+		inv_box.set_color(HUD.ui_color)
+		inv_box.set_alpha(HUD.ui_alpha)
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 
 		var/list/slot_data =  hud_data.gear[gear_slot]
@@ -53,16 +53,16 @@
 		using.set_icon_state("other")
 		using.screen_loc = ui_inventory
 		using.hud_layerise()
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 	// The combat mode button (it replaced the intent selector).
 	if(hud_data.has_a_intent)
 		using = HUD.make_combat_mode_button(src)
 		using.set_icon(HUD.ui_style)
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		hud_elements |= using // owned by HUD.combat_mode_button
 
 	if(hud_data.has_m_intent)
@@ -71,8 +71,8 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 		using.screen_loc = ui_movi
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 		rel_set(HUD, nameof(HUD.move_intent), using)
 
@@ -82,8 +82,8 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state("act_drop")
 		using.screen_loc = ui_drop_throw
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	if(hud_data.has_hands)
@@ -93,15 +93,15 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state("act_equip")
 		using.screen_loc = ui_equip
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		using = new /atom/movable/screen/useself()
 		using.set_icon(HUD.ui_style)
 		using.screen_loc = ui_swaphand2
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		inv_box = new /atom/movable/screen/inventory/hand()
@@ -113,8 +113,8 @@
 			inv_box.set_icon_state("r_hand_active")
 		inv_box.screen_loc = ui_rhand
 		inv_box.slot_id = SLOT_ID_HAND_R
-		inv_box.color = HUD.ui_color
-		inv_box.alpha = HUD.ui_alpha
+		inv_box.set_color(HUD.ui_color)
+		inv_box.set_alpha(HUD.ui_alpha)
 		rel_set(HUD, nameof(HUD.r_hand_hud_object), inv_box)
 		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
@@ -128,8 +128,8 @@
 			inv_box.set_icon_state("l_hand_active")
 		inv_box.screen_loc = ui_lhand
 		inv_box.slot_id = SLOT_ID_HAND_L
-		inv_box.color = HUD.ui_color
-		inv_box.alpha = HUD.ui_alpha
+		inv_box.set_color(HUD.ui_color)
+		inv_box.set_alpha(HUD.ui_alpha)
 		rel_set(HUD, nameof(HUD.l_hand_hud_object), inv_box)
 		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
@@ -139,8 +139,8 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state("hand1")
 		using.screen_loc = ui_swaphand1
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_set(using, nameof(using.hud), HUD)
 		rel_add(HUD, nameof(HUD.adding), using)
 
@@ -149,8 +149,8 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state("hand2")
 		using.screen_loc = ui_swaphand2
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_set(using, nameof(using.hud), HUD)
 		rel_add(HUD, nameof(HUD.adding), using)
 
@@ -160,8 +160,8 @@
 		using.set_icon(HUD.ui_style)
 		using.set_icon_state("act_resist")
 		using.screen_loc = ui_pull_resist
-		using.color = HUD.ui_color
-		using.alpha = HUD.ui_alpha
+		using.set_color(HUD.ui_color)
+		using.set_alpha(HUD.ui_alpha)
 		rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	if(hud_data.has_throw)
@@ -251,8 +251,8 @@
 	aw.set_icon_state("use")
 	aw.name = "use held item on self"
 	aw.screen_loc = ui_swaphand2
-	aw.color = HUD.ui_color
-	aw.alpha = HUD.ui_alpha
+	aw.set_color(HUD.ui_color)
+	aw.set_alpha(HUD.ui_alpha)
 	rel_add(HUD, nameof(HUD.adding), aw)
 
 	//Component hud elements. Made in /mob/living/create_mob_hud

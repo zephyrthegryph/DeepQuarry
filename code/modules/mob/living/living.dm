@@ -499,7 +499,7 @@ sparse(/mob/living, vomiting, type = bool)
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		var/antiemetic = H.factor(BF_ANTIEMETIC)
+		var/antiemetic = H.antiemetic
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
 				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
@@ -619,13 +619,13 @@ sparse(/mob/living, vomiting, type = bool)
 				set_lying(FALSE)
 				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
-					pixel_y = V.mob_offset_y - 5
+					set_pixel_y(V.mob_offset_y - 5)
 			else
 				if(buckled.buckle_lying != -1)
 					set_lying(buckled.buckle_lying)
 				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
-					pixel_y = V.mob_offset_y
+					set_pixel_y(V.mob_offset_y)
 		else if(buckled)
 			set_anchored(TRUE)
 			set_canmove(TRUE) //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
@@ -714,10 +714,10 @@ sparse(/mob/living, vomiting, type = bool)
 	return TRUE
 
 /mob/living/get_icon_scale_x()
-	return ..() * factor(BF_ICON_SCALE_X)
+	return ..() * src.scale_mult_x
 
 /mob/living/get_icon_scale_y()
-	return ..() * factor(BF_ICON_SCALE_Y)
+	return ..() * src.scale_mult_y
 
 /mob/living/update_transform(instant = FALSE)
 	// First, get the correct size.
@@ -732,7 +732,6 @@ sparse(/mob/living, vomiting, type = bool)
 	M.Scale(desired_scale_x, desired_scale_y)
 	M.Translate(cent_offset * desired_scale_x, (vis_height/2)*(desired_scale_y-1))
 	src.transform = M
-	handle_status_indicators()
 
 // This handles setting the client's color variable, which makes everything look a specific color.
 // This proc is here so it can be called without needing to check if the client exists, or if the client relogs.
@@ -899,19 +898,22 @@ sparse(/mob/living, vomiting, type = bool)
 	else
 		return ..()
 
-//Add an entry to overlays, assuming it exists
+/// Puts `I` (a new image, or the one grab_hud() gave back after an edit) in HUD slot `cache_index` and publishes the change: the draw shows a
+/// frozen copy of every HUD image (look.live_image()), so an image edited in place reaches the viewers only through this call.
 /mob/living/proc/apply_hud(cache_index, image/I)
 	if(I)
 		rel_add(src, nameof(hud_list), I, cache_index) // the mob owns its HUD images; a replaced one is deleted
-	if((. = hud_list[cache_index]))
-		add_overlay(.)
+	tracked_changed(src, nameof(hud_list))
+	return hud_list[cache_index]
 
-//Remove an entry from overlays for editing; it stays owned in its slot until apply_hud() re-adds it
+/// The image in HUD slot `cache_index`, to edit; it stays owned in its slot and apply_hud() publishes the edit.
 /mob/living/proc/grab_hud(cache_index)
-	var/I = hud_list[cache_index]
-	if(I)
-		cut_overlay(I)
-		return I
+	return hud_list[cache_index]
+
+/// The HUD images this mob carries, drawn on their own planes: a viewer sees one only while its plane master is shown (the viewer's HUD).
+/mob/living/proc/look_hud_images(datum/look/look)
+	for(var/image/hud as anything in hud_list)
+		look.live_image(hud)
 
 /mob/living/proc/make_hud_overlays()
 	return
@@ -1184,9 +1186,6 @@ CAPABILITIES(/datum/character_setup_button)
 
 	//Prime this list if we need it.
 	if(has_huds)
-		// Note, this should be refactored to drop priority overlays
-		// ALLOW(decl): priority overlay from a global, gated on has_huds
-		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
@@ -1500,7 +1499,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	var/mob/user = A.request.answerer
 	var/new_metadata = A.answer.value
 	if(new_metadata && CanUseTopic(src))
-		private_notes = new_metadata
+		set_private_notes(new_metadata)
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)
@@ -1509,3 +1508,15 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
 
+
+/// The images other things hang on this mob (a marker spell, a worn effect); each is drawn over its sprite until its owner takes it off.
+/mob/living/var/list/attached_overlays
+
+/mob/living/draw(datum/look/look)
+	..()
+	// The backplane blocks HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
+	look.overlay(GLOB.backplane, when = has_huds)
+	for(var/entry in attached_overlays)
+		look.overlay(entry)
+	look.overlay(look_overlay_image('icons/obj/glamour.dmi', "animation", plane = PLANE_LIGHTING_ABOVE), when = glamour_shift)
+	look_status_indicators(look)

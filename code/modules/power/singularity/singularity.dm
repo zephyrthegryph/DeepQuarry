@@ -135,36 +135,30 @@ CAPABILITIES(/obj/singularity)
 		if (STAGE_ONE)
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_ONE
+			set_current_size(STAGE_ONE)
 			set_icon('icons/obj/singularity.dmi')
 			set_icon_state("singularity_s1")
-			pixel_x = 0
-			pixel_y = 0
+			set_pixel_x(0)
+			set_pixel_y(0)
 			grav_pull = 4
 			consume_range = 0
 			dissipate_delay = 10
 			dissipate_track = 0
 			dissipate_strength = 1
-			overlays = 0
-			if(chained)
-				overlays = "chain_s1"
 			visible_message(span_notice("The singularity has shrunk to a rather pitiful size."))
 		if (STAGE_TWO) //1 to 3 does not check for the turfs if you put the gens right next to a 1x1 then its going to eat them.
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_TWO
+			set_current_size(STAGE_TWO)
 			set_icon('icons/effects/96x96.dmi')
 			set_icon_state("singularity_s3")
-			pixel_x = -32
-			pixel_y = -32
+			set_pixel_x(-32)
+			set_pixel_y(-32)
 			grav_pull = 6
 			consume_range = 1
 			dissipate_delay = 10
 			dissipate_track = 0
 			dissipate_strength = 5
-			overlays = 0
-			if(chained)
-				overlays = "chain_s3"
 			if(growing)
 				visible_message(span_notice("The singularity noticeably grows in size."))
 			else
@@ -173,19 +167,16 @@ CAPABILITIES(/obj/singularity)
 			if ((check_turfs_in(1, 2)) && (check_turfs_in(2, 2)) && (check_turfs_in(4, 2)) && (check_turfs_in(8, 2)))
 				name = "gravitational singularity"
 				desc = "A gravitational singularity."
-				current_size = STAGE_THREE
+				set_current_size(STAGE_THREE)
 				set_icon('icons/effects/160x160.dmi')
 				set_icon_state("singularity_s5")
-				pixel_x = -64
-				pixel_y = -64
+				set_pixel_x(-64)
+				set_pixel_y(-64)
 				grav_pull = 8
 				consume_range = 2
 				dissipate_delay = 4
 				dissipate_track = 0
 				dissipate_strength = 20
-				overlays = 0
-				if(chained)
-					overlays = "chain_s5"
 				if(growing)
 					visible_message(span_notice("The singularity expands to a reasonable size."))
 				else
@@ -194,19 +185,16 @@ CAPABILITIES(/obj/singularity)
 			if ((check_turfs_in(1, 3)) && (check_turfs_in(2, 3)) && (check_turfs_in(4, 3)) && (check_turfs_in(8, 3)))
 				name = "gravitational singularity"
 				desc = "A gravitational singularity."
-				current_size = STAGE_FOUR
+				set_current_size(STAGE_FOUR)
 				set_icon('icons/effects/224x224.dmi')
 				set_icon_state("singularity_s7")
-				pixel_x = -96
-				pixel_y = -96
+				set_pixel_x(-96)
+				set_pixel_y(-96)
 				grav_pull = 10
 				consume_range = 3
 				dissipate_delay = 10
 				dissipate_track = 0
 				dissipate_strength = 8
-				overlays = 0
-				if(chained)
-					overlays = "chain_s7"
 				if(growing)
 					visible_message(span_warning("The singularity expands to a dangerous size."))
 				else
@@ -214,17 +202,14 @@ CAPABILITIES(/obj/singularity)
 		if(STAGE_FIVE) //This one also lacks a check for gens because it eats everything.
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_FIVE
+			set_current_size(STAGE_FIVE)
 			set_icon('icons/effects/288x288.dmi')
 			set_icon_state("singularity_s9")
-			pixel_x = -128
-			pixel_y = -128
+			set_pixel_x(-128)
+			set_pixel_y(-128)
 			grav_pull = 10
 			consume_range = 4
 			dissipate = 0 //It cant go smaller due to e loss.
-			overlays = 0
-			if(chained)
-				overlays = "chain_s9"
 			if(growing)
 				visible_message(span_danger(span_normal("The singularity has grown out of control!")))
 			else
@@ -232,17 +217,15 @@ CAPABILITIES(/obj/singularity)
 		if(STAGE_SUPER)//SUPERSINGULO
 			name = "super gravitational singularity"
 			desc = "A gravitational singularity with the properties of supermatter. <b>It has the power to destroy worlds.</b>"
-			current_size = STAGE_SUPER
+			set_current_size(STAGE_SUPER)
 			set_icon('icons/effects/352x352.dmi')
 			set_icon_state("singularity_s11")//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
-			pixel_x = -160
-			pixel_y = -160
+			set_pixel_x(-160)
+			set_pixel_y(-160)
 			grav_pull = 16
 			consume_range = 5
 			dissipate = 0 //It cant go smaller due to e loss
 			event_chance = 25 //Events will fire off more often.
-			if(chained)
-				overlays = "chain_s9"
 			visible_message(span_sinister(span_large("You witness the creation of a destructive force that cannot possibly be stopped by human hands.")))
 
 	if (current_size == allowed_size)
@@ -477,25 +460,29 @@ CAPABILITIES(/obj/singularity)
 	)
 
 /obj/singularity/proc/on_capture()
-	chained = 1
-	overlays = 0
+	set_chained(1)
 	move_self = 0
-	switch (current_size)
-		if(STAGE_ONE)
-			add_overlay(image('icons/obj/singularity.dmi',"chain_s1"))
-		if(STAGE_TWO)
-			add_overlay(image('icons/effects/96x96.dmi',"chain_s3"))
-		if(STAGE_THREE)
-			add_overlay(image('icons/effects/160x160.dmi',"chain_s5"))
-		if(STAGE_FOUR)
-			add_overlay(image('icons/effects/224x224.dmi',"chain_s7"))
-		if(STAGE_FIVE)
-			add_overlay(image('icons/effects/288x288.dmi',"chain_s9"))
 
 /obj/singularity/proc/on_release()
-	chained = 0
-	overlays = 0
+	set_chained(0)
 	move_self = 1
+
+/// The chain around a captured singularity, in the size it has now.
+/obj/singularity/draw(datum/look/look)
+	..()
+	if(!chained)
+		return
+	switch(current_size)
+		if(STAGE_ONE)
+			look.overlay("chain_s1")
+		if(STAGE_TWO)
+			look.overlay("chain_s3")
+		if(STAGE_THREE)
+			look.overlay("chain_s5")
+		if(STAGE_FOUR)
+			look.overlay("chain_s7")
+		if(STAGE_FIVE, STAGE_SUPER)
+			look.overlay("chain_s9")
 
 /obj/singularity/singularity_act(S, size)
 	if(current_size <= size)

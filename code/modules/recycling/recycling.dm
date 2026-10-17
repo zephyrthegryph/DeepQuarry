@@ -277,4 +277,4 @@ CAPABILITIES(/obj/item/material_dust)
 /obj/item/material_dust/proc/dust_of(mat)
 	name = "[material_name] [initial(name)]"
 	var/datum/material/M = get_material_by_name(material_name)
-	color = M?.icon_colour
+	set_color(M?.icon_colour)

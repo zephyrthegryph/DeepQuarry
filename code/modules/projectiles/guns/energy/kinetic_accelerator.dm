@@ -325,7 +325,7 @@ CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
 		var/turf/simulated/mineral/M = target_turf
 		M.GetDrilled(TRUE)
 	var/obj/effect/temp_visual/kinetic_blast/K = new /obj/effect/temp_visual/kinetic_blast(target_turf)
-	K.color = color
+	K.set_color(color)
 
 //Modkits
 /obj/item/borg/upgrade/modkit
@@ -695,7 +695,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 
 /obj/item/borg/upgrade/modkit/tracer/modify_projectile(obj/item/projectile/kinetic/K)
 	K.set_icon_state("ka_tracer")
-	K.color = bolt_color
+	K.set_color(bolt_color)
 
 /obj/item/borg/upgrade/modkit/tracer/adjustable
 	name = "adjustable tracer bolts"

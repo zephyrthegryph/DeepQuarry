@@ -92,13 +92,13 @@
 	set_var(M, "pending_events", null)
 	set_var(M, "recording", TRUE)
 	var/datum/ticket/T = own(new /datum/ticket/dq_metrics_fixture)
-	T.id = 9001
-	T.state = AHELP_ACTIVE
+	T.set_id(9001)
+	T.set_state(AHELP_ACTIVE)
 	T.metrics_state_event()
 	T.metrics_state_event("handled")
-	T.state = AHELP_CLOSED
+	T.set_state(AHELP_CLOSED)
 	T.metrics_state_event()
-	T.state = AHELP_ACTIVE
+	T.set_state(AHELP_ACTIVE)
 	T.metrics_state_event()
 	var/list/changes = list()
 	for(var/list/event as anything in M.pending_events)

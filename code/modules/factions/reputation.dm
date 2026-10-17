@@ -383,7 +383,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	var/datum/faction_agent_record/record = get_agent_record(account_number)
 	if(!record || record.tier != FACTION_AGENT_TIER_CANDIDATE)
 		return FALSE
-	record.tier = FACTION_AGENT_TIER_ACCREDITED
+	record.set_tier(FACTION_AGENT_TIER_ACCREDITED)
 	EXPIRY_STAMP(record, appointed_at, CLOCK_WORLD)
 	SScontracts?.queue_agent_offers(record.account_number, record.faction_id)
 	return TRUE
@@ -393,7 +393,7 @@ CAPABILITIES(/datum/faction_agent_record)
 		return FALSE
 	if(record.contracts_completed < FACTION_AGENT_TRUSTED_COMPLETIONS || get_personal_faction_reputation(record.account_number, record.faction_id) < FACTION_AGENT_TRUSTED_REPUTATION)
 		return FALSE
-	record.tier = FACTION_AGENT_TIER_TRUSTED
+	record.set_tier(FACTION_AGENT_TIER_TRUSTED)
 	return TRUE
 
 /datum/station_faction_relations/proc/add_agent_exposure(account_number, faction_id, amount, reason, transaction_id)
@@ -427,7 +427,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	var/datum/antagonist/operative_role = SSantag.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
 	if(!owner_mind?.current || owner_mind.special_role || !operative_role || !operative_role.add_antagonist(owner_mind, TRUE, TRUE, FALSE, FALSE, TRUE))
 		return FALSE
-	record.tier = FACTION_AGENT_TIER_OPERATIVE
+	record.set_tier(FACTION_AGENT_TIER_OPERATIVE)
 	record.operative_contract_id = contract_id
 	return TRUE
 
@@ -439,7 +439,7 @@ CAPABILITIES(/datum/faction_agent_record)
 	if(record.agent_mind && operative_role)
 		operative_role.remove_antagonist(record.agent_mind, TRUE)
 	record.operative_contract_id = null
-	record.tier = FACTION_AGENT_TIER_TRUSTED
+	record.set_tier(FACTION_AGENT_TIER_TRUSTED)
 	return TRUE
 
 /proc/is_faction_agent(mob/living/user, faction_id)

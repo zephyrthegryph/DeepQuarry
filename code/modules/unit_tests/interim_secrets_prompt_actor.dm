@@ -3,7 +3,7 @@
 /datum/unit_test/interim_secrets_prompt_actor/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/secrets_menu/menu = allocate(/datum/secrets_menu, actor)
-	menu.is_funmin = TRUE
+	menu.set_is_funmin(TRUE)
 	var/obj/item/pen/held = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	TEST_ASSERT(actor.put_in_active_hand(held), "the actor holds an item before the question opens")
 	var/datum/antagonist/highlander/original_highlanders = GLOB.highlanders

@@ -4,7 +4,7 @@
 //   mechanisms reach it: plating, wiring and calibration repair, its own
 //   regeneration and refactory feedstock (treatment_tag_biology()).
 // - Regeneration is a TREAT_REGENERATION treatment funded by refactory steel,
-//   charged from what mend() actually repaired, scaled by BF_HEALING.
+//   charged from what mend() actually repaired, scaled by STAT_HEALING.
 // - The swarm's own troubles are nanite afflictions
 //   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
@@ -89,7 +89,7 @@
 	if(R.get_stored_material(MAT_STEEL) < NANOFORM_STEEL_PER_POINT)
 		afflict(/datum/affliction/nanite/refactory_depletion, R, NANITE_DEPLETION_PER_STARVED_TICK)
 		return 0
-	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration * get_factor(BF_HEALING))
+	return R.fund_repair(H, list(TREAT_REGENERATION), F.regeneration * owner.healing)
 
 /// Hits that land shake the swarm's cohesion; hits on the orchestrator, and
 /// shocks anywhere, damage its control.

@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/starcaster_news)
 
 /obj/item/starcaster_news/proc/ui_act_prg_toggle_archived(datum/act/op/A)
 	. = TRUE
-	show_archived = !show_archived
+	set_show_archived(!show_archived)
 
 /// Created for and owned by this holder; deleted with it.
 /obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article

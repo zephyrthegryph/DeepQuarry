@@ -101,8 +101,12 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("search", ui_act("search", arg("t1", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
-	op("photo_front", ui_act("photo_front"), then(PROC_REF(ui_act_photo_front)))
-	op("photo_side", ui_act("photo_side"), then(PROC_REF(ui_act_photo_side)))
+	op("photo_front", ui_act("photo_front"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(photo_choices)), "timeout" = 0), step = "photo", when = PROC_REF(asks_photo)),
+		then(PROC_REF(ui_act_photo_front)))
+	op("photo_side", ui_act("photo_side"),
+		asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(photo_choices)), "timeout" = 0), step = "photo", when = PROC_REF(asks_photo)),
+		then(PROC_REF(ui_act_photo_side)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
 	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
@@ -212,7 +216,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 /obj/machinery/computer/secure_data/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
-	temp = null
+	set_temp(null)
 
 /obj/machinery/computer/secure_data/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
@@ -232,14 +236,14 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
 		if(check_access(scan))
 			set_authenticated(scan.registered_name)
-			rank = scan.assignment
+			set_rank(scan.assignment)
 	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
 		set_authenticated(A.actor.name)
-		rank = A.actor.records_login_rank()
+		set_rank(A.actor.records_login_rank())
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
 		rel_clear(src, nameof(src.active2))
-		screen = SEC_DATA_R_LIST
+		set_screen(SEC_DATA_R_LIST)
 
 /obj/machinery/computer/secure_data/proc/ui_act_logout(datum/act/op/A)
 	. = TRUE
@@ -252,7 +256,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 			A.actor.put_in_hands(scan)
 		rel_take(src, nameof(src.scan))
 	set_authenticated(null)
-	screen = null
+	set_screen(null)
 	rel_clear(src, nameof(src.active1))
 	rel_clear(src, nameof(src.active2))
 
@@ -261,7 +265,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	screen = clamp(screen_arg || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
+	set_screen(clamp(screen_arg || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD))
 	rel_clear(src, nameof(src.active1))
 	rel_clear(src, nameof(src.active2))
 
@@ -272,7 +276,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	. = TRUE
 	for(var/datum/data/record/R in GLOB.data_core.security)
 		spent(R)
-	set_temp("All security records deleted.")
+	show_temp("All security records deleted.")
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_r(datum/act/op/A)
 	. = TRUE
@@ -280,7 +284,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	if(active2())
-		set_temp("Security record deleted.")
+		show_temp("Security record deleted.")
 		spent(active2())
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_r_2(datum/act/op/A)
@@ -289,7 +293,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	if(active1())
-		set_temp("All records for [active1().fields["name"]] deleted.")
+		show_temp("All records for [active1().fields["name"]] deleted.")
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
 				spent(R)
@@ -303,7 +307,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	if(active2())
-		set_temp(client_update_record(src,A.actor))
+		show_temp(client_update_record(src,A.actor))
 
 /obj/machinery/computer/secure_data/proc/ui_act_edit_notes(datum/act/op/A)
 	if(!active2())
@@ -336,7 +340,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	. = TRUE
 	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
 	if(!(general_record in GLOB.data_core.general))
-		set_temp("Record not found.", "danger")
+		show_temp("Record not found.", "danger")
 		return
 
 	var/datum/data/record/security_record
@@ -347,7 +351,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 
 	rel_set(src, nameof(src.active1), general_record)
 	rel_set(src, nameof(src.active2), security_record)
-	screen = SEC_DATA_RECORD
+	set_screen(SEC_DATA_RECORD)
 
 /obj/machinery/computer/secure_data/proc/ui_act_new(datum/act/op/A)
 	. = TRUE
@@ -356,21 +360,21 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	. = TRUE
 	if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
 		var/datum/data/record/R = new /datum/data/record()
-		R.fields["name"] = active1().fields["name"]
-		R.fields["id"] = active1().fields["id"]
-		R.name = "Security Record #[R.fields["id"]]"
-		R.fields["brain_type"]	= "Unknown"
-		R.fields["criminal"]	= "None"
-		R.fields["mi_crim"]		= "None"
-		R.fields["mi_crim_d"]	= "No minor crime convictions."
-		R.fields["ma_crim"]		= "None"
-		R.fields["ma_crim_d"]	= "No major crime convictions."
-		R.fields["notes"]		= "No notes."
-		R.fields["notes"]		= "No notes."
+		R.set_fields_at("name", active1().fields["name"])
+		R.set_fields_at("id", active1().fields["id"])
+		R.set_name("Security Record #[R.fields["id"]]")
+		R.set_fields_at("brain_type", "Unknown")
+		R.set_fields_at("criminal", "None")
+		R.set_fields_at("mi_crim", "None")
+		R.set_fields_at("mi_crim_d", "No minor crime convictions.")
+		R.set_fields_at("ma_crim", "None")
+		R.set_fields_at("ma_crim_d", "No major crime convictions.")
+		R.set_fields_at("notes", "No notes.")
+		R.set_fields_at("notes", "No notes.")
 		rel_add(GLOB.data_core, nameof(/datum/datacore::security), R)
 		rel_set(src, nameof(src.active2), R)
-		screen = SEC_DATA_RECORD
-		set_temp("Security record created.", "success")
+		set_screen(SEC_DATA_RECORD)
+		show_temp("Security record created.", "success")
 
 /obj/machinery/computer/secure_data/proc/ui_act_del_c(datum/act/op/A, del_c)
 	. = TRUE
@@ -402,13 +406,13 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 			rel_set(src, nameof(src.active1), R)
 			break
 	if(!active1())
-		set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
+		show_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 		return
 	for(var/datum/data/record/E in GLOB.data_core.security)
 		if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
 			rel_set(src, nameof(src.active2), E)
 			break
-	screen = SEC_DATA_RECORD
+	set_screen(SEC_DATA_RECORD)
 
 /obj/machinery/computer/secure_data/proc/ui_act_print_p(datum/act/op/A)
 	. = TRUE
@@ -416,16 +420,25 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		return FALSE
 	. = TRUE
 	if(!printing)
-		printing = TRUE
+		set_printing(TRUE)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
+
+/// The picture is asked of a silicon that holds no photo and has pictures saved.
+/obj/machinery/computer/secure_data/proc/asks_photo(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return istype(S) && !istype(S.get_active_hand(), /obj/item/photo) && length(S.aiCamera?.aipictures)
+
+/obj/machinery/computer/secure_data/proc/photo_choices(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return S.picture_choices()
 
 /obj/machinery/computer/secure_data/proc/ui_act_photo_front(datum/act/op/A)
 	. = TRUE
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/icon/photo = get_photo(A.actor)
+	var/icon/photo = get_photo(A.actor, A.step_value("photo"))
 	if(photo && active1())
 		active1().fields["photo_front"] = photo
 		active1().fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
@@ -435,7 +448,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/icon/photo = get_photo(A.actor)
+	var/icon/photo = get_photo(A.actor, A.step_value("photo"))
 	if(photo && active1())
 		active1().fields["photo_side"] = photo
 		active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
@@ -606,7 +619,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		P.set_info(P.info + (span_bold("Security Record Lost!") + "<br>"))
 	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Security Record: [active1().fields["name"]]'"
-	printing = FALSE
+	set_printing(FALSE)
 	SStgui.update_uis(src)
 
 /**
@@ -616,24 +629,21 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger, virus
  */
-/obj/machinery/computer/secure_data/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/secure_data/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
 /obj/machinery/computer/secure_data/proc/is_not_allowed(mob/user)
 	return !src.authenticated || user.stat || user.restrained() || (!in_range(src, user) && (!istype(user, /mob/living/silicon)))
 
-/obj/machinery/computer/secure_data/proc/get_photo(mob/user)
+/obj/machinery/computer/secure_data/proc/get_photo(mob/user, picked_name)
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		var/obj/item/photo/photo = user.get_active_hand()
 		return photo.img
-	if(istype(user, /mob/living/silicon))
-		var/mob/living/silicon/tempAI = user
-		var/obj/item/photo/selection = tempAI.GetPicture()
-		if (selection)
-			return selection.img
+	var/obj/item/photo/selection = user.GetPicture(picked_name)
+	if(selection)
+		return selection.img
 
 /// An EMP scrambles or wipes some of the records.
 /obj/machinery/computer/secure_data/proc/secure_data_emp(datum/act/A)
@@ -646,19 +656,19 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		if(prob(10/packet.severity))
 			switch(rand(1,6))
 				if(1)
-					R.fields["name"] = "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]"
+					R.set_fields_at("name", "[pick(pick(GLOB.first_names_male), pick(GLOB.first_names_female))] [pick(GLOB.last_names)]")
 				if(2)
-					R.fields["sex"]	= pick("Male", "Female")
+					R.set_fields_at("sex", pick("Male", "Female"))
 				if(3)
-					R.fields["age"] = rand(5, 85)
+					R.set_fields_at("age", rand(5, 85))
 				if(4)
-					R.fields["criminal"] = pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released")
+					R.set_fields_at("criminal", pick("None", "*Arrest*", "Incarcerated", "Parolled", "Released"))
 				if(5)
-					R.fields["p_stat"] = pick("*Unconcious*", "Active", "Physically Unfit")
+					R.set_fields_at("p_stat", pick("*Unconcious*", "Active", "Physically Unfit"))
 					if(GLOB.PDA_Manifest.len)
 						GLOB.PDA_Manifest.Cut()
 				if(6)
-					R.fields["m_stat"] = pick("*Insane*", "*Unstable*", "*Watch*", "Stable")
+					R.set_fields_at("m_stat", pick("*Insane*", "*Unstable*", "*Watch*", "Stable"))
 			continue
 
 		else if(prob(1))

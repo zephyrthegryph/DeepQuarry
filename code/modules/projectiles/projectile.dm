@@ -242,8 +242,8 @@ CAPABILITIES(/obj/item/projectile)
 			trajectory_ignore_forcemove = FALSE
 			after_z_change(old, loc)
 			if(!hitscanning)
-				pixel_x = trajectory.return_px()
-				pixel_y = trajectory.return_py()
+				set_pixel_x(trajectory.return_px())
+				set_pixel_y(trajectory.return_py())
 			forcemoved = TRUE
 			rel_set(src, nameof(hitscan_last), loc)
 		else if(T != loc)
@@ -254,8 +254,8 @@ CAPABILITIES(/obj/item/projectile)
 		if(can_hit_target(original(), permutated))
 			Bump(original())
 	if(!hitscanning && !forcemoved && trajectory)
-		pixel_x = trajectory.return_px() - trajectory.mpx * trajectory_multiplier * GLOB.projectile_iterations_per_move
-		pixel_y = trajectory.return_py() - trajectory.mpy * trajectory_multiplier * GLOB.projectile_iterations_per_move
+		set_pixel_x(trajectory.return_px() - trajectory.mpx * trajectory_multiplier * GLOB.projectile_iterations_per_move)
+		set_pixel_y(trajectory.return_py() - trajectory.mpy * trajectory_multiplier * GLOB.projectile_iterations_per_move)
 		animate(src, pixel_x = trajectory.return_px(), pixel_y = trajectory.return_py(), time = 1, flags = ANIMATION_END_NOW)
 	Range()
 
@@ -538,7 +538,7 @@ CAPABILITIES(/obj/item/projectile)
 		var/matrix/M = new
 		M.Turn(original_angle)
 		thing.transform = M
-		thing.color = color
+		thing.set_color(color)
 		set_glow(thing, GLOW(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color))
 		rel_add(drawn, nameof(drawn.beam_components), thing)
 	if(impacting && impact_type && duration > 0)
@@ -548,7 +548,7 @@ CAPABILITIES(/obj/item/projectile)
 		var/matrix/M = new
 		M.Turn(Angle)
 		thing.transform = M
-		thing.color = color
+		thing.set_color(color)
 		set_glow(thing, GLOW(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color))
 		rel_add(drawn, nameof(drawn.beam_components), thing)
 	drawn.expire(duration)

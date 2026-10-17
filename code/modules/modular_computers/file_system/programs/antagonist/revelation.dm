@@ -42,7 +42,7 @@ CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_obfuscate", ui_act("PRG_obfuscate", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_prg_obfuscate)))
 
 /datum/computer_file/program/revelation/proc/ui_act_prg_arm(datum/act/op/A)
-	armed = !armed
+	set_armed(!armed)
 	return OP_OK
 
 /datum/computer_file/program/revelation/proc/ui_act_prg_activate(datum/act/op/A)
@@ -53,12 +53,12 @@ CAPABILITIES(/datum/computer_file/program/revelation)
 	var/newname = new_name
 	if(!newname)
 		return
-	filedesc = newname
+	set_filedesc(newname)
 	return TRUE
 
 /datum/computer_file/program/revelation/clone()
 	var/datum/computer_file/program/revelation/temp = ..()
-	temp.armed = armed
+	temp.set_armed(armed)
 	return temp
 
 /datum/computer_file/program/revelation/ui_data(datum/act/eval/A)

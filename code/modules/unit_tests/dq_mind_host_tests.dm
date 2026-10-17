@@ -14,7 +14,7 @@
 /// would leave that identity stamped with a dead owner (an own_audit orphan).
 /proc/dq_test_give_mind(datum/unit_test/test, mob/living/L, name)
 	var/datum/mind/M = test.own(new /datum/mind("dq_mind_test_[name]"))
-	M.name = name
+	M.set_name(name)
 	M.transfer_to(L)
 	M.identity.ooc_notes = "notes of [name]"
 	M.identity.ooc_notes_likes = "likes of [name]"

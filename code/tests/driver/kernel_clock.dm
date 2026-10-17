@@ -125,6 +125,9 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	if(test_dirty || !phase_items)
 		rebuild_work_graph()
 		test_dirty = FALSE
+	// The test graph is clean here (rebuilt just now, or unchanged since its last phase): the live graph's dirty flag, kept in live_dirty
+	// and handed back by test_leave(), must not make every phase of a test rebuild (and revalidate) the test graph again.
+	work_dirty = FALSE
 
 /// Puts the live phase lists back; the test graph keeps its own.
 /datum/controller/kernel/proc/test_leave()

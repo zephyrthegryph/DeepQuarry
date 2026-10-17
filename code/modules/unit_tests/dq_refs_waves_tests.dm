@@ -7,7 +7,7 @@
 	var/list/saved = GLOB.virusDB
 	GLOB.virusDB = list()
 	var/datum/data/record/rec = new
-	rec.fields["name"] = "Test Plague"
+	rec.set_fields_at("name", "Test Plague")
 	GLOB.virusDB["77"] = rec
 	var/list/entries = medical_virus_entries()
 	TEST_ASSERT_EQUAL(length(entries), 1, "the console lists the one discovered virus")

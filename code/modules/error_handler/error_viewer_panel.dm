@@ -143,7 +143,7 @@ CAPABILITIES(/datum/error_viewer)
 	return OP_OK
 
 /datum/error_viewer/proc/ui_act_set_mode(datum/act/op/A, mode)
-	dq_linear = "[mode]" == "linear"
+	set_dq_linear("[mode]" == "linear")
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/error_viewer)
 	var/datum/error_viewer/EV = locate(ref)
 	if(istype(EV))
 		rel_set(EV, nameof(/datum/error_viewer::dq_back_to), src)
-		EV.dq_linear = dq_linear
+		EV.set_dq_linear(dq_linear)
 		EV.tgui_interact(user)
 	return TRUE
 

@@ -141,7 +141,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	if(hat)
 		look.watch(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = read_once(hat.color), appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
+		look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
 
 // Controls the 'mood' overlay. Overrided in subtypes for specific behaviour.
 /mob/living/simple_mob/slime/proc/update_mood()

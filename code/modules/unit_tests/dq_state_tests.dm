@@ -126,8 +126,8 @@ CAPABILITIES(/datum/dq_state_probe)
 /datum/unit_test/dq_state_canonical_delta/Run()
 	var/obj/item/paper/first = allocate(/obj/item/paper)
 	var/obj/item/paper/second = allocate(/obj/item/paper)
-	first.pixel_x = second.pixel_x
-	first.pixel_y = second.pixel_y
+	first.set_pixel_x(second.pixel_x)
+	first.set_pixel_y(second.pixel_y)
 	var/first_text = state_canonical(state_serialize(first))
 	var/second_text = state_canonical(state_serialize(second))
 	TEST_ASSERT_EQUAL(state_hash(state_serialize(first)), state_hash(state_serialize(second)), "two untouched papers should hash the same: [dq_state_first_difference(first_text, second_text)]")
@@ -342,10 +342,10 @@ CAPABILITIES(/datum/dq_state_probe)
 	var/obj/belly/belly = new(pred)
 	belly.name = "Tummy"
 	belly.desc = "A test belly."
-	belly.digest_mode = DM_DIGEST
-	belly.escapechance = 42
-	belly.struggle_messages_inside = list("one", "two")
-	belly.emote_lists = list(DM_HOLD = list("held"), DM_DIGEST = list("digested"))
+	belly.set_digest_mode(DM_DIGEST)
+	belly.set_escapechance(42)
+	belly.set_struggle_messages_inside(list("one", "two"))
+	belly.set_emote_lists(list(DM_HOLD = list("held"), DM_DIGEST = list("digested")))
 	belly.generated_reagents = list(REAGENT_ID_WATER = 1)
 	belly.reagents.add_reagent(REAGENT_ID_WATER, 10)
 
@@ -368,7 +368,7 @@ CAPABILITIES(/datum/dq_state_probe)
 	TEST_ASSERT_EQUAL(copy.owner, pred, "the loaded belly should belong to the mob it loaded into")
 	TEST_ASSERT(copy in pred.vore_organs, "the loaded belly should be registered on its owner")
 
-	belly.save_digest_mode = FALSE
+	belly.set_save_digest_mode(FALSE)
 	blob = state_serialize(belly)
 	TEST_ASSERT(!("digest_mode" in blob[STATE_KEY_VARS]), "digest mode is not saved when save_digest_mode is off")
 
@@ -383,7 +383,7 @@ CAPABILITIES(/datum/dq_state_probe)
 
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
-	gem.inside_flavor = "a test room"
+	gem.set_inside_flavor("a test room")
 	rel_set(gem, nameof(gem.linked_belly), copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")

@@ -44,31 +44,36 @@
 MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's scanning")
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/reagent_containers/glass))
-		var/obj/item/reagent_containers/glass/G = I
-		if(!G.is_open_container())
-			return OP_OK
-		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/prompt/choice, question = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"), buttons = TRUE)
-		if(isnull(choice))
-			return OP_DECLINE
-		if(!choice)
-			return OP_OK
-		if(choice == "Add water")
-			if(!G.reagents.has_reagent(REAGENT_ID_WATER))
-				to_chat(user, span_danger("No water found in beaker."))
-				return OP_OK
-			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
-			to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
-			return OP_OK
-		else if(choice == "Empty water")
-			var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
-			var/trans = reagents.trans_to(G, amount_transferred)
-			to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
-			return OP_OK
-		// fall through
+	return insert_scan_item(A.actor, A.held)
 
+/// An open container is asked what to do with.
+/obj/machinery/radiocarbon_spectrometer/proc/container_is_open(datum/act/op/A)
+	var/obj/item/reagent_containers/glass/G = A.held
+	return G.is_open_container()
+
+/// A container: water goes in or out of the machine as answered; "Scan container" (and a container with no question to ask) is put inside like any item.
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/G = A.held
+	if(!G.is_open_container())
+		return OP_OK
+	var/choice = A.step_value("k74")
+	if(choice == "Add water")
+		if(!G.reagents.has_reagent(REAGENT_ID_WATER))
+			to_chat(user, span_danger("No water found in beaker."))
+			return OP_OK
+		var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
+		to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
+		return OP_OK
+	else if(choice == "Empty water")
+		var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
+		var/trans = reagents.trans_to(G, amount_transferred)
+		to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
+		return OP_OK
+	return insert_scan_item(user, G)
+
+/// `I` is put inside to be scanned.
+/obj/machinery/radiocarbon_spectrometer/proc/insert_scan_item(mob/user, obj/item/I)
 	if(scanned_item())
 		to_chat(user, span_warning("[src] already has \a [scanned_item()] inside!"))
 		return OP_OK
@@ -79,6 +84,7 @@ MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's sc
 	rel_set(src, nameof(scanned_item), I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return OP_OK
+
 
 /obj/machinery/radiocarbon_spectrometer/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -95,6 +101,9 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	op("set_scanner_rpm_delta", ui_act("set_scanner_rpm_delta", arg("delta", num())), then(PROC_REF(ui_act_set_scanner_rpm_delta)))
 	op("inject_radiation", ui_act("inject_radiation"), then(PROC_REF(ui_act_inject_radiation)))
 	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(scanning), FALSE, because = MSG(radiocarbon_spectrometer/scanning))), then(PROC_REF(interaction_use_item)))
+	op("use_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(scanning), FALSE, because = MSG(radiocarbon_spectrometer/scanning))),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to do with the container?", "title" = "Radiometric Scanner", "choices" = list("Add water","Empty water","Scan container"), "buttons" = TRUE, "timeout" = 0), step = "k74", when = PROC_REF(container_is_open)),
+		then(PROC_REF(interaction_use_container)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/radiocarbon_spectrometer/ui_data(datum/act/eval/A)
@@ -163,15 +172,15 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_set_scanner_rpm_delta(datum/act/op/A, delta)
 	add_fingerprint(A.actor)
-	scanner_rpm_delta = CLAMP(delta, -RPM_MAX_DELTA, RPM_MAX_DELTA)
+	set_scanner_rpm_delta(CLAMP(delta, -RPM_MAX_DELTA, RPM_MAX_DELTA))
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/proc/ui_act_inject_radiation(datum/act/op/A)
 	add_fingerprint(A.actor)
 	if(!scanning)
-		radiation = 0
+		set_radiation(0)
 		return
-	radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
+	set_radiation(CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX))
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/var/scanning = FALSE
@@ -198,42 +207,42 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 	/************** RPM **************/
 	// Scanner slows down over time
-	scanner_rpm -= RPM_FRICTION + rand(0, RPM_FRICTION) // randomly add more friction
+	set_scanner_rpm(scanner_rpm - (RPM_FRICTION + rand(0, RPM_FRICTION))) // randomly add more friction
 	// Motor speeds it up
-	scanner_rpm += scanner_rpm_delta
+	set_scanner_rpm(scanner_rpm + scanner_rpm_delta)
 	// Cap
-	scanner_rpm = CLAMP(scanner_rpm, RPM_MIN, RPM_MAX)
+	set_scanner_rpm(CLAMP(scanner_rpm, RPM_MIN, RPM_MAX))
 
 	// Factor RPM into completion
 	var/diff_from_ideal_rpm = abs(scanner_rpm - IDEAL_RPM)
 	var/rpm_factor = CLAMP01(1 - (diff_from_ideal_rpm / RPM_OKAY_RANGE))
 
 	/************** RADIATION *************/
-	radiation -= RADIATION_LOSS
-	radiation = CLAMP(radiation, 0, RADIATION_MAX)
+	set_radiation(radiation - RADIATION_LOSS)
+	set_radiation(CLAMP(radiation, 0, RADIATION_MAX))
 	var/diff_from_ideal_radiation = abs(radiation - TARGET_RADIATION)
 	var/radiation_factor = CLAMP01(1 - (diff_from_ideal_radiation / RADIATION_OK_RANGE))
 
 	/************** COMPLETION *************/
 	var/completion_delta = rpm_factor + radiation_factor
-	scan_progress = CLAMP(scan_progress + (completion_delta * COMPLETION_DELTA_MODIFIER), 0, 100)
+	set_scan_progress(CLAMP(scan_progress + (completion_delta * COMPLETION_DELTA_MODIFIER), 0, 100))
 
 /obj/machinery/radiocarbon_spectrometer/proc/start_scanning()
 	set_icon_state("analyser_processing")
 	set_scanning(TRUE)
-	scan_progress = 0
-	scanner_rpm_delta = 0
-	scanner_rpm = 0
-	radiation = 0
+	set_scan_progress(0)
+	set_scanner_rpm_delta(0)
+	set_scanner_rpm(0)
+	set_radiation(0)
 	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/stop_scanning()
 	set_icon_state("analyser")
 	set_scanning(FALSE)
-	scan_progress = 0
-	scanner_rpm_delta = 0
-	scanner_rpm = 0
-	radiation = 0
+	set_scan_progress(0)
+	set_scanner_rpm_delta(0)
+	set_scanner_rpm(0)
+	set_radiation(0)
 	set_heat(0)
 
 /obj/machinery/radiocarbon_spectrometer/proc/complete_scan()
@@ -247,7 +256,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	var/obj/item/paper/P = new(src)
 	P.name = "[src] report #[++report_num]: [scanned_item().name]"
 	P.stamped = list(/obj/item/stamp)
-	P.add_overlay("paper_stamped")
+	P.add_stamp_mark("paper_stamped", 0, 0)
 
 	//work out data
 	var/data = " - Mundane object: [scanned_item().desc ? scanned_item().desc : "No information on record."]<br>"
@@ -296,7 +305,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 
 	P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
 	P.set_info(P.info + (span_bold("Scanned item:") + " [scanned_item().name]<br><br>" + data))
-	last_scan_data = P.info
+	set_last_scan_data(P.info)
 
 	P.forceMove(loc)
 	scanned_item().forceMove(loc)

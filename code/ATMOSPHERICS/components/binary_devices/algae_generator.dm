@@ -53,11 +53,11 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 /// Not farming: clear the error and report only the idle draw (what the step did when it parked).
 /obj/machinery/atmospherics/binary/algae_farm/proc/show_idle_readout()
 	set_recent_moles_transferred(0)
-	ui_error = null
+	set_ui_error(null)
 	if(use_power == USE_POWER_IDLE)
-		last_power_draw = power_of(src).idle
+		set_last_power_draw(power_of(src).idle)
 	else
-		last_power_draw = 0
+		set_last_power_draw(0)
 
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
@@ -86,26 +86,26 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 		return
 	// Switched on with nothing to do: its readout says why (its gas watch parks it before a step could).
 	if(stored_material[MAT_ALGAE] < algae_per_mole)
-		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
+		set_ui_error("Insufficient [material_display_name(MAT_ALGAE)] to process.")
 	else if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
-		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
+		set_ui_error("[material_display_name(MAT_GRAPHITE)] output storage is full.")
 	else if(!now)
-		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
+		set_ui_error("Insufficient [GLOB.gas_data.name[input_gas]] to process.")
 	else
-		ui_error = null
+		set_ui_error(null)
 
 /// One service interval of farming (its every(), while it has work).
 /obj/machinery/atmospherics/binary/algae_farm/proc/farm_step(datum/act/A)
 	set_recent_moles_transferred(0)
-	last_power_draw = power_of(src).active
+	set_last_power_draw(power_of(src).active)
 
 	// STEP 1 - Check material resources
 	if(stored_material[MAT_ALGAE] < algae_per_mole)
-		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
+		set_ui_error("Insufficient [material_display_name(MAT_ALGAE)] to process.")
 		reconsider()
 		return
 	if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
-		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
+		set_ui_error("[material_display_name(MAT_GRAPHITE)] output storage is full.")
 		reconsider()
 		return
 	var/moles_to_convert = min(moles_per_tick,\
@@ -117,28 +117,28 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	gas_touched(air1)
 	if (power_draw > 0)
 		use_power(power_draw)
-		last_power_draw += power_draw
+		set_last_power_draw(last_power_draw + power_draw)
 
 	// STEP 3 - Convert CO2 to O2  (Note: We know our internal group multipier is 1, so just be cool)
 	var/co2_moles = LINDA_GAS_AMT(internal, input_gas)
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
-		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
+		set_ui_error("Insufficient [GLOB.gas_data.name[input_gas]] to process.")
 		reconsider()
 		return
 
 	// STEP 4 - Consume the resources
 	var/converted_moles = min(co2_moles, moles_per_tick)
 	use_power(converted_moles * power_per_mole)
-	last_power_draw += converted_moles * power_per_mole
-	stored_material[MAT_ALGAE] -= converted_moles * algae_per_mole
-	stored_material[MAT_GRAPHITE] += converted_moles * carbon_per_mole
+	set_last_power_draw(last_power_draw + (converted_moles * power_per_mole))
+	set_stored_material_at(MAT_ALGAE, stored_material[MAT_ALGAE] - (converted_moles * algae_per_mole))
+	set_stored_material_at(MAT_GRAPHITE, stored_material[MAT_GRAPHITE] + (converted_moles * carbon_per_mole))
 
 	// STEP 5 - Output the converted oxygen. Fow now we output for free!
 	internal.adjust_gas(input_gas, -converted_moles)
 	air2.adjust_gas_temp(output_gas, converted_moles, internal.return_temperature())
 	gas_touched(air2)
 	set_recent_moles_transferred(converted_moles)
-	ui_error = null // Success!
+	set_ui_error(null) // Success!
 
 
 /obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 	var/storage = 5000 * (bin_rating**2)/2
 	for(var/mat in storage_capacity)
-		storage_capacity[mat] = storage
+		set_storage_capacity_at(mat, storage)
 
 	moles_per_tick = initial(moles_per_tick) + (manip_rating**2 - 1)
 
@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	if(!new_stack.set_amount(to_set))
 		return
 
-	stored_material[material_name] -= to_set * perunit
+	set_stored_material_at(material_name, stored_material[material_name] - (to_set * perunit))
 	units_to_eject -= to_set
 
 	while(units_to_eject > 0)
@@ -270,7 +270,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 		if(!new_stack.set_amount(to_set))
 			break
 
-		stored_material[material_name] -= to_set * perunit
+		set_stored_material_at(material_name, stored_material[material_name] - (to_set * perunit))
 		units_to_eject -= to_set
 
 // Attept to load materials.  Returns 0 if item wasn't a stack of materials, otherwise 1 (even if failed to load)
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	if(stored_material[S.material.name] + S.perunit <= max_res_amount)
 		var/count = 0
 		while(stored_material[S.material.name] + S.perunit <= max_res_amount && S.get_amount() >= 1)
-			stored_material[S.material.name] += S.perunit
+			set_stored_material_at(S.material.name, stored_material[S.material.name] + (S.perunit))
 			S.use(1)
 			count++
 		act_message(user, src, MSG_SELF(span_notice("You insert [count] [S.name] into %T%.")), MSG_OTHERS("%U% inserts [S.name] into %T%."))

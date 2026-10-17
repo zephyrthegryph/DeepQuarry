@@ -299,7 +299,7 @@
 	catch(var/exception/e)
 		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
 	updating_preview_icon = FALSE
-	dq_last_preview_render_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_started)
+	set_dq_last_preview_render_ms(TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_started))
 	dq_schedule_data_push()
 
 /datum/preferences/proc/dq_schedule_data_push()

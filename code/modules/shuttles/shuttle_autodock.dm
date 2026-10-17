@@ -76,6 +76,7 @@
 	rel_set(src, nameof(shuttle_docking_controller), controller)
 	if(shuttle_docking_controller)
 		observe(shuttle_docking_controller, /datum/notice/qdeleting, src, then(PROC_REF(docking_controller_deleted)))
+SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 
 /// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
@@ -210,7 +211,7 @@
 /datum/shuttle/autodock/cancel_launch(user, mob/actor)
 	if (!can_cancel()) return
 
-	moving_status = SHUTTLE_IDLE
+	set_moving_status(SHUTTLE_IDLE)
 	set_process_state(WAIT_FINISH)
 	rel_clear(src, nameof(in_use))
 

@@ -49,11 +49,18 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 	configure(item_combat(force = 12))
 	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
 
-/obj/item/extinguisher/Initialize(mapload)
-	if(rand_overlays)
-		var/choice = rand(1,rand_overlays)
-		add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
-	. = ..()
+/// Which of the random decal overlays this extinguisher wears (0: none), rolled when it spawns.
+/obj/item/extinguisher/var/overlay_choice = 0
+
+/// Rolled before init (rolls()): which decal overlay this extinguisher wears (0: none).
+/obj/item/extinguisher/proc/roll_overlay_choice(datum/roller/R)
+	if(!rand_overlays)
+		return 0
+	return R.number(1, rand_overlays)
+
+/obj/item/extinguisher/draw(datum/look/look)
+	..()
+	look.overlay("[item_state]O[overlay_choice]", when = overlay_choice > 0)
 
 /obj/item/extinguisher/examine(mob/user)
 	. = ..()
@@ -61,6 +68,7 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
+	rolls(nameof(overlay_choice), PROC_REF(roll_overlay_choice))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")))
 	configure(item_sounds(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
@@ -149,5 +157,5 @@ CAPABILITIES(/obj/item/extinguisher)
 		my_target = pick(the_targets)
 	W.create_reagents(spray_amount)
 	reagents.trans_to_obj(W, spray_amount, user = user)
-	W.set_color()
+	W.tint_from_reagents()
 	W.set_up(my_target, user = user)

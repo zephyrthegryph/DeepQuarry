@@ -448,7 +448,7 @@
 
 /datum/unit_test/dq_timed_pin_w3/floorbot_makes_tiles/run_pin()
 	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
-	B.maketiles = TRUE
+	B.set_maketiles(TRUE)
 	var/obj/item/stack/material/steel/S = allocate(/obj/item/stack/material/steel, run_loc_floor_bottom_left, 5)
 	var/start = B.amount
 	B.UnarmedAttack(S, TRUE)

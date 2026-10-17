@@ -143,15 +143,15 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_autoret(datum/act/op/A)
-	auto_return = !auto_return
+	set_auto_return(!auto_return)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_cargotypes(datum/act/op/A)
-	crates_only = !crates_only
+	set_crates_only(!crates_only)
 	. = TRUE
 
 /mob/living/bot/mulebot/proc/ui_act_safety(datum/act/op/A)
-	safety = !safety
+	set_safety(!safety)
 	. = TRUE
 
 /// The title of a beacon question: the bot's own.
@@ -217,6 +217,11 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	flick("mulebot-emagged", src)
 	play_sfx(src, SFX_EFFECTS_SPARKS1, vary = FALSE)
 	return 1
+
+/// The crate it carries rides on top of it.
+/mob/living/bot/mulebot/draw(datum/look/look)
+	..()
+	look.show_copy_of(load)
 
 /mob/living/bot/mulebot/update_icons()
 	if(open)
@@ -362,16 +367,13 @@ CAPABILITIES(/mob/living/bot/mulebot)
 		return
 	move_into(src, nameof(src.load), C)
 
-	C.pixel_y += 9
+	C.set_pixel_y(C.pixel_y + 9)
 	if(C.layer < layer)
-		C.layer = layer + 0.1
-	add_overlay(C)
+		C.set_layer(layer + 0.1)
 
 /mob/living/bot/mulebot/proc/unload(dirn = 0)
 	if(!load || bot_busy())
 		return
-
-	cut_overlays()
 
 	load.forceMove(loc)
 	load.pixel_y -= 9
@@ -387,8 +389,8 @@ CAPABILITIES(/mob/living/bot/mulebot)
 			continue
 
 		AM.forceMove(loc)
-		AM.layer = initial(AM.layer)
-		AM.pixel_y = initial(AM.pixel_y)
+		AM.set_layer(initial(AM.layer))
+		AM.set_pixel_y(initial(AM.pixel_y))
 
 #undef MULE_IDLE
 #undef MULE_MOVING

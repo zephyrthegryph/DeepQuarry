@@ -36,7 +36,7 @@ SYSTEM_DEF(profiler)
 	apply_interval()
 	// AUTO_PROFILE controls full world.Profile collection only. Compact subsystem
 	// diagnostics are cheap, bounded, and must continue even when it is disabled.
-	can_fire = TRUE
+	set_can_fire(TRUE)
 	return
 
 /datum/system/profiler/OnConfigLoad()
@@ -44,7 +44,7 @@ SYSTEM_DEF(profiler)
 		StartProfiling()
 	else
 		StopProfiling()
-	can_fire = TRUE
+	set_can_fire(TRUE)
 	apply_interval()
 
 /// The compact diagnostics record (phase K, one run per `wait`: the item is declared at the default and takes the configured

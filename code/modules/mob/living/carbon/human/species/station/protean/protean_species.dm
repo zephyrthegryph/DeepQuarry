@@ -35,7 +35,7 @@
 	blood_volume = 0
 	min_age = 18
 	max_age = 200
-	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.8, BF_INCOMING_THERMAL = 1.5, BF_DEMAND = 0)
+	factor_baseline = alist(STAT_INCOMING_PHYSICAL = 0.8, STAT_INCOMING_THERMAL = 1.5, STAT_DEMAND = 0)
 	darksight = 10
 	siemens_coefficient = 2
 	emp_dmg_mod = 0.8
@@ -146,7 +146,7 @@
 	return S.get_tail_hair(H)
 
 /datum/species/protean/get_blood_mask(mob/living/carbon/human/H)
-	if(!H || read_once(base_species == name)) return ..()
+	if(!H || base_species == name) return ..()
 	var/datum/species/S = GLOB.all_species[base_species]
 	return S.get_blood_mask(H)
 

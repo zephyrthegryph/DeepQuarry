@@ -149,7 +149,7 @@ fn inherited_variable_demands_preserve_exact_local_and_parent_storage_facts() {
             content: 1,
         },
     ];
-    let build = |rows: &[Skeleton]| {
+    let try_build = |rows: &[Skeleton]| {
         let (index, _) =
             crate::declaration_contributions::KeyedDeclarations::capture(None, rows).unwrap();
         crate::build_with_intrinsic_members_indexed(
@@ -160,8 +160,8 @@ fn inherited_variable_demands_preserve_exact_local_and_parent_storage_facts() {
             false,
             Some((&index, &retained)),
         )
-        .unwrap()
     };
+    let build = |rows: &[Skeleton]| try_build(rows).unwrap();
     let query = ResolveQuery::DeclaredVarType { owner: child, name };
     let first = build(&rows);
     let token = first.domain_version(query.domain()).unwrap();
@@ -208,11 +208,17 @@ fn inherited_variable_demands_preserve_exact_local_and_parent_storage_facts() {
         metadata: Arc::new(MemberMetadata::default()),
         content: 0,
     });
-    let shadow = build(&rows);
-    assert_ne!(
-        shadow.domain_version(query.domain()),
-        changed.domain_version(query.domain())
-    );
+    // A subtype may not redeclare an inherited variable (DreamMaker rejects it): the tree
+    // names the redeclaring owner and the owner of the formal declaration.
+    assert!(matches!(
+        try_build(&rows),
+        Err(crate::TreeError::InheritedDuplicate {
+            owner,
+            previous_owner,
+            name: duplicate,
+            ..
+        }) if owner == child && previous_owner == base && duplicate == name
+    ));
     rows.pop();
     rows.remove(2);
     let removed = build(&rows);

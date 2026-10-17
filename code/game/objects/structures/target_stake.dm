@@ -20,6 +20,8 @@
 
 CAPABILITIES(/obj/structure/target_stake)
 	ref_one(nameof(pinned_target))
+	// Relation teardown clears the pinned target before the target's own hooks run.
+	on_change(nameof(pinned_target), ANY, then(PROC_REF(pinned_target_changed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
@@ -45,7 +47,7 @@ CAPABILITIES(/obj/structure/target_stake)
 			return TRUE
 		set_density(FALSE)
 		W.set_density(TRUE)
-		W.layer = ABOVE_JUNK_LAYER
+		W.set_layer(ABOVE_JUNK_LAYER)
 		rel_set(src, nameof(pinned_target), W)
 		to_chat(user, "You slide the target into the stake.")
 	return TRUE
@@ -72,10 +74,5 @@ CAPABILITIES(/obj/structure/target_stake)
 
 // pinned_target sits on the stake's turf (not in it): a one-sided REL view.
 
-/// Relation teardown clears the pinned target before the target's own hooks run.
-/obj/structure/target_stake/reactions()
-	. = ..()
-	. += on_change(list(nameof(pinned_target)), PROC_REF(pinned_target_changed))
-
-/obj/structure/target_stake/proc/pinned_target_changed(list/keys)
+/obj/structure/target_stake/proc/pinned_target_changed(datum/act/A)
 	set_density(!pinned_target)

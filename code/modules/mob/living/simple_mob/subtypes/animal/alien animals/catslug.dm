@@ -80,12 +80,12 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot slick gut of a catslug!! Copious slime smears over you as you’re packed away into the gloom and oppressive humidity of this churning gastric sac. The pressure around you is intense, the squashy flesh bends and forms to your figure, clinging to you insistently! There’s basically no free space at all as your ears are filled with the slick slide of flesh against flesh and the burbling of gastric juices glooping all around you. The thumping of a heart booms from somewhere nearby, making everything pulse in against you in time with it! This is it! You’ve been devoured by a catslug!!!"
-	B.mode_flags = 40
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.digestchance = 10
-	B.absorbchance = 1
-	B.escapechance = 15
+	B.set_mode_flags(40)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(10)
+	B.set_absorbchance(1)
+	B.set_escapechance(15)
 
 // Catslug unique items.
 TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_whitelist, list( \
@@ -265,7 +265,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(!A.answer)
 		return
 	if(A.answer.value && !picked_color)
-		color = A.answer.value
+		set_color(A.answer.value)
 		picked_color = TRUE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
@@ -277,7 +277,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 /obj/item/holder/catslug/take_held(mob/held)
 	..()
 	if(held)
-		color = held.color
+		set_color(held.color)
 
 //Custom Catslugs and the Rascal's Pass bunch
 

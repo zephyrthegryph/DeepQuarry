@@ -46,15 +46,15 @@ CAPABILITIES(/datum/robot_component)
 /datum/robot_component/proc/install(obj/item/part)
 	if(part)
 		own_move(part, src, nameof(wrapped))
-	installed = ROBOT_PART_INSTALLED
+	set_installed(ROBOT_PART_INSTALLED)
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
-		max_damage = comp.max_damage
+		set_max_damage(comp.max_damage)
 		idle_usage = comp.idle_usage
 		active_usage = comp.active_usage
 	else if(istype(wrapped, /obj/item/cell))
 		var/obj/item/cell/cell = wrapped
-		max_damage = cell.robot_durability
+		set_max_damage(cell.robot_durability)
 	restore_carried_afflictions()
 	owner?.on_part_changed(src)
 
@@ -64,10 +64,10 @@ CAPABILITIES(/datum/robot_component)
 	SHOULD_CALL_PARENT(TRUE)
 	. = wrapped
 	carry_afflictions_out()
-	max_damage = initial(max_damage)
+	set_max_damage(initial(max_damage))
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
-	installed = ROBOT_PART_MISSING
+	set_installed(ROBOT_PART_MISSING)
 	rel_take(src, nameof(wrapped))
 	owner?.on_part_changed(src)
 
@@ -85,8 +85,8 @@ CAPABILITIES(/datum/robot_component)
 	if(!internal)
 		rel_set(src, nameof(wrapped), new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate
-	installed = ROBOT_PART_DESTROYED
-	max_damage = initial(max_damage)
+	set_installed(ROBOT_PART_DESTROYED)
+	set_max_damage(initial(max_damage))
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
 	log_runtime("ROBOT_PART: [owner ? key_name(owner) : "ownerless"] lost [name] (slot [slot]).")
@@ -331,7 +331,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 		if(slot == ROBOT_SLOT_POWER)
 			continue
 		if(C.internal)
-			C.installed = ROBOT_PART_INSTALLED
+			C.set_installed(ROBOT_PART_INSTALLED)
 		else if(C.external_type)
 			C.install(new C.external_type)
 

@@ -636,17 +636,17 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		light.set_dir(wall_direction)
 		switch(wall_direction)
 			if(NORTH)
-				light.pixel_x = (T.x % 2) ? 8 : -8
-				light.pixel_y = 26
+				light.set_pixel_x((T.x % 2) ? 8 : -8)
+				light.set_pixel_y(26)
 			if(SOUTH)
-				light.pixel_x = (T.x % 2) ? 8 : -8
-				light.pixel_y = -26
+				light.set_pixel_x((T.x % 2) ? 8 : -8)
+				light.set_pixel_y(-26)
 			if(EAST)
-				light.pixel_x = 26
-				light.pixel_y = (T.y % 2) ? 8 : -8
+				light.set_pixel_x(26)
+				light.set_pixel_y((T.y % 2) ? 8 : -8)
 			if(WEST)
-				light.pixel_x = -26
-				light.pixel_y = (T.y % 2) ? 8 : -8
+				light.set_pixel_x(-26)
+				light.set_pixel_y((T.y % 2) ? 8 : -8)
 		rel_add(result, nameof(result.power_objects), light)
 
 /// Publishes power and lighting only after the power and atmosphere graphs exist.

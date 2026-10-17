@@ -9,7 +9,7 @@
 		/datum/affliction_symptom/fever_sensation = 40
 	)
 	max_symptoms = 3
-	factors = alist(BF_TEMPERATURE = 1.5, BF_HEART_RATE = 15)
+	factors = alist(STAT_TEMPERATURE = 1.5, STAT_HEART_RATE = 15)
 	form = "Condition"
 	name = "Appendicitis"
 	medical_name = "Appendicitis"

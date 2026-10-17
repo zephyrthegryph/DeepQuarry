@@ -176,12 +176,12 @@ CAPABILITIES(/datum/prompt/text/chaplain_religion)
 			faking_job = TRUE
 
 	if (length(new_title) != 0 && !faking_job)
-		I.assignment = new_title
+		I.set_assignment(new_title)
 
 	rel_set(H.mind, nameof(/datum/mind::my_religion), new /datum/religion(new_religion, new_deity, B.name, "bible", "bible", new_title))
 
 	B.deity_name = H.mind.my_religion.deity
-	I.assignment = H.mind.my_religion.title
+	I.set_assignment(H.mind.my_religion.title)
 	I.name = text("[I.registered_name]'s ID Card ([I.assignment])")
 	GLOB.data_core.manifest_modify(I.registered_name, I.assignment, I.rank)
 

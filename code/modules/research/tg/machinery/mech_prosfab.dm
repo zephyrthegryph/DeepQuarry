@@ -73,13 +73,13 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_chosen(datum/act/op/A)
 	var/datum/prompt/P = A.answer
 	if(P?.value)
-		species = P.value
+		set_species(P.value)
 	return OP_OK
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/manufacturer_chosen(datum/act/op/A)
 	var/datum/prompt/P = A.answer
 	if(P?.value)
-		manufacturer = P.value
+		set_manufacturer(P.value)
 	return OP_OK
 
 // ---- the disks ----
@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 	var/upload_species = D.species
 	if(!consume(D, A.actor))
 		return OP_REFUSED
-	species_types |= upload_species
+	set_species_types(species_types | upload_species)
 	to_chat(A.actor, span_notice("Uploaded [upload_species] files!"))
 	return OP_OK
 
@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 
 		var/mob/living/carbon/human/H = new(src, newspecies)
 		H.set_stat(DEAD)
-		H.gender = gender
+		H.set_gender(gender)
 		for(var/obj/item/organ/external/EO in H.organs)
 			if(EO.organ_tag == BP_TORSO || EO.organ_tag == BP_GROIN)
 				continue //Roboticizing a torso does all the children and wastes time, do it later

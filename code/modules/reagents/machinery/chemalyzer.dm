@@ -37,11 +37,11 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 
 	// Now tell us everything that is inside.
 	if(held.reagents && held.reagents.reagent_list.len)
-		found_reagents = list() // a fresh list per analysis (the old Cut() ran on a list nothing had made)
+		set_found_reagents(list()) // a fresh list per analysis (the old Cut() ran on a list nothing had made)
 		for(var/datum/reagent/R in held.reagents.reagent_list)
 			if(!R.name)
 				continue
-			found_reagents[R.id] = R.volume
+			set_found_reagents_at(R.id, R.volume)
 		tgui_interact(user)
 	else
 		to_chat(user, span_warning("Nothing detected in [held]"))

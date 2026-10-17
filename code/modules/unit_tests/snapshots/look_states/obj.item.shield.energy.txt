@@ -2,12 +2,21 @@
 /obj/item/shield/energy active=1 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
 /obj/item/shield/energy active=2 +color: #006aff
 /obj/item/shield/energy active=2 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+/obj/item/shield/energy d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/shield/energy gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/shield/energy gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/shield/energy/imperial active=1 +color: #006aff
 /obj/item/shield/energy/imperial active=1 +overlay: icons/obj/weapons_vr.dmi:impshield_blade:-32767:#006aff
 /obj/item/shield/energy/imperial active=2 +color: #006aff
 /obj/item/shield/energy/imperial active=2 +overlay: icons/obj/weapons_vr.dmi:impshield_blade:-32767:#006aff
+/obj/item/shield/energy/imperial d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/shield/energy/imperial gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/shield/energy/imperial gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/shield/energy/interim_holder_appearance active=1 +color: #006aff
 /obj/item/shield/energy/interim_holder_appearance active=1 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
 /obj/item/shield/energy/interim_holder_appearance active=2 +color: #006aff
 /obj/item/shield/energy/interim_holder_appearance active=2 +overlay: icons/obj/weapons.dmi:eshield_blade:-32767:#006aff
+/obj/item/shield/energy/interim_holder_appearance d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/shield/energy/interim_holder_appearance gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/shield/energy/interim_holder_appearance gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 

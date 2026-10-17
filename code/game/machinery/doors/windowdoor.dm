@@ -247,7 +247,7 @@ CAPABILITIES(/obj/machinery/door/window)
 		assembly.set_facing("r")
 	assembly.set_dir(dir)
 	assembly.set_anchored(TRUE)
-	assembly.created_name = name
+	assembly.set_created_name(name)
 	graph_place(assembly, STAGE_WINDOOR_ASSEMBLY_BOARDED)
 	if(operating == -1)
 		rel_set(assembly, nameof(assembly.electronics), new /obj/item/circuitboard/broken(assembly))

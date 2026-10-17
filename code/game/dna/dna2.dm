@@ -105,7 +105,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 			if(DNA_UI_SKIN_TONE)
 				SetUIValueRange(DNA_UI_SKIN_TONE,rand(1,220),220,1) // Otherwise, it gets fucked
 			else
-				UI[i]=rand(0,4095)
+				set_UI_at(i, rand(0,4095))
 	if(!defer)
 		UpdateUI()
 
@@ -272,9 +272,9 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	//Sex... Needs future support for properly handling things other then just male/female. UIs have the capability to do so!
 	if(H.gender != NEUTER)
 		if (GetUIState(DNA_UI_GENDER))
-			H.gender = FEMALE
+			H.set_gender(FEMALE)
 		else
-			H.gender = MALE
+			H.set_gender(MALE)
 
 	//Body markings
 	for(var/tag in body_markings)
@@ -401,7 +401,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	if (block<=0) return
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
-	UI[block]=value
+	set_UI_at(block, value)
 	if(!defer)
 		UpdateUI()
 
@@ -497,7 +497,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	if (block<=0) return
 	ASSERT(value>=0)
 	ASSERT(value<=4095)
-	SE[block]=value
+	set_SE_at(block, value)
 	if(!defer)
 		UpdateSE()
 

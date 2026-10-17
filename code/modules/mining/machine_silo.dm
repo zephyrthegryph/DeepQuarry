@@ -250,7 +250,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	if (machine_name != other.machine_name || area_name != other.area_name)
 		return FALSE
 
-	timestamp = other.timestamp
+	set_timestamp(other.timestamp)
 	amount += other.amount
 	for(var/each in other.materials)
 		materials[each] += other.materials[each]

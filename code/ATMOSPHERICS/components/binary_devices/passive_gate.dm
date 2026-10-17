@@ -60,7 +60,7 @@
 			rust_set_device_flow(0, RUST_FLOW_VOLUME, set_flow_rate, RUST_DIR_DOWNHILL, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
 /obj/machinery/atmospherics/binary/passive_gate/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
+	set_last_flow_rate(abs(moles))
 	var/new_flowing = (moles != 0)
 	if(new_flowing != flowing)
 		set_flowing(new_flowing)

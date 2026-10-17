@@ -88,7 +88,7 @@
 	set_up_actors()
 	var/mob/living/bot/floorbot/F = allocate(/mob/living/bot/floorbot, test_floor())
 	F.set_locked(TRUE)
-	F.improvefloors = TRUE
+	F.set_improvefloors(TRUE)
 	var/list/hidden = hc_bot_data(crew, F)
 	TEST_ASSERT_NULL(hidden["improvefloors"], "a locked panel hides the settings from an ordinary person")
 	TEST_ASSERT_EQUAL(hidden["amount"], F.amount, "the tile count is always shown")

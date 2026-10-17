@@ -627,8 +627,8 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 
 	A.seed_native_frame_graph()
 	A.set_dir(dir)
-	A.pixel_x = pixel_x
-	A.pixel_y = pixel_y
+	A.set_pixel_x(pixel_x)
+	A.set_pixel_y(pixel_y)
 	A.update_desc()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
 	destroyed(src, null, "deconstructed")

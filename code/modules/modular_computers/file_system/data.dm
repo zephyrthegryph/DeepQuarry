@@ -9,12 +9,12 @@
 
 /datum/computer_file/data/clone()
 	var/datum/computer_file/data/temp = ..()
-	temp.stored_data = stored_data
+	temp.set_stored_data(stored_data)
 	return temp
 
 // Calculates file size from amount of characters in saved string
 /datum/computer_file/data/proc/calculate_size()
-	size = max(1, round(length(stored_data) / block_size))
+	set_size(max(1, round(length(stored_data) / block_size)))
 
 /datum/computer_file/data/proc/generate_file_data(mob/user)
 	return digitalPencode2html(stored_data)

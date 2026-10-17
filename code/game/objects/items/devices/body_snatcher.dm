@@ -92,9 +92,9 @@
 		rel_clear(M, nameof(M.mind))
 		rel_clear(user_mind, nameof(user_mind.current))
 		rel_clear(prey_mind, nameof(prey_mind.current))
-		user_mind.active = TRUE //If they are 'active', their client is automatically pushed to the mob
+		user_mind.set_active(TRUE) //If they are 'active', their client is automatically pushed to the mob
 		transfer_mind(user_mind, M, "bodysnatcher swap") // The identity (OOC notes and all) follows each mind.
-		prey_mind.active = TRUE
+		prey_mind.set_active(TRUE)
 		transfer_mind(prey_mind, user, "bodysnatcher swap")
 		if(M.tf_mob_holder == user)
 			M.set_tf_mob_holder(null)

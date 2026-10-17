@@ -10,13 +10,25 @@ import { sharedCompilerConfiguration } from './shared_compiler_configuration';
 import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
-import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
+import { withSharedCompileRoot } from './compile_root';
+import { bindCompilerInvocation, compilerInvocation, type CompilerInvocation } from './compiler_invocation';
+import { dmbcBinOverride, sharedDmbcExe } from './dmbc_cache';
+import { enterDaemonScope } from './dmbc_daemons';
 import { byondProvenance, nativeProvenance, observedExecutable } from './compiler_provenance';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
 export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
 /** Issued configuration prerequisites do not authenticate compilation inputs. */
+/** Compile workers per native request: DMB_WORKERS, else DQ_NATIVE_WORKERS, else 4 (a gentle default; the daemon admits up to 8). */
+export function nativeWorkers(): string {
+  const workers = process.env.DMB_WORKERS ?? process.env.DQ_NATIVE_WORKERS ?? '4';
+  if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
+    throw new Error('DMB_WORKERS (or DQ_NATIVE_WORKERS) must be a positive integer.');
+  }
+  return workers;
+}
+
 export function shadowSnapshotContract(): { status: 'incomplete'; reason: string } {
   return { status: 'incomplete', reason: 'Shared source/resource closure and complete implicit compiler configuration remain unissued; shared compilation snapshot is unproven' };
 }
@@ -83,10 +95,15 @@ export function compilerMode(): CompilerMode {
 function nativeRoot(): string {
   return path.resolve(process.env.DQ_BUILD_ROOT ?? process.cwd());
 }
-/** DQ_NATIVE_COMPILER, else this checkout's release build (`build.sh dmbc`). */
+/**
+ * DQ_NATIVE_COMPILER, else DQ_DMBC_BIN, else the machine-wide shared build (`build.sh dmbc`, lib/dmbc_cache.ts). Never a
+ * per-worktree binary: a different executable is a different compiler identity and would start its own 8 GB daemon.
+ */
 export function nativeCompilerPath(): string | undefined {
   if (process.env.DQ_NATIVE_COMPILER) return process.env.DQ_NATIVE_COMPILER;
-  const built = path.join(nativeRoot(), 'tools/dmb/target/release', process.platform === 'win32' ? 'dmbc.exe' : 'dmbc');
+  const override = dmbcBinOverride();
+  if (override) return override;
+  const built = sharedDmbcExe('dmbc');
   return fs.existsSync(built) ? built : undefined;
 }
 /** DQ_NATIVE_ENGINE_TEMPLATE, else the committed template fixture. */
@@ -132,7 +149,7 @@ export function compilerCacheIdentity(): string {
       catch { hash.update('<unavailable>'); }
     }
   }
-  hash.update(process.env.DQ_NATIVE_WORKERS ?? '8');
+  hash.update(nativeWorkers());
   // Unset and explicit zero preserve the existing default configuration identity.
   if (noDaemon) hash.update('DQ_NATIVE_NO_DAEMON=1');
   // A prior automatic BYOND fallback cannot satisfy a native-only request.
@@ -151,16 +168,13 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   const configuredExecutable = nativeCompilerPath();
   const template = nativeTemplatePath();
   if (!configuredExecutable || !template) {
-    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the defaults tools/dmb/target/release/dmbc and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
+    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the shared build (E:/dq-cache/dmb-target/release/dmbc, DQ_DMBC_BIN overrides) and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
   }
   // Resolve path-bearing configuration in the caller's cwd, before the child
   // switches to its captured namespace. PATH commands stay explicitly unobserved.
   const executable = path.isAbsolute(configuredExecutable) || /[\\/]/.test(configuredExecutable)
     ? fs.realpathSync.native(path.resolve(configuredExecutable)) : configuredExecutable;
-  const workers = process.env.DQ_NATIVE_WORKERS ?? '8';
-  if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
-    throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
-  }
+  const workers = nativeWorkers();
   // Existing stage events stream through Juke while the child is running, so
   // an external watchdog retains the last observed stage even without a result.
   const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
@@ -193,6 +207,8 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
   const receipt = path.join(owned, 'result.json');
   args.push('--compile-result-file', receipt);
   if (!artifacts && process.env.DQ_NATIVE_OUTPUT_STORE) args.push('--output-store', path.resolve(process.env.DQ_NATIVE_OUTPUT_STORE));
+  // One machine-wide daemon on the shared binary (DMB_DAEMON_NAMESPACE isolates a caller); the daemon caps itself at DQ_DMBC_MAX_DAEMONS.
+  const scope = nativeNoDaemon() ? undefined : enterDaemonScope(nativeRoot(), executable);
   try {
     const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });
     const currentIdentity = observedExecutable(executable);
@@ -207,6 +223,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     }
     catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }
   } finally {
+    scope?.release();
     // Housekeeping cannot turn a successful native publication into a second
     // compiler invocation. Preserve/report a cleanup limitation instead.
     try {
@@ -240,7 +257,13 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   }
   if (mode === 'native') {
     const strict = nativeStrict();
-    const result = await nativeCompile(dme, options, execute, undefined, invocation);
+    // One compile root per variant, viewing this worktree (lib/compile_root.ts), so the resident compiler's session is shared by
+    // every worktree. Not for captured invocations (they name their own root) and not when the manifest is not a worktree file.
+    const shared = invocation ? undefined : await withSharedCompileRoot(
+      nativeRoot(), dme, (outcome: { code: number | null; signal?: string | null }) => outcome.code === 0 && !outcome.signal,
+      (run) => nativeCompile(dme, options, execute, undefined, compilerInvocation(run.root, run.relativeManifest, options.defines ?? [])),
+      (message) => Juke.logger.info(message));
+    const result = shared ? shared.result : await nativeCompile(dme, options, execute, undefined, invocation);
     if (result.code === 0 && !result.signal) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain

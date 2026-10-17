@@ -27,12 +27,12 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 /proc/atmos_note_flow(obj/machinery/M, list/moved)
 	if(istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = moved[3]
+		A.set_last_flow_rate(moved[3])
 		if(A.debug)
 			A.visible_message("[A]: moles transferred = [moved[1]] mol, power = [round(moved[2], 0.1)] W")
 	else if(istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = moved[3]
+		P.set_last_flow_rate(moved[3])
 
 /// The efficiency divisor of a device's pump moves (ATMOS_PUMP_EFFICIENCY with the material multiplier), or of its
 /// filter/scrub moves.

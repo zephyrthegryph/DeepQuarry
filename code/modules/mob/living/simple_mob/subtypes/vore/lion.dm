@@ -73,7 +73,7 @@
 			mane_state = "[mane_rest]-[vore_fullness]"
 		else
 			mane_state = mane_rest
-	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (read_once(appearance_flags) | RESET_COLOR)))
+	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (appearance_flags | RESET_COLOR)))
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex()
 	set name = "Set Sex"

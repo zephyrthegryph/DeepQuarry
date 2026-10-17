@@ -244,7 +244,7 @@ CAPABILITIES(/obj/item/cell)
 	else
 		service.add_heat(-moved_heat, HEAT_SOURCE_MATERIAL)
 	service.input_joules += work_charge / CELLRATE
-	service.loss_joules += work_charge / CELLRATE
+	service.set_loss_joules(service.loss_joules + (work_charge / CELLRATE))
 	return moved_heat
 
 /// A conservative preflight budget for consumers that perform physical work
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/cell)
 	if(service)
 		service.input_joules += debited / CELLRATE
 		service.output_joules += used / CELLRATE
-		service.loss_joules += (debited - used) / CELLRATE
+		service.set_loss_joules(service.loss_joules + ((debited - used) / CELLRATE))
 		service.add_heat((debited - used) / CELLRATE)
 		run_material_heat_pump(used)
 	update_superconducting_state(amount / span)

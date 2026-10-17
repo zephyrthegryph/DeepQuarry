@@ -19,7 +19,7 @@
 
 /datum/nifsoft/medichines_org/deactivate(force = FALSE)
 	if((. = ..()))
-		a_drain = initial(a_drain)
+		set_a_drain(initial(a_drain))
 		mode = initial(mode)
 		if(nif().human)				// What if we deactivate because human is gone?
 			nif().human.set_stasis(null, nif())

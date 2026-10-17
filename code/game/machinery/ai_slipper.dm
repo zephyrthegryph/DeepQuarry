@@ -25,7 +25,7 @@
 
 /obj/machinery/ai_slipper/proc/setState(enabled, uses)
 	set_disabled(!enabled)
-	src.uses = uses
+	set_uses(uses)
 	power_change()
 
 // TGUI migration. The old attack_hand opened AiSlipper.tsx; the
@@ -36,9 +36,6 @@
 	var/mob/user = A.actor
 	if(!operable())
 		return OP_OK
-	if(istype(user, /mob/living/silicon))
-		attack_hand(user)
-		return OP_OK
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
@@ -48,6 +45,12 @@
 			attack_hand(user)
 	else
 		to_chat(user, span_warning("Access denied."))
+	return OP_OK
+
+/// A silicon swipe keeps its hand-touch path without changing the human ID lock.
+/obj/machinery/ai_slipper/proc/interaction_silicon_swipe(datum/act/op/A)
+	if(operable())
+		attack_hand(A.actor)
 	return OP_OK
 
 /obj/machinery/ai_slipper/proc/interaction_use(datum/act/op/A)
@@ -74,7 +77,8 @@ CAPABILITIES(/obj/machinery/ai_slipper)
 	op("toggle_on", ui_act("toggle_on"), then(PROC_REF(ui_act_toggle_on)))
 	op("toggle_use", ui_act("toggle_use"), then(PROC_REF(ui_act_toggle_use)))
 	extend(TAG_UI, needs(any_of(req_is(nameof(locked), FALSE, because = MSG(ai_slipper/panel_locked)), req_actor_kind(/mob/living/silicon, because = MSG(ai_slipper/panel_locked)))))
-	op("ai_slipper_toggle_lock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
+	op("ai_slipper_toggle_lock", item(/obj/item), when(req_actor_kind(/mob/living/silicon, not = TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_toggle_lock)))
+	op("ai_slipper_silicon_swipe", item(/obj/item), when(req_actor_kind(/mob/living/silicon)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_silicon_swipe)))
 	op("ai_slipper_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_use)))
 
 MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
@@ -85,7 +89,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	var/area/here = get_area(src)
 	data["area_name"] = here?.name || "Unknown"
 	data["locked"] = !!locked
-	data["is_silicon"] = istype(user, /mob/living/silicon)
+	data["is_silicon"] = ui_viewer_fact(user, "silicon")
 	data["disabled"] = !!disabled
 	data["cooldown_on"] = !!cooldown_on
 	data["uses"] = uses
@@ -100,7 +104,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	if(cooldown_on || disabled || uses <= 0)
 		return TRUE
 	new /obj/effect/effect/foam(src.loc)
-	uses--
+	set_uses(uses - 1)
 	cooldown_time = world.timeofday + 10 SECONDS
 	set_cooldown_on(1)
 	return TRUE
@@ -113,7 +117,7 @@ MSG_DEF_SELF(ai_slipper/panel_locked, "Control panel is locked!")
 	if(ticksleft > 0)
 		if(ticksleft > 1e5)
 			cooldown_time = world.timeofday + 1 SECOND	// midnight rollover
-		cooldown_timeleft = (ticksleft / 10)
+		set_cooldown_timeleft((ticksleft / 10))
 		return
 	if(uses <= 0)
 		set_cooldown_stopped(TRUE)

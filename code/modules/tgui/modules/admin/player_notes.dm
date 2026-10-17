@@ -33,10 +33,10 @@
 			note_keys = results
 
 		// Display the notes on the current page
-		number_pages = note_keys.len / PLAYER_NOTES_ENTRIES_PER_PAGE
+		set_number_pages(note_keys.len / PLAYER_NOTES_ENTRIES_PER_PAGE)
 		// Emulate CEILING(why does BYOND not have ceil, 1)
 		if(number_pages != round(number_pages))
-			number_pages = round(number_pages) + 1
+			set_number_pages(round(number_pages) + 1)
 		var/page_index = page - 1
 
 		if(page_index < 0 || page_index >= number_pages)
@@ -45,11 +45,11 @@
 			var/lower_bound = page_index * PLAYER_NOTES_ENTRIES_PER_PAGE + 1
 			var/upper_bound = (page_index + 1) * PLAYER_NOTES_ENTRIES_PER_PAGE
 			upper_bound = min(upper_bound, note_keys.len)
-			ckeys = null
+			set_ckeys(null)
 			for(var/index = lower_bound, index <= upper_bound, index++)
-				LAZYADD(ckeys, note_keys[index])
+				add_ckeys(note_keys[index])
 
-	current_filter = filter
+	set_current_filter(filter)
 
 /datum/tgui_module/player_notes/proc/open_legacy(mob/user)
 	var/datum/admins/A = GLOB.admin_datums[user.ckey]
@@ -72,7 +72,7 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 /datum/tgui_module/player_notes/proc/ui_act_show_player_info(datum/act/op/A, name)
 	var/mob/user = A.actor
 	var/datum/tgui_module/player_notes_info/A2 = new(src)
-	A2.key = name
+	A2.set_key(name)
 	A2.tgui_interact(user)
 
 /datum/tgui_module/player_notes/proc/ui_act_filter_player_notes(datum/act/op/A)
@@ -82,14 +82,14 @@ CAPABILITIES(/datum/tgui_module/player_notes)
 	if(!A.answer)
 		return
 	var/input = A.answer.value
-	current_filter = input
+	set_current_filter(input)
 
 /datum/tgui_module/player_notes/proc/ui_act_set_page(datum/act/op/A, index)
 	var/page = index
-	current_page = page
+	set_current_page(page)
 
 /datum/tgui_module/player_notes/proc/ui_act_clear_player_info_filter(datum/act/op/A)
-	current_filter = ""
+	set_current_filter("")
 
 /datum/tgui_module/player_notes/proc/ui_act_open_legacy_ui(datum/act/op/A)
 	var/mob/user = A.actor
@@ -136,7 +136,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	A.show_player_info_legacy(user, key)
 
 /datum/tgui_module/player_notes_info/proc/ui_act_cahngekey(datum/act/op/A, ckey)
-	key = sanitize(ckey)
+	set_key(sanitize(ckey))
 	return TRUE
 
 /datum/tgui_module/player_notes_info/proc/ui_act_add_player_info(datum/act/op/A, ckey)
@@ -180,7 +180,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 		for(var/datum/player_info/I in infos)
 			i += 1
 			if(!I.timestamp)
-				I.timestamp = "Pre-4/3/2012"
+				I.set_timestamp("Pre-4/3/2012")
 				update_file = 1
 			if(!I.rank)
 				I.rank = "N/A"
@@ -297,7 +297,7 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 		for(var/datum/player_info/I in infos)
 			i += 1
 			if(!I.timestamp)
-				I.timestamp = "Pre-4/3/2012"
+				I.set_timestamp("Pre-4/3/2012")
 				update_file = 1
 			if(!I.rank)
 				I.rank = "N/A"

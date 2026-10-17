@@ -91,7 +91,7 @@
 
 	//If the NIF was fine with it, or we're forcing it
 	if(nif_result || force)
-		active = TRUE
+		set_active(TRUE)
 
 		//If we enable vision planes
 		if(planes_enabled)
@@ -124,7 +124,7 @@
 
 	//If the NIF was fine with it or we're forcing it
 	if(nif_result || force)
-		active = FALSE
+		set_active(FALSE)
 
 		//If we enable vision planes, disable them
 		if(planes_enabled)

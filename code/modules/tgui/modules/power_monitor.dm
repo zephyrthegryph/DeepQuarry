@@ -44,7 +44,7 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 	return data
 
 /datum/tgui_module/power_monitor/proc/ui_act_clear(datum/act/op/A)
-	active_sensor = null
+	set_active_sensor(null)
 	return OP_OK
 
 /datum/tgui_module/power_monitor/proc/ui_act_refresh(datum/act/op/A)
@@ -52,7 +52,7 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 	return OP_OK
 
 /datum/tgui_module/power_monitor/proc/ui_act_setsensor(datum/act/op/A, id)
-	active_sensor = id
+	set_active_sensor(id)
 	. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()

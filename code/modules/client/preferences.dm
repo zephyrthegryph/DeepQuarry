@@ -204,8 +204,8 @@ CAPABILITIES(/datum/preferences)
 
 	// Open first; a cold preview is composed on a fresh tick and streamed into
 	// the visible window instead of blocking the initial backend payload.
-	current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
-	dq_open_requested_at = REALTIMEOFDAY
+	set_current_window(PREFERENCE_TAB_CHARACTER_PREFERENCES)
+	set_dq_open_requested_at(REALTIMEOFDAY)
 	tgui_interact(user)
 	if(!character_preview_b64)
 		after(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy), key = "preferences_preview_lazy")
@@ -261,7 +261,7 @@ CAPABILITIES(/datum/preferences)
 
 /datum/preferences/proc/clear_character_previews()
 	dq_preview_generation++
-	character_preview_b64 = null
+	set_character_preview_b64(null)
 
 
 /datum/preferences/proc/copy_to(mob/living/carbon/human/character, icon_updates = TRUE)

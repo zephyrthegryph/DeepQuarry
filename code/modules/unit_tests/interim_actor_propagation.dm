@@ -9,7 +9,7 @@
 	TEST_ASSERT_EQUAL(bomb.auth(), disk, "the action inserts the explicit actor's disk")
 	TEST_ASSERT_EQUAL(disk.loc, bomb, "the disk moves into the bomb")
 	TEST_ASSERT_NULL(actor.get_active_hand(), "insertion releases the actor's hand")
-	bomb.yes_code = TRUE
+	bomb.set_yes_code(TRUE)
 	TEST_ASSERT(test_op_committed(op_ui_act(actor, bomb, "auth")), "the authentication action handles ejection")
 	TEST_ASSERT_NULL(bomb.auth(), "ejection clears the authentication reference")
 	TEST_ASSERT_EQUAL(disk.loc, T, "ejection returns the disk to the floor")

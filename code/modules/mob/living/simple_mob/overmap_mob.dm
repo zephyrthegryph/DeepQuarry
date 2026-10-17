@@ -53,7 +53,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 		name = initial(parent.name)
 		set_icon(initial(parent.icon))
 		set_icon_state(initial(parent.icon_state))
-		color = initial(parent.color)
+		set_color(initial(parent.color))
 		desc = initial(parent.desc)
 
 // Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
@@ -65,7 +65,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 		name = initial(parent.name)
 		set_icon(initial(parent.icon))
 		set_icon_state(initial(parent.icon_state))
-		color = initial(parent.color)
+		set_color(initial(parent.color))
 		desc = initial(parent.desc)
 
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\[b\]Grid coordinates\[/b\]: [x],[y]\n\n[scanner_desc]"}
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
 		name = initial(parent.name)
 		set_icon(initial(parent.icon))
 		set_icon_state(initial(parent.icon_state))
-		color = initial(parent.color)
+		set_color(initial(parent.color))
 		desc = initial(parent.desc)
 
 // Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
@@ -207,7 +207,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
 		name = initial(parent.name)
 		set_icon(initial(parent.icon))
 		set_icon_state(initial(parent.icon_state))
-		color = initial(parent.color)
+		set_color(initial(parent.color))
 		desc = initial(parent.desc)
 
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\[b\]Grid coordinates\[/b\]: [x],[y]\n\n[scanner_desc]"}

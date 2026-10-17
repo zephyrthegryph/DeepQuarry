@@ -32,7 +32,7 @@
 // General preferences, have to be preloaded
 /datum/preferences/proc/load_early_prefs()
 	lastchangelog	= savefile.get_entry("lastchangelog", lastchangelog)
-	default_slot	= savefile.get_entry("default_slot", default_slot)
+	set_default_slot(savefile.get_entry("default_slot", default_slot))
 	lastnews		= savefile.get_entry("lastnews", lastnews)
 	lastlorenews	= savefile.get_entry("lastlorenews", lastlorenews)
 	key_bindings	= savefile.get_entry("key_bindings", key_bindings)
@@ -40,7 +40,7 @@
 
 /datum/preferences/proc/sanitize_early_prefs()
 	lastchangelog	= sanitize_text(lastchangelog, initial(lastchangelog))
-	default_slot 	= sanitize_integer(default_slot, 1, CONFIG_GET(number/character_slots), initial(default_slot))
+	set_default_slot(sanitize_integer(default_slot, 1, CONFIG_GET(number/character_slots), initial(default_slot)))
 	lastnews		= sanitize_text(lastnews, initial(lastnews))
 	lastlorenews	= sanitize_text(lastlorenews, initial(lastlorenews))
 	key_bindings	= sanitize_keybinding_overrides(key_bindings)
@@ -102,10 +102,10 @@
 			if (!slotnum)
 				continue
 			// max_save_slots = max(max_save_slots, slotnum) //so we can still update byond member slots after they lose memeber status
-			default_slot = slotnum
+			set_default_slot(slotnum)
 			if(load_character())
 				save_character()
-		default_slot = old_default_slot
+		set_default_slot(old_default_slot)
 		save_preferences()
 	// Bay player_setup.load_preferences chain deleted; see comment above.
 
@@ -143,7 +143,7 @@
 	fcopy(savefile.path, bacpath) //byond helpfully lets you use a savefile for the first arg.
 
 	savefile.remove_entry("character[default_slot]")
-	default_slot = 1
+	set_default_slot(1)
 
 	clear_character_previews()
 
@@ -161,7 +161,7 @@
 
 	slot = sanitize_integer(slot, 1, CONFIG_GET(number/character_slots), initial(default_slot))
 	if(slot != default_slot)
-		default_slot = slot
+		set_default_slot(slot)
 		savefile.set_entry("default_slot", slot)
 
 	var/list/save_data = savefile.get_entry("character[slot]") // This is allowed to be null and will give a -1 in needs_update
@@ -176,7 +176,7 @@
 		if(preference.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
 
-		LAZYREMOVE(value_cache, preference.type)
+		remove_value_cache(preference.type)
 		read_preference(preference.type)
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
@@ -230,7 +230,7 @@
 	// the slot
 	slot = sanitize_integer(slot, 1, CONFIG_GET(number/character_slots), initial(default_slot))
 	if(slot != default_slot)
-		default_slot = slot
+		set_default_slot(slot)
 		// Don't copy NIF to the new slot; clear migrated /datum/preference values.
 		update_preference_by_type(/datum/preference/nif_path, null)
 		update_preference_by_type(/datum/preference/numeric/nif_durability, null)

@@ -95,7 +95,7 @@ CAPABILITIES(/datum/stockMarket)
 						sname = "[pname] [pick(company)]"
 					if (3)
 						sname = "[pname]"
-		S.name = sname
+		S.set_name(sname)
 		S.short_name = generateDesignation(S.name)
 		S.current_value = rand(10, 125)
 		var/dv = rand(10, 40) / 10

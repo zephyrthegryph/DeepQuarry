@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 // Parameters: None
 // Description: If the communicator has an ID, and it is held by a mob, the ID is placed in the mob's hands, a chat message is sent indicating that
 //              the ID has been removed, and a sound effect is played. If the ID is not held by a mob, it is moved to the turf where the communicator
-//              is located. The "pda-id" overlay is removed, and the communicator's ID is set to null.
+//              is located. The "pda-id" overlay goes with it, and the communicator's ID is set to null.
 /obj/item/communicator/proc/remove_id()
 	if (id)
 		if (ismob(loc))
@@ -140,7 +140,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
-		cut_overlay("pda-id")
 		rel_take(src, nameof(id))
 
 // Proc: id_check(mob/user as mob, choice as num)
@@ -239,9 +238,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	if(length >= 24)
 		return
 	if(length == 4 || length == 9 || length == 14 || length == 19 || length == 24 || length == 29)
-		target_address += ":[hex]"
+		set_target_address(target_address + (":[hex]"))
 		return
-	target_address += hex
+	set_target_address(target_address + hex)
 
 // Proc: populate_known_devices()
 // Parameters: 1 (user - the person using the device)
@@ -297,13 +296,12 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		else if(!owner)
 			to_chat(user, span_notice("\The [src] rejects the ID."))
 		else if(owner == idcard.registered_name && occupation != idcard.assignment) //CHMPEDIT only edit assigment if different
-			occupation = idcard.assignment
+			set_occupation(idcard.assignment)
 			to_chat(user, span_notice(">Occupation updated."))
 		// ITION START Communicator ID slotting if we have an ID thats also already scanned
 		else if(((is_in_holder(src, user)) && (is_in_holder(C, user))) || (istype(loc, /turf) && in_range(src, user) && (is_in_holder(C, user))) )
 			if(id_check(user, 2))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
-				add_overlay("pda-id")
 		// ITION END
 		return OP_OK
 	return OP_DECLINE
@@ -355,7 +353,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/proc/register_device(new_name)
 	if(!new_name)
 		return
-	owner = new_name
+	set_owner(new_name)
 
 	name = "[new_name]'s [initial(name)]"
 	if(camera)
@@ -394,6 +392,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][appearance_comm_suffix()]")
+	look.overlay("pda-id", when = !isnull(id))
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator

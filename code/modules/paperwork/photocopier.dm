@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/list/data = list()
 
 	data["has_item"] = copyitem || has_buckled_mobs() // Ass copying
-	data["isAI"] = issilicon(user)
+	data["isAI"] = ui_viewer_fact(user, "silicon")
 	data["can_AI_print"] = (toner >= 5)
 	data["has_toner"] =	!!toner
 	data["max_toner"] = 40
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	return TRUE
 
 /obj/machinery/photocopier/proc/ui_act_set_copies(datum/act/op/A, num_copies)
-	copies = clamp(num_copies, 1, maxcopies)
+	set_copies(clamp(num_copies, 1, maxcopies))
 	return TRUE
 
 /// The camera album of the AI working the copier, or null (anyone else, or a silicon with no camera).
@@ -242,7 +242,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	c.set_info(c.info + ("</font>"))//</font>
 	c.name = copy.name // -- Doohl
 	c.fields = copy.fields
-	c.stamps = copy.stamps
+	c.set_stamps(copy.stamps)
 	c.stamped = copy.stamped
 	var/evidence_id = copy.medical_scan_evidence?["evidence_id"]
 	if(evidence_id)
@@ -349,9 +349,9 @@ CAPABILITIES(/obj/machinery/photocopier)
 		return
 	var/obj/item/photo/p = new /obj/item/photo (loc)
 	p.desc = "You see [sitter]'s ass on the photo."
-	p.pixel_x = rand(-10, 10)
-	p.pixel_y = rand(-10, 10)
-	p.img = temp_img
+	p.set_pixel_x(rand(-10, 10))
+	p.set_pixel_y(rand(-10, 10))
+	p.set_img(temp_img)
 	p.set_drop_sound('sound/items/drop/paper.ogg')
 	var/icon/small_img = icon(temp_img) // Icon() is needed or else temp_img will be rescaled too >.>
 	var/icon/ic = icon('icons/obj/items.dmi',"photo")
@@ -386,8 +386,8 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 	p.forceMove(src.loc)
 	p.name = bundle.name
-	p.pixel_y = rand(-8, 8)
-	p.pixel_x = rand(-9, 9)
+	p.set_pixel_y(rand(-8, 8))
+	p.set_pixel_x(rand(-9, 9))
 	return p
 
 // Rykka

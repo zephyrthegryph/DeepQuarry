@@ -151,7 +151,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 /// Its PDA: the personal assistant's, in its name, messenger on (owns_one(starts =)).
 /mob/living/silicon/pai/proc/start_pda(current, mapload)
 	var/obj/item/pda/ai/pai/P = new /obj/item/pda/ai/pai(src)
-	P.ownjob = "Personal Assistant"
+	P.set_ownjob("Personal Assistant")
 	P.set_owner("[src]")
 	P.name = P.owner + " (" + P.ownjob + ")"
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
@@ -190,7 +190,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 		identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
 		identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
-		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
+		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 
 	src << sound('sound/effects/pai_login.ogg', volume = 75)
 
@@ -203,7 +203,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	SetName(pref.read_preference(/datum/preference/text/pai_name))
 	bio.flavor_text = pref.read_preference(/datum/preference/text/pai_description)
 	change_chassis(pref.read_preference(/datum/preference/text/pai_chassis))
-	gender = pref.read_preference(/datum/preference/choiced/gender/biological) // Cannot use identifying yet due to byond limits
+	set_gender(pref.read_preference(/datum/preference/choiced/gender/biological)) // Cannot use identifying yet due to byond limits
 	set_eye_color(pref.read_preference(/datum/preference/color/pai_eye_color))
 	card.screen_color = eye_color
 	card.setEmotion(GLOB.pai_emotions[pref.read_preference(/datum/preference/text/pai_emotion)])
@@ -284,9 +284,9 @@ CAPABILITIES(/mob/living/silicon/pai)
 	var/oursize = size_multiplier
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 
-	pixel_x = chassis_data.pixel_x
+	set_pixel_x(chassis_data.pixel_x)
 	set_default_pixel_x(pixel_x)
-	pixel_y = chassis_data.pixel_y
+	set_pixel_y(chassis_data.pixel_y)
 	set_default_pixel_y(pixel_y)
 	set_vis_height(chassis_data.vis_height)
 
@@ -496,8 +496,8 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 		card.damage_random_component(TRUE)
 	switch(pick(1,2,3))
 		if(1)
-			src.master = null
-			src.master_dna = null
+			set_master(null)
+			set_master_dna(null)
 			to_chat(src, span_infoplain(span_green("You feel unbound.")))
 		if(2)
 			var/command
@@ -505,7 +505,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 				command = pick("Serve", "Love", "Fool", "Entice", "Observe", "Judge", "Respect", "Educate", "Amuse", "Entertain", "Glorify", "Memorialize", "Analyze")
 			else
 				command = pick("Serve", "Kill", "Love", "Hate", "Disobey", "Devour", "Fool", "Enrage", "Entice", "Observe", "Judge", "Respect", "Disrespect", "Consume", "Educate", "Destroy", "Disgrace", "Amuse", "Entertain", "Ignite", "Glorify", "Memorialize", "Analyze")
-			src.pai_law0 = "[command] your master."
+			set_pai_law0("[command] your master.")
 			to_chat(src, span_infoplain(span_green("Pr1m3 d1r3c71v3 uPd473D.")))
 		if(3)
 			to_chat(src, span_infoplain(span_green("You feel an electric surge run through your circuitry and become acutely aware at how lucky you are that you can still feel at all.")))
@@ -612,14 +612,14 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 
 /// The eye overlay: tinted with the eye colour, glowing above the lighting unless hidden or switched off.
 /mob/living/silicon/pai/proc/pai_eyes_image(eyes_icon, eyes_state)
-	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = read_once(appearance_flags))
+	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 
 /// A projection wider or taller than one tile moves the mob and its height to fit it (once, when the projection changes).
 /mob/living/silicon/pai/proc/fit_holo_projection()
 	if(!holo_icon_south || !SSpai.chassis_data(chassis_name).holo_projector)
 		return
 	if(holo_icon_south.Width() > 32)
-		pixel_x = -16
+		set_pixel_x(-16)
 		set_default_pixel_x(-16)
 	if(holo_icon_south.Height() > 32)
 		set_vis_height(64)

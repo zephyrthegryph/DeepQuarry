@@ -728,11 +728,11 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /obj/machinery/door/firedoor/glass/hidden/open()
 	. = ..()
-	plane = TURF_PLANE
+	set_plane(TURF_PLANE)
 
 /obj/machinery/door/firedoor/glass/hidden/close()
 	. = ..()
-	plane = OBJ_PLANE
+	set_plane(OBJ_PLANE)
 
 /obj/machinery/door/firedoor/glass/hidden/steel
 	name = "\improper Emergency Shutter System"

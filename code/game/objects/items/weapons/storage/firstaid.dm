@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 		to_chat(user, span_notice("You set the label."))
 	else
 		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-	label_text = tmp_label
+	set_label_text(tmp_label)
 	update_name_label()
 	return OP_OK
 

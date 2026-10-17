@@ -21,6 +21,8 @@
 	var/adjective = "hardens"
 	var/list/tail_lower_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/image/tail_image
+	/// The tinted snapshot of the petrified mob's layers, drawn as overlays (the tail is drawn from tail_image, its layer follows the facing).
+	var/list/statue_layers
 
 	var/can_revert = TRUE
 	var/was_rayed = FALSE
@@ -86,9 +88,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 		tint = tint_ovr
 
 	if(H.tail_style?.clip_mask_state)
-		tail_lower_dirs.Cut()
+		clear_tail_lower_dirs()
 	else if(H.tail_style)
-		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
+		set_tail_lower_dirs(H.tail_style.lower_layer_dirs.Copy())
 
 	set_max_integrity(H.get_endurance() + 100)
 	original_int = H.vitality() * H.get_endurance() + 100
@@ -125,26 +127,27 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(istype(layers[i], /image) && (i in body_layers))
 			var/image/old_image = layers[i]
 			var/image/tinted = image(old_image)
-			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-				tail_image = tinted
 			tinted.color = tint_color
 			tinted.layer = old_image.layer
 			new_image = tinted
-		add_overlay(new_image)
+			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
+				set_tail_image(tinted)
+				continue
+		add_statue_layers(new_image)
 
 	initial_sleep = H.status_units(STAT_SLEEPING)
 	initial_blind = H.status_units(STAT_BLINDED)
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
-	layer = H.layer
-	pixel_x = H.pixel_x
-	pixel_y = H.pixel_y
+	set_layer(H.layer)
+	set_pixel_x(H.pixel_x)
+	set_pixel_y(H.pixel_y)
 	set_dir(H.dir)
 	initial_lying = H.lying
 	initial_lying_prev = H.lying_prev
 	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
-		appearance_flags |= PIXEL_SCALE
+		set_appearance_flags(appearance_flags | PIXEL_SCALE)
 	wagging = H.wagging
 	flapping = H.flapping
 	H.toggle_tail(FALSE, FALSE)
@@ -241,7 +244,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 			for (var/x in 1 to 10)
 				gargoyle.injure(INJURY_BLUNT, f, ran_zone(), src)
 			hurtmessage = " " + span_bold("You feel your body take the damage that was dealt while being [material]!")
-	alpha = 0
+	set_alpha(0)
 	act_message(gargoyle, null, MSG_SELF(span_warning("Your skin reverts, freeing your movement once more![hurtmessage]")), \
 		MSG_OTHERS(span_warning("%U%'s skin rapidly reverts, returning them to normal!")))
 	gargoyle = null
@@ -310,12 +313,13 @@ CAPABILITIES(/obj/structure/gargoyle)
 	to_chat(A.actor, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 	set_anchored(!anchored)
 
-/obj/structure/gargoyle/set_dir(new_dir)
-	. = ..()
-	if(. && tail_image)
-		cut_overlay(tail_image)
-		tail_image.layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER)
-		add_overlay(tail_image)
+/// The look: the petrified mob's layers; the tail rides above or below the body by the way the statue faces.
+/obj/structure/gargoyle/draw(datum/look/look)
+	..()
+	for(var/layer_image in statue_layers)
+		look.overlay(layer_image)
+	if(tail_image)
+		look.overlay(look_overlay_image(of = tail_image, layer = BODY_LAYER + ((dir in tail_lower_dirs) ? TAIL_LOWER_LAYER : TAIL_UPPER_LAYER)))
 
 /obj/structure/gargoyle/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle

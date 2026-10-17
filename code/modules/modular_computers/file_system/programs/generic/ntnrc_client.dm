@@ -60,10 +60,10 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		return
 
 	if(netadmin_mode)
-		active_channel = new_target // Bypasses normal leave/join and passwords. Technically makes the user invisible to others.
+		set_active_channel(new_target) // Bypasses normal leave/join and passwords. Technically makes the user invisible to others.
 		return TRUE
 
-	active_channel =  new_target
+	set_active_channel(new_target)
 	channel = GLOB.ntnet_global.get_chat_channel_by_id(new_target)
 	if(!(src in channel.clients) && !channel.password)
 		channel.add_client(src)
@@ -73,7 +73,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	if(channel)
 		channel.remove_client(src)
-		active_channel = null
+		set_active_channel(null)
 		return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_newchannel(datum/act/op/A, new_channel_name)
@@ -84,21 +84,21 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	C.add_client(src)
 	rel_set(C, nameof(/datum/ntnet_conversation::operator), src)
 	C.title = channel_title
-	active_channel = C.id
+	set_active_channel(C.id)
 	return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_toggleadmin(datum/act/op/A)
 	var/mob/user = A.actor
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	if(netadmin_mode)
-		netadmin_mode = FALSE
+		set_netadmin_mode(FALSE)
 		if(channel)
 			channel.remove_client(src) // We shouldn't be in channel's user list, but just in case...
 		return TRUE
 	if(isliving(user) && can_run(user, TRUE, ACCESS_NETWORK))
 		for(var/datum/ntnet_conversation/chan as anything in GLOB.ntnet_global.chat_channels)
 			chan.remove_client(src)
-		netadmin_mode = TRUE
+		set_netadmin_mode(TRUE)
 		return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_changename(datum/act/op/A, new_name)
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	for(var/datum/ntnet_conversation/chan as anything in GLOB.ntnet_global.chat_channels)
 		if(src in chan.clients)
 			chan.add_status_message("[username] is now known as [newname].")
-	username = newname
+	set_username(newname)
 	return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_savelog(datum/act/op/A, log_name)
@@ -120,11 +120,11 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		return
 	var/datum/computer_file/data/logfile = new /datum/computer_file/data/logfile()
 	// Now we will generate HTML-compliant file that can actually be viewed/printed.
-	logfile.filename = logname
-	logfile.stored_data = "\[b\]Logfile dump from NTNRC channel [channel.title]\[/b\]\[BR\]"
+	logfile.set_filename(logname)
+	logfile.set_stored_data("\[b\]Logfile dump from NTNRC channel [channel.title]\[/b\]\[BR\]")
 	for(var/logstring in channel.messages)
-		logfile.stored_data = "[logfile.stored_data][logstring]\[BR\]"
-	logfile.stored_data = "[logfile.stored_data]\[b\]Logfile dump completed.\[/b\]"
+		logfile.set_stored_data("[logfile.stored_data][logstring]\[BR\]")
+	logfile.set_stored_data("[logfile.stored_data]\[b\]Logfile dump completed.\[/b\]")
 	logfile.calculate_size()
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(logfile))
 		if(!computer())
@@ -157,7 +157,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 		authed = TRUE
 	if(authed)
 		spent(channel)
-		active_channel = null
+		set_active_channel(null)
 		return TRUE
 
 /datum/computer_file/program/chatclient/proc/ui_act_prg_setpassword(datum/act/op/A, new_password_arg)
@@ -179,7 +179,7 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 	..()
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	if(program_state != PROGRAM_STATE_KILLED)
-		ui_header = "ntnrc_idle.gif"
+		set_ui_header("ntnrc_idle.gif")
 		if(channel)
 			// Remember the last message. If there is no message in the channel remember null.
 			last_message = length(channel.messages) ? channel.messages[channel.messages.len] : null
@@ -187,9 +187,9 @@ CAPABILITIES(/datum/computer_file/program/chatclient)
 			last_message = null
 		return 1
 	if(channel?.messages?.len)
-		ui_header = last_message == channel.messages[channel.messages.len] ? "ntnrc_idle.gif" : "ntnrc_new.gif"
+		set_ui_header(last_message == channel.messages[channel.messages.len] ? "ntnrc_idle.gif" : "ntnrc_new.gif")
 	else
-		ui_header = "ntnrc_idle.gif"
+		set_ui_header("ntnrc_idle.gif")
 
 /datum/computer_file/program/chatclient/kill_program(forced = FALSE)
 	for(var/datum/ntnet_conversation/channel as anything in GLOB.ntnet_global.chat_channels)

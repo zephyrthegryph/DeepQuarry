@@ -116,8 +116,8 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
-	current_board = get_defaultboard()
-	game_state = GAME_PLAYER_ONE
+	set_current_board(get_defaultboard())
+	set_game_state(GAME_PLAYER_ONE)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
@@ -150,32 +150,32 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		var/game_action = game_subaction(action_arg, data, user, "w")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_TWO
+				set_game_state(GAME_PLAYER_TWO)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		var/game_action = game_subaction(action_arg, data, user, "b")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_ONE
+				set_game_state(GAME_PLAYER_ONE)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	return FALSE
 
 /datum/board_game/checkers/proc/reset(full)
-	winner = null
-	player_one_time = 0
-	player_two_time = 0
-	LAZYCLEARLIST(selected_figure)
-	LAZYCLEARLIST(valid_moves)
+	set_winner(null)
+	set_player_one_time(0)
+	set_player_two_time(0)
+	clear_selected_figure()
+	clear_valid_moves()
 	if(full)
-		current_board.Cut()
-		game_state = GAME_SETUP
+		clear_current_board()
+		set_game_state(GAME_SETUP)
 		rel_clear(src, nameof(player_one))
 		rel_clear(src, nameof(player_two))
 	else
-		current_board = get_defaultboard()
-		game_state = GAME_PLAYER_ONE
+		set_current_board(get_defaultboard())
+		set_game_state(GAME_PLAYER_ONE)
 
 /datum/board_game/checkers/proc/game_select_figure(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
@@ -191,7 +191,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		if (length(jumps) == 0)
 			return GAME_ACTION_NONE
 
-	selected_figure = validated_data
+	set_selected_figure(validated_data)
 	update_valid_moves()
 	return GAME_ACTION_SELECT
 
@@ -233,25 +233,25 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 			y += step_y
 
 		if(did_jump && piece_can_jump_again(to_x, to_y))
-			selected_figure = list(to_x, to_y)
+			set_selected_figure(list(to_x, to_y))
 			update_valid_moves()
 			validate_victory(extra)
-			possible_jumps = get_mandatory_jumps(extra)
+			set_possible_jumps(get_mandatory_jumps(extra))
 			return GAME_ACTION_SELECT
 
 	var/turn_duration = world.time - turn_start_time
 	if(game_state == GAME_PLAYER_ONE)
-		player_one_time += turn_duration
+		set_player_one_time(player_one_time + turn_duration)
 	else if(game_state == GAME_PLAYER_TWO)
-		player_two_time += turn_duration
+		set_player_two_time(player_two_time + turn_duration)
 
-	LAZYCLEARLIST(selected_figure)
+	clear_selected_figure()
 	update_valid_moves()
 	validate_victory(extra)
 	if(game_state != GAME_OVER)
-		possible_jumps = get_mandatory_jumps(extra == "w" ? "b" : "w")
+		set_possible_jumps(get_mandatory_jumps(extra == "w" ? "b" : "w"))
 	else
-		LAZYCLEARLIST(possible_jumps)
+		clear_possible_jumps()
 	return GAME_ACTION_END_TURN
 
 /datum/board_game/checkers/proc/get_mandatory_jumps(active_color)
@@ -269,11 +269,11 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 	return jumping_pieces
 
 /datum/board_game/checkers/proc/update_valid_moves()
-	LAZYCLEARLIST(valid_moves)
+	clear_valid_moves()
 	if(length(selected_figure))
 		var/x = LAZYACCESS(selected_figure, 1)
 		var/y = LAZYACCESS(selected_figure, 2)
-		valid_moves = generate_valid_moves(x, y)
+		set_valid_moves(generate_valid_moves(x, y))
 
 /datum/board_game/checkers/proc/piece_can_jump_again(x, y)
 	var/piece = current_board[y][x]
@@ -319,20 +319,20 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 	if(!any_opponent_pieces)
 		var/mob/player_one_mob = player_one
 		var/mob/player_two_mob = player_two
-		winner = active_color == "w" ? player_one_mob?.name : player_two_mob?.name
-		game_state = GAME_OVER
+		set_winner(active_color == "w" ? player_one_mob?.name : player_two_mob?.name)
+		set_game_state(GAME_OVER)
 		return
 
 	if(!opponent_has_moves)
 		if(any_opponent_pieces)
-			winner = null
-			game_state = GAME_OVER_DRAW
+			set_winner(null)
+			set_game_state(GAME_OVER_DRAW)
 			return
 
 		var/mob/player_one_mob = player_one
 		var/mob/player_two_mob = player_two
-		winner = active_color == "w" ? player_one_mob?.name : player_two_mob?.name
-		game_state = GAME_OVER
+		set_winner(active_color == "w" ? player_one_mob?.name : player_two_mob?.name)
+		set_game_state(GAME_OVER)
 
 /datum/board_game/checkers/proc/generate_valid_moves(x, y, jump_only)
 	var/piece = current_board[y][x]

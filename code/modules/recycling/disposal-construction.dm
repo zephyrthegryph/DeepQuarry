@@ -122,9 +122,9 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		set_icon_state(base_state)
 
 	if(invisibility)				// if invisible, fade icon
-		alpha = 128
+		set_alpha(128)
 	else
-		alpha = 255
+		set_alpha(255)
 		//otherwise burying half-finished pipes under floors causes them to half-fade
 
 // hide called by levelupdate if turf intact status changes

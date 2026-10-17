@@ -917,7 +917,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/handle_germ_sync(cycles)
 	if(owner && isbelly(owner.loc)) //If we're in a belly, just skip infection spreading. This leads to extended vore scenes killing via infection.
 		return
-	var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
+	var/antibiotics = owner.antimicrobial
 	var/list/current_wounds = get_wounds()
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		//Open wounds can become infected
@@ -935,7 +935,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	. = ..() //May be null or an infection level, if null then no specific processing needed here
 	if(!.) return
 
-	var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
+	var/antibiotics = owner.antimicrobial
 
 	if(. >= 2 && antibiotics < ANTIBIO_NORM) //INFECTION_LEVEL_TWO
 		//spread the infection to internal organs
@@ -1127,7 +1127,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/atom/droploc = victim.drop_location()
 	switch(disintegrate)
 		if(DROPLIMB_EDGE)
-			appearance_flags &= ~PIXEL_SCALE
+			set_appearance_flags(appearance_flags & (~PIXEL_SCALE))
 			compile_icon()
 			add_blood(victim)
 			var/matrix/M = matrix()
@@ -1164,7 +1164,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			destroyed(src, null, BRUTE)
 
 		if(DROPLIMB_ACID)
-			appearance_flags &= ~PIXEL_SCALE
+			set_appearance_flags(appearance_flags & (~PIXEL_SCALE))
 			compile_icon()
 			add_blood(victim)
 			var/matrix/M = matrix()
@@ -1469,6 +1469,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return FALSE
 	var/is_robotic = is_robotic()
 	var/mob/living/carbon/human/victim = owner
+
+	// The layers it shows as an item are made while its body still describes it (the body's own icon builder leaves them alone).
+	get_icon()
 
 	// What the subtree wears has nothing to hang on once it goes. Before the
 	// move: the detach hook runs inside it and must not move anything.

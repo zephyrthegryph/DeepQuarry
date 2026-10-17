@@ -853,7 +853,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	var/mob_holder_type = src.holder_type || /obj/item/holder
 	C.set_w_class(src.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 	var/obj/item/holder/H = new mob_holder_type(C, src)
-	C.max_storage_space = H.w_class
+	C.set_max_storage_space(H.w_class)
 	C.set_icon_scale_x(0.25 * C.w_class)
 	C.set_icon_scale_y(0.25 * C.w_class)
 	C.update_transform()
@@ -998,7 +998,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	else
 		to_chat(src, span_danger(" You turn on your pain simulators "))
 
-	synth_cosmetic_pain = !synth_cosmetic_pain
+	set_synth_cosmetic_pain(!synth_cosmetic_pain)
 
 //This is the 'long vore' ability. Also known as "Grab Prey with appendage" or "Long Predatorial Reach". Or simply "Tongue Vore"
 //It involves projectiles (which means it can be VV'd onto a gun for shenanigans)
@@ -1107,7 +1107,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			color = originator.appendage_color
+			set_color(originator.appendage_color)
 	..()
 
 /obj/item/projectile/beam/appendage/on_hit(atom/target)
@@ -1661,8 +1661,8 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 			src.show_message(span_warning("You lay a egg!"))
 			eggs--
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
-			E.pixel_x = rand(-6,6)
-			E.pixel_y = rand(-6,6)
+			E.set_pixel_x(rand(-6,6))
+			E.set_pixel_y(rand(-6,6))
 		return
 	else
 		src.visible_message(span_warning("you dont have any eggs!"))

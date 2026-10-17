@@ -250,7 +250,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
 	rel_set(src, nameof(target), target)
 	src.kind = kind
-	src.level = level
+	set_level(level)
 	src.both_edges = both_edges
 	src.lane = lane
 	src.keep_body = keep_body

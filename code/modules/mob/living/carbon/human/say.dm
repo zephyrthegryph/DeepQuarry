@@ -172,7 +172,7 @@ sparse(/mob/living/carbon/human, special_voice, type = text)
 				message_data[2] = "HIIII EVERYPONY"
 			return 1
 
-	if(factor(BF_PENALTY_SCALE) < 1 || (status_units(STAT_JITTERY) >= 100 && !has_status(STAT_STUTTERING))) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
+	if(src.penalty_scale < 1 || (status_units(STAT_JITTERY) >= 100 && !has_status(STAT_STUTTERING))) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
 		// Despite trying to url/html decode these, byond is just being bad and I dunno.
 		var/static/regex/speedboost_initial = new (@"&[a-z]{2,5};|&#\d{2};","g")
 		// Not herestring because bad vs code syntax highlight panics at apostrophe

@@ -92,8 +92,8 @@
 	var/mob/living/carbon/human/H = make_person()
 	var/obj/e0_fixture/prompt_base/B = make_box()
 	open(H, B)
-	// the world changed without publishing a read the op watches: the answer still meets the requirement
-	B.set_powered(FALSE)
+	// the world changed without publishing (a raw write the op's watch never sees): the answer re-runs the requirements
+	set_var(B, nameof(B.powered), FALSE) // a raw write (no publish): the setter would end the op at once, before any answer
 	var/datum/op_result/result = test_answer(H, 7)
 	TEST_ASSERT_EQUAL(B.runs, 0, "the op did not run")
 	TEST_ASSERT_EQUAL(result?.reason, MSG(prompt/unpowered), "it refused with the requirement's reason")

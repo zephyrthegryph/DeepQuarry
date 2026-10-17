@@ -29,6 +29,8 @@
 	var/allergic_level = H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] || 0
 	var/allergic_gate = proto.acts_on_body(H)
 	H.species.medallergens = old_allergens
+	H.body.invalidate(BODY_DIRTY_TREATMENT) // the species' data was written raw: the snapshot rebuild reads the dose again
+	H.body.treatment_levels()
 	TEST_ASSERT(!allergic_gate, "an allergic patient gets no benefit from the reagent")
 	TEST_ASSERT_EQUAL(allergic_level, 0, "an allergic patient's snapshot carries none of its tags")
 	if(!proto.affects_dead)
@@ -97,7 +99,7 @@
 	lepo.affect_blood(H, null, REM)
 	TEST_ASSERT_EQUAL(H.body_temperature(), BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
 
-/// C16: a fever is a raised set point (BF_TEMPERATURE), not a per-tick temperature write.
+/// C16: a fever is a raised set point (STAT_TEMPERATURE), not a per-tick temperature write.
 /datum/unit_test/dq_med7_c16_fever_is_setpoint
 
 /datum/unit_test/dq_med7_c16_fever_is_setpoint/Run()
@@ -110,7 +112,6 @@
 	var/temp_before = H.body_temperature()
 	A.tick()
 	TEST_ASSERT_EQUAL(H.body_temperature(), temp_before, "the affliction's tick does not write body temperature")
-	H.body.invalidate(BODY_DIRTY_FACTORS)
 	TEST_ASSERT(H.thermal_setpoint() > base + 1, "sepsis raises the thermoregulation set point")
 
 /// B25: alcohol withdrawal races the heart through a forced pulse factor.
@@ -119,7 +120,7 @@
 /datum/unit_test/dq_med7_b25_withdrawal_pulse_factor/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.apply_body_effect(/datum/body_effect/withdrawal_tachycardia, 10 SECONDS)
-	TEST_ASSERT_EQUAL(H.factor(BF_PULSE_SET), PULSE_2FAST, "withdrawal forces a racing pulse")
+	TEST_ASSERT_EQUAL(H.pulse_set, PULSE_2FAST, "withdrawal forces a racing pulse")
 
 /// D18a: the internal-bleed arrest reads mechanisms; myelamine is a strong hemostatic.
 /datum/unit_test/dq_med7_d18a_ib_reads_tags

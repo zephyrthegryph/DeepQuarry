@@ -665,6 +665,10 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
             if py_lstrip(line).starts_with('#') {
                 continue;
             }
+            // A verb's `set name = "..."` / `set category = ...` is a declaration of the verb, not a write to a var.
+            if pat!(r"^\s*set\s+(?:name|desc|category|hidden|src|popup_menu|instant|invisibility|background|waitfor)\s*=").is_match(line) {
+                continue;
+            }
             for m in pat!(r"\bvar/(?:[\w/]*/)?(\w+)\b").captures_iter(line) {
                 locals.insert(m.s(1).to_string());
             }

@@ -49,7 +49,7 @@ CAPABILITIES(/datum/round_status_panel)
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
-	shown_antag_blocks = blocks
+	set_shown_antag_blocks(blocks)
 
 /datum/round_status_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)

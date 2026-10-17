@@ -291,8 +291,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	set_ready_state(FALSE)
 	do_after_cooldown()
 	if(!(r_id in known_reagents))
-		known_reagents += r_id
-		known_reagents[r_id] = r_name
+		add_known_reagents(r_id)
+		set_known_reagents_at(r_id, r_name)
 		return 1
 	return 0
 

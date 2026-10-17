@@ -284,8 +284,8 @@
 			other = D
 	TEST_ASSERT(fits && other, "(a design the lathe can learn and one it cannot)")
 	var/obj/item/disk/design_disk/disk = allocate(/obj/item/disk/design_disk, get_turf(H))
-	LAZYADD(disk.blueprints, fits)
-	LAZYADD(disk.blueprints, other)
+	disk.add_blueprints(fits)
+	disk.add_blueprints(other)
 	H.put_in_active_hand(disk)
 	touch(H, L, disk)
 	TEST_ASSERT(LAZYACCESS(mffab_imported(L), fits.id), "the lathe learns the design it can make")
@@ -304,7 +304,7 @@
 			break
 	touch(H, L, in_hand(H, /obj/item/tool/screwdriver))
 	var/obj/item/disk/design_disk/disk = allocate(/obj/item/disk/design_disk, get_turf(H))
-	LAZYADD(disk.blueprints, fits)
+	disk.add_blueprints(fits)
 	H.drop_item()
 	H.put_in_active_hand(disk)
 	touch(H, L, disk)

@@ -13,7 +13,7 @@
 	var/organ_damage = FALSE
 
 	if(scapacitor?.get_rating() < 5)
-		gridstatus = 3
+		set_gridstatus(3)
 	if(H)
 		for(var/obj/item/organ/org in H.internal_organ_list())
 			if(org.is_robotic())
@@ -81,7 +81,7 @@
 
 /obj/item/medigun_backpack/proc/ui_act_toggle_maintenance(datum/act/op/A)
 	. = TRUE
-	maintenance = !maintenance
+	set_maintenance(!maintenance)
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_smodule(datum/act/op/A)
@@ -102,7 +102,7 @@
 	smanipulator.forceMove(get_turf(loc))
 	to_chat(user, span_notice("You remove the [smanipulator] from \the [src]."))
 	rel_take(src, nameof(/obj/item/medigun_backpack::smanipulator))
-	smaniptier = 0
+	set_smaniptier(0)
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_laser(datum/act/op/A)
@@ -146,7 +146,7 @@
 /obj/item/medigun_backpack/proc/cell_eject(mob/user)
 	if(!ccell)
 		return FALSE
-	charging = FALSE
+	set_charging(FALSE)
 	ccell.forceMove(get_turf(loc))
 	if(user)
 		to_chat(user, span_notice("You remove the [ccell] from \the [src]."))

@@ -356,10 +356,9 @@
 /mob/living/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	. = ..()
 	var/obj/item/I = thing
-	var/domains = BODY_DIRTY_ARMOR
+	body?.invalidate(BODY_DIRTY_ARMOR)
 	if(istype(I) && I.worn_factors)
-		domains |= BODY_DIRTY_FACTORS
-	body?.invalidate(domains)
+		body?.sync_worn_factors()
 	on_equipment_changed()
 
 /// Why this mob can't use body slot `def` right now, or null: the holder's own
@@ -451,4 +450,5 @@
 	for(var/atom/movable/thing as anything in placed)
 		if(thing.loc == src && fresh.entries[thing] && fresh.def_by_id(placed[thing]))
 			fresh.reslot(thing, placed[thing])
-	body?.invalidate(BODY_DIRTY_ARMOR | BODY_DIRTY_FACTORS)
+	body?.invalidate(BODY_DIRTY_ARMOR)
+	body?.sync_worn_factors()

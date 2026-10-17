@@ -26,19 +26,19 @@
 	new_mob.name = src.name
 	new_mob.set_real_name(src.real_name)
 	for(var/lang in src.languages)
-		new_mob.languages |= lang
+		new_mob.include_languages(lang)
 	src.copy_vore_prefs_to_mob(new_mob)
 	set_vore_selected(new_mob, vore_selected_of(src))
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
-			N.gender = H.gender
+			N.set_gender(H.gender)
 			N.set_identifying_gender(H.identifying_gender)
 		else
-			new_mob.gender = H.gender
+			new_mob.set_gender(H.gender)
 	else
-		new_mob.gender = src.gender
+		new_mob.set_gender(src.gender)
 		if(ishuman(new_mob))
 			var/mob/living/carbon/human/N = new_mob
 			N.set_identifying_gender(src.gender)

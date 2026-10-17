@@ -44,18 +44,12 @@
 
 CAPABILITIES(/obj/machinery/ion_engine)
 	configure(uses_power(channel = ENVIRON, idle = 100))
-	after_init(0, then(PROC_REF(init_glow)))
 	owns_one(nameof(controller), starts = /datum/ship_engine/ion)
 
-/obj/machinery/ion_engine/proc/init_glow(datum/act/timer/A)
-	add_glow()
-
-
-
-/obj/machinery/ion_engine/proc/add_glow()
-	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")
-	i.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(i)
+/// The engine's glow, over the lighting.
+/obj/machinery/ion_engine/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay", plane = PLANE_LIGHTING_ABOVE))
 
 /obj/machinery/ion_engine/proc/get_status()
 	. = list()

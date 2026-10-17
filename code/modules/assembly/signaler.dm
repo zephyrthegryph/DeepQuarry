@@ -19,7 +19,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 /obj/item/assembly/signaler/var/deadman = FALSE
 
 /obj/item/assembly/signaler/proc/join_frequency(datum/act/timer/A)
-	set_frequency(frequency)
+	retune(frequency)
 
 /obj/item/assembly/signaler/activate()
 	if(!COOLDOWN_FINISHED(src, next_activate))
@@ -61,21 +61,21 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	. = TRUE
 
 /obj/item/assembly/signaler/proc/ui_act_freq(datum/act/op/A, freq)
-	frequency = unformat_frequency(freq)
-	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-	set_frequency(frequency)
+	set_frequency(unformat_frequency(freq))
+	set_frequency(sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+	retune(frequency)
 	. = TRUE
 
 /obj/item/assembly/signaler/proc/ui_act_code(datum/act/op/A, code_arg)
-	code = code_arg
-	code = clamp(round(code), 1, 100)
+	set_code(code_arg)
+	set_code(clamp(round(code), 1, 100))
 	. = TRUE
 
 /obj/item/assembly/signaler/proc/ui_act_reset(datum/act/op/A, reset)
 	if(reset == "freq")
-		set_frequency(initial(frequency))
+		retune(initial(frequency))
 	else
-		code = initial(code)
+		set_code(initial(code))
 	. = TRUE
 
 /// Old attackby: tap two secured signalers together to copy frequency/code.
@@ -85,8 +85,8 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	if(issignaler(W))
 		var/obj/item/assembly/signaler/signaler2 = W
 		if(secured && signaler2.secured)
-			code = signaler2.code
-			set_frequency(signaler2.frequency)
+			set_code(signaler2.code)
+			retune(signaler2.frequency)
 			to_chat(user, "You transfer the frequency and code of [signaler2] to [src].")
 		return TRUE
 	return OP_DECLINE
@@ -132,7 +132,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 		for(var/mob/O in hearers(1, src.loc))
 			O.show_message("[icon2html(src, O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 
-/obj/item/assembly/signaler/proc/set_frequency(new_frequency)
+/obj/item/assembly/signaler/proc/retune(new_frequency)
 	if(!frequency)
 		return
 	if(!SSradio)
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	SSradio.remove_object(src, frequency)
-	frequency = new_frequency
+	set_frequency(new_frequency)
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/proc/signaler_step(datum/act/timer/A)

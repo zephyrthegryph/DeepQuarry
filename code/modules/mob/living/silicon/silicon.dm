@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 	. = ..(language)
 	if (can_speak && (added_language in languages) && !(added_language in speech_synthesizer_langs))
-		speech_synthesizer_langs += added_language
+		add_speech_synthesizer_langs(added_language)
 		return 1
 
 /// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 
 	..(rem_language)
-	speech_synthesizer_langs -= removed_language
+	remove_speech_synthesizer_langs(removed_language)
 
 /mob/living/silicon/check_lang_data()
 	. = ""
@@ -321,7 +321,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	if(!blinded)
 		flash_eyes()
 
-	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	var/explosion_shift = src.explosion_shift
 	if(explosion_shift)
 		severity = CLAMP(severity + explosion_shift, 1, 4)
 
@@ -485,3 +485,7 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 //		if ("Disable")
 //			//Disable Medical planes
 //			plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
+
+/// Silicon bodies draw no shock energy and trigger no grid warning or damage calculation.
+/mob/living/silicon/receive_power_shock(power_source, obj/source, siemens_coeff = 1.0)
+	return 0

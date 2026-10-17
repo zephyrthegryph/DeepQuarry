@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Joining from the lobby is no longer cancelled with 'You stop what you were doing.'"
+  - code_imp: "Pipes carry no has_power reading, so an APC flipping its area no longer re-evaluates every pipe"
+  - bugfix: "A transfer valve can serve as an assembly's holder without an ownership report"

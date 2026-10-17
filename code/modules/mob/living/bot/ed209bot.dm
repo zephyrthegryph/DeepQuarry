@@ -180,7 +180,7 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly)
 	slime_assembly.set_item_state("sled209_taser")
 	slime_assembly.set_icon_state("sled209_taser")
 	graph_place(slime_assembly, STAGE_ED209_TASERED)
-	slime_assembly.created_name = created_name
+	slime_assembly.set_created_name(created_name)
 	slime_assembly.lasercolor = lasercolor
 	consume(src, A.actor)
 	return OP_OK

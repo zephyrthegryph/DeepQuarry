@@ -5,9 +5,9 @@
 	notransform = TRUE
 	set_dir(SOUTH)
 	var/obj/effect/temp_visual/decoy/fading/fivesecond/ANM = new /obj/effect/temp_visual/decoy/fading/fivesecond(loc, src)
-	ANM.layer = layer - 0.01
+	ANM.set_layer(layer - 0.01)
 	new /obj/effect/temp_visual/small_smoke(loc)
-	alpha = 0
+	set_alpha(0)
 	animate(src, alpha = 255, time = 50)
 	transform_prev_lockcharge = lockcharge
 	SetLockdown(1)

@@ -48,14 +48,14 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	temp.unsendable = unsendable
 	temp.undeletable = undeletable
 	temp.hidden = hidden
-	temp.size = size
+	temp.set_size(size)
 	if(metadata)
 		temp.metadata = metadata.Copy()
 	if(rename)
-		temp.filename = filename + "(Copy)"
+		temp.set_filename(filename + "(Copy)")
 	else
-		temp.filename = filename
-	temp.filetype = filetype
+		temp.set_filename(filename)
+	temp.set_filetype(filetype)
 	return temp
 
 /// The holder this refers to (a relation view: null once that is deleted).

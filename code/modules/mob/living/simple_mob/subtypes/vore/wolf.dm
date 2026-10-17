@@ -48,11 +48,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 	. = ..()
 
 	var/obj/belly/B = vore_selected_of(src)
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.fancy_vore = 1
-	B.belly_fullscreen_color = "#c47cb4"
-	B.belly_fullscreen = "VBOanim_belly1"
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_fancy_vore(1)
+	B.set_belly_fullscreen_color("#c47cb4")
+	B.set_belly_fullscreen("VBOanim_belly1")
 
 // Space edition, stronger and bitier
 /mob/living/simple_mob/vore/wolf/space

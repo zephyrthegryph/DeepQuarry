@@ -160,7 +160,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 			if("inherit_inhands")
 				current_data.inherit_inhands = text2num(field_data)
 			if("item_desc")
-				current_data.item_desc = field_data
+				current_data.set_item_desc(field_data)
 			if("req_access")
 				current_data.req_access = text2num(field_data)
 			if("req_titles")

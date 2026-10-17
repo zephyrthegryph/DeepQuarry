@@ -717,12 +717,12 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	if(!istype(Tar)) //Technically does not need this restriction, but prevents ghosts accidentally being placed in mob layer
 		return
 	if(Tar.plane != PLANE_INVIS_EVENT)
-		Tar.plane = PLANE_INVIS_EVENT
+		Tar.set_plane(PLANE_INVIS_EVENT)
 		if(!(VIS_EVENT_INVIS in hud_of(Tar)?.vis_enabled))
 			hud_of(Tar)?.plane_holder?.set_vis(VIS_EVENT_INVIS,TRUE)
 			hud_of(Tar)?.vis_enabled += VIS_EVENT_INVIS
 	else
-		Tar.plane = MOB_LAYER
+		Tar.set_plane(MOB_LAYER)
 		if(VIS_EVENT_INVIS in hud_of(Tar)?.vis_enabled)
 			hud_of(Tar)?.plane_holder?.set_vis(VIS_EVENT_INVIS,FALSE)
 			hud_of(Tar)?.vis_enabled -= VIS_EVENT_INVIS

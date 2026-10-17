@@ -96,7 +96,7 @@
 				clothing.set_material(structure.name)
 				// The outer layer remains the exposed material for reactions and appearance;
 				// the load-bearing layer supplies the actual armor calculation.
-				color = material_for_role(MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour
+				set_color(material_for_role(MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour)
 				var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER) || structure
 				clothing.set_siemens_coefficient(clamp(protection_of_type(clothing.type).siemens * (1.2 - liner.dielectric_strength / 125), 0.05, 2))
 				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.2 - liner.corrosion_resistance / 125), 0.05, 2))
@@ -104,7 +104,7 @@
 		if(MATERIAL_APPLICATION_MACHINE_PART, MATERIAL_APPLICATION_CAPACITOR, MATERIAL_APPLICATION_MANIPULATOR, MATERIAL_APPLICATION_MATTER_BIN, MATERIAL_APPLICATION_SCANNER, MATERIAL_APPLICATION_LASER)
 			if(istype(src, /obj/item/stock_parts))
 				var/obj/item/stock_parts/part = src
-				part.material_id = primary.name
+				part.set_material_id(primary.name)
 				part.rating = part.get_rating()
 		if(MATERIAL_APPLICATION_FIREARM)
 			if(istype(src, /obj/item/gun))
@@ -149,7 +149,7 @@
 				var/obj/item/clothing/clothing = src
 				var/datum/material/fabric = material_for_role(MATERIAL_ROLE_FABRIC) || primary
 				clothing.set_material(fabric.name)
-				color = fabric.icon_colour
+				set_color(fabric.icon_colour)
 				var/datum/material/reinforcement = material_for_role(MATERIAL_ROLE_STRUCTURE) || fabric
 				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2))
 		if(MATERIAL_APPLICATION_CABLE)

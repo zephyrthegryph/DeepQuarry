@@ -1,7 +1,7 @@
 // Aggregators (doc/rewrite/rules.md §1). One combine rule per PROP_AGG_*,
 // consistent with the body factor rules in code/modules/body/factors.dm:
-// PRODUCT is BF_RULE_MULT at full scale, SUM is BF_RULE_ADD, and MAX, MIN and
-// OR are BF_RULE_MAX, BF_RULE_MIN and BF_RULE_FLAGS. Null means "no value"
+// PRODUCT is the stat rule PRODUCT at full scale, SUM is SUM, and MAX, MIN and
+// OR are MAX, MIN and MASK_OR (code/engine/stats/rules.dm). Null means "no value"
 // and is the identity for every rule.
 
 /proc/dq_property_valid_aggregator(agg)

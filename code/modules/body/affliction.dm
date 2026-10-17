@@ -54,9 +54,6 @@
 	/// A whole-body condition (respiratory arrest, arrhythmia): afflict() reuses the one that
 	/// exists instead of adding another at a different location (C9).
 	var/systemic_singleton = FALSE
-	/// accumulate_factors() reads severity continuously (airway patency, breathing drive), so
-	/// every severity change re-dirties the factors (C21).
-	var/continuous_factors = FALSE
 	/// INJURY_CATEGORY_* this affliction counts toward for load queries
 	/// (vitality readouts, analysers, medbots). Null = not an injury
 	/// (side effects, interactions, infections).
@@ -177,19 +174,18 @@
 /datum/affliction/proc/on_removed()
 	for(var/symptom_type in active_symptoms)
 		affliction_symptom(symptom_type).on_resolve(owner, src)
-	active_symptoms = null
+	set_active_symptoms(null)
 
 /// Drops the stage-applied state (C15): the presenting symptoms are RESOLVED (their
 /// on_resolve() undoes what they applied) before the lists are cleared.
 /datum/affliction/proc/clear_stage()
 	for(var/symptom_type in active_symptoms)
 		affliction_symptom(symptom_type).on_resolve(owner, src)
-	stage = null
-	active_symptoms = null
+	set_stage(null)
+	set_active_symptoms(null)
 	symptom_pool = null
 	spontaneous_emotes = null
 	last_reroll_band = -1
-	body?.invalidate(BODY_DIRTY_FACTORS)
 
 /// Resolve and remove. The normal way an affliction ends.
 /datum/affliction/proc/cure()
@@ -206,16 +202,23 @@
 	severity = clamp(new_severity, 0, AFFLICTION_SEVERITY_TERMINAL)
 	if(severity == old_severity)
 		return FALSE
-	if(body)
-		var/dirty = BODY_DIRTY_VITALS
-		// C21: a type whose factors follow severity continuously re-dirties on every change,
-		// not only per band (and even with no static `factors` table).
-		if(continuous_factors || (factors && round(severity / BF_SEVERITY_BAND) != factor_band))
-			dirty |= BODY_DIRTY_FACTORS
-		body.invalidate(dirty)
+	tracked_changed(src, nameof(severity)) // the factors() entry follows the exact severity: its table is held again before the next line
+	body?.invalidate(BODY_DIRTY_VITALS)
 	if(owner)
 		PUBLISH_LEGACY(owner, /datum/notice/affliction_severity_changed, src, old_severity)
 	return TRUE
+
+SETTER(/datum/affliction, severity)
+
+/// Sets the active stage (null clears it): the stage's table replaces the severity-scaled one in the factors() entry. Returns TRUE when it changed.
+/datum/affliction/proc/set_stage(new_stage)
+	if(TRACKED_UNCHANGED(stage, new_stage))
+		return FALSE
+	stage = new_stage
+	tracked_changed(src, nameof(stage))
+	return TRUE
+
+SETTER(/datum/affliction, stage)
 
 /datum/affliction/proc/adjust_severity(delta)
 	return set_severity(severity + delta)
@@ -351,7 +354,7 @@
 		rate = simple_clearance_rate
 	var/drift = AFFLICTION_BASE_PROGRESSION * rate
 	if(drift > 0)
-		drift *= body.get_factor(BF_PROGRESSION)
+		drift *= owner.progression
 	var/delta = drift + pending_treatment
 	pending_treatment = 0
 	// Conditions snowball: 1x at 0, 2x at 50, 3x at 100. Cures scale too, so
@@ -409,10 +412,10 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
 	if(!stages || !stages[new_stage])
 		return
-	stage = new_stage
+	set_stage(new_stage)
 	var/list/entry = stages[new_stage]
 	if(entry["name"])
-		name = entry["name"]
+		set_name(entry["name"])
 	symptom_pool = entry["symptom_pool"]
 	if(!isnull(entry["min_symptoms"]))
 		min_symptoms = entry["min_symptoms"]
@@ -428,12 +431,11 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	if(!isnull(entry["organ_damage_targets"]))
 		organ_damage_targets = entry["organ_damage_targets"]
 	if(!isnull(entry["pain_at_max"]))
-		pain_at_max = entry["pain_at_max"]
+		set_pain_at_max(entry["pain_at_max"])
 	if(!isnull(entry["consciousness_at_max"]))
-		consciousness_at_max = entry["consciousness_at_max"]
+		set_consciousness_at_max(entry["consciousness_at_max"])
 	last_reroll_band = -1
-	if(body)
-		body.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS)
+	body?.invalidate(BODY_DIRTY_VITALS)
 	if(islist(entry["always_spawns"]))
 		for(var/T in entry["always_spawns"])
 			if(body?.find_affliction(T, pick_spawn_target(T)))
@@ -454,7 +456,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 			kept += symptom_type
 		else
 			affliction_symptom(symptom_type).on_resolve(owner, src)
-	active_symptoms = length(kept) ? kept : null
+	set_active_symptoms(length(kept) ? kept : null)
 	if(!symptom_pool)
 		return
 
@@ -465,7 +467,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 			var/symptom_type = pick_n_take(active_symptoms)
 			affliction_symptom(symptom_type).on_resolve(owner, src)
 		if(!LAZYLEN(active_symptoms))
-			active_symptoms = null
+			set_active_symptoms(null)
 		return
 
 	var/list/surfacing = list()
@@ -483,7 +485,7 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	while(length(surfacing) && LAZYLEN(active_symptoms) + length(surfacing) > max_symptoms)
 		pick_n_take(surfacing)
 	for(var/symptom_type in surfacing)
-		LAZYADD(active_symptoms, symptom_type)
+		add_active_symptoms(symptom_type)
 		affliction_symptom(symptom_type).on_present(owner, src)
 
 // --- Spontaneous emotes -----------------------------------------------------------------
@@ -581,3 +583,6 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 
 CAPABILITIES(/datum/affliction)
 	ref_one(nameof(body))
+	ref_one(nameof(owner), /mob/living)
+	// The affliction's own table, held on its owner at the exact current severity (or stage) and released with it (code/modules/body/factors.dm).
+	factors(PROC_REF(factor_table), scale = PROC_REF(factor_scale), to = nameof(owner))

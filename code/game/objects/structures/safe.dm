@@ -111,7 +111,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
-	dial = decrement(dial)
+	set_dial(decrement(dial))
 	if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
 		set_tumbler_1_pos(decrement(tumbler_1_pos))
 		if(canhear)
@@ -129,7 +129,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
-	dial = increment(dial)
+	set_dial(increment(dial))
 	if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
 		set_tumbler_1_pos(increment(tumbler_1_pos))
 		if(canhear)
@@ -163,7 +163,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 				return OP_OK
 			space += I.w_class
 			to_chat(user, span_notice("You put [I] in \the [src]."))
-			updateUsrDialog(user)
+			refresh_ui(src)
 		else
 			to_chat(user, span_notice("[I] won't fit in \the [src]."))
 	else

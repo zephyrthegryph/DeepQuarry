@@ -206,10 +206,10 @@
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		dq_atmos_test_snapshot_air(T)
 	run_gate()
-	room.air_vent_names = area_saved["names"]
-	room.air_vent_info = area_saved["info"]
-	room.air_scrub_names = area_saved["snames"]
-	room.air_scrub_info = area_saved["sinfo"]
+	room.set_air_vent_names(area_saved["names"])
+	room.set_air_vent_info(area_saved["info"])
+	room.set_air_scrub_names(area_saved["snames"])
+	room.set_air_scrub_info(area_saved["sinfo"])
 	if(room.atmosalm != area_saved["atmosalm"])
 		room.atmosalert(area_saved["atmosalm"], null)
 	test_driver_end()
@@ -685,10 +685,10 @@
 	var/obj/machinery/alarm/A = alarm()
 	am_alarm_set_locked(A, FALSE)
 	var/area/room = get_area(A)
-	room.air_vent_names = null
-	room.air_vent_info = null
-	room.air_scrub_names = null
-	room.air_scrub_info = null
+	room.set_air_vent_names(null)
+	room.set_air_vent_info(null)
+	room.set_air_scrub_names(null)
+	room.set_air_scrub_info(null)
 	am_area_reset_numbers(room)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = device(/obj/machinery/atmospherics/unary/vent_pump)
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = device(/obj/machinery/atmospherics/unary/vent_scrubber, 1, 3)
@@ -715,8 +715,8 @@
 /datum/unit_test/dq_atmos_m/device_names_collide
 /datum/unit_test/dq_atmos_m/device_names_collide/run_gate()
 	var/area/room = get_area(tile(1, 1))
-	room.air_vent_names = null
-	room.air_vent_info = null
+	room.set_air_vent_names(null)
+	room.set_air_vent_info(null)
 	var/obj/machinery/atmospherics/unary/vent_pump/first = device(/obj/machinery/atmospherics/unary/vent_pump, 1, 1)
 	var/obj/machinery/atmospherics/unary/vent_pump/second = device(/obj/machinery/atmospherics/unary/vent_pump, 3, 1)
 	TEST_ASSERT_NOTEQUAL(first.name, second.name, "two vents, two names")

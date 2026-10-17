@@ -73,14 +73,14 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stummy"
 	B.desc = "It's a star shaped stomach. A stummy, if you will. It's warm and soft, not unlike plush, but it's tight!"
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.digest_brute = 0
-	B.digest_burn = 0
-	B.digest_oxy = 12
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 35
-	B.selective_preference = DM_ABSORB
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(0)
+	B.set_digest_burn(0)
+	B.set_digest_oxy(12)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(35)
+	B.set_selective_preference(DM_ABSORB)
 
 /mob/living/simple_mob/vore/alienanimals/succlet/checkMoveCooldown()
 	return FALSE

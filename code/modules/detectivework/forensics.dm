@@ -20,7 +20,7 @@
 /// Forensics: Handles most forensic investigation actions while touching an object. Including fingerprints, stray fibers from clothing, and bloody hands smearing objects. Returns true if a fingerprint was made.
 /atom/proc/add_fingerprint(mob/living/M as mob, ignoregloves = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(isnull(M) || isAI(M) || isnull(M.key))
+	if(isnull(M) || isnull(M.fingerprint_identity()))
 		return FALSE
 
 	//Fibers from worn clothing get transfered along with fingerprints~
@@ -142,20 +142,20 @@
 			prints[print] = o_prints[print]
 		else
 			prints[print] = stringmerge(prints[print], o_prints[print])
-	fields["fprints"] = prints
+	set_fields_at("fprints", prints)
 
 	var/list/fibers = fields["fibers"]
 	var/list/o_fibers = other.fields["fibers"]
 	fibers |= o_fibers
-	fields["fibers"] = fibers
+	set_fields_at("fibers", fibers)
 
 	var/list/blood = fields["blood"]
 	var/list/o_blood = other.fields["blood"]
 	blood |= o_blood
-	fields["blood"] = blood
+	set_fields_at("blood", blood)
 
-	fields["area"] = other.fields["area"]
-	fields["time"] = other.fields["time"]
+	set_fields_at("area", other.fields["area"])
+	set_fields_at("time", other.fields["time"])
 
 /datum/data/record/forensic/proc/update_prints(list/o_prints)
 	var/list/prints = fields["fprints"]
@@ -163,4 +163,4 @@
 		if(prints[print])
 			prints[print] = stringmerge(prints[print], o_prints[print])
 			.=1
-	fields["fprints"] = prints
+	set_fields_at("fprints", prints)

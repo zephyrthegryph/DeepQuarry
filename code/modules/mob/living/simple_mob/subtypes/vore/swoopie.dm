@@ -74,84 +74,84 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/load_default_bellies()
 	grant(src, granted_verb(/mob/living/proc/restrict_trasheater), src)
 	var/obj/belly/B = new /obj/belly(src)
-	B.affects_vore_sprites = TRUE
-	B.belly_sprite_to_affect = "stomach"
+	B.set_affects_vore_sprites(TRUE)
+	B.set_belly_sprite_to_affect("stomach")
 	B.name = "Churno-Vac"
 	B.desc = "With an abrupt loud WHUMP after a very sucky trip through the hungry bot's vacuum tube, you finally spill out into its waste container, where everything the bot slurps off the floors ends up for swift processing among the caustic sludge, efficiently melting everything down into a thin slurry to fuel its form. More loose dirt and debris occasionally raining in from above as the bot carries on with its duties to keep the station nice and clean."
-	B.digest_messages_prey = list("Under the heat and internal pressure of the greedy machine's gutworks, you can feel the tides of the hot caustic sludge claiming the last bits of space around your body, a few more squeezes of the synthetic muscles squelching and glurking as your body finally loses its form, completely blending down and merging into the tingly sludge to fuel the mean machine.")
-	B.digest_mode = DM_DIGEST
-	B.item_digest_mode = IM_DIGEST
-	B.recycling = TRUE
-	B.mode_flags = DM_FLAG_THICKBELLY //Hard to be heard from inside the swoop!
-	B.digest_burn = 3
-	B.fancy_vore = 1
-	B.vore_sound = "Stomach Move"
-	B.belly_fullscreen = "VBOanim_belly9"
-	B.belly_fullscreen_color = "#202020"
-	B.sound_volume = 25
-	B.count_items_for_sprite = TRUE
-	B.show_liquids = TRUE
-	B.reagentbellymode = TRUE
-	B.reagent_mode_flags = DM_FLAG_REAGENTSDIGEST
+	B.set_digest_messages_prey(list("Under the heat and internal pressure of the greedy machine's gutworks, you can feel the tides of the hot caustic sludge claiming the last bits of space around your body, a few more squeezes of the synthetic muscles squelching and glurking as your body finally loses its form, completely blending down and merging into the tingly sludge to fuel the mean machine."))
+	B.set_digest_mode(DM_DIGEST)
+	B.set_item_digest_mode(IM_DIGEST)
+	B.set_recycling(TRUE)
+	B.set_mode_flags(DM_FLAG_THICKBELLY) //Hard to be heard from inside the swoop!
+	B.set_digest_burn(3)
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Stomach Move")
+	B.set_belly_fullscreen("VBOanim_belly9")
+	B.set_belly_fullscreen_color("#202020")
+	B.set_sound_volume(25)
+	B.set_count_items_for_sprite(TRUE)
+	B.set_show_liquids(TRUE)
+	B.set_reagentbellymode(TRUE)
+	B.set_reagent_mode_flags(DM_FLAG_REAGENTSDIGEST)
 	B.reagentid = "biomass"
-	B.reagent_chosen = "Biomass"
-	B.reagent_name = "caustic trash-sludge"
-	B.custom_reagentcolor = "#3c3030"
-	B.reagent_touches = FALSE
+	B.set_reagent_chosen("Biomass")
+	B.set_reagent_name("caustic trash-sludge")
+	B.set_custom_reagentcolor("#3c3030")
+	B.set_reagent_touches(FALSE)
 
 	B = new /obj/belly/longneck(src)
-	B.affects_vore_sprites = FALSE
+	B.set_affects_vore_sprites(FALSE)
 	B.name = "Vac-Beak"
 	B.desc = "SNAP! You have been sucked up into the big synthbird's beak, the powerful vacuum within the bird roaring somewhere beyond the abyssal deep gullet hungrily gaping before you, eagerly sucking you deeper inside towards a long bulgy ride down the bird's vacuum hose of a neck!"
-	B.entrance_logs = TRUE //Exept for the maw. I think that's reasonable. -Reo
-	B.autotransferlocation = "vacuum hose"
-	B.autotransfer_max_amount = 0
-	B.autotransferwait = 60
-	B.belly_fullscreen_color2 = "#1C1C1C"
-	B.belly_fullscreen_color3 = "#292929"
-	B.belly_fullscreen_color4 = "#CCFFFF"
-	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
+	B.set_entrance_logs(TRUE) //Exept for the maw. I think that's reasonable. -Reo
+	B.set_autotransferlocation("vacuum hose")
+	B.set_autotransfer_max_amount(0)
+	B.set_autotransferwait(60)
+	B.set_belly_fullscreen_color2("#1C1C1C")
+	B.set_belly_fullscreen_color3("#292929")
+	B.set_belly_fullscreen_color4("#CCFFFF")
+	B.set_belly_fullscreen("VBO_maw25") //Swoopies have beaks!!
 
 	set_vore_selected(src, B)
 
 	B = new /obj/belly/longneck(src)
-	B.affects_vore_sprites = TRUE
-	B.belly_sprite_to_affect = "neck1"
+	B.set_affects_vore_sprites(TRUE)
+	B.set_belly_sprite_to_affect("neck1")
 	B.name = "vacuum hose"
-	B.autotransferlocation = "upper vacuum hose"
-	B.fancy_vore = 1
-	B.vore_sound = "Stomach Move"
-	B.sound_volume = 100
+	B.set_autotransferlocation("upper vacuum hose")
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Stomach Move")
+	B.set_sound_volume(100)
 
 	B = new /obj/belly/longneck(src)
-	B.affects_vore_sprites = TRUE
-	B.belly_sprite_to_affect = "neck2"
+	B.set_affects_vore_sprites(TRUE)
+	B.set_belly_sprite_to_affect("neck2")
 	B.name = "upper vacuum hose"
-	B.autotransferlocation = "midway vacuum hose"
+	B.set_autotransferlocation("midway vacuum hose")
 	B.desc = "It feels very tight in here..."
-	B.fancy_vore = 1
-	B.vore_sound = "Stomach Move"
-	B.sound_volume = 80
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Stomach Move")
+	B.set_sound_volume(80)
 
 	B = new /obj/belly/longneck(src)
-	B.affects_vore_sprites = TRUE
-	B.belly_sprite_to_affect = "neck3"
+	B.set_affects_vore_sprites(TRUE)
+	B.set_belly_sprite_to_affect("neck3")
 	B.name = "midway vacuum hose"
-	B.autotransferlocation = "lower vacuum hose"
+	B.set_autotransferlocation("lower vacuum hose")
 	B.desc = "Looks like it's gonna be all downhill from here..."
-	B.fancy_vore = 1
-	B.vore_sound = "Stomach Move"
-	B.sound_volume = 40
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Stomach Move")
+	B.set_sound_volume(40)
 
 	B = new /obj/belly/longneck(src)
-	B.affects_vore_sprites = TRUE
-	B.belly_sprite_to_affect = "neck4"
+	B.set_affects_vore_sprites(TRUE)
+	B.set_belly_sprite_to_affect("neck4")
 	B.name = "lower vacuum hose"
-	B.autotransferlocation = "Churno-Vac"
+	B.set_autotransferlocation("Churno-Vac")
 	B.desc = "Thank you for your biofuel contribution~"
-	B.fancy_vore = 1
-	B.vore_sound = "Stomach Move"
-	B.sound_volume = 20
+	B.set_fancy_vore(1)
+	B.set_vore_sound("Stomach Move")
+	B.set_sound_volume(20)
 
 /obj/belly/longneck
 	affects_vore_sprites = TRUE

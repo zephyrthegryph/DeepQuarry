@@ -85,7 +85,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	rust_set_device_flow(scrubbing ? mask : 0, RUST_FLOW_VOLUME, rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_NONE, 0)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
+	set_last_flow_rate(abs(moles))
 
 /// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind, a disconnect and the weld.
 /obj/machinery/atmospherics/unary/vent_scrubber/derived()

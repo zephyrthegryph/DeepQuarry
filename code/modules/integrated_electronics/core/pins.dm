@@ -110,7 +110,7 @@ list[](
 	if(isnull(new_data) || isnum(new_data) || istext(new_data) || ic_is_ref(new_data)) // Anything else is a type we don't want.
 		if(istext(new_data) && !ic_is_ref(new_data))
 			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
-		data = new_data
+		set_data(new_data)
 		holder().on_data_written()
 
 /datum/integrated_io/proc/push_data()

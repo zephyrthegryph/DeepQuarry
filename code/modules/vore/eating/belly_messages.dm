@@ -346,131 +346,131 @@ GLOBAL_LIST_INIT(vore_words_snake, list("snake","serpent","reptilian","noodle","
 
 	switch(type)
 		if(STRUGGLE_OUTSIDE)
-			struggle_messages_outside = raw_list
+			set_struggle_messages_outside(raw_list)
 		if(STRUGGLE_INSIDE)
-			struggle_messages_inside = raw_list
+			set_struggle_messages_inside(raw_list)
 		if(ABSORBED_STRUGGLE_OUSIDE)
-			absorbed_struggle_messages_outside = raw_list
+			set_absorbed_struggle_messages_outside(raw_list)
 		if(ABSORBED_STRUGGLE_INSIDE)
-			absorbed_struggle_messages_inside = raw_list
+			set_absorbed_struggle_messages_inside(raw_list)
 		if(ESCAPE_ATTEMPT_OWNER)
-			escape_attempt_messages_owner = raw_list
+			set_escape_attempt_messages_owner(raw_list)
 		if(ESCAPE_ATTEMPT_PREY)
-			escape_attempt_messages_prey = raw_list
+			set_escape_attempt_messages_prey(raw_list)
 		if(ESCAPE_OWNER)
-			escape_messages_owner = raw_list
+			set_escape_messages_owner(raw_list)
 		if(ESCAPE_PREY)
-			escape_messages_prey = raw_list
+			set_escape_messages_prey(raw_list)
 		if(ESCAPE_OUTSIDE)
-			escape_messages_outside = raw_list
+			set_escape_messages_outside(raw_list)
 		if(ESCAPE_ITEM_OWNER)
-			escape_item_messages_owner = raw_list
+			set_escape_item_messages_owner(raw_list)
 		if(ESCAPE_ITEM_PREY)
-			escape_item_messages_prey = raw_list
+			set_escape_item_messages_prey(raw_list)
 		if(ESCAPE_ITEM_OUTSIDE)
-			escape_item_messages_outside = raw_list
+			set_escape_item_messages_outside(raw_list)
 		if(ESCAPE_FAIL_OWNER)
-			escape_fail_messages_owner = raw_list
+			set_escape_fail_messages_owner(raw_list)
 		if(ESCAPE_FAIL_PREY)
-			escape_fail_messages_prey = raw_list
+			set_escape_fail_messages_prey(raw_list)
 		if(ABSORBED_ESCAPE_ATTEMPT_OWNER)
-			escape_attempt_absorbed_messages_owner = raw_list
+			set_escape_attempt_absorbed_messages_owner(raw_list)
 		if(ABSORBED_ESCAPE_ATTEMPT_PREY)
-			escape_attempt_absorbed_messages_prey = raw_list
+			set_escape_attempt_absorbed_messages_prey(raw_list)
 		if(ABSORBED_ESCAPE_OWNER)
-			escape_absorbed_messages_owner = raw_list
+			set_escape_absorbed_messages_owner(raw_list)
 		if(ABSORBED_ESCAPE_PREY)
-			escape_absorbed_messages_prey = raw_list
+			set_escape_absorbed_messages_prey(raw_list)
 		if(ABSORBED_ESCAPE_OUTSIDE)
-			escape_absorbed_messages_outside = raw_list
+			set_escape_absorbed_messages_outside(raw_list)
 		if(ABSORBED_ESCAPE_FAIL_OWNER)
-			escape_fail_absorbed_messages_owner = raw_list
+			set_escape_fail_absorbed_messages_owner(raw_list)
 		if(ABSORBED_ESCAPE_FAIL_PREY)
-			escape_fail_absorbed_messages_prey = raw_list
+			set_escape_fail_absorbed_messages_prey(raw_list)
 		if(PRIMARY_TRANSFER_OWNER)
-			primary_transfer_messages_owner = raw_list
+			set_primary_transfer_messages_owner(raw_list)
 		if(PRIMARY_TRANSFER_PREY)
-			primary_transfer_messages_prey = raw_list
+			set_primary_transfer_messages_prey(raw_list)
 		if(SECONDARY_TRANSFER_OWNER)
-			secondary_transfer_messages_owner = raw_list
+			set_secondary_transfer_messages_owner(raw_list)
 		if(SECONDARY_TRANSFER_PREY)
-			secondary_transfer_messages_prey = raw_list
+			set_secondary_transfer_messages_prey(raw_list)
 		if(PRIMARY_AUTO_TRANSFER_OWNER)
-			primary_autotransfer_messages_owner = raw_list
+			set_primary_autotransfer_messages_owner(raw_list)
 		if(PRIMARY_AUTO_TRANSFER_PREY)
-			primary_autotransfer_messages_prey = raw_list
+			set_primary_autotransfer_messages_prey(raw_list)
 		if(SECONDARY_AUTO_TRANSFER_OWNER)
-			secondary_autotransfer_messages_owner = raw_list
+			set_secondary_autotransfer_messages_owner(raw_list)
 		if(SECONDARY_AUTO_TRANSFER_PREY)
-			secondary_autotransfer_messages_prey = raw_list
+			set_secondary_autotransfer_messages_prey(raw_list)
 		if(DIGEST_CHANCE_OWNER)
-			digest_chance_messages_owner = raw_list
+			set_digest_chance_messages_owner(raw_list)
 		if(DIGEST_CHANCE_PREY)
-			digest_chance_messages_prey = raw_list
+			set_digest_chance_messages_prey(raw_list)
 		if(ABSORB_CHANCE_OWNER)
-			absorb_chance_messages_owner = raw_list
+			set_absorb_chance_messages_owner(raw_list)
 		if(ABSORB_CHANCE_PREY)
-			absorb_chance_messages_prey = raw_list
+			set_absorb_chance_messages_prey(raw_list)
 		if(DIGEST_OWNER)
-			digest_messages_owner = raw_list
+			set_digest_messages_owner(raw_list)
 		if(DIGEST_PREY)
-			digest_messages_prey = raw_list
+			set_digest_messages_prey(raw_list)
 		if(ABSORB_OWNER)
-			absorb_messages_owner = raw_list
+			set_absorb_messages_owner(raw_list)
 		if(ABSORB_PREY)
-			absorb_messages_prey = raw_list
+			set_absorb_messages_prey(raw_list)
 		if(UNABSORBS_OWNER)
-			unabsorb_messages_owner = raw_list
+			set_unabsorb_messages_owner(raw_list)
 		if(UNABSORBS_PREY)
-			unabsorb_messages_prey = raw_list
+			set_unabsorb_messages_prey(raw_list)
 		if(EXAMINES)
-			examine_messages = raw_list
+			set_examine_messages(raw_list)
 		if(EXAMINES_ABSORBED)
-			examine_messages_absorbed = raw_list
+			set_examine_messages_absorbed(raw_list)
 		if(BELLY_MODE_DIGEST)
 			own_emote_lists()
-			emote_lists[DM_DIGEST] = raw_list
+			set_emote_lists_at(DM_DIGEST, raw_list)
 		if(BELLY_MODE_HOLD)
 			own_emote_lists()
-			emote_lists[DM_HOLD] = raw_list
+			set_emote_lists_at(DM_HOLD, raw_list)
 		if(BELLY_MODE_HOLD_ABSORB)
 			own_emote_lists()
-			emote_lists[DM_HOLD_ABSORBED] = raw_list
+			set_emote_lists_at(DM_HOLD_ABSORBED, raw_list)
 		if(BELLY_MODE_ABSORB)
 			own_emote_lists()
-			emote_lists[DM_ABSORB] = raw_list
+			set_emote_lists_at(DM_ABSORB, raw_list)
 		if(BELLY_MODE_HEAL)
 			own_emote_lists()
-			emote_lists[DM_HEAL] = raw_list
+			set_emote_lists_at(DM_HEAL, raw_list)
 		if(BELLY_MODE_DRAIN)
 			own_emote_lists()
-			emote_lists[DM_DRAIN] = raw_list
+			set_emote_lists_at(DM_DRAIN, raw_list)
 		if(BELLY_MODE_STEAL)
 			own_emote_lists()
-			emote_lists[DM_SIZE_STEAL] = raw_list
+			set_emote_lists_at(DM_SIZE_STEAL, raw_list)
 		if(BELLY_MODE_EGG)
 			own_emote_lists()
-			emote_lists[DM_EGG] = raw_list
+			set_emote_lists_at(DM_EGG, raw_list)
 		if(BELLY_MODE_SHRINK)
 			own_emote_lists()
-			emote_lists[DM_SHRINK] = raw_list
+			set_emote_lists_at(DM_SHRINK, raw_list)
 		if(BELLY_MODE_GROW)
 			own_emote_lists()
-			emote_lists[DM_GROW] = raw_list
+			set_emote_lists_at(DM_GROW, raw_list)
 		if(BELLY_MODE_UNABSORB)
 			own_emote_lists()
-			emote_lists[DM_UNABSORB] = raw_list
+			set_emote_lists_at(DM_UNABSORB, raw_list)
 		if(BELLY_TRASH_EATER_IN)
-			trash_eater_in = raw_list
+			set_trash_eater_in(raw_list)
 		if(BELLY_TRASH_EATER_OUT)
-			trash_eater_out = raw_list
+			set_trash_eater_out(raw_list)
 		if(BELLY_LIQUID_MESSAGE1)
-			fullness1_messages = raw_list
+			set_fullness1_messages(raw_list)
 		if(BELLY_LIQUID_MESSAGE2)
-			fullness2_messages = raw_list
+			set_fullness2_messages(raw_list)
 		if(BELLY_LIQUID_MESSAGE3)
-			fullness3_messages = raw_list
+			set_fullness3_messages(raw_list)
 		if(BELLY_LIQUID_MESSAGE4)
-			fullness4_messages = raw_list
+			set_fullness4_messages(raw_list)
 		if(BELLY_LIQUID_MESSAGE5)
-			fullness5_messages = raw_list
+			set_fullness5_messages(raw_list)

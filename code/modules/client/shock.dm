@@ -90,15 +90,15 @@ CAPABILITIES(/datum/tgui_shock)
 
 /datum/tgui_shock/proc/on_message(type, payload, href_list)
 	if(type == "connected")
-		connected = TRUE
+		set_connected(TRUE)
 	else if(type == "disconnected")
-		connected = FALSE
+		set_connected(FALSE)
 	else if(type == "error")
-		connected = FALSE
+		set_connected(FALSE)
 		log_runtime("WebSocket Error [json_encode(payload)]")
 	else if(type == "incomingMessage")
 		if(payload["lastCall"] == "get_devices")
-			available_devices = json_decode(payload["data"])
+			set_available_devices(json_decode(payload["data"]))
 
 //////////////////////////////////////////
 // TGUI                                 //
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/tgui_shock)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_setselecteddevice(datum/act/op/A, device)
-	selected_device = device
+	set_selected_device(device)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_test(datum/act/op/A)
@@ -140,19 +140,19 @@ CAPABILITIES(/datum/tgui_shock)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_set_flag(datum/act/op/A, flag)
-	enabled_flags ^= flag
+	set_enabled_flags(enabled_flags ^ flag)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_port(datum/act/op/A, port_arg)
-	port = port_arg
+	set_port(port_arg)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_intensity(datum/act/op/A, intensity_arg)
-	intensity = intensity_arg
+	set_intensity(intensity_arg)
 	. = TRUE
 
 /datum/tgui_shock/proc/ui_act_duration(datum/act/op/A, duration_arg)
-	duration = duration_arg
+	set_duration(duration_arg)
 	. = TRUE
 
 

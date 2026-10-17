@@ -185,7 +185,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
 			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
 	if(total_storage_space)
-		max_storage_space = max(total_storage_space, max_storage_space)
+		set_max_storage_space(max(total_storage_space, max_storage_space))
 
 // ---- Insertion ----
 
@@ -292,8 +292,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	else
 		moved = slot_remove(W, destination, user)
 	if(!moved)
-		W.plane = previous_plane
-		W.layer = previous_layer
+		W.set_plane(previous_plane)
+		W.set_layer(previous_layer)
 		return FALSE
 	if(W.maptext)
 		W.maptext = ""
@@ -355,16 +355,11 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 /// Quick-empty onto the floor, if `user` can.
 /obj/item/storage/proc/try_quick_empty(mob/user)
-	// Only humans and robots can dump contents
-	if(!(ishuman(user) || isrobot(user)))
-		return FALSE
-	// Hard to do when you're KO'd
-	if(user.incapacitated())
-		return FALSE
-	if(!Adjacent(user))
-		return FALSE
-	// No turf dumping if user is in a belly
-	if(isbelly(user.loc))
+	return user.empty_storage(src)
+
+/// An actor with the physical dumping transaction still needs a clear, nearby floor.
+/obj/item/storage/proc/finish_quick_empty(mob/user)
+	if(user.incapacitated() || !Adjacent(user) || isbelly(user.loc))
 		return FALSE
 	drop_contents(user)
 	return TRUE
@@ -762,7 +757,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.maptext = ""
 		I.hud_layerise()
 		var/atom/movable/storage_slot/SS = add_catcher(I)
-		SS.add_overlay(list(stored_start, stored_continue, stored_end))
+		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
+		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
 		bar_start.vis_contents += SS
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
@@ -800,10 +796,13 @@ CAPABILITIES(/atom/movable/storage_slot)
 	ASSERT(item)
 	name += item.name
 
-/// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
-/atom/movable/storage_slot/add_overlay(list/somethings)
-	ASSERT(islist(somethings))
-	overlays = somethings
+/// The backdrop bar images (start, middle, end) behind the stored item, as they looked when the slot was laid out.
+/atom/movable/storage_slot/var/list/bars
+
+/atom/movable/storage_slot/draw(datum/look/look)
+	..()
+	for(var/bar in bars)
+		look.overlay(bar)
 
 /// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
 /atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
@@ -892,11 +891,11 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 
 	var/list/types = list()
 	var/max_size = 0
-	max_storage_space = 0
+	set_max_storage_space(0)
 	for(var/obj/item/I as anything in items)
 		types |= I.type
 		max_size = max(I.w_class, max_size)
-		max_storage_space += I.get_storage_cost()
+		set_max_storage_space(max_storage_space + (I.get_storage_cost()))
 	restrict_hold(types, max_size)
 
 /// Narrows what this one storage takes: `types` replaces the types it accepts, `max_size` the largest w_class (null keeps what the type says).

@@ -62,8 +62,8 @@ CAPABILITIES(/obj/effect/projectile)
 	if(!isnull(new_loc))	//If you want to null it just delete it...
 		forceMove(new_loc)
 	for(var/i in 1 to increment)
-		pixel_x += round((sin(angle_override)+16*sin(angle_override)*2), 1)
-		pixel_y += round((cos(angle_override)+16*cos(angle_override)*2), 1)
+		set_pixel_x(pixel_x + (round((sin(angle_override)+16*sin(angle_override)*2), 1)))
+		set_pixel_y(pixel_y + (round((cos(angle_override)+16*cos(angle_override)*2), 1)))
 
 /obj/effect/projectile_lighting
 	var/owner

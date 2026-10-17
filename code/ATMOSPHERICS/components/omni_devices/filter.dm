@@ -62,8 +62,8 @@
 /obj/machinery/atmospherics/omni/atmos_filter/push_to_rust()
 	if(QDELETED(src))
 		return
-	last_power_draw = 0
-	last_flow_rate = 0
+	set_last_power_draw(0)
+	set_last_flow_rate(0)
 	rust_unregister_all_devices_n()
 	if(!operable() || !use_power || !input || !output || !length(atmos_filters)) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		return
@@ -79,11 +79,11 @@
 
 /// A step's result: the moles the group moved and the power it drew, billed.
 /obj/machinery/atmospherics/omni/atmos_filter/rust_device_stepped(moles, power_w, target_reached)
-	last_power_draw = power_w
+	set_last_power_draw(power_w)
 	if(power_w > 0)
 		use_power(power_w)
 	var/before = input?.air ? input.air.total_moles() + moles : moles
-	last_flow_rate = (before > 0 && input?.air) ? (moles / before) * input.air.return_volume() : 0
+	set_last_flow_rate((before > 0 && input?.air) ? (moles / before) * input.air.return_volume() : 0)
 
 
 /// The Rust group is pushed (once per frame) when the rate or (through wake_for_state_change()) a port or mode changes.
@@ -248,7 +248,7 @@
 	var/previous_mode = null
 	if(target_port)
 		previous_mode = target_port.mode
-		target_port.mode = mode
+		target_port.set_mode(mode)
 		if(target_port.mode != previous_mode)
 			handle_port_change(target_port)
 		else
@@ -259,7 +259,7 @@
 	for(var/datum/omni_port/P in other_ports)
 		if(P.mode == mode)
 			var/old_mode = P.mode
-			P.mode = previous_mode
+			P.set_mode(previous_mode)
 			if(P.mode != old_mode)
 				handle_port_change(P)
 

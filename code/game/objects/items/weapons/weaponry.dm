@@ -154,7 +154,7 @@ CAPABILITIES(/obj/effect/energy_net)
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)
 	if(M?.buckled_to() == src) //Just src?.buckled_to() someone
 		..()
-		layer = M.layer+1
+		set_layer(M.layer+1)
 		M.set_can_pull_size(0)
 	else //Just unbuckled someone
 		M.set_can_pull_size(movement_of_type(M.type).pull_size)

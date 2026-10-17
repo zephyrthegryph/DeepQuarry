@@ -124,7 +124,7 @@
 		return null
 	if(!istext(key) || !op_known_anywhere(actor, target, held, key))
 		var/datum/op_result/unknown = new
-		unknown.key = key
+		unknown.set_key(key)
 		unknown.origin = origin
 		unknown.outcome = ACT_REFUSED
 		unknown.reason = /datum/msg/op/unknown
@@ -154,7 +154,7 @@
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		var/datum/op_result/refused = new
-		refused.key = key
+		refused.set_key(key)
 		refused.origin = origin
 		refused.outcome = ACT_REFUSED
 		refused.reason = op_resolution_refusal(R)
@@ -227,7 +227,7 @@
 	RETURN_TYPE(/datum/op_result)
 	var/mob/actor = R.actor
 	var/datum/op_result/result = new
-	result.key = C.oplan.key
+	result.set_key(C.oplan.key)
 	result.origin = R.origin
 	// An actor has any number of pending ops: a question never keeps another input out. What conflicts is claims: the pending ops of the actor that
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
@@ -304,6 +304,10 @@
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
 	lookup_reads_prepare(A.holder, A)
+	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
+	A.holder?.settle_for_reads()
+	A.actor?.settle_for_reads()
+	A.target?.settle_for_reads()
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try
@@ -588,6 +592,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		. &= ~STAY
 	if(isnull(A.held_provider()))
 		. &= ~HELD
+	if(A.actor && A.actor.stat != CONSCIOUS)
+		. &= ~ALIVE // a lobby player or a ghost was never conscious: ALIVE guards an actor that falls, and would stop every one of its ops
 	var/policy = op_reach_policy(A.oplan, B)
 	if(!B || !(policy == REACH_ADJACENT || policy >= REACH_RANGE_BASE) || !A.actor)
 		. &= ~ADJACENT
@@ -1209,7 +1215,6 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	args_saved = null
 	ordered_args_saved = null
 	log_saved = null
-	rel_clear(src, nameof(answered_steps)) // owned: the answered prompts are deleted with the op
 	captured_saved = null
 	cancel_after(src, "op_wait")
 	if(request)

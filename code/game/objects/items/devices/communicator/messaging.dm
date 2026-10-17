@@ -58,16 +58,16 @@
 	if(isobserver(candidate))
 		var/mob/observer/dead/ghost = candidate
 		who = ghost.name
-		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
+		add_im_list(list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
 		rel_add(comm, nameof(comm.im_contacts), src)
-		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
+		add_im_list(list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/integrated_circuit))
 		var/obj/item/integrated_circuit/CIRC = candidate
 		who = CIRC
-		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
+		add_im_list(list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
 	rel_add(src, nameof(im_contacts), candidate)
@@ -138,7 +138,7 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 	if(!comm?.exonet || !message)
 		return
 	exonet.send_message(comm.exonet.address, "text", message)
-	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
+	add_im_list(list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
 	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
 	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
 

@@ -171,7 +171,7 @@
 /datum/unit_test/dq_hc_struct/safe_dial_turns_and_opens/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/safe/S = allocate(/obj/structure/safe, tile(3, 2))
-	S.dial = 10
+	S.set_dial(10)
 	S.set_tumbler_1_pos(8)
 	S.set_tumbler_1_open(40)
 	S.set_tumbler_2_pos(20)
@@ -179,7 +179,7 @@
 	press(H, S, "decrement")
 	TEST_ASSERT_EQUAL(S.dial, 9, "decrement turns the dial down")
 	TEST_ASSERT_EQUAL(S.tumbler_1_pos, 7, "and drags the first tumbler with it")
-	S.dial = 9
+	S.set_dial(9)
 	S.set_tumbler_1_pos(11)
 	press(H, S, "increment")
 	TEST_ASSERT_EQUAL(S.dial, 10, "increment turns the dial up")
@@ -553,7 +553,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/canvas/C = allocate(/obj/item/canvas, tile(2, 2))
 	var/obj/item/paint_brush/B = allocate(/obj/item/paint_brush, tile(2, 2))
-	B.selected_color = "#123456"
+	B.set_selected_color("#123456")
 	H.put_in_active_hand(B)
 	press(H, C, "paint", list("x" = 2, "y" = 3))
 	TEST_ASSERT_EQUAL(C.grid[2][3], "#123456", "a stroke paints the cell under the held brush")
@@ -561,7 +561,7 @@
 	var/list/data = hc_data(C, H)
 	TEST_ASSERT_EQUAL(data["grid"], C.grid, "the window shows the grid")
 	C.set_finalized(TRUE)
-	B.selected_color = "#654321"
+	B.set_selected_color("#654321")
 	press(H, C, "paint", list("x" = 4, "y" = 4))
 	TEST_ASSERT_NOTEQUAL(C.grid[4][4], "#654321", "a finished painting takes no more strokes")
 

@@ -52,6 +52,8 @@
 #define RULE_KEY_INTEGRITY 16
 /// The change key an atom publishes when its integrity changes (update_integrity()): what a condition reading get_integrity_damage() watches.
 #define ATOM_INTEGRITY_KEY "atom_integrity"
+/// The change key an atom publishes when its OPENCONTAINER flag is set or cleared (set_open_by_flag()): what a draw reading open_by_flag() watches.
+#define REAGENT_OPEN_FLAG_KEY "reagent_open_flag"
 
 /// hold_for bookkeeping: the rule fired during the current spell. Rate model ids can be 0.
 #define RULE_HOLD_SPENT "spent"

@@ -16,7 +16,7 @@ CAPABILITIES(/obj/item/wheelchair)
 	var/obj/structure/bed/chair/wheelchair/R = new unfolded_type(user.loc)
 	R.add_fingerprint(user)
 	R.name = src.name
-	R.color = src.color
+	R.set_color(src.color)
 	consume(src, user)
 	return OP_OK
 

@@ -201,7 +201,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 /obj/machinery/chemical_dispenser/proc/ui_act_amount(datum/act/op/A, amount_set)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	amount = clamp(round(amount_set, 1), 0, 120) // round to nearest 1 and clamp 0 - 120
+	set_amount(clamp(round(amount_set, 1), 0, 120)) // round to nearest 1 and clamp 0 - 120
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_dispense(datum/act/op/A, reagent)
@@ -209,7 +209,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	add_fingerprint(user)
 	var/label = reagent
 	if(recording_recipe)
-		recording_recipe += list(list("id" = label, "amount" = amount))
+		add_recording_recipe(list(list("id" = label, "amount" = amount)))
 	else if(LAZYACCESS(cartridges, label) && container && container.is_open_container())
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
@@ -259,13 +259,13 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 /obj/machinery/chemical_dispenser/proc/ui_act_record_recipe(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	recording_recipe = list()
+	set_recording_recipe(list())
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_cancel_recording(datum/act/op/A)
 	var/mob/user = A.actor
 	add_fingerprint(user)
-	recording_recipe = null
+	set_recording_recipe(null)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_clear_recipes(datum/act/op/A)
@@ -291,7 +291,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				return
 		set_saved_recipes_at(name, recording_recipe)
-		recording_recipe = null
+		set_recording_recipe(null)
 		. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_dispense_recipe(datum/act/op/A, recipe)
@@ -327,7 +327,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				break
 	else
-		recording_recipe += chemicals_to_dispense
+		add_recording_recipe(chemicals_to_dispense)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_remove_recipe(datum/act/op/A, recipe)

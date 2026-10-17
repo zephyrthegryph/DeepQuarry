@@ -80,7 +80,7 @@
 	server.set_grid_power(TRUE)
 	server.set_broken_condition(FALSE)
 	rel_set(monitor, "linkedServer", server)
-	monitor.auth = TRUE
+	monitor.set_auth(TRUE)
 	server.decryptkey = "original-key"
 	test_ui(user, monitor, "pass", list())
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "authorized key action opens current-key question")

@@ -56,7 +56,9 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("toggle_safety", ui_act("toggle_safety"), then(PROC_REF(ui_act_toggle_safety)))
 	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
 	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
-	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
+	op("remove_menu", ui_act("remove_menu"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(removal_question)), "title" = "Remove ingredients", "choices" = computed(PROC_REF(removal_options)), "timeout" = 0), step = "selection", when = PROC_REF(removal_asks)),
+		then(PROC_REF(ui_act_remove_menu)))
 	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds))), then(PROC_REF(appliance_interaction_item)))
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
 	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds))), then(PROC_REF(appliance_toggle_power_effect)))
@@ -195,11 +197,11 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		return
 
 	if(new_output == "Default")
-		selected_option = null
+		set_selected_option(null)
 		to_chat(user, span_notice("You decide not to make anything specific with \the [src]."))
 		return
 
-	selected_option = new_output
+	set_selected_option(new_output)
 	to_chat(user, span_notice("You prepare \the [src] to make \a [selected_option] with the next thing you put in. Try putting several ingredients in a container!"))
 
 //Handles all validity checking and error messages for inserting things
@@ -598,10 +600,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 			words |= text2list(reag.name, " ")
 
 	//Filling overlay
-	var/image/I = image(result.icon, "[result.icon_state]_filling")
-	I.color = totalcolour
-	result.add_overlay(I)
-	result.filling_color = totalcolour
+	result.set_filling_color(totalcolour)
+	result.set_filling_layer("[result.icon_state]_filling")
 
 	//Set the name.
 	words -= list("and", "the", "in", "is", "bar", "raw", "sticks", "boiled", "fried", "deep", "-o-", "warm", "two", "flavored")
@@ -747,20 +747,30 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	return TRUE
 
 /obj/machinery/appliance/proc/ui_act_remove_menu(datum/act/op/A)
-	var/mob/user = A.actor
-	removal_menu(user)
+	removal_menu(A)
 	return TRUE
 
-/obj/machinery/appliance/proc/removal_menu(mob/user)
-	if (can_remove_items(user))
-		var/list/menuoptions = list()
-		for(var/datum/cooking_item/CI as anything in cooking_objs)
-			if (CI.container())
-				menuoptions[CI.container().label(menuoptions.len)] = CI
+/// The removal question is asked only of someone who can remove items (the warning itself is given by the effect).
+/obj/machinery/appliance/proc/removal_asks(datum/act/op/A)
+	var/mob/user = A.actor
+	return can_remove_items(user, FALSE)
 
-		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
-		if(isnull(selection))
-			return
+/obj/machinery/appliance/proc/removal_question(datum/act/op/A)
+	return "Which item would you like to remove?"
+
+/// The removal question's choices: the label of each container's item, to the cooking item.
+/obj/machinery/appliance/proc/removal_options(datum/act/op/A)
+	var/list/menuoptions = list()
+	for(var/datum/cooking_item/CI as anything in cooking_objs)
+		if (CI.container())
+			menuoptions[CI.container().label(menuoptions.len)] = CI
+	return menuoptions
+
+/obj/machinery/appliance/proc/removal_menu(datum/act/op/A)
+	var/mob/user = A.actor
+	if (can_remove_items(user))
+		var/list/menuoptions = removal_options(A)
+		var/selection = A.step_value("selection")
 		if (selection)
 			var/datum/cooking_item/CI = menuoptions[selection]
 			eject(CI, user)
@@ -824,8 +834,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 /obj/machinery/appliance/proc/change_product_appearance(obj/item/reagent_containers/food/snacks/product, datum/cooking_item/CI)
 	if (!product.coating()) //Coatings change colour through a new sprite
-		product.color = food_color
-	product.filling_color = food_color
+		product.set_color(food_color)
+	product.set_filling_color(food_color)
 
 /mob/living/proc/calculate_composition() // moved from devour.dm on aurora's side
 	if (!composition_reagent)//if no reagent has been set, then we'll set one
@@ -935,12 +945,12 @@ CAPABILITIES(/datum/cooking_item)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
 	set_active_power_usage(power_of_type(type).active - scan_rating * 25)
-	heating_power = initial(heating_power) + cap_rating * 25
-	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
+	set_heating_power(initial(heating_power) + cap_rating * 25)
+	set_cooking_power(cooking_coeff * (1 + (scan_rating + cap_rating) / 20)) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.
 
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
-	food_safety = !food_safety
+	set_food_safety(!food_safety)
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
 
 /// the container this refers to (a relation view: null once it is deleted).

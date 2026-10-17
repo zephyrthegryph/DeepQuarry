@@ -87,12 +87,12 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
-	B.mode_flags = 40
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 15
+	B.set_mode_flags(40)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/apply_melee_effects(atom/A)
 	if(isliving(A))

@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	set_power_relevant(relevant)
 
 /obj/item/electronic_assembly/proc/handle_idle_power(seconds_per_tick)
-	net_power = 0 // Reset this. This gets increased/decreased with [give/draw]_power() outside of this loop.
+	set_net_power(0) // Reset this. This gets increased/decreased with [give/draw]_power() outside of this loop.
 
 	// Early-out: no battery / nothing power-relevant means double-iterating
 	// contents every SSobj tick is pure waste. Cache the verdict, recompute only
@@ -592,7 +592,7 @@ CAPABILITIES(/datum/ic_export_view)
 /obj/item/electronic_assembly/proc/draw_power(amount)
 	if(battery)
 		var/lost = battery.use(amount * CELLRATE)
-		net_power -= lost
+		set_net_power(net_power - lost)
 		return lost
 	return FALSE
 
@@ -600,7 +600,7 @@ CAPABILITIES(/datum/ic_export_view)
 /obj/item/electronic_assembly/proc/give_power(amount)
 	if(battery)
 		var/gained = battery.give(amount * CELLRATE)
-		net_power += gained
+		set_net_power(net_power + gained)
 		return TRUE
 	return FALSE
 

@@ -66,8 +66,8 @@
 		var/datum/affliction/contagion/engineered/dormant_disease = new /datum/affliction/contagion/engineered/random(symptom_amt, max_level, min_level, guaranteed_symptoms, infected = src)
 		dormant_disease.set_virus_modifiers(dormant_disease.virus_modifiers | DORMANT)
 		dormant_disease.set_spread_flags(DISEASE_SPREAD_NON_CONTAGIOUS)
-		dormant_disease.spread_text = "None"
-		dormant_disease.visibility_flags |= HIDDEN_SCANNER
+		dormant_disease.set_spread_text("None")
+		dormant_disease.set_visibility_flags(dormant_disease.visibility_flags | HIDDEN_SCANNER)
 		force_contagion(dormant_disease, TRUE)
 		return TRUE
 

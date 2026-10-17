@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/computer_hardware/network_card)
 	after_init(0, then(PROC_REF(assign_identification_id)))
 
 /obj/item/computer_hardware/network_card/proc/assign_identification_id(datum/act/timer/A)
-	identification_id = GLOB.ntnet_card_uid
+	set_identification_id(GLOB.ntnet_card_uid)
 	GLOB.ntnet_card_uid++
 
 /obj/item/computer_hardware/network_card/advanced

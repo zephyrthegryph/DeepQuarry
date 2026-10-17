@@ -16,7 +16,7 @@
 	var/body_type = /datum/body/simple
 	/// Toughness: how much injury load this mob can carry (simple plan), or
 	/// the reference scale for its vitality readouts (other plans). Tuned per
-	/// subtype. Body factors adjust it (BF_ENDURANCE_FLAT / BF_ENDURANCE_MULT).
+	/// subtype. Body factors adjust it (STAT_ENDURANCE_FLAT / STAT_ENDURANCE_MULT).
 	var/endurance = DEFAULT_ENDURANCE
 	/// What the mob's body is made of when it has no per-part biology (simple
 	/// mobs, bots). Humanoids resolve biology per organ instead.
@@ -41,15 +41,16 @@
 	return body ? body.biology_of(null) : biology
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
-/// the chem-caused afflictions are stale. The factors are NOT dirtied here
-/// (C12): the snapshot rebuild dirties them only when a factor reagent crosses
-/// a dose band, appears or leaves (update_reagent_factor_bands()).
+/// the chem-caused afflictions are stale. The factors follow the doses at once
+/// (settle_reagent_factors(): each factor reagent has a dose record that reads its volume).
 /mob/living/on_reagent_change(changetype)
 	. = ..()
 	if(!body)
 		return
-	body.reagent_bands_pending = TRUE
+	body.reagent_change_pending = TRUE
 	body.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS)
+	// The factors follow a reagent the moment its holder changes: the volumes are read and the dose records follow now.
+	body.settle_reagent_factors()
 
 /datum/body
 	/// The mob this body belongs to.
@@ -119,8 +120,8 @@
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)
-	// The physiology reads factors and organs.
-	if(domains & (BODY_DIRTY_FACTORS | BODY_DIRTY_ORGANS))
+	// The physiology reads organs.
+	if(domains & BODY_DIRTY_ORGANS)
 		domains |= BODY_DIRTY_PHYSIOLOGY
 	var/gained = domains & ~dirty
 	set_dirty(dirty | domains)
@@ -149,7 +150,7 @@
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
 	// Interference markers live on afflictions: the snapshot folds them in.
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
+	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_added()
 	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, TRUE)
 	return TRUE
@@ -163,7 +164,7 @@
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
-	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
+	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT)
 	A.on_removed()
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
@@ -179,7 +180,7 @@
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
-	A.active_symptoms = null
+	A.set_active_symptoms(null)
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
 	return TRUE
@@ -324,9 +325,9 @@
 	regeneration_read_at = now
 	var/regeneration = regeneration_level()
 	if(regeneration > 0)
-		LAZYSET(treatment_snapshot, TREAT_REGENERATION, regeneration)
+		set_treatment_snapshot_at(TREAT_REGENERATION, regeneration)
 	else if(treatment_snapshot)
-		treatment_snapshot -= TREAT_REGENERATION
+		remove_treatment_snapshot(TREAT_REGENERATION)
 		UNSETEMPTY(treatment_snapshot)
 
 /// Total volume of `reagent_id` across the mob's holders (snapshot).
@@ -345,15 +346,15 @@
 
 /datum/body/proc/build_treatment_snapshot()
 	set_dirty(dirty & (~BODY_DIRTY_TREATMENT))
-	treatment_snapshot = null
-	reagent_interference = null
-	reagent_volumes = collect_reagent_volumes(reagent_volumes)
+	set_treatment_snapshot(null)
+	set_reagent_interference(null)
+	refresh_reagent_volumes()
 
 	for(var/datum/affliction/A as anything in afflictions)
 		for(var/reagent_id in A.interferes_with)
 			LAZYINITLIST(reagent_interference)
 			var/current = reagent_interference[reagent_id]
-			reagent_interference[reagent_id] = (isnull(current) ? 1 : current) * A.interferes_with[reagent_id]
+			set_reagent_interference_at(reagent_id, (isnull(current) ? 1 : current) * A.interferes_with[reagent_id])
 
 	if(reagent_volumes)
 		var/strength = chem_heal_strength()
@@ -373,11 +374,11 @@
 			scale *= strength
 			for(var/tag in tags)
 				LAZYINITLIST(treatment_snapshot)
-				treatment_snapshot[tag] = min(treatment_snapshot[tag] + tags[tag] * scale, DQ_CHEM_DOSE_CAP)
+				set_treatment_snapshot_at(tag, min(treatment_snapshot[tag] + tags[tag] * scale, DQ_CHEM_DOSE_CAP))
 
 	// Regeneration is patched in on read (refresh_regeneration()); force a re-read.
 	regeneration_read_at = null
-	update_reagent_factor_bands()
+	sync_reagent_doses()
 
 /// Reagent ID -> volume across every holder the mob metabolises from, or
 /// null when there are none. `reuse` (the previous result) is emptied and refilled
@@ -419,9 +420,7 @@
 
 /// Called once per Life tick. Healthy bodies return immediately.
 /datum/body/proc/life_tick()
-	if(factors_stale())
-		recompute_factors()
-	if(factors)
+	if(factor_effects_due())
 		tick_factor_effects()
 	if(!always_evaluate && !LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS))
 		return
@@ -446,11 +445,15 @@
 	if(dirty & BODY_DIRTY_VITALS)
 		recompute_vitals()
 
+/// Brings every cache a question reads up to date (the owner's settle_for_reads()).
+/datum/body/proc/settle()
+	ensure_vitals()
+
 /datum/body/proc/recompute_vitals()
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
-	pain = 0
-	consciousness = 100
-	vitality = 1
+	set_pain(0)
+	set_consciousness(100)
+	set_vitality(1)
 
 /// TRUE when a hook on the owner takes the status question over: the body is held alive (a dormant nanoform core) and neither death nor
 /// unconsciousness is asked. A question, not a change: the action ends refused for whoever listens for that.

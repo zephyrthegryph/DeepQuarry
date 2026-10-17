@@ -242,7 +242,7 @@
 	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
 	TEST_ASSERT(target, "the medical records software exists")
 	P.remove_software(target.id)
-	P.ram = 100
+	P.set_ram(100)
 	P.touch_window(target.name)
 	hci_answer(P, TRUE)
 	settle()
@@ -256,9 +256,9 @@
 	var/mob/living/silicon/pai/P = make_pai(H)
 	var/datum/pai_software/target = GLOB.pai_software_by_key["med_records"]
 	P.remove_software(target.id)
-	P.ram = 100
+	P.set_ram(100)
 	P.touch_window(target.name)
-	P.ram = 0
+	P.set_ram(0)
 	hci_answer(P, TRUE)
 	settle()
 	TEST_ASSERT(!P.software[target.id], "a pAI that spent its RAM meanwhile installs nothing")

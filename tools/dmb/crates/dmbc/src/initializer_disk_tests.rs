@@ -74,7 +74,7 @@ fn run(source: &str, memo: Option<&crate::lowering_memo::ProcedureMemo>) -> Lowe
     lower_plan(
         (&frontend, plan),
         &evaluator,
-        host,
+        &pinned_host,
         None,
         true,
         LowerOptions {

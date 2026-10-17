@@ -197,13 +197,13 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 /obj/item/technomancer_catalog/proc/ui_act_tab_choice(datum/act/op/A, tab_arg)
 	if(!ui_gate(A))
 		return FALSE
-	tab = tab_arg
+	set_tab(tab_arg)
 	return TRUE
 
 /obj/item/technomancer_catalog/proc/ui_act_spell_category(datum/act/op/A, category)
 	if(!ui_gate(A))
 		return FALSE
-	spell_tab = category
+	set_spell_tab(category)
 	return TRUE
 
 /obj/item/technomancer_catalog/proc/ui_act_spell_choice(datum/act/op/A, name)
@@ -223,7 +223,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	if(new_spell && core)
 		if(new_spell.cost <= budget)
 			if(!core.has_spell(new_spell))
-				budget -= new_spell.cost
+				set_budget(budget - new_spell.cost)
 				to_chat(H, span_notice("You have just bought [new_spell.name]."))
 				core.add_spell(new_spell.obj_path, new_spell.name, new_spell.ability_icon_state)
 			else
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 			break
 	if(desired)
 		if(desired.cost <= budget)
-			budget -= desired.cost
+			set_budget(budget - desired.cost)
 			to_chat(H, span_notice("You have just bought \a [desired.name]."))
 			var/obj/O = new desired.obj_path(get_turf(H))
 			registry_join(REGISTRY_TECHNOMANCER_BELONGINGS, O)
@@ -270,7 +270,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 		for(var/obj/spellbutton/spell in core.spells)
 			for(var/datum/technomancer/spell/spell_datum in spell_instances)
 				if(spell_datum.obj_path == spell.spellpath)
-					budget += spell_datum.cost
+					set_budget(budget + spell_datum.cost)
 					core.remove_spell(spell)
 					break
 	return TRUE
@@ -300,7 +300,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 				to_chat(user, span_warning("\The [src] will not allow you to overflow your maximum budget by refunding that."))
 				return OP_PASS
 			else
-				budget = budget + E.cost
+				set_budget(budget + E.cost)
 				to_chat(user, span_notice("You've refunded \the [AM]."))
 
 				// We sadly need to do special stuff here or else people who refund cores with spells will lose points permanently.
@@ -309,7 +309,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 					for(var/obj/spellbutton/spell in core.spells)
 						for(var/datum/technomancer/spell/spell_datum in spell_instances)
 							if(spell_datum.obj_path == spell.spellpath)
-								budget += spell_datum.cost
+								set_budget(budget + spell_datum.cost)
 								to_chat(user, span_notice("[spell.name] was inside \the [core], and was refunded."))
 								core.remove_spell(spell)
 								break

@@ -128,15 +128,15 @@
 
 /datum/affliction/wound/proc/apply_current_stage()
 	min_damage = stage_damage(current_stage)
-	desc = stage_desc(current_stage)
-	name = desc
+	set_desc(stage_desc(current_stage))
+	set_name(desc)
 
 /// Push the physical model into the affliction model: severity (for vitality
 /// readouts), load participation, and the limb's integrity cache.
 /datum/affliction/wound/proc/sync()
 	var/obj/item/organ/external/E = location
 	var/scale = (istype(E) && E.max_damage) ? E.max_damage : 100
-	injury_category = (damage > 0 && !internal) ? wound_category : null
+	set_injury_category((damage > 0 && !internal) ? wound_category : null)
 	set_severity(internal ? min(damage * 2, AFFLICTION_SEVERITY_TERMINAL) : 100 * damage / scale)
 	if(istype(E))
 		E.set_integrity_dirty(TRUE)
@@ -188,7 +188,7 @@
 	return TRUE
 
 /datum/affliction/wound/proc/merge_wound(datum/affliction/wound/other)
-	damage += other.damage
+	set_damage(damage + other.damage)
 	amount += other.amount
 	bleed_timer += other.bleed_timer
 	germ_level = max(germ_level, other.germ_level)
@@ -232,7 +232,7 @@
 		return amount
 	var/healed = min(damage, amount)
 	amount -= healed
-	damage -= healed
+	set_damage(damage - healed)
 	if(length(stages))
 		while(wound_damage() < stage_damage(current_stage) && current_stage < length(stages))
 			current_stage++
@@ -244,7 +244,7 @@
 
 /// Reopen the wound by `amount`.
 /datum/affliction/wound/proc/open_wound(amount)
-	damage += amount
+	set_damage(damage + amount)
 	bleed_timer += amount
 	if(length(stages))
 		while(current_stage > 1 && stage_damage(current_stage - 1) <= damage / src.amount)

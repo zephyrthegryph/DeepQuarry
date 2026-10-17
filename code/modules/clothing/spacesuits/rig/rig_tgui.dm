@@ -179,7 +179,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 /obj/item/rig/proc/ui_act_toggle_suit_lock(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	locked = !locked
+	set_locked(!locked)
 	. = TRUE
 
 /obj/item/rig/proc/ui_act_toggle_piece(datum/act/op/A, piece)
@@ -213,7 +213,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 					module.activate(FALSE, user)
 				. = TRUE
 			if("select_charge_type")
-				module.charge_selected = charge_type
+				module.set_charge_selected(charge_type)
 				. = TRUE
 
 /obj/item/rig/proc/ui_act_tank_settings(datum/act/op/A)

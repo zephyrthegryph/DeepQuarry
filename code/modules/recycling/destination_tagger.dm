@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/destTagger)
 	var/new_tag = tag
 	if(!(new_tag in GLOB.tagger_locations))
 		return FALSE
-	currTag = new_tag
+	set_currTag(new_tag)
 	return TRUE
 
 /obj/item/destTagger/proc/ui_act_new_tag(datum/act/op/A, tag)
@@ -59,5 +59,5 @@ CAPABILITIES(/obj/item/destTagger)
 	if(dest_tag in GLOB.tagger_locations)
 		return FALSE
 	GLOB.tagger_locations[dest_tag] = null
-	currTag = dest_tag
+	set_currTag(dest_tag)
 	return TRUE

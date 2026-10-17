@@ -21,6 +21,12 @@ GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 
 // OP_PURE_ACTIVE and OP_PURE_GUARD are in code/__defines/engine/parts.dm (every file that writes uses them).
 
+/// Brings the state a condition or requirement is about to read up to date: caches that refresh themselves on first read (a body's cached vitals) write
+/// when they do, which a pure evaluation may not. The engine calls this before op_pure_begin() for the op's holder, actor and target; a type whose
+/// answers sit behind such a cache overrides it (a mob settles its body; a pod settles whoever is inside). Writes here are allowed: it runs outside the guard.
+/datum/proc/settle_for_reads()
+	return
+
 /// Condition and requirement evaluation starts: writes, publications and messages are reported until the matching op_pure_end().
 /proc/op_pure_begin()
 	GLOB.op_pure_depth++

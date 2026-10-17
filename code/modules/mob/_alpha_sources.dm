@@ -31,4 +31,4 @@ SOURCE_DEF(alpha_creature_cloak)
 	if(animate_time)
 		animate(src, alpha = target_alpha, time = animate_time)
 	else
-		alpha = target_alpha
+		set_alpha(target_alpha)

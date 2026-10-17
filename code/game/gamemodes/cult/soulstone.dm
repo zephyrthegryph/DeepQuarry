@@ -156,8 +156,8 @@ CAPABILITIES(/obj/structure/constructshell)
 	S.set_icon(T.icon)
 	S.set_icon_state(T.icon_state)
 	S.overlays = T.overlays
-	S.color = rgb(254,0,0)
-	S.alpha = 127
+	S.set_color(rgb(254,0,0))
+	S.set_alpha(127)
 	if (T.client)
 		T.client.mob = S
 	S.cancel_camera()

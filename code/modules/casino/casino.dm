@@ -419,44 +419,66 @@ CAPABILITIES(/obj/item/roulette_ball/hollow)
 
 CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
-	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning))), then(PROC_REF(interaction_use)))
+	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning)), req(PROC_REF(wheel_operator_ready), silent = TRUE), req(PROC_REF(wheel_interval_valid)), req(PROC_REF(wheel_spin_allowed))),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose what to do", "title" = "Wheel Of Fortune", "choices" = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"), "timeout" = 0), step = "wheel_choice", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))),
+		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Put the desired interval (1-1000)", "title" = "Set Interval"), step = "wheel_interval", keeps = 0, when = PROC_REF(wheel_interval_requested)), then(PROC_REF(wheel_use_done)))
 	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
 	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
-	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_setinterval_verb)))
+	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req(PROC_REF(wheel_interval_admission)), req(PROC_REF(wheel_operator_ready), silent = TRUE), req(PROC_REF(wheel_interval_valid))),
+		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Put the desired interval (1-1000)", "title" = "Set Interval"), step = "wheel_interval", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), then(PROC_REF(wheel_interval_done)))
 
 MSG_DEF_SELF(casino/wheel_spinning, "the wheel of fortune is already spinning")
 MSG_DEF_SELF(casino/access_denied, "access denied")
+MSG_DEF_SELF(casino/invalid_interval, "Invalid interval.")
+MSG_DEF_SELF(casino/invalid_price, "Invalid price.")
+MSG_DEF_SELF(casino/public_spin_disabled, "The Wheel makes a sad beep, public spins are not enabled right now...")
 
 /// Requirement: the wheel isn't mid-spin.
 /obj/machinery/wheel_of_fortune/proc/not_spinning(datum/act/op/A)
+	// The old hand operation ended before its question; later answers did not recheck busy.
+	if(A.started)
+		return null
 	return (!work_busy(src)) ? null : MSG(casino/wheel_spinning)
 
-/obj/machinery/wheel_of_fortune/proc/interaction_use(datum/act/op/A)
-	wheel_use_stage(A.actor, A.held, list())
+/obj/machinery/wheel_of_fortune/proc/wheel_operator_ready(datum/act/op/A)
+	return A.actor.incapacitated() ? "you can't do that right now" : null
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_requested(datum/act/op/A)
+	return A.step_value("wheel_choice") == "Set the interval"
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_valid(datum/act/op/A)
+	var/answer = A.step_value("wheel_interval")
+	if(!isnull(answer) && (!isnum(answer) || answer < 1 || answer > 1000))
+		return MSG(casino/invalid_interval)
+	return null
+
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_admission(datum/act/op/A)
+	// Preserve the independent menu's initial admission without adding a resumed range check.
+	if(A.started)
+		return null
+	var/datum/entry/part/req/admission = all_of(req_adjacent(), req_capable())
+	return admission.check(A)
+
+/obj/machinery/wheel_of_fortune/proc/wheel_spin_allowed(datum/act/op/A)
+	if(A.step_value("wheel_choice") == "Spin the Wheel! (Not Lottery)" && public_spin == 0)
+		return MSG(casino/public_spin_disabled)
+	return null
+
+/obj/machinery/wheel_of_fortune/proc/wheel_use_done(datum/act/op/A)
+	switch(A.step_value("wheel_choice"))
+		if("Spin the Wheel! (Not Lottery)")
+			to_chat(A.actor, span_notice("You spin the wheel!"))
+			spin_the_wheel("not_lottery")
+		if("Set the interval")
+			wheel_interval_done(A)
 	return OP_OK
 
-/obj/machinery/wheel_of_fortune/proc/wheel_use_stage(mob/user, obj/item/held, list/wheel_answers)
-	if(user.incapacitated())
-		return TRUE
-	if(ishuman(user) || isrobot(user))
-		if(!("k410" in wheel_answers))
-			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_use_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k410", wheel_held = held, question = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
-			return
-		var/_answer_k410 = wheel_answers["k410"]
-		if(isnull(_answer_k410))
-			return
-		switch(_answer_k410)
-			if("Cancel")
-				return TRUE
-			if("Spin the Wheel! (Not Lottery)")
-				if(public_spin == 0)
-					to_chat(user,span_notice("The Wheel makes a sad beep, public spins are not enabled right now..."))
-					return TRUE
-				to_chat(user,span_notice("You spin the wheel!"))
-				spin_the_wheel("not_lottery")
-			if("Set the interval")
-				wheel_interval_stage(user, list())
-	return TRUE
+/obj/machinery/wheel_of_fortune/proc/wheel_interval_done(datum/act/op/A)
+	var/answer = A.step_value("wheel_interval")
+	if(!isnull(answer))
+		set_interval(answer)
+		to_chat(A.actor, span_notice("You set the interval to [interval]"))
+	return OP_OK
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/wheel_of_fortune/proc/can_manage(datum/act/op/A)
@@ -500,10 +522,10 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 			if("Toggle Public Spins")
 				if(public_spin == 0)
-					public_spin = 1
+					set_public_spin(1)
 					to_chat(user,span_notice("Public spins has been enabled."))
 					return TRUE
-				public_spin = 0
+				set_public_spin(0)
 				to_chat(user,span_notice("Public spins has been disabled."))
 
 			if("Reset Lottery")
@@ -575,31 +597,6 @@ MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
 
 		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, and the winner is [result]!"))
 
-/obj/machinery/wheel_of_fortune/proc/interaction_setinterval_verb(datum/act/op/A)
-	interaction_setinterval(A.actor)
-	return OP_OK
-
-/// Old verb body, also called directly from the attack_hand "Set the interval" menu option.
-/obj/machinery/wheel_of_fortune/proc/interaction_setinterval(mob/user)
-	return wheel_interval_stage(user, list())
-
-/obj/machinery/wheel_of_fortune/proc/wheel_interval_stage(mob/user, list/wheel_answers)
-	if(user.incapacitated())
-		return
-	if(ishuman(user) || isrobot(user))
-		if(!("k556" in wheel_answers))
-			open_request(src, /datum/prompt/number/wheel_review, PROC_REF(wheel_interval_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k556", question = "Put the desired interval (1-1000)", title = "Set Interval")
-			return
-		var/new_interval = wheel_answers["k556"]
-		if(isnull(new_interval))
-			return
-		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
-			to_chat(user, span_notice("Invalid interval."))
-			return
-		interval = new_interval
-		to_chat(user, span_notice("You set the interval to [interval]"))
-	return
-
 //
 //Sentient Prize Terminal
 //
@@ -619,99 +616,105 @@ MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
 	var/obj/item/clothing/accessory/collar/casinosentientprize/selected_collar = null
 
 CAPABILITIES(/obj/machinery/casinosentientprize_handler)
+	op("casino_set_price", ai(), by(0), ungated(), needs(req(PROC_REF(actor_not_incapacitated), silent = TRUE), req(PROC_REF(price_valid))),
+		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Select the desired price (1-1000)", "title" = "Set Price"), step = "price", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), then(PROC_REF(price_done)))
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
 	ref_one(nameof(selected_collar), /obj/item/clothing/accessory/collar/casinosentientprize)
-	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
+	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(actor_not_incapacitated), silent = TRUE), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), asks(/datum/prompt/choice, fields = list("question" = "Choose what to do", "title" = "SPASM", "choices" = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"), "timeout" = 0), step = "k604", when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), asks(/datum/prompt/choice, fields = list("question" = "Select a prize", "title" = "Chose a collar", "choices" = computed(PROC_REF(spasm_prize_choices)), "timeout" = 0), step = "k624", when = PROC_REF(spasm_use_selecting)), asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to become a sentient prize?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k639", when = PROC_REF(spasm_use_becoming)), asks(/datum/prompt/choice, fields = list("question" = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "title" = "Confirm Item TF Preference", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k645", when = PROC_REF(spasm_use_becoming_confirmed)), then(PROC_REF(interaction_use)))
 	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
-	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), then(PROC_REF(interaction_collar)))
-	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage))), then(PROC_REF(interaction_id)))
+	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(spasm_collar_question)), "title" = "Confirm Sentient Prize Release", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k717", when = PROC_REF(spasm_collar_owner)), then(PROC_REF(interaction_collar)))
+	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage))), asks(/datum/prompt/choice, fields = list("question" = "Choose what to do (Management)", "title" = "SPASM (Management)", "choices" = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"), "timeout" = 0), step = "k743", when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(spasm_wipe_question)), "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k770", when = PROC_REF(spasm_id_wiping)), then(PROC_REF(interaction_id)))
 
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
 
+/// The collars a prize can be picked from.
+/obj/machinery/casinosentientprize_handler/proc/spasm_prize_choices(datum/act/op/A)
+	return collar_list || list()
+
+/// Question gate: the user chose to select a prize.
+/obj/machinery/casinosentientprize_handler/proc/spasm_use_selecting(datum/act/op/A)
+	return A.step_value("k604") == "Select Prize"
+
+/// Question gate: the user chose to become a prize and may (has a client, has no collar yet).
+/obj/machinery/casinosentientprize_handler/proc/spasm_use_becoming(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(A.step_value("k604") != "Become Prize (Please examine yourself first)")
+		return FALSE
+	if(!user.client)
+		return FALSE
+	return !(user.client.ckey in sentientprizes_ckeys_list)
+
+/// Question gate: the user confirmed becoming a prize.
+/obj/machinery/casinosentientprize_handler/proc/spasm_use_becoming_confirmed(datum/act/op/A)
+	return spasm_use_becoming(A) && A.step_value("k639") == "Yes"
+
+/// The SPASM's use.
 /obj/machinery/casinosentientprize_handler/proc/interaction_use(datum/act/op/A)
-	spasm_use(A.actor, A.held)
-	return OP_OK
-
-/// The SPASM's use; it asks its questions by re-running itself with the same arguments.
-/obj/machinery/casinosentientprize_handler/proc/spasm_use(mob/living/user, obj/item/held = null)
-	if(user.incapacitated())
-		return TRUE
-
-	if(ishuman(user) || isrobot(user))
-		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
-		if(isnull(_answer_k604))
-			return
-		switch(_answer_k604)
-			if("Cancel")
-				return TRUE
-			if("Show selected Prize")
-				if(QDELETED(selected_collar))
-					if(selected_collar)
-						rel_remove(src, nameof(collar_list), selected_collar)
-						LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
-						rel_clear(src, nameof(selected_collar))
-					to_chat(user, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
-					return TRUE
-				to_chat(user, span_warning("Sentient Prize information"))
-				to_chat(user, span_notice("Name: [selected_collar.sentientprizename]"))
-				to_chat(user, span_notice("Description: [selected_collar.sentientprizeflavor]"))
-				to_chat(user, span_notice("OOC: [selected_collar.sentientprizeooc]"))
-				to_chat(user, span_notice("Allows item prize TF: [selected_collar.sentientprizeitemtf ? "Yes (you may choose to turn your prize into an item when claiming!)" : "No"]"))
-				if(selected_collar.ownername != null)
-					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
-
-			if("Select Prize")
-				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Select a prize", title = "Chose a collar", choices = collar_list || list())
-				if(isnull(_answer_k624))
-					return
-				rel_set(src, nameof(selected_collar), _answer_k624)
-				if(QDELETED(selected_collar))
+	var/mob/living/user = A.actor
+	var/_answer_k604 = A.step_value("k604")
+	switch(_answer_k604)
+		if("Cancel")
+			return OP_OK
+		if("Show selected Prize")
+			if(QDELETED(selected_collar))
+				if(selected_collar)
 					rel_remove(src, nameof(collar_list), selected_collar)
-					LAZYREMOVE(sentientprizes_ckeys_list, selected_collar?.sentientprizeckey)
-					to_chat(user, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
+					remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
 					rel_clear(src, nameof(selected_collar))
-					return TRUE
+				to_chat(user, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
+				return OP_OK
+			to_chat(user, span_warning("Sentient Prize information"))
+			to_chat(user, span_notice("Name: [selected_collar.sentientprizename]"))
+			to_chat(user, span_notice("Description: [selected_collar.sentientprizeflavor]"))
+			to_chat(user, span_notice("OOC: [selected_collar.sentientprizeooc]"))
+			to_chat(user, span_notice("Allows item prize TF: [selected_collar.sentientprizeitemtf ? "Yes (you may choose to turn your prize into an item when claiming!)" : "No"]"))
+			if(selected_collar.ownername != null)
+				to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
-			if("Become Prize (Please examine yourself first)") //Its awkward, but no easy way to obtain flavor_text due to server not loading text of mob until its been examined at least once.
-				if(!user.client)
-					return TRUE
-				var/safety_ckey = user.client.ckey
-				if(safety_ckey in sentientprizes_ckeys_list)
-					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
-					return TRUE
-				var/confirm = rerun_ask(user, "k639", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(confirm))
-					return
-				if(!confirm)
-					return TRUE
-				if(confirm == "No")
-					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
-					return TRUE
-				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(confirmitemtf))
-					return
-				var/allowitemtf = FALSE
-				if(confirmitemtf == "Yes")
-					allowitemtf = TRUE
-				if(safety_ckey in sentientprizes_ckeys_list)
-					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
-					return TRUE
-				to_chat(user, span_warning("You are now a prize!"))
-				LAZYADD(sentientprizes_ckeys_list, user.ckey)
-				var/obj/item/clothing/accessory/collar/casinosentientprize/C = new(src.loc)
-				C.sentientprizename = "[user.name]"
-				C.sentientprizeckey = "[user.ckey]"
-				C.sentientprizeflavor = user.bio.flavor_text
-				C.sentientprizeooc = user.identity().ooc_notes
-				C.sentientprizeitemtf = allowitemtf
-				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
-				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
-				C.set_icon_state("casinoslave_available")
-				rel_add(src, nameof(collar_list), C)
+		if("Select Prize")
+			var/_answer_k624 = A.step_value("k624")
+			rel_set(src, nameof(selected_collar), _answer_k624)
+			if(QDELETED(selected_collar))
+				rel_remove(src, nameof(collar_list), selected_collar)
+				remove_sentientprizes_ckeys_list(selected_collar?.sentientprizeckey)
+				to_chat(user, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
+				rel_clear(src, nameof(selected_collar))
+				return OP_OK
 
-				spawn_casinochips(casinosentientprize_price, src.loc)
-	return TRUE
+		if("Become Prize (Please examine yourself first)") //Its awkward, but no easy way to obtain flavor_text due to server not loading text of mob until its been examined at least once.
+			if(!user.client)
+				return OP_OK
+			var/safety_ckey = user.client.ckey
+			if(safety_ckey in sentientprizes_ckeys_list)
+				to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
+				return OP_OK
+			var/confirm = A.step_value("k639")
+			if(confirm == "No")
+				to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
+				return OP_OK
+			var/confirmitemtf = A.step_value("k645")
+			var/allowitemtf = FALSE
+			if(confirmitemtf == "Yes")
+				allowitemtf = TRUE
+			if(safety_ckey in sentientprizes_ckeys_list)
+				to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
+				return OP_OK
+			to_chat(user, span_warning("You are now a prize!"))
+			add_sentientprizes_ckeys_list(user.ckey)
+			var/obj/item/clothing/accessory/collar/casinosentientprize/C = new(src.loc)
+			C.sentientprizename = "[user.name]"
+			C.sentientprizeckey = "[user.ckey]"
+			C.sentientprizeflavor = user.bio.flavor_text
+			C.sentientprizeooc = user.identity().ooc_notes
+			C.sentientprizeitemtf = allowitemtf
+			C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
+			C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
+			C.set_icon_state("casinoslave_available")
+			rel_add(src, nameof(collar_list), C)
+
+			spawn_casinochips(casinosentientprize_price, src.loc)
+	return OP_OK
 
 MSG_DEF_SELF(casino/prizes_disabled, "sentient prize sales are currently disabled")
 MSG_DEF_SELF(casino/select_prize_first, "select a prize first")
@@ -734,98 +737,100 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	to_chat(user, span_warning("This Sentient Prize is already owned! If you are the owner you can release the prize by swiping the collar on the SPASM!"))
 	return OP_OK
 
+/// Question gate: only the prize's owner is asked to release it.
+/obj/machinery/casinosentientprize_handler/proc/spasm_collar_owner(datum/act/op/A)
+	var/obj/item/clothing/accessory/collar/casinosentientprize/C = A.held
+	return read_once(A.actor.name) == C.ownername
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_collar_question(datum/act/op/A)
+	var/obj/item/clothing/accessory/collar/casinosentientprize/C = A.held
+	return "Are you sure you want to wipe [C.sentientprizename] entry?"
+
+/// Releasing a prize collar.
 /obj/machinery/casinosentientprize_handler/proc/interaction_collar(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/clothing/accessory/collar/casinosentientprize/held = A.held
-	if(user.name != held.sentientprizename && user.name != held.ownername)
+	var/obj/item/clothing/accessory/collar/casinosentientprize/C = A.held
+	if(user.name != C.sentientprizename && user.name != C.ownername)
 		to_chat(user, span_warning("This sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member."))
 		return OP_OK
-	spasm_collar(user, held)
-	return OP_OK
-
-/// Releasing a prize collar; it asks its question by re-running itself with the same arguments.
-/obj/machinery/casinosentientprize_handler/proc/spasm_collar(mob/user, obj/item/clothing/accessory/collar/casinosentientprize/C)
 	if(user.name == C.sentientprizename)
 		if(!C.ownername)
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please select your entry and insert chips. Or contact staff if you need assistance."))
-			return TRUE
+			return OP_OK
 		if(C.sentientprizename != C.ownername)
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please ask your owner to free you with collar swipe on the SPASM, or contact staff if you need assistance."))
-			return TRUE
+			return OP_OK
 	if(user.name == C.ownername)
-		var/confirm = rerun_ask(user, "k717", PROC_REF(spasm_collar), args, /datum/prompt/choice, question = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"), buttons = TRUE)
-		if(isnull(confirm))
-			return
+		var/confirm = A.step_value("k717")
 		if(confirm == "Yes")
 			to_chat(user, span_warning("[C.sentientprizename] collar has been deleted from registry!"))
 			C.set_icon_state("casinoslave")
 			C.name = "disabled Sentient Prize Collar: [C.sentientprizename]"
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
-			LAZYREMOVE(sentientprizes_ckeys_list, C.sentientprizeckey)
+			remove_sentientprizes_ckeys_list(C.sentientprizeckey)
 			C.sentientprizeckey = null
 			rel_remove(src, nameof(collar_list), C)
-	return TRUE
+	return OP_OK
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/casinosentientprize_handler/proc/can_manage(datum/act/op/A)
 	return (!!check_access(A.held)) ? null : MSG(casino/access_denied)
 
+/// Question gate: the manager chose to wipe the selected entry, and one is selected.
+/obj/machinery/casinosentientprize_handler/proc/spasm_id_wiping(datum/act/op/A)
+	return A.step_value("k743") == "Wipe Selected Prize Entry" && selected_collar && !QDELETED(selected_collar)
+
+/obj/machinery/casinosentientprize_handler/proc/spasm_wipe_question(datum/act/op/A)
+	return "Are you sure you want to wipe [selected_collar.sentientprizename] entry?"
+
+/// The management menu.
 /obj/machinery/casinosentientprize_handler/proc/interaction_id(datum/act/op/A)
-	spasm_id(A.actor, A.held)
-	return OP_OK
-
-/// The management menu; it asks its questions by re-running itself with the same arguments.
-/obj/machinery/casinosentientprize_handler/proc/spasm_id(mob/user, obj/item/W)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
-	if(ishuman(user) || isrobot(user))
-		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(spasm_id), args, /datum/prompt/choice, question = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
-		if(isnull(_answer_k743))
-			return
-		switch(_answer_k743)
-			if("Cancel")
-				return TRUE
+	var/_answer_k743 = A.step_value("k743")
+	switch(_answer_k743)
+		if("Cancel")
+			return OP_OK
 
-			if("Toggle Sentient Prize Sales")
-				if(casinosentientprize_sale == "disabled")
-					set_casinosentientprize_sale("enabled")
-					set_icon_state("casinoslave_hub_on")
-					to_chat(user,span_notice("Prize sale has been enabled."))
-				else
-					set_casinosentientprize_sale("disabled")
-					set_icon_state("casinoslave_hub_off")
-					to_chat(user,span_notice("Prize sale has been disabled."))
+		if("Toggle Sentient Prize Sales")
+			if(casinosentientprize_sale == "disabled")
+				set_casinosentientprize_sale("enabled")
+				set_icon_state("casinoslave_hub_on")
+				to_chat(user,span_notice("Prize sale has been enabled."))
+			else
+				set_casinosentientprize_sale("disabled")
+				set_icon_state("casinoslave_hub_off")
+				to_chat(user,span_notice("Prize sale has been disabled."))
 
-			if("Wipe Selected Prize Entry")
-				if(!selected_collar)
-					to_chat(user, span_warning("No collar selected!"))
-					return TRUE
-				if(QDELETED(selected_collar))
+		if("Wipe Selected Prize Entry")
+			if(!selected_collar)
+				to_chat(user, span_warning("No collar selected!"))
+				return OP_OK
+			if(QDELETED(selected_collar))
+				rel_remove(src, nameof(collar_list), selected_collar)
+				remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
+				to_chat(user, span_warning("Collar has been destroyed!"))
+				rel_clear(src, nameof(selected_collar))
+				return OP_OK
+			var/safety_ckey = selected_collar.sentientprizeckey
+			var/confirm = A.step_value("k770")
+			if(confirm == "Yes")
+				if(safety_ckey == selected_collar.sentientprizeckey)
+					to_chat(user, span_warning("[selected_collar.sentientprizename] collar has been deleted from registry!"))
+					selected_collar.icon_state = "casinoslave"
+					selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
+					selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
+					remove_sentientprizes_ckeys_list(selected_collar.sentientprizeckey)
+					selected_collar.sentientprizeckey = null
 					rel_remove(src, nameof(collar_list), selected_collar)
-					LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
-					to_chat(user, span_warning("Collar has been destroyed!"))
 					rel_clear(src, nameof(selected_collar))
-					return TRUE
-				var/safety_ckey = selected_collar.sentientprizeckey
-				var/confirm = rerun_ask(user, "k770", PROC_REF(spasm_id), args, /datum/prompt/choice, question = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
-				if(isnull(confirm))
-					return
-				if(confirm == "Yes")
-					if(safety_ckey == selected_collar.sentientprizeckey)
-						to_chat(user, span_warning("[selected_collar.sentientprizename] collar has been deleted from registry!"))
-						selected_collar.icon_state = "casinoslave"
-						selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
-						selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
-						LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)
-						selected_collar.sentientprizeckey = null
-						rel_remove(src, nameof(collar_list), selected_collar)
-						rel_clear(src, nameof(selected_collar))
-						return TRUE
-					to_chat(user, span_warning("Registry deletion aborted! Changed collar selection!"))
-					return TRUE
+					return OP_OK
+				to_chat(user, span_warning("Registry deletion aborted! Changed collar selection!"))
+				return OP_OK
 
-			if("Change Prize Value")
-				setprice(user)
-	return TRUE
+		if("Change Prize Value")
+			setprice(user)
+	return OP_OK
 
 /// The prize customises the item they become (each question optional), then is transformed.
 /obj/machinery/casinosentientprize_handler/proc/do_item_tf(mob/living/sentient_prize, target_item_name)
@@ -944,7 +949,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
 	if(item_color)
-		newitem.color = item_color
+		newitem.set_color(item_color)
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
@@ -1015,7 +1020,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		collar.set_icon_state("casinoslave")
 		collar.name = "disabled Sentient Prize Collar: [collar.sentientprizename]"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
-		LAZYREMOVE(sentientprizes_ckeys_list, collar.sentientprizeckey)
+		remove_sentientprizes_ckeys_list(collar.sentientprizeckey)
 		collar.sentientprizeckey = null
 		rel_remove(src, nameof(collar_list), collar)
 		if(selected_collar == collar)
@@ -1035,51 +1040,42 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		else if(declined_tf)
 			to_chat(user,span_notice("You decided to claim your prize without transformation."))
 		collar.set_icon_state("casinoslave_owned")
-		collar.ownername = user.name
+		collar.set_ownername(user.name)
 		collar.name =  "Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."
 		if(selected_collar == collar)
 			rel_clear(src, nameof(selected_collar))
 
 /obj/machinery/casinosentientprize_handler/proc/setprice(mob/living/user)
-	if(user.incapacitated())
-		return
-	if(ishuman(user) || isrobot(user))
-		open_request(src, /datum/prompt/number/casino_prize_price, PROC_REF(prize_price_answered), answerer = user)
+	// The legacy management flow delegates its leaf transaction to this script binding.
+	return perform_op(user, src, "casino_set_price", origin = ORIGIN_SYSTEM)
 
-/datum/prompt/number/casino_prize_price
-	question = "Select the desired price (1-1000)"
-	title = "Set Price"
+/obj/machinery/casinosentientprize_handler/proc/price_valid(datum/act/op/A)
+	var/answer = A.step_value("price")
+	if(!isnull(answer) && (!isnum(answer) || answer < 1 || answer > 1000))
+		return MSG(casino/invalid_price)
+	return null
+
+/obj/machinery/casinosentientprize_handler/proc/price_done(datum/act/op/A)
+	var/answer = A.step_value("price")
+	if(!isnull(answer))
+		casinosentientprize_price = answer
+		to_chat(A.actor, span_notice("You set the price to [casinosentientprize_price]"))
+	return OP_OK
+
+// Preserve the old 1..1000 presentation without rejecting outside answers in normalization.
+// The operation requirement handles range refusal and commits nothing.
+/datum/prompt/number/casino_setting
 	timeout = 0
-	recheck_on_open = TRUE
+	min_value = null
+	max_value = null
+	step = null
 
-/datum/prompt/number/casino_prize_price/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	var/mob/living/user = answerer
-	if(!istype(user) || QDELETED(user) || user.incapacitated() || !(ishuman(user) || isrobot(user)))
-		return "The operator cannot set the prize price."
-	if(!isnull(value) && (!isnum(value) || value < 1 || value > 1000))
-		return "The prize price is invalid."
-
-/datum/prompt/number/casino_prize_price/present(mob/user)
+/datum/prompt/number/casino_setting/present(mob/user)
 	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, 1000, 1, timeout, TRUE, GLOB.tgui_always_state)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
-
-/obj/machinery/casinosentientprize_handler/proc/prize_price_answered(datum/act/request/A)
-	var/mob/living/user = A.request.answerer
-	if(!A.answer)
-		if(!isnull(A.request.value) && !QDELETED(user))
-			if(A.request.last_error == "The prize price is invalid.")
-				to_chat(user, span_notice("Invalid price."))
-			SStgui.update_uis(src)
-		return
-	casinosentientprize_price = A.answer.value
-	to_chat(user, span_notice("You set the price to [casinosentientprize_price]"))
-	SStgui.update_uis(src)
 
 /obj/structure/casino_table/roulette_table/proc/roulette_stops(result, color)
 	set_icon_state(initial(icon_state))
@@ -1102,17 +1098,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	set_icon_state("wheel_of_fortune")
 
 
-/obj/machinery/wheel_of_fortune/proc/wheel_use_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = wheel_use_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/wheel_of_fortune/proc/wheel_use_apply(datum/act/request/A)
-	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.value
-	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_answers)
-
 /obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
 	if(!A.answer)
 		return
@@ -1123,17 +1108,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	var/datum/prompt/choice/wheel_review/ask = A.answer
 	ask.wheel_answers[ask.wheel_key] = ask.value
 	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_answers)
-
-/obj/machinery/wheel_of_fortune/proc/wheel_interval_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = wheel_interval_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/wheel_of_fortune/proc/wheel_interval_apply(datum/act/request/A)
-	var/datum/prompt/number/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.value
-	return wheel_interval_stage(ask.wheel_operator, ask.wheel_answers)
 
 /datum/prompt/choice/wheel_review
 	timeout = 0
@@ -1164,45 +1138,6 @@ CAPABILITIES(/datum/prompt/choice/wheel_review)
 /datum/prompt/choice/wheel_review/recheck_extra()
 	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)))
 		return "gone"
-
-/datum/prompt/number/wheel_review
-	timeout = 0
-	min_value = null
-	max_value = null
-	step = null
-	var/mob/wheel_operator
-	var/wheel_operator_expected = FALSE
-	var/obj/item/wheel_held
-	var/wheel_held_expected = FALSE
-	var/list/wheel_answers
-	var/wheel_key
-
-CAPABILITIES(/datum/prompt/number/wheel_review)
-	ref_one(nameof(wheel_operator), /mob)
-	ref_one(nameof(wheel_held), /obj/item)
-
-/datum/prompt/number/wheel_review/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_wheel_operator = wheel_operator
-	wheel_operator_expected = !isnull(captured_wheel_operator)
-	rel_clear(src, nameof(wheel_operator))
-	if(captured_wheel_operator && !QDELETED(captured_wheel_operator))
-		rel_set(src, nameof(wheel_operator), captured_wheel_operator)
-	var/obj/item/captured_wheel_held = wheel_held
-	wheel_held_expected = !isnull(captured_wheel_held)
-	rel_clear(src, nameof(wheel_held))
-	if(captured_wheel_held && !QDELETED(captured_wheel_held))
-		rel_set(src, nameof(wheel_held), captured_wheel_held)
-
-/datum/prompt/number/wheel_review/recheck_extra()
-	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)))
-		return "gone"
-
-/datum/prompt/number/wheel_review/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, 1000, 1, timeout, TRUE, GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
 
 /datum/prompt/choice/casino_purchase
 	timeout = 0

@@ -160,10 +160,10 @@ CAPABILITIES(/obj/machinery/shield_gen)
 		toggle()
 		return
 
-	average_field_strength = max(average_field_strength, 0)
+	set_average_field_strength(max(average_field_strength, 0))
 
 	if(length(field))
-		time_since_fail++
+		set_time_since_fail(time_since_fail + 1)
 		var/total_renwick_increase = 0 //the amount of renwicks that the generator can add this tick, over the entire field
 		var/renwick_upkeep_per_field = max(average_field_strength * dissipation_rate, min_dissipation)
 
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 			total_renwick_increase = assumed_charge * energy_conversion_rate
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
-				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
+				capacitor.set_stored_charge(capacitor.stored_charge - (max(assumed_charge / active_capacitors.len, 0))) // Drain from all active capacitors evenly.
 				work_start(capacitor)
 
 		else
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 
 		var/renwick_increase_per_field = total_renwick_increase/field.len //per field tile
 
-		average_field_strength = 0 //recalculate the average field strength
+		set_average_field_strength(0) //recalculate the average field strength
 		for(var/obj/effect/energy_field/E in field)
 			E.set_max_strength(target_field_strength)
 			var/amount_to_strengthen = renwick_increase_per_field - renwick_upkeep_per_field
@@ -206,13 +206,13 @@ CAPABILITIES(/obj/machinery/shield_gen)
 			else
 				E.adjust_strength(amount_to_strengthen, 0)
 
-			average_field_strength += E.get_strength()
+			set_average_field_strength(average_field_strength + (E.get_strength()))
 
-		average_field_strength /= length(field)
+		set_average_field_strength(average_field_strength / (length(field)))
 		if(average_field_strength < 1)
-			time_since_fail = 0
+			set_time_since_fail(0)
 	else
-		average_field_strength = 0
+		set_average_field_strength(0)
 
 /obj/machinery/shield_gen/proc/ui_act_toggle(datum/act/op/A)
 	var/mob/user = A.actor
@@ -223,19 +223,19 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	. = TRUE
 
 /obj/machinery/shield_gen/proc/ui_act_change_radius(datum/act/op/A, val)
-	field_radius = clamp(val, 0, max_field_radius)
+	set_field_radius(clamp(val, 0, max_field_radius))
 	. = TRUE
 
 /obj/machinery/shield_gen/proc/ui_act_strengthen_rate(datum/act/op/A, val)
-	strengthen_rate = clamp(val, 0, max_strengthen_rate)
+	set_strengthen_rate(clamp(val, 0, max_strengthen_rate))
 	. = TRUE
 
 /obj/machinery/shield_gen/proc/ui_act_target_field_strength(datum/act/op/A, val)
-	target_field_strength = clamp(val, 1, max_field_strength)
+	set_target_field_strength(clamp(val, 1, max_field_strength))
 	. = TRUE
 
 /obj/machinery/shield_gen/proc/ui_act_z_range(datum/act/op/A, val)
-	z_range = val
+	set_z_range(val)
 	. = TRUE
 
 

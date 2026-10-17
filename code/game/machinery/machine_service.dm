@@ -209,10 +209,10 @@ SYSTEM_DEF(machines)
 		if(!destination)
 			continue // the sink is gone: no power, flow or turf update for this entry
 		var/source_moles = max(transfer[6], MINIMUM_MOLES_TO_PUMP)
-		M.last_flow_rate = (actual / source_moles) * transfer[7]
+		M.set_last_flow_rate((actual / source_moles) * transfer[7])
 		var/power_draw = transfer[5] * actual
 		M.record_material_pumping(power_draw, destination, actual)
-		M.last_power_draw = power_draw
+		M.set_last_power_draw(power_draw)
 		M.use_power(power_draw)
 		if(isturf(M.loc))
 			var/turf/open/T = M.loc

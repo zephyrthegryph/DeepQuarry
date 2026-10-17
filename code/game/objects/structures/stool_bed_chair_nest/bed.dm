@@ -60,7 +60,7 @@
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A bed of no known material is not made.
 /obj/structure/bed/proc/make_of(padding)
-	color = null
+	set_color(null)
 	set_material(get_material_by_name(material_key || MAT_STEEL))
 	if(!istype(material))
 		stack_trace("Material of type: [material_key] does not exist.")
@@ -163,8 +163,8 @@ CAPABILITIES(/obj/structure/bed)
 /obj/structure/bed/proc/tucked_in(datum/act/op/A)
 	var/obj/item/W = A.held
 	A.actor.drop_from_inventory(W, get_turf(src))
-	W.pixel_x = 10 //make sure they reach the pillow
-	W.pixel_y = -6
+	W.set_pixel_x(10) //make sure they reach the pillow
+	W.set_pixel_y(-6)
 	if(istype(W, /obj/item/disk))
 		A.actor.visible_message(span_notice("[src] sleeps soundly. Sleep tight, disky."))
 	return OP_OK
@@ -233,10 +233,10 @@ CAPABILITIES(/obj/structure/bed)
 
 /obj/structure/bed/double/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
-		M.pixel_y = 13
+		M.set_pixel_y(13)
 		M.old_y = 13
 	else
-		M.pixel_y = 0
+		M.set_pixel_y(0)
 		M.old_y = 0
 
 /*
@@ -355,12 +355,12 @@ CAPABILITIES(/obj/item/roller_holder)
 
 /obj/structure/bed/roller/post_buckle_mob(mob/living/M as mob)
 	if(M?.buckled_to() == src)
-		M.pixel_y = 6
+		M.set_pixel_y(6)
 		M.old_y = 6
 		set_density(TRUE)
 		set_icon_state("[initial(icon_state)]_up")
 	else
-		M.pixel_y = 0
+		M.set_pixel_y(0)
 		M.old_y = 0
 		set_density(FALSE)
 		set_icon_state("[initial(icon_state)]")

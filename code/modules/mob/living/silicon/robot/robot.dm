@@ -228,7 +228,7 @@
 	fully_heal()
 	for(var/datum/robot_component/C as anything in components)
 		if(C.internal)
-			C.installed = ROBOT_PART_INSTALLED
+			C.set_installed(ROBOT_PART_INSTALLED)
 			continue
 		if(C.installed == ROBOT_PART_DESTROYED)
 			spent(C.uninstall())
@@ -386,7 +386,7 @@
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
 		rel_take(mount, nameof(mount.wrapped))
-		mount.installed = ROBOT_PART_MISSING
+		mount.set_installed(ROBOT_PART_MISSING)
 	set_cell(null)
 
 /// Recompute the cached demand. Called on toggle, install, equip and lights
@@ -446,7 +446,7 @@
 	var/datum/robot_component/C = get_component(slot)
 	if(!C)
 		return FALSE
-	C.toggled = !C.toggled
+	C.set_toggled(!C.toggled)
 	on_part_changed(C)
 	return TRUE
 
@@ -561,7 +561,7 @@
 			sprite_datum.do_equipment_glamour(module)
 			return
 	if(mind)
-		sprite_name = mind.name
+		set_sprite_name(mind.name)
 	if(!selecting_module)
 		var/datum/tgui_module/robot_ui_module/menu = new(src)
 		menu.tgui_interact(src)
@@ -618,7 +618,7 @@
 		identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
 		identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
-		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
+		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 		custom_link = client.prefs.read_preference(/datum/preference/text/human/custom_link) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
@@ -1178,16 +1178,10 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	//check if it doesn't require any access at all
 	if(check_access(null))
 		return 1
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		//if they are holding or wearing a card that has access, that works
-		if(check_access(H.get_active_hand()) || check_access(H.get_equipped_item(SLOT_ID_ID)))
-			return 1
-	else if(isrobot(M))
-		var/mob/living/silicon/robot/R = M
-		if(check_access(R.get_active_hand()) || istype(R.get_active_hand(), /obj/item/card/robot))
+	for(var/obj/item/credential in M?.robot_control_credentials())
+		if(check_access(credential))
 			return TRUE
-	return 0
+	return !!M?.robot_control_override_card()
 
 /mob/living/silicon/robot/proc/check_access(obj/item/I)
 	if(!istype(req_access, /list)) //something's very wrong
@@ -1657,7 +1651,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/proc/scramble_hardware(chance)
 	if(prob(chance))  //Small chance to spawn with a scrambled
-		emag_items = TRUE
+		set_emag_items(TRUE)
 
 // Module items found by type: used by upgrade detection (is_installed()).
 /mob/living/silicon/robot/proc/has_upgrade_module(given_type)
@@ -1710,8 +1704,20 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/reselect_ai_by_wire()
 	if(emagged)
 		return
-	var/mob/living/silicon/ai/picked = select_active_ai(src, src, PROC_REF(reselect_ai_by_wire), list())
-	if(picked)
+	var/list/ais = active_ais()
+	if(!length(ais))
+		return
+	open_request(src, /datum/prompt/choice/ai_selection, PROC_REF(ai_selected_by_wire), answerer = src, choices = ais)
+
+/// The cyborg chose an AI after its AI wire was pulsed.
+/mob/living/silicon/robot/proc/ai_selected_by_wire(datum/act/request/A)
+	if(emagged)
+		return
+	var/datum/prompt/choice/ai_selection/asked = A.answer
+	if(!asked)
+		return
+	var/mob/living/silicon/ai/picked = asked.value
+	if(istype(picked) && (picked in active_ais()))
 		connect_to_ai(picked)
 
 /mob/living/silicon/robot/proc/camera_wire_cut(datum/act/A)
@@ -1758,3 +1764,23 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/starting_nutrition()
 	return 0
+
+/// Actual credentials supplied to a robot's control lock. This is intentionally
+/// distinct from GetIdCard(): a robot's built-in card is not the held control card.
+/mob/proc/robot_control_credentials()
+	return null
+
+/mob/living/carbon/human/robot_control_credentials()
+	return list(get_active_hand(), get_equipped_item(SLOT_ID_ID))
+
+/mob/living/silicon/robot/robot_control_credentials()
+	return list(get_active_hand())
+
+/// A robot's held override card bypasses the control lock's normal access list.
+/// Humans holding the same card retain the normal check_access policy.
+/mob/proc/robot_control_override_card()
+	return null
+
+/mob/living/silicon/robot/robot_control_override_card()
+	var/obj/item/card/robot/card = get_active_hand()
+	return istype(card) ? card : null

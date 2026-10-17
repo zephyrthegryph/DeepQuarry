@@ -255,8 +255,7 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 	if(target == ROLL_PIXEL)
 		var/atom/A = holder
 		if(islist(value))
-			A.pixel_x = value[1]
-			A.pixel_y = value[2]
+			A.look_set_pixel_offset(value[1], value[2])
 		return
 	holder.vars[target] = value // ALLOW(api): a roll writes its declared target before init, as a map edit would
 

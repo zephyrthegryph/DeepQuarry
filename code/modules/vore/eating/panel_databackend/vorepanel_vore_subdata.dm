@@ -39,7 +39,7 @@
 			"possible_messages" = list(DEFAULT_MESSAGE, ABSORBED_MESSAGE)
 			)
 		if(!selected_message)
-			selected_message = DEFAULT_MESSAGE
+			set_selected_message(DEFAULT_MESSAGE)
 		if(selected_message == DEFAULT_MESSAGE)
 			tab_data["max_length"] = BELLIES_DESC_MAX
 			tab_data["active_message"] = selected.desc
@@ -58,7 +58,7 @@
 			"possible_messages" = list(WITH_PREY, WITH_ABSORBED_PREY)
 			)
 		if(!selected_message)
-			selected_message = WITH_PREY
+			set_selected_message(WITH_PREY)
 		if(selected_message == WITH_PREY)
 			tab_data["max_length"] = BELLIES_EXAMINE_MAX
 			tab_data["active_message"] = selected.examine_messages
@@ -81,7 +81,7 @@
 			"possible_messages" = list(TRASH_EAT, TRASH_EXPEL)
 			)
 		if(!selected_message)
-			selected_message = TRASH_EAT
+			set_selected_message(TRASH_EAT)
 		if(selected_message == TRASH_EAT)
 			tab_data["max_length"] = BELLIES_MESSAGE_MAX
 			tab_data["active_message"] = selected.trash_eater_in
@@ -100,11 +100,11 @@
 			"subtypes" = list(DEFAULT_MESSAGE, ABSORBED_MESSAGE)
 			)
 		if(!message_subtab)
-			message_subtab = DEFAULT_MESSAGE
+			set_message_subtab(DEFAULT_MESSAGE)
 		if(message_subtab == DEFAULT_MESSAGE)
 			tab_data["possible_messages"] = list(OUTSIDE_MESSAGE, INSIDE_MESSAGE)
 			if(!selected_message)
-				selected_message = OUTSIDE_MESSAGE
+				set_selected_message(OUTSIDE_MESSAGE)
 			if(selected_message == OUTSIDE_MESSAGE)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.struggle_messages_outside
@@ -124,7 +124,7 @@
 		if(message_subtab == ABSORBED_MESSAGE)
 			tab_data["possible_messages"] = list(OUTSIDE_MESSAGE, INSIDE_MESSAGE)
 			if(!selected_message)
-				selected_message = OUTSIDE_MESSAGE
+				set_selected_message(OUTSIDE_MESSAGE)
 			if(selected_message == OUTSIDE_MESSAGE)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.absorbed_struggle_messages_outside
@@ -149,11 +149,11 @@
 		if(selected.message_mode || selected.escapechance)
 			tab_data["subtypes"] += SUCCESS_MESSAGE
 		if(!message_subtab)
-			message_subtab = ITEM_MESSAGE
+			set_message_subtab(ITEM_MESSAGE)
 		if(message_subtab == ATTEMPT_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_attempt_messages_prey
@@ -169,7 +169,7 @@
 		if(message_subtab == SUCCESS_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU, OUTSIDE_MESSAGE)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_messages_prey
@@ -191,7 +191,7 @@
 		if(message_subtab == ITEM_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU, OUTSIDE_MESSAGE)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_item_messages_prey
@@ -213,7 +213,7 @@
 		if(message_subtab == FAIL_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_fail_messages_prey
@@ -234,11 +234,11 @@
 		if(selected.message_mode || selected.escapechance_absorbed)
 			tab_data["subtypes"] += SUCCESS_MESSAGE
 		if(!message_subtab)
-			message_subtab = ATTEMPT_MESSAGE
+			set_message_subtab(ATTEMPT_MESSAGE)
 		if(message_subtab == ATTEMPT_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_attempt_absorbed_messages_prey
@@ -254,7 +254,7 @@
 		if(message_subtab == SUCCESS_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU, OUTSIDE_MESSAGE)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_absorbed_messages_prey
@@ -276,7 +276,7 @@
 		if(message_subtab == FAIL_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.escape_fail_absorbed_messages_prey
@@ -303,11 +303,11 @@
 		if(selected.message_mode || selected.autotransferlocation_secondary)
 			tab_data["subtypes"] += SECONARY_AUTO_MESSAGE
 		if(!message_subtab)
-			message_subtab = PRIMARY_MESSAGE
+			set_message_subtab(PRIMARY_MESSAGE)
 		if(message_subtab == PRIMARY_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.primary_transfer_messages_prey
@@ -323,7 +323,7 @@
 		if(message_subtab == SECONARY_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.secondary_transfer_messages_prey
@@ -339,7 +339,7 @@
 		if(message_subtab == PRIMARY_AUTO_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.primary_autotransfer_messages_prey
@@ -355,7 +355,7 @@
 		if(message_subtab == SECONARY_AUTO_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.secondary_autotransfer_messages_prey
@@ -378,11 +378,11 @@
 		if(selected.message_mode || selected.absorbchance)
 			tab_data["subtypes"] += ABSORB_MESSAGE
 		if(!message_subtab)
-			message_subtab = DIGEST_MESSAGE
+			set_message_subtab(DIGEST_MESSAGE)
 		if(message_subtab == DIGEST_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.digest_chance_messages_prey
@@ -398,7 +398,7 @@
 		if(message_subtab == ABSORB_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.absorb_chance_messages_prey
@@ -423,11 +423,11 @@
 		if(selected.message_mode || selected.digest_mode == DM_UNABSORB)
 			tab_data["subtypes"] += UNABSORB_MESSAGE
 		if(!message_subtab)
-			message_subtab = DIGEST_MESSAGE
+			set_message_subtab(DIGEST_MESSAGE)
 		if(message_subtab == DIGEST_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.digest_messages_prey
@@ -443,7 +443,7 @@
 		if(message_subtab == ABSORB_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.absorb_messages_prey
@@ -458,7 +458,7 @@
 		if(message_subtab == UNABSORB_MESSAGE)
 			tab_data["possible_messages"] = list(TO_PREY, TO_YOU)
 			if(!selected_message)
-				selected_message = TO_PREY
+				set_selected_message(TO_PREY)
 			if(selected_message == TO_PREY)
 				tab_data["max_length"] = BELLIES_MESSAGE_MAX
 				tab_data["active_message"] = selected.unabsorb_messages_prey
@@ -498,7 +498,7 @@
 		if(selected.message_mode || selected.digest_mode == DM_UNABSORB)
 			tab_data["possible_messages"] += UNABSORB_MESSAGE
 		if(!selected_message)
-			selected_message = DIGEST_MESSAGE
+			set_selected_message(DIGEST_MESSAGE)
 		if(selected_message == DIGEST_MESSAGE)
 			tab_data["max_length"] = BELLIES_IDLE_MAX
 			tab_data["active_message"] = SANITIZE_LIST(selected.emote_lists[DM_DIGEST])
@@ -571,7 +571,7 @@
 			"possible_messages" = list(LIQUID0, LIQUID20, LIQUID40, LIQUID60, LIQUID80)
 			)
 		if(!selected_message)
-			selected_message = LIQUID0
+			set_selected_message(LIQUID0)
 		if(selected_message == LIQUID0)
 			tab_data["max_length"] = BELLIES_MESSAGE_MAX
 			tab_data["active_message"] = SANITIZE_LIST(selected.fullness1_messages)

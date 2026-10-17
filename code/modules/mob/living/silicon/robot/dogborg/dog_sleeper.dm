@@ -191,7 +191,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
-			deliverylists[delivery_tag] |= target
+			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | target)
 		to_chat(user, span_notice("\The [target.name] added to cargo compartment slot: [delivery_tag]."))
 	update_patient()
 	return OP_OK
@@ -210,7 +210,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 	if(delivery)
 		if(islist(deliverylists[delivery_tag]))
-			deliverylists[delivery_tag] |= trashman
+			set_deliverylists_at(delivery_tag, deliverylists[delivery_tag] | trashman)
 		to_chat(user, span_notice("\The [trashman] added to cargo compartment slot: [delivery_tag]."))
 		to_chat(trashman, span_notice("[hound.name] has added you to their cargo compartment slot: [delivery_tag]."))
 	update_patient()
@@ -252,7 +252,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/proc/go_out()
 	rel_set(src, nameof(hound), src.loc)
 	rel_clear(src, nameof(items_preserved))
-	cleaning = 0
+	set_cleaning(0)
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
 	if(contents_count(src) > 0)
@@ -387,7 +387,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		return FALSE
 	if(cleaning)
 		return FALSE
-	cleaning = TRUE
+	set_cleaning(TRUE)
 	drain(startdrain)
 	set_working(TRUE)
 	update_patient()
@@ -407,7 +407,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/new_port = value
 	if(!(new_port in list("disposal", "ingestion")))
 		return FALSE
-	eject_port = new_port
+	set_eject_port(new_port)
 	return TRUE
 
 /obj/item/dogborg/sleeper/proc/ui_act_ingest(datum/act/op/A)
@@ -422,7 +422,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/new_tag = value
 	if(!(new_tag in deliverylists))
 		return FALSE
-	delivery_tag = new_tag
+	set_delivery_tag(new_tag)
 	return TRUE
 
 /obj/item/dogborg/sleeper/proc/ui_act_slot_eject(datum/act/op/A)
@@ -550,7 +550,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/finisher = SFX_CLASSIC_DEATH_SOUNDS
 	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
-	cleaning = 0
+	set_cleaning(0)
 	update_patient()
 	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 

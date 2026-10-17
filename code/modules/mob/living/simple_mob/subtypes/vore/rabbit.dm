@@ -93,11 +93,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a sudden pounce, the rabbit begins swallowing you down with ease! A pink maw and surprisingly unintimidating teeth give way to the thing's pink, tight throat, until you're crammed down inside it's gut! Unless you happen to be drastically smaller than it, the inside of this thing's gut is incredibly cramped, as the fleshy pink walls undulate over your form. It's clearly still able to move with you inside somehow, despite the tiny size of the thing, as gastric sounds flood your ears. You've been bested by a RABBIT of all things!"
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.fancy_vore = TRUE
-	B.belly_fullscreen_color = "#b15aac"
-	B.belly_fullscreen = "VBOanim_belly1"
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_fancy_vore(TRUE)
+	B.set_belly_fullscreen_color("#b15aac")
+	B.set_belly_fullscreen("VBOanim_belly1")
 
 /datum/say_list/rabbit
 	speak = list("chrrrs.")

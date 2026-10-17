@@ -31,7 +31,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 0.6, BF_O2_SAT = -8, BF_RESP_RATE = 6)
+	factors = alist(STAT_SLOWDOWN = 0.6, STAT_O2_SAT = -8, STAT_RESP_RATE = 6)
 	spontaneous_emotes = list("cough", "gasp")
 	spontaneous_emote_prob = 4
 
@@ -65,7 +65,7 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	factors = alist(BF_SLOWDOWN = 0.8, BF_O2_SAT = -10, BF_RESP_RATE = 8)
+	factors = alist(STAT_SLOWDOWN = 0.8, STAT_O2_SAT = -10, STAT_RESP_RATE = 8)
 	spontaneous_emotes = list("cough", "wheeze", "gasp")
 	spontaneous_emote_prob = 5
 
@@ -99,7 +99,7 @@
 	)
 	min_symptoms = 2
 	max_symptoms = 4
-	factors = alist(BF_SLOWDOWN = 2.5, BF_ACCURACY = -50, BF_MOTOR_CONTROL = 0.92, BF_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, BF_HEART_RATE = 20, BF_RESP_RATE = -8, BF_GAS_EXCHANGE = 0.15)
+	factors = alist(STAT_SLOWDOWN = 2.5, STAT_ACCURACY = -50, STAT_MOTOR_CONTROL = 0.92, STAT_ACTION_BLOCKS = ACTION_BLOCK_SPEECH, STAT_HEART_RATE = 20, STAT_RESP_RATE = -8, STAT_GAS_EXCHANGE = 0.15)
 	spontaneous_emotes = list("gasp", "collapse", "wheeze")
 	spontaneous_emote_prob = 10
 

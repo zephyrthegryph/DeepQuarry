@@ -22,8 +22,8 @@
 	var/obj/item/eftpos/terminal = allocate(/obj/item/eftpos, T)
 	own_turf_contents(T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
-	terminal.transaction_locked = TRUE
-	terminal.transaction_paid = FALSE
+	terminal.set_transaction_locked(TRUE)
+	terminal.set_transaction_paid(FALSE)
 	terminal.scan_card(card, card, operator)
 	TEST_ASSERT(terminal.transaction_paid, "an emag swipe marks the locked transaction paid")
 	TEST_ASSERT(terminal.transaction_locked, "the first swipe preserves the transaction lock")

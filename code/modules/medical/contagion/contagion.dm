@@ -102,13 +102,14 @@
 /datum/affliction/contagion/var/virus_modifiers = NEEDS_ALL_CURES
 /datum/affliction/contagion/var/infectivity = 10
 
+/datum/affliction/contagion
+	stage = 1
+
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 /// Contagions are systemic: whatever arguments a subtype's constructor takes,
 /// the affliction location is null.
 /datum/affliction/contagion/New()
-	if(isnull(stage))
-		stage = 1
 	..(null)
 	// Its declared spread work starts when it joins a body (on_added()), not here: a contagion is
 	// also a template that is copied into a body and dropped, and a declaration started on the
@@ -183,12 +184,12 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		return
 	set_severity(round(100 * clamp(stage, 1, max_stages) / max_stages))
 
-/datum/affliction/contagion/proc/set_stage(new_stage)
+/datum/affliction/contagion/set_stage(new_stage)
 	new_stage = clamp(new_stage, 1, max(max_stages, 1))
 	if(new_stage == stage)
 		return FALSE
 	var/old_stage = stage
-	stage = new_stage
+	. = ..(new_stage)
 	if(!global_flag_check(virus_modifiers, DISCOVERED) && stage >= CEILING(max_stages * discovery_threshold, 1))
 		set_virus_modifiers(virus_modifiers | DISCOVERED)
 	sync_severity()
@@ -217,7 +218,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	if(tag == TREAT_RESTORATION)
 		cure()
 		return amount
-	immunity = min(immunity + amount, CONTAGION_IMMUNITY_CLEAR)
+	set_immunity(min(immunity + amount, CONTAGION_IMMUNITY_CLEAR))
 	return amount
 
 /// Worsening tags slow the immune response.
@@ -269,11 +270,11 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		set_virus_modifiers(virus_modifiers | PROCESSING)
 		Start()
 
-	immunity = clamp(immunity + immune_gain(), 0, CONTAGION_IMMUNITY_CLEAR)
+	set_immunity(clamp(immunity + immune_gain(), 0, CONTAGION_IMMUNITY_CLEAR))
 	var/controlled = immunity >= CONTAGION_IMMUNITY_CONTROL
 
 	// Advance while nothing holds it back.
-	if(!cure && !controlled && prob(stage_prob * body.get_factor(BF_PROGRESSION)))
+	if(!cure && !controlled && prob(stage_prob * owner.progression))
 		set_stage(stage + 1)
 
 	// A cure in the blood, or an immune system in control, drives it back.
@@ -368,7 +369,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /// The reference book and describing profiles read clinical_description.
 /datum/affliction/contagion/configure(location)
 	if(!clinical_description && desc)
-		clinical_description = desc
+		set_clinical_description(desc)
 
 
 // --- Identity and copies -------------------------------------------------------
@@ -427,13 +428,13 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 	var/datum/data/record/v = new()
 
-	v.fields["id"] = GetDiseaseID()
-	v.fields["name"] = name
-	v.fields["description"] = desc
-	v.fields["form"] = form
-	v.fields["agent"] = agent
-	v.fields["cure"] = cure_text
-	v.fields["spread"] = spread_text
+	v.set_fields_at("id", GetDiseaseID())
+	v.set_fields_at("name", name)
+	v.set_fields_at("description", desc)
+	v.set_fields_at("form", form)
+	v.set_fields_at("agent", agent)
+	v.set_fields_at("cure", cure_text)
+	v.set_fields_at("spread", spread_text)
 
 	GLOB.virusDB["[GetDiseaseID()]"] = v
 

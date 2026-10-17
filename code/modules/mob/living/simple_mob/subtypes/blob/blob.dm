@@ -35,11 +35,11 @@
 
 /mob/living/simple_mob/blob/update_icons()
 	if(overmind)
-		color = overmind.blob_type.complementary_color
+		set_color(overmind.blob_type.complementary_color)
 	else if(blob_type)
-		color = blob_type.complementary_color
+		set_color(blob_type.complementary_color)
 	else
-		color = null
+		set_color(null)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)

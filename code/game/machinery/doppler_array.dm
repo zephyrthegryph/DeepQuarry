@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/doppler_array)
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
 	PUBLISH_LEGACY(src, /datum/notice/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
-	LAZYINITLIST(detected_explosions); detected_explosions += list(
+	LAZYINITLIST(detected_explosions); add_detected_explosions(list(
 		list(
 			"index" = length(detected_explosions),
 			"time" = stationtime2text(),
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/doppler_array)
 			"light_impact_range" = light_impact_range,
 			"seconds_taken" = seconds_taken,
 		)
-	)
+	))
 	SStgui.update_uis(src)
 
 /obj/machinery/doppler_array/power_change()

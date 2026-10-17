@@ -159,6 +159,15 @@ placed finished. Code that makes the thing part-built (the frame item) calls `gr
 `on_notice(/datum/notice/attacked_by, then(PROC_REF(apc_struck)))`; a signaller at the open wire panel is its own op (`item(/obj/item/assembly/signaler)`,
 `when(PANEL_OPEN)`), and a silicon's click reaches the window through the interface's `remote()` binding. The bridge is `hit_try()` in `receive_damage()`.
 
+**A non-system `reactions()` table proc.** Only a `/datum/system` declares `reactions()` (the `reactions_table_proc` lint is a hard ban). An entity's entries are its `CAPABILITIES` block's:
+
+| Was in `reactions()` | Is in the block |
+|---|---|
+| `. += every(t, PROC_REF(x), when = nameof(v))` handler `x(dt)` | `every(t, then(PROC_REF(x)), when = nameof(v))`, handler `x(datum/act/timer/tick)`; `1 TICK` for the per-tick work; `lane =` stays |
+| `. += on_change(list(nameof(v)), PROC_REF(x))` handler `x(list/keys)` | `on_change(nameof(v), ANY, then(PROC_REF(x)))`, handler `x(datum/act/A)` |
+| `. += on_change(list(MOB_KEY_X, nameof(v)), PROC_REF(x), at_most = t, when = PROC_REF(g))` (keys a producer publishes) | `on_change(cond_published(MOB_KEY_X, nameof(v)), ANY, when(PROC_REF(g)), coalesce(t), then(PROC_REF(x)))`; the reads the generator finds for `x` (`reaction_reads()`) join the hook's keys; the gate runs per trigger and a gated-out holder opens no window |
+| `. += before_op(GUARD_X, GLOBAL_PROC_REF(h))` + `guard(src, GUARD_X, ...)` at the call site | the call site is `ACT_TRY(src, x, ...)` then `act_done()`; the holder says `extend(/datum/act/x, instead(then(PROC_REF(h))))`, handler `h(datum/act/x/A)` answering `HOOK_DECLINE` to leave the action to the next taker (code/datums/behaviours/spontaneous_vore.dm) |
+
 **Links and the night shift.** The area is a link, `links(/obj/machinery/power/apc::area, /area::apc)`: `rel_set(src, nameof(area), A)` writes both ends.
 What the area's lights read from its APC is the APC's to say, `contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))`, where
 `wants_night_lights()` reads the night-shift system through its accessor `night_shift_active()` (section 16.11): the system sets one tracked flag and

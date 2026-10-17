@@ -148,7 +148,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 		return
 	var/mob/living/carbon/human/user = A.request.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
-	vox.gender = user.gender
+	vox.set_gender(user.gender)
 	GLOB.raiders.equip(vox)
 	if(user.mind)
 		user.mind.transfer_to(vox)

@@ -131,7 +131,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	var/mob/living/silicon/robot/R = host()
 	var/new_color = value
 	if(findtext(new_color, GLOB.is_color))
-		R.robot_light_col = new_color
+		R.set_robot_light_col(new_color)
 	. = TRUE
 
 /datum/tgui_module/robot_ui/proc/ui_act_select_module(datum/act/op/A)

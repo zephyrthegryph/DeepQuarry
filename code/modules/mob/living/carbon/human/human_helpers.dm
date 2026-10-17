@@ -95,7 +95,7 @@
 	return sum
 
 /mob/living/carbon/human/get_gender()
-	return identifying_gender ? identifying_gender : read_once(gender)
+	return identifying_gender ? identifying_gender : gender
 
 /mob/living/carbon/human/name_gender() /// Returns proper names for gender identites
 	if(identifying_gender == "plural")
@@ -167,7 +167,6 @@
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R), STATUS_R_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP), BACKUP_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG), VANTAG_HUD)
-	add_overlay(hud_list)
 
 /mob/living/carbon/human/recalculate_vis()
 	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight and HUD reactions re-read it
@@ -179,7 +178,7 @@
 	var/static/list/slots = list(SLOT_ID_EYES,SLOT_ID_HEAD)
 	var/list/compiled_vis = list()
 
-	if(factor(BF_DARKSIGHT)) //Putting this near the beginning so it can be overwritten by equipment
+	if(src.darksight) //Putting this near the beginning so it can be overwritten by equipment
 		compiled_vis += VIS_FULLBRIGHT
 
 	for(var/slot in slots)
@@ -391,7 +390,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if(options.copy_name)
 		name = character.name
 		bio.nickname = character.bio.nickname
-	gender = character.gender
+	set_gender(character.gender)
 	set_identifying_gender(character.identifying_gender)
 
 	record_copy(looks, character.looks)

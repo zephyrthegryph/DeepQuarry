@@ -8,7 +8,7 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid options."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_gen_cost_limit(mob/user, list/params, extra)
 	var/new_limit = params["val"]
@@ -17,7 +17,7 @@
 	vore_selected_of(host()).reagent_gen_cost_limit = CLAMP(new_limit, 0, 100)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_gen(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).reagentbellymode) //liquid container adjustments and interactions.
@@ -28,7 +28,7 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] wont produce liquids, liquids already in your [lowertext(vore_selected_of(host()).name)] must be emptied out or removed with purge."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_type(mob/user, list/params, extra)
 	var/new_reagent = params["val"]
@@ -39,7 +39,7 @@
 	vore_selected_of(host()).ReagentSwitch() // For changing variables when a new reagent is chosen
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_name(mob/user, list/params, extra)
 	var/new_name = params["val"]
@@ -51,7 +51,7 @@
 	vore_selected_of(host()).reagent_name = new_name
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_transfer_verb(mob/user, list/params, extra)
 	var/new_verb = params["val"]
@@ -63,7 +63,7 @@
 	vore_selected_of(host()).reagent_transfer_verb = new_verb
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_nutri_rate(mob/user, list/params, extra)
 	vore_selected_of(host()).gen_time_display = params["val"]
@@ -84,7 +84,7 @@
 			vore_selected_of(host()).gen_time = 143
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_capacity(mob/user, list/params, extra)
 	var/new_custom_vol = params["val"]
@@ -93,7 +93,7 @@
 	vore_selected_of(host()).custom_max_volume = CLAMP(new_custom_vol, 10, 300)
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_sloshing(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).vorefootsteps_sounds)
@@ -104,7 +104,7 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] wont make any liquid sounds no matter how full it is."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_reagent_addons(mob/user, list/params, extra)
 	var/reagent_toggle_addon = params["val"]
@@ -113,7 +113,7 @@
 	vore_selected_of(host()).reagent_mode_flags ^= vore_selected_of(host()).reagent_mode_flag_list[reagent_toggle_addon]
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liquid_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).liquid_overlay)
@@ -124,7 +124,7 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] no longer has liquid overlay enabled."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_max_liquid_level(mob/user, list/params, extra)
 	var/new_max_liquid_level = params["val"]
@@ -134,7 +134,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_custom_reagentcolor(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -145,7 +145,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_custom_reagentalpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
@@ -158,7 +158,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_reagent_touches(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).reagent_touches)
@@ -169,7 +169,7 @@
 		to_chat(user,span_warning("Your [lowertext(vore_selected_of(host()).name)] will no longer apply reagents to creatures when digesting."))
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_mush_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).mush_overlay)
@@ -181,7 +181,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_mush_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -190,7 +190,7 @@
 		vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_mush_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
@@ -200,7 +200,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_max_mush(mob/user, list/params, extra)
 	var/new_max_mush = params["val"]
@@ -210,7 +210,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_min_mush(mob/user, list/params, extra)
 	var/new_min_mush = params["val"]
@@ -220,7 +220,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_item_mush_val(mob/user, list/params, extra)
 	var/new_item_mush_val = params["val"]
@@ -230,7 +230,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_metabolism_overlay(mob/user, list/params, extra)
 	if(!vore_selected_of(host()).metabolism_overlay)
@@ -242,7 +242,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_metabolism_mush_ratio(mob/user, list/params, extra)
 	var/new_metabolism_mush_ratio = params["val"]
@@ -252,7 +252,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_max_ingested(mob/user, list/params, extra)
 	var/new_max_ingested = params["val"]
@@ -262,7 +262,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_custom_ingested_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
@@ -273,7 +273,7 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_custom_ingested_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
@@ -283,13 +283,13 @@
 	vore_selected_of(host()).update_internal_overlay()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/liq_b_liq_purge(mob/user, list/params, extra)
 	vore_selected_of(host()).reagents.clear_reagents()
 	. = TRUE
 	if(.)
-		unsaved_changes = TRUE
+		set_unsaved_changes(TRUE)
 
 /// /datum/vore_look's "liq" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
 /datum/vore_look/proc/liq_subaction(action, list/data, mob/user, extra)

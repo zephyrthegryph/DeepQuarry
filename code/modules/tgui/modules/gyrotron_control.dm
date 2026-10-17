@@ -19,7 +19,7 @@ CAPABILITIES(/datum/tgui_module/gyrotron_control)
 		return
 	var/new_ident = sanitize_text(A.answer.value)
 	if(new_ident)
-		gyro_tag = new_ident
+		set_gyro_tag(new_ident)
 	SStgui.update_uis(src)
 
 /datum/tgui_module/gyrotron_control/proc/ui_act_toggle_active(datum/act/op/A, gyro)

@@ -22,4 +22,8 @@
 /obj/machinery/holosign/robotics state: robotoff
 /obj/machinery/holosign/robotics dir: 2
 /obj/machinery/holosign/robotics overlay: icons/obj/holosign.dmi:robotoff:8:#000000
+/obj/machinery/holosign/dq_keyed icon: icons/obj/holosign.dmi
+/obj/machinery/holosign/dq_keyed state: sign_off
+/obj/machinery/holosign/dq_keyed dir: 2
+/obj/machinery/holosign/dq_keyed overlay: icons/obj/holosign.dmi:sign_off:8:#000000
 

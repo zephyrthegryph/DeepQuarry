@@ -24,9 +24,15 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 	if(domains & BODY_DIRTY_ORGANS)
 		H.limb_refresh()
 	// Deferred: asking the organs (factors, loads) here would consume the dirt this call just set.
-	if(domains & (BODY_DIRTY_ORGANS | BODY_DIRTY_FACTORS | BODY_DIRTY_CHEMS))
+	if(domains & (BODY_DIRTY_ORGANS | BODY_DIRTY_CHEMS))
 		after(H, 0, TYPE_PROC_REF(/mob/living/carbon/human, organs_refresh), key = "organs_refresh")
 	after(H, 0, TYPE_PROC_REF(/mob/living/carbon/human, pain_refresh), key = "pain_refresh")
+
+/// A source's own factors() entry moved a stat: the organs' idleness reads the factors (organs_have_work()), so their work flag is looked at again, as it is
+/// when its organs or chemicals change (above).
+/mob/living/carbon/human/factors_held(list/moved)
+	..()
+	after(src, 0, TYPE_PROC_REF(/mob/living/carbon/human, organs_refresh), key = "organs_refresh")
 
 /// Recomputes the stance and raises or drops the limb checks.
 /mob/living/carbon/human/proc/limb_refresh()
@@ -101,7 +107,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 
 /// Moving around on a broken bone that holds organs (ribs, pelvis, skull) hurts enough to stagger you.
 /mob/living/carbon/human/proc/broken_bone_jolt()
-	if(lying || buckled_to() || stat || !can_feel_pain() || factor(BF_ANALGESIA) >= 50)
+	if(lying || buckled_to() || stat || !can_feel_pain() || src.analgesia >= 50)
 		return
 	if(ELAPSED_SINCE(src, l_move_time, CLOCK_WORLD) >= BODY_MOVING_WINDOW)
 		return

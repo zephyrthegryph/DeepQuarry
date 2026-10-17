@@ -82,7 +82,7 @@
 		if(!isnull(rhythm))
 			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
 	if(P.vitals & VITALS_TEMP)
-		D.temperature = round((owner.body_temperature() - T0C) * 10) / 10 // BF_TEMPERATURE moves the real set point (C16)
+		D.temperature = round((owner.body_temperature() - T0C) * 10) / 10 // STAT_TEMPERATURE moves the real set point (C16)
 	if(P.vitals & VITALS_CONSCIOUSNESS)
 		if(flat)
 			D.consciousness = "none"
@@ -111,7 +111,7 @@
 				// the first time it sees the condition), so a refreshing UI still shows a trend.
 				F.trend = _dq_trend_for_condition(A, baseline_key)
 				if(update_baseline || isnull(A.scan_baselines?[baseline_key]))
-					LAZYSET(A.scan_baselines, baseline_key, A.severity)
+					A.set_scan_baselines_at(baseline_key, A.severity)
 		if(!A.active_symptoms || !(biology_of(A.location) & P.biology))
 			continue
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(A))

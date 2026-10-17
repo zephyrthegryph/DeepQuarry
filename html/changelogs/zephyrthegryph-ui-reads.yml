@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Every window's ui_data() now reads only tracked state: the vars it shows publish their writes through generated setters, so open windows refresh without a hand update."
+  - code_imp: "The untracked_ui_read lint is global and a hard ban; the ui_hosts exemption list is gone."

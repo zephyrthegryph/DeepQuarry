@@ -210,7 +210,7 @@ CAPABILITIES(/obj/effect/plant)
 /// A fully grown plant stands tall (and, of woody seeds, blocks the way); a younger one lies flat and open.
 /obj/effect/plant/proc/plant_settle(full_grown)
 	if(full_grown)
-		plane = ABOVE_PLANE
+		set_plane(ABOVE_PLANE)
 		set_opacity(1)
 		if(!isnull(seed().chems[REAGENT_ID_WOODPULP]))
 			set_density(TRUE)

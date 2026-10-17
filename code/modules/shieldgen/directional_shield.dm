@@ -44,7 +44,7 @@ CAPABILITIES(/obj/effect/directional_shield)
 
 /obj/effect/directional_shield/proc/update_color(new_color)
 	if(!projector)
-		color = "#0099FF"
+		set_color("#0099FF")
 	else
 		animate(src, color = new_color, 5)
 

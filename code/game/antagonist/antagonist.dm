@@ -109,29 +109,29 @@ CAPABILITIES(/datum/antagonist)
 	return 1
 
 /datum/antagonist/proc/get_candidates(ghosts_only)
-	candidates = list() // Clear.
+	set_candidates(list()) // Clear.
 
 	// Prune restricted status. Broke it up for readability.
 	// Note that this is done before jobs are handed out.
-	candidates = ticker_mode().get_players_for_role(role_type, id, ghosts_only)
+	set_candidates(ticker_mode().get_players_for_role(role_type, id, ghosts_only))
 	for(var/datum/mind/player in candidates)
 		if(ghosts_only && !isobserver(player.current))
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: Only ghosts may join as this role! They have been removed from the draft.")
 		else if(CONFIG_GET(flag/use_age_restriction_for_antags) && player.current.client.player_age < minimum_player_age)
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: Is only [player.current.client.player_age] day\s old, has to be [minimum_player_age] day\s!")
 		else if(player.special_role)
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They already have a special role ([player.special_role])! They have been removed from the draft.")
 		else if (player in pending_antagonists)
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They have already been selected for this role! They have been removed from the draft.")
 		else if(!can_become_antag(player))
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They are blacklisted for this role! They have been removed from the draft.")
 		else if(SSantag.player_is_antag(player))
-			candidates -= player
+			remove_candidates(player)
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They are already an antagonist! They have been removed from the draft.")
 
 	return candidates
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/antagonist)
 /datum/antagonist/proc/build_candidate_list(ghosts_only)
 	// Get the raw list of potential players.
 	update_current_antag_max()
-	candidates = get_candidates(ghosts_only)
+	set_candidates(get_candidates(ghosts_only))
 
 //Selects players that will be spawned in the antagonist role from the potential candidates
 //Selected players are added to the pending_antagonists lists.
@@ -178,7 +178,7 @@ CAPABILITIES(/datum/antagonist)
 	//Grab candidates randomly until we have enough.
 	while(candidates.len && length(pending_antagonists) < initial_spawn_target)
 		var/datum/mind/player = pick(candidates)
-		candidates -= player
+		remove_candidates(player)
 		draft_antagonist(player)
 
 	return 1
@@ -200,7 +200,7 @@ CAPABILITIES(/datum/antagonist)
 
 	//Ensure that antags with ANTAG_OVERRIDE_JOB do not occupy job slots.
 	if(flags & ANTAG_OVERRIDE_JOB)
-		player.assigned_role = role_text
+		player.set_assigned_role(role_text)
 
 	//Ensure that a player cannot be drafted for multiple antag roles, taking up slots for antag roles that they will not fill.
 	player.set_special_role(role_text)
@@ -220,7 +220,7 @@ CAPABILITIES(/datum/antagonist)
 /datum/antagonist/proc/reset()
 	for(var/datum/mind/player in pending_antagonists)
 		if(flags & ANTAG_OVERRIDE_JOB)
-			player.assigned_role = null
+			player.set_assigned_role(null)
 		player.set_special_role(null)
 	rel_clear(src, nameof(pending_antagonists))
 

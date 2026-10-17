@@ -508,7 +508,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			D.set_real_name(copytext(P.info, findtext(P.info,">")+1, findtext(P.info,"<",2) ))
 			chose_name = 1
 			break
-	D.universal_speak = 1
+	D.set_universal_speak(1)
 	D.disable_godmode()
 	D.looks.set_eyes_color(rgb(200, 200, 200))
 	D.clear_all_underwear()

@@ -24,7 +24,7 @@ CAPABILITIES(/datum/tgui_feedback)
 	if(!win)
 		return
 
-	selected_window = sanitize(win)
+	set_selected_window(sanitize(win))
 	. = TRUE
 
 /datum/tgui_feedback/proc/ui_act_submit(datum/act/op/A, comment, rating)

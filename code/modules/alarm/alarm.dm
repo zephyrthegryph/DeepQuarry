@@ -56,13 +56,13 @@ CAPABILITIES(/datum/alarm)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
 		rel_add(src, nameof(sources), AS)
-		src.hidden = hidden
+		set_hidden(hidden)
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)
 		duration = duration SECONDS
 		AS.duration = duration
 	AS.severity = severity
-	src.hidden = min(src.hidden, hidden)
+	set_hidden(min(src.hidden, hidden))
 
 /datum/alarm/proc/clear(source)
 	var/datum/alarm_source/AS = source_entry(source)

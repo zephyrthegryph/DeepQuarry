@@ -61,9 +61,9 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 /obj/machinery/computer/shuttle_control/explore/proc/can_plot_expedition()
 	return !active_expedition() || QDELETED(active_expedition()) || active_expedition().status == EXP_STATUS_EXPIRED
 
-/obj/machinery/computer/shuttle_control/explore/proc/plot_expedition(mob/user, datum/shuttle/autodock/overmap/shuttle)
+/obj/machinery/computer/shuttle_control/explore/proc/plot_expedition(mob/user, datum/shuttle/autodock/overmap/shuttle, contract, threat_band)
 	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(shuttle.myship())
-	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src)
+	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src, contract, threat_band)
 	if(site)
 		rel_set(src, nameof(active_expedition), site)
 		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)

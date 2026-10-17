@@ -204,7 +204,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_name, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE)
-	verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/choose_gender, login = TRUE)
 	// a ghost becomes a ghost-joinable mob after a yes (the old attack_ghost; a mob nobody may join is not offered)
 	op("ghost_join", observer(), label("Inhabit"), when(nameof(ghostjoin)), needs(req(PROC_REF(can_ghost_join))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Become Mob", "question" = computed(PROC_REF(ghost_join_question)), "timeout" = 20 SECONDS), keeps = TARGET_PRESENT),
@@ -282,7 +282,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(!A.answer)
 		return
 	if(!picked_color)
-		color = A.answer.value
+		set_color(A.answer.value)
 	picked_color = TRUE
 
 /mob/living/simple_mob/SelfMove(turf/n, direct, movetime)
@@ -308,10 +308,10 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(force_max_speed)
 		return -3
 
-	if(factor(BF_HASTE))
+	if(src.haste)
 		return -3
-	. += factor(BF_SLOWDOWN)
-	var/penalty_scale = factor(BF_PENALTY_SCALE)
+	. += src.slowdown
+	var/penalty_scale = src.penalty_scale
 	if(penalty_scale != 1 && . > movement_cooldown)
 		. = movement_cooldown + (. - movement_cooldown) * penalty_scale
 
@@ -384,7 +384,6 @@ CAPABILITIES(/mob/living/simple_mob)
 /mob/living/simple_mob/make_hud_overlays()
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE), STATUS_HUD)
 	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE), LIFE_HUD)
-	add_overlay(hud_list)
 
 //Makes it so that simplemobs can understand galcomm without being able to speak it.
 /mob/living/simple_mob/say_understands(mob/other, datum/language/speaking = null)
@@ -670,25 +669,25 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/obj/belly/B = new /obj/belly(src)
 	set_vore_selected(src, B)
 	B.immutable = 1
-	B.affects_vore_sprites = TRUE
+	B.set_affects_vore_sprites(TRUE)
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
 	B.desc = vore_stomach_flavor ? vore_stomach_flavor : "Your surroundings are warm, soft, and slimy. Makes sense, considering you're inside \the [name]."
-	B.digest_mode = vore_default_mode
-	B.mode_flags = vore_default_flags
-	B.item_digest_mode = vore_default_item_mode
-	B.contaminates = vore_default_contaminates
-	B.contamination_flavor = vore_default_contamination_flavor
-	B.contamination_color = vore_default_contamination_color
-	B.escapable = vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE
-	B.escapechance = vore_escape_chance
-	B.escapechance_absorbed = vore_escape_chance_absorbed
-	B.digestchance = vore_digest_chance
-	B.absorbchance = vore_absorb_chance
+	B.set_digest_mode(vore_default_mode)
+	B.set_mode_flags(vore_default_flags)
+	B.set_item_digest_mode(vore_default_item_mode)
+	B.set_contaminates(vore_default_contaminates)
+	B.set_contamination_flavor(vore_default_contamination_flavor)
+	B.set_contamination_color(vore_default_contamination_color)
+	B.set_escapable(vore_escape_chance > 0 ? B_ESCAPABLE_DEFAULT : B_ESCAPABLE_NONE)
+	B.set_escapechance(vore_escape_chance)
+	B.set_escapechance_absorbed(vore_escape_chance_absorbed)
+	B.set_digestchance(vore_digest_chance)
+	B.set_absorbchance(vore_absorb_chance)
 	B.human_prey_swallow_time = swallowTime
 	B.nonhuman_prey_swallow_time = swallowTime
-	B.vore_verb = "swallow"
+	B.set_vore_verb("swallow")
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list( // We need more that aren't repetitive. I suck at endo. -Ace
+	B.set_emote_lists_at(DM_HOLD, list( // We need more that aren't repetitive. I suck at endo. -Ace
 		"The insides knead at you gently for a moment.",
 		"The guts glorp wetly around you as some air shifts.",
 		"The predator takes a deep breath and sighs, shifting you somewhat.",
@@ -697,9 +696,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The warm walls kneads harmlessly against you.",
 		"The liquids churn around you, though there doesn't seem to be much effect.",
 		"The sound of bodily movements drown out everything for a moment.",
-		"The predator's movements gently force you into a different position.")
+		"The predator's movements gently force you into a different position."))
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The burning acids eat away at your form.",
 		"The muscular stomach flesh grinds harshly against you.",
 		"The caustic air stings your chest when you try to breathe.",
@@ -708,11 +707,11 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The predator's body ripples and crushes against you as digestive enzymes pull you apart.",
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
-		"The stomach glorps and gurgles as it tries to work you into slop.")
+		"The stomach glorps and gurgles as it tries to work you into slop."))
 	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
-	B.belly_fullscreen = "a_tumby"
-	B.belly_fullscreen_color = "#823232"
-	B.belly_fullscreen_color2 = "#823232"
+	B.set_belly_fullscreen("a_tumby")
+	B.set_belly_fullscreen_color("#823232")
+	B.set_belly_fullscreen_color2("#823232")
 
 /mob/living/simple_mob/Bumped(atom/movable/AM, yes)
 	if(tryBumpNom(AM))
@@ -885,12 +884,12 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	cooldown_start(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
-	pixel_y = pixel_y + 10
+	set_pixel_y(pixel_y + 10)
 
 	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
-	pixel_y = default_pixel_y
+	set_pixel_y(default_pixel_y)
 	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
@@ -984,18 +983,15 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 			M.Turn(90)
 		M.Scale(desired_scale_x, desired_scale_y)
 		M.Translate(1,-6)
-		layer = MOB_LAYER -0.01 // Fix for a byond bug where turf entry order no longer matters
+		set_layer(MOB_LAYER -0.01) // Fix for a byond bug where turf entry order no longer matters
 	else
 		M.Scale(desired_scale_x, desired_scale_y)
 		M.Translate(0, (vis_height/2)*(desired_scale_y-1))
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 
 	// Animate instead of set. Original set left commented out
 	// src.transform = M //
 	animate(src, transform = M, time = anim_time)
-
-	// This from original living.dm update_transforms too
-	handle_status_indicators()
 
 /mob/living/simple_mob/proc/use_headset()
 	set name = "Use Headset"

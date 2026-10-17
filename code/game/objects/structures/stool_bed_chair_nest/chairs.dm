@@ -65,8 +65,8 @@ CAPABILITIES(/obj/structure/bed/chair)
 
 /obj/structure/bed/chair/proc/update_layer()
 	if(src.dir == NORTH)
-		plane = MOB_PLANE
-		layer = MOB_LAYER + 0.1
+		set_plane(MOB_PLANE)
+		set_layer(MOB_LAYER + 0.1)
 	else
 		reset_plane_and_layer()
 
@@ -305,8 +305,8 @@ CAPABILITIES(/obj/structure/bed/chair)
 /obj/structure/bed/chair/sofa/update_layer()
 	// Corner east/west should be on top of mobs, any other state's north should be.
 	if(!corner_piece && (dir & NORTH))
-		plane = MOB_PLANE
-		layer = MOB_LAYER + 0.1
+		set_plane(MOB_PLANE)
+		set_layer(MOB_LAYER + 0.1)
 	else
 		reset_plane_and_layer()
 

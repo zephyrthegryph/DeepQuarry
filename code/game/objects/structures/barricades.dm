@@ -28,7 +28,7 @@ CAPABILITIES(/obj/structure/barricade)
 	set_material_colour(material.icon_colour)
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	set_max_integrity(material.integrity)
 	update_integrity(max_integrity)
 
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/structure/barricade/sandbag)
 	if(QDELETED(src))
 		return
 	name = "[material.display_name] [initial(name)]"
-	color = null
+	set_color(null)
 	set_max_integrity(material.integrity * 2)	// These things are, commonly, used to stop bullets where possible.
 	update_integrity(max_integrity)
 	update_connections(1)

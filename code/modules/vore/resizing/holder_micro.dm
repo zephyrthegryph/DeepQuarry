@@ -24,16 +24,16 @@
 		icon_state = "teshariplushie_white"
 		item_state = "teshariplushie_white"
 
-/obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
+/obj/item/holder/micro/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	var/mob/living/carbon/human/H = held_mob
 	// Only proceed if dealing with a tesh (or something shaped like a tesh)
 	if(istype(H) && H.species.is_micro_carry(H))
 		var/colortemp = color //save original color var to a temp var
 		//convert numerical RGB to Hex #000000 format - is this necessary?
 		//then 'inject' changed color (from skin color) into original proc call
-		color = H.looks.skin_color
+		set_color(H.looks.skin_color)
 		. = ..()
-		color = colortemp //reset color var to it's old value after original proc call before proceeding - otherwise we change hand-slot icon color too!
+		set_color(colortemp) //reset color var to it's old value after original proc call before proceeding - otherwise we change hand-slot icon color too!
 	else
 		. = ..()
 

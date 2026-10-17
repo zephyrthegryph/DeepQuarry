@@ -22,9 +22,9 @@
 	..(forced)
 
 /datum/computer_file/program/access_decrypter/proc/reset()
-	running = FALSE
-	message = ""
-	progress = 0
+	set_running(FALSE)
+	set_message("")
+	set_progress(0)
 
 /datum/computer_file/program/access_decrypter/process_tick()
 	. = ..()
@@ -33,20 +33,20 @@
 	var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
 	var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
 	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
-		message = "A fatal hardware error has been detected."
+		set_message("A fatal hardware error has been detected.")
 		return
 	if(!istype(RFID.stored_card(), /obj/item/card/id))
-		message = "RFID card has been removed from the device. Operation aborted."
+		set_message("RFID card has been removed from the device. Operation aborted.")
 		return
 
-	progress += CPU.max_idle_programs
+	set_progress(progress + CPU.max_idle_programs)
 	if(progress >= target_progress)
 		reset()
 		RFID.stored_card().access |= target_access().id
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer().network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
 			GLOB.ntnet_global.intrusion_detection_alarm = 1
-		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
+		set_message("Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]")
 		target_access_static = null
 
 CAPABILITIES(/datum/computer_file/program/access_decrypter)
@@ -66,16 +66,16 @@ CAPABILITIES(/datum/computer_file/program/access_decrypter)
 	var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
 	var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
 	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
-		message = "A fatal hardware error has been detected."
+		set_message("A fatal hardware error has been detected.")
 		return
 	if(!istype(RFID.stored_card(), /obj/item/card/id))
-		message = "RFID card is not present in the device. Operation aborted."
+		set_message("RFID card is not present in the device. Operation aborted.")
 		return
-	running = TRUE
+	set_running(TRUE)
 	target_access_static = SSaccess.get_access_by_id("[access_target_arg]")
 	if(!target_access())
-		message = "Invalid access target. Operation aborted."
-		running = FALSE
+		set_message("Invalid access target. Operation aborted.")
+		set_running(FALSE)
 		return
 	if(GLOB.ntnet_global.intrusion_detection_enabled)
 		GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer().network_card.get_network_tag()]")

@@ -133,9 +133,9 @@ CAPABILITIES(/datum/board_game/space_battle)
 	var/mob/player_two_mob = player_two
 	if(!player_one_mob || !player_two_mob)
 		return FALSE
-	game_state = GAME_PLACE_SHIPS
-	ship_count_pone = get_remaining_ships(1)
-	ship_count_ptwo = get_remaining_ships(2)
+	set_game_state(GAME_PLACE_SHIPS)
+	set_ship_count_pone(get_remaining_ships(1))
+	set_ship_count_ptwo(get_remaining_ships(2))
 	return TRUE
 
 /datum/board_game/space_battle/proc/ui_act_start_game(datum/act/op/A)
@@ -147,9 +147,9 @@ CAPABILITIES(/datum/board_game/space_battle)
 	var/mob/player_two_mob = player_two
 	if(!player_one_mob || !player_two_mob)
 		return FALSE
-	ship_count_pone = get_alive_ships(1)
-	ship_count_ptwo = get_alive_ships(2)
-	game_state = GAME_PLAYER_ONE
+	set_ship_count_pone(get_alive_ships(1))
+	set_ship_count_ptwo(get_alive_ships(2))
+	set_game_state(GAME_PLAYER_ONE)
 	return TRUE
 
 /datum/board_game/space_battle/proc/ui_act_play_again(datum/act/op/A)
@@ -228,9 +228,9 @@ CAPABILITIES(/datum/board_game/space_battle)
 
 	UNTYPED_LIST_ADD(current_ships, ship_data)
 	if(player == 1)
-		ship_count_pone = get_remaining_ships(1)
+		set_ship_count_pone(get_remaining_ships(1))
 	else
-		ship_count_ptwo = get_remaining_ships(2)
+		set_ship_count_ptwo(get_remaining_ships(2))
 
 	return TRUE
 
@@ -263,9 +263,9 @@ CAPABILITIES(/datum/board_game/space_battle)
 			if(coord[1] == loc_x && coord[2] == loc_y)
 				ships.Cut(i, i + 1)
 				if(player == 1)
-					ship_count_pone = get_remaining_ships(1)
+					set_ship_count_pone(get_remaining_ships(1))
 				else
-					ship_count_ptwo = get_remaining_ships(2)
+					set_ship_count_ptwo(get_remaining_ships(2))
 				return TRUE
 	return FALSE
 
@@ -278,34 +278,34 @@ CAPABILITIES(/datum/board_game/space_battle)
 			return FALSE
 		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
-				game_state = GAME_PLAYER_TWO
+				set_game_state(GAME_PLAYER_TWO)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		if(data["player"] == 2)
 			return FALSE
 		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
-				game_state = GAME_PLAYER_ONE
+				set_game_state(GAME_PLAYER_ONE)
 			return TRUE
 	return FALSE
 
 /datum/board_game/space_battle/proc/reset(full)
-	LAZYCLEARLIST(ship_count_pone)
-	LAZYCLEARLIST(ship_count_ptwo)
+	clear_ship_count_pone()
+	clear_ship_count_ptwo()
 	shots_fired_pone.Cut()
 	shots_fired_ptwo.Cut()
 	ships_placed_pone.Cut()
 	ships_placed_ptwo.Cut()
-	LAZYCLEARLIST(destroyed_ships_pone)
-	LAZYCLEARLIST(destroyed_ships_ptwo)
-	winner = null
-	ships_have_been_placed = NONE
+	clear_destroyed_ships_pone()
+	clear_destroyed_ships_ptwo()
+	set_winner(null)
+	set_ships_have_been_placed(NONE)
 	if(full)
-		game_state = GAME_SETUP
+		set_game_state(GAME_SETUP)
 		rel_clear(src, nameof(player_one))
 		rel_clear(src, nameof(player_two))
 	else
-		game_state = GAME_PLACE_SHIPS
+		set_game_state(GAME_PLACE_SHIPS)
 
 /datum/board_game/space_battle/proc/game_fire_shot(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
@@ -356,11 +356,11 @@ CAPABILITIES(/datum/board_game/space_battle)
 			if(game_state == GAME_PLAYER_ONE)
 				if(!(LAZYFIND(destroyed_ships_pone, ship)))
 					UNTYPED_LIST_ADD(destroyed_ships_pone, ship)
-					ship_count_pone = get_alive_ships(1)
+					set_ship_count_pone(get_alive_ships(1))
 			else
 				if(!(LAZYFIND(destroyed_ships_ptwo, ship)))
 					UNTYPED_LIST_ADD(destroyed_ships_ptwo, ship)
-					ship_count_ptwo = get_alive_ships(2)
+					set_ship_count_ptwo(get_alive_ships(2))
 
 	for(var/list/ship in opponent_ships)
 		var/key
@@ -369,8 +369,8 @@ CAPABILITIES(/datum/board_game/space_battle)
 			if(!current_shots[key])
 				return
 
-	winner = user.name
-	game_state = GAME_OVER
+	set_winner(user.name)
+	set_game_state(GAME_OVER)
 
 /datum/board_game/space_battle/proc/field_check(new_x_location, new_y_location)
 	if(new_x_location < 1 || new_x_location > GRID_SIZE)
@@ -417,9 +417,9 @@ CAPABILITIES(/datum/board_game/space_battle)
 			remaining_ships[ship_name] = remaining_count
 
 	if(length(remaining_ships))
-		ships_have_been_placed &= ~ship_placed_flag
+		set_ships_have_been_placed(ships_have_been_placed & (~ship_placed_flag))
 	else
-		ships_have_been_placed |= ship_placed_flag
+		set_ships_have_been_placed(ships_have_been_placed | ship_placed_flag)
 
 	return remaining_ships
 

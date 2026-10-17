@@ -232,9 +232,9 @@ CAPABILITIES(/obj/item/bug_monitor)
 	else
 		if(in_use) // Don't allow spamming tgui menus
 			return
-		in_use = TRUE
+		set_in_use(TRUE)
 		if(!user || QDELETED(user) || !open_request(src, /datum/prompt/choice/bug_camera, PROC_REF(camera_chosen), answerer = user, choices = cameras))
-			in_use = FALSE
+			set_in_use(FALSE)
 		return
 	view_camera(user)
 
@@ -246,7 +246,7 @@ CAPABILITIES(/obj/item/bug_monitor)
 	timeout = 0
 
 /obj/item/bug_monitor/proc/camera_chosen(datum/act/request/A)
-	in_use = FALSE
+	set_in_use(FALSE)
 	if(!A.answer)
 		return
 	rel_set(src, nameof(selected_camera), A.answer.value)

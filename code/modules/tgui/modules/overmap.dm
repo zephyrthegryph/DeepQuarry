@@ -398,20 +398,20 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	var/datum/prompt/y_answer = A.step_answer("y")
 	var/newx = x_answer?.value
 	if(newx)
-		dx = CLAMP(newx, 1, world.maxx)
+		set_dx(CLAMP(newx, 1, world.maxx))
 	var/newy = y_answer?.value
 	if(newy)
-		dy = CLAMP(newy, 1, world.maxy)
+		set_dy(CLAMP(newy, 1, world.maxy))
 	. = TRUE
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_setds(datum/act/op/A, x, y)
-	dx = x
-	dy = y
+	set_dx(x)
+	set_dy(y)
 	. = TRUE
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_reset(datum/act/op/A)
-	dx = 0
-	dy = 0
+	set_dx(0)
+	set_dy(0)
 	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_speedlimit(datum/act/op/A)
@@ -422,7 +422,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 		return
 	var/newlimit = A.answer.value
 	if(newlimit)
-		speedlimit = CLAMP(newlimit/1000, 0, 100)
+		set_speedlimit(CLAMP(newlimit/1000, 0, 100))
 	. = TRUE
 	SStgui.update_uis(src)
 
@@ -434,7 +434,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 		return
 	var/newlimit = A.answer.value
 	if(newlimit)
-		accellimit = max(newlimit/1000, 0)
+		set_accellimit(max(newlimit/1000, 0))
 	. = TRUE
 	SStgui.update_uis(src)
 
@@ -451,14 +451,14 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_apilot(datum/act/op/A)
 	if(autopilot_disabled)
-		autopilot = FALSE
+		set_autopilot(FALSE)
 	else
-		autopilot = !autopilot
+		set_autopilot(!autopilot)
 	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_apilot_lock(datum/act/op/A)
-	autopilot_disabled = !autopilot_disabled
-	autopilot = FALSE
+	set_autopilot_disabled(!autopilot_disabled)
+	set_autopilot(FALSE)
 	return OP_OK
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_manual(datum/act/op/A)

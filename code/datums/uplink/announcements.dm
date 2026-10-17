@@ -42,43 +42,43 @@
 
 	var/datum/data/record/general = GLOB.data_core.CreateGeneralRecord(user)
 	if(I)
-		general.fields["age"] = I.age
-		general.fields["rank"] = I.assignment
-		general.fields["real_rank"] = I.assignment
-		general.fields["name"] = I.registered_name
-		general.fields["sex"] = I.sex
+		general.set_fields_at("age", I.age)
+		general.set_fields_at("rank", I.assignment)
+		general.set_fields_at("real_rank", I.assignment)
+		general.set_fields_at("name", I.registered_name)
+		general.set_fields_at("sex", I.sex)
 	else
 		var/mob/living/carbon/human/H
 		if(ishuman(user))
 			H = user
-			general.fields["age"] = H.bio.age
+			general.set_fields_at("age", H.bio.age)
 		else
-			general.fields["age"] = initial(H.bio.age)
+			general.set_fields_at("age", initial(H.bio.age))
 		var/assignment = GetAssignment(user)
-		general.fields["rank"] = assignment
-		general.fields["real_rank"] = assignment
-		general.fields["name"] = user.real_name
-		general.fields["sex"] = capitalize(user.gender)
+		general.set_fields_at("rank", assignment)
+		general.set_fields_at("real_rank", assignment)
+		general.set_fields_at("name", user.real_name)
+		general.set_fields_at("sex", capitalize(user.gender))
 
-	general.fields["species"] = user.get_species()
+	general.set_fields_at("species", user.get_species())
 	var/datum/data/record/medical = GLOB.data_core.CreateMedicalRecord(general.fields["name"], general.fields["id"])
 	GLOB.data_core.CreateSecurityRecord(general.fields["name"], general.fields["id"])
 
 	if(random_general_record)
-		general.fields["citizenship"]	= random_general_record.fields["citizenship"]
-		general.fields["faction"] 		= random_general_record.fields["faction"]
-		general.fields["fingerprint"] 	= random_general_record.fields["fingerprint"]
-		general.fields["home_system"] 	= random_general_record.fields["home_system"]
-		general.fields["birthplace"] 	= random_general_record.fields["birthplace"]
-		general.fields["religion"] 		= random_general_record.fields["religion"]
+		general.set_fields_at("citizenship", random_general_record.fields["citizenship"])
+		general.set_fields_at("faction", random_general_record.fields["faction"])
+		general.set_fields_at("fingerprint", random_general_record.fields["fingerprint"])
+		general.set_fields_at("home_system", random_general_record.fields["home_system"])
+		general.set_fields_at("birthplace", random_general_record.fields["birthplace"])
+		general.set_fields_at("religion", random_general_record.fields["religion"])
 	if(random_medical_record)
-		medical.fields["b_type"]		= random_medical_record.fields["b_type"]
-		medical.fields["b_dna"]			= random_medical_record.fields["b_dna"]
+		medical.set_fields_at("b_type", random_medical_record.fields["b_type"])
+		medical.set_fields_at("b_dna", random_medical_record.fields["b_dna"])
 
 	if(I)
-		general.fields["fingerprint"] 	= I.fingerprint_hash
-		medical.fields["b_type"]	= I.blood_type
-		medical.fields["b_dna"]		= I.dna_hash
+		general.set_fields_at("fingerprint", I.fingerprint_hash)
+		medical.set_fields_at("b_type", I.blood_type)
+		medical.set_fields_at("b_dna", I.dna_hash)
 
 	AnnounceArrivalSimple(general.fields["name"], general.fields["rank"])
 	return 1

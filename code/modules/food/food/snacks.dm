@@ -20,6 +20,10 @@
 	var/nutriment_amt = 0
 	var/list/nutriment_desc = list("food" = 1) // ALLOW(instance_list): d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
 	var/tmp/datum/reagent/nutriment/coating/coating
+	/// The batter or breading over the food, as an image of its flattened icon (raw while it is uncooked, cooked after cook()).
+	var/image/coating_look
+	/// The icon_state of the filling layer a cooking machine made this from, drawn in `filling_color`; null for a food that has none.
+	var/filling_layer
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
@@ -146,6 +150,12 @@
 // is unwrapped and a sealed one opened by using it in hand. A loaf is sliced by an edged thing on a table or a tray, and anything small enough (and a knife
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
+/obj/item/reagent_containers/food/snacks/draw(datum/look/look)
+	..()
+	if(filling_layer)
+		look.overlay(look_overlay_image(icon, filling_layer, color = filling_color))
+	look.overlay(coating_look, when = !!coating_look)
+
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
 	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
@@ -1820,7 +1830,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	desc = "Just add water!"
 	to_chat(user, "You unwrap the cube.")
 	set_wrapped(FALSE)
-	flags |= OPENCONTAINER
+	set_open_by_flag(TRUE)
 	return
 
 /obj/item/reagent_containers/food/snacks/monkeycube/On_Consume(mob/M)
@@ -3847,6 +3857,7 @@ CAPABILITIES(/obj/item/pizzabox)
 		needs(req(PROC_REF(is_open))), then(PROC_REF(pizza_put_in)))
 	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
+	examine_line(PROC_REF(pizza_text))
 
 MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
 MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
@@ -3863,7 +3874,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 	// Set appropriate description
 	if(open && pizza)
-		look.identity(desc = "A box suited for pizzas. It appears to have a [read_once(pizza.name)] inside.") // a name written on the pizza is sampled when the box redraws
+		look.identity(desc = "A box suited for pizzas. It appears to have a pizza inside.")
 	else if(stacked > 0)
 		var/stack_desc = "A pile of boxes suited for pizzas. There appears to be [stacked + 1] boxes in the pile."
 		var/toptag = topbox.boxtag
@@ -3887,6 +3898,12 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	if(tagged)
 		look.overlay(look_overlay_image('icons/obj/food.dmi', "pizzabox_tag", pixel_y = stacked * 3))
 	look.state("pizzabox[stacked + 1]")
+
+/// Which pizza an open box holds, asked when it is examined (a name is not a tracked read, so it is not part of the look).
+/obj/item/pizzabox/proc/pizza_text(datum/act/A)
+	if(!open || !pizza)
+		return null
+	return "The pizza inside is a [read_once(pizza.name)]."
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
@@ -4702,14 +4719,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	if (!flat_icon)
 		flat_icon = getFlatIcon(src)
 	var/icon/I = flat_icon
-	color = "#FFFFFF" //Some fruits use the color var. Reset this so it doesnt tint the batter
+	set_color("#FFFFFF") //Some fruits use the color var. Reset this so it doesnt tint the batter
 	I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
 	I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_raw),ICON_MULTIPLY)
 	var/image/J = image(I)
 	J.alpha = 200
 	J.blend_mode = BLEND_OVERLAY
-	J.tag = "coating"
-	add_overlay(J)
+	set_coating_look(J)
 
 	if (user)
 		act_message(user, src, MSG_SELF(span_notice("You dip %T% into \the [coating().name]")), \
@@ -4720,27 +4736,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 //Called by cooking machines. This is mainly intended to set properties on the food that differ between raw/cooked
 /obj/item/reagent_containers/food/snacks/proc/cook()
 	if (coating())
-		var/list/temp = overlays.Copy()
-		for (var/i in temp)
-			if (istype(i, /image))
-				var/image/I = i
-				if (I.tag == "coating")
-					temp.Remove(I)
-					break
-
-		overlays = temp
-		//Carefully removing the old raw-batter overlay
-
 		if (!flat_icon)
 			flat_icon = getFlatIcon(src)
 		var/icon/I = flat_icon
-		color = "#FFFFFF" //Some fruits use the color var
+		set_color("#FFFFFF") //Some fruits use the color var
 		I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
 		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
 		var/image/J = image(I)
 		J.alpha = 200
-		J.tag = "coating"
-		add_overlay(J)
+		set_coating_look(J) //replaces the raw-batter look
 
 		if (do_coating_prefix == 1)
 			name = "[coating().coated_adj] [name]"
@@ -4749,7 +4753,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 		if (istype(R, /datum/reagent/nutriment/coating))
 			var/datum/reagent/nutriment/coating/C = R
 			C.data["cooked"] = 1
-			C.name = C.cooked_name
+			C.set_name(C.cooked_name)
 
 /obj/item/reagent_containers/food/snacks/proc/on_consume(mob/eater, mob/feeder = null)
 	if(!reagents.total_volume)

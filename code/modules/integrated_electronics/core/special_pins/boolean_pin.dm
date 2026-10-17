@@ -9,7 +9,7 @@
 
 /datum/integrated_io/boolean/write_data_to_pin(new_data)
 	if(new_data == FALSE || new_data == TRUE)
-		data = new_data
+		set_data(new_data)
 		holder().on_data_written()
 
 /datum/integrated_io/boolean/scramble()

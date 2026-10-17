@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
 		var/obj/item/butt = new type_butt(src.loc)
 		transfer_fingerprints_to(butt)
 		if(transfer_color)
-			butt.color = color
+			butt.set_color(color)
 		if(brand)
 			butt.desc += " This one is \a [brand]."
 		if(ismob(loc))

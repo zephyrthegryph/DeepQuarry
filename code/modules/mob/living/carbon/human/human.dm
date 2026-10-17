@@ -158,7 +158,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!blinded)
 		flash_eyes()
 
-	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	var/explosion_shift = src.explosion_shift
 	if(explosion_shift)
 		severity = CLAMP(severity + explosion_shift, 1, 4)
 
@@ -693,7 +693,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	if(setcriminal == "Cancel")
 		return
 	var/datum/data/record/R = ask.record
-	R.fields["criminal"] = setcriminal
+	R.set_fields_at("criminal", setcriminal)
 	flag_hud_update(WANTED_HUD)
 	hud_record_changed(user)
 
@@ -709,7 +709,7 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	if(setmedical == "Cancel")
 		return
 	var/datum/data/record/R = ask.record
-	R.fields["p_stat"] = setmedical
+	R.set_fields_at("p_stat", setmedical)
 	if(GLOB.PDA_Manifest.len)
 		GLOB.PDA_Manifest.Cut()
 	hud_record_changed(user)
@@ -735,10 +735,10 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		counter++
 	if(ishuman(user))
 		var/mob/living/carbon/human/U = user
-		R.fields[text("com_[counter]")] = text("Made by [U.get_authentification_name()] ([U.get_assignment()]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]")
+		R.set_fields_at(text("com_[counter]"), text("Made by [U.get_authentification_name()] ([U.get_assignment()]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]"))
 	if(istype(user,/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/U = user
-		R.fields[text("com_[counter]")] = text("Made by [U.name] ([U.modtype] [U.braintype]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]")
+		R.set_fields_at(text("com_[counter]"), text("Made by [U.name] ([U.modtype] [U.braintype]) on [time2text(world.realtime, "DDD MMM DD hh:mm:ss")], [GLOB.game_year]<BR>[t1]"))
 
 ///eyecheck()
 ///Returns a number between -1 to 2
@@ -1023,11 +1023,11 @@ CAPABILITIES(/datum/morph_review)
 		looks.set_facial_style(new_f_style)
 	switch(new_gender)
 		if("Male")
-			gender = MALE
+			set_gender(MALE)
 		if("Female")
-			gender = FEMALE
+			set_gender(FEMALE)
 		if("Neutral")
-			gender = NEUTER
+			set_gender(NEUTER)
 	check_dna()
 	act_message(src, null, MSG_SELF(span_notice("You change your appearance!")), \
 		MSG_OTHERS(span_notice("%U% morphs and changes %THEIR% appearance!")), \
@@ -1173,7 +1173,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		if(VISIBLE_GENDER_FORCE_IDENTIFYING)
 			return get_gender()
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
-			return read_once(gender)
+			return gender
 		else
 			if(((worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT))
 				return PLURAL
@@ -1422,7 +1422,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	old_species?.remove_components(src, species)
 	if(replaced)
 		replaced_by(replaced) // the private copy proto_replace() handed back, done with now
-	invalidate_factors()
+	body?.sync_species_factors()
 
 	if(species.language)
 		add_language(species.language)
@@ -1443,7 +1443,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		set_holder_type(species.holder_type)
 
 	if(!(gender in species.genders))
-		gender = species.genders[1]
+		set_gender(species.genders[1])
 
 	// Swap the body plan before the organs are built so they attach to the new body.
 	// On the first set_species() (before /mob/living/Initialize()) the body is
@@ -1469,14 +1469,16 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		species.create_organs(src)
 
 	species.apply_components(src)
+	// The body exists now (the first species is set before the body does): its factor sources are read.
+	body?.sync_species_factors()
 
 	set_endurance(species.total_health)
 	set_hunger_rate(src, species.hunger_factor)
 
 	set_default_pixel_x(initial(pixel_x) + species.pixel_offset_x) //For giving datum/species ways to change 64x64 sprite offsets
 	set_default_pixel_y(initial(pixel_y) + species.pixel_offset_y)
-	pixel_x = default_pixel_x
-	pixel_y = default_pixel_y
+	set_pixel_x(default_pixel_x)
+	set_pixel_y(default_pixel_y)
 	set_center_offset(species.center_offset)
 
 	if(vessel && !keep_organs)
@@ -1941,13 +1943,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return 0
 	if(loc?.numbs_pain_of(src))
 		return FALSE
-	if(factor(BF_PAIN_IMMUNITY))
+	if(src.pain_immunity)
 		return 0
 	if(check_organ)
 		if(!istype(check_organ))
 			return 0
 		return check_organ.organ_can_feel_pain()
-	// NO_PAIN reaches here as BF_PAIN_IMMUNITY (species grant, humanoid factors).
+	// NO_PAIN reaches here as STAT_PAIN_IMMUNITY (species grant, humanoid factors).
 	return !(species?.flags & NO_PAIN)
 
 /mob/living/carbon/human/is_sentient()
@@ -1975,7 +1977,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
-			layer = HIDING_LAYER
+			set_layer(HIDING_LAYER)
 
 /mob/living/carbon/human/examine_icon()
 	var/icon/I = get_cached_examine_icon(src)

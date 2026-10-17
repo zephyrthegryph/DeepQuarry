@@ -300,8 +300,8 @@
 	var/datum/tgui_module/agentcard/M = hct_track(new /datum/tgui_module/agentcard(S))
 	var/mob/living/carbon/human/H = hct_actor()
 	S.register_user(H)
-	S.age = 99
-	S.assignment = "Captain"
+	S.set_age(99)
+	S.set_assignment("Captain")
 	press(H, M, "factoryreset")
 	TEST_ASSERT(p2cl_has_question(H), "the reset is confirmed first")
 	p2cl_answer(H, FALSE)
@@ -688,9 +688,9 @@
 /// A text file stored on the program's computer.
 /datum/unit_test/dq_hc_tgui/proc/hct_file(datum/computer_file/program/P, name, data = "")
 	var/datum/computer_file/data/F = new /datum/computer_file/data()
-	F.filename = name
-	F.filetype = "TXT"
-	F.stored_data = data
+	F.set_filename(name)
+	F.set_filetype("TXT")
+	F.set_stored_data(data)
 	F.calculate_size()
 	TEST_ASSERT(P.computer().hard_drive.store_file(F), "the drive stores the file")
 	return F
@@ -703,7 +703,7 @@
 	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
 	TEST_ASSERT_EQUAL(P.open_file, "doc", "the file is opened")
 	TEST_ASSERT_EQUAL(P.loaded_data, "hello", "and its text loaded")
-	P.loaded_data = "changed"
+	P.set_loaded_data("changed")
 	press(H, P, "PRG_savefile")
 	TEST_ASSERT_EQUAL(P.get_file("doc").stored_data, "changed", "saving writes the text back")
 	press(H, P, "PRG_newfile", list("PRG_saveasfile" = "x"))
@@ -716,7 +716,7 @@
 	TEST_ASSERT(P.error, "opening a file that is not there is an error")
 	press(H, P, "PRG_backtomenu")
 	TEST_ASSERT_NULL(P.error, "the error is cleared")
-	P.loaded_data = "unsaved"
+	P.set_loaded_data("unsaved")
 	P.set_is_edited(TRUE)
 	press(H, P, "PRG_openfile", list("PRG_openfile" = "doc"))
 	TEST_ASSERT(p2cl_has_question(H), "unsaved changes are asked about first")
@@ -754,18 +754,18 @@
 /// An appearance changer working on a human, with everything it may change allowed.
 /datum/unit_test/dq_hc_tgui/proc/hct_changer(mob/living/carbon/human/owner)
 	var/datum/tgui_module/appearance_changer/M = hct_track(new /datum/tgui_module/appearance_changer(hct_host(), owner))
-	M.flags = APPEARANCE_ALL
+	M.set_flags(APPEARANCE_ALL)
 	M.generate_data(owner, owner)
 	return M
 
 /// A press on the changer after its half-second cooldown (it reads world.time, which the test clock does not advance).
 /datum/unit_test/dq_hc_tgui/proc/cpress(datum/tgui_module/appearance_changer/M, mob/actor, action, list/args)
-	M.cooldown = 0
+	M.set_cooldown(0)
 	press(actor, M, action, args)
 
 /// Answers the question the person was asked, after the cooldown.
 /datum/unit_test/dq_hc_tgui/proc/canswer(datum/tgui_module/appearance_changer/M, mob/actor, value, cancel = FALSE)
-	M.cooldown = 0
+	M.set_cooldown(0)
 	p2cl_answer(actor, value, cancel)
 	test_time(10 SECONDS)
 
@@ -793,7 +793,7 @@
 	hct_ui(src, H, M, "hair", list("name" = first))
 	hct_ui(src, H, M, "hair", list("name" = second))
 	TEST_ASSERT_EQUAL(H.looks.hair_style, first, "a second button inside half a second is refused")
-	M.cooldown = 0
+	M.set_cooldown(0)
 	hct_ui(src, H, M, "hair", list("name" = second))
 	TEST_ASSERT_EQUAL(H.looks.hair_style, second, "and works once the half second has passed")
 

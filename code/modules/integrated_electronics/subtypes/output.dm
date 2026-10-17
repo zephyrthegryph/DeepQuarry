@@ -84,7 +84,7 @@
 			set_glow(light_source, GLOW(light_brightness, light_brightness, light_rgb))
 		else
 			set_glow(light_source, GLOW(0, null, null))
-	power_draw_idle = light_toggled ? light_brightness * light_brightness : 0 // Should be the same draw as regular lights.
+	set_power_draw_idle(light_toggled ? light_brightness * light_brightness : 0) // Should be the same draw as regular lights.
 
 /obj/item/integrated_circuit/output/light/power_fail() // Turns off the flashlight if there's no power left.
 	light_toggled = FALSE
@@ -269,7 +269,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/sound)
 	var/led_color
 
 /obj/item/integrated_circuit/output/led/on_data_written()
-	power_draw_idle = get_pin_data(IC_INPUT, 1) ? 1 : 0
+	set_power_draw_idle(get_pin_data(IC_INPUT, 1) ? 1 : 0)
 
 /obj/item/integrated_circuit/output/led/power_fail()
 	set_pin_data(IC_INPUT, 1, FALSE)
@@ -440,7 +440,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 			update_hologram()
 
 	//		holo_beam = assembly.Beam(hologram, icon_state = "holo_beam", time = INFINITY, maxdistance = world.view)
-			power_draw_idle = 500
+			set_power_draw_idle(500)
 			return TRUE
 	return FALSE
 
@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 	rel_clear(src, nameof(hologram))
 
 
-	power_draw_idle = 0
+	set_power_draw_idle(0)
 
 /obj/item/integrated_circuit/output/holographic_projector/on_data_written()
 	if(hologram)

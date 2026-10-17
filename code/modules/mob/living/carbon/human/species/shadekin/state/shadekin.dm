@@ -247,7 +247,7 @@
 	new_time = CLAMP(new_time, 2, 20)
 	if(!isnum(new_time))
 		return FALSE
-	flicker_time = new_time
+	set_flicker_time(new_time)
 	user.write_preference_directly(/datum/preference/numeric/living/flicker_time, new_time, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
@@ -258,7 +258,7 @@
 	var/mob/user = A.actor
 	var/picked = A.step_value("color")
 	if(picked)
-		flicker_color = picked
+		set_flicker_color(picked)
 		user.write_preference_directly(/datum/preference/color/living/flicker_color, picked, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
@@ -268,7 +268,7 @@
 	new_break_chance = CLAMP(new_break_chance, 0, 25)
 	if(!isnum(new_break_chance))
 		return FALSE
-	flicker_break_chance = new_break_chance
+	set_flicker_break_chance(new_break_chance)
 	user.write_preference_directly(/datum/preference/numeric/living/flicker_break_chance, new_break_chance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
@@ -278,20 +278,20 @@
 	new_distance = CLAMP(new_distance, 4, 10)
 	if(!isnum(new_distance))
 		return FALSE
-	flicker_distance = new_distance
+	set_flicker_distance(new_distance)
 	user.write_preference_directly(/datum/preference/numeric/living/flicker_distance, new_distance, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 	return TRUE
 
 /datum/shadekin/proc/ui_act_toggle_retreat(datum/act/op/A)
 	var/mob/user = A.actor
 	var/new_retreat = !no_retreat
-	no_retreat = !no_retreat
+	set_no_retreat(!no_retreat)
 	user.write_preference_directly(/datum/preference/toggle/living/dark_retreat_toggle, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
 /datum/shadekin/proc/ui_act_toggle_nutrition(datum/act/op/A)
 	var/mob/user = A.actor
 	var/new_retreat = !nutrition_energy_conversion
-	nutrition_energy_conversion = !nutrition_energy_conversion
+	set_nutrition_energy_conversion(!nutrition_energy_conversion)
 	user.write_preference_directly(/datum/preference/toggle/living/shadekin_nutrition_conversion, new_retreat, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
 /datum/shadekin/proc/ui_act_toggle_voice(datum/act/op/A)

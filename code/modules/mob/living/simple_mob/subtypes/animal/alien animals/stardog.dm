@@ -464,9 +464,9 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 	if(tree_chance && prob(tree_chance) && !check_density())
 		var/obj/structure/flora/tree/tree = new tree_type(src)
 		if(tree_color)
-			tree.color = tree_color
+			tree.set_color(tree_color)
 		else
-			tree.color = color
+			tree.set_color(color)
 
 /// Old Pet Fur verb: Pet the fur!
 /turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(datum/act/op/A)
@@ -605,7 +605,7 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)
 		var/obj/item/stack/material/fur/F = new product(get_turf(src), product_amount)
-		F.color = color
+		F.set_color(color)
 	visible_message(span_notice("\The [src] is felled!"))
 	if(prob(mob_chance))
 		if(!mob_list.len)
@@ -879,7 +879,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	move_player(user, host, "took control of [host] through [src]", share = TRUE)
 	log_admin("[host.ckey] has taken contol of \the [host].")
 	set_icon_state("control_node1")
-	plane = ABOVE_MOB_PLANE
+	set_plane(ABOVE_MOB_PLANE)
 	set_glow(src, GLOW(5, 0.75, "#f94bff"))
 
 /obj/structure/control_pod/proc/control_failed(datum/act/op/A)
@@ -892,7 +892,7 @@ CAPABILITIES(/obj/structure/control_pod)
 	visible_message(span_warning("\The [controller] is ejected from \the [src], tumbling free!"))
 	log_admin("[controller.ckey] is no longer controlling [host], they have been returned to their body, [controller].")
 	set_icon_state("control_node0")
-	plane = OBJ_PLANE
+	set_plane(OBJ_PLANE)
 	set_glow(src, GLOW(0, null, null))
 	var/our_x = rand(-5,5) + x
 	var/our_y = rand(-5,5) + y
@@ -1493,8 +1493,8 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	set_countdown(rand(10,20))
-	layer = OBJ_LAYER
-	plane = OBJ_PLANE
+	set_layer(OBJ_LAYER)
+	set_plane(OBJ_PLANE)
 
 /obj/structure/auto_flesh_door/proc/Close()
 	isSwitchingStates = 1
@@ -1510,8 +1510,8 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	set_countdown(rand(50,250))
-	layer = ABOVE_MOB_LAYER
-	plane = ABOVE_MOB_PLANE
+	set_layer(ABOVE_MOB_LAYER)
+	set_plane(ABOVE_MOB_PLANE)
 	for(var/mob/living/L in contents_of(src.loc))
 		if(isliving(L))
 			L.status_at_least(STAT_WEAKENED, 3)

@@ -27,8 +27,8 @@
 		animation.set_density(FALSE)
 		animation.set_anchored(TRUE)
 		animation.set_icon('icons/mob/mob.dmi')
-		animation.plane = MOB_PLANE
-		animation.layer = ABOVE_MOB_LAYER
+		animation.set_plane(MOB_PLANE)
+		animation.set_layer(ABOVE_MOB_LAYER)
 		rel_set(animation, nameof(animation.master), holder)
 		target.extinguish_mob()
 		if(target?.buckled_to())

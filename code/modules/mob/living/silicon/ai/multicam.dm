@@ -41,9 +41,9 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 		var/matrix/M = matrix()
 		M.Scale(width + 0.5, height + 0.5)
 		M.Translate((width-1)/2 * ICON_SIZE_X, (height-1)/2 * ICON_SIZE_Y)
-		highlighted_background.transform = M
-		standard_background.transform = M
-		add_overlay(highlighted ? highlighted_background : standard_background)
+		var/mutable_appearance/scaled_background = new(highlighted ? highlighted_background : standard_background)
+		scaled_background.transform = M
+		set_background_overlay(scaled_background)
 
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_size(width, height, do_refresh = TRUE)
 	if(!aiEye) // Exploit fix
@@ -72,15 +72,13 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 	if(highlighted)
 		return
 	highlighted = TRUE
-	cut_overlay(standard_background)
-	add_overlay(highlighted_background)
+	add_background()
 
 /atom/movable/screen/movable/pic_in_pic/ai/proc/unhighlight()
 	if(!highlighted)
 		return
 	highlighted = FALSE
-	cut_overlay(highlighted_background)
-	add_overlay(standard_background)
+	add_background()
 
 /atom/movable/screen/movable/pic_in_pic/ai/proc/set_ai(mob/living/silicon/ai/new_ai)
 	if(!aiEye && !QDELETED(src))

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The last raw overlay writes (HUD images, limb layers, thought bubbles, spore and morph copies, the emissive blocker) go through the look builder; raw overlay writes are now a hard lint ban"
+  - bugfix: "A morph restoring its own form no longer loses its emissive blocker"

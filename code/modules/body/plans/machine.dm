@@ -26,12 +26,12 @@
 /datum/body/simple/machine/recompute_vitals()
 	..()
 	var/max_load = owner.get_endurance() * DQ_MACHINE_LETHAL_MULT
-	vitality = max_load > 0 ? clamp(1 - total_load / max_load, 0, 1) : 0
-	consciousness = 100
+	set_vitality(max_load > 0 ? clamp(1 - total_load / max_load, 0, 1) : 0)
+	set_consciousness(100)
 	for(var/datum/affliction/A as anything in afflictions)
-		consciousness -= A.consciousness_penalty()
+		set_consciousness(consciousness - (A.consciousness_penalty()))
 	if(!owner.machine_power_ok())
-		consciousness = 0 // brownout
+		set_consciousness(0) // brownout
 
 /// Brownout and incapacitation change without any affliction changing, so a
 /// machine evaluates its status every tick (cheap: cached vitals).

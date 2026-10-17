@@ -28,14 +28,14 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 
 /// Sets an entry in the tree to the given value
 /datum/json_savefile/proc/set_entry(key, value)
-	tree[key] = value
+	set_tree_at(key, value)
 	if(auto_save)
 		save()
 
 /// Removes the given key from the tree
 /datum/json_savefile/proc/remove_entry(key)
 	if(key)
-		tree -= key
+		remove_tree(key)
 	if(auto_save)
 		save()
 
@@ -47,7 +47,7 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 	if(!path || !fexists(path))
 		return FALSE
 	try
-		tree = json_decode(rustg_file_read(path))
+		set_tree(json_decode(rustg_file_read(path)))
 		return TRUE
 	catch(var/exception/err)
 		stack_trace("failed to load json savefile at '[path]': [err]")
@@ -82,7 +82,7 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 
 /// Traverses the entire dir tree of the given savefile and dynamically assembles the tree from it
 /datum/json_savefile/proc/import_byond_savefile(savefile/savefile)
-	tree.Cut()
+	clear_tree()
 	var/list/dirs_to_go = list("/" = tree)
 	while(length(dirs_to_go))
 		var/dir = dirs_to_go[1]

@@ -12,7 +12,11 @@ done
 top="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 lib="${DQ_MERGE_LOCK_LIB:-$top/tools/dq_machine_slots.sh}"
 [ -f "$lib" ] || exit 0
+# The guard only means anything inside the merge worktree. Every other worktree (the main checkout running `git gc`, a lane, a pool
+# slot) must never be blocked, and a checkout whose dq_machine_slots.sh predates merge_lock_require (a stale main checkout) must
+# degrade to "allow" instead of failing every ref update with "command not found".
 # shellcheck source=/dev/null
-. "$lib"
+. "$lib" >/dev/null 2>&1 || exit 0
+type merge_lock_require >/dev/null 2>&1 || exit 0
 merge_lock_require || exit 1
 exit 0

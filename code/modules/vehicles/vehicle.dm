@@ -37,6 +37,8 @@
 
 	var/atom/movable/load		//all vehicles can take a load, since they should all be a least drivable
 	var/load_item_visible = 1	//set if the loaded item should be overlayed on the vehicle sprite
+	/// What a trolley shows of its load: a snapshot of the load, taken (and nudged by the load offsets) when it was put on. Null with no visible load.
+	var/image/load_image
 	var/load_offset_x = 0		//pixel_x offset for item overlay
 	var/load_offset_y = 0		//pixel_y offset for item overlay
 	var/mob_offset_y = 0		//pixel_y offset for mob overlay
@@ -346,12 +348,12 @@ CAPABILITIES(/obj/vehicle)
 	rel_set(src, nameof(load), C)
 
 	if(load_item_visible)
-		C.pixel_x += load_offset_x
+		C.set_pixel_x(C.pixel_x + load_offset_x)
 		if(ismob(C))
-			C.pixel_y += mob_offset_y
+			C.set_pixel_y(C.pixel_y + mob_offset_y)
 		else
-			C.pixel_y += load_offset_y
-		C.layer = layer + 0.1
+			C.set_pixel_y(C.pixel_y + load_offset_y)
+		C.set_layer(layer + 0.1)
 
 	if(ismob(C) && user)
 		user_buckle_mob(C, user)
@@ -393,8 +395,8 @@ CAPABILITIES(/obj/vehicle)
 	load.set_anchored(FALSE) //we can only load non-anchored items, so it makes sense to set this to false
 	if(ismob(load))
 		var/mob/L = load
-		L.pixel_x = L.default_pixel_x
-		L.pixel_y = L.default_pixel_y
+		L.set_pixel_x(L.default_pixel_x)
+		L.set_pixel_y(L.default_pixel_y)
 	else
 		load.pixel_x = initial(load.pixel_x)
 		load.pixel_y = initial(load.pixel_y)

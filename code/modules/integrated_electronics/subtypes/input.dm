@@ -326,10 +326,10 @@
 
 /obj/item/integrated_circuit/input/local_locator/do_work()
 	var/datum/integrated_io/O = outputs[1]
-	O.data = null
+	O.set_data(null)
 	if(assembly())
 		if(isliving(assembly().loc)) // Now check if someone's holding us.
-			O.data = ic_ref(assembly().loc)
+			O.set_data(ic_ref(assembly().loc))
 
 	O.push_data()
 
@@ -351,7 +351,7 @@
 /obj/item/integrated_circuit/input/adjacent_locator/do_work()
 	var/datum/integrated_io/I = inputs[1]
 	var/datum/integrated_io/O = outputs[1]
-	O.data = null
+	O.set_data(null)
 
 	if(!ic_is_ref(I.data))
 		return
@@ -369,7 +369,7 @@
 			continue
 		valid_things.Add(thing)
 	if(valid_things.len)
-		O.data = ic_ref(pick(valid_things))
+		O.set_data(ic_ref(pick(valid_things)))
 		activate_pin(2)
 	else
 		activate_pin(3)
@@ -404,7 +404,7 @@
 /obj/item/integrated_circuit/input/advanced_locator/do_work()
 	var/datum/integrated_io/I = inputs[1]
 	var/datum/integrated_io/O = outputs[1]
-	O.data = null
+	O.set_data(null)
 	var/turf/T = get_turf(src)
 	var/list/nearby_things = range(radius, T)
 	var/list/valid_things = list()
@@ -452,7 +452,7 @@
 			if(findtext(addtext(thing.name," ",thing.desc), DT, 1, 0) )
 				valid_things.Add(thing)
 	if(valid_things.len)
-		O.data = ic_ref(pick(valid_things))
+		O.set_data(ic_ref(pick(valid_things)))
 		O.push_data()
 		activate_pin(2)
 	else

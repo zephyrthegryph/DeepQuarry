@@ -56,8 +56,8 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 		animation.set_density(FALSE)
 		animation.set_anchored(TRUE)
 		animation.set_icon('icons/effects/effects.dmi')
-		animation.plane = OBJ_PLANE
-		animation.layer = ABOVE_JUNK_LAYER
+		animation.set_plane(OBJ_PLANE)
+		animation.set_layer(ABOVE_JUNK_LAYER)
 		rel_set(animation, nameof(animation.master), summoned_object)
 
 		for(var/varName in newVars)

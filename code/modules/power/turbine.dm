@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/compressor)
 	if(panel_open)
 		return
 
-	rpm = 0.9* rpm + 0.1 * rpmtarget
+	set_rpm(0.9* rpm + 0.1 * rpmtarget)
 	var/datum/gas_mixture/environment = inturf().return_air()
 
 	// It's a simplified version taking only 1/10 of the moles from the turf nearby. It should be later changed into a better version
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/machinery/compressor)
 	gas_contained.merge(removed)
 
 	// RPM function to include compression friction - be advised that too low/high of a compfriction value can make things screwy
-	rpm = max(0, rpm - (rpm*rpm)/(COMPFRICTION*efficiency))
+	set_rpm(max(0, rpm - (rpm*rpm)/(COMPFRICTION*efficiency)))
 
 	if(starter && !power_lost())
 		use_power(2800)
@@ -233,7 +233,7 @@ CAPABILITIES(/obj/machinery/compressor)
 
 	// This is the power generation function. If anything is needed it's good to plot it in EXCEL before modifying
 	// the TURBGENQ and TURBGENG values
-	lastgen = ((compressor().rpm / TURBGENQ)**TURBGENG) * TURBGENQ * productivity
+	set_lastgen(((compressor().rpm / TURBGENQ)**TURBGENG) * TURBGENQ * productivity)
 
 	add_avail(lastgen)
 
@@ -360,7 +360,7 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	. = TRUE
 
 /obj/machinery/computer/turbine_computer/proc/ui_act_doors(datum/act/op/A)
-	door_status = !door_status
+	set_door_status(!door_status)
 	for(var/obj/machinery/door/blast/D as anything in doors?.Copy())
 		if (door_status)
 			D.close()

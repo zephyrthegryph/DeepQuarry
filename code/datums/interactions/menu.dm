@@ -46,9 +46,9 @@
 		rel_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
 	var/datum/interaction_menu/menu = player.interaction_menu
 	rel_set(menu, nameof(/datum/interaction_menu::target), target)
-	menu.visible = TRUE
-	menu.cursor_params = istext(params) ? params : ""
-	menu.revision++
+	menu.set_visible(TRUE)
+	menu.set_cursor_params(istext(params) ? params : "")
+	menu.set_revision(menu.revision + 1)
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
 	menu.tgui_interact(user)
 	return TRUE
@@ -58,7 +58,7 @@
 
 /// Hides the popup (the page stays loaded for the next open).
 /datum/interaction_menu/proc/hide()
-	visible = FALSE
+	set_visible(FALSE)
 	if(owner())
 		// The popup took keyboard focus (for Escape); hand it back to the map, where the key macros live.
 		winset(owner(), null, list2params(list("[INTERACTION_MENU_CONTROL].is-visible" = "false", "mapwindow.map.focus" = "true")))

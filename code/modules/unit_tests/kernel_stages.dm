@@ -4,8 +4,8 @@
 /// How far from the burning tile the hotspot test restores air and floor heat (the burn's hot gas and fire spread past the first few tiles).
 #define KERNEL_HOTSPOT_TEST_REACH 8
 
-/// A hotspot burns as a kernel work item (every SSair tick) in the game run level, and leaves the membership when it
-/// is deleted.
+/// A hotspot burns as an every() of its own (a step every SSair tick, run by the kernel in the simulation lane) in the game run level, and
+/// stops when it is deleted.
 /datum/unit_test/kernel_hotspot_work
 
 /// Puts out whatever the hotspot test's burn spread around `T` and cools the floors it heated. The test is the only thing burning in the world.
@@ -17,7 +17,8 @@
 		heat_set_solid(near, T20C)
 
 /datum/unit_test/kernel_hotspot_work/Run()
-	var/datum/controller/kernel/K = kernel()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/turf/simulated/T
 	for(var/turf/simulated/sim_turf in world)
 		if(sim_turf.air)
@@ -40,24 +41,14 @@
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 300, CELL_VOLUME, soh = TRUE)
 	var/obj/effect/hotspot/H = T.active_hotspot
 	TEST_ASSERT_NOTNULL(H, "no hotspot to burn")
-	var/datum/work_item/W = K.work_by_key["/obj/effect/hotspot:burn_tick"]
-	TEST_ASSERT(W, "the hotspot's every() registered a kernel work item")
-	TEST_ASSERT_EQUAL(W.interval, 0.5 SECONDS, "the burn keeps SSair's cadence")
-	TEST_ASSERT_EQUAL(W.lane, LANE_SIMULATION, "the burn is simulation work")
-	TEST_ASSERT(W.members && member_is(W.members, H), "a hotspot joins the work item's membership when it appears")
-	var/runs_before = W.member_runs
-	// One pass of the item, driven here: a wall-clock sleep waits for the live kernel to get to it, and under load it may not within the wait. The first
-	// step of a new hotspot only clears just_spawned, so the hotspot is certainly still there after it.
-	W.next_run = 0
-	W.cursor = 0
-	W.yielded = FALSE
-	K.run_item(W, TICK_USAGE + 100, world.time + W.interval) // a whole tick of budget from here: the test's tick may already be spent
+	TEST_ASSERT(H.just_spawned, "a new hotspot has not stepped yet")
+	// One cadence of the hotspot's every(), driven on the kernel's injected clock: the first step of a new hotspot only clears just_spawned, so the
+	// hotspot is certainly still there after it.
+	test_time(0.5 SECONDS + 1)
 	TEST_ASSERT(!QDELETED(H), "the hotspot's first step deleted it")
-	TEST_ASSERT(W.member_runs > runs_before, "the kernel stepped the hotspot")
-	TEST_ASSERT(!H.just_spawned, "the hotspot's first step ran")
+	TEST_ASSERT(!H.just_spawned, "the every() stepped the hotspot")
 	qdel(H)
 	T.active_hotspot = null
-	TEST_ASSERT(!member_is(W.members, H), "a deleted hotspot left the membership")
 
 /// Every stage still on the object-model engine adapts into a kernel work item, and the adapted graph (the stages'
 /// after-edges within a phase) passes the same validator the boot DAG and the live work graph use: nothing missing,

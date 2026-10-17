@@ -15,7 +15,7 @@
 
 /obj/item/pda/ai/proc/set_name_and_job(newname as text, newjob as text, newrank as null|text)
 	set_owner(newname)
-	ownjob = newjob
+	set_ownjob(newjob)
 	if(newrank)
 		ownrank = newrank
 	else

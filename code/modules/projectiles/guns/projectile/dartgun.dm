@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 		if(!move_into(src, nameof(src.beakers), B, user))
 			return OP_PASS
 		to_chat(user, span_blue("You slot [B] into [src]."))
-		updateUsrDialog(user)
+		refresh_ui(src)
 		return OP_OK
 	return ..()
 
@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 		rel_add(src, nameof(mixing), B)
 	else
 		rel_remove(src, nameof(mixing), B)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /// Ejects the beaker in slot `index` onto the floor.
 /obj/item/gun/projectile/dartgun/proc/dartgun_eject_beaker(mob/user, index)
@@ -239,4 +239,4 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 	rel_remove(src, nameof(mixing), B)
 	own_take_member(src, nameof(beakers), B)
 	B.forceMove(get_turf(src))
-	updateUsrDialog(user)
+	refresh_ui(src)

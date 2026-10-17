@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
 	if(!armed)
-		armed = 1
+		set_armed(1)
 		open_door()
 
 /datum/embedded_program/docking/simple/escape_pod_berth/receive_user_command(command)

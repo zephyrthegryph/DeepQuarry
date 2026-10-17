@@ -456,26 +456,6 @@ CAPABILITIES(/obj/belly)
 	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.
 		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
 			PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
-		var/obj/item/I = thing
-		if(I.gurgled && !I.stains_in_look())
-			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
-			I.add_overlay(GLOB.gurgled_overlays[I.gurgled_color])
-		if(I.d_mult < 1)
-			var/overlay_color = I.gurgled_color ? I.gurgled_color : "green"
-			// The d_stage_overlay only depends on the item's (icon, icon_state, color).
-			// Reuse the cached image+icon() snapshot when none of those changed instead
-			// of rebuilding a fresh /image and icon() every single exit.
-			var/cache_key = "[I.icon]|[I.icon_state]|[overlay_color]"
-			if(!I.d_stage_overlay || I.d_stage_overlay_key != cache_key)
-				if(I.d_stage_overlay)
-					I.cut_overlay(I.d_stage_overlay)
-				var/image/temp = new /image(GLOB.gurgled_overlays[overlay_color])
-				temp.filters += filter(type = "alpha", icon = icon(I.icon, I.icon_state))
-				I.d_stage_overlay = temp
-				I.d_stage_overlay_key = cache_key
-			for(var/count in I.d_mult to 1 step 0.25)
-				// Note, this should be refactored to drop priority overlays
-				I.add_overlay(I.d_stage_overlay, TRUE)
 
 // Release all contents of this belly into the owning mob's location.
 // If that location is another mob, contents are transferred into whichever of its bellies the owning mob is in.
@@ -645,11 +625,11 @@ CAPABILITIES(/obj/belly)
 	return max(digest_max - get_total_digestion_damage(), 0)
 
 /obj/belly/proc/set_zero_digestion_damage()
-	digest_brute = 0
-	digest_burn = 0
-	digest_oxy = 0
-	digest_tox = 0
-	digest_clone = 0
+	set_digest_brute(0)
+	set_digest_burn(0)
+	set_digest_oxy(0)
+	set_digest_tox(0)
+	set_digest_clone(0)
 	return
 
 // Handle the death of a mob via digestion.
@@ -916,9 +896,9 @@ CAPABILITIES(/obj/belly)
 		dq_set_belly_cycles(content, 0)
 	var/old_entrance_logs = target.entrance_logs
 	if(silent)
-		target.entrance_logs = FALSE
+		target.set_entrance_logs(FALSE)
 	slot_transfer(content, target, BELLY_SLOT_INTERIOR)
-	target.entrance_logs = old_entrance_logs
+	target.set_entrance_logs(old_entrance_logs)
 	if(isitem(content))
 		var/obj/item/I = content
 		if(istype(I,/obj/item/card/id))
@@ -1250,7 +1230,7 @@ CAPABILITIES(/obj/belly)
 	return display_name ? lowertext(display_name) : lowertext(name)
 
 /obj/belly/proc/toggle_displayed_message_flags(flags_to_set)
-	displayed_message_flags ^= flags_to_set
+	set_displayed_message_flags(displayed_message_flags ^ flags_to_set)
 
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
@@ -1265,7 +1245,7 @@ CAPABILITIES(/obj/belly)
 
 /// after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
-	digest_mode = mode
+	set_digest_mode(mode)
 
 /obj/belly/muffles_death_of(mob/occupant)
 	return TRUE

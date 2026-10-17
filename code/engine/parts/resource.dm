@@ -149,7 +149,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/resource)
 	A.actor = actor || (ismob(holder) ? holder : null)
 	A.set_held_provider(held)
 	A.target = target || holder
-	A.key = "res_spend"
+	A.set_key("res_spend")
 	var/datum/reservation/R = RS.reserve(A, n)
 	var/spent = 0
 	if(R)

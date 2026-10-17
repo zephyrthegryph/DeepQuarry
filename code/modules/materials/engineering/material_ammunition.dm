@@ -9,7 +9,7 @@
 		return
 	forged_material_static = material
 	name = "[material.display_name] [initial(name)]"
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	if(BB)
 		BB.damage = max(1, round(BB.damage * clamp(0.75 + material.density / 240 + material.hardness / 400, 0.75, 1.25)))
 		BB.set_armor_penetration(max(0, combat_of(BB).armor_penetration + round((material.hardness - material.brittleness * 0.35) / 12)))

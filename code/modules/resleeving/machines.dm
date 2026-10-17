@@ -239,8 +239,8 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	H.forceMove(get_turf(src))
 
 	//Machine specific stuff at the end
-	stored_material[MAT_STEEL] -= body_cost
-	stored_material[MAT_GLASS] -= body_cost
+	set_stored_material_at(MAT_STEEL, stored_material[MAT_STEEL] - (body_cost))
+	set_stored_material_at(MAT_GLASS, stored_material[MAT_GLASS] - (body_cost))
 	set_busy(0)
 
 	return 1
@@ -281,7 +281,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 		if(S && S.get_amount() >= 1)
 			var/count = 0
 			while(stored_material[S.material.name] + amnt <= max_res_amount && S.get_amount() >= 1)
-				stored_material[S.material.name] += amnt
+				set_stored_material_at(S.material.name, stored_material[S.material.name] + (amnt))
 				S.use(1)
 				count++
 			to_chat(user, "You insert [count] [S.name] into \the [src].")

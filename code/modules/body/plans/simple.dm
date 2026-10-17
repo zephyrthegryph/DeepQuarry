@@ -35,10 +35,6 @@
 		var/load_type = simple_load_type_for_category(A.injury_category, owner.biology)
 		if(load_type)
 			afflict(load_type)?.receive_injury(A.simple_load_rate * A.severity / AFFLICTION_SEVERITY_TERMINAL)
-	// C17: the factor step runs here too (the humanoid plan runs it every cycle), so a stale
-	// table is rebuilt before the vitals read it.
-	if(factors_stale())
-		recompute_factors()
 	recompute_vitals()
 	evaluate_status()
 
@@ -81,13 +77,13 @@
 
 /datum/body/simple/recompute_vitals()
 	set_dirty(dirty & (~BODY_DIRTY_VITALS))
-	total_load = 0
+	set_total_load(0)
 	for(var/datum/affliction/load/L in afflictions)
-		total_load += L.load
+		set_total_load(total_load + L.load)
 	var/max_load = owner.get_endurance()
-	vitality = max_load > 0 ? clamp(1 - total_load / max_load, 0, 1) : 0
-	pain = 0
-	consciousness = 100
+	set_vitality(max_load > 0 ? clamp(1 - total_load / max_load, 0, 1) : 0)
+	set_pain(0)
+	set_consciousness(100)
 
 /datum/body/simple/is_lethal()
 	ensure_vitals()
@@ -123,13 +119,13 @@
 	return load
 
 /datum/affliction/load/receive_injury(amount, kind, atom/source)
-	load += amount
+	set_load(load + amount)
 	sync_severity()
 	return amount
 
 /datum/affliction/load/receive_treatment(amount)
 	var/treated = min(amount, load)
-	load -= treated
+	set_load(load - treated)
 	if(load <= 0)
 		cure()
 	else
@@ -182,7 +178,7 @@
 	if(amount <= 0 || !(owner.biology & BIOLOGY_ORGANIC))
 		return 0
 	var/datum/affliction/load/L = afflict(/datum/affliction/load/hypoxia)
-	return L ? L.receive_injury(amount * get_factor(BF_DEMAND), null, source) : 0
+	return L ? L.receive_injury(amount * owner.demand, null, source) : 0
 
 /datum/body/simple/oxygen_debt()
 	if(!(owner.biology & BIOLOGY_ORGANIC))

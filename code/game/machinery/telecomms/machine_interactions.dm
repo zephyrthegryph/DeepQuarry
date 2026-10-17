@@ -80,18 +80,9 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 
 	return data
 
-// Returns a multitool from a user depending on their mobtype.
+// The actor supplies the actual carried or built-in tool available at this machine.
 /obj/machinery/proc/get_multitool(mob/user as mob)	//No need to have this being a telecomms specific proc.
-	var/obj/item/multitool/P = null
-	var/obj/item/held = user.get_active_hand()
-	if(!issilicon(user))
-		P = held?.get_multitool()
-	else if(isAI(user))
-		var/mob/living/silicon/ai/U = user
-		P = U.aiMulti
-	else if(isrobot(user) && get_dist(user, src) <= 1)
-		P = held?.get_multitool()
-	return P
+	return user.multitool_for_machine(src)
 
 /// The type's own settings in the window (each machine type adds its own; a ranged machine shows its range).
 /obj/machinery/telecomms/proc/Options_Menu()
@@ -148,12 +139,12 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 		return OP_OK
 	newfreq = tcomms_tenths(newfreq)
 	if(!(newfreq in freq_listening) && newfreq < TCOMMS_FREQ_LIMIT)
-		LAZYADD(freq_listening, newfreq)
+		add_freq_listening(newfreq)
 		report("-% New frequency filter assigned: \"[newfreq / 10] GHz\" %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_delete(datum/act/op/A, delete)
-	LAZYREMOVE(freq_listening, delete)
+	remove_freq_listening(delete)
 	report("-% Removed frequency filter [delete] %-")
 	return OP_OK
 
@@ -198,7 +189,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 
 /// A ranged machine's range, within what it can do; a longer range draws more power.
 /obj/machinery/telecomms/proc/ui_act_range(datum/act/op/A, range)
-	overmap_range = clamp(range, overmap_range_min, overmap_range_max)
+	set_overmap_range(clamp(range, overmap_range_min, overmap_range_max))
 	update_idle_power_usage(power_of_type(type).idle ** (overmap_range + 1))
 	return OP_OK
 

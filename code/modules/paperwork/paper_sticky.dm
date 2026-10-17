@@ -74,7 +74,7 @@ MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 	var/obj/item/paper/paper = new paper_type(get_turf(src))
 	paper.set_content(written_text, "sticky note")
 	paper.last_modified_ckey = written_by
-	paper.color = color
+	paper.set_color(color)
 	set_written_text(null)
 	user.put_in_hands(paper)
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
@@ -122,8 +122,8 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 /obj/item/paper/sticky/proc/reset_persistence_tracking(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	SSpersistence.forget_value(src, /datum/persistent/paper/sticky)
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 
 // persistence stops tracking it.
 /obj/item/paper/sticky/lifecycle_dematerialize()
@@ -163,14 +163,14 @@ CAPABILITIES(/obj/item/paper/sticky)
 		if(params)
 			var/list/mouse_control = params2list(params)
 			if(mouse_control["icon-x"])
-				pixel_x = text2num(mouse_control["icon-x"]) - 16
+				set_pixel_x(text2num(mouse_control["icon-x"]) - 16)
 				if(dir_offset & EAST)
-					pixel_x += 32
+					set_pixel_x(pixel_x + 32)
 				else if(dir_offset & WEST)
-					pixel_x -= 32
+					set_pixel_x(pixel_x - 32)
 			if(mouse_control["icon-y"])
-				pixel_y = text2num(mouse_control["icon-y"]) - 16
+				set_pixel_y(text2num(mouse_control["icon-y"]) - 16)
 				if(dir_offset & NORTH)
-					pixel_y += 32
+					set_pixel_y(pixel_y + 32)
 				else if(dir_offset & SOUTH)
-					pixel_y -= 32
+					set_pixel_y(pixel_y - 32)

@@ -73,6 +73,12 @@
 #define HF_OUTLIVES (1<<0)
 /// The hold replaces the composed value instead of joining it (hold_override).
 #define HF_OVERRIDE (1<<1)
+/// The row is one entry of a table hold (code/engine/stats/tables.dm): hold_table() places and replaces it, release() leaves it.
+#define HF_TABLE (1<<2)
+/// A table row a pass has placed again (hold_tables_end() releases the table rows still unmarked, then clears the mark).
+#define HF_SEEN (1<<3)
+/// A table row a type's factors() entry placed (code/engine/stats/contributes.dm): the body's table pass leaves it, the entry's own triggers keep it.
+#define HF_DECLARED (1<<4)
 
 /// A marked drain's budget when the kernel gives none, in microseconds of tick time.
 #define STAT_DRAIN_BUDGET_US 4000

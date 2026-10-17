@@ -146,7 +146,7 @@
 	S.add_entry("hello", "Test File")
 	S.add_entry("again", "Test File")
 	var/obj/machinery/computer/telecomms/server/C = mach(/obj/machinery/computer/telecomms/server, tile(3, 2))
-	C.network = "mftc"
+	C.set_network("mftc")
 	press(H, C, "scan")
 	TEST_ASSERT(S in C.servers, "the probe finds the network's server")
 	press(H, C, "view", list("id" = "mftc server"))
@@ -166,7 +166,7 @@
 	R.set_network("mftc")
 	R.set_id("mftc relay")
 	var/obj/machinery/computer/telecomms/monitor/C = mach(/obj/machinery/computer/telecomms/monitor, tile(5, 2))
-	C.network = "mftc"
+	C.set_network("mftc")
 	press(H, C, "scan")
 	TEST_ASSERT(R in C.machinelist, "the probe finds the network's node")
 	press(H, C, "view", list("id" = "mftc relay"))

@@ -215,8 +215,8 @@ CAPABILITIES(/obj/item/flamethrower/full)
 /obj/item/flamethrower/proc/ui_act_amount(datum/act/op/A, amount)
 	if(!ui_gate(A))
 		return FALSE
-	throw_amount = amount
-	throw_amount = clamp(throw_amount,THROWER_MIN,THROWER_MAX)
+	set_throw_amount(amount)
+	set_throw_amount(clamp(throw_amount,THROWER_MIN,THROWER_MAX))
 	return TRUE
 
 /obj/item/flamethrower/proc/ui_act_remove(datum/act/op/A)

@@ -27,7 +27,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 	..()
 	for(var/datum/mind/player in candidates)
 		if(player.assigned_role && player.assigned_role != JOB_AI)
-			candidates -= player
+			remove_candidates(player)
 	if(!candidates.len)
 		return list()
 	return candidates

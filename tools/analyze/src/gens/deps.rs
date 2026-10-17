@@ -121,7 +121,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
     out
 }
 
-/// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to(), or inside a when() that wraps one.
+/// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to()/factors(), or inside a when() that wraps one.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Leaf {
     pub owner: String,
@@ -160,6 +160,7 @@ fn stat_ranges(body: &str) -> Vec<(&'static str, usize, usize)> {
         let kw: &'static str = match &body[start..i] {
             "contributes" => "contributes",
             "contributes_to" => "contributes_to",
+            "factors" => "factors",
             "when" => "when",
             _ => continue,
         };
@@ -259,6 +260,8 @@ pub struct DepsAnalysis {
     pub reads: BTreeSet<(String, String)>,
     /// The reads of `reads` no declaration makes reactive (see `gens::auto_tracked::candidate`): the vars the inference tracks.
     pub candidates: BTreeSet<(String, String)>,
+    /// "<type>::<proc>" of a draw, a contribution or a STAT formula -> where it samples with `read_once()` (rule `sampled_in_look`).
+    pub sampled: BTreeMap<String, BTreeSet<(String, u32)>>,
 }
 
 /// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual
@@ -286,12 +289,16 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
+    let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
         for a in &an.handlers {
             if !a.h.role.reads_covered() || a.h.cap_proc {
                 continue;
             }
             let Some(handled) = &a.closed else { continue };
+            if closed && a.h.role == crate::sem::hooks::Role::Contribution && !handled.sampled.is_empty() {
+                sampled.entry(format!("{}::{}", a.on, a.h.proc)).or_default().extend(handled.sampled.iter().cloned());
+            }
             consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
                 if closed {
                     // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
@@ -330,6 +337,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
             note_reads(&set, &mut reads);
+            if !set.sampled.is_empty() {
+                sampled.entry(format!("{}::{}", owner, name)).or_default().extend(set.sampled.iter().cloned());
+            }
             consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
         }
     }
@@ -358,6 +368,9 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         let set = eng.analyze(&d.owner, "draw");
         note_reads(&set, &mut reads);
+        if !set.sampled.is_empty() {
+            sampled.entry(id.clone()).or_default().extend(set.sampled.iter().cloned());
+        }
         let keys = draw_reads.entry(d.owner.clone()).or_default();
         let published = draw_keys.entry(d.owner.clone()).or_default();
         let hopped = draw_hops.entry(d.owner.clone()).or_default();
@@ -376,6 +389,24 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
+    }
+    // A window host's ui_data(A) is an output whether or not a CAPABILITIES block names an interface() for it (an inherited or implicit window):
+    // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
+    {
+        let mut seen_ui = BTreeSet::new();
+        for d in crate::sem::procs::proc_defs(&sem, &["ui_data", "tgui_data"]) {
+            if d.owner == "/" || d.owner == "/datum" || d.rel.starts_with("code/engine/") || !seen_ui.insert(format!("{}::{}", d.owner, d.name)) {
+                continue;
+            }
+            let set = eng.analyze_handler(&d.owner, &d.name, "/datum/act/eval");
+            // The base /datum's own vars (open_tguis, rx, the weakref, ...) are the framework's bookkeeping, reached from a window's data only through
+            // a helper such as update_static_data_for_all_viewers(): a host's window data is its own type's vars, never these.
+            for r in &set.reads {
+                if r.kind == ReadKind::Var && !r.owner.is_empty() && r.owner != "/datum" {
+                    reads.insert((r.owner.clone(), r.var.clone()));
+                }
+            }
+        }
     }
     let mut leaves = Vec::new();
     let mut named: BTreeSet<(String, String)> = BTreeSet::new();
@@ -416,7 +447,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
     candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates, sampled })
 }
 
 struct Deps;

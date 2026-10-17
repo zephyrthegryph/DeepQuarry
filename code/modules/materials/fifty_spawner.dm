@@ -16,7 +16,7 @@ CAPABILITIES(/obj/fiftyspawner)
 	var/stack_type = MAP_VAR(P, varedits, type_to_spawn)
 	var/obj/item/stack/M = new stack_type(map_spawn_container(loc), -1)
 	if(varedits && ("pixel_y" in varedits))
-		M.pixel_y = varedits["pixel_y"]
+		M.set_pixel_y(varedits["pixel_y"])
 	return TRUE
 
 /obj/fiftyspawner/rods

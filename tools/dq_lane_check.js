@@ -95,7 +95,7 @@ function check(ref, master) {
   if (!s.ok || lost > 0) return { verdict: 'INVALID', why: `the stamp records a failed run (${lost} failed)`, tests };
   const masterTip = git(['rev-parse', master]);
   if (!masterTip.ok) return { verdict: 'INVALID', why: `no ${master}`, tests };
-  if (s.master_commit === masterTip.out) return { verdict: 'VALID', why: `base is current (master ${masterTip.out.slice(0, 10)})`, tests };
+  if (s.master_commit === masterTip.out) return { current: true, verdict: 'VALID', why: `base is current (master ${masterTip.out.slice(0, 10)})`, tests };
   if (!git(['merge-base', '--is-ancestor', s.master_commit, master]).ok) {
     return { verdict: 'INVALID', why: `the stamp's master ${String(s.master_commit).slice(0, 10)} is not in ${master}'s history (rebased or force-pushed)`, tests };
   }
@@ -134,16 +134,18 @@ function check(ref, master) {
     return { verdict: 'INVALID', why: `master changed ${hits.length} file(s) the stamp depends on since ${String(s.master_commit).slice(0, 10)}: ${hits.slice(0, 8).join('; ')}${hits.length > 8 ? '; ...' : ''}${ignored.length ? ` (${ignored.length} changelog/doc/data file(s) ignored)` : ''}`, tests };
   }
   const others = delta.length - ignored.length;
-  return { verdict: 'VALID', why: `kept: master moved ${delta.length} file(s) since ${String(s.master_commit).slice(0, 10)}; ${ignored.length} changelog/doc/data file(s) ignored${ignored.length ? ` (${ignored.slice(0, 3).join(', ')}${ignored.length > 3 ? ', ...' : ''})` : ''}; ${others} other file(s), none the branch's files, directories, covers or tests depend on`, tests };
+  return { stamp: s, verdict: 'VALID', why: `kept: master moved ${delta.length} file(s) since ${String(s.master_commit).slice(0, 10)}; ${ignored.length} changelog/doc/data file(s) ignored${ignored.length ? ` (${ignored.slice(0, 3).join(', ')}${ignored.length > 3 ? ', ...' : ''})` : ''}; ${others} other file(s), none the branch's files, directories, covers or tests depend on`, tests };
 }
 
 const args = process.argv.slice(2);
 let master = 'origin/master';
 const refs = [];
 let fetch = false;
+let lite = false;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--fetch') fetch = true;
   else if (args[i] === '--master') master = args[++i];
+  else if (args[i] === '--lite') lite = true;
   else if (args[i] === '-h' || args[i] === '--help') {
     console.log(fs.readFileSync(__dirname + '/dq_lane_check.sh', 'utf8').split('\n').slice(1, 22).join('\n'));
     process.exit(0);
@@ -166,6 +168,10 @@ function resolveRef(ref) {
   return null;
 }
 
+function resolveRefLite(ref) {
+  return resolveRef(ref);
+}
+
 /** The branch names recorded in the stamps of this clone, for the hint when a name matches nothing. */
 function stampedBranches() {
   const names = new Set();
@@ -179,6 +185,48 @@ function stampedBranches() {
     }
   }
   return [...names];
+}
+
+/**
+ * The tests a re-proof of a stamped lane needs when master moved but touched none of what the stamp depends on (verdict VALID, base not
+ * current): the boot gate, the lane's own stamped tests, and the tests of every lane that landed on master since the stamp's base (their
+ * lane-ready notes), which are the tests that exercise what master changed. The rest of the smoke set is already proved on master.
+ */
+function liteTests(stamp, masterRef) {
+  const tests = new Set(['dq_boot_gate']);
+  const add = (list) => (list || []).forEach((t) => tests.add(String(t).replace(/^\/datum\/unit_test\//, '')));
+  add(stamp.tests);
+  for (const c of lines(git(['rev-list', `${stamp.master_commit}..${masterRef}`]).out)) {
+    const note = git(['notes', `--ref=${NOTES}`, 'show', c]);
+    if (!note.ok || !note.out) continue;
+    try {
+      const n = JSON.parse(note.out);
+      if (n.ok) add(n.tests);
+    } catch {
+      /* not a stamp */
+    }
+  }
+  return [...tests];
+}
+
+if (lite) {
+  const given = refs[0];
+  const ref = given && resolveRefLite(given);
+  if (!ref) {
+    console.log(`NOLITE ${given} no such ref`);
+    process.exit(1);
+  }
+  const r = check(ref, master);
+  if (r.verdict !== 'VALID') {
+    console.log(`NOLITE ${ref} ${r.verdict}: ${r.why}`);
+    process.exit(1);
+  }
+  if (r.current || !r.stamp) {
+    console.log(`NOLITE ${ref} the stamp's base is current: nothing to re-prove`);
+    process.exit(1);
+  }
+  console.log(`LITE ${ref} ${r.why} tests=${liteTests(r.stamp, master).join(',')}`);
+  process.exit(0);
 }
 
 for (const given of refs) {

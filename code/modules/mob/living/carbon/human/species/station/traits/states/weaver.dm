@@ -41,7 +41,7 @@
 		return
 	var/datum/prompt/color/ask = A.answer
 	if(ask.value)
-		silk_color = ask.value
+		set_silk_color(ask.value)
 	SStgui.update_uis(src)
 
 //TGUI Weaver Panel
@@ -99,7 +99,7 @@ CAPABILITIES(/datum/trait_state/weaver)
 	return FALSE
 
 /datum/trait_state/weaver/proc/ui_act_toggle_silk_production(datum/act/op/A)
-	silk_production = !(silk_production)
+	set_silk_production(!(silk_production))
 	to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))
 	return FALSE
 
@@ -168,7 +168,7 @@ MSG_DEF_SELF(weaver/already_there, span_warning("You can't create another one in
 	set_silk_reserve(max(silk_reserve - weave_cost(A), 0))
 	var/product = weave_product(A)
 	var/atom/object = new product(owner.loc)
-	object.color = silk_color
+	object.set_color(silk_color)
 
 /// Trait system: silk production.
 /// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).

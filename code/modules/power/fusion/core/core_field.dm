@@ -322,32 +322,32 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 			size = 1
 			set_icon('icons/obj/machines/power/fusion.dmi')
 			set_icon_state("emfield_s1")
-			pixel_x = 0
-			pixel_y = 0
+			set_pixel_x(0)
+			set_pixel_y(0)
 			//
 			changed = 1
 		if(3)
 			size = 3
 			set_icon('icons/effects/96x96.dmi')
 			set_icon_state("emfield_s3")
-			pixel_x = -32 * PIXEL_MULTIPLIER
-			pixel_y = -32 * PIXEL_MULTIPLIER
+			set_pixel_x(-32 * PIXEL_MULTIPLIER)
+			set_pixel_y(-32 * PIXEL_MULTIPLIER)
 			//
 			changed = 3
 		if(5)
 			size = 5
 			set_icon('icons/effects/160x160.dmi')
 			set_icon_state("emfield_s5")
-			pixel_x = -64 * PIXEL_MULTIPLIER
-			pixel_y = -64 * PIXEL_MULTIPLIER
+			set_pixel_x(-64 * PIXEL_MULTIPLIER)
+			set_pixel_y(-64 * PIXEL_MULTIPLIER)
 			//
 			changed = 5
 		if(7)
 			size = 7
 			set_icon('icons/effects/224x224.dmi')
 			set_icon_state("emfield_s7")
-			pixel_x = -96 * PIXEL_MULTIPLIER
-			pixel_y = -96 * PIXEL_MULTIPLIER
+			set_pixel_x(-96 * PIXEL_MULTIPLIER)
+			set_pixel_y(-96 * PIXEL_MULTIPLIER)
 			//
 			changed = 7
 	for(var/obj/effect/fusion_particle_catcher/catcher in particle_catchers)

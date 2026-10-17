@@ -45,13 +45,13 @@
 
 	if (value == RANDOM_ANTAG_ONLY)
 		var/datum/preferences/prefs_datum = preferences()
-		LAZYSET(prefs_datum.randomise, requested_preference_key, RANDOM_ANTAG_ONLY)
+		prefs_datum.set_randomise_at(requested_preference_key, RANDOM_ANTAG_ONLY)
 	else if (value == RANDOM_ENABLED)
 		var/datum/preferences/prefs_datum = preferences()
-		LAZYSET(prefs_datum.randomise, requested_preference_key, RANDOM_ENABLED)
+		prefs_datum.set_randomise_at(requested_preference_key, RANDOM_ENABLED)
 	else if (value == RANDOM_DISABLED)
 		var/datum/preferences/prefs_datum = preferences()
-		LAZYREMOVE(prefs_datum.randomise, requested_preference_key)
+		prefs_datum.remove_randomise(requested_preference_key)
 	else
 		return FALSE
 

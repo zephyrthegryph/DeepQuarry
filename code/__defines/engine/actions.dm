@@ -36,6 +36,8 @@
 #define EXIT (1<<1)
 /// Fires when the key's value changed (the only edge of a numeric key).
 #define ANY (ENTER | EXIT)
+/// The first item of a cond_published() condition (relations.dm): an on_change that runs when one of its keys is published, comparing no value.
+#define COND_PUBLISHED "published"
 
 // ---- hook order (instead and adjusts): the first taker in order wins ----
 #define ORDER_EARLY 1

@@ -337,25 +337,25 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 		return
 
 	var/datum/affliction/custom/A = new()
-	A.name = issue_name
-	A.advscan = scanner_strength
-	A.advscan_cure = advscan_cure
-	A.showscanner = (scanner_show == "Yes")
+	A.set_name(issue_name)
+	A.set_advscan(scanner_strength)
+	A.set_advscan_cure(advscan_cure)
+	A.set_showscanner((scanner_show == "Yes"))
 	if(damage == "Yes")
 		A.damage_organ = (damage_organ == "Organ")
 		A.damage_kind = damage_kind
 		A.damage_strength = damage_value
 		A.damage_max = damage_max
 	if(cure_reagent_type)
-		A.cure_reagent_name = initial(cure_reagent_type.name)
+		A.set_cure_reagent_name(initial(cure_reagent_type.name))
 		A.cured_by = list()
 		A.cured_by[initial(cure_reagent_type.id)] = DQ_CUSTOM_CURE_RATE
 	if(cure_surgery_name)
 		var/list/surgeries = istype(issue_organ, /obj/item/organ/internal) ? GLOB.dq_custom_internal_surgeries : GLOB.dq_custom_external_surgeries
-		A.cure_surgery = surgeries[cure_surgery_name]
-		A.cure_surgery_name = cure_surgery_name
-		A.treated_by = list()
-		A.treated_by[A.cure_surgery] = 1
+		A.set_cure_surgery(surgeries[cure_surgery_name])
+		A.set_cure_surgery_name(cure_surgery_name)
+		A.set_treated_by(list())
+		A.set_treated_by_at(A.cure_surgery, 1)
 	if(symptom_text)
 		A.symptom_text = sanitize(symptom_text)
 	if(symptom_affect != "None")

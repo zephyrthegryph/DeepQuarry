@@ -76,7 +76,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 
 	var/amount_to_add = min(amount, reagent_volumes[reagent_id])
 	target_reagents.add_reagent(reagent_id, amount_to_add)
-	reagent_volumes[reagent_id] -= amount_to_add
+	set_reagent_volumes_at(reagent_id, reagent_volumes[reagent_id] - (amount_to_add))
 	set_refilling(TRUE) // refill what was used
 	return BORGHYPO_STATUS_SUCCESS
 
@@ -137,7 +137,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 				if(reagent_volumes[T] < volume)
 					if(!robot_user.draw_power(ROBOT_CELL_JOULES(charge_cost), src, ROBOT_CELL_JOULES(800)))
 						return
-					reagent_volumes[T] = min(reagent_volumes[T] + 5, volume)
+					set_reagent_volumes_at(T, min(reagent_volumes[T] + 5, volume))
 
 // A cyborg hypospray makes the chosen reagent (or recipe) from its store and puts it into a person by a click (synthesizer(), code/library/reagents/synthesizer.dm);
 // a limb that is not there, or thick material over it, refuses it (unless it bypasses protection). Its store is filled again from its cyborg's cell.
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 
 /obj/item/reagent_containers/borghypo/ui_opening(mob/user, datum/tgui/ui)
 	// Assuming the user is opening the UI, empty the chem search preemptively.
-	ui_chemical_search = null
+	set_ui_chemical_search(null)
 
 /obj/item/reagent_containers/borghypo/ui_title(mob/user)
 	return "Integrated [is_dispensing_drinks ? "Drink Dispenser" : "Chemical Hypo"]"
@@ -287,9 +287,9 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 		if(recording_recipe)
 			UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
 		else
-			mode = new_mode
+			set_mode(new_mode)
 			balloon_alert(user, "synthesizer is now producing '[selected_reagent.name]'")
-			is_dispensing_recipe = FALSE
+			set_is_dispensing_recipe(FALSE)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_set_amount(datum/act/op/A, amount)
@@ -313,11 +313,11 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_record_recipe(datum/act/op/A)
-	recording_recipe = list()
+	set_recording_recipe(list())
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_cancel_recording(datum/act/op/A)
-	recording_recipe = null
+	set_recording_recipe(null)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_clear_recipes(datum/act/op/A)
@@ -339,7 +339,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 				to_chat(user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 				return
 		set_saved_recipes_at(name, recording_recipe)
-		recording_recipe = null
+		set_recording_recipe(null)
 		. = TRUE
 
 /// The overwrite question opens only for a name already saved.
@@ -353,8 +353,8 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	var/recipe_name = recipe
 	// If we've selected the recipe we're deleting, un-select it!
 	if(selected_recipe_id == recipe_name)
-		selected_recipe_id = null
-		is_dispensing_recipe = FALSE
+		set_selected_recipe_id(null)
+		set_is_dispensing_recipe(FALSE)
 	remove_saved_recipes(recipe_name)
 	. = TRUE
 
@@ -368,12 +368,12 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 		return
 	play_sfx(user, SFX_EFFECTS_POP)
 	balloon_alert(user, "synthesizer is using macro: '[recipe_name]'")
-	is_dispensing_recipe = TRUE
-	selected_recipe_id = recipe_name
+	set_is_dispensing_recipe(TRUE)
+	set_selected_recipe_id(recipe_name)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/proc/ui_act_set_chemical_search(datum/act/op/A, uiChemicalSearch)
-	ui_chemical_search = uiChemicalSearch
+	set_ui_chemical_search(uiChemicalSearch)
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/examine(mob/user)

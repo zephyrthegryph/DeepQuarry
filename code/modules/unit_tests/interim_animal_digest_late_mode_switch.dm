@@ -17,27 +17,27 @@
 	own(control_belly)
 	TEST_ASSERT_EQUAL(actor.stat, CONSCIOUS, "Actual requesting human starts conscious")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Fixture starts without a pending native request")
-	belly.digest_mode = DM_HOLD
-	control_belly.digest_mode = DM_HOLD
+	belly.set_digest_mode(DM_HOLD)
+	control_belly.set_digest_mode(DM_HOLD)
 
 	animal.toggle_digestion_for(actor)
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/animal_digestion/enable), "Public helper opens actual enable request")
-	belly.digest_mode = DM_DIGEST
+	belly.set_digest_mode(DM_DIGEST)
 	test_answer(actor, "Enable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_DIGEST, "Late mode change survives first answer while opposite branch asks")
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/animal_digestion/disable), "Answer rechecks current mode and opens actual disable request")
-	belly.digest_mode = DM_HOLD
+	belly.set_digest_mode(DM_HOLD)
 	test_answer(actor, "Disable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_DIGEST, "Second late switch applies cached Enable answer to current hold mode")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Both cached answers finish without reopening enable")
 
 	animal.toggle_digestion_for(actor)
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/animal_digestion/disable), "Digest mode opens actual disable request")
-	belly.digest_mode = DM_HOLD
+	belly.set_digest_mode(DM_HOLD)
 	test_answer(actor, "Disable")
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/animal_digestion/enable), "Late hold mode opens actual enable request")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "No answer from the wrong branch changes hold mode")
-	belly.digest_mode = DM_DIGEST
+	belly.set_digest_mode(DM_DIGEST)
 	test_answer(actor, "Enable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "Second late switch applies cached Disable answer to current digest mode")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Both cached answers finish without reopening disable")

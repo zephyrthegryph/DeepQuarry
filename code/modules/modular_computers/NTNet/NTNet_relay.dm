@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 		set_use_power(USE_POWER_IDLE)
 
 	if(dos_overload)
-		dos_overload = max(0, dos_overload - dos_dissipate)
+		set_dos_overload(max(0, dos_overload - dos_dissipate))
 
 	// If DoS traffic exceeded capacity, crash.
 	if((dos_overload > dos_capacity) && !dos_failure)
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	return data
 
 /obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
-	dos_overload = 0
+	set_dos_overload(0)
 	set_dos_failure(0)
 	GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
 	. = TRUE
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	if(NTNet())
 		NTNet().add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet().relays) - (src in NTNet().relays ? 1 : 0)]")
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
-		D.error = "Connection to quantum relay severed"
+		D.set_error("Connection to quantum relay severed")
 	..()
 
 /obj/machinery/ntnet_relay

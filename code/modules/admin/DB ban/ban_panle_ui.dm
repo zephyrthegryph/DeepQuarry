@@ -123,7 +123,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 	playerip = ip
 	playercid = cid
 	dbbantype = banType
-	min_search = minMatch
+	set_min_search(minMatch)
 	database_lookup()
 	update_tgui_static_data(user, ui)
 	return TRUE

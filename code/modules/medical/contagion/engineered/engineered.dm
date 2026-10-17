@@ -213,7 +213,7 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 	var/disease_id = GetDiseaseID()
 	if(!isnull(archiving_id) && disease_id == archiving_id)
 		if(archiving_name != DEVELOPER_WARNING_NAME)
-			name = archiving_name
+			set_name(archiving_name)
 	else if(!GLOB.archive_diseases[disease_id])
 		if(new_name)
 			AssignName()
@@ -228,7 +228,7 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 		var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[GetDiseaseID()]
 		var/actual_name = A.name
 		if(actual_name != DEVELOPER_WARNING_NAME)
-			name = actual_name
+			set_name(actual_name)
 
 
 /datum/affliction/contagion/engineered/proc/GenerateProperties()
@@ -269,9 +269,9 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 /datum/affliction/contagion/engineered/proc/AssignProperties()
 
 	if(global_flag_check(virus_modifiers, DORMANT) || stealth >= 2)
-		visibility_flags |= HIDDEN_SCANNER
+		set_visibility_flags(visibility_flags | HIDDEN_SCANNER)
 	else
-		visibility_flags &= ~HIDDEN_SCANNER
+		set_visibility_flags(visibility_flags & (~HIDDEN_SCANNER))
 
 	SetSpread()
 	permeability_mod = max(CEILING(0.4 * transmission, 1), 1)
@@ -288,21 +288,21 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 /datum/affliction/contagion/engineered/proc/SetSpread()
 	if(global_flag_check(virus_modifiers, FALTERED))
 		set_spread_flags(DISEASE_SPREAD_FALTERED)
-		spread_text = "Intentional Injection"
+		set_spread_text("Intentional Injection")
 	if(global_flag_check(virus_modifiers, DORMANT))
 		set_spread_flags(DISEASE_SPREAD_NON_CONTAGIOUS)
-		spread_text = "None"
+		set_spread_text("None")
 	else
 		switch(transmission)
 			if(-INFINITY to 5)
 				set_spread_flags(DISEASE_SPREAD_BLOOD)
-				spread_text = "Blood"
+				set_spread_text("Blood")
 			if(6 to 10)
 				set_spread_flags(DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS)
-				spread_text = "Fluids"
+				set_spread_text("Fluids")
 			if(11 to INFINITY)
 				set_spread_flags(DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_FLUIDS | DISEASE_SPREAD_CONTACT)
-				spread_text = "On Contact"
+				set_spread_text("On Contact")
 
 /datum/affliction/contagion/engineered/proc/SetDanger(level_sev)
 
@@ -333,14 +333,14 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 	if(GLOB.archive_diseases[id])
 		var/datum/affliction/contagion/engineered/archived = GLOB.archive_diseases[id]
 		cures = archived.cures
-		cure_text = archived.cure_text
+		set_cure_text(archived.cure_text)
 	else
 		var/res = clamp(resistance - (length(symptoms) / 2), 1, length(GLOB.advance_cures))
 		cures = list(pick(GLOB.advance_cures[res]))
 		var/datum/reagent/cure_reag = SSchemistry.ready().chemical_reagents[cures[1]]
 		if(!cure_reag) // Something went terribly wrong, return to sippy
 			cure_reag = /datum/reagent/water
-		cure_text = cure_reag.name
+		set_cure_text(cure_reag.name)
 		archivecure = res
 	return
 
@@ -391,13 +391,13 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 	else
 		set_virus_modifiers(virus_modifiers | FALTERED)
 		set_spread_flags(DISEASE_SPREAD_BLOOD)
-		spread_text = "Intentional Injection"
+		set_spread_text("Intentional Injection")
 
 // Name the disease.
 /datum/affliction/contagion/engineered/proc/AssignName(new_name = "Unknown")
 	Refresh()
 	var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[GetDiseaseID()]
-	A.name = new_name
+	A.set_name(new_name)
 	for(var/datum/affliction/contagion/engineered/AD in REGISTRY_MEMBERS(REGISTRY_ACTIVE_DISEASES))
 		AD.Refresh()
 

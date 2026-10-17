@@ -22,18 +22,18 @@
 
 	set_icon_state("[material.shard_icon][pick("large", "medium", "small")]")
 	randpixel_xy()
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity
-	alpha = 255 * (1 - (1 - material.opacity)*(1 - material.opacity))
+	set_alpha(255 * (1 - (1 - material.opacity)*(1 - material.opacity)))
 
 	if(material.shard_type)
 		name = "[material.display_name] [material.shard_type]"
 		desc = "A small piece of [material.display_name]. It looks sharp, you wouldn't want to step on it barefoot. Could probably be used as ... a throwing weapon?"
 		switch(material.shard_type)
 			if(SHARD_SPLINTER, SHARD_SHRAPNEL)
-				gender = PLURAL
+				set_gender(PLURAL)
 			else
-				gender = NEUTER
+				set_gender(NEUTER)
 	else
 		spent(src)
 

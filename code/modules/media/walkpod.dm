@@ -130,7 +130,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 			rel_set(src, nameof(current_track), current_track())
 		if(JUKEMODE_PLAY_ONCE)
 			rel_clear(src, nameof(current_track))
-			playing = 0
+			set_playing(0)
 	start_stop_song()
 
 // Track/music internals
@@ -141,17 +141,17 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 		runechat_message("*&nbsp;[current_track().display()]&nbsp;*", specific_viewers = list(listener()))
 	else
 		media_url = ""
-		media_start_time = 0
+		set_media_start_time(0)
 	update_music()
 
 /obj/item/walkpod/proc/StopPlaying()
-	playing = 0
+	set_playing(0)
 	start_stop_song()
 
 /obj/item/walkpod/proc/StartPlaying()
 	if(!current_track())
 		return
-	playing = 1
+	set_playing(1)
 	start_stop_song()
 
 // Advance to the next track - Don't start playing it unless we were already playing
@@ -220,12 +220,12 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 
 /obj/item/walkpod/proc/ui_act_loopmode(datum/act/op/A, loopmode)
 	var/newval = loopmode
-	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
+	set_loop_mode(sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode))
 	return TRUE
 
 /obj/item/walkpod/proc/ui_act_volume(datum/act/op/A, val)
 	var/newval = val
-	volume = clamp(newval, 0, 1)
+	set_volume(clamp(newval, 0, 1))
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 

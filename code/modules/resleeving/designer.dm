@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/computer/transhuman/designer)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())
 		designer_gui.make_fake_owner()
-		selected_record = FALSE
+		set_selected_record(FALSE)
 	designer_gui.tgui_interact(user)
 
 // Disk for manually moving body records between the designer and sleever console etc.

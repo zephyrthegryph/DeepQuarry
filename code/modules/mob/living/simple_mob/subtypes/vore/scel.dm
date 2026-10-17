@@ -94,24 +94,24 @@ CAPABILITIES(/mob/living/simple_mob/vore/scel)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The strange beast pounces atop of you, pinning you with it's hefty weight, the greedy stomach sloshing atop you before it looms closer, with that maw stretching almost impossibly wide and easily enveloping your body. The jaws of the scel are solid and fleshy, preventing any movement. Immediately you are embraced into the tight pull of oily black flesh, and you are rapidly dragged down into the humid, more malleable depths of the creature! Splashing down into a thick, ominously bubbling sludge, you fall into place as food among the remnants of previous meals. As you settle, you are completely hidden away inside of it's serpentine body, left to complete darkness and the sounds of squelching bodily functions. Movement is not difficult as the flesh around you is easily pushed back, but it quickly snaps back into place to keep you constrained. Slowly, the neon liquid that you could see from the outside of the creature begins to seep into the chamber. With that hefty stomach bloated with yet another meal, a lazy burp signals its meal complete. Leaving you to simmer in its depths as it continues its prowling..."
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBOanim_belly1"
-	B.fancy_vore = 1
-	B.selective_preference = DM_SELECT
-	B.vore_verb = "devour"
-	B.digest_brute = 1
-	B.digest_burn = 2
-	B.digest_oxy = 0
-	B.digestchance = 50
-	B.absorbchance = 0
-	B.escapechance = 10
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBOanim_belly1")
+	B.set_fancy_vore(1)
+	B.set_selective_preference(DM_SELECT)
+	B.set_vore_verb("devour")
+	B.set_digest_brute(1)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(0)
+	B.set_digestchance(50)
+	B.set_absorbchance(0)
+	B.set_escapechance(10)
 	B.escape_stun = 5
-	B.contamination_color = "grey"
-	B.contamination_flavor = "Wet"
+	B.set_contamination_color("grey")
+	B.set_contamination_flavor("Wet")
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The walls smother and press against you with a marshmallowy softness. Mechanically compressing you in waves to ease in your digestion.",
 		"As the scel slithers about, you feel the squishy walls around you roll over your form, causing the pool of digestive liquids to splash and churn against you.",
 		"Curious sounds can be heard muffled through the flesh as the creature pokes and prods at it's groaning gut.",
@@ -120,25 +120,25 @@ CAPABILITIES(/mob/living/simple_mob/vore/scel)
 		"The vibrant neon liquid pools over your body, it bubbles over your helpless figure as it steadily melts you down. All to churn you up to add an extra little weight to this strange beast.",
 		"The alien serpent seems to be kneading and massaging it's noisy stomach, sloshing noisily as you are shoved about inside.",
 		"The creature seems to stretch and arch their body for a moment, tightening you against those slick walls. For a brief moment, you can almost see the outside world.",
-		"The walls of this well-padded gut rumbles as the Scel lets out a crass belch. Forcing the walls of this roiling belly tighter against you as it works to digest you!")
-	B.digest_messages_prey = "The greedy walls compress around you as the Scel gives out an audible belch, taking with it the last of your air. You slowly slip under the bubbling and caustic tide of sludge as it overtakes your body. Your senses fade as the walls lazily ripple around you, reducing your body to a hot churning slop. The Scel's belly softens and rounds as you slowly amount to little more than some extra soft pudge on the lazy wryms body!"
-	B.struggle_messages_outside = list(
+		"The walls of this well-padded gut rumbles as the Scel lets out a crass belch. Forcing the walls of this roiling belly tighter against you as it works to digest you!"))
+	B.set_digest_messages_prey("The greedy walls compress around you as the Scel gives out an audible belch, taking with it the last of your air. You slowly slip under the bubbling and caustic tide of sludge as it overtakes your body. Your senses fade as the walls lazily ripple around you, reducing your body to a hot churning slop. The Scel's belly softens and rounds as you slowly amount to little more than some extra soft pudge on the lazy wryms body!")
+	B.set_struggle_messages_outside(list(
 		"The Scel stifles a belch before bringing a long tentacle to knead over its distended belly. It's noisily churning and gurgling, with every movement from within eliciting a loud slosh or squelch.",
 		"The shadowy serpent lets out a crass belch as its roiling, bulging belly slowly and noisily digests a wriggling meal. If you squint, you can just barely see the shilouette of someone!",
 		"The Scel clenches it's wriggling middle, sending that lumpy bulge further down along it's body! The distinct shape fading into its chubby body.",
 		"With a long and lazy stretch, the Scel causes the walls of its stomach to compress around their squirming meal, revealing the slowly digesting shape of someone!",
-		"The Scel's well-rounded belly bubbles and groans, making wet gurgling noises as it sloshes in its attempts to digest an uncooperative meal!")
-	B.struggle_messages_inside = list(
+		"The Scel's well-rounded belly bubbles and groans, making wet gurgling noises as it sloshes in its attempts to digest an uncooperative meal!"))
+	B.set_struggle_messages_inside(list(
 		"Your squirming and struggling just serves to kick the churning liquid around you in rough waves of digestive enzymes!",
 		"Your movements just prompt the strange creature shoves a tendril into their gut, causing the walls to compress into you and knocking you off balance.",
 		"You simply slide against the slick black flesh and splash back down into the neon-colored goop, doing little but to coat yourself in those roiling waves.",
 		"The slurry around you bubbles ominously, before a rush of air blasts past you and a rumbling belch shakes the walls, tightening against you even more.",
 		"The belly doesn't react to your wriggling at all, with a constant stream of 'blurps', 'blorbles', and 'groans'. The noisy stomach compresses you from all angles as it works to digest you like everything else that enters this gut.",
-		"You shove at the pudgy walls with all your strength, almost catching a vague glimpse of the outside world, before the Scel clenches their stomach, sending you bounding back inside as the stomach sloshes.")
-	B.examine_messages = list(
+		"You shove at the pudgy walls with all your strength, almost catching a vague glimpse of the outside world, before the Scel clenches their stomach, sending you bounding back inside as the stomach sloshes."))
+	B.set_examine_messages(list(
 		"The belly of the creature sags outwards, pushing out against its flexible flesh. It rumbles contently..",
 		"The Scel looks quite content right now, with multiple black tendrils rubbing over the sloshing, groaning mass of its gut.",
-		"A soft belch escapes the jaws of the alien creature as its soft and lumpy belly works to digest its latest meal.")
+		"A soft belch escapes the jaws of the alien creature as its soft and lumpy belly works to digest its latest meal."))
 
 /mob/living/simple_mob/vore/scel/do_special_attack(atom/A, stance)
 	. = TRUE

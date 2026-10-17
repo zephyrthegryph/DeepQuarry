@@ -15,9 +15,9 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 /datum/universal_state/supermatter_cascade/OnTurfChange(turf/T)
 	var/turf/space/S = T
 	if(istype(S))
-		S.color = "#0066FF"
+		S.set_color("#0066FF")
 	else
-		S.color = initial(S.color)
+		S.set_color(initial(S.color))
 
 /datum/universal_state/supermatter_cascade/DecayTurf(turf/T)
 	if(istype(T,/turf/simulated/wall))

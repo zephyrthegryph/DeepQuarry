@@ -289,6 +289,9 @@ fn text_owner(line: &str) -> String {
     init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
 }
 
+/// The atom built-ins `SETTER()`-registered in code/game/atom/atom_visual.dm.
+const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "appearance_flags", "gender"];
+
 /// What an `init_lines` statement is about, for its identity (`owner::Initialize::target`):
 ///
 /// * a write `x = v`, `src.x += v`, `var/T/x = v` or the call of its setter `set_x(v)`: the var `x` (so converting a write to its setter,
@@ -325,6 +328,15 @@ pub fn init_line_target(stmt: &str) -> String {
         if let Some(var) = callee.strip_prefix("set_") {
             if !var.is_empty() && !var.contains('.') {
                 return var.to_string();
+            }
+        }
+        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/game/atom/atom_visual.dm): the same
+        // site (`a.b`). Only those: `cell.set_charge(v)` is a call like any other.
+        if let Some((recv, last)) = callee.rsplit_once('.') {
+            if let Some(var) = last.strip_prefix("set_") {
+                if VISUAL_SETTER_VARS.contains(&var) && !recv.is_empty() {
+                    return format!("{recv}.{var}");
+                }
             }
         }
         return callee.to_string();
@@ -415,6 +427,8 @@ mod tests {
         assert_eq!(t("src.set_linked(x)"), "linked");
         assert_eq!(t("linked += 2"), "linked");
         assert_eq!(t("a.b = 1"), "a.b");
+        assert_eq!(t("a.set_color(1)"), "a.color");
+        assert_eq!(t("cell.set_charge(1)"), "cell.set_charge");
         assert_eq!(t("var/list/l = list()"), "l");
         assert_eq!(t("ensure_pump_materials()"), "ensure_pump_materials");
         assert_eq!(t("if(!pipe_color)"), "if");

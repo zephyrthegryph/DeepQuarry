@@ -297,7 +297,7 @@
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_menu(datum/act/op/A, num_arg)
-	menu = num_arg
+	set_menu(num_arg)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_genereset(datum/act/op/A)
@@ -305,24 +305,24 @@
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_cleartemp(datum/act/op/A)
-	temp = null
+	set_temp(null)
 	return OP_OK
 
 /// "create": grow or print the selected body record on the selected pod.
 /obj/machinery/computer/transhuman/resleeving/proc/resleeve_create_body()
 	var/datum/transhuman/body_record/active_br = current_br
 	if(!istype(active_br))
-		set_temp("Error: Data corruption.", "danger")
+		show_temp("Error: Data corruption.", "danger")
 		rel_clear(src, nameof(current_br))
 		return
 	if(active_br.synthetic)
 		if(!LAZYLEN(spods))
-			set_temp("Error: No SynthFabs detected.", "danger")
+			show_temp("Error: No SynthFabs detected.", "danger")
 			return
 		print_synthetic_body(active_br)
 	else
 		if(!LAZYLEN(pods))
-			set_temp("Error: No growpods detected.", "danger")
+			show_temp("Error: No growpods detected.", "danger")
 			return
 		grow_organic_body(active_br)
 
@@ -344,12 +344,12 @@
 	var/obj/machinery/transhuman/synthprinter/spod = selected_printer()
 	var/error = synthprinter_error(spod)
 	if(error)
-		set_temp(error, "danger")
+		show_temp(error, "danger")
 	else if(spod.print(active_br))
-		set_temp("Initiating printing cycle...", "success")
-		menu = 1
+		show_temp("Initiating printing cycle...", "success")
+		set_menu(1)
 	else
-		set_temp("Initiating printing cycle... Error: Post-initialisation failed. Printing cycle aborted.", "danger")
+		show_temp("Initiating printing cycle... Error: Post-initialisation failed. Printing cycle aborted.", "danger")
 	rel_clear(src, nameof(current_br))
 
 /// Why the selected growpod can't grow a body, or null when it can.
@@ -370,11 +370,11 @@
 	var/obj/machinery/clonepod/transhuman/pod = selected_pod()
 	var/error = growpod_error(pod)
 	if(error)
-		set_temp(error, "danger")
+		show_temp(error, "danger")
 	else if(pod.growclone(active_br))
-		set_temp("Initiating growing cycle...", "success")
+		show_temp("Initiating growing cycle...", "success")
 	else
-		set_temp("Initiating growing cycle... Error: Post-initialisation failed. Growing cycle aborted.", "danger")
+		show_temp("Initiating growing cycle... Error: Post-initialisation failed. Growing cycle aborted.", "danger")
 	rel_clear(src, nameof(current_br))
 
 /// "sleeve": put the selected mind record into the selected resleever's body (mode 1) or a card (mode 2).
@@ -388,17 +388,17 @@
 	. = TRUE
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(!istype(active_mr))
-		set_temp("Error: Data corruption.", "danger")
+		show_temp("Error: Data corruption.", "danger")
 		rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 		return
 	if(!LAZYLEN(sleevers))
-		set_temp("Error: No sleevers detected.", "danger")
+		show_temp("Error: No sleevers detected.", "danger")
 		rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 		return
 	var/override
 	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 	if(!istype(sleever))
-		set_temp("Error: No resleeving pod selected.", "danger")
+		show_temp("Error: No resleeving pod selected.", "danger")
 		rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 		return
 
@@ -406,7 +406,7 @@
 		if(1) //Body resleeving
 			var/error = sleeve_body_error(sleever, active_mr)
 			if(error)
-				set_temp(error, "danger")
+				show_temp(error, "danger")
 				rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 				return
 			var/list/subtargets = list()
@@ -424,13 +424,13 @@
 					return
 				override = _answer_k417
 				if(!override || oc_sanity != sleever.get_occupant() || !(override in sleever.get_occupant()))
-					set_temp("Error: Target selection aborted.", "danger")
+					show_temp("Error: Target selection aborted.", "danger")
 					rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 					return
 
 		if(2) //Card resleeving
 			if(sleever.sleevecards <= 0)
-				set_temp("Error: No available cards in resleever.", "danger")
+				show_temp("Error: No available cards in resleever.", "danger")
 				rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 				return
 
@@ -444,13 +444,13 @@
 			return
 		//They declined to be moved.
 		if(answer != "Yes")
-			set_temp("Initiating resleeving... Error: Post-initialisation failed. Resleeving cycle aborted.", "danger")
+			show_temp("Initiating resleeving... Error: Post-initialisation failed. Resleeving cycle aborted.", "danger")
 			rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 			return
 
 	//They were dead, or otherwise available.
 	sleever.putmind(active_mr, mode, override, db_key = db_key)
-	set_temp("Initiating resleeving...")
+	show_temp("Initiating resleeving...")
 	rel_clear(src, nameof(/obj/machinery/computer/transhuman/resleeving::current_mr))
 
 /datum/tgui/proc/resleeving_body_answered(datum/act/request/A)
@@ -512,10 +512,10 @@
 /obj/machinery/computer/transhuman/resleeving/proc/resleeve_gene_reset()
 	var/datum/transhuman/body_record/active_br = current_br
 	if(gene_sequencing)
-		set_temp("Sequencing Record... Please wait.")
+		show_temp("Sequencing Record... Please wait.")
 		tgui_modal_clear(src)
 	else if(istype(active_br))
-		set_temp("Sequencing Record...")
+		show_temp("Sequencing Record...")
 		tgui_modal_clear(src)
 		gene_sequencing = TRUE
 		// Make the injector here, so no desync
@@ -532,11 +532,11 @@
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)
 	if(!I)
 		gene_sequencing = FALSE
-		set_temp("Injector synthesis cancelled...")
+		show_temp("Injector synthesis cancelled...")
 		return
 	I.forceMove(loc)
 	gene_sequencing = FALSE
-	set_temp("Injector dispensed...")
+	show_temp("Injector dispensed...")
 	visible_message(span_notice("\The [src] ejects \the [I]."))
 	play_sfx(src, SFX_MACHINES_DING)
 
@@ -585,9 +585,8 @@ CAPABILITIES(/obj/item/disk/transcore)
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger
  */
-/obj/machinery/computer/transhuman/resleeving/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/transhuman/resleeving/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -601,25 +600,25 @@ CAPABILITIES(/obj/item/disk/transcore)
 			if(!QDELETED(active_br))
 				spent(active_br)
 				rel_clear(src, nameof(current_br))
-			set_temp("Error: Record corrupt.", "danger")
+			show_temp("Error: Record corrupt.", "danger")
 		else
-			can_grow_active = TRUE
+			set_can_grow_active(TRUE)
 			if(!synthetic_capable && active_br.synthetic) //Disqualified due to being synthetic in an organic only.
-				can_grow_active = FALSE
-				set_temp("Error: Cannot grow [active_br.mydna.name] due to lack of synthfabs.", "danger")
+				set_can_grow_active(FALSE)
+				show_temp("Error: Cannot grow [active_br.mydna.name] due to lack of synthfabs.", "danger")
 			else if(!organic_capable && !active_br.synthetic) //Disqualified for the opposite.
-				can_grow_active = FALSE
-				set_temp("Error: Cannot grow [active_br.mydna.name] due to lack of cloners.", "danger")
+				set_can_grow_active(FALSE)
+				show_temp("Error: Cannot grow [active_br.mydna.name] due to lack of cloners.", "danger")
 			else if(!synthetic_capable && !organic_capable) //What have you done??
-				can_grow_active = FALSE
-				set_temp("Error: Cannot grow [active_br.mydna.name] due to lack of synthfabs and cloners.", "danger")
+				set_can_grow_active(FALSE)
+				show_temp("Error: Cannot grow [active_br.mydna.name] due to lack of synthfabs and cloners.", "danger")
 			else if(active_br.toocomplex)
-				can_grow_active = FALSE
-				set_temp("Error: Cannot grow [active_br.mydna.name] due to species complexity.", "danger")
+				set_can_grow_active(FALSE)
+				show_temp("Error: Cannot grow [active_br.mydna.name] due to species complexity.", "danger")
 			// load it!
 			rel_set(src, nameof(current_br), active_br)
 	else
-		set_temp("Error: Record missing.", "danger")
+		show_temp("Error: Record missing.", "danger")
 
 /obj/machinery/computer/transhuman/resleeving/proc/view_m_rec(ref)
 	if(!length(ref))
@@ -631,22 +630,22 @@ CAPABILITIES(/obj/item/disk/transcore)
 			if(!QDELETED(active_mr))
 				spent(active_mr)
 				rel_clear(src, nameof(current_mr))
-			set_temp("Error: Record corrupt.", "danger")
+			show_temp("Error: Record corrupt.", "danger")
 		else
-			can_sleeve_active = TRUE
+			set_can_sleeve_active(TRUE)
 			if(!LAZYLEN(sleevers))
-				can_sleeve_active = FALSE
-				set_temp("Error: Cannot sleeve due to no sleevers.", "danger")
+				set_can_sleeve_active(FALSE)
+				show_temp("Error: Cannot sleeve due to no sleevers.", "danger")
 			if(!selected_sleever())
-				can_sleeve_active = FALSE
-				set_temp("Error: Cannot sleeve due to no selected sleever.", "danger")
+				set_can_sleeve_active(FALSE)
+				show_temp("Error: Cannot sleeve due to no selected sleever.", "danger")
 			if(selected_sleever() && !selected_sleever().get_occupant())
-				can_sleeve_active = FALSE
-				set_temp("Error: Cannot sleeve due to lack of sleever occupant.", "danger")
+				set_can_sleeve_active(FALSE)
+				show_temp("Error: Cannot sleeve due to lack of sleever occupant.", "danger")
 			// load it!
 			rel_set(src, nameof(current_mr), active_mr)
 	else
-		set_temp("Error: Record missing.", "danger")
+		show_temp("Error: Record missing.", "danger")
 
 #undef MENU_MAIN
 #undef MENU_BODY

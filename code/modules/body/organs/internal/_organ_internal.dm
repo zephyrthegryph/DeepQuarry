@@ -36,7 +36,7 @@
 	. = ..() //Should be an interger value for infection level
 	if(!.) return
 
-	var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
+	var/antibiotics = owner.antimicrobial
 
 	if(. >= 2 && antibiotics < ANTIBIO_NORM) //INFECTION_LEVEL_TWO
 		if (prob(3))

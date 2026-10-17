@@ -5,7 +5,7 @@
 												list/species_blacklist = list(),
 												datum/tgui_state/state = GLOB.tgui_self_state)
 	var/datum/tgui_module/appearance_changer/self_deleting/AC = new(src, src, check_species_whitelist, species_whitelist, species_blacklist)
-	AC.flags = flags
+	AC.set_flags(flags)
 	AC.tgui_interact(user, custom_state = state)
 
 /mob/living/carbon/human/proc/change_species(new_species)
@@ -26,7 +26,7 @@
 	if(src.gender == gender)
 		return
 
-	src.gender = gender
+	set_gender(gender)
 	// reset_hair() // Remove - Don't just randomize hair on gender swaps for prometheans.
 	update_dna()
 	return 1

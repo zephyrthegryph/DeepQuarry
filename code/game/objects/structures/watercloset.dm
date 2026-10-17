@@ -58,7 +58,7 @@ CAPABILITIES(/obj/structure/toilet)
 		asks(/datum/prompt/yes_no, fields = list("title" = "Toilet Crystal", "question" = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", "yes_text" = "Take it!", "no_text" = "Leave it.", "timeout" = 0), step = "crystal", when = PROC_REF(offers_crystal)),
 		then(PROC_REF(interaction_hand)))
 	// the old attack_ai: the hand's Use for a silicon, except a cyborg that is remote viewing or has no player
-	op("silicon_use", remote(), label("Use"), needs(req(PROC_REF(silicon_at_hand), silent = TRUE)), then(PROC_REF(interaction_hand)))
+	op("silicon_use", remote(), label("Use"), needs(any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = /datum/msg/req_silent), req(PROC_REF(silicon_at_hand), silent = TRUE))), then(PROC_REF(interaction_hand)))
 	op("swirlie", item(/obj/item/grab), label("Give a swirlie"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(swirlie_possible)), starts(PROC_REF(swirlie_started)), begins(PROC_REF(swirlie_begins)), wait(3 SECONDS), then(PROC_REF(swirlie_done)))
 	op("insert_crystal", item(/obj/item/bluespace_crystal), label("Insert"), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(crystal_slot_free)), begins(MSG(toilet/inserting_crystal)), wait(2 SECONDS), then(PROC_REF(crystal_inserted)))
 	op("replace_bin", item(/obj/item/stock_parts/matter_bin), label("Replace the bin"), priority(OP_PRIORITY_DEFAULT), when(nameof(cistern)), begins(PROC_REF(bin_begins)), wait(2 SECONDS), then(PROC_REF(bin_replaced)))
@@ -136,11 +136,7 @@ READS_AS(/obj/structure/toilet/proc/cistern_loot_count, TOILET_CISTERN_KEY)
 
 /// A silicon's hand is its own: a cyborg uses the toilet only from its body, with a player in it.
 /obj/structure/toilet/proc/silicon_at_hand(datum/act/op/A)
-	return (read_once(silicon_in_body(A.actor))) ? null : /datum/msg/req_silent // a player's presence is asked when the click is made
-
-/// Is `user` a silicon acting from its own body (not a cyborg remote viewing, or one with no player)?
-/obj/structure/toilet/proc/silicon_in_body(mob/user)
-	return !(isrobot(user) && (!user.client || user.is_remote_viewing()))
+	return (read_once(A.actor?.client) && !read_once(A.actor.is_remote_viewing())) ? null : /datum/msg/req_silent // a player's presence is asked when the click is made
 
 MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 
@@ -257,7 +253,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
 			MSG_BLIND("You hear a toilet flushing."))
 		if(!GM.internal)
-			GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+			GM.body?.add_restriction(src, STAT_AIRWAY, 0, 5 SECONDS) // a faceful of water
 		if(GM.size_multiplier <= 0.75)
 			act_message(GM, src, MSG_SELF(span_userdanger("You get sucked into %T%!")), \
 				MSG_OTHERS(span_danger("%U% gets sucked into %T% due to their small size!")))
@@ -467,7 +463,7 @@ MSG_DEF_SELF(toilet/inserting_crystal, span_notice("You begin to insert %I% into
 		var/obj/effect/effect/water/W = new(get_turf(T))
 		W.create_reagents(15)
 		W.reagents.add_reagent(REAGENT_ID_WATER, 15)
-		W.set_color()
+		W.tint_from_reagents()
 		W.set_up(target_turf)
 
 /obj/structure/toilet/atom_deconstruct(disassembled)
@@ -1361,9 +1357,9 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "waste hopper"
 	B.desc = "With a resounding CRUNCH, your form has gotten snagged by the Muffin Monster's rotational interlocking cutters indiscriminately crunching away at anything unlucky enough to end up in its hopper, only for the insatiable machine to grind it all down into a slurry mulch fine enough to pass through the narrow sewage lines trouble-free..."
-	B.digest_brute = 20
+	B.set_digest_brute(20)
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
-	B.recycling = TRUE
+	B.set_recycling(TRUE)
 
 /// Relation view: muffinmonster (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

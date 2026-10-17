@@ -85,7 +85,7 @@ CAPABILITIES(/datum/keybind_editor)
 	if(!ui_gate(A))
 		return FALSE
 	if(profile_arg in KEYBIND_PROFILES)
-		profile = profile_arg
+		set_profile(profile_arg)
 	return TRUE
 
 /datum/keybind_editor/proc/ui_act_set_right_click(datum/act/op/A, binding_arg)

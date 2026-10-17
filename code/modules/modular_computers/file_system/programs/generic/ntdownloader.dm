@@ -48,7 +48,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	if(!check_file_download(filename))
 		return 0
 
-	ui_header = "downloader_running.gif"
+	set_ui_header("downloader_running.gif")
 
 	if(PRG in GLOB.ntnet_global.available_station_software)
 		generate_network_log("Began downloading file [PRG.filename].[PRG.filetype] from NTNet Software Repository.")
@@ -83,8 +83,8 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
 	rel_clear(src, nameof(downloaded_file)) // null already when store_file() took it
-	download_completion = 0
-	ui_header = "downloader_finished.gif"
+	set_download_completion(0)
+	set_ui_header("downloader_finished.gif")
 
 /datum/computer_file/program/ntnetdownload/proc/complete_file_download()
 	if(!downloaded_file)
@@ -92,10 +92,10 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	generate_network_log("Completed download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
-		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
+		set_downloaderror("I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance.")
 	rel_clear(src, nameof(downloaded_file)) // null already when store_file() took it
-	download_completion = 0
-	ui_header = "downloader_finished.gif"
+	set_download_completion(0)
+	set_ui_header("downloader_finished.gif")
 
 /datum/computer_file/program/ntnetdownload/process_tick()
 	if(!downloaded_file)
@@ -104,37 +104,37 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 		complete_file_download()
 		if(length(downloads_queue) > 0)
 			begin_file_download(LAZYACCESS(downloads_queue, 1))
-			LAZYREMOVE(downloads_queue, LAZYACCESS(downloads_queue, 1))
+			remove_downloads_queue(LAZYACCESS(downloads_queue, 1))
 
 	// Download speed according to connectivity state. NTNet server is assumed to be on unlimited speed so we're limited by our local connectivity
-	download_netspeed = 0
+	set_download_netspeed(0)
 	// Speed defines are found in misc.dm
 	switch(ntnet_status)
 		if(1)
-			download_netspeed = NTNETSPEED_LOWSIGNAL
+			set_download_netspeed(NTNETSPEED_LOWSIGNAL)
 		if(2)
-			download_netspeed = NTNETSPEED_HIGHSIGNAL
+			set_download_netspeed(NTNETSPEED_HIGHSIGNAL)
 		if(3)
-			download_netspeed = NTNETSPEED_ETHERNET
-	download_completion += download_netspeed
+			set_download_netspeed(NTNETSPEED_ETHERNET)
+	set_download_completion(download_completion + download_netspeed)
 
 /datum/computer_file/program/ntnetdownload/proc/ui_act_prg_downloadfile(datum/act/op/A, filename)
 	if(!downloaded_file)
 		begin_file_download(filename)
 	else if(check_file_download(filename) && !LAZYFIND(downloads_queue, filename) && downloaded_file.filename != filename)
-		LAZYADD(downloads_queue, filename)
+		add_downloads_queue(filename)
 	return TRUE
 
 /datum/computer_file/program/ntnetdownload/proc/ui_act_prg_removequeued(datum/act/op/A, filename)
-	LAZYREMOVE(downloads_queue, filename)
+	remove_downloads_queue(filename)
 	return TRUE
 
 /datum/computer_file/program/ntnetdownload/proc/ui_act_prg_reseterror(datum/act/op/A)
 	if(downloaderror)
-		download_completion = 0
-		download_netspeed = 0
+		set_download_completion(0)
+		set_download_netspeed(0)
 		rel_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file)) // null already when store_file() took it
-		downloaderror = ""
+		set_downloaderror("")
 	return OP_OK
 
 /datum/computer_file/program/ntnetdownload/ui_data(datum/act/eval/A)

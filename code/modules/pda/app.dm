@@ -38,14 +38,11 @@
 		pda().play_ringtone()
 
 	if(blink && !(src in pda().notifying_programs))
-		pda().add_overlay("pda-r")
 		rel_add(pda(), nameof(/obj/item/pda::notifying_programs), src)
 
 /datum/data/pda/proc/unnotify()
 	if(src in pda().notifying_programs)
 		rel_remove(pda(), nameof(/obj/item/pda::notifying_programs), src)
-		if(!length(pda().notifying_programs))
-			pda().cut_overlay("pda-r")
 
 // An app has a button on the home screen and its own UI
 /datum/data/pda/app
@@ -94,7 +91,7 @@
 		rel_clear(pda(), nameof(/obj/item/pda::scanmode))
 	else
 		rel_set(pda(), nameof(/obj/item/pda::scanmode), src)
-		name = "Disable [base_name]"
+		set_name("Disable [base_name]")
 
 	pda().update_shortcuts()
 	return 1

@@ -118,11 +118,11 @@
 /obj/structure/thecake/proc/HasSliceMissing()
 	if(slices < maxslices)
 		if(interval >= regentime)
-			interval = 0
+			set_interval(0)
 			slices++
 			HasSliceMissing()
 		else
-			interval++
+			set_interval(interval + 1)
 			HasSliceMissing()
 	else
 		return
@@ -413,11 +413,11 @@ CAPABILITIES(/obj/structure/thecake)
 /obj/structure/chaoscake/proc/HasSliceMissing()
 	if(slices < maxslices)
 		if(interval >= regentime)
-			interval = 0
+			set_interval(0)
 			slices++
 			HasSliceMissing()
 		else
-			interval++
+			set_interval(interval + 1)
 			HasSliceMissing()
 	else
 		return

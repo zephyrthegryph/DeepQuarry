@@ -49,7 +49,7 @@ TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 		stack_trace("Material of type: [material_name] does not exist.")
 		spent(src)
 		return
-	color = material.icon_colour
+	set_color(material.icon_colour)
 
 // Blue wood.
 TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
@@ -289,9 +289,9 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 
 /obj/structure/bonfire/post_buckle_mob(mob/living/M)
 	if(M?.buckled_to() == src) // Just buckled someone
-		M.pixel_y += 13
+		M.set_pixel_y(M.pixel_y + 13)
 	else // Just unbuckled someone
-		M.pixel_y -= 13
+		M.set_pixel_y(M.pixel_y - 13)
 
 /obj/structure/fireplace //more like a space heater than a bonfire. A cozier alternative to both.
 	name = "fireplace"

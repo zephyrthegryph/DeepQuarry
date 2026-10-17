@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/flash)
 		else if(!power_supply || !power_supply.checked_use(charge_cost))
 			break
 
-		use_cooldown += 10 SECONDS
+		set_use_cooldown(use_cooldown + (10 SECONDS))
 		times_used--
 
 	COOLDOWN_START(src, use_cooldown, 10 SECONDS)
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/flash)
 
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
-		animation.layer = user.layer + 1
+		animation.set_layer(user.layer + 1)
 		animation.set_icon_state("blank")
 		animation.set_icon('icons/mob/mob.dmi')
 		rel_set(animation, nameof(animation.master), user)
@@ -275,14 +275,7 @@ CAPABILITIES(/obj/item/flash)
 
 	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
-	if(istype(user, /mob/living/silicon/robot))
-		var/atom/movable/overlay/animation = new(user.loc)
-		animation.layer = user.layer + 1
-		animation.set_icon_state("blank")
-		animation.set_icon('icons/mob/mob.dmi')
-		rel_set(animation, nameof(animation.master), user)
-		flick("blspell", animation)
-		animation.expire(5)
+
 
 	for(var/mob/living/carbon/C in oviewers(3, null))
 		var/safety = C.eyecheck()

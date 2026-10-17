@@ -122,8 +122,8 @@
 
 //Do not override this proc, instead use the appropiate procs.
 //This proc will handle the calls to the appropiate procs.
-/// One event step every 2 s while the event is active (the every() in reactions(), gated on event_active).
-/datum/event/proc/event_step(dt)
+/// One event step every 2 s while the event is active (the every() in CAPABILITIES(/datum/event), gated on event_active).
+/datum/event/proc/event_step(datum/act/timer/tick)
 	if(!processing_active)
 		return
 	if(activeFor > startWhen && activeFor < endWhen)
@@ -172,12 +172,11 @@
 REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
 /// TRUE from New() until the event service completes it: one event step every 2 s while set
-/// (the every() below). Events made with external_use never step on their own.
+/// (its every() in CAPABILITIES(/datum/event)). Events made with external_use never step on their own.
 /datum/event/var/tmp/event_active = FALSE
 
-/datum/event/reactions()
-	. = ..()
-	. += every(2 SECONDS, PROC_REF(event_step), when = nameof(event_active))
+CAPABILITIES(/datum/event)
+	every(2 SECONDS, then(PROC_REF(event_step)), when = nameof(event_active))
 
 /datum/event/New(datum/event_meta/EM, external_use = FALSE)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons

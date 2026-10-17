@@ -311,7 +311,7 @@ CAPABILITIES(/obj/item/book)
 				return OP_PASS
 			else
 				src.name = newtitle
-				src.title = newtitle
+				set_title(newtitle)
 		if("Contents")
 			var/content = A.step_value("k259")
 			if(isnull(content))
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/item/book)
 				to_chat(user, "The name is invalid.")
 				return OP_PASS
 			else
-				src.author = newauthor
+				set_author(newauthor)
 		else
 			return OP_PASS
 	return OP_PASS
@@ -443,7 +443,7 @@ CAPABILITIES(/obj/item/book/bundle)
 			var/obj/item/paper/P = W
 			data["page_name"] = P.name
 			data["page_kind"] = "paper"
-			var/info = (ishuman(user) || isobserver(user) || issilicon(user)) ? P.info : stars(P.info)
+			var/info = user ? user.written_text_view(P.info) : stars(P.info)
 			data["page_info"] = "[info][P.stamps]"
 		else if(istype(W, /obj/item/photo))
 			var/obj/item/photo/P = W
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/item/book/bundle)
 			data["page_name"] = "Page [page]"
 			data["page_kind"] = "text"
 			var/text = pages[page]
-			data["page_info"] = (ishuman(user) || isobserver(user) || issilicon(user)) ? "[text]" : stars("[text]")
+			data["page_info"] = user ? user.written_text_view("[text]") : stars("[text]")
 		else
 			data["page_name"] = "Page [page]"
 			data["page_kind"] = "text"
@@ -480,7 +480,7 @@ CAPABILITIES(/obj/item/book/bundle)
 	if(!ui_gate(A))
 		return FALSE
 	if(page != pages.len)
-		page++
+		set_page(page + 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
@@ -488,7 +488,7 @@ CAPABILITIES(/obj/item/book/bundle)
 	if(!ui_gate(A))
 		return FALSE
 	if(page > 1)
-		page--
+		set_page(page - 1)
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 

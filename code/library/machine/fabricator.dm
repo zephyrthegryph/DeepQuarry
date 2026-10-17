@@ -243,8 +243,8 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /proc/fabricator_place(atom/movable/made, turf/target, datum/fab_run/run, worth)
 	if(isitem(made))
 		var/obj/item/I = made
-		I.pixel_x = rand(-6, 6)
-		I.pixel_y = rand(-6, 6)
+		I.set_pixel_x(rand(-6, 6))
+		I.set_pixel_y(rand(-6, 6))
 		I.set_economic_provenance(run.department, worth, run.producer_account)
 	made.forceMove(target)
 

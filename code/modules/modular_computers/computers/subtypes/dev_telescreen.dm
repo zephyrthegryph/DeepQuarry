@@ -30,22 +30,22 @@
 		shutdown_computer()
 		set_anchored(FALSE)
 		screen_on = FALSE
-		pixel_x = 0
-		pixel_y = 0
+		set_pixel_x(0)
+		set_pixel_y(0)
 		to_chat(user, "You unsecure \the [src].")
 		return OP_OK
 	switch(A.step_value("offset"))
 		if("North")
-			pixel_y = 32
+			set_pixel_y(32)
 		if("South")
-			pixel_y = -32
+			set_pixel_y(-32)
 		if("West")
-			pixel_x = -32
+			set_pixel_x(-32)
 		if("East")
-			pixel_x = 32
+			set_pixel_x(32)
 		if("This tile")
-			pixel_x = 0
-			pixel_y = 0
+			set_pixel_x(0)
+			set_pixel_y(0)
 		else
 			return OP_OK
 	set_anchored(TRUE)

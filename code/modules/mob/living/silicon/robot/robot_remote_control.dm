@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	// Set the name when the AI steps inside.
 	SetName("[AI.real_name] shell [num2text(ident)]")
 	if(isnull(sprite_name)) // For custom sprites. It can only chance once in case there are two AIs with custom borg sprites.
-		sprite_name = AI.real_name
+		set_sprite_name(AI.real_name)
 	if(!QDELETED(camera))
 		camera.c_tag = real_name
 
@@ -173,9 +173,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	To return to your core, use the <b>Release Control</b> verb."))
 
 	// Languages and comms.
-	languages = AI.languages.Copy()
+	set_languages(AI.languages.Copy())
 	sync_language_state()
-	speech_synthesizer_langs = AI.speech_synthesizer_langs.Copy()
+	set_speech_synthesizer_langs(AI.speech_synthesizer_langs.Copy())
 	if(radio && AI.aiRadio) //AI keeps all channels, including Syndie if it is an Infiltrator.
 		radio.subspace_transmission = TRUE
 		radio.channels = AI.aiRadio.channels

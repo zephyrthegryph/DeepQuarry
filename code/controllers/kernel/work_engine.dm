@@ -7,10 +7,10 @@
 	if(!W.handler && !istype(W, /datum/work_item/stage))
 		CRASH("kernel_register_work: a work item for [owner_type] has no handler")
 	W.name ||= "[W.handler]"
-	W.key = W.item_key(owner_type)
+	W.set_key(W.item_key(owner_type))
 	if(istype(W, /datum/work_item/stage))
 		var/datum/work_item/stage/S = W
-		W.key = "[owner_type]:stage:[S.stage_type]"
+		W.set_key("[owner_type]:stage:[S.stage_type]")
 	var/datum/work_item/old = work_by_key[W.key]
 	if(old)
 		work_all -= old

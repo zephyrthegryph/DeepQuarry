@@ -1,3 +1,6 @@
+/obj/item/taperecorder d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/taperecorder gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/taperecorder gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/taperecorder playing=1 +state: taperecorder_playing
 /obj/item/taperecorder playing=1 +overlay: icons/obj/device.dmi:taperecorder_playing:8:#000000
 /obj/item/taperecorder playing=1 -state: taperecorder_idle
@@ -14,4 +17,7 @@
 /obj/item/taperecorder recording=2 +overlay: icons/obj/device.dmi:taperecorder_recording:8:#000000
 /obj/item/taperecorder recording=2 -state: taperecorder_idle
 /obj/item/taperecorder recording=2 -overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+/obj/item/taperecorder/empty d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/taperecorder/empty gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/taperecorder/empty gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 

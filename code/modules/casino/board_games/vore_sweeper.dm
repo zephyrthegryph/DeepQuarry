@@ -78,13 +78,13 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	var/mob/dealer_mob = dealer
 	if(game_state < GAME_PLAYING)
 		return FALSE
-	LAZYCLEARLIST(placed_mines)
-	LAZYCLEARLIST(revealed_fields)
-	LAZYCLEARLIST(placed_flags)
+	clear_placed_mines()
+	clear_revealed_fields()
+	clear_placed_flags()
 	if(!dealer_mob && game_state > GAME_PLAYING)
 		auto_place_mines(user, TRUE)
 		return TRUE
-	game_state = GAME_SETUP
+	set_game_state(GAME_SETUP)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
@@ -121,11 +121,11 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	if(LAZYACCESS(revealed_fields, key))
 		return FALSE
 	if(LAZYACCESS(placed_mines, key))
-		game_state = GAME_LOST
-		LAZYSET(revealed_fields, key, "M")
+		set_game_state(GAME_LOST)
+		set_revealed_fields_at(key, "M")
 		return TRUE
 	var/mine_count = count_surrounding_mines(validated_data[2], validated_data[3])
-	LAZYSET(revealed_fields, key, mine_count)
+	set_revealed_fields_at(key, mine_count)
 	if(!mine_count)
 		reveal_empty_area(validated_data[2], validated_data[3])
 	validate_victory()
@@ -139,9 +139,9 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	if(LAZYACCESS(revealed_fields, key))
 		return FALSE
 	if(LAZYACCESS(placed_flags, key))
-		LAZYREMOVE(placed_flags, key)
+		remove_placed_flags(key)
 		return TRUE
-	LAZYSET(placed_flags, key, TRUE)
+	set_placed_flags_at(key, TRUE)
 	validate_flag_victory()
 	return TRUE
 
@@ -149,7 +149,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	var/total_tiles = grid_size * grid_size
 	var/safe_tiles = total_tiles - length(placed_mines)
 	if(length(revealed_fields) >= safe_tiles)
-		game_state = GAME_WON
+		set_game_state(GAME_WON)
 
 /datum/board_game/vore_sweeper/proc/validate_flag_victory()
 	var/all_flagged = TRUE
@@ -174,9 +174,9 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 			if(LAZYACCESS(placed_mines, key))
 				continue
 
-			LAZYSET(revealed_fields, key, count_surrounding_mines(x, y))
+			set_revealed_fields_at(key, count_surrounding_mines(x, y))
 
-	game_state = GAME_WON
+	set_game_state(GAME_WON)
 
 /// Whether `user` may set the board up (the dealer, before play).
 /datum/board_game/vore_sweeper/proc/can_setup(mob/user)
@@ -193,7 +193,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	if(new_grid_size < 4 || new_grid_size > 16)
 		return FALSE
 	validate_mine_count(mine_count, new_grid_size)
-	grid_size = new_grid_size
+	set_grid_size(new_grid_size)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/setup_change_mine_count(mob/user, list/params, extra)
@@ -212,7 +212,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	var/key = validated_data[1]
 	if(LAZYACCESS(placed_mines, key))
 		return FALSE
-	LAZYSET(placed_mines, key, TRUE)
+	set_placed_mines_at(key, TRUE)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/setup_remove_mine(mob/user, list/params, extra)
@@ -224,7 +224,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	if(!validated_data)
 		return FALSE
 	var/key = validated_data[1]
-	LAZYREMOVE(placed_mines, key)
+	remove_placed_mines(key)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/setup_auto_place_mines(mob/user, list/params, extra)
@@ -234,11 +234,11 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	return auto_place_mines(user, TRUE)
 
 /datum/board_game/vore_sweeper/proc/setup_clear_all_mines(mob/user, list/params, extra)
-	LAZYCLEARLIST(placed_mines)
+	clear_placed_mines()
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/setup_start_game(mob/user, list/params, extra)
-	game_state = GAME_PLAYING
+	set_game_state(GAME_PLAYING)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/reveal_empty_area(x, y)
@@ -261,7 +261,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 			continue
 
 		var/adjacent_mines = count_surrounding_mines(cx, cy)
-		LAZYSET(revealed_fields, key, adjacent_mines)
+		set_revealed_fields_at(key, adjacent_mines)
 
 		if(adjacent_mines == 0)
 			for(var/dx = -1 to 1)
@@ -282,11 +282,11 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 		var/y = rand(1, grid_size)
 		var/key = "[x],[y]"
 		if(!LAZYACCESS(placed_mines, key))
-			LAZYSET(placed_mines, key, TRUE)
+			set_placed_mines_at(key, TRUE)
 			placed++
 	if(play)
 		rel_clear(src, nameof(dealer))
-		game_state = GAME_PLAYING
+		set_game_state(GAME_PLAYING)
 	return TRUE
 
 /datum/board_game/vore_sweeper/proc/field_check(new_x_location, new_y_location)
@@ -319,13 +319,13 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	// past the upper bound and break grid generation.
 	if(!isnum(mines) || mines < 1)
 		parent().atom_say("The grid must have at least one mine.")
-		mine_count = 1
+		set_mine_count(1)
 		return
 	if(mines <= max_mines)
-		mine_count = round(mines)
+		set_mine_count(round(mines))
 		return
 	parent().atom_say("The grid with [total_tiles] tiles only supports a maximum of [max_mines] mines.")
-	mine_count = max_mines
+	set_mine_count(max_mines)
 
 /datum/board_game/vore_sweeper/proc/validate_coords(x_loc, y_loc)
 

@@ -55,11 +55,11 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 				sense()
 
 	if(timing && (time >= 0))
-		time--
+		set_time(time - 1)
 	if(timing && time <= 0)
 		set_timing(FALSE)
 		toggle_scan()
-		time = initial(time)
+		set_time(initial(time))
 
 /obj/item/assembly/prox_sensor/dropped(mob/user, equipping, slot)
 	..()
@@ -147,9 +147,9 @@ CAPABILITIES(/obj/item/assembly/prox_sensor)
 		var/list/L = splittext(new_time, ":")
 		for(var/i in 1 to LAZYLEN(L))
 			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-	time = clamp(real_new_time, 0, 600)
+	set_time(clamp(real_new_time, 0, 600))
 	return TRUE
 
 /obj/item/assembly/prox_sensor/proc/ui_act_range(datum/act/op/A, range_arg)
-	range = clamp(range_arg, 1, 5)
+	set_range(clamp(range_arg, 1, 5))
 	return TRUE

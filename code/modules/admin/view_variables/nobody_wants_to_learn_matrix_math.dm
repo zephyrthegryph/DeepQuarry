@@ -70,7 +70,7 @@ CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
 
 /datum/nobody_wants_to_learn_matrix_math/proc/set_transform()
 	animate(target(), transform = testing_matrix, time = 0.5 SECONDS)
-	testing_matrix = matrix(target().transform)
+	set_testing_matrix(matrix(target().transform))
 
 /client/proc/open_matrix_tester(atom/in_atom)
 	if(holder)

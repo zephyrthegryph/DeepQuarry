@@ -124,7 +124,23 @@
 	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 	if(C)
 		return !C.sealed && (!C.lid || reagent_container_lid_open(src))
-	return !!read_once(flags & OPENCONTAINER) // a container without the capability is open by its flag, sampled when asked
+	return open_by_flag()
+
+/// Whether a container without the reagent_container capability is open: its OPENCONTAINER flag. The flag bits of an atom are not tracked (lifecycle
+/// bits change inside a draw), so a flag that changes while the thing lives goes through set_open_by_flag(), which publishes this key.
+/atom/proc/open_by_flag()
+	return !!(flags & OPENCONTAINER)
+READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
+
+/// Opens or closes a container that is open by its flag and tells what draws it.
+/atom/proc/set_open_by_flag(open)
+	var/was = open_by_flag()
+	if(open)
+		flags |= OPENCONTAINER
+	else
+		flags &= ~OPENCONTAINER
+	if(was != open_by_flag())
+		PUBLISH_CHANGE(src, REAGENT_OPEN_FLAG_KEY)
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 
@@ -624,15 +640,15 @@ SETTER(/atom, invisibility)
 
 /// Resets the atom's color to null, and then sets it to the highest priority colour available
 /atom/proc/update_atom_colour()
-	color = null
+	set_color(null)
 	for(var/C in atom_colours)
 		if(islist(C))
 			var/list/L = C
 			if(L.len)
-				color = L
+				set_color(L)
 				return
 		else if(C)
-			color = C
+			set_color(C)
 			return
 
 ///Passes Stat Browser Panel clicks to the game and calls client click on an atom
@@ -752,4 +768,4 @@ SETTER(/atom, icon)
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)
-	color = new_color
+	set_color(new_color)

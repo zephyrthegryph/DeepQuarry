@@ -81,7 +81,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), /datum/material_template/cable, SHEET_MATERIAL_AMOUNT)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
-		color = material.icon_colour
+		set_color(material.icon_colour)
 	power_material_changed()
 
 /obj/structure/cable/material_service_changed()
@@ -388,7 +388,7 @@ CAPABILITIES(/obj/structure/cable)
 	var/color_n = "#DD0000"
 	if(colorC)
 		color_n = colorC
-	color = color_n
+	set_color(color_n)
 
 //////////////////////////////////////////////
 // Powernets handling helpers
@@ -556,7 +556,7 @@ CAPABILITIES(/obj/structure/cable)
 	if(!final_color)
 		final_color = GLOB.possible_cable_coil_colours["Red"]
 		selected_color = "red"
-	color = final_color
+	set_color(final_color)
 	to_chat(user, span_notice("You change \the [src]'s color to [lowertext(selected_color)]."))
 
 /obj/item/stack/cable_coil/proc/update_wclass()
@@ -599,7 +599,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 			to_chat(M, span_warning("You need at least 15 lengths to make restraints!"))
 			return
 		var/obj/item/handcuffs/cable/B = new /obj/item/handcuffs/cable(M.loc)
-		B.color = color
+		B.set_color(color)
 		to_chat(M, span_notice("You wind some cable together to make some restraints."))
 		src.use(15)
 	else

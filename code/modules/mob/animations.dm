@@ -97,10 +97,10 @@
 	after(src, time + 0.1 SECONDS, PROC_REF(fade_towards_reset), with = list(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha))
 
 /atom/movable/proc/fade_towards_reset(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
-	pixel_x = default_pixel_x
-	pixel_y = default_pixel_y
-	pixel_z = default_pixel_z
-	alpha = initial_alpha
+	set_pixel_x(default_pixel_x)
+	set_pixel_y(default_pixel_y)
+	set_pixel_z(default_pixel_z)
+	set_alpha(initial_alpha)
 
 // Similar to attack animations, but in reverse and is longer to act as a telegraph.
 /atom/movable/proc/do_windup_animation(atom/A, windup_time)

@@ -14,7 +14,6 @@ GLOBAL_LIST_INIT(pipe_colors, list("grey" = PIPE_COLOR_GREY, "red" = PIPE_COLOR_
 GLOBAL_DATUM_INIT(icon_manager, /datum/pipe_icon_manager, new)
 
 GLOBAL_DATUM_INIT(global_message_listener, /datum/comm_message_listener, new) //May be used by admins
-GLOBAL_DATUM_INIT(ntnet_global, /datum/ntnet, new)
 GLOBAL_VAR_INIT(last_message_id, 0)
 
 // We manually initialize the alarm handlers instead of looping over all existing types
@@ -38,6 +37,5 @@ GLOBAL_DATUM_INIT(ghostnet, /datum/visualnet/ghost, new)
 
 GLOBAL_DATUM_INIT(all_locations, /datum/locations/milky_way, new)
 
-GLOBAL_DATUM_INIT(news_network, /datum/feed_network, new) //The global news-network, which is coincidentally a global list.
 
 GLOBAL_DATUM_INIT(loremaster, /datum/lore/loremaster, new)

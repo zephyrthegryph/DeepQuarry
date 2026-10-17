@@ -4,7 +4,7 @@ use super::{
     transport,
 };
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     io,
     path::PathBuf,
     sync::{
@@ -130,6 +130,68 @@ struct SessionKey {
     engine: Option<PathBuf>,
     bootstrap: bool,
 }
+impl SessionKey {
+    fn of(
+        manifest: PathBuf,
+        defines: &BTreeMap<String, String>,
+        config: Option<&crate::request::BuildRequest>,
+    ) -> Self {
+        Self {
+            manifest,
+            defines: defines.clone(),
+            engine: config.and_then(|request| request.engine_template.clone()),
+            bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
+        }
+    }
+}
+/// Why recent sessions disappeared (bounded, newest last), so the next compile of that session can say why it missed.
+static EVICTIONS: Mutex<VecDeque<(SessionKey, String)>> = Mutex::new(VecDeque::new());
+const EVICTION_LEDGER: usize = 64;
+fn note_eviction(key: &SessionKey, why: &str) {
+    let mut ledger = EVICTIONS.lock().unwrap_or_else(|e| e.into_inner());
+    ledger.retain(|(old, _)| old != key);
+    ledger.push_back((key.clone(), why.to_string()));
+    while ledger.len() > EVICTION_LEDGER {
+        ledger.pop_front();
+    }
+}
+fn take_eviction(key: &SessionKey) -> Option<String> {
+    let mut ledger = EVICTIONS.lock().unwrap_or_else(|e| e.into_inner());
+    let at = ledger.iter().position(|(old, _)| old == key)?;
+    ledger.remove(at).map(|(_, why)| why)
+}
+/// Samples the process's private bytes every 100 ms while a request runs and keeps the maximum.
+struct PeakSampler {
+    peak: Arc<AtomicU64>,
+    stop: Arc<AtomicBool>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+impl PeakSampler {
+    fn start() -> Self {
+        let peak = Arc::new(AtomicU64::new(0));
+        let stop = Arc::new(AtomicBool::new(false));
+        let (peak_in, stop_in) = (Arc::clone(&peak), Arc::clone(&stop));
+        let thread = std::thread::Builder::new()
+            .name("dmbd-peak-sampler".into())
+            .spawn(move || {
+                while !stop_in.load(Ordering::Acquire) {
+                    if let Some(bytes) = transport::private_bytes() {
+                        peak_in.fetch_max(bytes, Ordering::AcqRel);
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            })
+            .ok();
+        Self { peak, stop, thread }
+    }
+    fn finish(mut self) -> Option<u64> {
+        self.stop.store(true, Ordering::Release);
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+        Some(self.peak.load(Ordering::Acquire)).filter(|bytes| *bytes > 0)
+    }
+}
 impl Slot {
     fn lock_request_until(
         &self,
@@ -205,15 +267,24 @@ impl Shared {
             after = transport::private_bytes();
             joined_workers = true;
         }
-        super::emit_stderr(format_args!(
-            "dmbd allocator reclaim private-before={before:?} private-after={after:?} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} rust-requested-live={} seconds={:.6}",
-            dm_profile::allocator_commit_bytes(),
-            housekeeping::allocations::requested_live(),
-            started.elapsed().as_secs_f64()
-        ));
+        // A reclaim that freed nothing is the common case after every build and under pressure; logging each one
+        // grew lifecycle.log to megabytes of identical lines. Log only reclaims that returned memory or joined workers.
+        let freed = match (before, after) {
+            (Some(before), Some(after)) => before.saturating_sub(after),
+            _ => 0,
+        };
+        if joined_workers || freed >= RECLAIM_LOG_MIN_BYTES {
+            super::emit_stderr(format_args!(
+                "dmbd allocator reclaim private-before={before:?} private-after={after:?} freed={freed} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} rust-requested-live={} seconds={:.6}",
+                dm_profile::allocator_commit_bytes(),
+                housekeeping::allocations::requested_live(),
+                started.elapsed().as_secs_f64()
+            ));
+        }
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        housekeeping::allocations::dump_sites(&format!("after_request private={after:?}"));
         after
     }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
@@ -223,6 +294,35 @@ impl Shared {
             Arc::clone(&self.procedures),
         );
     }
+    /// What the daemon holds for `key` right now: a usable retained session (hot) or the reason there is none.
+    fn probe(&self, key: &SessionKey) -> crate::compile_stats::SessionState {
+        let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        let sessions = slots.len();
+        let miss = match slots.get(key) {
+            Some(slot) => {
+                let tier = slot.idle_tier.load(Ordering::Acquire);
+                // A host busy with another request will have built by the time this one runs: count it as retained.
+                let retained = match slot.host.try_lock() {
+                    Ok(host) => host.retains_patch_base(),
+                    Err(std::sync::TryLockError::Poisoned(_)) => false,
+                    Err(std::sync::TryLockError::WouldBlock) => true,
+                };
+                if tier >= 3 {
+                    Some(format!("degraded-tier-{tier}"))
+                } else if !retained {
+                    Some(take_eviction(key).map_or_else(|| "no-patch-base".to_string(), |why| format!("evicted:{why}")))
+                } else {
+                    None
+                }
+            }
+            None => Some(match take_eviction(key) {
+                Some(why) => format!("evicted:{why}"),
+                None if slots.keys().any(|other| other.manifest == key.manifest) => "variant-mismatch".to_string(),
+                None => "no-session".to_string(),
+            }),
+        };
+        crate::compile_stats::SessionState { hot: miss.is_none(), miss, sessions }
+    }
     fn slot(
         &self,
         path: PathBuf,
@@ -231,12 +331,7 @@ impl Shared {
     ) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         let slot = slots
-            .entry(SessionKey {
-                manifest: path,
-                defines: defines.clone(),
-                engine: config.and_then(|request| request.engine_template.clone()),
-                bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
-            })
+            .entry(SessionKey::of(path, defines, config))
             .or_insert_with(|| {
                 Arc::new(Slot {
                     request_serial: Mutex::new(()),
@@ -338,6 +433,28 @@ impl Shared {
             BUILDS_RECLAIMED.store(finished, Ordering::Release);
             bytes = self.reclaim_allocator(bytes);
         }
+        // A retiring daemon holds session memory for nobody: free every idle session now, then return the pages.
+        if self.retiring.load(Ordering::Acquire) && self.release_for_retire() {
+            bytes = self.reclaim_allocator(transport::private_bytes());
+        }
+        // Diagnostic (feature `allocation-sites` only): 20 s after a build, release the idle session and dump what the
+        // daemon still holds with no session, to attribute that residual.
+        #[cfg(feature = "allocation-sites")]
+        if running == 0
+            && std::env::var_os("DMB_ALLOC_SITES_RELEASE").is_some()
+            && BUILDS_FINISHED.load(Ordering::Acquire) > 0
+            && !DIAG_RELEASED.swap(true, Ordering::AcqRel)
+        {
+            std::thread::sleep(Duration::from_secs(20));
+            let upto = std::env::var("DMB_ALLOC_SITES_RELEASE").ok().and_then(|text| text.parse::<usize>().ok());
+            if match upto {
+                Some(tier) if (2..housekeeping::SESSION_RELEASE).contains(&tier) => self.diag_release_tiers(tier),
+                Some(0) => false,
+                _ => self.release_for_retire(),
+            } {
+                bytes = self.reclaim_allocator(transport::private_bytes());
+            }
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -349,7 +466,10 @@ impl Shared {
         self.executors.trim(Instant::now(), hard);
     }
 }
+const RECLAIM_LOG_MIN_BYTES: u64 = 64 << 20;
 static PRESSURE_RECLAIMED: Mutex<Option<Instant>> = Mutex::new(None);
+#[cfg(feature = "allocation-sites")]
+static DIAG_RELEASED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
 static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
 struct Permit(Arc<Shared>, usize);
@@ -358,6 +478,7 @@ impl Drop for Permit {
         let mut running = self.0.running.lock().unwrap_or_else(|e| e.into_inner());
         *running -= 1;
         BUILDS_FINISHED.fetch_add(1, Ordering::AcqRel);
+        super::resident::touch();
         *self.0.workers.lock().unwrap_or_else(|e| e.into_inner()) -= self.1;
         drop(running);
         self.0.capacity.notify_all();
@@ -370,6 +491,8 @@ impl Drop for Connection {
     }
 }
 pub(super) fn serve() -> io::Result<()> {
+    // Registers this daemon and retires the least recently used idle peers beyond DQ_DMBC_MAX_DAEMONS, whatever binary they run.
+    let mut registration = super::resident::register_and_enforce();
     let max_workers = admission_limits::max_workers()?;
     let soft_private_bytes = soft_memory::startup()?;
     super::emit_stderr(format_args!(
@@ -378,6 +501,10 @@ pub(super) fn serve() -> io::Result<()> {
         max_workers,
         soft_memory::hard(soft_private_bytes)?
     ));
+    crate::fs_watch::enable();
+    if let Err(error) = super::cache_gc::spawn() {
+        eprintln!("dmbd cache budget: could not start: {error}");
+    }
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
     let shared = Arc::new(Shared {
@@ -412,10 +539,59 @@ pub(super) fn serve() -> io::Result<()> {
                 }
             })?;
     }
+    let mut beat = Instant::now();
+    let mut retiring_since: Option<Instant> = None;
+    let mut beat_retiring = false;
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
+        if retiring && retiring_since.is_none() {
+            retiring_since = Some(Instant::now());
+        }
+        if beat.elapsed() >= Duration::from_secs(5) || retiring != beat_retiring {
+            beat_retiring = retiring;
+            beat = Instant::now();
+            let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
+                || shared.connections.load(Ordering::Acquire) > 0;
+            if let Some(registration) = registration.as_mut() {
+                if registration.beat(busy, retiring) && !retiring {
+                    super::emit_stderr(format_args!(
+                        "dmbd retiring: a newer daemon asked for it (machine-wide resident cap); draining running builds"
+                    ));
+                    shared.retire();
+                }
+            }
+        }
+        if shared.root_gone_exit_ready(incoming.is_some()) {
+            super::emit_stderr(format_args!(
+                "dmbd exiting: every retained project root no longer exists pid={}",
+                std::process::id()
+            ));
+            return Ok(());
+        }
+        if incoming.is_none()
+            && retiring_since.is_some_and(|since| {
+                super::resident::retire_exit_due(
+                    since.elapsed(),
+                    *shared.running.lock().unwrap_or_else(|e| e.into_inner()),
+                )
+            })
+        {
+            super::emit_stderr(format_args!(
+                "dmbd exiting pid={}: retiring with no running build for {}s (open connections: {})",
+                std::process::id(),
+                super::resident::RETIRE_GRACE.as_secs(),
+                shared.connections.load(Ordering::Acquire)
+            ));
+            return Ok(());
+        }
         if shared.exit_ready(incoming.is_some(), activity.elapsed()) {
+            super::emit_stderr(format_args!(
+                "dmbd exiting pid={} retiring={} idle-seconds={}",
+                std::process::id(),
+                shared.retiring.load(Ordering::Acquire),
+                activity.elapsed().as_secs()
+            ));
             return Ok(());
         }
         match incoming {
@@ -423,6 +599,7 @@ pub(super) fn serve() -> io::Result<()> {
                 let stream = incoming.stream;
                 let discovery = incoming.discovery;
                 activity = Instant::now();
+                super::resident::touch();
                 if shared.connections.fetch_add(1, Ordering::AcqRel) >= 16 {
                     shared.connections.fetch_sub(1, Ordering::AcqRel);
                     let mut stream = stream;
@@ -607,6 +784,14 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 }
             };
             let key = RequestKey::of(&request, &path);
+            let session_key = SessionKey::of(path.clone(), &request.defines, Some(&request));
+            let session_state = shared.probe(&session_key);
+            let stats_context = (
+                request.command == crate::request::BuildCommand::Compile,
+                path.clone(),
+                path.file_name().map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
+                request.workers,
+            );
             let slot = shared.slot(path, &request.defines, Some(&request));
             let token = control::Cancellation::default();
             let _latest = LatestRequest::register(&slot, key, token.clone());
@@ -650,6 +835,10 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             };
             slot.idle_tier.store(0, Ordering::Release);
             dm_profile::request_mark("daemon.admitted");
+            crate::compile_stats::begin();
+            let private_before = transport::private_bytes();
+            let build_started = Instant::now();
+            let sampler = PeakSampler::start();
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
@@ -657,6 +846,28 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 },
             ));
             *slot.last.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+            let private_after = transport::private_bytes();
+            let peak = sampler.finish().max(private_before).max(private_after);
+            if stats_context.0 {
+                let error = match &outcome {
+                    Ok(Ok(_)) => None,
+                    Ok(Err(error)) => Some(error.to_string()),
+                    Err(_) => Some("internal compiler panic".to_string()),
+                };
+                let record = crate::compile_stats::finish(
+                    &stats_context.1,
+                    stats_context.2,
+                    stats_context.3,
+                    session_state,
+                    build_started.elapsed().as_secs_f64(),
+                    (private_before, private_after, peak),
+                    error,
+                );
+                crate::compile_stats::append(&super::resident::state_dir(), &record);
+                // The daemon's own stderr is the lifecycle log; the client sees the same line in its build output.
+                eprintln!("dmbd {}", record.line());
+                crate::daemon_eprintln!("{}", record.line());
+            }
             let reply = match outcome {
                 Ok(Ok(outcome)) => Reply::Completed(outcome),
                 Ok(Err(error)) => Reply::Rejected(

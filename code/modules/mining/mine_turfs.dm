@@ -123,7 +123,7 @@ CAPABILITIES(/turf/simulated/mineral)
 		return FALSE
 	set_density(FALSE)
 	set_opacity(0)
-	blocks_air = 0
+	set_blocks_air(0)
 	can_build_into_floor = TRUE
 	// under LINDA, a turf with blocks_air=0 but air=null trips
 	// process_cell guards on every neighbor share. Mineral walls start with
@@ -142,7 +142,7 @@ CAPABILITIES(/turf/simulated/mineral)
 		return FALSE
 	set_density(TRUE)
 	set_opacity(1)
-	blocks_air = 1
+	set_blocks_air(1)
 	can_build_into_floor = FALSE
 	// re-walling a carved mineral: drop the air mixture so we don't
 	// leave a stale gas pocket inside a solid wall. air_update_turf below
@@ -276,7 +276,7 @@ CAPABILITIES(/turf/simulated/mineral)
 				if(prob(50))
 					artifact_debris()
 
-		excavation_level += Proj.excavation_amount
+		set_excavation_level(excavation_level + Proj.excavation_amount)
 		update_archeo_overlays(Proj.excavation_amount)
 
 /turf/simulated/mineral/Bumped(AM)
@@ -445,7 +445,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 					excavate_turf()
 				return OP_PASS
 
-			excavation_level += S.excavation_amount
+			set_excavation_level(excavation_level + S.excavation_amount)
 			update_archeo_overlays(S.excavation_amount)
 			rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 			//drop some rocks
@@ -529,7 +529,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 			excavate_turf()
 		return
 
-	excavation_level += P.excavation_amount
+	set_excavation_level(excavation_level + P.excavation_amount)
 	update_archeo_overlays(P.excavation_amount)
 	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 	//drop some rocks

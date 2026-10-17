@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		set_scanning(FALSE)
 	else
 		if(bloodsamp())
-			scanner_progress = 0
+			set_scanner_progress(0)
 			set_scanning(TRUE)
 			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 			to_chat(user, span_notice("Scan initiated."))
@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	else
 		//calculate time difference
 		var/deltaT = (world.time - last_process_worldtime) * 0.1
-		scanner_progress = min(100, scanner_progress + scanner_rate * deltaT)
+		set_scanner_progress(min(100, scanner_progress + scanner_rate * deltaT))
 	EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
@@ -125,8 +125,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		var/obj/item/paper/P = new(src)
 		P.name = "[src] report #[++report_num]: [bloodsamp().name]"
 		P.stamped = list(/obj/item/stamp)
-		P.cut_overlays()
-		P.add_overlay("paper_stamped")
+		P.add_stamp_mark("paper_stamped", 0, 0)
 		//dna data itself
 		var/data = "No scan information available."
 		if(bloodsamp().dna != null)

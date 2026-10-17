@@ -1,0 +1,9 @@
+/datum/perk/body/end_burn_tolerant|1|1 => incoming_thermal=0.89999998
+/datum/perk/body/spd_quick_step|1|1 => slowdown=-0.5
+/datum/perk/body/spd_sprinter|1|1 => slowdown=-1
+/datum/perk/body/str_crusher|1|1 => incoming_physical=0.89999998
+/datum/perk/body/str_iron_skin|1|1 => incoming_physical=0.89999998
+/datum/perk/body/str_titan|1|1 => incoming_physical=0.94999999
+/datum/perk/body/str_toughness|1|1 => incoming_physical=0.89999998
+/datum/perk/body/vig_iron_constitution|1|1 => incoming_thermal=0.89999998
+

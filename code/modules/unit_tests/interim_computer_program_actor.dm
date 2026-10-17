@@ -74,8 +74,8 @@
 	TEST_ASSERT_EQUAL(computer.hard_drive.find_file_by_name(program.filename), program, "the actual drive lookup retrieves the stored executable")
 	TEST_ASSERT(program.is_supported_by_hardware(computer.hardware_flag), "the actual executable supports this computer hardware")
 	var/datum/computer_file/data/autorun = allocate(/datum/computer_file/data)
-	autorun.filename = "autorun"
-	autorun.stored_data = program.filename
+	autorun.set_filename("autorun")
+	autorun.set_stored_data(program.filename)
 	TEST_ASSERT(computer.hard_drive.store_file(autorun), "the actual drive stores the autorun instruction")
 	computer.enable_computer(actor)
 	TEST_ASSERT(computer.enabled, "the real startup enables the computer")
@@ -114,9 +114,9 @@
 	TEST_ASSERT_NOTNULL(drive.find_file_by_name("ntndownloader"), "the second default program remains retrievable")
 	TEST_ASSERT_NOTNULL(drive.find_file_by_name("filemanager"), "the third default program remains retrievable")
 	var/datum/computer_file/data/first = allocate(/datum/computer_file/data)
-	first.filename = "interim_first"
+	first.set_filename("interim_first")
 	var/datum/computer_file/data/second = allocate(/datum/computer_file/data)
-	second.filename = "interim_second"
+	second.set_filename("interim_second")
 	TEST_ASSERT(drive.store_file(first), "the actual drive accepts the first additional file")
 	TEST_ASSERT(drive.store_file(second), "the actual drive accepts the second additional file")
 	TEST_ASSERT_EQUAL(length(drive.stored_files), 5, "storing another file preserves all earlier files")
@@ -149,8 +149,8 @@
 	var/donor_default_capacity = donor.used_capacity
 	var/destination_default_capacity = destination.used_capacity
 	var/datum/computer_file/data/transferred = allocate(/datum/computer_file/data)
-	transferred.filename = "interim_direct_transfer"
-	transferred.size = 7
+	transferred.set_filename("interim_direct_transfer")
+	transferred.set_size(7)
 	TEST_ASSERT(donor.store_file(transferred), "the real donor stores a seven-unit file")
 	TEST_ASSERT_EQUAL(donor.used_capacity, donor_default_capacity + 7, "donor capacity includes its new file")
 	TEST_ASSERT(destination.store_file(transferred), "the real storage API directly moves an already owned file")

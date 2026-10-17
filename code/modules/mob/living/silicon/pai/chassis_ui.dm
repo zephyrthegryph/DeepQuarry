@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_module/pai_chassis)
 /datum/tgui_module/pai_chassis/proc/ui_act_pick_icon(datum/act/op/A, value)
 	var/new_chassis = value
 	if(new_chassis && (new_chassis in SSpai.get_chassis_list()))
-		selected_chassis = new_chassis
+		set_selected_chassis(new_chassis)
 	return TRUE
 
 /datum/tgui_module/pai_chassis/proc/ui_act_confirm(datum/act/op/A)
@@ -66,5 +66,5 @@ CAPABILITIES(/datum/tgui_module/pai_chassis)
 	var/new_color = sanitize_hexcolor(color)
 	if(!new_color)
 		return FALSE
-	selected_color = new_color
+	set_selected_color(new_color)
 	return TRUE

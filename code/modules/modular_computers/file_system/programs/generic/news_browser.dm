@@ -29,18 +29,18 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 /datum/computer_file/program/newsbrowser/process_tick()
 	if(!downloading)
 		return
-	download_netspeed = 0
+	set_download_netspeed(0)
 	// Speed defines are found in misc.dm
 	switch(ntnet_status)
 		if(1)
-			download_netspeed = NTNETSPEED_LOWSIGNAL
+			set_download_netspeed(NTNETSPEED_LOWSIGNAL)
 		if(2)
-			download_netspeed = NTNETSPEED_HIGHSIGNAL
+			set_download_netspeed(NTNETSPEED_HIGHSIGNAL)
 		if(3)
-			download_netspeed = NTNETSPEED_ETHERNET
-	download_progress += download_netspeed
+			set_download_netspeed(NTNETSPEED_ETHERNET)
+	set_download_progress(download_progress + download_netspeed)
 	if(download_progress >= loaded_article.size)
-		downloading = 0
+		set_downloading(0)
 		requires_ntnet = 0 // Turn off NTNet requirement as we already loaded the file into local memory.
 	SStgui.update_uis(src)
 
@@ -82,9 +82,9 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	..()
 	requires_ntnet = TRUE
 	rel_clear(src, nameof(loaded_article))
-	download_progress = 0
-	downloading = FALSE
-	show_archived = FALSE
+	set_download_progress(0)
+	set_downloading(FALSE)
+	set_show_archived(FALSE)
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_openarticle(datum/act/op/A, uid)
 	. = TRUE
@@ -94,20 +94,20 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 		if(N.uid == uid)
 			rel_set(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), N.clone())
-			downloading = 1
+			set_downloading(1)
 			break
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_reset(datum/act/op/A)
 
-	downloading = 0
-	download_progress = 0
+	set_downloading(0)
+	set_download_progress(0)
 	requires_ntnet = 1
 	rel_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article))
 	return OP_OK
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_clearmessage(datum/act/op/A)
 
-	message = ""
+	set_message("")
 	return OP_OK
 
 /datum/computer_file/program/newsbrowser/proc/article_default_name(datum/act/op/A)
@@ -126,10 +126,10 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	if(!HDD)
 		return TRUE
 	var/datum/computer_file/data/news_article/N = loaded_article.clone()
-	N.filename = savename
+	N.set_filename(savename)
 	HDD.store_file(N)
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_toggle_archived(datum/act/op/A)
 
-	show_archived = !show_archived
+	set_show_archived(!show_archived)
 	return OP_OK

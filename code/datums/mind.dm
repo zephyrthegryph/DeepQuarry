@@ -137,7 +137,7 @@ CAPABILITIES(/datum/mind)
 	SSantag.update_antag_icons(src)
 
 /datum/mind/proc/store_memory(new_text)
-	memory += "[new_text]<BR>"
+	set_memory(memory + ("[new_text]<BR>"))
 
 // show_memory body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI). Stub here keeps the proc declaration parseable.
 /datum/mind/proc/show_memory(mob/recipient)
@@ -163,7 +163,7 @@ CAPABILITIES(/datum/mind)
 
 /datum/mind/proc/topic_set_crystals(datum/act/op/A)
 	var/mob/user = A.actor
-	tcrystals = A.step_value("amount")
+	set_tcrystals(A.step_value("amount"))
 	edit_memory(user)
 
 /// Starts the admin add-objective questions for this mind.
@@ -286,12 +286,12 @@ CAPABILITIES(/datum/mind)
 				new_objective = new objective_path
 				rel_set(new_objective, nameof(new_objective.owner), src)
 				new_objective:target = null
-				new_objective.explanation_text = "Free objective"
+				new_objective.set_explanation_text("Free objective")
 			else
 				new_objective = new objective_path
 				rel_set(new_objective, nameof(new_objective.owner), src)
 				new_objective:target = M.mind
-				new_objective.explanation_text = "[objective_type] [M.real_name], the [M.mind.special_role ? M.mind:special_role : M.mind:assigned_role]."
+				new_objective.set_explanation_text("[objective_type] [M.real_name], the [M.mind.special_role ? M.mind:special_role : M.mind:assigned_role].")
 
 		if ("prevent")
 			new_objective = new /datum/objective/block
@@ -331,13 +331,13 @@ CAPABILITIES(/datum/mind)
 			switch(new_obj_type)
 				if("capture")
 					new_objective = new /datum/objective/capture
-					new_objective.explanation_text = "Accumulate [target_number] capture points."
+					new_objective.set_explanation_text("Accumulate [target_number] capture points.")
 				if("absorb")
 					new_objective = new /datum/objective/absorb
-					new_objective.explanation_text = "Absorb [target_number] compatible genomes."
+					new_objective.set_explanation_text("Absorb [target_number] compatible genomes.")
 				if("vore")
 					new_objective = new /datum/objective/vore
-					new_objective.explanation_text = "Devour [target_number] [target_number == 1 ? "person" : "people"]. What happens to them after you do that is irrelevant."
+					new_objective.set_explanation_text("Devour [target_number] [target_number == 1 ? "person" : "people"]. What happens to them after you do that is irrelevant.")
 			rel_set(new_objective, nameof(new_objective.owner), src)
 			new_objective.target_amount = target_number
 
@@ -346,7 +346,7 @@ CAPABILITIES(/datum/mind)
 			if (!expl) return
 			new_objective = new /datum/objective
 			rel_set(new_objective, nameof(new_objective.owner), src)
-			new_objective.explanation_text = expl
+			new_objective.set_explanation_text(expl)
 
 	if (!new_objective) return
 
@@ -395,7 +395,7 @@ CAPABILITIES(/datum/mind)
 	return (duration <= ELAPSED(src, brigged_since, CLOCK_WORLD))
 
 /datum/mind/proc/reset()
-	assigned_role =   null
+	set_assigned_role(null)
 	set_special_role(null)
 	role_alt_title =  null
 	//changeling =    null //TODO: Figure out where this is all used and move it from mind to mob.

@@ -158,8 +158,8 @@ CAPABILITIES(/turf/simulated/wall)
 	for(var/obj/effect/plant/plant in range(src, 1))
 		if(!plant.floor) //shrooms drop to the floor
 			plant.set_floor(1)
-			plant.pixel_x = 0
-			plant.pixel_y = 0
+			plant.set_pixel_x(0)
+			plant.set_pixel_y(0)
 		plant.update_neighbors()
 
 /turf/simulated/wall/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
@@ -313,7 +313,7 @@ CAPABILITIES(/turf/simulated/wall)
 	O.set_icon_state("2")
 	O.set_anchored(TRUE)
 	O.set_density(TRUE)
-	O.plane = ABOVE_PLANE
+	O.set_plane(ABOVE_PLANE)
 
 	if(girder_material.integrity >= 150 && !girder_material.is_brittle()) //Strong girders will remain in place when a wall is melted.
 		dismantle_wall(1,1)
@@ -660,9 +660,9 @@ CAPABILITIES(/turf/simulated/wall)
 /obj/item/rcd/proc/get_airlock_image(airlock_type)
 	var/obj/machinery/door/airlock/proto = airlock_type
 	var/ic = initial(proto.icon)
-	var/mutable_appearance/MA = mutable_appearance(ic, "door_closed")
+	var/image/MA = image(ic, icon_state = "door_closed")
 	if(!initial(proto.glass))
-		MA.overlays += "fill_closed"
+		MA = look_composed_image(MA, list("fill_closed"))
 	//Not scaling these down to button size because they look horrible then, instead just bumping up radius.
 	return MA
 
@@ -1261,17 +1261,17 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 					break
 			switch(direction)
 				if(NORTH)
-					O.pixel_x = 0
-					O.pixel_y = -26 - adjust_val
+					O.set_pixel_x(0)
+					O.set_pixel_y(-26 - adjust_val)
 				if(SOUTH)
-					O.pixel_x = 0
-					O.pixel_y = 26 + adjust_val
+					O.set_pixel_x(0)
+					O.set_pixel_y(26 + adjust_val)
 				if(EAST)
-					O.pixel_x = -26 - adjust_val
-					O.pixel_y = 0
+					O.set_pixel_x(-26 - adjust_val)
+					O.set_pixel_y(0)
 				if(WEST)
-					O.pixel_x = 26 + adjust_val
-					O.pixel_y = 0
+					O.set_pixel_x(26 + adjust_val)
+					O.set_pixel_y(0)
 			return TRUE
 	return FALSE
 

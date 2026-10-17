@@ -96,7 +96,7 @@ MSG_DEF_SELF(tcomms_console/buffer_full, "The buffer is full: release it before 
 	var/newnet = P?.value
 	if(!newnet)
 		return OP_OK
-	network = newnet
+	set_network(newnet)
 	probe_clear()
 	show_none()
 	report("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")

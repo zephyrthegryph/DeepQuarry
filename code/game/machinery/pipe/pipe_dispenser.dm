@@ -79,7 +79,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 
 /obj/machinery/pipedispenser/proc/ui_act_p_layer(datum/act/op/A, raw_p_layer)
 	. = TRUE
-	p_layer = raw_p_layer
+	set_p_layer(raw_p_layer)
 
 /obj/machinery/pipedispenser/proc/ui_act_dispense_pipe(datum/act/op/A, bent, raw_ref)
 	var/mob/user = A.actor

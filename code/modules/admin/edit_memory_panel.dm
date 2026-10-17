@@ -53,7 +53,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 			var/list/entry = A?.get_panel_data(target_mind)
 			if(entry)
 				blocks += list(entry)
-	shown_antag_blocks = blocks
+	set_shown_antag_blocks(blocks)
 
 /datum/edit_memory_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -145,7 +145,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 		return FALSE
 	var/datum/objective/O = ref
 	if(istype(O))
-		O.completed = !O.completed
+		O.set_completed(!O.completed)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_obj_delete(datum/act/op/A, ref)

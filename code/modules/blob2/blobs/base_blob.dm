@@ -234,10 +234,10 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	O.set_dir(dir)
 	if(controller)
 		var/mob/observer/blob/BO = controller
-		O.color = BO.blob_type.color
-		O.alpha = 200
+		O.set_color(BO.blob_type.color)
+		O.set_alpha(200)
 	else if(overmind)
-		O.color = overmind.blob_type.color
+		O.set_color(overmind.blob_type.color)
 	if(A)
 		O.do_attack_animation(A) //visually attack the whatever
 	return O //just in case you want to do something to the animation.

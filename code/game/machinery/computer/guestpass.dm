@@ -149,7 +149,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 		else
 			giver.forceMove(src.loc)
 		rel_take(src, nameof(giver))
-		LAZYCLEARLIST(accesses)
+		clear_accesses()
 	else
 		to_chat(user, span_warning("There is nothing to remove from the console."))
 	return TRUE
@@ -228,16 +228,16 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 	var/datum/prompt/R = A.answer
 	var/dur = R?.value
 	if(dur > 0 && dur <= 360)
-		duration = dur
+		set_duration(dur)
 	return TRUE
 
 /obj/machinery/computer/guestpass/proc/ui_act_access(datum/act/op/A, access)
 	var/selected = access
 	if(selected in accesses)
-		LAZYREMOVE(accesses, selected)
+		remove_accesses(selected)
 	else
 		if(selected in giver?.GetAccess())	//Let's make sure the ID card actually has the access.
-			LAZYADD(accesses, selected)
+			add_accesses(selected)
 		else
 			to_chat(A.actor, span_warning("Invalid selection, please consult technical support if there are any issues."))
 			log_admin("[key_name_admin(A.actor)] tried selecting an invalid guest pass terminal option.")
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 		else
 			giver.forceMove(src.loc)
 			rel_take(src, nameof(/obj/machinery/computer/guestpass::giver))
-		LAZYCLEARLIST(accesses)
+		clear_accesses()
 	else
 		var/obj/item/I = A.actor.get_active_hand()
 		if(istype(I, /obj/item/card/id))
@@ -282,7 +282,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 				var/area = SSaccess.get_access_desc(granted)
 				entry += "[i > 1 ? ", [area]" : "[area]"]"
 		entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
-		LAZYADD(internal_log, entry)
+		add_internal_log(entry)
 
 		var/obj/item/card/id/guest/pass = new(src.loc)
 		pass.set_temp_access(LAZYCOPY(accesses))

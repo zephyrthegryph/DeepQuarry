@@ -79,9 +79,9 @@
 	var/mob/living/carbon/human/hypoxic = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/control = allocate(/mob/living/carbon/human)
 	control.add_oxygen_debt(PHYSIOLOGY_HYPOXIA_ARRHYTHMIA_THRESHOLD / 2, "unit test")
-	TEST_ASSERT(dq_near(control.factor(BF_CARDIAC_IRRITABILITY), 1), "a shallow debt shouldn't irritate the heart ([control.factor(BF_CARDIAC_IRRITABILITY)])")
+	TEST_ASSERT(dq_near(control.cardiac_irritability, 1), "a shallow debt shouldn't irritate the heart ([control.cardiac_irritability])")
 	hypoxic.add_oxygen_debt(95, "unit test")
-	TEST_ASSERT(hypoxic.factor(BF_CARDIAC_IRRITABILITY) > 1.5, "a deep debt should irritate the heart ([hypoxic.factor(BF_CARDIAC_IRRITABILITY)])")
+	TEST_ASSERT(hypoxic.cardiac_irritability > 1.5, "a deep debt should irritate the heart ([hypoxic.cardiac_irritability])")
 
 	var/datum/affliction/cardiac_arrhythmia/hot = hypoxic.induce_arrhythmia(CARDIAC_RHYTHM_TACHY)
 	var/datum/affliction/cardiac_arrhythmia/calm = control.induce_arrhythmia(CARDIAC_RHYTHM_TACHY)
@@ -100,15 +100,15 @@
 	var/obj/belly/B = allocate(/obj/belly, pred)
 	prey.vore_prefs.set_digestable(TRUE)
 	prey.forceMove(B)
-	B.digest_mode = DM_HOLD
-	B.digest_oxy = BELLY_AIR_STALE_AT
+	B.set_digest_mode(DM_HOLD)
+	B.set_digest_oxy(BELLY_AIR_STALE_AT)
 	TEST_ASSERT_EQUAL(B.breath_quality_for(prey), 1, "a holding belly's air is fine")
-	B.digest_mode = DM_DIGEST
-	B.digest_oxy = BELLY_AIR_STALE_AT / 2
+	B.set_digest_mode(DM_DIGEST)
+	B.set_digest_oxy(BELLY_AIR_STALE_AT / 2)
 	TEST_ASSERT(dq_near(B.breath_quality_for(prey), 0.5), "half-stale air should be half a breath ([B.breath_quality_for(prey)])")
 	prey.body.set_breath_quality(1)
 	TEST_ASSERT(dq_near(prey.body.physiology.breath_quality, 0.5), "the belly's air should reach breath quality ([prey.body.physiology.breath_quality])")
-	B.digest_oxy = BELLY_AIR_STALE_AT
+	B.set_digest_oxy(BELLY_AIR_STALE_AT)
 	prey.body.set_breath_quality(1)
 	TEST_ASSERT_EQUAL(prey.body.physiology.breath_quality, 0, "stale air is no breath at all")
 	physiology_test_run(prey, 5)

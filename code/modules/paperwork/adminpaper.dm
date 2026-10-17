@@ -59,7 +59,7 @@
 	text += span_bold("[origin] Quantum Uplink Signed Message") + "<br>"
 	text += span_small("Encryption key: [originhash]<br>Challenge: [timehash]") + "<br></center><hr>"
 
-	header = text
+	set_header(text)
 
 /obj/item/paper/admin/proc/generateFooter()
 	var/text = null
@@ -70,7 +70,7 @@
 	text += "Failure to comply is a breach of regulation and may be prosecuted to the fullest extent of the law, where applicable."
 	text += "</font>"
 
-	footer = text
+	set_footer(text)
 
 
 // full TGUI migration. AdminPaper.tsx renders the
@@ -78,7 +78,7 @@
 // the admin actions. No more byond:// hrefs, no more admin_fax_links HTML.
 /obj/item/paper/admin/proc/adminbrowse(mob/user)
 	generateFooter()
-	tgui_view = "write"
+	set_tgui_view("write")
 	// Closing the logo question opens the fax without a header.
 	open_request(src, /datum/prompt/choice, PROC_REF(header_logo_chosen), answerer = user, timeout = 0, title = "Fax Logo", question = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), rights = R_ADMIN|R_EVENT)
 
@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/paper/admin)
 	return TRUE
 
 /obj/item/paper/admin/proc/admin_paper_penmode(datum/act/op/A)
-	isCrayon = !isCrayon
+	set_isCrayon(!isCrayon)
 	return OP_OK
 
 /obj/item/paper/admin/proc/ui_act_cancel(datum/act/op/A)
@@ -163,11 +163,11 @@ CAPABILITIES(/obj/item/paper/admin)
 	return OP_OK
 
 /obj/item/paper/admin/proc/admin_paper_toggleheader(datum/act/op/A)
-	headerOn = !headerOn
+	set_headerOn(!headerOn)
 	return OP_OK
 
 /obj/item/paper/admin/proc/admin_paper_togglefooter(datum/act/op/A)
-	footerOn = !footerOn
+	set_footerOn(!footerOn)
 	return OP_OK
 
 // Admin variant uses no pen/range checks (admins fax from anywhere) and

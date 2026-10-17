@@ -67,12 +67,12 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
-		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
-		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!"))
 
 /obj/item/projectile/energy/homing_bolt/wizard/boss
 	damage = 10
@@ -93,7 +93,7 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	// Thermal injuries.
 	// Toxic injuries.
 	// Asphyxiation.
-	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_DEMAND = 2)
+	factors = alist(STAT_INCOMING_ALL = 2, STAT_INCOMING_PHYSICAL = 2, STAT_INCOMING_THERMAL = 2, STAT_INCOMING_TOXIC = 2, STAT_DEMAND = 2)
 
 //Trying to learn from the AADG's ai and make my own
 

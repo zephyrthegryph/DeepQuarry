@@ -123,7 +123,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 			product.set_price(initial(NS.cost))
 			product.set_amount(10)
 			product.set_category(category)
-			product.item_desc = initial(NS.desc)
+			product.set_item_desc(initial(NS.desc))
 
 			rel_add(src, nameof(product_records), product)
 

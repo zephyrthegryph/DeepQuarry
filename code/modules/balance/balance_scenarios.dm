@@ -579,7 +579,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 	if(mode_id == "heal")
 		prey.injure(INJURY_BLUNT, BALANCE_DIGEST_HEAL_INJURY, BP_TORSO)
 		live(prey)
-	B.digest_mode = TYPE_TABLE_GET(src, balance_digestion_modes)[mode_id]
+	B.set_digest_mode(TYPE_TABLE_GET(src, balance_digestion_modes)[mode_id])
 	B.nom_atom(prey, pred)
 	if(prey.loc != B)
 		note("[mode_id]: the prey would not go in")

@@ -55,10 +55,10 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 		if(E.uses && !emagged)
 			E.set_uses(E.uses - 1)
 			act_message(user, src, MSG_SELF(span_warning("You swipe your [E] over %T%.")), MSG_OTHERS(span_warning("%U% swipes a card over %T%.")), range = 2, runemessage = "click")
-			emagged = TRUE
+			set_emagged(TRUE)
 			if(pai)
 				var/mob/living/silicon/pai/infomorph/our_infomorph = pai
-				our_infomorph.emagged = TRUE
+				our_infomorph.set_emagged(TRUE)
 				to_chat(our_infomorph, span_warning("You can feel the restricting binds of your card's directives taking hold of your mind as \the [user] swipes their [E] over you. You must serve your master."))
 
 /obj/item/paicard/sleevecard/proc/sleeveInto(datum/transhuman/mind_record/MR, db_key)
@@ -75,7 +75,7 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 	name = "[initial(name)] ([MR.mindname])"
 
 	if(emagged)
-		infomorph.emagged = TRUE
+		infomorph.set_emagged(TRUE)
 
 	if(infomorph.client)
 		rel_set(src, nameof(pai), infomorph)

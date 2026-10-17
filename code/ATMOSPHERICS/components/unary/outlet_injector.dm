@@ -51,7 +51,7 @@
 	rust_set_device_flow(0, RUST_FLOW_VOLUME, volume_rate, RUST_DIR_FORCED, RUST_SIDE_A, RUST_STOP_AT_LEAST, 1e30)
 
 /obj/machinery/atmospherics/unary/outlet_injector/rust_device_stepped(moles, power_w, target_reached)
-	last_flow_rate = abs(moles)
+	set_last_flow_rate(abs(moles))
 
 /// The Rust law is pushed (once per frame) when any of these change: rust_device_rev is bumped by a power change, a port bind and a disconnect.
 /obj/machinery/atmospherics/unary/outlet_injector/derived()

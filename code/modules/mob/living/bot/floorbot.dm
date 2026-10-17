@@ -79,23 +79,23 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_vocal(datum/act/op/A)
-	vocal = !vocal
+	set_vocal(!vocal)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_improve(datum/act/op/A)
-	improvefloors = !improvefloors
+	set_improvefloors(!improvefloors)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_tiles(datum/act/op/A)
-	eattiles = !eattiles
+	set_eattiles(!eattiles)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_make(datum/act/op/A)
-	maketiles = !maketiles
+	set_maketiles(!maketiles)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_bridgemode(datum/act/op/A, dir)
-	targetdirection = text2dir(dir)
+	set_targetdirection(text2dir(dir))
 	. = TRUE
 
 /mob/living/bot/floorbot/handleRegular()
@@ -290,11 +290,11 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	return ..()
 
 /mob/living/bot/floorbot/proc/addTiles(am)
-	amount += am
+	set_amount(amount + am)
 	if(amount < 0)
-		amount = 0
+		set_amount(0)
 	else if(amount > maxAmount)
-		amount = maxAmount
+		set_amount(maxAmount)
 
 /mob/living/bot/floorbot/handlePanic()	// Speed modification based on alert level.
 	. = 0
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/toolbox_tiles)
 	if(isprox(W))
 		consume(W, user)
 		var/obj/item/toolbox_tiles_sensor/B = new /obj/item/toolbox_tiles_sensor()
-		B.created_name = created_name
+		B.set_created_name(created_name)
 		user.put_in_hands(B)
 		to_chat(user, span_notice("You add the sensor to the toolbox and tiles!"))
 		consume(src, user)

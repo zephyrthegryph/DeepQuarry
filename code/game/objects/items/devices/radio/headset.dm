@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	set_channels(list())
 	src.translate_binary = FALSE
 	src.translate_hive = FALSE
-	src.syndie = FALSE
+	set_syndie(FALSE)
 
 	if(keyslot1)
 		for(var/ch_name in keyslot1.channels)
@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			src.translate_hive = TRUE
 
 		if(keyslot1.syndie)
-			src.syndie = TRUE
+			set_syndie(TRUE)
 
 	if(keyslot2)
 		for(var/ch_name in keyslot2.channels)
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			src.translate_hive = TRUE
 
 		if(keyslot2.syndie)
-			src.syndie = TRUE
+			set_syndie(TRUE)
 
 	handle_finalize_recalculatechannels(setDescription, register)
 
@@ -728,7 +728,8 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	ref_one(nameof(wearer), /mob/living/carbon/human)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
-	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
+	worn_factors = slowdown_to_set ? alist(STAT_SLOWDOWN = slowdown_to_set) : null
+	H?.body?.sync_worn_factors() // the table was written after the slot change that would have asked for it
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		rel_set(src, nameof(wearer), H)
@@ -739,7 +740,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 			effect_overlay.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 			effect_overlay.plane = PLANE_LIGHTING_ABOVE
 			effect_overlay.layer = MOB_LAYER
-			H.add_overlay(effect_overlay)
+			H.add_attached_overlays(effect_overlay)
 		if(spells.len)
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
@@ -753,7 +754,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 		if(glow_of(src).power)
 			set_light_on(0)
 		if(effect_icon)
-			H.cut_overlay(effect_overlay)
+			H.remove_attached_overlays(effect_overlay)
 		if(length(remove_spells))
 			for(var/datum/spell/SP in remove_spells.Copy())
 				H.remove_spell(SP)

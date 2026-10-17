@@ -348,16 +348,15 @@
 /// Jobs still outstanding: poll_step() runs once a tick while set.
 /datum/dq_preview_poll/var/polling = FALSE
 
-/datum/dq_preview_poll/reactions()
-	. = ..()
-	. += every(WORK_EVERY_TICK, PROC_REF(poll_step), when = nameof(polling))
+CAPABILITIES(/datum/dq_preview_poll)
+	every(1 TICK, then(PROC_REF(poll_step)), when = nameof(polling))
 
 /datum/dq_preview_poll/New()
 	..()
 	lifecycle_decls_init(src) // a non-atom has no materialize
 
 /// One poll of a render's iconforge jobs.
-/datum/dq_preview_poll/proc/poll_step(dt)
+/datum/dq_preview_poll/proc/poll_step(datum/act/timer/tick)
 	var/list/jobs = state[2]
 	var/list/outputs = state[7]
 	for(var/dir_key in jobs)
@@ -434,7 +433,7 @@
 		return FALSE
 	LAZYINITLIST(character_preview_b64)
 	for(var/key in result)
-		character_preview_b64[key] = result[key]
+		set_character_preview_b64_at(key, result[key])
 	dq_schedule_data_push()
 	return TRUE
 

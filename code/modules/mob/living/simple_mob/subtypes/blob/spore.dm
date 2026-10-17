@@ -71,29 +71,31 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 		overmind.blob_type.on_spore_death(src)
 
 /mob/living/simple_mob/blob/spore/update_icons()
-	..() // This will cut our overlays.
+	..()
 
 	if(overmind)
-		color = overmind.blob_type.complementary_color
+		set_color(overmind.blob_type.complementary_color)
 		set_glow_color(color)
 		set_glow_toggle(TRUE)
 	else if(blob_type)
-		color = blob_type.complementary_color
+		set_color(blob_type.complementary_color)
 		set_glow_color(color)
 		set_glow_toggle(TRUE)
 	else
-		color = null
+		set_color(null)
 		set_glow_color(null)
 		set_glow_toggle(FALSE)
 
 	if(is_infesting)
-		set_icon(infested.icon)
-		copy_overlays(infested)
-		var/mutable_appearance/blob_head_overlay = mutable_appearance('icons/mob/blob.dmi', "blob_head")
-		if(overmind)
-			blob_head_overlay.color = overmind.blob_type.complementary_color
-		color = initial(color)//looks better.
-		add_overlay(blob_head_overlay)
+		set_color(initial(color))//looks better.
+
+/// An infesting spore wears the body it infests, with the blob's head on top of it.
+/mob/living/simple_mob/blob/spore/draw(datum/look/look)
+	..()
+	if(!is_infesting)
+		return
+	look.mimic(infested)
+	look.overlay(look_appearance('icons/mob/blob.dmi', "blob_head", color = overmind?.blob_type.complementary_color))
 
 /mob/living/simple_mob/blob/spore/life_special(datum/seq_frame/life/F)
 	..()
@@ -113,7 +115,7 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 		spent(src)
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
-	is_infesting = TRUE
+	set_is_infesting(TRUE)
 	set_endurance(endurance + (H.body?.worn_armor(UPPER_TORSO, MELEE))) //That zombie's got armor, I want armor!
 
 	set_endurance(endurance + 40)

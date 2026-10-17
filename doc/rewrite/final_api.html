@@ -857,7 +857,8 @@ CAPABILITIES(/obj/machinery/door)
 contributes(STAT_ACTS_VIA, ORIGIN_NONE, reason = MSG(vore/absorbed))   <span class="c">// MASK_AND: no input at all; the actor gate (section 8) shows the reason</span>
 </code></pre>
   <div class="sig">contributes(STAT_X, cond | value | STAT_Y, priority =, reason =, key =)
-contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span class="c">// a contribution to a stat on a related entity</span></div>
+contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span class="c">// a contribution to a stat on a related entity</span>
+factors(table, scale =, stacks =, to = nameof(rel), part =, priority =, key =)   <span class="c">// a whole table of contributions to a related entity, at a scale</span></div>
   <div class="prose">
     <ul>
       <li><strong>Conditions.</strong> A condition is boolean with no reason. On a boolean stat a contribution is a condition. On a numeric stat a <code>PROC_REF(x)</code> returns the number, and its reads are generated the same way, so it recomputes when they change. A requirement (<a href="#parts">section 9</a>) is a condition plus a reason, and a contribution never needs one.</li>
@@ -865,6 +866,7 @@ contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span cla
       <li><strong><code>priority =</code></strong> orders contributions where order matters (<code>TOP</code>, and overrides). It is an integer. Named levels: <code>PRIORITY_DEFAULT</code> (0), <code>PRIORITY_FORCE</code> (100), <code>PRIORITY_ADMIN</code> (1000).</li>
       <li><strong><code>key =</code></strong> names the entry so a subtype can drop it with <code>without("key")</code> (<a href="#parts">section 9</a>).</li>
       <li><strong><code>contributes_to</code></strong> puts a contribution on a stat of the entity a relation names, for example the APC's night-shift setting on its area's <code>lights_nightshift</code>. It is released when the relation changes or either end is deleted.</li>
+      <li><strong><code>factors</code></strong> is <code>contributes_to</code> for a source that contributes a table (an affliction, a stasis hold, a body effect application): <code>table</code> is a static <code>alist(STAT_X = value, ...)</code> or a <code>PROC_REF(x)</code> returning one (a stage table, a species-merged table), <code>scale</code> and <code>stacks</code> are a constant, <code>nameof(v)</code> of a tracked var or a <code>PROC_REF</code>, and <code>to</code> names the relation var of the entity that receives it (the body, the mob). Each entry is held on the receiver as the rows of the source under <code>part</code>, composed by each stat's rule at <code>scale</code> and <code>stacks</code> (a multiplier fades toward 1 as the scale falls, an offset scales linearly, a maximum or minimum takes the value, a mask its bits; a scale of 0 holds nothing). It holds again at the exact new value when the scale, the stacks, a read of the table, the relation or an enclosing <code>when()</code> changes, with no banding of the scale, and releases when the relation changes or either end is deleted. A source never keeps the number its table gave: the receiver's stat is the composed value.</li>
     </ul>
   </div>
   <div class="tbl"><table>
@@ -2827,7 +2829,7 @@ CAPABILITIES(/obj/machinery/light)   <span class="c">// excerpt: the full list i
       <li><strong>Composites:</strong> a layered body (species body, limbs, markings, hair, each slot's clothing) is built by <code>look.composite()</code> from named layers and cached by <code>key</code>, the list of inputs that change it, in the shared composite cache. Only the composite whose key changed is rebuilt. A worn item adds its layer to the wearer's composite through <code>while_slotted(SLOT_ANY_WORN, look_layer(...), on = ON_HOLDER)</code>. <code>overlays_standing</code> and the hand-rolled mutable <code>/icon</code> caches go away.</li>
       <li><strong>Icon state names</strong> follow the standard dashed convention (<code>&lt;base&gt;-&lt;variant&gt;</code>, <code>&lt;base&gt;-&lt;layer&gt;</code>), checked by <code>look_lacks()</code> and the icon tests.</li>
       <li><strong>Flashes:</strong> a short-lived overlay is a <code>flash(layer)</code> feedback part, or <code>look_flash()</code> from code.</li>
-      <li><strong>Banned:</strong> <code>update_icon()</code>, <code>add_overlay</code> and <code>queue_icon_update()</code> in content.</li>
+      <li><strong>Banned:</strong> <code>update_icon()</code>, <code>add_overlay</code>, <code>cut_overlay</code>, <code>overlays +=</code> and <code>queue_icon_update()</code> in content. <code>dx_raw_overlays</code> is a hard ban (empty baseline); the files that are the overlay engine (the look builder, the overlay subsystem, the emissive blocker, the overlay limit macro) are exempt by path in <code>tools/ci/lint_scopes.toml</code>.</li>
     </ul>
   </div>
   <h3 id="look-sweep-forms">What a look does besides drawing (the sweep forms)</h3>
@@ -2844,6 +2846,10 @@ CAPABILITIES(/obj/machinery/light)   <span class="c">// excerpt: the full list i
       <tr><td>What stands on the turfs around the holder (a hub's feeder, a flipped table's twin)</td><td><code>look.neighbours(src, dirs, type)</code>, <code>look.neighbour(src, dir, type)</code></td><td>Returns the movables of <code>type</code> on those turfs and watches the turfs (a mover of that type entering or leaving redraws the holder) and each one found (its tracked changes). The holder's own move re-points the watch on its next draw.</td></tr>
       <tr><td>Writes a draw used to make</td><td>A TRACKED var with its setter, or <code>look.effect()</code> of a setter</td><td>A cache the draw also read goes (the look key already is the cache). A plain write to a var the draw never reads is an effect of a generated setter.</td></tr>
       <tr><td>A layer with its own placement or tint</td><td><code>look.overlay(look_overlay_image(icon, state, plane =, pixel_y =, color = ...))</code></td><td>A draw writes nothing, not even the members of an image it made; the image is built in one call.</td></tr>
+      <tr><td>An image its owner keeps editing, shown to some viewers only (a mob's HUD icons)</td><td><code>look.live_image(image, when =)</code></td><td>The look shows a frozen copy of the image as it is now (a copy is cut by what was added, so an edited image never leaves a stale layer behind). The owner publishes the edit with a tracked write or <code>tracked_changed(src, nameof(hud_list))</code> (<code>apply_hud()</code>), and the draw runs again. Who sees it is the image's plane: a viewer's plane masters show or hide it, so the look carries no viewer list. A HUD is drawn by <code>look_hud_images()</code> from the mob's <code>draw</code>; nothing calls <code>add_overlay</code> and no caller refreshes by hand.</td></tr>
+      <tr><td>Wearing another atom's appearance (a morph in its prey's shape, a spore on the body it infests)</td><td><code>look.mimic(atom)</code></td><td>Takes the atom's icon, icon_state and a frozen copy of each overlay it shows now, and hears of its look (<code>watch_look()</code>), so the copy follows when the original is redrawn. Layers the draw adds after it sit above the copy; a later <code>look.set_icon()</code> or <code>look.state()</code> wins. A draw that stops mimicking gives the holder its own look back with no cleanup call.</td></tr>
+      <tr><td>A transient layer (a thought bubble, a debug scan mark)</td><td><code>look_flash(holder, image, duration)</code></td><td>The image is a layer of the holder's look for the duration and takes itself back through the timer; a flash of the same image restarts its time. Works on any atom with a look, a turf included.</td></tr>
+      <tr><td>A limb or body part shown as an item (a dropped head, a severed arm)</td><td>A tracked list of its layers, read by the type's <code>draw</code></td><td><code>/obj/item/organ/external/shown_layers</code> holds the icons the limb was built from; <code>get_icon()</code> builds the list and writes it through <code>set_shown_layers()</code>, and <code>draw</code> shows each with <code>look.overlay()</code>. The composite on the body itself is <code>look.composite()</code> (above), which has not landed.</td></tr>
       <tr><td>The emissive blocker</td><td>Nothing to write</td><td>A movable carries one generic blocker (a priority overlay). <code>add_overlay()</code> no longer merges it into every add, so a look's layers never stack a second one.</td></tr>
       <tr><td>A late <code>..()</code></td><td>Call it where it was</td><td>The statements before it run first and the parent's draw runs there; a later <code>look.state()</code> still wins. No form is needed.</td></tr>
       <tr><td>A draw that reads the composed <code>overlays</code></td><td>Hand work</td><td>Draw from the tracked contents the overlays were made from (a folder from its papers, a bundle from its pages).</td></tr>
@@ -4345,7 +4351,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
 
-  <h3 id="status">Where master stands (2026-10-08)</h3>
+  <h3 id="status">Where master stands (2026-10-16)</h3>
   <div class="prose"><p>Counts come from <code>tools/ci/legacy_form_counts.sh</code> (a grep census of call sites in <code>code/</code>, outside unit tests and the files that define each form; comment lines are skipped) and from the status column of <code>doc/rewrite/framework_gaps.md</code>. Re-run the script and update this table in the commit that retires a form.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Phase</th><th>Status</th><th>Evidence</th></tr></thead>
@@ -4356,7 +4362,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
       <tr><td>1S · Service ports</td><td>Done</td><td>0 <code>world_service</code> call sites; the kernel hosts <code>SYSTEM_DEF</code> systems</td></tr>
       <tr><td>2 · Library</td><td>Partly: 20 areas have a folder in <code>code/library/</code>, the files outside it are the remaining work</td><td><code>access, construction, containers, input, items, jobs, lifeforms, machine, materialization, mob, operations, present, prompts, providers, reactions, reagents, requests, stats, structures, tasks</code></td></tr>
       <tr><td>2.5 · Codemod infrastructure</td><td>Done as far as it was needed; later steps ran by hand with focused tests</td><td><code>tools/analyze/codemods</code></td></tr>
-      <tr><td>3 · Codemods</td><td>Mostly done for interactions, UI, timers, grants, damage reactions, emag, verbs; open for table procs, <code>REQ_*</code>, <code>CHANGE_*</code>, <code>rerun_ask</code></td><td>Census below</td></tr>
+      <tr><td>3 · Codemods</td><td>Done for interactions, the task engine, UI, timers, grants, damage reactions, emag, verbs, ownership and relations, look forms, <code>CHANGE_*</code>, <code>PERIODIC_*</code>, <code>changed()</code>, <code>update_icon</code>, <code>world_service</code>; all hard-banned. Open: <code>REQ_*</code>, <code>rerun_ask</code>, <code>BF_*</code> body factors (the stat layer exists, the factors are not on it), <code>reactions()</code> on non-system types, the init, <code>base_vars</code> and raw-overlay ratchets</td><td>Census below</td></tr>
       <tr><td>4 · Machine track</td><td>In progress (machinery conversion waves)</td><td>Recent commits on master</td></tr>
       <tr><td>5 · Life track</td><td>In progress (every <code>/mob/living</code> has a <code>/datum/body</code>)</td><td><code>doc/body_architecture.md</code></td></tr>
       <tr><td>6 · Content waves</td><td>Not started as a move: <code>code/domains</code> holds atmos, heat and power only, <code>code/content</code> holds jobs only</td><td>The old directories are the remaining-work list</td></tr>
@@ -4364,22 +4370,15 @@ CAPABILITIES(/obj/machinery/librarycomp)
     </tbody>
   </table></div>
   <h4>Legacy forms still in the tree</h4>
+  <div class="prose"><p>Everything not listed here (<code>om_*</code>, <code>OM_EMIT</code>, <code>OM_FIELD</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_*</code>, <code>DAMAGE_REACTION</code>, <code>OWN</code>/<code>REL</code>, <code>world_service</code>, <code>PERIODIC_*</code>, <code>act_ask</code>, <code>INTERACT_*</code>, <code>changed()</code> channels, <code>update_icon(</code>, the <code>APPEARANCE_*</code> look forms, interactions and the task engine) counts 0 and is a hard ban. The remaining <code>APPEARANCE_*</code> sites are plain appearance flag and race constants, not look forms.</p></div>
   <div class="tbl"><table>
     <thead><tr><th>Form</th><th class="n">Sites</th><th class="n">Files</th><th>Replacement</th></tr></thead>
     <tbody>
-      <tr><td><code>capabilities()</code>/<code>reactions()</code>/<code>relations()</code> table procs</td><td class="n">136</td><td class="n">-</td><td><code>CAPABILITIES(T)</code> (new)</td></tr>
-      <tr><td><code>REQ_*</code></td><td class="n">386</td><td class="n">137</td><td><code>needs(req...)</code> (new)</td></tr>
-      <tr><td><code>CHANGE_*</code> channels</td><td class="n">328</td><td class="n">108</td><td>tracked setters, <code>on_change</code></td></tr>
-      <tr><td><code>APPEARANCE_*</code></td><td class="n">155</td><td class="n">50</td><td>look parts (new)</td></tr>
-      <tr><td><code>rerun_ask</code></td><td class="n">80</td><td class="n">45</td><td><code>asks()</code> steps</td></tr>
-      <tr><td><code>PERIODIC_*</code></td><td class="n">23</td><td class="n">18</td><td><code>every()</code></td></tr>
-      <tr><td><code>OM_FIELD</code></td><td class="n">14</td><td class="n">5</td><td><code>TRACKED</code> and generated reads</td></tr>
-      <tr><td><code>topic_ask</code></td><td class="n">10</td><td class="n">3</td><td><code>asks()</code> steps (H4)</td></tr>
-      <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">6</td><td class="n">6</td><td><code>extend()</code></td></tr>
-      <tr><td><code>DECLARE_INTERACTIONS</code>, <code>om_after</code></td><td class="n">2 each</td><td class="n">2 each</td><td><code>op()</code>, <code>after()</code></td></tr>
-      <tr><td><code>DECLARE_PERIODIC_WHILE</code>, <code>om_raise_change</code></td><td class="n">1 each</td><td class="n">1 each</td><td><code>every(when =)</code>, tracked setters</td></tr>
-      <tr><td><code>om_hook</code>, <code>om_ask</code>, <code>om_grant</code>, <code>OM_EMIT</code>, <code>TOPIC_ACTION</code>, <code>DECLARE_REPEAT</code>, <code>DECLARE_EMAG</code>, <code>DAMAGE_REACTION</code>, <code>INTERACT_HAND</code>, <code>act_ask</code>, <code>world_service</code>, <code>OWN</code>, <code>REL</code>, <code>om_changed</code>, <code>DECLARE_UI</code>, <code>DECLARE_VERB</code></td><td class="n">0</td><td class="n">0</td><td>gone from call sites</td></tr>
-      <tr><td><code>topic_allowed</code> (hard ban)</td><td class="n">3</td><td class="n">-</td><td><code>needs(req_topic_token())</code>, <code>extend(TAG_TOPIC, needs(...))</code>; the 3 sites are the obj wrapper and its two machinery callers, exempt by path</td></tr>
+      <tr><td><code>reactions()</code> table procs on non-system types</td><td class="n">62</td><td class="n">-</td><td><code>CAPABILITIES(T)</code> entries</td></tr>
+      <tr><td><code>REQ_*</code> predicate macros (not the kernel request-status constants)</td><td class="n">99</td><td class="n">23</td><td><code>needs(req...)</code></td></tr>
+      <tr><td><code>rerun_ask</code></td><td class="n">76</td><td class="n">41</td><td><code>asks()</code> steps</td></tr>
+      <tr><td><code>CHANGE_*</code> outside the engine</td><td class="n">10</td><td class="n">2</td><td>tracked setters, <code>on_change</code></td></tr>
+      <tr><td><code>BF_*</code> body factors</td><td class="n">-</td><td class="n">-</td><td><code>stat()</code>/<code>hold()</code> (the stat layer exists; the factors have not moved onto it)</td></tr>
     </tbody>
   </table></div>
 

@@ -1,11 +1,5 @@
 #define TANK_IDEAL_PRESSURE 1015 //Arbitrary.
 
-DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overlay), SC_NEVER)
-
-/// Builder for tank_gauge_overlays.
-/proc/build_tank_gauge_overlay(icon, indicator)
-	return image(icon, indicator)
-
 /obj/item/tank
 	material_template = /datum/material_template/pressure
 	material_total = SHEET_MATERIAL_AMOUNT
@@ -173,7 +167,6 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 		if(C.use(1))
 			set_wired(1)
 			to_chat(user, span_notice("You attach the wires to the tank."))
-			src.add_bomb_overlay()
 
 	return OP_PASS
 
@@ -224,7 +217,6 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 /obj/item/tank/proc/wirecutter_act_timed_done(mob/user)
 	set_wired(0)
-	cut_overlay("bomb_assembly")
 	to_chat(user, span_notice("You cut the wire and remove the device."))
 
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
@@ -239,13 +231,11 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 			rel_take(assy, nameof(assy.a_right))
 			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 			destroyed(assy, user)
-	cut_overlays()
-	last_gauge_pressure = 0
+	set_last_gauge_pressure(0)
 	update_gauge()
 /obj/item/tank/proc/wirecutter_act_timed_done2(mob/user)
 	to_chat(user, span_notice("You quickly clip the wire from the tank."))
 	set_wired(0)
-	cut_overlay("bomb_assembly")
 
 /// Four seconds of welding on a valve that is still open.
 /obj/item/tank/proc/welder_time(datum/act/op/A)
@@ -341,7 +331,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
-		distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
+		set_distribute_pressure(clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE))
 	add_fingerprint(user)
 
 /obj/item/tank/proc/ui_act_toggle(datum/act/op/A)
@@ -397,7 +387,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 	var/tank_pressure = air_contents.return_pressure()
 	if(tank_pressure < distribute_pressure)
-		distribute_pressure = tank_pressure
+		set_distribute_pressure(tank_pressure)
 
 	var/moles_needed = distribute_pressure*volume_to_return/(R_IDEAL_GAS_EQUATION*air_contents.return_temperature())
 
@@ -412,14 +402,21 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 		update_gauge()
 	check_status()
 
-/obj/item/tank/proc/add_bomb_overlay()
-	if(src.wired)
-		add_overlay("bomb_assembly")
-		if(src.proxyassembly.assembly)
-			var/icon/test = getFlatIcon(src.proxyassembly.assembly)
+/// A wired tank shows its wiring, the assembly taped to it, and the pressure gauge.
+/obj/item/tank/draw(datum/look/look)
+	..()
+	if(wired)
+		look.overlay("bomb_assembly")
+		look.watch(proxyassembly)
+		var/obj/item/assembly_holder/assembly = proxyassembly?.assembly
+		if(assembly)
+			look.watch_look(assembly)
+			var/icon/test = getFlatIcon(assembly)
 			test.Shift(SOUTH,1)
 			test.Shift(WEST,3)
-			add_overlay(test)
+			look.overlay(test)
+	if(gauge_icon && !isnull(last_gauge_pressure))
+		look.overlay("[gauge_icon][(last_gauge_pressure == -1) ? "overload" : last_gauge_pressure]")
 
 /obj/item/tank/proc/update_gauge()
 	var/gauge_pressure = 0
@@ -433,11 +430,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	if(gauge_pressure == last_gauge_pressure)
 		return
 
-	last_gauge_pressure = gauge_pressure
-	cut_overlays()
-	add_bomb_overlay()
-	var/indicator = "[gauge_icon][(gauge_pressure == -1) ? "overload" : gauge_pressure]"
-	add_overlay(CACHED_KEY(tank_gauge_overlays, indicator, icon, indicator))
+	set_last_gauge_pressure(gauge_pressure)
 
 /obj/item/tank/proc/check_status()
 	//Handle exploding, leaking, and rupturing of the tank
@@ -623,9 +616,6 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
 	set_item_master(H, src.proxyassembly)
 
-
-	add_overlay("bomb_assembly")
-
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
 	param(nameof(bomb_fill), pos = 1)
 
@@ -693,9 +683,6 @@ CAPABILITIES(/obj/item/tankassemblyproxy)
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
 	set_item_master(S, src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
-
-
-	src.add_bomb_overlay()
 
 	return
 

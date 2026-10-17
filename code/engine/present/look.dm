@@ -99,3 +99,23 @@
 /// How the look applies an invisibility level; the atom layer answers with set_invisibility(), which publishes it (code/game/atom/_atom.dm).
 /atom/proc/look_set_invisibility(new_invisibility)
 	return
+
+/// How the look applies a colour; the atom layer answers with set_color(), which publishes it (code/game/atom/atom_visual.dm).
+/atom/proc/look_set_color(new_color)
+	return
+
+/// How the look applies an alpha; the atom layer answers with set_alpha(), which publishes it (code/game/atom/atom_visual.dm).
+/atom/proc/look_set_alpha(new_alpha)
+	return
+
+/// How the look applies a plane; the atom layer answers with set_plane(), which publishes it (code/game/atom/atom_visual.dm).
+/atom/proc/look_set_plane(new_plane)
+	return
+
+/// How the look applies a layer; the atom layer answers with set_layer(), which publishes it (code/game/atom/atom_visual.dm).
+/atom/proc/look_set_layer(new_layer)
+	return
+
+/// How the look applies a ground offset; the atom layer answers with set_pixel_offset(), which publishes it (code/game/atom/atom_visual.dm).
+/atom/proc/look_set_pixel_offset(new_x, new_y)
+	return

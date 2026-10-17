@@ -347,8 +347,8 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay(target)
 	animation.name = "conjure"
 	animation.set_icon('icons/effects/effects.dmi')
-	animation.plane = OBJ_PLANE
-	animation.layer = ABOVE_JUNK_LAYER
+	animation.set_plane(OBJ_PLANE)
+	animation.set_layer(ABOVE_JUNK_LAYER)
 	animation.set_icon_state("cultwall")
 	flick("cultwall",animation)
 	animation.expire(1 SECOND)

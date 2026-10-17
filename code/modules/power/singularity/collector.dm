@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/power/rad_collector)
 		return
 	rel_take(src, nameof(P)) // dropped on the floor
 	Z.forceMove(get_turf(src))
-	Z.layer = initial(Z.layer)
+	Z.set_layer(initial(Z.layer))
 	if(active)
 		toggle_power()
 

@@ -113,6 +113,12 @@
 	turf_instance_setup()
 
 /// The per-turf part of Initialize(), shared with the init_from_table path (atom_type_table.dm).
+/// Every turf shows the decals laid on it (floor decals, warning stripes, hazard tape).
+/turf/draw(datum/look/look)
+	..()
+	for(var/image/decal as anything in decals)
+		look.overlay(decal)
+
 /turf/proc/turf_instance_setup()
 	PRIVATE_PROC(TRUE)
 	if(length(contents)) // ALLOW(spatial): hot map-load path (one read per turf); skips the loop setup for empty turfs
@@ -506,8 +512,8 @@ CAPABILITIES(/turf)
 		if(mouse_control["icon-y"])
 			p_y = text2num(mouse_control["icon-y"]) - 16
 
-		graffiti.pixel_x = p_x
-		graffiti.pixel_y = p_y
+		graffiti.set_pixel_x(p_x)
+		graffiti.set_pixel_y(p_y)
 
 	if(lowertext(message) == "elbereth")
 		to_chat(vandal, span_notice("You feel much safer."))

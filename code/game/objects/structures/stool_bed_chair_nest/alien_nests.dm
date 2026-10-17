@@ -20,7 +20,7 @@
 				act_message(buckled_mob, null, MSG_SELF(span_notice("[user.name] pulls you free from the gelatinous resin.")), \
 					MSG_OTHERS(span_notice("[user.name] pulls [buckled_mob.name] free from the sticky nest!")), \
 					MSG_BLIND(span_notice("You hear squelching...")))
-				buckled_mob.pixel_y = 0
+				buckled_mob.set_pixel_y(0)
 				buckled_mob.old_y = 0
 				unbuckle_mob(buckled_mob)
 			else
@@ -38,7 +38,7 @@
 /obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
 	if(user?.buckled_to() == src)
 		cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
-		buckled_mob.pixel_y = 0
+		buckled_mob.set_pixel_y(0)
 		buckled_mob.old_y = 0
 		unbuckle_mob(buckled_mob)
 
@@ -67,7 +67,7 @@
 			MSG_BLIND(span_notice("You hear squelching...")))
 	M.forceMove(src.loc)
 	buckle_mob(M, forced = TRUE)
-	M.pixel_y = 6
+	M.set_pixel_y(6)
 	M.old_y = 6
 	src.add_fingerprint(user)
 	return

@@ -46,7 +46,7 @@
 	holder.admincaster_screen = 2 // create_channel
 	snap("create_channel_screen")
 	var/datum/feed_channel/draft = holder.admincaster_feed_channel()
-	draft.channel_name = "Dq Pin Channel" // set_channel_name
+	draft.set_channel_name("Dq Pin Channel") // set_channel_name
 	draft.locked = TRUE // set_channel_lock
 	holder.admincaster_resync()
 	snap("channel_draft")
@@ -67,7 +67,7 @@
 	var/datum/feed_message/story
 	if(made)
 		for(var/datum/feed_message/posted in made.messages)
-			posted.time_stamp = "00:00" // the story stamps the station clock
+			posted.set_time_stamp("00:00") // the story stamps the station clock
 			story = posted
 	snap("story_posted")
 	if(made)
@@ -75,14 +75,14 @@
 	holder.admincaster_screen = 9
 	snap("channel_shown")
 	if(made)
-		made.censored = TRUE // toggle_d_notice
+		made.set_censored(TRUE) // toggle_d_notice
 	if(story)
 		story.backup_author = story.author // censor_story_author
-		story.author = "REDACTED"
+		story.set_author("REDACTED")
 	snap("censored")
 	var/datum/feed_message/wanted = new /datum/feed_message
-	wanted.author = "Pin Fugitive" // set_wanted_name
-	wanted.body = "Wanted for pinning." // set_wanted_desc
+	wanted.set_author("Pin Fugitive") // set_wanted_name
+	wanted.set_body("Wanted for pinning.") // set_wanted_desc
 	wanted.backup_author = holder.admincaster_signature
 	wanted.is_admin_message = 1
 	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), wanted) // submit_wanted
@@ -235,7 +235,7 @@
 	snap("initial")
 	var/datum/dq_delete_book_panel/panel = host
 	// The sort / order / delete buttons call the library computer's tgui_act with the open window, which needs a client; they change these.
-	comp.sortby = "title" // sort
+	comp.set_sortby("title") // sort
 	snap("sorted_by_title")
 	panel.set_books(list(book_two, book_one)) // order_by_id
 	snap("ordered_by_id")
@@ -258,12 +258,12 @@
 	host = beacon
 	watch_host()
 	snap("initial")
-	beacon.temptext = "Pin greeting" // the beacon's own dialogue text
+	beacon.set_temptext("Pin greeting") // the beacon's own dialogue text
 	snap("text_set")
-	beacon.selfdestructing = TRUE
+	beacon.set_selfdestructing(TRUE)
 	snap("selfdestructing")
-	beacon.selfdestructing = FALSE
-	beacon.charges = 0 // transfer_supplies spends the charge
+	beacon.set_selfdestructing(FALSE)
+	beacon.set_charges(0) // transfer_supplies spends the charge
 	snap("charges_spent")
 
 // ---- Magnetic control console ---------------------------------------------------------------------------------------------
@@ -288,7 +288,7 @@
 	console.ui_act_speed_minus(A)
 	console.ui_act_speed_minus(A)
 	snap("speed_minus_twice")
-	console.path = "NSEW" // set_path: the path is asked for with a prompt, whose answer sets these (magnet_path_entered)
+	console.set_path("NSEW") // set_path: the path is asked for with a prompt, whose answer sets these (magnet_path_entered)
 	console.pathpos = 1
 	console.filter_path()
 	snap("path_set")
@@ -301,7 +301,7 @@
 	console.ui_act_elec_plus(A)
 	console.ui_act_mag_plus(A)
 	snap("levels_raised")
-	console.autolink = FALSE
+	console.set_autolink(FALSE)
 	snap("autolink_off")
 	cleanup_admin()
 
@@ -314,7 +314,7 @@
 	make_user(T)
 	var/obj/machinery/computer/telecomms/traffic/console = test.allocate(/obj/machinery/computer/telecomms/traffic, T)
 	console.set_req_access(null) // the access gate is not what is pinned
-	console.network = "dqpin_net"
+	console.set_network("dqpin_net")
 	var/turf/beside = locate(T.x + 1, T.y, T.z)
 	var/obj/machinery/telecomms/server/box = test.allocate(/obj/machinery/telecomms/server, beside)
 	box.set_id("dqpin_server")
@@ -349,25 +349,25 @@
 /datum/ui_pin/admin_host/edit_memory_panel/script(turf/T)
 	make_user(T)
 	var/datum/mind/subject = test.allocate(/datum/mind, "dqpinkey")
-	subject.name = "Pin Mind"
-	subject.assigned_role = "Assistant"
+	subject.set_name("Pin Mind")
+	subject.set_assigned_role("Assistant")
 	var/datum/edit_memory_panel/panel = test.allocate(/datum/edit_memory_panel, subject, user)
 	host = panel
 	watch_host()
 	snap("initial")
 	// The buttons check the admin's client for rights first and ask with prompts, so the mind is changed the way their handlers change it.
-	subject.assigned_role = "Captain" // edit_role
+	subject.set_assigned_role("Captain") // edit_role
 	snap("role_set")
-	subject.memory = "Pin memory text" // edit_memory
+	subject.set_memory("Pin memory text") // edit_memory
 	snap("memory_set")
-	subject.ambitions = "Pin ambition" // edit_ambitions
+	subject.set_ambitions("Pin ambition") // edit_ambitions
 	snap("ambitions_set")
 	var/datum/objective/first = test.allocate(/datum/objective, "Pin objective one")
 	rel_add(subject, nameof(/datum/mind::objectives), first) // obj_add
 	snap("objective_added")
 	var/datum/objective/second = test.allocate(/datum/objective, "Pin objective two")
 	rel_add(subject, nameof(/datum/mind::objectives), second)
-	first.completed = TRUE // obj_toggle_complete
+	first.set_completed(TRUE) // obj_toggle_complete
 	snap("objective_completed")
 	rel_remove(subject, nameof(/datum/mind::objectives), first) // obj_delete
 	snap("objective_deleted")

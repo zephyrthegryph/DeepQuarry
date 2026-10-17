@@ -69,22 +69,22 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
 	B.desc = "All it takes is a few more rasps of the panther's rough, barbed tongue to shovel the rest of you down its tightly rippling gullet... and with a final couple ravenous swallows, you spill out into the predatory feline's stomach! Right away, that gut's muscular walls knead and contract around you, forcing you into a curled-up ball as the panther's noisy purring rumbles into you from every direction."
 
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"A steady white noise of content purring vibrates throughout you, the panther clearly enjoying the hanging, shifting swell you've given it.",
 		"Your slick, gently churning surroundings abruptly clench inwards, smothering you in an all-encompassing, massage-filled hug before finally easing back.",
 		"The strength of the content feline's purring is easily felt underneath its gut's constant massaging, vibrating the flesh in an utterly relaxing way.",
 		"As the panther lazily struts around, its hanging, prey-laden belly on full display, you're rocked from side to side to a soothing, slosh-filled beat.",
 		"For a moment, you can hear a few other sounds through the juicy sloshing and reverberating purring, such as the panther slurping its tongue over its chops.",
-		"The possessive feline takes a moment to flump down into a resting position, its doughy insides kneading snugly around your curled figure until it shuffles back up.")
+		"The possessive feline takes a moment to flump down into a resting position, its doughy insides kneading snugly around your curled figure until it shuffles back up."))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The big feline rumbles heartily, incredibly satisfied as it works to digest its newfound, stomach-filling catch!",
 		"The surrounding stomach walls suddenly tighten inwards, smothering you in slimy, kneading flesh for a time until they finally relax back again!",
 		"The purring of the content kitty is practically deafening within its churning depths, gently vibrating its gut flesh around you!",
 		"The massive feline's gut sways from side to side as it prowls around, steadily coating you in hot digestive juices until you're practically soaked!",
 		"You can hear the muffled sounds of the panther lickings its chops, savoring the remnants of your taste!",
-		"The near-constant cacophony of digestive noises intensifies for a while, overwhelming your senses before finally calming down somewhat!")
+		"The near-constant cacophony of digestive noises intensifies for a while, overwhelming your senses before finally calming down somewhat!"))
 
 /datum/say_list/panther
 	speak = list("RAWR!","Rawr!","GRR!","Growl!")

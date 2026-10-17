@@ -115,8 +115,10 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		value = isnull(def.formula) ? def.base : stat_call(E, def.formula)
 	else if(def.keyed)
 		value = stat_compute_keyed(def, rec)
-	else if(I && def.fast && !rec?.holds)
+	else if(I && def.fast && !rec?.by_stat?[def.skey])
 		value = stat_compute_fast(E, def, I, rec)
+		if(def.clamps)
+			value = stat_clamp(def, value)
 	else
 		var/list/rows = list()
 		var/has_var = I ? I.has_var[def.skey] : (def.name in E.vars)
@@ -134,9 +136,7 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				rows.Add(stat_contrib_value(E, def, C), C.priority, C.serial)
 		var/override_priority = null
 		var/override_serial = 0
-		for(var/list/row as anything in rec?.holds)
-			if(row[H_STAT] != def.id)
-				continue
+		for(var/list/row as anything in rec?.by_stat?[def.skey])
 			var/row_value = row[H_VALUE]
 			var/list/spec = row[H_SPEC]
 			if(spec)
@@ -155,6 +155,8 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				continue
 			rows.Add(row_value, row[H_PRIORITY], row[H_SERIAL])
 		value = stat_combine(def, rows)
+		if(def.clamps)
+			value = stat_clamp(def, value)
 		if(override_set)
 			value = override_value
 	if(def.units && E)
@@ -165,13 +167,22 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 /// A SUM_PER_KEY stat: key -> the sum of the holds naming that key (a fresh list, empty with none).
 /proc/stat_compute_keyed(datum/stat_def/def, datum/stat_record/rec)
 	. = list()
-	for(var/list/row as anything in rec?.holds)
-		if(row[H_STAT] != def.id)
-			continue
+	for(var/list/row as anything in rec?.by_stat?[def.skey])
 		var/key = row[H_KEY]
 		.[key] = (.[key] || 0) + row[H_VALUE]
 
-/// stat_compute() for the rules whose result needs no ordering (ALL, ANY, SUM) on an entity with no holds: no row list, no combine call.
+/// A numeric stat's composed value held to its declared bounds (bounds = list(lo, hi)); anything that is not a number is left as it is.
+/proc/stat_clamp(datum/stat_def/def, value)
+	if(!isnum(value))
+		return value
+	if(!isnull(def.bound_lo) && value < def.bound_lo)
+		return def.bound_lo
+	if(!isnull(def.bound_hi) && value > def.bound_hi)
+		return def.bound_hi
+	return value
+
+/// stat_compute() for the rules a row list adds nothing to (ALL, ANY, SUM, PRODUCT, MAX, MIN, MASK_OR) on a stat none of whose rows exist: no row
+/// list, no combine call. The constant comes first and the contributions follow in order, as in the general path, so the value is the same.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)
 	var/rule = def.rule
 	var/has_const = FALSE
@@ -197,6 +208,31 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 				if(stat_contrib_active(E, C) && stat_contrib_value(E, def, C))
 					return TRUE
 			return FALSE
+		if(STAT_RULE_PRODUCT)
+			. = has_const ? constant : 1
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(stat_contrib_active(E, C))
+					. *= stat_contrib_value(E, def, C)
+		if(STAT_RULE_MASK_OR)
+			var/any_member = has_const
+			. = has_const ? constant : 0
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(stat_contrib_active(E, C))
+					. |= stat_contrib_value(E, def, C)
+					any_member = TRUE
+			if(!any_member)
+				return def.base
+		if(STAT_RULE_MAX, STAT_RULE_MIN)
+			. = has_const ? constant : null
+			var/is_max = (rule == STAT_RULE_MAX)
+			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
+				if(!stat_contrib_active(E, C))
+					continue
+				var/v = stat_contrib_value(E, def, C)
+				if(isnull(.) || (is_max ? (v > .) : (v < .)))
+					. = v
+			if(isnull(.))
+				return def.base
 		else
 			. = has_const ? constant : 0
 			for(var/datum/stat_contrib/C as anything in I.contribs[def.skey])
@@ -581,6 +617,9 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 			rec.ct_targets -= ct_key
 	if(!isdatum(target) || QDELETED(target))
 		return
+	if(ct.table_kind)
+		stat_ct_hold_table(E, target, rec, ct_key, ct)
+		return
 	var/datum/stat_def/def = stat_def_of(ct.stat_id)
 	if(!def || !stat_declared_on(target.type, def))
 		declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: contributes_to([ct.rel], [def ? def.name : ct.stat_id]) names a stat the related [target.type] does not declare")
@@ -597,9 +636,77 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 	rec.ct_targets[ct_key] = target
 	stat_row_set(target, def, E, value, ct.priority, "ct:[ct.serial]")
 
+/// A factors() entry of E: the table it names, at its scale and stacks now, held on `target` as rows of E (part = the entry's), or released while its
+/// when() conditions do not hold. The exact current values every time: nothing is banded. The target hears which of its stats moved (factors_held()).
+PROC_SUMMARY(/proc/stat_ct_hold_table) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_ct_hold_table(datum/E, datum/target, datum/stat_record/rec, ct_key, datum/stat_contrib/ct)
+	var/alist/table = null
+	var/scale = 0
+	var/stacks = 1
+	if(stat_contrib_active(E, ct))
+		table = stat_factors_arg(E, ct.table_kind, ct.table_spec)
+		scale = stat_factors_arg(E, ct.scale_kind, ct.scale_spec)
+		stacks = stat_factors_arg(E, ct.stacks_kind, ct.stacks_spec)
+		if(!isnum(scale) || !isnum(stacks))
+			declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: factors() scale [scale] and stacks [stacks] must be numbers")
+			return
+	if(!rec.ct_targets)
+		rec.ct_targets = list()
+	rec.ct_targets[ct_key] = target
+	var/list/before = stat_table_snapshot(target, E, ct.part, table)
+	if(length(table))
+		hold_table(target, E, table, scale, stacks, ct.part, ct.priority, TRUE)
+	else
+		release_table(target, E, ct.part)
+	stat_table_moved(target, before)
+
+/// The value now of each stat a table call for (source, part) on `target` can change: those the table names and those the source's rows already hold.
+/// Pure. "[stat id]" -> value.
+/proc/stat_table_snapshot(datum/target, datum/source, part, alist/table)
+	var/list/ids = list()
+	for(var/id in table)
+		ids |= list(id)
+	var/key = TABLE_KEY(part)
+	for(var/list/row as anything in target.rx?.stats?.holds)
+		if((row[H_FLAGS] & HF_TABLE) && row[H_SOURCE] == source && row[H_KEY] == key)
+			ids |= list(row[H_STAT])
+	var/list/snapshot = list()
+	for(var/id in ids)
+		var/datum/stat_def/def = stat_def_of(id)
+		if(def)
+			snapshot["[id]"] = stat_value_now(target, def, null)
+	return snapshot
+
+/// Tells `target` which of the stats in `before` (a stat_table_snapshot()) ended with another value, through factors_held().
+/proc/stat_table_moved(datum/target, list/before)
+	if(QDELETED(target) || !length(before))
+		return
+	var/list/moved = list()
+	for(var/id_key in before)
+		var/datum/stat_def/def = stat_def_of(text2num(id_key))
+		if(def && !stat_values_equal(before[id_key], stat_value_now(target, def, null)))
+			moved += text2num(id_key)
+	if(length(moved))
+		target.factors_held(moved)
+
+/// One argument of a factors() entry now: its constant, the var it names, or what its holder proc returns.
+PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_factors_arg(datum/E, kind, spec)
+	switch(kind)
+		if(CV_VAR)
+			return E.vars[spec]
+		if(CV_PROC)
+			return stat_call(E, spec)
+	return spec
+
 /// Takes E's contributes_to row for `ct` off `target` and settles the stat.
 /proc/stat_ct_release(datum/target, datum/E, datum/stat_contrib/ct)
 	if(QDELETED(target))
+		return
+	if(ct.table_kind)
+		var/list/before = stat_table_snapshot(target, E, ct.part, null)
+		release_table(target, E, ct.part)
+		stat_table_moved(target, before)
 		return
 	var/datum/stat_record/trec = target.rx?.stats
 	if(!trec?.holds)
@@ -622,7 +729,7 @@ PROC_SUMMARY(/proc/stat_ct_update) // vars[] / call() dispatcher: the walk canno
 		row[H_PRIORITY] = priority
 	else
 		row = list(def.id, source, value, 0, priority, 0, HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
-		rec.holds += list(row)
+		stat_rows_add(rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, target)

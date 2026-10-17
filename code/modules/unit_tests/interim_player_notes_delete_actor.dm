@@ -10,10 +10,10 @@
 	var/datum/player_info/second = allocate(/datum/player_info)
 	first.author = "first-author"
 	first.content = "remove this exact note"
-	first.timestamp = "first-time"
+	first.set_timestamp("first-time")
 	second.author = "second-author"
 	second.content = "retain this exact note"
-	second.timestamp = "second-time"
+	second.set_timestamp("second-time")
 	var/savefile/fixture = new(path)
 	var/list/infos = list(first, second)
 	fixture.cd = "/"

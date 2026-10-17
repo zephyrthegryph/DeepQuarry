@@ -36,7 +36,7 @@
 
 	to_chat(user, span_boldnotice("You slot \the [input_device] into the suit module."))
 	consume(input_device, user)
-	accepted_item.charges++
+	accepted_item.set_charges(accepted_item.charges + 1)
 	return 1
 
 /obj/item/rig_module/cleaner_launcher/engage(atom/target, notify_ai, mob/user)
@@ -62,7 +62,7 @@
 		to_chat(H, span_danger("Insufficient grenades!"))
 		return 0
 
-	charge.charges--
+	charge.set_charges(charge.charges - 1)
 	var/obj/item/grenade/new_grenade = new charge.product_type(get_turf(H))
 	act_message(H, null, others = span_danger("%U% launches \a [new_grenade]!"))
 	new_grenade.activate(H)

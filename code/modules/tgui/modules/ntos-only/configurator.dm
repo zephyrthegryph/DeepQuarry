@@ -43,7 +43,7 @@ CAPABILITIES(/datum/tgui_module/computer_configurator)
 /datum/tgui_module/computer_configurator/proc/ui_act_pc_toggle_component(datum/act/op/A, name)
 	var/obj/item/computer_hardware/H = movable().find_hardware_by_name(name)
 	if(H && istype(H))
-		H.enabled = !H.enabled
+		H.set_enabled(!H.enabled)
 	. = TRUE
 
 /// The movable this refers to (a relation view: null once that is deleted).

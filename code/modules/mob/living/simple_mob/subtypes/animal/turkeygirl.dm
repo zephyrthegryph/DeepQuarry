@@ -46,15 +46,15 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot churning stomach of a turkey girl! The doughy flesh presses inward to form to your figure, thick slime coating everything, and very shortly that includes you as well! There isn't any escaping that constant full body motion, as her body works to ball yours up into a tight little package. Gurgling and glubbing with every shifting movement, while her pulse throbs through the flesh all around you with every beat of her heart. All in all, one thing is for certain! You've become turkey stuffing! Oh no..."
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.belly_fullscreen = "VBOanim_belly1"
-	B.digest_brute = 1
-	B.digest_burn = 6
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 15
-	B.colorization_enabled = TRUE
-	B.belly_fullscreen_color = "#521717"
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_belly_fullscreen("VBOanim_belly1")
+	B.set_digest_brute(1)
+	B.set_digest_burn(6)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(15)
+	B.set_colorization_enabled(TRUE)
+	B.set_belly_fullscreen_color("#521717")
 
 /datum/say_list/turkey
 	speak = list("Gobble!", "Gobble gobble!", "Gobble gobble gobble!", "Give me something to be thankful for~", "Could use something to gobble~", "Why don't you make a pilgrimage over here and give me something good to eat?", "I want a treat... I could bite you too if you like~", "What's your favorite time of year?", "Autumn is the best time of year~", "You just gonna let a girl go hungry?")

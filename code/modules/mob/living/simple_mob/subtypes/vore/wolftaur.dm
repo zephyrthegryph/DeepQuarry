@@ -63,14 +63,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "After a gruelling compressive traversal down through the taur's gullet, you briefly get deposited in an oppressively tight stomach at it's humanoid waist. However, the wolf has little interest in keeping you here, instead treating you as a mere snack, an orifice opens beneath you and you're soon dragged deeper into her depths. Soon you're splashing into an active, waiting caustic slurry, and the world around you drops as though you're trapped in a hammock. The taur's underbelly sags with your weight, and you feel a heavy pat from the woman outside settling in to make the most of her meal."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.digest_brute = 2
-	B.digest_burn = 2
-	B.digest_oxy = 1
-	B.digestchance = 100
-	B.absorbchance = 0
-	B.escapechance = 5
-	B.selective_preference = DM_DIGEST
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_digest_brute(2)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(1)
+	B.set_digestchance(100)
+	B.set_absorbchance(0)
+	B.set_escapechance(5)
+	B.set_selective_preference(DM_DIGEST)
 	B.escape_stun = 5
 
 /mob/living/simple_mob/vore/wolftaur/clown

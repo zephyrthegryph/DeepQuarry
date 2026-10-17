@@ -121,7 +121,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	var/new_loc = sanitize(raw_new_loc, MAX_NAME_LEN)
 	if(!new_loc)
 		return FALSE
-	location = new_loc
+	set_location(new_loc)
 	return TRUE
 
 /obj/machinery/navbeacon/proc/ui_act_trans_edit_key(datum/act/op/A, code, raw_new_key)
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 			new_codes[new_key] = value
 			continue
 		new_codes[key] = value
-	codes = new_codes
+	set_codes(new_codes)
 	return TRUE
 
 /obj/machinery/navbeacon/proc/ui_act_trans_edit_code(datum/act/op/A, code, raw_new_val)
@@ -151,7 +151,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	var/new_val = sanitize(raw_new_val, MAX_NAME_LEN)
 	if(!new_val)
 		return FALSE
-	LAZYSET(codes, codekey, new_val)
+	set_codes_at(codekey, new_val)
 	return TRUE
 
 /obj/machinery/navbeacon/proc/ui_act_trans_add_code(datum/act/op/A, raw_new_key, raw_new_val)
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	var/new_val = sanitize(raw_new_val, MAX_NAME_LEN)
 	if(!new_val)
 		return FALSE
-	LAZYSET(codes, new_key, new_val)
+	set_codes_at(new_key, new_val)
 	return TRUE
 
 /obj/machinery/navbeacon/proc/ui_act_trans_del(datum/act/op/A, code)
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	var/codekey = code
 	if(!codekey)
 		return FALSE
-	LAZYREMOVE(codes, codekey)
+	remove_codes(codekey)
 	return TRUE
 
 //

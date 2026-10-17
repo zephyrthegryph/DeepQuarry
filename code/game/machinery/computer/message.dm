@@ -44,7 +44,7 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 			// Will help make emagging the console not so easy to get away with.
 			MK.set_info(MK.info + ("<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")))
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
-			temp = rebootmsg
+			set_temp(rebootmsg)
 			return OP_OK
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
@@ -176,13 +176,13 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	set_emag(FALSE)
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
-	customsender 	= "System Administrator"
+	set_customsender("System Administrator")
 	rel_clear(src, nameof(customrecepient))
-	custommessage 	= "This is a test, please ignore."
-	customjob 		= "Admin"
+	set_custommessage("This is a test, please ignore.")
+	set_customjob("Admin")
 
 /obj/machinery/computer/message_monitor/proc/ui_act_cleartemp(datum/act/op/A)
-	temp = null
+	set_temp(null)
 	. = TRUE
 //Authenticate
 
@@ -190,13 +190,13 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	var/dkey = key
 	if(dkey && dkey != "")
 		if(linkedServer() && linkedServer().decryptkey == dkey)
-			auth = TRUE
+			set_auth(TRUE)
 		else
-			temp = incorrectkey
+			set_temp(incorrectkey)
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_deauth(datum/act/op/A)
-	auth = FALSE
+	set_auth(FALSE)
 	. = TRUE
 //Find a server
 
@@ -208,9 +208,9 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		server_selected(A)
 	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 		rel_set(src, nameof(/obj/machinery/computer/message_monitor::linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
-		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
+		show_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 	else
-		temp = noserver
+		set_temp(noserver)
 //Hack the Console to get the password
 
 /obj/machinery/computer/message_monitor/proc/ui_act_hack(datum/act/op/A)
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	linkedServer().set_active(!linkedServer().active)
 	. = TRUE
@@ -236,10 +236,10 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), OWN_DELETE)
-	set_temp("NOTICE: Logs cleared.", "average")
+	show_temp("NOTICE: Logs cleared.", "average")
 	. = TRUE
 //Clears the request console logs - KEY REQUIRED
 
@@ -247,10 +247,10 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), OWN_DELETE)
-	set_temp("NOTICE: Logs cleared.", "average")
+	show_temp("NOTICE: Logs cleared.", "average")
 	. = TRUE
 //Change the password - KEY REQUIRED
 
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	current_key_entered(A)
 	. = TRUE
@@ -271,7 +271,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	if(kind == "pda")
 		var/datum/log_entry = ui_ref(id, linkedServer().pda_msgs, null)
@@ -281,7 +281,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/datum/log_entry = ui_ref(id, linkedServer().rc_msgs, null)
 		if(log_entry)
 			own_remove(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), log_entry)
-	set_temp("NOTICE: Log Deleted!", "average")
+	show_temp("NOTICE: Log Deleted!", "average")
 	. = TRUE
 //Fake messaging selection - KEY REQUIRED
 
@@ -289,25 +289,25 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
-	customsender = sanitize(val)
+	set_customsender(sanitize(val))
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_set_sender_job(datum/act/op/A, val)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
-	customjob = sanitize(val)
+	set_customjob(sanitize(val))
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_set_recipient(datum/act/op/A, val)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	var/obj/item/pda/P = ui_ref(val, null, /obj/item/pda)
 	if(!istype(P) || !P.owner || P.hidden)
@@ -323,26 +323,26 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
-	custommessage = sanitize(val)
+	set_custommessage(sanitize(val))
 	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/ui_act_send_message(datum/act/op/A)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	if(isnull(customsender) || customsender == "")
-		customsender = "UNKNOWN"
+		set_customsender("UNKNOWN")
 
 	if(isnull(customrecepient()))
-		set_temp("NOTICE: No recepient selected!", "average")
+		show_temp("NOTICE: No recepient selected!", "average")
 		return TRUE
 
 	if(isnull(custommessage) || custommessage == "")
-		set_temp("NOTICE: No message entered!", "average")
+		show_temp("NOTICE: No message entered!", "average")
 		return TRUE
 
 	var/obj/item/pda/PDARec = null
@@ -378,7 +378,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	token_entered(A)
 	. = TRUE
@@ -387,7 +387,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!auth)
 		return
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
+		set_temp(noserver)
 		return TRUE
 	var/tokennum = deltoken
 	linkedServer().spamfilter.Cut(tokennum, tokennum + 1)
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!server)
 		return
 	rel_set(src, nameof(linkedServer), server)
-	set_temp("NOTICE: Server selected.", "alert")
+	show_temp("NOTICE: Server selected.", "alert")
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/op/A)
 	if(!A.answer)
@@ -419,7 +419,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!dkey || !linkedServer())
 		return
 	if(linkedServer().decryptkey != dkey)
-		temp = incorrectkey
+		set_temp(incorrectkey)
 		return
 	if(!isnull(A.step_value("new_key")))
 		new_key_entered(A)
@@ -431,20 +431,19 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!linkedServer())
 		return
 	if(length(newkey) <= 3)
-		set_temp("NOTICE: Decryption key too short!", "average")
+		show_temp("NOTICE: Decryption key too short!", "average")
 	else if(length(newkey) > 16)
-		set_temp("NOTICE: Decryption key too long!", "average")
+		show_temp("NOTICE: Decryption key too long!", "average")
 	else if(newkey && newkey != "")
 		linkedServer().decryptkey = newkey
-	set_temp("NOTICE: Decryption key set.", "average")
+	show_temp("NOTICE: Decryption key set.", "average")
 
 /obj/machinery/computer/message_monitor/proc/token_entered(datum/act/op/A)
 	if(A.answer && linkedServer())
 		linkedServer().spamfilter += A.answer.value
 
-/obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/message_monitor/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 

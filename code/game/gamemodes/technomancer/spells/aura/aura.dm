@@ -13,7 +13,7 @@ CAPABILITIES(/obj/item/spell/aura)
 
 /// The aura's light: wide and bright with the caster's spell power, in the aura's colour.
 /obj/item/spell/aura/proc/aura_glow(datum/act/A)
-	return GLOW(read_once(calculate_spell_power(7)), read_once(calculate_spell_power(4)), glow_color)
+	return GLOW(calculate_spell_power(7), calculate_spell_power(4), glow_color)
 
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()

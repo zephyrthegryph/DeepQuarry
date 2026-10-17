@@ -266,7 +266,7 @@ CAPABILITIES(/obj/item/flashlight)
 		flicker_color = glow_of(src).color //If we don't have a flicker color, use our current light color.
 	if((!power_use && !forced) || (!power_usage && !forced))
 		return //We don't use power / have no power, so we're probably a flare or dead.
-	flickering = TRUE
+	set_flickering(TRUE)
 	var/original_color = glow_of(src).color
 	var/original_on = on
 	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/flashlight)
 	set_light_color(original_color)
 	OL.directional_atom?.color = original_color
 	set_on(original_on)
-	flickering = FALSE
+	set_flickering(FALSE)
 	update_brightness()
 
 /obj/item/flashlight/pen

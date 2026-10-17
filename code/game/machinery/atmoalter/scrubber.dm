@@ -79,10 +79,10 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 		power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_rating)
 
 	if (power_draw < 0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 	else
-		last_power_draw = pay_material_pump_energy(power_draw)
+		set_last_power_draw(pay_material_pump_energy(power_draw))
 
 		update_connected_network()
 		// scrub_gas pulled from loc.return_air() directly when not
@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	. = TRUE
 
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_act_volume_adj(datum/act/op/A, vol)
-	volume_rate = CLAMP(vol, minrate, maxrate)
+	set_volume_rate(CLAMP(vol, minrate, maxrate))
 	. = TRUE
 
 
@@ -183,8 +183,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/huge_step(datum/act/A)
 	if(!anchored || (!operable()))
 		set_on(0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
@@ -199,8 +199,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_of(src).active)
 
 	if (power_draw < 0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 	else
 		use_power(power_draw)
 		update_connected_network()

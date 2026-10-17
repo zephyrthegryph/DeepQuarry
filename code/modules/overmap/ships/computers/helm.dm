@@ -274,26 +274,26 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 		return FALSE
 	var/newx = setx ? A.step_value("x") : null
 	if(newx)
-		dx = CLAMP(newx, 1, world.maxx)
+		set_dx(CLAMP(newx, 1, world.maxx))
 	var/newy = sety ? A.step_value("y") : null
 	if(newy)
-		dy = CLAMP(newy, 1, world.maxy)
+		set_dy(CLAMP(newy, 1, world.maxy))
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_setds(datum/act/op/A, x, y)
 	if(!ui_gate(A))
 		return FALSE
-	dx = x
-	dy = y
+	set_dx(x)
+	set_dy(y)
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
 /obj/machinery/computer/ship/helm/proc/ui_act_reset(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	dx = 0
-	dy = 0
+	set_dx(0)
+	set_dy(0)
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
@@ -308,7 +308,7 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 		return FALSE
 	var/newlimit = A.step_value("limit")
 	if(newlimit)
-		speedlimit = CLAMP(newlimit/1000, 0, 100)
+		set_speedlimit(CLAMP(newlimit/1000, 0, 100))
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
@@ -317,7 +317,7 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 		return FALSE
 	var/newlimit = A.step_value("limit")
 	if(newlimit)
-		accellimit = max(newlimit/1000, 0)
+		set_accellimit(max(newlimit/1000, 0))
 	helm_terminal_feedback(A.actor)
 	return TRUE
 

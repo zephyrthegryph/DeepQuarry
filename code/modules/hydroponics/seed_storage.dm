@@ -81,17 +81,17 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 /// The smart wire cut turns smart mode off (mending does not turn it back on).
 /obj/machinery/seed_storage/proc/smart_wire_cut(datum/act/A)
-	smart = FALSE
+	set_smart(FALSE)
 
 /obj/machinery/seed_storage/proc/smart_wire_pulsed(datum/act/A)
-	smart = !smart
+	set_smart(!smart)
 
 /obj/machinery/seed_storage/proc/contraband_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	hacked = !N.mended
+	set_hacked(!N.mended)
 
 /obj/machinery/seed_storage/proc/contraband_wire_pulsed(datum/act/A)
-	hacked = !hacked
+	set_hacked(!hacked)
 
 /// The lockdown wire mended locks the keypad down and clears the access; cut, the access is back as built.
 /obj/machinery/seed_storage/proc/lockdown_wire_cut(datum/act/A)
@@ -306,9 +306,9 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	var/list/data = list()
 
 	if(smart)
-		scanner = list("stats", "produce", "soil", "temperature", "light", "pressure")
+		set_scanner(list("stats", "produce", "soil", "temperature", "light", "pressure"))
 	else
-		scanner = initial(scanner)
+		set_scanner(initial(scanner))
 
 	data["scanner"] = (scanner || list())
 
@@ -467,10 +467,11 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	set_panel_open(!panel_open)
 	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
 	playsound(src, sounds_of(tool).use, 50, TRUE)
-	cut_overlays()
-	if(panel_open)
-		add_overlay("[initial(icon_state)]-panel")
 	return OP_OK
+
+/obj/machinery/seed_storage/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]-panel", when = panel_open)
 
 /// The wirecutters or a multitool behind the open panel: the wires.
 /obj/machinery/seed_storage/proc/wire_tool_used(datum/act/op/A)

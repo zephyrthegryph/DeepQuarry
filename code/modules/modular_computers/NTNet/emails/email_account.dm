@@ -19,10 +19,10 @@
 	var/notification_sound = "*beep*"
 
 /datum/computer_file/data/email_account/calculate_size()
-	size = 1
+	set_size(1)
 	for(var/datum/computer_file/data/email_message/stored_message in all_emails())
 		stored_message.calculate_size()
-		size += stored_message.size
+		set_size(size + stored_message.size)
 
 /datum/computer_file/data/email_account/New(glob_load)
 	if(!glob_load)

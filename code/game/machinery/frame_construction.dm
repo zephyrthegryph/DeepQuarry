@@ -326,15 +326,15 @@ STAGE_DEF(machine_frame, finished)
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
 
-	new_machine.pixel_x = pixel_x
-	new_machine.pixel_y = pixel_y
+	new_machine.set_pixel_x(pixel_x)
+	new_machine.set_pixel_y(pixel_y)
 	replace_with(src, new_machine)
 
 /// Builds an alarm (facing the frame's way first) or a display from the board.
 /obj/structure/frame/proc/finish_simple(alarm, mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
-	B.pixel_x = pixel_x
-	B.pixel_y = pixel_y
+	B.set_pixel_x(pixel_x)
+	B.set_pixel_y(pixel_y)
 	B.set_dir(dir)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()
@@ -344,8 +344,8 @@ STAGE_DEF(machine_frame, finished)
 /// Builds a computer.
 /obj/structure/frame/proc/finish_computer(mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
-	B.pixel_x = pixel_x
-	B.pixel_y = pixel_y
+	B.set_pixel_x(pixel_x)
+	B.set_pixel_y(pixel_y)
 	B.set_dir(dir)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()

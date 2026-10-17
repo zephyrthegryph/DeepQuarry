@@ -8,12 +8,12 @@
 	test_ui(actor, console, "increasetime", list())
 	test_drain()
 	TEST_ASSERT_EQUAL(console.checkoutperiod, 6, "The actual increase button extends the lending period")
-	console.checkoutperiod = 1
+	console.set_checkoutperiod(1)
 	test_ui(actor, console, "decreasetime", list())
 	test_drain()
 	TEST_ASSERT_EQUAL(console.checkoutperiod, 1, "The actual decrease button cannot shorten the period below one minute")
-	console.buffer_book = "Interim lending book"
-	console.buffer_mob = "Interim borrower"
+	console.set_buffer_book("Interim lending book")
+	console.set_buffer_mob("Interim borrower")
 	TEST_ASSERT_EQUAL(length(console.checkouts), 0, "The real console begins without checkout records")
 	test_ui(actor, console, "checkout", list())
 	test_drain()

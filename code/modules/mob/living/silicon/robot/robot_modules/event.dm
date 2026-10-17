@@ -41,9 +41,9 @@
 	rel_add(src, nameof(modules), new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/malf/lost/adjust_gps(obj/item/gps/robot/robot_gps)
-	robot_gps.long_range = TRUE
-	robot_gps.hide_signal = TRUE
-	robot_gps.can_hide_signal = TRUE
+	robot_gps.set_long_range(TRUE)
+	robot_gps.set_hide_signal(TRUE)
+	robot_gps.set_can_hide_signal(TRUE)
 
 /obj/item/robot_module/robot/malf/lost/handle_special_unlocks(mob/living/silicon/robot/owner_robot)
 	if(!owner_robot.emag_items)

@@ -36,15 +36,15 @@
 /datum/computer_file/program/game/proc/game_evaluate(next)
 	var/ended = TRUE
 	if(boss_hp <= 0)
-		heads_up = "You have crushed [boss_name]! Rejoice!"
+		set_heads_up("You have crushed [boss_name]! Rejoice!")
 		play_sfx(computer().loc, SFX_ARCADE_WIN)
-		game_active = FALSE
+		set_game_active(FALSE)
 		set_program_icon_state("arcade_off")
-		ticket_count += 1
+		set_ticket_count(ticket_count + 1)
 	else if(player_hp <= 0 || player_mp <= 0)
-		heads_up = "You have been defeated... how will the station survive?"
+		set_heads_up("You have been defeated... how will the station survive?")
 		play_sfx(computer().loc, SFX_ARCADE_LOSE)
-		game_active = FALSE
+		set_game_active(FALSE)
 		set_program_icon_state("arcade_off")
 	else
 		ended = FALSE
@@ -70,21 +70,21 @@
 	if(game_active == FALSE)
 		return
 	if(boss_mp <= 5)
-		heads_up = "[boss_mpamt] magic power has been stolen from you!"
+		set_heads_up("[boss_mpamt] magic power has been stolen from you!")
 		play_sfx(computer().loc, SFX_ARCADE_STEAL)
-		player_mp -= boss_mpamt
+		set_player_mp(player_mp - boss_mpamt)
 		boss_mp += boss_mpamt
 	else if(boss_mp > 5 && boss_hp <12)
-		heads_up = "[boss_name] heals for [bossheal] health!"
+		set_heads_up("[boss_name] heals for [bossheal] health!")
 		play_sfx(computer().loc, SFX_ARCADE_HEAL)
-		boss_hp += bossheal
+		set_boss_hp(boss_hp + bossheal)
 		boss_mp -= boss_mpamt
 	else
-		heads_up = "[boss_name] attacks you for [boss_attackamt] damage!"
+		set_heads_up("[boss_name] attacks you for [boss_attackamt] damage!")
 		play_sfx(computer().loc, SFX_ARCADE_HIT)
-		player_hp -= boss_attackamt
+		set_player_hp(player_hp - boss_attackamt)
 
-	pause_state = FALSE
+	set_pause_state(FALSE)
 	game_check()
 
 /**
@@ -126,10 +126,10 @@ CAPABILITIES(/datum/computer_file/program/game)
 	var/attackamt = 0 //Spam prevention.
 	if(pause_state == FALSE)
 		attackamt = rand(2,6) // + rand(0, gamerSkill)
-	pause_state = TRUE
-	heads_up = "You attack for [attackamt] damage."
+	set_pause_state(TRUE)
+	set_heads_up("You attack for [attackamt] damage.")
 	play_sfx(computer().loc, SFX_ARCADE_HIT)
-	boss_hp -= attackamt
+	set_boss_hp(boss_hp - attackamt)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
@@ -140,11 +140,11 @@ CAPABILITIES(/datum/computer_file/program/game)
 		healamt = rand(6,8) // + rand(0, gamerSkill)
 		var/maxPointCost = 3
 		healcost = rand(1, maxPointCost)
-	pause_state = TRUE
-	heads_up = "You heal for [healamt] damage."
+	set_pause_state(TRUE)
+	set_heads_up("You heal for [healamt] damage.")
 	play_sfx(computer().loc, SFX_ARCADE_HEAL)
-	player_hp += healamt
-	player_mp -= healcost
+	set_player_hp(player_hp + healamt)
+	set_player_mp(player_mp - healcost)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
@@ -152,10 +152,10 @@ CAPABILITIES(/datum/computer_file/program/game)
 	var/rechargeamt = 0 //As above.
 	if(pause_state == FALSE)
 		rechargeamt = rand(4,7) // + rand(0, gamerSkill)
-	pause_state = TRUE
-	heads_up = "You regain [rechargeamt] magic power."
+	set_pause_state(TRUE)
+	set_heads_up("You regain [rechargeamt] magic power.")
 	play_sfx(computer().loc, SFX_ARCADE_MANA)
-	player_mp += rechargeamt
+	set_player_mp(player_mp + rechargeamt)
 	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
@@ -175,18 +175,18 @@ CAPABILITIES(/datum/computer_file/program/game)
 		if(ticket_count >= 1)
 			new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
 			to_chat(user, span_notice("[src] dispenses a ticket!"))
-			ticket_count -= 1
+			set_ticket_count(ticket_count - 1)
 			printer.stored_paper -= 1
 		else
 			to_chat(user, span_notice("You don't have any stored tickets!"))
 		return TRUE
 
 /datum/computer_file/program/game/proc/ui_act_start_game(datum/act/op/A)
-	game_active = TRUE
-	boss_hp = 45
-	player_hp = 30
-	player_mp = 10
-	heads_up = "You stand before [boss_name]! Prepare for battle!"
+	set_game_active(TRUE)
+	set_boss_hp(45)
+	set_player_hp(30)
+	set_player_mp(10)
+	set_heads_up("You stand before [boss_name]! Prepare for battle!")
 	set_program_icon_state("arcade")
-	boss_id = rand(1,6)
-	pause_state = FALSE
+	set_boss_id(rand(1,6))
+	set_pause_state(FALSE)

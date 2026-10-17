@@ -166,7 +166,7 @@ CAPABILITIES(/datum/board_game/nine_mens)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
-	game_state = GAME_PLAYER_ONE
+	set_game_state(GAME_PLAYER_ONE)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
@@ -199,36 +199,36 @@ CAPABILITIES(/datum/board_game/nine_mens)
 		var/game_action = game_subaction(action_arg, data, user, "w")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_TWO
+				set_game_state(GAME_PLAYER_TWO)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		var/game_action = game_subaction(action_arg, data, user, "b")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_ONE
+				set_game_state(GAME_PLAYER_ONE)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	return FALSE
 
 /datum/board_game/nine_mens/proc/reset(full)
-	winner = null
-	player_one_time = 0
-	player_two_time = 0
-	selected_node = null
-	LAZYCLEARLIST(valid_moves)
-	LAZYCLEARLIST(valid_removes)
-	pone_pieces = 9
-	ptwo_pieces = 9
-	phase = GAME_PHASE_PLACING
+	set_winner(null)
+	set_player_one_time(0)
+	set_player_two_time(0)
+	set_selected_node(null)
+	clear_valid_moves()
+	clear_valid_removes()
+	set_pone_pieces(9)
+	set_ptwo_pieces(9)
+	set_phase(GAME_PHASE_PLACING)
 	for(var/i = 1 to NODE_COUNT)
-		current_board[i] = null
+		set_current_board_at(i, null)
 	if(full)
-		game_state = GAME_SETUP
+		set_game_state(GAME_SETUP)
 		rel_clear(src, nameof(player_one))
 		rel_clear(src, nameof(player_two))
 	else
-		game_state = GAME_PLAYER_ONE
+		set_game_state(GAME_PLAYER_ONE)
 
 /datum/board_game/nine_mens/proc/game_select_figure(mob/user, list/params, extra)
 	var/node = validate_node(params["node_number"])
@@ -239,7 +239,7 @@ CAPABILITIES(/datum/board_game/nine_mens)
 	if(!piece || piece[1] != extra)
 		return GAME_ACTION_NONE
 
-	selected_node = node
+	set_selected_node(node)
 	update_valid_moves()
 	return GAME_ACTION_SELECT
 
@@ -253,23 +253,23 @@ CAPABILITIES(/datum/board_game/nine_mens)
 			if(current_board[target_node])
 				return GAME_ACTION_NONE
 
-			current_board[target_node] = extra
+			set_current_board_at(target_node, extra)
 
 			if(extra == "w")
 				if(pone_pieces > 0)
-					pone_pieces--
+					set_pone_pieces(pone_pieces - 1)
 			else
 				if(ptwo_pieces > 0)
-					ptwo_pieces--
+					set_ptwo_pieces(ptwo_pieces - 1)
 
 			if(check_for_mill(target_node, extra))
-				phase = GAME_PHASE_REMOVING
+				set_phase(GAME_PHASE_REMOVING)
 				update_valid_removals(extra == "w" ? "b" : "w")
 			else
 				if((ptwo_pieces && extra == "w") || (pone_pieces && extra == "b"))
-					phase = GAME_PHASE_PLACING
+					set_phase(GAME_PHASE_PLACING)
 				else
-					phase = GAME_PHASE_MOVING
+					set_phase(GAME_PHASE_MOVING)
 			return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
 
 		if(GAME_PHASE_MOVING)
@@ -278,19 +278,19 @@ CAPABILITIES(/datum/board_game/nine_mens)
 			if(!valid_move(extra, selected_node, target_node))
 				return GAME_ACTION_NONE
 
-			current_board[target_node] = current_board[selected_node]
-			current_board[selected_node] = null
-			selected_node = null
-			LAZYCLEARLIST(valid_moves)
+			set_current_board_at(target_node, current_board[selected_node])
+			set_current_board_at(selected_node, null)
+			set_selected_node(null)
+			clear_valid_moves()
 			validate_victory(extra)
 			if(game_state < GAME_OVER)
 				if(check_for_mill(target_node, extra))
-					phase = GAME_PHASE_REMOVING
+					set_phase(GAME_PHASE_REMOVING)
 					update_valid_removals(extra == "w" ? "b" : "w")
 				else
-					phase = GAME_PHASE_MOVING
+					set_phase(GAME_PHASE_MOVING)
 			else
-				phase = GAME_PHASE_NONE
+				set_phase(GAME_PHASE_NONE)
 
 			return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
 
@@ -298,36 +298,36 @@ CAPABILITIES(/datum/board_game/nine_mens)
 			if(!valid_remove(target_node))
 				return GAME_ACTION_NONE
 
-			current_board[target_node] = null
+			set_current_board_at(target_node, null)
 
-			LAZYCLEARLIST(valid_removes)
+			clear_valid_removes()
 			validate_victory(extra)
 			if(game_state < GAME_OVER)
 				if((ptwo_pieces && extra == "w") || (pone_pieces && extra == "b"))
-					phase = GAME_PHASE_PLACING
+					set_phase(GAME_PHASE_PLACING)
 				else
-					phase = GAME_PHASE_MOVING
+					set_phase(GAME_PHASE_MOVING)
 			else
-				phase = GAME_PHASE_NONE
+				set_phase(GAME_PHASE_NONE)
 
 			return GAME_ACTION_END_TURN
 	return GAME_ACTION_NONE
 
 /datum/board_game/nine_mens/proc/update_valid_moves()
-	LAZYCLEARLIST(valid_moves)
+	clear_valid_moves()
 	if(selected_node)
-		valid_moves = generate_valid_moves(selected_node)
+		set_valid_moves(generate_valid_moves(selected_node))
 
 /datum/board_game/nine_mens/proc/update_valid_removals(opponent_color)
-	LAZYCLEARLIST(valid_removes)
+	clear_valid_removes()
 	for(var/i = 1 to NODE_COUNT)
 		if(current_board[i] && current_board[i][1] == opponent_color)
 			if(!check_for_mill(i, opponent_color))
-				LAZYADD(valid_removes, i)
+				add_valid_removes(i)
 	if(!length(valid_removes))
 		for(var/i = 1 to NODE_COUNT)
 			if(current_board[i] && current_board[i][1] == opponent_color)
-				LAZYADD(valid_removes, i)
+				add_valid_removes(i)
 
 /datum/board_game/nine_mens/proc/valid_remove(picked_node)
 	if(!picked_node || !current_board[picked_node] || !(picked_node in valid_removes))
@@ -364,8 +364,8 @@ CAPABILITIES(/datum/board_game/nine_mens)
 
 	if(count_pieces(opponent) < 3 || !has_moves(opponent))
 		var/mob/winning_player = (active_color == "w" ? player_one : player_two)
-		winner = winning_player?.name
-		game_state = GAME_OVER
+		set_winner(winning_player?.name)
+		set_game_state(GAME_OVER)
 
 /datum/board_game/nine_mens/proc/generate_valid_moves(node)
 	var/list/moves = list()

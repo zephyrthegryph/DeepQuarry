@@ -143,33 +143,33 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Through either grave error, overwhelming willingness, or some other factor, you find yourself lodged halfway past the grub's mandibles. While it had initially hissed and chittered in glee at the prospect of a new meal, it is clearly more versed in crunching ores to feed off of; inch by inch, bit by bit, it undulates forth to slowly, noisily gulp you down its short esophagus... and right into its extra-cramped, surprisingly hot stomach. As the rest of you spills out into the plush-walled chamber, the grub's soft body bulges outwards here and there with your compressed figure. Before long, a thick slime oozes out from the surrounding stomach walls; only time will tell how effective it is on something fleshy like you, although given it's usual diet..."
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.fancy_vore = 1
-	B.belly_fullscreen_color = "#1b4ba3"
-	B.belly_fullscreen = "VBOanim_belly1"
-	B.colorization_enabled = TRUE
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_fancy_vore(1)
+	B.set_belly_fullscreen_color("#1b4ba3")
+	B.set_belly_fullscreen("VBOanim_belly1")
+	B.set_colorization_enabled(TRUE)
 
 	// Yes, these are copied + modified from the solargrub list. These are better placeholders than ~nothing~, and will give us more voremobs to work with.
 	B.own_emote_lists()
-	B.emote_lists[DM_HOLD] = list(
+	B.set_emote_lists_at(DM_HOLD, list(
 		"The air trapped within the grub is hot, humid, and tinged with soot, but otherwise mercifully harmless to you aside from being heavy on the lungs.",
 		"Your doughy, squishy surroundings heavily pulse around your body as the grub attempts to wriggle elsewhere, its solid prey weighing it down quite a bit.",
 		"A mineral cracks underneath the pressure of the grub's gut, briefly illuminating the interior of the thing's gut with a reddish glow!",
 		"The grub's inner muscles are in a constant state of clenching all over you, adding an extra element to your full-body massage.",
 		"For a moment, the grub's stomach walls clench down even more firmly than before, working into your muscles, steadily relaxing them down.",
-		"The incredible heat trapped within the grub helps daze and disorient you, ensuring that its new filling wouldn't interfere in its mineral-hunting.")
+		"The incredible heat trapped within the grub helps daze and disorient you, ensuring that its new filling wouldn't interfere in its mineral-hunting."))
 
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"Every breath taken inside the grub is swelteringly hot, painfully thick, and more than subtly caustic, worsening with every passing moment spent inside!",
 		"As the grub wriggles off somewhere quiet to digest its meal, the resulting undulations help crush you down into a more compact, easier to handle morsel!",
 		"From time to time, minerals crush inwards against your body, helping ensure that the grub's food was thoroughly worked over into a softer, rougher state!",
 		"The grub's inner muscles are in a constant state of clenching all over you, adding an additional layer of processing to its stomach's slow, steady churning, helping break you down faster!",
 		"The grub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
-		"The deceptively severe heat trapped within the grub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
+		"The deceptively severe heat trapped within the grub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!"))
 
 /mob/living/simple_mob/vore/oregrub/lava/load_default_bellies() // Should inherit everything from parent, and then change our belly fullscreen color.
 	.=..()
 	var/obj/belly/B = vore_selected_of(src)
-	B.belly_fullscreen_color = "#cf741e"
+	B.set_belly_fullscreen_color("#cf741e")

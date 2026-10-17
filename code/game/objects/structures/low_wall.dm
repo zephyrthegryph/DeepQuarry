@@ -380,9 +380,9 @@ CAPABILITIES(/obj/structure/window/bay)
 	for(var/i = 1 to 4)
 		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = read_once(color)))
+			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
 		else
-			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = read_once(color)))
+			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = color))
 
 	if(damage_alpha)
 		look.overlay(look_overlay_image(icon, "window0_damage", dir = img_dir, alpha = damage_alpha, blend_mode = BLEND_MULTIPLY))

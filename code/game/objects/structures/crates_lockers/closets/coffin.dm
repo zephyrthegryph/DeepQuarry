@@ -102,7 +102,7 @@ CAPABILITIES(/obj/structure/closet/grave)
 /// A grave with something in it is only hidden a little; an empty one goes away.
 /obj/structure/closet/grave/proc/smoothed_over(datum/act/op/A)
 	if(LAZYLEN(contents) || has_latent())
-		alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
+		set_alpha(40)	// If we've got stuff inside, like maybe a person, just make it hard to see us
 	else
 		consume(src, A.actor)	// Else, go away
 	return OP_OK
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/structure/closet/grave)
 
 /obj/structure/closet/grave/open()
 	.=..()
-	alpha = 255	// Needed because of grave hiding
+	set_alpha(255)	// Needed because of grave hiding
 
 /obj/structure/closet/grave/bullet_act(obj/item/projectile/P)
 	return PROJECTILE_CONTINUE	// It's a hole in the ground, doesn't usually stop or even care about bullets

@@ -21,8 +21,8 @@
 //     the definition's type: body_effect_origin(), body_effect_state()/set_body_effect_state().
 //     It is dropped when the last stack ends.
 //
-// The body reads the per-key value (type -> stacks) in recompute_factors(); a change of the
-// hold invalidates the factors (invalidate_factors() after each write).
+// The application's own record (the /datum/body_effect_origin the mob owns under the type) holds the effect's factor table on the mob with a
+// factors() entry, once per stack the count stat says: a change of the count or of the application's table moves the mob's stats before the writer's next line.
 //
 // API (on /mob/living):
 //   apply_body_effect(type, duration, origin, suppress)  timed when duration > 0, held otherwise
@@ -104,7 +104,7 @@
 	return null
 
 /datum/body_effect/proc/changes_icon_scale()
-	return factors && (!isnull(factors[BF_ICON_SCALE_X]) || !isnull(factors[BF_ICON_SCALE_Y]))
+	return factors && (!isnull(factors[STAT_SCALE_MULT_X]) || !isnull(factors[STAT_SCALE_MULT_Y]))
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
@@ -129,9 +129,6 @@
 	var/list/body_effect_origins
 	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
 	var/list/body_effect_data
-	/// Body effect type -> the application's own factor table (a static alist, or null for
-	/// none), replacing the definition's `factors`. Lazy; a type absent here uses `factors`.
-	var/list/body_effect_factors
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
@@ -172,7 +169,9 @@
 				rel_clear(src, nameof(body_effect_origins))
 		return
 	var/datum/body_effect_origin/O = new
+	O.set_path(path)
 	rel_set(O, nameof(O.origin), origin)
+	rel_set(O, nameof(O.holder), src)
 	rel_add(src, nameof(body_effect_origins), O, path)
 
 /mob/living/proc/body_effect_state(path)
@@ -190,21 +189,15 @@
 /// effects). Pass a static alist; null means no factors. Swapping between static tables keeps
 /// the recompute cheap: nothing changes when the same table is set again.
 /mob/living/proc/set_body_effect_factors(path, alist/new_factors)
-	if(!body_effect_stacks(path))
+	var/datum/body_effect_origin/application = body_effect_origins?[path]
+	if(!application || !body_effect_stacks(path))
 		return
-	if(body_effect_factors && (path in body_effect_factors) && body_effect_factors[path] == new_factors)
-		return
-	LAZYSET(body_effect_factors, path, new_factors)
-	tracked_changed(src, nameof(body_effect_factors))
-	invalidate_factors()
+	application.set_table_override(isnull(new_factors) ? alist() : new_factors)
 
 /// Goes back to the definition's `factors` for `path`.
 /mob/living/proc/reset_body_effect_factors(path)
-	if(!body_effect_factors || !(path in body_effect_factors))
-		return
-	body_effect_factors -= path
-	UNSETEMPTY(body_effect_factors)
-	invalidate_factors()
+	var/datum/body_effect_origin/application = body_effect_origins?[path]
+	application?.set_table_override(null)
 
 /// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
 /// or, for a world-clock effect, on the global owner under a name that includes the mob.
@@ -286,7 +279,6 @@
 			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	hold(src, STAT_BODY_EFFECT_COUNTS, stacks, src, key = path)
-	invalidate_factors()
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
@@ -339,7 +331,6 @@
 	var/current = body_effect_stacks(path)
 	if(current > 1 && length(timers))
 		hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = path)
-		invalidate_factors()
 		return
 	end_body_effect(path, FALSE, TRUE)
 
@@ -365,7 +356,6 @@
 		body_effect_cancel(body_effect_def(key), timers[1])
 		timers.Cut(1, 2)
 	hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = key)
-	invalidate_factors()
 	return TRUE
 
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
@@ -379,7 +369,6 @@
 	body_effect_cancel(def, "[path]#tick")
 	if(!release(src, STAT_BODY_EFFECT_COUNTS, src, path))
 		return
-	invalidate_factors()
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)
@@ -391,9 +380,6 @@
 		def.on_end(src, expired)
 	set_body_effect_origin(path, null)
 	set_body_effect_state(path, null)
-	if(body_effect_factors)
-		body_effect_factors -= path
-		UNSETEMPTY(body_effect_factors)
 	if(QDELETED(src))
 		return
 	if(def.changes_icon_scale())
@@ -418,21 +404,6 @@
 /// The filter a body effect added to the mob (for animate()), or null.
 /mob/living/proc/body_effect_filter(path)
 	return get_filter("body_effect:[path]")
-
-/// Accumulates every body effect's factors (per stack) into `acc`.
-/mob/living/proc/accumulate_body_effect_factors(list/acc)
-	var/list/active = body_effects()
-	for(var/path in active)
-		var/alist/table
-		if(body_effect_factors && (path in body_effect_factors))
-			table = body_effect_factors[path]
-		else
-			table = body_effect_def(path).factors
-		if(!table)
-			continue
-		for(var/i in 1 to active[path])
-			acc = body_factor_accumulate(acc, table)
-	return acc
 
 /// OOC listing lines ("name: factor lines") for visible body effects.
 /mob/living/proc/describe_body_effects()
@@ -472,10 +443,27 @@
 			I.appearance_flags = RESET_COLOR
 		LAZYADD(., I)
 
-/// Who applied one body effect to a mob: owned by the mob's body_effect_origins, keyed by type.
+/// One application of a body effect to a mob: who applied it, and the factor table it holds on the mob. Owned by the mob's body_effect_origins, keyed by type.
 /datum/body_effect_origin
 	/// A relation view: null once the origin is deleted.
 	var/atom/origin
+	/// The effect type this application is of.
+	var/path
+	/// The mob it is on: a relation view the factors() entry contributes to.
+	var/mob/living/holder
+	/// The table the running application set (set_body_effect_factors()) in place of the definition's `factors`: an empty alist is "no factors", null is "the definition's".
+	var/alist/table_override
 
+/// The application's table, once per stack the mob holds of it (STAT_BODY_EFFECT_COUNTS, read through the relation), held on the mob as rows of this record.
 CAPABILITIES(/datum/body_effect_origin)
 	ref_one(nameof(origin), /atom)
+	ref_one(nameof(holder), /mob/living)
+	factors(PROC_REF(effect_table), stacks = PROC_REF(effect_stacks), to = nameof(holder), reads = list("holder.body_effect_counts"))
+
+/datum/body_effect_origin/proc/effect_stacks(datum/act/eval/A)
+	return holder ? holder.body_effect_stacks(path) : 0
+
+/datum/body_effect_origin/proc/effect_table(datum/act/eval/A)
+	if(!path)
+		return null
+	return isnull(table_override) ? body_effect_def(path).factors : table_override

@@ -156,6 +156,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(runemessage != -1)
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
+/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a carbon relation).
+/mob/proc/note_assailant(mob/living/who)
+	if(iscarbon(who))
+		rel_set(src, nameof(LAssailant), who)
+	else
+		rel_clear(src, nameof(LAssailant))
+
 /mob/proc/findname(msg)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (M.real_name == text("[]", msg))
@@ -658,10 +665,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				to_chat(src, span_warning("Somebody has a grip on them!"))
 				return
 
-		if(!iscarbon(src))
-			rel_clear(M, nameof(M.LAssailant))
-		else
-			rel_set(M, nameof(M.LAssailant), src)
+		M.note_assailant(src)
 
 		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
@@ -1047,7 +1051,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_y <= (default_pixel_y + 16))
-		pixel_y++
+		set_pixel_y(pixel_y + 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shiftsouth()
@@ -1055,7 +1059,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_y >= (default_pixel_y - 16))
-		pixel_y--
+		set_pixel_y(pixel_y - 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shiftwest()
@@ -1063,7 +1067,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_x >= (default_pixel_x - 16))
-		pixel_x--
+		set_pixel_x(pixel_x - 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/shifteast()
@@ -1071,7 +1075,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!canface())
 		return FALSE
 	if(pixel_x <= (default_pixel_x + 16))
-		pixel_x++
+		set_pixel_x(pixel_x + 1)
 		set_is_shifted(TRUE)
 
 /mob/verb/planeup()
@@ -1081,10 +1085,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(plane >= MOB_PLANE + 3)	//Don't bother going too high!
 		return
 	if(layer == MOB_LAYER)	//Become higher
-		layer = ABOVE_MOB_LAYER
-	plane += 1		//Increase the plane
+		set_layer(ABOVE_MOB_LAYER)
+	set_plane(plane + 1)		//Increase the plane
 	if(plane == MOB_PLANE)	//Return to normal
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 	set_is_shifted(TRUE)
 
 /mob/verb/planedown()
@@ -1094,10 +1098,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(plane <= MOB_PLANE - 3)	//Don't bother going too low!
 		return
 	if(layer == MOB_LAYER)	//Become lower
-		layer = BELOW_MOB_LAYER
-	plane -= 1		//Decrease the plane
+		set_layer(BELOW_MOB_LAYER)
+	set_plane(plane - 1)		//Decrease the plane
 	if(plane == MOB_PLANE)	//Return to normal
-		layer = MOB_LAYER
+		set_layer(MOB_LAYER)
 	set_is_shifted(TRUE)
 
 // End VOREstation edit
@@ -1440,7 +1444,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	return TRUE
 
 /mob/proc/vv_topic_regen_icons_full(datum/act/op/A)
-	cut_overlays()
 	regenerate_icons()
 	return TRUE
 

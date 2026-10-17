@@ -239,6 +239,11 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 /proc/cond_config(entry_type)
 	return list("config", entry_type)
 
+/// cond_published(key, ...): the condition of an on_change(..., ANY, ...) that is an event, not a value: it runs after any of the keys was published
+/// (a PUBLISH_CHANGE(E, key) fact, or a var's name) and compares nothing (change.dm). Not a condition anything asks: condition_holds() is FALSE for it.
+/proc/cond_published(...)
+	return list(COND_PUBLISHED) + args
+
 // ---- link: a pair declared once for both types ----
 
 /// Statics, not GLOB lists: tables are built while the globals are still being made (a global datum's New()), so what a build reads

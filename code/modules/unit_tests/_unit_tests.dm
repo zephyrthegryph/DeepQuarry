@@ -127,6 +127,11 @@
 #include "disease_tests.dm"
 #include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
+#include "dq_factor_oracle.dm"
+#include "dq_factor_hot_reads_tests.dm"
+#include "dq_factor_oracle_tests.dm"
+#include "dq_factor_pins.dm"
+#include "dq_physiology_pins.dm"
 #include "dq_items_emag_ops.dm"
 #include "dq_retired_behaviour_pins.dm"
 #include "dq_test_overrides_tests.dm"
@@ -269,6 +274,7 @@
 #include "dq_focus.dm"
 #include "dq_gc_tests.dm"
 #include "dq_gc_sweep_tests.dm"
+#include "dq_list_leak_tests.dm"
 #include "dq_table_ref_hold_tests.dm"
 #include "dq_hc_bots_behaviour.dm"
 #include "dq_hc_mobs_behaviour.dm"
@@ -410,6 +416,14 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_silicon_remote_pins.dm"
+#include "dq_machinery_silicon_boundary_tests.dm"
+#include "dq_module_silicon_boundary_tests.dm"
+#include "dq_object_silicon_boundary_tests.dm"
+#include "dq_silicon_physical_tests.dm"
+#include "dq_pin_constructor_repairs.dm"
+#include "dq_silicon_device_tests.dm"
+#include "dq_silicon_residual_tests.dm"
 #include "dq_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_hop_kinds.dm"
@@ -418,6 +432,7 @@
 #include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"
 #include "dq_draw_reagents.dm"
+#include "dq_look_forms.dm"
 #include "dq_look_glow_tests.dm"
 #include "dq_look_pins.dm"
 #include "dq_look_sweep.dm"
@@ -537,6 +552,7 @@
 #include "dq_e1_declare_tests.dm"
 #include "dq_table_cache_tests.dm"
 #include "dq_e3_stats_tests.dm"
+#include "dq_stat_layer_tests.dm"
 #include "dq_hop_tests.dm"
 #include "dq_life_wake_tests.dm"
 #include "dq_e4_actions_tests.dm"
@@ -1123,6 +1139,7 @@
 #include "../benchmarks/dx_deps.dm"
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
@@ -1193,6 +1210,8 @@
 
 #include "round2_slime_docility_name_request.dm"
 
+#include "lobby_join_op_alive_keep.dm"
+#include "pipe_carries_no_has_power.dm"
 #include "round2_helm_limit_requests.dm"
 #include "round2_helm_coordinates_clientless.dm"
 
@@ -1321,6 +1340,10 @@
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
 #include "dq_pin_constructor_repairs.dm"
+#include "dq_casino_prompt_flow_tests.dm"
+#include "dq_machine_refresh_dartgun_pin.dm"
+#include "dq_native_machine_refresh_tests.dm"
+#include "dq_spasm_use_flow_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

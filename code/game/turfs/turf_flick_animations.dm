@@ -11,7 +11,7 @@
 	animation.set_icon(a_icon)
 	if(isatom(target))
 		var/atom/A = target
-		animation.layer = A.layer + 1
+		animation.set_layer(A.layer + 1)
 	if(a_icon_state)
 		animation.set_icon_state(a_icon_state)
 	else

@@ -67,9 +67,9 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/new_age = A.answer.value
 	if(!isnull(new_age))
 		if(new_age < 0)
-			S.age = initial(S.age)
+			S.set_age(initial(S.age))
 		else
-			S.age = new_age
+			S.set_age(new_age)
 		to_chat(user, span_notice("Age has been set to '[S.age]'."))
 		. = TRUE
 
@@ -100,7 +100,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_job = A.answer.value
 	if(!isnull(new_job))
-		S.assignment = new_job
+		S.set_assignment(new_job)
 		to_chat(user, span_notice("Occupation changed to '[new_job]'."))
 		S.update_name()
 		. = TRUE
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_blood_type = A.answer.value
 	if(!isnull(new_blood_type))
-		S.blood_type = new_blood_type
+		S.set_blood_type(new_blood_type)
 		to_chat(user, span_notice("Blood type changed to '[new_blood_type]'."))
 		. = TRUE
 /datum/tgui_module/agentcard/proc/ui_act_dnahash(datum/act/op/A)
@@ -142,7 +142,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_dna_hash = A.answer.value
 	if(!isnull(new_dna_hash))
-		S.dna_hash = new_dna_hash
+		S.set_dna_hash(new_dna_hash)
 		to_chat(user, span_notice("DNA hash changed to '[new_dna_hash]'."))
 		. = TRUE
 /datum/tgui_module/agentcard/proc/ui_act_fingerprinthash(datum/act/op/A)
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_fingerprint_hash = A.answer.value
 	if(!isnull(new_fingerprint_hash))
-		S.fingerprint_hash = new_fingerprint_hash
+		S.set_fingerprint_hash(new_fingerprint_hash)
 		to_chat(user, span_notice("Fingerprint hash changed to '[new_fingerprint_hash]'."))
 		. = TRUE
 /datum/tgui_module/agentcard/proc/ui_act_name(datum/act/op/A)
@@ -199,7 +199,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_sex = A.answer.value
 	if(!isnull(new_sex))
-		S.sex = new_sex
+		S.set_sex(new_sex)
 		to_chat(user, span_notice("Sex changed to '[new_sex]'."))
 		. = TRUE
 
@@ -214,7 +214,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/new_species = A.answer.value
 	if(!isnull(new_species))
-		S.species = new_species
+		S.set_species(new_species)
 		to_chat(user, span_notice("Species changed to '[new_species]'."))
 		. = TRUE
 
@@ -228,21 +228,21 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	var/_answer_a10 = (A.answer.value ? "Yes" : "No")
 	if(_answer_a10 == "Yes")
-		S.age = initial(S.age)
+		S.set_age(initial(S.age))
 		S.set_access(GLOB.syndicate_access.Copy())
-		S.assignment = initial(S.assignment)
-		S.blood_type = initial(S.blood_type)
-		S.dna_hash = initial(S.dna_hash)
+		S.set_assignment(initial(S.assignment))
+		S.set_blood_type(initial(S.blood_type))
+		S.set_dna_hash(initial(S.dna_hash))
 		S.electronic_warfare = initial(S.electronic_warfare)
-		S.fingerprint_hash = initial(S.fingerprint_hash)
+		S.set_fingerprint_hash(initial(S.fingerprint_hash))
 		S.set_icon_state(initial(S.icon_state))
 		S.set_item_state(initial(S.item_state))
 		S.set_sprite_stack(S.initial_sprite_stack)
-		S.front = null
+		S.set_front(null)
 		S.name = initial(S.name)
 		S.set_registered_name(initial(S.registered_name))
 		S.unset_registered_user()
-		S.sex = initial(S.sex)
-		S.species = initial(S.species)
+		S.set_sex(initial(S.sex))
+		S.set_species(initial(S.species))
 		to_chat(user, span_notice("All information has been deleted from \the [src]."))
 		. = TRUE

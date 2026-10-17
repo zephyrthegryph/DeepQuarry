@@ -1,0 +1,403 @@
+# Retained frontend revision
+
+Status: design plus staged implementation, lane `tools/dmb-redesign`, started 2026-10-16.
+Follows `structural_change_set.md` (change set, stable numbering) and the 2026-10-16 addendum of
+`doc/rewrite/native_compiler_issues.md` ("What the 2.5 s target still needs").
+
+## Goal and targets
+
+With a resident daemon on the production tree (`deepquarry.dme`):
+
+| Edit | Target |
+|---|---|
+| body edit (including string literals), new var or proc on an existing type | at most 2.5 s |
+| new type, removed var or proc, `#define` used outside a body | at most 5 s, no full compile |
+
+Also: a persistent filesystem watcher instead of per-request directory sweeps, incremental
+publication (write only changed sections), and no memory regression (about 8.3 GB private after
+edits today; under 8 GB if possible).
+
+Incremental output only has to be semantically equivalent to a fresh native build (`dmb-equiv
+--ignore-debug`), never byte identical (2026-10-14 decision, `structural_change_set.md` addendum).
+
+## Where a request spends its time today
+
+Measured on the production tree, resident daemon, private namespace (`DMB_DAEMON_NAMESPACE`),
+machine shared with other lanes (single runs vary by 1.3x). Body edit, seconds from request start:
+
+| Stage (`request_mark` names) | Cost | What it does |
+|---|---|---|
+| session validation | 0.5-1.1 | latest session record, bulk directory proofs (1,359 listed and 651 fallback directories), input validate |
+| input scan | 0.25 | canonicalize about 5,900 source paths, prepared-input hits |
+| frontend | 2.1-2.3 | directive planning 0.61, expansion 0.30, source indexing 0.11, declaration parsing 0.71 (ordered merge 0.17), origins 0.19, tree resolution 0.08, body indexing 0.14 |
+| source checks, shape | 0.35 | bodies, text, braces, skeleton hash, per-body digests |
+| resources and maps | 1.0 | resource demand (lex of the expanded text) 0.31, input validation 0.35, retained order 0.07 |
+| patch admission, startup facts | 0.65 | early admission, roster, startup keys, plan, inventory, spellings |
+| ABI preparation | 0.9 | scheduler over 87,014 units: collect, qualify, validate, waves, certify |
+| lowering, link, splice | 0.1 + 0.1 | one body |
+| publication | 0.55-0.85 | pair store write (77 MB), install, resource manifest |
+| finalization | 0.2 | declarations, generation, memo publication |
+
+Every stage except the one body being lowered is a whole-program pass whose answer is almost
+always "unchanged". Item-level reuse (memo keys, receipts) is already high; the cost left is
+visiting every item to find that out. Trimming those passes cannot reach 2.5 s; the passes must
+stop being visited.
+
+## Model
+
+One retained revision per daemon slot, edited in place by a **change set** instead of rebuilt and
+re-validated:
+
+```
+Revision {
+  files:       per source file: bytes digest, directive digest, interval table
+  plan:        directive plan (intervals, per-interval recorded actions and macro reads)
+  regions:     expansion regions with output ranges (prefix-summed, so a length change is O(log n))
+  chunks:      declaration chunks keyed by content, with contributions
+  tree:        semantic tree, occurrence index, member arena (existing retained semantic state)
+  bodies:      body table (expanded span, source position, digest)
+  demand:      resource demand per region (literals found in that region's output)
+  facts:       startup facts, ABI units, admitted per unit
+  watch:       filesystem epoch the revision was validated at
+}
+ChangeSet { files: set<path>, kinds: Body | Declaration | Directive | Include | Resource | Map | Unknown }
+```
+
+A request is: (1) ask the watcher which paths changed since `watch.epoch`; (2) classify them into
+a `ChangeSet`; (3) hand each stage the change set. A stage that cannot prove it can edit in place
+reports `Unclassified(reason)`, logs `change set: <stage> full (<reason>)` and runs its present
+whole-program path, so correctness reduces to "the full path is correct" plus "an in-place edit
+equals what the full path would produce".
+
+### The invalidation unit for one changed file
+
+From the frontend map (passes in `dm-tree/src/frontend_pipeline.rs`):
+
+* **Directive planning** is one serial state machine (macro environment, conditional stack,
+  include-once set, `FILE_DIR`). An interval's recorded actions depend on its bytes, its incoming
+  conditionals and the macros it read. If the changed file's directive lines (the `#...` tokens
+  and their order) are the same, every interval of every other file replays to the same actions,
+  so the plan is the old plan with that file's intervals re-lexed. If a `#define`, `#undef`,
+  `#if`, `#include` or `#pragma` line changed, the invalidation unit is the file plus every later
+  interval whose recorded `reads` name a macro whose definition changed (a reverse index
+  macro -> reader intervals, kept with the plan).
+* **Expansion** is per region: its bytes, the macros it reads, `__FILE__`/`__LINE__` inputs. The
+  unit is the file's regions plus the readers of changed macros. Joined-text offsets after the
+  edit shift by the length delta; they are kept as (region, offset) pairs bound by prefix sums, so
+  nothing downstream stores an absolute offset it cannot rebind.
+* **Declaration parsing** chunks are content-addressed and independent of other files; the unit is
+  the chunks overlapping the changed regions plus boundary resynchronisation (the grammar scan
+  already reuses descriptors).
+* **Tree resolution**: for body-only change sets the skeleton is identical, so the retained tree
+  is reused as is. Declaration change sets feed the existing splice (`metadata_splice.rs`), whose
+  work is bounded by `affected_types()`.
+* **Bodies**: a body's key is (owner, name, occurrence); positions are a side table rebound by the
+  piecewise line map of `body_patch_lines.rs`.
+
+### Consumers keyed by the change set
+
+| Consumer | Today | With the change set |
+|---|---|---|
+| resource demand | lex of the whole expanded text (0.31 s) | per-region literal sets; changed regions re-lexed, union maintained |
+| resource/map validation | proofs over every recorded folder (0.35 s) | watcher says no resource or map path changed |
+| startup facts | rebuilt from all bodies and declarations (0.65 s) | reused when no changed body is `guarded` (static/global declaring) and no declaration changed; changed bodies only re-keyed |
+| ABI units | scheduler over 87,014 units (0.9 s) | units of unchanged owners with clean read domains keep their admission; only changed units re-run |
+| publication | 77 MB pair write plus install plus 218 MB RSC reuse checks | write the changed byte ranges and the string/list tail (see below) |
+
+### Filesystem watcher
+
+A per-slot watcher (Windows: `ReadDirectoryChangesW` on the project root and every recorded input
+directory outside it, through raw FFI like the existing bulk proofs; elsewhere the present sweep)
+maintains an epoch counter and a dirty set.
+
+* **Sync cookie.** A request first creates a unique file in the watched root and waits for its
+  event; events on one directory handle are ordered, so everything written before the request has
+  been delivered when the cookie arrives. This closes the save-then-build race.
+* **Overflow and errors** (zero-length completion, `ERROR_NOTIFY_ENUM_DIR`, handle loss, rename of
+  a watched directory) mark the root unknown; the next request runs the full sweep and re-arms.
+* **What it replaces.** `BulkFileSystemProofs::capture_snapshot` and `InputSnapshot::validate_*`
+  re-stat and re-list on every request. With a healthy watcher, validation is: drain events, restat
+  only the dirty paths, keep the retained proofs for the rest.
+* **Safety net.** Publication admission (`runner_freshness::admit_live`, early admission on a
+  worker thread) still restats every captured input live. A watcher that lost an event can at
+  worst make that admission refuse and rebuild; it cannot publish a stale build.
+
+### Incremental publication
+
+The pair store is immutable and content addressed, so a patched build cannot edit a stored pair
+in place. Two writes of 77 MB per request are the DMB (pair store, then the conventional copy);
+the 218 MB RSC is reused when its identity is unchanged. Plan: (1) hard link the store entry to the
+conventional path instead of a second copy where the volume allows it; (2) assemble the new DMB
+from the retained image by copying unchanged sections (class table, procedure table, variables,
+untouched list rows are one contiguous run each) and writing only changed list rows and the string
+table tail, using the section offsets the encoder already tracks for `patch_rows`.
+
+### Resource listing changes (coordinator request, 2026-10-16)
+
+The daemon-ns lane saw body patches declined with `non-text input changed: resource folder
+listing` because the icon repack rewrites `icons/gen` between compiles. That would disable
+patching on nearly every real build, so the resource input of the patch base must stop being a
+folder listing:
+
+* **Key by what the compile consumed.** A patch base records, instead of `FolderListing`s, the
+  resolved resource references of the build (referenced file -> content digest, from the resource
+  catalog / generated icon manifest) plus, per search folder, only the answers lookups received
+  (found at path P with digest D, or proven absent). Decline only when a consumed answer changed.
+  A listing change that adds, removes or rewrites an unreferenced file (the common repack case)
+  leaves every answer intact and does not decline.
+* **Repack churn.** `icons/gen` files are rewritten with identical bytes when sources are
+  unchanged; the watcher (stage 2) reports the event, the stage 3 check compares digests of the
+  referenced files only, so an identical rewrite is a no-op.
+* **Changed references** (a referenced file's bytes differ, or a new literal resolves to a new
+  file) patch incrementally: the resource tables are append-extended like strings (stage 1), the
+  archive identity changes and the RSC is re-published, the DMB code of units that embed the
+  resource index is relowered through the existing body patch path.
+* Stage 3 is therefore reordered ahead of stage 2: "resource input keyed by consumed answers"
+  first (it removes a full-compile cause on every real build), then the watcher.
+
+### Structural edits
+
+Added procs and vars append (landed). Remaining: new types (append the class when fresh
+first-encounter order puts it last, else relink class order), removed members (tombstones, dropped
+from class lists; compaction when tombstones exceed 5 % of a table), `#define` used outside a
+body (re-expand only the reader regions, then the declaration path above).
+
+## Stages and status
+
+Each stage lands as its own commit with: `dmb-equiv --ignore-debug` patched vs fresh native
+(strict order where it holds), boot gate under `DQ_COMPILER=native DQ_COMPILER_STRICT=1`, and no
+new dmbc / dm-tree test failures.
+
+| Stage | Content | Status |
+|---|---|---|
+| 0 | baseline timeline and measurement scripts | done |
+| 1 | body edits that change string literals patch (append table strings, units' string footprint split from entry footprint) | done (see results) |
+| 2 | resource input of the patch base keyed by consumed answers and referenced-file digests (no decline on icon repack listing churn) | next |
+| 3 | watcher and cached directory proofs (landed); per-region resource demand (tried: parallel split lex, correct but no measurable gain, not landed) | partly done |
+| 4 | startup facts and ABI units reused for body-only change sets | |
+| 5 | frontend revision edited in place for body and declaration change sets | |
+| 6 | incremental publication | |
+| 7 | new types, removed members, defines used outside bodies | |
+
+Results and timings per stage are appended below as each stage lands.
+
+## Results
+
+Production tree, resident daemon (private namespace), machine shared with other lanes. Seconds,
+wall time of the client call.
+
+| Edit | Before this lane | After stage 1 and 2 | Path |
+|---|---|---|---|
+| unchanged rebuild | 1.6-2.0 | 1.6-2.0 | session hit (not touched) |
+| body edit, no string change | 8.2-9.1 | 8.2-9.1 | patch (not touched: stages 3-6 do that) |
+| body edit changing a string literal | 22.8-25.1 (full compile) | 6.5-8.4 | patch, string append |
+| body edit with line shift and a changed literal | full compile | 6.5-7.2 | patch, string append |
+| body edit after a resource listing changed (icon repack) | full compile (reported by daemon-ns lane) | 8.2-10.6 | patch |
+| new proc / new var | 9.7-10.8 | unchanged | append patch |
+| removed member, new type, `#define` outside a body | 20-30 | unchanged | full compile |
+
+Equivalence: `dmb-equiv --ignore-debug --strict-order` (and with debug lines) of the patched output
+against a fresh native one-shot compile (`DMB_BODY_PATCH=0 --no-cache --no-daemon`) is EQUIVALENT
+for: a string edit, a string plus body edit with and without a line shift, and a body edit after
+an unreferenced file was added to and removed from `icons/gen`. `six_session_contract_tests`
+gained `string_literal_edits_patch_and_match_fresh_bytes`; all 17 six-session tests pass, and
+`cargo test -p dmbc --lib` has the same 24 failures as master (994 passed).
+
+### Stage 1: string literals
+
+`PatchRecord::footprint` split the old `inventory` part into `inventory` (entry key, slot aliases)
+and `strings` (the unit's own literals). A unit whose footprint differs only in `strings` or
+`value_strings` no longer declines: its string entries extend the retained `LinkTables` append-only
+(`LinkTables::extended`), the changed code rows and the new strings go through `patch_model`
+(model edit, list-row reuse encode), the base's unit record is replaced, and old strings stay
+unreferenced (counted for compaction by a later stage). `DMB_STRING_PATCH=0` restores the decline.
+
+### Stage 2: resource listing churn
+
+`InputSnapshot::non_text_difference_with(other, listings)`: the folder listings and negative
+lookups are compared only when the resource archive identity changed. A listing records every name
+in a folder, so an icon repack that adds, removes or rewrites an unreferenced file changed it on
+nearly every real build. A listing matters only through what it resolved; resolution results are in
+the archive identity, the search context is the search paths alone, and consumed files are still
+compared by content.
+
+### Not done
+
+Stages 3-7 of the table above (watcher, per-region resource demand, startup/ABI reuse, in-place
+frontend revision, incremental publication, new types and removed members). The body-edit
+timeline above (frontend 2.1-2.3 s, resources 1.0 s, startup+ABI 1.5 s, validation 0.5-1.1 s,
+publication 0.8 s) is unchanged, so the 2.5 s and 5 s targets are not met. Memory was not
+re-measured (no change to retained state beyond one extended link table per string patch).
+
+### Stage 3: watcher (lane `tools/dmb-redesign-2`)
+
+`fs_watch.rs`: the daemon (never a one-shot) watches the project root with `ReadDirectoryChangesW`
+(raw FFI, recursive, 4 MB buffer, changes buffer per handle between calls). Each request runs a sync
+cookie (`.dmbc/watch-cookie-*`) before session validation; the cache of directory proofs, and of
+directory absences (a failed open is cached too), is invalidated by events (the containing
+directory, the path, and its subtree for anything but a plain modification) and cleared on overflow,
+read failure or a cookie timeout. A proof is cached only if no event arrived while it was captured.
+Publication still restats every captured input live. `DMB_WATCH=0` disables it,
+`DMB_WATCH_VERIFY=1` recaptures every cached directory and logs mismatches (none seen on the
+production tree over six requests, 5,182 verified directories). The sweep also assembles its proof
+maps once per distinct parent instead of once per file.
+
+Session validation, idle between edits (marks `session.*`): proof capture 0.6 s to 0.19 s, whole
+validation 0.5-1.1 s to 0.28 s. Directory capture itself is 0.02 s; the remaining 0.2 s is building
+the 13.7k-file stamp map (`proofs.exact_built`).
+
+Also landed: a body patch no longer declines when no body changed (a comment or spacing inside a
+body); the base just advances. Test `comment_inside_a_body_patches_without_relowering...`.
+
+Next-largest costs (body edit, quiet run): frontend 2.1 s, resources and maps 0.9 s, early admission
+snapshot merge 0.44 s, publication 0.7 s, ABI scheduler 0.5 s, startup facts 0.4 s.
+
+## Frontend revision: concrete design (lane `tools/dmb-redesign-3`)
+
+Inventory (from reading `dm-preprocess` and `dm-tree`; see also the pass table above). The frontend
+already retains content-addressed chunk facts, region expansion records and the semantic state, and
+a request still visits everything: planning 0.6 s, expansion 0.3 s, source indexing 0.1 s,
+declaration parsing 0.7 s, origins 0.19 s, tree 0.08 s, bodies 0.14 s. State holding absolute
+offsets into the joined expanded text: `receipts[].output`, the origin rows (`output_start/end`; the
+row index is the `output_line`), `BodyOccurrence.expanded_span`, `issued_body_codes.termination`,
+the grammar descriptors. Position independent: chunk contributions (rebound by offset), the tree and
+occurrence table when the skeleton is unchanged, `plan` regions (source spans are per file),
+`files`. Tokens are not retained (`expand_regions_text`). Identity binding: `ColdFrontend` is a
+fresh `Arc` per request and startup facts, body inputs, the callable roster and the source export
+mapping are bound to it by pointer (`issuance`, `ptr_eq`), so reuse across requests means
+re-issuing against the new instance, not mutating one in place.
+
+Decision: every request still builds a new `ColdFrontend` value; what changes is how its parts are
+made. The flag is `DMB_FRONTEND_REVISION`: `0` (today), `verify` (build both, compare, use the full
+result), `1` (use the incremental result; fall back to the full build on any unmet precondition).
+The default flips to `1` only after `verify` shows no difference over the whole production tree and
+the full edit matrix.
+
+Change set: the files whose prepared source differs from the previous frontend's `plan.source_texts`
+(`Arc` pointer compare, 5.9k entries). The previous frontend is held by the host (the same `Arc`
+the query state already retains).
+
+Steps, each landing alone with `verify` proof:
+
+* **F1, plan and expansion for a directive-free leaf file.** Precondition for every changed file:
+  one non-suppressed occurrence, a `.dm` leaf (no child occurrences), one region with one segment and
+  no effects, no line starting with `#` (after whitespace) in the old or the new text, no planner or
+  expansion diagnostics. Then the new plan is the previous plan with that file's text, line starts,
+  region lines and span, and `eof_cursor_line` replaced. The new lines come from the real planner run on
+  a one-file synthetic project (so the line splitting is the planner's own); the macro environment
+  is the previous segment's. The new expansion is the previous one with the file's region
+  re-expanded through the region memo, the joined text spliced, the origin rows after it shifted by
+  the byte and line delta (compact records, one copy), receipts rebased. Every provider read the
+  full planner would make is still issued so the input capture records the same files.
+  Verify compares plan and expansion structurally and by hash with the full pass.
+* **F2, declaration parsing.** Reuse of the grammar scan and ordered merge for chunks outside the
+  changed range: chunk contributions are position independent, so the merge splices the changed
+  chunks into the retained ordered list and rebinds offsets by a prefix sum.
+* **F3, origins, body indexing, tree.** Same splice for provenance, `collect_bodies` and tree
+  resolution (skeleton unchanged: reuse the tree; changed: the metadata splice).
+* **F4, issuance.** Startup facts, ABI units and the callable roster re-issued against the new
+  instance for unchanged units instead of recomputed (the structural change set decides which units
+  are dirty).
+* **F5, directive-bearing files and include structure** (a `#define` edit, an added include).
+
+### F1 results (plan and expansion edited in place)
+
+Landed behind `DMB_FRONTEND_REVISION` (`0`/unset: off, the default for now; `verify`; `1`).
+`dm_preprocess::regions::{plan_regions_edit, expand_regions_edit}` (`regions/edit.rs`), the origin
+arena splice (`ExpandedOriginArena::spliced`), the previous revision kept in `RetainedSemanticTree`
+(`remember_frontend`), and the hook in `frontend_pipeline.rs`.
+
+Proof: `edit_tests.rs` (edited plan and expansion equal the full ones through a chain of leaf edits
+including an emptied file; directive, conditional, manifest and previously-directive edits decline);
+`verify` on the production tree for a same-length and a line-shifting edit logged "plan edit equals
+the full plan" and "expansion edit equals the full expansion" (the comparison covers every region
+header, line, span, every origin row field, receipts and the joined text; the macro environment is
+compared deeply for the edited regions only, since comparing every region's bindings took longer
+than the build); `DMB_FRONTEND_REVISION=1` output of a patched edit is `dmb-equiv --ignore-debug
+--strict-order` EQUIVALENT to a fresh native build. dm-preprocess 148, dm-tree 324 tests pass; the
+dmbc lib failures are the same 24 as master.
+
+Timing, body edit in a directive-free leaf file (same machine state, seconds from request start):
+`frontend` stage mark 3.0 to 2.4-2.5 (the plan is ready at 1.4-1.5, the clone of the previous plan
+and the 5.9k provider touches are about 0.4 of that); client wall 7.2 to 6.1-6.3.
+
+Not yet: the default stays off until the other passes (declaration parsing, origins, bodies) take
+the same edit and the whole edit matrix has been verified. The previous plan is cloned
+(about 200 MB of region lines) because `DirectivePlan` is a plain value; sharing the regions behind
+an `Arc` would remove the clone and the touches' only other cost.
+
+## Retained session memory (lane `tools/dmb-session-memory`, 2026-10-17)
+
+Goal: at most 2 GB retained per project session and a much lower compile peak, so three sessions fit in
+8 GB. This section is the measurement; the cuts and their effect are appended below as each lands.
+
+### How to measure
+
+* **Live bytes by allocation call site (new).** Build with `--features allocation-sites` (a separate
+  `CARGO_TARGET_DIR`), run the daemon with `DMB_ALLOC_SITES_PATH=<file>`. After every request the
+  daemon writes `retained.after_request` (process private bytes, mimalloc commit, requested-live bytes) and the top
+  400 allocation sites by sampled live bytes (one sample per 2 MiB requested, size-weighted). The counting build
+  is slower (a cold production compile took 287 s instead of 130 s) but the retained set is the same.
+* **Per-stage owner census (existing).** `DMB_HEAP_CENSUS_PATH` writes one JSON report per pipeline stage
+  (`frontend.ready` ... `publication.ready`), `DMB_IDLE_CENSUS_PATH` one per idle-release boundary. Each report
+  counts only the owners that stage visits, so it covers 1 to 1.8 GiB where the process holds about 9 GB:
+  it does not see the observation/receipt store (below), which is the largest owner.
+* `dmbc --daemon-stats`, `E:/dq-cache/dmb-daemon/lifecycle.log` (shared by all namespaces) for peaks and release tiers.
+
+### Baseline (production `deepquarry.dme`, one native cold compile, 4 workers)
+
+| Quantity | Bytes |
+|---|---|
+| compile peak (`peak=` in the lifecycle log) | 12.2 GB (13.0 to 13.2 GB for `deepquarry.test.dme`) |
+| private after the request and `mi_collect` | 8.97 GB (11.95 GB before the reclaim) |
+| requested-live (counting build) | 7.43 GB |
+| mimalloc commit | 9.17 GB, so 1.74 GB (19%) is allocator slack (freed pages, thread heaps of finished workers) |
+| private right after a `tier=session` release | 3.0 to 3.15 GB, but the daemon's next allocator reclaim (within 30 s) takes it to 1.13 GB with 0.18 GB live (counting build, DMB_ALLOC_SITES_RELEASE) |
+
+Allocator findings (2026-10-17): after a build the daemon already joins idle workers and runs `mi_collect(true)`;
+`private` then equals mimalloc's commit (9.07 GB) against 7.40 GB requested-live. The 1.7 GB difference is
+size-class rounding and partly used pages pinned by long-lived small allocations, not freed pages, so purging more often
+or with a zero purge delay returns nothing (a second forced collect from a fresh thread was also tried: 1.18 GB residual,
+no change, reverted). Likewise the "3.1 GB with no session" is the transient between a session release and the next
+reclaim; the steady no-session residual is 1.13 GB (0.18 GB live: shared engine, filesystem proofs, source checks). Vec and
+hash-table slack in the census owners is 3 to 6 %. Remaining retained memory is data, not waste.
+
+### What the retained set holds (sampled live bytes at idle, 7.28 GB sampled total, top 400 sites = 6.30 GB)
+
+| Area | MB | Main owners (innermost frame) |
+|---|---|---|
+| observation and artifact store (`dm_session`) | 1,852 | `artifacts::incidence` 569 (scheduling index), `observations::receipt_pool` 389, `artifacts::leased` 387, `ObservedArtifactStore` 362, `observations::receipt` 139 |
+| declaration parse, tree, owner metadata (`dm_tree`) | 1,355 | `declaration_parse` 232, `owner_metadata::RetainedMetadata` 181, `adapter::walk` 152, `owner_normalization::receipts` 79, `KeyedDeclarations` 63 |
+| preprocessor | 1,093 | `region_memo` 286, `directives` 244, `directive_memo` 154, `expansion` 80, `prepared_source` 59 |
+| lowering memo and symbolic code | 602 | `lowering::memo` 119, `symbolic_input` 79, `SymbolicCode` 70 |
+| class projection, ABI, startup, other `dmbc` | 494 | `class_projection` 118, `driver_facts::abi_artifacts` 48 |
+| initializer policy and classification | 284 | `classification` 184, `modifier_facts` 90 |
+| DMB image and composition | 274 | `dmb::writing` 152 |
+| unattributed (only std/hashbrown frames in the 5 shown) | 344 | |
+
+The census structures the design names (expanded text 52 MiB, origin arena 40 MiB, source text 65 MiB, directive plan
+135 MiB, declaration AST 91 MiB, body arena 99 MiB) are small. The retained cost is dominated by per-unit
+observation receipts and per-region memos keyed by 87,000 procedures and 5,900 files, not by one big text.
+
+### Cost of releasing retained state (2026-10-17)
+
+Measured with the counting build (about 2.6x slower patches than the plain build: 14.3 s hot here against 5.4 s plain),
+one daemon per row, full uncached compile, idle ladder applied to the idle session
+(`DMB_ALLOC_SITES_RELEASE=<tier>`, diagnostic, feature `allocation-sites`), then a body edit:
+
+| Released up to | Private after | Next edit | The edit after that |
+|---|---|---|---|
+| nothing (hot) | 9.05 GB | patch 14.5 s | patch 14.2 s |
+| tier 2 (rich buffers) | 8.52 GB | patch 28.1 s | patch 11.7 s |
+| tier 3 (compiler artifacts) | 7.27 GB | full compile 108 s | patch 15.1 s |
+| tier 4 (optional images) | 6.91 GB | full compile 80 s | patch 14.4 s |
+| tier 5 (compact symbolic) | 5.85 GB | full compile 99 s | patch 13.0 s |
+| tier 6 (remaining optional) | 5.50 GB | full compile 74 s | patch 13.5 s |
+| tier 7 (whole session, plain build) | about 1.1 GB | full compile 169 s counting | patch 12.8 s |
+
+Findings: the disk memos make a released edit a 74 to 108 s compile (against 120 to 130 s cold), not a few seconds,
+because a released session leaves no patch base ("patch declined: no patch base retained"). Every tier from 3 up costs the
+next edit a full compile, so shortening the idle release (or the 30-minute MRU shield) would trade a full compile per
+returning edit for the memory. The 1.85 GB observation store is part of what tier 3 drops: evicting it means relowering
+(45 s in the released run), so it is not a cheap lazy rebuild. Revisit when record hits leave a patch base (lane
+`tools/dmb-real-world`): a released edit could then patch from persisted records.

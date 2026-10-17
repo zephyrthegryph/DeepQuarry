@@ -58,7 +58,7 @@
 	unobserve(owner(), /datum/notice/examine, src)
 	rel_clear(src, nameof(monitor_tool))
 	rel_clear(src, nameof(monitor_user))
-	last_reading = null
+	set_last_reading(null)
 
 /datum/material_service/proc/examine_service(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -121,8 +121,31 @@
 	var/list/roles = list()
 	for(var/role in owner().material_roles())
 		roles += role
-	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/prompt/choice, question = "Which component should be replaced?", title = "Service assembly", choices = roles)
-	if(isnull(role))
+	open_request(src, /datum/prompt/choice/service_role, PROC_REF(fit_stock_role_answered), answerer = user, question = "Which component should be replaced?", title = "Service assembly", choices = roles, timeout = 0, stock = stock)
+
+/// The question of which component a stack of sheets replaces: the stack.
+/datum/prompt/choice/service_role
+	timeout = 0
+	var/obj/item/stack/material/stock
+
+CAPABILITIES(/datum/prompt/choice/service_role)
+	ref_one(nameof(stock), /obj/item/stack/material)
+
+/datum/prompt/choice/service_role/prepare(datum/act/A)
+	..()
+	var/obj/item/stack/material/captured_stock = stock
+	rel_clear(src, nameof(stock))
+	rel_set(src, nameof(stock), captured_stock)
+
+/// The component was chosen: fit_stock()'s checks are made again, then the fitting starts.
+/datum/material_service/proc/fit_stock_role_answered(datum/act/request/A)
+	var/datum/prompt/choice/service_role/asked = A.answer
+	if(!asked)
+		return
+	var/mob/user = asked.answerer
+	var/obj/item/stack/material/stock = asked.stock
+	var/role = asked.value
+	if(!can_service(user) || !stock || stock.loc != user)
 		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner().material_roles()))
 		return
@@ -285,15 +308,15 @@ CAPABILITIES(/datum/material_service)
 	var/flow = delivered_moles - monitor_last_moles
 	if(output <= 0 || input <= 0 || wear.leaking || wear.fatigue >= 100)
 		reset_observation()
-		last_input_watts = 0
-		last_output_watts = 0
+		set_last_input_watts(0)
+		set_last_output_watts(0)
 		return TRUE
 	monitor_minimum_output = min(monitor_minimum_output, output / interval)
 	monitor_minimum_flow = min(monitor_minimum_flow, flow / interval)
 	monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
 	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature(), last_delivery_temperature)
-	last_input_watts = input / interval
-	last_output_watts = output / interval
+	set_last_input_watts(input / interval)
+	set_last_output_watts(output / interval)
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
@@ -301,7 +324,7 @@ CAPABILITIES(/datum/material_service)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)
-	last_reading = list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
+	set_last_reading(list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name))
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 

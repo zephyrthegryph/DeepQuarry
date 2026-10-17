@@ -8,13 +8,24 @@
 
 	var/input
 	if(!message)
-		var/_answer_k11 = rerun_ask(src, "k11", PROC_REF(custom_emote), args, /datum/prompt/text, question = "Choose an emote to display.")
-		if(isnull(_answer_k11))
-			return
-		input = _answer_k11
-	else
-		input = message
+		open_request(src, /datum/prompt/text/custom_emote, PROC_REF(custom_emote_answered), answerer = src, question = "Choose an emote to display.", m_type = m_type, range = range, check_stat = check_stat)
+		return
+	input = message
 	process_normal_emote(m_type, input, input, range)
+
+/// The question for a custom emote typed by its mob: what the emote was called with.
+/datum/prompt/text/custom_emote
+	timeout = 0
+	var/m_type
+	var/range
+	var/check_stat
+
+/// The emote the mob typed: custom_emote() runs again with it (its checks are made again).
+/mob/proc/custom_emote_answered(datum/act/request/A)
+	var/datum/prompt/text/custom_emote/asked = A.answer
+	if(!asked || isnull(asked.value))
+		return
+	custom_emote(asked.m_type, asked.value, asked.range, asked.check_stat)
 
 /// This is the custom_emote that you'll want to use if you're forcing something to custom emote with no input from the mob.
 /// By default, we have a visible message, our range is world.view, and we do NOT check the stat.

@@ -35,7 +35,7 @@
 	if(isnull(new_data) || (istext(new_data) && !ic_is_ref(new_data)))
 		if(length(new_data) > 1)
 			return
-		data = new_data
+		set_data(new_data)
 		holder().on_data_written()
 
 // This makes the text go from "A" to "%".
@@ -43,7 +43,7 @@
 	if(!is_valid())
 		return
 	var/list/options = list("!","@","#","$","%","^","&","*") + GLOB.alphabet_upper
-	data = pick(options)
+	set_data(pick(options))
 	push_data()
 
 /datum/integrated_io/char/display_pin_type()

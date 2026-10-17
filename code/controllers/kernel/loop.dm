@@ -148,7 +148,7 @@ CAPABILITIES(/datum/controller/kernel)
 		//debug
 		if (Kernel.make_runtime)
 			var/datum/system/SS
-			SS.can_fire = 0
+			SS.set_can_fire(0)
 
 		if (!watchdog || (watchdog.processing_interval > 0 && (watchdog.lasttick+(watchdog.processing_interval*5)) < world.time)) // ALLOW(sys_world_time_expiry): the kernel loop's own bookkeeping (drift, restart rate limit), not an entity expiry
 			start_watchdog() // (re)start the watchdog

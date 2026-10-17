@@ -51,8 +51,8 @@ CAPABILITIES(/mob/living/simple_mob/fleshtaker)
 	set_mimic_icon(target.icon)
 	set_icon_living(target.icon_living)
 	set_icon_dead(target.icon_dead)
-	pixel_x = target.pixel_x
-	pixel_y = target.pixel_y
+	set_pixel_x(target.pixel_x)
+	set_pixel_y(target.pixel_y)
 	set_melee_damage_lower(target.melee_damage_lower)
 	set_melee_damage_upper(target.melee_damage_upper)
 	set_endurance(target.endurance)
@@ -69,8 +69,8 @@ CAPABILITIES(/mob/living/simple_mob/fleshtaker)
 	set_mimic_icon(null)
 	set_icon_living(base_values["icon_living"])
 	set_icon_dead(base_values["icon_dead"])
-	pixel_x = base_values["pixel_x"]
-	pixel_y = base_values["pixel_y"]
+	set_pixel_x(base_values["pixel_x"])
+	set_pixel_y(base_values["pixel_y"])
 	set_melee_damage_lower(base_values["melee_damage_lower"])
 	set_melee_damage_upper(base_values["melee_damage_upper"])
 	set_endurance(base_values["endurance"])

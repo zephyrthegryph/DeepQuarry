@@ -76,7 +76,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	prior_holder_type = H.holder_type
 	seq_extra_add(H, /datum/sequence/life, src)
 	current.on_enter(src, H)
-	H.invalidate_factors()
+	H.body?.sync_form_factors()
 
 /// Leaves the owner (was UnregisterFromParent).
 /datum/forms/proc/detach()
@@ -84,7 +84,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	seq_extra_remove(H, /datum/sequence/life, src)
 	if(current)
 		current.on_exit(src, H)
-	H.invalidate_factors()
+	H.body?.sync_form_factors()
 	clear_form_appearance(H)
 	remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.set_holder_type(prior_holder_type)
@@ -111,7 +111,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	old.on_exit(src, H)
 	rel_set(src, nameof(current), next)
 	next.on_enter(src, H)
-	H.invalidate_factors()
+	H.body?.sync_form_factors()
 	if(!silent)
 		next.announce_enter(H)
 	refresh_appearance()
@@ -246,7 +246,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 	var/scale_y = size_multiplier * icon_scale_y
 	M.Scale(scale_x, scale_y)
 	M.Translate(0, 16 * (scale_y - 1))
-	layer = MOB_LAYER
+	set_layer(MOB_LAYER)
 	if(instant)
 		transform = M
 	else

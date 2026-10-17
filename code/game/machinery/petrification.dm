@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/petrification)
 /obj/machinery/petrification/proc/tint_chosen(datum/act/op/A)
 	var/value = A.step_value("tint")
 	if(value)
-		tint = value
+		set_tint(value)
 
 /datum/prompt/text/statue_option
 	max_len = MAX_NAME_LEN

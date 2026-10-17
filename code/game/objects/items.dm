@@ -6,7 +6,6 @@
 	w_class = ITEMSIZE_NORMAL
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
@@ -95,8 +94,6 @@
 	var/digest_stage = null
 	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
-	var/tmp/image/d_stage_overlay //digest stage effects
-	var/tmp/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
 	var/gurgled = FALSE
 	var/oldname
 	var/cleanname
@@ -391,7 +388,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	// also safe -- it just keeps the item real a while longer, same as
 	// before C10 existed.
 	latent_unpin("equipped")
-	appearance_flags &= ~NO_CLIENT_COLOR
+	set_appearance_flags(appearance_flags & (~NO_CLIENT_COLOR))
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
 		action_item_has.Remove(user)
@@ -409,8 +406,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
 	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
 	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 	return
 
 // called when this item is removed from a storage item, which is passed on as S. The loc variable is already set to the new destination before this is called.
@@ -482,19 +479,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	return
 
 /obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	if(!M) return 0
-
-	if(!canremove)
-		return 0
-
-	if(!slot)
-		if(issilicon(M))
-			return 1 // for stuff in grippers
-		return 0
-
-	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
-		return 0
-	return 1
+	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
@@ -589,13 +574,21 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(dq_get_was_bloodied(src) && !dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
 		dq_set_blood_color(src, COLOR_LUMINOL)
-		if(blood_overlay)
-			blood_overlay.color = COLOR_LUMINOL
 
-/// TRUE for an item whose look draws its own stains (blood from the tracked blood colour and the forensics record, a vore gurgle from the tracked
-/// gurgled colour), so add_blood() and the gurgle code add no overlay of their own.
-/obj/item/proc/stains_in_look()
-	return FALSE
+/// An item shows its own blood and gurgle residue as layers of its look, drawn from the tracked blood colour, the forensics record and the gurgled state.
+/obj/item/draw(datum/look/look)
+	..()
+	look.watch(forensic_data)
+	if(forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	// Blood washed away still glows under a UV light: the light holds the item at fluorescent 2 while it scans it. An unlit item draws nothing here.
+	if(dq_get_fluorescent(src) == 2 && dq_get_was_bloodied(src) && !forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	if(gurgled)
+		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
+	// Digestion eats the item one quarter at a time: a layer of residue per stage.
+	for(var/stage in d_mult to 1 step 0.25)
+		look.overlay(item_digest_image(icon, icon_state, gurgled_color || "green"), when = d_mult < 1)
 
 /obj/item/add_blood(mob/living/carbon/human/M as mob)
 	if (!..())
@@ -604,39 +597,10 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(istype(src, /obj/item/melee/energy))
 		return
 
-	if(!stains_in_look())
-		//if we haven't made our blood_overlay already
-		if(!blood_overlay)
-			generate_blood_overlay()
-		else
-			overlays.Remove(blood_overlay)
-
-		//Make the blood_overlay have the proper color then apply it.
-		blood_overlay.color = dq_get_blood_color(src)
-		add_overlay(blood_overlay)
 	if(istype(M))
 		add_blooddna(M.dna,M)
 
 	return 1 //we applied blood to the item
-
-GLOBAL_LIST_EMPTY(blood_overlays_by_type)
-/obj/item/proc/generate_blood_overlay()
-	// Already got one
-	if(blood_overlay)
-		return
-
-	// Already cached
-	if(GLOB.blood_overlays_by_type[type])
-		blood_overlay = GLOB.blood_overlays_by_type[type]
-		return
-
-	// Firsties!
-	var/image/blood = image(icon = 'icons/effects/blood.dmi', icon_state = "itemblood") // Needs to be a new one each time since we're slicing it up with filters.
-	blood.filters += filter(type = "alpha", icon = icon(icon, icon_state)) // Same, this filter is unique for each blood overlay per type
-	GLOB.blood_overlays_by_type[type] = blood
-
-	// And finally
-	blood_overlay = blood
 
 /obj/item/proc/showoff(mob/user)
 	for (var/mob/M in view(user))
@@ -711,14 +675,14 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 //Used for selecting a random pixel placement, usually on initialize. Checks for pixel_x/y to not interfere with mapped in items.
 /obj/item/proc/randpixel_xy()
 	if(!pixel_x && !pixel_y)
-		pixel_x = rand(-randpixel, randpixel)
-		pixel_y = rand(-randpixel, randpixel)
+		set_pixel_x(rand(-randpixel, randpixel))
+		set_pixel_y(rand(-randpixel, randpixel))
 		return TRUE
 	else
 		return FALSE
 
 //Worn icon generation for on-mob sprites
-/obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
+/obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null, mob/living/carbon/human/wearer = null)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
 	if(istext(icon2use)) // a sheet named by its path: an image takes a file, not the text of one
@@ -748,8 +712,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
 	else
 		standing = image(icon = icon2use, icon_state = state2use)
-	standing.alpha = read_once(alpha) // the worn picture is made from the item's tint when it is made: a sampled read
-	standing.color = read_once(color)
+	standing.alpha = alpha
+	standing.color = color
 	standing.layer = layer2use
 
 	if(istype(clip_mask)) //For taur bodies/tails clipping off parts of uniforms and suits.
@@ -757,8 +721,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 	//Apply any special features
 	if(!inhands)
-		apply_blood(standing)			//Some items show blood when bloodied
-		apply_accessories(standing)		//Some items sport accessories like webbing
+		standing = apply_blood(standing, wearer)			//Some items show blood when bloodied
+		standing = apply_accessories(standing)		//Some items sport accessories like webbing
 
 	//Apply overlays to our...overlay
 	apply_overlays(standing)
@@ -881,7 +845,8 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	return standing_icon
 
 //STUB
-/obj/item/proc/apply_blood(image/standing)
+/// A garment shows the blood it carries in the mask of the one who wears it (the wearer, when the caller draws one; a hat on a robot has none).
+/obj/item/proc/apply_blood(image/standing, mob/living/carbon/human/wearer)
 	return standing
 
 //STUB
@@ -894,8 +859,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)
 	blocker_overlay.color = GLOB.em_block_color
-	standing.add_overlay(blocker_overlay)
-	return standing
+	return look_composed_image(standing, list(blocker_overlay))
 
 /obj/item/MouseEntered(location,control,params)
 	. = ..()
@@ -969,8 +933,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 			var/dist = sqrt((dist_x*dist_x)+(dist_y*dist_y))
 			animate(W, pixel_x=target_x, pixel_y=target_y,time=dist*0.5)
 		else
-			W.pixel_x = target_x
-			W.pixel_y = target_y
+			W.set_pixel_x(target_x)
+			W.set_pixel_y(target_y)
 
 #undef CELLS
 #undef CELLSIZE
@@ -1038,9 +1002,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 	animation_matrix.Turn(pick(-30, 30))
 	animation_matrix.Scale(0.7)
 
-	pixel_x = from_x
-	pixel_y = from_y
-	alpha = 0
+	set_pixel_x(from_x)
+	set_pixel_y(from_y)
+	set_alpha(0)
 	transform = animation_matrix
 
 	animate(src, alpha = old_alpha, pixel_x = old_x, pixel_y = old_y, transform = old_transform, time = 3, easing = CUBIC_EASING)

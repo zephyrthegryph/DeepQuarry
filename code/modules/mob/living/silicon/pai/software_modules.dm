@@ -176,16 +176,16 @@ CAPABILITIES(/datum/pai_software/med_records)
 		var/datum/data/record/R = record
 		var/datum/data/record/M = null
 		if (!( GLOB.data_core.general.Find(R) ))
-			P.medical_cannotfind = 1
+			P.set_medical_cannotfind(1)
 		else
-			P.medical_cannotfind = 0
+			P.set_medical_cannotfind(0)
 			for(var/datum/data/record/E in GLOB.data_core.medical)
 				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 					M = E
 			rel_set(P, nameof(/mob/living/silicon/pai::medicalActive1), R)
 			rel_set(P, nameof(/mob/living/silicon/pai::medicalActive2), M)
 	else
-		P.medical_cannotfind = 1
+		P.set_medical_cannotfind(1)
 	return 1
 
 /datum/pai_software/sec_records
@@ -229,9 +229,9 @@ CAPABILITIES(/datum/pai_software/sec_records)
 		if (!( GLOB.data_core.general.Find(R) ))
 			rel_clear(P, nameof(/mob/living/silicon/pai::securityActive1))
 			rel_clear(P, nameof(/mob/living/silicon/pai::securityActive2))
-			P.security_cannotfind = 1
+			P.set_security_cannotfind(1)
 		else
-			P.security_cannotfind = 0
+			P.set_security_cannotfind(0)
 			for(var/datum/data/record/E in GLOB.data_core.security)
 				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 					S = E
@@ -240,7 +240,7 @@ CAPABILITIES(/datum/pai_software/sec_records)
 	else
 		rel_clear(P, nameof(/mob/living/silicon/pai::securityActive1))
 		rel_clear(P, nameof(/mob/living/silicon/pai::securityActive2))
-		P.security_cannotfind = 1
+		P.set_security_cannotfind(1)
 	return TRUE
 
 /datum/pai_software/door_jack
@@ -286,7 +286,7 @@ CAPABILITIES(/datum/pai_software/door_jack)
 	var/mob/user = A.actor
 	var/mob/living/silicon/pai/P = user
 	var/turf/T = get_turf(P)
-	P.hack_aborted = 0
+	P.set_hack_aborted(0)
 	rel_set(P, nameof(/mob/living/silicon/pai::cable), new /obj/item/pai_cable(T))
 	for(var/mob/M in viewers(T))
 		M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
@@ -302,8 +302,8 @@ CAPABILITIES(/datum/pai_software/door_jack)
 			to_chat(AI, span_bolddanger("Network Alert: Brute-force encryption crack in progress. Unable to pinpoint location."))
 	var/obj/machinery/door/D = cable.machine()
 	if(!istype(D))
-		hack_aborted = 1
-		hackprogress = 0
+		set_hack_aborted(1)
+		set_hackprogress(0)
 		rel_clear(cable, nameof(cable.machine))
 		rel_clear(src, nameof(hackdoor))
 		return
@@ -312,13 +312,13 @@ CAPABILITIES(/datum/pai_software/door_jack)
 /// One second of brute-forcing the door (its every() runs while hackdoor is set).
 /mob/living/silicon/pai/proc/hack_tick(datum/act/A)
 	if(cable && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
-		hackprogress = min(hackprogress+rand(1, 20), 1000)
+		set_hackprogress(min(hackprogress+rand(1, 20), 1000))
 	else
-		hack_aborted = 1
-		hackprogress = 0
+		set_hack_aborted(1)
+		set_hackprogress(0)
 		rel_clear(src, nameof(hackdoor))
 	if(hackprogress >= 1000)
-		hackprogress = 0
+		set_hackprogress(0)
 		hackdoor.open()
 		rel_clear(cable, nameof(cable.machine))
 		rel_clear(src, nameof(hackdoor))
@@ -449,7 +449,7 @@ CAPABILITIES(/datum/pai_software/signaller)
 	if(!istype(pai))
 		return
 	var/obj/item/radio/integrated/signal/R = pai.sradio
-	R.code = round(code)
+	R.set_code(round(code))
 	. = TRUE
 
 /datum/pai_software/signaller/proc/ui_act_reset(datum/act/op/A, reset)
@@ -461,7 +461,7 @@ CAPABILITIES(/datum/pai_software/signaller)
 	if(reset == "freq")
 		R.set_frequency(initial(R.frequency))
 	else
-		R.code = initial(R.code)
+		R.set_code(initial(R.code))
 	. = TRUE
 
 /datum/pai_software/deathalarm

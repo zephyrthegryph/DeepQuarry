@@ -162,7 +162,7 @@ SYSTEM_DEF(research)
 
 		if(techweb_list.last_income)
 			var/income_time_difference = ELAPSED(techweb_list, last_income, CLOCK_WORLD)
-			techweb_list.last_bitcoins = bitcoins  // Doesn't take tick drift into account
+			techweb_list.set_last_bitcoins(bitcoins)  // Doesn't take tick drift into account
 			for(var/i in bitcoins)
 				bitcoins[i] *= (income_time_difference / 10) * techweb_list.income_modifier
 			techweb_list.add_point_list(bitcoins)

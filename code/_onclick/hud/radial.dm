@@ -21,6 +21,14 @@ CAPABILITIES(/atom/movable/screen/radial)
 	var/choice
 	var/next_page = FALSE
 	var/tooltips = FALSE
+	/// The choice's picture (an icon_state, image or icon), drawn over the slice.
+	var/choice_icon
+
+/// The slice shows the next-page arrow, or its choice's picture.
+/atom/movable/screen/radial/slice/draw(datum/look/look)
+	..()
+	look.overlay("radial_next", when = next_page)
+	look.overlay(choice_icon)
 
 /atom/movable/screen/radial/slice/set_parent(new_value)
 	. = ..()
@@ -193,7 +201,7 @@ CAPABILITIES(/datum/radial_menu)
 
 	LAZYSET(page_data, page, current)
 	pages = page
-	current_page = clamp(set_page, 1, pages)
+	set_current_page(clamp(set_page, 1, pages))
 	update_screen_objects(entry_animation, click_on_hover)
 
 /datum/radial_menu/proc/update_screen_objects(anim = FALSE, click_on_hover = FALSE)
@@ -216,14 +224,14 @@ CAPABILITIES(/datum/radial_menu)
 				element.click_on_hover = TRUE
 
 /datum/radial_menu/proc/HideElement(atom/movable/screen/radial/slice/E)
-	E.cut_overlays()
+	E.set_choice_icon(null)
 	E.vis_contents.Cut()
-	E.alpha = 0
+	E.set_alpha(0)
 	E.name = "None"
 	E.maptext = null
 	E.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	E.choice = null
-	E.next_page = FALSE
+	E.set_next_page(FALSE)
 
 /datum/radial_menu/proc/SetElement(atom/movable/screen/radial/slice/E,choice_id,angle,anim,anim_order)
 	//Position
@@ -237,19 +245,18 @@ CAPABILITIES(/datum/radial_menu)
 		var/matrix/TM = matrix()
 		animate(E,pixel_x = px,pixel_y = py, transform = TM, time = timing)
 	else
-		E.pixel_y = py
-		E.pixel_x = px
+		E.set_pixel_y(py)
+		E.set_pixel_x(px)
 
 	//Visuals
-	E.alpha = 255
+	E.set_alpha(255)
 	E.mouse_opacity = MOUSE_OPACITY_ICON
-	E.cut_overlays()
+	E.set_choice_icon(null)
 	E.vis_contents.Cut()
 	if(choice_id == NEXT_PAGE_ID)
 		E.name = "Next Page"
-		E.next_page = TRUE
+		E.set_next_page(TRUE)
 		E.set_icon_state("radial_slice") // Resets the bg icon state to the default for next page buttons.
-		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.
 		var/datum/radial_menu_choice/choice_datum = LAZYACCESS(choice_datums, choice_id)
@@ -265,13 +272,12 @@ CAPABILITIES(/datum/radial_menu)
 			E.name = AM.name
 		E.choice = choice_id
 		E.maptext = null
-		E.next_page = FALSE
-		if(LAZYACCESS(choices_icons, choice_id))
-			E.add_overlay(LAZYACCESS(choices_icons, choice_id))
+		E.set_next_page(FALSE)
+		E.set_choice_icon(LAZYACCESS(choices_icons, choice_id))
 		if (choice_datum?.info)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
-			info_button.plane = PLANE_PLAYER_HUD_ABOVE
-			info_button.layer = RADIAL_CONTENT_LAYER
+			info_button.set_plane(PLANE_PLAYER_HUD_ABOVE)
+			info_button.set_layer(RADIAL_CONTENT_LAYER)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
@@ -283,7 +289,7 @@ CAPABILITIES(/datum/radial_menu)
 	LAZYCLEARLIST(choices_icons)
 	LAZYCLEARLIST(choices_values)
 	LAZYCLEARLIST(choice_datums)
-	current_page = 1
+	set_current_page(1)
 
 /datum/radial_menu/proc/element_chosen(choice_id,mob/user)
 	selected_choice = LAZYACCESS(choices_values, choice_id)
@@ -322,7 +328,7 @@ CAPABILITIES(/datum/radial_menu)
 
 /datum/radial_menu/proc/next_page()
 	if(pages > 1)
-		current_page = WRAP(current_page + 1,1,pages+1)
+		set_current_page(WRAP(current_page + 1,1,pages+1))
 		update_screen_objects()
 
 /datum/radial_menu/proc/show_to(mob/M, offset_x = 0, offset_y = 0)

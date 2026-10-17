@@ -224,7 +224,7 @@
 	rc_click(H, patient, B, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_borg_units(B, id), 25, "one transfer (5) is made")
 	TEST_ASSERT(rc_blood_units(patient) > before, "and is in the patient")
-	B.reagent_volumes[id] = 3
+	B.set_reagent_volumes_at(id, 3)
 	var/after = rc_blood_units(patient)
 	rc_click(H, patient, B, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_borg_units(B, id), 3, "a store with less than a transfer gives nothing")
@@ -283,8 +283,8 @@
 	var/obj/item/reagent_containers/borghypo/service/S = allocate(/obj/item/reagent_containers/borghypo/service)
 	var/obj/item/reagent_containers/glass/beaker/B = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
 	S.set_saved_recipes(list("mix" = list(list("id" = REAGENT_ID_WATER, "amount" = 5), list("id" = REAGENT_ID_SUGAR, "amount" = 10))))
-	S.selected_recipe_id = "mix"
-	S.is_dispensing_recipe = TRUE
+	S.set_selected_recipe_id("mix")
+	S.set_is_dispensing_recipe(TRUE)
 	rc_click(H, B, S)
 	TEST_ASSERT_EQUAL(rc_units(B), 15, "both steps are in the beaker")
 	TEST_ASSERT(B.reagents.has_reagent(REAGENT_ID_WATER, 5), "the water")

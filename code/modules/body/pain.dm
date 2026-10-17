@@ -16,7 +16,7 @@
 /mob/living/carbon/proc/custom_pain(message, power, force)
 	if(!body)
 		return 0
-	if((!message || stat || !can_feel_pain() || factor(BF_ANALGESIA) > power) && !synth_cosmetic_pain)
+	if((!message || stat || !can_feel_pain() || src.analgesia > power) && !synth_cosmetic_pain)
 		return 0
 	message = span_danger("[message]")
 	if(power >= 50)
@@ -99,7 +99,7 @@ STAT(/mob/living/carbon/human, pain_felt, ANY)
 	// D22: the species scaling applies once, after the pick (inside the loop it compared scaled
 	// against unscaled damage), and the level is rounded so fractions still hit a message band.
 	maxdam = round(maxdam * (self.species ? self.species.trauma_mod : 1))
-	if(damaged_organ && self.factor(BF_ANALGESIA) < maxdam)
+	if(damaged_organ && self.analgesia < maxdam)
 		if(maxdam > 10 && self.has_status(STAT_PARALYZED))
 			self.status_adjust(STAT_PARALYZED, -round(maxdam/10))
 		if(maxdam > 50 && prob(maxdam / 5))

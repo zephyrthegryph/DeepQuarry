@@ -266,7 +266,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
 	detach()
 
 /obj/item/mecha_parts/mecha_equipment/proc/set_ready_state(state)
-	equip_ready = state
+	set_equip_ready(state)
 	if(chassis)
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return

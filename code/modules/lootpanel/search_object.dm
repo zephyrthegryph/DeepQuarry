@@ -61,7 +61,7 @@ CAPABILITIES(/datum/search_object)
 
 /// Generates the icon for the search object. This is the expensive part.
 /datum/search_object/proc/generate_icon(client/owner)
-	icon = costly_icon2html(item(), owner, sourceonly = TRUE)
+	set_icon(costly_icon2html(item(), owner, sourceonly = TRUE))
 
 /// Parent item has been altered, search object no longer valid
 /datum/search_object/proc/on_item_moved(datum/act/notice/N)

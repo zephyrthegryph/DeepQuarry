@@ -128,17 +128,17 @@
 /datum/reagent/paint/touch_turf(turf/T)
 	..()
 	if(istype(T) && !istype(T, /turf/space))
-		T.color = color
+		T.set_color(color)
 
 /datum/reagent/paint/touch_obj(obj/O)
 	..()
 	if(istype(O))
-		O.color = color
+		O.set_color(color)
 
 /datum/reagent/paint/touch_mob(mob/M)
 	..()
 	if(istype(M) && !istype(M, /mob/observer)) //painting ghosts: not allowed
-		M.color = color //maybe someday change this to paint only clothes and exposed body parts for human mobs.
+		M.set_color(color) //maybe someday change this to paint only clothes and exposed body parts for human mobs.
 
 /datum/reagent/paint/get_data()
 	return color
@@ -178,7 +178,7 @@
 /datum/reagent/adminordrazine //An OP chemical for admins
 	// Admin magic: restores every biology, surgical lesions included.
 	treatment_tags = list(TREAT_RESTORATION = DQ_CHEM_DOSE_CAP)
-	factors = alist(BF_ANALGESIA = 200, BF_STABILIZATION = 15, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
+	factors = alist(STAT_ANALGESIA = 200, STAT_STABILIZATION = 15, STAT_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_ADMINORDRAZINE
 	id = REAGENT_ID_ADMINORDRAZINE
 	description = "It's magic. We don't have to explain it."
@@ -798,7 +798,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 	// Clog the lungs' exchange surfaces.
-	factors = alist(BF_GAS_EXCHANGE = 0.5)
+	factors = alist(STAT_GAS_EXCHANGE = 0.5)
 
 /datum/reagent/defective_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure_many(alist(

@@ -8,6 +8,8 @@
 //!
 //! * `stat_input_untracked`: a condition, requirement, output or contribution handler reads untracked state.
 //! * `draw_untracked`: a draw() reads untracked state.
+//! * `sampled_in_look`: a draw, a stat contribution or a STAT formula (or a proc one reaches) wraps a read in `read_once()`. A sample is taken
+//!   once and never follows, so a look or a stat built from it goes stale: track the var, declare the relation or publish the key instead.
 //! * `leaf_untracked`: a CAPABILITIES block names an untracked var as a stat input (`nameof(v)` in contributes()/contributes_to() or a when()
 //!   around one).
 //!
@@ -27,6 +29,7 @@ use crate::tree::CODE_DM;
 
 const H_STAT: &str = "make the var TRACKED (write it through set_<var>()), declare the relation, or publish a READS_AS key where it changes: a stat reading it recomputes on every read";
 const H_DRAW: &str = "make the var TRACKED (write it through set_<var>()), declare the relation, or publish a READS_AS key where it changes: the look cannot follow it";
+const H_SAMPLED: &str = "a draw or a stat input must not read_once(): track the var (write it through set_<var>()), declare the relation, or publish a READS_AS key";
 const H_LEAF: &str = "make the var TRACKED and write it through its setter: a stat whose input never publishes recomputes on every read";
 
 static META: Meta = Meta {
@@ -40,6 +43,7 @@ static META: Meta = Meta {
     rules: &[
         RuleMeta { name: "stat_input_untracked", hint: H_STAT },
         RuleMeta { name: "draw_untracked", hint: H_DRAW },
+        RuleMeta { name: "sampled_in_look", hint: H_SAMPLED },
         RuleMeta { name: "leaf_untracked", hint: H_LEAF },
     ],
     allow: &["untracked_inputs"],
@@ -85,6 +89,17 @@ impl Lint for UntrackedInputs {
             let reader = sem.as_ref().map(|s| s.reader_ident(rel, *line)).unwrap_or_else(|| "?".to_string());
             let read = if owner.is_empty() { what.clone() } else { format!("{owner}::{what}") };
             put(out, rule, rel, *line, format!("{reader} reads {read}"), format!("{}{} reads `{}`, which nothing publishes", ids[0], more, what));
+        }
+        let mut sampled: std::collections::BTreeMap<(String, u32), Vec<&String>> = std::collections::BTreeMap::new();
+        for (id, at) in &an.sampled {
+            for site in at {
+                sampled.entry(site.clone()).or_default().push(id);
+            }
+        }
+        for ((rel, line), ids) in &sampled {
+            let more = if ids.len() > 1 { format!(" (and {} more)", ids.len() - 1) } else { String::new() };
+            let reader = sem.as_ref().map(|s| s.reader_ident(rel, *line)).unwrap_or_else(|| "?".to_string());
+            put(out, "sampled_in_look", rel, *line, format!("{reader} samples"), format!("{}{} reaches a read_once(), which a look or a stat input must not sample", ids[0], more));
         }
         for l in &an.leaves {
             put(out, "leaf_untracked", &l.rel, l.line, format!("{}::{}", l.owner, l.var), format!("{} names `{}` as a stat input, and nothing publishes it", l.owner, l.var));

@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/eggsac/grey/colormatch)
 /obj/item/organ/internal/xenos/eggsac/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 /obj/item/organ/internal/xenos/plasmavessel
 	name = "plasma vessel"
@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch)
 /obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 /obj/item/organ/internal/xenos/plasmavessel/queen
 	name = "bloated plasma vessel"
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/acidgland/grey/colormatch)
 /obj/item/organ/internal/xenos/acidgland/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 /obj/item/organ/internal/xenos/hivenode
 	name = "hive node"
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/hivenode/grey/colormatch)
 /obj/item/organ/internal/xenos/hivenode/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 /obj/item/organ/internal/xenos/resinspinner
 	name = "resin spinner"
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch)
 /obj/item/organ/internal/xenos/resinspinner/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 
 // XENOMORPH EXTERNAL ORGANS

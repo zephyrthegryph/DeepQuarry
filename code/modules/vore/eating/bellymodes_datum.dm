@@ -240,10 +240,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 			var/obj/item/storage/vore_egg/EG = E
 			if(EG.egg_name != B.egg_name)
 				if(!B.egg_name)
-					EG.egg_name = null
+					EG.set_egg_name(null)
 					EG.name = initial(EG.name)
 				else
-					EG.egg_name = B.egg_name
+					EG.set_egg_name(B.egg_name)
 					EG.name = B.egg_name
 			continue
 		if(isliving(E))

@@ -185,14 +185,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	return data
 
 /datum/controller/kernel/proc/ui_act_toggle_fast_update(datum/act/op/A)
-	overview_fast_update = !overview_fast_update
+	set_overview_fast_update(!overview_fast_update)
 	return TRUE
 
 /datum/controller/kernel/proc/ui_act_set_rolling_length(datum/act/op/A, rolling_length)
 	var/length = rolling_length
 	if(!length || length < 0)
 		return
-	rolling_usage_length = length SECONDS
+	set_rolling_usage_length(length SECONDS)
 	return TRUE
 
 /datum/controller/kernel/proc/ui_act_view_variables(datum/act/op/A, ref)

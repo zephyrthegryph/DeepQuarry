@@ -75,29 +75,29 @@ CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The enormous beast snaps it's boney jaws around your form, effortlessly lifting you from the ground. Throwing it's head backwards, your body is tossed up momentarily as the maw parts wider, only for you to descend rapidly moments later. You're caught in the creature's throat for a moment, contracting dark purple flesh holding tightly onto you, there's no going back at this point. The peristaltic motions squeeze you down this tunnel towards your final destination, where you're soon relieved of the intense squelching to be pushed into a move flexible, stretching chamber. Immediately coated in caustic oozes, the world around you seems more than eager to ensure that you're soaked over every inch, wrinkled walls twisting and grinding around your body. The drake's stomach clenches and compresses over you rhythmically, attempting to eagerly add you to the soup of fluids that fill this sloshing gut. Omnipresent sounds of groaning, gurgling and burbling bodily functions signify just how active this process already is."
-	B.vore_sound = "Tauric Swallow"
-	B.release_sound = "Pred Escape"
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.fancy_vore = 1
-	B.selective_preference = DM_DIGEST
-	B.vore_verb = "devour"
-	B.digest_brute = 3
-	B.digest_burn = 2
-	B.digest_oxy = 0
-	B.digestchance = 50
-	B.absorbchance = 0
-	B.escapechance = 3
+	B.set_vore_sound("Tauric Swallow")
+	B.set_release_sound("Pred Escape")
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_fancy_vore(1)
+	B.set_selective_preference(DM_DIGEST)
+	B.set_vore_verb("devour")
+	B.set_digest_brute(3)
+	B.set_digest_burn(2)
+	B.set_digest_oxy(0)
+	B.set_digestchance(50)
+	B.set_absorbchance(0)
+	B.set_escapechance(3)
 	B.escape_stun = 5
-	B.contamination_color = "grey"
-	B.contamination_flavor = "Wet"
+	B.set_contamination_color("grey")
+	B.set_contamination_flavor("Wet")
 	B.own_emote_lists()
-	B.emote_lists[DM_DIGEST] = list(
+	B.set_emote_lists_at(DM_DIGEST, list(
 		"The drake growls in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
 		"As the beast wanders about, you're forced to slip and slide around amidst a pool of thick digestive goop, sinking briefly into the thick, heavy walls!",
 		"You can barely hear the drake let out a pleased rumble as its stomach eagerly gurgles around its newfound meal!",
 		"As the thinning air begins to make you feel dizzy, menacing bworps and grumbles fill that dark, constantly shifting organ!",
 		"The constant, rhythmic kneading and massaging starts to take its toll along with the muggy heat, making you feel weaker and weaker!",
-		"The drake happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it. Not like it made much of a difference on his already borderline obese form anyway~")
+		"The drake happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it. Not like it made much of a difference on his already borderline obese form anyway~"))
 
 /mob/living/simple_mob/vore/cryptdrake/do_special_attack(atom/A, stance)	//Mostly copied from hunter.dm
 	if(!isliving(A))

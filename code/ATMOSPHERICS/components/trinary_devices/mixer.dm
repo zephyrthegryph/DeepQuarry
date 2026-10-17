@@ -43,8 +43,8 @@
 /obj/machinery/atmospherics/trinary/mixer/push_to_rust()
 	if(QDELETED(src))
 		return
-	last_power_draw = 0
-	last_flow_rate = 0
+	set_last_power_draw(0)
+	set_last_flow_rate(0)
 	if(!operable() || !use_power || !node1 || !node2 || !node3) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		rust_unregister_device_n("in1")
 		rust_unregister_device_n("in2")
@@ -56,10 +56,10 @@
 
 /// A step's result: the moles the group moved and the power it drew, billed.
 /obj/machinery/atmospherics/trinary/mixer/rust_device_stepped(moles, power_w, target_reached)
-	last_power_draw = power_w
+	set_last_power_draw(power_w)
 	if(power_w > 0)
 		use_power(power_w)
-	last_flow_rate = moles
+	set_last_flow_rate(moles)
 
 /// A port bound: its region exists in Rust, so the legs can be registered once the last one is.
 /obj/machinery/atmospherics/trinary/mixer/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)

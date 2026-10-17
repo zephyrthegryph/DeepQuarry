@@ -25,10 +25,10 @@
 
 	rel_clear(src, nameof(securityActive1))
 	rel_clear(src, nameof(securityActive2))
-	security_cannotfind = 0
+	set_security_cannotfind(0)
 	rel_clear(src, nameof(medicalActive1))
 	rel_clear(src, nameof(medicalActive2))
-	medical_cannotfind = 0
+	set_medical_cannotfind(0)
 	SStgui.update_uis(src)
 	to_chat(src, span_notice("You reset your record-viewing software."))
 
@@ -68,7 +68,7 @@
 /mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	gender = A.answer.value
+	set_gender(A.answer.value)
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"

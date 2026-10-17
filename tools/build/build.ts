@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { execLowPriority } from './lib/low_priority';
 import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
@@ -89,7 +90,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { dmbcCacheDir, dmbcCacheKey, restoreDmbc, storeDmbc } from './lib/dmbc_cache';
+import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, pruneDmbcVersions, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -99,6 +100,13 @@ const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
 
 export const DME_NAME = 'deepquarry';
+
+/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1 (merge gates, push), CI, or by request. */
+function dreamCheckerWanted(): boolean {
+  const explicit = process.env.DQ_DREAMCHECKER;
+  if (explicit !== undefined && explicit !== '') return explicit !== '0';
+  return !!process.env.CI && process.env.CI !== '0' && process.env.CI !== 'false';
+}
 
 function findDreamChecker(): string | null {
   const candidates = [
@@ -839,8 +847,10 @@ export const AnalyzeTarget = new Juke.Target({
 });
 
 /** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
-const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
-const DMBD_EXE = DMBC_EXE.replace(/dmbc(\.exe)?$/, 'dmbd$1');
+// Every checkout runs the one shared binary (E:/dq-cache/dmb-bin, a published copy), never a per-worktree copy: one compiler
+// identity is one resident daemon. DQ_DMBC_BIN runs an explicit executable instead and nothing here rebuilds it.
+const DMBC_EXE = sharedDmbcExe('dmbc');
+const DMBD_EXE = sharedDmbcExe('dmbd');
 // A fresh worktree copies the compiler from the shared content-addressed cache (lib/dmbc_cache.ts) instead of
 // running cargo; a build with inputs that differ from HEAD bypasses it and stores nothing.
 let dmbcPendingStore: { cache: string; key: string; commit: string } | null = null;
@@ -854,8 +864,9 @@ const dmbcCacheHit = (): boolean => {
     return false;
   }
   try {
-    if (restoreDmbc(cache, k.key, DMBC_EXE, DMBD_EXE)) {
+    if (restoreDmbc(cache, k.key)) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
+      pruneDmbcVersions();
       return true;
     }
   } catch (error) {
@@ -870,7 +881,7 @@ const storeDmbcBuild = (): void => {
   if (!pending) return;
   dmbcPendingStore = null;
   try {
-    storeDmbc(pending.cache, pending.key, pending.commit, DMBC_EXE, DMBD_EXE);
+    storeDmbc(pending.cache, pending.key, pending.commit, sharedDmbcExe('dmbc'), sharedDmbcExe('dmbd'));
     Juke.logger.info(`dmbc cache: stored ${pending.key}`);
   } catch (error) {
     Juke.logger.warn(`dmbc cache: store failed: ${error instanceof Error ? error.message : error}`);
@@ -878,7 +889,7 @@ const storeDmbcBuild = (): void => {
 };
 export const DmbcTarget = new Juke.Target({
   // An explicit compiler is never rebuilt here; a shared-cache hit needs no cargo.
-  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcCacheHit(),
+  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcBinOverride() && !dmbcCacheHit(),
   inputs: [
     'tools/dmb/Cargo.toml',
     'tools/dmb/Cargo.lock',
@@ -887,36 +898,47 @@ export const DmbcTarget = new Juke.Target({
     'tools/dmb/crates/**/Cargo.toml',
     'tools/dmb/crates/**/*.rs',
   ],
-  outputs: [DMBC_EXE],
+  outputs: [sharedDmbcPointer()],
   executes: async () => {
-    // Windows will not let cargo replace an executable a resident dmbc daemon is still running ("failed to remove file ...
-    // dmbc.exe: Access is denied"), but it does let the running file be renamed. Move the old one aside, and sweep the aside
-    // copies of earlier builds that no daemon holds any more.
-    const exeDir = path.dirname(DMBC_EXE);
-    const exeName = path.basename(DMBC_EXE);
-    for (const entry of fs.existsSync(exeDir) ? fs.readdirSync(exeDir) : []) {
-      if (!entry.startsWith(`${exeName}.old-`)) continue;
+    // Cargo builds in a private target and the result is published as an immutable version (lib/dmbc_cache.ts publishDmbcVersion):
+    // a compile that is running keeps the version it started with. Sweep the aside copies the old in-place publication left.
+    const binDir = sharedDmbcBinDir();
+    for (const entry of fs.existsSync(binDir) ? fs.readdirSync(binDir) : []) {
+      if (!entry.includes('.old-')) continue;
       try {
-        fs.rmSync(`${exeDir}/${entry}`);
+        fs.rmSync(`${binDir}/${entry}`);
       } catch {
         // still running under a daemon; try again on the next build
-      }
-    }
-    if (fs.existsSync(DMBC_EXE)) {
-      try {
-        fs.renameSync(DMBC_EXE, `${DMBC_EXE}.old-${Date.now()}`);
-      } catch (error) {
-        Juke.logger.warn(`dmbc: could not move the previous ${DMBC_EXE} aside (${error}); cargo may fail to replace it`);
       }
     }
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
-    if (fs.existsSync(slots)) {
-      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo]);
-    } else {
-      await Juke.exec(cargo[0], cargo.slice(1));
+    const target = sharedDmbcBuildTarget();
+    const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
+      fs.existsSync(slots)
+        ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
+        : Juke.exec(args[0], args.slice(1), { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false });
+    let result = await runCargo(cargo);
+    if (result.code !== 0 && staleCargoArtifactSignature(result.combined ?? '')) {
+      // The one shared target is written by builds of different checkouts and revisions. A compile error that says a method or item
+      // that exists in the source is missing ("no method named evict_to_budget") is stale incremental or fingerprint state, not a
+      // code error: drop the workspace crates' artifacts and the incremental cache and build once more, non-incrementally.
+      Juke.logger.warn('dmbc: the cargo build failed with a stale-artifact signature; cleaning the workspace crates and retrying once');
+      const meta = spawnSync('cargo', ['metadata', '--no-deps', '--format-version', '1', '--manifest-path', 'tools/dmb/Cargo.toml'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARGO_TARGET_DIR: target } });
+      let names: string[] = [];
+      try {
+        names = (JSON.parse(meta.stdout).packages as { name: string }[]).map((pkg) => pkg.name);
+      } catch {
+        // no metadata: the incremental directory removal below still applies
+      }
+      fs.rmSync(`${target}/release/incremental`, { recursive: true, force: true });
+      if (names.length) await runCargo(['cargo', 'clean', '--release', '--manifest-path', 'tools/dmb/Cargo.toml', ...names.flatMap((n) => ['-p', n])]);
+      result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
+    if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
+    publishDmbc(`${sharedDmbcBuildTarget()}/release`);
+    pruneDmbcVersions();
     storeDmbcBuild();
   },
 });
@@ -973,8 +995,13 @@ export const DmTarget = new Juke.Target({
     // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
     // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
     // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
-    const checker = findDreamChecker();
-    if (!checker) {
+    // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
+    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script, CI
+    // and the explicit lint target run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
+    const checker = dreamCheckerWanted() ? findDreamChecker() : null;
+    if (!dreamCheckerWanted()) {
+      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); the merge gates, CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
+    } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
     const results = await Promise.allSettled([
@@ -1119,12 +1146,24 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
   if (native) fs.rmSync(cacheFile, { force: true });
   let output: CompiledOutput;
   try {
-    output = await DreamMaker(dme, {
-      defines: allDefines,
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: dmVersion,
-    });
+    const compile = () =>
+      DreamMaker(dme, {
+        defines: allDefines,
+        warningsAsErrors: get(WarningParameter).includes('error'),
+        ignoreWarningCodes: get(NoWarningParameter),
+        namedDmVersion: dmVersion,
+      });
+    // Concurrent worlds (look-pin shards) compile one manifest. The daemon lets a newer request for a project
+    // supersede an older one ("build superseded before publication", exit 75), so overlapping native compiles of the
+    // same manifest cancel each other. Serialize them per manifest; the later one is an unchanged-session hit.
+    output = native
+      ? await withSlot(
+          `native_${createHash('sha1').update(path.resolve(dme).toLowerCase()).digest('hex').slice(0, 12)}`,
+          `native compile ${dme}`,
+          compile,
+          (m) => Juke.logger.info(m),
+        )
+      : await compile();
   } catch (error) {
     // Don't leave a half-built derived dme/rsc lying around after a failed compile.
     // A failed native build leaves the previous published generation and its
@@ -3380,7 +3419,7 @@ async function runDreamChecker(): Promise<void> {
   // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
   // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme
   // under a parallel test compile (EBUSY on Windows). Nothing is renamed or written now.
-  await Juke.exec(dreamChecker, ['-e', `${DME_NAME}.dme`]);
+  await execLowPriority(dreamChecker, ['-e', `${DME_NAME}.dme`]);
 }
 
 export const TguiDevTarget = new Juke.Target({

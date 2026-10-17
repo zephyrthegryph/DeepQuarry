@@ -379,14 +379,11 @@ CAPABILITIES(/obj/item/stack/lightpole)
 	catalogue_data = list(/datum/category_item/catalogue/material/trail_blazer)
 
 CAPABILITIES(/obj/structure/trailblazer)
+	setup(PROC_REF(set_beacon_glow))
 	climb()
 	op("hand", hand(), ungated(), label("Use"), wait(8 SECONDS), then(PROC_REF(knock_down_done)))
 
-/obj/structure/trailblazer/Initialize(mapload)
-	. = ..()
-	set_color()
-
-/obj/structure/trailblazer/proc/set_color()
+/obj/structure/trailblazer/proc/set_beacon_glow()
 	set_icon_state("redtrail_light_on")
 	set_glow(src, GLOW(2, 2, "#FF0000"))
 
@@ -407,7 +404,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 	icon_state = "bluetrail_light_on"
 	stack_type = /obj/item/stack/lightpole/blue
 
-/obj/structure/trailblazer/blue/set_color()
+/obj/structure/trailblazer/blue/set_beacon_glow()
 	set_icon_state("bluetrail_light_on")
 	set_glow(src, GLOW(2, 2, "#C4FFFF"))
 
@@ -417,7 +414,7 @@ CAPABILITIES(/obj/structure/trailblazer)
 	icon_state = "yellowtrail_light_on"
 	stack_type = /obj/item/stack/lightpole/yellow
 
-/obj/structure/trailblazer/yellow/set_color()
+/obj/structure/trailblazer/yellow/set_beacon_glow()
 	set_icon_state("yellowtrail_light_on")
 	set_glow(src, GLOW(2, 2, "#ffea00"))
 

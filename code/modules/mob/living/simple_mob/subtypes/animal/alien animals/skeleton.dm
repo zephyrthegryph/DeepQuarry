@@ -92,12 +92,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You're not sure quite how, but you've found your way inside of the skeleton's stomach! It's cramped and cold and sounds heavily of xylophones!"
-	B.mode_flags = 40
-	B.digest_brute = 0.5
-	B.digest_burn = 0.5
-	B.digestchance = 10
-	B.absorbchance = 0
-	B.escapechance = 25
+	B.set_mode_flags(40)
+	B.set_digest_brute(0.5)
+	B.set_digest_burn(0.5)
+	B.set_digestchance(10)
+	B.set_absorbchance(0)
+	B.set_escapechance(25)
 
 /mob/living/simple_mob/vore/alienanimals/skeleton
 

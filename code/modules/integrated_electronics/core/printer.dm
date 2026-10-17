@@ -22,7 +22,7 @@
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
 	if(!queued_assembly())
-		is_printing = FALSE
+		set_is_printing(FALSE)
 		return
 
 	// Drop the assembly on the ground
@@ -32,8 +32,8 @@
 
 	// Clear printing state
 	rel_clear(src, nameof(queued_assembly))
-	is_printing = FALSE
-	print_end_time = 0
+	set_is_printing(FALSE)
+	set_print_end_time(0)
 
 /obj/item/integrated_circuit_printer/all_upgrades
 	upgraded = TRUE
@@ -80,14 +80,14 @@
 				return OP_PASS
 			if(stack.use(max(1, round(num)))) // We don't want to create stacks that aren't whole numbers
 				to_chat(user, span_notice("You add [num] sheet\s to \the [src]."))
-				metal += num * metal_per_sheet
+				set_metal(metal + (num * metal_per_sheet))
 				attack_self(user)
 				return TRUE
 
 	if(istype(O,/obj/item/integrated_circuit))
 		to_chat(user, span_notice("You insert the circuit into \the [src]."))
 		user.unEquip(O)
-		metal = min(metal + O.w_class, max_metal)
+		set_metal(min(metal + O.w_class, max_metal))
 		consume(O, user)
 		attack_self(user)
 		return TRUE
@@ -97,7 +97,7 @@
 			to_chat(user, span_warning("\The [src] already has this upgrade."))
 			return TRUE
 		to_chat(user, span_notice("You install \the [O] into  \the [src]."))
-		upgraded = TRUE
+		set_upgraded(TRUE)
 		dirty_items = TRUE
 		attack_self(user)
 		return TRUE
@@ -117,7 +117,7 @@
 			to_chat(user, span_warning("\The [src] already has this upgrade."))
 			return TRUE
 		to_chat(user, span_notice("You install \the [O] into  \the [src]."))
-		can_clone = TRUE
+		set_can_clone(TRUE)
 		attack_self(user)
 		return TRUE
 
@@ -264,7 +264,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 		if(metal - cost < 0)
 			to_chat(user, span_warning("You need [cost] metal to build that!."))
 			return 1
-		metal -= cost
+		set_metal(metal - cost)
 	var/obj/item/built = new build_type(get_turf(loc))
 	user.put_in_hands(built)
 	to_chat(user, span_notice("[capitalize(built.name)] printed."))
@@ -472,7 +472,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 		return
 
 	if(!debug)
-		metal = max(0, metal - (total_cost / 2))
+		set_metal(max(0, metal - (total_cost / 2)))
 
 	// Calculate printing time based on actual complexity (1 minute per 120 complexity = 5 deciseconds per complexity)
 	var/print_time = total_complexity * 5
@@ -482,7 +482,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	if(!assembly)
 		to_chat(user, span_warning("Failed to create assembly!"))
 		if(!debug)
-			metal += total_cost
+			set_metal(metal + total_cost)
 		return
 
 	// Add components to assembly
@@ -491,7 +491,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 		to_chat(user, span_warning("Failed to add components to assembly! No components were created."))
 		spent(assembly, user)
 		if(!debug)
-			metal += total_cost
+			set_metal(metal + total_cost)
 		return
 
 	// Restore wiring, and appearance
@@ -499,7 +499,7 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 
 	// Start the printing process
 	rel_set(src, nameof(queued_assembly), assembly)
-	is_printing = TRUE
+	set_is_printing(TRUE)
 	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
 	after(src, print_time, PROC_REF(finish_printing))

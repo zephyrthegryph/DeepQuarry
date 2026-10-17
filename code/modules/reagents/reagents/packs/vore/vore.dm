@@ -157,7 +157,7 @@
 	for(var/obj/belly/B as anything in M.vore_organs)
 
 		if(B.digest_mode == DM_ABSORB) //Turn off absorbing on bellies
-			B.digest_mode = DM_HOLD
+			B.set_digest_mode(DM_HOLD)
 
 		for(var/mob/living/P in B)
 			if(!P.absorbed)
@@ -215,7 +215,7 @@
 		M.status_adjust(STAT_STUNNED, 5) // stun accounting for crawl
 
 /datum/reagent/pain_enzyme
-	factors = alist(BF_ANALGESIA = -200)
+	factors = alist(STAT_ANALGESIA = -200)
 	name = REAGENT_PAINENZYME
 	id = REAGENT_ID_PAINENZYME
 	scannable = SCANNABLE_ADVANCED

@@ -121,7 +121,7 @@
 	var/list/before = current.Copy()
 	var/datum/act/op/A = new
 	A.actor = surgeon
-	A.key = surgery_op_key(/datum/surgical_step/treat/organ/suture)
+	A.set_key(surgery_op_key(/datum/surgical_step/treat/organ/suture))
 	H.surgery_interrupted(A)
 	TEST_ASSERT_NULL(H.surgery_record(surgeon), "the surgeon's record is dropped on interruption")
 	for(var/datum/affliction/A2 as anything in H.get_afflictions())

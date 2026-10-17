@@ -321,8 +321,8 @@
 /datum/unit_test/dq_wires_radio/Run()
 	var/turf/T = test_floor()
 	var/obj/item/radio/R = allocate(/obj/item/radio, T)
-	R.listening = TRUE
-	R.broadcasting = FALSE
+	R.set_listening(TRUE)
+	R.set_broadcasting(FALSE)
 	wbt_pulse(R, WIRE_RADIO_TRANSMIT)
 	TEST_ASSERT(R.broadcasting, "the transmit wire pulsed turns the mic on")
 	wbt_pulse(R, WIRE_RADIO_RECEIVER)

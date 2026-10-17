@@ -214,24 +214,22 @@
 	act_message(user, src, MSG_SELF(span_notice("You attach %T% to the wall.")), \
 		MSG_OTHERS("%U% attaches %T% to the wall."), \
 		MSG_BLIND(span_warningplain("You hear clicking.")))
-	if(isrobot(user)) //Robots cannot unequip/drop items, for Safety Reasons.
-		forceMove(T)
-	user.drop_item(T)
+	user.release_wall_assembly(src, T)
 	set_anchored(TRUE)
 	on_anchored()
 	switch(ndir)
 		if(NORTH)
-			pixel_y = -31
+			set_pixel_y(-31)
 		if(SOUTH)
-			pixel_y = 31
+			set_pixel_y(31)
 		if(EAST)
-			pixel_x = -31
+			set_pixel_x(-31)
 		if(WEST)
-			pixel_x = 31
+			set_pixel_x(31)
 
 /obj/item/electronic_assembly/wallmount/on_unanchored()
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 	..()
 
 /obj/item/electronic_assembly/wallmount/heavy

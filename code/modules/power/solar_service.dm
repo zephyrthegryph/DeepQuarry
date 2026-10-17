@@ -74,7 +74,7 @@ SYSTEM_DEF(solars)
 				return STEP_YIELD
 
 		// Update the controller
-		SC.connected_power = SC.solar_pending_sum
+		SC.set_connected_power(SC.solar_pending_sum)
 		SC.set_power_supply(SC.connected_power)
 		rel_remove(src, nameof(controller_run), SC)
 

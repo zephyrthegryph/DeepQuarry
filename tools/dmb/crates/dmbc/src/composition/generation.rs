@@ -47,6 +47,11 @@ pub(super) struct PatchSlot {
     fields: Option<crate::class_projection::FieldRecords>,
     base: Option<Arc<crate::body_patch::BodyPatchBase>>,
     image: Option<Arc<PatchImage>>,
+    /// Code rows spliced into `image` by body patches since the retained model's own encoding
+    /// (`model_anchor`, the hash of `current.encoded`). Applied to a copy of the model when a
+    /// structural patch needs it, so a body edit does not cost a model update.
+    model_rows: Vec<(usize, Arc<Vec<u32>>)>,
+    model_anchor: Option<u128>,
 }
 /// A single latest successful generation; no history or source authority retained.
 pub struct RetainedGeneration {
@@ -265,6 +270,8 @@ impl RetainedGeneration {
                 base: None,
                 image: None,
                 fields: None,
+                model_rows: Vec::new(),
+                model_anchor: None,
             };
         });
     }
@@ -278,6 +285,20 @@ impl RetainedGeneration {
     pub(crate) fn field_record(&self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId) -> Option<u32> {
         let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
         slot.fields.as_ref()?.0.get(&(owner, name)).copied()
+    }
+    /// Record the Variables-table records of vars a structural patch added, so
+    /// the next default patch can find them.
+    pub(crate) fn extend_field_records(&self, added: &[(dm_ir::SymbolId, dm_ir::SymbolId, u32)]) {
+        if added.is_empty() {
+            return;
+        }
+        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(fields) = slot.fields.as_mut() {
+            let map = Arc::make_mut(&mut fields.0);
+            for &(owner, name, record) in added {
+                map.insert((owner, name), record);
+            }
+        }
     }
     /// Default-edit patch: replace Variables-table values in the retained
     /// image (see `crate::body_patch::try_default_patch`). The base advances
@@ -325,9 +346,46 @@ impl RetainedGeneration {
                     rows: patched,
                     proc_code: Arc::clone(&image.proc_code),
                 }));
+                // The retained model was replaced (or released) above.
+                slot.model_rows.clear();
+                slot.model_anchor = None;
                 Ok(encoded)
             })
             .unwrap_or_else(|| Err("generation attempt is not pending".into()))
+    }
+    /// Whether body patches since the model's encoding (`encoded`) account for the published image
+    /// `base_hash`: the model plus the rows in the patch slot describe that image.
+    fn rows_synced(&self, encoded: u128, base_hash: u128) -> bool {
+        let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        slot.model_anchor == Some(encoded)
+            && !slot.model_rows.is_empty()
+            && slot.base.as_ref().is_some_and(|base| base.dmb_hash() == base_hash)
+    }
+    /// A copy of the retained model that describes the published image `base_hash`: the model
+    /// itself when it does, else the model with the code rows body patches spliced since.
+    fn model_for(&self, base_hash: u128) -> Result<Dmb, String> {
+        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        let generation = current.as_ref().ok_or("retained model released")?;
+        let mut model = generation.inputs.model.clone();
+        if generation.encoded.content_hash() == base_hash {
+            return Ok(model);
+        }
+        if !self.rows_synced(generation.encoded.content_hash(), base_hash) {
+            return Err("retained model differs from the patch base".to_string());
+        }
+        let rows = self
+            .patch
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .model_rows
+            .clone();
+        let image = model
+            .patch_list_rows(&rows)
+            .map_err(|error| format!("retained model row sync: {error}"))?;
+        if image.content_hash() != base_hash {
+            return Err("retained model rows do not reproduce the patch base".into());
+        }
+        Ok(model)
     }
     /// First free physical index of each link table in the retained model
     /// that describes the published image `base_hash` (append-only linking).
@@ -337,7 +395,9 @@ impl RetainedGeneration {
     ) -> Option<std::collections::BTreeMap<dm_link::Table, u32>> {
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         let generation = current.as_ref()?;
-        if generation.encoded.content_hash() != base_hash {
+        if generation.encoded.content_hash() != base_hash
+            && !self.rows_synced(generation.encoded.content_hash(), base_hash)
+        {
             return None;
         }
         let model = &generation.inputs.model;
@@ -373,16 +433,7 @@ impl RetainedGeneration {
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt
             .with_pending(|_| {
-                let mut model = {
-                    let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-                    let generation = current
-                        .as_ref()
-                        .ok_or("retained model released")?;
-                    if generation.encoded.content_hash() != base_hash {
-                        return Err("retained model differs from the patch base".to_string());
-                    }
-                    generation.inputs.model.clone()
-                };
+                let mut model = self.model_for(base_hash)?;
                 strings(&mut model).map_err(|error| format!("{error:?}"))?;
                 let (mut index, seed) = self.string_index(&model).map_err(|error| format!("{error:?}"))?;
                 edit(&mut model, &mut index).map_err(|error| format!("{error:?}"))?;
@@ -413,6 +464,9 @@ impl RetainedGeneration {
                 slot.link = Some(Arc::new(link));
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
                 slot.image = Some(Arc::new(PatchImage { rows, proc_code }));
+                // The model was just re-encoded: it now describes the image itself.
+                slot.model_rows.clear();
+                slot.model_anchor = None;
                 Ok(encoded)
             })
             .unwrap_or_else(|| Err("generation attempt is not pending".into()))
@@ -451,6 +505,12 @@ impl RetainedGeneration {
             })
             .unwrap_or(false)
     }
+    /// True when the published generation holds a patch base (what the next request leases; for the daemon session probe).
+    pub(crate) fn has_patch_base(&self) -> bool {
+        self.publication
+            .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.is_some())
+            .unwrap_or(false)
+    }
     /// The patch base, its link answers and the image they describe.
     pub(crate) fn patch_base(
         &self,
@@ -486,7 +546,33 @@ impl RetainedGeneration {
                 dm_profile::request_mark("patch.spliced");
                 let encoded = spliced.image().clone();
                 validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
+                let anchor = self
+                    .current
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .as_ref()
+                    .map(|generation| generation.encoded.content_hash());
                 let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+                // Keep what the retained model lacks: rows spliced since its own encoding.
+                match anchor {
+                    Some(anchor) if slot.model_anchor == Some(anchor) => {}
+                    Some(anchor) if anchor == image.rows.image().content_hash() => {
+                        slot.model_anchor = Some(anchor);
+                        slot.model_rows.clear();
+                    }
+                    _ => {
+                        slot.model_anchor = None;
+                        slot.model_rows.clear();
+                    }
+                }
+                if slot.model_anchor.is_some() {
+                    for (index, words) in rows {
+                        match slot.model_rows.iter_mut().find(|(row, _)| row == index) {
+                            Some(entry) => entry.1 = Arc::clone(words),
+                            None => slot.model_rows.push((*index, Arc::clone(words))),
+                        }
+                    }
+                }
                 slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
                 if let (Some(initializers), Some(link)) = (initializers, slot.link.as_ref()) {
                     // Shifted initializer origins are the next patch's baseline.

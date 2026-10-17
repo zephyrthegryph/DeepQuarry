@@ -59,7 +59,7 @@ GLOBAL_LIST_EMPTY(derives_running)
 	var/datum/act/op/A = take(/datum/act/op)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one run and is reset on release
 	A.target = holder
-	A.key = plan.key
+	A.set_key(plan.key)
 	A.oplan = plan // ALLOW(ownership): a pooled context names its op's plan for one run and is reset on release
 	A.outcome = ACT_COMMITTED
 	var/was = GLOB.starts_as_running

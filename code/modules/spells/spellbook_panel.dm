@@ -63,7 +63,7 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 	return data
 
 /obj/item/spellbook/proc/ui_act_clear_temp(datum/act/op/A)
-	temp = null
+	set_temp(null)
 	SStgui.update_uis(src)
 	return OP_OK
 

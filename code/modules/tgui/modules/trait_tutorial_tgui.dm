@@ -12,10 +12,10 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 	var/trait_selected = ""
 
 /datum/tgui_module/trait_tutorial_tgui/proc/set_vars(list/names, list/categories, list/descriptions, list/tutorials)
-	trait_names = names
-	trait_category = categories
-	trait_desc = descriptions
-	trait_tutorial = tutorials
+	set_trait_names(names)
+	set_trait_category(categories)
+	set_trait_desc(descriptions)
+	set_trait_tutorial(tutorials)
 
 CAPABILITIES(/datum/tgui_module/trait_tutorial_tgui)
 	interface("TraitTutorial", state = nameof(GLOB.tgui_always_state))
@@ -32,5 +32,5 @@ CAPABILITIES(/datum/tgui_module/trait_tutorial_tgui)
 
 /datum/tgui_module/trait_tutorial_tgui/proc/ui_act_select_trait(datum/act/op/A, name)
 	var/selection = name
-	trait_selected = selection
+	set_trait_selected(selection)
 	. = TRUE

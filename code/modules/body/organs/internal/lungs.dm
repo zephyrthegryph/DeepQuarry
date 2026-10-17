@@ -55,7 +55,7 @@
 		if(prob(1))
 			owner.custom_pain("You suddenly feel short of breath and take a sharp, painful breath!",1)
 			// Pus-filled alveoli: gas exchange fails for a while.
-			owner.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.3, 30 SECONDS)
+			owner.body?.add_restriction(src, STAT_GAS_EXCHANGE, 0.3, 30 SECONDS)
 
 /obj/item/organ/internal/lungs/grey
 	icon_state = "lungs_grey"
@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/organ/internal/lungs/grey/colormatch)
 /obj/item/organ/internal/lungs/grey/colormatch/proc/match_blood_color(datum/act/timer/A)
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.blood_color
+		set_color(H.species.blood_color)
 
 
 // === merged from lungs_ch.dm during hard-fork de-suffix (verified no override-order change) ===

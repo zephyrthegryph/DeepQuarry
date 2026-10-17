@@ -24,9 +24,8 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 
 /proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
-		T.color = null
+		T.set_color(null)
 		T.maptext = null
-		T.overlays.len = 0
 
 /proc/get_astar_scan_overlay(dir, forwards, color)
 	var/image/I = new
@@ -79,14 +78,14 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 					turfs_got_colored[considering] = TRUE; \
 					after(considering, debug_t, TYPE_PROC_REF(/atom, set_base_color), with = list(ASTAR_VISUAL_COLOR_OPEN)); \
 					considering.maptext = MAPTEXT("[top[ASTAR_NODE_DEPTH] + 1], [considering_cost], [considering_score]"); \
-					considering.overlays += get_astar_scan_overlay(DIR); \
+					look_flash(considering, get_astar_scan_overlay(DIR), GLOB.astar_visualization_persist); \
 				} \
 				else { \
 					if(considering_node[ASTAR_NODE_COST] > considering_cost) { \
 						considering_node[ASTAR_NODE_COST] = considering_cost; \
 						considering_node[ASTAR_NODE_DEPTH] = top[ASTAR_NODE_DEPTH] + 1; \
 						considering.maptext = MAPTEXT("X [top[ASTAR_NODE_DEPTH] + 1], [considering_cost], [considering_score]"); \
-						considering.overlays += get_astar_scan_overlay(DIR, TRUE, ASTAR_TRACE_COLOR_REDIRECTED); \
+						look_flash(considering, get_astar_scan_overlay(DIR, TRUE, ASTAR_TRACE_COLOR_REDIRECTED), GLOB.astar_visualization_persist); \
 						considering_node[ASTAR_NODE_PREV] = top; \
 					} \
 				} \

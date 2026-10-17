@@ -16,9 +16,9 @@
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0
 	set_vis_height(species.icon_height)
-	appearance_flags = read_once(appearance_flags) | PIXEL_SCALE
+	set_appearance_flags(appearance_flags | PIXEL_SCALE)
 	if(fuzzy)
-		appearance_flags = read_once(appearance_flags) & ~PIXEL_SCALE
+		set_appearance_flags(appearance_flags & ~PIXEL_SCALE)
 		set_center_offset(0)
 
 	// Regular stuff again.
@@ -43,11 +43,11 @@
 			else
 				M.Translate((1 / desired_scale_x * 4) - (desired_scale_x * cent_offset), 0)
 				M.Turn(90)
-		layer = MOB_LAYER -0.01 // Fix for a byond bug where turf entry order no longer matters
+		set_layer(MOB_LAYER -0.01) // Fix for a byond bug where turf entry order no longer matters
 	else
 		M.Scale(desired_scale_x, desired_scale_y)
 		M.Translate(cent_offset * desired_scale_x, (vis_height/2)*(desired_scale_y-1))
-		layer = MOB_LAYER // Fix for a byond bug where turf entry order no longer matters
+		set_layer(MOB_LAYER) // Fix for a byond bug where turf entry order no longer matters
 
 	if(instant)
 		transform = M

@@ -75,25 +75,25 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/ui_act_change_zeroth_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != zeroth_law)
-		zeroth_law = new_law
+		set_zeroth_law(new_law)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_ion_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != ion_law)
-		ion_law = new_law
+		set_ion_law(new_law)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_inherent_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != inherent_law)
-		inherent_law = new_law
+		set_inherent_law(new_law)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_supplied_law(datum/act/op/A, val)
 	var/new_law = sanitize(val)
 	if(new_law && new_law != supplied_law)
-		supplied_law = new_law
+		set_supplied_law(new_law)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_supplied_law_position(datum/act/op/A)
@@ -104,7 +104,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 		return
 	var/new_position = A.answer.value
 	if(isnum(new_position))
-		supplied_law_position = CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER)
+		set_supplied_law_position(CLAMP(new_position, 1, MAX_SUPPLIED_LAW_NUMBER))
 	SStgui.update_uis(src)
 
 /// Only an antagonist (or an admin on a silicon that is not slaved) edits or deletes laws; anyone else's button is not answered.
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	var/new_law = P?.value
 	if(AL && new_law && new_law != AL.law && is_malf(A.actor))
 		log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'")
-		AL.law = new_law
+		AL.set_law(new_law)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_delete_law(datum/act/op/A, delete_law)

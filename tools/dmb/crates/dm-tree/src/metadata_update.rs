@@ -253,6 +253,26 @@ impl MetadataDependencies {
     }
 }
 
+/// The f32 bits of a declaration initializer that is exactly one numeric
+/// literal token (decimal or `0x` hexadecimal), after macro expansion.
+pub(crate) fn numeric_literal(
+    expression: &Option<dm_ir::SymbolicExpression>,
+    symbols: &dm_ir::SymbolTable,
+) -> Option<u32> {
+    let tokens = &expression.as_ref()?.tokens;
+    if tokens.len() != 1 {
+        return None;
+    }
+    let text = symbols.text(tokens[0].text)?;
+    if !text.bytes().all(|byte| byte.is_ascii_hexdigit() || matches!(byte, b'.' | b'x' | b'X')) {
+        return None;
+    }
+    let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
+        Some(hex) => u32::from_str_radix(hex, 16).ok()? as f32,
+        None => text.parse::<f32>().ok()?,
+    };
+    value.is_finite().then(|| value.to_bits())
+}
 /// Every changed row is a formal var (flags 0 or tmp) whose metadata differs
 /// only in its initializer, from one numeric literal to another.
 fn default_edits<'a, 'b>(
@@ -261,22 +281,7 @@ fn default_edits<'a, 'b>(
     previous_symbols: &dm_ir::SymbolTable,
     symbols: &dm_ir::SymbolTable,
 ) -> Option<Vec<crate::DefaultEdit>> {
-    let literal = |expression: &Option<dm_ir::SymbolicExpression>, symbols: &dm_ir::SymbolTable| -> Option<u32> {
-        let tokens = &expression.as_ref()?.tokens;
-        if tokens.len() != 1 {
-            return None;
-        }
-        let text = symbols.text(tokens[0].text)?;
-        if !text.bytes().all(|byte| byte.is_ascii_hexdigit() || matches!(byte, b'.' | b'x' | b'X'))
-        {
-            return None;
-        }
-        let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
-            Some(hex) => u32::from_str_radix(hex, 16).ok()? as f32,
-            None => text.parse::<f32>().ok()?,
-        };
-        value.is_finite().then(|| value.to_bits())
-    };
+    let literal = numeric_literal;
     let mut edits = Vec::new();
     let trace = std::env::var_os("DMB_DEFAULT_EDIT_TRACE").is_some();
     for (old, new) in previous.zip(current) {

@@ -135,7 +135,7 @@ fn accepted_request_rejects_foreign_generation_and_current_cancellation_or_deadl
 #[test]
 fn accepted_listener_result_and_handshake_connection_prevent_idle_exit() {
     let shared = shared(91);
-    let idle = Duration::from_secs(7200);
+    let idle = crate::daemon::resident::idle_exit().expect("default idle exit is on");
     assert!(!shared.exit_ready(false, idle - Duration::from_secs(1)));
     assert!(shared.exit_ready(false, idle));
     assert!(!shared.exit_ready(true, idle));

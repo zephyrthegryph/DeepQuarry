@@ -226,8 +226,7 @@ CAPABILITIES(/datum/action)
 	var/used_icon_key = is_action_active(current_button) ? "bg_state_active" : "bg_state"
 
 	// Make the underlay
-	current_button.underlays.Cut()
-	current_button.underlays += image(icon = icon_settings["bg_icon"], icon_state = icon_settings[used_icon_key])
+	current_button.set_button_underlay(image(icon = icon_settings["bg_icon"], icon_state = icon_settings[used_icon_key]))
 	current_button.active_underlay_icon_state = icon_settings[used_icon_key]
 
 /**
@@ -253,9 +252,7 @@ CAPABILITIES(/datum/action)
 	if(!overlay_icon || !overlay_icon_state || (current_button.active_overlay_icon_state == overlay_icon_state && !force))
 		return
 
-	current_button.cut_overlay(current_button.button_overlay)
-	current_button.button_overlay = mutable_appearance(icon = overlay_icon, icon_state = overlay_icon_state)
-	current_button.add_overlay(current_button.button_overlay)
+	current_button.set_button_overlay(mutable_appearance(icon = overlay_icon, icon_state = overlay_icon_state))
 	current_button.active_overlay_icon_state = overlay_icon_state
 
 /**
@@ -267,9 +264,9 @@ CAPABILITIES(/datum/action)
  */
 /datum/action/proc/update_button_status(atom/movable/screen/movable/action_button/current_button, force = FALSE)
 	if(IsAvailable())
-		current_button.color = rgb(255,255,255,255)
+		current_button.set_color(rgb(255,255,255,255))
 	else
-		current_button.color = transparent_when_unavailable ? rgb(128,0,0,128) : rgb(128,0,0)
+		current_button.set_color(transparent_when_unavailable ? rgb(128,0,0,128) : rgb(128,0,0))
 
 /// Gives our action to the passed viewer.
 /// Puts our action in their actions list and shows them the button.

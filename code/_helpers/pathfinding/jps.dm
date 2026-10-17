@@ -44,10 +44,8 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 
 /proc/jps_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
-		T.color = null
+		T.set_color(null)
 		T.maptext = null
-		// lol just cut all this is a debug proc anyways
-		T.overlays.len = 0
 
 #endif
 
@@ -182,7 +180,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		start_check_dir = DIR ; \
 		start_check = get_step(start, start_check_dir); \
 		if(!isnull(start_check) && JPS_ADJACENCY_CALL(start, start_check)) { \
-			start.overlays += get_jps_scan_overlay(DIR, TRUE); \
+			look_flash(start, get_jps_scan_overlay(DIR, TRUE), GLOB.jps_visualization_persist); \
 			node_creating = JPS_NODE_NEW(start, null, start_heuristic, 0, start_check_dir) ; \
 			open.enqueue(node_creating); \
 		}
@@ -248,7 +246,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			return jps_unwind_path(node_creating, turfs_got_colored); \
 		} \
 		turfs_got_colored[cscan_current] = turfs_got_colored[cscan_current] || 0; \
-		cscan_current.overlays += get_jps_scan_overlay(DIR, JPS_CARDINAL_DURING_DIAGONAL); \
+		look_flash(cscan_current, get_jps_scan_overlay(DIR, JPS_CARDINAL_DURING_DIAGONAL), GLOB.jps_visualization_persist); \
 		cscan_turf1 = get_step(cscan_current, cscan_dir1); \
 		cscan_turf2 = get_step(cscan_current, cscan_dir2); \
 		if(!isnull(cscan_turf1)) { \
@@ -450,7 +448,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 				// we don't do current turf because it's assumed already ran
 				dscan_next = get_step(dscan_current, node_top_dir)
 				#ifdef JPS_DEBUGGING
-				dscan_current.overlays += get_jps_scan_overlay(node_top_dir, TRUE)
+				look_flash(dscan_current, get_jps_scan_overlay(node_top_dir, TRUE), GLOB.jps_visualization_persist)
 				turfs_got_colored[dscan_current] = turfs_got_colored[dscan_current] || 0
 				#endif
 				// check it's 1. there and 2. we haven't checked it yet and
@@ -494,7 +492,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			// check that it's valid and not blocked
 			cscan_current = get_step(node_top_pos, node_top_dir)
 			#ifdef JPS_DEBUGGING
-			cscan_current.overlays += get_jps_scan_overlay(node_top_dir, TRUE)
+			look_flash(cscan_current, get_jps_scan_overlay(node_top_dir, TRUE), GLOB.jps_visualization_persist)
 			turfs_got_colored[cscan_current] = turfs_got_colored[cscan_current] || 0
 			#endif
 			// check it's 1. there and 2. we haven't checked it yet and

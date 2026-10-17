@@ -33,7 +33,7 @@
 					return									// Leave the fake one far behind,
 				safety_dance++
 
-		data = new_data										// And we can hex
+		set_data(new_data)										// And we can hex
 		holder().on_data_written()
 
 // This randomizes the color.
@@ -41,7 +41,7 @@
 	if(!is_valid())
 		return
 	var/new_data = get_random_colour(simple = FALSE, lower = 0, upper = 255)
-	data = new_data
+	set_data(new_data)
 	push_data()
 
 /datum/integrated_io/color/display_pin_type()

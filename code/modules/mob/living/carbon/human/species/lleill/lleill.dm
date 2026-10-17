@@ -56,7 +56,7 @@
 
 	chem_strength_alcohol = 0 //Can't get drunk
 
-	factor_baseline = alist(BF_DEMAND = 0.25)
+	factor_baseline = alist(STAT_DEMAND = 0.25)
 	//Suffocates very slowly, but does ultimately need to breathe, will outpace heal most oxygen damage. (oxy)
 	poison_type = null //Not harmed by phoron.
 	water_breather = TRUE
@@ -154,7 +154,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 /datum/species/lleill/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
 	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-	if(!S || read_once(S.name == src.name))
+	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_blood_mask(H)
 

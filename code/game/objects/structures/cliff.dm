@@ -137,7 +137,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	bottom.set_icon_variant(icon_variant)
 	bottom.set_corner(corner)
 	bottom.set_ramp(ramp)
-	bottom.layer = layer - 0.1
+	bottom.set_layer(layer - 0.1)
 	if(!density)
 		hold(bottom, STAT_DENSITY, FALSE, SRC_CLIFF_LEDGE, priority = PRIORITY_FORCE) // a ramp's lower edge does not block either: density is a stat, a raw write of it would leave its composed value stale
 
@@ -234,7 +234,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 
 		var/fall_time = 3
 		if(displaced) // Make the fall look more natural when falling sideways.
-			L.pixel_z = 32 * 2
+			L.set_pixel_z(32 * 2)
 			animate(L, pixel_z = 0, time = fall_time)
 		after(src, fall_time, PROC_REF(fall_land), with = list(L, T, safe_fall, harm)) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
 

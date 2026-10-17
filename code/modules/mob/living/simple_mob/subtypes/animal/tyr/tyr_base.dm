@@ -33,9 +33,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr)
 	. = ..()
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
-	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digestchance = 0
-	B.absorbchance = 0
-	B.escapechance = 25
+	B.set_mode_flags(DM_FLAG_THICKBELLY | DM_FLAG_NUMBING)
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digestchance(0)
+	B.set_absorbchance(0)
+	B.set_escapechance(25)

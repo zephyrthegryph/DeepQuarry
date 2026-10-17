@@ -7,8 +7,8 @@
 	var/obj/item/circuitboard/board = allocate(board_type, T)
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type))
 	frame.set_dir(WEST)
-	frame.pixel_x = 7
-	frame.pixel_y = -3
+	frame.set_pixel_x(7)
+	frame.set_pixel_y(-3)
 	var/expected_type = board.build_path
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, T, 6)
 	TEST_ASSERT(interim_native_frame_step(frame, actor, "construction.build:machine_frame_placed.anchor"), "The console fixture must anchor")

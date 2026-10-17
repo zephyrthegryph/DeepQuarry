@@ -77,7 +77,7 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 /datum/computer_file/program/email_administration/proc/ui_act_back(datum/act/op/A)
 	if(error)
-		error = ""
+		set_error("")
 	else if(current_message())
 		rel_clear(src, nameof(src.current_message))
 	else
@@ -92,7 +92,7 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 	current_account().suspended = !current_account().suspended
 	GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended by SA [I.registered_name] ([I.assignment]).")
-	error = "Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended."
+	set_error("Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended.")
 	return TRUE
 
 /datum/computer_file/program/email_administration/proc/has_account(datum/act/op/A)
@@ -153,13 +153,13 @@ CAPABILITIES(/datum/computer_file/program/email_administration)
 
 	var/complete_login = "[newlogin]@[newdomain]"
 	if(GLOB.ntnet_global.does_email_exist(complete_login))
-		error = "Error creating account: An account with same address already exists."
+		set_error("Error creating account: An account with same address already exists.")
 		return TRUE
 
 	var/datum/computer_file/data/email_account/new_account = new/datum/computer_file/data/email_account()
 	new_account.login = complete_login
 	new_account.password = GenerateKey()
-	error = "Email [new_account.login] has been created, with generated password [new_account.password]"
+	set_error("Email [new_account.login] has been created, with generated password [new_account.password]")
 	return TRUE
 
 

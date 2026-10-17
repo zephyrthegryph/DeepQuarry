@@ -28,12 +28,12 @@
 	// Lock or unlock the access panel.
 	if(W.GetID())
 		if(subverted)
-			locked = 0
+			set_locked(0)
 			to_chat(user, span_danger("It looks like the locking system has been shorted out."))
 			return OP_PASS
 
 		if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
-			locked = 0
+			set_locked(0)
 			to_chat(user, span_danger("\The [src] doesn't seem to have a locking mechanism."))
 			return OP_PASS
 
@@ -41,7 +41,7 @@
 			to_chat(user, span_danger("Access denied."))
 			return OP_PASS
 
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, "You [locked ? "lock" : "unlock"] \the [src] access panel.")
 		return OP_PASS
 
@@ -200,8 +200,8 @@
 	if(!subverted)
 		set_req_access(null)
 		set_req_one_access(null)
-		locked = 0
-		subverted = 1
+		set_locked(0)
+		set_subverted(1)
 		to_chat(user, span_danger("You short out the access protocol for the suit."))
 		return OP_OK
 	return OP_DECLINE

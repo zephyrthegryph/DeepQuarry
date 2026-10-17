@@ -28,7 +28,7 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 	var/closed = TRUE
 	var/cycling = FALSE
 
-/obj/item/gun/projectile/smartgun/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask)
+/obj/item/gun/projectile/smartgun/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask, mob/living/carbon/human/wearer = null)
 	var/image/I = ..()
 	if(I)
 		I.pixel_x = -16

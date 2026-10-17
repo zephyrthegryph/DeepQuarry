@@ -18,40 +18,28 @@
 	animate(visual, pixel_x = (tile.x - our_tile.x) * world.icon_size + pointed_atom.pixel_x, pixel_y = (tile.y - our_tile.y) * world.icon_size + pointed_atom.pixel_y, time = 1.7, easing = EASE_OUT)
 
 /atom/movable/proc/create_point_bubble(atom/pointed_atom)
-	var/mutable_appearance/thought_bubble = mutable_appearance(
-		'icons/effects/effects.dmi',
-		"thought_bubble",
-		plane = PLANE_RUNECHAT,
-		appearance_flags = KEEP_APART,
-	)
-
 	var/mutable_appearance/pointed_atom_appearance = new(pointed_atom.appearance)
 	pointed_atom_appearance.blend_mode = BLEND_INSET_OVERLAY
 	pointed_atom_appearance.plane = FLOAT_PLANE
 	pointed_atom_appearance.layer = FLOAT_LAYER
 	pointed_atom_appearance.pixel_x = 0
 	pointed_atom_appearance.pixel_y = 0
-	thought_bubble.overlays += pointed_atom_appearance
-
-	thought_bubble.pixel_x = 16
-	thought_bubble.pixel_y = 32
-	thought_bubble.alpha = 200
-	thought_bubble.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 	var/mutable_appearance/point_visual = mutable_appearance(
 		'icons/mob/screen1.dmi',
 		"arrow"
 	)
 
-	thought_bubble.overlays += point_visual
+	var/image/thought_bubble = look_composed_image(image('icons/effects/effects.dmi', "thought_bubble"), list(pointed_atom_appearance, point_visual))
+	thought_bubble.plane = PLANE_RUNECHAT
+	thought_bubble.appearance_flags = KEEP_APART
+	thought_bubble.pixel_x = 16
+	thought_bubble.pixel_y = 32
+	thought_bubble.alpha = 200
+	thought_bubble.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
-	add_overlay(thought_bubble)
-	dq_add_z_update_image(src, thought_bubble) // register with DQ z-image tracker so the point bubble follows z-moves
-	after(src, POINT_TIME, PROC_REF(clear_point_bubble), with = list(thought_bubble))
-
-/atom/movable/proc/clear_point_bubble(mutable_appearance/thought_bubble)
-	dq_remove_z_update_image(src, thought_bubble) // paired teardown for dq_add_z_update_image above
-	cut_overlay(thought_bubble)
+	// A look part that takes itself back: the bubble is the holder's look for POINT_TIME.
+	look_flash(src, thought_bubble, POINT_TIME)
 
 /obj/effect/temp_visual/point
 	name = "pointer"
@@ -67,8 +55,8 @@ CAPABILITIES(/obj/effect/temp_visual/point)
 /obj/effect/temp_visual/point/proc/settle_on_turf(set_invis)
 	var/atom/old_loc = loc
 	abstract_move(get_turf(src))
-	pixel_x = old_loc.pixel_x
-	pixel_y = old_loc.pixel_y
+	set_pixel_x(old_loc.pixel_x)
+	set_pixel_y(old_loc.pixel_y)
 
 #undef POINT_TIME
 

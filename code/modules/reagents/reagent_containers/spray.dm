@@ -49,7 +49,7 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 		var/turf/my_target = get_turf(target)
 		D.create_reagents(amount)
 		reagents.trans_to_obj(D, amount, user = user)
-		D.set_color()
+		D.tint_from_reagents()
 		D.set_up(my_target, spray_size, 1 SECOND, user)
 
 /// A spray of a few reagents is told to the admins.
@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
 		if(!src)
 			return
 		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
-		D.set_color()
+		D.tint_from_reagents()
 		D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 
 /obj/item/reagent_containers/spray/plantbgone
@@ -255,7 +255,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 			if(!src)
 				return
 			reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
-			D.set_color()
+			D.tint_from_reagents()
 			D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 		return
 
@@ -273,7 +273,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 				my_target = pick(the_targets)
 			W.create_reagents(amount_per_transfer_from_this)
 			reagents.trans_to_obj(W, amount_per_transfer_from_this, user = user)
-			W.set_color()
+			W.tint_from_reagents()
 			W.set_up(my_target, user = user)
 
 		return

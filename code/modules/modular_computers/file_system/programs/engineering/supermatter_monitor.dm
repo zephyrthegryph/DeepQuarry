@@ -20,5 +20,5 @@
 	var/new_status = istype(TMS) ? TMS.get_status() : 0
 	if(last_status != new_status)
 		last_status = new_status
-		ui_header = "smmon_[last_status].gif"
+		set_ui_header("smmon_[last_status].gif")
 		set_program_icon_state("smmon_[last_status]")

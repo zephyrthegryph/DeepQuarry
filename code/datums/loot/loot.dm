@@ -57,7 +57,7 @@ CAPABILITIES(/datum/loot_decl)
 	if(rows["table"])
 		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, rows["table"]))
 	if(!isnull(rows["count"]))
-		count = rows["count"]
+		set_count(rows["count"])
 	if(!isnull(rows["chance"]))
 		chance = rows["chance"]
 	all = rows["all"]
@@ -327,9 +327,9 @@ CAPABILITIES(/obj/random)
 			if(QDELETED(A) || isturf(A))
 				continue
 			if(has_px)
-				A.pixel_x = varedits["pixel_x"]
+				A.set_pixel_x(varedits["pixel_x"])
 			if(has_py)
-				A.pixel_y = varedits["pixel_y"]
+				A.set_pixel_y(varedits["pixel_y"])
 			if(has_dir)
 				A.set_dir(varedits["dir"])
 	return made || list()

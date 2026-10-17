@@ -216,7 +216,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 
 /obj/machinery/door/blast/proc/complete_force_open()
 	PRIVATE_PROC(TRUE)
-	layer = open_layer
+	set_layer(open_layer)
 	set_operating(FALSE)
 
 /// Proc: force_close()
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 	set_operating(TRUE)
 	autoclose_cancel()
 	playsound(src, close_sound, 100, 1)
-	layer = closed_layer
+	set_layer(closed_layer)
 	flick(icon_state_closing, src)
 	set_density(TRUE)
 	update_nearby_tiles()

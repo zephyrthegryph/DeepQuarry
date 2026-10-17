@@ -320,7 +320,7 @@ CAPABILITIES(/obj/item/beacon_locator)
 /obj/item/beacon_locator/proc/ui_act_setfrequency(datum/act/op/A, freq)
 	var/new_frequency = (freq)
 	new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-	frequency = new_frequency
+	set_frequency(new_frequency)
 	return TRUE
 
 MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5000))

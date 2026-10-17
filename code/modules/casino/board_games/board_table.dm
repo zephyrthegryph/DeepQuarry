@@ -16,8 +16,8 @@
 
 CAPABILITIES(/obj/structure/casino_table/board_game)
 	owns_one(nameof(game_ui), /datum/board_game, starts = nameof(game_ui))
-	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	op("hand", hand(), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Pick the game to play", "title" = "Choose Game", "choices" = nameof(possible_games), "timeout" = 0), step = "k42", when = PROC_REF(hand_picks_game)), then(PROC_REF(interaction_hand)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), asks(/datum/prompt/choice, fields = list("question" = "Pick the game to play", "title" = "Choose Game", "choices" = nameof(possible_games), "timeout" = 0), step = "k42", when = PROC_REF(alt_picks_game)), then(PROC_REF(interaction_alt)))
 
 
 /// Old attack_hand.
@@ -25,7 +25,7 @@ CAPABILITIES(/obj/structure/casino_table/board_game)
 	var/mob/user = A.actor
 	if(isliving(user))
 		if(!game_ui)
-			pick_game(user)
+			pick_game(user, A.step_value("k42"))
 		if(game_ui)
 			game_ui.tgui_interact(user)
 	return TRUE
@@ -33,13 +33,21 @@ CAPABILITIES(/obj/structure/casino_table/board_game)
 /// Old click_alt.
 /obj/structure/casino_table/board_game/proc/interaction_alt(datum/act/op/A)
 	var/mob/user = A.actor
-	pick_game(user)
+	pick_game(user, A.step_value("k42"))
 	return TRUE
 
-/obj/structure/casino_table/board_game/proc/pick_game(mob/user)
+/// Question gate of the hand use: a living user at a table with no game is asked which to play (while the table is in setup).
+/obj/structure/casino_table/board_game/proc/hand_picks_game(datum/act/op/A)
+	return isliving(A.actor) && !game_ui && game_ui?.game_state == GAME_SETUP
+
+/// Question gate of the alternate use: a table in setup is asked which game to play.
+/obj/structure/casino_table/board_game/proc/alt_picks_game(datum/act/op/A)
+	return game_ui?.game_state == GAME_SETUP
+
+/// Starts the game the user picked (a key of possible_games), while the table is in setup.
+/obj/structure/casino_table/board_game/proc/pick_game(mob/user, new_game)
 	if(game_ui?.game_state != GAME_SETUP)
 		return
-	var/datum/board_game/new_game = rerun_ask(user, "k42", PROC_REF(pick_game), args, /datum/prompt/choice, question = "Pick the game to play", title = "Choose Game", choices = possible_games)
 	if(isnull(new_game))
 		return
 	if(!new_game)

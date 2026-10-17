@@ -64,11 +64,11 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 
 /obj/machinery/computer/mecha/proc/ui_act_get_log(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
 	if(istype(mt))
-		stored_data = mt.get_mecha_log()
+		set_stored_data(mt.get_mecha_log())
 	return TRUE
 
 /obj/machinery/computer/mecha/proc/ui_act_clear_log(datum/act/op/A)
-	stored_data = null
+	set_stored_data(null)
 	return OP_OK
 
 /datum/prompt/text/mecha_tracker_message

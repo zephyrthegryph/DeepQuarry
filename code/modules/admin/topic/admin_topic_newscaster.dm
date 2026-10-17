@@ -25,7 +25,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /// Switches the admincaster to `screen` and refreshes.
 /datum/admins/proc/admincaster_goto(mob/user, screen)
-	admincaster_screen = screen
+	set_admincaster_screen(screen)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_view_wanted(datum/act/op/A)
@@ -55,12 +55,12 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 /datum/admins/proc/topic_ac_submit_new_channel(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!ac_channel_submittable())
-		admincaster_screen = 7
+		set_admincaster_screen(7)
 	else if(A.step_value("confirm") == "Confirm")
 		GLOB.news_network.CreateFeedChannel(admincaster_feed_channel().channel_name, admincaster_signature, admincaster_feed_channel().locked, 1)
 		feedback_inc("newscaster_channels",1)                  //Adding channel to the global network
 		log_admin("[key_name_admin(user)] created command feed channel: [admincaster_feed_channel().channel_name]!")
-		admincaster_screen = 5
+		set_admincaster_screen(5)
 	admincaster_refresh(user)
 
 /// The names of the channels on the network (the choices of the receiving-channel question).
@@ -88,11 +88,11 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 /datum/admins/proc/topic_ac_submit_new_message(datum/act/op/A)
 	var/mob/user = A.actor
 	if(admincaster_feed_message.body == "" || admincaster_feed_message.title == "" || admincaster_feed_message.body == "\[REDACTED\]" || admincaster_feed_channel().channel_name == "")
-		admincaster_screen = 6
+		set_admincaster_screen(6)
 	else
 		feedback_inc("newscaster_stories",1)
 		GLOB.news_network.SubmitArticle(admincaster_feed_message.body, admincaster_signature, admincaster_feed_channel().channel_name, null, 1, "", admincaster_feed_message.title)
-		admincaster_screen = 4
+		set_admincaster_screen(4)
 
 	log_admin("[key_name_admin(user)] submitted a feed story to channel: [admincaster_feed_channel().channel_name]!")
 	admincaster_refresh(user)
@@ -142,25 +142,25 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/mob/user = A.actor
 	var/input_param = href_ac_submit_wanted
 	if(!ac_wanted_submittable())
-		admincaster_screen = 16
+		set_admincaster_screen(16)
 	else if(A.step_value("confirm") == "Confirm")
 		if(input_param == 1)          //If input_param == 1 we're submitting a new wanted issue. At 2 we're just editing an existing one. See the else below
 			var/datum/feed_message/WANTED = new /datum/feed_message
-			WANTED.author = admincaster_feed_message.author               //Wanted name
-			WANTED.body = admincaster_feed_message.body                   //Wanted desc
+			WANTED.set_author(admincaster_feed_message.author)               //Wanted name
+			WANTED.set_body(admincaster_feed_message.body)                   //Wanted desc
 			WANTED.backup_author = admincaster_signature                  //Submitted by
 			WANTED.is_admin_message = 1
 			rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.newsAlert()
-			admincaster_screen = 15
+			set_admincaster_screen(15)
 		else
 			var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
 			if(wanted)
-				wanted.author = admincaster_feed_message.author
-				wanted.body = admincaster_feed_message.body
+				wanted.set_author(admincaster_feed_message.author)
+				wanted.set_body(admincaster_feed_message.body)
 				wanted.backup_author = admincaster_feed_message.backup_author
-			admincaster_screen = 19
+			set_admincaster_screen(19)
 		log_admin("[key_name_admin(user)] issued a Station-wide Wanted Notification for [admincaster_feed_message.author]!")
 	admincaster_refresh(user)
 
@@ -168,7 +168,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/mob/user = A.actor
 	if(A.step_value("confirm") == "Confirm")
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
-		admincaster_screen = 17
+		set_admincaster_screen(17)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_censor_channel_author(datum/act/op/A, href_ac_censor_channel_author)
@@ -176,9 +176,9 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/datum/feed_channel/FC = href_ac_censor_channel_author
 	if(FC.author != span_bold("\[REDACTED\]"))
 		FC.backup_author = FC.author
-		FC.author = span_bold("\[REDACTED\]")
+		FC.set_author(span_bold("\[REDACTED\]"))
 	else
-		FC.author = FC.backup_author
+		FC.set_author(FC.backup_author)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_censor_channel_story_author(datum/act/op/A, href_ac_censor_channel_story_author)
@@ -186,9 +186,9 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/datum/feed_message/MSG = href_ac_censor_channel_story_author
 	if(MSG.author != span_bold("\[REDACTED\]"))
 		MSG.backup_author = MSG.author
-		MSG.author = span_bold("\[REDACTED\]")
+		MSG.set_author(span_bold("\[REDACTED\]"))
 	else
-		MSG.author = MSG.backup_author
+		MSG.set_author(MSG.backup_author)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_censor_channel_story_body(datum/act/op/A, href_ac_censor_channel_story_body)
@@ -196,9 +196,9 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/datum/feed_message/MSG = href_ac_censor_channel_story_body
 	if(MSG.body != span_bold("\[REDACTED\]"))
 		MSG.backup_body = MSG.body
-		MSG.body = span_bold("\[REDACTED\]")
+		MSG.set_body(span_bold("\[REDACTED\]"))
 	else
-		MSG.body = MSG.backup_body
+		MSG.set_body(MSG.backup_body)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_pick_d_notice(datum/act/op/A, href_ac_pick_d_notice)
@@ -209,7 +209,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 /datum/admins/proc/topic_ac_toggle_d_notice(datum/act/op/A, href_ac_toggle_d_notice)
 	var/mob/user = A.actor
 	var/datum/feed_channel/FC = href_ac_toggle_d_notice
-	FC.censored = !FC.censored
+	FC.set_censored(!FC.censored)
 	admincaster_refresh(user)
 
 /datum/admins/proc/topic_ac_view(datum/act/op/A)
@@ -219,7 +219,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 /// Brings us to the main menu and resets all fields.
 /datum/admins/proc/topic_ac_setscreen(datum/act/op/A, href_ac_setscreen)
 	var/mob/user = A.actor
-	admincaster_screen = href_ac_setscreen
+	set_admincaster_screen(href_ac_setscreen)
 	if(admincaster_screen == 0)
 		if(admincaster_feed_channel())
 			rel_clear(src, nameof(admincaster_feed_channel))
@@ -244,7 +244,7 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /datum/admins/proc/topic_ac_set_signature(datum/act/op/A)
 	var/mob/user = A.actor
-	admincaster_signature = A.step_value("answer")
+	set_admincaster_signature(A.step_value("answer"))
 	admincaster_refresh(user)
 
 /datum/prompt/text/admincaster_topic

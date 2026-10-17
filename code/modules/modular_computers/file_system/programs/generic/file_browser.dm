@@ -43,10 +43,10 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 	if(!newname)
 		return
 	if(HDD.find_file_by_name(newname))
-		error = "I/O error: File already exists."
+		set_error("I/O error: File already exists.")
 		return
 	var/datum/computer_file/data/F = new/datum/computer_file/data/text()
-	F.filename = newname
+	F.set_filename(newname)
 	HDD.store_file(F)
 	return TRUE
 
@@ -115,14 +115,14 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 		if(!F.holder().remove_file(F))
 			spent(backup)
 			return TRUE
-		F.stored_data = newtext
+		F.set_stored_data(newtext)
 		F.calculate_size()
 		// We can't store the updated file, it's probably too large. Print an error and restore backed up version.
 		// This is mostly intended to prevent people from losing texts they spent lot of time working on due to running out of space.
 		// They will be able to copy-paste the text from error screen and store it in notepad or something.
 		var/obj/item/computer_hardware/hard_drive/drive = F.holder()
 		if(!drive.store_file(F))
-			error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
+			set_error("I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>")
 			drive.store_file(backup)
 			spent(F) // detached by remove_file() and not stored again
 		else
@@ -139,10 +139,10 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 	if(!F || !istype(F))
 		return
 	if(!computer().nano_printer)
-		error = "Missing Hardware: Your computer does not have required hardware to complete this operation."
+		set_error("Missing Hardware: Your computer does not have required hardware to complete this operation.")
 		return TRUE
 	if(!computer().nano_printer.print_text(pencode2html(F.stored_data)))
-		error = "Hardware error: Printer was unable to print the file. It may be out of paper."
+		set_error("Hardware error: Printer was unable to print the file. It may be out of paper.")
 		return TRUE
 	return TRUE
 
@@ -168,9 +168,9 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 	if(!newname)
 		return
 	if(file.holder().find_file_by_name(newname))
-		error = "I/O error: File already exists."
+		set_error("I/O error: File already exists.")
 		return TRUE
-	file.filename = newname
+	file.set_filename(newname)
 	return TRUE
 
 /datum/computer_file/program/filemanager/proc/ui_act_prg_copytousb(datum/act/op/A, uid)
@@ -183,7 +183,7 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 		return
 	var/datum/computer_file/C = F.clone(FALSE)
 	if(!RHDD.try_store_file(C))
-		error = "I/O error: File already exists or insufficient space on drive."
+		set_error("I/O error: File already exists or insufficient space on drive.")
 		return TRUE
 	RHDD.store_file(C)
 	return TRUE
@@ -198,13 +198,13 @@ CAPABILITIES(/datum/computer_file/program/filemanager)
 		return
 	var/datum/computer_file/C = F.clone(FALSE)
 	if(!HDD.try_store_file(C))
-		error = "I/O error: File already exists or insufficient space on drive."
+		set_error("I/O error: File already exists or insufficient space on drive.")
 		return TRUE
 	HDD.store_file(C)
 	return TRUE
 
 /datum/computer_file/program/filemanager/proc/ui_act_prg_clearerror(datum/act/op/A)
-	error = null
+	set_error(null)
 	return OP_OK
 
 /datum/computer_file/program/filemanager/ui_data(datum/act/eval/A)

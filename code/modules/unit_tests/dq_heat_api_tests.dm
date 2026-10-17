@@ -93,7 +93,7 @@
 	var/turf/T = heat_test_turf()
 	TEST_ASSERT_NOTNULL(T, "no floor with air")
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
-	mech.use_internal_tank = FALSE
+	mech.set_use_internal_tank(FALSE)
 	var/datum/gas_mixture/air = T.return_air()
 	TEST_ASSERT_EQUAL(mech.get_interior_temperature(), air.return_temperature(), "mech interior on outside air")
 

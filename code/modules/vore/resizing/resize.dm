@@ -98,7 +98,7 @@
  * `resize()`, not a body factor, stays the single writer of `size_multiplier`.
  * Body factors (code/modules/body/factors.dm) model quantities that many
  * independent sources contribute to and that get recombined into one flat
- * number on demand -- a good fit for BF_ICON_SCALE_X/Y, which are exactly
+ * number on demand -- a good fit for STAT_SCALE_MULT_X/Y, which are exactly
  * that: a pure cosmetic sprite-scale multiplier folded in from species,
  * forms and modifiers, read only by the icon transform.
  *

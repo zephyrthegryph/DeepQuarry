@@ -114,7 +114,7 @@
 	var/list/unarmed_attacks = null							// For empty hand harm-intent attack
 	/// Multiplier on radiation's EFFECTS (mutation, sickness, radiation burns); the
 	/// dose absorbed is not scaled. Injury multipliers are body factors in
-	/// `factor_baseline` (BF_INCOMING_*).
+	/// `factor_baseline` (STAT_INCOMING_*).
 	var/radiation_mod = 1
 	var/flash_mod =     1								// Stun from blindness modifier (flashes and flashbangs)
 	var/flash_burn =    0								// how much damage to take from being flashed if light hypersensitive
@@ -206,7 +206,7 @@
 	var/minimum_breath_pressure = 16						// Minimum required pressure for breath, in kPa
 
 
-	/// Body factors every member of the species has (BF_* -> value), e.g.
+	/// Body factors every member of the species has (stat id -> value), e.g.
 	/// slowdown and metabolism. See code/modules/body/factors.dm.
 	var/alist/factor_baseline
 	/// Factor tables granted by traits and perks applied to this species
@@ -928,7 +928,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	//Set up a mob. The mob's species is PROTO: the copy becomes its private copy, and the private
 	// copy it replaces (often src itself, still read below) is deleted.
 	proto_set(H, nameof(H.species), new_copy)
-	H.invalidate_factors()
+	H.body?.sync_species_factors()
 	H.set_icon_state(new_copy.get_bodytype())
 
 	if(new_copy.holder_type)

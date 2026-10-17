@@ -11,7 +11,7 @@
 	var/list/expected_lengths = list(/obj/structure/cable/heavyduty/interim_stub = 1, /obj/structure/cable/heavyduty/interim_straight = 2)
 	for(var/cable_type in expected_lengths)
 		var/obj/structure/cable/heavyduty/cable = allocate(cable_type, T)
-		cable.color = COLOR_BLUE
+		cable.set_color(COLOR_BLUE)
 		var/expected_amount = expected_lengths[cable_type]
 		TEST_ASSERT_EQUAL(cable.d1, expected_amount == 1 ? 0 : NORTH, "The stub and straight fixtures must parse distinct cable orientations")
 		var/old_handle = entity_handle(cable)

@@ -136,7 +136,7 @@
 	invoice.payment_method = payment_method
 	invoice.staff_account_number = staff_account_number
 	invoice.staff_name = staff_name || "Unassigned Service staff"
-	invoice.items = items?.Copy() || list()
+	invoice.set_items(items?.Copy() || list())
 	invoice.prices = prices?.Copy() || list()
 	invoice.amount = result["total"] + (result["tip"] || 0)
 	invoice.subsidy = result["subsidy"] || 0
@@ -473,7 +473,7 @@ CAPABILITIES(/datum/economic_adoption)
 	for(var/datum/service_invoice/invoice in service_invoices)
 		if(invoice.accounting_period != accounting_period)
 			continue
-		invoice.settled = TRUE
+		invoice.set_settled(TRUE)
 		departments[invoice.provider_department] = TRUE
 		if(invoice.staff_account_number)
 			LAZYINITLIST(staff_by_department[invoice.provider_department])

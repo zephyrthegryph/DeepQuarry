@@ -191,7 +191,7 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		target_human.looks.set_facial_style(new_fstyle)
 
 	if(stage >= 10 && new_gender)
-		target_human.set_gender(new_gender)
+		target_human.set_biological_gender(new_gender)
 
 
 /datum/admin_edit_appearance_review/proc/finish_edit()

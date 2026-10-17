@@ -154,9 +154,9 @@
 	var/datum/system/test_runs/S = new
 	S.initialized = TRUE
 	TEST_ASSERT(S.work_ready(), "a booted system that may run is ready")
-	S.can_fire = FALSE
+	S.set_can_fire(FALSE)
 	TEST_ASSERT(!S.work_ready(), "can_fire = FALSE parks the work")
-	S.can_fire = TRUE
+	S.set_can_fire(TRUE)
 	S.note_run(4, TRUE)
 	TEST_ASSERT_EQUAL(S.times_fired, 0, "a yielded run is not a completed one")
 	TEST_ASSERT_EQUAL(S.run_ms, 4, "but its cost is recorded")

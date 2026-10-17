@@ -229,11 +229,11 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 		return
 	if(!isnull(shown_y)) // the pod's look shows them (on_draw()); they sit raised in it, facing out
 		if(inserted)
-			M.pixel_y += shown_y
+			M.set_pixel_y(M.pixel_y + shown_y)
 			M.set_dir(SOUTH)
 		else
-			M.pixel_x = M.default_pixel_x
-			M.pixel_y = M.default_pixel_y
+			M.set_pixel_x(M.default_pixel_x)
+			M.set_pixel_y(M.default_pixel_y)
 	if(inserted)
 		PUBLISH(holder, pod_enter, M)
 	else
@@ -259,6 +259,11 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 	return length(inside) ? inside[1] : null
 
 READS_AS(/proc/occupant_of, OCCUPANT_KEY)
+
+/// A pod's requirements read its occupant (is it alive, is it viable): the occupant's pending refreshes settle first.
+/atom/settle_for_reads()
+	. = ..()
+	occupant_of(src)?.settle_for_reads()
 
 /// Puts `M` into `holder`'s pod from code (a spawn, a bump, a test): the pod's own rules, no wait. TRUE when they are inside.
 /proc/occupant_enter(atom/movable/holder, mob/living/M, mob/actor = null)

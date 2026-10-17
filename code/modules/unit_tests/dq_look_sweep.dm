@@ -30,13 +30,19 @@
  *   look-order=reverse | shuffle:<n>   the order the owned types are probed in (the determinism proof: the rows must not move)
  *   look-dump=<dir>     write the rows this run produced, sorted, under <dir>/look_trees and <dir>/look_states
  *   look-fresh=1        a fresh instance for every probe (how the pin probed before; the measuring baseline)
+ *   look-bless-dir=<dir>  a sharded bless writes its partial rows here (see dq_look_bless_partial) instead of failing
  *   look-trace=1        log every global scalar and list length a unit changed ("LOOK LEAK")
  * A sharded world (shard-index/shard-count params) probes the types whose index in the sorted list of all of them it owns
- * (sweep_owns) and compares only those; bless, and a new empty pin file, need an unsharded full run.
+ * (sweep_owns) and compares only those; a new empty pin file needs an unsharded full run, and a bless writes per-shard partial files
+ * (look-bless-dir) that tools/dq_look_bless_merge.py merges.
  */
 #define DQ_LOOK_TREE_DIR "code/modules/unit_tests/snapshots/look_trees/"
 #define DQ_LOOK_STATE_DIR "code/modules/unit_tests/snapshots/look_states/"
 #define DQ_LOOK_STATE_MAX_VARS 24
+/// The cap for a type whose plan is unknown ("*"): every numeric var it declares, up to this many. A type's own vars come last in
+/// declaration order (an opossum declares 271 below /mob, its is_angry the 201st), so a cap below the most any type declares drops the
+/// vars the type itself added; probes are cheap enough now (one instance per type) that the cap only stops a runaway.
+#define DQ_LOOK_STATE_MAX_VARS_UNPLANNED 600
 /// Deadline passes a settle runs: work that queues more zero-delay work (a timer that arms a timer) needs the next one.
 #define DQ_LOOK_SETTLE_PASSES 3
 
@@ -151,6 +157,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
 	var/list/universe = dq_look_universe(want_tree, want_state)
+	// A pin compares only the types under a root it has a file for: a type outside every root of a pin is made for the other pin and not
+	// probed for this one (its rows would be thrown away, and the state probes are most of a type's cost).
+	var/list/tree_covered = want_tree ? dq_look_covered_types(DQ_LOOK_TREE_DIR) : null
+	var/list/state_covered = want_state ? dq_look_covered_types(DQ_LOOK_STATE_DIR) : null
 	var/list/plan = dq_look_read_plan()
 	var/list/only = dq_look_param_lines("look-types")
 	var/list/only_set
@@ -173,8 +183,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	log_test("look sweep: [length(work)] of [length(universe)] types in this world (shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count], order [world.params?["look-order"] || "path"], plan [isnull(plan) ? "none" : length(plan)])")
 	for(var/type in work)
 		var/datum/dq_look_result/res = GLOB.dq_look_results["[type]"]
-		var/need_tree = want_tree && dq_look_tree_eligible(type) && !res?.tree_done
-		var/need_state = want_state && dq_look_state_eligible(type) && !res?.state_done
+		var/need_tree = want_tree && tree_covered["[type]"] && dq_look_tree_eligible(type) && !res?.tree_done
+		var/need_state = want_state && state_covered["[type]"] && dq_look_state_eligible(type) && !res?.state_done
 		if(!need_tree && !need_state)
 			continue
 		if(!res)
@@ -191,18 +201,35 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			dq_look_globals_report(type, before)
 	dq_look_reset(T) // the block is released clean: nothing of the last type is left on it
 
+/// The types under a root `dir` has a file for, as "[type]" => TRUE (the types its pin compares).
+/datum/unit_test/proc/dq_look_covered_types(dir)
+	. = list()
+	for(var/root in dq_look_roots(dir))
+		for(var/type in typesof(root))
+			.["[type]"] = TRUE
+
+/// The roots `dir` has a file for, in file-name order (the names only: a pin file's rows are not read to know its roots).
+/datum/unit_test/proc/dq_look_roots(dir)
+	. = list()
+	var/list/names = flist(dir)
+	sortTim(names, GLOBAL_PROC_REF(cmp_text_asc))
+	for(var/name in names)
+		if(copytext(name, -4) != ".txt")
+			continue
+		var/path = text2path("/[replacetext(copytext(name, 1, -4), ".", "/")]")
+		if(path)
+			. += path
+
 /// Every type either wanted pin makes, in the one order every shard agrees on (the sorted path text).
 /datum/unit_test/proc/dq_look_universe(want_tree, want_state)
 	var/list/seen = list()
 	if(want_tree)
-		var/list/bad = list()
-		for(var/root in dq_snapshot_read_dir(DQ_LOOK_TREE_DIR, bad))
+		for(var/root in dq_look_roots(DQ_LOOK_TREE_DIR))
 			for(var/type in typesof(root))
 				if(dq_look_tree_eligible(type))
 					seen["[type]"] = type
 	if(want_state)
-		var/list/bad = list()
-		for(var/root in dq_snapshot_read_dir(DQ_LOOK_STATE_DIR, bad))
+		for(var/root in dq_look_roots(DQ_LOOK_STATE_DIR))
 			for(var/type in typesof(root))
 				if(dq_look_state_eligible(type))
 					seen["[type]"] = type
@@ -337,14 +364,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	if(length(found) > DQ_LOOK_STATE_MAX_VARS)
-		found.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
 	if(!islist(plan_entry))
+		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
+		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
+			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
 		return found
-	. = list()
+	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
+	var/list/read = list()
 	for(var/name in found)
 		if(name in plan_entry)
-			. += name
+			read += name
+	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
+		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	return read
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
@@ -377,9 +409,23 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			log_test("look sweep IMPURE: [type] [name]=[value]: writing [original] back did not return the look to the made one; the rest of its probes use fresh instances")
 			return FALSE
 	catch(var/exception/e)
-		res.probe_rows += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
-		return FALSE
+		if(!dq_look_write_refused(e, name))
+			res.probe_rows += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
+		return dq_look_still_made(subject, name, original, base)
 	return TRUE
+
+/// Whether `subject` is still the made instance after a probe ran into a runtime (a setter that refuses the value changes nothing, so the
+/// next probe may use it): the var holds its original value and the look, after a settle, is the made one. Anything else is not trusted.
+/datum/unit_test/proc/dq_look_still_made(atom/subject, name, original, list/base)
+	if(QDELETED(subject))
+		return FALSE
+	try
+		dq_look_settle()
+		if(subject.vars[name] != original)
+			return FALSE
+		return jointext(dq_look_pin_lines(subject), "\n") == jointext(base, "\n")
+	catch
+		return FALSE
 
 /// One probe on a fresh instance (the way the pin always probed): a fresh `type` with `name` written to `value`, redrawn, against the
 /// made look `base`; rows only for a difference.
@@ -403,10 +449,16 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			. += "[type] [name]=[value] -[row]"
 		dq_look_dispose(target)
 	catch(var/exception/e)
-		. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
+		if(!dq_look_write_refused(e, name))
+			. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
 	// A probe leaves nothing behind: what its thing spilled when it was deleted (a core's chunk, a cabinet's guns, a worm's dead
 	// heads) would otherwise be there for every later probe, and a closet takes all of it in each time it is made.
 	dq_look_drain_turf(T)
+
+/// Whether `e` is the var's own setter refusing the value ("set_stasis() given 1, not a /datum/body_effect/stasis": the setter takes a
+/// datum, not a number). A refused write changes nothing, so the probe is a probe that changes nothing and writes no row.
+/proc/dq_look_write_refused(exception/e, name)
+	return !!findtext("[e.name]", "set_[name]() given")
 
 /proc/dq_look_state_error(exception/e)
 	var/static/regex/where = regex(@"^\S+\.dm:\d+:")
@@ -422,9 +474,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /datum/unit_test/proc/dq_look_sweep_compare(dir, name, list/expected_by_root, list/bad, tree)
 	dq_look_report = null
 	var/partial = dq_look_sweep_partial()
-	if(partial)
-		if(dq_snapshot_blessing())
-			dq_look_report = "a sharded or incremental look sweep cannot bless: run it unsharded and full (tools/dq_focused_test.sh --bless does)"
+	var/bless_dir = world.params?["look-bless-dir"]
+	if(partial && dq_snapshot_blessing())
+		if(!bless_dir || !isnull(world.params?["look-types"]))
+			dq_look_report = "an incremental look sweep cannot bless, and a sharded one needs look-bless-dir (tools/dq_focused_test.sh --bless sets it)"
 			return dq_look_report
 	var/list/actual_by_root = list()
 	var/list/expected_kept = list()
@@ -462,6 +515,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			keep += row
 		expected_kept[root] = keep
 	dq_look_sweep_dump(name, actual_by_root)
+	if(partial && dq_snapshot_blessing())
+		dq_look_bless_partial(bless_dir, name, expected_by_root, actual_by_root)
+		return null
 	var/list/unrecorded = list()
 	if(partial)
 		// An empty file is a root with no rows, or a new pin that is not recorded yet; a partial run cannot tell which, nor write the file.
@@ -475,6 +531,30 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	if(length(unrecorded))
 		dq_look_report = "[dq_look_report ? "[dq_look_report]\n" : ""][jointext(unrecorded, "\n")]"
 	return dq_look_report
+
+/**
+ * A sharded bless: this world's rows for each root, written under the look-bless-dir param (a folder per shard index, per pin, one file
+ * per root), one row per line as the type's position in typesof(root), a TAB and the row. Nothing under snapshots/ is touched: the shards' files are merged, in that
+ * position order, by tools/dq_look_bless_merge.py after every world has ended, so the written file is what an unsharded bless writes.
+ * A root this world probed nothing for still gets its (empty) file, so the merge knows the root.
+ */
+/datum/unit_test/proc/dq_look_bless_partial(dir, name, list/expected_by_root, list/actual_by_root)
+	var/rows_written = 0
+	for(var/root in actual_by_root)
+		var/list/position = list()
+		var/index = 0
+		for(var/type in typesof(root))
+			index++
+			position["[type]"] = index
+		var/list/lines = list()
+		for(var/row in actual_by_root[root])
+			var/row_type = copytext(row, 1, findtext(row, " "))
+			lines += "[position[row_type] || 0]\t[row]"
+		var/file_name = "[dir]/shard[GLOB.dq_test_shard_index]/[name]/[replacetext(copytext("[root]", 2), "/", ".")].txt"
+		fdel(file_name)
+		text2file(length(lines) ? "[jointext(lines, "\n")]\n" : "", file_name)
+		rows_written += length(lines)
+	log_test("look bless: [name] shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count] wrote [rows_written] rows for [length(actual_by_root)] roots under [dir]")
 
 /// look-dump=<dir>: the rows this world produced, sorted, one file per root, plus the md5 of each in the log.
 /datum/unit_test/proc/dq_look_sweep_dump(name, list/actual_by_root)

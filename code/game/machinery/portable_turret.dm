@@ -377,7 +377,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /// The cover starts to move: the animation plays on a stand-in over the turret, and the mechanism sounds.
 /obj/machinery/porta_turret/proc/cover_moves(datum/act/A, raising)
 	var/atom/movable/flick_holder = new /atom/movable/porta_turret_cover(loc)
-	flick_holder.layer = layer + 0.1
+	flick_holder.set_layer(layer + 0.1)
 	flick("[raising ? "popup" : "popdown"]_[turret_type]", flick_holder)
 	play_sfx(src, raising ? SFX_MACHINES_TURRETS_TURRET_DEPLOY : SFX_MACHINES_TURRETS_TURRET_RETRACT)
 	after(src, 1 SECOND, PROC_REF(cover_flick_done), with = list(flick_holder))

@@ -1,6 +1,7 @@
-// reactions(): what a type reacts to (code/__defines/reactions.dm).
+// reactions(): what a /datum/system reacts to (code/__defines/reactions.dm). Only a system declares one (the reactions_table_proc lint bans it on every
+// other type: an entity's every(), on_change() and extend() entries are its CAPABILITIES block's).
 //
-//	/obj/machinery/pump/reactions()
+//	/datum/system/pump/reactions()
 //		. = ..()
 //		. += before_op(OP_KEY_SET_PRESSURE, PROC_REF(check_pressure_change))
 //		. += on_change(list(nameof(target_pressure), nameof(on)), PROC_REF(retune))
@@ -9,7 +10,7 @@
 //		. += every(1 SECONDS, PROC_REF(pump_step), when = nameof(on))
 //		. += drawn_from(nameof(on))            // the existing derived() sugar works here too
 //
-// The composed table of a type is its own reactions() + each capability's reactions() + the generated
+// The composed table of a type is its own reactions() + the generated
 // reads (code/_generated/reads.dm, written by tools/ci/derived_reads_lint.py --fix-generated) + its derived()
 // entries, built once per type. It answers READERS(): a key nothing reads publishes nothing.
 //
@@ -200,9 +201,6 @@ PROC_SUMMARY(/proc/rx_call_reaction) // vars[] / call() dispatcher: the walk can
 	RETURN_TYPE(/list)
 	return list()
 
-// A capability contributes its reactions by overriding reactions() (it inherits /datum/proc/reactions):
-// `/datum/capability/x/reactions()  . = ..()  . += before_op(...)`. Static: read no holder state.
-
 /// The reads the framework generated for this type from its draw / should_run / tgui_data / hidden_verbs /
 /// push_to_rust / derive_<x> bodies (code/_generated/reads.dm; never write it by hand). They are implicit:
 /// they feed READERS() without making the type's derived() exact.
@@ -284,15 +282,16 @@ PROC_SUMMARY(/proc/rx_table_build) // vars[] / call() dispatcher: the walk canno
 		rx_table_add(T, R)
 	for(var/datum/derived_entry/E in generated + derived)
 		if(E.kind == DKIND_REACTION)
-			rx_table_add_reaction_reads(T, own, E)
+			rx_table_add_reaction_reads(T, own, E, D)
 		else
 			rx_table_add_reads(T, E)
 	GLOB.rx_tables[D.type] = T
 	return T
 
 /// reaction_reads(handler, ...): each read also runs the type's on_change() reactions with that handler (the same
-/// reaction datum, so the reads coalesce with its declared ones: one pend per drain).
-/proc/rx_table_add_reaction_reads(datum/rx_table/T, list/own, datum/derived_entry/E)
+/// reaction datum, so the reads coalesce with its declared ones: one pend per drain). A handler that is the then() of a published
+/// on_change hook of the type's CAPABILITIES block is the hook engine's: its reads join that hook's index (change_generated_reads()).
+/proc/rx_table_add_reaction_reads(datum/rx_table/T, list/own, datum/derived_entry/E, datum/D)
 	var/found = FALSE
 	for(var/datum/reaction/R in own)
 		if(R.kind != RXN_CHANGE || R.handler != E.name)
@@ -304,7 +303,7 @@ PROC_SUMMARY(/proc/rx_table_build) // vars[] / call() dispatcher: the walk canno
 			LAZYINITLIST(T.by_key[read])
 			T.by_key[read] |= R
 			T.read_keys[read] = TRUE
-	if(!found)
+	if(!found && !change_handler_declared(D, E.name))
 		stack_trace("reaction_reads([E.name]) on [T.owner_type]: no on_change() reaction of the type has that handler")
 
 /proc/rx_table_add_reads(datum/rx_table/T, datum/derived_entry/E)

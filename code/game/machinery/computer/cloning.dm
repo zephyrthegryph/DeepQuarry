@@ -236,7 +236,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if(!scanner() || !scanner_occupant || loading)
 		return
 	set_scan_temp("Scanner ready.", "good")
-	loading = TRUE
+	set_loading(TRUE)
 
 	after(src, 2 SECONDS, PROC_REF(delayed_scan), with = list(scanner_occupant))
 	add_fingerprint(A.actor)
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if(istype(active_BR(), /datum/transhuman/body_record))
 		if(isnull(active_BR().ckey))
 			spent(active_BR())
-			set_temp("Error: Record corrupt.", "danger")
+			show_temp("Error: Record corrupt.", "danger")
 		else
 			var/obj/item/implant/health/H = null
 			if(active_BR().mydna.implant)
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			tgui_modal_message(src, "view_rec", "", null, payload)
 	else
 		rel_clear(src, nameof(/obj/machinery/computer/cloning::active_BR))
-		set_temp("Error: Record missing.", "danger")
+		show_temp("Error: Record missing.", "danger")
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/has_active_record(datum/act/op/A)
@@ -293,7 +293,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		return
 	var/obj/item/card/id/C = user.get_active_hand()
 	if(!istype(C) && !istype(C, /obj/item/pda))
-		set_temp("ID not in hand.", "danger")
+		show_temp("ID not in hand.", "danger")
 		return
 	if(check_access(C))
 		var/datum/transhuman/body_record/doomed = active_BR()
@@ -301,10 +301,10 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			rel_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
 		else
 			spent(doomed)
-		set_temp("Record deleted.", "success")
-		menu = MENU_RECORDS
+		show_temp("Record deleted.", "success")
+		set_menu(MENU_RECORDS)
 	else
-		set_temp("Access denied.", "danger")
+		show_temp("Access denied.", "danger")
 
 /obj/machinery/computer/cloning/proc/ui_act_disk(datum/act/op/A, option)
 	. = TRUE
@@ -313,24 +313,24 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	switch(option)
 		if("load")
 			if(isnull(diskette) || isnull(diskette.stored)) // Traitgenes Storing the entire body record
-				set_temp("Error: The disk's data could not be read.", "danger")
+				show_temp("Error: The disk's data could not be read.", "danger")
 				return
 			else if(isnull(active_BR()))
-				set_temp("Error: No active record was found.", "danger")
-				menu = MENU_MAIN
+				show_temp("Error: No active record was found.", "danger")
+				set_menu(MENU_MAIN)
 				return
 
 			rel_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
 			rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), loaded_BR) // Traitgenes Storing the entire body record
-			set_temp("Successfully loaded from disk.", "success")
+			show_temp("Successfully loaded from disk.", "success")
 		if("save")
 			if(isnull(diskette) || isnull(active_BR())) // Traitgenes Removed readonly
-				set_temp("Error: The data could not be saved.", "danger")
+				show_temp("Error: The data could not be saved.", "danger")
 				return
 
 			rel_set(diskette, nameof(diskette.stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
 			diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
-			set_temp("Successfully saved to disk.", "success")
+			show_temp("Successfully saved to disk.", "success")
 		if("eject")
 			if(!isnull(diskette))
 				diskette.forceMove(get_turf(src))
@@ -361,36 +361,36 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		tgui_modal_clear(src)
 		//Can't clone without someone to clone.  Or a pod.  Or if the pod is busy. Or full of gibs.
 		if(!length(pods))
-			set_temp("Error: No cloning pod detected.", "danger")
+			show_temp("Error: No cloning pod detected.", "danger")
 		else
 			var/obj/machinery/clonepod/pod = selected_pod()
 			var/cloneresult
 			if(!selected_pod())
-				set_temp("Error: No cloning pod selected.", "danger")
+				show_temp("Error: No cloning pod selected.", "danger")
 			else if(pod.get_occupant())
-				set_temp("Error: The cloning pod is currently occupied.", "danger")
+				show_temp("Error: The cloning pod is currently occupied.", "danger")
 			else if(pod.get_biomass() < CLONE_BIOMASS)
-				set_temp("Error: Not enough biomass.", "danger")
+				show_temp("Error: Not enough biomass.", "danger")
 			else if(pod.mess)
-				set_temp("Error: The cloning pod is malfunctioning.", "danger")
+				show_temp("Error: The cloning pod is malfunctioning.", "danger")
 			else if(!CONFIG_GET(flag/revival_cloning))
-				set_temp("Error: Unable to initiate cloning cycle.", "danger")
+				show_temp("Error: Unable to initiate cloning cycle.", "danger")
 			else
 				cloneresult = pod.growclone(C)
 				if(cloneresult)
-					set_temp("Initiating cloning cycle...", "success")
+					show_temp("Initiating cloning cycle...", "success")
 					play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, 2)
 					own_move(C, pod, nameof(/obj/machinery/clonepod::growing_record))
-					menu = MENU_MAIN
+					set_menu(MENU_MAIN)
 				else
-					set_temp("Error: Initialisation failure.", "danger")
+					show_temp("Error: Initialisation failure.", "danger")
 	else
-		set_temp("Error: Data corruption.", "danger")
+		show_temp("Error: Data corruption.", "danger")
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/ui_act_menu(datum/act/op/A, num_arg)
 	. = TRUE
-	menu = num_arg
+	set_menu(num_arg)
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/ui_act_toggle_mode(datum/act/op/A)
@@ -398,9 +398,9 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if(loading)
 		return
 	if(can_brainscan())
-		scan_mode = !scan_mode
+		set_scan_mode(!scan_mode)
 	else
-		scan_mode = FALSE
+		set_scan_mode(FALSE)
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/ui_act_eject(datum/act/op/A)
@@ -413,7 +413,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
-	temp = null
+	set_temp(null)
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
@@ -508,9 +508,8 @@ CAPABILITIES(/obj/machinery/computer/cloning)
  * * text - Text to display, null/empty to clear the message from the UI
  * * style - The style of the message: (color name), info, success, warning, danger
  */
-/obj/machinery/computer/cloning/proc/set_temp(text = "", style = "info", update_now = FALSE)
-	temp = list(text = text, style = style)
-	tracked_changed(src, nameof(temp))
+/obj/machinery/computer/cloning/proc/show_temp(text = "", style = "info", update_now = FALSE)
+	set_temp(list(text = text, style = style))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -522,7 +521,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
  * * color - The color of the message: (color name)
  */
 /obj/machinery/computer/cloning/proc/set_scan_temp(text = "", color = "", update_now = FALSE)
-	scantemp = list(text = text, color = color)
+	set_scantemp(list(text = text, color = color))
 	if(update_now)
 		SStgui.update_uis(src)
 
@@ -534,7 +533,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 		scan_mob(scanner_occupant, scan_brain = TRUE)
 	else
 		scan_mob(scanner_occupant)
-	loading = FALSE
+	set_loading(FALSE)
 	SStgui.update_uis(src)
 
 /// Whether its work starts at initialization (started_work(starts =)).

@@ -113,7 +113,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 
 	//Set some kinda scanning var to pause UI input on console
 	EXPIRY_STAMP(GLOB.rm_controller, last_scan, CLOCK_WORLD)
-	scanning = 1
+	set_scanning(1)
 	after(src, 6 SECONDS, PROC_REF(finish_scan))
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	rel_set(GLOB.rm_controller, nameof(/datum/controller/rogue::current_zone), ZM_target)
 
 	//Unset scanning
-	scanning = 0
+	set_scanning(0)
 
 	return
 

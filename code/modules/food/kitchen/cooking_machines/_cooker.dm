@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 		warm_contents()
 	if(istype(CI) && CI.combine_target)
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
-		selected_option = null
+		set_selected_option(null)
 
 /// The starting cooking slots (owns_many(starts =)): one container per slot.
 /obj/machinery/appliance/cooker/proc/make_cooking_objs(current)

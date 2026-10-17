@@ -200,6 +200,13 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.exact_reuse = exact;
         self
     }
+    pub(crate) fn shape(&self) -> io::Result<(usize, usize, usize)> {
+        Ok(self
+            .snapshot
+            .lock()
+            .map_err(|_| invalid("input capture mutex poisoned"))?
+            .shape())
+    }
     pub fn snapshot(&self) -> io::Result<InputSnapshot> {
         Ok(self
             .snapshot
@@ -353,6 +360,11 @@ impl Validation {
 }
 
 impl InputSnapshot {
+    /// Entry counts of the three recorded sets. Records only grow (a repeated
+    /// read that differs is rejected), so equal counts mean an equal capture.
+    pub(crate) fn shape(&self) -> (usize, usize, usize) {
+        (self.files.len(), self.folders.len(), self.negative_files.len())
+    }
     /// Exact captured facts, independent of validation's refreshed scan time.
     /// Stamps and issued generated-output policy remain part of this proof.
     pub(crate) fn same_recorded_facts(&self, other: &Self) -> bool {
@@ -391,10 +403,28 @@ impl InputSnapshot {
     fn filter_generated(&self, folder: &Path, listing: FolderListing) -> FolderListing {
         match listing {
             FolderListing::Present(mut names) => {
+                if self.generated_outputs.is_empty() {
+                    return FolderListing::Present(names);
+                }
+                // A listing name is generated when `canonical_path(folder/name)` is a generated
+                // output. Only outputs that sit directly in this folder can match, so their leaf
+                // names are compared instead of canonicalizing every name of every listing (a
+                // path allocation per name, repeated by every freshness sweep of a request).
+                let base = canonical_path(folder);
+                let leaves: Vec<&std::ffi::OsStr> = self
+                    .generated_outputs
+                    .iter()
+                    .filter(|output| output.parent() == Some(base.as_path()))
+                    .filter_map(|output| output.file_name())
+                    .collect();
                 names.retain(|name| {
-                    !self
-                        .generated_outputs
-                        .contains(&canonical_path(&folder.join(name)))
+                    if name.contains(':') {
+                        // Drive-relative or stream spellings keep the exact path semantics.
+                        return !self
+                            .generated_outputs
+                            .contains(&canonical_path(&folder.join(name)));
+                    }
+                    !leaves.iter().any(|leaf| *leaf == std::ffi::OsStr::new(name))
                 });
                 FolderListing::Present(names)
             }
@@ -432,6 +462,13 @@ impl InputSnapshot {
     /// (`.dm`, `.dme`), by content: non-text files, folder listings, negative
     /// lookups and generated outputs. Used to admit body-edit patches.
     pub(crate) fn non_text_difference(&self, other: &Self) -> Option<String> {
+        self.non_text_difference_with(other, true)
+    }
+    /// As `non_text_difference`, but with `listings` false the folder listings and negative lookups
+    /// are not compared. A patch passes false when the resource archive and search context are
+    /// unchanged: a listing only matters through what it resolved, and an icon repack that rewrites
+    /// unreferenced files changes listings without changing any resolution.
+    pub(crate) fn non_text_difference_with(&self, other: &Self, listings: bool) -> Option<String> {
         let text = |path: &Path| {
             path.extension().is_some_and(|extension| {
                 extension.eq_ignore_ascii_case("dm") || extension.eq_ignore_ascii_case("dme")
@@ -455,10 +492,10 @@ impl InputSnapshot {
         if let Some((path, _)) = right.next() {
             return Some(format!("{} removed", path.display()));
         }
-        if self.folders != other.folders {
+        if listings && self.folders != other.folders {
             return Some("resource folder listing".into());
         }
-        if self.negative_files != other.negative_files {
+        if listings && self.negative_files != other.negative_files {
             return Some("negative file lookups".into());
         }
         if self.generated_outputs != other.generated_outputs {
@@ -489,7 +526,10 @@ impl InputSnapshot {
     /// Merge a freshly validated retained domain into this capture. Conflicting
     /// reads reject the build instead of silently selecting one observation.
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
+        let _timer = dm_profile::detail_timer("snapshot.merge.check_structure");
         other.check_structure()?;
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.files");
         if !other.folders.is_empty() && other.generated_outputs != self.generated_outputs {
             return Err(invalid("retained generated-output proof policy differs"));
         }
@@ -505,11 +545,54 @@ impl InputSnapshot {
                 self.files.insert(path.clone(), file.clone());
             }
         }
-        for path in &other.negative_files {
-            self.record_negative(path)?;
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.rest");
+        // `other` passed `check_structure` above: its paths are canonical, its listings sorted
+        // leaf names, and (the policies being equal) already free of generated outputs. Merging
+        // therefore compares and inserts; re-filtering every listing name through
+        // `canonical_path` cost about 0.5 s per request on DeepQuarry's resource folders.
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.negatives");
+        // Both sets are ordered: one linear walk finds a negative that is also a file, where a
+        // lookup per negative (a component-wise path comparison each) cost 0.18 s.
+        {
+            let mut files = self.files.keys().peekable();
+            for path in &other.negative_files {
+                while let Some(file) = files.peek() {
+                    match (*file).cmp(path) {
+                        std::cmp::Ordering::Less => {
+                            files.next();
+                        }
+                        std::cmp::Ordering::Equal => {
+                            return Err(invalid("present input became negative during capture"));
+                        }
+                        std::cmp::Ordering::Greater => break,
+                    }
+                }
+            }
         }
+        if self.negative_files.is_empty() {
+            self.negative_files = other.negative_files.clone();
+        } else {
+            self.negative_files.extend(other.negative_files.iter().cloned());
+        }
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.folders");
+        let same_policy = other.generated_outputs == self.generated_outputs;
         for (path, listing) in &other.folders {
-            self.record_folder(path, listing.clone())?;
+            if !same_policy {
+                self.record_folder(path, listing.clone())?;
+                continue;
+            }
+            match self.folders.get(path) {
+                Some(previous) if previous != listing => {
+                    return Err(invalid("resource folder changed during capture"));
+                }
+                Some(_) => {}
+                None => {
+                    self.folders.insert(path.clone(), listing.clone());
+                }
+            }
         }
         self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
         Ok(())

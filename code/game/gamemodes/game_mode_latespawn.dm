@@ -54,7 +54,7 @@
 		usable_templates = get_usable_templates(antag_templates)
 	else
 		message_admins("[uppertext(name)]: Failed to find configured mode spawn templates, please disable auto-antagonists until one is added.")
-		round_autoantag = 0
+		set_round_autoantag(0)
 		return
 
 	while(usable_templates.len)

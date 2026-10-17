@@ -410,7 +410,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		ex_organ.nonsolid = TRUE
 		ex_organ.spread_dam = TRUE
 		ex_organ.set_max_damage(5) //VERY fragile, now.
-		ex_organ.vital = FALSE
+		ex_organ.set_vital(FALSE)
 		ex_organ.encased = FALSE
 		ex_organ.cannot_gib = FALSE
 

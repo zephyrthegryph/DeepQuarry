@@ -60,7 +60,7 @@ Buildable meters
 		set_req_access(make_from.req_access)
 	if(make_from.req_one_access)
 		set_req_one_access(make_from.req_one_access)
-	color = make_from.pipe_color
+	set_color(make_from.pipe_color)
 	set_pipe_type(make_from.type)
 	material_engineered_id_set(src, make_from.engineered_material_id)
 	material_liner_integrity = make_from.material_liner_integrity
@@ -84,16 +84,16 @@ Buildable meters
 	// Do it the Polaris way
 	switch(piping_layer)
 		if(PIPING_LAYER_SCRUBBER)
-			color = PIPE_COLOR_RED
+			set_color(PIPE_COLOR_RED)
 			name = "[initial(fakeA.name)] scrubber fitting"
 		if(PIPING_LAYER_SUPPLY)
-			color = PIPE_COLOR_BLUE
+			set_color(PIPE_COLOR_BLUE)
 			name = "[initial(fakeA.name)] supply fitting"
 		if(PIPING_LAYER_FUEL)
-			color = PIPE_COLOR_YELLOW
+			set_color(PIPE_COLOR_YELLOW)
 			name = "[initial(fakeA.name)] fuel fitting"
 		if(PIPING_LAYER_AUX)
-			color = PIPE_COLOR_CYAN
+			set_color(PIPE_COLOR_CYAN)
 			name = "[initial(fakeA.name)] aux fitting"
 
 /obj/item/pipe/proc/update()
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/pipe)
 		return OP_FAILED
 	material_engineered_id_set(src, material.name)
 	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
-	color = material.icon_colour
+	set_color(material.icon_colour)
 	to_chat(A.actor, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
 	return OP_OK
 

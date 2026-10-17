@@ -14,5 +14,5 @@ CAPABILITIES(/datum/malf_research_ability)
 /datum/malf_research_ability/proc/research_tick(time = 0)
 	invested += time
 	if(invested >= price)
-		unlocked = 1
+		set_unlocked(1)
 

@@ -10,7 +10,7 @@
 /datum/belly_overlay_tgui
 	var/tmp/mob/owner
 	var/datum/tgui/active_ui
-	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
+	var/list/overlay_state = list() // ALLOW(instance_list): the window payload, replaced whole on every show or hide
 	/// Signature of the last computed overlay state. show() recomputes it cheaply
 	/// each tick and skips the (expensive) layer rebuild + send_update() when it
 	/// hasn't changed, so liquid bellies don't repaint the tgui every single tick.
@@ -45,7 +45,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 
 /// /datum/belly_overlay_tgui's window data.
 /datum/belly_overlay_tgui/ui_data(datum/act/eval/A)
-	return src.state
+	return overlay_state
 
 /datum/belly_overlay_tgui/tgui_close(mob/user)
 	hide()
@@ -162,10 +162,10 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 			for(var/list/L in layers)
 				urls_to_send += L["url"]
 			dq_send_belly_overlay_urls(owner().client, urls_to_send)
-	state = list(
+	set_overlay_state(list(
 		"visible" = length(layers) > 0,
 		"layers"  = layers,
-	)
+	))
 	open_window()
 	if(active_ui)
 		active_ui.send_update()
@@ -176,7 +176,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 	// blanks for hundreds of ms. Just push an empty layer set so the React
 	// side renders nothing, and hide the BROWSER widget. The window stays
 	// alive in the background, ready to re-render the next belly instantly.
-	state = list("visible" = FALSE, "layers" = list())
+	set_overlay_state(list("visible" = FALSE, "layers" = list()))
 	// Invalidate the cached signature so the next show() always re-renders rather
 	// than matching a stale (pre-hide) signature and leaving the overlay blank.
 	last_show_sig = null

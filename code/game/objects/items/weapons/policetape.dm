@@ -246,7 +246,7 @@ CAPABILITIES(/obj/item/taperoll)
 				var/obj/item/tape/T = new tape_type(cur)
 				T.set_tape_dir(tape_dir)
 				if(tape_dir & SOUTH)
-					T.layer += 0.1 // Must always show above other tapes
+					T.set_layer(T.layer + 0.1) // Must always show above other tapes
 			if(cur == get_end())
 				break
 			cur = get_step_towards(cur,get_end())
@@ -265,7 +265,7 @@ CAPABILITIES(/obj/item/taperoll)
 			to_chat(user, "There's already tape over that door!")
 		else
 			var/obj/item/tape/P = new tape_type(T)
-			P.layer = WINDOW_LAYER
+			P.set_layer(WINDOW_LAYER)
 			to_chat(user, span_notice("You finish placing \the [src]."))
 
 	if (istype(A, /turf/simulated/floor) ||istype(A, /turf/unsimulated/floor))
@@ -277,11 +277,11 @@ CAPABILITIES(/obj/item/taperoll)
 
 		if(GLOB.tape_roll_applications[F] & direction) // hazard_overlay in F.overlays wouldn't work.
 			act_message(user, src, MSG_SELF("You use the adhesive of %T% to remove area markings from \the [F]."), MSG_OTHERS("%U% uses the adhesive of %T% to remove area markings from \the [F]."))
-			F.cut_overlay(hazard_overlay)
+			F.set_decals(F.decals - hazard_overlay) // the floor's draw shows its decals
 			GLOB.tape_roll_applications[F] &= ~direction
 		else
 			act_message(user, src, MSG_SELF("You apply %T% on \the [F] to create area markings."), MSG_OTHERS("%U% applied %T% on \the [F] to create area markings."))
-			F.add_overlay(hazard_overlay)
+			F.set_decals(F.decals ? F.decals + hazard_overlay : list(hazard_overlay))
 			GLOB.tape_roll_applications[F] |= direction
 		return
 
@@ -334,8 +334,8 @@ CAPABILITIES(/obj/item/tape)
 
 /obj/item/tape/proc/lift(time)
 	lifted = 1
-	plane = MOB_PLANE
-	layer = ABOVE_MOB_LAYER
+	set_plane(MOB_PLANE)
+	set_layer(ABOVE_MOB_LAYER)
 	after(src, time, PROC_REF(settle))
 
 // Returns a list of all tape objects connected to src, including itself.

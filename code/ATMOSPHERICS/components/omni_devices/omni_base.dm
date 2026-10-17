@@ -41,13 +41,13 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 		var/datum/omni_port/new_port = new(src, d)
 		switch(d)
 			if(NORTH)
-				new_port.mode = tag_north
+				new_port.set_mode(tag_north)
 			if(SOUTH)
-				new_port.mode = tag_south
+				new_port.set_mode(tag_south)
 			if(EAST)
-				new_port.mode = tag_east
+				new_port.set_mode(tag_east)
 			if(WEST)
-				new_port.mode = tag_west
+				new_port.set_mode(tag_west)
 		if(new_port.mode > 0)
 			initialize_directions |= d
 		rel_add(src, nameof(ports), new_port)

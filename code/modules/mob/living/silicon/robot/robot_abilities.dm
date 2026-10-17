@@ -155,7 +155,7 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 	var/newname = sanitizeSafe(entered || "", MAX_NAME_LEN)
 	if (newname && !custom_name)
 		set_custom_name(newname)
-		sprite_name = newname
+		set_sprite_name(newname)
 
 	updatename()
 

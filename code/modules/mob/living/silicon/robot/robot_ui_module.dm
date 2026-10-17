@@ -41,7 +41,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	var/list/whitelisted = list()
 	if(R.module)
 		modules = list(R.modtype)
-		selected_module = R.modtype
+		set_selected_module(R.modtype)
 	else
 		if(LAZYLEN(R.restrict_modules_to))
 			modules += R.restrict_modules_to
@@ -80,13 +80,13 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		data["selected_module"]  = selected_module
 		if(!SSrobot_sprites)
 			to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
-			selected_module = null
+			set_selected_module(null)
 			return
 
 		var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
 		if(!module_sprites || !module_sprites.len)
 			to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))
-			selected_module = null
+			set_selected_module(null)
 			return
 		var/list/available_sprites = list()
 		for(var/datum/robot_sprite/S in module_sprites)
@@ -117,7 +117,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		return FALSE
 	if(!is_borg_whitelisted(R, new_module))
 		return FALSE
-	selected_module = new_module
+	set_selected_module(new_module)
 	if(sprite_datum)
 		var/new_datum
 		var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 			if(S.name == sprite_datum.name)
 				new_datum = S
 				break
-		sprite_datum = new_datum
+		set_sprite_datum(new_datum)
 	return TRUE
 
 /datum/tgui_module/robot_ui_module/proc/ui_act_pick_icon(datum/act/op/A, value)
@@ -136,7 +136,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
 	for(var/datum/robot_sprite/S in module_sprites)
 		if(S.name == sprite)
-			sprite_datum = S
+			set_sprite_datum(S)
 			break
 	return TRUE
 
@@ -144,8 +144,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	var/mob/living/silicon/robot/R = host()
 	var/name = value
 	if(name)
-		new_name = sanitizeSafe(name, MAX_NAME_LEN)
-		R.sprite_name = new_name
+		set_new_name(sanitizeSafe(name, MAX_NAME_LEN))
+		R.set_sprite_name(new_name)
 	return TRUE
 
 /datum/tgui_module/robot_ui_module/proc/ui_act_confirm(datum/act/op/A)
@@ -163,7 +163,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	if(!custom_name)
 		if (new_name)
 			set_custom_name(new_name)
-			sprite_name = new_name
+			set_sprite_name(new_name)
 
 /mob/living/silicon/robot/proc/apply_module(datum/robot_sprite/new_datum, new_module)
 	icon_selected = TRUE

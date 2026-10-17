@@ -13,7 +13,7 @@
 	if(S.use(use_flooring.build_cost))
 		install_flooring(use_flooring)
 		if(S.color)
-			color = S.color
+			set_color(S.color)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)
 	return OP_OK
 
@@ -121,7 +121,7 @@
 					play_sfx(src, SFX_WEAPONS_GENHIT)
 					ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					if(S.color)
-						color = S.color
+						set_color(S.color)
 					return OP_PASS
 		else if(istype(C, /obj/item))
 			try_deconstruct_tile(C, user)

@@ -5,7 +5,7 @@
 
 	//do this again, just in case
 	if(flags & ANTAG_OVERRIDE_JOB)
-		player.assigned_role = role_text
+		player.set_assigned_role(role_text)
 	player.set_special_role(role_text)
 
 	if(isobserver(player.current))
@@ -63,6 +63,6 @@
 			revoke(player.current, granted_verb(/mob/living/proc/write_ambition), src)
 			if(player.current.client)
 				revoke(player.current.client, granted_verb(/client/proc/aooc), player)
-			player.ambitions = ""
+			player.set_ambitions("")
 		return 1
 	return 0

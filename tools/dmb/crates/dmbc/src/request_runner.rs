@@ -67,6 +67,17 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
     );
     Ok(())
 }
+/// Progress line for one prior session record's validation attempt.
+struct RecordTimer(u128, Instant);
+impl Drop for RecordTimer {
+    fn drop(&mut self) {
+        dmbc::daemon_eprintln!(
+            "native session record {:032x}: {:.3}s",
+            self.0,
+            self.1.elapsed().as_secs_f64()
+        );
+    }
+}
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
 }
@@ -236,6 +247,13 @@ fn run_build_attempt(
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
+    if retains_query_owners {
+        if let Some(root) = project.parent() {
+            dmbc::fs_watch::arm(root);
+            dmbc::fs_watch::sync(root);
+        }
+        dm_profile::request_mark("session.watch_synced");
+    }
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -269,6 +287,7 @@ fn run_build_attempt(
                 .unwrap_or_else(|| dmbc::publish::default_store_path(&project))?,
         )?;
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
+            let _record_timer = progress_enabled.then(|| RecordTimer(id, Instant::now()));
             if let Some(mut validated) = configured
                 .validate_filesystem_shared(
                     id,
@@ -351,6 +370,7 @@ fn run_build_attempt(
                         }
                         configured.store(record)?;
                     }
+                    dmbc::compile_stats::note_hit();
                     dmbc::daemon_eprintln!(
                         "native session hit: total={:.3}s rehashed={} pair={}",
                         total.elapsed().as_secs_f64(),
@@ -378,7 +398,11 @@ fn run_build_attempt(
         session = Some(configured);
         pair_store = Some(store);
     }
-    stamped_provider.adopt(shared_proofs.take());
+    if retains_query_owners && dmbc::fs_watch::enabled() {
+        let (hits, misses) = dmbc::fs_watch::counters();
+        dmbc::daemon_eprintln!("native fs watch: directory proofs cached={hits} captured={misses}");
+    }
+    stamped_provider.adopt(shared_proofs.clone());
     drop(session_profile);
     dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
@@ -579,6 +603,10 @@ fn run_build_attempt(
         }
     });
     dm_profile::request_mark("frontend.revision");
+    if retains_query_owners {
+        // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        semantic_state.remember_frontend(&project, &defines, frontend.clone());
+    }
     if progress_enabled {
         dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
     }
@@ -686,8 +714,17 @@ fn run_build_attempt(
             };
             let proof_started = std::time::Instant::now();
             let proof_profile = dm_profile::stage("resources.filesystem_proofs");
-            let raw_proofs = manifest.filesystem_proofs().map_err(|error| error.to_string())?;
-            let proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_proofs, generated_paths.iter().cloned());
+            // The directory proofs session validation captured at the start of this request already
+            // cover the previous build's inputs, resource files included (paths outside them fall back
+            // to live handling inside the proofs). Publication restats every captured input live, so
+            // a file that moves between that capture and now still rebuilds.
+            let raw_proofs = match &shared_proofs {
+                Some(shared) => std::sync::Arc::clone(shared),
+                None => std::sync::Arc::new(
+                    manifest.filesystem_proofs().map_err(|error| error.to_string())?,
+                ),
+            };
+            let proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&*raw_proofs, generated_paths.iter().cloned());
             drop(proof_profile);
             dmbc::daemon_eprintln!(
                 "native resource FilesystemProofCapture: {:.3}s",
@@ -795,13 +832,15 @@ fn run_build_attempt(
         // remains outside this optimization, including on memo hits.
         dmbc::daemon::control::checkpoint()?;
         // Every input is captured now; prove freshness while compilation runs.
-        let early_admission = match runner_freshness::snapshot_captured(&inputs_capture, nontext.retained_resource_inputs()) {
+        let snapshot_memo = runner_freshness::SnapshotMemo::default();
+        let early_admission = match snapshot_memo.get(&inputs_capture, nontext.retained_resource_inputs()) {
             Ok(inputs) => Some(runner_freshness::EarlyAdmission::start(inputs, &input_provider, generated_paths)),
             Err(error) => {
                 dmbc::daemon_eprintln!("native early admission skipped: {error}");
                 None
             }
         };
+        dm_profile::request_mark("patch.early_admission_started");
         // Body-edit fast path: relower only changed bodies and splice their code
         // into the retained output. Any unproven condition declines (logged) and
         // the full compilation below runs. DMB_BODY_PATCH=0 disables it.
@@ -811,11 +850,10 @@ fn run_build_attempt(
             {
                 let patch_started = Instant::now();
                 let attempt = (|| {
-                    let inputs = runner_freshness::snapshot_captured(
-                        &inputs_capture,
-                        nontext.retained_resource_inputs(),
-                    )
-                    .map_err(|error| format!("input admission: {error}"))?;
+                    let inputs = snapshot_memo
+                        .get(&inputs_capture, nontext.retained_resource_inputs())
+                        .map_err(|error| format!("input admission: {error}"))?;
+                    dm_profile::request_mark("patch.inputs_snapshot");
                     dmbc::body_patch::try_patch(dmbc::body_patch::PatchRequest {
                         generation,
                         shape,
@@ -835,6 +873,7 @@ fn run_build_attempt(
                 })();
                 match attempt {
                     Ok(patched) => {
+                        dmbc::compile_stats::note_patch(patched.changed_bodies);
                         dmbc::body_patch::note_applied(&project);
                         dmbc::daemon_eprintln!(
                             "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
@@ -846,6 +885,7 @@ fn run_build_attempt(
                         Some(patched)
                     }
                     Err(reason) => {
+                        dmbc::compile_stats::note_full(format!("patch declined: {reason}"));
                         dmbc::daemon_eprintln!(
                             "native body patch: declined after {:.3}s, full compilation: {reason}",
                             patch_started.elapsed().as_secs_f64()
@@ -854,7 +894,16 @@ fn run_build_attempt(
                     }
                 }
             }
-            _ => None,
+            _ => {
+                dmbc::compile_stats::note_full(if std::env::var_os("DMB_BODY_PATCH").is_some_and(|value| value == "0") {
+                    "body patch disabled"
+                } else if generation.is_none() {
+                    "no retained generation (cold session)"
+                } else {
+                    "no patch shape"
+                });
+                None
+            }
         };
         dm_profile::request_mark("patch.attempted");
         // A patch claims nothing in the procedure memo; publishing its empty
@@ -1077,7 +1126,8 @@ fn run_build_attempt(
         // A live admission (early or here) already proved these exact inputs,
         // so the session record below needs no second freshness sweep.
         let early_inputs = early_admission.and_then(|early| {
-            runner_freshness::snapshot_captured(&inputs_capture, publication.retained_resource_inputs.as_ref())
+            snapshot_memo
+                .get(&inputs_capture, publication.retained_resource_inputs.as_ref())
                 .ok()
                 .and_then(|current| early.finish(&current))
         });
@@ -1180,8 +1230,18 @@ fn run_build_attempt(
                 if let Some(engine) = &engine_capture { query_attempt.bind_publication_proof(&inputs, &engine.bytes); }
                 dm_profile::request_mark("publication.resource_manifest");
                 if let Some(session) = &session {
-                    session.store(dmbc::session::Record { inputs, pair: pair.id,
+                    let stored = session.store(dmbc::session::Record { inputs, pair: pair.id,
                         outputs: Some(outputs), warnings: dmbc::initializer_policy::warnings::render(&output.warnings)?, resource_manifest: Some((*resource_manifest).clone()) })?;
+                    // The next request validates this record first. A resident daemon decodes it now,
+                    // beside the reply, so the request that follows finds it decoded.
+                    if retains_query_owners {
+                        let records = session.records();
+                        let _ = std::thread::Builder::new()
+                            .name("dmbc-session-decode".into())
+                            .spawn(move || {
+                                let _ = records.prior(stored);
+                            });
+                    }
                 }
             } else {
                 dmbc::daemon_eprintln!("native session not saved: inputs changed during compilation");

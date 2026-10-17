@@ -269,7 +269,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		for(var/list/L in list(GLOB.data_core.general, GLOB.data_core.medical, GLOB.data_core.security, GLOB.data_core.locked))
 			for(var/datum/data/record/R in L)
 				if(R.fields["name"] == oldname)
-					R.fields["name"] = newname
+					R.set_fields_at("name", newname)
 					break
 
 		//update our pda and id if we have them on our person
@@ -357,15 +357,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return "[pick("1","2","3","4","5","6","7","8","9","0")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")][pick("!","@","#","$","%","^","&","*")]"
 
 //When an AI is activated, it can choose from a list of non-slaved borgs to have as a slave.
-/// The pick re-runs `proc_name` on `asker` with `proc_args` (null while waiting, or with no borgs).
-/proc/freeborg(mob/user, datum/asker, proc_name, list/proc_args)
-	var/list/borgs = free_borg_choices()
-	if(!borgs.len)
-		return
-	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/prompt/choice, question = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
-	if(select)
-		return borgs[select]
-
 /proc/free_borg_choices()
 	var/list/borgs = list()
 	for (var/mob/living/silicon/robot/A in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -396,16 +387,10 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	return selected
 
-/// Without a user (or asker) an AI is picked at random; else `user` picks, and the answer
-/// re-runs `proc_name` on `asker` with `proc_args` (null meanwhile).
-/proc/select_active_ai(mob/user, datum/asker, proc_name, list/proc_args)
-	var/list/ais = active_ais()
-	if(!ais.len)
-		return
-	if(!user || !asker)
-		return pick(ais)
-	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/prompt/choice, question = "AI signals detected:", title = "AI selection", choices = ais)
-	return (picked in active_ais()) ? picked : null
+/// The question a borg is asked to choose which active AI to link to (open_request(borg, /datum/prompt/choice/ai_selection, ..., answerer = borg, choices = active_ais())).
+/datum/prompt/choice/ai_selection
+	question = "AI signals detected:"
+	title = "AI selection"
 
 //Returns a list of all mobs with their name
 /proc/getmobs()
@@ -1187,7 +1172,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 /atom/proc/get_light_and_color(atom/origin)
 	if(origin)
-		color = origin.color
+		set_color(origin.color)
 		set_glow(src, GLOW(glow_of(origin).range, glow_of(origin).power, glow_of(origin).color))
 
 /// We don't want to be in any mob registry; we're a dummy not a mob.
@@ -1280,11 +1265,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		if (show_messages)
 			to_chat(user, span_notice("You don't know how to operate [src]."))
 		return USE_FAIL_NON_ADV_TOOL_USR
-
-	if (HAS_FLAG(USE_DISALLOW_SILICONS) && issilicon(user))
-		if (show_messages)
-			to_chat(user, span_notice("You need hands for that."))
-		return USE_FAIL_IS_SILICON
 
 	if (HAS_FLAG(USE_FORCE_SRC_IN_USER) && !(src in user))
 		if (show_messages)

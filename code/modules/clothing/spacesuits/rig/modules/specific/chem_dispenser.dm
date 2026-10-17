@@ -64,7 +64,7 @@
 				if((charge.charges + chems_to_transfer) > max_reagent_volume)
 					chems_to_transfer = max_reagent_volume - charge.charges
 
-				charge.charges += chems_to_transfer
+				charge.set_charges(charge.charges + chems_to_transfer)
 				input_item.reagents.remove_reagent(R.id, chems_to_transfer)
 				total_transferred += chems_to_transfer
 
@@ -113,8 +113,8 @@
 	to_chat(target_mob, span_danger("You feel a rushing in your veins as [chems_to_use] unit\s of [charge.display_name] [chems_to_use == 1 ? "is" : "are"] injected."))
 	target_mob.reagents.add_reagent(charge.display_name, chems_to_use)
 
-	charge.charges -= chems_to_use
-	if(charge.charges < 0) charge.charges = 0
+	charge.set_charges(charge.charges - chems_to_use)
+	if(charge.charges < 0) charge.set_charges(0)
 
 	return 1
 

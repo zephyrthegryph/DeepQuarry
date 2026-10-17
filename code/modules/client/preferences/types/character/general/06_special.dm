@@ -10,7 +10,7 @@
 /datum/preference/color/living/flicker_color/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.flicker_color = value
+		our_SK.set_flicker_color(value)
 
 /datum/preference/numeric/living/flicker_time
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -26,7 +26,7 @@
 /datum/preference/numeric/living/flicker_time/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.flicker_time = value
+		our_SK.set_flicker_time(value)
 
 /datum/preference/numeric/living/flicker_break_chance
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -42,7 +42,7 @@
 /datum/preference/numeric/living/flicker_break_chance/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.flicker_break_chance = value
+		our_SK.set_flicker_break_chance(value)
 
 /datum/preference/numeric/living/flicker_distance
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -58,7 +58,7 @@
 /datum/preference/numeric/living/flicker_distance/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.flicker_distance = value
+		our_SK.set_flicker_distance(value)
 
 /datum/preference/toggle/living/dark_retreat_toggle
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -69,7 +69,7 @@
 /datum/preference/toggle/living/dark_retreat_toggle/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.no_retreat = value
+		our_SK.set_no_retreat(value)
 
 /datum/preference/toggle/living/shadekin_nutrition_conversion
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -80,7 +80,7 @@
 /datum/preference/toggle/living/shadekin_nutrition_conversion/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.nutrition_energy_conversion = value
+		our_SK.set_nutrition_energy_conversion(value)
 
 /datum/preference/toggle/living/shadekin_hide_voice_in_phase
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED

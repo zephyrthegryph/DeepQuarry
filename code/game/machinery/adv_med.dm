@@ -61,9 +61,9 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	default_parts()
 
 /obj/machinery/bodyscanner/RefreshParts()
-	scan_level = SCANNABLE_DIFFICULT
+	set_scan_level(SCANNABLE_DIFFICULT)
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
-		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
+		set_scan_level(scan_level + (max(0, (P.rating - 2)))) //We require T3 parts or higher to actually increase our scan level.
 
 /// Someone got in: the scan beeps and reads them.
 /obj/machinery/bodyscanner/proc/occupant_entered(datum/act/A)

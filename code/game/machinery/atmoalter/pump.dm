@@ -66,9 +66,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 		set_on(!on)
 
 	if(prob(100/severity))
-		direction_out = !direction_out
+		set_direction_out(!direction_out)
 
-	target_pressure = rand(0,1300)
+	set_target_pressure(rand(0,1300))
 	return HOOK_DECLINE
 
 /// One service interval of pumping while it is on (its every()): toward its target, between its tank or the room and its own gas.
@@ -107,10 +107,10 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 				power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	if (power_draw < 0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 	else
-		last_power_draw = pay_material_pump_energy(power_draw)
+		set_last_power_draw(pay_material_pump_energy(power_draw))
 
 		update_connected_network()
 		// pump_gas mutated loc.return_air() directly when not piped
@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_direction(datum/act/op/A)
-	direction_out = !direction_out
+	set_direction_out(!direction_out)
 	. = 1
 
 /obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_eject(datum/act/op/A)
@@ -180,7 +180,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	else if(isnum(pressure))
 		. = TRUE
 	if(.)
-		target_pressure = clamp(round(pressure), pressuremin, pressuremax)
+		set_target_pressure(clamp(round(pressure), pressuremin, pressuremax))
 
 
 /obj/machinery/portable_atmospherics/powered/pump/huge
@@ -239,8 +239,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 /obj/machinery/portable_atmospherics/powered/pump/huge/proc/huge_step(datum/act/A)
 	if(!anchored || (!operable()))
 		set_on(0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
@@ -272,8 +272,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	if (power_draw < 0)
-		last_flow_rate = 0
-		last_power_draw = 0
+		set_last_flow_rate(0)
+		set_last_power_draw(0)
 	else
 		use_power(power_draw)
 		update_connected_network()

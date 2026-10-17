@@ -269,7 +269,7 @@ CAPABILITIES(/datum/system/requests)
 	A.holder = payer // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = ismob(payer) ? payer : null
 	A.target = R.owner
-	A.key = "request:[R.type]"
+	A.set_key("request:[R.type]")
 	return A
 
 /// null when every cost of `R` could be reserved now, else the first refusal (the require half of costs: nothing is set aside). Reads only.

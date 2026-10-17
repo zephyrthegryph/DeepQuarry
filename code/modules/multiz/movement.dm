@@ -734,8 +734,10 @@
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 
-	if(guard(src, GUARD_FALL, drop_mob, null, landing))
+	var/datum/act/fall/fall_act = ACT_TRY(src, fall, landing, drop_mob)
+	if(!fall_act)
 		return
+	act_done(fall_act)
 
 	if(drop_mob && drop_mob != src)
 		///Varible to tell if we take damage or not for falling.
@@ -788,7 +790,11 @@
 	set src in oview(1)
 
 	if(!isliving(usr)) return	//Why would ghosts want to climb?
-	var/mob/living/L = usr
+	climb_wall_attempt(usr)
+
+/// The climb of the Climb Wall verb. The questions in front of it (an unequipped climb, a scug's spear) are requests whose answers come back
+/// here with `confirmed` (the climber said "Bring it!") and `spear_answer` ("Yes!" / "No") set; every check is made again with each answer.
+/turf/simulated/proc/climb_wall_attempt(mob/living/L, confirmed = FALSE, spear_answer = null)
 	var/climbing_delay_min = L.climbing_delay
 	var/fall_chance = 0
 	var/drop_our_held = FALSE
@@ -834,17 +840,15 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k824", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
-			if(isnull(sure))
+			if(!confirmed)
+				climb_ask_confirm(src, L, PROC_REF(climb_wall_confirmed))
 				return
-			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!movement_of(L).can_climb)
-		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
-		if(isnull(sure))
+		if(!confirmed)
+			climb_ask_confirm(src, L, PROC_REF(climb_wall_confirmed))
 			return
-		if(!sure || sure == "Stay grounded") return
 		if(isrobot(L))
 			fall_chance = 80 // Robots get no mercy
 		else
@@ -854,10 +858,10 @@
 	if(istype(L, /mob/living/simple_mob/vore/alienanimals/catslug))
 		var/obj/O = L.get_active_hand()
 		if(istype(O, /obj/item/material/twohanded/spear))
-			var/choice = rerun_ask(L, "k840", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"), buttons = TRUE)
-			if(isnull(choice))
+			if(isnull(spear_answer))
+				open_request(src, /datum/prompt/choice, PROC_REF(climb_wall_spear_chosen), answerer = L, question = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"), buttons = TRUE, timeout = 0)
 				return
-			if(choice == "Yes!")
+			if(spear_answer == "Yes!")
 				drop_our_held = TRUE
 				climbing_delay_min = 0.75
 
@@ -893,6 +897,24 @@
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
 	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+
+/// Asks the climber whether to try without tools; `answered` is the callback that goes on with the climb.
+/proc/climb_ask_confirm(datum/owner, mob/living/L, answered)
+	open_request(owner, /datum/prompt/choice, answered, answerer = L, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE, timeout = 0)
+
+/// "Bring it!" goes on with the climb; anything else (or no answer) ends it.
+/turf/simulated/proc/climb_wall_confirmed(datum/act/request/A)
+	var/mob/living/L = A.request.answerer
+	if(!A.answer || A.answer.value != "Bring it!" || !isliving(L))
+		return
+	climb_wall_attempt(L, TRUE)
+
+/// The scug's spear answer goes on with the climb (the question to try without tools was already said yes to).
+/turf/simulated/proc/climb_wall_spear_chosen(datum/act/request/A)
+	var/mob/living/L = A.request.answerer
+	if(!A.answer || !isliving(L))
+		return
+	climb_wall_attempt(L, TRUE, A.answer.value)
 
 /// How long the climb takes: what the one climbing worked out.
 /mob/living/proc/climb_time_of(datum/act/op/A)
@@ -937,6 +959,10 @@
 	set desc = "attempt to climb down the wall you are standing on, in direction you're looking"
 	set category = VERB_CAT_IC_GAME
 
+	climb_down_attempt()
+
+/// The climb of the Climb down wall verb; the question in front of an unequipped climb comes back here with `confirmed` set.
+/mob/living/proc/climb_down_attempt(confirmed = FALSE)
 	var/fall_chance = 0	//Increased if we can't actually climb
 	var/turf/our_turf = get_turf(src) //floor we're standing on
 	var/climbing_delay_min = src.climbing_delay //We take the lowest climbing delay between mob, species and gear.
@@ -983,17 +1009,15 @@
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k951", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
-			if(isnull(sure))
+			if(!confirmed)
+				climb_ask_confirm(src, src, PROC_REF(climb_down_confirmed))
 				return
-			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
 	else if(!movement_of(src).can_climb)
-		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
-		if(isnull(sure))
+		if(!confirmed)
+			climb_ask_confirm(src, src, PROC_REF(climb_down_confirmed))
 			return
-		if(!sure || sure == "Stay grounded") return
 		if(isrobot(src))
 			fall_chance = 80 // Robots get no mercy
 		else
@@ -1040,6 +1064,12 @@
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
 	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
+
+/// "Bring it!" goes on with the climb; anything else (or no answer) ends it.
+/mob/living/proc/climb_down_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.value != "Bring it!")
+		return
+	climb_down_attempt(TRUE)
 
 /mob/living/proc/climb_down_done(datum/act/op/A)
 	var/turf/front_of_us = A.arg("front_of_us")

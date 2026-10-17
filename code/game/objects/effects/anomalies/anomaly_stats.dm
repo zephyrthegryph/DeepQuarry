@@ -41,10 +41,10 @@ CAPABILITIES(/datum/anomaly_stats)
 /datum/anomaly_stats/proc/randomize_particle_types()
 	var/list/particles = list(ANOMALY_PARTICLE_SIGMA, ANOMALY_PARTICLE_DELTA, ANOMALY_PARTICLE_ZETA, ANOMALY_PARTICLE_EPSILON)
 	particles = shuffle(particles)
-	danger_type = particles[1]
-	unstable_type = particles[2]
-	containment_type = particles[3]
-	transformation_type = particles[4]
+	set_danger_type(particles[1])
+	set_unstable_type(particles[2])
+	set_containment_type(particles[3])
+	set_transformation_type(particles[4])
 
 /datum/anomaly_stats/proc/calculate_points()
 	var/total = 15
@@ -61,7 +61,7 @@ CAPABILITIES(/datum/anomaly_stats)
 	if(modifier)
 		total *= modifier.get_value()
 
-	points = total
+	set_points(total)
 
 	return points
 
@@ -88,7 +88,7 @@ CAPABILITIES(/datum/anomaly_stats)
 		rel_clear(src, nameof(attached_anomaly))
 		return
 	var/sev_change = rand(lower, upper)
-	severity += sev_change
+	set_severity(severity + sev_change)
 
 	if(severity >= 100)
 		kill_anomaly(TRUE)

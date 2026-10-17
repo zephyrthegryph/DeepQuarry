@@ -236,7 +236,7 @@ CAPABILITIES(/datum/tick_meter)
 		ms = KM_MIN_CHARGE_MS
 	var/cur = tick_ms[idx]
 	if(!cur)
-		touched[++n_touched] = idx
+		set_touched_at(++n_touched, idx)
 	tick_ms[idx] = cur + ms
 	tick_charged += ms
 
@@ -331,7 +331,7 @@ CAPABILITIES(/datum/tick_meter)
 				hist.min_seen = ms
 			if(ms > hist.max_seen)
 				hist.max_seen = ms
-			hist.count++
+			hist.set_count(hist.count + 1)
 			stats.ticks++
 			stats.ms_lo += ms
 			if(stats.ms_lo >= KM_FLUSH_MS)

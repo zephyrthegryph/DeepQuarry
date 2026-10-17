@@ -139,9 +139,9 @@ SYSTEM_DEF(transcore)
 		//Timing check
 		var/since_backup = world.time - curr_MR.last_update
 		if(since_backup < overdue_time)
-			curr_MR.dead_state = MR_NORMAL
+			curr_MR.set_dead_state(MR_NORMAL)
 		else
-			curr_MR.dead_state = MR_DEAD
+			curr_MR.set_dead_state(MR_DEAD)
 
 		if(KERNEL_OVER_BUDGET)
 			return FALSE

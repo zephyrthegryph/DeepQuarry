@@ -68,7 +68,7 @@ ADMIN_VERB(PlayerNotes, R_ADMIN|R_MOD|R_EVENT|R_DEBUG, "Player Notes", "Access t
 		note_keys = sortList(note_keys)
 
 	var/datum/tgui_module/player_notes/A = new(src)
-	A.ckeys = note_keys
+	A.set_ckeys(note_keys)
 	A.tgui_interact(user)
 
 
@@ -584,12 +584,8 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 		if(M.special_role)
 			return 1
 
-	if(isrobot(character))
-		var/mob/living/silicon/robot/R = character
-		if(R.emagged)
-			return 1
-
-	return 0
+	var/mob/actor = character
+	return istype(actor) ? actor.antagonist_override_rank() : 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
 	return seed_spawn_stage(user, list())
@@ -1112,7 +1108,7 @@ CAPABILITIES(/datum/prompt/choice/fax_stamp)
 	var/shouldStamp = P.sender() || stamp // admin initiated faxes are stamped when asked
 
 	if(shouldStamp)
-		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")
+		P.set_stamps(P.stamps + ("<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")))
 
 		P.add_stamp_mark("paper_stamp-cent", rand(-2, 0), rand(-1, 2))
 

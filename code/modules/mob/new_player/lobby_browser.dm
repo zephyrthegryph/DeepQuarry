@@ -73,9 +73,9 @@
 	if(!ready && client?.login_hold_refuses()) // the login gate is still checking them
 		return TRUE
 	if(!SSticker || ticker_current_state() <= GAME_STATE_PREGAME)
-		ready = !ready
+		set_ready(!ready)
 	else
-		ready = 0
+		set_ready(0)
 	return TRUE
 
 /mob/new_player/proc/ui_act_manifest(datum/act/op/A)
@@ -164,7 +164,7 @@
 		var/mob/observer/dead/observer = new(mannequin)
 		observer.moveToNullspace() //Let's not stay in our doomed mannequin
 
-		spawning = 1
+		set_spawning(1)
 		if(client.media)
 			client.media.stop_music() // MAD JAMS cant last forever yo
 

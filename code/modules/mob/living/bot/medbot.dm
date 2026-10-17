@@ -191,10 +191,12 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 			"detail" = "[src] completed an autonomous treatment for [H].",
 		), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
 
+/// The kit skin it was built from shows over the sprite.
+/mob/living/bot/medbot/draw(datum/look/look)
+	..()
+	look.overlay("medskin_[skin]", when = !!skin)
+
 /mob/living/bot/medbot/update_icons()
-	cut_overlays()
-	if(skin)
-		add_overlay("medskin_[skin]")
 	if(bot_busy())
 		set_icon_state("medibots")
 	else
@@ -306,17 +308,17 @@ CAPABILITIES(/mob/living/bot/medbot)
 	var/rank = val
 	if(isnull(rank))
 		return FALSE
-	min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
+	set_min_urgency(clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY))
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_adj_inject(datum/act/op/A, val)
 	. = TRUE
-	injection_amount = val
+	set_injection_amount(val)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_use_beaker(datum/act/op/A)
 	. = TRUE
-	use_beaker = !use_beaker
+	set_use_beaker(!use_beaker)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_eject(datum/act/op/A)
@@ -328,12 +330,12 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
 	. = TRUE
-	vocal = !vocal
+	set_vocal(!vocal)
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_declaretreatment(datum/act/op/A)
 	. = TRUE
-	declare_treatment = !declare_treatment
+	set_declare_treatment(!declare_treatment)
 	. = TRUE
 
 /mob/living/bot/medbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -540,6 +542,7 @@ CAPABILITIES(/obj/item/storage/firstaid)
 			look.overlay("kit_skin_tox")
 		if("o2")
 			look.overlay("kit_skin_o2")
+	look.overlay("na_scanner", when = (build_step >= 1))
 
 CAPABILITIES(/obj/item/firstaid_arm_assembly)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -556,10 +559,9 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 				if(istype(W, /obj/item/healthanalyzer))
 					user.drop_item()
 					consume(W, user)
-					build_step++
+					set_build_step(build_step + 1)
 					to_chat(user, span_notice("You add the health sensor to [src]."))
 					name = "First aid/robot arm/health analyzer assembly"
-					add_overlay("na_scanner")
 
 			if(1)
 				if(isprox(W))
@@ -568,7 +570,7 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 					to_chat(user, span_notice("You complete the Medibot! Beep boop."))
 					var/turf/T = get_turf(src)
 					var/mob/living/bot/medbot/S = new /mob/living/bot/medbot(T)
-					S.skin = skin
+					S.set_skin(skin)
 					S.name = created_name
 					consume(src, user)
 	return OP_PASS

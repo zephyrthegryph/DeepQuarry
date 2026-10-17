@@ -76,7 +76,7 @@
 	var/datum/material_container/container = silo.materials
 	TEST_ASSERT_NOTNULL(container, "the silo has a material container")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	container.materials[steel] = 2000
+	container.set_materials_at(steel, 2000)
 	var/list/texts = list()
 	PUBLISH_LEGACY(silo, /datum/notice/examine, null, texts)
 	TEST_ASSERT(length(texts) > 0, "the examine notice reached the container's observer, which listed what it holds")

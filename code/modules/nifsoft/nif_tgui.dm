@@ -195,7 +195,7 @@ CAPABILITIES(/obj/item/nif)
  */
 /obj/item/nif/proc/ui_act_settheme(datum/act/op/A, theme)
 	if((theme in valid_ui_themes) || theme == null)
-		save_data["ui_theme"] = theme
+		set_save_data_at("ui_theme", theme)
 	return TRUE
 
 /obj/item/nif/proc/ui_act_toggle_module(datum/act/op/A, module)
@@ -221,7 +221,7 @@ CAPABILITIES(/obj/item/nif)
 	return TRUE
 
 /obj/item/nif/proc/ui_act_dismissnotification(datum/act/op/A)
-	last_notification = null
+	set_last_notification(null)
 	return TRUE
 
 /// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).

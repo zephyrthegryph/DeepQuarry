@@ -75,11 +75,11 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 
 	if(flags & OPENCONTAINER)
 		to_chat(user, span_notice("You close the input on \the [src]"))
-		flags -= OPENCONTAINER
+		set_open_by_flag(FALSE)
 		open_top = FALSE
 	else
 		to_chat(user, span_notice("You open the input on \the [src], allowing you to pour reagents in."))
-		flags |= OPENCONTAINER
+		set_open_by_flag(TRUE)
 		open_top = TRUE
 	return TRUE
 
@@ -216,7 +216,14 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
 	rel_take(src, nameof(rig))
-	overlays = new/list()
+	set_rig_look(null)
+
+/// What a rigged tank shows of the assembly on it: a flat snapshot, nudged onto the tank.
+/obj/structure/reagent_dispensers/fueltank/var/icon/rig_look
+
+/obj/structure/reagent_dispensers/fueltank/draw(datum/look/look)
+	..()
+	look.overlay(rig_look, when = !!rig_look)
 
 /obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(datum/act/op/A)
 	var/mob/user = A.actor
@@ -236,7 +243,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	var/icon/test = getFlatIcon(H)
 	test.Shift(NORTH,1)
 	test.Shift(EAST,6)
-	add_overlay(test)
+	set_rig_look(test)
 
 /obj/structure/reagent_dispensers/fueltank/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

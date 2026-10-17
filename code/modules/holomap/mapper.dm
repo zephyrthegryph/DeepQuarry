@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.set_icon('icons/effects/64x64.dmi')
 	mark.set_icon_state("mapper_none")
-	mark.layer = 10
+	mark.set_layer(10)
 	rel_add(src, nameof(icon_image_cache), mark, "bad")
 
 	var/atom/movable/screen/mapper/map/tmp = new()
@@ -282,6 +282,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			map_app.icon = icon(holomaps_holoMiniMaps()[T.z])
 
 			// Apply markers
+			var/list/marker_images = list()
 			for(var/marker in GLOB.holomap_markers)
 				var/datum/holomap_marker/holomarker = GLOB.holomap_markers[marker]
 				if(holomarker.z == T_z && holomarker.filter & mapper_filter)
@@ -291,7 +292,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 					markerImage.appearance_flags = RESET_COLOR|PIXEL_SCALE
 					markerImage.pixel_x = holomarker.x+holomarker.offset_x
 					markerImage.pixel_y = holomarker.y+holomarker.offset_y
-					map_app.add_overlay(markerImage)
+					marker_images += markerImage
+			look_composed_image(map_app, marker_images)
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
@@ -302,8 +304,10 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	// The holomap moves around, the user is always in the center. This slides the holomap.
 	var/offset_x = bgmap.offset_x
 	var/offset_y = bgmap.offset_y
-	extras_holder.pixel_x = bgmap.pixel_x = -1*T_x + offset_x
-	extras_holder.pixel_y = bgmap.pixel_y = -1*T_y + offset_y
+	var/slide_x = -1*T_x + offset_x
+	var/slide_y = -1*T_y + offset_y
+	extras_holder.set_pixel_offset(slide_x, slide_y)
+	bgmap.set_pixel_offset(slide_x, slide_y)
 
 	// Populate other mapper icons
 	for(var/obj/item/mapping_unit/HC as anything in REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS))
@@ -354,11 +358,11 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 				rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
-						mark.layer = 3 // Above the other markers
+						mark.set_layer(3) // Above the other markers
 					if(HOLOMAP_DEAD)
-						mark.layer = 2
+						mark.set_layer(2)
 					else
-						mark.layer = 1
+						mark.set_layer(1)
 
 			var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 			handle_marker(mark,TU.x,TU.y)
@@ -378,7 +382,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		if(!(marker_cache_key in icon_image_cache))
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.set_icon_state("beacon")
-			mark.layer = 1
+			mark.set_layer(1)
 			rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
@@ -387,8 +391,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 	if(badmap)
 		var/obj/O = LAZYACCESS(icon_image_cache, "bad")
-		O.pixel_x = T_x - offset_x
-		O.pixel_y = T_y - offset_y
+		O.set_pixel_x(T_x - offset_x)
+		O.set_pixel_y(T_y - offset_y)
 		extras += O
 
 	extras_holder.filters = filter(type = "alpha", icon = mask_icon, x = T_x-(offset_x*0.5), y = T_y-(offset_y*0.5))
@@ -414,8 +418,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 				return
 
 /obj/item/mapping_unit/proc/handle_marker(atom/movable/marker,TU_x,TU_y)
-	marker.pixel_x = TU_x - 8 //16x16 icons, so to center.
-	marker.pixel_y = TU_y - 8
+	marker.set_pixel_x(TU_x - 8) //16x16 icons, so to center.
+	marker.set_pixel_y(TU_y - 8)
 	animate(marker, alpha = 0, time = 5, easing = SINE_EASING)
 	animate(alpha = 255, time = 2, easing = SINE_EASING)
 

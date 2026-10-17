@@ -239,14 +239,14 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	drop_heat_links()
 	if(heat_store)
 		heat_store_release(heat_store)
-		heat_store = null
+		set_heat_store(null)
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	if(batch && (batch.doomed[src] || batch.doomed[owner()]))
 		// Batched destroy (doc/rewrite/init_and_turfs.md sec 4.4 step 6): no hook is unhooked one by one --
 		// this service's own teardown (its activations end with it) drops every observe()
 		// it holds, on the doomed owner and on its turf and holders alike.
 		gas_watch_many_clear(src, nameof(gas_watches))
-		last_reading = null
+		set_last_reading(null)
 		mixture_ids = null
 		mixture_pressures = null
 		mixture_corrosion = null
@@ -432,7 +432,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	electrical_stock_static = owner().material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
 	if(!heat_store)
-		heat_store = heat_store_create(thermal_capacity, T20C)
+		set_heat_store(heat_store_create(thermal_capacity, T20C))
 	else
 		heat_store_set_capacity(heat_store, thermal_capacity)
 	// An exothermic stock is a heat source for as long as the assembly is in service.
@@ -621,7 +621,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	temperature_moved(old_temperature)
 	var/datum/material/structure = owner().material_for_role(MATERIAL_ROLE_STRUCTURE) || owner().primary_construction_material()
 	last_stress = structure ? temperature() / max(structure.melting_point, 1) : 0
-	status = material_assembly_view(owner()).leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
+	set_status(material_assembly_view(owner()).leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal")))))
 	if(last_stress >= 1 && elapsed > 0)
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE

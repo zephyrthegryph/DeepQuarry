@@ -178,12 +178,26 @@ pub struct DefaultEdits {
     pub from_identity: u128,
     pub edits: Vec<DefaultEdit>,
 }
-/// Callables added relative to the tree with identity `from_identity`.
+/// Callables and plain vars added relative to the tree with identity `from_identity`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AppendedCallables {
     pub from_identity: u128,
-    /// `(owner, name, kind)` of each added row.
+    /// `(owner, name, kind)` of each added proc or verb row.
     pub members: Vec<(SymbolId, SymbolId, MemberKind)>,
+    /// Each added plain var row (see `AppendedField`).
+    pub fields: Vec<AppendedField>,
+}
+/// A newly declared instance var whose Variables-table record is fully
+/// determined by the row: formal, not static/const/global, no array shape, and
+/// a default that is absent (null) or one numeric literal.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AppendedField {
+    pub owner: SymbolId,
+    pub name: SymbolId,
+    /// Source modifier bits (0, or 4 for tmp).
+    pub flags: u32,
+    /// f32 bits of the numeric default; `None` is null.
+    pub default_bits: Option<u32>,
 }
 impl SemanticTree {
     /// Callables added by the last splice relative to the previous tree.

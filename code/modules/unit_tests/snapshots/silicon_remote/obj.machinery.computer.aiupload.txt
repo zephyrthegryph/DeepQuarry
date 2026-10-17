@@ -1,0 +1,6 @@
+@obj.machinery.computer robot|none
+-click: Click: Use
++2 menu: Install module (refused: needs an item)
++3 menu: Select AI
++5 click: Click: Select AI
+@obj.machinery ai|none

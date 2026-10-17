@@ -6,11 +6,13 @@ use std::{
 };
 mod build_admission;
 pub mod control;
+mod cache_gc;
 pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
 mod protocol;
 pub mod query;
+pub mod resident;
 mod service;
 mod transport;
 
@@ -229,7 +231,10 @@ pub fn route(
             // generation has drained. Only an absent listener permits replacement.
             if listener_absent(&error) {
                 lifecycle.unavailable(std::time::Instant::now())?;
-                if !started {
+                if !started && resident::same_binary_draining() {
+                    // The daemon of this same executable is draining and exits as soon as its builds finish; starting a
+                    // second one beside it doubled resident memory. Wait for it instead.
+                } else if !started {
                     // Discovery is advisory lifecycle control, never the build
                     // destination. An old busy listener cannot block the new
                     // generation from starting or change its request semantics.
@@ -244,6 +249,42 @@ pub fn route(
         }
         let remaining = lifecycle.remaining(std::time::Instant::now())?;
         std::thread::sleep(Duration::from_millis(100).min(remaining));
+    }
+}
+/// Ask the daemon of the current `DMB_DAEMON_NAMESPACE` (any compiler generation) to retire. Retirement drains running
+/// builds before the process exits, so a busy daemon is never cut off. Used by the build tooling's resident-daemon cap.
+/// Returns Ok(false) when no daemon listens.
+pub fn retire_namespace() -> io::Result<bool> {
+    let discovery = transport::Endpoint::discovery()?;
+    let mut stream = match transport::connect(&discovery) {
+        Ok(stream) => stream,
+        Err(error) if listener_absent(&error) => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    transport::set_timeout(&mut stream, Duration::from_secs(5))?;
+    protocol::send(
+        &mut stream,
+        &protocol::Request::Hello {
+            version: protocol::VERSION,
+            compiler: compiler_identity()?,
+        },
+    )?;
+    match protocol::receive::<protocol::Reply>(&mut stream)? {
+        protocol::Reply::Hello { retiring: true, .. } => Ok(true),
+        protocol::Reply::Hello { .. } => {
+            protocol::send(&mut stream, &protocol::Request::Retire)?;
+            match protocol::receive::<protocol::Reply>(&mut stream)? {
+                protocol::Reply::Retiring => Ok(true),
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "daemon did not acknowledge retirement",
+                )),
+            }
+        }
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid discovery daemon handshake",
+        )),
     }
 }
 fn retire_discovered(identity: u128, remaining: Duration) -> io::Result<()> {
@@ -304,8 +345,9 @@ fn start() -> io::Result<()> {
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr({
-            let directory = std::path::PathBuf::from("E:/dq-cache/dmb-daemon");
+            let directory = resident::state_dir();
             std::fs::create_dir_all(&directory)?;
+            resident::rotate_lifecycle_log(&directory);
             std::process::Stdio::from(
                 std::fs::OpenOptions::new()
                     .create(true)

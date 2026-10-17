@@ -1,4 +1,5 @@
 /// Actual detachment releases the clamped item only for a valid explicit nearby actor.
+/datum/unit_test/interim_hoist_detach_actor
 /datum/unit_test/interim_hoist_detach_actor/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, start)

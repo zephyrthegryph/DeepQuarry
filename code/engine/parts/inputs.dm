@@ -246,7 +246,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	var/why = op_validate_args(P.ui_args, holder, payload, values)
 	if(why)
 		var/datum/op_result/refused = new
-		refused.key = P.key
+		refused.set_key(P.key)
 		refused.origin = ORIGIN_UI
 		refused.outcome = ACT_REFUSED
 		refused.reason = why
@@ -357,7 +357,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	var/why = op_validate_args(P.topic_args, holder, params, values)
 	if(why)
 		var/datum/op_result/refused = new
-		refused.key = P.key
+		refused.set_key(P.key)
 		refused.origin = ORIGIN_UI
 		refused.outcome = ACT_REFUSED
 		refused.reason = why

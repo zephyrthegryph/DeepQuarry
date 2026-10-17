@@ -33,7 +33,7 @@
 
 /obj/machinery/computer/stockexchange/proc/ui_act_logout(datum/act/op/A)
 	add_fingerprint(A.actor)
-	logged_in = null
+	set_logged_in(null)
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_buy(datum/act/op/A, share)
 	var/mob/user = A.actor
@@ -59,14 +59,14 @@
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_check(datum/act/op/A)
 	add_fingerprint(A.actor)
-	screen = "logs"
+	set_screen("logs")
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_archive(datum/act/op/A, share)
 	add_fingerprint(A.actor)
 	var/datum/stock/S = share
 	if(S)
 		rel_set(src, nameof(/obj/machinery/computer/stockexchange::current_stock), S)
-		screen = "archive"
+		set_screen("archive")
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_history(datum/act/op/A, share)
 	var/mob/user = A.actor
@@ -82,13 +82,13 @@
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_backbutton(datum/act/op/A)
 	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/stockexchange::current_stock))
-	screen = "stocks"
+	set_screen("stocks")
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_cycle_view(datum/act/op/A)
 	add_fingerprint(A.actor)
-	vmode++
+	set_vmode(vmode + 1)
 	if (vmode > 1)
-		vmode = 0
+		set_vmode(0)
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()

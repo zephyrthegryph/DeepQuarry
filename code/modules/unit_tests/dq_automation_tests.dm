@@ -34,7 +34,7 @@
 	TEST_ASSERT(second_choice != REAGENT_ID_BICARIDINE, "a medbot should not re-dose a reagent the patient already has")
 
 	// The urgency threshold gates treatment.
-	bot.min_urgency = 4
+	bot.set_min_urgency(4)
 	TEST_ASSERT_NULL(bot.choose_treatment(poisoned), "a medbot set to critical-only should leave a moderate poisoning")
 
 

@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/rnd)
 /obj/machinery/rnd/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
 		log_research("[src] disconnected from techweb [stored_research] when connected to [new_techweb].")
-	stored_research = new_techweb
+	set_stored_research(new_techweb)
 	if(!isnull(stored_research))
 		on_connected_techweb()
 

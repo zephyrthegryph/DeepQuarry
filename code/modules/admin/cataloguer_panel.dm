@@ -73,12 +73,12 @@ CAPABILITIES(/obj/item/cataloguer)
 /obj/item/cataloguer/proc/ui_act_show_data(datum/act/op/A, ref)
 	var/datum/category_item/catalogue/new_data = ref
 	if(istype(new_data))
-		displayed_data = new_data
+		set_displayed_data(new_data)
 		SStgui.update_uis(src)
 	return TRUE
 
 /obj/item/cataloguer/proc/ui_act_back_to_list(datum/act/op/A)
-	displayed_data = null
+	set_displayed_data(null)
 	SStgui.update_uis(src)
 	return OP_OK
 

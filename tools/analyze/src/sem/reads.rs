@@ -198,6 +198,9 @@ pub struct ReadSet {
     /// They stay in `reads` (the subscriptions are complete) but are not inputs a stat or a look can be stale on: `gen deps` and the lints
     /// leave them out. Closed walk only; a read also made from outside the engine is not in this set.
     pub internal: BTreeSet<Read>,
+    /// Where a `read_once(...)` sample sits (file, line) in a body the walk entered. A draw or a stat input must not sample: the look or the
+    /// value is made from it once and never follows (`untracked_inputs` rule `sampled_in_look`).
+    pub sampled: BTreeSet<(String, u32)>,
 }
 
 impl ReadSet {
@@ -926,7 +929,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 self.diag_ix = saved_ix;
                 self.computing.remove(&key);
                 let memo = self.eng.memo.read().unwrap();
-                let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty();
+                let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty() && own.sampled.is_empty();
                 let trivial = bare && children.iter().all(|(c, _)| memo.get(c).map(|n| n.trivial).unwrap_or(false));
                 drop(memo);
                 self.eng.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
@@ -994,6 +997,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         for (k, v) in &d.opaque {
             self.out.opaque.entry(k.clone()).or_insert_with(|| v.clone());
         }
+        self.out.sampled.extend(d.sampled.iter().cloned());
     }
 
     fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
@@ -1759,6 +1763,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         if name == "read_once" {
             // A value read once when the question opens (code/engine/parts/cond.dm read_once()): never subscribed.
+            self.out.sampled.insert((fr.rel.clone(), line));
             self.mute += 1;
             for a in args {
                 self.eval(fr, a);
@@ -2394,6 +2399,9 @@ TRACKED(/obj/cell, charge)
         assert!(through.diags.iter().any(|d| d.rule == "hop_not_relation"), "a read through the var is: {:?}", through.diags);
         let sampled = eng.analyze("/obj/lamp", "sampled");
         assert!(sampled.diags.iter().all(|d| d.rule != "hop_not_relation"), "read_once samples it: {:?}", sampled.diags);
+        // The sample itself is recorded: a draw or a stat input that reaches one is `sampled_in_look`.
+        assert_eq!(sampled.sampled.len(), 1, "{:?}", sampled.sampled);
+        assert!(bare.sampled.is_empty() && through.sampled.is_empty());
         std::fs::remove_dir_all(root).unwrap();
     }
 

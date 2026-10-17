@@ -42,11 +42,11 @@ CAPABILITIES(/datum/system/vis_overlays)
 	var/obj/effect/overlay/vis/overlay = new
 	overlay.set_icon(icon)
 	overlay.set_icon_state(iconstate)
-	overlay.layer = layer
-	overlay.plane = plane
+	overlay.set_layer(layer)
+	overlay.set_plane(plane)
 	overlay.set_dir(dir)
-	overlay.alpha = alpha
-	overlay.appearance_flags |= add_appearance_flags
+	overlay.set_alpha(alpha)
+	overlay.set_appearance_flags(overlay.appearance_flags | add_appearance_flags)
 	overlay.vis_flags |= add_vis_flags
 	return overlay
 

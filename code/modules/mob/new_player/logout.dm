@@ -1,5 +1,5 @@
 /mob/new_player/Logout()
-	ready = 0
+	set_ready(0)
 
 	registry_leave(REGISTRY_NEW_PLAYERS, src)
 	disable_lobby_browser()

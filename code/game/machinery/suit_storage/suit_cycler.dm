@@ -405,7 +405,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_radlevel(datum/act/op/A, radlevel)
-	radiation_level = clamp(radlevel, 1, emagged() ? 5 : 3)
+	set_radiation_level(clamp(radlevel, 1, emagged() ? 5 : 3))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_repair_suit(datum/act/op/A)
@@ -480,10 +480,8 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		return
 
 	if(irradiating == 1)
-		add_overlay("decon")
 		finished_job()
 		set_irradiating(0)
-		cut_overlays()
 		return
 
 	set_irradiating(irradiating - 1)

@@ -121,8 +121,8 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
-	current_board = get_defaultboard()
-	game_state = GAME_PLAYER_ONE
+	set_current_board(get_defaultboard())
+	set_game_state(GAME_PLAYER_ONE)
 	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 	return TRUE
 
@@ -155,34 +155,34 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 		var/game_action = game_subaction(action_arg, data, user, "w")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_TWO
+				set_game_state(GAME_PLAYER_TWO)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	if(user == player_two && game_state == GAME_PLAYER_TWO)
 		var/game_action = game_subaction(action_arg, data, user, "b")
 		if(game_action)
 			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-				game_state = GAME_PLAYER_ONE
+				set_game_state(GAME_PLAYER_ONE)
 				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
 	return FALSE
 
 /datum/board_game/chess/proc/reset(full)
-	winner = null
-	player_one_time = 0
-	player_two_time = 0
-	LAZYCLEARLIST(selected_figure)
-	LAZYCLEARLIST(valid_moves)
+	set_winner(null)
+	set_player_one_time(0)
+	set_player_two_time(0)
+	clear_selected_figure()
+	clear_valid_moves()
 	LAZYCLEARLIST(last_double_pawn_move)
-	game_flags = NONE
+	set_game_flags(NONE)
 	if(full)
-		current_board.Cut()
-		game_state = GAME_SETUP
+		clear_current_board()
+		set_game_state(GAME_SETUP)
 		rel_clear(src, nameof(player_one))
 		rel_clear(src, nameof(player_two))
 	else
-		current_board = get_defaultboard()
-		game_state = GAME_PLAYER_ONE
+		set_current_board(get_defaultboard())
+		set_game_state(GAME_PLAYER_ONE)
 
 /datum/board_game/chess/proc/game_select_figure(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
@@ -196,7 +196,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 	if(piece[1] != extra)
 		return GAME_ACTION_NONE
 
-	selected_figure = validated_data
+	set_selected_figure(validated_data)
 	update_valid_moves()
 	return GAME_ACTION_SELECT
 
@@ -218,9 +218,9 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 
 	var/turn_duration = world.time - turn_start_time
 	if(game_state == GAME_PLAYER_ONE)
-		player_one_time += turn_duration
+		set_player_one_time(player_one_time + turn_duration)
 	else if(game_state == GAME_PLAYER_TWO)
-		player_two_time += turn_duration
+		set_player_two_time(player_two_time + turn_duration)
 
 	if(moving_piece[2] == "K" && abs(to_x - from_x) == 2)
 		if(!handle_castling(extra, from_x, from_y, to_x, to_y))
@@ -247,7 +247,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 				promotion = "Q"
 			current_board[to_y][to_x] = moving_piece[1] + promotion
 
-	LAZYCLEARLIST(selected_figure)
+	clear_selected_figure()
 	update_valid_moves()
 	validate_victory(extra)
 
@@ -336,18 +336,18 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 	current_board[row][rook_x] = null
 
 	if(active_color == "w")
-		game_flags |= GAME_FLAG_CASTLING_USED_PONE
+		set_game_flags(game_flags | GAME_FLAG_CASTLING_USED_PONE)
 	else
-		game_flags |= GAME_FLAG_CASTLING_USED_PTWO
+		set_game_flags(game_flags | GAME_FLAG_CASTLING_USED_PTWO)
 
 	return TRUE
 
 /datum/board_game/chess/proc/update_valid_moves()
-	LAZYCLEARLIST(valid_moves)
+	clear_valid_moves()
 	if(length(selected_figure))
 		var/x = LAZYACCESS(selected_figure, 1)
 		var/y = LAZYACCESS(selected_figure, 2)
-		valid_moves = generate_valid_moves(x, y)
+		set_valid_moves(generate_valid_moves(x, y))
 
 /datum/board_game/chess/proc/square_under_attack(opponent_color, x, y)
 	for(var/row = 1; row <= GRID_SIZE; row++)
@@ -408,16 +408,16 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 	var/king_pos = locate_king(opponent_color)
 	if(!king_pos)
 		var/mob/winning_player = (active_color == "w" ? player_two : player_one)
-		winner = winning_player?.name
-		game_state = GAME_OVER
+		set_winner(winning_player?.name)
+		set_game_state(GAME_OVER)
 		return
 
 	var/in_check = square_under_attack(active_color, king_pos[1], king_pos[2])
 
 	if(in_check)
-		game_flags |= (opponent_color == "w" ? GAME_FLAG_CHECK_PONE : GAME_FLAG_CHECK_PTWO)
+		set_game_flags(game_flags | ((opponent_color == "w" ? GAME_FLAG_CHECK_PONE : GAME_FLAG_CHECK_PTWO)))
 	else
-		game_flags &= ~(opponent_color == "w" ? GAME_FLAG_CHECK_PONE : GAME_FLAG_CHECK_PTWO)
+		set_game_flags(game_flags & (~(opponent_color == "w" ? GAME_FLAG_CHECK_PONE : GAME_FLAG_CHECK_PTWO)))
 
 	var/no_moves = TRUE
 	for(var/row = 1 to GRID_SIZE)
@@ -433,12 +433,12 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 
 	if(in_check && no_moves)
 		var/mob/winning_player = active_color == "w" ? player_one : player_two
-		winner = winning_player?.name
-		game_state = GAME_OVER
+		set_winner(winning_player?.name)
+		set_game_state(GAME_OVER)
 		return
 	if(!in_check && no_moves)
-		winner = null
-		game_state = GAME_OVER_DRAW
+		set_winner(null)
+		set_game_state(GAME_OVER_DRAW)
 
 /datum/board_game/chess/proc/locate_king(color)
 	var/king_symbol = color + "K"

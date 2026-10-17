@@ -85,7 +85,7 @@
 		return FALSE
 	var/new_id = reject_bad_name(LOWER_TEXT(id_arg), max_length = 20, allow_numbers = TRUE, cap_after_symbols = FALSE)
 	if(new_id)
-		id = new_id
+		set_id(new_id)
 	return TRUE
 
 /datum/song/proc/ui_act_change_instrument(datum/act/op/A, new_instrument_arg)
@@ -109,7 +109,7 @@
 		tempo_diff = world.tick_lag
 	else
 		tempo_diff = -world.tick_lag
-	tempo = sanitize_tempo(tempo + tempo_diff)
+	set_tempo(sanitize_tempo(tempo + tempo_diff))
 	return TRUE
 
 //SONG MAKING
@@ -154,7 +154,7 @@
 /datum/song/proc/ui_act_start_new_song(datum/act/op/A)
 	name = ""
 	set_lines(list())
-	tempo = sanitize_tempo(5) // default 120 BPM
+	set_tempo(sanitize_tempo(5)) // default 120 BPM
 	return OP_OK
 
 /datum/song/proc/ui_act_add_new_line(datum/act/op/A)
@@ -199,7 +199,7 @@
 	var/new_mode = new_mode_arg
 	if(isnull(new_mode) || !(new_mode in SSinstruments.ready().note_sustain_modes))
 		return FALSE
-	sustain_mode = new_mode
+	set_sustain_mode(new_mode)
 	return TRUE
 
 /datum/song/proc/ui_act_set_note_shift(datum/act/op/A, amount_arg)
@@ -208,7 +208,7 @@
 	var/amount = amount_arg
 	if(!isnum(amount))
 		return FALSE
-	note_shift = clamp(amount, note_shift_min, note_shift_max)
+	set_note_shift(clamp(amount, note_shift_min, note_shift_max))
 	return TRUE
 
 /datum/song/proc/ui_act_set_volume(datum/act/op/A, amount)
@@ -230,7 +230,7 @@
 	return TRUE
 
 /datum/song/proc/ui_act_toggle_sustain_hold_indefinitely(datum/act/op/A)
-	full_sustain_held_note = !full_sustain_held_note
+	set_full_sustain_held_note(!full_sustain_held_note)
 	return OP_OK
 
 /datum/song/proc/ui_act_set_repeat_amount(datum/act/op/A, amount)
@@ -266,10 +266,10 @@
 		var/bpm_string = "BPM: "
 		if(findtext(lines[1], bpm_string, 1, length(bpm_string) + 1))
 			var/divisor = text2num(copytext(lines[1], length(bpm_string) + 1)) || 120 // default
-			tempo = sanitize_tempo(BPM_TO_TEMPO_SETTING(divisor))
+			set_tempo(sanitize_tempo(BPM_TO_TEMPO_SETTING(divisor)))
 			cut_lines(1, 2)
 		else
-			tempo = sanitize_tempo(5) // default 120 BPM
+			set_tempo(sanitize_tempo(5)) // default 120 BPM
 		if(lines.len > MUSIC_MAXLINES)
 			if(user)
 				to_chat(user, "Too many lines!")

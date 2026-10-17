@@ -1,7 +1,8 @@
-// Body factors: the unified stat layer (doc/health_system_review.md §5.3).
-// Defines live in code/__defines/body_factors.dm.
+// Body factors: the body's stats (doc/rewrite/final_api.html section 5; doc/rewrite/proposals/stat_layer.md).
+// Every factor is a stat declared on /mob/living (code/contracts/ids/body_stats.dm) with a var of its own, the value the stat engine composes
+// (code/engine/stats). The ids of the old stat ids space translate to them in code/modules/body/factor_compat.dm.
 //
-// Sources declare STATIC tables, never per-tick code:
+// Sources declare STATIC tables (stat id -> value), never per-tick code:
 //   /datum/affliction   `factors`, value at severity 100, scaled by severity.
 //                       A stage entry's "factors" replaces the table and is
 //                       applied at full value (the stage is the severity band).
@@ -9,305 +10,206 @@
 //                       dose curve (dq_chem_dose_scale). get_factors(L) may
 //                       return another static table per species.
 //   /datum/body_effect  `factors` (per stack), or the application's own table
-//                       (set_body_effect_factors()), applied at full value.
+//                       (set_body_effect_factors() sets it on the application's record), applied at full value.
 //   /datum/species      `factor_baseline`, applied at full value.
 //   /datum/trait        `factors`, folded into the species' baseline.
 //   /datum/form         `factors`, applied at full value while worn.
 //   /obj/item           `worn_factors`, applied while equipped outside the hands.
 //
-// The body keeps one flat cached list, `body.factors`, indexed by BF_*. It
-// stays null while every factor is at baseline (most bodies). It is rebuilt
-// only when marked dirty (BODY_DIRTY_FACTORS): an affliction is added or
-// removed or crosses a BF_SEVERITY_BAND, a body effect changes, reagents change,
-// equipment with worn_factors moves, the form or species changes.
+// Every source holds its own table with a factors() entry in its type's CAPABILITIES block (code/engine/stats/contributes.dm): the engine holds it on the
+// entity its relation names (hold_table()) at the exact current scale and releases it with the relation or the source, and the stat settles before the
+// writer's next line. Stasis holds (code/modules/medical/stabilisation/stasis.dm), body effect applications (the /datum/body_effect_origin record,
+// body_effects.dm), afflictions (affliction.dm) and reagent doses (/datum/reagent_dose, below) read what they contribute through their relations. The plan's
+// own sources (species baseline and grants, the form, worn items) are /datum/factor_source records the body keeps in step with them (sync_species_factors(),
+// sync_form_factors() and sync_worn_factors(), called where those change).
 //
-// Read with `L.factor(BF_X)`.
+// Read a factor as the var of its stat: `L.slowdown`.
 
 /datum/body_factor_def
 	var/id
 	var/name
-	var/rule = BF_RULE_ADD
-	var/baseline = 0
-	var/min_value = -INFINITY
-	var/max_value = INFINITY
 	/// Book text: what the factor does.
 	var/desc
 	/// How the book prints a value: "percent" (multipliers), "points",
 	/// "flag" (on/off), "flags" (bitfield).
 	var/format = "points"
 
-/datum/body_factor_def/New(id, name, rule, baseline, min_value, max_value, format, desc)
+/datum/body_factor_def/New(id, name, format, desc)
 	..()
 	src.id = id
 	src.name = name
-	src.rule = rule
-	src.baseline = baseline
-	src.min_value = min_value
-	src.max_value = max_value
 	src.format = format
 	src.desc = desc
 
-/// BF_* -> /datum/body_factor_def. Built once.
+/// stat ids -> /datum/body_factor_def (the book's names and texts). Built once; a factor that was deleted has no entry.
 /proc/build_body_factor_defs()
-	var/list/defs = new /list(BF_COUNT)
+	var/alist/defs = alist()
 	var/list/rows = list( // ALLOW(sys_const_list_alloc): input rows of a one-shot table builder, runs once
-		// id, name, rule, baseline, min, max, format, desc
-		list(BF_AIRWAY, "Airway", BF_RULE_MULT, 1, 0, 1, "percent", "How open the airway is."),
-		list(BF_RESP_DRIVE, "Breathing drive", BF_RULE_MULT, 1, 0, 2, "percent", "The drive to breathe unaided."),
-		list(BF_LUNG_MECHANICS, "Lung expansion", BF_RULE_MULT, 1, 0, 1, "percent", "How well the chest and lungs expand."),
-		list(BF_GAS_EXCHANGE, "Gas exchange", BF_RULE_MULT, 1, 0, 1, "percent", "How well the lungs exchange gas."),
-		list(BF_PUMP, "Cardiac output", BF_RULE_MULT, 1, 0, 2, "percent", "How much blood (or power) the heart moves."),
-		list(BF_CIRCULATION, "Circulation", BF_RULE_MULT, 1, 0, 2, "percent", "Vascular tone and circulation."),
-		list(BF_DEMAND, "Metabolic demand", BF_RULE_MULT, 1, 0, 4, "percent", "How much oxygen and fuel the tissues need."),
-		list(BF_PROGRESSION, "Affliction progression", BF_RULE_MULT, 1, 0, 4, "percent", "How fast conditions worsen."),
-		list(BF_METABOLISM, "Metabolism", BF_RULE_MULT, 1, 0, 10, "percent", "How fast reagents are processed and hunger grows."),
-		list(BF_BLEEDING, "Bleeding", BF_RULE_MULT, 1, 0, 10, "percent", "How fast wounds bleed."),
-		list(BF_HEALING, "Natural healing", BF_RULE_MULT, 1, 0, 10, "percent", "Natural regeneration."),
-		list(BF_ANALGESIA, "Analgesia", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Pain relief."),
-		list(BF_PAIN, "Pain", BF_RULE_ADD, 0, 0, INFINITY, "points", "Extra pain."),
-		list(BF_SEDATION, "Sedation", BF_RULE_ADD, 0, 0, INFINITY, "points", "Lowered consciousness."),
-		list(BF_ARRHYTHMIA_RISK, "Arrhythmia risk", BF_RULE_ADD, 0, 0, INFINITY, "points", "Risk that the heart rhythm deteriorates."),
-		list(BF_HEART_RATE, "Heart rate", BF_RULE_ADD, 0, -INFINITY, INFINITY, "bpm", "Change in heart rate."),
-		list(BF_TEMPERATURE, "Temperature", BF_RULE_ADD, 0, -INFINITY, INFINITY, "°C", "Change in core temperature."),
-		list(BF_BP_SYSTOLIC, "Systolic pressure", BF_RULE_ADD, 0, -INFINITY, INFINITY, "mmHg", "Change in systolic blood pressure."),
-		list(BF_BP_DIASTOLIC, "Diastolic pressure", BF_RULE_ADD, 0, -INFINITY, INFINITY, "mmHg", "Change in diastolic blood pressure."),
-		list(BF_O2_SAT, "Oxygen saturation", BF_RULE_ADD, 0, -100, 100, "%", "Change in blood oxygen saturation."),
-		list(BF_RESP_RATE, "Breathing rate", BF_RULE_ADD, 0, -INFINITY, INFINITY, "/min", "Change in breaths per minute."),
-		list(BF_SLOWDOWN, "Slowdown", BF_RULE_ADD, 0, -10, 20, "points", "Movement delay; negative is faster."),
-		list(BF_PENALTY_SCALE, "Movement penalties", BF_RULE_MULT, 1, 0, 4, "percent", "Scale on every movement penalty."),
-		list(BF_HASTE, "Haste", BF_RULE_MAX, 0, 0, 1, "flag", "Ignores every slowdown."),
-		list(BF_ACCURACY, "Accuracy", BF_RULE_ADD, 0, -INFINITY, INFINITY, "%", "Ranged accuracy."),
-		list(BF_DISPERSION, "Dispersion", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "How widely shots stray."),
-		list(BF_EVASION, "Evasion", BF_RULE_ADD, 0, -INFINITY, INFINITY, "%", "Chance for attacks to miss."),
-		list(BF_ATTACK_SPEED, "Attack delay", BF_RULE_MULT, 1, 0.1, 10, "percent", "Delay between attacks."),
-		list(BF_MELEE_DAMAGE, "Melee damage", BF_RULE_MULT, 1, 0, 10, "percent", "Damage dealt in melee and unarmed."),
-		list(BF_VISION, "Vision", BF_RULE_MULT, 1, 0, 2, "percent", "Visual acuity."),
-		list(BF_HEARING, "Hearing", BF_RULE_MULT, 1, 0, 2, "percent", "Hearing."),
-		list(BF_MOTOR_CONTROL, "Motor control", BF_RULE_MULT, 1, 0, 1, "percent", "Fine motor control; poor control drops held items."),
-		list(BF_DARKSIGHT, "Darksight", BF_RULE_MAX, 0, 0, 1, "flag", "Sees in the dark."),
-		list(BF_SIGHT_FLAGS, "Special sight", BF_RULE_FLAGS, 0, 0, INFINITY, "flags", "Sees through walls."),
-		list(BF_ACTION_BLOCKS, "Blocked actions", BF_RULE_FLAGS, 0, 0, INFINITY, "flags", "Actions that can't be performed."),
-		list(BF_INCOMING_ALL, "Injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Every injury taken."),
-		list(BF_INCOMING_PHYSICAL, "Physical injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Blunt, cutting and piercing injury taken."),
-		list(BF_INCOMING_THERMAL, "Thermal injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Burn, frostbite, corrosive and electrical injury taken."),
-		list(BF_INCOMING_TOXIC, "Toxic injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Poisoning taken."),
-		list(BF_INCOMING_GENETIC, "Genetic injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Radiation and cellular injury taken."),
-		list(BF_INCOMING_NEURAL, "Neural injury taken", BF_RULE_MULT, 1, 0, 10, "percent", "Neural injury taken."),
-		list(BF_INCOMING_PAIN, "Pain taken", BF_RULE_MULT, 1, 0, 10, "percent", "Pain inflicted by weapons."),
-		list(BF_DISABLE_DURATION, "Disable duration", BF_RULE_MULT, 1, 0, 10, "percent", "How long stuns and knockdowns last."),
-		list(BF_HEALING_RECEIVED, "Healing received", BF_RULE_MULT, 1, 0, 10, "percent", "Strength of every treatment received."),
-		list(BF_ENDURANCE_FLAT, "Endurance", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Toughness."),
-		list(BF_ENDURANCE_MULT, "Endurance scale", BF_RULE_MULT, 1, 0, 100, "percent", "Toughness."),
-		list(BF_ICON_SCALE_X, "Width", BF_RULE_MULT, 1, 0.1, 10, "percent", "Sprite width."),
-		list(BF_ICON_SCALE_Y, "Height", BF_RULE_MULT, 1, 0.1, 10, "percent", "Sprite height."),
-		list(BF_PAIN_IMMUNITY, "Pain immunity", BF_RULE_MAX, 0, 0, 1, "flag", "Feels no pain."),
-		list(BF_PULSE_SHIFT, "Pulse shift", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Shifts the pulse up or down."),
-		list(BF_PULSE_SET, "Forced pulse", BF_RULE_MAX, -1, -1, INFINITY, "points", "Forces the pulse to a level."),
-		list(BF_EMP_SHIFT, "EMP resistance", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Weakens EMPs (higher is weaker)."),
-		list(BF_EXPLOSION_SHIFT, "Blast resistance", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Weakens explosions (higher is weaker)."),
-		list(BF_HEAT_EXPOSURE, "Heat exposure", BF_RULE_MULT, 1, 0, 10, "percent", "Share of environmental heat that reaches the body."),
-		list(BF_COLD_EXPOSURE, "Cold exposure", BF_RULE_MULT, 1, 0, 10, "percent", "Share of environmental cold that reaches the body."),
-		list(BF_SIEMENS, "Conductivity", BF_RULE_MULT, 1, 0, 10, "percent", "Electrical conductivity."),
-		list(BF_STABILIZATION, "Stabilisation", BF_RULE_ADD, 0, 0, INFINITY, "points", "Keeps the heart and breathing stable in crisis."),
-		list(BF_ANTIMICROBIAL, "Antimicrobial", BF_RULE_ADD, 0, 0, INFINITY, "points", "Fights infection."),
-		list(BF_BLOOD_REGEN, "Blood regeneration", BF_RULE_ADD, 0, 0, INFINITY, "points", "Blood rebuilt per tick."),
-		list(BF_INTOXICATION, "Intoxication", BF_RULE_ADD, 0, 0, INFINITY, "points", "Alcohol intoxication."),
-		list(BF_HEPATOTOXICITY, "Liver toxicity", BF_RULE_ADD, 0, 0, INFINITY, "points", "Alcohol poisoning of the liver."),
-		list(BF_ANTIEMETIC, "Antiemetic", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses vomiting."),
-		list(BF_ALLERGY, "Allergic reaction", BF_RULE_ADD, 0, 0, INFINITY, "points", "Strength of an allergic reaction."),
-		list(BF_WITHDRAWAL, "Withdrawal", BF_RULE_ADD, 0, 0, INFINITY, "points", "Withdrawal strain on the organs."),
-		list(BF_NEURAL_REPAIR, "Neural repair", BF_RULE_ADD, 0, 0, INFINITY, "points", "Extra brain repair per tick."),
-		list(BF_IMMUNE_SUPPRESSION, "Immune suppression", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses the immune response."),
-		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
-		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
-		list(BF_CARDIAC_IRRITABILITY, "Cardiac irritability", BF_RULE_MULT, 1, 0, 10, "percent", "How fast a disordered heart rhythm deteriorates: an unstable rhythm tips into fibrillation and fibrillation fades to a flatline this much sooner."),
-		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
+		// id, name, format, desc
+		list(STAT_AIRWAY, "Airway", "percent", "How open the airway is."),
+		list(STAT_RESP_DRIVE, "Breathing drive", "percent", "The drive to breathe unaided."),
+		list(STAT_LUNG_MECHANICS, "Lung expansion", "percent", "How well the chest and lungs expand."),
+		list(STAT_GAS_EXCHANGE, "Gas exchange", "percent", "How well the lungs exchange gas."),
+		list(STAT_PUMP, "Cardiac output", "percent", "How much blood (or power) the heart moves."),
+		list(STAT_CIRCULATION, "Circulation", "percent", "Vascular tone and circulation."),
+		list(STAT_DEMAND, "Metabolic demand", "percent", "How much oxygen and fuel the tissues need."),
+		list(STAT_PROGRESSION, "Affliction progression", "percent", "How fast conditions worsen."),
+		list(STAT_METABOLISM_MULT, "Metabolism", "percent", "How fast reagents are processed and hunger grows."),
+		list(STAT_BLEEDING, "Bleeding", "percent", "How fast wounds bleed."),
+		list(STAT_HEALING, "Natural healing", "percent", "Natural regeneration."),
+		list(STAT_ANALGESIA, "Analgesia", "points", "Pain relief."),
+		list(STAT_PAIN, "Pain", "points", "Extra pain."),
+		list(STAT_SEDATION, "Sedation", "points", "Lowered consciousness."),
+		list(STAT_HEART_RATE, "Heart rate", "bpm", "Change in heart rate."),
+		list(STAT_TEMPERATURE, "Temperature", "°C", "Change in core temperature."),
+		list(STAT_BP_SYSTOLIC, "Systolic pressure", "mmHg", "Change in systolic blood pressure."),
+		list(STAT_BP_DIASTOLIC, "Diastolic pressure", "mmHg", "Change in diastolic blood pressure."),
+		list(STAT_O2_SAT, "Oxygen saturation", "%", "Change in blood oxygen saturation."),
+		list(STAT_RESP_RATE, "Breathing rate", "/min", "Change in breaths per minute."),
+		list(STAT_SLOWDOWN, "Slowdown", "points", "Movement delay; negative is faster."),
+		list(STAT_PENALTY_SCALE, "Movement penalties", "percent", "Scale on every movement penalty."),
+		list(STAT_HASTE, "Haste", "flag", "Ignores every slowdown."),
+		list(STAT_ACCURACY, "Accuracy", "%", "Ranged accuracy."),
+		list(STAT_DISPERSION, "Dispersion", "points", "How widely shots stray."),
+		list(STAT_EVASION, "Evasion", "%", "Chance for attacks to miss."),
+		list(STAT_ATTACK_SPEED, "Attack delay", "percent", "Delay between attacks."),
+		list(STAT_MELEE_DAMAGE, "Melee damage", "percent", "Damage dealt in melee and unarmed."),
+		list(STAT_MOTOR_CONTROL, "Motor control", "percent", "Fine motor control; poor control drops held items."),
+		list(STAT_DARKSIGHT, "Darksight", "flag", "Sees in the dark."),
+		list(STAT_SIGHT_FLAGS, "Special sight", "flags", "Sees through walls."),
+		list(STAT_ACTION_BLOCKS, "Blocked actions", "flags", "Actions that can't be performed."),
+		list(STAT_INCOMING_ALL, "Injury taken", "percent", "Every injury taken."),
+		list(STAT_INCOMING_PHYSICAL, "Physical injury taken", "percent", "Blunt, cutting and piercing injury taken."),
+		list(STAT_INCOMING_THERMAL, "Thermal injury taken", "percent", "Burn, frostbite, corrosive and electrical injury taken."),
+		list(STAT_INCOMING_TOXIC, "Toxic injury taken", "percent", "Poisoning taken."),
+		list(STAT_INCOMING_GENETIC, "Genetic injury taken", "percent", "Radiation and cellular injury taken."),
+		list(STAT_INCOMING_NEURAL, "Neural injury taken", "percent", "Neural injury taken."),
+		list(STAT_INCOMING_PAIN, "Pain taken", "percent", "Pain inflicted by weapons."),
+		list(STAT_DISABLE_DURATION, "Disable duration", "percent", "How long stuns and knockdowns last."),
+		list(STAT_HEALING_RECEIVED, "Healing received", "percent", "Strength of every treatment received."),
+		list(STAT_ENDURANCE_FLAT, "Endurance", "points", "Toughness."),
+		list(STAT_ENDURANCE_MULT, "Endurance scale", "percent", "Toughness."),
+		list(STAT_SCALE_MULT_X, "Width", "percent", "Sprite width."),
+		list(STAT_SCALE_MULT_Y, "Height", "percent", "Sprite height."),
+		list(STAT_PAIN_IMMUNITY, "Pain immunity", "flag", "Feels no pain."),
+		list(STAT_PULSE_SHIFT, "Pulse shift", "points", "Shifts the pulse up or down."),
+		list(STAT_PULSE_SET, "Forced pulse", "points", "Forces the pulse to a level."),
+		list(STAT_EMP_SHIFT, "EMP resistance", "points", "Weakens EMPs (higher is weaker)."),
+		list(STAT_EXPLOSION_SHIFT, "Blast resistance", "points", "Weakens explosions (higher is weaker)."),
+		list(STAT_HEAT_EXPOSURE, "Heat exposure", "percent", "Share of environmental heat that reaches the body."),
+		list(STAT_COLD_EXPOSURE, "Cold exposure", "percent", "Share of environmental cold that reaches the body."),
+		list(STAT_SIEMENS, "Conductivity", "percent", "Electrical conductivity."),
+		list(STAT_STABILIZATION, "Stabilisation", "points", "Keeps the heart and breathing stable in crisis."),
+		list(STAT_ANTIMICROBIAL, "Antimicrobial", "points", "Fights infection."),
+		list(STAT_BLOOD_REGEN, "Blood regeneration", "points", "Blood rebuilt per tick."),
+		list(STAT_INTOXICATION, "Intoxication", "points", "Alcohol intoxication."),
+		list(STAT_HEPATOTOXICITY, "Liver toxicity", "points", "Alcohol poisoning of the liver."),
+		list(STAT_ANTIEMETIC, "Antiemetic", "points", "Suppresses vomiting."),
+		list(STAT_ALLERGY, "Allergic reaction", "points", "Strength of an allergic reaction."),
+		list(STAT_WITHDRAWAL, "Withdrawal", "points", "Withdrawal strain on the organs."),
+		list(STAT_NEURAL_REPAIR, "Neural repair", "points", "Extra brain repair per tick."),
+		list(STAT_IMMUNE_SUPPRESSION, "Immune suppression", "points", "Suppresses the immune response."),
+		list(STAT_O2_CARRIAGE, "Oxygen carriage", "percent", "How much oxygen the blood carries."),
+		list(STAT_TISSUE_UPTAKE, "Tissue oxygen uptake", "percent", "How well the tissues use the oxygen that reaches them."),
+		list(STAT_STASIS, "Stasis", "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
+		list(STAT_CARDIAC_IRRITABILITY, "Cardiac irritability", "percent", "How fast a disordered heart rhythm deteriorates: an unstable rhythm tips into fibrillation and fibrillation fades to a flatline this much sooner."),
 	)
 	for(var/list/row as anything in rows)
-		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
+		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4])
+	var/static/list/armor_stats = list(STAT_ARMOR_BLUNT, STAT_ARMOR_CUT, STAT_ARMOR_PIERCE, STAT_ARMOR_BURN, STAT_ARMOR_FROSTBITE, STAT_ARMOR_CORROSIVE, STAT_ARMOR_ELECTRIC, STAT_ARMOR_TOXIN, STAT_ARMOR_RADIATION, STAT_ARMOR_CELLULAR, STAT_ARMOR_NEURAL, STAT_ARMOR_PAIN, STAT_ARMOR_DIGESTION, STAT_ARMOR_BLAST)
 	for(var/kind in 1 to ARMOR_KIND_COUNT)
 		var/kind_name = armor_kind_name(kind)
-		defs[BF_ARMOR(kind)] = new /datum/body_factor_def(BF_ARMOR(kind), "[capitalize(kind_name)] armour", BF_RULE_ADD, 0, -INFINITY, INFINITY, "points", "Extra armour against [kind_name] harm.")
-	for(var/id in 1 to BF_COUNT)
-		if(!defs[id])
-			stack_trace("body factor [id] has no definition")
+		defs[armor_stats[kind]] = new /datum/body_factor_def(armor_stats[kind], "[capitalize(kind_name)] armour", "points", "Extra armour against [kind_name] harm.")
 	return defs
 
 GLOBAL_TABLE(body_factor_defs, GLOBAL_PROC_REF(build_body_factor_defs))
 
-/// Flat list of baselines, indexed by BF_*. Shared: never mutate.
-/proc/build_body_factor_baselines()
-	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
-	var/list/baselines = new /list(BF_COUNT)
-	for(var/id in 1 to BF_COUNT)
-		var/datum/body_factor_def/D = defs[id]
-		baselines[id] = D ? D.baseline : 0
-	return baselines
-
-GLOBAL_TABLE(body_factor_baselines, GLOBAL_PROC_REF(build_body_factor_baselines))
-
-/// Flat list of combine rules, indexed by BF_*. Shared: never mutate.
-/proc/build_body_factor_rules()
-	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
-	var/list/rules = new /list(BF_COUNT)
-	for(var/id in 1 to BF_COUNT)
-		var/datum/body_factor_def/D = defs[id]
-		rules[id] = D ? D.rule : BF_RULE_ADD
-	return rules
-
-GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
-
-/proc/body_factor_baseline(id)
-	return GLOBAL_TABLE_GET(body_factor_baselines)[id]
-
-/// Fold one source's table into `acc` (a flat BF_COUNT list seeded with the
-/// baselines) at `scale`. Returns `acc`, allocating it on the first
-/// contribution. See the combine rules in code/__defines/body_factors.dm.
-/proc/body_factor_accumulate(list/acc, alist/table, scale = 1)
-	if(!length(table) || scale <= 0)
-		return acc
-	if(!acc)
-		var/list/baselines = GLOBAL_TABLE_GET(body_factor_baselines)
-		acc = baselines.Copy()
-	var/list/rules = GLOBAL_TABLE_GET(body_factor_rules)
-	for(var/id in table)
-		if(!isnum(id) || id < 1 || id > BF_COUNT)
-			stack_trace("invalid body factor id [id] in a factor table")
-			continue
-		var/value = table[id]
-		switch(rules[id])
-			if(BF_RULE_MULT)
-				acc[id] *= max(0, 1 - (1 - value) * scale)
-			if(BF_RULE_ADD)
-				acc[id] += value * scale
-			if(BF_RULE_MAX)
-				acc[id] = max(acc[id], value * scale)
-			if(BF_RULE_MIN)
-				acc[id] = min(acc[id], value * scale)
-			if(BF_RULE_FLAGS)
-				acc[id] |= value
-	return acc
-
-/// Clamp `acc` to the factor bounds. Returns null when every factor sits at
-/// its baseline, so healthy bodies keep no list.
-/proc/body_factor_finalize(list/acc)
-	if(!acc)
-		return null
-	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
-	var/list/baselines = GLOBAL_TABLE_GET(body_factor_baselines)
-	var/at_baseline = TRUE
-	for(var/id in 1 to BF_COUNT)
-		var/datum/body_factor_def/D = defs[id]
-		var/value = clamp(acc[id], D.min_value, D.max_value)
-		acc[id] = value
-		if(value != baselines[id])
-			at_baseline = FALSE
-	return at_baseline ? null : acc
-
 
 // --- Mob-side queries ----------------------------------------------------------
 
-/// The current value of body factor `id` (BF_*).
-/mob/living/proc/factor(id)
-	if(!body)
-		return body_factor_baseline(id)
-	return body.get_factor(id)
-
-/// Mark this mob's factors stale.
-/mob/living/proc/invalidate_factors()
-	body?.invalidate(BODY_DIRTY_FACTORS)
-
 /// Is `block` (ACTION_BLOCK_*) set on this mob?
 /mob/living/proc/action_blocked(block)
-	return (factor(BF_ACTION_BLOCKS) & block) ? TRUE : FALSE
+	return (action_blocks & block) ? TRUE : FALSE
 
 /// Incoming multiplier for an INJURY_CATEGORY_*: the overall and the
 /// per-category factor.
 /mob/living/proc/incoming_injury_factor(category)
-	. = factor(BF_INCOMING_ALL)
-	if(category)
-		. *= factor(BF_INCOMING(category))
+	. = incoming_all
+	switch(category)
+		if(INJURY_CATEGORY_PHYSICAL)
+			. *= incoming_physical
+		if(INJURY_CATEGORY_THERMAL)
+			. *= incoming_thermal
+		if(INJURY_CATEGORY_TOXIC)
+			. *= incoming_toxic
+		if(INJURY_CATEGORY_GENETIC)
+			. *= incoming_genetic
+		if(INJURY_CATEGORY_NEURAL)
+			. *= incoming_neural
+		if(INJURY_CATEGORY_PAIN)
+			. *= incoming_pain
 
 // --- Body side ---------------------------------------------------------------------
 
 /datum/body
-	/// Flat list indexed by BF_*, or null when every factor is at baseline.
-	var/list/factors
-	/// C12: reagent id -> dose band of every factor-contributing reagent at the
-	/// last treatment snapshot, or null. A change here is what dirties factors.
-	var/tmp/list/reagent_factor_bands
-	/// A reagent holder changed since the bands were last compared.
-	var/tmp/reagent_bands_pending = FALSE
+	/// Reagent id -> its /datum/reagent_dose, one for every reagent in the body that can change a factor (the body owns them). Lazy.
+	var/list/reagent_doses
+	/// A reagent holder changed since the volumes were last read (on_reagent_change() sets it and settles it at once).
+	var/tmp/reagent_change_pending = FALSE
+	/// Key (FACTOR_SOURCE_*) -> the plan's /datum/factor_source of it (the body owns them). Lazy.
+	var/list/factor_sources
 
-/datum/body/proc/get_factor(id)
-	if(factors_stale())
-		recompute_factors()
-	return factors ? factors[id] : body_factor_baseline(id)
+/// A source's own factors() entry held or released a table on this mob (code/engine/stats/contributes.dm): the vitals and the physiology are dirty when a stat they
+/// read moved.
+/mob/living/factors_held(list/moved)
+	if(!body)
+		return
+	for(var/stat_id in moved)
+		if(stat_id in GLOB.factor_vitals_stats)
+			body.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
+			return
 
-/// Are the factors stale? Resolves a pending reagent change first (C12), so
-/// every "should I recompute?" check sees band crossings.
-/datum/body/proc/factors_stale()
-	if(reagent_bands_pending)
-		build_treatment_snapshot()
-	return (dirty & BODY_DIRTY_FACTORS) ? TRUE : FALSE
+/// The factor stats the cached vitals and the physiology read: pain and consciousness read analgesia, pain, sedation and pain immunity; the physiology reads
+/// the oxygen-transport chain (airway, drive, lungs, exchange, pump, circulation, demand, carriage, uptake, stabilisation) and the readouts it writes
+/// (heart rate, pressures, saturation, breathing rate). A change of any other factor leaves them as they are.
+GLOBAL_LIST_INIT(factor_vitals_stats, list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LUNG_MECHANICS, STAT_GAS_EXCHANGE, STAT_PUMP, STAT_CIRCULATION, STAT_DEMAND, STAT_O2_CARRIAGE, STAT_TISSUE_UPTAKE, STAT_STABILIZATION, STAT_HEART_RATE, STAT_BP_SYSTOLIC, STAT_BP_DIASTOLIC, STAT_O2_SAT, STAT_RESP_RATE, STAT_ANALGESIA, STAT_PAIN, STAT_SEDATION, STAT_PAIN_IMMUNITY))
 
-/// C12: compare each factor reagent's dose band with the last snapshot's and
-/// dirty the factors only on a band crossing, or when a factor reagent appears
-/// or leaves. Called by build_treatment_snapshot() with fresh volumes.
-/datum/body/proc/update_reagent_factor_bands()
-	reagent_bands_pending = FALSE
-	var/list/bands = null
+/// Resolves a pending reagent change now: the volumes are read again and the doses follow, so the factors follow a reagent the moment its holder changes.
+/// The treatment snapshot stays stale; it rebuilds when something asks for it.
+/datum/body/proc/settle_reagent_factors()
+	if(!reagent_change_pending)
+		return
+	refresh_reagent_volumes()
+	sync_reagent_doses()
+
+/// Reads the volumes of every reagent in the mob's holders into reagent_volumes and tells what reads them (each dose record follows its volume).
+/datum/body/proc/refresh_reagent_volumes()
+	var/list/volumes = collect_reagent_volumes(reagent_volumes)
+	if(volumes && volumes == reagent_volumes)
+		// Refilled in place (collect_reagent_volumes() reuses the list): the setter would see the same list, so the write is announced by hand.
+		tracked_changed(src, nameof(reagent_volumes))
+	else
+		set_reagent_volumes(volumes)
+
+/// One dose record for each reagent in the body that can change a factor (contributes_factors()), and none for the rest: a reagent that appears gets
+/// its record, one that leaves loses it, and a record's rows go with it. Called with fresh volumes.
+/datum/body/proc/sync_reagent_doses()
+	reagent_change_pending = FALSE
 	for(var/reagent_id in reagent_volumes)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
-		if(!R || !R.contributes_factors(owner))
-			continue
-		LAZYSET(bands, reagent_id, reagent_factor_band(reagent_volumes[reagent_id]))
-	var/list/old = reagent_factor_bands
-	reagent_factor_bands = bands
-	if(!reagent_bands_equal(old, bands))
-		invalidate(BODY_DIRTY_FACTORS)
-
-/datum/body/proc/reagent_bands_equal(list/a, list/b)
-	if(length(a) != length(b))
-		return FALSE
-	for(var/reagent_id in a)
-		if(!(reagent_id in b) || a[reagent_id] != b[reagent_id])
-			return FALSE
-	return TRUE
-
-/// Dose band of `volume` for factor dirtying (DQ_CHEM_FACTOR_BAND of the dose scale).
-/proc/reagent_factor_band(volume)
-	return round(dq_chem_dose_scale(volume) / DQ_CHEM_FACTOR_BAND)
-
-/// Rebuild `factors` from every source. Visits each source's static table
-/// once; allocates only when something contributes.
-/datum/body/proc/recompute_factors()
-	set_dirty(dirty & (~BODY_DIRTY_FACTORS))
-	var/list/acc = null
-	for(var/datum/affliction/A as anything in afflictions)
-		acc = A.accumulate_factors(acc)
-	acc = owner.accumulate_body_effect_factors(acc)
-	acc = owner.accumulate_stasis_factors(acc)
-	acc = accumulate_reagent_factors(acc)
-	acc = accumulate_plan_factors(acc)
-	var/list/old = factors
-	factors = body_factor_finalize(acc)
-	if(length(GLOB.derived_factor_watch))
-		derived_factors_recomputed(owner, old, factors) // entities that read a factor through factor_dep()
-	if(!factors_equal(old, factors))
-		// Pain and consciousness read analgesia, pain and sedation; the
-		// physiology reads the oxygen-transport factors.
-		invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
-
-/datum/body/proc/factors_equal(list/a, list/b)
-	if(a == b)
-		return TRUE
-	if(!a || !b)
-		return FALSE
-	for(var/id in 1 to BF_COUNT)
-		if(a[id] != b[id])
-			return FALSE
-	return TRUE
+		var/wanted = R && R.contributes_factors(owner)
+		var/datum/reagent_dose/existing = reagent_doses?[reagent_id]
+		if(wanted && !existing)
+			var/datum/reagent_dose/D = new
+			D.set_reagent_id(reagent_id)
+			rel_set(D, nameof(D.body), src)
+			rel_set(D, nameof(D.holder), owner)
+			rel_add(src, nameof(reagent_doses), D, reagent_id)
+		else if(!wanted && existing)
+			rel_add(src, nameof(reagent_doses), null, reagent_id)
+	for(var/reagent_id in reagent_doses?.Copy())
+		if(!(reagent_id in reagent_volumes))
+			rel_add(src, nameof(reagent_doses), null, reagent_id)
 
 /// Per-tick consequences of the current factors: poor motor control drops
 /// held items, blocked hands can't hold anything.
@@ -315,70 +217,90 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 	if(!ishuman(owner) || owner.is_dead())
 		return
 	var/mob/living/carbon/human/H = owner
-	var/blocks = factors[BF_ACTION_BLOCKS]
+	var/blocks = H.action_blocks
 	if((blocks & ACTION_BLOCK_HOLD_LEFT) && H.get_equipped_item(SLOT_ID_HAND_L))
 		to_chat(H, span_warning("Your left hand won't close around \the [H.get_equipped_item(SLOT_ID_HAND_L)]."))
 		H.drop_l_hand()
 	if((blocks & ACTION_BLOCK_HOLD_RIGHT) && H.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(H, span_warning("Your right hand won't close around \the [H.get_equipped_item(SLOT_ID_HAND_R)]."))
 		H.drop_r_hand()
-	var/motor = factors[BF_MOTOR_CONTROL]
-	if(motor < 1 && prob(min(BF_MAX_DROP_CHANCE, (1 - motor) * 100)))
+	var/motor = H.motor_control
+	if(motor < 1 && prob(min(FACTOR_MAX_DROP_CHANCE, (1 - motor) * 100)))
 		dq_drop_random_held(H)
 
-/// Reagent contributions: each reagent's table at its dose scale (from the
-/// treatment snapshot's volumes).
-/datum/body/proc/accumulate_reagent_factors(list/acc)
-	if(dirty & BODY_DIRTY_TREATMENT)
-		build_treatment_snapshot()
-	if(!reagent_volumes)
-		return acc
-	for(var/reagent_id in reagent_volumes)
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
-		if(!R)
-			continue
-		var/alist/table = R.get_factors(owner)
-		var/scale = dq_chem_dose_scale(reagent_volumes[reagent_id])
-		// B2: the reagent's own table obeys the same gates as on_mob_life; the
-		// patient-side contributions (allergy, blood rebuild) still apply.
-		if(length(table) && scale > 0 && R.acts_on_body(owner))
-			acc = accumulate_scaled_reagent(acc, table, scale)
-		acc = R.accumulate_special_factors(acc, owner, reagent_volumes[reagent_id])
-	return acc
+/// Does the body's tick have a factor effect to apply (a hand that can't hold, poor motor control)?
+/datum/body/proc/factor_effects_due()
+	return (owner.action_blocks || owner.motor_control < 1) ? TRUE : FALSE
 
-/// One reagent table. Plans scale individual factors (a species' analgesic
-/// sensitivity) by overriding this.
-/datum/body/proc/accumulate_scaled_reagent(list/acc, alist/table, scale)
-	return body_factor_accumulate(acc, table, scale)
+/// One of the plan's sources (the species baseline, a table a trait granted it, the form, a worn item): the table it had when the body last read it, held on the mob
+/// as rows of this record. The body owns it under its key (factor_sources, set_factor_source()) and it goes when the source has no table.
+/datum/factor_source
+	/// The mob it is on: a relation view.
+	var/mob/living/holder
+	/// The source's table (stat id -> value), held at full value.
+	var/alist/table
 
-/// Plan-specific sources: species, traits, form, worn equipment. Base: none.
-/datum/body/proc/accumulate_plan_factors(list/acc)
-	return acc
+CAPABILITIES(/datum/factor_source)
+	ref_one(nameof(holder), /mob/living)
+	factors(nameof(table), to = nameof(holder))
+
+/// Sets the table of the plan source `key`: its record is made if it has none, and ends when the table is empty.
+/datum/body/proc/set_factor_source(key, alist/table)
+	var/datum/factor_source/S = factor_sources?[key]
+	if(!length(table))
+		if(S)
+			rel_add(src, nameof(factor_sources), null, key)
+		return
+	if(!S)
+		S = new
+		rel_set(S, nameof(S.holder), owner)
+		rel_add(src, nameof(factor_sources), S, key)
+	S.set_table(table)
+
+/// Ends every plan source whose key starts with `prefix` and is not in `keep` (a list of keys).
+/datum/body/proc/drop_factor_sources(prefix, list/keep)
+	for(var/key in factor_sources?.Copy())
+		if(findtext(key, prefix) == 1 && !(key in keep))
+			rel_add(src, nameof(factor_sources), null, key)
+
+/// Plan-specific sources, read when they change. Base: none.
+/datum/body/proc/sync_species_factors()
+	return
+
+/datum/body/proc/sync_form_factors()
+	return
+
+/datum/body/proc/sync_worn_factors()
+	return
 
 
 // --- Source tables -------------------------------------------------------------------
 
 /datum/affliction
-	/// Body factors at severity 100, scaled by severity (BF_* -> value).
+	/// Body factors at severity 100, scaled by severity (stat id -> value).
 	var/alist/factors
-	/// Severity band the factors were last computed at.
-	var/tmp/factor_band = -1
 
-/// The table this affliction contributes now. A staged affliction uses its
-/// active stage's "factors" (applied at full value; a stage without one
-/// contributes nothing); otherwise `factors`, scaled by severity.
-/datum/affliction/proc/accumulate_factors(list/acc)
-	factor_band = round(severity / BF_SEVERITY_BAND)
+/// The table this affliction contributes now (the factors() entry in its CAPABILITIES block, code/modules/body/affliction.dm). A staged affliction uses its
+/// active stage's "factors" (a stage without one contributes nothing); otherwise `factors`.
+/datum/affliction/proc/factor_table(datum/act/eval/A)
 	if(stage)
 		var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
 		var/list/entry = stages?[stage]
 		if(entry)
-			return body_factor_accumulate(acc, entry["factors"], 1)
-	return body_factor_accumulate(acc, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
+			return entry["factors"]
+	return factors
+
+/// The scale of factor_table(): a stage's table is applied at full value (the stage is the severity band), `factors` scales with severity.
+/datum/affliction/proc/factor_scale(datum/act/eval/A)
+	if(stage)
+		var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
+		if(stages?[stage])
+			return 1
+	return severity / AFFLICTION_SEVERITY_TERMINAL
 
 /datum/reagent
 	/// Body factors at the standard dose (DQ_CHEM_STANDARD_DOSE), scaled by
-	/// the dose curve. BF_* -> value.
+	/// the dose curve. stat id -> value.
 	var/alist/factors
 	/// Per-species replacements for `factors`: reagent tag (IS_*) -> table.
 	/// A tag mapped to null gets nothing (diona ignore most drugs).
@@ -417,7 +339,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 /// B2: the one gate for whether a reagent's own effects (treatment tags,
 /// body factors) reach this mob — the same rules `on_mob_life` applies: dead
 /// bodies, synthetic processing, and medical allergy (which gives no benefit;
-/// the reaction itself is `accumulate_special_factors`).
+/// the reaction itself is special_table()).
 /datum/reagent/proc/acts_on_body(mob/living/L)
 	if(!L)
 		return FALSE
@@ -444,8 +366,8 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 	return R ? R.acts_on_body(L) : FALSE
 
 /// C12: can this reagent change `L`'s body factors at all? (Its own table, or a
-/// patient-side contribution in accumulate_special_factors().) Reagents that
-/// can't never dirty the factors when their dose moves.
+/// patient-side contribution in special_table().) Reagents that
+/// can't never refresh the factors when their dose moves.
 /datum/reagent/proc/contributes_factors(mob/living/L)
 	if(length(get_factors(L)))
 		return TRUE
@@ -457,22 +379,30 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 			return TRUE
 	return FALSE
 
-/// Contributions that depend on the patient rather than the reagent: the
-/// mob's allergies, and blood rebuilt from its own blood reagent. Called at
-/// every factor recompute with the reagent's volume across the mob's holders.
-/datum/reagent/proc/accumulate_special_factors(list/acc, mob/living/L, volume)
+/// Contributions that depend on the patient rather than the reagent: the mob's allergies, blood rebuilt from its own blood reagent (the base reagent), and
+/// intoxication and liver toxicity (ethanol). Each is one part of the reagent's dose record (REAGENT_PART_*, /datum/reagent_dose): this is the part's table
+/// for `L` at `volume` of the reagent in its system, or null for none.
+/datum/reagent/proc/special_table(part, mob/living/L, volume)
 	if(!ishuman(L) || volume <= 0)
-		return acc
+		return null
 	var/mob/living/carbon/human/H = L
-	var/scale = dq_chem_dose_scale(volume)
-	if((H.species.allergens & allergen_type) || (H.species.medallergens & medallergen_type))
-		// REM: the old per-tick reaction came from the ~REM units metabolised.
-		var/static/alist/allergy = alist(BF_ALLERGY = REM)
-		acc = body_factor_accumulate(acc, allergy, allergen_factor * scale)
-	if(id == H.species.blood_reagents)
-		var/static/alist/blood_rebuild = alist(BF_BLOOD_REGEN = 1.6)
-		acc = body_factor_accumulate(acc, blood_rebuild, scale)
-	return acc
+	switch(part)
+		if(REAGENT_PART_ALLERGY)
+			// REM: the old per-tick reaction came from the ~REM units metabolised.
+			var/static/alist/allergy = alist(STAT_ALLERGY = REM)
+			if((H.species.allergens & allergen_type) || (H.species.medallergens & medallergen_type))
+				return allergy
+		if(REAGENT_PART_BLOOD)
+			var/static/alist/blood_rebuild = alist(STAT_BLOOD_REGEN = 1.6)
+			if(id == H.species.blood_reagents)
+				return blood_rebuild
+	return null
+
+/// The scale of special_table(part) at `volume`.
+/datum/reagent/proc/special_scale(part, volume)
+	if(part == REAGENT_PART_ALLERGY)
+		return allergen_factor * dq_chem_dose_scale(volume)
+	return dq_chem_dose_scale(volume)
 
 /// Reagent tag (IS_*) the mob metabolises as, or null.
 /mob/living/proc/reagent_tag()
@@ -480,6 +410,72 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 
 /mob/living/carbon/human/reagent_tag()
 	return species?.reagent_tag
+
+/// One reagent in a body that can change a factor: the dose the stat layer composes. The body owns it under the reagent id (reagent_doses, sync_reagent_doses()),
+/// for as long as the reagent is in the mob's holders and contributes_factors(); its volume is read through `body` from the body's reagent_volumes, so the tables
+/// follow the dose exactly. Its parts: the reagent's own table (gated like on_mob_life: acts_on_body()), the species' analgesic sensitivity (humanoids), and the
+/// patient-side parts of special_table().
+/datum/reagent_dose
+	/// The reagent this is the dose of.
+	var/reagent_id
+	/// The mob it is in, and its body: relation views.
+	var/mob/living/holder
+	var/datum/body/body
+
+CAPABILITIES(/datum/reagent_dose)
+	ref_one(nameof(holder), /mob/living)
+	ref_one(nameof(body), /datum/body)
+	factors(PROC_REF(dose_table), scale = PROC_REF(dose_scale), to = nameof(holder), reads = list("body.reagent_volumes"))
+	factors(PROC_REF(strength_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_STRENGTH, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(allergy_table), scale = PROC_REF(allergy_scale), to = nameof(holder), part = REAGENT_PART_ALLERGY, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(blood_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_BLOOD, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(intoxication_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_INTOXICATION, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(hepatotoxicity_table), scale = PROC_REF(hepatotoxicity_scale), to = nameof(holder), part = REAGENT_PART_HEPATOTOXICITY, reads = list("body.reagent_volumes"))
+
+/datum/reagent_dose/proc/reagent_def()
+	RETURN_TYPE(/datum/reagent)
+	return SSchemistry.ready().chemical_reagents[reagent_id]
+
+/// The reagent's volume across the mob's holders (the body's snapshot).
+/datum/reagent_dose/proc/volume()
+	return body?.reagent_volumes?[reagent_id] || 0
+
+/datum/reagent_dose/proc/dose_scale(datum/act/eval/A)
+	return dq_chem_dose_scale(volume())
+
+/// The reagent's own table, when it acts on this mob (B2: the same gates as on_mob_life).
+/datum/reagent_dose/proc/dose_table(datum/act/eval/A)
+	var/datum/reagent/R = reagent_def()
+	if(!R || !holder || !R.acts_on_body(holder))
+		return null
+	return R.get_factors(holder)
+
+/// The humanoid plan's extra share of a reagent's analgesia (the species' analgesic sensitivity).
+/datum/reagent_dose/proc/strength_table(datum/act/eval/A)
+	var/alist/table = dose_table(A)
+	return length(table) ? body.strength_table(table) : null
+
+/datum/reagent_dose/proc/allergy_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_ALLERGY, holder, volume())
+
+/datum/reagent_dose/proc/allergy_scale(datum/act/eval/A)
+	return reagent_def()?.special_scale(REAGENT_PART_ALLERGY, volume()) || 0
+
+/datum/reagent_dose/proc/blood_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_BLOOD, holder, volume())
+
+/datum/reagent_dose/proc/intoxication_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_INTOXICATION, holder, volume())
+
+/datum/reagent_dose/proc/hepatotoxicity_table(datum/act/eval/A)
+	return reagent_def()?.special_table(REAGENT_PART_HEPATOTOXICITY, holder, volume())
+
+/datum/reagent_dose/proc/hepatotoxicity_scale(datum/act/eval/A)
+	return reagent_def()?.special_scale(REAGENT_PART_HEPATOTOXICITY, volume()) || 0
+
+/// What a plan adds to a reagent table (its analgesia scaled by the species' sensitivity), or null. Base: nothing.
+/datum/body/proc/strength_table(alist/table)
+	return null
 
 /datum/form
 	/// Body factors applied at full value while this form is worn.
@@ -499,7 +495,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 		return
 	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
 	for(var/id in table)
-		var/datum/body_factor_def/D = (isnum(id) && id >= 1 && id <= BF_COUNT) ? defs[id] : null
+		var/datum/body_factor_def/D = isnum(id) ? defs[id] : null
 		if(!D)
 			continue
 		. += "[D.name]: [body_factor_format_value(D, table[id])][suffix]"

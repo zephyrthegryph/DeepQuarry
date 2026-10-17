@@ -63,7 +63,7 @@ CAPABILITIES(/datum/private_notes_panel)
 	if(user != src)
 		return
 	if(!private_notes)
-		private_notes = " "
+		set_private_notes(" ")
 		return
 	var/key = "[REF(src)]"
 	var/datum/private_notes_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_private_notes_panels, key))

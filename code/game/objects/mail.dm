@@ -200,7 +200,7 @@ CAPABILITIES(/obj/item/mail)
 	if(O.currTag)
 		if(src.sortTag != O.currTag)
 			balloon_alert(user, "labeled for [O.currTag].")
-			src.sortTag = O.currTag
+			set_sortTag(O.currTag)
 			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
 			balloon_alert(user, "already labeled for [O.currTag].")
@@ -428,7 +428,7 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 /obj/item/storage/bag/mail/borg/proc/upgrade()
 	name += " of holding"
 	storage_slots = 45
-	max_storage_space = 75
+	set_max_storage_space(75)
 
 // Mail Scanner
 /obj/item/mail_scanner

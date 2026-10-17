@@ -9,7 +9,7 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	H.set_real_name("Alice Test")
 	H.name = "Alice Test"
-	H.gender = FEMALE
+	H.set_gender(FEMALE)
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, test_floor())
 	var/obj/structure/closet/box = allocate(/obj/structure/closet, test_floor())
 

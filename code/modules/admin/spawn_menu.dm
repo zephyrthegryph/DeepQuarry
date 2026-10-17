@@ -28,25 +28,25 @@ CAPABILITIES(/datum/spawn_menu)
 /datum/spawn_menu/proc/ui_act_setregexsearch(datum/act/op/A, regexSearch)
 	if(!ui_gate(A))
 		return FALSE
-	regex_search = regexSearch
+	set_regex_search(regexSearch)
 	return TRUE
 
 /datum/spawn_menu/proc/ui_act_setnamesearch(datum/act/op/A, searchNames)
 	if(!ui_gate(A))
 		return FALSE
-	name_search = searchNames
+	set_name_search(searchNames)
 	return TRUE
 
 /datum/spawn_menu/proc/ui_act_setfancytypes(datum/act/op/A, fancyTypes)
 	if(!ui_gate(A))
 		return FALSE
-	fancy_types = fancyTypes
+	set_fancy_types(fancyTypes)
 	return TRUE
 
 /datum/spawn_menu/proc/ui_act_setincludeabstracts(datum/act/op/A, includeAbstracts)
 	if(!ui_gate(A))
 		return FALSE
-	include_abstracts = includeAbstracts
+	set_include_abstracts(includeAbstracts)
 	return TRUE
 
 /datum/spawn_menu/proc/ui_act_spawn(datum/act/op/A, amount_arg, type)

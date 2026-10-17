@@ -28,7 +28,7 @@
 	shock(N.user, 100)
 
 /obj/item/rig/proc/interface_lock_wire_pulsed(datum/act/A)
-	interface_locked = !interface_locked
+	set_interface_locked(!interface_locked)
 	visible_message("\The [src] clicks audibly as the software interface [interface_locked?"darkens":"brightens"].")
 
 /// The shock wire cut electrifies the interface until mended; either way it may shock the hand.

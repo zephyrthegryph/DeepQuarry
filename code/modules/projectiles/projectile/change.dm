@@ -46,7 +46,7 @@
 		switch(randomize)
 			if("robot")
 				new_mob = new /mob/living/silicon/robot(M.loc)
-				new_mob.gender = M.gender
+				new_mob.set_gender(M.gender)
 				new_mob.set_invisibility(INVISIBILITY_NONE)
 				new_mob.set_job(JOB_CYBORG)
 				var/mob/living/silicon/robot/Robot = new_mob
@@ -54,7 +54,7 @@
 				Robot.mmi.take_identity(M)	//Does not transfer key/client.
 			if("slime")
 				new_mob = new /mob/living/simple_mob/slime/xenobio(M.loc)
-				new_mob.universal_speak = 1
+				new_mob.set_universal_speak(1)
 			else
 				var/mob/living/carbon/human/H
 				if(ishuman(M))
@@ -64,20 +64,20 @@
 					H = new_mob
 
 				if(M.gender == MALE)
-					H.gender = MALE
+					H.set_gender(MALE)
 					H.name = pick(GLOB.first_names_male)
 				else if(M.gender == FEMALE)
-					H.gender = FEMALE
+					H.set_gender(FEMALE)
 					H.name = pick(GLOB.first_names_female)
 				else
-					H.gender = NEUTER
+					H.set_gender(NEUTER)
 					H.name = pick(GLOB.first_names_female|GLOB.first_names_male)
 
 				H.name += " [pick(GLOB.last_names)]"
 				H.set_real_name(H.name)
 
 				H.set_species(randomize)
-				H.universal_speak = 1
+				H.set_universal_speak(1)
 
 		if(new_mob)
 			for (var/datum/spell/S in M.spell_list)

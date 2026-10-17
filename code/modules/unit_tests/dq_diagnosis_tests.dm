@@ -80,7 +80,7 @@
 	// A condition declared lab-only needs the body scanner or a phasic analyzer.
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/toxic_poisoning, null, 50)
 	TEST_ASSERT_NOTNULL(A, "toxic poisoning could not be afflicted")
-	A.presentation = PRESENT_LAB
+	A.set_presentation(PRESENT_LAB)
 	basic = _diagnose(H, /datum/diagnostic_profile/health_analyzer)
 	advanced = _diagnose(H, /datum/diagnostic_profile/health_analyzer/advanced)
 	var/datum/diagnosis/scanner = _diagnose(H, /datum/diagnostic_profile/body_scanner)
@@ -96,7 +96,7 @@
 	TEST_ASSERT(lab_demand?[TREAT_ANTITOXIN], "the body scanner should ask for antitoxin for the poisoning it found")
 
 	// Declared surface presentation brings it back to the basic analyzer.
-	A.presentation = PRESENT_SURFACE
+	A.set_presentation(PRESENT_SURFACE)
 	basic = _diagnose(H, /datum/diagnostic_profile/health_analyzer)
 	TEST_ASSERT(basic.has_finding_for(/datum/affliction/toxic_poisoning), "a surface-presenting condition should reach the basic analyzer")
 	qdel(basic)

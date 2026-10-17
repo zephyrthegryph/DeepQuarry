@@ -61,9 +61,9 @@
 		var/obj/effect/decal/cleanable/dirt/dirtoverlay = locate(/obj/effect/decal/cleanable/dirt, T)
 		if (!dirtoverlay)
 			dirtoverlay = new/obj/effect/decal/cleanable/dirt(T)
-			dirtoverlay.alpha = volume * 30
+			dirtoverlay.set_alpha(volume * 30)
 		else
-			dirtoverlay.alpha = min(dirtoverlay.alpha + volume * 30, 255)
+			dirtoverlay.set_alpha(min(dirtoverlay.alpha + volume * 30, 255))
 
 /datum/reagent/chlorine
 	name = REAGENT_CHLORINE
@@ -130,19 +130,26 @@
 /datum/reagent/ethanol/contributes_factors(mob/living/L)
 	return ishuman(L) || ..()
 
-/datum/reagent/ethanol/accumulate_special_factors(list/acc, mob/living/L, volume)
-	acc = ..()
+/datum/reagent/ethanol/special_table(part, mob/living/L, volume)
+	if(part != REAGENT_PART_INTOXICATION && part != REAGENT_PART_HEPATOTOXICITY)
+		return ..()
 	if(!ishuman(L) || volume <= 0)
-		return acc
+		return null
 	var/mob/living/carbon/human/H = L
 	if(HAS_SYNTHETIC_BIOLOGY(H) && !H.species.robo_ethanol_drunk)
-		return acc
-	var/static/alist/intoxication = alist(BF_INTOXICATION = 1)
-	var/static/alist/hepatotoxicity = alist(BF_HEPATOTOXICITY = 1)
-	acc = body_factor_accumulate(acc, intoxication, dq_chem_dose_scale(volume))
+		return null
+	var/static/alist/intoxication = alist(STAT_INTOXICATION = 1)
+	var/static/alist/hepatotoxicity = alist(STAT_HEPATOTOXICITY = 1)
+	if(part == REAGENT_PART_INTOXICATION)
+		return intoxication
 	if(strength && volume >= strength * H.species.chem_strength_alcohol * 6)
-		acc = body_factor_accumulate(acc, hepatotoxicity, toxicity)
-	return acc
+		return hepatotoxicity
+	return null
+
+/datum/reagent/ethanol/special_scale(part, volume)
+	if(part == REAGENT_PART_HEPATOTOXICITY)
+		return toxicity
+	return ..()
 
 /datum/reagent/ethanol/touch_mob(mob/living/L, amount)
 	..()
@@ -248,7 +255,7 @@
 	if(prob(8))
 		current_addiction  -= 1
 	// withdrawl mechanics
-	if(!M.factor(BF_STABILIZATION)) //Without stabilization effects
+	if(!M.stabilization) //Without stabilization effects
 		if(current_addiction <= 60)
 			M.apply_body_effect(/datum/body_effect/withdrawal_tachycardia, 3 SECONDS)
 		if(prob(2))

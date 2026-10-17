@@ -359,7 +359,7 @@
 		var/obj/item/integrated_circuit/IC = new component_type_path()
 
 		if(component_data["n"])
-			IC.displayed_name = component_data["n"]
+			IC.set_displayed_name(component_data["n"])
 
 		// Set pin data - use shortened key "p" for pins (both inputs and outputs)
 		if(component_data["p"] && islist(component_data["p"]))

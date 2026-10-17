@@ -7,13 +7,10 @@
 
 /datum/data/pda/utility/flashlight/start()
 	fon = !fon
-	name = fon ? "Disable Flashlight" : "Enable Flashlight"
+	set_name(fon ? "Disable Flashlight" : "Enable Flashlight")
 	pda().update_shortcuts()
 	set_glow(pda(), GLOW(fon ? f_lum : 0, null, null))
-	if(fon)
-		pda().add_overlay("light-o")
-	else
-		pda().cut_overlay("light-o")
+	pda().flashlight_lit = fon
 
 /datum/data/pda/utility/honk
 	name = "Honk Synthesizer"

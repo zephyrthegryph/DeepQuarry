@@ -137,7 +137,7 @@ CAPABILITIES(/datum/simple_sun/planetary)
 
 /datum/simple_sun/planetary/update()
 	. = ..()
-	brightness = CLAMP01(sun().our_brightness)
+	set_brightness(CLAMP01(sun().our_brightness))
 	color = sun().our_color
 
 

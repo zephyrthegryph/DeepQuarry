@@ -59,8 +59,8 @@
 /mob/proc/status_jittery_ended()
 	set_jittery_shaking(FALSE)
 	// The jittering mob's pixel offsets reset.
-	pixel_x = old_x
-	pixel_y = old_y
+	set_pixel_x(old_x)
+	set_pixel_y(old_y)
 
 // --- Presentation, rates and scaling ---------------------------------------------------------
 
@@ -83,14 +83,14 @@
 /mob/status_resting()
 	return resting
 
-/// BF_DISABLE_DURATION scales every `scaled` status (0: immune).
+/// STAT_DISABLE_DURATION scales every `scaled` status (0: immune).
 /mob/living/status_scale(id, amount)
 	return scale_disable_duration(amount)
 
 /// Scale a stun / weaken / paralysis / sleep / confusion / blindness duration
-/// by BF_DISABLE_DURATION (0 = immune).
+/// by STAT_DISABLE_DURATION (0 = immune).
 /mob/living/proc/scale_disable_duration(amount)
-	var/scale = factor(BF_DISABLE_DURATION)
+	var/scale = src.disable_duration
 	return scale == 1 ? amount : round(amount * scale)
 
 /// Carbons wake at their species' waking_speed.

@@ -151,19 +151,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 /obj/machinery/requests_console/proc/ui_act_write(datum/act/op/A, raw_priority, raw_write)
 	if(!reject_bad_text(raw_write))
 		return FALSE
-	recipient = raw_write //write contains the string of the receiving department's name
+	set_recipient(raw_write) //write contains the string of the receiving department's name
 	var/new_message = A.answer?.value
 	SStgui.update_uis(src)
 	if(new_message)
-		message = new_message
-		screen = RCS_MESSAUTH
+		set_message(new_message)
+		set_screen(RCS_MESSAUTH)
 		switch(raw_priority)
 			if(1)
-				priority = 1
+				set_priority(1)
 			if(2)
-				priority = 2
+				set_priority(2)
 			else
-				priority = 0
+				set_priority(0)
 	else
 		reset_message(1)
 	. = TRUE
@@ -173,7 +173,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	var/new_message = A.answer?.value
 	SStgui.update_uis(src)
 	if(new_message)
-		message = new_message
+		set_message(new_message)
 	else
 		reset_message(1)
 	. = TRUE
@@ -190,15 +190,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		return FALSE
 	var/log_msg = message
 	var/pass = 0
-	screen = RCS_SENTFAIL
+	set_screen(RCS_SENTFAIL)
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!MS.active)
 			continue
 		MS.send_rc_message(ckey(raw_department), department, log_msg, msgStamped, msgVerified, priority)
 		pass = 1
 	if(pass)
-		screen = RCS_SENTPASS
-		LAZYADD(message_log, list(list("Message sent to [recipient]", "[message]")))
+		set_screen(RCS_SENTPASS)
+		add_message_log(list(list("Message sent to [recipient]", "[message]")))
 	else
 		audible_message(text("[icon2html(src,viewers(src))] *The Requests Console beeps: 'NOTICE: No server detected!'"),,4)
 	. = TRUE
@@ -231,14 +231,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 				Console.set_newmessagepriority(0)
 	if(tempScreen == RCS_MAINMENU)
 		reset_message()
-	screen = tempScreen
+	set_screen(tempScreen)
 	. = TRUE
 
 //Handle silencing the console
 
 /obj/machinery/requests_console/proc/ui_act_togglesilent(datum/act/op/A)
 	add_fingerprint(A.actor)
-	silent = !silent
+	set_silent(!silent)
 	return OP_OK
 
 			//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
@@ -250,12 +250,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/card/id/T = held
-		msgVerified = span_green(span_bold("Verified by [T.registered_name] ([T.assignment])"))
+		set_msgVerified(span_green(span_bold("Verified by [T.registered_name] ([T.assignment])")))
 		SStgui.update_uis(src)
 	if(screen == RCS_ANNOUNCE)
 		var/obj/item/card/id/ID = held
 		if(ACCESS_RC_ANNOUNCE in ID.GetAccess())
-			announceAuth = 1
+			set_announceAuth(1)
 			announcement.announcer = ID.assignment ? "[ID.assignment] [ID.registered_name]" : ID.registered_name
 		else
 			reset_message()
@@ -269,7 +269,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/stamp/T = held
-		msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
+		set_msgStamped(span_blue(span_bold("Stamped with the [T.name]")))
 		SStgui.update_uis(src)
 	return OP_OK
 
@@ -292,15 +292,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	return OP_OK
 
 /obj/machinery/requests_console/proc/reset_message(mainmenu = 0)
-	message = ""
-	recipient = ""
-	priority = 0
-	msgVerified = ""
-	msgStamped = ""
-	announceAuth = 0
+	set_message("")
+	set_recipient("")
+	set_priority(0)
+	set_msgVerified("")
+	set_msgStamped("")
+	set_announceAuth(0)
 	announcement.announcer = ""
 	if(mainmenu)
-		screen = RCS_MAINMENU
+		set_screen(RCS_MAINMENU)
 
 #undef RCS_MAINMENU
 #undef RCS_RQASSIST

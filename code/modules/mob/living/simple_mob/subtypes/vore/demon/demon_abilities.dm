@@ -39,10 +39,9 @@
 		shifted_out = FALSE
 		name = real_name
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = initial(B.escapable)
+			B.set_escapable(initial(B.escapable))
 
-		cut_overlays()
-		alpha = initial(alpha)
+		set_alpha(initial(alpha))
 		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
 		set_incorporeal_move(initial(incorporeal_move))
@@ -65,9 +64,8 @@
 		fully_heal()
 
 		for(var/obj/belly/B as anything in vore_organs)
-			B.escapable = B_ESCAPABLE_NONE
+			B.set_escapable(B_ESCAPABLE_NONE)
 
-		cut_overlays()
 		flick("phaseout",src)
 		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
@@ -112,9 +110,8 @@
 	name = "Something"
 
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = B_ESCAPABLE_NONE
+		B.set_escapable(B_ESCAPABLE_NONE)
 
-	cut_overlays()
 	flick("phaseout",src)
 	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
@@ -124,10 +121,9 @@
 	shifted_out = FALSE
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = initial(B.escapable)
+		B.set_escapable(initial(B.escapable))
 
-	cut_overlays()
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
@@ -145,7 +141,7 @@
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	set_invisibility(INVISIBILITY_LEVEL_TWO)
 	see_invisible = INVISIBILITY_LEVEL_TWO
-	alpha = 127
+	set_alpha(127)
 
 	set_is_shifting(FALSE)
 	set_canmove(original_canmove)
@@ -311,10 +307,9 @@
 	shifted_out = FALSE
 	name = real_name
 	for(var/obj/belly/B as anything in vore_organs)
-		B.escapable = initial(B.escapable)
+		B.set_escapable(initial(B.escapable))
 
-	cut_overlays()
-	alpha = initial(alpha)
+	set_alpha(initial(alpha))
 	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))

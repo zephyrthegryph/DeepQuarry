@@ -43,7 +43,7 @@ CAPABILITIES(/datum/board_game/rpg_dice)
 	return TRUE
 
 /datum/board_game/rpg_dice/proc/ui_act_clear_history(datum/act/op/A)
-	LAZYCLEARLIST(last_rolls)
+	clear_last_rolls()
 	return OP_OK
 
 /datum/board_game/rpg_dice/proc/check_crit(low, max, result)

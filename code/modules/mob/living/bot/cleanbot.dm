@@ -248,16 +248,16 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_vocal(datum/act/op/A)
-	vocal = !vocal
+	set_vocal(!vocal)
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_wet_floors(datum/act/op/A)
-	wet_floors = !wet_floors
+	set_wet_floors(!wet_floors)
 	to_chat(A.actor, span_notice("You twiddle the screw."))
 	. = TRUE
 
 /mob/living/bot/cleanbot/proc/ui_act_spray_blood(datum/act/op/A)
-	spray_blood = !spray_blood
+	set_spray_blood(!spray_blood)
 	to_chat(A.actor, span_notice("You press the weird button."))
 	. = TRUE
 
@@ -267,8 +267,8 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 		if(user)
 			to_chat(user, span_notice("The [src] buzzes and beeps."))
 			play_sfx(src, SFX_MACHINES_BUZZBEEP)
-		spray_blood = 1
-		wet_floors = 1
+		set_spray_blood(1)
+		set_wet_floors(1)
 		return 1
 
 /mob/living/bot/cleanbot/proc/get_targets()

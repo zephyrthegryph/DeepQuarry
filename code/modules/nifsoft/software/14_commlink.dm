@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/communicator/commlink)
 // is a plain back relation.
 
 /obj/item/communicator/commlink/register_device(new_name)
-	owner = new_name
+	set_owner(new_name)
 	name = "[owner]'s [initial(name)]"
 	nif.save_data["commlink_name"] = owner
 
@@ -116,12 +116,12 @@ CAPABILITIES(/obj/item/communicator/commlink)
 	if(isobserver(candidate))
 		var/mob/observer/dead/ghost = candidate
 		who = ghost
-		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
+		add_im_list(list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
 		rel_add(comm, nameof(comm.im_contacts), src)
-		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
+		add_im_list(list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
 	rel_add(src, nameof(im_contacts), candidate)

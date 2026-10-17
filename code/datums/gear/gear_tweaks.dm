@@ -127,7 +127,7 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 	if(istype(I))
 		I.add_atom_colour(metadata, FIXED_COLOUR_PRIORITY)
 	else
-		I.color = metadata
+		I.set_color(metadata)
 
 GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recolor, new)
 
@@ -169,7 +169,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 	if(istype(I))
 		I.add_atom_colour(metadata, FIXED_COLOUR_PRIORITY)
 	else
-		I.color = metadata
+		I.set_color(metadata)
 
 /*
 * Path adjustment

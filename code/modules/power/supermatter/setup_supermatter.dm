@@ -20,17 +20,20 @@
 		to_chat(usr, "Error: you are not an admin!")
 		return
 
-	var/response = rerun_ask(usr, "k23", PROC_REF(setup_supermatter), args, /datum/prompt/choice, question = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"))
-	if(isnull(response))
+	open_request(src, /datum/prompt/choice, PROC_REF(setup_supermatter_answered), answerer = usr, question = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"), timeout = 0)
+
+/// The coolant is chosen: the supermatter engine is started with it.
+/datum/admins/proc/setup_supermatter_answered(datum/act/request/A)
+	if(!A.answer || A.answer.value == "Abort")
 		return
-	if(!response || response == "Abort")
-		return
+	var/response = A.answer.value
+	var/mob/user = A.request.answerer
 
 	var/errors = 0
 	var/warnings = 0
 	var/success = 0
 
-	log_and_message_admins("## SUPERMATTER SETUP - Setup initiated by [usr] using coolant type [response].")
+	log_and_message_admins("## SUPERMATTER SETUP - Setup initiated by [user] using coolant type [response].")
 
 	// CONFIGURATION PHASE
 	// Coolant canisters, set types according to response.
@@ -250,10 +253,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 			if(P.mode != ATM_N2)
 				continue
 			if(coolant == "PH")
-				P.mode = ATM_P
+				P.set_mode(ATM_P)
 				break
 			else if(coolant == "CO2")
-				P.mode = ATM_CO2
+				P.set_mode(ATM_CO2)
 				break
 			else
 				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!")

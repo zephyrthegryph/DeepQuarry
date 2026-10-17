@@ -249,7 +249,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 	switch(href_notes)
 		if("show")
 			var/datum/tgui_module/player_notes_info/A = new(src)
-			A.key = ckey
+			A.set_key(ckey)
 			A.tgui_interact(user)
 		if("list")
 			PlayerNotesPage(user, href_index)

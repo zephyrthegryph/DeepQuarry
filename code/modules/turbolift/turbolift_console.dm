@@ -11,16 +11,16 @@
 
 /obj/structure/lift/set_dir(newdir)
 	. = ..()
-	pixel_x = 0
-	pixel_y = 0
+	set_pixel_x(0)
+	set_pixel_y(0)
 	if(dir & NORTH)
-		pixel_y = -32
+		set_pixel_y(-32)
 	else if(dir & SOUTH)
-		pixel_y = 32
+		set_pixel_y(32)
 	else if(dir & EAST)
-		pixel_x = -32
+		set_pixel_x(-32)
 	else if(dir & WEST)
-		pixel_x = 32
+		set_pixel_x(32)
 
 /// `stance`: the touch's stance (a tgui button press is a plain press).
 /obj/structure/lift/proc/pressed(mob/user, stance = I_HELP)

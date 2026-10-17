@@ -45,15 +45,15 @@
 	var/obj/belly/B = vore_selected_of(src)
 	B.name = "tail"
 	B.desc = "The small critter seems to suddenly panic, lunging at you with its massive fluffy tail, using it like a weapon. Despite the appearance of the tail, it seems to be much larger on the inside, suddenly engulfing you completely in a world of endless softness. Inside, you are bound up nice and tight in an oddly comfortable prison of hair, it ripples over your body tickling every bit of exposed body on offer."
-	B.mode_flags = DM_FLAG_THICKBELLY
-	B.belly_fullscreen = "VBO_fleshs"
-	B.digest_brute = 1
-	B.digest_burn = 1
-	B.digest_oxy = 0
-	B.digestchance = 10
-	B.absorbchance = 60
-	B.escapechance = 10
-	B.selective_preference = DM_ABSORB
+	B.set_mode_flags(DM_FLAG_THICKBELLY)
+	B.set_belly_fullscreen("VBO_fleshs")
+	B.set_digest_brute(1)
+	B.set_digest_burn(1)
+	B.set_digest_oxy(0)
+	B.set_digestchance(10)
+	B.set_absorbchance(60)
+	B.set_escapechance(10)
+	B.set_selective_preference(DM_ABSORB)
 	B.escape_stun = 5
 	B.transferlocation_absorb = "fluff"
 
@@ -61,44 +61,44 @@
 	fluff.immutable = TRUE
 	fluff.name = "fluff"
 	fluff.desc = "You find yourself sinking deeper and deeper into the fluff around you, steadily it wraps around your entire body, binding you up. It seems to grow tighter and tigher forever, although never to the point of discomfort. Before long, the tightness goes beyond a physical sensation, it starts to feel like it buries into you, becoming part of you. It is becoming hard to discern yourself from the fluff, you feel floaty, wavy and soft yourself. Eventually, you can't feel yourself at all, there's nothing but fur. Every movement you make feels pointless, simply causing the slightest rustling of fluff as though the hair was moving on its own."
-	fluff.digest_mode = DM_HOLD // like, shes got you already, doesn't need to get you more
-	fluff.mode_flags = DM_FLAG_FORCEPSAY
-	fluff.escapable = B_ESCAPABLE_DEFAULT // good luck
-	fluff.escapechance = 40 // high chance of STARTING a successful escape attempt
-	fluff.escapechance_absorbed = 5 // m i n e
-	fluff.vore_verb = "soak"
-	fluff.count_absorbed_prey_for_sprite = FALSE
-	fluff.absorbed_struggle_messages_inside = list(
+	fluff.set_digest_mode(DM_HOLD) // like, shes got you already, doesn't need to get you more
+	fluff.set_mode_flags(DM_FLAG_FORCEPSAY)
+	fluff.set_escapable(B_ESCAPABLE_DEFAULT) // good luck
+	fluff.set_escapechance(40) // high chance of STARTING a successful escape attempt
+	fluff.set_escapechance_absorbed(5) // m i n e
+	fluff.set_vore_verb("soak")
+	fluff.set_count_absorbed_prey_for_sprite(FALSE)
+	fluff.set_absorbed_struggle_messages_inside(list(
 		"You try and push free from %pred's %belly, but can't seem to will yourself to move.",
 		"Your fruitless mental struggles only cause %pred to giggle lightly.",
-		"You can't make any progress freeing yourself from %pred's %belly.")
-	fluff.escape_attempt_absorbed_messages_owner = list(
-		"%prey is attempting to free themselves from your %belly!")
+		"You can't make any progress freeing yourself from %pred's %belly."))
+	fluff.set_escape_attempt_absorbed_messages_owner(list(
+		"%prey is attempting to free themselves from your %belly!"))
 
-	fluff.escape_attempt_absorbed_messages_prey = list(
+	fluff.set_escape_attempt_absorbed_messages_prey(list(
 		"You try to force yourself out of %pred's %belly.",
 		"You strain and push, attempting to reach out of %pred's %belly.",
-		"You work up the will to try and force yourself free of %pred's clutches.")
+		"You work up the will to try and force yourself free of %pred's clutches."))
 
-	fluff.escape_absorbed_messages_owner = list(
-		"%prey forces themselves free of your %belly!")
+	fluff.set_escape_absorbed_messages_owner(list(
+		"%prey forces themselves free of your %belly!"))
 
-	fluff.escape_absorbed_messages_prey = list(
+	fluff.set_escape_absorbed_messages_prey(list(
 		"You finally manage to wrest yourself free from %pred's %belly, re-asserting your more usual form.",
-		"You heave and push, eventually spilling out from %pred's %belly, eliciting a happy chirp from your former captor.")
+		"You heave and push, eventually spilling out from %pred's %belly, eliciting a happy chirp from your former captor."))
 
-	fluff.escape_absorbed_messages_outside = list(
-		"%prey suddenly forces themselves free of %pred's %belly!")
+	fluff.set_escape_absorbed_messages_outside(list(
+		"%prey suddenly forces themselves free of %pred's %belly!"))
 
-	fluff.escape_fail_absorbed_messages_owner = list(
-		"%prey's attempt to escape form your %belly has failed!")
+	fluff.set_escape_fail_absorbed_messages_owner(list(
+		"%prey's attempt to escape form your %belly has failed!"))
 
-	fluff.escape_fail_absorbed_messages_prey = list(
+	fluff.set_escape_fail_absorbed_messages_prey(list(
 		"Before you manage to reach freedom, you feel yourself getting dragged back into %pred's %belly!",
 		"%pred laughs lightly, simply pressing your wrigging form back into her %belly before you get anywhere.",
 		"Try as you might, you barely make an impression before %pred simply clenches with the most minimal effort, binding you back into her %belly.",
 		"Unfortunately, %pred seems to have absolutely no intention of letting you go, and your futile effort goes nowhere.",
-		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly.")
+		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
 
 
 /datum/say_list/fluffball

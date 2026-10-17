@@ -93,7 +93,7 @@ CAPABILITIES(/datum/character_identity)
 	else
 		identity().flavor_texts = bio.flavor_texts
 	if(identity().languages)
-		languages = identity().languages
+		set_languages(identity().languages)
 	else
 		identity().languages = languages
 	sync_language_state()

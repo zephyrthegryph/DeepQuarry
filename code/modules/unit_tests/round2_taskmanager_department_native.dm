@@ -18,7 +18,7 @@
 		// A valid existing-progress fixture: this canonical type is on the source's department scan tables.
 		manager.set_scancount(1)
 		manager.set_scanreq(9)
-		LAZYADD(manager.scanned, /obj/item/geiger)
+		manager.add_scanned(/obj/item/geiger)
 		TEST_ASSERT_EQUAL(manager.scancount, 1, "source has nonzero progress before the real choice")
 		TEST_ASSERT_EQUAL(LAZYLEN(manager.scanned), 1, "source has an actual recorded scanned type before reset")
 		test_click(user, manager, manager)

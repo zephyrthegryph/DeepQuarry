@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Riders on a robot mount are placed once and no longer crash the offsets loop; statues keep the person they petrify until their setup has run"
+  - bugfix: "UV lights show washed-away blood on items again, as a look part drawn only while the item is UV-lit"
+  - bugfix: "Anything that is not a carbon (a sakimm, a slime) no longer breaks grabbing or bumping by being recorded as a last assailant"
+  - bugfix: "Energy weapons draw their blade from their own type's sprite, not from whatever the last draw left"
+  - bugfix: "Broken wooden floors break as soon as they are made, whatever load frame is open"

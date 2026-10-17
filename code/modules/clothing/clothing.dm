@@ -37,14 +37,13 @@
 			src.attach_accessory(null, tie)
 
 
-/// A clothing item shows its own blood as a layer of its look: drawn from the tracked blood colour and the forensics record, not added by add_blood().
+/// Clothing's own blood and gurgle layers come from the item's look (/obj/item/draw()).
 /obj/item/clothing/draw(datum/look/look)
 	..()
-	look.watch(forensic_data)
-	if(forensic_data?.has_blooddna())
-		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
-	if(gurgled)
-		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
+	// Attached accessories show their inventory sprite on the garment.
+	for(var/obj/item/clothing/accessory/attached in accessories)
+		look.watch(attached)
+		look.overlay(attached.get_inv_overlay())
 
 DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_image), SC_NEVER, 2048, 0)
 
@@ -61,9 +60,19 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	blood.color = colour
 	return blood
 
-/// add_blood() and the gurgle code leave the stains to the look.
-/obj/item/clothing/stains_in_look()
-	return TRUE
+DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_image), SC_NEVER, 1024, 0)
+
+/// The residue of a digesting item: the gurgle sludge of `colour` cut to the item's silhouette; one shared image per (icon, state, colour).
+/proc/item_digest_image(icon, icon_state, colour)
+	READS_FROM()
+	if(!isfile(icon))
+		return build_item_digest_image(icon, icon_state, colour)
+	return CACHED_KEY(item_digest_images, "[icon]|[icon_state]|[colour]", icon, icon_state, colour)
+
+/proc/build_item_digest_image(icon, icon_state, colour)
+	var/image/temp = new /image(GLOB.gurgled_overlays[colour])
+	temp.filters += filter(type = "alpha", icon = icon(icon, icon_state))
+	return temp
 
 /obj/item/clothing/equipped(mob/user,slot)
 	..()
@@ -206,7 +215,7 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 	if(!A.answer)
 		return
 	if(A.answer.value && (A.answer.value != color))
-		color = A.answer.value
+		set_color(A.answer.value)
 // end
 
 ///////////////////////////////////////////////////////////////////////
@@ -484,21 +493,7 @@ CAPABILITIES(/obj/item/clothing/head)
 /obj/item/clothing/head/proc/mob_wear_hat(mob/user)
 	if(!Adjacent(user))
 		return 0
-	var/success
-	if(istype(user, /mob/living/silicon/robot/drone))
-		var/mob/living/silicon/robot/drone/D = user
-		if(D.hat)
-			success = 2
-		else
-			D.place_on_head(src)
-			success = 1
-	else if(istype(user, /mob/living/carbon/alien/diona))
-		var/mob/living/carbon/alien/diona/D = user
-		if(D.hat)
-			success = 2
-		else
-			D.wear_hat(src)
-			success = 1
+	var/success = user.receive_loose_hat(src)
 
 	if(!success)
 		return 0
@@ -982,7 +977,7 @@ CAPABILITIES(/obj/item/clothing/suit)
 		taurized = FALSE
 
 // Taur suits need to be shifted so its centered on their taur half.
-/obj/item/clothing/suit/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask)
+/obj/item/clothing/suit/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer = 0,icon/clip_mask, mob/living/carbon/human/wearer = null)
 	var/image/standing = ..()
 	if(taurized) //Special snowflake var on suits
 		standing.pixel_x = -16
@@ -991,10 +986,12 @@ CAPABILITIES(/obj/item/clothing/suit)
 
 /obj/item/clothing/suit/apply_accessories(image/standing)
 	if(LAZYLEN(accessories) && taurized)
+		var/list/worn
 		for(var/obj/item/clothing/accessory/A in accessories)
 			var/image/I = new(A.get_mob_overlay())
 			I.pixel_x = 16 //Opposite of the pixel_x on the suit (-16) from taurization to cancel it out and puts the accessory in the correct place on the body.
-			standing.add_overlay(I)
+			LAZYADD(worn, I)
+		return look_composed_image(standing, worn)
 	else
 		return ..()
 

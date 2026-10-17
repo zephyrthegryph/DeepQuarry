@@ -94,8 +94,8 @@
 	// The combat mode button (it replaced the intent selector).
 	var/atom/movable/screen/combat_mode/combat_button = HUD.make_combat_mode_button(src, "intent_help-s", "intent_harm-s")
 	combat_button.set_icon(ui_style)
-	combat_button.alpha = ui_alpha
-	combat_button.layer = LAYER_HUD_ITEM
+	combat_button.set_alpha(ui_alpha)
+	combat_button.set_layer(LAYER_HUD_ITEM)
 	rel_add(HUD, nameof(HUD.adding), combat_button)
 
 	//Move intent (walk/run)
@@ -104,8 +104,8 @@
 	using.set_icon(ui_style)
 	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
@@ -115,8 +115,8 @@
 	using.set_icon(ui_style)
 	using.set_icon_state("act_resist")
 	using.screen_loc = ui_movi
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
@@ -153,8 +153,8 @@
 	using.name = "choose chassis"
 	using.set_icon_state("choose_chassis")
 	using.screen_loc = ui_movi
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -163,8 +163,8 @@
 	using.name = "software interface"
 	using.set_icon_state("software_interface")
 	using.screen_loc = ui_acti
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -173,8 +173,8 @@
 	using.name = "radio configuration"
 	using.set_icon_state("radio_configuration")
 	using.screen_loc = ui_acti
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -183,8 +183,8 @@
 	using.name = "pda"
 	using.set_icon_state("pda")
 	using.screen_loc = ui_pai_comms
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -193,8 +193,8 @@
 	using.name = "communicator"
 	using.set_icon_state("communicator")
 	using.screen_loc = ui_pai_comms
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -203,8 +203,8 @@
 	using.name = "known languages"
 	using.set_icon_state("language")
 	using.screen_loc = ui_acti
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -212,8 +212,8 @@
 	using.name = "software toggle"
 	using.set_icon_state("software")
 	using.screen_loc = ui_inventory
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
@@ -221,80 +221,80 @@
 	using.name = "directives"
 	using.set_icon_state("directives")
 	using.screen_loc = "WEST:6,SOUTH:18"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "crew manifest"
 	using.set_icon_state("manifest")
 	using.screen_loc = "WEST:6,SOUTH+1:2"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "medical records"
 	using.base_state = "med_records"
 	using.screen_loc = "WEST:6,SOUTH+1:18"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "security records"
 	using.base_state = "sec_records"
 	using.screen_loc = "WEST:6,SOUTH+2:2"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "atmosphere sensor"
 	using.base_state = "atmos_sensor"
 	using.screen_loc = "WEST:6,SOUTH+2:18"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "remote signaler"
 	using.base_state = "signaller"
 	using.screen_loc = "WEST:6,SOUTH+3:2"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "universal translator"
 	using.base_state = "translator"
 	using.screen_loc = "WEST:6,SOUTH+3:18"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "door jack"
 	using.base_state = "door_jack"
 	using.screen_loc = "WEST:6,SOUTH+4:2"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "ar hud"
 	using.base_state = "ar_hud"
 	using.screen_loc = "WEST:6,SOUTH+4:18"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "death alarm"
 	using.base_state = "death_alarm"
 	using.screen_loc = "WEST:6,SOUTH+5:2"
-	using.color = ui_color
-	using.alpha = ui_alpha
+	using.set_color(ui_color)
+	using.set_alpha(ui_alpha)
 	rel_add(HUD, nameof(HUD.other), using)
 
 	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))

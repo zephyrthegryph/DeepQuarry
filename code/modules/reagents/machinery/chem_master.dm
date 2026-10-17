@@ -361,11 +361,11 @@ CAPABILITIES(/obj/machinery/chem_master)
 			return
 		var/obj/item/reagent_containers/pill/P = new(loc)
 		P.name = "[answer] pill"
-		P.pixel_x = rand(-7, 7) // Random position
-		P.pixel_y = rand(-7, 7)
+		P.set_pixel_x(rand(-7, 7)) // Random position
+		P.set_pixel_y(rand(-7, 7))
 		P.set_icon_state("pill[pillsprite]")
 		if(P.icon_state in list("pill1", "pill2", "pill3", "pill4")) // if using greyscale, take colour from reagent
-			P.color = reagents.get_color()
+			P.set_color(reagents.get_color())
 		reagents.trans_to_obj(P, amount_per_pill)
 		// Load the pills in the bottle if there's one loaded
 		if(istype(loaded_pill_bottle) && length(loaded_pill_bottle.contents) < loaded_pill_bottle.max_storage_space)
@@ -378,7 +378,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_PILL_SPRITE)
 	if(!new_style)
 		return
-	pillsprite = new_style
+	set_pillsprite(new_style)
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_create_patch(datum/act/op/A, list/arguments)
@@ -399,8 +399,8 @@ CAPABILITIES(/obj/machinery/chem_master)
 			return
 		var/obj/item/reagent_containers/pill/patch/P = new(loc)
 		P.name = "[answer] patch"
-		P.pixel_x = rand(-7, 7) // random position
-		P.pixel_y = rand(-7, 7)
+		P.set_pixel_x(rand(-7, 7)) // random position
+		P.set_pixel_y(rand(-7, 7))
 		reagents.trans_to_obj(P, amount_per_patch)
 	return TRUE
 
@@ -422,8 +422,8 @@ CAPABILITIES(/obj/machinery/chem_master)
 			return
 		var/obj/item/reagent_containers/glass/bottle/P = new(loc)
 		P.name = "[answer] bottle"
-		P.pixel_x = rand(-7, 7) // random position
-		P.pixel_y = rand(-7, 7)
+		P.set_pixel_x(rand(-7, 7)) // random position
+		P.set_pixel_y(rand(-7, 7))
 		P.set_icon_state("bottle-[bottlesprite]" || "bottle-1")
 		reagents.trans_to_obj(P, amount_per_bottle)
 	return TRUE
@@ -434,7 +434,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	var/new_style = CLAMP(choices.Find(A.step_value("style")), 0, MAX_BOTTLE_SPRITE)
 	if(!new_style)
 		return
-	bottlesprite = new_style
+	set_bottlesprite(new_style)
 	return TRUE
 
 // ---- the buttons ----
@@ -466,7 +466,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 
 	var/datum/reagent/R = reagent_list[idx]
 
-	printing = TRUE
+	set_printing(TRUE)
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 
 	var/obj/item/paper/P = new /obj/item/paper(loc)
@@ -541,5 +541,5 @@ CAPABILITIES(/obj/machinery/chem_master)
 	condi = 1
 
 /obj/machinery/chem_master/proc/printing_done()
-	printing = FALSE
+	set_printing(FALSE)
 

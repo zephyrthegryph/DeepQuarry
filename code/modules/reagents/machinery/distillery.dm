@@ -220,7 +220,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/use_power(amount, chan = -1)
-	last_power_draw = amount
+	set_last_power_draw(amount)
 	if(use_cell && cell && cell.charge)
 		var/cellcharge = cell.charge
 		cell.use(amount)

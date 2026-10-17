@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 
 /// Opens the container and applies the default parts once init is complete.
 /obj/machinery/smart_centrifuge/proc/finish_setup(datum/act/timer/A)
-	flags |= OPENCONTAINER
+	set_open_by_flag(TRUE)
 	default_apply_parts()
 
 /obj/machinery/smart_centrifuge/proc/interaction_attackby(datum/act/op/A)
@@ -76,7 +76,7 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 		separate_force_canister = force_canister
 		separate_delay = 10 SECONDS
 		set_working(TRUE)
-		flags ^= OPENCONTAINER
+		set_open_by_flag(!(flags & OPENCONTAINER))
 
 /obj/machinery/smart_centrifuge/proc/internal_reagent_seperate(datum/act/timer/A)
 	var/force_canister = separate_force_canister
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 		play_sfx(src, SFX_MACHINES_BIOGENERATOR_END, 1.25)
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		set_working(FALSE)
-		flags |= OPENCONTAINER
+		set_open_by_flag(TRUE)
 		return
 
 	// Seperate out reagents
@@ -108,8 +108,8 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		reagents.trans_id_to( CD, RL.id, min(RL.volume,CD.reagents.maximum_volume), TRUE)
 		CD.forceMove(loc) // Drop it outside
-		CD.pixel_x = rand(-7, 7) // random position
-		CD.pixel_y = rand(-7, 7)
+		CD.set_pixel_x(rand(-7, 7)) // random position
+		CD.set_pixel_y(rand(-7, 7))
 		break
 
 /// Whether the drop was a deliberate one (the actor can reach both). No side effects.

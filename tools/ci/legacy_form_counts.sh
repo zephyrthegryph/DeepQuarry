@@ -12,6 +12,8 @@ for f in "${forms[@]}"; do
 		*) re="\b${f}\b" ;;
 	esac
 	out=$(grep -rEn --include='*.dm' "$re" code 2>/dev/null | grep -Ev '^code/(modules/unit_tests|tests|engine|datums/om|datums/sys|__defines)/' | grep -Ev '^[^:]*:[0-9]+:\s*//')
+	# REQ_ also names the kernel request-status constants (engine/vocabulary.dm), which are not legacy predicate macros.
+	if [ "$f" = REQ_ ]; then out=$(printf '%s' "$out" | grep -Ev 'REQ_(ANSWERED|CANCELLED|TIMED_OUT|TRANSPORT_FAILED|NO_RESULT|FAILED)'); fi
 	sites=$(printf '%s' "$out" | grep -c . || true)
 	files=$(printf '%s' "$out" | cut -d: -f1 | sort -u | grep -c . || true)
 	printf '%s\t%s\t%s\n' "$f" "$sites" "$files"

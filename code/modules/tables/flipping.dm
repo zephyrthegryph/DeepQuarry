@@ -105,8 +105,8 @@
 
 	set_dir(direction)
 	if(dir != NORTH)
-		plane = MOB_PLANE
-		layer = ABOVE_MOB_LAYER
+		set_plane(MOB_PLANE)
+		set_layer(ABOVE_MOB_LAYER)
 	//climbable = FALSE //flipping tables allows them to be used as makeshift barriers
 	set_flipped(1)
 	flags |= ON_BORDER

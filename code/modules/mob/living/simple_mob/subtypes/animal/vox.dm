@@ -168,17 +168,15 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 	. = OP_OK
 	if(istype(O,/obj/item/vox/armalis_armour))
 		user.drop_item(O)
-		armour = O
+		set_armour(O)
 		movement_cooldown = 4
 		set_endurance(endurance + 200)
 		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
-		regenerate_icons()
 		return
 	if(istype(O,/obj/item/vox/armalis_amp))
 		user.drop_item(O)
-		amp = O
+		set_amp(O)
 		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
-		regenerate_icons()
 		return
 
 	set_base_attack_cooldown(5)
@@ -201,17 +199,11 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 			if ((M.client && !( M.blinded )))
 				M.show_message(span_warning("[user] gently taps [src] with the [O]. "))
 
-/mob/living/simple_mob/vox/armalis/regenerate_icons()
+/// The armour and the amplifier it has been fitted with.
+/mob/living/simple_mob/vox/armalis/draw(datum/look/look)
 	..()
-	overlays = list()
-	if(armour)
-		var/icon/armour = image('icons/mob/vox.dmi',"armour")
-		movement_cooldown = 4
-		overlays += armour
-	if(amp)
-		var/icon/amp = image('icons/mob/vox.dmi',"amplifier")
-		overlays += amp
-	return
+	look.overlay(look_overlay_image('icons/mob/vox.dmi', "armour"), when = !!armour)
+	look.overlay(look_overlay_image('icons/mob/vox.dmi', "amplifier"), when = !!amp)
 
 /obj/item/vox/armalis_armour
 

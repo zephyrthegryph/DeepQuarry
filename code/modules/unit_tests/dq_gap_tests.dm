@@ -749,7 +749,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/silicon/robot/platform/tank = allocate(/mob/living/silicon/robot/platform, get_step(T, EAST))
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
-	ghost.timeofdeath = -1 HOURS
+	ghost.set_timeofdeath(-1 HOURS)
 	var/old_name = tank.name
 	test_click(ghost, tank, null)
 	test_time(1 SECOND)

@@ -56,7 +56,9 @@ CAPABILITIES(/obj/machinery/item_bank)
 	op("retrieve_wait", ai(), takes("item_type"), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(retrieve_finished)))
 	op("store_wait", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(store_finished)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
-	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds))), then(PROC_REF(interaction_store)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds))),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(store_question)), "title" = computed(PROC_REF(store_title)), "choices" = list("Store", "Cancel"), "timeout" = 10 SECONDS, "buttons" = TRUE), step = "store", when = PROC_REF(store_asks)),
+		then(PROC_REF(interaction_store)))
 
 /// Requirement (was REQ_* can_store): the legacy check answers TRUE to pass.
 /obj/machinery/item_bank/proc/can_store_holds(datum/act/op/A)
@@ -189,7 +191,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 	log_admin("[key_name_admin(user)] retrieved [N] from the item bank.")
 	act_message(src, user, others = span_notice("%U% dispenses the [N] to %T%."))
 	user.put_in_hands(N)
-	N.persist_storable = FALSE
+	N.set_persist_storable(FALSE)
 	var/path = src.persist_item_savefile_path(user)
 	var/savefile/F = new /savefile(src.persist_item_savefile_path(user))
 	F["persist item"] << null
@@ -218,19 +220,48 @@ CAPABILITIES(/obj/machinery/item_bank)
 	set_busy_bank(FALSE)
 	set_icon_state("item_bank")
 
+/// The confirmation is asked only of a human storing something storable while the bank holds nothing of theirs.
+/obj/machinery/item_bank/proc/store_asks(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/O = A.held
+	if(!ishuman(user) || busy_bank)
+		return FALSE
+	if(istool(O) || !O.persist_storable)
+		return FALSE
+	return !ispath(read_once(persist_item_stored_type(user)))
+
+/// The type of the item `user` has stored, read without touching the file (persist_item_savefile_load() deletes a broken save and tells the user, which a question gate must not do); null for none.
+/obj/machinery/item_bank/proc/persist_item_stored_type(mob/user)
+	if(IsGuestKey(user.key))
+		return null
+	var/path = persist_item_savefile_path(user)
+	if(!fexists(path))
+		return null
+	var/savefile/F = new /savefile(path)
+	var/persist_item
+	F["persist item"] >> persist_item
+	return ispath(persist_item) ? persist_item : null
+
+/obj/machinery/item_bank/proc/store_question(datum/act/op/A)
+	var/obj/item/O = A.held
+	return "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?"
+
+/obj/machinery/item_bank/proc/store_title(datum/act/op/A)
+	return "[src]"
+
 /obj/machinery/item_bank/proc/interaction_store(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/O = A.held
 	if(!ishuman(user))
 		return OP_OK
-	if(busy_bank) // re-entered after the confirm prompt (rerun_ask): the bank may have been claimed meanwhile
+	if(busy_bank) // the bank may have been claimed while the confirm prompt was open
 		return OP_OK
 	var/I = persist_item_savefile_load(user, "type")
 	if(!istool(O) && O.persist_storable)
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
 			return OP_OK
-		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/prompt/choice, question = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS, buttons = TRUE)
+		var/choice = A.step_value("store")
 		if(!choice || choice == "Cancel" || !Adjacent(user) || !operable() || panel_open || busy_bank || O.loc != user)
 			return OP_OK
 		for(var/obj/item/check in contents_of(O))

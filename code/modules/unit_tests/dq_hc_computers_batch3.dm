@@ -5,7 +5,7 @@
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
 	I.set_registered_name("Records Reader")
-	I.assignment = "Tester"
+	I.set_assignment("Tester")
 	I.set_access(access)
 	hc_hold(H, I)
 	return H
@@ -18,7 +18,7 @@
 /// A general record with a name and id, kept for the test to clean up.
 /datum/unit_test/dq_hc_computers/proc/hc_general_record(name, id)
 	var/datum/data/record/G = GLOB.data_core.CreateGeneralRecord(null, id)
-	G.fields["name"] = name
+	G.set_fields_at("name", name)
 	LAZYADD(hc_records, G)
 	return G
 
@@ -59,7 +59,7 @@
 	LAZYADD(hc_records, M)
 	TEST_ASSERT_EQUAL(M.fields["name"], "Patient Zed", "with their name")
 	TEST_ASSERT(M in GLOB.data_core.medical, "held by the data core")
-	M.fields["comments"] = list(list(header = "h1", text = "one"), list(header = "h2", text = "two"))
+	M.set_fields_at("comments", list(list(header = "h1", text = "one"), list(header = "h2", text = "two")))
 	press(doctor, C, "del_c", list("del_c" = 1))
 	TEST_ASSERT_EQUAL(length(M.fields["comments"]), 1, "a comment is deleted")
 	press(doctor, C, "screen", list("screen" = 2))
@@ -138,7 +138,7 @@
 	LAZYADD(hc_records, S)
 	TEST_ASSERT_EQUAL(S.fields["name"], "Suspect Wen", "with their name")
 	TEST_ASSERT(S in GLOB.data_core.security, "held by the data core")
-	S.fields["comments"] = list(list(header = "h1", text = "one"), list(header = "h2", text = "two"))
+	S.set_fields_at("comments", list(list(header = "h1", text = "one"), list(header = "h2", text = "two")))
 	press(officer, C, "del_c", list("del_c" = 2))
 	TEST_ASSERT_EQUAL(length(S.fields["comments"]), 1, "a comment is deleted")
 	press(officer, C, "screen", list("screen" = 2))

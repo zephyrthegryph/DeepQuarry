@@ -882,19 +882,57 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		item_meta = list()
 	var/list/cur_meta = item_meta["[tweak_idx]"]
 	var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
-	// The answer re-runs this action, so the item is checked again.
-	var/list/new_matrix = rerun_ask(user, "matrix", PROC_REF(handle_action), args, /datum/prompt/colormatrix, question = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE)
+	open_request(src, /datum/prompt/colormatrix/prefs/gear_tweak, PROC_REF(matrix_picked), answerer = user, question = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE, timeout = 0, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
+	return PREF_UPDATE_UNCHANGED
+
+/// A colour matrix for one of an equipped gear's tweaks. Re-checked on the answer like the colour pickers: the same prefs, loadout
+/// slot and gear still equipped in it.
+/datum/prompt/colormatrix/prefs/gear_tweak
+	var/datum/preferences/preferences
+	var/gear_name
+	var/tweak_idx
+	var/loadout_key
+
+CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
+	ref_one(nameof(preferences), /datum/preferences)
+
+/datum/prompt/colormatrix/prefs/gear_tweak/prepare(datum/act/A)
+	..()
+	var/datum/preferences/captured_preferences = preferences
+	rel_clear(src, nameof(preferences))
+	rel_set(src, nameof(preferences), captured_preferences)
+
+/datum/prompt/colormatrix/prefs/gear_tweak/recheck_extra()
+	if(QDELETED(preferences) || !answerer.client?.prefs || answerer.client.prefs != preferences)
+		return "prefs changed"
+	var/datum/preference_editor/loadout/editor = GLOB.preference_editors_by_key["loadout"]
+	if(editor && editor._current_slot(preferences) != loadout_key)
+		return "slot changed"
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[loadout_key] || list()
+	if(!(gear_name in active))
+		return "not equipped"
+
+/// The matrix picked for a gear tweak (what ui_act_recolor_pick_matrix did after its question).
+/datum/preference_editor/loadout/proc/matrix_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/colormatrix/prefs/gear_tweak/ask = A.answer
+	var/list/new_matrix = ask.value
 	if(!islist(new_matrix) || length(new_matrix) < 12)
-		return PREF_UPDATE_UNCHANGED
-	if(!user?.client?.prefs || user.client.prefs != preferences)
-		return PREF_UPDATE_UNCHANGED
-	item_meta["[tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
-	active[gear_name] = item_meta
-	gear_list[loadout_key] = active
+		return
+	var/datum/preferences/preferences = ask.preferences
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[ask.loadout_key] || list()
+	var/list/item_meta = active[ask.gear_name]
+	if(!islist(item_meta))
+		item_meta = list()
+	item_meta["[ask.tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
+	active[ask.gear_name] = item_meta
+	gear_list[ask.loadout_key] = active
 	preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
 	preferences.update_preview_icon()
 	SStgui.update_uis(preferences)
-	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/loadout/proc/ui_act_set_recolor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// direct write for the unified recolor tweak. value is a dict:

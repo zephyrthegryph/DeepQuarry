@@ -199,13 +199,13 @@
 
 // For visuals.
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/submerge()
-	alpha = 0
+	set_alpha(0)
 	dig_under_floor(get_turf(src))
 	new /obj/effect/temporary_effect/tunneler_hole(get_turf(src))
 
 // Ditto.
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/emerge()
-	alpha = 255
+	set_alpha(255)
 	dig_under_floor(get_turf(src))
 	new /obj/effect/temporary_effect/tunneler_hole(get_turf(src))
 
@@ -225,7 +225,7 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	factors = alist(BF_EVASION = -100, BF_INCOMING_ALL = 2)
+	factors = alist(STAT_EVASION = -100, STAT_INCOMING_ALL = 2)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/cave
 	name = "cave spider"

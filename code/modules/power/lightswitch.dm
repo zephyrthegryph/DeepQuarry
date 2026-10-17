@@ -31,8 +31,8 @@
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	var/obj/structure/construction/lightswitch/A = new(src.loc, src.dir)
 	graph_place(A, STAGE_LIGHTSWITCH_WIRED)
-	A.pixel_x = pixel_x
-	A.pixel_y = pixel_y
+	A.set_pixel_x(pixel_x)
+	A.set_pixel_y(pixel_y)
 	A.update_state()
 	replace_with(src, A)
 	return 1
@@ -117,8 +117,8 @@ MSG_DEF_SELF(lightswitch/fastened_first, "You have to unscrew the case first.")
 /// The last screw closes the frame into the machine it stands for, on the same spot.
 /obj/structure/construction/proc/finished(datum/act/op/A)
 	var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
-	newmachine.pixel_x = pixel_x
-	newmachine.pixel_y = pixel_y
+	newmachine.set_pixel_x(pixel_x)
+	newmachine.set_pixel_y(pixel_y)
 	transfer_fingerprints_to(newmachine)
 	replace_with(src, newmachine)
 	return OP_OK

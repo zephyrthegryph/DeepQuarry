@@ -5,8 +5,6 @@
 	var/image/legend
 
 /datum/station_holomap/proc/initialize_holomap(turf/T, isAI = null, mob/user = null, reinit = FALSE)
-	if(!station_map || reinit)
-		station_map = image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAP]_[T.z]"])
 	if(!cursor || reinit)
 		cursor = image('icons/holomap_markers.dmi', "you")
 	if(!legend || reinit)
@@ -20,14 +18,13 @@
 	legend.pixel_x = HOLOMAP_LEGEND_X(T.z)
 	legend.pixel_y = HOLOMAP_LEGEND_Y(T.z)
 
-	station_map.add_overlay(cursor)
-	station_map.add_overlay(legend)
+	// The map with the cursor and the legend on it, made afresh so the overlays never pile up over earlier positions.
+	station_map = look_composed_image(image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAP]_[T.z]"]), list(cursor, legend))
 
 /datum/station_holomap/proc/initialize_holomap_bogus()
-	station_map = image('icons/480x480.dmi', "stationmap")
 	legend = image('icons/effects/64x64.dmi', "notfound")
 	legend.pixel_x = 7 * WORLD_ICON_SIZE
 	legend.pixel_y = 7 * WORLD_ICON_SIZE
-	station_map.add_overlay(legend)
+	station_map = look_composed_image(image('icons/480x480.dmi', "stationmap"), list(legend))
 
 

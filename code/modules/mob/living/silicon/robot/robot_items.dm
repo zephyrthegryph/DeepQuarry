@@ -83,7 +83,6 @@ CAPABILITIES(/obj/item/card/robot)
 
 				I.forceMove(src)
 				rel_add(src, nameof(carrying), I)
-				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
 		if ( addedSomething )
 			act_message(user, null, others = span_notice("%U% loads some items onto their service tray."))
@@ -107,8 +106,6 @@ CAPABILITIES(/obj/item/card/robot)
 			dropspot = target
 		else					// they clicked on a table
 			dropspot = target.loc
-
-		overlays = null
 
 		var droppedSomething = 0
 

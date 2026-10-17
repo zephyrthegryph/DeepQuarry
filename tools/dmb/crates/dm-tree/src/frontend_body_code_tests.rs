@@ -62,6 +62,26 @@ fn p_body(front: &ColdFrontend) -> &BodyOccurrence {
         })
         .unwrap()
 }
+/// Include text whose last declaration closes a chunk, so the chunk of the include that follows
+/// starts at its own first declaration. The chunker is content defined: a declaration ends a
+/// chunk when the hash of its header line has its low four bits clear (or after 32 declarations).
+/// Editing this text therefore never touches the following chunk, which only moves.
+fn q_chunk(prefix: &str, last: u32) -> &'static str {
+    let closes_chunk = |header: &str| {
+        header
+            .bytes()
+            .fold(0xcbf29ce484222325u64, |hash, byte| {
+                (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+            })
+            & 15
+            == 0
+    };
+    let tail = (0..)
+        .map(|index| format!("/proc/q_tail{index}()"))
+        .find(|header| closes_chunk(header))
+        .unwrap();
+    Box::leak(format!("{prefix}/proc/q()\n    return {last}\n{tail}\n    return {last}\n").into_boxed_str())
+}
 #[test]
 fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
     let mut state = RetainedSemanticTree::default();
@@ -70,12 +90,12 @@ fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
     let old = chunks(
         &mut state,
         "/proc/p(value = 1)\n    return value\n",
-        "/proc/q()\n    return 2\n",
+        q_chunk("", 2),
     );
     let shifted = chunks(
         &mut state,
         "/proc/p(value = 1)\n    return value\n",
-        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
+        q_chunk("// shifted preceding include\n\n", 333),
     );
     let a = old.body_code(p_body(&old)).unwrap();
     let b = shifted.body_code(p_body(&shifted)).unwrap();
@@ -88,7 +108,7 @@ fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
     let fresh = chunks(
         &mut RetainedSemanticTree::default(),
         "/proc/p(value = 1)\n    return value\n",
-        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
+        q_chunk("// shifted preceding include\n\n", 333),
     );
     assert_eq!(b.occurrence().source, p_body(&fresh).source);
     assert_eq!(
@@ -98,7 +118,7 @@ fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
     let changed = chunks(
         &mut state,
         "/proc/p(value = 9)\n    return value\n",
-        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
+        q_chunk("// shifted preceding include\n\n", 333),
     );
     assert!(!Arc::ptr_eq(
         b.identity(),

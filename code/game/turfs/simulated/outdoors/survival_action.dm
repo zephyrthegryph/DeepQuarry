@@ -45,8 +45,8 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	if(!(icon_state in GLOB.has_rocks))
 		return OP_REFUSED
 	var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
-	R.pixel_x = rand(-6,6)
-	R.pixel_y = rand(-6,6)
+	R.set_pixel_x(rand(-6,6))
+	R.set_pixel_y(rand(-6,6))
 	set_icon_state("dirt0")
 	return OP_OK
 
@@ -89,8 +89,8 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	if(!sticks)
 		return
 	var/obj/item/stack/material/stick/S = new(get_turf(user), rand(1,3))
-	S.pixel_x = rand(-6,6)
-	S.pixel_y = rand(-6,6)
+	S.set_pixel_x(rand(-6,6))
+	S.set_pixel_y(rand(-6,6))
 	set_sticks(FALSE)
 
 MSG_DEF(tree/searching_sticks, "You search %T% for loose sticks...", "%U% searches %T% for loose sticks...")

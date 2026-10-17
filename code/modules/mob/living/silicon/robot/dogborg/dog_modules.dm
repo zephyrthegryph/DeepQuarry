@@ -288,11 +288,11 @@ CAPABILITIES(/obj/item/pupscrubber)
 	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(!enabled)
-		R.scrubbing = TRUE
+		R.set_scrubbing(TRUE)
 		enabled = TRUE
 		set_icon_state("scrub1")
 	else
-		R.scrubbing = FALSE
+		R.set_scrubbing(FALSE)
 		enabled = FALSE
 		set_icon_state("scrub0")
 	return TRUE
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 
 	cooldown_start(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
-	pixel_y = pixel_y + 10
+	set_pixel_y(pixel_y + 10)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	/* // disable for now
@@ -454,7 +454,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	*/
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src) // no bluespace pounce
 	play_sfx(src, SFX_MECHA_MECHSTEP2)
-	pixel_y = default_pixel_y
+	set_pixel_y(default_pixel_y)
 
 	if(!bluespace)
 		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)

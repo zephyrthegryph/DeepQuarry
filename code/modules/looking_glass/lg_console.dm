@@ -97,10 +97,10 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 	if(COOLDOWN_FINISHED(src, ready))
 		var/prog = program
 		if(prog == "Off")
-			current_program = "Off"
+			set_current_program("Off")
 			unload_program()
 		else if((prog in supported_programs) || (emagged() && (prog in secret_programs)))
-			current_program = prog
+			set_current_program(prog)
 			load_program(prog)
 	else
 		visible_message(span_warning("ERROR. Recalibrating displays."))
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 	return TRUE
 
 /obj/machinery/computer/looking_glass/proc/ui_act_immersion(datum/act/op/A)
-	immersion = !immersion
+	set_immersion(!immersion)
 	my_area()?.toggle_optional(immersion)
 	return TRUE
 

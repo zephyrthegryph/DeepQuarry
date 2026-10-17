@@ -192,9 +192,9 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 	to_chat(user, span_notice("The Special Operations shuttle will arrive at [using_map.boss_name] in [(SPECOPS_MOVETIME/10)] seconds."))
 
-	temp += "Shuttle departing.<BR><BR>"
+	set_temp(temp + ("Shuttle departing.<BR><BR>"))
 	add_fingerprint(user)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 	GLOB.specops_shuttle_moving_to_centcom = 1
 	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
@@ -210,9 +210,9 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 
 	to_chat(user, span_notice("The Special Operations shuttle will arrive on [station_name()] in [(SPECOPS_MOVETIME/10)] seconds."))
 
-	temp += "Shuttle departing.<BR><BR>"
+	set_temp(temp + ("Shuttle departing.<BR><BR>"))
 	add_fingerprint(user)
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 	var/area/centcom/specops/special_ops = locate()
 	if(special_ops)

@@ -103,7 +103,7 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
 
 /obj/effect/temporary_effect/pulse/snake/test/on_enter_turf(turf/T)
 	if(T)
-		T.color = "#00ff00"
+		T.set_color("#00ff00")
 
 		after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), with = list(initial(T.color)))
 

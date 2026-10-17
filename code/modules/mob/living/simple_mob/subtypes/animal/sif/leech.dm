@@ -135,11 +135,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 
 	var/turf/T = get_turf(src)
 	if(istype(T, /turf/simulated/floor/water) && src.loc == T && !src.stat)	// Are we sitting in water, and alive?
-		src.alpha = max(5, src.alpha - 10)
+		set_alpha(max(5, src.alpha - 10))
 		if(src.chemicals + 1 < src.max_chemicals / 3)
 			src.chemicals++
 	else
-		src.alpha = min(255, src.alpha + 20)
+		set_alpha(min(255, src.alpha + 20))
 
 	if(!src.client && !src.host)
 		src.infest_target = pick(src.bodypart_targets)
@@ -148,7 +148,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		if(src.ai_brain)
 			src.ai_brain.set_attack_on_sight(FALSE)
 			src.ai_brain.lose_target()
-		src.alpha = 5
+		set_alpha(5)
 		if(src.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !src.docile)	// Overwhelms the leech with food.
 			var/message = "We feel the rush of cardiac pluripotent cells in your host's blood, lulling us into docility."
 			to_chat(src, span_warning(message))

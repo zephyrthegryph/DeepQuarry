@@ -394,10 +394,10 @@
 		"1000" = STAGE_FOUR, "1999" = STAGE_FOUR, "2000" = STAGE_FIVE, "49999" = STAGE_FIVE, "50000" = STAGE_SUPER)
 	for(var/e in expected)
 		S.set_energy(text2num(e))
-		S.current_size = STAGE_SUPER // never expand during the sweep
+		S.set_current_size(STAGE_SUPER) // never expand during the sweep
 		S.check_energy()
 		TEST_ASSERT_EQUAL(S.allowed_size, expected[e], "energy [e] allows size [expected[e]]")
-	S.current_size = STAGE_ONE
+	S.set_current_size(STAGE_ONE)
 	S.set_energy(300)
 	S.check_energy()
 	TEST_ASSERT_EQUAL(S.current_size, STAGE_TWO, "energy 300 grows a stage-one singularity to stage two")
@@ -477,7 +477,7 @@
 	qdel(S)
 	var/obj/singularity/big = pp_singularity(run[3], 100)
 	big.move_self = 1
-	big.current_size = STAGE_FIVE
+	big.set_current_size(STAGE_FIVE)
 	TEST_ASSERT(big.move(turn(dir, 180)), "a stage-five singularity ignores containment: it never checks the turfs it steps to")
 	qdel(big)
 
@@ -936,7 +936,7 @@
 	var/list/run = pp_run(1)
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
-	P.power_output = 4
+	P.set_power_output(4)
 	P.TogglePower()
 	TEST_ASSERT(P.active, "a fuelled, bolted, wired PACMAN starts")
 	pp_step(P, PP_GEN_STEP_PROC)
@@ -959,8 +959,8 @@
 	var/list/run = pp_run(3)
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 0)
-	P.sheet_left = 0.01
-	P.power_output = 4
+	P.set_sheet_left(0.01)
+	P.set_power_output(4)
 	P.set_active(TRUE)
 	pp_step(P, PP_GEN_STEP_PROC)
 	TEST_ASSERT(!P.active, "a PACMAN without the fuel for a step stops")
@@ -980,22 +980,22 @@
 	var/list/room = pp_room(T20C, o2 = MOLES_O2STANDARD, n2 = MOLES_N2STANDARD)
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(room[1], net, 50)
-	P.power_output = 4
+	P.set_power_output(4)
 	P.TogglePower()
 	for(var/i in 1 to 60)
 		pp_step(P, PP_GEN_STEP_PROC)
-	log_test("PACMAN at output 4 after 60 steps: [P.temperature] K")
-	TEST_ASSERT(P.temperature >= 200 && P.temperature <= 280, "it settles in its band (256..276 K at 1 atm 20 C): [P.temperature]")
+	log_test("PACMAN at output 4 after 60 steps: [P.core_temperature] K")
+	TEST_ASSERT(P.core_temperature >= 200 && P.core_temperature <= 280, "it settles in its band (256..276 K at 1 atm 20 C): [P.core_temperature]")
 	TEST_ASSERT_EQUAL(P.overheating, 0, "below 300 it does not overheat")
-	P.temperature = P.max_temperature + 10
-	P.power_output = 5
+	P.set_core_temperature(P.max_temperature + 10)
+	P.set_power_output(5)
 	pp_step(P, PP_GEN_STEP_PROC)
 	TEST_ASSERT(P.overheating >= 1, "above 300 it overheats: [P.overheating]")
 	P.TogglePower()
-	P.temperature = 200
+	P.set_core_temperature(200)
 	P.set_overheating(0)
 	pp_step(P, PP_GEN_STEP_PROC)
-	TEST_ASSERT(pp_close(P.temperature, 200 - round((200 - 20) / 40, 1), 0.01), "off, it cools by (T - 20) / 40: [P.temperature]")
+	TEST_ASSERT(pp_close(P.core_temperature, 200 - round((200 - 20) / 40, 1), 0.01), "off, it cools by (T - 20) / 40: [P.core_temperature]")
 	power_test_drop_grid(net)
 
 /// An emag lets the output go to 2.5 times the safe maximum.
@@ -1006,7 +1006,7 @@
 	var/net = power_test_grid(0)
 	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run[1])
-	P.power_output = P.max_power_output
+	P.set_power_output(P.max_power_output)
 	TEST_ASSERT(!pp_pacman_raise(P, H), "the output stops at max_power_output")
 	pp_pacman_emag(P)
 	var/raised = 0
@@ -1083,7 +1083,7 @@
 /datum/unit_test/dq_pp/gravgen_spin_up/run_pp()
 	var/list/run = pp_run(1)
 	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
-	G.charge_count = 0
+	G.set_charge_count(0)
 	G.set_use_power(USE_POWER_IDLE)
 	G.set_charging_state(GRAVGEN_UP)
 	pp_step(G, PP_GRAV_STEP)
@@ -1103,7 +1103,7 @@
 /datum/unit_test/dq_pp/gravgen_spin_down/run_pp()
 	var/list/run = pp_run(1)
 	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
-	G.charge_count = 4
+	G.set_charge_count(4)
 	G.set_use_power(USE_POWER_ACTIVE)
 	G.set_charging_state(GRAVGEN_DOWN)
 	pp_step(G, PP_GRAV_STEP)
@@ -1122,10 +1122,10 @@
 	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
 	G.set_charging_state(GRAVGEN_IDLE)
 	G.set_use_power(USE_POWER_ACTIVE)
-	G.breaker = FALSE
+	G.set_breaker(FALSE)
 	G.set_power()
 	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_DOWN, "the breaker off spins it down")
-	G.breaker = TRUE
+	G.set_breaker(TRUE)
 	G.set_power()
 	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "back on, it spins up again")
 	pp_gravgen_done()
@@ -1203,7 +1203,7 @@
 	var/obj/machinery/compressor/C = pair[1]
 	var/obj/machinery/power/turbine/T = pair[2]
 	C.set_starter(TRUE)
-	C.rpm = 50000
+	C.set_rpm(50000)
 	pp_step(T, PP_TURB_STEP)
 	var/expected = ((50000 / 100000) ** 0.8) * 100000 * T.productivity
 	TEST_ASSERT(pp_close(T.lastgen, expected, 0.0001), "50000 rpm makes [expected] W: [T.lastgen]")
@@ -1221,7 +1221,7 @@
 	room.power_change() // the machines of the area learn of it, as a holodeck switch does
 	C.power_change()
 	C.set_starter(TRUE)
-	C.rpm = 0
+	C.set_rpm(0)
 	C.rpmtarget = 0
 	pp_step(C, PP_COMP_STEP)
 	TEST_ASSERT_EQUAL(C.rpmtarget, 1000, "started, it aims for 1000 rpm")

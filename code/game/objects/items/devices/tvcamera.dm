@@ -65,7 +65,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 		hide_tvs(showing)
 
 	rel_set(src, nameof(showing), thing)
-	showing_name = "[thing]"
+	set_showing_name("[thing]")
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
 
@@ -75,7 +75,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
 	rel_clear(src, nameof(showing))
-	showing_name = null
+	set_showing_name(null)
 
 /obj/item/tvcamera/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	. = ..()
@@ -178,7 +178,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 		hide_bodycamera_tvs(showing)
 
 	rel_set(src, nameof(showing), thing)
-	showing_name = "[thing]"
+	set_showing_name("[thing]")
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
 
@@ -188,7 +188,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
 	rel_clear(src, nameof(showing))
-	showing_name = null
+	set_showing_name(null)
 
 /obj/item/clothing/accessory/bodycam/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	. = ..()

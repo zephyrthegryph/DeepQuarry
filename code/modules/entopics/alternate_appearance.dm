@@ -47,7 +47,7 @@
 		return
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
-	AA.key = key
+	AA.set_key(key)
 	rel_set(AA, nameof(AA.owner), src)
 
 	rel_add(src, nameof(alt_appearances_owned), AA, key) // deletes the one it replaces

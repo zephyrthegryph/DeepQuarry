@@ -61,8 +61,8 @@ CAPABILITIES(/obj/item/uplink)
 
 /// A new discount every offer_time (the every() of CAPABILITIES(/obj/item/uplink/hidden)).
 /obj/item/uplink/hidden/proc/next_offer(datum/act/timer/A)
-	discount_item_static = GLOB.default_uplink_selection.get_random_item(INFINITY)
-	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
+	set_discount_item_static(GLOB.default_uplink_selection.get_random_item(INFINITY))
+	set_discount_amount(pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1))
 	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
 	SStgui.update_uis(src)
 
@@ -217,11 +217,11 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	return TRUE
 
 /obj/item/uplink/hidden/proc/ui_act_compact_toggle(datum/act/op/A)
-	compact_mode = !compact_mode
+	set_compact_mode(!compact_mode)
 	return OP_OK
 
 /obj/item/uplink/hidden/proc/ui_act_view_exploits(datum/act/op/A, id)
-	exploit_id = id
+	set_exploit_id(id)
 	return TRUE
 
 /// The list the UI_ARG_REF rows resolve refs in.

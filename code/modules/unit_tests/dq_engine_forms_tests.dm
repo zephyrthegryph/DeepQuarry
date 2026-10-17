@@ -24,6 +24,18 @@ CAPABILITIES(/obj/forms_listener)
 	on_notice(/datum/notice/forms_pinged, coalesce(2 SECONDS), then(PROC_REF(coalesced_ping)))
 	on_change(nameof(charge), ANY, coalesce(PROC_REF(charge_window)), then(PROC_REF(coalesced_charge)))
 
+/// A holder whose coalesce is the leading-edge form.
+/obj/forms_leader
+	name = "forms leader"
+	anchored = TRUE
+	var/runs = 0
+
+CAPABILITIES(/obj/forms_leader)
+	on_notice(/datum/notice/forms_pinged, coalesce(2 SECONDS, leading = TRUE), then(PROC_REF(led_ping)))
+
+/obj/forms_leader/proc/led_ping(datum/act/A)
+	runs++
+
 /obj/forms_listener/proc/coalesced_ping(datum/act/A)
 	runs++
 	GLOB.forms_runs++
@@ -185,6 +197,25 @@ CAPABILITIES(/obj/forms_holder)
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(L.runs, 1, "and no more without another trigger")
 	TEST_ASSERT_EQUAL(time_scheduler().timer_count(L), 0, "an idle holder has no timer")
+
+/// leading = TRUE: the first trigger runs at once, a burst inside the window gives one trailing run, and a lone trigger gives none.
+/datum/unit_test/dq_forms/coalesce_leading_edge_runs_first_then_trails
+
+/datum/unit_test/dq_forms/coalesce_leading_edge_runs_first_then_trails/run_forms()
+	var/obj/forms_leader/L = allocate(/obj/forms_leader)
+	PUBLISH(L, forms_ping)
+	TEST_ASSERT_EQUAL(L.runs, 1, "the first trigger runs at once")
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(L.runs, 1, "a lone trigger has no trailing run")
+	PUBLISH(L, forms_ping)
+	for(var/i in 1 to 5)
+		PUBLISH(L, forms_ping)
+	TEST_ASSERT_EQUAL(L.runs, 2, "the next quiet-period trigger runs at once, the burst inside its window does not")
+	TEST_ASSERT_EQUAL(time_scheduler().timer_count(L), 1, "and the window is one timer")
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(L.runs, 3, "the window closes into one trailing run for the burst")
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(L.runs, 3, "and no more without another trigger")
 
 /datum/unit_test/dq_forms/coalesce_sustained_runs_at_the_interval
 

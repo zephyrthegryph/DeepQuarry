@@ -299,22 +299,22 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 		if(PIPING_LAYER_SCRUBBER)
 			set_icon_state("[icon_state]-scrubbers")
 			connect_types = CONNECT_TYPE_SCRUBBER
-			layer = PIPES_SCRUBBER_LAYER
+			set_layer(PIPES_SCRUBBER_LAYER)
 			set_icon_connect_type("-scrubbers")
 		if(PIPING_LAYER_SUPPLY)
 			set_icon_state("[icon_state]-supply")
 			connect_types = CONNECT_TYPE_SUPPLY
-			layer = PIPES_SUPPLY_LAYER
+			set_layer(PIPES_SUPPLY_LAYER)
 			set_icon_connect_type("-supply")
 		if(PIPING_LAYER_FUEL)
 			set_icon_state("[icon_state]-fuel")
 			connect_types = CONNECT_TYPE_FUEL
-			layer = PIPES_FUEL_LAYER
+			set_layer(PIPES_FUEL_LAYER)
 			set_icon_connect_type("-fuel")
 		if(PIPING_LAYER_AUX)
 			set_icon_state("[icon_state]-aux")
 			connect_types = CONNECT_TYPE_AUX
-			layer = PIPES_AUX_LAYER
+			set_layer(PIPES_AUX_LAYER)
 			set_icon_connect_type("-aux")
 	if(pipe_flags & PIPING_ALL_LAYER)
 		connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY|CONNECT_TYPE_SCRUBBER|CONNECT_TYPE_FUEL|CONNECT_TYPE_AUX

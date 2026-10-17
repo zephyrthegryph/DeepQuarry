@@ -61,8 +61,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	alarms_hidden = TRUE
 
 /obj/machinery/firealarm/angled/offset_alarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 20 : -20)
-	pixel_y = (dir & 3) ? (dir == 1 ? -18 : 21) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? 20 : -20))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -18 : 21) : 0)
 
 /obj/machinery/firealarm/examine()
 	. = ..()
@@ -80,8 +80,8 @@ CAPABILITIES(/obj/machinery/firealarm)
 	..()
 
 /obj/machinery/firealarm/proc/offset_alarm()
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
-	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
+	set_pixel_x((dir & 3) ? 0 : (dir == 4 ? 26 : -26))
+	set_pixel_y((dir & 3) ? (dir == 1 ? -26 : 26) : 0)
 
 
 /// What the alarm shows: dark with its panel open, broken or unpowered; else its detector state and the security level, lit red while the
@@ -283,7 +283,7 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	var/area/here = get_area(src)
 	data["party_on"] = !!here?.party
 	data["timing"] = !!timing
-	data["scrambled"] = !(ishuman(user) || istype(user, /mob/living/silicon/ai))
+	data["scrambled"] = !ui_viewer_fact(user, "person_console")
 	data["time"] = time
 	return data
 
@@ -312,13 +312,13 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	return TRUE
 
 /obj/machinery/partyalarm/proc/ui_act_time(datum/act/op/A, value)
-	timing = value
+	set_timing(value)
 	return TRUE
 
 /obj/machinery/partyalarm/proc/ui_act_tp(datum/act/op/A, value)
 	var/tp = value
-	time += tp
-	time = min(max(round(time), 0), 120)
+	set_time(time + tp)
+	set_time(min(max(round(time), 0), 120))
 	return TRUE
 
 /obj/machinery/firealarm/proc/power_change_settle()
