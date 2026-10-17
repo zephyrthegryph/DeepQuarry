@@ -2,8 +2,13 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
+  dmbcCacheKey,
   dmbcVersionDir,
+  keyPointer,
+  mayAdvanceCurrent,
+  treeDmbcVersion,
   pinnedDmbcVersion,
   pruneDmbcVersions,
   publishDmbcVersion,
@@ -96,5 +101,69 @@ describe('stale cargo artifact signature', () => {
     expect(staleCargoArtifactSignature("error[E0599]: no method named `evict_to_budget` found for struct `Cache`")).toBe(true);
     expect(staleCargoArtifactSignature('error: internal compiler error: encountered incremental compilation error')).toBe(true);
     expect(staleCargoArtifactSignature('error[E0308]: mismatched types')).toBe(false);
+  });
+});
+
+// A checkout selects its compiler by its own sources; `current` only moves forward along history.
+describe('per-checkout compiler selection', () => {
+  const git = (cwd: string, ...args: string[]) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+    return r.stdout.trim();
+  };
+  function repo(): { root: string; first: string; second: string } {
+    const root = path.join(tmp, 'repo').split(path.sep).join('/');
+    for (const file of ['tools/dmb/Cargo.toml', 'tools/dmb/Cargo.lock', 'tools/dmb/build.rs', 'tools/dmb/src/lib.rs', 'tools/dmb/crates/a/lib.rs', 'tools/dmb/patches/p.patch', 'tools/dmb/fixtures/native_template.bin']) {
+      fs.mkdirSync(path.dirname(`${root}/${file}`), { recursive: true });
+      fs.writeFileSync(`${root}/${file}`, 'one');
+    }
+    git(root, 'init', '-q');
+    git(root, 'add', '-A');
+    git(root, 'commit', '-qm', 'first');
+    const first = git(root, 'rev-parse', 'HEAD');
+    fs.writeFileSync(`${root}/tools/dmb/src/lib.rs`, 'two');
+    git(root, 'commit', '-qam', 'second');
+    return { root, first, second: git(root, 'rev-parse', 'HEAD') };
+  }
+  const keyOf = (root: string) => {
+    const k = dmbcCacheKey(root);
+    if ('bypass' in k) throw new Error(k.bypass);
+    return k.key;
+  };
+
+  test('restoring an older tree compiler does not move current back, and each tree keeps its own version', () => {
+    const { root, first, second } = repo();
+    git(root, 'switch', '-q', '--detach', first);
+    const keyFirst = keyOf(root);
+    git(root, 'switch', '-q', '--detach', second);
+    const keySecond = keyOf(root);
+    const newer = publishDmbcVersion(pair('new', 'new'), bin, { root, key: keySecond, commit: second });
+    expect(readCurrentDmbcVersion(bin)).toBe(newer);
+    expect(mayAdvanceCurrent(root, first, bin)).toBe(false);
+    const older = publishDmbcVersion(pair('old', 'old'), bin, { root, key: keyFirst, commit: first });
+    expect(readCurrentDmbcVersion(bin)).toBe(newer);
+    expect(fs.readFileSync(keyPointer(bin, keyFirst), 'utf8').trim()).toBe(older);
+    // Each tree selects the version built from its own sources, whatever current says.
+    git(root, 'switch', '-q', '--detach', first);
+    unpinDmbcVersion(bin);
+    expect(treeDmbcVersion(root, bin)).toBe(older);
+    git(root, 'switch', '-q', '--detach', second);
+    expect(treeDmbcVersion(root, bin)).toBe(newer);
+    // A later commit still advances current.
+    expect(mayAdvanceCurrent(root, second, bin)).toBe(true);
+  });
+
+  test('a dirty compiler tree runs its own build and never moves current or another tree', () => {
+    const { root, second } = repo();
+    const published = publishDmbcVersion(pair('main', 'main'), bin, { root, key: keyOf(root), commit: second });
+    fs.writeFileSync(`${root}/tools/dmb/src/lib.rs`, 'edited');
+    const own = publishDmbcVersion(pair('dev', 'dev'), bin, { root });
+    expect(own).not.toBe(published);
+    expect(readCurrentDmbcVersion(bin)).toBe(published);
+    unpinDmbcVersion(bin);
+    expect(treeDmbcVersion(root, bin)).toBe(own);
+    fs.writeFileSync(`${root}/tools/dmb/src/lib.rs`, 'two');
+    unpinDmbcVersion(bin);
+    expect(treeDmbcVersion(root, bin)).toBe(published);
   });
 });

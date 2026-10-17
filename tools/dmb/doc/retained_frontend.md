@@ -424,7 +424,9 @@ play server): 40% of compiles took the hit or patch path, session hit rate 9.1%.
   (`resident::isolate_development_build`): its daemon, discovery endpoint and sessions are private and it never touches the
   published daemon. An explicit `DMB_DAEMON_NAMESPACE` still wins.
 * A daemon leaves for idleness (`DMB_DAEMON_IDLE_EXIT_SECS`, default 1 hour), for memory (below), on `--daemon-retire`, or, as a
-  **superseded published version** (`<bin>/current` names another id), once it has had no connection or build for 2 minutes.
+  **superseded published version** (`<bin>/current` names another id), once it has had no connection or build for 30 minutes. Which version a checkout runs is chosen by its own compiler sources
+  (`<bin>/by-key/<cache key>`, or `<bin>/by-tree/<hash>` for a dirty compiler tree), never by whoever built last; `<bin>/current` is only
+  the default for a checkout that has not built, and a publish moves it only forward along history (`<bin>/current.commit`).
 * The caller-namespace registry in `tools/build/lib/dmbc_daemons.ts` keeps its count cap for explicit namespaces (bench,
   experiments) but never retires a namespace used in the last 10 minutes.
 

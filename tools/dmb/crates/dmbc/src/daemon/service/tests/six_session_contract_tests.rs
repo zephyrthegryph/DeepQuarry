@@ -13,6 +13,8 @@ mod retirement_pipe;
 mod query_failure_state;
 #[path = "six_session_contract_tests/structural_change_tests.rs"]
 mod structural_change;
+#[path = "revert_rebase_tests.rs"]
+mod revert_rebase;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 

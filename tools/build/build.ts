@@ -864,7 +864,7 @@ const dmbcCacheHit = (): boolean => {
     return false;
   }
   try {
-    if (restoreDmbc(cache, k.key)) {
+    if (restoreDmbc(cache, k.key, { root: process.cwd(), key: k.key, commit: k.commit })) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
       pruneDmbcVersions();
       return true;
@@ -937,7 +937,9 @@ export const DmbcTarget = new Juke.Target({
       result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
     if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
-    publishDmbc(`${sharedDmbcBuildTarget()}/release`);
+    // The checkout selects its own version: by cache key when its compiler inputs equal HEAD, by tree when dirty (never `current`).
+    const publishKey = dmbcCacheKey(process.cwd());
+    publishDmbc(`${sharedDmbcBuildTarget()}/release`, 'bypass' in publishKey ? { root: process.cwd() } : { root: process.cwd(), key: publishKey.key, commit: publishKey.commit });
     pruneDmbcVersions();
     storeDmbcBuild();
   },

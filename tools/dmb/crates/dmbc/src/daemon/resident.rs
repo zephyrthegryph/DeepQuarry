@@ -209,9 +209,10 @@ pub fn isolate_development_build(identity: u128) {
     std::env::set_var("DMB_DAEMON_NAMESPACE", &name[..20]);
 }
 
-/// A superseded published version leaves once it has had no connection or build for this long: its clients are pinned to an
-/// older `current`, and when none of them is left it only holds memory.
-pub(super) const SUPERSEDED_IDLE: Duration = Duration::from_secs(120);
+/// A published version that is not `<bin>/current` leaves once it has had no connection or build for this long. Checkouts select
+/// their compiler by their own sources (tools/build/lib/dmbc_cache.ts), so a lane on an older tree keeps using its older version
+/// between builds; half an hour covers a working pause, and after it nobody of that version is left to hold the memory.
+pub(super) const SUPERSEDED_IDLE: Duration = Duration::from_secs(1800);
 pub(super) fn superseded_idle_due(provenance: Provenance, idle: Duration, running: usize, connections: usize) -> bool {
     provenance == Provenance::Superseded && running == 0 && connections == 0 && idle >= SUPERSEDED_IDLE
 }

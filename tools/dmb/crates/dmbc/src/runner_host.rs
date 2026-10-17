@@ -329,6 +329,11 @@ impl BuildHost {
     pub(crate) fn retains_patch_base(&self) -> bool {
         self.generation.as_ref().is_some_and(|(_, generation)| generation.has_patch_base())
     }
+    /// The image the retained patch base describes (None without one): a stored-record hit that would serve a different
+    /// image must not leave the base behind (see `request_runner`).
+    pub(crate) fn patch_base_image_hash(&self) -> Option<u128> {
+        self.generation.as_ref().and_then(|(_, generation)| generation.patch_base_image_hash())
+    }
     /// Retain map answers across requests; disk snapshots remain request-local.
     pub(crate) fn map_memo(
         &mut self,

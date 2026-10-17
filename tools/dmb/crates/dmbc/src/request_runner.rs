@@ -335,6 +335,18 @@ fn run_build_attempt(
             {
                 let pair_verification_started = Instant::now();
                 if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
+                    // The patch base describes the last image this session built. A stored record that serves another image
+                    // (an edit was reverted, or an earlier state came back) must not be answered as a hit while that base
+                    // stays behind: every later edit would be compared with the wrong build and fall off the patch path. Leave
+                    // this record and let the patch path take the change; its result becomes the new base.
+                    if let Some(base_image) = host.patch_base_image_hash().filter(|base| *base != pair.dmb_hash) {
+                        dmbc::daemon_eprintln!(
+                            "native session hit skipped: stored image {:032x} differs from the patch base image {:032x}; patching from the base",
+                            pair.dmb_hash,
+                            base_image
+                        );
+                        continue;
+                    }
                     let pair_verification_seconds =
                         pair_verification_started.elapsed().as_secs_f64();
                     let output_validation_started = Instant::now();
