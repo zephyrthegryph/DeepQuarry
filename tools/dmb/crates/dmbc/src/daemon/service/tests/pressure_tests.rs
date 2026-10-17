@@ -68,6 +68,22 @@ fn over_budget_sheds_the_least_recently_used_project_whole_and_keeps_the_newest(
 }
 
 #[test]
+fn retiring_releases_every_idle_session_once_and_skips_a_building_one() {
+    let shared = shared();
+    let idle = shared.slot("E:/fixture/retire-idle.dme".into(), &BTreeMap::new(), None);
+    let building = shared.slot("E:/fixture/retire-building.dme".into(), &BTreeMap::new(), None);
+    let guard = building.host.lock().unwrap();
+    assert!(shared.release_for_retire());
+    assert_eq!(idle.idle_tier.load(Ordering::Acquire), 7);
+    assert_eq!(building.idle_tier.load(Ordering::Acquire), 0, "a building session is never reset under its build");
+    assert!(!shared.release_for_retire(), "nothing left to release while the build runs");
+    drop(guard);
+    assert!(shared.release_for_retire());
+    assert_eq!(building.idle_tier.load(Ordering::Acquire), 7);
+    assert!(!shared.release_for_retire());
+}
+
+#[test]
 fn pressure_never_releases_a_currently_borrowed_host() {
     let shared = shared();
     let slot = shared.slot("E:/fixture/active.dme".into(), &BTreeMap::new(), None);

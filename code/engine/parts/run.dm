@@ -592,6 +592,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		. &= ~STAY
 	if(isnull(A.held_provider()))
 		. &= ~HELD
+	if(A.actor && A.actor.stat != CONSCIOUS)
+		. &= ~ALIVE // a lobby player or a ghost was never conscious: ALIVE guards an actor that falls, and would stop every one of its ops
 	var/policy = op_reach_policy(A.oplan, B)
 	if(!B || !(policy == REACH_ADJACENT || policy >= REACH_RANGE_BASE) || !A.actor)
 		. &= ~ADJACENT

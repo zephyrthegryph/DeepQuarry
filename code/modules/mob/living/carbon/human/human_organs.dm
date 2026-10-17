@@ -101,7 +101,7 @@
 /mob/living/carbon/human/proc/set_biological_gender(g)
 	set_gender(g)
 
-	if(dna.GetUIState(DNA_UI_GENDER) ^ gender == FEMALE) // XOR will catch both cases where they do not match
+	if(dna.GetUIState(DNA_UI_GENDER) != (gender == FEMALE)) // the DNA gender bit disagrees with the gender var
 		dna.SetUIState(DNA_UI_GENDER, gender == FEMALE)
 		sync_organ_dna(dna)
 

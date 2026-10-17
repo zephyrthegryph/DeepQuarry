@@ -230,7 +230,10 @@ pub fn route(
             // generation has drained. Only an absent listener permits replacement.
             if listener_absent(&error) {
                 lifecycle.unavailable(std::time::Instant::now())?;
-                if !started {
+                if !started && resident::same_binary_draining() {
+                    // The daemon of this same executable is draining and exits as soon as its builds finish; starting a
+                    // second one beside it doubled resident memory. Wait for it instead.
+                } else if !started {
                     // Discovery is advisory lifecycle control, never the build
                     // destination. An old busy listener cannot block the new
                     // generation from starting or change its request semantics.

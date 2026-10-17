@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Worktree hygiene (AGENTS.md section 4). Worktrees live under E:/projects/dq-wt, caches under E:/dq-cache, nothing in .git.
-#   bash tools/dq_worktree.sh new <name> [base-ref]   create E:/projects/dq-wt/<name> on a new branch <name> from origin/master
+#   bash tools/dq_worktree.sh lease <branch>          a LANE's worktree: one of DQ_LANE_POOL_SIZE (3) pooled worktrees, E:/projects/dq-wt/pool-N
+#   bash tools/dq_worktree.sh release <branch>        give it back (daemon retired, build outputs dropped; tools/dq_lane_pool.sh has the rules)
+#   bash tools/dq_worktree.sh pool                    who holds which pool slot
+#   bash tools/dq_worktree.sh new <name> [base-ref]   a NON-lane worktree E:/projects/dq-wt/<name> on a new branch <name> from origin/master
 #   bash tools/dq_worktree.sh gc [--dry-run]          remove every worktree that is clean and merged into origin/master
 #   bash tools/dq_worktree.sh status                  free space, worktree count, merged+clean per worktree
 # `new` refuses when more than DQ_WT_MAX (8) worktrees exist or E: has under DQ_WT_MIN_FREE_GB (60) GB free: run `gc` first.
@@ -22,6 +25,15 @@ strip() {
 		[ -L "$t" ] && rm -f "$t"
 	done
 }
+# E:/dq-cache/worktree-keep.txt (DQ_WT_KEEP_FILE): one worktree name per line, # comments
+keep_file_names() { sed 's/#.*//' "${DQ_WT_KEEP_FILE:-E:/dq-cache/worktree-keep.txt}" 2>/dev/null | tr -d '' | xargs; }
+in_use() { # <dir>: a process names the worktree on its command line (dd.exe, dmbc, bun, node, cargo, bash), or the worktree wrote anything
+	local w m   # in the last 20 minutes (a running world or build holds its cwd there without naming it: cwd is not visible from here)
+	[ -n "$(find "$1/data" "$1" -maxdepth 2 -type f -mmin -20 2>/dev/null | head -n 1)" ] && return 0
+	w="$(cygpath -m "$1" 2>/dev/null || echo "$1")"
+	m="${w//\//\\}"
+	powershell -NoProfile -Command "\$a='$w'; \$b='$m'; \$me=\$PID; \$n=Get-CimInstance Win32_Process | Where-Object { \$_.ProcessId -ne \$me -and \$_.CommandLine -and (\$_.CommandLine.IndexOf(\$a,[StringComparison]::OrdinalIgnoreCase) -ge 0 -or \$_.CommandLine.IndexOf(\$b,[StringComparison]::OrdinalIgnoreCase) -ge 0) } | Measure-Object; if (\$n.Count -gt 0) { exit 0 } else { exit 1 }" >/dev/null 2>&1
+}
 merged_clean() { # <dir>
 	local d="$1" sha
 	[ -z "$(git -C "$d" status --porcelain --untracked-files=normal 2>/dev/null)" ] || return 1
@@ -34,7 +46,12 @@ cmd_gc() {
 	while IFS= read -r d; do
 		n="$(basename "$d")"
 		[ "$(cd "$d" && pwd -P)" = "$(cd "$here" && pwd -P)" ] && continue
-		case " ${DQ_WT_KEEP:-} " in *" $n "*) echo "keep  $n (DQ_WT_KEEP)"; continue ;; esac
+		case "$n" in pool-[0-9]*) continue ;; esac  # pool slots are permanent: tools/dq_lane_pool.sh leases and releases them
+		# Never removed: the default keep list (the live game server and the merge worktree), DQ_WT_KEEP, the keep file, a detached HEAD
+		# (a server or a pool slot sits detached at a merged commit, which looks "merged and clean"), or a worktree a process is using.
+		case " play merge-base ${DQ_WT_KEEP:-} $(keep_file_names) " in *" $n "*) echo "keep  $n (keep list)"; continue ;; esac
+		git -C "$d" symbolic-ref -q HEAD >/dev/null 2>&1 || { echo "keep  $n (detached HEAD)"; continue; }
+		if in_use "$d"; then echo "keep  $n (a process uses it)"; continue; fi
 		if merged_clean "$d"; then
 			if [ "$dry" = 1 ]; then echo "would remove $n"; continue; fi
 			strip "$d"
@@ -47,6 +64,7 @@ cmd_gc() {
 cmd_new() {
 	local name="${1:-}" base="${2:-origin/master}" count
 	[ -n "$name" ] || die "usage: new <name> [base-ref]"
+	[ -n "${DQ_WT_ALLOW_LANE_NEW:-}" ] || echo "dq_worktree: note: a lane gets its worktree with 'lease <branch>' (the pool, at most 3 lanes); 'new' is for non-lane worktrees" >&2
 	count="$(wts | wc -l)"
 	[ "$count" -lt "$MAX" ] || die "$count worktrees already exist (cap $MAX); run: bash tools/dq_worktree.sh gc, or remove one by hand"
 	[ "$(free_gb)" -ge "$MIN_FREE" ] || die "E: has $(free_gb) GB free (need $MIN_FREE); run: bash tools/dq_worktree.sh gc"
@@ -57,4 +75,4 @@ cmd_status() {
 	git -C "$main" fetch -q origin 2>/dev/null
 	while IFS= read -r d; do echo "$(basename "$d") $(merged_clean "$d" && echo merged+clean || echo keep)"; done < <(wts)
 }
-case "${1:-}" in new) shift; cmd_new "$@" ;; gc) shift; cmd_gc "$@" ;; status) cmd_status ;; *) die "usage: new|gc|status" ;; esac
+case "${1:-}" in lease|release) c="$1"; shift; exec bash "$(dirname "${BASH_SOURCE[0]}")/dq_lane_pool.sh" "$c" "$@" ;; pool) exec bash "$(dirname "${BASH_SOURCE[0]}")/dq_lane_pool.sh" status ;; new) shift; cmd_new "$@" ;; gc) shift; cmd_gc "$@" ;; status) cmd_status ;; *) die "usage: lease|release|pool|new|gc|status" ;; esac
