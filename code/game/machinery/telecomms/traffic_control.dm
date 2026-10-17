@@ -94,7 +94,7 @@
 		if(T.id == id)
 			rel_set(src, nameof(SelectedServer), T)
 			break
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
 	if(!traffic_access(user))
@@ -149,7 +149,7 @@
 		if("togglerun")
 			SelectedServer()?.autoruncode = !(SelectedServer()?.autoruncode)
 
-	updateUsrDialog(user)
+	refresh_ui(src)
 
 /obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/op/A)
 	var/mob/user = A.actor
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
 	to_chat(user, span_notice("You you disable the security protocols"))
-	updateUsrDialog(user)
+	refresh_ui(src)
 	return OP_OK
 
 /// editingcode (a relation view: it reads null once the target is deleted).

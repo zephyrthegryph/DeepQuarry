@@ -39,11 +39,9 @@ CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 /obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
 	var/mob/user = A.actor
 	specops_send_to_dock(user)
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_station(datum/act/op/A)
 	var/mob/user = A.actor
 	specops_send_to_station(user)
-	SStgui.update_uis(src)
 	return TRUE

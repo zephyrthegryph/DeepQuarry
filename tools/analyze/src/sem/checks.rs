@@ -603,7 +603,9 @@ pub fn slot_flags_mutation_positions(sem: &super::Sem, decls: &super::decls::Dec
     positions
 }
 
-// Prove direct borrowed action-context fields without relying on receiver names.
+// Prove direct fields whose declared receiver cannot be a client. An action's
+// borrowed holder and a pending operation's owner are ordinary engine references,
+// not the admin datum reached through client.holder. Unknown receivers stay debt.
 pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSet<(usize, usize)> {
     fn declared(v: &dreammaker::ast::VarType) -> Option<String> {
         (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
@@ -639,7 +641,9 @@ pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSe
             let ty = if receiver.as_str() == "src" { Some(owner.as_str()) }
                 else { types.get(receiver.as_str()).and_then(|ty| ty.as_deref()) };
             let Some(ty) = ty else { return; };
-            if !sem.is_subtype(ty, "/datum/act") || sem.var_owner(ty, "holder").as_deref() != Some("/datum/act") { return; }
+            // A broad ancestor of /client is not sufficient proof either: an actual
+            // client may inhabit it. Require a real declared field on a disjoint type.
+            if sem.ty(ty).is_none() || sem.is_subtype(ty, "/client") || sem.is_subtype("/client", ty) || sem.var_owner(ty, "holder").is_none() { return; }
             if sem.rel(term.location) != file { return; }
             let Some(line) = text.lines().nth(term.location.line as usize - 1) else { return; };
             let start = term.location.column as usize - 1;

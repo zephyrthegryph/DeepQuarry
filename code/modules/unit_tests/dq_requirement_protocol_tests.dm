@@ -109,3 +109,40 @@
 	var/datum/op_result/conditional = test_menu(M, F, "boolean_when")
 	TEST_ASSERT_EQUAL(conditional?.outcome, ACT_COMMITTED, "A TRUE visibility condition works without a refusal declaration")
 	TEST_ASSERT_EQUAL(F.commits, 2, "The conditional op executed its real effect")
+
+/datum/unit_test/dq_e2/requirement_any_silent
+/datum/unit_test/dq_e2/requirement_any_silent/run_gate()
+	var/obj/req_protocol_fixture/silent_composition/F = allocate(/obj/req_protocol_fixture/silent_composition)
+	var/datum/act/op/A = allocate(/datum/act/op)
+	A.holder = F
+	var/datum/entry/part/req/first = req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_ready))
+	var/datum/entry/part/req/second = req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_other), silent = TRUE)
+	var/datum/entry/part/req/composed = any_of(first, second)
+	F.set_mode(4)
+	TEST_ASSERT_EQUAL(composed.check(A), /datum/msg/req_silent, "two silent refusals remain a non-null silent refusal")
+	TEST_ASSERT_EQUAL(reason_text(composed.check(A)), "", "silent composition has no generic refusal text")
+	F.set_mode(1)
+	TEST_ASSERT_EQUAL(composed.check(A), "A custom reason.", "a visible refusal wins over a silent alternative")
+	var/datum/entry/part/req/allow = req(TYPE_PROC_REF(/obj/req_protocol_fixture, check_always))
+	var/datum/entry/part/req/allowed = any_of(first, allow)
+	TEST_ASSERT_NULL(allowed.check(A), "one allowed alternative still allows the composition")
+	var/datum/entry/part/req/empty = part_make(/datum/entry/part/req/any, null, list())
+	TEST_ASSERT_EQUAL(empty.check(A), /datum/msg/req_failed, "an empty composition keeps its existing default refusal")
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	F.set_mode(4)
+	var/found = FALSE
+	for(var/list/row in action_options(M, F, null))
+		if(row["key"] == "silent_any")
+			found = TRUE
+	TEST_ASSERT(!found, "the actual menu hides an all-silent composition")
+	var/datum/op_result/refused = test_menu(M, F, "silent_any")
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "the hidden action still refuses if invoked directly")
+	TEST_ASSERT_EQUAL(reason_text(refused?.reason), "", "direct invocation retains its silent refusal")
+	TEST_ASSERT_EQUAL(F.commits, 0, "the all-silent requirement never executes the effect")
+	F.set_mode(1)
+	found = FALSE
+	for(var/list/row in action_options(M, F, null))
+		if(row["key"] == "silent_any")
+			found = TRUE
+			TEST_ASSERT_EQUAL(row["reason"], "A custom reason.", "mixed composition exposes the actual visible reason")
+	TEST_ASSERT(found, "a visible alternative makes the refused action discoverable")

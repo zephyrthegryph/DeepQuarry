@@ -70,4 +70,4 @@ human|/obj/item/tool/crowbar click: Click: Deconstruct
 +0 menu: Eject Recharger
 +1 menu: Enter Recharger
 +2 menu: Put in recharger (refused: needs a grab)
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked, silicon_hand
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recharge_station_admit, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked, silicon_hand

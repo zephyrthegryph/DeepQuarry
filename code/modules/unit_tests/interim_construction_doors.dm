@@ -111,6 +111,7 @@
 
 
 /// Dispatching a UI action directly has no ambient usr: it must use the supplied actor.
+/datum/unit_test/interim_airlock_electronics_login_actor
 /datum/unit_test/interim_airlock_electronics_login_actor/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	actor.set_real_name("Explicit Electronics Configurator")

@@ -1,0 +1,2 @@
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
