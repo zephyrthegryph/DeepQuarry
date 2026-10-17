@@ -22,7 +22,7 @@ proof_tree() { git rev-parse "${1:-HEAD}^{tree}"; }
 # --no-pins also excludes inherited snapshot selectors. Proofs record the tests run.
 proof_test_enabled() {
 	[ "${DQ_NO_PINS:-0}" = 1 ] || return 0
-	case "$1" in *_pin*|*/pin*|dx_menu_order|*/dx_menu_order) return 1 ;; esac
+	case "$1" in *_pin*|*/pin*|*dq_constraint_parity*|dx_menu_order|*/dx_menu_order) return 1 ;; esac
 	return 0
 }
 

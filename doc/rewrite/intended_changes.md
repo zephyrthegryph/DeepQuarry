@@ -5129,3 +5129,12 @@ The silicon lane retains current master's plan filtering before the cap, both ex
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+# Closet density composition (2026-10-17)
+
+Closet doors now publish their density through the existing native door-state hold,
+as machinery doors do. Opening records passable and closing records solid instead
+of toggling the currently composed value. This repairs a stale density detected by
+the containment conservation test and preserves the closed state when a stronger
+independent density hold is later released. Non-dense wall lockers remain passable.
+Direct regression: `dq_closet_density_state`; conservation regression:
+`dq_containment_conservation_fuzz/representative`. No snapshots are re-recorded.
