@@ -121,3 +121,15 @@
 	TEST_ASSERT_NULL(jukebox.remove_actor, "the actual native remove keeps an absent actor absent")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent jukebox actor opens no prompt")
 	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "absent actor refusal preserves actual jukebox ownership")
+
+CAPABILITIES(/datum/system/media_tracks/interim_actor_probe)
+	ref_one(nameof(add_actor))
+	ref_one(nameof(remove_actor))
+
+CAPABILITIES(/obj/interim_jukebox_actor_click)
+	ref_one(nameof(actor))
+	ref_one(nameof(jukebox))
+
+CAPABILITIES(/obj/machinery/media/jukebox/ghost/interim_actor_probe)
+	ref_one(nameof(add_actor))
+	ref_one(nameof(remove_actor))

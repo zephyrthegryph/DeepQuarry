@@ -20,6 +20,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
 CAPABILITIES(/obj/effect/dq_batch_probe)
 	after_init(0, then(PROC_REF(log_late)))
+	ref_one(nameof(seen_batch))
 
 /obj/effect/dq_batch_probe/proc/log_late(datum/act/timer/A)
 	GLOB.dq_batch_probe_log.Add(list(list("late", src)))

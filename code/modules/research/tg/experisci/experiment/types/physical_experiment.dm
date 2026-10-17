@@ -36,3 +36,7 @@
  */
 /datum/experiment/physical/proc/unregister_events()
 	return
+
+CAPABILITIES(/datum/experiment/physical)
+	ref_one(nameof(currently_scanned_atom))
+	ref_one(nameof(linked_experiment_handler))

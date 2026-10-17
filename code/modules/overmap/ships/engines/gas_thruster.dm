@@ -285,3 +285,6 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 /// Accessor for the nozzle var.
 /datum/ship_engine/gas_thruster/proc/nozzle() as /obj/machinery/atmospherics/unary/engine
 	return nozzle
+
+CAPABILITIES(/datum/ship_engine/gas_thruster)
+	ref_one(nameof(nozzle))

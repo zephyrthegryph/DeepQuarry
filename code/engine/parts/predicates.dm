@@ -41,6 +41,7 @@
 
 CAPABILITIES(/datum/predicate)
 	owns_one(nameof(root), /datum/pred_node)
+	ref_many(nameof(watchable))
 
 /// Compile `spec` against `registry` (default: the global one). Called once.
 /datum/predicate/proc/compile(datum/property_registry/registry)
@@ -802,3 +803,6 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 /// Extra predicate vocabulary supplied by declaration adapters.
 /datum/predicate_compiler/proc/compile_requirement(list/clause, negate)
 	return null
+
+CAPABILITIES(/datum/predicate_compiler)
+	ref_many(nameof(watchable))

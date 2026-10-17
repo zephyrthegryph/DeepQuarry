@@ -99,6 +99,7 @@ CAPABILITIES(/obj/item/pda)
 	op("pda_verb_remove_pen", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove pen"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_pen)))
 	op("pda_verb_remove_cartridge", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cartridge"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried(), req(PROC_REF(can_remove_cartridge_holds))), then(PROC_REF(pda_verb_remove_cartridge)))
 	owns_one(nameof(id), on_destroy = ON_DESTROY_DELETE, only_if = nameof(delete_id), otherwise = ON_DESTROY_SPILL)
+	ref_many(nameof(notifying_programs))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()

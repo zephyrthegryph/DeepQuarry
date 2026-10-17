@@ -118,6 +118,8 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 CAPABILITIES(/obj/item/taperoll)
 	configure(item_tooling(speed = 3))
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
+	ref_one(nameof(end))
+	ref_one(nameof(start))
 
 /obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)
 	var/mob/user = A.actor

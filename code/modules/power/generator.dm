@@ -51,6 +51,8 @@ CAPABILITIES(/obj/machinery/power/generator)
 	ui_shape(totalOutput = num(), maxTotalOutput = num(), thermalOutput = num(), primary = list_of(), secondary = list_of())
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(teg_step)), when = nameof(generating))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
+	ref_one(nameof(circ1))
+	ref_one(nameof(circ2))
 
 /obj/machinery/power/generator/Initialize(mapload)
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."

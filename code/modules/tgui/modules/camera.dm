@@ -80,6 +80,8 @@ CAPABILITIES(/datum/tgui_module/camera)
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("switch_camera", ui_act("switch_camera", arg("name", schema_text(4096))), then(PROC_REF(ui_act_switch_camera)))
 	op("pan", ui_act("pan", arg("dir", num())), then(PROC_REF(ui_act_pan)))
+	ref_one(nameof(active_camera))
+	ref_one(nameof(last_camera_turf))
 
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()

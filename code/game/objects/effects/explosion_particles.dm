@@ -75,3 +75,9 @@
 /// Relation view: location (reads null once it is gone).
 /datum/effect/system/explosion/proc/get_location() as /turf
 	return location
+
+CAPABILITIES(/datum/effect/system/expl_particles)
+	ref_one(nameof(location))
+
+CAPABILITIES(/datum/effect/system/explosion)
+	ref_one(nameof(location))

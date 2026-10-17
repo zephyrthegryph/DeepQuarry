@@ -71,6 +71,7 @@ CAPABILITIES(/obj/item/cell)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
 	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
+	ref_one(nameof(gradual_user))
 
 /obj/item/cell/Initialize(mapload)
 	. = ..()

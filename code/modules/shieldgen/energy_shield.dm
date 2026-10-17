@@ -165,6 +165,7 @@ CAPABILITIES(/obj/effect/shield)
 	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_emp_drain)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shield_blast_drain))))
+	ref_one(nameof(gen))
 
 /// Old attack_hand, just for fun: the touched segments flash.
 /obj/effect/shield/proc/interaction_touch_shield(datum/act/op/A)

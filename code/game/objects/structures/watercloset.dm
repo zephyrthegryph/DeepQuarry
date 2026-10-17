@@ -71,6 +71,7 @@ CAPABILITIES(/obj/structure/toilet)
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt)))
 	on_notice(/datum/notice/disposal_receive, then(PROC_REF(toilet_reflux)))
 	derives(nameof(desc), PROC_REF(model_desc))
+	ref_many(nameof(currently_held_objects))
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()

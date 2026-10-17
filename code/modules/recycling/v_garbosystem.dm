@@ -63,6 +63,7 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("v_garbosystem_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("v_garbosystem_crowbar_open", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), label("Open filter hatch"), wait(0), then(PROC_REF(interaction_crowbar_open)))
+	ref_one(nameof(crusher))
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || (crusher().power_lost() || crusher().broken_now()))

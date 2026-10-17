@@ -468,3 +468,6 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 /// The landed holder this floor owns (landed_holder_ref), or null.
 /turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder
 	return QDELETED(landed_holder_ref) ? null : landed_holder_ref
+
+CAPABILITIES(/obj/landed_holder)
+	ref_one(nameof(my_turf))

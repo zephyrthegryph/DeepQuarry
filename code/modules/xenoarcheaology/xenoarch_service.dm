@@ -208,3 +208,7 @@ SYSTEM_DEF(xenoarch)
 #undef ARTIFACTSPAWNNUM_UPPER
 #undef PROCEDURAL_LOWER
 #undef PROCEDURAL_UPPER
+
+CAPABILITIES(/datum/system/xenoarch)
+	ref_many(nameof(artifact_spawning_turfs))
+	ref_many(nameof(digsite_spawning_turfs))

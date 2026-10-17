@@ -106,6 +106,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_unload)))
+	ref_many(nameof(resource_field))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()

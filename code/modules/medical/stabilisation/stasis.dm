@@ -122,6 +122,7 @@
 CAPABILITIES(/datum/stasis_hold)
 	ref_one(nameof(holder), /mob/living)
 	factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")
+	ref_one(nameof(source))
 
 /datum/stasis_hold/proc/stasis_table(datum/act/eval/A)
 	return stasis_type ? body_effect_def(stasis_type)?.factors : null

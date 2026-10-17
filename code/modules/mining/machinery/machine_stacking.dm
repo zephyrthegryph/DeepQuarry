@@ -30,6 +30,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
 	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(machine))
 
 /// /obj/machinery/mineral/stacking_unit_console's window data.
 /obj/machinery/mineral/stacking_unit_console/ui_data(datum/act/eval/A)
@@ -112,6 +113,8 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/stacking_machine)
 	started_work(step = PROC_REF(work_step))
+	ref_one(nameof(input))
+	ref_one(nameof(output))
 
 /obj/machinery/mineral/stacking_machine/proc/work_step(datum/act/timer/A)
 	var/did_work = FALSE

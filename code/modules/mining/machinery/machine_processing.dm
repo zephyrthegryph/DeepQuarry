@@ -48,6 +48,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
+	ref_one(nameof(machine))
 
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(datum/act/op/A)
 	var/mob/user = A.actor
@@ -274,6 +275,8 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
 	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
+	ref_one(nameof(input))
+	ref_one(nameof(output))
 
 /obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)
 

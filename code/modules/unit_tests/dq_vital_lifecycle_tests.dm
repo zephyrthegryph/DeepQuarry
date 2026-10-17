@@ -292,4 +292,7 @@
 	TEST_ASSERT_EQUAL(M.vital_band(), VITAL_BAND_DYING, "the dying band")
 	unobserve(M, /datum/act/body_status, src)
 
+
+CAPABILITIES(/datum/dq_vital_listener)
+	ref_one(nameof(last_revive_source))
 #endif

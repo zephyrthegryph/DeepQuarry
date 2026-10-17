@@ -91,6 +91,7 @@ CAPABILITIES(/obj/effect/rune)
 	op("nullrod_rune", item(/obj/item/nullrod), label("Disrupt rune"), then(PROC_REF(interaction_nullrod_rune)))
 	op("invoke_rune", hand(), label("Invoke"), then(PROC_REF(interaction_invoke_rune)))
 	every(3 SECONDS, then(PROC_REF(manifest_tick)), when = nameof(manifesting))
+	ref_many(nameof(converting))
 
 /// Old attackby: a cultist's tome undoes the rune.
 /obj/effect/rune/proc/interaction_erase_rune(datum/act/op/A)

@@ -36,6 +36,7 @@ CAPABILITIES(/obj/machinery/floorlayer)
 		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
 		then(PROC_REF(tile_type_chosen)))
 	owns_one(nameof(T), starts = /obj/item/stack/tile/floor, on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(old_turf))
 
 
 /obj/machinery/floorlayer/proc/interaction_toggle(datum/act/op/A)

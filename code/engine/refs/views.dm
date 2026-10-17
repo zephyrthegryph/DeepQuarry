@@ -165,7 +165,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	var/names = index[OWN_KEY(source)]
 	return islist(names) ? (var_name in names) : names == var_name
 
-/// The REF entry for source.var_name (learned as an implicit REF when undeclared; reported when
+/// The REF entry for source.var_name (reported and null when undeclared, reported when
 /// the var is another kind).
 /proc/_rel_entry(datum/source, var_name, is_list = FALSE)
 	return own_entry_of_kind(source, var_name, OWNK_REL, is_list)
@@ -183,7 +183,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return null
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
-		source.vars[var_name] = target // ALLOW(api): undeclared view, reported above
+		source.vars[var_name] = target // ALLOW(api): an undeclared view is reported by _rel_entry() above and still written, so a live round keeps the value
 		own_field_changed(source, var_name)
 		return target
 	if(entry[OWNE_LIST])

@@ -280,6 +280,7 @@
 
 CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 	owns_many(nameof(made))
+	ref_one(nameof(floor))
 
 /datum/unit_test/dq_latency_fuzz/Run()
 	dq_latency_isolate_diagnostics()

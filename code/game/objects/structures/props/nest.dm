@@ -36,6 +36,7 @@ CAPABILITIES(/obj/structure/prop/nest)
 	every(2 SECONDS, then(PROC_REF(nest_step)), when = STAT_RELEVANCE)
 	without("message")   // the disturbance shows the message itself
 	op("disturb", hand(), label("Use"), then(PROC_REF(interaction_disturb)))
+	ref_many(nameof(den_mobs))
 
 // The original attack_hand called ..() (prop's message) unconditionally, then always continued below, so interaction_disturb() shows the message
 // itself and the nest drops the prop's own message op.

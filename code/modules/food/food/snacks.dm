@@ -175,6 +175,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks)
 	op("coat", at_target(), priority(OP_PRIORITY_PART), when(PROC_REF(target_has_coating)), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
 	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(PROC_REF(pours_into_target)), label("Empty it into"),
 		needs(req_reagent_room(because = MSG(reagent_container/full))), costs(RES_REAGENTS, PROC_REF(pour_amount)), consumes(), says(PROC_REF(pour_message)))
+	ref_one(nameof(coating))
 
 MSG_DEF(snack/crack, "You crack %I% into %T%.", "%U% cracks %I% into %T%.")
 MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% tears %I% open, pouring it into %T%.")

@@ -266,3 +266,9 @@ CAPABILITIES(/obj/item/integrated_circuit/smart/advanced_pathfinder)
 /// The last_known_position this refers to (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/proc/last_known_position() as /turf
 	return last_known_position
+
+CAPABILITIES(/obj/item/integrated_circuit/smart/pathfinding_locomotion)
+	ref_one(nameof(last_known_position))
+
+CAPABILITIES(/obj/item/integrated_circuit/smart/targeted_pathfinder)
+	ref_one(nameof(last_known_position))

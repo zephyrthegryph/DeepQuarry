@@ -478,3 +478,6 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 /// the attached this refers to (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return attached
+
+CAPABILITIES(/obj/machinery/smartfridge/chemistry/chemvator)
+	ref_one(nameof(attached))

@@ -584,6 +584,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
 	configure(item_worn(slots = SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
 	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
+	ref_one(nameof(owner))
 
 /// TRUE once the crystal is paired and until it breaks or loses its owner.
 /obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE

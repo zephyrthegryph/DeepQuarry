@@ -182,6 +182,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
 	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
 	op("use_wrench", tool(TOOL_WRENCH), label("Bolt or unbolt"), needs(req(PROC_REF(shell_refusal))), starts(PROC_REF(bolting_started)), begins(PROC_REF(bolting_begins)), wait(4 SECONDS), then(PROC_REF(wrench_act_tool_done)), on_interrupt(PROC_REF(wrench_act_tool_failed)))
+	ref_many(nameof(connected_robots))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)

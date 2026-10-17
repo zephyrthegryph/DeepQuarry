@@ -42,6 +42,7 @@ CAPABILITIES(/datum/tgui_shock)
 	op("port", ui_act("port", arg("port", num())), then(PROC_REF(ui_act_port)))
 	op("intensity", ui_act("intensity", arg("intensity", num())), then(PROC_REF(ui_act_intensity)))
 	op("duration", ui_act("duration", arg("duration", num())), then(PROC_REF(ui_act_duration)))
+	ref_one(nameof(client))
 
 //////////////////////////////////////////
 // SHOCK.JS UI                          //

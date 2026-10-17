@@ -70,6 +70,7 @@ CAPABILITIES(/obj/machinery/camera)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), when(req_actor_kind(/mob/living/silicon/ai, not = TRUE)), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 	op("ai_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), when(req_actor_kind(/mob/living/silicon/ai)), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(ai_wire_tool_used)))
+	ref_one(nameof(area_motion))
 
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
 TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)

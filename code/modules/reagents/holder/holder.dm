@@ -24,6 +24,7 @@
 
 CAPABILITIES(/datum/reagents)
 	owns_many(nameof(reagent_list), on_lost = PROC_REF(reagent_lost))
+	ref_one(nameof(my_atom))
 
 
 /datum/reagents/New(max = 100, atom/A = null)

@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
+	ref_many(nameof(magnets))
 
 /obj/machinery/magnetic_controller/ui_data(datum/act/eval/A)
 	var/list/data = list()

@@ -271,4 +271,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
 	verb_entry(/mob/living/proc/ventcrawl)
+	ref_many(nameof(dq_ignored_machines))
 

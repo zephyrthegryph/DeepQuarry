@@ -46,3 +46,6 @@
 	TEST_ASSERT_EQUAL(picker.runs, 1, "the actual native click invokes the actorless real picker")
 	TEST_ASSERT_NULL(picker.result, "an actorless picker returns no resource")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "the actorless helper cannot adopt the native click's unrelated ambient actor")
+
+CAPABILITIES(/obj/interim_icon_picker_no_actor_probe)
+	ref_one(nameof(picker))

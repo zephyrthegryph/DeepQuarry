@@ -427,9 +427,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /proc/own_entry(datum/holder, var_name)
 	return own_table_of(holder).entries[var_name]
 
-/// The entry for holder.var_name, which must be of `kind`. An undeclared owned var is reported and null returned: an owned var is
-/// declared (owns_one / owns_many, with `starts =` for a starting occupant). An undeclared relation is learned: the first
-/// rel_set()/rel_add() records an implicit rel() in the type's table (ownership.md §7: declarations are only for exceptions).
+/// The entry for holder.var_name, which must be of `kind`. An undeclared var is reported and null returned: every written var is declared
+/// (owns_one / owns_many with `starts =` for a starting occupant, ref_one / ref_many, a links() end) in the type's CAPABILITIES block, and
+/// the `rel_write_undeclared` lint holds the line statically (doc/rewrite/proposals/relations.md D1). Nothing is learned from a write.
 /// A var of another kind is reported and null is returned.
 /proc/own_entry_of_kind(datum/holder, var_name, kind, is_list = FALSE)
 	var/datum/own_table/T = own_table_of(holder)
@@ -440,17 +440,14 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			return null
 		switch(kind)
 			if(OWNK_REL)
-				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list, null, CLEAR, null, null)
-				LAZYADD(T.ref_vars, var_name)
+				OWN_REPORT("[holder.type].[var_name] is written as a relation but not declared: add ref_one / ref_many (or links) to the type's CAPABILITIES list")
+				return null
 			if(OWNK_OWN)
 				OWN_REPORT("[holder.type].[var_name] is written as an owned var but not declared: add owns_one / owns_many to the type's CAPABILITIES list")
 				return null
 			else
 				OWN_REPORT("[holder.type].[var_name] is not declared [own_kind_name(kind)]")
 				return null
-		T.entries[var_name] = entry
-		T.empty = FALSE
-		return entry
 	if(entry[OWNE_KIND] != kind)
 		OWN_REPORT("[holder.type].[var_name] is [own_kind_name(entry[OWNE_KIND])], not [own_kind_name(kind)]")
 		return null

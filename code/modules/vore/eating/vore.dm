@@ -505,3 +505,6 @@
 /// the client this refers to (a relation view: null once it is deleted).
 /datum/vore_preferences/proc/client() as /client
 	return client
+
+CAPABILITIES(/datum/vore_preferences)
+	ref_one(nameof(client))

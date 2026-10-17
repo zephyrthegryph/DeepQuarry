@@ -320,3 +320,6 @@ Bonus
 /// The mind to put back in its body: a relation view, null once it is deleted.
 /datum/viral_trait/growth/proc/ownermind() as /datum/mind
 	return ownermind
+
+CAPABILITIES(/datum/viral_trait/growth)
+	ref_one(nameof(ownermind))

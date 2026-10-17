@@ -61,3 +61,7 @@
 	if(destination)
 		SSflight.unregister_destination(destination.id)
 	qdel(ship)
+
+CAPABILITIES(/obj/interim_ship_ingestion_prompt_actor_click)
+	ref_one(nameof(eater))
+	ref_one(nameof(ship))

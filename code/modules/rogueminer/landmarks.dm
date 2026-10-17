@@ -13,6 +13,7 @@
 
 CAPABILITIES(/obj/asteroid_spawner)
 	after_init(0, then(PROC_REF(register_spawn)))
+	ref_one(nameof(myasteroid))
 
 /obj/asteroid_spawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))

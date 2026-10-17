@@ -679,3 +679,9 @@
 /// The client this refers to (a relation view: null once that is deleted).
 /datum/tgui_window/proc/client() as /client
 	return client
+
+CAPABILITIES(/datum/tgui_window)
+	ref_one(nameof(asset_generation))
+	ref_one(nameof(client))
+	ref_one(nameof(locked_by))
+	ref_one(nameof(subscriber_object))

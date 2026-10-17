@@ -47,6 +47,7 @@ CAPABILITIES(/obj/trader)
 	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
 	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))
 	owns_one(nameof(products), on_destroy = ON_DESTROY_CONTAINED)
+	ref_many(nameof(bank))
 
 /// Requirement: TRUE, or why no trade can start.
 /obj/trader/proc/can_trade(mob/living/user, atom/target, obj/item/held)

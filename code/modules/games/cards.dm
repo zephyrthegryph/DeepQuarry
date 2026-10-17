@@ -562,6 +562,7 @@ CAPABILITIES(/obj/item/hand)
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
 	op("hand_verb_discard", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Discard"), needs(carried()), then(PROC_REF(hand_verb_discard_op)))
 	op("hand_verb_remove_card", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove card"), then(PROC_REF(hand_verb_remove_card_op)))
+	ref_many(nameof(cards))
 
 /// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
 /obj/item/hand/proc/can_remove_card_holds(datum/act/op/A)

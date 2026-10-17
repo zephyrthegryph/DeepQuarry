@@ -29,6 +29,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 CAPABILITIES(/datum/hallucinations)
 	owns_one(nameof(halitem), /obj)
 	ref_one(nameof(our_human), /mob/living/carbon/human)
+	ref_one(nameof(halitem_client))
 
 /mob/living/carbon/var/datum/hallucinations/hallucinations
 

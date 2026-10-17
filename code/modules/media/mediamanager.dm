@@ -149,6 +149,7 @@ CAPABILITIES(/datum/media_manager)
 	owns_one(nameof(media_window), /datum/tgui_window)
 	interface("MediaPlayer", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
 	ui_shape(url = schema_text(), start_time = num(), volume = num())
+	ref_one(nameof(owner))
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))

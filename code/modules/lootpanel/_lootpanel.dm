@@ -24,6 +24,8 @@ CAPABILITIES(/datum/lootpanel)
 	interface("LootPanel")
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("grab", ui_act("grab", arg("ref", schema_ref(/datum/search_object)), arg("ctrl", bool()), arg("middle", bool()), arg("shift", bool()), arg("alt", bool()), arg("right", bool())), then(PROC_REF(ui_act_grab)))
+	ref_one(nameof(owner))
+	ref_one(nameof(source_turf))
 
 /datum/lootpanel/New(client/owner)
 	. = ..()

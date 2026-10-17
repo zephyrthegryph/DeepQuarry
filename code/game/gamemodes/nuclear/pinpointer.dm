@@ -369,6 +369,7 @@ CAPABILITIES(/obj/item/pinpointer/shuttle)
 CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	ref_one(nameof(target))
 	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))
+	ref_one(nameof(location))
 
 /datum/prompt/choice/pinpointer_carried
 	ask_flags = ASK_CARRIED | ASK_CAPABLE

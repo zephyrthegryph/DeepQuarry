@@ -76,6 +76,7 @@ CAPABILITIES(/datum/species)
 	hands()
 	owns_one(nameof(hud), /datum/hud_data)
 	owns_many(nameof(unarmed_attacks))
+	ref_many(nameof(env_traits))
 
 /mob/living/can_provide_hands(datum/act/A)
 	return has_working_hand(A)

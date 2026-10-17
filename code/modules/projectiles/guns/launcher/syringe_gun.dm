@@ -139,6 +139,7 @@ CAPABILITIES(/obj/item/gun/launcher/syringe)
 	configure(item_combat(force = 7))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	owns_many(nameof(darts), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(next))
 
 /// Old attack_hand.
 /obj/item/gun/launcher/syringe/proc/interaction_hand(datum/act/op/A)

@@ -43,3 +43,6 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 /// The station_newspaper this refers to (a relation view: null once that is deleted).
 /datum/lore/news/proc/station_newspaper() as /datum/feed_channel
 	return station_newspaper
+
+CAPABILITIES(/datum/lore/news)
+	ref_one(nameof(station_newspaper))

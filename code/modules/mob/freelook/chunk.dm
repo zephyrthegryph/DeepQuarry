@@ -149,3 +149,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 #undef UPDATE_BUFFER
 
 // Turfs are never deleted (a changed turf keeps its object), so the chunk's turf index holds them strongly.
+
+CAPABILITIES(/datum/chunk)
+	ref_many(nameof(seenby))

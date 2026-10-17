@@ -78,6 +78,7 @@ CAPABILITIES(/datum/mind)
 	owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel)
 	owns_many(nameof(objectives), /datum/objective)
 	op("common_crystals", topic("common=crystals"), needs(req_rights(R_FUN)), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(crystals_question)), "default" = computed(PROC_REF(crystals_default)), "rights" = R_FUN, "timeout" = 0), step = "amount"), then(PROC_REF(topic_set_crystals)))
+	ref_many(nameof(learned_spells))
 
 /datum/mind/New(key)
 	src.key = key

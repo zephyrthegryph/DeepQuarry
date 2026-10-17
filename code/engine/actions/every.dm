@@ -555,3 +555,6 @@ GLOBAL_LIST_EMPTY(every_hop_watches)
 	GLOB.every_hop_watches -= "[REF(holder)]"
 	W.unsubscribe()
 	spent(W)
+
+CAPABILITIES(/datum/every_hop_watch)
+	ref_one(nameof(holder))

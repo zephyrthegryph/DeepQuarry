@@ -107,3 +107,6 @@
 	TEST_ASSERT_NULL(resolve_handle(frame_handle), "A structure assembly handle must terminate for its cross-family machinery successor")
 	qdel(door)
 	TEST_ASSERT(QDELETED(board), "The successor must own and delete the transferred electronics")
+
+CAPABILITIES(/obj/structure/windoor_assembly/interim_completion_trace)
+	ref_one(nameof(trace))

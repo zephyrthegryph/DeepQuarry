@@ -9,6 +9,7 @@
 
 CAPABILITIES(/datum/event/horde_infestation)
 	owns_many(nameof(alive_metroids))
+	ref_many(nameof(vents))
 
 /datum/event/horde_infestation/setup()
 	announceWhen = rand(announceWhen, announceWhen + 60)

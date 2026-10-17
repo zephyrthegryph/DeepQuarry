@@ -179,6 +179,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), then(PROC_REF(ui_act_toggle_engine)))
 	op("range", ui_act("range"), then(PROC_REF(ui_act_range)))
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
+	ref_one(nameof(sensors))
 
 /datum/tgui_module/ship/fullmonty/tgui_close(mob/user)
 	. = ..()
@@ -589,3 +590,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 /// The sensors this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
 	return sensors
+
+CAPABILITIES(/datum/tgui_module/ship)
+	ref_one(nameof(linked))
+	ref_many(nameof(watchers))

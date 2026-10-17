@@ -19,6 +19,7 @@ CAPABILITIES(/datum/own_test_holder)
 	owns_many(nameof(children))
 	owns_many(nameof(values))
 	owns_one(nameof(species), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
+	ref_one(nameof(view))
 
 
 

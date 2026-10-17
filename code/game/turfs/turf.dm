@@ -188,6 +188,11 @@ CAPABILITIES(/turf)
 	op("crawl_drag", ai(), takes("thing", "from"), wait(PROC_REF(crawl_drag_time)), then(PROC_REF(crawl_drag_done)))
 	op("dig_grave", ai(), takes("delay"), wait(PROC_REF(grave_time)), then(PROC_REF(grave_dug)))
 	op("graffiti", ai(), takes("message", "click_parameters"), wait(PROC_REF(graffiti_time)), then(PROC_REF(graffiti_done)))
+	ref_one(nameof(lighting_corner_NE))
+	ref_one(nameof(lighting_corner_NW))
+	ref_one(nameof(lighting_corner_SE))
+	ref_one(nameof(lighting_corner_SW))
+	ref_one(nameof(lighting_object))
 
 /// The touch op: the old attack_hand.
 /turf/proc/turf_touch_op(datum/act/op/A)

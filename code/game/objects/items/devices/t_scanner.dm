@@ -28,6 +28,7 @@ CAPABILITIES(/obj/item/t_scanner)
 	// Scans underfloor objects while switched on.
 	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
 	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))
+	ref_one(nameof(user_client))
 
 /obj/item/t_scanner/proc/scanner_power_requested(datum/act/op/A)
 	set_active(!on)

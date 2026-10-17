@@ -1508,3 +1508,10 @@ GLOBAL_VAR(boot_unclean)
 
 CAPABILITIES(/datum/unit_test)
 	ref_many(nameof(allocated))
+	ref_one(nameof(run_loc_floor_bottom_left))
+	ref_one(nameof(run_loc_floor_top_right))
+	ref_one(nameof(test_block))
+
+CAPABILITIES(/datum/unit_test_block)
+	ref_one(nameof(bottom_left))
+	ref_one(nameof(top_right))

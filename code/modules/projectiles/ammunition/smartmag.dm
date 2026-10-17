@@ -40,6 +40,7 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 		starts(PROC_REF(realize_rounds)), begins(PROC_REF(struggle_text)), wait(4 SECONDS), then(PROC_REF(cell_removed)))
 	op("clear_data", menu(), label("Clear Ammo Data"), needs(carried(), req_empty(nameof(stored_ammo), because = MSG(smartmag/not_empty))), then(PROC_REF(smartmag_verb_clear_data)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Remove the cell"), needs(req(PROC_REF(cell_refusal), silent = TRUE)), begins(PROC_REF(cell_removal_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
+	ref_one(nameof(holding_gun))
 
 MSG_DEF_SELF(smartmag/not_empty, "you can't reset it unless it's empty")
 MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")

@@ -129,3 +129,7 @@
 
 /datum/callback/invoke_actor(...)
 	return Invoke(arglist(args))
+
+CAPABILITIES(/datum/callback)
+	ref_one(nameof(object))
+	ref_one(nameof(user))

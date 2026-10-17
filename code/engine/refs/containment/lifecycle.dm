@@ -104,10 +104,21 @@
 			parts += "slot [def.slot_id] (policy [def.drop_policy]): [jointext(names, ", ")] latent entries=[latent_n]"
 	return jointext(parts, "; ")
 
+/// Lifecycle property (doc/rewrite/proposals/relations.md D17): a thing that must outlive its container's deletion whatever the slot's drop policy
+/// says (a mob with a mind or a client, a brain or MMI holding one, the nuclear disk). A container's destroy transaction spills it instead of
+/// deleting it. Default FALSE; a type that qualifies overrides it.
+/atom/movable/proc/survives_container()
+	return FALSE
+
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
 /proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/relation_definition/slot/def, atom/movable/thing, atom/drop, atom/movable/successor)
 	var/flags = LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING
-	switch(def.drop_policy)
+	var/policy = def.drop_policy
+	// survives_container() is checked before the DELETE branch: a deleting slot spills such a thing instead (a latent entry cannot hold one).
+	if((policy == SLOT_DROP_DELETE || policy == SLOT_DROP_TO_LATENT) && thing.survives_container())
+		log_world("LIFECYCLE: [thing] ([thing.type]) survives the deletion of [holder] ([holder.type]); slot [def.slot_id] policy [policy] became SPILL")
+		policy = SLOT_DROP_SPILL
+	switch(policy)
 		if(SLOT_DROP_DELETE)
 			spent(thing)
 			return

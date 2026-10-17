@@ -18,6 +18,7 @@ CAPABILITIES(/obj/item/extraction_pack)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = computed(PROC_REF(possible_beacon_choices)), "timeout" = 0), step = "beacon", when = PROC_REF(has_possible_beacons)), then(PROC_REF(interaction_self)))
 
 	op("attach", at_target(/atom/movable), label("Attach"), needs(req(PROC_REF(can_attach))), begins(PROC_REF(attach_begins)), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(attach_done)))
+	ref_one(nameof(beacon))
 
 /// Requirement: the pack is linked to a beacon and the target can be sent (anything else is refused, some of it silently).
 /// Why the pack cannot be attached to the target: a text, the silent message for a target that is simply not eligible, or null.

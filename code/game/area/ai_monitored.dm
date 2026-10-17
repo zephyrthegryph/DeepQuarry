@@ -24,3 +24,6 @@
 /// Motioncamera (a relation view).
 /area/ai_monitored/proc/motioncamera() as /obj/machinery/camera
 	return motioncamera
+
+CAPABILITIES(/area/ai_monitored)
+	ref_one(nameof(motioncamera))

@@ -36,6 +36,7 @@
 
 CAPABILITIES(/datum/tgui_say)
 	owns_one(nameof(window), /datum/tgui_window)
+	ref_one(nameof(client))
 
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)

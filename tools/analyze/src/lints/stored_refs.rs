@@ -78,16 +78,16 @@ fn under_any(path: &str, roots: &[&str]) -> bool {
 }
 
 /// The holder-side knowledge every rule asks: which declared types are references.
-struct Kinds<'a> {
-    sem: &'a Sem,
-    exempt_types: Vec<String>,
-    registry: Vec<String>,
-    cache: std::cell::RefCell<HashMap<String, bool>>,
+pub(crate) struct Kinds<'a> {
+    pub(crate) sem: &'a Sem,
+    pub(crate) exempt_types: Vec<String>,
+    pub(crate) registry: Vec<String>,
+    pub(crate) cache: std::cell::RefCell<HashMap<String, bool>>,
 }
 
 impl<'a> Kinds<'a> {
     /// `declared` names an atom or datum a reference to which can pin it.
-    fn is_ref(&self, declared: &str) -> bool {
+    pub(crate) fn is_ref(&self, declared: &str) -> bool {
         if declared.is_empty() || declared == "/" {
             return false;
         }
@@ -116,7 +116,7 @@ impl<'a> Kinds<'a> {
 }
 
 /// Relation declarations by var name: name -> the types declaring it.
-fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
+pub(crate) fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
     let d = Decls::get(cx.tree);
     for (t, vars) in &d.relations {
@@ -139,27 +139,27 @@ fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     out
 }
 
-fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
+pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
     let Some(types) = rels.get(var) else { return false };
     types.iter().any(|t| t == owner || sem.is_subtype(t, owner) || sem.is_subtype(owner, t))
 }
 
 /// A list a proc body writes into.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-enum Place {
+pub(crate) enum Place {
     /// (declaring type, var name)
     Member(String, String),
     /// A proc's `var/static/list` (file, model line).
     ProcStatic(String, u32),
 }
 
-struct ProcScope<'a> {
-    owner: &'a str,
+pub(crate) struct ProcScope<'a> {
+    pub(crate) owner: &'a str,
     /// local and parameter names -> declared type ("" untyped); `Some(place)` for a proc-static list.
-    locals: HashMap<String, (String, Option<Place>)>,
+    pub(crate) locals: HashMap<String, (String, Option<Place>)>,
 }
 
-fn path_of(tp: &[String]) -> String {
+pub(crate) fn path_of(tp: &[String]) -> String {
     if tp.is_empty() {
         String::new()
     } else {
@@ -167,7 +167,7 @@ fn path_of(tp: &[String]) -> String {
     }
 }
 
-fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
+pub(crate) fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
     for st in b.iter() {
         match &st.elem {
             Statement::Var(v) => {
@@ -205,9 +205,9 @@ fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Optio
     }
 }
 
-struct Walker<'a, 'k> {
-    sem: &'a Sem,
-    kinds: &'k Kinds<'a>,
+pub(crate) struct Walker<'a, 'k> {
+    pub(crate) sem: &'a Sem,
+    pub(crate) kinds: &'k Kinds<'a>,
 }
 
 impl<'a, 'k> Walker<'a, 'k> {
@@ -220,7 +220,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The static type of `e`: a type path, or None when the model can't say.
-    fn type_of(&self, sc: &ProcScope, e: &Expression) -> Option<String> {
+    pub(crate) fn type_of(&self, sc: &ProcScope, e: &Expression) -> Option<String> {
         let e = strip_parens(e);
         match e {
             Expression::Base { term, follow } => {
@@ -277,7 +277,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The list `e` names, when it is a type's var, a global or a proc-static list.
-    fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
+    pub(crate) fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
         let e = strip_parens(e);
         let Expression::Base { term, follow } = e else { return None };
         if follow.is_empty() {

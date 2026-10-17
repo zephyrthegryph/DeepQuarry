@@ -22,3 +22,6 @@
 /// The stored_card this refers to (a relation view: null once that is deleted).
 /obj/item/computer_hardware/card_slot/proc/stored_card() as /obj/item/card/id
 	return stored_card
+
+CAPABILITIES(/obj/item/computer_hardware/card_slot)
+	ref_one(nameof(stored_card))

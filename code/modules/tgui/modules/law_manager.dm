@@ -17,6 +17,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
 	op("state_law_set", ui_act("state_law_set", arg("state_law_set")), then(PROC_REF(ui_act_state_law_set)))
 	op("transfer_laws", ui_act("transfer_laws", arg("transfer_laws")), then(PROC_REF(ui_act_transfer_laws)))
+	ref_one(nameof(owner))
 
 /datum/tgui_module/law_manager
 	name = "Law manager"

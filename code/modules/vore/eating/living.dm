@@ -2143,3 +2143,7 @@ CAPABILITIES(/datum/prompt/choice/vore_feed_review)
 		var/obj/belly/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
+
+CAPABILITIES(/datum/vore_panel_button)
+	ref_one(nameof(owner))
+	ref_one(nameof(screen_icon))

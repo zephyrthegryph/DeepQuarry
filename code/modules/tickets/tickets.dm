@@ -257,6 +257,7 @@ CAPABILITIES(/datum/ticket)
 	op("reopen", ui_act("reopen"), then(PROC_REF(ui_act_reopen)))
 	op("legacy", ui_act("legacy"), then(PROC_REF(ui_act_legacy)))
 	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096)), arg("ticket_ref", schema_ref(/datum/ticket))), then(PROC_REF(ui_act_send_msg)))
+	ref_one(nameof(initiator))
 
 /**
  * public

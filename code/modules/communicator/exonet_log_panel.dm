@@ -14,6 +14,7 @@ CAPABILITIES(/mob/observer/dead)
 	param(nameof(admin_ghosted), pos = 1)
 	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_track)))
 	op("reenter", topic("reenter"), then(PROC_REF(topic_reenter)))
+	ref_many(nameof(visibleChunks))
 
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host

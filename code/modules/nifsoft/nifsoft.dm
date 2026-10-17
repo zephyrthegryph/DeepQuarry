@@ -431,3 +431,6 @@ CAPABILITIES(/obj/item/disk/nifsoft/compliance)
 /// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif
 	return nif
+
+CAPABILITIES(/datum/nifsoft)
+	ref_one(nameof(nif))

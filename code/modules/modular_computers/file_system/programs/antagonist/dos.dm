@@ -44,6 +44,7 @@ CAPABILITIES(/datum/computer_file/program/ntnet_dos)
 	op("PRG_target_relay", ui_act("PRG_target_relay", arg("targid", num())), then(PROC_REF(ui_act_prg_target_relay)))
 	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
 	op("PRG_execute", ui_act("PRG_execute"), then(PROC_REF(ui_act_prg_execute)))
+	ref_one(nameof(target))
 
 /datum/computer_file/program/ntnet_dos/ui_data(datum/act/eval/A)
 	if(!GLOB.ntnet_global)

@@ -445,3 +445,6 @@ CAPABILITIES(/datum/dq_state_probe)
 	TEST_ASSERT_EQUAL(survivor.last_bits, CHANGE_EXPLICIT, "the surviving output receives its original change channel")
 	TEST_ASSERT_EQUAL(survivor.refresh_queued, 0, "the surviving queued mark is consumed")
 	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 0, "the drain removes both stale and completed queue entries")
+
+CAPABILITIES(/datum/dq_state_holder)
+	ref_one(nameof(held))

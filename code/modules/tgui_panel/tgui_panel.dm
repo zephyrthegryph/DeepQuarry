@@ -18,6 +18,7 @@
 
 CAPABILITIES(/datum/tgui_panel)
 	owns_one(nameof(window), /datum/tgui_window)
+	ref_one(nameof(client))
 
 /datum/tgui_panel/New(client/client, id)
 	rel_set(src, nameof(client), client)

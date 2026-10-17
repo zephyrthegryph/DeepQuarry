@@ -291,6 +291,9 @@ CAPABILITIES(/obj/belly)
 	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
 	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
 	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
+	ref_many(nameof(items_preserved))
+	ref_one(nameof(ownegg))
+	ref_one(nameof(owner))
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)

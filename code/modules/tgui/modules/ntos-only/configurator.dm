@@ -6,6 +6,7 @@
 CAPABILITIES(/datum/tgui_module/computer_configurator)
 	interface("Configuration")
 	op("PC_toggle_component", ui_act("PC_toggle_component", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_toggle_component)))
+	ref_one(nameof(movable))
 
 /datum/tgui_module/computer_configurator/ui_data(datum/act/eval/A)
 	rel_set(src, nameof(movable), tgui_host())

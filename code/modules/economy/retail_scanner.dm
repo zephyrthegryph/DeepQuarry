@@ -80,6 +80,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
+	ref_many(nameof(freight_form_paper))
 
 /obj/item/retail_scanner/proc/retail_scanner_controls_opened(datum/act/op/A)
 	var/mob/user = A.actor

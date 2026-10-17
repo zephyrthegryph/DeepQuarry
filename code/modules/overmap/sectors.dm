@@ -56,6 +56,8 @@
 
 CAPABILITIES(/obj/effect/overmap/visitable)
 	rolls(nameof(docking_codes), PROC_REF(roll_docking_codes))
+	ref_many(nameof(generic_waypoints))
+	ref_many(nameof(restricted_waypoints))
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 

@@ -138,3 +138,6 @@ CAPABILITIES(/datum/prompt/choice/hose_socket)
 			to_chat(user, span_notice("There are no available connectors on \the [target]. You wind \the [src] back up."))
 		rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 		..()
+
+CAPABILITIES(/obj/item/stack/hose)
+	ref_one(nameof(remembered))

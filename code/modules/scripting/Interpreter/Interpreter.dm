@@ -59,6 +59,9 @@
 CAPABILITIES(/datum/n_Interpreter)
 	owns_one(nameof(globalScope), /datum/scope)
 	owns_one(nameof(program), /datum/node/BlockDefinition)
+	ref_one(nameof(container))
+	ref_one(nameof(curFunction_ref))
+	ref_one(nameof(curScope_ref))
 
 /*
 	Constructor: New

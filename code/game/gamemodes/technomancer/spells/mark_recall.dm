@@ -16,6 +16,7 @@
 
 CAPABILITIES(/datum/technomancer_marker)
 	ref_one(nameof(caster))
+	ref_one(nameof(T))
 
 /datum/technomancer_marker/New(mob/user)
 	rel_set(src, nameof(caster), user)

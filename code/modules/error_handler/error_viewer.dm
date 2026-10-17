@@ -142,6 +142,7 @@ CAPABILITIES(/datum/error_viewer/error_cache)
 CAPABILITIES(/datum/error_viewer/error_entry)
 	ref_one(nameof(error_source), /datum/error_viewer/error_source)
 	owns_one(nameof(exc), /exception)
+	ref_one(nameof(usr_loc))
 
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)
 	if (!istype(e))
@@ -191,4 +192,7 @@ CAPABILITIES(/datum/error_viewer/error_entry)
 /// The error_source this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
 	return error_source
+
+CAPABILITIES(/datum/error_viewer/error_source)
+	ref_many(nameof(errors))
 

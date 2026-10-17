@@ -61,3 +61,9 @@
 	TEST_ASSERT_EQUAL(length(query.candidates), 0, "a deleted observer cannot enter the actual candidate list")
 	TEST_ASSERT_EQUAL(query.finished, FALSE, "the dropped callback leaves the actual query open")
 	test_driver_end()
+
+CAPABILITIES(/datum/ghost_query/interim_actor_probe)
+	ref_one(nameof(reply_actor))
+
+CAPABILITIES(/obj/interim_ghost_query_alert_probe)
+	ref_one(nameof(alert))

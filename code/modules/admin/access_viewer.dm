@@ -10,6 +10,7 @@ CAPABILITIES(/datum/access_viewer)
 	interface("AccessViewer", title = "Access Viewer", rights = R_DEBUG)
 	op("req_all", ui_act("req_all", arg("set_id", num())), then(PROC_REF(ui_act_req_all)))
 	op("req_one", ui_act("req_one", arg("set_id", num())), then(PROC_REF(ui_act_req_one)))
+	ref_one(nameof(focused_obj))
 
 /datum/access_viewer/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor

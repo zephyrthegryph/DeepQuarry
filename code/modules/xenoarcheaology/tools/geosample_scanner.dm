@@ -105,6 +105,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 		asks(/datum/prompt/choice, fields = list("question" = "What do you want to do with the container?", "title" = "Radiometric Scanner", "choices" = list("Add water","Empty water","Scan container"), "buttons" = TRUE, "timeout" = 0), step = "k74", when = PROC_REF(container_is_open)),
 		then(PROC_REF(interaction_use_container)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(scanned_item))
 
 /obj/machinery/radiocarbon_spectrometer/ui_data(datum/act/eval/A)
 	var/list/data = list()

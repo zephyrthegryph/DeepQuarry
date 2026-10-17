@@ -15,6 +15,7 @@ CAPABILITIES(/datum/experiment_handler)
 	op("select_server", ui_act("select_server", arg("ref", schema_ref(/datum/techweb))), then(PROC_REF(ui_act_select_server)))
 	op("select_experiment", ui_act("select_experiment", arg("ref", schema_ref(/datum/experiment))), then(PROC_REF(ui_act_select_experiment)))
 	op("start_experiment_callback", ui_act("start_experiment_callback"), then(PROC_REF(ui_act_start_experiment_callback)))
+	ref_one(nameof(selected_experiment))
 
 /datum/experiment_handler
 	/// The movable this handler belongs to.

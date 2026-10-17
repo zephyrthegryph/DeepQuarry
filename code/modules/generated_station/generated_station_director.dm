@@ -67,6 +67,7 @@ CAPABILITIES(/datum/generated_station_director)
 	owns_many(nameof(orders))
 	owns_many(nameof(reports))
 	owns_many(nameof(squads))
+	ref_many(nameof(registered_defenders))
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()

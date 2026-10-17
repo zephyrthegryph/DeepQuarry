@@ -313,3 +313,6 @@
 #undef TRACKING_POSSIBLE
 #undef TRACKING_NO_COVERAGE
 #undef TRACKING_TERMINATE
+
+CAPABILITIES(/datum/trackable)
+	ref_many(nameof(tracked))

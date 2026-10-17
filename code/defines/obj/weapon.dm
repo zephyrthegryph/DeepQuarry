@@ -479,3 +479,6 @@ CAPABILITIES(/obj/effect/spawner/parts/t5)
 /obj/item/pai_cable/proc/machine() as /obj/machinery
 	return machine
 
+CAPABILITIES(/obj/item/pai_cable)
+	ref_one(nameof(machine))
+

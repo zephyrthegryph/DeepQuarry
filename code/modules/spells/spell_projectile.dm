@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/projectile/spell_projectile)
 	owns_many(nameof(trails))
+	ref_one(nameof(carried))
 
 
 /obj/item/projectile/spell_projectile/before_move()

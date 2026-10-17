@@ -184,6 +184,7 @@ CAPABILITIES(/datum/vore_look)
 		then(PROC_REF(ui_act_pick_from_outside)))
 	op("prey_ability", ui_act("prey_ability", arg("belly", schema_ref(/obj/belly)), arg("ability", schema_text(64))), then(PROC_REF(perform_prey_ability)))
 	op("set_spont_belly", ui_act("set_spont_belly", arg("attribute", schema_text(64)), arg("val", schema_text(MAX_NAME_LEN))), then(PROC_REF(set_spont_belly)))
+	ref_one(nameof(host))
 
 // This looks weird, but all tgui_host is used for is state checking
 // So this allows us to use the self_state just fine.

@@ -21,6 +21,7 @@
 CAPABILITIES(/datum/weather_holder)
 	owns_one(nameof(special_visuals), /atom/movable/weather_visuals/special)
 	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+	ref_one(nameof(current_weather))
 
 /datum/weather_holder/New(source)
 	..()
@@ -216,6 +217,7 @@ CAPABILITIES(/datum/weather_holder)
 CAPABILITIES(/datum/weather)
 	owns_one(nameof(indoor_sounds), /datum/looping_sound)
 	owns_one(nameof(outdoor_sounds), /datum/looping_sound)
+	ref_one(nameof(holder))
 
 /datum/weather/New()
 	if(outdoor_sounds_type)

@@ -27,6 +27,7 @@ CAPABILITIES(/obj/structure/blob/core)
 	param(nameof(controller), pos = 1, overrides = TRUE)
 	param(nameof(point_rate), pos = 2)
 	param(nameof(placed_at_make), pos = 3)
+	ref_one(nameof(controller))
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player

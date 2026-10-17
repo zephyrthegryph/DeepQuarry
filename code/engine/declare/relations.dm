@@ -285,7 +285,13 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		var/other = end == "a" ? "b" : "a"
 		var/var_name = E.args["[end]_var"]
 		var/back = E.args["[other]_var"]
-		if(T.entries[var_name])
+		var/list/existing = T.entries[var_name]
+		if(existing)
+			// The same link patched again (a table built before a late link) is fine; another entry on the var is a declaration error: a var is one kind of
+			// relation, and the pair would silently not be maintained at this end (doc/rewrite/proposals/relations.md D3).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_PARTNER] == back && (existing[OWNE_ARG] == RELS_PAIR || existing[OWNE_ARG] == RELS_SYMMETRIC))
+				continue
+			OWN_REPORT("[T.owner_type].[var_name] is an end of links([E.args["a_type"]]::[E.args["a_var"]], [E.args["b_type"]]::[E.args["b_var"]]) and is also declared [own_kind_name(existing[OWNE_KIND])]: one declaration per var")
 			continue
 		var/is_list = !!E.args["[end]_many"]
 		var/shape = RELS_PAIR

@@ -19,6 +19,8 @@
 CAPABILITIES(/datum/hose)
 	owns_one(nameof(current_beam), /datum/beam)
 	every(0.2 SECONDS, then(PROC_REF(hose_step)), when = nameof(hose_formed))
+	ref_one(nameof(node1))
+	ref_one(nameof(node2))
 
 /datum/hose/proc/get_pairing(datum/hose_connector/target)
 	RETURN_TYPE(/datum/hose_connector)

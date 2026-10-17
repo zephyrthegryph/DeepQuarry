@@ -109,3 +109,7 @@
 	TEST_ASSERT_EQUAL(rune.word2, GLOB.cultwords["hide"], "the rune receives the second Stun word")
 	TEST_ASSERT_EQUAL(rune.word3, GLOB.cultwords["technology"], "the rune receives the third Stun word")
 	TEST_ASSERT_EQUAL(spell.charge_counter, 42, "skip-charge validation preserves the existing spell charge")
+
+CAPABILITIES(/datum/spell/interim_range_actor_probe)
+	ref_one(nameof(far_target))
+	ref_one(nameof(near_target))

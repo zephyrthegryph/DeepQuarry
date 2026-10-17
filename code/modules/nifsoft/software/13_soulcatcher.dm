@@ -310,6 +310,8 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	configure(mob_kind(use_me = 1))
+	ref_one(nameof(nif))
+	ref_one(nameof(soulcatcher))
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()

@@ -300,6 +300,9 @@ CAPABILITIES(/obj/mecha)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(mecha_blast))))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast_afflictions)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
+	ref_many(nameof(afflictions))
+	ref_many(nameof(micro_utility_equipment))
+	ref_many(nameof(micro_weapon_equipment))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 

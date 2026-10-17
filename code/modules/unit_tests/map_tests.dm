@@ -205,3 +205,6 @@
 /datum/unit_test/default_spawnpoint_exists/Run()
 	var/datum/spawnpoint/default_spawnpoint = new DEFAULT_LATEJOIN_LOCATION()
 	TEST_ASSERT(LAZYLEN(default_spawnpoint.turfs), "Map does not define the default spawnpoint location ([default_spawnpoint.display_name])")
+
+CAPABILITIES(/datum/unit_test/wire_test)
+	ref_one(nameof(T))

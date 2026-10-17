@@ -118,6 +118,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("savetodisk", ui_act("savetodisk"), then(PROC_REF(ui_act_savetodisk)))
 	op("ejectdisk", ui_act("ejectdisk"), then(PROC_REF(ui_act_ejectdisk)))
 	op("back_to_library", ui_act("back_to_library"), then(PROC_REF(ui_act_back_to_library)))
+	ref_one(nameof(last_camera_turf))
 
 /datum/tgui_module/appearance_changer/New(
 		host,
@@ -1467,3 +1468,6 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 				owner().dna.blood_color = ask.value
 				changed_hook(APPEARANCECHANGER_CHANGED_RACE, ask.answerer)
 				return TRUE
+
+CAPABILITIES(/datum/tgui_module/appearance_changer/body_designer)
+	ref_one(nameof(linked_body_design_console))

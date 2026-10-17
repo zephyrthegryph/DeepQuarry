@@ -51,6 +51,7 @@ CAPABILITIES(/obj/machinery/door/airlock/lift)
 	without(CAP_EMAG)
 	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
 		needs(req(PROC_REF(emag_welcome))), then(PROC_REF(nothing_done)))
+	ref_one(nameof(floor))
 
 /// Never: the lift machinery alone works the door.
 /obj/machinery/door/airlock/lift/proc/emag_welcome(datum/act/A)

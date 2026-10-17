@@ -1249,6 +1249,7 @@ CAPABILITIES(/obj/effect/dog_teleporter/mouth_return)
 /turf/simulated/floor/water/digestive_enzymes/var/we_process = FALSE
 CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 	every(2 SECONDS, then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process))
+	ref_one(nameof(linked_mob))
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source))

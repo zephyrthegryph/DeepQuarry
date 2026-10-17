@@ -1129,3 +1129,10 @@
 		by_channels["[A.equipment]/[A.lighting]/[A.environ]"]++
 		cell_total += A.cell ? A.cell.charge : 0
 	log_world("POWER_PROBE [label] apcs [apcs] cell_total [round(cell_total)] status [json_encode(by_status)] channels [json_encode(by_channels)]")
+
+CAPABILITIES(/datum/benchmark/generation)
+	ref_one(nameof(generated_site))
+
+CAPABILITIES(/datum/benchmark/major_events)
+	ref_one(nameof(event_center))
+	ref_many(nameof(event_turfs))

@@ -294,3 +294,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 
 /client/proc/present_verb_changes(list/add, list/remove)
 	return
+
+CAPABILITIES(/datum/client_verbs)
+	ref_one(nameof(owner))

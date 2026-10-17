@@ -412,6 +412,8 @@ CAPABILITIES(/obj/item/shield_projector)
 
 CAPABILITIES(/obj/item/shield_projector/line/exosuit)
 	op("exosuit_interaction_self", in_hand(), label("Toggle"), then(PROC_REF(exosuit_interaction_self)))
+	ref_one(nameof(my_mecha))
+	ref_one(nameof(my_tool))
 
 /// Old attack_self (the parent's self-use does nothing here: special handling).
 /obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(datum/act/op/A)

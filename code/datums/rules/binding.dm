@@ -151,6 +151,7 @@ CAPABILITIES(/datum)
 
 CAPABILITIES(/datum/rule_binding)
 	ref_one(nameof(owner))
+	ref_many(nameof(world_watches))
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()

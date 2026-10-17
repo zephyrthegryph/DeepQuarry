@@ -318,3 +318,6 @@ CAPABILITIES(/datum/stock)
 /datum/borrow/proc/stock() as /datum/stock
 	return stock
 
+CAPABILITIES(/datum/borrow)
+	ref_one(nameof(stock))
+

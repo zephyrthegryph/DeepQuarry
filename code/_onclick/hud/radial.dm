@@ -133,6 +133,7 @@ CAPABILITIES(/datum/radial_menu)
 	ref_one(nameof(anchor))
 	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
 	owns_many(nameof(elements), /atom/movable/screen)
+	ref_one(nameof(current_user))
 
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)

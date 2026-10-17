@@ -73,6 +73,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
+	ref_one(nameof(source_hoist))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -136,6 +137,7 @@ CAPABILITIES(/obj/structure/hoist)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
 	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), begins(PROC_REF(hoist_begins)), wait(PROC_REF(hoist_time)), then(PROC_REF(interaction_hand)))
 	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
+	ref_one(nameof(hoistee))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)

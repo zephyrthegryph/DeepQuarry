@@ -191,3 +191,6 @@ CAPABILITIES(/datum/system/radio)
 /// Relation view: the device that sent this signal (reads null once it is gone).
 /datum/signal/proc/source() as /obj
 	return source
+
+CAPABILITIES(/datum/signal)
+	ref_one(nameof(source))

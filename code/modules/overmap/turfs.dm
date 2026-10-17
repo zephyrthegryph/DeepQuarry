@@ -23,6 +23,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 
 CAPABILITIES(/turf/unsimulated/map/edge)
 	after_init(0, then(PROC_REF(find_wrap)))
+	ref_one(nameof(wrap_buddy))
 
 /// Finds the map it wraps to, once the overmap exists.
 /turf/unsimulated/map/edge/proc/find_wrap(datum/act/timer/A)

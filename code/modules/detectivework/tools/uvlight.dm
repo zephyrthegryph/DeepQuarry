@@ -24,6 +24,7 @@ CAPABILITIES(/obj/item/uv_light)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))
+	ref_many(nameof(reset_objects))
 
 /// Old attack_self.
 /obj/item/uv_light/proc/interaction_self(datum/act/op/A)

@@ -84,6 +84,8 @@ CAPABILITIES(/datum/computer_file/program/nttransfer)
 	op("PRG_setpassword", ui_act("PRG_setpassword"), then(PROC_REF(ui_act_prg_setpassword)))
 	op("PRG_uploadfile", ui_act("PRG_uploadfile", arg("uid", num())), then(PROC_REF(ui_act_prg_uploadfile)))
 	op("PRG_uploadmenu", ui_act("PRG_uploadmenu"), then(PROC_REF(ui_act_prg_uploadmenu)))
+	ref_one(nameof(downloaded_file))
+	ref_one(nameof(remote))
 
 /datum/computer_file/program/nttransfer/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()

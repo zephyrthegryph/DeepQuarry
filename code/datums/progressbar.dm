@@ -28,6 +28,7 @@
 CAPABILITIES(/datum/progressbar)
 	ref_one(nameof(bar_loc))
 	ref_one(nameof(user))
+	ref_one(nameof(user_client))
 
 /datum/progressbar/New(mob/User, goal_number, atom/target, starting_amount)
 	. = ..()

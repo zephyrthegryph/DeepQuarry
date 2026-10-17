@@ -23,6 +23,7 @@ CAPABILITIES(/datum/pipe_network)
 	links(/datum/pipe_network::normal_members, /obj/machinery/atmospherics::network_memberships, a_many = TRUE, b_many = TRUE)
 	links(/datum/pipe_network::line_members, /datum/pipeline::network_memberships, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(air), /datum/gas_mixture)
+	ref_many(nameof(leaks))
 
 
 // Rust-owned networks refuse deletion.

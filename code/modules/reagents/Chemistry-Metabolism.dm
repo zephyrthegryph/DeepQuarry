@@ -164,3 +164,6 @@
 	metabolism_class = CHEM_TOUCH
 
 // parent is a back reference to the carbon holding this metabolism.
+
+CAPABILITIES(/datum/reagents/metabolism)
+	ref_one(nameof(parent))
