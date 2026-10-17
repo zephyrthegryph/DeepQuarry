@@ -4,7 +4,7 @@ use super::{
     transport,
 };
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     io,
     path::PathBuf,
     sync::{
@@ -130,6 +130,68 @@ struct SessionKey {
     engine: Option<PathBuf>,
     bootstrap: bool,
 }
+impl SessionKey {
+    fn of(
+        manifest: PathBuf,
+        defines: &BTreeMap<String, String>,
+        config: Option<&crate::request::BuildRequest>,
+    ) -> Self {
+        Self {
+            manifest,
+            defines: defines.clone(),
+            engine: config.and_then(|request| request.engine_template.clone()),
+            bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
+        }
+    }
+}
+/// Why recent sessions disappeared (bounded, newest last), so the next compile of that session can say why it missed.
+static EVICTIONS: Mutex<VecDeque<(SessionKey, String)>> = Mutex::new(VecDeque::new());
+const EVICTION_LEDGER: usize = 64;
+fn note_eviction(key: &SessionKey, why: &str) {
+    let mut ledger = EVICTIONS.lock().unwrap_or_else(|e| e.into_inner());
+    ledger.retain(|(old, _)| old != key);
+    ledger.push_back((key.clone(), why.to_string()));
+    while ledger.len() > EVICTION_LEDGER {
+        ledger.pop_front();
+    }
+}
+fn take_eviction(key: &SessionKey) -> Option<String> {
+    let mut ledger = EVICTIONS.lock().unwrap_or_else(|e| e.into_inner());
+    let at = ledger.iter().position(|(old, _)| old == key)?;
+    ledger.remove(at).map(|(_, why)| why)
+}
+/// Samples the process's private bytes every 100 ms while a request runs and keeps the maximum.
+struct PeakSampler {
+    peak: Arc<AtomicU64>,
+    stop: Arc<AtomicBool>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+impl PeakSampler {
+    fn start() -> Self {
+        let peak = Arc::new(AtomicU64::new(0));
+        let stop = Arc::new(AtomicBool::new(false));
+        let (peak_in, stop_in) = (Arc::clone(&peak), Arc::clone(&stop));
+        let thread = std::thread::Builder::new()
+            .name("dmbd-peak-sampler".into())
+            .spawn(move || {
+                while !stop_in.load(Ordering::Acquire) {
+                    if let Some(bytes) = transport::private_bytes() {
+                        peak_in.fetch_max(bytes, Ordering::AcqRel);
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            })
+            .ok();
+        Self { peak, stop, thread }
+    }
+    fn finish(mut self) -> Option<u64> {
+        self.stop.store(true, Ordering::Release);
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+        Some(self.peak.load(Ordering::Acquire)).filter(|bytes| *bytes > 0)
+    }
+}
 impl Slot {
     fn lock_request_until(
         &self,
@@ -231,6 +293,35 @@ impl Shared {
             Arc::clone(&self.procedures),
         );
     }
+    /// What the daemon holds for `key` right now: a usable retained session (hot) or the reason there is none.
+    fn probe(&self, key: &SessionKey) -> crate::compile_stats::SessionState {
+        let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        let sessions = slots.len();
+        let miss = match slots.get(key) {
+            Some(slot) => {
+                let tier = slot.idle_tier.load(Ordering::Acquire);
+                // A host busy with another request will have built by the time this one runs: count it as retained.
+                let retained = match slot.host.try_lock() {
+                    Ok(host) => host.retains_artifacts(),
+                    Err(std::sync::TryLockError::Poisoned(_)) => false,
+                    Err(std::sync::TryLockError::WouldBlock) => true,
+                };
+                if tier >= 3 {
+                    Some(format!("degraded-tier-{tier}"))
+                } else if !retained {
+                    Some(take_eviction(key).map_or_else(|| "no-retained-state".to_string(), |why| format!("evicted:{why}")))
+                } else {
+                    None
+                }
+            }
+            None => Some(match take_eviction(key) {
+                Some(why) => format!("evicted:{why}"),
+                None if slots.keys().any(|other| other.manifest == key.manifest) => "variant-mismatch".to_string(),
+                None => "no-session".to_string(),
+            }),
+        };
+        crate::compile_stats::SessionState { hot: miss.is_none(), miss, sessions }
+    }
     fn slot(
         &self,
         path: PathBuf,
@@ -239,12 +330,7 @@ impl Shared {
     ) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         let slot = slots
-            .entry(SessionKey {
-                manifest: path,
-                defines: defines.clone(),
-                engine: config.and_then(|request| request.engine_template.clone()),
-                bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
-            })
+            .entry(SessionKey::of(path, defines, config))
             .or_insert_with(|| {
                 Arc::new(Slot {
                     request_serial: Mutex::new(()),
@@ -674,6 +760,14 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 }
             };
             let key = RequestKey::of(&request, &path);
+            let session_key = SessionKey::of(path.clone(), &request.defines, Some(&request));
+            let session_state = shared.probe(&session_key);
+            let stats_context = (
+                request.command == crate::request::BuildCommand::Compile,
+                path.clone(),
+                path.file_name().map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
+                request.workers,
+            );
             let slot = shared.slot(path, &request.defines, Some(&request));
             let token = control::Cancellation::default();
             let _latest = LatestRequest::register(&slot, key, token.clone());
@@ -717,6 +811,10 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             };
             slot.idle_tier.store(0, Ordering::Release);
             dm_profile::request_mark("daemon.admitted");
+            crate::compile_stats::begin();
+            let private_before = transport::private_bytes();
+            let build_started = Instant::now();
+            let sampler = PeakSampler::start();
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
@@ -724,6 +822,28 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 },
             ));
             *slot.last.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+            let private_after = transport::private_bytes();
+            let peak = sampler.finish().max(private_before).max(private_after);
+            if stats_context.0 {
+                let error = match &outcome {
+                    Ok(Ok(_)) => None,
+                    Ok(Err(error)) => Some(error.to_string()),
+                    Err(_) => Some("internal compiler panic".to_string()),
+                };
+                let record = crate::compile_stats::finish(
+                    &stats_context.1,
+                    stats_context.2,
+                    stats_context.3,
+                    session_state,
+                    build_started.elapsed().as_secs_f64(),
+                    (private_before, private_after, peak),
+                    error,
+                );
+                crate::compile_stats::append(&super::resident::state_dir(), &record);
+                // The daemon's own stderr is the lifecycle log; the client sees the same line in its build output.
+                eprintln!("dmbd {}", record.line());
+                crate::daemon_eprintln!("{}", record.line());
+            }
             let reply = match outcome {
                 Ok(Ok(outcome)) => Reply::Completed(outcome),
                 Ok(Err(error)) => Reply::Rejected(

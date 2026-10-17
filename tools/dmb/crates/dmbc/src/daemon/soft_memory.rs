@@ -1,9 +1,9 @@
 //! Startup-only soft pressure policy; this is not a hard allocation bound.
 //! DMB_DAEMON_SOFT_PRIVATE_BYTES accepts 256 MiB..32 GiB integer bytes.
-//! Unset uses 8,000,000,000 bytes: the retained DeepQuarry session is about 6 GB
-//! private, so a lower default keeps the daemon in permanent soft pressure.
+//! Unset uses 5,333,333,332 bytes, the soft limit of an 8 GB budget (hard ceiling 8 GB): the daemon
+//! must leave room for the player's machine, and retained sessions are being shrunk to fit.
 use std::{ffi::OsStr, io};
-pub(super) const DEFAULT: u64 = 8_000_000_000;
+pub(super) const DEFAULT: u64 = 5_333_333_332;
 pub(super) fn startup() -> io::Result<u64> {
     if std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").is_none() {
         if let Some(budget) = std::env::var_os("DMB_DAEMON_MEMORY_BUDGET_GB") {
@@ -12,7 +12,7 @@ pub(super) fn startup() -> io::Result<u64> {
     }
     parse(std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").as_deref())
 }
-/// DMB_DAEMON_MEMORY_BUDGET_GB (default 12, so unset keeps `DEFAULT`/1.5x) is the whole daemon's private-memory budget across
+/// DMB_DAEMON_MEMORY_BUDGET_GB (default 8, so unset keeps `DEFAULT`/1.5x) is the whole daemon's private-memory budget across
 /// every retained project: it becomes the hard ceiling (soft limit is two thirds of it). Above it the least recently used project
 /// session is released whole.
 fn budget_soft(value: &OsStr) -> io::Result<u64> {
@@ -56,12 +56,12 @@ mod tests {
     #[test]
     fn hard_ceiling_defaults_above_soft_limit() {
         if std::env::var_os("DMB_DAEMON_HARD_PRIVATE_BYTES").is_none() {
-            assert_eq!(hard(DEFAULT).unwrap(), 12_000_000_000);
+            assert_eq!(hard(DEFAULT).unwrap(), 7_999_999_998);
         }
     }
     #[test]
     fn budget_maps_to_hard_ceiling() {
-        assert_eq!(budget_soft(OsStr::new("12")).unwrap(), DEFAULT);
+        assert_eq!(budget_soft(OsStr::new("8")).unwrap(), DEFAULT);
         assert_eq!(budget_soft(OsStr::new("6")).unwrap() + budget_soft(OsStr::new("6")).unwrap() / 2, 6_000_000_000);
         for value in ["", "0", "49", "x", "-3"] {
             assert!(budget_soft(OsStr::new(value)).is_err());

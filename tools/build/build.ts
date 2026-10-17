@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { execLowPriority } from './lib/low_priority';
 import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
@@ -99,6 +100,13 @@ const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
 
 export const DME_NAME = 'deepquarry';
+
+/** DreamChecker inside `dm` runs only where its verdict is required: DQ_DREAMCHECKER=1 (merge gates, push), CI, or by request. */
+function dreamCheckerWanted(): boolean {
+  const explicit = process.env.DQ_DREAMCHECKER;
+  if (explicit !== undefined && explicit !== '') return explicit !== '0';
+  return !!process.env.CI && process.env.CI !== '0' && process.env.CI !== 'false';
+}
 
 function findDreamChecker(): string | null {
   const candidates = [
@@ -968,8 +976,13 @@ export const DmTarget = new Juke.Target({
     // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
     // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
     // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
-    const checker = findDreamChecker();
-    if (!checker) {
+    // SpacemanDMM's DreamChecker has no incremental mode: it always parses and checks the whole tree (2+ minutes, competing
+    // with the compile for every core). A local dm/server/test build therefore skips it; the merge gates, the push script, CI
+    // and the explicit lint target run it (DQ_DREAMCHECKER=1 does it for one build). doc/testing.md "DreamChecker policy".
+    const checker = dreamCheckerWanted() ? findDreamChecker() : null;
+    if (!dreamCheckerWanted()) {
+      Juke.logger.info('dreamchecker skipped for this local build (it checks the whole tree every time); the merge gates, CI and `build.sh lint` run it, or set DQ_DREAMCHECKER=1');
+    } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
     const results = await Promise.allSettled([
@@ -3387,7 +3400,7 @@ async function runDreamChecker(): Promise<void> {
   // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
   // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme
   // under a parallel test compile (EBUSY on Windows). Nothing is renamed or written now.
-  await Juke.exec(dreamChecker, ['-e', `${DME_NAME}.dme`]);
+  await execLowPriority(dreamChecker, ['-e', `${DME_NAME}.dme`]);
 }
 
 export const TguiDevTarget = new Juke.Target({

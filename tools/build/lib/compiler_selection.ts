@@ -19,6 +19,15 @@ type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
 export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
 /** Issued configuration prerequisites do not authenticate compilation inputs. */
+/** Compile workers per native request: DMB_WORKERS, else DQ_NATIVE_WORKERS, else 4 (a gentle default; the daemon admits up to 8). */
+export function nativeWorkers(): string {
+  const workers = process.env.DMB_WORKERS ?? process.env.DQ_NATIVE_WORKERS ?? '4';
+  if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
+    throw new Error('DMB_WORKERS (or DQ_NATIVE_WORKERS) must be a positive integer.');
+  }
+  return workers;
+}
+
 export function shadowSnapshotContract(): { status: 'incomplete'; reason: string } {
   return { status: 'incomplete', reason: 'Shared source/resource closure and complete implicit compiler configuration remain unissued; shared compilation snapshot is unproven' };
 }
@@ -139,7 +148,7 @@ export function compilerCacheIdentity(): string {
       catch { hash.update('<unavailable>'); }
     }
   }
-  hash.update(process.env.DQ_NATIVE_WORKERS ?? '8');
+  hash.update(nativeWorkers());
   // Unset and explicit zero preserve the existing default configuration identity.
   if (noDaemon) hash.update('DQ_NATIVE_NO_DAEMON=1');
   // A prior automatic BYOND fallback cannot satisfy a native-only request.
@@ -164,10 +173,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   // switches to its captured namespace. PATH commands stay explicitly unobserved.
   const executable = path.isAbsolute(configuredExecutable) || /[\\/]/.test(configuredExecutable)
     ? fs.realpathSync.native(path.resolve(configuredExecutable)) : configuredExecutable;
-  const workers = process.env.DQ_NATIVE_WORKERS ?? '8';
-  if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
-    throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
-  }
+  const workers = nativeWorkers();
   // Existing stage events stream through Juke while the child is running, so
   // an external watchdog retains the last observed stage even without a result.
   const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];

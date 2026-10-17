@@ -7,6 +7,7 @@
 pub(crate) mod artifact_publication_store;
 pub mod cache_maintenance;
 pub mod cli;
+pub mod compile_stats;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;
@@ -23,6 +24,7 @@ pub use runner_host::disk as runner_disk;
 pub mod map_memo;
 pub mod output_cli;
 pub mod pinned_target;
+pub mod priority;
 pub mod publish;
 pub mod publication_proof;
 pub mod request;
