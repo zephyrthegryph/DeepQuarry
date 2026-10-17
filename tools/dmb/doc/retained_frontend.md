@@ -352,7 +352,15 @@ Goal: at most 2 GB retained per project session and a much lower compile peak, s
 | private after the request and `mi_collect` | 8.97 GB (11.95 GB before the reclaim) |
 | requested-live (counting build) | 7.43 GB |
 | mimalloc commit | 9.17 GB, so 1.74 GB (19%) is allocator slack (freed pages, thread heaps of finished workers) |
-| private after the idle `tier=session` release (other lane's session, same binary) | 3.15 GB, so the session itself is about 6.5 GB and a daemon with no session still holds about 3.1 GB |
+| private right after a `tier=session` release | 3.0 to 3.15 GB, but the daemon's next allocator reclaim (within 30 s) takes it to 1.13 GB with 0.18 GB live (counting build, DMB_ALLOC_SITES_RELEASE) |
+
+Allocator findings (2026-10-17): after a build the daemon already joins idle workers and runs `mi_collect(true)`;
+`private` then equals mimalloc's commit (9.07 GB) against 7.40 GB requested-live. The 1.7 GB difference is
+size-class rounding and partly used pages pinned by long-lived small allocations, not freed pages, so purging more often
+or with a zero purge delay returns nothing (a second forced collect from a fresh thread was also tried: 1.18 GB residual,
+no change, reverted). Likewise the "3.1 GB with no session" is the transient between a session release and the next
+reclaim; the steady no-session residual is 1.13 GB (0.18 GB live: shared engine, filesystem proofs, source checks). Vec and
+hash-table slack in the census owners is 3 to 6 %. Remaining retained memory is data, not waste.
 
 ### What the retained set holds (sampled live bytes at idle, 7.28 GB sampled total, top 400 sites = 6.30 GB)
 

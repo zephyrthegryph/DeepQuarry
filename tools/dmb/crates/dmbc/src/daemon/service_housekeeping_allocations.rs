@@ -14,6 +14,26 @@ pub(in crate::daemon) fn requested_live() -> RequestedLive {
     RequestedLive(bytes)
 }
 
+/// Diagnostic: append the live-bytes-by-call-site report to `DMB_ALLOC_SITES_PATH` (feature `allocation-sites`).
+pub(in crate::daemon) fn dump_sites(label: &str) {
+    #[cfg(feature = "allocation-sites")]
+    if let Some(path) = std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()) {
+        use std::io::Write;
+        let text = format!(
+            "######## retained.{label} mimalloc-commit={:?} requested-live={}
+{}",
+            dm_profile::allocator_commit_bytes(),
+            requested_live(),
+            dm_profile::allocation_sites::report(400)
+        );
+        if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            let _ = file.write_all(text.as_bytes());
+        }
+    }
+    #[cfg(not(feature = "allocation-sites"))]
+    let _ = label;
+}
+
 impl fmt::Display for RequestedLive {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {

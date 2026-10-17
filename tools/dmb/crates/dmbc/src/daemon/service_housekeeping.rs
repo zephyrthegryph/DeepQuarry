@@ -191,6 +191,7 @@ impl Shared {
                     started.elapsed().as_secs_f64(),
                     allocations::requested_live()
                 ));
+                allocations::dump_sites("after_session_release");
                 continue;
             }
             slot.idle_tier.store(next, Ordering::Release);
@@ -208,6 +209,7 @@ impl Shared {
                     transport::private_bytes(),
                     allocations::requested_live()
                 ));
+                allocations::dump_sites("after_queued_session_release");
                 continue;
             }
             host.release_idle_executor();
