@@ -4,9 +4,13 @@
 > The production `REQ_*(` inventory is 141 lines on that master and zero after this merge; the boolean-requirement baseline remains zero.
 > Master’s internal-storage admission guard, pilot constructor test and private-notes setter are preserved; acceptance preference setters remain in place.
 > No change against master remains under `tools/dmb`, build tooling or `code/engine/change`.
-> The earlier receipt below is historical. A new lane-ready proof is pending on this merged code; 85 explicit selectors include the changed acceptance/constraint/consent tests and both mandatory pins.
+> The earlier receipt below is historical. A new lane-ready proof is pending on this merged code; 84 explicit selectors include the changed acceptance/constraint/consent tests and both mandatory pins.
 
 Branch: `codex/req-burndown`. Final lane-ready verification is pending; this document does not claim a stamp or a completed gate.
+
+## Dropped during the October 17 refresh
+
+Master's look producer, sweep and verified look-key record are retained verbatim. This drops the old telecube cleanup and related harness edits rather than reviving the rejected sampling/seed change. No appearance snapshot is re-blessed for this retirement; any future harness proposal is separate. The earlier receipt below describes historical code.
 
 ## Result and counts
 

@@ -269,7 +269,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	for(var/name in A.vars)
 		. += name
-	dq_look_dispose(A)
+	qdel(A)
 	own_turf_contents(T)
 
 /// One turf type: `spot` east of the test floor is turned into it, drawn and turned back.
@@ -325,7 +325,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		res.tree_done = TRUE
 	if(!need_state)
 		if(subject && !QDELETED(subject))
-			dq_look_dispose(subject)
+			qdel(subject)
 		dq_look_drain_turf(T)
 		return
 	res.state_done = TRUE
@@ -339,7 +339,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/base = res.made
 	var/reuse = !force_fresh
 	if(!reuse)
-		dq_look_dispose(subject) // fresh probes make their own: a second table on the tile does not flip
+		qdel(subject) // fresh probes make their own: a second table on the tile does not flip
 		dq_look_drain_turf(T)
 	for(var/name in names)
 		for(var/value in list(0, 1, 2))
@@ -347,12 +347,12 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 				if(!dq_look_probe_reuse(subject, type, name, value, base, res))
 					reuse = FALSE
 					if(!QDELETED(subject))
-						dq_look_dispose(subject)
+						qdel(subject)
 					dq_look_drain_turf(T)
 			else
 				res.probe_rows += dq_look_state_probe(type, T, name, value, base)
 	if(subject && !QDELETED(subject))
-		dq_look_dispose(subject)
+		qdel(subject)
 	dq_look_drain_turf(T)
 
 /// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
@@ -438,7 +438,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			return
 		dq_look_settle()
 		if(target.vars[name] == value)
-			dq_look_dispose(target)
+			qdel(target)
 			dq_look_drain_turf(T)
 			return
 		dq_look_write(target, name, value)
@@ -447,7 +447,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			. += "[type] [name]=[value] +[row]"
 		for(var/row in base - now)
 			. += "[type] [name]=[value] -[row]"
-		dq_look_dispose(target)
+		qdel(target)
 	catch(var/exception/e)
 		if(!dq_look_write_refused(e, name))
 			. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"

@@ -4908,7 +4908,6 @@ Affected requirement-pin classes:
 
 - Master `5b0a2f09d0` typed internal storage ownership and cloning-console scanner references without normalizing their old producers. Internal storage now rejects non-item locations before linking, through `keeps_if()` and `setup()`; an absent scanner returns null instead of numeric zero. Valid ownership, names and scanner search ordering are unchanged. Focused constructor tests cover both accepted and rejected cases. Existing runtime-free pin rows are retained.
 - Master `f13b84652d` removed the dead mecha AI-attack surface. The stale `ai_use_equipment` key is therefore removed from the Mecha/Ripley conversion-pin inventories; expanded menu and click rows are identical; this requirement conversion does not change click ranking.
-- Look capture cleanup now relocates an observed telecube pair to nullspace after recording and before its real destruction. This prevents its queued blast from leaking smoke into subsequent tests; captured appearance and production destruction behavior are unchanged. No look row is blessed for this fixture repair.
 ## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
 
 The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
