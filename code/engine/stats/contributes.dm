@@ -281,6 +281,10 @@ PROC_SUMMARY(/proc/stat_factors_from) // vars[] / call() dispatcher: the walk ca
 	contrib.scale_kind = stat_factors_kind(E, contrib.scale_spec)
 	contrib.stacks_spec = entry.args["stacks"]
 	contrib.stacks_kind = stat_factors_kind(E, contrib.stacks_spec)
+	// The generated reads of each holder proc are inputs of the entry; a hand-written reads = list(...) only adds to them.
+	for(var/kind_spec in list(list(contrib.table_kind, contrib.table_spec), list(contrib.scale_kind, contrib.scale_spec), list(contrib.stacks_kind, contrib.stacks_spec)))
+		if(kind_spec[1] == CV_PROC)
+			contrib.reads = stat_reads_union(contrib.reads, stat_generated_reads(E, kind_spec[2]))
 	return contrib
 
 GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (state_changed() asks before it calls the stat layer)
@@ -551,6 +555,9 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 		hop.skey = stat_id ? "[stat_id]" : null
 		hop.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		hop.settle = length(segments) == 1 ? stat_hop_settle(E, hop.rel_var, hop.remote_var) : SETTLE_MARKED
+		// A factors() entry reading its receiver reads the entity that owns it: that entity's sources are few, so the table follows the write at once.
+		if(contrib?.table_kind && length(segments) == 1)
+			hop.settle = SETTLE_INLINE
 		var/list/hop_list = I.hops[hop.remote_var]
 		if(!hop_list)
 			hop_list = list()

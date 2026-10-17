@@ -91,8 +91,9 @@
 	var/list/active = body_effects()
 	for(var/path in active)
 		var/alist/table
-		if(body_effect_factors && (path in body_effect_factors))
-			table = body_effect_factors[path]
+		var/datum/body_effect_origin/application = body_effect_origins?[path]
+		if(application && !isnull(application.table_override))
+			table = application.table_override
 		else
 			table = body_effect_def(path).factors
 		if(!table)

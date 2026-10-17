@@ -102,13 +102,14 @@
 /datum/affliction/contagion/var/virus_modifiers = NEEDS_ALL_CURES
 /datum/affliction/contagion/var/infectivity = 10
 
+/datum/affliction/contagion
+	stage = 1
+
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
 /// Contagions are systemic: whatever arguments a subtype's constructor takes,
 /// the affliction location is null.
 /datum/affliction/contagion/New()
-	if(isnull(stage))
-		stage = 1
 	..(null)
 	// Its declared spread work starts when it joins a body (on_added()), not here: a contagion is
 	// also a template that is copied into a body and dropped, and a declaration started on the
@@ -183,12 +184,12 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		return
 	set_severity(round(100 * clamp(stage, 1, max_stages) / max_stages))
 
-/datum/affliction/contagion/proc/set_stage(new_stage)
+/datum/affliction/contagion/set_stage(new_stage)
 	new_stage = clamp(new_stage, 1, max(max_stages, 1))
 	if(new_stage == stage)
 		return FALSE
 	var/old_stage = stage
-	stage = new_stage
+	. = ..(new_stage)
 	if(!global_flag_check(virus_modifiers, DISCOVERED) && stage >= CEILING(max_stages * discovery_threshold, 1))
 		set_virus_modifiers(virus_modifiers | DISCOVERED)
 	sync_severity()

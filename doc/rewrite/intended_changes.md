@@ -4909,3 +4909,10 @@ prove the composition equal within a relative 1e-5. What is different on purpose
 * **Evasion.** `evasion` is the stat: the mob's own base evasion is its type-level constant and the factor contributions add to it; `get_evasion()` reads the one var.
 * **Float order.** PRODUCT stats multiply in row-creation order, not afflictions-effects-stasis-reagents-species order; the last bit can differ.
 * **Dead factors deleted.** `BF_ARRHYTHMIA_RISK`, `BF_VISION` and `BF_HEARING` had no source and no reader; `BF_SEDATION` and `BF_INCOMING_NEURAL` stay.
+
+## Stat layer, wave 3 (factors() entries)
+
+* **An affliction's factor table follows its exact severity.** Master refreshed a table scaled by severity only when the severity crossed a 10-point band (except the airway, respiratory
+  arrest and tissue hypoxia, which followed every change); a source now holds its table at the severity it has, so a change inside a band moves the stats at once. This is what the factor
+  oracle computes, and the old band test (`dq_body_factor_affliction_bands`) now pins the exact value. `FACTOR_SEVERITY_BAND`, `factor_band` and `continuous_factors` are gone.
+* **Cardiac arrhythmia's tachycardia restart goes through `set_severity(0)`** where it wrote `severity = 0`: the severity-changed notice and the vitals dirtying now follow that reset too.

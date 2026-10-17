@@ -61,7 +61,6 @@
 	var/complete_threshold = 50
 	/// Severity a freshly created instance starts at (the base /datum/affliction var).
 	initial_severity = 30
-	continuous_factors = TRUE // C21: patency follows severity
 
 /datum/affliction/airway/on_added()
 	. = ..()
@@ -80,9 +79,11 @@
 	return 1 - 0.5 * severity / complete_threshold
 
 /// The airway's patency is a factor the physiology reads.
-/datum/affliction/airway/hold_factors(mob/living/L)
-	..()
-	hold_table(L, src, alist(STAT_AIRWAY = patency()), 1, 1, "patency")
+/datum/affliction/airway/proc/patency_table(datum/act/eval/A)
+	return alist(STAT_AIRWAY = patency())
+
+CAPABILITIES(/datum/affliction/airway)
+	factors(PROC_REF(patency_table), to = nameof(owner), part = "patency")
 
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
@@ -133,7 +134,6 @@
 /// The patient has stopped breathing on their own.
 /datum/affliction/respiratory_arrest
 	systemic_singleton = TRUE // C9
-	continuous_factors = TRUE // C21: the breathing drive follows severity
 	factors = alist(STAT_HEART_RATE = 10)
 	name = "respiratory arrest"
 	category = "Respiratory"
@@ -163,9 +163,11 @@
 	return severity >= RESP_ARREST_APNEA_THRESHOLD
 
 /// The drive to breathe is a factor the physiology reads: none while apneic.
-/datum/affliction/respiratory_arrest/hold_factors(mob/living/L)
-	..()
-	hold_table(L, src, alist(STAT_RESP_DRIVE = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL), 1, 1, "drive")
+/datum/affliction/respiratory_arrest/proc/drive_table(datum/act/eval/A)
+	return alist(STAT_RESP_DRIVE = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL)
+
+CAPABILITIES(/datum/affliction/respiratory_arrest)
+	factors(PROC_REF(drive_table), to = nameof(owner), part = "drive")
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()
@@ -380,7 +382,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 	// Instability carries over only from a rhythm that was pumping; a fresh
 	// affliction (created as VF) or a pulseless one starts a tachycardia afresh.
 	if(new_rhythm == CARDIAC_RHYTHM_TACHY && !is_perfusing())
-		severity = 0
+		set_severity(0)
 	rhythm = new_rhythm
 	switch(rhythm)
 		if(CARDIAC_RHYTHM_SINUS)

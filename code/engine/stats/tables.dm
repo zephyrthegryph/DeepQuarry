@@ -39,9 +39,9 @@ GLOBAL_LIST_EMPTY(stat_pass_touched)
 GLOBAL_LIST_EMPTY(stat_pass_before)
 
 /// The contribution of one table entry at scale and stacks for the stat's rule, or null when it contributes nothing (the neutral value, or a scale
-/// that is not above 0). Pure.
+/// or a stack count that is not above 0). Pure.
 /proc/stat_table_contribution(datum/stat_def/def, value, scale, stacks)
-	if(scale <= 0 || isnull(value))
+	if(scale <= 0 || stacks <= 0 || isnull(value))
 		return null
 	switch(def.rule)
 		if(STAT_RULE_PRODUCT)

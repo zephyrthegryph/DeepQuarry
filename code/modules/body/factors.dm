@@ -10,16 +10,18 @@
 //                       dose curve (dq_chem_dose_scale). get_factors(L) may
 //                       return another static table per species.
 //   /datum/body_effect  `factors` (per stack), or the application's own table
-//                       (set_body_effect_factors()), applied at full value.
+//                       (set_body_effect_factors() sets it on the application's record), applied at full value.
 //   /datum/species      `factor_baseline`, applied at full value.
 //   /datum/trait        `factors`, folded into the species' baseline.
 //   /datum/form         `factors`, applied at full value while worn.
 //   /obj/item           `worn_factors`, applied while equipped outside the hands.
 //
-// The body holds each source's table as rows of that source on the mob (hold_table(), code/engine/stats/tables.dm); the stat engine composes the
-// rows by each stat's rule and settles the stat var before the next line. The body re-reads every source in refresh_factors() whenever one of
-// them changed (BODY_DIRTY_FACTORS is that trigger, never a stored bit): an affliction is added or removed or crosses a FACTOR_SEVERITY_BAND, a body
-// effect changes, a factor reagent crosses a dose band, equipment with worn_factors moves, the form or species changes.
+// A source whose family has converted holds its own table with a factors() entry in its type's CAPABILITIES block (code/engine/stats/contributes.dm): the
+// engine holds it on the entity its relation names (hold_table()) at the exact current scale and releases it with the relation or the source, and the stat
+// settles before the writer's next line. Converted: stasis holds (code/modules/medical/stabilisation/stasis.dm), body effect applications (the
+// /datum/body_effect_origin record, body_effects.dm) and afflictions (affliction.dm). The body still re-reads the rest in refresh_factors() whenever one
+// of them changed (BODY_DIRTY_FACTORS is that trigger, never a stored bit): a factor reagent crosses a dose band, equipment with worn_factors moves, the
+// form or species changes.
 //
 // Read a factor as the var of its stat: `L.slowdown`.
 
@@ -185,9 +187,6 @@ PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from t
 		factor_refresh_again = FALSE
 		passes++
 		if(hold_tables_begin(owner))
-			for(var/datum/affliction/A as anything in afflictions)
-				A.hold_factors(owner)
-			owner.hold_effect_factors()
 			hold_reagent_factors()
 			hold_plan_factors()
 			// Only a factor the cached vitals or the physiology read dirties them; the first pass, which fills the factors in for the first time,
@@ -310,21 +309,24 @@ GLOBAL_LIST_INIT(factor_vitals_stats, list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LU
 /datum/affliction
 	/// Body factors at severity 100, scaled by severity (stat id -> value).
 	var/alist/factors
-	/// Severity band the factors were last read at.
-	var/tmp/factor_band = -1
 
-/// Holds the table this affliction contributes now. A staged affliction uses its
-/// active stage's "factors" (applied at full value; a stage without one
-/// contributes nothing); otherwise `factors`, scaled by severity.
-/datum/affliction/proc/hold_factors(mob/living/L)
-	factor_band = round(severity / FACTOR_SEVERITY_BAND)
+/// The table this affliction contributes now (the factors() entry in its CAPABILITIES block, code/modules/body/affliction.dm). A staged affliction uses its
+/// active stage's "factors" (a stage without one contributes nothing); otherwise `factors`.
+/datum/affliction/proc/factor_table(datum/act/eval/A)
 	if(stage)
 		var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
 		var/list/entry = stages?[stage]
 		if(entry)
-			hold_table(L, src, entry["factors"], 1)
-			return
-	hold_table(L, src, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
+			return entry["factors"]
+	return factors
+
+/// The scale of factor_table(): a stage's table is applied at full value (the stage is the severity band), `factors` scales with severity.
+/datum/affliction/proc/factor_scale(datum/act/eval/A)
+	if(stage)
+		var/list/stages = TYPE_TABLE_GET(src, affliction_stages)
+		if(stages?[stage])
+			return 1
+	return severity / AFFLICTION_SEVERITY_TERMINAL
 
 /datum/reagent
 	/// Body factors at the standard dose (DQ_CHEM_STANDARD_DOSE), scaled by

@@ -497,4 +497,19 @@ The reads that compare a factor with a constant, after the conversion (every oth
 5. **A source that is not an instance** (a body-effect definition is one flyweight per type, with its stacks on the mob) cannot hold a relation to the receiver: its
    per-application instance (the effect's origin record, the stasis hold, the affliction) carries the entry, and a flyweight's table is read by the instance's table proc.
 
-Families converted so far: stasis (`/datum/stasis_hold` holds its level's table on its mob; `hold_stasis_factors()` deleted).
+Families converted so far, and how each source type carries its entry:
+
+* **Stasis** (merged): `/datum/stasis_hold` (one per source, owned by the mob's `stasis_sources`) has `holder` and `factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")`;
+  the table is its level's `factors`. `hold_stasis_factors()` is deleted.
+* **Body effects**: the definition is a flyweight with no relation to a mob, so the entry lives on the application record the mob already owns per effect type
+  (`/datum/body_effect_origin`, which gains `path`, `holder` and `table_override`): `factors(PROC_REF(effect_table), stacks = PROC_REF(effect_stacks), to = nameof(holder),
+  reads = list("holder.body_effect_counts"))`. The stack count is read through the relation from the mob's `STAT_BODY_EFFECT_COUNTS`, which stays the one record of the count (no copy on the
+  record); a factors() entry's hop over its single receiver relation settles inline, so a stack change moves the stats before the writer's next line. A zero stack count holds nothing.
+  `set_body_effect_factors()` / `reset_body_effect_factors()` write the record's `table_override` (the mob's `body_effect_factors` list is deleted). `hold_effect_factors()` is deleted.
+* **Afflictions**: `/datum/affliction`'s block has `factors(PROC_REF(factor_table), scale = PROC_REF(factor_scale), to = nameof(owner))` (the stage's table at scale 1, else `factors` at
+  `severity / AFFLICTION_SEVERITY_TERMINAL`); the four types with an extra table add an entry of their own under a part (`patency`, `drive`, `irritability`, `band`). `severity` and `stage`
+  are written through `set_severity()` / `set_stage()`. The within-band refresh (`FACTOR_SEVERITY_BAND`, `factor_band`, `continuous_factors`) is gone: every affliction follows its exact
+  severity, which is what the old fold gave on the continuous types and what the oracle computes for all of them. `hold_factors()` is deleted.
+
+Where the table is data on a flyweight or a prototype (`factors = alist(...)` of a body effect or an affliction type), it stays a data var read by the type's one entry; the ban that keeps a converted
+family converted is the one on the legacy `hold_*_factors` procs (`legacy_forms` `banned`, hard, empty baseline). `factors_converted` is for the types that move the table into the entry itself.

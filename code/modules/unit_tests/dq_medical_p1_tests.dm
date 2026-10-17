@@ -248,7 +248,6 @@
 	var/datum/affliction/hypovolemic_shock/A = H.body.afflict(/datum/affliction/hypovolemic_shock, H.get_organ(BP_TORSO), 10)
 	TEST_ASSERT(A.band_factors, "the band table must be set when the shock takes hold")
 	TEST_ASSERT(H.o2_sat < 0, "the declared O2 saturation factor is held: [H.o2_sat]")
-	TEST_ASSERT(A.factor_band >= 0, "and the severity band it was held at is recorded")
 
 /// C8: wound infection severity goes through the setter.
 /datum/unit_test/dq_p1_c8_infection_uses_setter
