@@ -33,3 +33,22 @@
 	TEST_ASSERT("recipient fiber" in recipient.evidence, "successful merge retains original evidence")
 	TEST_ASSERT("donor fiber" in recipient.evidence, "successful merge transfers original donor evidence")
 	TEST_ASSERT_EQUAL(recipient.name, "fiber bag (combined)", "successful merge retains the original combined label")
+
+/// Washed-away blood glows on an item only while a UV light scans it (fluorescent 2): the look gains one overlay then, and none while it is unlit.
+/datum/unit_test/dq_uv_light_shows_washed_blood
+
+/datum/unit_test/dq_uv_light_shows_washed_blood/Run()
+	var/obj/item/pen/item = allocate(/obj/item/pen, test_floor())
+	dq_set_was_bloodied(item, TRUE)
+	dq_set_fluorescent(item, 1)
+	var/datum/look/unlit = new
+	item.draw(unlit)
+	var/unlit_count = length(unlit.overlays)
+	dq_set_fluorescent(item, 2)
+	var/datum/look/lit = new
+	item.draw(lit)
+	TEST_ASSERT_EQUAL(length(lit.overlays), unlit_count + 1, "a UV-lit item that was bloodied draws the blood glow")
+	dq_set_fluorescent(item, 1)
+	var/datum/look/after = new
+	item.draw(after)
+	TEST_ASSERT_EQUAL(length(after.overlays), unlit_count, "the glow goes with the light")
