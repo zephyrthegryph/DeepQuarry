@@ -130,18 +130,26 @@
 /datum/reagent/ethanol/contributes_factors(mob/living/L)
 	return ishuman(L) || ..()
 
-/datum/reagent/ethanol/hold_special_factors(mob/living/L, volume)
-	..()
+/datum/reagent/ethanol/special_table(part, mob/living/L, volume)
+	if(part != REAGENT_PART_INTOXICATION && part != REAGENT_PART_HEPATOTOXICITY)
+		return ..()
 	if(!ishuman(L) || volume <= 0)
-		return
+		return null
 	var/mob/living/carbon/human/H = L
 	if(HAS_SYNTHETIC_BIOLOGY(H) && !H.species.robo_ethanol_drunk)
-		return
+		return null
 	var/static/alist/intoxication = alist(STAT_INTOXICATION = 1)
 	var/static/alist/hepatotoxicity = alist(STAT_HEPATOTOXICITY = 1)
-	hold_table(L, src, intoxication, dq_chem_dose_scale(volume), 1, "intoxication")
+	if(part == REAGENT_PART_INTOXICATION)
+		return intoxication
 	if(strength && volume >= strength * H.species.chem_strength_alcohol * 6)
-		hold_table(L, src, hepatotoxicity, toxicity, 1, "hepatotoxicity")
+		return hepatotoxicity
+	return null
+
+/datum/reagent/ethanol/special_scale(part, volume)
+	if(part == REAGENT_PART_HEPATOTOXICITY)
+		return toxicity
+	return ..()
 
 /datum/reagent/ethanol/touch_mob(mob/living/L, amount)
 	..()
