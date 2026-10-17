@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added transformations, one declared rule form for inputs under conditions becoming outputs: the transformation() entry, its terms and conditions, a compiled index and a reagent settle, with outcome pins recorded on the chemistry rules."
