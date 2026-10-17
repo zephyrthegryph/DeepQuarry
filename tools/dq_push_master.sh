@@ -117,11 +117,19 @@ for round in 1 2 3; do
 	if why="$(dirty)"; then die "$why: commit (or remove) them first"; fi
 	echo "== dq_push_master: round $round: merging origin/master"
 	lap "start"
-	bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
-	lap "merge origin/master"
-	if why="$(dirty)"; then die "the merge left $why"; fi
-	bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
-	lap "dirty check and look keys"
+	git fetch -q origin || die "git fetch failed"
+	if git merge-base --is-ancestor origin/master HEAD; then
+		# Nothing to merge (the gates just ran on a HEAD that has all of master): the merge step, its regeneration and the look-key
+		# normalization (done by the gates, or implied by the proof of this very tree) would change nothing; the lock is held across them.
+		echo "== dq_push_master: origin/master is already in HEAD; no merge needed"
+		lap "fetch (nothing to merge)"
+	else
+		bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
+		lap "merge origin/master"
+		if why="$(dirty)"; then die "the merge left $why"; fi
+		bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
+		lap "dirty check and look keys"
+	fi
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
 
@@ -197,6 +205,7 @@ for round in 1 2 3; do
 		lap "verify landed"
 		# The push landed: free the merge lock BEFORE the disk cleanup, which can take minutes and needs no lock (a next batch must not wait for it).
 		release_batch
+		echo "== dq_push_master: merge lock released; the disk cleanup below runs without it"
 		# Reclaim disk: every other worktree that is now clean and merged goes (build targets deleted first). Best effort.
 		bash tools/dq_worktree.sh gc || echo "dq_push_master: worktree cleanup failed (non-fatal); run tools/dq_worktree.sh gc"
 		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
