@@ -13,6 +13,7 @@ RESOURCE_DEF(RES_REAGENTS, adapter = /datum/resource/reagents)
 RESOURCE_DEF(RES_SLOT_CAPACITY, adapter = /datum/resource/slot_capacity)
 RESOURCE_DEF(RES_CREDITS, adapter = /datum/resource/credits)
 RESOURCE_DEF(RES_CPU, adapter = /datum/resource/cpu)
+RESOURCE_DEF(RES_GAS, adapter = /datum/resource/gas)
 
 #define RES_FUEL 1
 #define RES_USES 2
@@ -26,3 +27,4 @@ RESOURCE_DEF(RES_CPU, adapter = /datum/resource/cpu)
 #define RES_SLOT_CAPACITY 10
 #define RES_CREDITS 11
 #define RES_CPU 12
+#define RES_GAS 13
