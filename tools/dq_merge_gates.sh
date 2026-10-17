@@ -36,9 +36,13 @@ cd "$(git rev-parse --show-toplevel)"
 # In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may gate.
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
 merge_lock_require || exit 1
+# shellcheck source=tools/dq_proof_cache.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
 merge_lock_busy begin
 trap 'merge_lock_busy end' EXIT
 
+orig_args=("$@")
+automerge=1
 tests_arg=()
 lanes=""
 smoke_file="tools/ci/smoke_tests.txt"
@@ -51,7 +55,8 @@ reproof=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests) shift; read -r -a more <<<"${1:-}"; tests_arg+=("${more[@]}") ;;
-		--lanes) shift; lanes="${1:-}" ;;
+		--lanes) shift; lanes="${1:-}"; lanes="${lanes//,/ }" ;;
+		--no-auto-merge) automerge=0 ;;
 		--smoke) shift; smoke_file="${1:-}" ;;
 		--snapshot-output) snapshot_output=1 ;;
 		--no-smoke) smoke=0 ;;
@@ -59,7 +64,7 @@ while [ $# -gt 0 ]; do
 		--tgui) tgui=1 ;;
 		--serial) serial=1 ;;
 		--reproof) reproof=1 ;;
-		-h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+		-h|--help) sed -n '2,32p' "$0"; echo '  --lanes a,b,c   lanes not yet in HEAD are merged as a batch (tools/dq_merge_batch.sh); --no-auto-merge refuses instead'; exit 0 ;;
 		*) echo "unknown argument: $1" >&2; exit 2 ;;
 	esac
 	shift
@@ -69,6 +74,14 @@ git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: REFUSED: uncommitted changes to tracked files; commit the merge first (the stamp names an exact HEAD)" >&2
 	exit 1
+fi
+# --lanes names lanes that are not merged yet: this is a batch. The batch driver merges them (one look-key record, one build, one union of
+# tests) and bisects by lane on a failure, calling this script again per attempt with --no-auto-merge (tools/dq_merge_batch.sh).
+if [ "$automerge" -eq 1 ] && [ -n "$lanes" ]; then
+	for ref in $lanes; do
+		tip="$(git rev-parse -q --verify "$ref^{commit}" 2>/dev/null || git rev-parse -q --verify "origin/$ref^{commit}" 2>/dev/null || true)"
+		if [ -n "$tip" ] && ! git merge-base --is-ancestor "$tip" HEAD; then exec bash "$(dirname "${BASH_SOURCE[0]}")/dq_merge_batch.sh" "${orig_args[@]}"; fi
+	done
 fi
 # The generated files must be fresh before the HEAD is stamped.
 tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
@@ -102,7 +115,9 @@ fi
 bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
 # Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
 # its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
-if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
+if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ] && ! dq_diff_touches_dm; then
+	echo "== look pins: skipped (the batch touches no DM, map, icon, sound, skin or analyzer file: no look key can have moved)"
+elif [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
 	unverified_line="$(bash tools/ci/check_look_keys_format.sh --unverified)" || { echo "dq_merge_gates: could not compute the unverified look types" >&2; exit 1; }
 	unverified_n="${unverified_line%% *}"
 	echo "== look pins: $unverified_line"
@@ -204,6 +219,21 @@ if [ "$reproof" -eq 1 ]; then
 fi
 if [ "$run_tests" -eq 1 ] && [ ${#tests[@]} -eq 0 ]; then tests=(dq_boot_gate); fi
 
+# ---- a proof for this exact tree ------------------------------------------------------------------------------------------------
+# dq_lane_ready.sh proves a lane on its merge with master and stores the proof under the TREE hash (tools/dq_proof_cache.sh). If master
+# has not moved, merging the lane gives that very tree: nothing to rebuild or retest, the stamps for this commit are written from the
+# proof. A tree nobody proved (master moved, a batch of several lanes) runs the gates below. DQ_PROOF_REUSE=0 forces them.
+tree="$(proof_tree HEAD)"
+proof_file=""
+if [ "$run_tests" -eq 1 ] && [ "${DQ_PROOF_REUSE:-1}" != 0 ] && [ -z "$reproof_of" ]; then
+	proof_file="$(proof_find "$tree" "$tgui" "$analyze_tests" "${tests[@]}")" || proof_file=""
+fi
+reused=0
+if [ -n "$proof_file" ]; then
+	reused=1
+	echo "== proof reused: tree ${tree:0:12} was proved on master $(sed -n 's/^master=//p' "$proof_file" | cut -c1-10) ($(sed -n 's/^passed=//p' "$proof_file") test(s) passed); no compile, no test world, no ratchet run"
+fi
+
 # ---- running the gates -----------------------------------------------------------------------------------------------------
 gate() { # <name> <command...>: one step in the foreground
 	local name="$1" t0 rc
@@ -219,6 +249,11 @@ gate() { # <name> <command...>: one step in the foreground
 	fi
 }
 
+names=()
+failed=()
+dm_ok=0
+declare -A pid start
+if [ "$reused" -eq 0 ]; then
 gate gen tools/build/build.sh gen
 gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
 
@@ -237,13 +272,11 @@ job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/ana
 	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
 }
 
-names=()
 [ "$run_tests" -eq 1 ] && names+=(tests)
 names+=(dm ratchets)
 [ "$tgui" -eq 1 ] && names+=(tgui)
 [ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
-declare -A pid start
 for n in "${names[@]}"; do
 	log="data/merge-gates/$short.$n.log"
 	start[$n]=$(date +%s)
@@ -259,7 +292,6 @@ for n in "${names[@]}"; do
 	[ "$serial" -eq 1 ] || wait "${pid[$n]}" 2>/dev/null
 done
 
-failed=()
 for n in "${names[@]}"; do
 	log="data/merge-gates/$short.$n.log"
 	read -r rc finished <"$log.rc" 2>/dev/null || { rc=1; finished=$(date +%s); }
@@ -279,7 +311,6 @@ done
 echo "gates-wall $(( $(date +%s) - wall_start ))s" | tee -a "$timings"
 
 # The DreamChecker and DreamMaker verdicts, read the way dq_push_master.sh reads them.
-dm_ok=0
 if printf '%s\n' "${names[@]}" | grep -qx dm && [[ " ${failed[*]-} " != *" dm "* ]]; then
 	dm_log="data/merge-gates/$short.dm.log"
 	if grep -q "dream-checker: passed" "$dm_log" && grep -q "Found 0 diagnostics" "$dm_log" && grep -qE "deepquarry\.dmb - 0 errors" "$dm_log"; then
@@ -299,6 +330,10 @@ if [ ${#failed[@]} -gt 0 ]; then
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1
 fi
+else
+	dm_ok=1
+	echo "proof-reused 0s" >>"$timings"
+fi
 
 git update-index -q --refresh >/dev/null 2>&1
 gate_diff_args=()
@@ -316,7 +351,11 @@ if [ "$dm_ok" -eq 1 ]; then echo "$sha" >"data/merge-gates/$short.dm.ok"; fi
 tests_json=""
 passed=0
 nfailed=0
-if [ "$run_tests" -eq 1 ]; then
+if [ "$reused" -eq 1 ]; then
+	passed="$(sed -n 's/^passed=//p' "$proof_file")"
+	nfailed="$(sed -n 's/^failed=//p' "$proof_file")"
+	tests_json="$(sed -n 's/^tests_json=//p' "$proof_file")"
+elif [ "$run_tests" -eq 1 ]; then
 	res_line="$(grep -h '^FOCUSED RESULT:' "data/merge-gates/$short.tests.log" | tail -n 1)"
 	tests_json="$(sed -n 's/.*(json: \([^)]*\)).*/\1/p' <<<"$res_line")"
 	passed="$(sed -n 's/^FOCUSED RESULT: \([0-9]*\) passed.*/\1/p' <<<"$res_line")"
@@ -346,7 +385,13 @@ fi
 	echo "base_master=$base_master"
 	echo "reproof_of=$reproof_of"
 	echo "reproof_reason=$reproof_reason"
+	echo "proof_reused=$([ "$reused" -eq 1 ] && echo "$tree")"
 } >"data/merge-gates/$short.ok"
+# The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
+if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && [ "$dm_ok" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
+	proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json"
+	proof_prune
+fi
 # The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
 # that tools/ci/known_failures.txt does not list. A lane-ready run gets its own note from dq_lane_ready.sh; a merge batch pushes on this one.
 if [ "$run_tests" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then

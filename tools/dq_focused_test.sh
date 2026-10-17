@@ -333,6 +333,8 @@ list_only=0
 all_types=""
 split_mode=auto
 look_shards="${DQ_LOOK_SHARDS:-4}"
+look_shards_set=0
+[ -n "${DQ_LOOK_SHARDS:-}" ] && look_shards_set=1
 sweep_shards="${DQ_SWEEP_SHARDS:-4}"
 look_full=0
 look_order=""
@@ -353,6 +355,7 @@ for arg in "$@"; do
 		--look-shards=*)
 			look_shards="${arg#--look-shards=}"
 			[[ "$look_shards" =~ ^[1-9][0-9]*$ ]] || { echo "--look-shards needs a positive integer, got '$look_shards'" >&2; exit 2; }
+			look_shards_set=1
 			;;
 		--full) look_full=1 ;;
 		--look-order=*) look_order="${arg#--look-order=}" ;;
@@ -524,6 +527,12 @@ look_prepare() {
 	else
 		echo "== look pins: no analyzer plan (analyze look-keys unavailable): full, unnarrowed run"
 		look_full=1
+	fi
+	if [ "$look_full" -eq 1 ] && [ "$look_shards_set" -eq 0 ]; then
+		# A full sweep is thousands of types: use every test-world slot the machine has (tools/dq_machine_slots.sh; the group acquire
+		# waits for them, so this never oversubscribes), not the incremental default of 4.
+		cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null)"
+		if [[ "$cap" =~ ^[1-9][0-9]*$ ]] && [ "$cap" -gt "$look_shards" ]; then look_shards="$cap"; echo "== look pins: full run sharded over $look_shards worlds (the test_world slot count)"; fi
 	fi
 	if [ -n "$look_order" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-order=$look_order"; fi
 	if [ -n "$look_dump" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-dump=$look_dump"; fi

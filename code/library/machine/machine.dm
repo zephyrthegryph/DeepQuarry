@@ -126,6 +126,19 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 
 // ---- machine basics ----
 
+/// The entries that take a machine off its area's channel: no has_power reading (so nothing marks or re-evaluates it when an APC flips) and no
+/// STAT_OPERABLE contribution from it.
+/proc/machine_without_area_power()
+	return list(
+		without("area_power"), // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		without("power_operable")) // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+
+/// A machine that never draws power (a pipe): it carries no has_power at all, so an APC flip does not touch it.
+CAPABILITY_DEF(unpowered_machine, CAP_UNPOWERED_MACHINE, key = NONE)
+
+/datum/capability/def/unpowered_machine/entries()
+	return machine_without_area_power()
+
 CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE)
 
 /// The machine core's own: breakable with welder repair (`repair` = NONE: none), powered (`powered` = FALSE: a machine whose look says its own),
@@ -141,8 +154,7 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 	if(powered)
 		entries += powered()
 	if(!area_power)
-		entries += without("area_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
-		entries += without("power_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		entries += machine_without_area_power()
 		entries += without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op // a machine that says its own power (the APC, the SMES, a self-powered turret) is not darkened by its area's channel
 	if(frame && frame != NONE)
 		entries += frame

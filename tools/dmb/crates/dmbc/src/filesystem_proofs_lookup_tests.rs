@@ -5,7 +5,7 @@ fn proofs() -> (BulkFileSystemProofs, PathBuf) {
     let mut proof = BulkFileSystemProofs::capture([], []);
     proof.directories.insert(
         parent.clone(),
-        DirectoryProof {
+        std::sync::Arc::new(DirectoryProof {
             entries: BTreeMap::from([(
                 "item.dm".into(),
                 Some(Stamp {
@@ -17,7 +17,7 @@ fn proofs() -> (BulkFileSystemProofs, PathBuf) {
             aliases: BTreeSet::from(["item.dm".into()]),
             ascii: true,
             charged: 0,
-        },
+        }),
     );
     proof.missing_directories.insert(parent.join("missing"));
     (proof, parent)

@@ -247,6 +247,13 @@ fn run_build_attempt(
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
+    if retains_query_owners {
+        if let Some(root) = project.parent() {
+            dmbc::fs_watch::arm(root);
+            dmbc::fs_watch::sync(root);
+        }
+        dm_profile::request_mark("session.watch_synced");
+    }
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -389,6 +396,10 @@ fn run_build_attempt(
         }
         session = Some(configured);
         pair_store = Some(store);
+    }
+    if retains_query_owners && dmbc::fs_watch::enabled() {
+        let (hits, misses) = dmbc::fs_watch::counters();
+        dmbc::daemon_eprintln!("native fs watch: directory proofs cached={hits} captured={misses}");
     }
     stamped_provider.adopt(shared_proofs.clone());
     drop(session_profile);

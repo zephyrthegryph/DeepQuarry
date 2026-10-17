@@ -576,9 +576,8 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
         .filter(|(_, (new, old))| new.digest != old.digest)
         .map(|(index, _)| index)
         .collect();
-    if changed.is_empty() {
-        return Err("no body changed".into());
-    }
+    // Nothing to relower is an edit of text the compiler drops (a comment inside a body, spacing):
+    // the image is the base image, and the patch only advances the base to the new inputs.
     {
         let sample: Vec<String> = changed
             .iter()

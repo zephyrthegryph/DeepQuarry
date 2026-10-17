@@ -35,6 +35,35 @@ export function dmbcCacheDir(): string | null {
   return path.join(os.homedir(), '.cache', 'dq', 'dmbc');
 }
 
+/**
+ * The one compiler binary every checkout and worktree on the machine runs, so they all share one compiler identity and
+ * therefore one resident daemon: `<bin>/{dmbc,dmbd}[.exe]`, default E:/dq-cache/dmb-bin. It is a published copy, never a
+ * cargo output dir: other agents point CARGO_TARGET_DIR at E:/dq-cache/dmb-target and rewrite its dmbc.exe while a compile
+ * is using it (the merge gates saw ENOENT on it mid-compile). `DQ_DMBC_BIN_DIR` relocates it; `DQ_DMBC_BIN` names an
+ * explicit dmbc executable instead (see `dmbcBinOverride`).
+ */
+export function sharedDmbcBinDir(): string {
+  if (process.env.DQ_DMBC_BIN_DIR) return path.resolve(process.env.DQ_DMBC_BIN_DIR).split(path.sep).join('/');
+  if (process.platform === 'win32' && fs.existsSync('E:/dq-cache')) return 'E:/dq-cache/dmb-bin';
+  return path.join(os.homedir(), '.cache', 'dq', 'dmb-bin').split(path.sep).join('/');
+}
+
+/** Private cargo target the shared binary is built in on a cache miss (path-dependent, so shared by name not by content). */
+export function sharedDmbcBuildTarget(): string {
+  if (process.env.DQ_DMBC_BUILD_DIR) return path.resolve(process.env.DQ_DMBC_BUILD_DIR).split(path.sep).join('/');
+  if (process.platform === 'win32' && fs.existsSync('E:/dq-cache')) return 'E:/dq-cache/dmb-build';
+  return path.join(os.homedir(), '.cache', 'dq', 'dmb-build').split(path.sep).join('/');
+}
+
+export function sharedDmbcExe(name: 'dmbc' | 'dmbd' = 'dmbc'): string {
+  return `${sharedDmbcBinDir()}/${name}${process.platform === 'win32' ? '.exe' : ''}`;
+}
+
+/** DQ_DMBC_BIN: run this dmbc instead of the shared binary (it is never rebuilt or restored over). */
+export function dmbcBinOverride(): string | undefined {
+  return process.env.DQ_DMBC_BIN ? path.resolve(process.env.DQ_DMBC_BIN) : undefined;
+}
+
 function git(root: string, args: string[]): string | null {
   const r = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return r.error || r.status !== 0 ? null : r.stdout.trim();
@@ -57,6 +86,33 @@ export function dmbcCacheKey(root: string): CacheKey {
 }
 
 /**
+ * Atomically make `file` a copy of `source`: nothing happens when the bytes already match; a differing file is copied to a
+ * temporary name and renamed over it, the old one moved aside when a running daemon holds it open.
+ */
+export function installFile(source: string, file: string): boolean {
+  const same =
+    fs.existsSync(file) &&
+    fs.statSync(file).size === fs.statSync(source).size &&
+    fs.readFileSync(file).equals(fs.readFileSync(source));
+  if (same) return false;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp-${process.pid}`;
+  fs.copyFileSync(source, tmp);
+  try {
+    fs.rmSync(file, { force: true });
+  } catch {
+    fs.renameSync(file, `${file}.old-${Date.now()}`);
+  }
+  fs.renameSync(tmp, file);
+  return true;
+}
+
+/** Publish a freshly built compiler pair (a cargo `release` dir) as the shared binary. */
+export function publishDmbc(builtDir: string, exe: string, daemon: string): void {
+  for (const file of [exe, daemon]) installFile(path.join(builtDir, path.basename(file)), file);
+}
+
+/**
  * Copy the cached executables into place. Returns true on a hit. A running daemon holds its executable open
  * (Windows refuses to delete it but allows a rename), so a differing file is moved aside, never overwritten.
  */
@@ -65,23 +121,7 @@ export function restoreDmbc(cache: string, key: string, exe: string, daemon: str
   if (!fs.existsSync(path.join(dir, 'manifest.json'))) return false;
   const files = [exe, daemon];
   if (!files.every((file) => fs.existsSync(path.join(dir, path.basename(file))))) return false;
-  for (const file of files) {
-    const cached = path.join(dir, path.basename(file));
-    const same =
-      fs.existsSync(file) &&
-      fs.statSync(file).size === fs.statSync(cached).size &&
-      fs.readFileSync(file).equals(fs.readFileSync(cached));
-    if (same) continue;
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    const tmp = `${file}.cache-tmp-${process.pid}`;
-    fs.copyFileSync(cached, tmp);
-    try {
-      fs.rmSync(file, { force: true });
-    } catch {
-      fs.renameSync(file, `${file}.old-${Date.now()}`);
-    }
-    fs.renameSync(tmp, file);
-  }
+  for (const file of files) installFile(path.join(dir, path.basename(file)), file);
   try {
     const now = new Date();
     fs.utimesSync(path.join(cache, key), now, now);

@@ -240,10 +240,21 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   another checkout's `verdigris.dll` by hand (`DQ_PREBUILT_VERDIGRIS=1`); a DLL built from other
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
-- **Worktrees and caches live on E: only.** Create worktrees only under `E:/projects/dq-wt/<name>`
-  and build caches only under `E:/dq-cache/`; never on `D:` or `C:`. When E: runs low, prune
-  merged worktrees: unlink their junctions first (e.g. `node_modules`), then
-  `git worktree remove`, then `git worktree prune`.
+- **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
+  `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  dirty slot and never discards anything); a 4th concurrent lane is refused ("POOL FULL"). `... release <branch>` retires the dmbc
+  daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
+  binary and `data/analyze-cache` warm; a merged lane's slot is also reclaimed by the next lease. Do not `git worktree add` a lane
+  worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.
+  Worktrees and caches live on E: only: worktrees under `E:/projects/dq-wt/`, build caches under `E:/dq-cache/`; never on `D:` or `C:`.
+  Details and the gate flow: `doc/rewrite/agent_workflow.md` sections 19-23.
+- **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
+  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
+  `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
+  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most 3 lanes at once);
+  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
+  `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
+  first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
