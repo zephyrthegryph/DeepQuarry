@@ -2,7 +2,7 @@
 
 Status: approved 2026-10-17 (decisions D1 to D7 as recommended). Branch `rewrite/change-graph`. Scope: doc section 7
 (`final_api.html`, "Change tracking and dependencies"), and the engine under `code/engine/{change,stats,refs,actions,lifeforms}`.
-Benchmarks are paused; every step is proven by tests and pins only.
+Benchmarks are paused; every step is proven by tests only (the look pins are being deleted; no snapshots).
 
 ## 0. Summary
 
@@ -225,16 +225,17 @@ by what uses it. The plan table is per type, shared, built once.
 
 | Step | Change | Proof |
 |---|---|---|
-| 1 | this doc; `dq_fresh_look_default` (+ representative) | the new test, pins, boot gate |
-| 2 | generated plans with interned keys (`analyze gen`); `write()` consults the plan; D5 fallback and the `plan_fallback` ratchet | all pins; a parity test that the plan and today's tables agree for every type |
-| 3 | fold reactions, hooks, lifeforms, observers, pending ops, op caches, stats, draw hops, relation watchers into plan dependents; delete `rx_readers`, `hooks_watching`, `lifeform_watching`, `draw_hop_reads_var`, `derived_mask`, `stat_input_keys` lookups and the backward hop walk | all pins plus the touched systems' tests |
-| 4 | per-class queues and frame stamps replace `refresh_queue`/`done`, `rx_drain` lists and hook pend lists | pins, drain-order tests |
-| 5 | creation default-look stamp; drop the `caps_init` blanket (forced-draw list); drop the runtime probe | `dq_fresh_look_default` against the stamp, pins |
+| 1 | this doc; `dq_fresh_look_default` (+ representative) | the new test and its representative, the boot gate |
+| 2 | generated plans with interned keys (`analyze gen`); `write()` consults the plan; D5 fallback and the `plan_fallback` ratchet | a parity test that the plan and today's tables agree for every type; `dq_staleness_*`; boot gate |
+| 3 | fold reactions, hooks, lifeforms, observers, pending ops, op caches, stats, draw hops, relation watchers into plan dependents; delete `rx_readers`, `hooks_watching`, `lifeform_watching`, `draw_hop_reads_var`, `derived_mask`, `stat_input_keys` lookups and the backward hop walk | a behavioural test per folded consumer: a write to key K redraws exactly the atoms whose look reads K, once per frame (and runs exactly the hooks, stats and observers that read K); `dq_staleness_*`; the touched systems' tests |
+| 4 | per-class queues and frame stamps replace `refresh_queue`/`done`, `rx_drain` lists and hook pend lists | drain-order tests; once-per-frame redraw test; `dq_staleness_*` |
+| 5 | creation default-look stamp; drop the `caps_init` blanket (forced-draw list); drop the runtime probe | `dq_fresh_look_default` against the stamp; `dq_staleness_*` |
 | 6 | drop the dispatch blanket | `dq_staleness_*` clean |
-| 7 | split `rx_state` | memory counters, pins |
+| 7 | split `rx_state` | memory counters; `dq_staleness_*` |
 
-Every step: `dq_look_state_pin`, `dq_look_pin`, `dq_staleness_*`, the boot gate, and the focused tests of the systems touched. A pin
-diff is fixed in the code, never re-blessed, unless it is an intended visible fix listed in the merge report.
+Every step: `dq_fresh_look_default` (and its representative), `dq_staleness_*`, the boot gate, the focused tests of the systems touched,
+and the production draw-purity guard (it stays on). Where a step used to rely on pins to show draws did not change, it adds a targeted
+behavioural test instead (a write to key K redraws exactly the atoms whose look reads K, once per frame); snapshots are not used.
 
 Ratchets: `plan_fallback` (new, baseline = types without a plan, to zero), the `Initialize` ratchet (`init_baseline.txt`, shrink-only,
 drives the forced-draw list), `untracked_inputs` and `raw_write` (unchanged, they are what makes the plans complete).
