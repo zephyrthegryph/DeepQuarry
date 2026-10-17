@@ -526,7 +526,10 @@ impl InputSnapshot {
     /// Merge a freshly validated retained domain into this capture. Conflicting
     /// reads reject the build instead of silently selecting one observation.
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
+        let _timer = dm_profile::detail_timer("snapshot.merge.check_structure");
         other.check_structure()?;
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.files");
         if !other.folders.is_empty() && other.generated_outputs != self.generated_outputs {
             return Err(invalid("retained generated-output proof policy differs"));
         }
@@ -542,16 +545,39 @@ impl InputSnapshot {
                 self.files.insert(path.clone(), file.clone());
             }
         }
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.rest");
         // `other` passed `check_structure` above: its paths are canonical, its listings sorted
         // leaf names, and (the policies being equal) already free of generated outputs. Merging
         // therefore compares and inserts; re-filtering every listing name through
         // `canonical_path` cost about 0.5 s per request on DeepQuarry's resource folders.
-        for path in &other.negative_files {
-            if self.files.contains_key(path) {
-                return Err(invalid("present input became negative during capture"));
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.negatives");
+        // Both sets are ordered: one linear walk finds a negative that is also a file, where a
+        // lookup per negative (a component-wise path comparison each) cost 0.18 s.
+        {
+            let mut files = self.files.keys().peekable();
+            for path in &other.negative_files {
+                while let Some(file) = files.peek() {
+                    match (*file).cmp(path) {
+                        std::cmp::Ordering::Less => {
+                            files.next();
+                        }
+                        std::cmp::Ordering::Equal => {
+                            return Err(invalid("present input became negative during capture"));
+                        }
+                        std::cmp::Ordering::Greater => break,
+                    }
+                }
             }
-            self.negative_files.insert(path.clone());
         }
+        if self.negative_files.is_empty() {
+            self.negative_files = other.negative_files.clone();
+        } else {
+            self.negative_files.extend(other.negative_files.iter().cloned());
+        }
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.folders");
         let same_policy = other.generated_outputs == self.generated_outputs;
         for (path, listing) in &other.folders {
             if !same_policy {
