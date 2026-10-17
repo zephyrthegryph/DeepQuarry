@@ -4899,30 +4899,13 @@ Affected requirement-pin classes:
 
 The object startup cohort replaces constructor statements with declared owned starts, initial derivations/rolls and ordered setup. The item and non-item handoffs name every converted type and exact remaining phase/context constraints. Existing owned-versus-borrowed lifetimes, constructor amounts (including zero), map defaults, random choice catalogues, radio registration, glow and material-dependent capacity are covered by real constructor assertions. Pipe-painter startup uses the native per-instance roller with the same catalogue; no balance probability is changed. Internal storage now rejects a non-item location before binding its typed owner, restoring self-deletion instead of the prior invalid-owner runtime. No appearance runtime is blessed by this migration.
 
-## Deterministic look sampling in the initializer lane
-
-The user-approved probe repair keeps plan filtering before the existing 24/200 limits, then orders eligible variable names lexically. Host variable enumeration can therefore no longer change the sampled set. The order-invariance regression covers both limits, empty plans and input immutability. This changes test sampling only; no appearance golden has been re-recorded in this lane.
-
-## Look fixture native-roll stream isolation (2026-10-16)
-
-The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
-
 ### Object initializer verification: inherited operation keys
 
 The object-init lane refreshes only the `keys` rows in 51 inherited mob pins for master `2136172edc4` (2026-10-15), which made devour a waiting op, and in two mecha pins for master `f13b84652d`, which removed the dead `ai_use_equipment` surface. Every menu and click row is unchanged; these are master changes, not initializer behavior changes.
 
-### Look-sampler isolation and native random realizations
-
-The object-init verification uses a type-local native roller (`f3d40a5365`), in addition to the existing host RNG seed. Re-recorded rows are limited to the constructor realizations this changes: drone shell; simple-mob coat, clothing style, colors and experiment effects; cigarette/gum/lollipop color or flavor; blob direction; and toilet lid/open state. State-probe changes are the corresponding synx, shadekin, lamia and raptor appearances. Pilot catslug is specifically the native 25% helm roll: the type-local MD5 stream yields 51.8255%, so it does not take a helm and remains closed to ghosts; no pilot production code changed.
-
-The six slime-eye differences are NOT blessed: sorted `consuming` probes normalize a hidden text cache before `has_eye_glow`. Reuse now checks immutable scalar state as well as the visible look, falling back to fresh instances when restoration leaves hidden changes. A real slime test compares reused/fallback and forced-fresh results. The sampler also drains its queued explosion work before resetting its block, with a real queued-blast regression, so that deferred blast products do not leak into the following test.
-
-
-## Object-lane verification support: prone density and look identity
+## Object-lane verification support: prone density
 
 The base-variable focused run exposed a preexisting prone-density cache mismatch: `interim_mining_conflict_data` detected a human whose cached density remained zero after standing, while a fresh stat evaluation was one. The actual cause is the preceding posture transition, not mining. This reapplies the already-reviewed DECL fix (`e37ef75e92`, included in `codex/decl-burndown`): lying contributes a forced nonblocking STAT_DENSITY source instead of writing the served density field. Recovery preserves nondense type defaults and unrelated holds. The two actual knockdown/recovery composition tests cover those contracts.
-
-Look allocation now establishes the existing native entity handle after construction and before both made/fresh captures. This prevents lazy `om_hid` allocation from being mistaken for a semantic probe mutation. It consumes no RNG and adds no primitive-state exemption; the real slime hidden-cache regression continues to require fallback. The new native-handle/robot regression checks unchanged appearance, reuse/fresh row parity and dead resolution. No pin rows are re-recorded for this normalization.
 
 ### Extinguisher cosmetic finish: native presentation timing
 
@@ -5155,3 +5138,7 @@ The silicon lane retains current master's plan filtering before the cap, both ex
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+### Biowaste tank: deleted crusher lookup (2026-10-17)
+
+Global type lookup can return a crusher after its destroy transaction, before garbage collection removes it. The tank now ignores that deleted target rather than attempting a refused relation write during construction. A normal focused constructor test covers this case and the existing live-crusher test covers the retained connection and owned monster. No snapshot is re-recorded for this fix. The rejected look sampling, native roller fixture and teardown harness changes have been dropped in favor of master.
