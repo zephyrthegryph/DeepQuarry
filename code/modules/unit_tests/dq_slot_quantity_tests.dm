@@ -23,7 +23,7 @@
 	TEST_ASSERT(!move_into(bay, "qty_bay", rods, null, amount = QUANTITY_ALL), "a full bay refuses the rest")
 	TEST_ASSERT_EQUAL(rods.get_amount(), 3, "and the refused stack is untouched")
 	// A larger limit makes room by itself (per instance).
-	bay.bay_room = 7
+	bay.set_bay_room(7)
 	TEST_ASSERT_EQUAL(bay.slot_room(rods, "qty_bay"), 2, "raising the holder's limit opens room")
 	TEST_ASSERT_EQUAL(move_into(bay, "qty_bay", rods, null, amount = 1), 1, "an amount below the room moves just that")
 	TEST_ASSERT_EQUAL(rods.get_amount(), 2, "two units left")

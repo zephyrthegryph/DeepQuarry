@@ -9,3 +9,11 @@
 CAPABILITIES(/obj/qty_fixture)
 	slot("qty_bay", accepts = /obj/item/stack, capacity = nameof(bay_room), unit = SLOT_CAPACITY_UNITS, quantity = TRUE)
 	slot("qty_whole", capacity = 2)
+
+/obj/qty_fixture/proc/set_bay_room(value)
+	if(TRACKED_UNCHANGED(bay_room, value))
+		return FALSE
+	bay_room = value
+	tracked_changed(src, nameof(bay_room))
+	return TRUE
+SETTER(/obj/qty_fixture, bay_room)
