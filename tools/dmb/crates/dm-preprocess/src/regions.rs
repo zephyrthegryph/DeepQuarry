@@ -17,6 +17,8 @@ pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
+mod edit;
+pub use edit::{expand_regions_edit, expansions_equal, plan_regions_edit, plans_equal, PlanEdit};
 mod expansion;
 mod expansion_input;
 mod joined_text;
@@ -31,6 +33,8 @@ pub use region_memo::{
 };
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod edit_tests;
 
 pub use expansion::{
     expand_regions, expand_regions_text, expand_regions_text_with_executor,
