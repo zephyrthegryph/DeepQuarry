@@ -38,22 +38,21 @@ CAPABILITIES(/datum/riding)
 	var/ridden_dir = "[ridden().dir]"
 	var/passindex = 0
 	if(ridden().has_buckled_mobs())
-		for(var/m in ridden()?.buckled_mob_list())
+		for(var/mob/living/buckled_mob as anything in ridden().buckled_mob_list())
 			passindex++
-			var/mob/living/buckled_mob = m
 			var/list/offsets = get_offsets(passindex)
 			var/rider_dir = get_rider_dir(passindex)
 			buckled_mob.set_dir(rider_dir)
-			dir_loop:
-				for(var/offsetdir in offsets)
-					if(offsetdir == ridden_dir)
-						var/list/diroffsets = offsets[offsetdir]
-						buckled_mob.set_pixel_x(diroffsets[1])
-						if(diroffsets.len >= 2)
-							buckled_mob.set_pixel_y(diroffsets[2])
-						if(diroffsets.len == 3)
-							buckled_mob.set_layer(diroffsets[3])
-						break dir_loop
+			// A direct lookup, not a labelled `break` out of a loop over the keys: that `break` also ended the enclosing rider loop's iteration
+			// on the wrong variable (the rider loop ran a second time with the offsets key as the rider).
+			var/list/diroffsets = offsets[ridden_dir]
+			if(!islist(diroffsets))
+				continue
+			buckled_mob.set_pixel_x(diroffsets[1])
+			if(diroffsets.len >= 2)
+				buckled_mob.set_pixel_y(diroffsets[2])
+			if(diroffsets.len == 3)
+				buckled_mob.set_layer(diroffsets[3])
 
 // Override this to set your vehicle's various pixel offsets
 /datum/riding/proc/get_offsets(pass_index) // list(dir = x, y, layer)
