@@ -196,7 +196,8 @@
 
 /// Goes back to the definition's `factors` for `path`.
 /mob/living/proc/reset_body_effect_factors(path)
-	body_effect_origins?[path]?.set_table_override(null)
+	var/datum/body_effect_origin/application = body_effect_origins?[path]
+	application?.set_table_override(null)
 
 /// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
 /// or, for a world-clock effect, on the global owner under a name that includes the mob.
