@@ -383,7 +383,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	var/obj/item/dq_containment_test/item = allocate(/obj/item/dq_containment_test, T)
 
 	// The predicate decides, with its reason.
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(item, folder), "only paper, photos and bundles fit", "folder refuses a non-paper item")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(item, folder)), "only paper, photos and bundles fit", "folder refuses a non-paper item")
 	TEST_ASSERT(!move_into(folder, null, item), "the refused move fails")
 	TEST_ASSERT_EQUAL(item.loc, T, "a refused move changes nothing")
 	TEST_ASSERT_NULL(dq_ledger_refusal(page, folder), "paper fits")
