@@ -132,6 +132,9 @@ Run `bash tools/ci/legacy_form_counts.sh` for the current census. If you touch a
 uses an open form, leave it in place unless you are converting that file in a wave (§3c). The docs
 under `doc/rewrite/archive/` describe the old forms; they are history now, not a guide to master.
 
+The old `/datum/req` flyweights (`req.dm`, `op_ctx.dm`, `/datum/requirement`, `requirement_composer()`) are retired and hard-banned (`legacy_forms`): a requirement is a native
+`/datum/entry/part/req` (`req_empty_hand()`, `req_access()`, `req_stance()`, ... in `code/library/requirements/`); the design is `doc/rewrite/proposals/admission.md`.
+
 Corrections to older notes: there is no `om_changed()`, `changed()` channels or `om_raise_change()`
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
 was folded into the kernel (`code/controllers/kernel/kernel.dm`).
@@ -242,7 +245,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
   `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
-  dirty slot and never discards anything); a 4th concurrent lane is refused ("POOL FULL"). `... release <branch>` retires the dmbc
+  dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
+  `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
   binary and `data/analyze-cache` warm; a merged lane's slot is also reclaimed by the next lease. Do not `git worktree add` a lane
   worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.

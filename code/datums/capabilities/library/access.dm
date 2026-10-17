@@ -41,32 +41,6 @@
 		return actor
 	return null
 
-// ---- the requirement ----
-
-/// The actor has a credential provider granting the target's access (access_credential()).
-/datum/req/credential
-	reason = /datum/msg/req_no_access
-	of = OP_TARGET
-	var/list/req_access
-	var/list/req_one_access
-	var/list/id_types
-
-/datum/req/credential/test(datum/op_ctx/ctx)
-	var/atom/A = ctx.target
-	if(!istype(A) || !ctx.actor || ctx.route == ROUTE_AUTHORITY)
-		return null
-	var/list/needs = access_needs(A, req_access, req_one_access)
-	return access_credential(A, ctx.actor, ctx.held, needs[1], needs[2], id_types) ? null : reason
-
-/// A credential requirement: the holder's own access, else these defaults (shared, interned).
-/proc/req_credential(list/access, list/req_one_access, list/id_types)
-	RETURN_TYPE(/datum/req)
-	var/datum/req/credential/R = new
-	R.req_access = access
-	R.req_one_access = req_one_access
-	R.id_types = id_types
-	return req_intern(R)
-
 /// Whether `actor` (with `held` in hand) has a credential for holder's own access. From code that asks outside an op
 /// (a UI's status, a button).
 /proc/access_allowed(atom/holder, mob/actor, obj/item/held)
