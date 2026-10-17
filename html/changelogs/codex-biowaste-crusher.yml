@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Bio-compostor terminals can initialize after a linked crusher has been deleted."
