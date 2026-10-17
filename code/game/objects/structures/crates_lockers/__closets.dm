@@ -131,7 +131,6 @@ CAPABILITIES(/obj/structure/closet)
 	slot_id = CONTAINER_SLOT_INTERIOR
 	name = "interior"
 	capacity_model = SLOT_CAPACITY_UNITS
-	accepts = /datum/predicate/slot_closet_interior
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
@@ -142,9 +141,8 @@ CAPABILITIES(/obj/structure/closet)
 /datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
 	return holder.storage_cost_of(thing)
 
-/datum/predicate/slot_closet_interior
-	name = "closet interior"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /atom/movable/proc/slot_loose, null), "it is fastened down"))
+/datum/relation_definition/slot/closet_interior/accepts_requirements()
+	return req_loose()
 
 /obj/structure/closet/latent_generator()
 	return starts_with

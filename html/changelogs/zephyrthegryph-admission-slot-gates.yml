@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Slots take a type list and requirements together in accepts, a fits requirement, and a replace policy (REPLACE, REPLACE_IF_BETTER); slot predicates are gone for requirements, and slot_transfer takes an admin_authority grant"

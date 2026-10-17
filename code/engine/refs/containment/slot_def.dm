@@ -45,8 +45,17 @@
 	/// Whether the slot takes a quantity: a thing carrying several units (a stack, a shell count) may go in partly, as many units as
 	/// there is room for (move_into(amount =)). The cost of a thing is its unit cost times its units.
 	var/quantity = FALSE
-	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
-	var/accepts
+	/// What the slot admits besides its type list, as requirements (accepts_requirements()), compiled once: an acceptance plan, or null. A declared
+	/// slot's `accepts =` splits into accepts_type (the type list) and this.
+	var/accepts_plan
+	var/accepts_planned = FALSE
+	/// The requirement on size and shape (a slot(fits =)), compiled the same way; asked after accepts and before capacity.
+	var/fits_plan
+	var/fits_planned = FALSE
+	/// What a full slot does with a newcomer: REFUSE (default), REPLACE (the oldest occupant leaves) or REPLACE_IF_BETTER (the worst occupant leaves when
+	/// the newcomer is better by the stat `replace_by`). A displaced occupant goes to where the newcomer came from, else to the holder's turf.
+	var/replace = REFUSE
+	var/replace_by
 	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
 	/// CONSTRAINT_HOLD for storage: checked after `accepts`, for holders whose
 	/// acceptance varies by type. Null for none.
@@ -165,7 +174,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 		if(isnull(id) || taken[id] || (istext(id) && (id in holder.vars)))
 			continue
 		taken[id] = TRUE
-		. += declared_slot_def(holder.type, id, E.args["capacity"], E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"], E.args["on_destroy"], E.args["unit"], E.args["quantity"])
+		. += declared_slot_def(holder.type, id, E.args["capacity"], E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"], E.args["on_destroy"], E.args["unit"], E.args["quantity"], E.args["fits"], E.args["replace"], E.args["replace_by"])
 	var/list/graph_slots = holder.construction_slot_declarations(taken, defs, length(.))
 	if(length(graph_slots))
 		. += graph_slots
@@ -174,7 +183,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /// `unit` (a SLOT_CAPACITY_* model, default COUNT; `quantity` lets a thing go in by units), in space `at`, of type `accepts`. An
 /// `exposure` of SLOT_EXPOSURE_SEALED makes it a sealed slot (an occupant pod's): what is inside lives in the holder's shell. An `on_destroy` of
 /// ON_DESTROY_DELETE deletes the contents with the holder; otherwise they spill.
-/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null, on_destroy = null, unit = null, quantity = FALSE)
+/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null, on_destroy = null, unit = null, quantity = FALSE, fits = null, replace = null, replace_by = null)
 	RETURN_TYPE(/datum/relation_definition/slot)
 	var/static/list/made = list()
 	var/cache_key = "[holder_type]|[id]"
@@ -193,6 +202,10 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	S.quantity = !!quantity
 	S.at = at
 	S.set_declared_accepts(accepts)
+	S.set_declared_fits(fits)
+	if(replace)
+		S.replace = replace
+		S.replace_by = replace_by
 	S.is_default = is_default
 	if(on_destroy == ON_DESTROY_DELETE) // slot(..., on_destroy =): what the slot holds goes with the holder instead of spilling
 		S.drop_policy = SLOT_DROP_DELETE
@@ -261,16 +274,91 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 		for(var/key in change_read_keys(holder, capacity_var))
 			. += list(list(holder, key))
 
-/// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
+/// What this slot admits besides a type list, as native requirements (pure: null or a /datum/msg reason): a registry decl overrides this. Compiled once.
+/datum/relation_definition/slot/proc/accepts_requirements()
+	return null
+
+/// The requirement on size and shape (see fits_plan): a registry decl overrides this.
+/datum/relation_definition/slot/proc/fits_requirements()
+	return null
+
+/// The compiled accepts plan, or null when the slot has none.
+/datum/relation_definition/slot/proc/accepts_plan_of()
+	if(!accepts_planned)
+		accepts_planned = TRUE
+		var/list/parts = accepts_requirements()
+		if(length(parts))
+			accepts_plan = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
+	return accepts_plan
+
+/// The compiled fits plan, or null when the slot has none.
+/datum/relation_definition/slot/proc/fits_plan_of()
+	if(!fits_planned)
+		fits_planned = TRUE
+		var/list/parts = fits_requirements()
+		if(length(parts))
+			fits_plan = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
+	return fits_plan
+
+/// Why `thing` can't go in this slot on `holder`, not counting capacity, or null. The order is the stated one (admission.md D2h): the slot's
+/// accepts (its type list and requirements), then fits, then the holder's constraint; capacity, occupancy and the insert action's needs() follow in
+/// dq_ledger_refusal().
 /datum/relation_definition/slot/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		. = P.why_not(actor, thing, null)
+	var/datum/entry/part/acceptance_plan/accepts_compiled = accepts_plan_of()
+	if(accepts_compiled)
+		. = acceptance_plan_query(accepts_compiled, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
+		if(.)
+			return .
+	var/datum/entry/part/acceptance_plan/fits_compiled = fits_plan_of()
+	if(fits_compiled)
+		. = acceptance_plan_query(fits_compiled, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
 		if(.)
 			return .
 	if(holder_constraint)
 		return holder.containment_constraint_refusal(holder_constraint, thing, actor)
 	return null
+
+/// The reads behind refusal(): the accepts and fits plans' requirements.
+/datum/relation_definition/slot/proc/plan_read_keys(atom/holder, atom/movable/thing, mob/actor)
+	. = list()
+	var/datum/entry/part/acceptance_plan/accepts_compiled = accepts_plan_of()
+	if(accepts_compiled)
+		. += acceptance_plan_query(accepts_compiled, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
+	var/datum/entry/part/acceptance_plan/fits_compiled = fits_plan_of()
+	if(fits_compiled)
+		. += acceptance_plan_query(fits_compiled, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
+
+/// What this slot's accepts and fits depend on (REQ_READS_TYPE or REQ_READS_INSTANCE): the largest of its requirements' levels. A type list alone is
+/// type-level. A slot whose answer is type-level can be asked about a latent entry without making the thing (admission.md D8).
+/datum/relation_definition/slot/proc/accepts_level()
+	. = REQ_READS_TYPE
+	var/datum/entry/part/acceptance_plan/accepts_compiled = accepts_plan_of()
+	if(accepts_compiled)
+		. = max(., accepts_compiled.req_level())
+	var/datum/entry/part/acceptance_plan/fits_compiled = fits_plan_of()
+	if(fits_compiled)
+		. = max(., fits_compiled.req_level())
+
+/// The occupant a full slot would give up for `thing` (replace policy), or null when it refuses a newcomer when full.
+/datum/relation_definition/slot/proc/displaced_for(atom/holder, atom/movable/thing)
+	if(replace == REFUSE)
+		return null
+	var/list/there = holder.slot_contents(slot_id)
+	if(!length(there))
+		return null
+	if(replace == REPLACE)
+		return there[1]
+	var/atom/movable/worst = null
+	var/worst_value = null
+	for(var/atom/movable/occupant as anything in there)
+		var/value = op_key_value(occupant, replace_by)
+		if(!isnum(value))
+			value = 0
+		if(isnull(worst_value) || value < worst_value)
+			worst = occupant
+			worst_value = value
+	var/mine = op_key_value(thing, replace_by)
+	return (isnum(mine) && mine > worst_value) ? worst : null
 
 /// Why `thing` can't leave this slot on `holder`, or null. Default: it can.
 /datum/relation_definition/slot/proc/removal_refusal(atom/holder, atom/movable/thing, mob/actor)
@@ -324,6 +412,9 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 /datum/relation_definition/slot/proc/set_declared_accepts(accepts)
 	CRASH("Not a declared containment slot")
 
+/datum/relation_definition/slot/proc/set_declared_fits(fits)
+	CRASH("Not a declared containment slot")
+
 /datum/relation_definition/slot/declared
 	name = "declared slot"
 	capacity_model = SLOT_CAPACITY_COUNT
@@ -332,11 +423,7 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 	var/accepts_type
 
 /datum/relation_definition/slot/declared/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(istype(accepts_type, /datum/entry/part/acceptance_plan))
-		var/datum/entry/part/acceptance_plan/P = accepts_type
-		. = acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
-	else
-		. = declared_slot_type_refusal(accepts_type, thing)
+	. = declared_slot_type_refusal(accepts_type, thing)
 	if(.)
 		return .
 	return ..()
@@ -353,25 +440,30 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 
 
 
+/// `accepts` is a type, a list of types, requirements, or any mix: the types are a type-list check (accepts_type), the requirements a compiled plan
+/// (accepts_plan); both must pass.
 /datum/relation_definition/slot/declared/set_declared_accepts(accepts)
-	var/list/parts = entry_flatten(list(accepts))
-	var/native = FALSE
-	for(var/part in parts)
-		if(istype(part, /datum/entry))
-			native = TRUE
-	if(!native)
-		accepts_type = accepts
-		return
-	for(var/part in parts)
-		if(!istype(part, /datum/entry/part/req))
-			CRASH("slot accepts cannot mix native requirements and type paths")
-	accepts_type = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
+	var/list/types = list()
+	var/list/reqs = list()
+	for(var/part in entry_flatten(list(accepts)))
+		if(istype(part, /datum/entry/part/req))
+			reqs += part
+		else if(ispath(part))
+			types += part
+		else
+			CRASH("slot accepts takes types and requirements, got [part]")
+	accepts_type = length(types) ? types : null
+	accepts_planned = TRUE
+	accepts_plan = length(reqs) ? acceptance_compile(list(acceptance(slot_id, reqs, mode = ACCEPTANCE_REPLACE))) : null
 
-/datum/relation_definition/slot/declared/admission_read_keys(atom/holder, atom/movable/thing, mob/actor)
-	. = ..()
-	if(istype(accepts_type, /datum/entry/part/acceptance_plan))
-		var/datum/entry/part/acceptance_plan/P = accepts_type
-		. += acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
+/datum/relation_definition/slot/declared/set_declared_fits(fits)
+	var/list/reqs = list()
+	for(var/part in entry_flatten(list(fits)))
+		if(!istype(part, /datum/entry/part/req))
+			CRASH("slot fits takes requirements, got [part]")
+		reqs += part
+	fits_planned = TRUE
+	fits_plan = length(reqs) ? acceptance_compile(list(acceptance(slot_id, reqs, mode = ACCEPTANCE_REPLACE))) : null
 
 /proc/declared_slot_type_refusal(accepts_type, atom/movable/thing)
 	// A declared slot accepts either one type or a list of types.

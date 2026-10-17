@@ -65,9 +65,6 @@
 		return .
 	if(acceptance_declared(GLOB.native_equipment_acceptance, slot_id))
 		return dq_native_equip_slot_reason(wearer, slot_id, thing, actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		return P.why_not(wearer, thing, null)
 	return null
 
 // ---- The shared slot ----

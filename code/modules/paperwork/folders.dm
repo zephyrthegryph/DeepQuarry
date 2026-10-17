@@ -16,14 +16,14 @@
 	holder = /obj/item/folder
 	slot_id = CONTAINER_SLOT_PAGES
 	name = "pages"
-	accepts = /datum/predicate/slot_folder_pages
 	drop_policy = SLOT_DROP_DELETE
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
 
-/datum/predicate/slot_folder_pages
-	name = "folder pages"
-	spec = list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_PAPERWORK), "only paper, photos and bundles fit"))
+/datum/relation_definition/slot/folder_pages/accepts_requirements()
+	return req_acceptance_tag(TAG_PAPERWORK, because = MSG(folder/only_paper))
+
+MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
 
 /// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
 /obj/item/folder/draw(datum/look/look)

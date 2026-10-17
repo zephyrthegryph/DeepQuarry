@@ -139,6 +139,20 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	stages = PART_STAGE_REQUIRE
 	/// The reason when the entry names none.
 	var/default_reason = /datum/msg/req_failed
+	/// REQ_READS_TYPE or REQ_READS_INSTANCE: what the answer depends on (admission.md D8). A slot whose requirements are all type-level can be
+	/// asked about a latent entry (a type, a delta, a count) without making the thing.
+	var/reads_level = REQ_READS_INSTANCE
+	/// Whether the answer depends on who acts. The actorless contract (admission.md D2i): a part that does holds when there is no actor (a system
+	/// mover: a conveyor, Bumped, Cross), while the parts that read the holder or the candidate still answer.
+	var/reads_actor = FALSE
+
+/// The level of this requirement and everything it combines: the largest reads_level.
+/datum/entry/part/req/proc/req_level()
+	. = reads_level
+	for(var/child in children)
+		if(istype(child, /datum/entry/part/req))
+			var/datum/entry/part/req/R = child
+			. = max(., R.req_level())
 
 /// The boolean view: the requirement as a condition.
 /datum/entry/part/req/proc/holds(datum/act/op/A)
@@ -367,6 +381,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/capable
 	part_name = "req_capable"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/capable/read_keys(datum/act/op/A)
@@ -383,6 +398,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/conscious
 	part_name = "req_conscious"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/conscious/read_keys(datum/act/op/A)
@@ -397,6 +413,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/alive
 	part_name = "req_alive"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/alive/read_keys(datum/act/op/A)
@@ -412,6 +429,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/self
 	part_name = "req_self"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_silent
 
 /datum/entry/part/req/self/read_keys(datum/act/op/A)
@@ -465,6 +483,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/adjacent
 	part_name = "req_adjacent"
+	reads_actor = TRUE
 	default_reason = /datum/msg/op/unreachable
 
 /datum/entry/part/req/adjacent/read_keys(datum/act/op/A)

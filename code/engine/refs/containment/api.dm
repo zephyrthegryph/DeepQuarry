@@ -8,6 +8,10 @@
 //   holder.slot_lookup(slot_id, key)                  the thing keyed `key` in a keyed slot, or null
 //   dq_ledger_refusal(thing, holder, slot_id, actor)  why a move would fail, or null
 //
+// The stated order of reasons (admission.md D2h): sanity (gone, inside itself, no such holder or slot, already there), release (the source's
+// removal rules and /datum/act/remove needs), the slot's accepts (type list, then requirements), fits, a keyed duplicate, capacity (a replace policy
+// may displace an occupant), then the insert action's needs(). The first refusal is the one a player sees.
+//
 // Each move checks both sides first: the thing can leave its current slot
 // (the slot's removal_refusal() and /datum/act/check_remove), and it can enter
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
@@ -68,8 +72,15 @@
 		var/limit = def.capacity_for(holder)
 		if(limit != INFINITY)
 			var/cost = (def.quantity && !isnull(units)) ? def.unit_cost(holder, thing) * units : def.cost(holder, thing)
-			if(dest.current_used(id) + def.latent_used(holder) + cost > limit)
-				return "there's no room for it"
+			var/used_now = dest.current_used(id) + def.latent_used(holder)
+			if(used_now + cost > limit)
+				// A full slot with a replace policy gives up an occupant when that makes room, if the occupant may leave (its remove needs() apply).
+				var/atom/movable/displaced = def.displaced_for(holder, thing)
+				if(!displaced || used_now - def.cost(holder, displaced) + cost > limit)
+					return "there's no room for it"
+				. = dq_ledger_removal_refusal(displaced, actor)
+				if(.)
+					return .
 	return reason_text(op_transfer_precheck(holder, /datum/act/insert, thing, id, actor))
 
 /// Why `thing` can't leave the slot it is in now, or null. Things not in a
@@ -92,6 +103,7 @@
 /proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0)
 	var/datum/ledger/dest = holder.containment_ledger()
 	var/id = slot_id || dest.default_id
+	dq_ledger_make_room(thing, holder, id)
 	if(thing.loc == holder)
 		dest.reslot(thing, id, flags)
 		return TRUE
@@ -108,6 +120,26 @@
 		dest.pending_flags = null
 	var/list/entry = dest.entries?[thing]
 	return entry && entry[LEDGER_E_SLOT] == id
+
+/// A slot with a replace policy that is full gives up the occupant its policy names so `thing` fits (the refusal check already asked whether it may
+/// leave). It goes to where `thing` came from when that is a floor or another holder, else to the holder's turf. Nothing happens for a slot that
+/// refuses when full or has room.
+/proc/dq_ledger_make_room(atom/movable/thing, atom/holder, id)
+	var/datum/ledger/dest = dq_ledger(holder)
+	var/datum/relation_definition/slot/def = dest?.def_by_id(id)
+	if(!def || def.replace == REFUSE || def.capacity_model == SLOT_CAPACITY_NONE)
+		return
+	var/limit = def.capacity_for(holder)
+	if(limit == INFINITY || dest.current_used(id) + def.latent_used(holder) + def.cost(holder, thing) <= limit)
+		return
+	var/atom/movable/displaced = def.displaced_for(holder, thing)
+	if(!displaced)
+		return
+	var/atom/where = thing.loc
+	if(!isturf(where) && !(where && where != holder && dq_slot_defs_for(where)))
+		where = get_turf(holder)
+	log_world("SLOT_REPLACE: [displaced] leaves [holder] ([id]) for [thing]; it goes to [where || "nullspace"]")
+	holder.slot_remove(displaced, where, null, LEDGER_MOVE_FORCED)
 
 /// Take `thing` out of this holder's slots to `destination`. A destination
 /// with slots makes this a transfer into its default slot. `flags` may carry
@@ -181,8 +213,12 @@
 	var/list/entry = L?.entries[thing]
 	if(!entry || !new_holder || QDELETED(new_holder))
 		return FALSE
+	if(istype(authority, /datum/authority_grant))
+		var/datum/authority_grant/granted = authority
+		log_world("SLOT_TRANSFER: authority [granted.reason || "unstated"] granted by [granted.granted_by]")
+		authority = granted.mask
 	if(!isnull(authority) && !isnum(authority))
-		stack_trace("slot_transfer(): authority is an AUTH_* mask, got [authority]")
+		stack_trace("slot_transfer(): authority is an AUTH_* mask or a /datum/authority_grant, got [authority]")
 		return FALSE
 	var/forced = !!(authority & AUTH_ADMIN)
 	var/from_slot = entry[LEDGER_E_SLOT]
@@ -224,6 +260,24 @@
 	act_done(leaving)
 	act_done(entering)
 	return TRUE
+
+/// An authority a caller is granted for one transfer: who granted it (a log name, never a reference), why, and which AUTH_* bits it carries.
+/// slot_transfer(authority =) takes this or a bare mask; the grant is logged. (admission.md D2j: the datum replaces forced/silent flags; a `quiet`
+/// field arrives with the first feedback path that reads it.)
+/datum/authority_grant
+	var/mask = AUTH_ADMIN
+	var/granted_by = "the game"
+	var/reason
+
+/// A grant of admin authority: `actor` forces a transfer for `reason`.
+/proc/admin_authority(mob/actor, reason, mask = AUTH_ADMIN)
+	RETURN_TYPE(/datum/authority_grant)
+	var/datum/authority_grant/granted = new
+	granted.mask = mask
+	if(actor)
+		granted.granted_by = key_name(actor)
+	granted.reason = reason
+	return granted
 
 /// Remove everything in `slot_id` (null: every slot) to `destination`.
 /// Returns how many things left.

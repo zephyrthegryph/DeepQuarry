@@ -24,7 +24,7 @@
 
 // Engine declarations: add beside the existing slot query methods.
 /datum/relation_definition/slot/proc/admission_read_keys(atom/holder, atom/movable/thing, mob/actor)
-	return list()
+	return plan_read_keys(holder, thing, actor)
 
 /datum/relation_definition/slot/proc/removal_read_keys(atom/holder, atom/movable/thing, mob/actor)
 	return list()

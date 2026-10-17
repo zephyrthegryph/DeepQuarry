@@ -17,6 +17,9 @@
 		CRASH("acceptance type must be a path or list of paths")
 	return part_make(/datum/entry/part/req/acceptance_leaf/type, list("types" = paths.Copy(), "exclude" = exclude, "because" = because))
 
+/datum/entry/part/req/acceptance_leaf/type
+	reads_level = REQ_READS_TYPE
+
 /datum/entry/part/req/acceptance_leaf/type/acceptance_reason(datum/act/op/A)
 	var/fits = FALSE
 	if(A?.target)
