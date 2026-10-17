@@ -108,6 +108,7 @@
 	var/turf/beside = get_step(T, EAST)
 	var/beside_type = beside?.type
 	for(var/type in expected_by_type)
+		log_test("conversion pin: capturing [type]") // Keep the watchdog informed and identify a stalled capture.
 		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
 		rand_seed(1)
 		var/list/baseline_atoms = dq_pin_fixture_atoms()
