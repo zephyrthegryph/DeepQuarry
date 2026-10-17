@@ -122,11 +122,20 @@ proof_merge_tree() {
 # them. Prints the tree on success. This is the cheap question "can this lane land without a gate run?"; dq_merge_gates.sh asks the same
 # thing of the real merge and is the authority.
 proof_covers_merge() {
-	local base="$1" lane="$2" tree tgui=0 an=0 tests=()
-	tree="$(proof_merge_tree "$base" "$lane")" || return 1
+	local tree
+	tree="$(proof_merge_tree "$1" "$2")" || return 1
+	proof_covers_tree "$1" "$tree" || return 1
+	printf '%s
+' "$tree"
+}
+
+# proof_covers_tree <base-ref> <tree> [extra selectors...]: the check above for a tree already in hand (the gates ask it of HEAD's tree).
+# Silent; exit 0 when a proof covers the usual list plus the extra selectors, and tgui lint / analyzer tests where the diff against <base-ref> needs them.
+proof_covers_tree() {
+	local base="$1" tree="$2" tgui=0 an=0 tests=()
+	shift 2
 	git diff --quiet "$base" "$tree" -- tgui/ ':!tgui/packages/tgui/interfaces/generated' || tgui=1
 	git diff --quiet "$base" "$tree" -- tools/analyze/ || an=1
 	mapfile -t tests < <(proof_smoke_tests)
-	proof_find "$tree" "$tgui" "$an" "${tests[@]}" >/dev/null || return 1
-	printf '%s\n' "$tree"
+	proof_find "$tree" "$tgui" "$an" "${tests[@]}" "$@" >/dev/null
 }
