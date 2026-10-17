@@ -1338,7 +1338,6 @@
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
-#include "dq_pin_constructor_repairs.dm"
 #include "dq_casino_prompt_flow_tests.dm"
 #include "dq_machine_refresh_dartgun_pin.dm"
 #include "dq_native_machine_refresh_tests.dm"
