@@ -658,3 +658,32 @@ so no later wave converts before its pin exists.
 * Whether the gas gate's `min_energy` and `min_fire` requirement fields are populated by any DM reaction today (the DM `requirements` list
   names only gases and temperatures).
 * How `GLOB.sheet_reagents` and `GLOB.ore_reagents` are populated (their entry counts were not taken).
+
+## 15. Implementation notes (waves 0 and 1)
+
+Where the code differs from the syntax this proposal sketched, and why. The decisions D1 to D14 are unchanged.
+
+* **`holds`, not `when`.** The condition argument of `transformation()` is `holds = ...`. The handler lints read every `when` as an op condition
+  (`x(datum/act/A)`), and a transformation has no act. Conditions are `temperature_in()`, `pressure_in()`, `ambient_gas_over()`,
+  `ambient_gas_under()`, `subject_is()`, `appliance()` and the combinators `xform_all()`, `xform_any()`, `xform_not()`; `all_of()` and `any_of()` already mean
+  the op requirements. A subtype's `holds` is ANDed over the one it inherits (the proposal's slime example would otherwise have replaced the base's).
+* **Terms.** `reagent()` and `gas()` as proposed; `item_term()`, `stack_term()`, `ore_term()` and `fruit_term()` because `item()` and `stack()` are the op input parts.
+* **Procs in a static block.** A static block is read in a global proc, so `PROC_REF(x)` has no type to resolve against: a tail, a data proc or a proc condition is
+  `TYPE_PROC_REF(/the/rule/type, x)`. The compile keeps the name and calls it on the rule's one owner instance, so an override in a subtype answers for itself.
+  A reagent rule's tail is called as `x(holder, made)` and its data as `x(holder, extent)`: the shapes of the old `on_reaction()` and `send_data()`.
+* **Energy.** `energy = per_step(joules)`, booked once per step (chemistry's `temp_shift` was a flat amount per step, not per extent), into the air around the
+  subject (`XFORM_HEAT_AIR`, the default) or its own heat body (`XFORM_HEAT_SUBJECT`). `HEAT_AMBIENT` already names the heat-rejection loop, so it is not reused.
+* **Ambient gas.** `takes_ambient = list(gas(id, moles))` is the gas a step takes from the air around the subject (distilling's `consumes_xgm_gas`).
+* **`made`, `wiki`, `important`.** `made = n` is what the tail is told was made when a rule has no product term (a rule that spawns things); `wiki` carries the
+  WIKI_X flags; `important` is the old `log_is_important`.
+* **Index.** A rule is indexed under its first take only (as before), so each bucket holds the same rules in the same order. `subject_is()` is a pre-filter in the
+  matcher rather than an index key; the order a bucket is walked in is unchanged, so the overlap pin holds.
+* **Order.** `order` is the rule type's place in `subtypesof(/transformation)`; converted files keep their declaration order, so it equals the legacy order. A type's path
+  below `/transformation/chem/` is the same as its path below `/datum/decl/chemical_reaction/` was, which is what the pins key on.
+* **Outputs.** Reagent products truncate to the free volume (`CAPACITY_TRUNCATE`, the only capacity built). Item and stack products go through
+  `xform_prepare_item()` (made in nullspace and checked against the destination slot before anything is spent) and `xform_commit_item()` (the ledger's `move_into()`);
+  a slot that refuses refuses the step. The one quantity-insertion form belongs to the admission lane; this layer does not build its own.
+* **`log_chemical_reaction()` has no caller.** The proposal's section 6 moves the chemistry log onto a listener of `/datum/notice/transformed`; on master nothing
+  calls it, so mixing an important reaction has never messaged admins. The log proc is kept and takes a rule; no listener is registered, so behaviour is unchanged.
+  The contract event is still emitted by the settle, and the pins count it.
+* **Boot cost (D14).** `xform_build()` logs how long the compile took (`Transformations compiled: n rule(s) in s`).
