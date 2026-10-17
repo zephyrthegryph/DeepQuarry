@@ -87,7 +87,7 @@
 			return
 		for(var/atom/movable/AM as anything in left)
 			if(!QDELETED(AM))
-				qdel(AM)
+				dq_fresh_look_delete(AM)
 
 /// The block back to the state every unit starts from: its turfs reset, the lane settled.
 /datum/unit_test/proc/dq_fresh_look_reset(turf/T)
@@ -95,6 +95,16 @@
 		dq_fresh_look_drain(B)
 		unit_test_block_reset_turf(B)
 	dq_fresh_look_settle()
+
+/// Whether `A`'s type refuses an unforced qdel() (LIFECYCLE_KEEP_*): asked with the refusal's own report switched off.
+/datum/unit_test/proc/dq_fresh_look_keeps(datum/A)
+	GLOB.lifecycle_keep_expected = TRUE // the question itself reports an unforced delete otherwise
+	. = !!A.lifecycle_keep(FALSE)
+	GLOB.lifecycle_keep_expected = FALSE
+
+/// Deletes `A`; a type that refuses an unforced qdel() is deleted forced (the sweep made it, so it owns the end of it).
+/datum/unit_test/proc/dq_fresh_look_delete(datum/A)
+	qdel(A, dq_fresh_look_keeps(A))
 
 /// The look of one atom as sorted rows: icon, state, dir, colour, alpha and every distinct overlay and underlay.
 /proc/dq_fresh_look_lines(atom/target)
@@ -133,10 +143,13 @@
 		var/atom/A = dq_snapshot_allocate(type, T)
 		if(QDELETED(A))
 			. = list("deleted itself on creation")
+		else if(dq_fresh_look_keeps(A))
+			. = list("keeps itself (lifecycle_keep)") // a singleton or an owned part: not a look a type's instances share
+			dq_fresh_look_delete(A)
 		else
 			dq_fresh_look_settle()
 			. = dq_fresh_look_lines(A)
-			qdel(A)
+			dq_fresh_look_delete(A)
 	catch(var/exception/e)
 		. = list("runtime: [e.name]")
 	dq_fresh_look_drain(T)
