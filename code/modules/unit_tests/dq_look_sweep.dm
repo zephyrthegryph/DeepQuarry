@@ -7,7 +7,7 @@
  *
  * Look state pins (snapshots/look_states/<root>.txt, test dq_look_state_pin): how each creatable obj/mob subtype of a root looks
  * after the state its look reacts to changes. Per type, for each numeric var the type declares below its base (/obj or /mob; at
- * most DQ_LOOK_STATE_MAX_VARS planned vars, filtered to the allowed read plan before lexical ordering and capping), the
+ * most DQ_LOOK_STATE_MAX_VARS of them, in declaration order, narrowed to the vars the analyzer's plan says a draw can read), the
  * var is written (0, 1 and 2, whichever differ from its made value; through its tracked setter when it has one, else the raw
  * var), a redraw is requested the way a caller does (update_icon(), then changed()), the presentation lane is flushed and the
  * look is compared with the made look. A row is the probe and what the look gained or lost:
@@ -269,7 +269,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	for(var/name in A.vars)
 		. += name
-	dq_look_dispose(A)
+	qdel(A)
 	own_turf_contents(T)
 
 /// One turf type: `spot` east of the test floor is turned into it, drawn and turned back.
@@ -310,7 +310,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/names = list()
 	var/runtime
 	try
-		subject = dq_look_allocate(type, T)
+		subject = dq_snapshot_allocate(type, T)
 		if(QDELETED(subject))
 			res.made = list("deleted itself on creation")
 		else
@@ -325,7 +325,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		res.tree_done = TRUE
 	if(!need_state)
 		if(subject && !QDELETED(subject))
-			dq_look_dispose(subject)
+			qdel(subject)
 		dq_look_drain_turf(T)
 		return
 	res.state_done = TRUE
@@ -339,7 +339,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/base = res.made
 	var/reuse = !force_fresh
 	if(!reuse)
-		dq_look_dispose(subject) // fresh probes make their own: a second table on the tile does not flip
+		qdel(subject) // fresh probes make their own: a second table on the tile does not flip
 		dq_look_drain_turf(T)
 	for(var/name in names)
 		for(var/value in list(0, 1, 2))
@@ -347,16 +347,16 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 				if(!dq_look_probe_reuse(subject, type, name, value, base, res))
 					reuse = FALSE
 					if(!QDELETED(subject))
-						dq_look_dispose(subject)
+						qdel(subject)
 					dq_look_drain_turf(T)
 			else
 				res.probe_rows += dq_look_state_probe(type, T, name, value, base)
 	if(subject && !QDELETED(subject))
-		dq_look_dispose(subject)
+		qdel(subject)
 	dq_look_drain_turf(T)
 
-/// Numeric non-base, non-time-like vars the analyzer permits this type to probe.
-/// Host vars enumeration order cannot change the selected set or probe order.
+/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
+/// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
@@ -364,71 +364,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	return dq_look_select_probe_names(found, plan_entry)
-
-/// Keep both existing coverage limits: 24 planned vars, 200 when no plan exists.
-/// An explicit empty plan means no probes. Selection never mutates its inputs.
-/proc/dq_look_select_probe_names(list/candidates, plan_entry)
-	var/planned = islist(plan_entry)
-	var/list/selected = list()
-	for(var/name in candidates)
-		if(!planned || (name in plan_entry))
-			selected += name
-	sortTim(selected, GLOBAL_PROC_REF(cmp_text_asc))
-	var/limit = planned ? DQ_LOOK_STATE_MAX_VARS : DQ_LOOK_STATE_MAX_VARS_UNPLANNED
-	if(length(selected) > limit)
-		selected.Cut(limit + 1)
-	return selected
-
-/datum/unit_test/dq_look_probe_order_invariance
-/datum/unit_test/dq_look_probe_order_invariance/Run()
-	var/list/forward = list()
-	var/list/backward = list()
-	for(var/i in 1 to 250)
-		forward += "v[1000 + i]"
-	for(var/i = 250, i >= 1, i--)
-		backward += "v[1000 + i]"
-	var/original_forward = jointext(forward, ",")
-	var/original_backward = jointext(backward, ",")
-	var/list/planned = list("v1250", "v1249")
-	var/list/from_forward = dq_look_select_probe_names(forward, planned)
-	var/list/from_backward = dq_look_select_probe_names(backward, planned)
-	TEST_ASSERT_EQUAL(jointext(from_forward, ","), "v1249,v1250", "planned vars beyond either old enumeration cap remain covered")
-	TEST_ASSERT_EQUAL(jointext(from_backward, ","), jointext(from_forward, ","), "reversed host enumeration selects the same planned probes")
-	var/list/all_planned = dq_look_select_probe_names(backward, forward)
-	TEST_ASSERT_EQUAL(length(all_planned), DQ_LOOK_STATE_MAX_VARS, "planned coverage retains its existing bound")
-	TEST_ASSERT_EQUAL(all_planned[1], "v1001", "planned capping follows canonical ordering")
-	TEST_ASSERT_EQUAL(all_planned[DQ_LOOK_STATE_MAX_VARS], "v1024", "planned coverage ends at its canonical cap")
-	var/list/unplanned = dq_look_select_probe_names(forward, null)
-	var/list/reversed_unplanned = dq_look_select_probe_names(backward, null)
-	TEST_ASSERT_EQUAL(length(unplanned), DQ_LOOK_STATE_MAX_VARS_UNPLANNED, "absent-plan fallback retains its existing coverage bound")
-	TEST_ASSERT_EQUAL(jointext(unplanned, ","), jointext(reversed_unplanned, ","), "fallback selection is independent of host order")
-	TEST_ASSERT_EQUAL(unplanned[1], "v1001", "fallback starts with the first canonical name")
-	TEST_ASSERT_EQUAL(unplanned[DQ_LOOK_STATE_MAX_VARS_UNPLANNED], "v1200", "fallback caps after canonical ordering")
-	TEST_ASSERT_EQUAL(length(dq_look_select_probe_names(forward, list())), 0, "an explicit empty plan permits no probes")
-	TEST_ASSERT_EQUAL(jointext(planned, ","), "v1250,v1249", "selection preserves the caller's plan ordering")
-	TEST_ASSERT_EQUAL(jointext(forward, ","), original_forward, "selection preserves forward candidates")
-	TEST_ASSERT_EQUAL(jointext(backward, ","), original_backward, "selection preserves backward candidates")
-
-/// A probe owns its native construction stream, independently of round seed, tile and prior allocations.
-/// Keep the host rand_seed calls at the call sites: legacy random constructors retain their old seed policy.
-/datum/unit_test/proc/dq_look_allocate(type, turf/T)
-	var/creator_depth = length(GLOB.roll_creators)
-	var/old_seed = GLOB.round_seed
-	var/old_serial = GLOB.roll_serial
-	var/datum/roller/R = new("look:[type]")
-	GLOB.roll_creators += R
-	var/exception/failure
-	try
-		. = dq_snapshot_allocate(type, T)
-	catch(var/exception/e)
-		failure = e
-	GLOB.roll_creators.Cut(creator_depth + 1)
-	GLOB.round_seed = old_seed
-	GLOB.roll_serial = old_serial
-	qdel(R)
-	if(failure)
-		throw failure
+	if(!islist(plan_entry))
+		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
+		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
+			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
+		return found
+	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
+	var/list/read = list()
+	for(var/name in found)
+		if(name in plan_entry)
+			read += name
+	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
+		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	return read
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
@@ -485,12 +433,12 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
 	try
-		var/atom/target = dq_look_allocate(type, T)
+		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			return
 		dq_look_settle()
 		if(target.vars[name] == value)
-			dq_look_dispose(target)
+			qdel(target)
 			dq_look_drain_turf(T)
 			return
 		dq_look_write(target, name, value)
@@ -499,7 +447,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			. += "[type] [name]=[value] +[row]"
 		for(var/row in base - now)
 			. += "[type] [name]=[value] -[row]"
-		dq_look_dispose(target)
+		qdel(target)
 	catch(var/exception/e)
 		if(!dq_look_write_refused(e, name))
 			. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
@@ -691,48 +639,3 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		dq_look_unit(type, T, base_vars, null, fresh, TRUE, TRUE, TRUE)
 		TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "[type]: one instance for every probe gave other rows than a fresh one per probe")
 		TEST_ASSERT(!length(reused.impure), "[type]: a write-back did not return the look: [jointext(reused.impure, "; ")]")
-
-// Two independent native draws make accidental equality an ineffective substitute for stream isolation.
-/obj/dq_look_native_roll_fixture
-	var/first_roll
-	var/second_roll
-
-CAPABILITIES(/obj/dq_look_native_roll_fixture)
-	rolls(nameof(first_roll), range_of(1, 1000000))
-	rolls(nameof(second_roll), range_of(1, 1000000))
-
-/datum/unit_test/dq_look_native_roll_allocation
-
-/datum/unit_test/dq_look_native_roll_allocation/Run()
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.roll_creators), GLOB.roll_creators.Copy())
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/first_turf = run_loc_floor_bottom_left
-	var/turf/second_turf = get_step(first_turf, EAST)
-	TEST_ASSERT(second_turf && second_turf != first_turf, "the fixture uses two distinct actual turf positions")
-	var/seed_before = GLOB.round_seed
-	var/serial_before = GLOB.roll_serial
-	var/list/creators_before = GLOB.roll_creators.Copy()
-	var/obj/dq_look_native_roll_fixture/first = dq_look_allocate(/obj/dq_look_native_roll_fixture, first_turf)
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "allocation restores the global native seed")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "allocation restores unrelated serial history")
-	var/obj/dq_look_native_roll_fixture/unrelated = allocate(/obj/dq_look_native_roll_fixture)
-	// Deliberately perturb the fallback serial without changing the production RNG implementation.
-	GLOB.roll_serial += 37
-	var/perturbed_serial = GLOB.roll_serial
-	var/obj/dq_look_native_roll_fixture/second = dq_look_allocate(/obj/dq_look_native_roll_fixture, second_turf)
-	TEST_ASSERT_EQUAL(second.first_roll, first.first_roll, "native constructor rolls do not depend on turf or prior allocations")
-	TEST_ASSERT_EQUAL(second.second_roll, first.second_roll, "the full native stream is reproduced, not just its first draw")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, perturbed_serial, "allocation preserves its caller's current serial")
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "the second allocation preserves the global seed")
-	TEST_ASSERT_EQUAL(length(GLOB.roll_creators), length(creators_before), "allocation leaves no synthetic creator on the stack")
-	for(var/i in 1 to length(creators_before))
-		TEST_ASSERT_EQUAL(GLOB.roll_creators[i], creators_before[i], "allocation preserves every existing outer creator")
-	GLOB.roll_serial = serial_before
-	qdel(first)
-	qdel(second)
-	qdel(unrelated)
