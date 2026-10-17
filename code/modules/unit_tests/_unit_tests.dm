@@ -414,6 +414,7 @@
 #include "dq_domain_snapshot.dm"
 #include "dq_snapshot_files.dm"
 #include "dq_chem_math_pins.dm"
+#include "dq_xform_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_silicon_remote_pins.dm"

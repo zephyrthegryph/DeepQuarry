@@ -131,6 +131,7 @@
 #include "code\__defines\loot.dm"
 #include "code\__defines\map_resolvers.dm"
 #include "code\__defines\reputation.dm"
+#include "code\__defines\transformations.dm"
 #include "code\__defines\contracts.dm"
 #include "code\__defines\cargo_market.dm"
 #include "code\__defines\flags.dm"
