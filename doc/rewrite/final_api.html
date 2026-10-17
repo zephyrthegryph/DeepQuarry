@@ -857,7 +857,8 @@ CAPABILITIES(/obj/machinery/door)
 contributes(STAT_ACTS_VIA, ORIGIN_NONE, reason = MSG(vore/absorbed))   <span class="c">// MASK_AND: no input at all; the actor gate (section 8) shows the reason</span>
 </code></pre>
   <div class="sig">contributes(STAT_X, cond | value | STAT_Y, priority =, reason =, key =)
-contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span class="c">// a contribution to a stat on a related entity</span></div>
+contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span class="c">// a contribution to a stat on a related entity</span>
+factors(table, scale =, stacks =, to = nameof(rel), part =, priority =, key =)   <span class="c">// a whole table of contributions to a related entity, at a scale</span></div>
   <div class="prose">
     <ul>
       <li><strong>Conditions.</strong> A condition is boolean with no reason. On a boolean stat a contribution is a condition. On a numeric stat a <code>PROC_REF(x)</code> returns the number, and its reads are generated the same way, so it recomputes when they change. A requirement (<a href="#parts">section 9</a>) is a condition plus a reason, and a contribution never needs one.</li>
@@ -865,6 +866,7 @@ contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =)   <span cla
       <li><strong><code>priority =</code></strong> orders contributions where order matters (<code>TOP</code>, and overrides). It is an integer. Named levels: <code>PRIORITY_DEFAULT</code> (0), <code>PRIORITY_FORCE</code> (100), <code>PRIORITY_ADMIN</code> (1000).</li>
       <li><strong><code>key =</code></strong> names the entry so a subtype can drop it with <code>without("key")</code> (<a href="#parts">section 9</a>).</li>
       <li><strong><code>contributes_to</code></strong> puts a contribution on a stat of the entity a relation names, for example the APC's night-shift setting on its area's <code>lights_nightshift</code>. It is released when the relation changes or either end is deleted.</li>
+      <li><strong><code>factors</code></strong> is <code>contributes_to</code> for a source that contributes a table (an affliction, a stasis hold, a body effect application): <code>table</code> is a static <code>alist(STAT_X = value, ...)</code> or a <code>PROC_REF(x)</code> returning one (a stage table, a species-merged table), <code>scale</code> and <code>stacks</code> are a constant, <code>nameof(v)</code> of a tracked var or a <code>PROC_REF</code>, and <code>to</code> names the relation var of the entity that receives it (the body, the mob). Each entry is held on the receiver as the rows of the source under <code>part</code>, composed by each stat's rule at <code>scale</code> and <code>stacks</code> (a multiplier fades toward 1 as the scale falls, an offset scales linearly, a maximum or minimum takes the value, a mask its bits; a scale of 0 holds nothing). It holds again at the exact new value when the scale, the stacks, a read of the table, the relation or an enclosing <code>when()</code> changes, with no banding of the scale, and releases when the relation changes or either end is deleted. A source never keeps the number its table gave: the receiver's stat is the composed value.</li>
     </ul>
   </div>
   <div class="tbl"><table>

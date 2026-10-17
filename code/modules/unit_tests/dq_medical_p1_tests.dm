@@ -248,7 +248,6 @@
 	var/datum/affliction/hypovolemic_shock/A = H.body.afflict(/datum/affliction/hypovolemic_shock, H.get_organ(BP_TORSO), 10)
 	TEST_ASSERT(A.band_factors, "the band table must be set when the shock takes hold")
 	TEST_ASSERT(H.o2_sat < 0, "the declared O2 saturation factor is held: [H.o2_sat]")
-	TEST_ASSERT(A.factor_band >= 0, "and the severity band it was held at is recorded")
 
 /// C8: wound infection severity goes through the setter.
 /datum/unit_test/dq_p1_c8_infection_uses_setter
@@ -295,16 +294,6 @@
 	A.clear_stage()
 	TEST_ASSERT_NULL(A.stage, "no stage after clearing")
 	TEST_ASSERT(!length(A.active_symptoms), "no presenting symptoms after clearing")
-
-/// C17: a simple body rebuilds stale factors in its own life tick.
-/datum/unit_test/dq_p1_c17_simple_factor_step
-
-/datum/unit_test/dq_p1_c17_simple_factor_step/Run()
-	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
-	M.injure(INJURY_BLUNT, 1)
-	M.body.invalidate(BODY_DIRTY_FACTORS)
-	M.body.life_tick()
-	TEST_ASSERT(!(M.body.dirty & BODY_DIRTY_FACTORS), "the simple plan's tick must rebuild the factor table")
 
 /// C21: airway patency re-dirties the factors on every severity change.
 /datum/unit_test/dq_p1_c21_continuous_airway_factors

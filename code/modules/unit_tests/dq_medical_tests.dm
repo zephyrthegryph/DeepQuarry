@@ -675,7 +675,6 @@
 	var/base = H.species.body_temperature
 	for(var/i in 1 to 10)
 		C.tick()
-	H.body.invalidate(BODY_DIRTY_FACTORS)
 	TEST_ASSERT(H.thermal_setpoint() > base + 1, "cellulitis at high severity should raise the temperature set point ([base] -> [H.thermal_setpoint()])")
 
 

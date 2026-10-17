@@ -152,8 +152,7 @@
 			TEST_ASSERT_EQUAL(length(TYPE_TABLE_GET(inst, affliction_stages)), 3, "[path] builds three stages from its data")
 		qdel(inst)
 
-/// C12: reagent changes refresh the factors only on a band crossing or when a
-/// factor reagent appears or leaves.
+/// C12: a factor reagent's dose record follows its volume exactly, and comes and goes with the reagent.
 /datum/unit_test/dq_k_b_c12_factor_bands
 
 /datum/unit_test/dq_k_b_c12_factor_bands/Run()
@@ -165,9 +164,10 @@
 	var/first = H.antiemetic
 	TEST_ASSERT(first > 0, "a factor reagent appearing refreshes the factors at once: the new factor applies")
 	H.ingested.add_reagent(REAGENT_ID_CALCIUMCARBONATE, 0.05)
-	TEST_ASSERT_EQUAL(H.antiemetic, first, "a change inside one dose band does not refresh: the factor stays at the value of the band's last refresh")
+	TEST_ASSERT(H.antiemetic > first, "a small change follows the dose exactly: there is no band")
+	var/second = H.antiemetic
 	H.ingested.add_reagent(REAGENT_ID_CALCIUMCARBONATE, 5)
-	TEST_ASSERT(H.antiemetic > first, "crossing a dose band refreshes the factors: the new dose applies")
+	TEST_ASSERT(H.antiemetic > second, "a larger dose applies")
 	H.ingested.remove_reagent(REAGENT_ID_CALCIUMCARBONATE, 100)
 	TEST_ASSERT_EQUAL(H.antiemetic, 0, "a factor reagent leaving refreshes the factors: the factor is gone with the reagent")
 
