@@ -20,11 +20,8 @@
 	// Destroyed by injury (not a scripted death): the card takes a beating too.
 	if(!gibbed && vitality() <= 0)
 		card.death_damage()
-	card.cut_overlays()
-	card.setEmotion(16)
+	card.setEmotion(gibbed ? 16 : PAI_EMOTION_DEAD)
 	card.damage_random_component()
 	if(gibbed)
 		if(!QDELETED(card)) // Either the pai or card could be deleted first, prevent a loop
 			ended_with(card, src)
-	else
-		card.add_overlay("pai-dead")

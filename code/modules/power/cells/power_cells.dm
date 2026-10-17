@@ -219,9 +219,8 @@
 /obj/item/fbp_backup_cell/proc/use(mob/living/user, mob/living/target)
 	if(used)
 		return
-	used = TRUE
+	set_used(TRUE)
 	desc += " This one has already been used."
-	cut_overlays()
 	target.adjust_nutrition(amount)
 	user.custom_emote(message = "connects \the [src] to [user == target ? "their" : "[target]'s"] charging port, expending it.")
 
@@ -291,4 +290,4 @@ CAPABILITIES(/obj/item/cell/void)
 
 /obj/item/fbp_backup_cell/draw(datum/look/look)
 	..()
-	look.overlay("[initial(icon_state)]_100")
+	look.overlay("[initial(icon_state)]_100", when = !used)

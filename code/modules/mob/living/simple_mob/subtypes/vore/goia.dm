@@ -341,7 +341,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 
 /mob/living/simple_mob/vore/zorgoia/on_death(gibbed) //are they going to be ok?
 	. = ..()
-	cut_overlays()
 
 /mob/living/simple_mob/vore/zorgoia/tamed
 	tamed = TRUE

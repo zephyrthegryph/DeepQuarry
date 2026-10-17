@@ -7,7 +7,7 @@
  *
  * Look state pins (snapshots/look_states/<root>.txt, test dq_look_state_pin): how each creatable obj/mob subtype of a root looks
  * after the state its look reacts to changes. Per type, for each numeric var the type declares below its base (/obj or /mob; at
- * most DQ_LOOK_STATE_MAX_VARS planned vars, filtered to the allowed read plan before lexical ordering and capping), the
+ * most DQ_LOOK_STATE_MAX_VARS of them, in declaration order, narrowed to the vars the analyzer's plan says a draw can read), the
  * var is written (0, 1 and 2, whichever differ from its made value; through its tracked setter when it has one, else the raw
  * var), a redraw is requested the way a caller does (update_icon(), then changed()), the presentation lane is flushed and the
  * look is compared with the made look. A row is the probe and what the look gained or lost:
@@ -30,15 +30,19 @@
  *   look-order=reverse | shuffle:<n>   the order the owned types are probed in (the determinism proof: the rows must not move)
  *   look-dump=<dir>     write the rows this run produced, sorted, under <dir>/look_trees and <dir>/look_states
  *   look-fresh=1        a fresh instance for every probe (how the pin probed before; the measuring baseline)
+ *   look-bless-dir=<dir>  a sharded bless writes its partial rows here (see dq_look_bless_partial) instead of failing
  *   look-trace=1        log every global scalar and list length a unit changed ("LOOK LEAK")
  * A sharded world (shard-index/shard-count params) probes the types whose index in the sorted list of all of them it owns
- * (sweep_owns) and compares only those; bless, and a new empty pin file, need an unsharded full run.
+ * (sweep_owns) and compares only those; a new empty pin file needs an unsharded full run, and a bless writes per-shard partial files
+ * (look-bless-dir) that tools/dq_look_bless_merge.py merges.
  */
 #define DQ_LOOK_TREE_DIR "code/modules/unit_tests/snapshots/look_trees/"
 #define DQ_LOOK_STATE_DIR "code/modules/unit_tests/snapshots/look_states/"
 #define DQ_LOOK_STATE_MAX_VARS 24
-/// The cap for a type whose plan is unknown ("*"): every numeric var it declares, up to this many.
-#define DQ_LOOK_STATE_MAX_VARS_UNPLANNED 200
+/// The cap for a type whose plan is unknown ("*"): every numeric var it declares, up to this many. A type's own vars come last in
+/// declaration order (an opossum declares 271 below /mob, its is_angry the 201st), so a cap below the most any type declares drops the
+/// vars the type itself added; probes are cheap enough now (one instance per type) that the cap only stops a runaway.
+#define DQ_LOOK_STATE_MAX_VARS_UNPLANNED 600
 /// Deadline passes a settle runs: work that queues more zero-delay work (a timer that arms a timer) needs the next one.
 #define DQ_LOOK_SETTLE_PASSES 3
 
@@ -152,10 +156,11 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * beside the other asks for both, so each type is made once). A later call for a result the first one skipped probes only that.
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
-	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
-	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
-	scope_strain_archive()
 	var/list/universe = dq_look_universe(want_tree, want_state)
+	// A pin compares only the types under a root it has a file for: a type outside every root of a pin is made for the other pin and not
+	// probed for this one (its rows would be thrown away, and the state probes are most of a type's cost).
+	var/list/tree_covered = want_tree ? dq_look_covered_types(DQ_LOOK_TREE_DIR) : null
+	var/list/state_covered = want_state ? dq_look_covered_types(DQ_LOOK_STATE_DIR) : null
 	var/list/plan = dq_look_read_plan()
 	var/list/only = dq_look_param_lines("look-types")
 	var/list/only_set
@@ -178,8 +183,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	log_test("look sweep: [length(work)] of [length(universe)] types in this world (shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count], order [world.params?["look-order"] || "path"], plan [isnull(plan) ? "none" : length(plan)])")
 	for(var/type in work)
 		var/datum/dq_look_result/res = GLOB.dq_look_results["[type]"]
-		var/need_tree = want_tree && dq_look_tree_eligible(type) && !res?.tree_done
-		var/need_state = want_state && dq_look_state_eligible(type) && !res?.state_done
+		var/need_tree = want_tree && tree_covered["[type]"] && dq_look_tree_eligible(type) && !res?.tree_done
+		var/need_state = want_state && state_covered["[type]"] && dq_look_state_eligible(type) && !res?.state_done
 		if(!need_tree && !need_state)
 			continue
 		if(!res)
@@ -196,18 +201,35 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			dq_look_globals_report(type, before)
 	dq_look_reset(T) // the block is released clean: nothing of the last type is left on it
 
+/// The types under a root `dir` has a file for, as "[type]" => TRUE (the types its pin compares).
+/datum/unit_test/proc/dq_look_covered_types(dir)
+	. = list()
+	for(var/root in dq_look_roots(dir))
+		for(var/type in typesof(root))
+			.["[type]"] = TRUE
+
+/// The roots `dir` has a file for, in file-name order (the names only: a pin file's rows are not read to know its roots).
+/datum/unit_test/proc/dq_look_roots(dir)
+	. = list()
+	var/list/names = flist(dir)
+	sortTim(names, GLOBAL_PROC_REF(cmp_text_asc))
+	for(var/name in names)
+		if(copytext(name, -4) != ".txt")
+			continue
+		var/path = text2path("/[replacetext(copytext(name, 1, -4), ".", "/")]")
+		if(path)
+			. += path
+
 /// Every type either wanted pin makes, in the one order every shard agrees on (the sorted path text).
 /datum/unit_test/proc/dq_look_universe(want_tree, want_state)
 	var/list/seen = list()
 	if(want_tree)
-		var/list/bad = list()
-		for(var/root in dq_snapshot_read_dir(DQ_LOOK_TREE_DIR, bad))
+		for(var/root in dq_look_roots(DQ_LOOK_TREE_DIR))
 			for(var/type in typesof(root))
 				if(dq_look_tree_eligible(type))
 					seen["[type]"] = type
 	if(want_state)
-		var/list/bad = list()
-		for(var/root in dq_snapshot_read_dir(DQ_LOOK_STATE_DIR, bad))
+		for(var/root in dq_look_roots(DQ_LOOK_STATE_DIR))
 			for(var/type in typesof(root))
 				if(dq_look_state_eligible(type))
 					seen["[type]"] = type
@@ -236,48 +258,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// presentation lane and the stat drain settled. A thing left from the last unit, a mob that wandered off the tile or air a probe
 /// heated would otherwise be in the next unit's look.
 /datum/unit_test/proc/dq_look_reset(turf/T)
-	// This fixture owns the entire template rectangle, including its one-tile wall border.
-	// A probe may destroy the walls or floor, or qdel may itself queue another real blast.
-	var/saved_ticklimit = Kernel.current_ticklimit
-	Kernel.current_ticklimit = INFINITY
-	try
-		var/settled = FALSE
-		for(var/cycle in 1 to 50)
-			// Finish real owed epochs without advancing unrelated periodic work. Keeping a
-			// spent host tick budget here made every call yield after one turf forever.
-			for(var/pass in 1 to 10000)
-				if(!SSexplosions.has_work())
-					break
-				SSexplosions.explosion_step(0)
-			if(SSexplosions.has_work())
-				CRASH("look cleanup explosion drain exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
-			for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
-				for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
-					var/turf/B = locate(x, y, test_block.z)
-					dq_look_drain_turf(B)
-			dq_look_settle()
-			if(!SSexplosions.has_work())
-				settled = TRUE
-				break
-		if(!settled)
-			CRASH("look cleanup qdel explosion cascade exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
-		// Restore the actual template only after every destroy consequence has finished.
-		for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
-			for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
-				var/turf/B = locate(x, y, test_block.z)
-				var/border = x < test_block.bottom_left.x || x > test_block.top_right.x || y < test_block.bottom_left.y || y > test_block.top_right.y
-				var/template_type = border ? /turf/simulated/wall : /turf/simulated/floor/tiled/steel
-				if(B.type != template_type)
-					B = B.ChangeTurf(template_type)
-				if(!border)
-					unit_test_block_reset_turf(B)
-		dq_look_settle()
-		if(SSexplosions.has_work())
-			CRASH("look cleanup template restoration queued unexpected explosion work")
-	catch(var/exception/fault)
-		Kernel.current_ticklimit = saved_ticklimit
-		throw fault
-	Kernel.current_ticklimit = saved_ticklimit
+	for(var/turf/B as anything in block_turfs(test_block))
+		dq_look_drain_turf(B)
+		unit_test_block_reset_turf(B)
+	dq_look_settle()
 
 /// The var names of the base type `base`: what a probe leaves alone.
 /datum/unit_test/proc/dq_look_state_base_vars(base, turf/T)
@@ -326,7 +310,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/names = list()
 	var/runtime
 	try
-		subject = dq_look_allocate(type, T)
+		subject = dq_snapshot_allocate(type, T)
 		if(QDELETED(subject))
 			res.made = list("deleted itself on creation")
 		else
@@ -371,8 +355,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		qdel(subject)
 	dq_look_drain_turf(T)
 
-/// Numeric non-base, non-time-like vars the analyzer permits this type to probe.
-/// Host vars enumeration order cannot change the selected set or probe order.
+/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
+/// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
@@ -380,82 +364,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	return dq_look_select_probe_names(found, plan_entry)
-
-/// Keep both existing coverage limits: 24 planned vars, 200 when no plan exists.
-/// An explicit empty plan means no probes. Selection never mutates its inputs.
-/proc/dq_look_select_probe_names(list/candidates, plan_entry)
-	var/planned = islist(plan_entry)
-	var/list/selected = list()
-	for(var/name in candidates)
-		if(!planned || (name in plan_entry))
-			selected += name
-	sortTim(selected, GLOBAL_PROC_REF(cmp_text_asc))
-	var/limit = planned ? DQ_LOOK_STATE_MAX_VARS : DQ_LOOK_STATE_MAX_VARS_UNPLANNED
-	if(length(selected) > limit)
-		selected.Cut(limit + 1)
-	return selected
-
-/datum/unit_test/dq_look_probe_order_invariance
-/datum/unit_test/dq_look_probe_order_invariance/Run()
-	var/list/forward = list()
-	var/list/backward = list()
-	for(var/i in 1 to 250)
-		forward += "v[1000 + i]"
-	for(var/i = 250, i >= 1, i--)
-		backward += "v[1000 + i]"
-	var/original_forward = jointext(forward, ",")
-	var/original_backward = jointext(backward, ",")
-	var/list/planned = list("v1250", "v1249")
-	var/list/from_forward = dq_look_select_probe_names(forward, planned)
-	var/list/from_backward = dq_look_select_probe_names(backward, planned)
-	TEST_ASSERT_EQUAL(jointext(from_forward, ","), "v1249,v1250", "planned vars beyond either old enumeration cap remain covered")
-	TEST_ASSERT_EQUAL(jointext(from_backward, ","), jointext(from_forward, ","), "reversed host enumeration selects the same planned probes")
-	var/list/all_planned = dq_look_select_probe_names(backward, forward)
-	TEST_ASSERT_EQUAL(length(all_planned), DQ_LOOK_STATE_MAX_VARS, "planned coverage retains its existing bound")
-	TEST_ASSERT_EQUAL(all_planned[1], "v1001", "planned capping follows canonical ordering")
-	TEST_ASSERT_EQUAL(all_planned[DQ_LOOK_STATE_MAX_VARS], "v1024", "planned coverage ends at its canonical cap")
-	var/list/unplanned = dq_look_select_probe_names(forward, null)
-	var/list/reversed_unplanned = dq_look_select_probe_names(backward, null)
-	TEST_ASSERT_EQUAL(length(unplanned), DQ_LOOK_STATE_MAX_VARS_UNPLANNED, "absent-plan fallback retains its existing coverage bound")
-	TEST_ASSERT_EQUAL(jointext(unplanned, ","), jointext(reversed_unplanned, ","), "fallback selection is independent of host order")
-	TEST_ASSERT_EQUAL(unplanned[1], "v1001", "fallback starts with the first canonical name")
-	TEST_ASSERT_EQUAL(unplanned[DQ_LOOK_STATE_MAX_VARS_UNPLANNED], "v1200", "fallback caps after canonical ordering")
-	TEST_ASSERT_EQUAL(length(dq_look_select_probe_names(forward, list())), 0, "an explicit empty plan permits no probes")
-	TEST_ASSERT_EQUAL(jointext(planned, ","), "v1250,v1249", "selection preserves the caller's plan ordering")
-	TEST_ASSERT_EQUAL(jointext(forward, ","), original_forward, "selection preserves forward candidates")
-	TEST_ASSERT_EQUAL(jointext(backward, ","), original_backward, "selection preserves backward candidates")
-
-/// A probe owns its native construction stream, independently of round seed, tile and prior allocations.
-/// Keep the host rand_seed calls at the call sites: legacy random constructors retain their old seed policy.
-/datum/unit_test/proc/dq_look_allocate(type, turf/T)
-	var/creator_depth = length(GLOB.roll_creators)
-	var/old_seed = GLOB.round_seed
-	var/old_serial = GLOB.roll_serial
-	var/datum/roller/R = new("look:[type]")
-	GLOB.roll_creators += R
-	var/exception/failure
-	try
-		. = dq_snapshot_allocate(type, T)
-		// Normalize kernel identity before either made/fresh capture; no probe exemption.
-		if(isdatum(.))
-			var/datum/created = .
-			if(!QDELETED(created))
-				entity_handle(created)
-				// Normalize the same stable identity the shared-cache API lazily assigns.
-				if(!created.shared_cache_uid)
-					shared_cache_assign_uid(created)
-				// Real culture initialization creates detached copies carried by its blood.
-				// Its vial/archive own different strains; retain only these exact products.
-				dq_look_own_culture_products(created)
-	catch(var/exception/e)
-		failure = e
-	GLOB.roll_creators.Cut(creator_depth + 1)
-	GLOB.round_seed = old_seed
-	GLOB.roll_serial = old_serial
-	qdel(R)
-	if(failure)
-		throw failure
+	if(!islist(plan_entry))
+		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
+		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
+			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
+		return found
+	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
+	var/list/read = list()
+	for(var/name in found)
+		if(name in plan_entry)
+			read += name
+	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
+		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	return read
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
@@ -467,29 +388,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	state_changed(target)
 	dq_look_settle()
 
-/// Snapshot immutable primitive values, not mutable object/list aliases. Parallel arrays retain null values.
-/// A publication may normalize an invisible text cache while the visible look returns unchanged.
-/datum/unit_test/proc/dq_look_primitive_state(atom/subject)
-	var/list/names = list()
-	for(var/name in subject.vars)
-		var/value = subject.vars[name]
-		if(isnull(value) || isnum(value) || istext(value) || ispath(value) || isfile(value))
-			names += name
-	var/list/values = new /list(length(names))
-	for(var/i in 1 to length(names))
-		values[i] = subject.vars[names[i]]
-	return list(names, values)
-
-/datum/unit_test/proc/dq_look_primitive_changes(atom/subject, list/before)
-	var/list/changed = list()
-	var/list/names = before[1]
-	var/list/values = before[2]
-	for(var/i in 1 to length(names))
-		// Include the probed value too: a clamping setter may not restore it exactly.
-		if(subject.vars[names[i]] != values[i])
-			changed += names[i]
-	return changed
-
 /// One probe on the made instance: write, capture, write the original back, check the look returned to `base`. Returns FALSE when
 /// the instance can no longer be trusted (a runtime, or the look did not come back); the rows it wrote stay.
 /datum/unit_test/proc/dq_look_probe_reuse(atom/subject, type, name, value, list/base, datum/dq_look_result/res)
@@ -497,7 +395,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/original = subject.vars[name]
 	if(original == value)
 		return TRUE
-	var/list/primitive_before = dq_look_primitive_state(subject)
 	try
 		dq_look_write(subject, name, value)
 		var/list/now = dq_look_pin_lines(subject)
@@ -511,15 +408,24 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			res.impure += "[type] [name]=[value] (back to [original]): [length(back - base)] rows gained, [length(base - back)] lost"
 			log_test("look sweep IMPURE: [type] [name]=[value]: writing [original] back did not return the look to the made one; the rest of its probes use fresh instances")
 			return FALSE
-		var/list/hidden_changes = dq_look_primitive_changes(subject, primitive_before)
-		if(length(hidden_changes))
-			res.impure += "[type] [name]=[value] (back to [original]): scalar state changed: [jointext(hidden_changes, ", ")]"
-			log_test("look sweep IMPURE: [type] [name]=[value]: restored look retained changed scalar state ([jointext(hidden_changes, ", ")]); the rest of its probes use fresh instances")
-			return FALSE
 	catch(var/exception/e)
-		res.probe_rows += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
-		return FALSE
+		if(!dq_look_write_refused(e, name))
+			res.probe_rows += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
+		return dq_look_still_made(subject, name, original, base)
 	return TRUE
+
+/// Whether `subject` is still the made instance after a probe ran into a runtime (a setter that refuses the value changes nothing, so the
+/// next probe may use it): the var holds its original value and the look, after a settle, is the made one. Anything else is not trusted.
+/datum/unit_test/proc/dq_look_still_made(atom/subject, name, original, list/base)
+	if(QDELETED(subject))
+		return FALSE
+	try
+		dq_look_settle()
+		if(subject.vars[name] != original)
+			return FALSE
+		return jointext(dq_look_pin_lines(subject), "\n") == jointext(base, "\n")
+	catch
+		return FALSE
 
 /// One probe on a fresh instance (the way the pin always probed): a fresh `type` with `name` written to `value`, redrawn, against the
 /// made look `base`; rows only for a difference.
@@ -527,7 +433,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
 	try
-		var/atom/target = dq_look_allocate(type, T)
+		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			return
 		dq_look_settle()
@@ -543,10 +449,16 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			. += "[type] [name]=[value] -[row]"
 		qdel(target)
 	catch(var/exception/e)
-		. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
+		if(!dq_look_write_refused(e, name))
+			. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
 	// A probe leaves nothing behind: what its thing spilled when it was deleted (a core's chunk, a cabinet's guns, a worm's dead
 	// heads) would otherwise be there for every later probe, and a closet takes all of it in each time it is made.
 	dq_look_drain_turf(T)
+
+/// Whether `e` is the var's own setter refusing the value ("set_stasis() given 1, not a /datum/body_effect/stasis": the setter takes a
+/// datum, not a number). A refused write changes nothing, so the probe is a probe that changes nothing and writes no row.
+/proc/dq_look_write_refused(exception/e, name)
+	return !!findtext("[e.name]", "set_[name]() given")
 
 /proc/dq_look_state_error(exception/e)
 	var/static/regex/where = regex(@"^\S+\.dm:\d+:")
@@ -562,9 +474,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /datum/unit_test/proc/dq_look_sweep_compare(dir, name, list/expected_by_root, list/bad, tree)
 	dq_look_report = null
 	var/partial = dq_look_sweep_partial()
-	if(partial)
-		if(dq_snapshot_blessing())
-			dq_look_report = "a sharded or incremental look sweep cannot bless: run it unsharded and full (tools/dq_focused_test.sh --bless does)"
+	var/bless_dir = world.params?["look-bless-dir"]
+	if(partial && dq_snapshot_blessing())
+		if(!bless_dir || !isnull(world.params?["look-types"]))
+			dq_look_report = "an incremental look sweep cannot bless, and a sharded one needs look-bless-dir (tools/dq_focused_test.sh --bless sets it)"
 			return dq_look_report
 	var/list/actual_by_root = list()
 	var/list/expected_kept = list()
@@ -602,6 +515,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			keep += row
 		expected_kept[root] = keep
 	dq_look_sweep_dump(name, actual_by_root)
+	if(partial && dq_snapshot_blessing())
+		dq_look_bless_partial(bless_dir, name, expected_by_root, actual_by_root)
+		return null
 	var/list/unrecorded = list()
 	if(partial)
 		// An empty file is a root with no rows, or a new pin that is not recorded yet; a partial run cannot tell which, nor write the file.
@@ -615,6 +531,30 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	if(length(unrecorded))
 		dq_look_report = "[dq_look_report ? "[dq_look_report]\n" : ""][jointext(unrecorded, "\n")]"
 	return dq_look_report
+
+/**
+ * A sharded bless: this world's rows for each root, written under the look-bless-dir param (a folder per shard index, per pin, one file
+ * per root), one row per line as the type's position in typesof(root), a TAB and the row. Nothing under snapshots/ is touched: the shards' files are merged, in that
+ * position order, by tools/dq_look_bless_merge.py after every world has ended, so the written file is what an unsharded bless writes.
+ * A root this world probed nothing for still gets its (empty) file, so the merge knows the root.
+ */
+/datum/unit_test/proc/dq_look_bless_partial(dir, name, list/expected_by_root, list/actual_by_root)
+	var/rows_written = 0
+	for(var/root in actual_by_root)
+		var/list/position = list()
+		var/index = 0
+		for(var/type in typesof(root))
+			index++
+			position["[type]"] = index
+		var/list/lines = list()
+		for(var/row in actual_by_root[root])
+			var/row_type = copytext(row, 1, findtext(row, " "))
+			lines += "[position[row_type] || 0]\t[row]"
+		var/file_name = "[dir]/shard[GLOB.dq_test_shard_index]/[name]/[replacetext(copytext("[root]", 2), "/", ".")].txt"
+		fdel(file_name)
+		text2file(length(lines) ? "[jointext(lines, "\n")]\n" : "", file_name)
+		rows_written += length(lines)
+	log_test("look bless: [name] shard [GLOB.dq_test_shard_index + 1]/[GLOB.dq_test_shard_count] wrote [rows_written] rows for [length(actual_by_root)] roots under [dir]")
 
 /// look-dump=<dir>: the rows this world produced, sorted, one file per root, plus the md5 of each in the log.
 /datum/unit_test/proc/dq_look_sweep_dump(name, list/actual_by_root)
@@ -699,127 +639,3 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		dq_look_unit(type, T, base_vars, null, fresh, TRUE, TRUE, TRUE)
 		TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "[type]: one instance for every probe gave other rows than a fresh one per probe")
 		TEST_ASSERT(!length(reused.impure), "[type]: a write-back did not return the look: [jointext(reused.impure, "; ")]")
-
-// Two independent native draws make accidental equality an ineffective substitute for stream isolation.
-/obj/dq_look_native_roll_fixture
-	var/first_roll
-	var/second_roll
-
-CAPABILITIES(/obj/dq_look_native_roll_fixture)
-	rolls(nameof(first_roll), range_of(1, 1000000))
-	rolls(nameof(second_roll), range_of(1, 1000000))
-
-/datum/unit_test/dq_look_native_roll_allocation
-
-/datum/unit_test/dq_look_native_roll_allocation/Run()
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.roll_creators), GLOB.roll_creators.Copy())
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/first_turf = run_loc_floor_bottom_left
-	var/turf/second_turf = get_step(first_turf, EAST)
-	TEST_ASSERT(second_turf && second_turf != first_turf, "the fixture uses two distinct actual turf positions")
-	var/seed_before = GLOB.round_seed
-	var/serial_before = GLOB.roll_serial
-	var/list/creators_before = GLOB.roll_creators.Copy()
-	var/obj/dq_look_native_roll_fixture/first = dq_look_allocate(/obj/dq_look_native_roll_fixture, first_turf)
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "allocation restores the global native seed")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "allocation restores unrelated serial history")
-	var/obj/dq_look_native_roll_fixture/unrelated = allocate(/obj/dq_look_native_roll_fixture)
-	// Deliberately perturb the fallback serial without changing the production RNG implementation.
-	GLOB.roll_serial += 37
-	var/perturbed_serial = GLOB.roll_serial
-	var/obj/dq_look_native_roll_fixture/second = dq_look_allocate(/obj/dq_look_native_roll_fixture, second_turf)
-	TEST_ASSERT_EQUAL(second.first_roll, first.first_roll, "native constructor rolls do not depend on turf or prior allocations")
-	TEST_ASSERT_EQUAL(second.second_roll, first.second_roll, "the full native stream is reproduced, not just its first draw")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, perturbed_serial, "allocation preserves its caller's current serial")
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "the second allocation preserves the global seed")
-	TEST_ASSERT_EQUAL(length(GLOB.roll_creators), length(creators_before), "allocation leaves no synthetic creator on the stack")
-	for(var/i in 1 to length(creators_before))
-		TEST_ASSERT_EQUAL(GLOB.roll_creators[i], creators_before[i], "allocation preserves every existing outer creator")
-	GLOB.roll_serial = serial_before
-	qdel(first)
-	qdel(second)
-	qdel(unrelated)
-
-/// A look probe's pending blast belongs to that probe, not the test that follows it.
-/datum/unit_test/dq_look_cleanup_finishes_explosion
-/datum/unit_test/dq_look_cleanup_finishes_explosion/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	test_driver_begin()
-	var/turf/T = test_floor()
-	explosion(T, 0, 0, 1)
-	TEST_ASSERT(SSexplosions.has_work(), "the real blast is queued before the simulation periodic runs")
-	dq_look_reset(T)
-	TEST_ASSERT(!SSexplosions.has_work(), "cleanup drains the actual explosion epoch without advancing unrelated periodics")
-	for(var/turf/B as anything in block_turfs(test_block))
-		for(var/obj/effect/expl_particles/particle in B)
-			TEST_FAIL("look cleanup left a real explosion particle on the released block")
-
-/// Real consuming publications normalize hidden icon_living even when eyes-off appearance is unchanged.
-/datum/unit_test/dq_look_reuse_detects_hidden_slime_state
-/datum/unit_test/dq_look_reuse_detects_hidden_slime_state/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/T = test_floor()
-	var/path = /mob/living/simple_mob/slime/xenobio/bluespace
-	var/mob/living/simple_mob/slime/xenobio/S = dq_look_allocate(path, T)
-	dq_look_settle()
-	TEST_ASSERT_EQUAL(S.icon_living, "slime baby", "The real constructor begins with its inherited generic cache")
-	var/list/base = dq_look_pin_lines(S)
-	var/datum/dq_look_result/probe = allocate(/datum/dq_look_result)
-	TEST_ASSERT(!dq_look_probe_reuse(S, path, "consuming", 1, base, probe), "The real sampler rejects hidden state changes after a visually restored probe")
-	TEST_ASSERT_EQUAL(S.icon_living, "bluespace slime baby", "The actual consuming publication normalized the hidden cache")
-	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(S), "\n"), jointext(base, "\n"), "The visible eyes-off base alone cannot detect this mutation")
-	TEST_ASSERT(length(probe.impure), "The actual sampler records why reuse ended")
-	qdel(S)
-	dq_look_drain_turf(T)
-	var/list/base_vars = dq_look_state_base_vars(/mob, T)
-	var/list/plan = list("[path]" = list("consuming", "has_eye_glow"))
-	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
-	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
-	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
-	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
-	TEST_ASSERT(length(reused.impure), "The complete production sampler actually switches from reuse to fresh allocation")
-	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "Consuming-before-eye probes now match actual fresh-instance sampling")
-	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "The repair does not change initial tree capture")
-
-/// A real periodic-key probe must not mistake first identity allocation for appearance state.
-/datum/unit_test/dq_look_identity_warmup/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/T = test_floor()
-	var/obj/subject = dq_look_allocate(/obj, T)
-	TEST_ASSERT_NOTNULL(entity_handle_of(subject), "look allocation establishes the real native handle before baseline capture")
-	var/handle = entity_handle_of(subject)
-	var/list/before = dq_look_pin_lines(subject)
-	TEST_ASSERT_EQUAL(entity_handle(subject), handle, "later native identity requests reuse the exact existing handle")
-	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(subject), "\n"), jointext(before, "\n"), "normalizing identity leaves the actual appearance unchanged")
-	qdel(subject)
-	TEST_ASSERT_NULL(resolve_handle(handle), "normal look cleanup releases the prewarmed native handle")
-	var/path = /mob/living/silicon/robot
-	var/list/base_vars = dq_look_state_base_vars(/mob, T)
-	var/list/plan = list("[path]" = list("autofire_on"))
-	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
-	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
-	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
-	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
-	TEST_ASSERT(!length(reused.impure), "the actual robot's reversible autofire key does not force fresh allocation for lazy identity")
-	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "native identity normalization preserves made rows")
-	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "the real periodic probe preserves fresh-instance rows")
-
-/// Bound the known culture fixture producer: never traverse arbitrary reagent data,
-/// adopt a source template, or clear subscription indexes. The production reagent
-/// codec still lacks nested lifetime cleanup (including mixing/transfer ownership).
-/datum/unit_test/proc/dq_look_own_culture_products(datum/created)
-	if(!istype(created, /obj/item/reagent_containers/glass/beaker/vial/culture))
-		return
-	var/obj/item/reagent_containers/glass/beaker/vial/culture/vial = created
-	var/datum/reagent/blood/blood = vial.reagents?.get_reagent(REAGENT_ID_BLOOD)
-	var/list/strains = blood?.data?["viruses"]
-	for(var/datum/affliction/contagion/strain as anything in strains)
-		own(strain)

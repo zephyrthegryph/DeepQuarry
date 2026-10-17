@@ -36,8 +36,7 @@
 
 	var/obj/effect/decal/cleanable/blood/drip/drop = B
 	if(istype(drop) && drips && drips.len)
-		drop.add_overlay(drips)
-		drop.drips |= drips
+		drop.include_drips(drips)
 
 	B.set_basecolor(blood_color)
 	if(istype(B, drop)) //We're a drop.

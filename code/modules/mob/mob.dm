@@ -156,6 +156,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(runemessage != -1)
 			M.create_chat_message(src, "[runemessage || message]", FALSE, list("emote"), audible = FALSE)
 
+/// `who` was the last to push, drag or grab this mob: remembered when it is a carbon, else the old assailant is forgotten (LAssailant is a carbon relation).
+/mob/proc/note_assailant(mob/living/who)
+	if(iscarbon(who))
+		rel_set(src, nameof(LAssailant), who)
+	else
+		rel_clear(src, nameof(LAssailant))
+
 /mob/proc/findname(msg)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if (M.real_name == text("[]", msg))
@@ -658,10 +665,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				to_chat(src, span_warning("Somebody has a grip on them!"))
 				return
 
-		if(!iscarbon(src))
-			rel_clear(M, nameof(M.LAssailant))
-		else
-			rel_set(M, nameof(M.LAssailant), src)
+		M.note_assailant(src)
 
 		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
@@ -1440,7 +1444,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	return TRUE
 
 /mob/proc/vv_topic_regen_icons_full(datum/act/op/A)
-	cut_overlays()
 	regenerate_icons()
 	return TRUE
 

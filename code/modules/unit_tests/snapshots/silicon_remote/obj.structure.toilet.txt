@@ -1,0 +1,6 @@
+robot|none menu: Flush
+robot|none menu: Use
+robot|none menu: Yank the flush lever
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use

@@ -205,12 +205,22 @@ fn run_build_attempt(
     let engine_bytes = if embedded_engine {
         Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
     } else {
+        // A compile accepts only the pinned template (checked below against the embedded copy), so where the caller keeps the
+        // file says nothing about the build. Reading it through the capture recorded its PATH as a non-text input, and every
+        // worktree keeps its own copy: a body edit compiled from another worktree was declined as "non-text input changed:
+        // <template A> / <template B>" and took the full path. A live compile reads it unrecorded; recording and replay (which
+        // must reproduce every read) and the analysis commands (whose catalog does depend on it) keep the recorded read.
+        let unrecorded = executable && matches!(input_provider, dmbc::frozen_inputs::Inputs::Live);
         engine_template
             .as_ref()
             .map(|path| {
-                inputs_capture
-                    .read_binary(path)
-                    .map_err(|error| format!("engine template {}: {error}", path.display()))
+                if unrecorded {
+                    std::fs::read(path).map_err(|error| format!("engine template {}: {error}", path.display()))
+                } else {
+                    inputs_capture
+                        .read_binary(path)
+                        .map_err(|error| format!("engine template {}: {error}", path.display()))
+                }
             })
             .transpose()?
     };
@@ -247,6 +257,13 @@ fn run_build_attempt(
     drop(input_context_profile);
     dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
+    if retains_query_owners {
+        if let Some(root) = project.parent() {
+            dmbc::fs_watch::arm(root);
+            dmbc::fs_watch::sync(root);
+        }
+        dm_profile::request_mark("session.watch_synced");
+    }
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
@@ -363,6 +380,7 @@ fn run_build_attempt(
                         }
                         configured.store(record)?;
                     }
+                    dmbc::compile_stats::note_hit();
                     dmbc::daemon_eprintln!(
                         "native session hit: total={:.3}s rehashed={} pair={}",
                         total.elapsed().as_secs_f64(),
@@ -389,6 +407,10 @@ fn run_build_attempt(
         }
         session = Some(configured);
         pair_store = Some(store);
+    }
+    if retains_query_owners && dmbc::fs_watch::enabled() {
+        let (hits, misses) = dmbc::fs_watch::counters();
+        dmbc::daemon_eprintln!("native fs watch: directory proofs cached={hits} captured={misses}");
     }
     stamped_provider.adopt(shared_proofs.clone());
     drop(session_profile);
@@ -591,6 +613,10 @@ fn run_build_attempt(
         }
     });
     dm_profile::request_mark("frontend.revision");
+    if retains_query_owners {
+        // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        semantic_state.remember_frontend(&project, &defines, frontend.clone());
+    }
     if progress_enabled {
         dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
     }
@@ -857,6 +883,7 @@ fn run_build_attempt(
                 })();
                 match attempt {
                     Ok(patched) => {
+                        dmbc::compile_stats::note_patch(patched.changed_bodies);
                         dmbc::body_patch::note_applied(&project);
                         dmbc::daemon_eprintln!(
                             "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
@@ -868,6 +895,7 @@ fn run_build_attempt(
                         Some(patched)
                     }
                     Err(reason) => {
+                        dmbc::compile_stats::note_full(format!("patch declined: {reason}"));
                         dmbc::daemon_eprintln!(
                             "native body patch: declined after {:.3}s, full compilation: {reason}",
                             patch_started.elapsed().as_secs_f64()
@@ -876,7 +904,16 @@ fn run_build_attempt(
                     }
                 }
             }
-            _ => None,
+            _ => {
+                dmbc::compile_stats::note_full(if std::env::var_os("DMB_BODY_PATCH").is_some_and(|value| value == "0") {
+                    "body patch disabled"
+                } else if generation.is_none() {
+                    "no retained generation (cold session)"
+                } else {
+                    "no patch shape"
+                });
+                None
+            }
         };
         dm_profile::request_mark("patch.attempted");
         // A patch claims nothing in the procedure memo; publishing its empty

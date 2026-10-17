@@ -5,7 +5,6 @@
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
 	w_class = ITEMSIZE_NORMAL
 
-	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
@@ -86,8 +85,6 @@
 	var/digest_stage = null
 	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
-	var/tmp/image/d_stage_overlay //digest stage effects
-	var/tmp/d_stage_overlay_key //cache key (icon|icon_state|color) for d_stage_overlay; rebuild only when this changes
 	var/gurgled = FALSE
 	var/oldname
 	var/cleanname
@@ -473,19 +470,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	return
 
 /obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	if(!M) return 0
-
-	if(!canremove)
-		return 0
-
-	if(!slot)
-		if(issilicon(M))
-			return 1 // for stuff in grippers
-		return 0
-
-	if(!M.slot_is_accessible(slot, src, disable_warning? null : M))
-		return 0
-	return 1
+	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
@@ -580,13 +565,21 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(dq_get_was_bloodied(src) && !dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
 		dq_set_blood_color(src, COLOR_LUMINOL)
-		if(blood_overlay)
-			blood_overlay.color = COLOR_LUMINOL
 
-/// TRUE for an item whose look draws its own stains (blood from the tracked blood colour and the forensics record, a vore gurgle from the tracked
-/// gurgled colour), so add_blood() and the gurgle code add no overlay of their own.
-/obj/item/proc/stains_in_look()
-	return FALSE
+/// An item shows its own blood and gurgle residue as layers of its look, drawn from the tracked blood colour, the forensics record and the gurgled state.
+/obj/item/draw(datum/look/look)
+	..()
+	look.watch(forensic_data)
+	if(forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	// Blood washed away still glows under a UV light: the light holds the item at fluorescent 2 while it scans it. An unlit item draws nothing here.
+	if(dq_get_fluorescent(src) == 2 && dq_get_was_bloodied(src) && !forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	if(gurgled)
+		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
+	// Digestion eats the item one quarter at a time: a layer of residue per stage.
+	for(var/stage in d_mult to 1 step 0.25)
+		look.overlay(item_digest_image(icon, icon_state, gurgled_color || "green"), when = d_mult < 1)
 
 /obj/item/add_blood(mob/living/carbon/human/M as mob)
 	if (!..())
@@ -595,39 +588,10 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(istype(src, /obj/item/melee/energy))
 		return
 
-	if(!stains_in_look())
-		//if we haven't made our blood_overlay already
-		if(!blood_overlay)
-			generate_blood_overlay()
-		else
-			overlays.Remove(blood_overlay)
-
-		//Make the blood_overlay have the proper color then apply it.
-		blood_overlay.color = dq_get_blood_color(src)
-		add_overlay(blood_overlay)
 	if(istype(M))
 		add_blooddna(M.dna,M)
 
 	return 1 //we applied blood to the item
-
-GLOBAL_LIST_EMPTY(blood_overlays_by_type)
-/obj/item/proc/generate_blood_overlay()
-	// Already got one
-	if(blood_overlay)
-		return
-
-	// Already cached
-	if(GLOB.blood_overlays_by_type[type])
-		blood_overlay = GLOB.blood_overlays_by_type[type]
-		return
-
-	// Firsties!
-	var/image/blood = image(icon = 'icons/effects/blood.dmi', icon_state = "itemblood") // Needs to be a new one each time since we're slicing it up with filters.
-	blood.filters += filter(type = "alpha", icon = icon(icon, icon_state)) // Same, this filter is unique for each blood overlay per type
-	GLOB.blood_overlays_by_type[type] = blood
-
-	// And finally
-	blood_overlay = blood
 
 /obj/item/proc/showoff(mob/user)
 	for (var/mob/M in view(user))
@@ -748,8 +712,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 
 	//Apply any special features
 	if(!inhands)
-		apply_blood(standing, wearer)			//Some items show blood when bloodied
-		apply_accessories(standing)		//Some items sport accessories like webbing
+		standing = apply_blood(standing, wearer)			//Some items show blood when bloodied
+		standing = apply_accessories(standing)		//Some items sport accessories like webbing
 
 	//Apply overlays to our...overlay
 	apply_overlays(standing)
@@ -886,8 +850,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)
 	blocker_overlay.color = GLOB.em_block_color
-	standing.add_overlay(blocker_overlay)
-	return standing
+	return look_composed_image(standing, list(blocker_overlay))
 
 /obj/item/MouseEntered(location,control,params)
 	. = ..()

@@ -84,8 +84,6 @@ CAPABILITIES(/obj/structure/lattice)
 	replace_with(src, /obj/structure/catwalk)
 
 /obj/structure/lattice/proc/update_overlays_now()
-	cut_overlays()
-
 	var/dir_sum = 0
 
 	for (var/direction in GLOB.cardinal)

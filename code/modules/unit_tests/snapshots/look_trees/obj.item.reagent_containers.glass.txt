@@ -333,10 +333,10 @@
 /obj/item/reagent_containers/glass/paint/white dir: 2
 /obj/item/reagent_containers/glass/paint/white overlay: icons/obj/items.dmi:paint_white:8:#000000
 /obj/item/reagent_containers/glass/bottle icon: icons/obj/chemical.dmi
-/obj/item/reagent_containers/glass/bottle state: bottle-3
+/obj/item/reagent_containers/glass/bottle state: bottle-1
 /obj/item/reagent_containers/glass/bottle dir: 2
-/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:bottle-3:8:#000000
-/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:lid_bottle-3:-32767
+/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:bottle-1:8:#000000
+/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:lid_bottle-1:-32767
 /obj/item/reagent_containers/glass/bottle/adminordrazine icon: icons/obj/drinks.dmi
 /obj/item/reagent_containers/glass/bottle/adminordrazine state: holyflask
 /obj/item/reagent_containers/glass/bottle/adminordrazine dir: 2
@@ -812,9 +812,9 @@
 /obj/item/reagent_containers/glass/bottle/potion/darksight overlay: icons/obj/chemical.dmi:lid_bottle-5:-32767
 /obj/item/reagent_containers/glass/bottle/potion/darksight overlay: icons/obj/reagentfillings.dmi:bottle-5-10:-32767
 /obj/item/reagent_containers/glass/bottle/robot icon: icons/obj/chemical.dmi
-/obj/item/reagent_containers/glass/bottle/robot state: bottle-1
+/obj/item/reagent_containers/glass/bottle/robot state: bottle-2
 /obj/item/reagent_containers/glass/bottle/robot dir: 2
-/obj/item/reagent_containers/glass/bottle/robot overlay: icons/obj/chemical.dmi:bottle-1:8:#000000
+/obj/item/reagent_containers/glass/bottle/robot overlay: icons/obj/chemical.dmi:bottle-2:8:#000000
 /obj/item/reagent_containers/glass/bottle/robot/inaprovaline icon: icons/obj/chemical.dmi
 /obj/item/reagent_containers/glass/bottle/robot/inaprovaline state: bottle-4
 /obj/item/reagent_containers/glass/bottle/robot/inaprovaline dir: 2

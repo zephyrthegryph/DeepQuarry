@@ -480,10 +480,8 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		return
 
 	if(irradiating == 1)
-		add_overlay("decon")
 		finished_job()
 		set_irradiating(0)
-		cut_overlays()
 		return
 
 	set_irradiating(irradiating - 1)

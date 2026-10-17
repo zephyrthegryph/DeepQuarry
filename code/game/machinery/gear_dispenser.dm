@@ -308,6 +308,8 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	var/obj/effect/overlay/vis/door
 	var/datum/gear_disp/held_gear_disp
 	var/special_frame
+	/// The scanner is working while the gear is being dispensed (drawn as the "working" layer).
+	var/dispense_working = FALSE
 
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
 	. = ..()
@@ -320,6 +322,8 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 
 	if(special_frame)
 		look.overlay(special_frame)
+
+	look.overlay("working", when = dispense_working)
 
 	if(needs_power && !operable())
 		look.overlay("nopower")
@@ -377,22 +381,18 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 /obj/machinery/gear_dispenser/suit_fancy/dispense_anim_time = 60.5
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing()
-	add_overlay("working")
+	set_dispense_working(TRUE)
 	after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing_flick()
-	add_overlay("fullsuit")
 	door.icon_state = "open"
 	flick("anim_open", door)
 	after(src, 1.05 SECONDS, PROC_REF(animate_dispensing_lit))
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/animate_dispensing_lit()
-	add_overlay("light2")
-	cut_overlay("working")
+	set_dispense_working(FALSE)
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/animate_close()
-	cut_overlay("fullsuit")
-	cut_overlay("light2")
 	door.icon_state = "closed"
 	flick("anim_close", door)
 

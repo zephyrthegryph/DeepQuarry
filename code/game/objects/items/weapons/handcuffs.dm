@@ -48,16 +48,7 @@
 			return ITEM_INTERACT_FAILURE
 
 /obj/item/handcuffs/proc/can_place(mob/target, mob/user)
-	if(user == target)
-		return 1
-	if(isrobot(user))
-		if(user.Adjacent(target))
-			return 1
-	else
-		for(var/obj/item/grab/G in target?.grabbed_by_list())
-			if(G.loc == user && G.state >= GRAB_AGGRESSIVE)
-				return 1
-	return 0
+	return !!user.restraint_evidence(target, adjacent_required = TRUE)
 
 /// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
 CAPABILITIES(/obj/item/handcuffs)

@@ -266,7 +266,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		return
 	M.put_in_active_hand(G)
 	G.synch()
-	rel_set(src, nameof(LAssailant), M)
+	note_assailant(M)
 
 	M.do_attack_animation(src)
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)

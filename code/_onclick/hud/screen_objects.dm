@@ -40,7 +40,13 @@
 
 /atom/movable/screen/inventory
 	var/slot_id	//The indentifier for the slot. It has nothing to do with ID cards.
-	var/list/object_overlays // Required for inventory/screen overlays.
+	/// The held item ghosted over the slot while the mouse is over it (green if it fits, red if not), else null.
+	var/image/hover_overlay
+
+/// The hovered slot shows the ghost of the active item.
+/atom/movable/screen/inventory/draw(datum/look/look)
+	..()
+	look.overlay(hover_overlay)
 
 /atom/movable/screen/inventory/MouseEntered()
 	..()
@@ -48,8 +54,7 @@
 
 /atom/movable/screen/inventory/MouseExited()
 	..()
-	if(object_overlays) cut_overlay(object_overlays)
-	LAZYCLEARLIST(object_overlays)
+	set_hover_overlay(null)
 
 /atom/movable/screen/close
 	name = "close"
@@ -266,6 +271,8 @@ CAPABILITIES(/atom/movable/screen)
 /// The named HUD controls act on the mob supplied by their native click boundary.
 /atom/movable/screen/proc/click_with_actor(mob/user, location, control, params)
 	if(!user)	return 1
+	if(user.operate_hud_control(src, location, control, params))
+		return 1
 	switch(name)
 		if("toggle")
 			if(user.hud_used.inventory_shown)
@@ -288,19 +295,6 @@ CAPABILITIES(/atom/movable/screen)
 			if(isliving(user))
 				var/mob/living/L = user
 				L.resist()
-
-		if("control_vtec")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.speed == 0 && R.vtec_active)
-					R.speed = -0.5
-					R.hud_used.control_vtec.icon_state = "speed_1"
-				else if(R.speed == -0.5 && R.vtec_active)
-					R.speed = -1
-					R.hud_used.control_vtec.icon_state = "speed_2"
-				else
-					R.speed = 0
-					R.hud_used.control_vtec.icon_state = "speed_0"
 
 		if("mov_intent")
 			if(isliving(user))
@@ -482,9 +476,6 @@ CAPABILITIES(/atom/movable/screen)
 			if(ishuman(user))
 				var/mob/living/carbon/human/u = user
 				u.pose()
-			else if (issilicon(user))
-				var/mob/living/silicon/u = user
-				u.pose()
 
 		if("move upwards")
 			user.up()
@@ -505,128 +496,6 @@ CAPABILITIES(/atom/movable/screen)
 					s.can_use(u,i)
 				else
 					to_chat(user, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
-
-		if("module")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.pick_module()
-
-		if("inventory")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.module)
-					R.hud_used.toggle_show_robot_modules()
-					return 1
-				else
-					to_chat(R, "You haven't selected a module yet.")
-
-		if("radio")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.radio_menu()
-		if("panel")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.installed_modules()
-
-		if("store")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				if(R.module)
-					R.uneq_active()
-				else
-					to_chat(R, "You haven't selected a module yet.")
-
-		if("module1")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(1)
-
-		if("module2")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(2)
-
-		if("module3")
-			if(isrobot(user))
-				var/mob/living/silicon/robot/R = user
-				R.toggle_module(3)
-
-		if("AI Core")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.view_core()
-
-		if("Show Camera List")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				open_request(src, /datum/prompt/choice, PROC_REF(camera_list_answered), answerer = ai_user, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list(), timeout = 0)
-
-		if("Track With Camera")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				open_request(src, /datum/prompt/choice, PROC_REF(camera_track_answered), answerer = ai_user, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs(), timeout = 0)
-
-		if("Toggle Camera Light")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.toggle_camera_light()
-
-		if("Crew Monitoring")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_crew_monitor()
-
-		if("Show Crew Manifest")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_crew_manifest()
-
-		if("Show Alerts")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.subsystem_alarm_monitor()
-
-		if("Announcement")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_announcement()
-
-		if("Call Emergency Shuttle")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_call_shuttle()
-
-		if("State Laws")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.ai_checklaws()
-
-		if("PDA - Messenger")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-				ai_user.aiPDA.cmd_pda_open_ui(user)
-
-		if("Take Image")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.take_image()
-
-		if("View Images")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.view_images()
-
-		if("Multicamera Mode")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.toggle_multicam()
-
-		if("New Camera")
-			if(isAI(user))
-				var/mob/living/silicon/ai/ai_user = user
-				ai_user.drop_new_multicam()
 
 		if("shadekin status")
 			var/turf/T = get_turf(user)
@@ -698,24 +567,6 @@ CAPABILITIES(/atom/movable/screen)
 
 CAPABILITIES(/atom/movable/screen/inventory)
 	click_on(PROC_REF(click_input))
-
-/// The AI picked a camera from "Show Camera List".
-/atom/movable/screen/proc/camera_list_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/silicon/ai/ai_user = A.answer.answerer
-	if(QDELETED(ai_user))
-		return
-	ai_user.ai_camera_list(A.answer.value)
-
-/// The AI picked a mob from "Track With Camera".
-/atom/movable/screen/proc/camera_track_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/silicon/ai/ai_user = A.answer.answerer
-	if(QDELETED(ai_user))
-		return
-	ai_user.ai_camera_track(A.answer.value)
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /atom/movable/screen/inventory/proc/click_input(datum/act/input/A)
@@ -901,7 +752,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 		on()
 
 /atom/movable/screen/movable/mapper_holder/proc/off(inform = TRUE)
-	frame.cut_overlay("powlight")
+	frame.powered = FALSE
 	bg.vis_contents.Cut()
 	vis_contents.Remove(mask_ping, mask_full, extras_holder())
 	rel_clear(src, nameof(extras_holder))
@@ -910,7 +761,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 		owner().stop_updates()
 
 /atom/movable/screen/movable/mapper_holder/proc/on(inform = TRUE)
-	frame.add_overlay("powlight")
+	frame.powered = TRUE
 	if(inform)
 		owner().start_updates()
 
@@ -961,6 +812,12 @@ CAPABILITIES(/atom/movable/screen/mapper)
 	pixel_y = -29
 	mouse_opacity = 1
 	vis_flags = VIS_INHERIT_ID
+	/// The power light shows while the unit runs.
+	var/powered = FALSE
+
+/atom/movable/screen/mapper/frame/draw(datum/look/look)
+	..()
+	look.overlay("powlight", when = powered)
 
 /atom/movable/screen/mapper/powbutton
 	icon = 'icons/effects/gpshud.dmi'
@@ -1034,6 +891,12 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 	icon_state = "ammo"
 	screen_loc = ui_ammo_hud1
 	var/warned = FALSE
+	/// The icon_state of the loaded-rounds light (null while the magazine is empty).
+	var/ammo_state
+	/// The icon_state of the empty-magazine light (null until the empty flash has played).
+	var/empty_state
+	/// The round count shown as digits.
+	var/rounds_text
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
 	/// The gun this hud reports (a relation view)
 	var/obj/item/gun/our_gun
@@ -1089,40 +952,47 @@ CAPABILITIES(/atom/movable/screen/ammo)
 	var/hud_state = ammo_type[1]
 	var/hud_state_empty = ammo_type[2]
 
-	overlays.Cut()
-
-	var/empty = image('icons/mob/screen_ammo.dmi', src, "[hud_state_empty]")
-
 	if(rounds == 0)
+		set_ammo_state(null)
 		if(warned)
-			overlays += empty
+			set_empty_state(hud_state_empty)
 		else
+			set_empty_state(null)
 			warned = TRUE
 			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
 			F.set_icon_state("frame")
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty), keeps_dead = TRUE)
+			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, hud_state_empty), keeps_dead = TRUE)
 	else
 		warned = FALSE
-		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")
+		set_empty_state(null)
+		set_ammo_state(hud_state)
 
-	rounds = num2text(rounds)
-	//Handle the amount of rounds
+	set_rounds_text(num2text(rounds))
+
+/// The ammo counter: the empty or loaded light, then the round digits (ones, tens, hundreds; over 999 shows 999).
+/atom/movable/screen/ammo/draw(datum/look/look)
+	..()
+	look.overlay(empty_state)
+	look.overlay(ammo_state)
+	if(isnull(rounds_text))
+		return
+	var/rounds = rounds_text
 	switch(length(rounds))
 		if(1)
-			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[1]]")
+			look.overlay("o[rounds[1]]")
 		if(2)
-			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[2]]")
-			overlays += image('icons/mob/screen_ammo.dmi', src, "t[rounds[1]]")
+			look.overlay("o[rounds[2]]")
+			look.overlay("t[rounds[1]]")
 		if(3)
-			overlays += image('icons/mob/screen_ammo.dmi', src, "o[rounds[3]]")
-			overlays += image('icons/mob/screen_ammo.dmi', src, "t[rounds[2]]")
-			overlays += image('icons/mob/screen_ammo.dmi', src, "h[rounds[1]]")
+			look.overlay("o[rounds[3]]")
+			look.overlay("t[rounds[2]]")
+			look.overlay("h[rounds[1]]")
 		else //"0" is still length 1 so this means it's over 999
-			overlays += image('icons/mob/screen_ammo.dmi', src, "o9")
-			overlays += image('icons/mob/screen_ammo.dmi', src, "t9")
-			overlays += image('icons/mob/screen_ammo.dmi', src, "h9")
+			look.overlay("o9")
+			look.overlay("t9")
+			look.overlay("h9")
 
 //Invesitgating a runtime made me discover that all simplemobs have HUD on hands set to themselves
 //Which cause this original code to die because the mob does not have a mymob var...
@@ -1152,14 +1022,13 @@ CAPABILITIES(/atom/movable/screen/ammo)
 		else
 			item_overlay.color = "#00ff00"
 
-		LAZYADD(object_overlays, item_overlay)
-		add_overlay(object_overlays)
+		set_hover_overlay(item_overlay)
 
-/atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
+/atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, empty_light_state)
 	if(user?.client)
 		user.client.screen -= F
 	spent(F, user)
-	overlays += empty
+	set_empty_state(empty_light_state)
 
 /// The hud this screen object belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/proc/owner_hud() as /datum/hud

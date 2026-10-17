@@ -50,8 +50,29 @@ plan() { # <out>: write the analyzer's current keys
 	[ -s "$1" ] || { echo "check_look_keys_format: analyze look-keys wrote an empty plan" >&2; return 1; }
 }
 
-unverified_of() { # <plan>: the plan's types whose (type, key) is not a recorded row
-	awk -F'\t' 'NR == FNR { ok[$1 "\t" $2] = 1; next } !(($1 "\t" $2) in ok) { print $1 }' "$f" "$1"
+# The manifest: a machine-wide record of (type, key) pairs a passing pin run verified, kept under E:/dq-cache/look-manifest (never committed),
+# so a lane does not re-probe a type another worktree already proved at the same key. A row is true only for the snapshots and the sweep
+# it was proved against, so the manifest file is named by the content hash of everything a probe compares or runs with: the committed look
+# snapshots (look_states, look_trees, looks) and the two harness files. Any change to those starts an empty manifest; that is the whole
+# soundness argument, and why it cannot make an incremental run differ from a full one. DQ_LOOK_MANIFEST=off disables it.
+manifest_file() {
+	local dir="${DQ_LOOK_MANIFEST_DIR:-}" d digest
+	[ "${DQ_LOOK_MANIFEST:-on}" = off ] && return 1
+	if [ -z "$dir" ]; then
+		if [ -d E:/dq-cache ] || [ -d /e/dq-cache ]; then dir="E:/dq-cache/look-manifest"; else dir="$HOME/.cache/dq/look-manifest"; fi
+	fi
+	d="code/modules/unit_tests/snapshots"
+	digest="$( { find "$d/look_states" "$d/look_trees" "$d/looks" -type f 2>/dev/null | LC_ALL=C sort | while read -r x; do echo "$x"; tr -d '\r' <"$x"; done
+		cat code/modules/unit_tests/dq_look_sweep.dm code/modules/unit_tests/dq_look_pins.dm 2>/dev/null | tr -d '\r'; } | sha256sum | cut -c1-32)"
+	mkdir -p "$dir" 2>/dev/null || return 1
+	echo "$dir/$digest.tsv"
+}
+
+unverified_of() { # <plan>: the plan's types whose (type, key) is neither a recorded row nor in the manifest
+	local m
+	m="$(manifest_file 2>/dev/null || true)"
+	[ -n "$m" ] && [ -f "$m" ] || m="$f"
+	awk -F'\t' 'FILENAME == ARGV[1] || FILENAME == ARGV[2] { ok[$1 "\t" $2] = 1; next } !(($1 "\t" $2) in ok) { print $1 }' "$f" "$m" "$1"
 }
 
 case "$mode" in
@@ -132,6 +153,10 @@ record)
 		cp "$p" "$tmp"
 	fi
 	cp "$tmp" "$f"
+	if m="$(manifest_file 2>/dev/null)" && [ -n "$m" ]; then
+		# every row now in the file was verified at the plan's key by a passing run: share it with the other worktrees
+		{ [ -f "$m" ] && cat "$m"; cut -f1,2 "$f"; } | LC_ALL=C sort -u >"$m.$$.tmp" && mv -f "$m.$$.tmp" "$m"
+	fi
 	echo "check_look_keys_format: recorded $(wc -l <"$f" | tr -d ' ') verified type keys in $f"
 	;;
 esac

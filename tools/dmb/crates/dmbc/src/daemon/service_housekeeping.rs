@@ -9,6 +9,10 @@ const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
 // minutes but not always within ten, so the whole-session release waits an hour.
 pub(super) const SESSION_IDLE: Duration = Duration::from_secs(3600);
 const RELEASES_PER_PASS: usize = 4;
+/// How long the most recently used session stays exempt from memory-pressure degradation.
+pub(super) const MRU_PROTECTED: Duration = Duration::from_secs(1800);
+/// Set when a retained session was dropped because its project no longer exists on disk.
+pub(super) static ROOT_GONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 pub(super) struct Deadline(Instant);
 impl Deadline {
@@ -29,7 +33,7 @@ impl Deadline {
 const OPTIONAL_IMAGES: usize = 4;
 const COMPACT_SYMBOLIC: usize = 5;
 const REMAINING_OPTIONAL: usize = 6;
-const SESSION_RELEASE: usize = 7;
+pub(super) const SESSION_RELEASE: usize = 7;
 // Soft pressure sheds nothing. Measured on DeepQuarry (2026-10-15): the tier-2 release of rich
 // buffers (prepared sources, maps, link bindings, initializer assemblies) returned no private
 // memory (private bytes before and after differ by under 0.1%: the freed pages are scattered among
@@ -61,10 +65,93 @@ fn target(age: Duration, pressured: bool, hard: bool, previous: usize) -> usize 
 }
 
 impl Shared {
+    /// Drop the retained session of every idle slot (a daemon that is exiting serves no further edit). A slot whose host is
+    /// building is left to finish; it is released on a later pass. True when anything was released.
+    pub(super) fn release_for_retire(&self) -> bool {
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
+            .collect();
+        let mut released = false;
+        for (key, slot) in slots {
+            let manifest = key.manifest.clone();
+            if slot.idle_tier.load(Ordering::Acquire) == SESSION_RELEASE {
+                continue;
+            }
+            // Never under the roster lock: a host drop joins pools and can take seconds.
+            let Ok(mut host) = slot.host.try_lock() else { continue };
+            let before = transport::private_bytes();
+            self.reset_host(&mut host);
+            slot.idle_tier.store(SESSION_RELEASE, Ordering::Release);
+            note_eviction(&key, "daemon-retiring");
+            released = true;
+            super::super::emit_stderr(format_args!(
+                "dmbd retire release project={} private-before={before:?} private-after={:?}",
+                manifest.display(),
+                transport::private_bytes()
+            ));
+        }
+        released
+    }
+
+    /// Diagnostic (feature `allocation-sites`): apply the idle release ladder up to `upto` to every idle session, as the
+    /// housekeeping pass would one tier per pass, so the next edit's latency can be measured per tier.
+    #[cfg(feature = "allocation-sites")]
+    pub(super) fn diag_release_tiers(&self, upto: usize) -> bool {
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
+            .slots
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
+            .collect();
+        let mut released = false;
+        for (key, slot) in slots {
+            let Ok(mut host) = slot.host.try_lock() else { continue };
+            host.release_idle_executor();
+            for tier in 2..=upto {
+                let before = transport::private_bytes();
+                if tier == OPTIONAL_IMAGES {
+                    host.release_idle_optional_images();
+                } else if tier == COMPACT_SYMBOLIC {
+                    host.release_idle_compact_symbolic();
+                } else if tier == REMAINING_OPTIONAL {
+                    host.release_idle_remaining_optional();
+                } else if tier == 3 {
+                    host.release_idle_compiler_artifacts();
+                } else if tier == 2 {
+                    host.release_idle_artifacts();
+                }
+                super::super::emit_stderr(format_args!(
+                    "dmbd diagnostic release tier={tier} project={} private-before={before:?} private-after={:?}",
+                    key.manifest.display(),
+                    transport::private_bytes()
+                ));
+            }
+            slot.idle_tier.store(upto.min(SESSION_RELEASE - 1), Ordering::Release);
+            released = true;
+        }
+        released
+    }
+
     pub(super) fn housekeep(&self, now: Instant, pressured: bool, hard: bool) {
+        // The newest session is shielded from pressure degradation, except when the machine is about to page.
+        let emergency = hard && self.memory_emergency();
         let candidates = {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let mut candidates = BTreeMap::new();
+            // The session someone is iterating on is exempt from memory-pressure degradation while it is fresh: a single
+            // retained session can alone exceed the budget (about 8.6 GB private on DeepQuarry), and degrading it after every
+            // build would make every edit a full compile. Pressure sheds the other sessions (least recently used first).
+            let protected = slots
+                .iter()
+                .map(|(key, slot)| (*slot.last.lock().unwrap_or_else(|e| e.into_inner()), key))
+                .max()
+                .filter(|(last, _)| now.saturating_duration_since(*last) < MRU_PROTECTED)
+                .map(|(_, key)| key.clone());
             for (key, slot) in slots.iter() {
                 if Arc::strong_count(slot) != 1 && !pressured {
                     continue;
@@ -76,12 +163,26 @@ impl Shared {
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
                 let previous = slot.idle_tier.load(Ordering::Acquire);
-                let next = target(now.saturating_duration_since(last), pressured, hard, previous);
+                let shielded = pressured && protected.as_ref() == Some(key) && !emergency;
+                let mut next = target(now.saturating_duration_since(last), pressured && !shielded, hard && !shielded, previous);
+                // A removed worktree's session can never be edited again: release it whole, whatever the tier.
+                if !key.manifest.exists() {
+                    next = SESSION_RELEASE;
+                    ROOT_GONE.store(true, Ordering::Release);
+                }
                 if next > previous {
                     candidates.insert((last, key.clone()), (Arc::clone(slot), next));
                     if candidates.len() > RELEASES_PER_PASS {
                         candidates.pop_last();
                     }
+                }
+            }
+            // Over the memory budget with several retained projects: shed the least recently used project whole
+            // (the next most recent stays resident) instead of degrading every session a tier at a time.
+            if hard && slots.len() > 1 {
+                if let Some((first, (slot, _))) = candidates.pop_first() {
+                    candidates.clear();
+                    candidates.insert(first, (slot, SESSION_RELEASE));
                 }
             }
             candidates
@@ -106,6 +207,18 @@ impl Shared {
             if next == SESSION_RELEASE && Arc::strong_count(&slot) == 2 {
                 let removed = slots.remove(&key);
                 drop(slots);
+                note_eviction(
+                    &key,
+                    if !key.manifest.exists() {
+                        "root-gone"
+                    } else if hard {
+                        "hard-memory-limit"
+                    } else if pressured {
+                        "memory-pressure"
+                    } else {
+                        "idle"
+                    },
+                );
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
                 let started = Instant::now();
@@ -120,6 +233,7 @@ impl Shared {
                     started.elapsed().as_secs_f64(),
                     allocations::requested_live()
                 ));
+                allocations::dump_sites("after_session_release");
                 continue;
             }
             slot.idle_tier.store(next, Ordering::Release);
@@ -130,12 +244,14 @@ impl Shared {
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
                 self.reset_host(&mut host);
+                note_eviction(&key, if hard { "hard-memory-limit" } else if pressured { "memory-pressure" } else { "idle" });
                 super::super::emit_stderr(format_args!(
                     "dmbd idle release tier=queued-session project={} pressure={pressured} hard={hard} private-before={before:?} private-after={:?} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
                     transport::private_bytes(),
                     allocations::requested_live()
                 ));
+                allocations::dump_sites("after_queued_session_release");
                 continue;
             }
             host.release_idle_executor();
@@ -214,6 +330,37 @@ mod tests {
         assert_eq!(target(Duration::ZERO, true, true, 2), 3);
         assert_eq!(target(Duration::ZERO, false, false, 3), 0);
         assert_eq!(target(Duration::ZERO, true, true, 3), OPTIONAL_IMAGES);
+    }
+    #[test]
+    fn a_fresh_single_session_over_the_hard_limit_keeps_its_state() {
+        let shared = Shared {
+            engines: Arc::new(Default::default()),
+            executors: Arc::new(Default::default()),
+            procedures: Arc::new(Default::default()),
+            compiler: 1,
+            retiring: AtomicBool::new(false),
+            slots: Mutex::new(BTreeMap::new()),
+            running: Mutex::new(0),
+            workers: Mutex::new(0),
+            max_workers: 8,
+            soft_private_bytes: soft_memory::DEFAULT,
+            capacity: Condvar::new(),
+            connections: AtomicUsize::new(0),
+        };
+        let now = Instant::now();
+        // The project must exist on disk: housekeeping drops sessions whose manifest is gone.
+        let only = shared.slot(std::env::temp_dir(), &BTreeMap::new(), None);
+        *only.last.lock().unwrap() = now - Duration::from_secs(60);
+        drop(only);
+        // Hard pressure, as after every build of a session larger than the whole budget: nothing is degraded or released.
+        shared.housekeep(now, true, true);
+        let slots = shared.slots.lock().unwrap();
+        let slot = slots.values().next().expect("the session survives");
+        assert!(slot.idle_tier.load(Ordering::Acquire) <= 1, "only the idle executor may be released");
+        drop(slots);
+        // Once it has been idle past the protection window the ordinary pressure policy applies again.
+        shared.housekeep(now + MRU_PROTECTED + Duration::from_secs(120), true, true);
+        assert!(shared.slots.lock().unwrap().values().next().is_none_or(|slot| slot.idle_tier.load(Ordering::Acquire) > 0));
     }
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {

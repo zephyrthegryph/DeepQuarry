@@ -112,12 +112,8 @@
 	name = "glamour cell"
 	desc = "A large but light round ball of glamour that glows from somewhere within."
 	icon = 'icons/obj/glamour.dmi'
-
-/obj/item/capture_crystal/glamour/animate_action(atom/thing)
-	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
-	coolanimation.plane = PLANE_LIGHTING_ABOVE
-	thing.overlays += coolanimation
-	after(src, 1.4 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
+	animation_icon = 'icons/obj/glamour.dmi'
+	animation_time = 1.4 SECONDS
 
 //Face of Glamour (creates a clone of a target)
 

@@ -6,7 +6,6 @@
 	anchored = FALSE
 	density = FALSE
 	var/deflector_icon_state
-	var/image/deflector_overlay
 	var/finished = FALSE
 	var/admin = FALSE //Can't be rotated or deconstructed
 	var/can_rotate = TRUE
@@ -30,13 +29,11 @@
 /obj/structure/reflector/draw(datum/look/look)
 	..()
 	look.state("reflector_base")
+	if(deflector_icon_state)
+		look.overlay(look_overlay_image(icon, deflector_icon_state, transform = ((can_rotate && rotation_angle != -1) ? turn(matrix(), rotation_angle) : null)))
 
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()
-	if(deflector_icon_state)
-		deflector_overlay = image(icon, deflector_icon_state)
-		add_overlay(deflector_overlay)
-
 	if(rotation_angle == -1)
 		setAngle(dir2angle(dir))
 	else
@@ -75,11 +72,7 @@
 
 /obj/structure/reflector/proc/setAngle(new_angle)
 	if(can_rotate)
-		rotation_angle = new_angle
-		if(deflector_overlay)
-			cut_overlay(deflector_overlay)
-			deflector_overlay.transform = turn(matrix(), new_angle)
-			add_overlay(deflector_overlay)
+		set_rotation_angle(new_angle)
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
 	var/angle_key = num2text(pangle)

@@ -41,7 +41,7 @@
 	new_dest.interior_corner = my_turf().interior_corner
 	new_dest.takes_underlays = my_turf().takes_underlays
 	new_dest.under_turf = my_turf().under_turf
-	new_dest.join_flags = my_turf().join_flags
+	new_dest.set_join_flags(my_turf().join_flags)
 	new_dest.join_group = my_turf().join_group
 	new_dest.lighting_build_overlay()
 
@@ -88,7 +88,8 @@
 	var/under_turf //Underlay override turf path.
 	var/join_flags = 0 //Bitstring to represent adjacency of joining walls
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
-	var/static/list/antilight_cache // ALLOW(cache): constant table, also read by cut_overlay
+	/// Whether this joined corner cancels the lighting overlay of the dynamic lighting beside it (update_breaklights()).
+	var/breaks_light = FALSE
 	rad_insulation = RAD_MEDIUM_INSULATION
 
 CAPABILITIES(/turf/simulated/shuttle)
@@ -98,25 +99,21 @@ CAPABILITIES(/turf/simulated/shuttle)
 /turf/simulated/shuttle/Initialize(mapload)
 	. = ..()
 	apply_rad_shield_material()
-	if(!antilight_cache)
-		antilight_cache = list()
-		for(var/diag in GLOB.cornerdirs)
-			var/image/I = image(LIGHTING_ICON, null, icon_state = "diagonals", layer = 10, dir = diag)
-			I.plane = PLANE_LIGHTING
-			antilight_cache["[diag]"] = I
-
 	if(takes_underlays)
 		underlay_update()
 
 // For joined corners touching static lighting turfs, add an overlay to cancel out that part of our lighting overlay.
 /turf/simulated/shuttle/proc/update_breaklights()
-	cut_overlay(antilight_cache["[join_flags]"])
 	if(!(join_flags in GLOB.cornerdirs)) //We're not joined at an angle
+		set_breaks_light(FALSE)
 		return
 	//Dynamic lighting dissolver
 	var/turf/T = get_step(src, turn(join_flags,180))
-	if(!T || !T.dynamic_lighting || !get_area(T).dynamic_lighting)
-		add_overlay(antilight_cache["[join_flags]"])
+	set_breaks_light(!T || !T.dynamic_lighting || !get_area(T).dynamic_lighting)
+
+/turf/simulated/shuttle/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(LIGHTING_ICON, "diagonals", layer = 10, plane = PLANE_LIGHTING, dir = join_flags), when = breaks_light)
 
 /turf/simulated/shuttle/proc/underlay_update()
 	if(!takes_underlays)

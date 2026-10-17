@@ -79,8 +79,12 @@ CAPABILITIES(/obj)
 	var/obj/O = A.holder
 	O.burning_start_heat()
 	O.set_resistance_flags(O.resistance_flags | ON_FIRE)
-	if(O.burn_overlay)
-		O.add_overlay(O.burn_overlay)
+
+/// The flames show over the burning holder.
+/datum/capability/burning/draw(atom/holder, datum/look/look)
+	..()
+	var/obj/O = holder
+	look.overlay(O.burn_overlay)
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
 	var/obj/O = A.holder
@@ -90,8 +94,6 @@ CAPABILITIES(/obj)
 		O.burn_particle_type = null
 	if(!QDELETED(O))
 		O.set_resistance_flags(O.resistance_flags & (~ON_FIRE))
-		if(O.burn_overlay)
-			O.cut_overlay(O.burn_overlay)
 	O.burn_overlay = null
 
 /// The heat source and the cooling watch on the object's heat body.

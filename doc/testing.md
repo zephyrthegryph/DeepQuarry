@@ -562,8 +562,12 @@ No variable is needed: the executable defaults to `tools/dmb/target/release/dmbc
 the engine template to `tools/dmb/fixtures/native_template.bin`. With the native compiler selected the
 `dm`, `dm-test`, `test-repeat`, `bench` and `balance` targets depend on `dmbc` and rebuild it
 when its sources changed. Overrides: `DQ_NATIVE_COMPILER`, `DQ_NATIVE_ENGINE_TEMPLATE` (an explicit
-compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 8), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
+compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 4; `DMB_WORKERS` wins), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
 `DQ_COMPILER_STRICT=1` (no DreamMaker fallback on a compiler internal error).
+The native compiler is gentle with the machine by default: `dmbc` (client, daemon and its worker threads) lowers its own priority
+class to below normal at startup (`DMB_PRIORITY=normal` opts out, `idle` goes lower; `tools/dmb/crates/dmbc/src/priority.rs`), DreamChecker runs at
+below normal too (`DQ_PRIORITY=normal` opts out), compile workers default to 4 (`DMB_WORKERS`, up to 8), and the daemon's whole private-memory
+budget defaults to 8 GB (`DMB_DAEMON_MEMORY_BUDGET_GB`; soft limit two thirds of it).
 A fresh worktree does not run cargo: `build.sh dmbc` restores `dmbc`/`dmbd` from a shared content-addressed cache
 (`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE=<dir>`, `off` disables) keyed by the git ids of `tools/dmb` at HEAD, and stores a fresh build there.
 A checkout whose compiler sources differ from HEAD bypasses the cache. Measured edit times, the equivalence triage and the memory
@@ -764,6 +768,26 @@ what it measured.
 TypeScript checks. DreamChecker is skipped with a notice if it is not installed;
 install it with `tools/ci/install_spaceman_dmm.sh dreamchecker`, or put
 `dreamchecker.exe` in `%USERPROFILE%/SpacemanDMM/`.
+
+### Shared compile roots, daemon lifetime, cache budget
+
+`build.sh dm`/`dm-test` compile through one root per DME variant under `E:/dq-cache/dmb-roots/<variant>` (junctions to the worktree's input
+directories, `tools/build/lib/compile_root.ts`; `DQ_SHARED_ROOT=0` compiles in the worktree), so a compile after switching worktrees reuses the
+resident session (measured 8-18 s against 100-170 s cold) and the output is equivalent to a fresh build (`dmb-equiv --ignore-debug`; a
+patched output may keep unreferenced old strings, so it is not byte-identical). The daemon now exits after 60 minutes idle (was 10), matching
+its one-hour session retention (`DMB_DAEMON_IDLE_EXIT_SECS`). The first edit after a daemon restart compiles cold: the patch base lives only in
+memory. The shared cache directory is held to `DMB_CACHE_BUDGET_GB` (default 32) by recency of use. `dmbc --daemon-stats` prints hit rate,
+paths, wall times and miss causes.
+
+### DreamChecker policy (2026-10-16)
+
+SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
+every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
+for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1` (set by `tools/dq_merge_gates.sh` and
+`tools/dq_push_master.sh`, so the merge gates and the push still require "Found 0 diagnostics"), a `CI` environment, or when you
+ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
+below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
+ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.
 
 CI also runs these scripts, all from the repository root:
 

@@ -1,6 +1,7 @@
 //! Port of `tools/ci/sys_rules/dx_raw_overlays.py`: raw overlay writes outside the look builder
 //! (design review M9). `add_overlay(` / `cut_overlay(` / `cut_overlays(` / `overlays +=` /
-//! `overlays -=` outside the look builder.
+//! `overlays -=` outside the look builder. A hard ban: the baseline is empty. The engine files that compile looks to overlays are
+//! exempt by path in `[lint."sys/dx_raw_overlays"]` of tools/ci/lint_scopes.toml.
 
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
@@ -11,11 +12,6 @@ const RULES: &[RuleMeta] = &[RuleMeta {
     name: "dx_raw_overlays",
     hint: "draw the layer in draw(datum/look/look) (look.overlay/glow/gauge), not a raw overlay write (design review M9)",
 }];
-
-const EXEMPT: &[&str] = &[
-    "code/engine/present/appearance_builder.dm",
-    "code/controllers/subsystems/overlays.dm",
-];
 
 /// `scan_file` of the Python: one site per sanitized line with a raw overlay write.
 fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
@@ -29,9 +25,6 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
 }
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
-    if EXEMPT.contains(&f.rel.as_str()) {
-        return;
-    }
     scan_lines(f, out);
 }
 
@@ -55,12 +48,6 @@ fn selftest() -> Result<String, String> {
     let got: Vec<usize> = v.into_iter().map(|(_, n)| n).collect();
     if got != vec![1, 2, 3, 4, 5] {
         return Err(format!("dx_raw_overlays selftest: got {:?}", got));
-    }
-    let ex = SourceFile::from_text("code/engine/present/appearance_builder.dm", "A.add_overlay(added)");
-    let mut v2 = Vec::new();
-    scan_file(&ex, &mut v2);
-    if !v2.is_empty() {
-        return Err("dx_raw_overlays selftest: the look builder is exempt".to_string());
     }
     Ok("dx_raw_overlays".to_string())
 }

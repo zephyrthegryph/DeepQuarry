@@ -21,6 +21,14 @@ CAPABILITIES(/atom/movable/screen/radial)
 	var/choice
 	var/next_page = FALSE
 	var/tooltips = FALSE
+	/// The choice's picture (an icon_state, image or icon), drawn over the slice.
+	var/choice_icon
+
+/// The slice shows the next-page arrow, or its choice's picture.
+/atom/movable/screen/radial/slice/draw(datum/look/look)
+	..()
+	look.overlay("radial_next", when = next_page)
+	look.overlay(choice_icon)
 
 /atom/movable/screen/radial/slice/set_parent(new_value)
 	. = ..()
@@ -216,14 +224,14 @@ CAPABILITIES(/datum/radial_menu)
 				element.click_on_hover = TRUE
 
 /datum/radial_menu/proc/HideElement(atom/movable/screen/radial/slice/E)
-	E.cut_overlays()
+	E.set_choice_icon(null)
 	E.vis_contents.Cut()
 	E.set_alpha(0)
 	E.name = "None"
 	E.maptext = null
 	E.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	E.choice = null
-	E.next_page = FALSE
+	E.set_next_page(FALSE)
 
 /datum/radial_menu/proc/SetElement(atom/movable/screen/radial/slice/E,choice_id,angle,anim,anim_order)
 	//Position
@@ -243,13 +251,12 @@ CAPABILITIES(/datum/radial_menu)
 	//Visuals
 	E.set_alpha(255)
 	E.mouse_opacity = MOUSE_OPACITY_ICON
-	E.cut_overlays()
+	E.set_choice_icon(null)
 	E.vis_contents.Cut()
 	if(choice_id == NEXT_PAGE_ID)
 		E.name = "Next Page"
-		E.next_page = TRUE
+		E.set_next_page(TRUE)
 		E.set_icon_state("radial_slice") // Resets the bg icon state to the default for next page buttons.
-		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.
 		var/datum/radial_menu_choice/choice_datum = LAZYACCESS(choice_datums, choice_id)
@@ -265,9 +272,8 @@ CAPABILITIES(/datum/radial_menu)
 			E.name = AM.name
 		E.choice = choice_id
 		E.maptext = null
-		E.next_page = FALSE
-		if(LAZYACCESS(choices_icons, choice_id))
-			E.add_overlay(LAZYACCESS(choices_icons, choice_id))
+		E.set_next_page(FALSE)
+		E.set_choice_icon(LAZYACCESS(choices_icons, choice_id))
 		if (choice_datum?.info)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
 			info_button.set_plane(PLANE_PLAYER_HUD_ABOVE)

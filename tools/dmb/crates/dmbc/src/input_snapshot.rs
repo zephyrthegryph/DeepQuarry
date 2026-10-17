@@ -462,6 +462,13 @@ impl InputSnapshot {
     /// (`.dm`, `.dme`), by content: non-text files, folder listings, negative
     /// lookups and generated outputs. Used to admit body-edit patches.
     pub(crate) fn non_text_difference(&self, other: &Self) -> Option<String> {
+        self.non_text_difference_with(other, true)
+    }
+    /// As `non_text_difference`, but with `listings` false the folder listings and negative lookups
+    /// are not compared. A patch passes false when the resource archive and search context are
+    /// unchanged: a listing only matters through what it resolved, and an icon repack that rewrites
+    /// unreferenced files changes listings without changing any resolution.
+    pub(crate) fn non_text_difference_with(&self, other: &Self, listings: bool) -> Option<String> {
         let text = |path: &Path| {
             path.extension().is_some_and(|extension| {
                 extension.eq_ignore_ascii_case("dm") || extension.eq_ignore_ascii_case("dme")
@@ -485,10 +492,10 @@ impl InputSnapshot {
         if let Some((path, _)) = right.next() {
             return Some(format!("{} removed", path.display()));
         }
-        if self.folders != other.folders {
+        if listings && self.folders != other.folders {
             return Some("resource folder listing".into());
         }
-        if self.negative_files != other.negative_files {
+        if listings && self.negative_files != other.negative_files {
             return Some("negative file lookups".into());
         }
         if self.generated_outputs != other.generated_outputs {
@@ -519,7 +526,10 @@ impl InputSnapshot {
     /// Merge a freshly validated retained domain into this capture. Conflicting
     /// reads reject the build instead of silently selecting one observation.
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
+        let _timer = dm_profile::detail_timer("snapshot.merge.check_structure");
         other.check_structure()?;
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.files");
         if !other.folders.is_empty() && other.generated_outputs != self.generated_outputs {
             return Err(invalid("retained generated-output proof policy differs"));
         }
@@ -535,16 +545,39 @@ impl InputSnapshot {
                 self.files.insert(path.clone(), file.clone());
             }
         }
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.rest");
         // `other` passed `check_structure` above: its paths are canonical, its listings sorted
         // leaf names, and (the policies being equal) already free of generated outputs. Merging
         // therefore compares and inserts; re-filtering every listing name through
         // `canonical_path` cost about 0.5 s per request on DeepQuarry's resource folders.
-        for path in &other.negative_files {
-            if self.files.contains_key(path) {
-                return Err(invalid("present input became negative during capture"));
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.negatives");
+        // Both sets are ordered: one linear walk finds a negative that is also a file, where a
+        // lookup per negative (a component-wise path comparison each) cost 0.18 s.
+        {
+            let mut files = self.files.keys().peekable();
+            for path in &other.negative_files {
+                while let Some(file) = files.peek() {
+                    match (*file).cmp(path) {
+                        std::cmp::Ordering::Less => {
+                            files.next();
+                        }
+                        std::cmp::Ordering::Equal => {
+                            return Err(invalid("present input became negative during capture"));
+                        }
+                        std::cmp::Ordering::Greater => break,
+                    }
+                }
             }
-            self.negative_files.insert(path.clone());
         }
+        if self.negative_files.is_empty() {
+            self.negative_files = other.negative_files.clone();
+        } else {
+            self.negative_files.extend(other.negative_files.iter().cloned());
+        }
+        drop(_timer);
+        let _timer = dm_profile::detail_timer("snapshot.merge.folders");
         let same_policy = other.generated_outputs == self.generated_outputs;
         for (path, listing) in &other.folders {
             if !same_policy {

@@ -214,9 +214,7 @@
 	act_message(user, src, MSG_SELF(span_notice("You attach %T% to the wall.")), \
 		MSG_OTHERS("%U% attaches %T% to the wall."), \
 		MSG_BLIND(span_warningplain("You hear clicking.")))
-	if(isrobot(user)) //Robots cannot unequip/drop items, for Safety Reasons.
-		forceMove(T)
-	user.drop_item(T)
+	user.release_wall_assembly(src, T)
 	set_anchored(TRUE)
 	on_anchored()
 	switch(ndir)

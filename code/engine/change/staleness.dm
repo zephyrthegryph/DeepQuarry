@@ -60,7 +60,7 @@ GLOBAL_LIST_EMPTY(staleness_reports)
 GLOBAL_LIST_EMPTY(staleness_seen)
 /// "kind|type|what" -> how many holders were stale this run (the work list).
 GLOBAL_LIST_EMPTY(staleness_census)
-/// "ref|kind|what" -> assoc input -> value at the last clean check (strict only).
+/// ref -> ("kind|what" -> assoc input -> value at the last clean check) (strict only). Indexed by entity so staleness_forget() drops everything one holds.
 GLOBAL_LIST_EMPTY(staleness_good)
 /// ref -> list of var names written while the engine decided the draw reads none of them; checked at the next presentation drain.
 GLOBAL_LIST_EMPTY(staleness_served)
@@ -127,6 +127,8 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	GLOB.stale_all -= ref
 	GLOB.stale_new -= ref
 	GLOB.stale_pretest -= ref
+	GLOB.staleness_good -= ref
+	GLOB.staleness_served -= ref
 
 // ---------------------------------------------------------------- reporting
 
@@ -238,11 +240,16 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	var/list/snap = list()
 	for(var/input in inputs)
 		snap[input] = list(staleness_input_value(E, input))
-	GLOB.staleness_good[snap_key] = snap
+	var/ref = REF(E)
+	var/list/mine = GLOB.staleness_good[ref]
+	if(!mine)
+		mine = list()
+		GLOB.staleness_good[ref] = mine
+	mine[snap_key] = snap
 
 /// The culprit text for a mismatch: the inputs whose value moved since the last clean check, else the candidates.
 /proc/staleness_culprit(datum/E, snap_key, list/inputs, extra)
-	var/list/snap = GLOB.staleness_good[snap_key]
+	var/list/snap = GLOB.staleness_good[REF(E)]?[snap_key]
 	var/list/moved = list()
 	if(snap)
 		for(var/input in snap)
@@ -316,7 +323,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(failed)
 		return
 	GLOB.staleness_checks++
-	var/snap_key = "[REF(E)]|stat|[def.skey]"
+	var/snap_key = "stat|[def.skey]"
 	var/list/inputs
 	if(GLOB.staleness_strict)
 		inputs = staleness_stat_inputs(E, def, I)
@@ -385,7 +392,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(failed)
 		return
 	GLOB.staleness_checks++
-	var/snap_key = "[REF(A)]|draw|draw"
+	var/snap_key = "draw|draw"
 	var/list/inputs
 	if(GLOB.staleness_strict)
 		inputs = staleness_draw_inputs(A)
@@ -484,6 +491,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(!D || QDELETED(D) || REF(D) != ref)
 		GLOB.stale_all -= ref
 		GLOB.staleness_served -= ref
+		GLOB.staleness_good -= ref
 		return FALSE
 	staleness_check_entity(D, trigger)
 	return TRUE

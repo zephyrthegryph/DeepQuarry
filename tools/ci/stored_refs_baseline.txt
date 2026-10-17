@@ -191,7 +191,6 @@ var	code/modules/admin/view_variables_panel.dm	@/client::dq_vv_panel
 var	code/modules/assembly/signaler.dm	@/obj/item/assembly/signaler::connected
 var	code/modules/assembly/signaler.dm	@/obj/item/assembly/signaler::radio_connection
 var	code/modules/blob2/core_chunk.dm	@/obj/item/blobcore_chunk::parent_blob_type
-var	code/modules/body/affliction.dm	@/datum/affliction::owner
 var	code/modules/body/affliction.dm	@/datum/affliction::location
 var	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::applied_pressure
 var	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::parent

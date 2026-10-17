@@ -1,6 +1,9 @@
 #[path = "store_lifecycle.rs"]
 mod lifecycle;
 pub use lifecycle::EvictionReport;
+#[path = "store_budget.rs"]
+mod budget;
+pub use budget::BudgetReport;
 #[path = "store_candidates.rs"]
 mod candidates;
 #[path = "store_compaction.rs"]
@@ -43,6 +46,8 @@ pub struct CacheSnapshot {
     rejection_generation: AtomicU64,
     revised_superseded: Mutex<(u64, Arc<BTreeSet<u128>>)>,
     used_keys: Mutex<BTreeSet<RecordKey>>,
+    /// Ordinals (into `segments`) of segments that served a record in this snapshot's life; see `touch_used_segments`.
+    pub(crate) used_segments: Mutex<BTreeSet<usize>>,
 }
 #[derive(Debug)]
 pub struct CompactResult {
@@ -147,6 +152,7 @@ impl Cache {
             rejection_generation: AtomicU64::new(0),
             revised_superseded: Mutex::new((0, Arc::new(BTreeSet::new()))),
             used_keys: Mutex::new(BTreeSet::new()),
+            used_segments: Mutex::new(BTreeSet::new()),
         })
     }
     pub fn publish(&self, records: &[Record]) -> Result<u128, CacheError> {

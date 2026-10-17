@@ -144,7 +144,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)))
 	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
-	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("tend", hand(), ungated(), label("Use"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(req_silent))), then(PROC_REF(interaction_hand)))
 	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
 	// a ghost may become the living plant product of a ripe tray (the old attack_ghost: never fell through to the default)
 	op("ghost_harvest", observer(), label("Harvest"), needs(req(PROC_REF(can_ghost_harvest))),
@@ -697,8 +697,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	if(istype(user,/mob/living/silicon))
-		return
 	if(frozen == 1)
 		to_chat(user, span_warning("Disable the cryogenic freezing first!"))
 	if(harvest)

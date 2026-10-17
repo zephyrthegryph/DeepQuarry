@@ -45,8 +45,6 @@ CAPABILITIES(/obj/effect/floor_decal)
 		I.alpha = alpha
 		GLOB.floor_decals[cache_key] = I
 	T.set_decals(T.decals ? T.decals + I : list(I)) // remembered, so the floor's draw shows it
-	if(!istype(T, /turf/simulated/floor)) // a tile that does not draw its decals gets it as an overlay too
-		T.add_overlay(I) // Add to its current overlays too.
 
 /obj/effect/floor_decal/reset
 	name = "reset marker"

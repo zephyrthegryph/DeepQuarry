@@ -258,7 +258,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 /obj/effect/overmap/visitable/proc/distress(mob/user)
 	if(has_distress_beacon)
 		return FALSE
-	has_distress_beacon = TRUE
+	set_has_distress_beacon(TRUE)
 	admin_chat_message(message = "Overmap panic button hit on z[z] ([name]) by '[user?.ckey || "Unknown"]'", color = "#FF2222")
 	// start: Making the rescue beacon more generic rather then upstreams
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant beacon transmitting on [PUB_FREQ*0.1]kHz. \
@@ -269,13 +269,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 
-	var/image/I = image(icon, icon_state = "distress")
-	I.plane = PLANE_LIGHTING_ABOVE
-	I.appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR
-	add_overlay(I)
 
 	after(src, 5 MINUTES, PROC_REF(distress_update))
 	return TRUE
+
+/// A lit "distress" marker while the beacon is out.
+/obj/effect/overmap/visitable/draw(datum/look/look)
+	..()
+	if(has_distress_beacon)
+		look.overlay(look_overlay_image(icon, "distress", plane = PLANE_LIGHTING_ABOVE, appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR))
 
 /obj/effect/overmap/visitable/proc/get_distress_info()
 	return "\[X:[x], Y:[y]\]"

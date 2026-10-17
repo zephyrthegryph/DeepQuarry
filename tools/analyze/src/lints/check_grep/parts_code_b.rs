@@ -189,6 +189,17 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::KeepPaths("legacy_fields_converted")])
         .allow(Allow::None),
+        // A source family whose stat contributions moved into factors() entries in its type's CAPABILITIES block (doc/rewrite/final_api.html section 5,
+        // doc/rewrite/proposals/stat_layer.md section 8) lists its files under `factors_converted`; a raw `factors =` table var there is a hard ban.
+        Part::new(
+            "raw_factors_table_vars_banned_in_converted_files",
+            "raw factors table vars banned in converted files",
+            "a `factors =` table var in a file listed under factors_converted. The source's table is a factors(table, scale = nameof(v), to = nameof(rel)) entry in its type's CAPABILITIES block, held on the entity the relation names and re-held at the exact new scale.",
+            Files::Code,
+            line(r"^\s*(var/(alist/|list/)?)?factors\s*="),
+        )
+        .flt(vec![Flt::KeepPaths("factors_converted")])
+        .allow(Allow::None),
         // The hand window pushes: a window updates because its ui_data(A) re-runs when something it reads changes (code/modules/tgui/ui_push.dm). A file
         // is listed under `ui_push_converted` when its last SStgui.update_uis() and hand changed() mark is gone; a hard ban there. Files are only ever added.
         Part::new(

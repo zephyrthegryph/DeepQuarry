@@ -115,6 +115,16 @@
 	/// What applies it: a relation view, null once the source is deleted (the hold is then
 	/// sourceless) or when applied without one.
 	var/datum/source
+	/// The mob this hold is on: a relation view the factors() entry below contributes to, null once the mob is gone.
+	var/mob/living/holder
+
+/// The level's table (STAT_STASIS), held on the mob as rows of this hold for as long as the hold stands; the stat (MAX rule) composes the deepest level.
+CAPABILITIES(/datum/stasis_hold)
+	ref_one(nameof(holder), /mob/living)
+	factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")
+
+/datum/stasis_hold/proc/stasis_table(datum/act/eval/A)
+	return stasis_type ? body_effect_def(stasis_type)?.factors : null
 
 /// The stasis_sources key for `source`: the source's own entry, or for a null source the
 /// sourceless entry or one whose source has since been deleted.
@@ -162,13 +172,13 @@
 		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE
 		var/datum/body_effect/stasis/level = body_effect_def(stasis_type)
 		var/datum/stasis_hold/hold = new
-		hold.stasis_type = stasis_type
+		hold.set_stasis_type(stasis_type)
 		if(source)
 			rel_set(hold, nameof(hold.source), source)
+		rel_set(hold, nameof(hold.holder), src)
 		rel_add(src, nameof(stasis_sources), hold, key)
 		if(holds_rate)
 			hold(src, STAT_CLOCK_RATE_BIO, 1 - level.stasis_depth(), hold, clock = HOLD_CLOCK_WORLD)
-	invalidate_factors()
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
 	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null
@@ -182,13 +192,6 @@
 
 /mob/living/proc/has_stasis_from(datum/source)
 	return !!stasis_type_from(source)
-
-/// Holds the stasis levels held by sources (the stasis stat, MAX rule) as rows of each level's definition, apart from the same definition applied as
-/// a body effect.
-/mob/living/proc/hold_stasis_factors()
-	for(var/key in stasis_sources)
-		var/datum/body_effect/level = body_effect_def(stasis_type_at(key))
-		hold_table(src, level, level.factors, 1, 1, "stasis")
 
 // --- The stat ------------------------------------------------------------------------------------------------------------------
 

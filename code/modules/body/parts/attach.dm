@@ -215,7 +215,7 @@ SETTER(/obj/item/organ, organ_tag)
 		adopt_part(part)
 		if(istype(part, /obj/item/organ/external))
 			limbs = TRUE
-	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_ARMOR)
 	if(limbs)
 		owner.hands_refresh() // the hands() provider follows the limbs
 	if(limbs && ishuman(owner))
@@ -258,7 +258,7 @@ SETTER(/obj/item/organ, organ_tag)
 		log_runtime("PARTS: [key_name(owner)] released [root] ([root.type]) with [length(tree) - 1] part(s) below it[destroying ? " (holder destroying)" : ""][reparent ? " (reparent)" : ""]")
 	if(destroying || reparent)
 		return
-	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_ARMOR)
 	owner.hands_refresh() // the hands() provider follows the limbs
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner

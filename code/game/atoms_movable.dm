@@ -53,25 +53,7 @@
 	if(proximity_tracked)
 		SSproximity.member_update(src)
 
-#if EMISSIVE_BLOCK_GENERIC != 0
-	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
-	#error Read the comment in code/game/atoms_movable.dm for details.
-#endif
-
-	if (lighting_of(src).emissive)
-		if (lighting_of(src).emissive == EMISSIVE_BLOCK_UNIQUE)
-			render_target = ref(src)
-			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
-			// Note, this should be refactored to drop priority overlays
-			add_overlay(list(em_block), TRUE)
-			observe(em_block, /datum/notice/qdeleting, src, then(PROC_REF(emblocker_gc)))
-	else
-		var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = src.alpha)
-		gen_emissive_blocker.color = GLOB.em_block_color
-		gen_emissive_blocker.dir = dir
-		gen_emissive_blocker.appearance_flags |= appearance_flags
-		// Note, this should be refactored to drop priority overlays
-		add_overlay(list(gen_emissive_blocker), TRUE)
+	emissive_blocker_attach()
 
 	if(opacity)
 		start_blocking_light()
@@ -137,10 +119,7 @@
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
 	// checks that it released them (dq_lifecycle_check_released()).
-	if(em_block)
-		cut_overlay(em_block)
-		unobserve(em_block, /datum/notice/qdeleting, src)
-		rel_clear(src, nameof(em_block))
+	emissive_blocker_detach()
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -827,13 +806,6 @@ CAPABILITIES(/atom/movable/overlay)
 
 /atom/movable/proc/get_cell()
 	return
-
-/atom/movable/proc/emblocker_gc(datum/act/notice/N)
-	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/source = N.target
-	unobserve(source, /datum/notice/qdeleting, src)
-	cut_overlay(source)
-	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
 
 /atom/movable/proc/abstract_move(atom/new_loc)
 	var/atom/old_loc = loc

@@ -32,8 +32,12 @@ CAPABILITIES(/obj/machinery/flasher/portable)
 /obj/machinery/flasher/portable/proc/arm_proximity(datum/act/timer/A)
 	// Map start flashers enable proximity sensing
 	if(anchored)
-		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+
+/// The look: a portable flasher shows its armed light while anchored.
+/obj/machinery/flasher/portable/draw(datum/look/look)
+	..()
+	look.overlay("[base_state]-s", when = anchored)
 
 /obj/machinery/flasher/power_change()
 	. = ..()
@@ -135,11 +139,9 @@ CAPABILITIES(/obj/machinery/flasher)
 	set_anchored(!anchored)
 	if(!anchored)
 		user.show_message(span_warning("[src] can now be moved."))
-		cut_overlays()
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	else
 		user.show_message(span_warning("[src] is now secured."))
-		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	return OP_OK
 

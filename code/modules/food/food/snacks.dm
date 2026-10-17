@@ -20,6 +20,10 @@
 	var/nutriment_amt = 0
 	var/list/nutriment_desc = list("food" = 1) // ALLOW(instance_list): d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
 	var/tmp/datum/reagent/nutriment/coating/coating
+	/// The batter or breading over the food, as an image of its flattened icon (raw while it is uncooked, cooked after cook()).
+	var/image/coating_look
+	/// The icon_state of the filling layer a cooking machine made this from, drawn in `filling_color`; null for a food that has none.
+	var/filling_layer
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
@@ -146,6 +150,12 @@
 // is unwrapped and a sealed one opened by using it in hand. A loaf is sliced by an edged thing on a table or a tray, and anything small enough (and a knife
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
+/obj/item/reagent_containers/food/snacks/draw(datum/look/look)
+	..()
+	if(filling_layer)
+		look.overlay(look_overlay_image(icon, filling_layer, color = filling_color))
+	look.overlay(coating_look, when = !!coating_look)
+
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
 	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
@@ -4715,8 +4725,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	var/image/J = image(I)
 	J.alpha = 200
 	J.blend_mode = BLEND_OVERLAY
-	J.tag = "coating"
-	add_overlay(J)
+	set_coating_look(J)
 
 	if (user)
 		act_message(user, src, MSG_SELF(span_notice("You dip %T% into \the [coating().name]")), \
@@ -4727,17 +4736,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 //Called by cooking machines. This is mainly intended to set properties on the food that differ between raw/cooked
 /obj/item/reagent_containers/food/snacks/proc/cook()
 	if (coating())
-		var/list/temp = overlays.Copy()
-		for (var/i in temp)
-			if (istype(i, /image))
-				var/image/I = i
-				if (I.tag == "coating")
-					temp.Remove(I)
-					break
-
-		overlays = temp
-		//Carefully removing the old raw-batter overlay
-
 		if (!flat_icon)
 			flat_icon = getFlatIcon(src)
 		var/icon/I = flat_icon
@@ -4746,8 +4744,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
 		var/image/J = image(I)
 		J.alpha = 200
-		J.tag = "coating"
-		add_overlay(J)
+		set_coating_look(J) //replaces the raw-batter look
 
 		if (do_coating_prefix == 1)
 			name = "[coating().coated_adj] [name]"

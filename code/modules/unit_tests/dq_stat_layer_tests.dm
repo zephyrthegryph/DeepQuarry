@@ -222,3 +222,54 @@
 	TEST_ASSERT(length(reports()) == 2 && findtext(reports()[2], "does not declare"), "a stat the type lacks is reported: [json_encode(reports())]")
 	TEST_ASSERT_NULL(hold_table(F, "not a source", alist(STAT_TB_SUM = 1)), "a text source is refused")
 	TEST_ASSERT_EQUAL(length(reports()), 3, "and reported")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// factors()
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_stat_layer/dq_stat_factors_entry
+
+/datum/unit_test/dq_stat_layer/dq_stat_factors_entry/run_layer()
+	var/obj/stat_table_fixture/F = allocate(/obj/stat_table_fixture)
+	var/obj/stat_table_fixture/G = allocate(/obj/stat_table_fixture)
+	var/datum/factor_source_fixture/S = new
+	// Nothing is held until the source has a target.
+	TEST_ASSERT_EQUAL(F.tb_sum, 0, "no target, no table")
+	rel_set(S, nameof(S.target), F)
+	TEST_ASSERT(STAT_NEAR(F.tb_sum, 4), "the table lands on the target at scale 1")
+	TEST_ASSERT(STAT_NEAR(F.tb_product, 0.5), "a PRODUCT entry of it too")
+	TEST_ASSERT_EQUAL(F.tb_free, 4, "a static table of the same entry list, under its own part")
+	// The scale is a tracked var: the exact new value is held at the write, never a band.
+	S.set_level(0.5)
+	TEST_ASSERT(STAT_NEAR(F.tb_sum, 2), "half the scale, half the offset, before the next line")
+	TEST_ASSERT(STAT_NEAR(F.tb_product, 0.75), "the product fades toward 1 with the scale")
+	S.set_level(0.51)
+	TEST_ASSERT(STAT_NEAR(F.tb_sum, 2.04), "a small step inside what a band would hide moves the stat")
+	S.set_stacks(2)
+	TEST_ASSERT(STAT_NEAR(F.tb_sum, 4.08), "stacks are a tracked input too")
+	S.set_level(0)
+	TEST_ASSERT_EQUAL(F.tb_sum, 0, "a scale of 0 holds nothing")
+	TEST_ASSERT_EQUAL(rows_of(F, STAT_TB_SUM), 0, "and leaves no row")
+	S.set_level(1)
+	S.set_stacks(1)
+	// A when() gate holds the entry's table only while it stands.
+	TEST_ASSERT_EQUAL(F.tb_max, 0, "the gated table is not held")
+	S.set_wide(TRUE)
+	TEST_ASSERT(STAT_NEAR(F.tb_max, 0.4), "the gate opens: the table is held")
+	TEST_ASSERT(STAT_NEAR(F.tb_sum, 5), "alongside the first")
+	S.set_wide(FALSE)
+	TEST_ASSERT_EQUAL(F.tb_max, 0, "the gate closes: it is released")
+	// The relation moves the rows.
+	rel_set(S, nameof(S.target), G)
+	TEST_ASSERT_EQUAL(F.tb_sum, 0, "the old target is released")
+	TEST_ASSERT_EQUAL(F.tb_free, 0, "every part of it")
+	TEST_ASSERT(STAT_NEAR(G.tb_sum, 4), "the new target holds the table")
+	// A body-style pass over the target leaves the declared rows alone.
+	TEST_ASSERT(hold_tables_begin(G), "pass opened")
+	hold_tables_end(G)
+	TEST_ASSERT(STAT_NEAR(G.tb_sum, 4), "a table pass does not release a declared table")
+	// The source's deletion releases what it held.
+	qdel(S)
+	TEST_ASSERT_EQUAL(G.tb_sum, 0, "the source is gone and so is its table")
+	TEST_ASSERT_EQUAL(G.tb_free, 0, "every part")
+	TEST_ASSERT_EQUAL(length(reports()), 0, "no report: [json_encode(reports())]")

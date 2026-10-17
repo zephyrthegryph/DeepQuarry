@@ -10,7 +10,8 @@ CAPABILITIES(/obj/item/storage/internal)
 	keeps_if(PROC_REF(has_item_owner))
 	setup(PROC_REF(link_item_owner))
 
-/// Reject invalid owners before binding the typed relation; discarded atoms skip setup.
+/// Admission precedes the typed link: map-spawned internal storage has no item
+/// owner and is discarded without ever linking its turf as an item.
 /obj/item/storage/internal/proc/has_item_owner()
 	return istype(loc, /obj/item)
 

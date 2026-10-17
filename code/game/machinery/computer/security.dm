@@ -641,11 +641,9 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		var/obj/item/photo/photo = user.get_active_hand()
 		return photo.img
-	if(istype(user, /mob/living/silicon))
-		var/mob/living/silicon/tempAI = user
-		var/obj/item/photo/selection = tempAI.GetPicture(picked_name)
-		if (selection)
-			return selection.img
+	var/obj/item/photo/selection = user.GetPicture(picked_name)
+	if(selection)
+		return selection.img
 
 /// An EMP scrambles or wipes some of the records.
 /obj/machinery/computer/secure_data/proc/secure_data_emp(datum/act/A)

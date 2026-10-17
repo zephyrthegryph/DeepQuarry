@@ -1,7 +1,7 @@
 import os from 'node:os';
 import { ByondCompileFailure, failedCompileOutcome, observedCompileOutcome } from './compile_outcome';
 import { afterEach, expect, test } from 'bun:test';
-import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
+import { classifyShadowReport, compilerCacheIdentity, compilerMode, nativeWorkers, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
 import { observeDreamMakerIdentity, type PreparedDreamMaker, type ByondCompilationResult } from './byond';
 import fs from 'node:fs';
@@ -12,7 +12,7 @@ import { withCompiledOutput } from './native_pair';
 import { createHash } from 'node:crypto';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT', 'DQ_BUILD_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DMB_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT', 'DQ_BUILD_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -753,4 +753,16 @@ test('failed native publication ignores leftover pair receipts and preserves old
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('native workers default to 4; DMB_WORKERS wins over DQ_NATIVE_WORKERS', () => {
+  delete process.env.DMB_WORKERS;
+  delete process.env.DQ_NATIVE_WORKERS;
+  expect(nativeWorkers()).toBe('4');
+  process.env.DQ_NATIVE_WORKERS = '6';
+  expect(nativeWorkers()).toBe('6');
+  process.env.DMB_WORKERS = '2';
+  expect(nativeWorkers()).toBe('2');
+  process.env.DMB_WORKERS = '0';
+  expect(() => nativeWorkers()).toThrow('positive integer');
 });

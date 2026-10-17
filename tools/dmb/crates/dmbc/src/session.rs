@@ -524,6 +524,7 @@ impl SessionRecords {
             ..ValidationTimings::default()
         };
         observer(&record);
+        dm_profile::request_mark("session.record_loaded");
         let started = std::time::Instant::now();
         let proofs = match shared {
             Some(proofs) => std::sync::Arc::clone(proofs),
@@ -539,6 +540,7 @@ impl SessionRecords {
         };
         let proofs = proofs.as_ref();
         timings.bulk_capture = started.elapsed();
+        dm_profile::request_mark("session.proofs_captured");
         let started = std::time::Instant::now();
         let generated = crate::input_snapshot::GeneratedOutputInputs::new(
             proofs,
@@ -548,6 +550,7 @@ impl SessionRecords {
             .inputs
             .validate_for_reuse(&generated, exact, now_ns)?;
         timings.input_validate = started.elapsed();
+        dm_profile::request_mark("session.inputs_validated");
         timings.proofs = proofs.counts();
         let Some((validation, inputs)) = validated else {
             return Ok(None);
