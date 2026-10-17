@@ -185,7 +185,8 @@ add_test() {
 if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f "$smoke_file" ]; then
 	while IFS= read -r line; do
 		line="${line%%#*}"
-		line="$(echo "$line" | tr -d '\r' | xargs)"
+		line="${line//$'\r'/}"
+		read -r line <<<"$line" # trims the blanks with no fork (an xargs per line cost seconds on Windows, under the merge lock)
 		[ -n "$line" ] && add_test "$line"
 	done <"$smoke_file"
 fi
@@ -193,8 +194,8 @@ fi
 if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f tools/ci/gameplay_tests.txt ]; then
 	while IFS= read -r line; do
 		line="${line%%#*}"
-		line="$(echo "$line" | tr -d '
-' | xargs)"
+		line="${line//$'\r'/}"
+		read -r line <<<"$line"
 		[ -n "$line" ] && add_test "$line"
 	done <tools/ci/gameplay_tests.txt
 fi
