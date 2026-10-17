@@ -1,5 +1,7 @@
 // Declared lookups bind real argument, registry-identity and result producers.
 // Cache/evaluation consumers own their scopes; bindings never retain pooled acts.
+/// producer REF() -> (read key -> the bindings reading it). Nested by producer so a destroyed producer finds its own reads without
+/// scanning every key of every producer (that scan ran once per qdel).
 GLOBAL_LIST_EMPTY(lookup_read_index)
 GLOBAL_DATUM(lookup_read_scope_frame, /datum/lookup_read_scope)
 
@@ -121,16 +123,20 @@ CAPABILITIES(/datum/lookup_read_scope)
 	READS_FROM()
 	if(!producer || QDELING(producer) || !istext(key))
 		return
-	var/index_key = "[REF(producer)]|[key]"
-	var/list/readers = GLOB.lookup_read_index[index_key]
+	var/producer_ref = REF(producer)
+	var/list/by_key = GLOB.lookup_read_index[producer_ref]
+	if(!by_key)
+		by_key = list()
+		GLOB.lookup_read_index[producer_ref] = by_key
+	var/list/readers = by_key[key]
 	if(!readers)
 		readers = list()
-		GLOB.lookup_read_index[index_key] = readers
+		by_key[key] = readers
 	if(src in readers)
 		return
 	readers += src
 	rx_watch_adjust(producer, key, 1)
-	LAZYADD(watching, list(list(entity_handle(producer), key, index_key)))
+	LAZYADD(watching, list(list(entity_handle(producer), key, producer_ref)))
 
 /datum/lookup_read_binding/proc/unbind()
 	READS_FROM()
@@ -138,10 +144,13 @@ CAPABILITIES(/datum/lookup_read_scope)
 		var/datum/producer = resolve_handle(read[1])
 		if(producer?.rx)
 			rx_watch_adjust(producer, read[2], -1)
-		var/list/readers = GLOB.lookup_read_index[read[3]]
+		var/list/by_key = GLOB.lookup_read_index[read[3]]
+		var/list/readers = by_key?[read[2]]
 		readers -= src
 		if(!length(readers))
-			GLOB.lookup_read_index -= read[3]
+			by_key?.Remove(read[2])
+			if(!length(by_key))
+				GLOB.lookup_read_index -= read[3]
 	watching = null
 
 /datum/lookup_read_binding/proc/rebind()
@@ -196,18 +205,18 @@ CAPABILITIES(/datum/lookup_read_scope)
 
 /proc/lookup_reads_published(datum/producer, key)
 	READS_FROM()
-	var/list/readers = GLOB.lookup_read_index["[REF(producer)]|[key]"]
+	var/list/readers = GLOB.lookup_read_index[REF(producer)]?[key]
 	for(var/datum/lookup_read_binding/binding as anything in readers?.Copy())
 		binding.changed()
 
 /proc/lookup_reads_source_gone(datum/producer)
 	READS_FROM()
+	var/list/by_key = GLOB.lookup_read_index[REF(producer)]
+	if(!length(by_key))
+		return
 	var/list/all_bindings
-	var/prefix = "[REF(producer)]|"
-	for(var/key in GLOB.lookup_read_index)
-		if(findtext(key, prefix) != 1)
-			continue
-		for(var/datum/lookup_read_binding/binding as anything in GLOB.lookup_read_index[key])
+	for(var/key in by_key)
+		for(var/datum/lookup_read_binding/binding as anything in by_key[key])
 			LAZYOR(all_bindings, binding)
 	for(var/datum/lookup_read_binding/binding as anything in all_bindings)
 		binding.changed()
@@ -235,7 +244,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 	. = list()
 	if(!registry || QDELING(registry))
 		return
-	var/prefix = "[REF(registry)]|"
-	for(var/index_key in GLOB.lookup_read_index)
-		if(findtext(index_key, prefix) == 1 && length(GLOB.lookup_read_index[index_key]))
-			. |= list(copytext(index_key, length(prefix) + 1))
+	var/list/by_key = GLOB.lookup_read_index[REF(registry)]
+	for(var/index_key in by_key)
+		if(length(by_key[index_key]))
+			. |= list(index_key)
