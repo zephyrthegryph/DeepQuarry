@@ -48,6 +48,25 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     build_with_executor(project, provider, defines, config, memo, &executor)
 }
 
+/// `DMB_FRONTEND_REVISION`: `0` or unset builds every pass in full; `verify` also derives the plan
+/// and expansion from the previous revision and logs any difference (the full result is used);
+/// `1` uses the derived ones whenever their preconditions hold.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RevisionMode {
+    Off,
+    Verify,
+    On,
+}
+impl RevisionMode {
+    fn from_env() -> Self {
+        match std::env::var("DMB_FRONTEND_REVISION").as_deref() {
+            Ok("1") => Self::On,
+            Ok("verify") => Self::Verify,
+            _ => Self::Off,
+        }
+    }
+}
+
 /// Build the frontend on the request's borrowed executor, including expansion
 /// and declaration parsing. Ordered directive traversal remains on the caller.
 pub fn build_with_executor<P: SourceProvider>(
@@ -89,12 +108,50 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         0,
     );
     let profile_stage = dm_profile::stage("frontend.directive_planning");
-    let plan = match memo {
+    let mode = RevisionMode::from_env();
+    let previous = match mode {
+        RevisionMode::Off => None,
+        _ => semantic_state
+            .as_ref()
+            .and_then(|state| state.previous_frontend(project, defines)),
+    };
+    // Changed leaf files edit the previous plan in place (doc/retained_frontend.md, step F1).
+    // Every provider read the full planner makes is repeated, so the input capture is the same.
+    let mut edited = previous
+        .as_ref()
+        .and_then(|previous| dm_preprocess::regions::plan_regions_edit(&previous.plan, &captured));
+    let full_plan = || match memo {
         Some(memo) => {
             dm_preprocess::regions::plan_regions_with_memo(project, &captured, defines, memo)
         }
         None => plan_regions(project, &captured, defines),
     };
+    let mut edit_regions = None;
+    let plan = match (mode, edited.take()) {
+        (RevisionMode::On, Some(edit)) => {
+            edit_regions = Some(edit.regions);
+            edit.plan
+        }
+        (RevisionMode::Verify, Some(edit)) => {
+            let full = full_plan();
+            match dm_preprocess::regions::plans_equal(&edit.plan, &full, &edit.regions) {
+                Ok(()) => {
+                    eprintln!("frontend revision verify: plan edit equals the full plan");
+                    edit_regions = Some(edit.regions);
+                }
+                Err(why) => eprintln!("frontend revision verify: PLAN MISMATCH: {why}"),
+            }
+            full
+        }
+        (_, _) => full_plan(),
+    };
+    if mode != RevisionMode::Off {
+        eprintln!(
+            "frontend revision: plan {}",
+            if edit_regions.is_some() { "edited" } else { "full" }
+        );
+    }
+    dm_profile::request_mark("frontend.plan_done");
     timings.directive_planning = stage_start.elapsed();
     observe(
         config,
@@ -115,7 +172,34 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         plan.regions.len(),
     );
     let profile_stage = dm_profile::stage("frontend.expansion");
-    let expanded = dm_preprocess::regions::expand_regions_text_with_executor(&plan, executor, memo);
+    let full_expansion =
+        || dm_preprocess::regions::expand_regions_text_with_executor(&plan, executor, memo);
+    let edited_expansion = match (&edit_regions, previous.as_ref(), memo) {
+        (Some(regions), Some(previous), Some(memo)) => {
+            dm_preprocess::regions::expand_regions_edit(&previous.expanded, &plan, regions, memo)
+        }
+        _ => None,
+    };
+    let expanded = match (mode, edited_expansion) {
+        (RevisionMode::On, Some(expansion)) => {
+            eprintln!("frontend revision: expansion edited");
+            expansion
+        }
+        (RevisionMode::Verify, Some(expansion)) => {
+            let full = full_expansion();
+            match dm_preprocess::regions::expansions_equal(&expansion, &full) {
+                Ok(()) => eprintln!("frontend revision verify: expansion edit equals the full expansion"),
+                Err(why) => eprintln!("frontend revision verify: EXPANSION MISMATCH: {why}"),
+            }
+            full
+        }
+        _ => {
+            if mode != RevisionMode::Off {
+                eprintln!("frontend revision: expansion full");
+            }
+            full_expansion()
+        }
+    };
     timings.expansion = stage_start.elapsed();
     observe(
         config,

@@ -299,3 +299,29 @@ Steps, each landing alone with `verify` proof:
   instance for unchanged units instead of recomputed (the structural change set decides which units
   are dirty).
 * **F5, directive-bearing files and include structure** (a `#define` edit, an added include).
+
+### F1 results (plan and expansion edited in place)
+
+Landed behind `DMB_FRONTEND_REVISION` (`0`/unset: off, the default for now; `verify`; `1`).
+`dm_preprocess::regions::{plan_regions_edit, expand_regions_edit}` (`regions/edit.rs`), the origin
+arena splice (`ExpandedOriginArena::spliced`), the previous revision kept in `RetainedSemanticTree`
+(`remember_frontend`), and the hook in `frontend_pipeline.rs`.
+
+Proof: `edit_tests.rs` (edited plan and expansion equal the full ones through a chain of leaf edits
+including an emptied file; directive, conditional, manifest and previously-directive edits decline);
+`verify` on the production tree for a same-length and a line-shifting edit logged "plan edit equals
+the full plan" and "expansion edit equals the full expansion" (the comparison covers every region
+header, line, span, every origin row field, receipts and the joined text; the macro environment is
+compared deeply for the edited regions only, since comparing every region's bindings took longer
+than the build); `DMB_FRONTEND_REVISION=1` output of a patched edit is `dmb-equiv --ignore-debug
+--strict-order` EQUIVALENT to a fresh native build. dm-preprocess 148, dm-tree 324 tests pass; the
+dmbc lib failures are the same 24 as master.
+
+Timing, body edit in a directive-free leaf file (same machine state, seconds from request start):
+`frontend` stage mark 3.0 to 2.4-2.5 (the plan is ready at 1.4-1.5, the clone of the previous plan
+and the 5.9k provider touches are about 0.4 of that); client wall 7.2 to 6.1-6.3.
+
+Not yet: the default stays off until the other passes (declaration parsing, origins, bodies) take
+the same edit and the whole edit matrix has been verified. The previous plan is cloned
+(about 200 MB of region lines) because `DirectivePlan` is a plain value; sharing the regions behind
+an `Arc` would remove the clone and the touches' only other cost.
