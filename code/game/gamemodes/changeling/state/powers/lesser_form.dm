@@ -83,7 +83,6 @@
 	C.set_transforming(1)
 	C.set_canmove(0)
 	C.set_icon(null)
-	C.cut_overlays()
 	C.set_invisibility(INVISIBILITY_ABSTRACT)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( C.loc )
 	animation.set_icon_state("blank")

@@ -121,7 +121,6 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 
 /// Old attack_self, answered: the chosen tool is assumed.
 /obj/item/robotic_multibelt/proc/tool_chosen(datum/act/op/A)
-	cut_overlays()
 	assume_selected_item(integrated_tool_named(A.step_value("tool")))
 	return OP_OK
 

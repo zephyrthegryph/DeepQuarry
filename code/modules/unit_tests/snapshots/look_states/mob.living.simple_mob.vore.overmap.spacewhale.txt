@@ -2,4 +2,6 @@
 /mob/living/simple_mob/vore/overmap/spacewhale ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/overmap/spacewhale has_eye_glow=1 +overlay: icons/mob/alienanimals_x32.dmi:space_whale-eyes:7
 /mob/living/simple_mob/vore/overmap/spacewhale has_eye_glow=2 +overlay: icons/mob/alienanimals_x32.dmi:space_whale-eyes:7
+/mob/living/simple_mob/vore/overmap/spacewhale glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
+/mob/living/simple_mob/vore/overmap/spacewhale glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 

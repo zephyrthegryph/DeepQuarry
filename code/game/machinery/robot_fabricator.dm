@@ -10,6 +10,12 @@
 	use_power = USE_POWER_IDLE
 	var/inserting = FALSE
 
+/// The look: metal going in, a part being built.
+/obj/machinery/robotic_fabricator/draw(datum/look/look)
+	..()
+	look.overlay("fab-load-metal", when = inserting)
+	look.overlay("fab-active", when = operating)
+
 /// No side effects: whether this stack is steel and we're not already mid-insertion.
 /obj/machinery/robotic_fabricator/proc/wants_steel(datum/act/op/A)
 	if(inserting)
@@ -25,7 +31,6 @@
 	if(metal_amount < 150000)
 		if(!supplied_stack.get_amount())
 			return TRUE
-		add_overlay("fab-load-metal")
 		set_inserting(TRUE)
 		after(src, 0.9 SECONDS, PROC_REF(complete_insertion), with = list(user, supplied_stack), keeps_dead = TRUE)
 		return TRUE
@@ -45,7 +50,6 @@
 		count++
 
 	to_chat(user, "You insert [count] metal sheet\s into the fabricator.")
-	cut_overlay("fab-load-metal")
 	set_inserting(FALSE)
 
 
@@ -109,7 +113,6 @@ CAPABILITIES(/obj/machinery/robotic_fabricator)
 	set_operating(TRUE)
 	set_use_power(USE_POWER_ACTIVE)
 	set_metal_amount(max(0, metal_amount - build_cost))
-	add_overlay("fab-active")
 
 	after(src, build_time, PROC_REF(complete_building), with = list(building))
 	return TRUE
@@ -120,5 +123,4 @@ CAPABILITIES(/obj/machinery/robotic_fabricator)
 	rel_take(src, nameof(being_built))
 	set_use_power(USE_POWER_IDLE)
 	set_operating(FALSE)
-	cut_overlay("fab-active")
 

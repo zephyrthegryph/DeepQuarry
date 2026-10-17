@@ -46,8 +46,7 @@ SYSTEM_DEF(skybox)
 		im.alpha = 128 //80
 		im.blend_mode = BLEND_ADD
 
-		MA.cut_overlays()
-		MA.add_overlay(im)
+		look_composed_image(MA, list(im))
 
 		dust_cache["[i]"] = MA
 		dust_by_index += MA
@@ -59,8 +58,7 @@ SYSTEM_DEF(skybox)
 		var/image/im = image('icons/turf/space_dust_transit.dmi', "speedspace_ns_[i]")
 		im.plane = DUST_PLANE
 		im.blend_mode = BLEND_ADD
-		MA.cut_overlays()
-		MA.add_overlay(im)
+		look_composed_image(MA, list(im))
 		speedspace_cache["NS_[i]"] = MA
 		// EAST/WEST
 		MA = new(normal_space)
@@ -68,8 +66,7 @@ SYSTEM_DEF(skybox)
 		im.plane = DUST_PLANE
 		im.blend_mode = BLEND_ADD
 
-		MA.cut_overlays()
-		MA.add_overlay(im)
+		look_composed_image(MA, list(im))
 
 		speedspace_cache["EW_[i]"] = MA
 
@@ -111,7 +108,7 @@ SYSTEM_DEF(skybox)
 	if(settings.use_stars)
 		var/image/stars = image(settings.icon, settings.star_state)
 		stars.appearance_flags = RESET_COLOR
-		base.overlays += stars
+		look_composed_image(base, list(stars))
 
 	new_overlays += base
 

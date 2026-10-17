@@ -467,10 +467,11 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	set_panel_open(!panel_open)
 	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
 	playsound(src, sounds_of(tool).use, 50, TRUE)
-	cut_overlays()
-	if(panel_open)
-		add_overlay("[initial(icon_state)]-panel")
 	return OP_OK
+
+/obj/machinery/seed_storage/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]-panel", when = panel_open)
 
 /// The wirecutters or a multitool behind the open panel: the wires.
 /obj/machinery/seed_storage/proc/wire_tool_used(datum/act/op/A)

@@ -15,6 +15,12 @@
 	layer = BACKGROUND_LAYER
 	plane = SKYBOX_PLANE
 	blend_mode = BLEND_MULTIPLY // You actually need to do it this way or you see it in occlusion.
+	/// The z-level's sky picture drawn on this screen.
+	var/sky_image
+
+/atom/movable/screen/skybox/draw(datum/look/look)
+	..()
+	look.overlay(sky_image)
 
 // Adjust transform property to scale for client's view var. We assume the skybox is 736x736 px
 /atom/movable/screen/skybox/proc/scale_to_view(view)
@@ -39,8 +45,7 @@
 	var/turf/T = get_turf(eye)
 	if(T)
 		if(rebuild)
-			skybox.cut_overlays()
-			skybox.add_overlay(SSskybox.ready().get_skybox(T.z))
+			skybox.sky_image = SSskybox.ready().get_skybox(T.z)
 			screen |= skybox
 		skybox.screen_loc = "CENTER:[(world.maxx>>1) - T.x],CENTER:[(world.maxy>>1) - T.y]"
 

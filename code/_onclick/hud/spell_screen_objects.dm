@@ -8,6 +8,8 @@
 
 	var/open_state = "master_open"
 	var/closed_state = "master_closed"
+	/// The open or closed button drawn over the master (null until it is first toggled).
+	var/panel_state
 
 	screen_loc = ui_spell_master
 
@@ -16,6 +18,11 @@
 
 CAPABILITIES(/atom/movable/screen/movable/spell_master)
 	ref_one(nameof(spell_holder))
+
+/// The master shows the open or closed button once it has been toggled.
+/atom/movable/screen/movable/spell_master/draw(datum/look/look)
+	..()
+	look.overlay(panel_state)
 
 /// The buttons listed on this spell master.
 /atom/movable/screen/movable/spell_master/proc/spell_buttons() as /list
@@ -53,14 +60,12 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 				spell_holder.client.screen -= O
 			O.handle_icon_updates = 0
 		showing = 0
-		overlays.len = 0
-		overlays.Add(closed_state)
+		set_panel_state(closed_state)
 	else if(forced_state != 1)
 		open_spellmaster()
 		update_spells(1)
 		showing = 1
-		overlays.len = 0
-		overlays.Add(open_state)
+		set_panel_state(open_state)
 
 /atom/movable/screen/movable/spell_master/proc/open_spellmaster()
 	var/list/screen_loc_xy = splittext(screen_loc,",")
@@ -175,7 +180,17 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 	var/atom/movable/screen/movable/spell_master/listed_on
 
 	var/icon/last_charged_icon
+	/// The icon_state of the spell's own picture, drawn over the charge fill.
+	var/hud_state_shown
+	/// A silenced spell shows the silence mark.
+	var/silenced = FALSE
 
+/// The charge fill, the spell's picture, then the silence mark.
+/atom/movable/screen/spell/draw(datum/look/look)
+	..()
+	look.overlay(last_charged_icon)
+	look.overlay(hud_state_shown)
+	look.overlay("silence", when = silenced)
 
 /// The spell this button casts (a relation view: null once that is deleted).
 /atom/movable/screen/spell/proc/spell() as /datum/spell
@@ -190,35 +205,27 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 	if((last_charge == spell.charge_counter || !handle_icon_updates) && !forced_update)
 		return //nothing to see here
 
-	cut_overlay(spell.hud_state)
-
 	if(spell.charge_type == Sp_RECHARGE || spell.charge_type == Sp_CHARGES)
 		if(spell.charge_counter < spell.charge_max)
 			set_icon_state("[spell_base]_spell_base")
 			if(spell.charge_counter > 0)
 				var/icon/partial_charge = icon(src.icon, "[spell_base]_spell_ready")
 				partial_charge.Crop(1, 1, partial_charge.Width(), round(partial_charge.Height() * spell.charge_counter / spell.charge_max))
-				overlays += partial_charge
-				if(last_charged_icon)
-					cut_overlay(last_charged_icon)
-				last_charged_icon = partial_charge
+				set_last_charged_icon(partial_charge)
 			else if(last_charged_icon)
-				cut_overlay(last_charged_icon)
-				last_charged_icon = null
+				set_last_charged_icon(null)
 		else
 			set_icon_state("[spell_base]_spell_ready")
 			if(last_charged_icon)
-				cut_overlay(last_charged_icon)
+				set_last_charged_icon(null)
 	else
 		set_icon_state("[spell_base]_spell_ready")
 
-	add_overlay(spell.hud_state)
+	set_hud_state_shown(spell.hud_state)
 
 	last_charge = spell.charge_counter
 
-	cut_overlay("silence")
-	if(spell.silenced)
-		overlays += "silence"
+	set_silenced(spell.silenced ? TRUE : FALSE)
 
 CAPABILITIES(/atom/movable/screen/spell)
 	ref_one(nameof(spell))

@@ -50,6 +50,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 /obj/item/organ/external/head/proc/get_hair_icon()
 	var/image/res = image('icons/mob/human_face.dmi',"bald_s")
+	var/list/face_parts
 	//Facial hair
 	if(owner.looks.facial_style)
 		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[owner.looks.facial_style]
@@ -57,7 +58,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 			var/icon/facial_s = new/icon("icon" = facial_hair_style.icon, "icon_state" = "[facial_hair_style.icon_state]_s")
 			if(facial_hair_style.do_colouration)
 				facial_s.Blend(owner.looks.facial_color, facial_hair_style.color_blend_mode)
-			res.add_overlay(facial_s)
+			LAZYADD(face_parts, facial_s)
 
 	//Head hair
 	if(owner.looks.hair_style)
@@ -72,9 +73,9 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 			if(hair_style.do_colouration && islist(h_col) && h_col.len >= 3)
 				hair_s.Blend(rgb(h_col[1], h_col[2], h_col[3]), ICON_MULTIPLY)
 				hair_s.Blend(hair_s_add, ICON_ADD)
-			res.add_overlay(hair_s)
+			LAZYADD(face_parts, hair_s)
 
-	return res
+	return look_composed_image(res, face_parts)
 
 /obj/item/organ/external/proc/get_icon(skeletal, can_apply_transparency = TRUE)
 	var/digitigrade = 0
@@ -232,8 +233,7 @@ GLOBAL_LIST_INIT(robot_hud_colours, list("#CFCFCF","#AFAFAF","#8F8F8F","#6F6F6F"
 				var/g = 0.59 * R.health_hud_intensity
 				var/b = 0.11 * R.health_hud_intensity
 				temp.color = list(r, r, r, g, g, g, b, b, b)
-		hud_damage_image = image(null)
-		hud_damage_image.add_overlay(temp)
+		hud_damage_image = look_composed_image(image(null), list(temp))
 
 	// Calculate the required color index.
 	var/dam_state = min(1,((get_trauma() + get_burn())/max_damage))

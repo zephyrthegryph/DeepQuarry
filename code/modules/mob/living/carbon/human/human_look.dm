@@ -11,8 +11,14 @@
 //
 // look_layers() is also what other code reads when it wants the human's layers (a gargoyle's statue, a voodoo doll, a ghost's copy).
 
+/// Set while an organ (the voltaic cyberheart) wraps the body in lightning.
+/mob/living/carbon/human
+	var/shock_aura = FALSE
+
 /mob/living/carbon/human/draw(datum/look/look)
 	..()
+	look.overlay(look_appearance('icons/effects/effects.dmi', "lightning"), when = shock_aura)
+	look.overlay(pose_indicator, when = !!pose_indicator)
 	if(!species)
 		return
 	var/list/body = body_look(look)

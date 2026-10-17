@@ -348,10 +348,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	var/list/beast_options = A.arg("options")
 	var/chosen_beast = A.arg("beast")
 
-	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
-	coolanimation.plane = PLANE_LIGHTING_ABOVE
-	src.overlays += coolanimation
-	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(coolanimation, chosen_beast, beast_options[chosen_beast]))
+	set_glamour_shift(TRUE)
+	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(chosen_beast, beast_options[chosen_beast]))
 
 /mob/living/proc/polymorph_living_failed(datum/act/op/A)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
@@ -380,8 +378,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 		to_chat(src, span_warning("The shifting of your skin settles down and you become visible once again."))
 
 /// The end of a polymorph, a second after the animation starts.
-/mob/living/proc/finish_polymorph(image/coolanimation, chosen_beast, beast_type)
-	overlays -= coolanimation
+/mob/living/proc/finish_polymorph(chosen_beast, beast_type)
+	set_glamour_shift(FALSE)
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction

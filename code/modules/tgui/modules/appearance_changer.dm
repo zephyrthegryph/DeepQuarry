@@ -1072,7 +1072,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	cam_screen.vis_contents = list(owner()) // Copied from the vore version.
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
-	local_skybox.cut_overlays()
+	local_skybox.sky_image = null
 
 /datum/tgui_module/appearance_changer/proc/update_dna(mob/living/carbon/human/target)
 	if(target)
@@ -1212,7 +1212,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	cam_screen.vis_contents = list(owner())
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
-	local_skybox.cut_overlays()
+	local_skybox.sky_image = null
 
 /datum/tgui_module/appearance_changer/vore/changed_hook(flag, mob/user)
 	var/mob/living/carbon/human/M = owner()

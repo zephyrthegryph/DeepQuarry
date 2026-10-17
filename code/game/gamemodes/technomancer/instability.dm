@@ -92,13 +92,7 @@
 // a lot of instability.
 /mob/living/proc/instability_effects()
 	EXPIRY_STAMP(src, last_instability_event, CLOCK_WORLD)
-	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
-	add_overlay(instability_flash)
-	after(src, 0.4 SECONDS, PROC_REF(instability_flash_clear), with = list(instability_flash))
-
-/mob/living/proc/instability_flash_clear(image/instability_flash)
-	cut_overlay(instability_flash)
-	lapsed(instability_flash)
+	look_flash(src, look_image('icons/obj/spells.dmi', "instability"), 0.4 SECONDS)
 
 /mob/living/silicon/instability_effects()
 	if(instability)

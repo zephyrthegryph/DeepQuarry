@@ -1,3 +1,6 @@
+/obj/item/gun/projectile/automatic/mg42 d_mult=0 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767 x5
+/obj/item/gun/projectile/automatic/mg42 gurgled=1 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
+/obj/item/gun/projectile/automatic/mg42 gurgled=2 +overlay: icons/effects/sludgeoverlay_vr.dmi:green:-32767
 /obj/item/gun/projectile/automatic/mg42 cover_open=1 +state: mg42open
 /obj/item/gun/projectile/automatic/mg42 cover_open=1 +overlay: icons/obj/gun_yw.dmi:mg42open:8:#000000
 /obj/item/gun/projectile/automatic/mg42 cover_open=1 -state: mg42closed

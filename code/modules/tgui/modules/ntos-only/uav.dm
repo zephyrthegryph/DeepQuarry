@@ -243,7 +243,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 
 	var/mutable_appearance/MA = new (hud_of(host_mob)?.healths)
 	MA.icon = 'icons/mob/screen1_robot_minimalist.dmi'
-	MA.cut_overlays()
+	MA.overlays = null
 
 	if(!tgui_owner?.current_uav())
 		MA.icon_state = "health7"

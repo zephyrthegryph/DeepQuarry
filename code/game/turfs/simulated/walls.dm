@@ -660,9 +660,9 @@ CAPABILITIES(/turf/simulated/wall)
 /obj/item/rcd/proc/get_airlock_image(airlock_type)
 	var/obj/machinery/door/airlock/proto = airlock_type
 	var/ic = initial(proto.icon)
-	var/mutable_appearance/MA = mutable_appearance(ic, "door_closed")
+	var/image/MA = image(ic, icon_state = "door_closed")
 	if(!initial(proto.glass))
-		MA.overlays += "fill_closed"
+		MA = look_composed_image(MA, list("fill_closed"))
 	//Not scaling these down to button size because they look horrible then, instead just bumping up radius.
 	return MA
 

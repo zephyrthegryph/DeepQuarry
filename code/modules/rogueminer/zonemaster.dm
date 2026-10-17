@@ -393,7 +393,6 @@
 	var/list/doomed = list()
 	for(var/atom/I in myarea().contents)
 		if(I.type == /turf/space)
-			I.cut_overlays()
 			continue
 		if(isturf(I))
 			var/turf/T = I
