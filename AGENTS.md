@@ -284,6 +284,10 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
   master, proves the lane once and stamps it, so the merge agent tests only the combination.
+- **A lane lands with `bash tools/dq_land.sh --tests "<its tests>"`** (section 25 of that document): it proves the lane on the current
+  master outside the merge lock (a lite re-proof when master moved under a valid stamp), takes the lock only to merge and push (about a
+  minute), and gives the lock back and proves again if master moved while it queued. A gate failure that passes alone is a flake:
+  ledgered (`bash tools/dq_flake_log.sh`), not a failure. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 

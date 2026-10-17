@@ -5,9 +5,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { acquireSlot, acquireSlotGroup, defaultTestWorlds, slotCapacity, slotGroupSize, slotsDir, slotsStatus } from './machine_slots';
+import { acquireSlot, acquireSlotGroup, defaultTestWorlds, slotCapacity, slotGroupSize, slotsDir, slotsStatus, usableSlots } from './machine_slots';
 
-const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOTS_LOOK_STATE_PIN', 'DQ_LOOK_PIN_SLOTS', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD'] as const;
+const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOTS_LOOK_STATE_PIN', 'DQ_LOOK_PIN_SLOTS', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE'] as const;
 const saved: Record<string, string | undefined> = {};
 for (const k of ENV_KEYS) saved[k] = process.env[k];
 let tmp = '';
@@ -63,9 +63,23 @@ describe('test_world default', () => {
   });
 });
 
+describe('merge reserve', () => {
+  test('a lane caller leaves the merge worktree one test_world slot when the class has three or more', () => {
+    delete process.env.DQ_SLOTS_MERGE_RESERVE;
+    expect(usableSlots('test_world', 5, 1)).toBe(4);
+    expect(usableSlots('test_world', 5, 0)).toBe(5);
+    expect(usableSlots('test_world', 2, 1)).toBe(2);
+    expect(usableSlots('dm_compile', 2, 1)).toBe(2);
+    process.env.DQ_SLOTS_MERGE_RESERVE = '9';
+    expect(usableSlots('test_world', 3, 1)).toBe(1);
+    delete process.env.DQ_SLOTS_MERGE_RESERVE;
+  });
+});
+
 describe('groups', () => {
   test('a group is clamped to the capacity and a second group waits for all of it, never holding a part', async () => {
     process.env.DQ_SLOTS_TEST_WORLD = '3';
+    process.env.DQ_SLOTS_MERGE_RESERVE = '0';
     expect(slotGroupSize('test_world', 9)).toBe(3);
     expect(slotGroupSize('test_world', 2)).toBe(2);
     const g1 = await acquireSlotGroup('test_world', 2, 'g1', quiet);

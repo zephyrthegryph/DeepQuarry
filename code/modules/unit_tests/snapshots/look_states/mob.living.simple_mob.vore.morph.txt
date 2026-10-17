@@ -2,6 +2,13 @@
 /mob/living/simple_mob/vore/morph ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/morph has_eye_glow=1 +overlay: icons/mob/animal_vr.dmi:new_morph-eyes:7
 /mob/living/simple_mob/vore/morph has_eye_glow=2 +overlay: icons/mob/animal_vr.dmi:new_morph-eyes:7
+/mob/living/simple_mob/vore/morph has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/vore/morph glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/vore/morph glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
+/mob/living/simple_mob/vore/morph morphed=1 -overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/morph morphed=1 -overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/morph morphed=1 -overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/vore/morph morphed=2 -overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/morph morphed=2 -overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/morph morphed=2 -overlay: icons/misc/win32.dmi::-100
 

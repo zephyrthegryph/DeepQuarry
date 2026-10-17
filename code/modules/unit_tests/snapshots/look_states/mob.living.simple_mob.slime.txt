@@ -2,6 +2,7 @@
 /mob/living/simple_mob/slime ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -10,6 +11,7 @@
 /mob/living/simple_mob/slime/xenobio ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -26,6 +28,7 @@
 /mob/living/simple_mob/slime/xenobio/purple ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/purple has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/purple has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/purple has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/purple glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/purple glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/purple shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -42,6 +45,7 @@
 /mob/living/simple_mob/slime/xenobio/orange ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/orange has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/orange has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/orange has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/orange glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/orange glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/orange shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -58,6 +62,7 @@
 /mob/living/simple_mob/slime/xenobio/blue ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/blue has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/blue has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/blue has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/blue glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/blue glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/blue shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -74,6 +79,7 @@
 /mob/living/simple_mob/slime/xenobio/metal ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/metal has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/metal has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/metal has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/metal glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/metal glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/metal shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -89,6 +95,7 @@
 /mob/living/simple_mob/slime/xenobio/yellow ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/yellow has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/yellow has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/yellow has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/yellow glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/yellow glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/yellow shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -105,6 +112,7 @@
 /mob/living/simple_mob/slime/xenobio/dark_purple ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/dark_purple has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/dark_purple has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/dark_purple has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/dark_purple glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark_purple glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark_purple shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -121,6 +129,7 @@
 /mob/living/simple_mob/slime/xenobio/dark_blue ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/dark_blue has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/dark_blue has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/dark_blue has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/dark_blue glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark_blue glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark_blue shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -137,6 +146,7 @@
 /mob/living/simple_mob/slime/xenobio/silver ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/silver has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/silver has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/silver has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/silver glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/silver glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/silver shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -152,6 +162,7 @@
 /mob/living/simple_mob/slime/xenobio/bluespace ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/bluespace has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/bluespace has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/bluespace glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/bluespace glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/bluespace shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -168,6 +179,7 @@
 /mob/living/simple_mob/slime/xenobio/ruby ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/ruby has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/ruby has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/ruby has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/ruby glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/ruby glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/ruby shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -184,6 +196,7 @@
 /mob/living/simple_mob/slime/xenobio/amber ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/amber has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/amber has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/amber has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/amber glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/amber glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/amber shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -199,6 +212,7 @@
 /mob/living/simple_mob/slime/xenobio/cerulean ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/cerulean has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/cerulean has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/cerulean has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/cerulean glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/cerulean glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/cerulean shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -215,6 +229,7 @@
 /mob/living/simple_mob/slime/xenobio/red ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/red has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/red has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/red has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/red glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/red glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/red shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -231,6 +246,7 @@
 /mob/living/simple_mob/slime/xenobio/green ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/green has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/green has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/green has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/green glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/green glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/green shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -247,6 +263,7 @@
 /mob/living/simple_mob/slime/xenobio/pink ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/pink has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/pink has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/pink has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/pink glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/pink glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/pink shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -263,6 +280,7 @@
 /mob/living/simple_mob/slime/xenobio/pink/sana ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/pink/sana has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/pink/sana has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/pink/sana has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/pink/sana glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/pink/sana glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/pink/sana shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -279,6 +297,7 @@
 /mob/living/simple_mob/slime/xenobio/gold ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/gold has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/gold has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/gold has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/gold glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/gold glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/gold shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -294,6 +313,7 @@
 /mob/living/simple_mob/slime/xenobio/oil ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/oil has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/oil has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/oil has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/oil glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/oil glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/oil shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -309,6 +329,7 @@
 /mob/living/simple_mob/slime/xenobio/sapphire ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/sapphire has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/sapphire has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/sapphire has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/sapphire glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sapphire glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sapphire shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -324,6 +345,7 @@
 /mob/living/simple_mob/slime/xenobio/emerald ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/emerald has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/emerald has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/emerald has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/emerald glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/emerald glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/emerald shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -339,6 +361,7 @@
 /mob/living/simple_mob/slime/xenobio/light_pink ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/light_pink has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/light_pink has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/light_pink has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/light_pink glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/light_pink glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/light_pink shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -355,6 +378,7 @@
 /mob/living/simple_mob/slime/xenobio/rainbow ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/rainbow has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/rainbow glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/rainbow glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/rainbow shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -371,6 +395,7 @@
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/rainbow/kendrick has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -387,6 +412,7 @@
 /mob/living/simple_mob/slime/xenobio/sepia ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/sepia has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/sepia has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/sepia has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/sepia glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sepia glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sepia shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -403,6 +429,7 @@
 /mob/living/simple_mob/slime/xenobio/redspace ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/redspace has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/redspace has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/redspace has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/redspace glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/redspace glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/redspace shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -419,6 +446,7 @@
 /mob/living/simple_mob/slime/xenobio/dark ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/dark has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/dark has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/dark has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/dark glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dark shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -435,6 +463,7 @@
 /mob/living/simple_mob/slime/xenobio/plague ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/plague has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/plague has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/plague has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/plague glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/plague glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/plague shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -451,6 +480,7 @@
 /mob/living/simple_mob/slime/xenobio/oceanic ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/oceanic has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/oceanic has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/oceanic has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/oceanic glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/oceanic glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/oceanic shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -467,6 +497,7 @@
 /mob/living/simple_mob/slime/xenobio/nuclear ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/nuclear has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/nuclear has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/nuclear has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/nuclear glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/nuclear glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/nuclear shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -483,6 +514,7 @@
 /mob/living/simple_mob/slime/xenobio/dream ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/dream has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/dream has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/dream has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/dream glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dream glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/dream shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -499,6 +531,7 @@
 /mob/living/simple_mob/slime/xenobio/nightmare ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/nightmare has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/nightmare has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/nightmare has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/nightmare glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/nightmare glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/nightmare shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -515,6 +548,7 @@
 /mob/living/simple_mob/slime/xenobio/sound ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/xenobio/sound has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
 /mob/living/simple_mob/slime/xenobio/sound has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime baby-eyes:7
+/mob/living/simple_mob/slime/xenobio/sound has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/xenobio/sound glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sound glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/xenobio/sound shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -531,6 +565,7 @@
 /mob/living/simple_mob/slime/feral ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -539,6 +574,7 @@
 /mob/living/simple_mob/slime/feral/dark_blue ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/dark_blue has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/dark_blue has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/dark_blue has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/dark_blue glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/dark_blue glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/dark_blue shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -547,6 +583,7 @@
 /mob/living/simple_mob/slime/feral/purple ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/purple has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/purple has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/purple has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/purple glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/purple glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/purple shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -555,6 +592,7 @@
 /mob/living/simple_mob/slime/feral/orange ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/orange has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/orange has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/orange has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/orange glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/orange glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/orange shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -563,6 +601,7 @@
 /mob/living/simple_mob/slime/feral/blue ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/blue has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/blue has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/blue has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/blue glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/blue glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/blue shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -571,6 +610,7 @@
 /mob/living/simple_mob/slime/feral/metal ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/metal has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/metal has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/metal has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/metal glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/metal glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/metal shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -578,6 +618,7 @@
 /mob/living/simple_mob/slime/feral/yellow ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/yellow has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/yellow has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/yellow has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/yellow glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/yellow glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/yellow shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -586,6 +627,7 @@
 /mob/living/simple_mob/slime/feral/dark_purple ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/dark_purple has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/dark_purple has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/dark_purple has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/dark_purple glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/dark_purple glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/dark_purple shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -594,6 +636,7 @@
 /mob/living/simple_mob/slime/feral/silver ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/silver has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/silver has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/silver has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/silver glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/silver glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/silver shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -601,6 +644,7 @@
 /mob/living/simple_mob/slime/feral/bluespace ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/bluespace has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/bluespace has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/bluespace has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/bluespace glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/bluespace glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/bluespace shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -609,6 +653,7 @@
 /mob/living/simple_mob/slime/feral/ruby ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/ruby has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/ruby has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/ruby has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/ruby glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/ruby glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/ruby shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -617,6 +662,7 @@
 /mob/living/simple_mob/slime/feral/red ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/red has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/red has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/red has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/red glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/red glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/red shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -625,6 +671,7 @@
 /mob/living/simple_mob/slime/feral/green ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/green has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/green has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/green has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/green glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/green glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/green shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -633,6 +680,7 @@
 /mob/living/simple_mob/slime/feral/pink ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/pink has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/pink has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/pink has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/pink glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/pink glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/pink shiny=1 +overlay: icons/mob/slime2.dmi:slime shiny:-32767
@@ -641,6 +689,7 @@
 /mob/living/simple_mob/slime/feral/emerald ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/slime/feral/emerald has_eye_glow=1 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
 /mob/living/simple_mob/slime/feral/emerald has_eye_glow=2 +overlay: icons/mob/slime2.dmi:slime adult-eyes:7
+/mob/living/simple_mob/slime/feral/emerald has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/slime/feral/emerald glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/emerald glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/slime/feral/emerald shiny=0 -overlay: icons/mob/slime2.dmi:slime shiny:-32767

@@ -136,7 +136,7 @@ syntax pre-check.
 
 ## 9. Merge batches (October 2026, `rewrite/merge-speed`)
 
-Measured data and reasoning: `doc/rewrite/merge_pipeline_report.md`. The batch recipe, in order:
+Measured data and reasoning: `doc/rewrite/merge_pipeline_report.md`. A single lane lands with one command that proves outside the lock and holds it for about a minute: `bash tools/dq_land.sh` (section 25). The batch recipe, in order:
 
 ```sh
 export DQ_MERGE_SESSION=<your lane branch>         # 0. names your batch; every merge command needs it
@@ -544,3 +544,60 @@ plan) and a shuffled run over a 263-type subset of them wrote 2257 rows in the s
 row (`comm -23` empty over 431 files): a type's rows do not depend on which other types a run probes. Both runs also showed 14 and 6
 committed snapshot rows that no longer match the render on master (a finding about the tree, not the incremental path): master's look
 snapshots need a bless, which today is an unsharded full run (hours) because shards cannot write the same root file.
+
+## 25. Fast, reliable gates (17 October 2026, `tools/gate-speed`)
+
+**Land with `tools/dq_land.sh`: prove outside the lock, lock only to merge and push.**
+
+```sh
+export DQ_MERGE_SESSION=<your lane branch>
+bash tools/dq_land.sh --tests "dq_my_test dq_my_other/*" [--covers GLOB] [--no-pins] [--rounds N] [--dry-run]   # from the lane's worktree
+```
+
+A gate run inside the merge lock took 3-10+ minutes and everyone queued behind it. The proof is stored under the tree hash (section 20), so it
+can be made before the lock: `dq_land.sh` asks `git merge-tree` what tree merging the lane into `origin/master` would give and whether that
+tree already has a covering proof (`proof_covers_merge`). If not, it runs `dq_lane_ready.sh --lite` (no lock held; other lanes land
+meanwhile). Only then does it take the merge lock, and only for the fast part: merge, `dq_merge_gates.sh` (answers from the proof: no compile, no
+test world), `dq_push_master.sh` (which still verifies master did not move and that the lane landed). If master moved while the lock was queued, the lock is
+given back at once (the worktree reset to `origin/master`) and the lane is proved again, up to `--rounds` (default 3); the last round
+proves and lands under the lock as before, so a busy master delays a lane but never starves it. `bash tools/ci/test_land.sh` covers the loop.
+
+**Lite re-proof (`dq_lane_ready.sh --lite`, `dq_lane_check.js --lite`).** When master moved under a stamped lane but changed none of what the stamp depends
+on (the lane check says VALID), and `origin/master`'s own tree carries a passing proof of the smoke set, the gates run the boot gate, the lane's
+stamped tests, the gameplay scenarios and the tests of the lanes that landed on master since (their stamps), not the rest of the smoke set. The
+compile, DreamChecker and ratchets still run on the merged tree. The proof records `inherits=<master's tree>`; `proof_find` counts that proof's
+selectors as covered while it is itself clean (`dm=1`, `new_failed=0`). `bash tools/ci/test_lane_lite.sh`.
+
+**A gate flake costs one isolated rerun, not a batch.** `dq_merge_gates.sh` runs its test job through `tools/dq_gate_retry.sh`: when tests failed, only
+those run again once in a fresh world (`--force`); if they pass the job passes and each test is recorded in the machine flake ledger
+(`E:/dq-cache/flakes.tsv`; `bash tools/dq_flake_log.sh [N|--count]`; the `.ok` record has `flakes=`; the log has `GATE FLAKE:` lines). Every test in the
+`--count` list needs a fix lane. A test that fails twice is a failure. A world that produced no result ("Native executable changed during compilation", "daemon
+startup deadline", watchdog) reruns the whole list once and is ledgered as `infra`. `DQ_GATE_RETRY=0` turns it off. `bash tools/ci/test_gate_retry.sh`.
+
+**The shared compiler binary is immutable per version.** `E:/dq-cache/dmb-bin/v/<id>/{dmbc,dmbd}.exe` (`<id>` the content hash of the pair), `dmb-bin/current` names the
+version a new compile uses, a process resolves it once and keeps it (`tools/build/lib/dmbc_cache.ts`). Publishing writes a new version directory and swaps the
+pointer atomically; it never touches a version a running compile or daemon holds, so a republish mid-gate cannot produce "Native executable changed during
+compilation". Old versions are pruned (the current and the 3 newest others stay). A bin dir with no `current` is the old layout, still honoured.
+
+**`no method named evict_to_budget` (dmbc build).** The method exists in `tools/dmb/crates/dm-cache/src/store_budget.rs` and the call in `dmbc/src/daemon/cache_gc.rs`; the
+error came from the one shared cargo target (`E:/dq-cache/dmb-build`) holding stale artifacts of another revision of the path crates (each worktree is a different
+path, but pool slots reuse a path across revisions and the target is incremental). It was not reproducible from source. `DmbcTarget` now treats a build that fails with
+that signature (E0599/E0432/E0433/E0425, an ICE, an incremental-cache error) as stale state: it removes `release/incremental`, runs `cargo clean --release` for the
+workspace crates and builds once more with `CARGO_INCREMENTAL=0`. A real compile error fails twice and is reported.
+
+**A test-world slot is kept free for the merge worktree.** With 3 or more `test_world` slots, other worktrees may hold only all but one
+(`DQ_SLOTS_MERGE_RESERVE`, `DQ_SLOTS_MERGE_RESERVE_<CLASS>`; the merge worktree already went first in the queue but could still wait for a long run to finish).
+
+**Measurements (17 October 2026, real landings of this lane on a machine with 5 lanes active).**
+
+| What | Before | After |
+|---|---|---|
+| Merge lock held per lane | the whole gate run: 260-1109 s on 12 recent gate runs (`data/merge-gates/*.timings`), plus queue waits up to 4.5 h behind it | landing 1: 113 s, landing 2: 120 s, of which merge 3 s, gates 36-39 s, push 65 s (about 30 s of that was the disk cleanup, now after the release); with the early-proof path, the no-fork test-list read and the skipped second merge: see the landing-3 line below |
+| Gate steps before the proof lookup | `proof_covers`-style test list: 10.8 s of forks (an `xargs` per smoke line) | 0.9 s (`proof_smoke_tests`, the gates' list read) |
+| Gate run proving a lane (outside the lock) | 6-10+ min, redone in the lock when master moved | landing 1: proof 557 s (47 tests), master moved, re-proof (lite: 15 tests) 516 s; the wall time is dominated by queues for the test compile root (171 s) and test-world slots on a loaded machine, not by the tests |
+| Master moves while the lock is queued | the lane waits, then gates for 3-10 min under the lock | the lock is given back at once (observed, landing 2: 43 s queued), the lane is re-proved outside the lock |
+| A flaky test in the gate | the whole batch fails; rerun costs a full gate | one isolated rerun (seconds); ledgered |
+
+What is still slow and is not fixed here: the test compile of a cold tree takes the one machine-wide `dmb_root_deepquarry.test` compile-root slot (waits of 171 s
+seen) and the test worlds queue for `test_world` slots; those are the load of five lanes sharing one machine, and a lane proof (outside the lock) absorbs them
+instead of the merge. The production compile (`dm` job, 200-330 s) and the test job overlap, so a proof's wall time is the longer of the two.

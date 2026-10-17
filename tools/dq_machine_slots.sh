@@ -83,6 +83,23 @@ slots_capacity() { # class -> count (0 = off)
 	echo "$val"
 }
 
+# Slots kept free for the merge worktree: a caller that is not the merge worktree (priority 1) may hold only the first
+# (max - reserve) slots of a class, so a gate in the merge worktree never queues behind a full house of lane runs. The reserve is
+# DQ_SLOTS_MERGE_RESERVE (default 1 for test_world when the class has at least 3 slots, else 0; any class: DQ_SLOTS_MERGE_RESERVE_<CLASS>).
+slots_usable() { # class max prio -> how many slots (counted from 1) this caller may take
+	local cls="$1" max="$2" prio="$3" up var res
+	[ "$prio" = "0" ] && { echo "$max"; return; }
+	up="$(printf '%s' "$cls" | tr 'a-z' 'A-Z')"
+	var="DQ_SLOTS_MERGE_RESERVE_$up"
+	res="${!var:-${DQ_SLOTS_MERGE_RESERVE:-}}"
+	if [ -z "$res" ]; then
+		if [ "$cls" = "test_world" ] && [ "$max" -ge 3 ]; then res=1; else res=0; fi
+	fi
+	case "$res" in '' | *[!0-9]*) res=0 ;; esac
+	[ "$res" -le $((max - 1)) ] || res=$((max - 1))
+	echo $((max - res))
+}
+
 _slots_norm() { printf '%s' "$1" | tr 'A-Z\\' 'a-z/' | sed -e 's|^/\([a-z]\)/|\1:/|' -e 's|/*$||'; }
 
 _slots_worktree() {
@@ -176,7 +193,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 }
 
 _slots_acquire() {
-	local cls="${1:?class}" label="${2:-}" max root d top prio now name waited=0 last=0 i pos
+	local cls="${1:?class}" label="${2:-}" max root d top prio usable now name waited=0 last=0 i pos
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
 	root="$(slots_dir)"
@@ -184,6 +201,7 @@ _slots_acquire() {
 	mkdir -p "$d/queue" 2>/dev/null || { echo "== machine slots: cannot create $d; running without a $cls limit" >&2; return 0; }
 	top="$(_slots_worktree)"
 	prio="$(_slots_priority "$top")"
+	usable="$(slots_usable "$cls" "$max" "$prio")"
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
@@ -192,7 +210,7 @@ _slots_acquire() {
 	while true; do
 		_slots_reap "$d"
 		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
-			for ((i = 1; i <= max; i++)); do
+			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
 					SLOTS_HELD="$d/slot.$i"
@@ -291,6 +309,7 @@ SLOTS_GROUP_HB=""
 slots_group_size() { # class wanted -> how many slots a group of that wish gets (the wish, clamped to the capacity)
 	local max
 	max="$(slots_capacity "$1")"
+	[ "$max" -gt 0 ] && max="$(slots_usable "$1" "$max" "$(_slots_priority "$(_slots_worktree)")")"
 	if [ "$max" -gt 0 ] && [ "$2" -gt "$max" ]; then echo "$max"; else echo "$2"; fi
 }
 
@@ -304,18 +323,19 @@ slots_group_acquire() { # class n [label]: waits for n slots at once (n is clamp
 }
 
 _slots_group_acquire() {
-	local cls="${1:?class}" want="${2:?n}" label="${3:-}" max root d top prio now name waited=0 last=0 i have=0 pos o
+	local cls="${1:?class}" want="${2:?n}" label="${3:-}" max usable root d top prio now name waited=0 last=0 i have=0 pos o
 	local owners=() dirs=()
 	SLOTS_GROUP_DIRS=()
 	SLOTS_GROUP_CLASS="$cls"
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
-	[ "$want" -le "$max" ] || want="$max"
 	root="$(slots_dir)"
 	d="$root/$cls"
 	mkdir -p "$d/queue" 2>/dev/null || { echo "== machine slots: cannot create $d; running without a $cls limit" >&2; return 0; }
 	top="$(_slots_worktree)"
 	prio="$(_slots_priority "$top")"
+	usable="$(slots_usable "$cls" "$max" "$prio")"
+	[ "$want" -le "$usable" ] || want="$usable"
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
@@ -324,7 +344,7 @@ _slots_group_acquire() {
 	while true; do
 		_slots_reap "$d"
 		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
-			for ((i = 1; i <= max && have < want; i++)); do
+			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
 					dirs+=("$d/slot.$i")
@@ -690,8 +710,10 @@ slots_selftest() {
 	DQ_SLOTS_CARGO=0 bash "$0" run cargo -- echo unlimited | grep -q unlimited || { echo "FAIL: DQ_SLOTS_CARGO=0 should run without a limit"; ok=0; }
 	# 4. env counts and the old pin-speed name.
 	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(DQ_LOOK_PIN_SLOTS=4 slots_capacity look_state_pin)" = 4 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
+	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, the merge worktree all 3, and a class below 3 reserves nothing.
+	[ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=0 slots_group_size test_world 9)" = 3 ] 		&& [ "$(slots_usable test_world 2 1)" = 2 ] && [ "$(DQ_SLOTS_MERGE_RESERVE=9 slots_usable test_world 3 1)" = 1 ] && [ "$(slots_usable dm_compile 2 1)" = 2 ] 		|| { echo "FAIL: merge reserve"; ok=0; }
 	# 5. a group is clamped to the capacity and starts only when it has all its slots; two groups never run each on part of the budget.
-	export DQ_SLOTS_TEST_WORLD=3
+	export DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_MERGE_RESERVE=0
 	[ "$(slots_group_size test_world 9)" = 3 ] && [ "$(slots_group_size test_world 2)" = 2 ] || { echo "FAIL: group size clamp"; ok=0; }
 	bash -c 'source "$0"; slots_group_acquire test_world 2 g1 >/dev/null; sleep 6; slots_group_release' "$self" & p1=$!
 	sleep 2

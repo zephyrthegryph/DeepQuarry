@@ -24,6 +24,18 @@ exempt_files = [
   "code/modules/admin/IsBanned.dm",
 ]
 
+[lint."sys/dx_raw_overlays"]
+# The files that are the overlay engine: look parts compile to overlays here and nowhere else. The look builder applies them; the
+# overlay subsystem is the queue under add_overlay(); the emissive blocker is the one priority overlay a movable keeps; the limit macro
+# is the overflow guard every overlay write runs. Anything else draws through look.overlay()/look.live_image()/look.mimic()/look_flash().
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
+exempt_files = [
+  "code/engine/present/appearance_builder.dm",
+  "code/modules/lighting/emissive_blocker_overlays.dm",
+  "code/controllers/subsystems/overlays.dm",
+  "code/__defines/overlay.dm",
+]
+
 [lint."sys/usr_use"]
 # usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
 # writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).

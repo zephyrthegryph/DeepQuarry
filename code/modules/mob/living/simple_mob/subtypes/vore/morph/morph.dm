@@ -122,10 +122,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	set_color(null)
 	name = target.name
 	desc = target.desc
-	set_icon(target.icon)
-	set_icon_state(target.icon_state)
 	set_alpha(max(target.alpha, 150))
-	copy_overlays(target, TRUE)
 	our_size_multiplier = size_multiplier
 
 	set_pixel_x(initial(target.pixel_x))
@@ -165,9 +162,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	name = initial(name)
 	desc = initial(desc)
 
-	set_icon(initial(icon))
-	set_icon_state(initial(icon_state))
-
 	set_alpha(initial(alpha))
 	if(chosen_color)
 		set_color(chosen_color)
@@ -182,8 +176,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	set_icon_scale_y(initial(icon_scale_y))
 
 	set_density(initial(density))
-
-	cut_overlays(TRUE) //ALL of zem
 
 	maptext = null
 
@@ -237,9 +229,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		..()
 
 
-/// A morphed mob wears its copied form's appearance, so it draws nothing (the look stays untouched); in its own form it is an ordinary simple mob.
+/// A morphed mob wears its copied form's appearance (icon, state and layers, following the form when it is redrawn); in its own form it is an ordinary simple mob.
 /mob/living/simple_mob/vore/morph/draw(datum/look/look)
 	if(morphed)
+		look.mimic(form)
 		return
 	..()
 
