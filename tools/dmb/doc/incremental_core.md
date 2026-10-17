@@ -66,13 +66,17 @@ pair store write stays whole-file until a later step.
 4. Incremental link and section-wise publication.
 5. Delete `body_patch`, the append patch, the default patch and the code-motion map once the query path passes the same
    equivalence suite (add proc, remove proc, add var, remove var, change parent, rename type, add `#define`, test-build switch).
+6. Preprocessing, frontend and resources become queries: directive planning and expansion per file keyed by content hash plus the
+   macros read (reverse index macro to reader regions), declaration parsing per file, resource demand per region and resource
+   content per file (keyed by the references actually resolved, not folder listings), so an edit costs only its dependants end to
+   end and the 9 s floor goes away. Subsumes `retained_frontend.md` stages 4-7 and the F1-F5 frontend revision steps.
 
 ## Coordination and risks
 
 - The memory lane owns `SessionKey`, `BuildHost` keying and the budget. The session becomes the `Db`: eviction is by query kind,
   recomputable values first, inputs last. A defines change must not discard the `Db`, only redden the macro reads. Interface: it keeps
   `SessionKey` free of declarations; I add `Db` as a field and ask it for an eviction hook per query kind.
-- Frontend (4-6 s) and resources (2.4 s) are still whole-program per request; they are queries too (steps 2 and later) and bound
-  the floor near 9 s until `retained_frontend.md` stages 4-7 land.
+- Frontend (4-6 s) and resources (2.4 s) are whole-program per request until step 6 and bound the floor near 9 s; the floor is not
+  permanent.
 - Risk: the dependency wrapper must see every read. The existing `RecordingResolver` already gates lowering; the same gate must
   cover initializers and class layout. `DMB_QUERY_VERIFY=1` recomputes green queries and compares, as `DMB_DOMAIN_CACHE_VERIFY` does.
