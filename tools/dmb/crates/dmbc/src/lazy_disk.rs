@@ -12,6 +12,16 @@ pub struct LazyDisk {
     writer: OnceLock<Result<Arc<dm_cache::Cache>, String>>,
     snapshot: OnceLock<Option<Arc<dm_cache::CacheSnapshot>>>,
 }
+/// A segment that served a record is touched (at most hourly) when the request that used it ends, so the cache directory's
+/// modification times mean "last used" and the daemon's size budget (`daemon::cache_gc`) evicts what nothing has used lately.
+const TOUCH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(3600);
+impl Drop for LazyDisk {
+    fn drop(&mut self) {
+        if let Some(Some(snapshot)) = self.snapshot.get() {
+            snapshot.touch_used_segments(std::time::SystemTime::now(), TOUCH_INTERVAL);
+        }
+    }
+}
 impl LazyDisk {
     #[cfg(test)]
     pub(crate) fn is_opened(&self) -> bool {

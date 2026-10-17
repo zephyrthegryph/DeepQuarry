@@ -481,6 +481,9 @@ pub(super) fn serve() -> io::Result<()> {
         soft_memory::hard(soft_private_bytes)?
     ));
     crate::fs_watch::enable();
+    if let Err(error) = super::cache_gc::spawn() {
+        eprintln!("dmbd cache budget: could not start: {error}");
+    }
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
     let shared = Arc::new(Shared {
