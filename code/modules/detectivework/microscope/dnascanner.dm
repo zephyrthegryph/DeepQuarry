@@ -125,8 +125,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		var/obj/item/paper/P = new(src)
 		P.name = "[src] report #[++report_num]: [bloodsamp().name]"
 		P.stamped = list(/obj/item/stamp)
-		P.cut_overlays()
-		P.add_overlay("paper_stamped")
+		P.add_stamp_mark("paper_stamped", 0, 0)
 		//dna data itself
 		var/data = "No scan information available."
 		if(bloodsamp().dna != null)

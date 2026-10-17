@@ -261,6 +261,11 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 
 	return ..()
 
+/// The load, as it sat on the trolley when it was put on.
+/obj/vehicle/train/security/trolley/draw(datum/look/look)
+	..()
+	look.overlay(load_image, when = !!load_image)
+
 //Load the object "inside" the trolley and add an overlay of it.
 //This prevents the object from being interacted with until it has
 // been unloaded. A dummy object is loaded instead so the loading
@@ -280,16 +285,7 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 	C.forceMove(src)
 
 	if(load_item_visible)
-		C.set_pixel_x(C.pixel_x + load_offset_x)
-		C.set_pixel_y(C.pixel_y + load_offset_y)
-		C.set_layer(layer)
-
-		add_overlay(C)
-
-		//we can set these back now since we have already cloned the icon into the overlay
-		C.set_pixel_x(initial(C.pixel_x))
-		C.set_pixel_y(initial(C.pixel_y))
-		C.set_layer(initial(C.layer))
+		set_load_image(look_overlay_image(of = C, layer = layer, pixel_x = C.pixel_x + load_offset_x, pixel_y = C.pixel_y + load_offset_y))
 
 /obj/vehicle/train/security/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
@@ -297,7 +293,7 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
 		spent(dummy_load, src)
-		cut_overlays()
+		set_load_image(null)
 	..()
 
 //-------------------------------------------

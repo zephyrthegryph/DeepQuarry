@@ -159,12 +159,12 @@ DECLARE_SHARED_CACHE(fruit_icons, GLOBAL_PROC_REF(build_fruit_composite), SC_NEV
 	var/image/plant_icon = image('icons/obj/hydroponics_products.dmi', "blank")
 	var/image/fruit_base = image('icons/obj/hydroponics_products.dmi', "[product_icon]-product")
 	fruit_base.color = "[product_colour]"
-	plant_icon.add_overlay(fruit_base)
+	var/list/parts = list(fruit_base)
 	if(icon_exists('icons/obj/hydroponics_products.dmi', "[product_icon]-leaf"))
 		var/image/fruit_leaves = image('icons/obj/hydroponics_products.dmi', "[product_icon]-leaf")
 		fruit_leaves.color = "[plant_colour]"
-		plant_icon.add_overlay(fruit_leaves)
-	return plant_icon
+		parts += fruit_leaves
+	return look_composed_image(plant_icon, parts)
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)
 	if(M.is_incorporeal())
@@ -415,6 +415,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 
 /// The seed of the fruit the slice was cut from (its constructor param).
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/datum/seed/slice_seed
+/// The colours the slice draws: the rind (the fruit's product colour) and the flesh.
+/obj/item/reagent_containers/food/snacks/fruit_slice/var/rind_colour
+/obj/item/reagent_containers/food/snacks/fruit_slice/var/flesh_colour
 
 // ALLOW(init/INSTANCE_STATE): a slice takes its fruit's name and colours
 /obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
@@ -429,13 +432,17 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 	set_drop_sound(SFX_ITEMS_DROP_HERB)
 	set_pickup_sound(SFX_ITEMS_PICKUP_HERB)
 
-	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
-	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
+	rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
+	flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
 	if(!flesh_colour) flesh_colour = rind_colour
-	// ALLOW(decl): the colours are the seed's traits, per instance, not a declarable state var
-	add_overlay(CACHED_KEY(fruit_icon, "rind-[rind_colour]", icon, "fruit_rind", rind_colour))
-	// ALLOW(decl): the colours are the seed's traits, per instance, like the overlay above
-	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
+
+/// The rind and the flesh of the slice, in the colours of the fruit it was cut from.
+/obj/item/reagent_containers/food/snacks/fruit_slice/draw(datum/look/look)
+	..()
+	if(isnull(rind_colour))
+		return
+	look.overlay(look_cached_image("rind-[rind_colour]", icon, "fruit_rind", rind_colour))
+	look.overlay(look_cached_image("slice-[rind_colour]-[flesh_colour]", icon, "fruit_slice", flesh_colour))
 
 /// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed

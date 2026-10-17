@@ -89,17 +89,20 @@ GLOBAL_VAR(bomb_set)
 		return null
 	return "\the [src] emits a buzzing noise, the panel staying locked in"
 
+/// The look: the control panel is unscrewed while the panel stage is open.
+/obj/machinery/nuclearbomb/draw(datum/look/look)
+	..()
+	look.overlay("npanel_open", when = (opened == 1))
+
 /obj/machinery/nuclearbomb/proc/panel_opened(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 50, 1)
 	add_fingerprint(A.actor)
-	add_overlay("npanel_open")
 	to_chat(A.actor, "You unscrew the control panel of [src].")
 	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/panel_closed(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 50, 1)
 	add_fingerprint(A.actor)
-	cut_overlay("npanel_open")
 	to_chat(A.actor, "You screw the control panel of [src] back on.")
 	if(!auth())
 		flick("nuclearbombc", src)

@@ -16,11 +16,16 @@
 	var/max_bonus_damage = 5
 	COOLDOWN_DECLARE(shield_bash)
 
+/// Everything the tray carries is shown on it.
+/obj/item/tray/draw(datum/look/look)
+	..()
+	for(var/obj/item/I in carrying)
+		look.show_copy_of(I, layer + 0.01) // the carried item's own picture, just above the tray
+
 /obj/item/tray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/tray_sound = SFX_ITEMS_TRAYHIT_MIX
 	user.setClickCooldown(user.get_attack_speed(src))
 	// Drop all the things. All of them.
-	cut_overlays()
 	for(var/obj/item/I in carrying)
 		I.forceMove(M.loc)
 		rel_remove(src, nameof(carrying), I)
@@ -150,17 +155,8 @@ CAPABILITIES(/obj/item/tray)
 				add = 5
 			if(calc_carry() + add >= max_carry)
 				break
-			var/image/Img = new(src.icon)
 			I.forceMove(src)
 			rel_add(src, nameof(carrying), I)
-			Img.icon = I.icon
-			Img.icon_state = I.icon_state
-			Img.layer = layer + I.layer*0.01
-			if(istype(I, /obj/item/material))
-				var/obj/item/material/O = I
-				if(O.applies_material_colour)
-					Img.color = O.color
-			add_overlay(Img)
 
 /obj/item/tray/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -174,7 +170,6 @@ CAPABILITIES(/obj/item/tray)
 		noTable = 1
 
 	if(isturf(loc) && !(locate_within(loc, /mob/living)))
-		cut_overlays()
 		for(var/obj/item/I in carrying)
 			I.forceMove(loc)
 			rel_remove(src, nameof(carrying), I)

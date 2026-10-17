@@ -4,7 +4,7 @@
 CAPABILITIES(/obj/effect/decal/warning_stripes)
 	map_resolver(GLOBAL_PROC_REF(resolve_warning_stripes))
 
-/// The map resolver of warning stripes: an overlay on the turf.
+/// The map resolver of warning stripes: a decal of the turf.
 /proc/resolve_warning_stripes(atom/loc, path, list/varedits)
 	var/obj/effect/decal/warning_stripes/P = path
 	var/turf/T = get_turf(loc)
@@ -12,5 +12,5 @@ CAPABILITIES(/obj/effect/decal/warning_stripes)
 		return TRUE
 	var/image/I = image(MAP_VAR(P, varedits, icon), icon_state = MAP_VAR(P, varedits, icon_state), dir = MAP_VAR(P, varedits, dir))
 	I.color = MAP_VAR(P, varedits, color)
-	T.add_overlay(I)
+	T.set_decals(T.decals ? T.decals + I : list(I)) // the floor's draw shows its decals
 	return TRUE

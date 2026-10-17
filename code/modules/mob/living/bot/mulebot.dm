@@ -218,6 +218,11 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	play_sfx(src, SFX_EFFECTS_SPARKS1, vary = FALSE)
 	return 1
 
+/// The crate it carries rides on top of it.
+/mob/living/bot/mulebot/draw(datum/look/look)
+	..()
+	look.show_copy_of(load)
+
 /mob/living/bot/mulebot/update_icons()
 	if(open)
 		set_icon_state("mulebot-hatch")
@@ -365,13 +370,10 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	C.set_pixel_y(C.pixel_y + 9)
 	if(C.layer < layer)
 		C.set_layer(layer + 0.1)
-	add_overlay(C)
 
 /mob/living/bot/mulebot/proc/unload(dirn = 0)
 	if(!load || bot_busy())
 		return
-
-	cut_overlays()
 
 	load.forceMove(loc)
 	load.pixel_y -= 9

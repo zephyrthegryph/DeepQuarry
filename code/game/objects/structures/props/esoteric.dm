@@ -34,6 +34,14 @@
 	desc = "It looks like you're meant to scan something here."
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "nt_reader_off"
+	/// The colour of the cruciform's light, or null with no cruciform inserted.
+	var/cruciform_light = null
+
+/// The look: the inserted cruciform's light and the open panel.
+/obj/structure/prop/esoteric/reader/draw(datum/look/look)
+	..()
+	look.overlay("nt_reader_c_[cruciform_light]", when = cruciform_light)
+	look.overlay("nt_reader_panel", when = panel_shown)
 
 /obj/structure/prop/esoteric/reader/change_state(state)
 	. = ..()
@@ -43,18 +51,12 @@
 		if("on")
 			set_icon_state("nt_reader_on")
 		if("no_cruciform")
-			cut_overlay("nt_reader_c_green")
-			cut_overlay("nt_reader_c_red")
+			set_cruciform_light(null)
 		if("red_cruciform")
-			cut_overlay("nt_reader_c_green")
-			cut_overlay("nt_reader_c_red")
-			add_overlay("nt_reader_c_red")
+			set_cruciform_light("red")
 		if("green_cruciform")
-			cut_overlay("nt_reader_c_red")
-			cut_overlay("nt_reader_c_green")
-			add_overlay("nt_reader_c_green")
+			set_cruciform_light("green")
 		if("panel_open")
-			cut_overlay("nt_reader_panel")
-			add_overlay("nt_reader_panel")
+			set_panel_shown(TRUE)
 		if("panel_closed")
-			cut_overlay("nt_reader_panel")
+			set_panel_shown(FALSE)

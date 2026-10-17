@@ -48,28 +48,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
 	else
 		return OP_DECLINE
 
-/mob/living/simple_mob/animal/passive/dog/regenerate_icons()
-	cut_overlays()
-
+/// The hat and the pack it wears (the dead dog wears the "2" sprites).
+/mob/living/simple_mob/animal/passive/dog/draw(datum/look/look)
+	..()
 	if(inventory_head)
-		var/head_icon_state = inventory_head.icon_state
-		if(stat == DEAD)
-			head_icon_state += "2"
-
-		var/icon/head_icon = image('icons/mob/corgi_head.dmi',head_icon_state)
-		if(head_icon)
-			add_overlay(head_icon)
-
+		var/list/head_picture = look.picture_of(inventory_head)
+		look.overlay(look_overlay_image('icons/mob/corgi_head.dmi', "[head_picture[2]][stat == DEAD ? "2" : ""]"))
 	if(inventory_back)
-		var/back_icon_state = inventory_back.icon_state
-		if(stat == DEAD)
-			back_icon_state += "2"
-
-		var/icon/back_icon = image('icons/mob/corgi_back.dmi',back_icon_state)
-		if(back_icon)
-			add_overlay(back_icon)
-
-	return
+		var/list/back_picture = look.picture_of(inventory_back)
+		look.overlay(look_overlay_image('icons/mob/corgi_back.dmi', "[back_picture[2]][stat == DEAD ? "2" : ""]"))
 
 
 /obj/item/reagent_containers/food/snacks/meat/corgi

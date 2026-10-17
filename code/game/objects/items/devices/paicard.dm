@@ -1,3 +1,8 @@
+/// The screen shows the ghost invitation (a ghost flashed the unoccupied cards), instead of a face.
+#define PAI_EMOTION_GHOST_ALERT 17
+/// The card of a pAI that died: the screen is off and cracked.
+#define PAI_EMOTION_DEAD 18
+
 /obj/item/paicard
 	name = "personal AI device"
 	icon = 'icons/obj/pda.dmi'
@@ -9,7 +14,8 @@
 
 	var/obj/item/radio/borg/pai/radio
 	var/mob/living/silicon/pai/pai
-	var/image/screen_layer
+	/// The tint of the screen's face (the occupant's eye colour).
+	var/face_color = "#00ff0d"
 	var/screen_color = "#00ff0d"
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
@@ -410,30 +416,20 @@ CAPABILITIES(/obj/item/paicard)
 	setEmotion(16)
 
 /obj/item/paicard/proc/setEmotion(emotion)
-	cut_overlays()
-	spent(screen_layer)
-	screen_layer = null
-	switch(emotion)
-		if(1) screen_layer = image(icon, "pai-neutral")
-		if(2) screen_layer = image(icon, "pai-what")
-		if(3) screen_layer = image(icon, "pai-happy")
-		if(4) screen_layer = image(icon, "pai-cat")
-		if(5) screen_layer = image(icon, "pai-extremely-happy")
-		if(6) screen_layer = image(icon, "pai-face")
-		if(7) screen_layer = image(icon, "pai-laugh")
-		if(8) screen_layer = image(icon, "pai-sad")
-		if(9) screen_layer = image(icon, "pai-angry")
-		if(10) screen_layer = image(icon, "pai-silly")
-		if(11) screen_layer = image(icon, "pai-nose")
-		if(12) screen_layer = image(icon, "pai-smirk")
-		if(13) screen_layer = image(icon, "pai-exclamation")
-		if(14) screen_layer = image(icon, "pai-question")
-		if(15) screen_layer = image(icon, "pai-blank")
-		if(16) screen_layer = image(icon, "pai-off")
-
-	screen_layer.color = pai ? pai.eye_color : initial(screen_color)
-	add_overlay(screen_layer)
+	set_face_color(pai ? pai.eye_color : initial(screen_color))
 	set_current_emotion(emotion)
+
+/// The face the card's screen shows for the current emotion, tinted with the occupant's eye colour.
+/obj/item/paicard/draw(datum/look/look)
+	..()
+	var/static/list/faces = list(
+		"pai-neutral", "pai-what", "pai-happy", "pai-cat", "pai-extremely-happy", "pai-face", "pai-laugh", "pai-sad",
+		"pai-angry", "pai-silly", "pai-nose", "pai-smirk", "pai-exclamation", "pai-question", "pai-blank", "pai-off",
+		"pai-ghostalert", "pai-off") // indexed by emotion; 17 is PAI_EMOTION_GHOST_ALERT, 18 PAI_EMOTION_DEAD
+	var/face = (current_emotion >= 1 && current_emotion <= length(faces)) ? faces[current_emotion] : null
+	// The ghost invitation is untinted; a dead card is cracked over its dark screen.
+	look.overlay(look_overlay_image(icon, face, color = (current_emotion == PAI_EMOTION_GHOST_ALERT) ? null : face_color), when = !isnull(face))
+	look.overlay("pai-dead", when = (current_emotion == PAI_EMOTION_DEAD))
 
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)

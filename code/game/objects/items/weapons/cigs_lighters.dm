@@ -703,16 +703,32 @@ CAPABILITIES(/obj/item/flame/lighter)
 	configure(item_thrown(force = 4))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
+	rolls(nameof(cheap_pattern), PROC_REF(roll_cheap_pattern))
+	rolls(nameof(cheap_color), PROC_REF(roll_cheap_color))
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)
 /obj/item/flame/lighter/random
 
-// Randomizes Cheap Lighters on Spawn
-/obj/item/flame/lighter/Initialize(mapload)
-	. = ..()
-	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
-	I.color = pick(available_colors)
-	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+/// A cheap lighter wears a random pattern and colour, rolled when it spawns (a zippo does not).
+/obj/item/flame/lighter/var/cheap_look = TRUE
+/obj/item/flame/lighter/var/cheap_pattern
+/obj/item/flame/lighter/var/cheap_color
+
+/// Rolled before init (rolls()): a cheap lighter's pattern; a zippo has none.
+/obj/item/flame/lighter/proc/roll_cheap_pattern(datum/roller/R)
+	if(!cheap_look)
+		return null
+	return "lighter-[R.choose(list("trans", "tall", "matte"))]"
+
+/// Rolled before init (rolls()): a cheap lighter's colour; a zippo has none.
+/obj/item/flame/lighter/proc/roll_cheap_color(datum/roller/R)
+	if(!cheap_look)
+		return null
+	return R.choose(available_colors)
+
+/obj/item/flame/lighter/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, cheap_pattern, color = cheap_color), when = !isnull(cheap_pattern))
 
 /// Using the lighter in the hand lights it or puts it out. Each kind of lighter overrides this; one that does not handle the use declines it, and the click goes on to the item's own use.
 /obj/item/flame/lighter/proc/toggled(datum/act/op/A)
@@ -770,10 +786,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 	activation_sound = SFX_ITEMS_ZIPPO_ON
 	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
-
-/obj/item/flame/lighter/zippo/Initialize(mapload)
-	. = ..()
-	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
+	cheap_look = FALSE
 
 /// A zippo flips open and shut with its own states.
 /obj/item/flame/lighter/zippo/toggled(datum/act/op/A)

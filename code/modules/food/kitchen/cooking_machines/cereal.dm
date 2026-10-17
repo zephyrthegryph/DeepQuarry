@@ -37,9 +37,8 @@ CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 			//Images of cereal boxes on cereal boxes is dumb
 			continue
 
-		var/image/food_image = image(I.icon, I.icon_state)
+		var/image/food_image = look_composed_image(image(I.icon, I.icon_state), I.overlays)
 		food_image.color = I.color
-		food_image.add_overlay(I.overlays)
 		food_image.transform *= 0.7 - (num * 0.05)
 		food_image.pixel_x = rand(-2,2)
 		food_image.pixel_y = rand(-3,5)
@@ -54,6 +53,10 @@ CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 	var/obj/item/reagent_containers/food/snacks/result = ..()
 
 	result.set_color(result.filling_color)
-	for (var/i in images)
-		result.overlays += images[i]
+	if(istype(result, /obj/item/reagent_containers/food/snacks/variable/cereal))
+		var/obj/item/reagent_containers/food/snacks/variable/cereal/box = result
+		var/list/shown = list()
+		for(var/i in images)
+			shown += images[i]
+		box.set_box_images(shown)
 

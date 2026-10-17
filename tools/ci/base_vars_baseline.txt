@@ -100,7 +100,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::throw_speed
 base_var	code/game/atoms_movable.dm	@/atom/movable::throw_range
 base_var	code/game/atoms_movable.dm	@/atom/movable::icon_rotation
 base_var	code/game/atoms_movable.dm	@/atom/movable::icon_expected_height
-base_var	code/game/atoms_movable.dm	@/atom/movable::icon_expected_width
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
 base_var	code/game/atoms_movable.dm	@/atom/movable::riding_datum
@@ -134,7 +133,6 @@ base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_dir
 base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_lying
 base_var	code/game/objects/buckling.dm	@/atom/movable::buckle_require_restraints
 base_var	code/game/objects/buckling.dm	@/atom/movable::max_buckled_mobs
-base_var	code/game/objects/items.dm	@/obj/item::blood_overlay
 base_var	code/game/objects/items.dm	@/obj/item::randpixel
 base_var	code/game/objects/items.dm	@/obj/item::abstract
 base_var	code/game/objects/items.dm	@/obj/item::health
@@ -165,9 +163,6 @@ base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
 base_var	code/game/objects/items.dm	@/obj/item::trash_eatable
 base_var	code/game/objects/items.dm	@/obj/item::digest_stage
 base_var	code/game/objects/items.dm	@/obj/item::d_mult_old
-base_var	code/game/objects/items.dm	@/obj/item::d_mult
-base_var	code/game/objects/items.dm	@/obj/item::d_stage_overlay
-base_var	code/game/objects/items.dm	@/obj/item::d_stage_overlay_key
 base_var	code/game/objects/items.dm	@/obj/item::oldname
 base_var	code/game/objects/items.dm	@/obj/item::cleanname
 base_var	code/game/objects/items.dm	@/obj/item::cleandesc
@@ -376,7 +371,6 @@ base_var	code/modules/mob/living/melee_swing.dm	@/mob/living::melee_swing_resolv
 base_var	code/modules/mob/living/melee_swing.dm	@/mob/living::melee_swing_serial
 base_var	code/modules/mob/living/organs.dm	@/mob/living::organs
 base_var	code/modules/mob/living/silicon/robot/component.dm	@/obj/item::carried_afflictions
-base_var	code/modules/mob/living/status_indicators.dm	@/mob/living::status_indicators
 base_var	code/modules/mob/living/turfslip.dm	@/mob/living::turfslip
 base_var	code/modules/mob/mind_host.dm	@/obj/item::mind_host
 base_var	code/modules/mob/mob.dm	@/obj/item::user_vars_to_edit
@@ -469,8 +463,6 @@ base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::
 base_var	code/modules/surgery/cavity.dm	@/obj/item::cavity_implantable
 base_var	code/modules/surgery/surgery.dm	@/obj::surgery_cleanliness
 base_var	code/modules/tgui/external.dm	@/mob::tgui_open_uis
-base_var	code/modules/tgui_input/say_modal/typing.dm	@/mob::active_typing_indicator
-base_var	code/modules/tgui_input/say_modal/typing.dm	@/mob::active_thinking_indicator
 base_var	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::pipes_shown
 base_var	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::is_ventcrawling
 base_var	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::ventcrawl_layer

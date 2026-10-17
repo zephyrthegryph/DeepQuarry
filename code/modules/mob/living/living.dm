@@ -732,7 +732,6 @@ sparse(/mob/living, vomiting, type = bool)
 	M.Scale(desired_scale_x, desired_scale_y)
 	M.Translate(cent_offset * desired_scale_x, (vis_height/2)*(desired_scale_y-1))
 	src.transform = M
-	handle_status_indicators()
 
 // This handles setting the client's color variable, which makes everything look a specific color.
 // This proc is here so it can be called without needing to check if the client exists, or if the client relogs.
@@ -1509,3 +1508,13 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
 
+
+/// The images other things hang on this mob (a marker spell, a worn effect); each is drawn over its sprite until its owner takes it off.
+/mob/living/var/list/attached_overlays
+
+/mob/living/draw(datum/look/look)
+	..()
+	for(var/entry in attached_overlays)
+		look.overlay(entry)
+	look.overlay(look_overlay_image('icons/obj/glamour.dmi', "animation", plane = PLANE_LIGHTING_ABOVE), when = glamour_shift)
+	look_status_indicators(look)

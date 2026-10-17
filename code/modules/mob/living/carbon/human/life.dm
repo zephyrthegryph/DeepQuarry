@@ -1659,7 +1659,7 @@
 	else if(!trauma_val && no_damage)
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
-	healths_ma.add_overlay(health_images)
+	healths_ma.overlays = health_images
 	hud_used?.healths?.appearance = healths_ma
 
 /// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
