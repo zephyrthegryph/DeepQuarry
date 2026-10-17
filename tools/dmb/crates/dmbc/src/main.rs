@@ -41,6 +41,34 @@ fn main_inner() {
         }
         return;
     }
+    if arguments.first().map(String::as_str) == Some("--daemon-stats") {
+        if compile_result.is_some() {
+            eprintln!("--daemon-stats accepts no compile result");
+            std::process::exit(2);
+        }
+        // --daemon-stats [--since-hours H]: what the daemon recorded per compile (hit rate, paths, wall time, memory).
+        let mut since_ms = 0u64;
+        let mut rest = arguments.iter().skip(1);
+        while let Some(argument) = rest.next() {
+            match (argument.as_str(), rest.next().and_then(|value| value.parse::<f64>().ok())) {
+                ("--since-hours", Some(hours)) if hours >= 0.0 => {
+                    let now = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |d| d.as_millis() as u64);
+                    since_ms = now.saturating_sub((hours * 3_600_000.0) as u64);
+                }
+                _ => {
+                    eprintln!("usage: dmbc --daemon-stats [--since-hours H]");
+                    std::process::exit(2);
+                }
+            }
+        }
+        let directory = dmbc::daemon::resident::state_dir();
+        let records = dmbc::compile_stats::load(&directory);
+        println!("compile statistics from {}", dmbc::compile_stats::stats_path(&directory).display());
+        print!("{}", dmbc::compile_stats::summary(&records, since_ms));
+        return;
+    }
     if arguments.first().map(String::as_str) == Some("--daemon-retire") {
         if arguments.len() != 1 || compile_result.is_some() {
             eprintln!("--daemon-retire accepts no other arguments");

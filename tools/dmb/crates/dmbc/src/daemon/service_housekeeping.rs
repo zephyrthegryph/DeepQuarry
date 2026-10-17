@@ -66,15 +66,16 @@ impl Shared {
     /// Drop the retained session of every idle slot (a daemon that is exiting serves no further edit). A slot whose host is
     /// building is left to finish; it is released on a later pass. True when anything was released.
     pub(super) fn release_for_retire(&self) -> bool {
-        let slots: Vec<(PathBuf, Arc<Slot>)> = self
+        let slots: Vec<(SessionKey, Arc<Slot>)> = self
             .slots
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .iter()
-            .map(|(key, slot)| (key.manifest.clone(), Arc::clone(slot)))
+            .map(|(key, slot)| (key.clone(), Arc::clone(slot)))
             .collect();
         let mut released = false;
-        for (manifest, slot) in slots {
+        for (key, slot) in slots {
+            let manifest = key.manifest.clone();
             if slot.idle_tier.load(Ordering::Acquire) == SESSION_RELEASE {
                 continue;
             }
@@ -83,6 +84,7 @@ impl Shared {
             let before = transport::private_bytes();
             self.reset_host(&mut host);
             slot.idle_tier.store(SESSION_RELEASE, Ordering::Release);
+            note_eviction(&key, "daemon-retiring");
             released = true;
             super::super::emit_stderr(format_args!(
                 "dmbd retire release project={} private-before={before:?} private-after={:?}",
@@ -151,6 +153,18 @@ impl Shared {
             if next == SESSION_RELEASE && Arc::strong_count(&slot) == 2 {
                 let removed = slots.remove(&key);
                 drop(slots);
+                note_eviction(
+                    &key,
+                    if !key.manifest.exists() {
+                        "root-gone"
+                    } else if hard {
+                        "hard-memory-limit"
+                    } else if pressured {
+                        "memory-pressure"
+                    } else {
+                        "idle"
+                    },
+                );
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
                 let started = Instant::now();
@@ -175,6 +189,7 @@ impl Shared {
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
                 self.reset_host(&mut host);
+                note_eviction(&key, if hard { "hard-memory-limit" } else if pressured { "memory-pressure" } else { "idle" });
                 super::super::emit_stderr(format_args!(
                     "dmbd idle release tier=queued-session project={} pressure={pressured} hard={hard} private-before={before:?} private-after={:?} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
