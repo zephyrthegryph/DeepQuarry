@@ -88,11 +88,35 @@ impl CallableDemands {
 /// The current demand owner. Walks hold `current` shared, so a revision
 /// (exclusive) never interleaves with an admission in progress; workers on the
 /// same tree walk concurrently. `issue` serializes only the short
-/// check-lookup-insert of one missing token so racing workers agree on it.
-#[derive(Default)]
+/// check-lookup-insert of one missing token so racing workers agree on it:
+/// racing workers need the same lock only for the same selection, so the lock is
+/// sharded by selection and unrelated selections issue concurrently.
 pub(super) struct CurrentDemands {
     current: RwLock<Weak<CallableDemands>>,
-    issue: Mutex<()>,
+    issue: Box<[Mutex<()>]>,
+}
+const ISSUE_SHARDS: usize = 64;
+impl Default for CurrentDemands {
+    fn default() -> Self {
+        Self {
+            current: RwLock::default(),
+            issue: (0..ISSUE_SHARDS).map(|_| Mutex::new(())).collect(),
+        }
+    }
+}
+impl CurrentDemands {
+    fn issue_lock(&self, selection: (SymbolId, SymbolId, u8)) -> std::sync::MutexGuard<'_, ()> {
+        let mixed = selection
+            .0
+            .bits()
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+            .rotate_left(23)
+            ^ selection.1.bits().wrapping_mul(0xC2B2_AE3D_27D4_EB4F)
+            ^ u64::from(selection.2);
+        self.issue[(mixed >> 32) as usize % ISSUE_SHARDS]
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+    }
 }
 impl std::fmt::Debug for CurrentDemands {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -243,11 +267,7 @@ impl RetainedMetadata {
         {
             return None;
         }
-        let _issue = self
-            .current_demands
-            .issue
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let _issue = self.current_demands.issue_lock(selection);
         if let Some(token) = tree
             .owner_callable_demands
             .tokens
@@ -490,11 +510,7 @@ impl RetainedMetadata {
                     )
                 };
                 let host = Host(answer);
-                let _issue = self
-                    .current_demands
-                    .issue
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner());
+                let _issue = self.current_demands.issue_lock(selection);
                 let raced = tree
                     .owner_callable_demands
                     .tokens

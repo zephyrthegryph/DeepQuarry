@@ -325,7 +325,9 @@ mod windows {
         state.healthy.store(false, Ordering::Release);
         // Changes are buffered per handle only from the first read call on, so a cookie written
         // before the thread reaches it is lost; a later one proves the watcher.
-        if (0..3).any(|_| cookie(root, &state, 1)) {
+        // The first cookie is usually lost (the reader thread has not issued its first read yet), so
+        // probe in short rounds: the same 3 s worst case as before, but a normal arm costs tens of ms.
+        if (0..60).any(|_| cookie(root, &state, std::time::Duration::from_millis(50))) {
             state.healthy.store(true, Ordering::Release);
             crate::daemon_eprintln!("native fs watch: armed {}", root.display());
         } else {
@@ -351,14 +353,14 @@ mod windows {
         let Some(state) = state else {
             return;
         };
-        if !cookie(root, &state, 3) {
+        if !cookie(root, &state, std::time::Duration::from_secs(3)) {
             state.healthy.store(false, Ordering::Release);
             clear_all();
             crate::daemon_eprintln!("native fs watch: sync cookie timed out; cache dropped");
         }
     }
 
-    fn cookie(root: &Path, state: &Root, seconds: u64) -> bool {
+    fn cookie(root: &Path, state: &Root, timeout: std::time::Duration) -> bool {
         let directory = root.join(".dmbc");
         let _ = std::fs::create_dir_all(&directory);
         let id = state.counter.fetch_add(1, Ordering::Relaxed);
@@ -367,7 +369,7 @@ mod windows {
         if std::fs::write(&path, b"x").is_err() {
             return false;
         }
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+        let deadline = std::time::Instant::now() + timeout;
         let mut seen = state.seen.lock().unwrap_or_else(|e| e.into_inner());
         let found = loop {
             if let Some(at) = seen.iter().position(|seen| *seen == name) {
