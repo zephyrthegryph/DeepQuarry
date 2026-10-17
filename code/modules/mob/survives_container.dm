@@ -7,7 +7,7 @@
 
 /// A holder of a mob with a mind or client (a brain, an MMI, a soulcatcher shell) survives with it.
 /proc/dq_holds_player(atom/movable/holder)
-	for(var/mob/inside in holder.contents)
+	for(var/mob/inside in contents_of(holder))
 		if(inside.survives_container())
 			return TRUE
 	return FALSE

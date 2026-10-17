@@ -15,15 +15,19 @@
 	desc = "A Wiz-Off deck. Fight an arcane battle for the fate of the universe: Draw 5! Play 5! Best of 5!"
 	icon_state = "wizoff"
 
-/obj/item/deck/wizoff/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/deck/wizoff)
+	owns_many(nameof(cards), starts = PROC_REF(starting_cards))
+
+/// The cards it starts with (owns_many(starts =)).
+/obj/item/deck/wizoff/proc/starting_cards()
 	var/datum/playingcard/P
+	. = list()
 	for(var/cardtext in card_wiz_list)
 		P = new()
 		P.name = "[cardtext]"
-		P.card_icon = "[icon_state]_card"
-		P.back_icon = "[icon_state]_card_back"
-		rel_add(src, nameof(cards), P)
+		P.set_card_icon("[icon_state]_card")
+		P.set_back_icon("[icon_state]_card_back")
+		. += P
 
 /obj/item/deck/wizoff/var/list/card_wiz_list = list(
 	"O1: Spell Cards",

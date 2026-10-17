@@ -192,7 +192,7 @@
 	if(new_ai)
 		connect_to_ai(new_ai)
 	else
-		lawupdate = FALSE
+		set_lawupdate(FALSE)
 
 /// Chassis with a fixed module create it here.
 /mob/living/silicon/robot/proc/setup_module()
@@ -1244,7 +1244,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/proc/UnlinkSelf()
 	disconnect_from_ai()
-	lawupdate = FALSE
+	set_lawupdate(FALSE)
 	set_lockcharge(0)
 	set_lockdown(0)
 	set_canmove(1)
@@ -1381,7 +1381,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/subvert_laws(mob/user)
 	set_emagged(TRUE)
 	robotact?.update_static_data_for_all_viewers()
-	lawupdate = FALSE
+	set_lawupdate(FALSE)
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
@@ -1689,7 +1689,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 			lawsync()
 			show_laws()
 	else if(!lawupdate && !emagged)
-		lawupdate = TRUE
+		set_lawupdate(TRUE)
 
 /// The AI wire cut drops the cyborg's AI link.
 /mob/living/silicon/robot/proc/ai_wire_cut(datum/act/A)

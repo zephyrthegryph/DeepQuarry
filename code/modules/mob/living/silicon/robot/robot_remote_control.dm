@@ -163,9 +163,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	// Outpost 21 upport: force the law sync when an AI enters this shell, unless emagged
 	var/org_lu = lawupdate
 	if(!emagged)
-		lawupdate = TRUE // not emagged, so the AI shell should have law priority. Prevents confusion when you suddenly have two different ion laws. One in shell one in core.
+		set_lawupdate(TRUE) // not emagged, so the AI shell should have law priority. Prevents confusion when you suddenly have two different ion laws. One in shell one in core.
 	lawsync()
-	lawupdate = org_lu
+	set_lawupdate(org_lu)
 
 	// Give button to leave.
 	grant(src, granted_verb(/mob/living/silicon/robot/proc/undeploy_act), src)

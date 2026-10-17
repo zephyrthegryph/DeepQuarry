@@ -377,7 +377,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 	if(player.mob && player.mob.mind)
 		player.mob.mind.transfer_to(src)
 
-	lawupdate = FALSE
+	set_lawupdate(FALSE)
 	to_chat(src, span_infoplain(span_bold("Systems rebooted") + " Loading base pattern maintenance protocol... " + span_bold("loaded") + "."))
 	full_law_reset()
 	welcome_drone()

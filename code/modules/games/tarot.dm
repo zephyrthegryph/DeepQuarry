@@ -17,15 +17,15 @@ CAPABILITIES(/obj/item/deck/tarot)
 	for(var/name in list("Fool","Magician","High Priestess","Empress","Emperor","Hierophant","Lovers","Chariot","Strength","Hermit","Wheel of Fortune","Justice","Hanged Man","Death","Temperance","Devil","Tower","Star","Moon","Sun","Judgement","World"))
 		P = new()
 		P.name = "[name]"
-		P.card_icon = "tarot_major"
-		P.back_icon = "card_back_tarot"
+		P.set_card_icon("tarot_major")
+		P.set_back_icon("card_back_tarot")
 		. += P
 	for(var/suit in list("wands","pentacles","cups","swords"))
 		for(var/number in list("ace","two","three","four","five","six","seven","eight","nine","ten","page","knight","queen","king"))
 			P = new()
 			P.name = "[number] of [suit]"
-			P.card_icon = "tarot_[suit]"
-			P.back_icon = "card_back_tarot"
+			P.set_card_icon("tarot_[suit]")
+			P.set_back_icon("card_back_tarot")
 			. += P
 
 /obj/item/deck/tarot/shuffle(mob/user)
@@ -63,27 +63,27 @@ CAPABILITIES(/obj/item/deck/dark_tarot)
 		P = new()
 		P.name = "[name]"
 		if(name == "high priestess")
-			P.card_icon = "dark_high_priestess"
+			P.set_card_icon("dark_high_priestess")
 		else if(name == "wheel of fortune")
-			P.card_icon = "dark_wheel"
+			P.set_card_icon("dark_wheel")
 		else if(name == "hanged man")
-			P.card_icon = "dark_hanged"
+			P.set_card_icon("dark_hanged")
 		else if(name == "white dragon with blue eyes")
-			P.card_icon = "dark_dragon"
+			P.set_card_icon("dark_dragon")
 		else if(name == "charred lizard")
-			P.card_icon = "dark_lizard"
+			P.set_card_icon("dark_lizard")
 		else if(name == "dark lotus")
-			P.card_icon = "dark_lotus"
+			P.set_card_icon("dark_lotus")
 		else
-			P.card_icon = "dark_[name]"
-		P.back_icon = "dark_back_tarot"
+			P.set_card_icon("dark_[name]")
+		P.set_back_icon("dark_back_tarot")
 		. += P
 	for(var/suit in list("wands","pentacles","cups","swords"))
 		for(var/number in list("ace","two","three","four","five","six","seven","eight","nine","ten","page","knight","queen","king"))
 			P = new()
 			P.name = "[number] of [suit]"
-			P.card_icon = "dark_[suit]"
-			P.back_icon = "dark_back_tarot"
+			P.set_card_icon("dark_[suit]")
+			P.set_back_icon("dark_back_tarot")
 			. += P
 
 /obj/item/deck/dark_tarot/shuffle(mob/user)

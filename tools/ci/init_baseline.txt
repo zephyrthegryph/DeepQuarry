@@ -1690,13 +1690,6 @@ init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/
 init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::item_records
 init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::else
 init_lines	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge/chemistry/chemvator/down::Initialize::to_chat
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::for
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.name
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.card_icon
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.back_icon
-init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::rel_add
 init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::current_program
 init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::linkedholodeck
 init_lines	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::Initialize::if

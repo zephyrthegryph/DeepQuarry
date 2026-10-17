@@ -228,11 +228,11 @@
 	wait_for_assets()
 	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
 	for(var/event_name in events)
-		rel_clear(src, nameof(event_turfs))
+		event_turfs = list()
 		for(var/turf/open/T as anything in build_floor_fixture(64))
-			rel_add(src, nameof(event_turfs), T)
+			event_turfs += T
 		var/turf/corner = event_turfs[1]
-		rel_set(src, nameof(event_center), locate(33, 33, corner.z))
+		event_center = locate(33, 33, corner.z)
 		stoplag()
 		switch(event_name)
 			if("large_explosion")
@@ -292,7 +292,7 @@
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		rel_set(src, nameof(generated_site), SSexpedition.generate_debug_station(seed, diagnostics))
+		generated_site = SSexpedition.generate_debug_station(seed, diagnostics)
 	catch(var/exception/error)
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
@@ -304,7 +304,7 @@
 	for(var/cycle in 1 to cycles)
 		mark("cycle[cycle]_begin")
 		var/list/diagnostics = list()
-		rel_clear(src, nameof(generated_site))
+		generated_site = null
 		generation_done = FALSE
 		begin_window()
 		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
@@ -319,7 +319,7 @@
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
 		SSexpedition.release_site(generated_site(), "generation benchmark")
-		rel_clear(src, nameof(generated_site))
+		generated_site = null
 		var/waited = 0
 		while((length(expedition_teardown_z()) || !length(expedition_free_z())) && waited++ < world.fps * 180)
 			stoplag()
@@ -1129,10 +1129,3 @@
 		by_channels["[A.equipment]/[A.lighting]/[A.environ]"]++
 		cell_total += A.cell ? A.cell.charge : 0
 	log_world("POWER_PROBE [label] apcs [apcs] cell_total [round(cell_total)] status [json_encode(by_status)] channels [json_encode(by_channels)]")
-
-CAPABILITIES(/datum/benchmark/generation)
-	ref_one(nameof(generated_site))
-
-CAPABILITIES(/datum/benchmark/major_events)
-	ref_one(nameof(event_center))
-	ref_many(nameof(event_turfs))

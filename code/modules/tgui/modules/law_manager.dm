@@ -237,7 +237,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	return 0
 
 /mob/living/silicon/robot/is_slaved()
-	return lawupdate && connected_ai ? sanitize(connected_ai.name) : null
+	return lawupdate && connected_ai ? sanitize(read_once(connected_ai.name)) : null
 
 /datum/tgui_module/law_manager/proc/sync_laws(mob/living/silicon/ai/AI)
 	if(!AI)

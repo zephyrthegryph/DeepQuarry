@@ -24,14 +24,14 @@ CAPABILITIES(/obj/item/deck/cah)
 	for(var/cardtext in card_text_list)
 		P = new()
 		P.name = "[cardtext]"
-		P.card_icon = "[icon_state]_card"
-		P.back_icon = "[icon_state]_card_back"
+		P.set_card_icon("[icon_state]_card")
+		P.set_back_icon("[icon_state]_card_back")
 		. += P
 	if(!blanks)
 		return
 	for(var/x=1 to blanks)
 		P = new()
 		P.name = "Blank Card"
-		P.card_icon = "[icon_state]_card_back"
-		P.back_icon = "[icon_state]_card_back"
+		P.set_card_icon("[icon_state]_card_back")
+		P.set_back_icon("[icon_state]_card_back")
 		. += P

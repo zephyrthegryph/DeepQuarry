@@ -225,6 +225,9 @@ call	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::smooth_key_se
 call	code/game/turfs/turf.dm	@/turf::thermal_conductivity
 call	code/game/turfs/turf_edges.dm	@/turf/simulated::edge_key_sent
 call	code/library/machine/fabricator.dm	@/datum/fab_run::coefficient
+call	code/library/transformations/transformation_entry.dm	@/datum/xform::data_proc
+call	code/library/transformations/transformation_entry.dm	@/datum/xform::then_proc
+call	code/library/transformations/transformation_entry.dm	@/datum/xform::subject_type
 call	code/modules/admin/admin.dm	@/datum/player_info::rank
 call	code/modules/admin/holder2.dm	@/datum/controller/global_vars::href_token
 call	code/modules/admin/holder2.dm	@/datum/admins::href_token
