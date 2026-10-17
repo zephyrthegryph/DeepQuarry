@@ -648,33 +648,38 @@ pub(super) fn serve() -> io::Result<()> {
     let mut beat = Instant::now();
     let mut retiring_since: Option<Instant> = None;
     let mut beat_retiring = false;
+    let mut superseded_exit = false;
+    let mut check_superseded = Instant::now();
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
         if retiring && retiring_since.is_none() {
             retiring_since = Some(Instant::now());
         }
+        // One latest compiler: when `current` moves past this version the daemon drains and exits (checked every second).
+        if !superseded_exit && check_superseded.elapsed() >= Duration::from_secs(1) {
+            check_superseded = Instant::now();
+            if super::resident::superseded(super::resident::provenance_of_self()) {
+                superseded_exit = true;
+                super::emit_stderr(format_args!(
+                    "dmbd retiring: a newer compiler version is current; finishing in-flight builds, refusing new ones, then exiting"
+                ));
+                shared.retire();
+            }
+        }
+        if superseded_exit
+            && incoming.is_none()
+            && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
+            && shared.connections.load(Ordering::Acquire) == 0
+        {
+            super::emit_stderr(format_args!("dmbd exiting pid={}: superseded and idle", std::process::id()));
+            return Ok(());
+        }
         if beat.elapsed() >= Duration::from_secs(5) || retiring != beat_retiring {
             beat_retiring = retiring;
             beat = Instant::now();
             let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
                 || shared.connections.load(Ordering::Acquire) > 0;
-            let running_now = *shared.running.lock().unwrap_or_else(|e| e.into_inner());
-            let connections_now = shared.connections.load(Ordering::Acquire);
-            if !retiring
-                && super::resident::superseded_idle_due(
-                    super::resident::provenance_of_self(),
-                    activity.elapsed(),
-                    running_now,
-                    connections_now,
-                )
-            {
-                super::emit_stderr(format_args!(
-                    "dmbd retiring: a newer compiler version is published and no client of this version has been active for {}s",
-                    super::resident::SUPERSEDED_IDLE.as_secs()
-                ));
-                shared.retire();
-            }
             if let Some(registration) = registration.as_mut() {
                 if registration.beat(busy, retiring) && !retiring {
                     super::emit_stderr(format_args!(

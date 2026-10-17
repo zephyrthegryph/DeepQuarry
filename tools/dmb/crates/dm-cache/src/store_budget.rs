@@ -19,6 +19,8 @@ pub struct BudgetReport {
     pub deleted_bytes: u64,
     pub deferred: usize,
     pub protected: usize,
+    /// Leaves deleted for age alone (`max_age`), whatever the size.
+    pub aged: usize,
 }
 
 impl CacheSnapshot {
@@ -67,6 +69,19 @@ impl Cache {
         budget_bytes: u64,
         min_age: Duration,
     ) -> Result<BudgetReport, CacheError> {
+        self.evict_to_limits(now, budget_bytes, min_age, None)
+    }
+
+    /// `evict_to_budget` plus an age cap: a leaf unused (not modified, which is what use touches) for longer than `max_age`
+    /// is deleted even when the directory fits the budget, so a rarely used compiler identity's memos do not sit there until
+    /// the size cap happens to reach them. `min_age` still protects fresh leaves.
+    pub fn evict_to_limits(
+        &self,
+        now: SystemTime,
+        budget_bytes: u64,
+        min_age: Duration,
+        max_age: Option<Duration>,
+    ) -> Result<BudgetReport, CacheError> {
         let _lock = self.compact_lock(false)?;
         let mut leaves: Vec<(SystemTime, u64, PathBuf)> = Vec::new();
         for entry in fs::read_dir(&self.root)? {
@@ -88,12 +103,11 @@ impl Cache {
             ..BudgetReport::default()
         };
         report.total_after = report.total_before;
-        if report.total_before <= budget_bytes {
-            return Ok(report);
-        }
         leaves.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.2.cmp(&b.2)));
         for (modified, bytes, path) in leaves {
-            if report.total_after <= budget_bytes {
+            let aged = max_age.is_some_and(|limit| now.duration_since(modified).is_ok_and(|age| age > limit));
+            if report.total_after <= budget_bytes && !aged {
+                // Oldest first: once a leaf is within the age cap and the size fits, every later one is too.
                 break;
             }
             // A modification time in the future counts as fresh.
@@ -104,6 +118,7 @@ impl Cache {
             match fs::remove_file(&path) {
                 Ok(()) => {
                     report.deleted += 1;
+                    report.aged += usize::from(aged);
                     report.deleted_bytes += bytes;
                     report.total_after -= bytes;
                 }
@@ -184,6 +199,29 @@ mod tests {
         assert_eq!(report.deleted, 1);
         assert!(path(hot).exists(), "the used segment must survive");
         assert!(!path(cold).exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn leaves_older_than_the_age_cap_go_even_when_the_directory_fits_the_budget() {
+        let dir = scratch("aged");
+        let cache = Cache::open(&dir, Limits::default()).unwrap();
+        let ids: Vec<u128> = (0..3).map(|n| cache.publish(&[record(n + 1, 10_000)]).unwrap()).collect();
+        let path = |id: u128| dir.join(format!("{id:032x}.seg"));
+        let now = SystemTime::now();
+        set_age(&path(ids[0]), now, Duration::from_secs(20 * 24 * 3600));
+        set_age(&path(ids[1]), now, Duration::from_secs(3 * 24 * 3600));
+        set_age(&path(ids[2]), now, Duration::from_secs(60));
+        let week = Some(Duration::from_secs(7 * 24 * 3600));
+        let report = cache.evict_to_limits(now, u64::MAX, Duration::from_secs(3600), week).unwrap();
+        assert_eq!((report.deleted, report.aged), (1, 1), "{report:?}");
+        assert!(!path(ids[0]).exists() && path(ids[1]).exists() && path(ids[2]).exists());
+        // No age cap: the same directory is left alone.
+        assert_eq!(cache.evict_to_limits(now, u64::MAX, Duration::from_secs(3600), None).unwrap().deleted, 0);
+        // The fresh-leaf protection still wins over the age cap.
+        let report = cache.evict_to_limits(now, u64::MAX, Duration::from_secs(3600), Some(Duration::from_secs(1))).unwrap();
+        assert_eq!(report.deleted, 1);
+        assert!(path(ids[2]).exists());
         let _ = fs::remove_dir_all(&dir);
     }
 }

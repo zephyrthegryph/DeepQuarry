@@ -90,7 +90,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, pruneDmbcVersions, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
+import { compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -854,8 +854,12 @@ const DMBD_EXE = sharedDmbcExe('dmbd');
 // A fresh worktree copies the compiler from the shared content-addressed cache (lib/dmbc_cache.ts) instead of
 // running cargo; a build with inputs that differ from HEAD bypasses it and stores nothing.
 let dmbcPendingStore: { cache: string; key: string; commit: string } | null = null;
+// Everyone runs `current`, the latest compiler, resolved per compile. A checkout therefore builds the compiler only when its tree is
+// ahead of `current` (the commit that set it is an ancestor of HEAD) and the shared cache has no entry for its sources; a checkout
+// behind or equal to `current` has nothing to do. A checkout whose compiler sources are dirty builds privately (see below).
 const dmbcCacheHit = (): boolean => {
   dmbcPendingStore = null;
+  if (compilerSourcesDirty()) return false;
   const cache = dmbcCacheDir();
   if (!cache) return false;
   const k = dmbcCacheKey(process.cwd());
@@ -863,8 +867,12 @@ const dmbcCacheHit = (): boolean => {
     Juke.logger.info(`dmbc cache: bypassed (${k.bypass})`);
     return false;
   }
+  if (currentIsCommit(k.commit) || !mayAdvanceCurrent(process.cwd(), k.commit)) {
+    Juke.logger.info('dmbc: this tree is not ahead of the current compiler; using it');
+    return true;
+  }
   try {
-    if (restoreDmbc(cache, k.key, { root: process.cwd(), key: k.key, commit: k.commit })) {
+    if (restoreDmbc(cache, k.key, { root: process.cwd(), commit: k.commit })) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
       pruneDmbcVersions();
       return true;
@@ -881,7 +889,8 @@ const storeDmbcBuild = (): void => {
   if (!pending) return;
   dmbcPendingStore = null;
   try {
-    storeDmbc(pending.cache, pending.key, pending.commit, sharedDmbcExe('dmbc'), sharedDmbcExe('dmbd'));
+    const built = `${sharedDmbcBuildTarget()}/release`;
+    storeDmbc(pending.cache, pending.key, pending.commit, `${built}/dmbc${process.platform === 'win32' ? '.exe' : ''}`, `${built}/dmbd${process.platform === 'win32' ? '.exe' : ''}`);
     Juke.logger.info(`dmbc cache: stored ${pending.key}`);
   } catch (error) {
     Juke.logger.warn(`dmbc cache: store failed: ${error instanceof Error ? error.message : error}`);
@@ -914,7 +923,9 @@ export const DmbcTarget = new Juke.Target({
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
-    const target = sharedDmbcBuildTarget();
+    // Compiler development builds into a private target and publishes nothing; every other build shares one target.
+    const privateBuild = compilerSourcesDirty();
+    const target = privateBuild ? devCompilerDir() : sharedDmbcBuildTarget();
     const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
       fs.existsSync(slots)
         ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
@@ -937,9 +948,12 @@ export const DmbcTarget = new Juke.Target({
       result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
     if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
-    // The checkout selects its own version: by cache key when its compiler inputs equal HEAD, by tree when dirty (never `current`).
-    const publishKey = dmbcCacheKey(process.cwd());
-    publishDmbc(`${sharedDmbcBuildTarget()}/release`, 'bypass' in publishKey ? { root: process.cwd() } : { root: process.cwd(), key: publishKey.key, commit: publishKey.commit });
+    if (privateBuild) {
+      Juke.logger.info(`dmbc: private compiler build at ${target}/release (not published; this checkout runs it)`);
+      return;
+    }
+    const published = dmbcCacheKey(process.cwd());
+    publishDmbc(`${sharedDmbcBuildTarget()}/release`, 'bypass' in published ? undefined : { root: process.cwd(), commit: published.commit });
     pruneDmbcVersions();
     storeDmbcBuild();
   },

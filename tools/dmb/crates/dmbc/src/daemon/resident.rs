@@ -209,12 +209,23 @@ pub fn isolate_development_build(identity: u128) {
     std::env::set_var("DMB_DAEMON_NAMESPACE", &name[..20]);
 }
 
-/// A published version that is not `<bin>/current` leaves once it has had no connection or build for this long. Checkouts select
-/// their compiler by their own sources (tools/build/lib/dmbc_cache.ts), so a lane on an older tree keeps using its older version
-/// between builds; half an hour covers a working pause, and after it nobody of that version is left to hold the memory.
-pub(super) const SUPERSEDED_IDLE: Duration = Duration::from_secs(1800);
-pub(super) fn superseded_idle_due(provenance: Provenance, idle: Duration, running: usize, connections: usize) -> bool {
-    provenance == Provenance::Superseded && running == 0 && connections == 0 && idle >= SUPERSEDED_IDLE
+/// A published version that is not `<bin>/current` is superseded: one latest compiler serves everyone, so the daemon finishes its
+/// in-flight builds, refuses new ones and exits as soon as nothing is running; clients resolve `current` per compile and reach the
+/// new daemon (an old executable that still gets invoked forwards to it, see `forward_target`).
+pub(super) fn superseded(provenance: Provenance) -> bool {
+    provenance == Provenance::Superseded
+}
+
+/// The latest published compiler, when this executable is a superseded published version: where an old client forwards a request.
+pub fn forward_target() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    if provenance_of_self() != Provenance::Superseded {
+        return None;
+    }
+    let bin = exe.parent()?.parent()?.parent()?;
+    let id = fs::read_to_string(bin.join("current")).ok()?.trim().to_owned();
+    let target = bin.join("v").join(&id).join(exe.file_name()?);
+    target.is_file().then_some(target)
 }
 
 /// A draining daemon of this very executable is still alive and recently heartbeating. A client that finds the endpoint
@@ -335,14 +346,10 @@ mod tests {
     }
 
     #[test]
-    fn only_an_idle_superseded_version_retires_itself() {
-        let long = SUPERSEDED_IDLE;
-        assert!(superseded_idle_due(Provenance::Superseded, long, 0, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long - Duration::from_secs(1), 0, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long, 1, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long, 0, 1));
-        assert!(!superseded_idle_due(Provenance::Current, Duration::from_secs(86_400), 0, 0));
-        assert!(!superseded_idle_due(Provenance::Development, Duration::from_secs(86_400), 0, 0));
+    fn only_a_published_version_that_is_not_current_is_superseded() {
+        assert!(superseded(Provenance::Superseded));
+        assert!(!superseded(Provenance::Current));
+        assert!(!superseded(Provenance::Development));
     }
 
     #[test]

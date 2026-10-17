@@ -7,6 +7,10 @@ use std::{
 mod build_admission;
 pub mod control;
 mod cache_gc;
+/// One cache pass with the configured size and age caps (`dmbc --cache-gc`).
+pub fn cache_gc_once() -> String {
+    cache_gc::run_configured()
+}
 pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
