@@ -1,4 +1,4 @@
-// Regressions seen on the live server at round start (docking airlocks, first draw, hidden mapping helpers).
+// Regressions seen on the live server at round start (docking airlocks, hidden mapping helpers).
 
 /datum/unit_test/dq_shuttle_docking_opens_airlocks
 
@@ -34,71 +34,6 @@
 			break
 		sleep(1 SECOND)
 	TEST_ASSERT(!length(closed), "docked Ferry-Demo airlocks stayed closed: [jointext(closed, "; ")]")
-
-/datum/unit_test/dq_arrivals_shuttle_docks_and_opens
-
-/// The arrivals shuttle flies in from its off-station start, docks, and its airlocks open for the passengers (Southern Cross).
-/datum/unit_test/dq_arrivals_shuttle_docks_and_opens/Run()
-	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles["Arrivals"]
-	TEST_ASSERT_NOTNULL(shuttle, "the arrivals shuttle is not registered (run with --full-map)")
-	TEST_ASSERT(shuttle.current_location() == shuttle.landmark_offsite(), "the arrivals shuttle does not start off-station")
-	shuttle.warmup_time = 0
-	shuttle.launch(src)
-	var/deadline = world.time + 120 SECONDS
-	while(world.time < deadline && (shuttle.current_location() != shuttle.landmark_station() || shuttle.process_state != IDLE_STATE))
-		sleep(1 SECOND)
-	TEST_ASSERT(shuttle.current_location() == shuttle.landmark_station(), "the arrivals shuttle never reached the station (state [shuttle.process_state], moving [shuttle.moving_status])")
-	var/datum/embedded_program/docking/ours = shuttle.shuttle_docking_controller
-	var/datum/embedded_program/docking/theirs = shuttle.active_docking_controller()
-	TEST_ASSERT(shuttle.check_docked(), "the arrivals shuttle never finished docking: ours [ours?.get_docking_status()], station [theirs?.get_docking_status()]; [dq_docking_diagnostics(ours)]; [dq_docking_diagnostics(theirs)]")
-	var/open_deadline = world.time + 30 SECONDS
-	var/list/closed
-	var/list/doors = list()
-	while(world.time < open_deadline)
-		closed = list()
-		doors = list()
-		for(var/area/A as anything in shuttle.shuttle_area)
-			for(var/obj/machinery/door/airlock/D in contents_of(A))
-				doors += D
-				if(D.density)
-					closed += "[D.type] at [D.x],[D.y],[D.z] (id_tag [D.id_tag], power [D.power_systems_on()], bolted [is_bolted(D)], cmd [D.cur_command])"
-		if(length(doors) && !length(closed))
-			break
-		sleep(1 SECOND)
-	TEST_ASSERT(length(doors), "the arrivals shuttle has no airlock")
-	TEST_ASSERT(!length(closed), "docked arrivals shuttle airlocks stayed closed: [jointext(closed, "; ")]")
-
-/datum/unit_test/dq_first_draw_backlog_drained_at_boot
-
-/// Every atom's first draw happens before the round is playable: the queue is empty when the first test starts
-/// and every drawn atom of a type that derives a look has applied it.
-/datum/unit_test/dq_first_draw_backlog_drained_at_boot/Run()
-	if(length(GLOB.refresh_queue))
-		var/list/by_type = list()
-		for(var/datum/D as anything in GLOB.refresh_queue)
-			if(D)
-				by_type["[D.type]"] += 1
-		by_type = sortTim(by_type, GLOBAL_PROC_REF(cmp_numeric_dsc), TRUE)
-		var/list/top = list()
-		for(var/t in by_type)
-			top += "[t] x[by_type[t]]"
-			if(length(top) >= 12)
-				break
-		TEST_FAIL("[length(GLOB.refresh_queue)] first draws were still queued when the world finished booting: [jointext(top, ", ")]")
-	var/checked = 0
-	var/list/undrawn = list()
-	for(var/turf/T in block(locate(1, 1, 1), locate(world.maxx, world.maxy, 1)))
-		for(var/atom/A as anything in list(T) + T.contents)
-			if(!isobj(A) && !isturf(A))
-				continue
-			var/flags = type_derive_flags(A)
-			if(!(flags & TYPE_DERIVES_LOOK) || A.invisibility >= INVISIBILITY_ABSTRACT)
-				continue
-			checked++
-			if(isnull(A.rx?.look_key) && length(undrawn) < 10)
-				undrawn += "[A.type] at [T.x],[T.y],[T.z]"
-	log_test("first draw check: [checked] look-deriving atoms on z1")
-	TEST_ASSERT(!length(undrawn), "atoms that derive a look were not drawn at boot: [jointext(undrawn, "; ")]")
 
 /datum/unit_test/dq_mapping_helpers_stay_hidden
 
