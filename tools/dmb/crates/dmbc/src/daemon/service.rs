@@ -284,6 +284,21 @@ impl Shared {
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        // Retained-session attribution: the steady state after a build, by allocation call site (diagnostic only).
+        #[cfg(feature = "allocation-sites")]
+        if let Some(path) = std::env::var_os("DMB_ALLOC_SITES_PATH").filter(|path| !path.is_empty()) {
+            use std::io::Write;
+            let text = format!(
+                "######## retained.after_request private={after:?} mimalloc-commit={:?} requested-live={}
+{}",
+                dm_profile::allocator_commit_bytes(),
+                housekeeping::allocations::requested_live(),
+                dm_profile::allocation_sites::report(400)
+            );
+            if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+                let _ = file.write_all(text.as_bytes());
+            }
+        }
         after
     }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {

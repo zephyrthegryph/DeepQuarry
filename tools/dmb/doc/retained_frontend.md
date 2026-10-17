@@ -325,3 +325,48 @@ Not yet: the default stays off until the other passes (declaration parsing, orig
 the same edit and the whole edit matrix has been verified. The previous plan is cloned
 (about 200 MB of region lines) because `DirectivePlan` is a plain value; sharing the regions behind
 an `Arc` would remove the clone and the touches' only other cost.
+
+## Retained session memory (lane `tools/dmb-session-memory`, 2026-10-17)
+
+Goal: at most 2 GB retained per project session and a much lower compile peak, so three sessions fit in
+8 GB. This section is the measurement; the cuts and their effect are appended below as each lands.
+
+### How to measure
+
+* **Live bytes by allocation call site (new).** Build with `--features allocation-sites` (a separate
+  `CARGO_TARGET_DIR`), run the daemon with `DMB_ALLOC_SITES_PATH=<file>`. After every request the
+  daemon writes `retained.after_request` (process private bytes, mimalloc commit, requested-live bytes) and the top
+  400 allocation sites by sampled live bytes (one sample per 2 MiB requested, size-weighted). The counting build
+  is slower (a cold production compile took 287 s instead of 130 s) but the retained set is the same.
+* **Per-stage owner census (existing).** `DMB_HEAP_CENSUS_PATH` writes one JSON report per pipeline stage
+  (`frontend.ready` ... `publication.ready`), `DMB_IDLE_CENSUS_PATH` one per idle-release boundary. Each report
+  counts only the owners that stage visits, so it covers 1 to 1.8 GiB where the process holds about 9 GB:
+  it does not see the observation/receipt store (below), which is the largest owner.
+* `dmbc --daemon-stats`, `E:/dq-cache/dmb-daemon/lifecycle.log` (shared by all namespaces) for peaks and release tiers.
+
+### Baseline (production `deepquarry.dme`, one native cold compile, 4 workers)
+
+| Quantity | Bytes |
+|---|---|
+| compile peak (`peak=` in the lifecycle log) | 12.2 GB (13.0 to 13.2 GB for `deepquarry.test.dme`) |
+| private after the request and `mi_collect` | 8.97 GB (11.95 GB before the reclaim) |
+| requested-live (counting build) | 7.43 GB |
+| mimalloc commit | 9.17 GB, so 1.74 GB (19%) is allocator slack (freed pages, thread heaps of finished workers) |
+| private after the idle `tier=session` release (other lane's session, same binary) | 3.15 GB, so the session itself is about 6.5 GB and a daemon with no session still holds about 3.1 GB |
+
+### What the retained set holds (sampled live bytes at idle, 7.28 GB sampled total, top 400 sites = 6.30 GB)
+
+| Area | MB | Main owners (innermost frame) |
+|---|---|---|
+| observation and artifact store (`dm_session`) | 1,852 | `artifacts::incidence` 569 (scheduling index), `observations::receipt_pool` 389, `artifacts::leased` 387, `ObservedArtifactStore` 362, `observations::receipt` 139 |
+| declaration parse, tree, owner metadata (`dm_tree`) | 1,355 | `declaration_parse` 232, `owner_metadata::RetainedMetadata` 181, `adapter::walk` 152, `owner_normalization::receipts` 79, `KeyedDeclarations` 63 |
+| preprocessor | 1,093 | `region_memo` 286, `directives` 244, `directive_memo` 154, `expansion` 80, `prepared_source` 59 |
+| lowering memo and symbolic code | 602 | `lowering::memo` 119, `symbolic_input` 79, `SymbolicCode` 70 |
+| class projection, ABI, startup, other `dmbc` | 494 | `class_projection` 118, `driver_facts::abi_artifacts` 48 |
+| initializer policy and classification | 284 | `classification` 184, `modifier_facts` 90 |
+| DMB image and composition | 274 | `dmb::writing` 152 |
+| unattributed (only std/hashbrown frames in the 5 shown) | 344 | |
+
+The census structures the design names (expanded text 52 MiB, origin arena 40 MiB, source text 65 MiB, directive plan
+135 MiB, declaration AST 91 MiB, body arena 99 MiB) are small. The retained cost is dominated by per-unit
+observation receipts and per-region memos keyed by 87,000 procedures and 5,900 files, not by one big text.
