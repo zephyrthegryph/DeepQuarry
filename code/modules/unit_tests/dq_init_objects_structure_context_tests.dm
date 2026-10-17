@@ -32,3 +32,16 @@
 	qdel(T)
 	TEST_ASSERT(QDELETED(monster), "tank destruction still deletes its owned monster")
 	TEST_ASSERT(!QDELETED(available), "the borrowed world crusher survives tank destruction")
+
+/datum/unit_test/dq_init_objects_biowaste_deleted_crusher
+
+/datum/unit_test/dq_init_objects_biowaste_deleted_crusher/Run()
+	dq_init_objects_fixture_scope()
+	var/obj/machinery/recycling/crusher/C = allocate(/obj/machinery/recycling/crusher, test_floor())
+	qdel(C)
+	var/obj/machinery/recycling/crusher/found = locate(/obj/machinery/recycling/crusher)
+	TEST_ASSERT(found && QDELETED(found), "the fixture exposes a deleted crusher before garbage collection")
+	var/obj/structure/biowaste_tank/T = allocate(/obj/structure/biowaste_tank, test_floor())
+	TEST_ASSERT(!QDELETED(T), "a deleted external crusher does not abort tank construction")
+	TEST_ASSERT_NULL(T.crusher(), "a deleted crusher is never adopted as the tank's borrowed link")
+	TEST_ASSERT(T.muffinmonster() && owner_of(T.muffinmonster()) == T, "the tank still constructs its actual owned monster")

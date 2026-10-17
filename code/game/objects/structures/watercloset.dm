@@ -1253,7 +1253,10 @@ CAPABILITY_TYPE(initial_biowaste, CAP_INITIAL_BIOWASTE, /datum/capability/initia
 
 /datum/capability/initial_biowaste/on_holder_preinit(datum/act/eval/A)
 	var/obj/structure/biowaste_tank/T = A.holder
-	rel_set(T, nameof(T.crusher), locate(/obj/machinery/recycling/crusher))
+	var/obj/machinery/recycling/crusher/C = locate(/obj/machinery/recycling/crusher)
+	// Global locate can still find a destroyed machine awaiting garbage collection.
+	if(!QDELETED(C))
+		rel_set(T, nameof(T.crusher), C)
 
 /datum/capability/initial_biowaste/on_holder_init(datum/act/eval/A)
 	var/obj/structure/biowaste_tank/T = A.holder

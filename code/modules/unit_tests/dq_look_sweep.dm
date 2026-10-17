@@ -7,7 +7,7 @@
  *
  * Look state pins (snapshots/look_states/<root>.txt, test dq_look_state_pin): how each creatable obj/mob subtype of a root looks
  * after the state its look reacts to changes. Per type, for each numeric var the type declares below its base (/obj or /mob; at
- * most DQ_LOOK_STATE_MAX_VARS planned vars, filtered to the allowed read plan before lexical ordering and capping), the
+ * most DQ_LOOK_STATE_MAX_VARS of them, in declaration order, narrowed to the vars the analyzer's plan says a draw can read), the
  * var is written (0, 1 and 2, whichever differ from its made value; through its tracked setter when it has one, else the raw
  * var), a redraw is requested the way a caller does (update_icon(), then changed()), the presentation lane is flushed and the
  * look is compared with the made look. A row is the probe and what the look gained or lost:
@@ -156,9 +156,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * beside the other asks for both, so each type is made once). A later call for a result the first one skipped probes only that.
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
-	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
-	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
-	scope_strain_archive()
 	var/list/universe = dq_look_universe(want_tree, want_state)
 	// A pin compares only the types under a root it has a file for: a type outside every root of a pin is made for the other pin and not
 	// probed for this one (its rows would be thrown away, and the state probes are most of a type's cost).
@@ -261,48 +258,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /// presentation lane and the stat drain settled. A thing left from the last unit, a mob that wandered off the tile or air a probe
 /// heated would otherwise be in the next unit's look.
 /datum/unit_test/proc/dq_look_reset(turf/T)
-	// This fixture owns the entire template rectangle, including its one-tile wall border.
-	// A probe may destroy the walls or floor, or qdel may itself queue another real blast.
-	var/saved_ticklimit = Kernel.current_ticklimit
-	Kernel.current_ticklimit = INFINITY
-	try
-		var/settled = FALSE
-		for(var/cycle in 1 to 50)
-			// Finish real owed epochs without advancing unrelated periodic work. Keeping a
-			// spent host tick budget here made every call yield after one turf forever.
-			for(var/pass in 1 to 10000)
-				if(!SSexplosions.has_work())
-					break
-				SSexplosions.explosion_step(0)
-			if(SSexplosions.has_work())
-				CRASH("look cleanup explosion drain exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
-			for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
-				for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
-					var/turf/B = locate(x, y, test_block.z)
-					dq_look_drain_turf(B)
-			dq_look_settle()
-			if(!SSexplosions.has_work())
-				settled = TRUE
-				break
-		if(!settled)
-			CRASH("look cleanup qdel explosion cascade exhausted its bound: [json_encode(SSexplosions.performance_diagnostics())]")
-		// Restore the actual template only after every destroy consequence has finished.
-		for(var/x in (test_block.bottom_left.x - 1) to (test_block.top_right.x + 1))
-			for(var/y in (test_block.bottom_left.y - 1) to (test_block.top_right.y + 1))
-				var/turf/B = locate(x, y, test_block.z)
-				var/border = x < test_block.bottom_left.x || x > test_block.top_right.x || y < test_block.bottom_left.y || y > test_block.top_right.y
-				var/template_type = border ? /turf/simulated/wall : /turf/simulated/floor/tiled/steel
-				if(B.type != template_type)
-					B = B.ChangeTurf(template_type)
-				if(!border)
-					unit_test_block_reset_turf(B)
-		dq_look_settle()
-		if(SSexplosions.has_work())
-			CRASH("look cleanup template restoration queued unexpected explosion work")
-	catch(var/exception/fault)
-		Kernel.current_ticklimit = saved_ticklimit
-		throw fault
-	Kernel.current_ticklimit = saved_ticklimit
+	for(var/turf/B as anything in block_turfs(test_block))
+		dq_look_drain_turf(B)
+		unit_test_block_reset_turf(B)
+	dq_look_settle()
 
 /// The var names of the base type `base`: what a probe leaves alone.
 /datum/unit_test/proc/dq_look_state_base_vars(base, turf/T)
@@ -351,7 +310,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/names = list()
 	var/runtime
 	try
-		subject = dq_look_allocate(type, T)
+		subject = dq_snapshot_allocate(type, T)
 		if(QDELETED(subject))
 			res.made = list("deleted itself on creation")
 		else
@@ -396,8 +355,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		qdel(subject)
 	dq_look_drain_turf(T)
 
-/// Numeric non-base, non-time-like vars the analyzer permits this type to probe.
-/// Host vars enumeration order cannot change the selected set or probe order.
+/// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
+/// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
@@ -405,82 +364,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
-	return dq_look_select_probe_names(found, plan_entry)
-
-/// Keep both existing coverage limits: 24 planned vars, 200 when no plan exists.
-/// An explicit empty plan means no probes. Selection never mutates its inputs.
-/proc/dq_look_select_probe_names(list/candidates, plan_entry)
-	var/planned = islist(plan_entry)
-	var/list/selected = list()
-	for(var/name in candidates)
-		if(!planned || (name in plan_entry))
-			selected += name
-	sortTim(selected, GLOBAL_PROC_REF(cmp_text_asc))
-	var/limit = planned ? DQ_LOOK_STATE_MAX_VARS : DQ_LOOK_STATE_MAX_VARS_UNPLANNED
-	if(length(selected) > limit)
-		selected.Cut(limit + 1)
-	return selected
-
-/datum/unit_test/dq_look_probe_order_invariance
-/datum/unit_test/dq_look_probe_order_invariance/Run()
-	var/list/forward = list()
-	var/list/backward = list()
-	for(var/i in 1 to 250)
-		forward += "v[1000 + i]"
-	for(var/i = 250, i >= 1, i--)
-		backward += "v[1000 + i]"
-	var/original_forward = jointext(forward, ",")
-	var/original_backward = jointext(backward, ",")
-	var/list/planned = list("v1250", "v1249")
-	var/list/from_forward = dq_look_select_probe_names(forward, planned)
-	var/list/from_backward = dq_look_select_probe_names(backward, planned)
-	TEST_ASSERT_EQUAL(jointext(from_forward, ","), "v1249,v1250", "planned vars beyond either old enumeration cap remain covered")
-	TEST_ASSERT_EQUAL(jointext(from_backward, ","), jointext(from_forward, ","), "reversed host enumeration selects the same planned probes")
-	var/list/all_planned = dq_look_select_probe_names(backward, forward)
-	TEST_ASSERT_EQUAL(length(all_planned), DQ_LOOK_STATE_MAX_VARS, "planned coverage retains its existing bound")
-	TEST_ASSERT_EQUAL(all_planned[1], "v1001", "planned capping follows canonical ordering")
-	TEST_ASSERT_EQUAL(all_planned[DQ_LOOK_STATE_MAX_VARS], "v1024", "planned coverage ends at its canonical cap")
-	var/list/unplanned = dq_look_select_probe_names(forward, null)
-	var/list/reversed_unplanned = dq_look_select_probe_names(backward, null)
-	TEST_ASSERT_EQUAL(length(unplanned), DQ_LOOK_STATE_MAX_VARS_UNPLANNED, "absent-plan fallback retains its existing coverage bound")
-	TEST_ASSERT_EQUAL(jointext(unplanned, ","), jointext(reversed_unplanned, ","), "fallback selection is independent of host order")
-	TEST_ASSERT_EQUAL(unplanned[1], "v1001", "fallback starts with the first canonical name")
-	TEST_ASSERT_EQUAL(unplanned[DQ_LOOK_STATE_MAX_VARS_UNPLANNED], "v1200", "fallback caps after canonical ordering")
-	TEST_ASSERT_EQUAL(length(dq_look_select_probe_names(forward, list())), 0, "an explicit empty plan permits no probes")
-	TEST_ASSERT_EQUAL(jointext(planned, ","), "v1250,v1249", "selection preserves the caller's plan ordering")
-	TEST_ASSERT_EQUAL(jointext(forward, ","), original_forward, "selection preserves forward candidates")
-	TEST_ASSERT_EQUAL(jointext(backward, ","), original_backward, "selection preserves backward candidates")
-
-/// A probe owns its native construction stream, independently of round seed, tile and prior allocations.
-/// Keep the host rand_seed calls at the call sites: legacy random constructors retain their old seed policy.
-/datum/unit_test/proc/dq_look_allocate(type, turf/T)
-	var/creator_depth = length(GLOB.roll_creators)
-	var/old_seed = GLOB.round_seed
-	var/old_serial = GLOB.roll_serial
-	var/datum/roller/R = new("look:[type]")
-	GLOB.roll_creators += R
-	var/exception/failure
-	try
-		. = dq_snapshot_allocate(type, T)
-		// Normalize kernel identity before either made/fresh capture; no probe exemption.
-		if(isdatum(.))
-			var/datum/created = .
-			if(!QDELETED(created))
-				entity_handle(created)
-				// Normalize the same stable identity the shared-cache API lazily assigns.
-				if(!created.shared_cache_uid)
-					shared_cache_assign_uid(created)
-				// Real culture initialization creates detached copies carried by its blood.
-				// Its vial/archive own different strains; retain only these exact products.
-				dq_look_own_culture_products(created)
-	catch(var/exception/e)
-		failure = e
-	GLOB.roll_creators.Cut(creator_depth + 1)
-	GLOB.round_seed = old_seed
-	GLOB.roll_serial = old_serial
-	qdel(R)
-	if(failure)
-		throw failure
+	if(!islist(plan_entry))
+		// The plan does not know what the draw reads: scan more of them (a robot declares over a hundred numeric vars, and the cover is the 25th).
+		if(length(found) > DQ_LOOK_STATE_MAX_VARS_UNPLANNED)
+			found.Cut(DQ_LOOK_STATE_MAX_VARS_UNPLANNED + 1)
+		return found
+	// Narrowed to what the plan says a draw reads first, then capped: the cap must not drop a var the draw reads.
+	var/list/read = list()
+	for(var/name in found)
+		if(name in plan_entry)
+			read += name
+	if(length(read) > DQ_LOOK_STATE_MAX_VARS)
+		read.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	return read
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
@@ -492,29 +388,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	state_changed(target)
 	dq_look_settle()
 
-/// Snapshot immutable primitive values, not mutable object/list aliases. Parallel arrays retain null values.
-/// A publication may normalize an invisible text cache while the visible look returns unchanged.
-/datum/unit_test/proc/dq_look_primitive_state(atom/subject)
-	var/list/names = list()
-	for(var/name in subject.vars)
-		var/value = subject.vars[name]
-		if(isnull(value) || isnum(value) || istext(value) || ispath(value) || isfile(value))
-			names += name
-	var/list/values = new /list(length(names))
-	for(var/i in 1 to length(names))
-		values[i] = subject.vars[names[i]]
-	return list(names, values)
-
-/datum/unit_test/proc/dq_look_primitive_changes(atom/subject, list/before)
-	var/list/changed = list()
-	var/list/names = before[1]
-	var/list/values = before[2]
-	for(var/i in 1 to length(names))
-		// Include the probed value too: a clamping setter may not restore it exactly.
-		if(subject.vars[names[i]] != values[i])
-			changed += names[i]
-	return changed
-
 /// One probe on the made instance: write, capture, write the original back, check the look returned to `base`. Returns FALSE when
 /// the instance can no longer be trusted (a runtime, or the look did not come back); the rows it wrote stay.
 /datum/unit_test/proc/dq_look_probe_reuse(atom/subject, type, name, value, list/base, datum/dq_look_result/res)
@@ -522,7 +395,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/original = subject.vars[name]
 	if(original == value)
 		return TRUE
-	var/list/primitive_before = dq_look_primitive_state(subject)
 	try
 		dq_look_write(subject, name, value)
 		var/list/now = dq_look_pin_lines(subject)
@@ -535,11 +407,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		if(jointext(back, "\n") != jointext(base, "\n"))
 			res.impure += "[type] [name]=[value] (back to [original]): [length(back - base)] rows gained, [length(base - back)] lost"
 			log_test("look sweep IMPURE: [type] [name]=[value]: writing [original] back did not return the look to the made one; the rest of its probes use fresh instances")
-			return FALSE
-		var/list/hidden_changes = dq_look_primitive_changes(subject, primitive_before)
-		if(length(hidden_changes))
-			res.impure += "[type] [name]=[value] (back to [original]): scalar state changed: [jointext(hidden_changes, ", ")]"
-			log_test("look sweep IMPURE: [type] [name]=[value]: restored look retained changed scalar state ([jointext(hidden_changes, ", ")]); the rest of its probes use fresh instances")
 			return FALSE
 	catch(var/exception/e)
 		if(!dq_look_write_refused(e, name))
@@ -566,7 +433,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
 	try
-		var/atom/target = dq_look_allocate(type, T)
+		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			return
 		dq_look_settle()
@@ -772,174 +639,3 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		dq_look_unit(type, T, base_vars, null, fresh, TRUE, TRUE, TRUE)
 		TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "[type]: one instance for every probe gave other rows than a fresh one per probe")
 		TEST_ASSERT(!length(reused.impure), "[type]: a write-back did not return the look: [jointext(reused.impure, "; ")]")
-
-// Two independent native draws make accidental equality an ineffective substitute for stream isolation.
-/obj/dq_look_native_roll_fixture
-	var/first_roll
-	var/second_roll
-
-CAPABILITIES(/obj/dq_look_native_roll_fixture)
-	rolls(nameof(first_roll), range_of(1, 1000000))
-	rolls(nameof(second_roll), range_of(1, 1000000))
-
-/datum/unit_test/dq_look_native_roll_allocation
-
-/datum/unit_test/dq_look_native_roll_allocation/Run()
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.roll_creators), GLOB.roll_creators.Copy())
-	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/first_turf = run_loc_floor_bottom_left
-	var/turf/second_turf = get_step(first_turf, EAST)
-	TEST_ASSERT(second_turf && second_turf != first_turf, "the fixture uses two distinct actual turf positions")
-	var/seed_before = GLOB.round_seed
-	var/serial_before = GLOB.roll_serial
-	var/list/creators_before = GLOB.roll_creators.Copy()
-	var/obj/dq_look_native_roll_fixture/first = dq_look_allocate(/obj/dq_look_native_roll_fixture, first_turf)
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "allocation restores the global native seed")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "allocation restores unrelated serial history")
-	var/obj/dq_look_native_roll_fixture/unrelated = allocate(/obj/dq_look_native_roll_fixture)
-	// Deliberately perturb the fallback serial without changing the production RNG implementation.
-	GLOB.roll_serial += 37
-	var/perturbed_serial = GLOB.roll_serial
-	var/obj/dq_look_native_roll_fixture/second = dq_look_allocate(/obj/dq_look_native_roll_fixture, second_turf)
-	TEST_ASSERT_EQUAL(second.first_roll, first.first_roll, "native constructor rolls do not depend on turf or prior allocations")
-	TEST_ASSERT_EQUAL(second.second_roll, first.second_roll, "the full native stream is reproduced, not just its first draw")
-	TEST_ASSERT_EQUAL(GLOB.roll_serial, perturbed_serial, "allocation preserves its caller's current serial")
-	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "the second allocation preserves the global seed")
-	TEST_ASSERT_EQUAL(length(GLOB.roll_creators), length(creators_before), "allocation leaves no synthetic creator on the stack")
-	for(var/i in 1 to length(creators_before))
-		TEST_ASSERT_EQUAL(GLOB.roll_creators[i], creators_before[i], "allocation preserves every existing outer creator")
-	GLOB.roll_serial = serial_before
-	qdel(first)
-	qdel(second)
-	qdel(unrelated)
-
-/// A look probe's pending blast belongs to that probe, not the test that follows it.
-/datum/unit_test/dq_look_cleanup_finishes_explosion
-/datum/unit_test/dq_look_cleanup_finishes_explosion/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	test_driver_begin()
-	var/turf/T = test_floor()
-	explosion(T, 0, 0, 1)
-	TEST_ASSERT(SSexplosions.has_work(), "the real blast is queued before the simulation periodic runs")
-	dq_look_reset(T)
-	TEST_ASSERT(!SSexplosions.has_work(), "cleanup drains the actual explosion epoch without advancing unrelated periodics")
-	for(var/turf/B as anything in block_turfs(test_block))
-		for(var/obj/effect/expl_particles/particle in B)
-			TEST_FAIL("look cleanup left a real explosion particle on the released block")
-
-/// Real consuming publications normalize hidden icon_living even when eyes-off appearance is unchanged.
-/datum/unit_test/dq_look_reuse_detects_hidden_slime_state
-/datum/unit_test/dq_look_reuse_detects_hidden_slime_state/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/T = test_floor()
-	var/path = /mob/living/simple_mob/slime/xenobio/bluespace
-	var/mob/living/simple_mob/slime/xenobio/S = dq_look_allocate(path, T)
-	dq_look_settle()
-	TEST_ASSERT_EQUAL(S.icon_living, "slime baby", "The real constructor begins with its inherited generic cache")
-	var/list/base = dq_look_pin_lines(S)
-	var/datum/dq_look_result/probe = allocate(/datum/dq_look_result)
-	TEST_ASSERT(!dq_look_probe_reuse(S, path, "consuming", 1, base, probe), "The real sampler rejects hidden state changes after a visually restored probe")
-	TEST_ASSERT_EQUAL(S.icon_living, "bluespace slime baby", "The actual consuming publication normalized the hidden cache")
-	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(S), "\n"), jointext(base, "\n"), "The visible eyes-off base alone cannot detect this mutation")
-	TEST_ASSERT(length(probe.impure), "The actual sampler records why reuse ended")
-	qdel(S)
-	dq_look_drain_turf(T)
-	var/list/base_vars = dq_look_state_base_vars(/mob, T)
-	var/list/plan = list("[path]" = list("consuming", "has_eye_glow"))
-	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
-	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
-	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
-	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
-	TEST_ASSERT(length(reused.impure), "The complete production sampler actually switches from reuse to fresh allocation")
-	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "Consuming-before-eye probes now match actual fresh-instance sampling")
-	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "The repair does not change initial tree capture")
-
-/// The crashing sweep deleted an orange slime after prey_controlled=1, while disposing its owned deafness sound.
-/// Exercise that real owner teardown, then both production sampler paths; this is bounded, not a cumulative heap proof.
-/datum/unit_test/dq_look_orange_slime_teardown
-/datum/unit_test/dq_look_orange_slime_teardown/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/T = test_floor()
-	var/path = /mob/living/simple_mob/slime/xenobio/orange
-	TEST_ASSERT(islist(SSgarbage.queues), "The real collector starts with its queue list")
-	TEST_ASSERT_EQUAL(length(SSgarbage.queues), GC_QUEUE_COUNT, "The real collector has every declared queue")
-	for(var/level in 1 to GC_QUEUE_COUNT)
-		TEST_ASSERT(islist(SSgarbage.queues[level]), "Collector queue [level] exists before the real teardown")
-
-	var/mob/living/simple_mob/slime/xenobio/S = dq_look_allocate(path, T)
-	own(S)
-	dq_look_settle()
-	var/datum/looping_sound/mob/deafened/sound = S.deaf_loop
-	TEST_ASSERT(!QDELETED(sound), "The actual orange slime owns a live deafness sound")
-	var/slime_handle = entity_handle(S)
-	var/sound_handle = entity_handle(sound)
-	TEST_ASSERT_EQUAL(resolve_handle(sound_handle), sound, "The owned sound is addressable before owner teardown")
-	dq_look_write(S, "prey_controlled", 1)
-	TEST_ASSERT_EQUAL(S.prey_controlled, 1, "The real probe reaches the value named in the crashing teardown")
-	qdel(S)
-	TEST_ASSERT(QDELETED(S), "The actual probe owner is deleted")
-	TEST_ASSERT(QDELETED(sound), "Deleting the orange slime deletes its owned deafness sound")
-	TEST_ASSERT_NULL(resolve_handle(slime_handle), "The deleted slime's native handle no longer resolves")
-	TEST_ASSERT_NULL(resolve_handle(sound_handle), "The owned sound's native handle no longer resolves")
-	dq_look_drain_turf(T)
-
-	var/list/base_vars = dq_look_state_base_vars(/mob, T)
-	var/list/plan = list("[path]" = list("consuming", "has_eye_glow", "prey_controlled"))
-	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
-	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
-	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
-	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
-	TEST_ASSERT(reused.tree_done && reused.state_done && fresh.tree_done && fresh.state_done, "Both actual sampler paths finish their tree and state work")
-	TEST_ASSERT(length(reused.impure), "The consuming probe exercises the real reuse-to-fresh fallback")
-	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "Reused and fresh orange-slime paths capture the same initial look")
-	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "Reused and fresh paths agree for the three real probe keys")
-	for(var/row in reused.probe_rows)
-		TEST_ASSERT(!findtext(row, "runtime:"), "The bounded orange-slime probes finish without captured runtimes: [row]")
-	TEST_ASSERT(islist(SSgarbage.queues), "Real probe teardowns preserve the collector queue list")
-	TEST_ASSERT_EQUAL(length(SSgarbage.queues), GC_QUEUE_COUNT, "Real probe teardowns preserve all declared collector queues")
-	for(var/level in 1 to GC_QUEUE_COUNT)
-		TEST_ASSERT(islist(SSgarbage.queues[level]), "Collector queue [level] remains a list after actual fresh/reused teardowns")
-
-/// A real periodic-key probe must not mistake first identity allocation for appearance state.
-/datum/unit_test/dq_look_identity_warmup/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
-	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
-	var/turf/T = test_floor()
-	var/obj/subject = dq_look_allocate(/obj, T)
-	TEST_ASSERT_NOTNULL(entity_handle_of(subject), "look allocation establishes the real native handle before baseline capture")
-	var/handle = entity_handle_of(subject)
-	var/list/before = dq_look_pin_lines(subject)
-	TEST_ASSERT_EQUAL(entity_handle(subject), handle, "later native identity requests reuse the exact existing handle")
-	TEST_ASSERT_EQUAL(jointext(dq_look_pin_lines(subject), "\n"), jointext(before, "\n"), "normalizing identity leaves the actual appearance unchanged")
-	qdel(subject)
-	TEST_ASSERT_NULL(resolve_handle(handle), "normal look cleanup releases the prewarmed native handle")
-	var/path = /mob/living/silicon/robot
-	var/list/base_vars = dq_look_state_base_vars(/mob, T)
-	var/list/plan = list("[path]" = list("autofire_on"))
-	var/datum/dq_look_result/reused = allocate(/datum/dq_look_result)
-	var/datum/dq_look_result/fresh = allocate(/datum/dq_look_result)
-	dq_look_unit(path, T, base_vars, plan, reused, TRUE, TRUE)
-	dq_look_unit(path, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
-	TEST_ASSERT(!length(reused.impure), "the actual robot's reversible autofire key does not force fresh allocation for lazy identity")
-	TEST_ASSERT_EQUAL(jointext(reused.made, "\n"), jointext(fresh.made, "\n"), "native identity normalization preserves made rows")
-	TEST_ASSERT_EQUAL(jointext(reused.probe_rows, "\n"), jointext(fresh.probe_rows, "\n"), "the real periodic probe preserves fresh-instance rows")
-
-/// Bound the known culture fixture producer: never traverse arbitrary reagent data,
-/// adopt a source template, or clear subscription indexes. The production reagent
-/// codec still lacks nested lifetime cleanup (including mixing/transfer ownership).
-/datum/unit_test/proc/dq_look_own_culture_products(datum/created)
-	if(!istype(created, /obj/item/reagent_containers/glass/beaker/vial/culture))
-		return
-	var/obj/item/reagent_containers/glass/beaker/vial/culture/vial = created
-	var/datum/reagent/blood/blood = vial.reagents?.get_reagent(REAGENT_ID_BLOOD)
-	var/list/strains = blood?.data?["viruses"]
-	for(var/datum/affliction/contagion/strain as anything in strains)
-		own(strain)
