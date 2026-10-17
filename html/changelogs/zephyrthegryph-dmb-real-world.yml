@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native compiler and DreamChecker run at below-normal priority, use 4 workers by default and a daemon memory budget of 8 GB"

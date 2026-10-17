@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { execLowPriority } from './lib/low_priority';
 import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
@@ -3387,7 +3388,7 @@ async function runDreamChecker(): Promise<void> {
   // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
   // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme
   // under a parallel test compile (EBUSY on Windows). Nothing is renamed or written now.
-  await Juke.exec(dreamChecker, ['-e', `${DME_NAME}.dme`]);
+  await execLowPriority(dreamChecker, ['-e', `${DME_NAME}.dme`]);
 }
 
 export const TguiDevTarget = new Juke.Target({

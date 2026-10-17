@@ -562,8 +562,12 @@ No variable is needed: the executable defaults to `tools/dmb/target/release/dmbc
 the engine template to `tools/dmb/fixtures/native_template.bin`. With the native compiler selected the
 `dm`, `dm-test`, `test-repeat`, `bench` and `balance` targets depend on `dmbc` and rebuild it
 when its sources changed. Overrides: `DQ_NATIVE_COMPILER`, `DQ_NATIVE_ENGINE_TEMPLATE` (an explicit
-compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 8), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
+compiler is never rebuilt), `DQ_NATIVE_WORKERS` (default 4; `DMB_WORKERS` wins), `DQ_NATIVE_NO_DAEMON=1` (one-shot, cold),
 `DQ_COMPILER_STRICT=1` (no DreamMaker fallback on a compiler internal error).
+The native compiler is gentle with the machine by default: `dmbc` (client, daemon and its worker threads) lowers its own priority
+class to below normal at startup (`DMB_PRIORITY=normal` opts out, `idle` goes lower; `tools/dmb/crates/dmbc/src/priority.rs`), DreamChecker runs at
+below normal too (`DQ_PRIORITY=normal` opts out), compile workers default to 4 (`DMB_WORKERS`, up to 8), and the daemon's whole private-memory
+budget defaults to 8 GB (`DMB_DAEMON_MEMORY_BUDGET_GB`; soft limit two thirds of it).
 A fresh worktree does not run cargo: `build.sh dmbc` restores `dmbc`/`dmbd` from a shared content-addressed cache
 (`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE=<dir>`, `off` disables) keyed by the git ids of `tools/dmb` at HEAD, and stores a fresh build there.
 A checkout whose compiler sources differ from HEAD bypasses the cache. Measured edit times, the equivalence triage and the memory
