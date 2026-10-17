@@ -45,6 +45,7 @@
 	if(def)
 		. += def.admission_read_keys(holder, thing, actor)
 		if(def.capacity_model != SLOT_CAPACITY_NONE && def.capacity_for(holder) != INFINITY)
+			. += def.capacity_read_keys(holder)
 			. += def.cost_read_keys(holder, thing)
 			for(var/atom/movable/resident as anything in dest.slots[id])
 				. += def.cost_read_keys(holder, resident)
