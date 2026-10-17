@@ -89,9 +89,9 @@
 /turf/simulated/floor/wood/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/broken/sim_after_init(datum/act/timer/A)
-	..()
-	break_tile()
+// Broken as soon as its Initialize() has returned (setup), not at the after-init pass: a floor made while another load frame is open waits for that frame to close.
+CAPABILITIES(/turf/simulated/floor/wood/broken)
+	setup(PROC_REF(break_tile))
 
 /turf/simulated/floor/wood/sif
 	name = "alien wooden floor"
@@ -103,9 +103,9 @@
 /turf/simulated/floor/wood/sif/broken
 	icon_state = "sifwood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/sif/broken/sim_after_init(datum/act/timer/A)
-	..()
-	break_tile()
+// Broken as soon as its Initialize() has returned (setup), not at the after-init pass: a floor made while another load frame is open waits for that frame to close.
+CAPABILITIES(/turf/simulated/floor/wood/sif/broken)
+	setup(PROC_REF(break_tile))
 
 
 /turf/simulated/floor/wood/alt
@@ -116,9 +116,9 @@
 /turf/simulated/floor/wood/alt/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/broken/sim_after_init(datum/act/timer/A)
-	..()
-	break_tile()
+// Broken as soon as its Initialize() has returned (setup), not at the after-init pass: a floor made while another load frame is open waits for that frame to close.
+CAPABILITIES(/turf/simulated/floor/wood/alt/broken)
+	setup(PROC_REF(break_tile))
 
 /turf/simulated/floor/wood/alt/tile
 	icon_state = "wood_tile"
@@ -127,9 +127,9 @@
 /turf/simulated/floor/wood/alt/tile/broken
 	icon_state = "wood_tile-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/tile/broken/sim_after_init(datum/act/timer/A)
-	..()
-	break_tile()
+// Broken as soon as its Initialize() has returned (setup), not at the after-init pass: a floor made while another load frame is open waits for that frame to close.
+CAPABILITIES(/turf/simulated/floor/wood/alt/tile/broken)
+	setup(PROC_REF(break_tile))
 
 /turf/simulated/floor/wood/alt/panel
 	icon_state = "wood_panel"
@@ -143,9 +143,9 @@
 /turf/simulated/floor/wood/alt/parquet/broken
 	icon_state = "wood_parquet-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/parquet/broken/sim_after_init(datum/act/timer/A)
-	..()
-	break_tile()
+// Broken as soon as its Initialize() has returned (setup), not at the after-init pass: a floor made while another load frame is open waits for that frame to close.
+CAPABILITIES(/turf/simulated/floor/wood/alt/parquet/broken)
+	setup(PROC_REF(break_tile))
 
 
 /turf/simulated/floor/grass

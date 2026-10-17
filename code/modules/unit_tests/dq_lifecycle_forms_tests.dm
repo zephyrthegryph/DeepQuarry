@@ -363,6 +363,7 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	TEST_ASSERT(result?[1] && result[2], "without ui_rights the action runs")
 	TEST_ASSERT_EQUAL(plain.acted, 1, "once")
 	rel_clear(window, nameof(window.user))
+	qdel(window) // a window left to the collector is freed without qdel() while the relation layer still holds a handle to it
 	var/datum/round_status_panel/rsp = new
 	TEST_ASSERT_EQUAL(rsp.ui_interface(null), "RoundStatusPanel", "the converted panel opens by tgui_id")
 	TEST_ASSERT_EQUAL(rsp.tgui_state(null), ADMIN_STATE(R_ADMIN | R_EVENT | R_SERVER), "and gates by ui_rights")
