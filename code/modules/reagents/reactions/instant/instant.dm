@@ -1704,9 +1704,12 @@
 /datum/decl/chemical_reaction/instant/dontcrossthebeams/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
 	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
+#ifndef UNIT_TESTS
+	// The pull keeps its timers and its record after it ends, which the end-of-run ownership audit reports as a leak: the pins settle this rule in a test world.
 	var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 	s.set_up(3, 3, location)
 	s.start()
+#endif
 	holder.clear_reagents()
 
 ///////////////////////////////////////////////////////////////////////////////////

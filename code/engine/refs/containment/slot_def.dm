@@ -40,6 +40,11 @@
 	var/capacity_model = SLOT_CAPACITY_NONE
 	/// Limit in the capacity model's units. See capacity_for().
 	var/capacity = 0
+	/// The holder var that holds the limit (a slot(capacity = nameof(v)) entry): per instance. Null: `capacity` is the limit.
+	var/capacity_var
+	/// Whether the slot takes a quantity: a thing carrying several units (a stack, a shell count) may go in partly, as many units as
+	/// there is room for (move_into(amount =)). The cost of a thing is its unit cost times its units.
+	var/quantity = FALSE
 	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
 	var/accepts
 	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
@@ -84,7 +89,7 @@
 
 	// ---- Operations (operations/routes.dm) ----
 	/// AFF_* mask of what the holder can do through this slot (a hand: hold, manipulate,
-	/// hold small, interface). ops_provider() picks the slot that gives an op's affordance.
+	/// hold small, interface). the provider picks the slot that gives an op's affordance.
 	var/provides = NONE
 	/// BAY_*: the compartment of the holder this slot sits in; paths cross that bay's boundary.
 	var/at
@@ -160,16 +165,16 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 		if(isnull(id) || taken[id] || (istext(id) && (id in holder.vars)))
 			continue
 		taken[id] = TRUE
-		var/capacity = E.args["capacity"]
-		. += declared_slot_def(holder.type, id, isnum(capacity) ? capacity : 0, E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"], E.args["on_destroy"])
+		. += declared_slot_def(holder.type, id, E.args["capacity"], E.args["at"], E.args["accepts"], !length(defs) && !length(.), E.args["exposure"], E.args["on_destroy"], E.args["unit"], E.args["quantity"])
 	var/list/graph_slots = holder.construction_slot_declarations(taken, defs, length(.))
 	if(length(graph_slots))
 		. += graph_slots
 
-/// The shared declared slot of holder type `holder_type` with id `id`: `capacity` things (0: no limit), in space `at`, of type `accepts`. An
+/// The shared declared slot of holder type `holder_type` with id `id`: `capacity` (a number, 0: no limit; or the name of a holder var that holds it) in
+/// `unit` (a SLOT_CAPACITY_* model, default COUNT; `quantity` lets a thing go in by units), in space `at`, of type `accepts`. An
 /// `exposure` of SLOT_EXPOSURE_SEALED makes it a sealed slot (an occupant pod's): what is inside lives in the holder's shell. An `on_destroy` of
 /// ON_DESTROY_DELETE deletes the contents with the holder; otherwise they spill.
-/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null, on_destroy = null)
+/proc/declared_slot_def(holder_type, id, capacity, at, accepts, is_default, exposure = null, on_destroy = null, unit = null, quantity = FALSE)
 	RETURN_TYPE(/datum/relation_definition/slot)
 	var/static/list/made = list()
 	var/cache_key = "[holder_type]|[id]"
@@ -180,8 +185,12 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 	S.holder = holder_type
 	S.slot_id = id
 	S.name = "[id]"
-	S.capacity_model = capacity ? SLOT_CAPACITY_COUNT : SLOT_CAPACITY_NONE
-	S.capacity = capacity
+	if(istext(capacity))
+		S.capacity_var = capacity
+	else if(isnum(capacity))
+		S.capacity = capacity
+	S.capacity_model = (S.capacity || S.capacity_var) ? (unit || SLOT_CAPACITY_COUNT) : SLOT_CAPACITY_NONE
+	S.quantity = !!quantity
 	S.at = at
 	S.set_declared_accepts(accepts)
 	S.is_default = is_default
@@ -204,12 +213,21 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /atom/proc/slot_relation_overrides()
 	return null
 
-/// The limit for this holder. Override for per-instance capacities.
+/// The limit for this holder: a declared capacity_var is read off the holder (per instance); override for any other rule.
 /datum/relation_definition/slot/proc/capacity_for(atom/holder)
+	if(capacity_var)
+		var/limit = holder.vars[capacity_var]
+		return isnum(limit) ? limit : 0
 	return capacity
 
-/// What `thing` costs in this slot, in the capacity model's units.
+/// What `thing` costs in this slot, in the capacity model's units: one unit's cost, times its units in a quantity slot.
 /datum/relation_definition/slot/proc/cost(atom/holder, atom/movable/thing)
+	if(quantity)
+		return unit_cost(holder, thing) * thing.slot_units()
+	return unit_cost(holder, thing)
+
+/// What one unit of `thing` costs in this slot (a thing that is not a quantity is one unit).
+/datum/relation_definition/slot/proc/unit_cost(atom/holder, atom/movable/thing)
 	switch(capacity_model)
 		if(SLOT_CAPACITY_NONE)
 			return 0
@@ -220,6 +238,28 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 		if(SLOT_CAPACITY_MASS)
 			return PROPERTY(thing, PROP_MASS) || 0
 	return 1
+
+/// How many units of `thing` (a thing carrying several: a stack) fit in this slot of `holder` now, counting the latent stock: INFINITY when
+/// the slot has no limit. Whole numbers; 0 when full.
+/datum/relation_definition/slot/proc/room_for(atom/holder, atom/movable/thing)
+	if(capacity_model == SLOT_CAPACITY_NONE)
+		return INFINITY
+	var/limit = capacity_for(holder)
+	if(limit == INFINITY)
+		return INFINITY
+	var/datum/ledger/L = dq_ledger(holder)
+	var/free = limit - (L ? L.current_used(slot_id) : 0) - latent_used(holder)
+	var/each = unit_cost(holder, thing)
+	if(each <= 0)
+		return INFINITY
+	return max(0, round(free / each))
+
+/// The reads that decide capacity_for(): a per-instance limit is a var of the holder.
+/datum/relation_definition/slot/proc/capacity_read_keys(atom/holder)
+	. = list()
+	if(capacity_var)
+		for(var/key in change_read_keys(holder, capacity_var))
+			. += list(list(holder, key))
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
 /datum/relation_definition/slot/proc/refusal(atom/holder, atom/movable/thing, mob/actor)

@@ -47,7 +47,7 @@
 
 /// Why `thing` can't be moved into `holder` (its slot `slot`, null: the default one), or null.
 /// Checks both sides; changes nothing.
-/proc/own_transfer_refusal(atom/holder, atom/movable/thing, slot, mob/user)
+/proc/own_transfer_refusal(atom/holder, atom/movable/thing, slot, mob/user, units = null)
 	if(!ismovable(thing) || QDELETED(thing))
 		return "it is gone"
 	if(!isatom(holder) || QDELETED(holder))
@@ -61,7 +61,7 @@
 		if(.)
 			return .
 	if(dq_slot_defs_for(holder))
-		return dq_ledger_refusal(thing, holder, slot, user, check_removal = FALSE)
+		return dq_ledger_refusal(thing, holder, slot, user, check_removal = FALSE, units = units)
 	return null
 
 /// The transfer half of _own_set / _own_add / _own_put: TRUE when `value` may be adopted (it is in the

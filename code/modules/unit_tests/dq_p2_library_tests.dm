@@ -182,7 +182,7 @@
 /datum/unit_test/dq_p2_lib/heard_notice_is_wanted/run_gate()
 	var/obj/machinery/p2_box/plain = allocate(/obj/machinery/p2_box)
 	var/obj/machinery/p2_box/slasher/listener = allocate(/obj/machinery/p2_box/slasher)
-	TEST_ASSERT(!op_notice_wanted(plain, /datum/notice/slashed), "nothing listens: req_heard() does not offer the op")
+	TEST_ASSERT(!op_notice_wanted(plain, /datum/notice/slashed), "nothing listens: the op is not offered")
 	TEST_ASSERT(op_notice_wanted(listener, /datum/notice/slashed), "a hook on the notice makes it wanted")
 
 // ---------------------------------------------------------------------------------------------------------------------
