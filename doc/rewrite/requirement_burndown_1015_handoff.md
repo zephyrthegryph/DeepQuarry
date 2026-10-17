@@ -4,9 +4,15 @@
 > The production `REQ_*(` inventory is 141 lines on that master and zero after this merge; the boolean-requirement baseline remains zero.
 > Master’s internal-storage admission guard, pilot constructor test and private-notes setter are preserved; acceptance preference setters remain in place.
 > No change against master remains under `tools/dmb`, build tooling or `code/engine/change`.
-> The earlier receipt below is historical. A new lane-ready proof is pending on this merged code; 84 explicit selectors include the changed acceptance/constraint/consent tests and both mandatory pins.
+> The earlier receipt below is historical. A new lane-ready proof is pending on this merged code; 80 explicit selectors include the changed acceptance/constraint/consent tests and both mandatory pins.
 
 Branch: `codex/req-burndown`. Final lane-ready verification is pending; this document does not claim a stamp or a completed gate.
+
+## Admission integration (October 17)
+
+Merged master 077c0abc73 (rewrite/admission) in 55b1007765. Its native actor requirement parts and deletions of the old requirement/context/adapter types are retained verbatim; no retired type is resurrected. The remaining content conversion still removes all 141 production REQ_* call lines. The three historical admission branches listed below remain abandoned, with their useful content consolidated here rather than replayed over the new admission engine.
+
+Verification now excludes all look-pin tests and uses --no-pins for both lane-ready and landing. Only the published compiler is used; it is never built or published by this lane. Final proof remains pending.
 
 ## Dropped during the October 17 refresh
 
