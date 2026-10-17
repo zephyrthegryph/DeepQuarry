@@ -1130,6 +1130,7 @@
 #include "../benchmarks/dx_deps.dm"
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
