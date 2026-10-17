@@ -127,7 +127,7 @@ impl Drop for Registration {
 }
 
 /// Register this daemon in the machine registry (heartbeat, busy flag, retire flag). Registration never retires or counts other
-/// daemons: a daemon leaves only for idleness (`idle_exit`), for being a superseded version nobody uses (`superseded_idle_due`),
+/// daemons: a daemon leaves only for idleness (`idle_exit`), for being a superseded version nobody uses (`superseded`),
 /// or on an explicit `--daemon-retire`. A newcomer never replaces an incumbent; each compiler version has its own daemon and
 /// its own sessions, and a development build runs in a private namespace (`isolate_development_build`).
 /// Failure to register is logged and never prevents the daemon from serving.
@@ -214,6 +214,9 @@ pub fn isolate_development_build(identity: u128) {
     std::env::set_var("DMB_DAEMON_NAMESPACE", &name[..20]);
 }
 
+/// How long an older-build daemon (one without the immediate self-exit) must be idle before the current daemon asks it to retire.
+pub(super) const SUPERSEDED_IDLE: Duration = Duration::from_secs(120);
+
 /// A published version that is not `<bin>/current` is superseded: one latest compiler serves everyone, so the daemon finishes its
 /// in-flight builds, refuses new ones and exits as soon as nothing is running; clients resolve `current` per compile and reach the
 /// new daemon (an old executable that still gets invoked forwards to it, see `forward_target`).
@@ -231,6 +234,57 @@ pub fn forward_target() -> Option<PathBuf> {
     let id = fs::read_to_string(bin.join("current")).ok()?.trim().to_owned();
     let target = bin.join("v").join(&id).join(exe.file_name()?);
     target.is_file().then_some(target)
+}
+
+/// The published layout `<bin>/v/<id>/dmbc` split into (`<bin>`, id) when `exe` is a published compiler.
+fn published_parts(exe: &Path) -> Option<(PathBuf, String)> {
+    let version = exe.parent()?;
+    let versions = version.parent()?;
+    let id = version.file_name()?.to_str()?;
+    let published = versions.file_name().is_some_and(|name| name == "v") && id.len() == 16 && id.bytes().all(|byte| byte.is_ascii_hexdigit());
+    published.then(|| (versions.parent().map(Path::to_path_buf).unwrap_or_default(), id.to_ascii_lowercase()))
+}
+
+/// Peers (by pid) of a superseded published version that nobody is using: registered under the same `<bin>`, a version other than
+/// `current`, alive (fresh heartbeat), not building, not already retiring, and idle for `SUPERSEDED_IDLE`. A superseded daemon
+/// retires itself (`superseded`), but only a daemon that is new enough to contain that check does; the compiler that
+/// published a newer version is the one party that is certain to, so it asks the older ones to drain through the same
+/// `<pid>.retire` flag every earlier registry-aware build already honors in its heartbeat. A peer that never registered cannot be
+/// seen here and still leaves by its own idle exit.
+fn superseded_peers(records: &[Record], own_exe: &Path, current: &str, own_pid: u32, now: u64) -> Vec<u32> {
+    let Some((own_bin, own_id)) = published_parts(own_exe) else { return Vec::new() };
+    if !own_id.eq_ignore_ascii_case(current) {
+        return Vec::new();
+    }
+    records
+        .iter()
+        .filter(|record| record.pid != own_pid && !record.busy && !record.retiring)
+        .filter(|record| now.saturating_sub(record.beat_ms) < BEAT_FRESH.as_millis() as u64)
+        .filter(|record| now.saturating_sub(record.active_ms) >= SUPERSEDED_IDLE.as_millis() as u64)
+        .filter(|record| {
+            published_parts(Path::new(&record.exe))
+                .is_some_and(|(bin, id)| same_exe(&bin.display().to_string(), &own_bin.display().to_string()) && id != current.to_ascii_lowercase())
+        })
+        .map(|record| record.pid)
+        .collect()
+}
+
+/// Ask every idle superseded peer to retire (see `superseded_peers`). Returns the pids asked.
+pub(super) fn retire_superseded_peers() -> Vec<u32> {
+    let Ok(own) = std::env::current_exe() else { return Vec::new() };
+    let Some((bin, _)) = published_parts(&own) else { return Vec::new() };
+    let Some(current) = fs::read_to_string(bin.join("current")).ok().map(|text| text.trim().to_owned()) else { return Vec::new() };
+    let dir = state_dir();
+    let pids = superseded_peers(&read_records(&dir), &own, &current, std::process::id(), now_ms());
+    let mut asked = Vec::new();
+    for pid in pids {
+        let flag = retire_flag(&dir, pid);
+        if !flag.exists() && fs::write(&flag, b"superseded").is_ok() {
+            super::emit_stderr(format_args!("dmbd asked superseded daemon pid={pid} to retire (a newer compiler is current and it has been idle)"));
+            asked.push(pid);
+        }
+    }
+    asked
 }
 
 /// A draining daemon of this very executable is still alive and recently heartbeating. A client that finds the endpoint
@@ -361,6 +415,43 @@ mod tests {
         assert!(!superseded(Provenance::Current));
         assert!(!superseded(Provenance::Candidate));
         assert!(!superseded(Provenance::Development));
+    }
+
+    #[test]
+    fn current_daemon_asks_only_idle_live_superseded_peers_of_its_own_bin_to_retire() {
+        let exe = |bin: &str, id: &str| format!("{bin}/v/{id}/dmbc.exe");
+        let record = |pid: u32, exe: String, active: u64, beat: u64, busy: bool, retiring: bool| Record {
+            pid,
+            exe,
+            namespace: None,
+            started_ms: 0,
+            active_ms: active,
+            beat_ms: beat,
+            busy,
+            retiring,
+        };
+        let now = 10_000_000u64;
+        let idle = now - 121_000;
+        let fresh = now - 1_000;
+        let cur = "643a75e76011938e";
+        let old = "ebfc6fb0e7c801a8";
+        let own = PathBuf::from(exe("E:/dq-cache/dmb-bin", cur));
+        let records = vec![
+            record(1, exe("E:/dq-cache/dmb-bin", old), idle, fresh, false, false),
+            record(2, exe("E:/dq-cache/dmb-bin", old), now - 60_000, fresh, false, false),
+            record(3, exe("E:/dq-cache/dmb-bin", old), idle, fresh, true, false),
+            record(4, exe("E:/dq-cache/dmb-bin", old), idle, fresh, false, true),
+            record(5, exe("E:/dq-cache/dmb-bin", old), idle, now - 60_000, false, false),
+            record(6, exe("E:/other-bin", old), idle, fresh, false, false),
+            record(7, exe("E:/dq-cache/dmb-bin", cur), idle, fresh, false, false),
+            record(8, "E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe".to_owned(), idle, fresh, false, false),
+            record(9, exe("E:/dq-cache/dmb-bin", "D6FFBB1A7A4FA369"), idle, fresh, false, false),
+        ];
+        // Only 1 (idle, alive, other version) and 9 (another old version, id compared case-blind) qualify.
+        assert_eq!(superseded_peers(&records, &own, cur, 99, now), vec![1, 9]);
+        // A daemon that is itself superseded, or a development build, asks nobody.
+        assert!(superseded_peers(&records, &PathBuf::from(exe("E:/dq-cache/dmb-bin", old)), cur, 99, now).is_empty());
+        assert!(superseded_peers(&records, Path::new("E:/projects/x/target/release/dmbc.exe"), cur, 99, now).is_empty());
     }
 
     #[test]
