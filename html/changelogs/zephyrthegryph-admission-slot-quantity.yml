@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Slots can take a quantity: slot(unit =, quantity =, capacity = nameof(var)) with a per-instance limit, and move_into(amount =) moves as many units as fit (stacks split on the way in)"
