@@ -293,6 +293,8 @@ impl Shared {
     /// or after `MEMORY_WAIT`, the build is admitted anyway and the shortfall is logged, so a machine that is simply too small
     /// slows down instead of refusing every build.
     fn await_memory(&self, key: &SessionKey, hot: bool) -> io::Result<()> {
+        // The daemon-wide budget applies to every mode: a build is admitted against what it is expected to add.
+        self.enforce_retained_budget(Some(key), expected_growth(key, hot).min(soft_memory::retained_budget() / 2));
         let Some(reserve) = soft_memory::adaptive_reserve() else { return Ok(()) };
         let need = expected_growth(key, hot);
         let started = Instant::now();
@@ -346,6 +348,48 @@ impl Shared {
             reserve as f64 / 1e9
         ));
         true
+    }
+    /// The daemon-wide retained-memory budget (`soft_memory::retained_budget`, default 20 GB): while the process holds more private
+    /// memory than that and another idle session exists, release the least recently used idle session whole. The most recently used
+    /// session and any session that is building are never released for the budget, so a lone session larger than the budget stays
+    /// resident. `reserve` is memory a build about to be admitted will add. True when anything was released.
+    fn enforce_retained_budget(&self, keep: Option<&SessionKey>, reserve: u64) -> bool {
+        let budget = soft_memory::retained_budget();
+        let mut released = false;
+        loop {
+            let Some(private) = transport::private_bytes() else { return released };
+            if private.saturating_add(reserve) <= budget {
+                return released;
+            }
+            let victim = {
+                let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+                let sessions: Vec<(SessionKey, Instant, bool)> = slots
+                    .iter()
+                    .map(|(key, slot)| {
+                        let idle = Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok();
+                        // The session being admitted counts as the newest even before its use is recorded.
+                        let last = if keep == Some(key) { Instant::now() } else { *slot.last.lock().unwrap_or_else(|e| e.into_inner()) };
+                        (key.clone(), last, idle)
+                    })
+                    .collect();
+                soft_memory::budget_victim(&sessions).and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
+            };
+            let Some((key, slot)) = victim else { return released };
+            note_eviction(&key, "memory-budget");
+            drop(slot);
+            let after = self.reclaim_allocator(transport::private_bytes());
+            released = true;
+            super::emit_stderr(format_args!(
+                "dmbd memory budget: released least recently used idle session {} (budget {:.1} GB, private-before={private} private-after={after:?}, reserved for admission {:.1} GB)",
+                key.manifest.display(),
+                budget as f64 / 1e9,
+                reserve as f64 / 1e9
+            ));
+            if after.is_none_or(|bytes| bytes >= private) {
+                // The release returned nothing (allocator slack): do not walk every remaining session on one sample.
+                return released;
+            }
+        }
     }
     /// Return freed pages to the OS before any pressure decision. Freed-but-
     /// committed allocator pages (transient composition/encode peaks, exited
@@ -553,6 +597,9 @@ impl Shared {
                 bytes = self.reclaim_allocator(transport::private_bytes());
             }
         }
+        if self.enforce_retained_budget(None, 0) {
+            bytes = transport::private_bytes();
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -646,6 +693,7 @@ pub(super) fn serve() -> io::Result<()> {
             })?;
     }
     let mut beat = Instant::now();
+    let mut peers_checked = Instant::now();
     let mut retiring_since: Option<Instant> = None;
     let mut beat_retiring = false;
     loop {
@@ -674,6 +722,10 @@ pub(super) fn serve() -> io::Result<()> {
                     super::resident::SUPERSEDED_IDLE.as_secs()
                 ));
                 shared.retire();
+            }
+            if !retiring && peers_checked.elapsed() >= Duration::from_secs(30) {
+                peers_checked = Instant::now();
+                let _ = super::resident::retire_superseded_peers();
             }
             if let Some(registration) = registration.as_mut() {
                 if registration.beat(busy, retiring) && !retiring {
