@@ -4,6 +4,14 @@
 //	contributes(STAT_X, cond | value | STAT_Y, priority =, reason =, key =, reads =)
 //	contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =, reads =)
 //
+//	factors(table, scale =, stacks =, to =, part =, priority =, reads =, key =)
+//
+// factors() is the table form: the type's source (an affliction, a stasis hold, a body effect application) contributes a whole table (stat id -> value) to the
+// stats of the entity its relation var `to` names, at `scale` and `stacks`, exactly as hold_table() places one. `table` is a static alist or a PROC_REF
+// x(datum/act/eval/A) returning one (a stage table, a species-merged table); `scale` and `stacks` are a constant, nameof(v) of a tracked var, or a PROC_REF. The
+// entry re-holds at the exact new value whenever any of them (or the relation, or an enclosing when()) changes, with no banding, and releases its rows when the
+// source or the relation goes. It is a contributes_to entry whose value is a table.
+//
 // A contribution's second argument is a CONDITION when the stat is boolean and a VALUE when it is not: nameof(v) (a var), a PROC_REF (a holder proc
 // x(datum/act/A), which returns the boolean or the number), another stat's id, a capability key id, cond_not()/cond_all()/cond_any() of those, or a
 // constant. An enclosing when(cond, ...) gates the contribution: its condition is one of the stat's inputs, so the stat is right the moment the
@@ -35,6 +43,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 	var/list/reads
 	/// The target entity's relation var, for a contributes_to entry.
 	var/rel
+	/// A factors() entry: how its table, scale and stacks are read (CV_*), what each names, and the part its rows go under. table_kind is 0 for every other entry.
+	var/table_kind = 0
+	var/table_spec
+	var/scale_kind = CV_CONST
+	var/scale_spec = 1
+	var/stacks_kind = CV_CONST
+	var/stacks_spec = 1
+	var/part
 	var/serial = 0
 
 /// One dependent of an input key: a stat to recompute, or a contributes_to entry to re-evaluate.
@@ -96,6 +112,12 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 /proc/contributes_to(rel_var, stat_id, value = null, priority = PRIORITY_DEFAULT, key = null, list/reads = null)
 	return entry_make("contributes_to", key, list("rel" = rel_var, "stat" = stat_id, "value" = value, "priority" = priority, "reads" = reads))
 
+/// factors(table, scale =, stacks =, to =, part =): see the header. `to` is nameof(rel), the var naming the entity that receives the table.
+/proc/factors(table, scale = 1, stacks = 1, to = null, part = null, priority = PRIORITY_DEFAULT, list/reads = null, key = null)
+	if(isnull(to))
+		declare_report("factors(): `to` names the relation var of the entity that receives the table (to = nameof(owner))")
+	return entry_make("factors", key, list("table" = table, "scale" = scale, "stacks" = stacks, "rel" = to, "part" = part, "priority" = priority, "reads" = reads))
+
 /// immune_to(STATUS_X, when = cond): a contribution that zeroes the status (TRUE on its companion immunity stat).
 /proc/immune_to(status_id, when = null)
 	if(isnull(when))
@@ -144,7 +166,13 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 		var/datum/entry/entry = C.item
 		if(!istype(entry))
 			continue
-		if(entry.kind != "contributes" && entry.kind != "contributes_to")
+		if(entry.kind != "contributes" && entry.kind != "contributes_to" && entry.kind != "factors")
+			continue
+		if(entry.kind == "factors")
+			var/datum/stat_contrib/table_contrib = stat_factors_from(E, entry, C)
+			table_contrib.serial = --serial
+			I.ct_entries += table_contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
+			stat_index_table_inputs(E, I, table_contrib)
 			continue
 		var/datum/stat_contrib/contrib = stat_contrib_from(E, entry, C, I, T)
 		if(!contrib)
@@ -227,6 +255,34 @@ PROC_SUMMARY(/proc/stat_contrib_from) // vars[] / call() dispatcher: the walk ca
 		contrib.reads = stat_reads_union(contrib.reads, stat_generated_reads(E, spec))
 	return contrib
 
+/// How an argument of factors() (the table, scale or stacks) is read: a constant (a list or a number), a var of the holder, or a holder proc.
+/proc/stat_factors_kind(datum/E, spec)
+	if(istext(spec))
+		return (spec in E.vars) ? CV_VAR : CV_PROC
+	return CV_CONST
+
+/// The compiled form of one factors() entry.
+PROC_SUMMARY(/proc/stat_factors_from) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_factors_from(datum/E, datum/entry/entry, datum/centry/C)
+	var/datum/stat_contrib/contrib = new
+	contrib.priority = entry.args["priority"]
+	contrib.key = entry.key
+	contrib.origin = C.origin
+	contrib.reads = entry.args["reads"]
+	contrib.rel = entry.args["rel"]
+	contrib.part = entry.args["part"]
+	var/list/whens = null
+	for(var/datum/entry/W as anything in C.whens)
+		LAZYADD(whens, list(W))
+	contrib.whens = whens
+	contrib.table_spec = entry.args["table"]
+	contrib.table_kind = stat_factors_kind(E, contrib.table_spec)
+	contrib.scale_spec = entry.args["scale"]
+	contrib.scale_kind = stat_factors_kind(E, contrib.scale_spec)
+	contrib.stacks_spec = entry.args["stacks"]
+	contrib.stacks_kind = stat_factors_kind(E, contrib.stacks_spec)
+	return contrib
+
 GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (state_changed() asks before it calls the stat layer)
 
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
@@ -282,6 +338,29 @@ PROC_SUMMARY(/proc/stat_index_inputs) // vars[] / call() dispatcher: the walk ca
 		keys += list(read)
 	if(stat_id && length(untracked))
 		stat_note_untracked(I, stat_id, untracked)
+	stat_register_keys(E, I, keys, stat_id, contrib)
+
+/// The inputs of a factors() entry: what its table, scale and stacks read, its when() conditions and its reads.
+PROC_SUMMARY(/proc/stat_index_table_inputs) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_index_table_inputs(datum/E, datum/stat_type_info/I, datum/stat_contrib/contrib)
+	var/list/keys = list()
+	var/list/untracked = list()
+	stat_collect_condition_inputs(E, contrib.table_kind, contrib.table_spec, keys, untracked)
+	stat_collect_condition_inputs(E, contrib.scale_kind, contrib.scale_spec, keys, untracked)
+	stat_collect_condition_inputs(E, contrib.stacks_kind, contrib.stacks_spec, keys, untracked)
+	for(var/datum/entry/W as anything in contrib.whens)
+		stat_collect_tree_inputs(E, W.args["cond"], keys, untracked)
+		for(var/read in W.args["reads"])
+			keys += list(read)
+	for(var/read in contrib.reads)
+		keys += list(read)
+	if(length(untracked))
+		declare_report("[contrib.origin]: [declare_rule(RULE_STAT)] [E.type]: factors() reads what nothing publishes ([jointext(untracked, ", ")]): make it a TRACKED var, or the table would not follow it")
+	stat_register_keys(E, I, keys, null, contrib)
+
+/// Registers each input key of a contribution in the type's index (the shared tail of stat_index_inputs and stat_index_table_inputs).
+PROC_SUMMARY(/proc/stat_register_keys) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
+/proc/stat_register_keys(datum/E, datum/stat_type_info/I, list/keys, stat_id, datum/stat_contrib/contrib)
 	for(var/key in keys)
 		// A read through a list relation ("parts[].x") has no one target to follow: the stat cannot see it change.
 		if(istext(key) && findtext(key, "\[]"))
@@ -558,7 +637,14 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 				var/list/checked = schema_check(def.schema, contrib.value_spec)
 				if(checked[1] == SCHEMA_REJECT || checked[2])
 					declare_report("[contrib.origin]: [declare_rule(RULE_STAT)] [E.type]: a contribution of [contrib.value_spec] to [def.name] does not satisfy its schema ([checked[2]])")
+	var/list/parts_seen = list()
 	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
+		if(ct.table_kind)
+			var/part_key = "[ct.rel]/[ct.part]"
+			if(part_key in parts_seen)
+				declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: two factors() entries to [ct.rel] share the part [ct.part ? ct.part : "(none)"]: give each its own part =")
+			parts_seen[part_key] = TRUE
+			continue
 		var/datum/stat_def/ct_def = stat_def_of(ct.stat_id)
 		if(!ct_def)
 			declare_report("[ct.origin]: [declare_rule(RULE_STAT)] [E.type]: contributes_to() names stat [ct.stat_id], which is not declared")
@@ -622,7 +708,7 @@ PROC_SUMMARY(/proc/stat_formula_types) // vars[] / call() dispatcher: the walk c
 		return FALSE
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/entry = C.item
-		if(istype(entry) && (entry.kind == "contributes" || entry.kind == "contributes_to"))
+		if(istype(entry) && (entry.kind == "contributes" || entry.kind == "contributes_to" || entry.kind == "factors"))
 			return TRUE
 	if(!GLOB.stat_defs_built)
 		stat_defs_build()

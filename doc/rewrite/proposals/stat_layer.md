@@ -1,6 +1,6 @@
 # Proposal: the stat layer for body factors (phase 1, design only)
 
-Status: approved 2026-10-16 (decisions D1 to D10 as recommended); waves 0 to 2 in progress, wave 3 deferred. Branch `rewrite/stat-layer` (from origin/master `c3cb037784`). Scope: doc section 5
+Status: approved 2026-10-16 (decisions D1 to D10 as recommended); waves 0 to 2 landed; wave 3 (section 8) in progress. Branch `rewrite/stat-layer` (from origin/master `c3cb037784`). Scope: doc section 5
 (`final_api.html`), the body-factor (`BF_*`) system in `code/modules/body/factors.dm`, and the leftovers of the old grant and
 contribution store.
 
@@ -476,3 +476,25 @@ The reads that compare a factor with a constant, after the conversion (every oth
 | `stasis > STASIS_SLEEP_THRESHOLD` (`life.dm`) | MAX 0..1 | a maximum, never a sum: order cannot move it |
 | `allergy > 0` (`life.dm`, `life_medical_due()`) | SUM 0..inf | zero exactly when nothing contributes |
 | `pump <= 0` (`physiology.dm`), `resp_drive < SUPPORT_BVM_DRIVE` | PRODUCT | a table value of 0 gives exactly 0 under any order; the drive compares with a support floor of 0.4 |
+
+## 8. Wave 3: sources declare their tables (decided 2026-10-17)
+
+`CAPABILITIES` is on master, so wave 3 is writable. Decisions (user approved, recorded here as the doc's source of truth):
+
+1. **One new entry, `factors(table, scale =, stacks =, to =, part =, priority =, key =)`** (`code/engine/stats/contributes.dm`, doc section 5). It is `contributes_to` for a
+   table. `table` is a static `alist(STAT_X = v, ...)` or a `PROC_REF(x)` returning one (so a stage table and a species-merged reagent table are the same form);
+   `scale` and `stacks` are a constant, `nameof(v)` of a tracked var, or a `PROC_REF`; `to = nameof(rel)` names the relation var of the entity that receives the table (the
+   body or the mob the source belongs to). The engine holds the table with `hold_table()` on that entity (rows of the source, `part` as the key, flagged `HF_DECLARED`) and
+   releases it with `release_table()` when the relation changes, a `when()` gate closes, the scale is 0 or less, or either end is deleted.
+2. **Triggers are inputs, not events.** The scale, the stacks, what a table proc reads, the relation and a `when()` condition are indexed as inputs of the entry exactly like a
+   `contributes_to` entry's, so a tracked write re-holds at the exact new value before the writer's next line. **No band quantisation**: the within-band refresh that waves 1 and 2
+   kept is gone for a converted family, which makes it equal the old eager fold at every moment, so a converted family needs no `intended_changes.md` entry (the pins are the
+   proof). The receiver hears which of its stats moved through `factors_held(moved)`; `/mob/living` dirties the vitals and the physiology when one of `GLOB.factor_vitals_stats`
+   moved, as `refresh_factors()` does for the sources it still re-reads. A body's table pass (`hold_tables_begin()` / `hold_tables_end()`) leaves `HF_DECLARED` rows alone.
+3. **Order**: stasis, body effects, afflictions, reagents, plans (species, traits, form, worn items). After the last, the catch-all `refresh_factors()` re-read is deleted.
+4. **The lint.** `tools/ci/lint_scopes.toml` `[lint.check_grep.lists] factors_converted` lists the files of each converted family; a raw `factors =` table var there fails
+   `check_grep` (rule `raw_factors_table_vars_banned_in_converted_files`, hard, no waiver). A family's commit adds its files.
+5. **A source that is not an instance** (a body-effect definition is one flyweight per type, with its stacks on the mob) cannot hold a relation to the receiver: its
+   per-application instance (the effect's origin record, the stasis hold, the affliction) carries the entry, and a flyweight's table is read by the instance's table proc.
+
+Families converted so far: stasis (`/datum/stasis_hold` holds its level's table on its mob; `hold_stasis_factors()` deleted).

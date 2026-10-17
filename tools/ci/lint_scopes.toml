@@ -288,6 +288,9 @@ core = [
 [lint.check_grep.lists]
 # Field declarations reached zero independently of the wider interaction/hit sweeps.
 legacy_fields_converted = ["code/game/machinery/", "code/modules/power/"]
+# The files (a directory ends in `/`, else an exact file) of the source families whose stat tables moved into factors() entries in their CAPABILITIES blocks
+# (doc/rewrite/proposals/stat_layer.md section 8): a raw `factors =` table var there is a hard ban. Files are only ever added.
+factors_converted = []
 # The folders (a directory ends in `/`, else an exact file) where the legacy declaration forms of the sweeps (DECLARE_INTERACTIONS and EXTEND_INTERACTIONS,
 # DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its

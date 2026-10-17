@@ -188,7 +188,6 @@ PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from t
 			for(var/datum/affliction/A as anything in afflictions)
 				A.hold_factors(owner)
 			owner.hold_effect_factors()
-			owner.hold_stasis_factors()
 			hold_reagent_factors()
 			hold_plan_factors()
 			// Only a factor the cached vitals or the physiology read dirties them; the first pass, which fills the factors in for the first time,
@@ -206,6 +205,16 @@ PROC_SUMMARY(/datum/body/proc/refresh_factors) // writes the factor stats from t
 			break
 	while(factor_refresh_again)
 	factor_refresh_depth--
+
+/// A source's own factors() entry held or released a table on this mob (code/engine/stats/contributes.dm): the vitals and the physiology are dirty when a stat they
+/// read moved, as refresh_factors() does for the sources it still re-reads.
+/mob/living/factors_held(list/moved)
+	if(!body)
+		return
+	for(var/stat_id in moved)
+		if(!body.factors_primed || (stat_id in GLOB.factor_vitals_stats))
+			body.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
+			return
 
 /// The factor stats the cached vitals and the physiology read: pain and consciousness read analgesia, pain, sedation and pain immunity; the physiology reads
 /// the oxygen-transport chain (airway, drive, lungs, exchange, pump, circulation, demand, carriage, uptake, stabilisation) and the readouts it writes
