@@ -17,6 +17,7 @@
 
 /mob/living/carbon/human/draw(datum/look/look)
 	..()
+	look_hud_images(look)
 	look.overlay(look_appearance('icons/effects/effects.dmi', "lightning"), when = shock_aura)
 	look.overlay(pose_indicator, when = !!pose_indicator)
 	if(!species)
@@ -237,7 +238,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// Compose the body icon from every visible part, then tint it for husk or hulk. A cache builder (body_look()).
 /mob/living/carbon/human/proc/build_body_icon(wholeicontransparent, husk, hulk, skeleton)
 	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
-	var/icon/base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent))
+	var/icon/base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent, item_layers = FALSE))
 
 	var/apply_extra_transparency_leg = limb_tagged(BP_L_LEG) && limb_tagged(BP_R_LEG)
 	var/apply_extra_transparency_foot = limb_tagged(BP_L_FOOT) && limb_tagged(BP_R_FOOT)
@@ -246,7 +247,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	for(var/obj/item/organ/external/part in organs)
 		if(part.is_stump() || part == chest || limb_hidden(part)) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
 			continue
-		var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent))
+		var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent, item_layers = FALSE))
 
 		if(cutter && (part.organ_tag in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
 			temp.Blend(cutter[1], ICON_AND, x = cutter[2], y = cutter[3])

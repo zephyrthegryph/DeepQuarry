@@ -2,6 +2,7 @@
 /mob/living/simple_mob/vore/raptor ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/raptor has_eye_glow=1 +overlay: icons/mob/vore_raptor.dmi:raptorgreen-eyes:7
 /mob/living/simple_mob/vore/raptor has_eye_glow=2 +overlay: icons/mob/vore_raptor.dmi:raptorgreen-eyes:7
+/mob/living/simple_mob/vore/raptor has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/vore/raptor glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/vore/raptor glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/vore/raptor draws_life_state=0 +state: raptorpurple
@@ -10,6 +11,7 @@
 /mob/living/simple_mob/vore/raptor/yellow ghostjoin=2 +overlay: icons/mob/hud_vr.dmi:ghostjoin:10
 /mob/living/simple_mob/vore/raptor/yellow has_eye_glow=1 +overlay: icons/mob/vore_raptor.dmi:raptoryellow-eyes:7
 /mob/living/simple_mob/vore/raptor/yellow has_eye_glow=2 +overlay: icons/mob/vore_raptor.dmi:raptoryellow-eyes:7
+/mob/living/simple_mob/vore/raptor/yellow has_huds=0 -overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/vore/raptor/yellow glamour_shift=1 +overlay: icons/obj/glamour.dmi:animation:7
 /mob/living/simple_mob/vore/raptor/yellow glamour_shift=2 +overlay: icons/obj/glamour.dmi:animation:7
 
