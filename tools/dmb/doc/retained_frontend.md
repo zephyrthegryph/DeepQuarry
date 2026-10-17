@@ -325,3 +325,79 @@ Not yet: the default stays off until the other passes (declaration parsing, orig
 the same edit and the whole edit matrix has been verified. The previous plan is cloned
 (about 200 MB of region lines) because `DirectivePlan` is a plain value; sharing the regions behind
 an `Arc` would remove the clone and the touches' only other cost.
+
+## Retained session memory (lane `tools/dmb-session-memory`, 2026-10-17)
+
+Goal: at most 2 GB retained per project session and a much lower compile peak, so three sessions fit in
+8 GB. This section is the measurement; the cuts and their effect are appended below as each lands.
+
+### How to measure
+
+* **Live bytes by allocation call site (new).** Build with `--features allocation-sites` (a separate
+  `CARGO_TARGET_DIR`), run the daemon with `DMB_ALLOC_SITES_PATH=<file>`. After every request the
+  daemon writes `retained.after_request` (process private bytes, mimalloc commit, requested-live bytes) and the top
+  400 allocation sites by sampled live bytes (one sample per 2 MiB requested, size-weighted). The counting build
+  is slower (a cold production compile took 287 s instead of 130 s) but the retained set is the same.
+* **Per-stage owner census (existing).** `DMB_HEAP_CENSUS_PATH` writes one JSON report per pipeline stage
+  (`frontend.ready` ... `publication.ready`), `DMB_IDLE_CENSUS_PATH` one per idle-release boundary. Each report
+  counts only the owners that stage visits, so it covers 1 to 1.8 GiB where the process holds about 9 GB:
+  it does not see the observation/receipt store (below), which is the largest owner.
+* `dmbc --daemon-stats`, `E:/dq-cache/dmb-daemon/lifecycle.log` (shared by all namespaces) for peaks and release tiers.
+
+### Baseline (production `deepquarry.dme`, one native cold compile, 4 workers)
+
+| Quantity | Bytes |
+|---|---|
+| compile peak (`peak=` in the lifecycle log) | 12.2 GB (13.0 to 13.2 GB for `deepquarry.test.dme`) |
+| private after the request and `mi_collect` | 8.97 GB (11.95 GB before the reclaim) |
+| requested-live (counting build) | 7.43 GB |
+| mimalloc commit | 9.17 GB, so 1.74 GB (19%) is allocator slack (freed pages, thread heaps of finished workers) |
+| private right after a `tier=session` release | 3.0 to 3.15 GB, but the daemon's next allocator reclaim (within 30 s) takes it to 1.13 GB with 0.18 GB live (counting build, DMB_ALLOC_SITES_RELEASE) |
+
+Allocator findings (2026-10-17): after a build the daemon already joins idle workers and runs `mi_collect(true)`;
+`private` then equals mimalloc's commit (9.07 GB) against 7.40 GB requested-live. The 1.7 GB difference is
+size-class rounding and partly used pages pinned by long-lived small allocations, not freed pages, so purging more often
+or with a zero purge delay returns nothing (a second forced collect from a fresh thread was also tried: 1.18 GB residual,
+no change, reverted). Likewise the "3.1 GB with no session" is the transient between a session release and the next
+reclaim; the steady no-session residual is 1.13 GB (0.18 GB live: shared engine, filesystem proofs, source checks). Vec and
+hash-table slack in the census owners is 3 to 6 %. Remaining retained memory is data, not waste.
+
+### What the retained set holds (sampled live bytes at idle, 7.28 GB sampled total, top 400 sites = 6.30 GB)
+
+| Area | MB | Main owners (innermost frame) |
+|---|---|---|
+| observation and artifact store (`dm_session`) | 1,852 | `artifacts::incidence` 569 (scheduling index), `observations::receipt_pool` 389, `artifacts::leased` 387, `ObservedArtifactStore` 362, `observations::receipt` 139 |
+| declaration parse, tree, owner metadata (`dm_tree`) | 1,355 | `declaration_parse` 232, `owner_metadata::RetainedMetadata` 181, `adapter::walk` 152, `owner_normalization::receipts` 79, `KeyedDeclarations` 63 |
+| preprocessor | 1,093 | `region_memo` 286, `directives` 244, `directive_memo` 154, `expansion` 80, `prepared_source` 59 |
+| lowering memo and symbolic code | 602 | `lowering::memo` 119, `symbolic_input` 79, `SymbolicCode` 70 |
+| class projection, ABI, startup, other `dmbc` | 494 | `class_projection` 118, `driver_facts::abi_artifacts` 48 |
+| initializer policy and classification | 284 | `classification` 184, `modifier_facts` 90 |
+| DMB image and composition | 274 | `dmb::writing` 152 |
+| unattributed (only std/hashbrown frames in the 5 shown) | 344 | |
+
+The census structures the design names (expanded text 52 MiB, origin arena 40 MiB, source text 65 MiB, directive plan
+135 MiB, declaration AST 91 MiB, body arena 99 MiB) are small. The retained cost is dominated by per-unit
+observation receipts and per-region memos keyed by 87,000 procedures and 5,900 files, not by one big text.
+
+### Cost of releasing retained state (2026-10-17)
+
+Measured with the counting build (about 2.6x slower patches than the plain build: 14.3 s hot here against 5.4 s plain),
+one daemon per row, full uncached compile, idle ladder applied to the idle session
+(`DMB_ALLOC_SITES_RELEASE=<tier>`, diagnostic, feature `allocation-sites`), then a body edit:
+
+| Released up to | Private after | Next edit | The edit after that |
+|---|---|---|---|
+| nothing (hot) | 9.05 GB | patch 14.5 s | patch 14.2 s |
+| tier 2 (rich buffers) | 8.52 GB | patch 28.1 s | patch 11.7 s |
+| tier 3 (compiler artifacts) | 7.27 GB | full compile 108 s | patch 15.1 s |
+| tier 4 (optional images) | 6.91 GB | full compile 80 s | patch 14.4 s |
+| tier 5 (compact symbolic) | 5.85 GB | full compile 99 s | patch 13.0 s |
+| tier 6 (remaining optional) | 5.50 GB | full compile 74 s | patch 13.5 s |
+| tier 7 (whole session, plain build) | about 1.1 GB | full compile 169 s counting | patch 12.8 s |
+
+Findings: the disk memos make a released edit a 74 to 108 s compile (against 120 to 130 s cold), not a few seconds,
+because a released session leaves no patch base ("patch declined: no patch base retained"). Every tier from 3 up costs the
+next edit a full compile, so shortening the idle release (or the 30-minute MRU shield) would trade a full compile per
+returning edit for the memory. The 1.85 GB observation store is part of what tier 3 drops: evicting it means relowering
+(45 s in the released run), so it is not a cheap lazy rebuild. Revisit when record hits leave a patch base (lane
+`tools/dmb-real-world`): a released edit could then patch from persisted records.

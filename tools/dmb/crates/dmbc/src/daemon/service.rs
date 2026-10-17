@@ -284,6 +284,7 @@ impl Shared {
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        housekeeping::allocations::dump_sites(&format!("after_request private={after:?}"));
         after
     }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
@@ -436,6 +437,24 @@ impl Shared {
         if self.retiring.load(Ordering::Acquire) && self.release_for_retire() {
             bytes = self.reclaim_allocator(transport::private_bytes());
         }
+        // Diagnostic (feature `allocation-sites` only): 20 s after a build, release the idle session and dump what the
+        // daemon still holds with no session, to attribute that residual.
+        #[cfg(feature = "allocation-sites")]
+        if running == 0
+            && std::env::var_os("DMB_ALLOC_SITES_RELEASE").is_some()
+            && BUILDS_FINISHED.load(Ordering::Acquire) > 0
+            && !DIAG_RELEASED.swap(true, Ordering::AcqRel)
+        {
+            std::thread::sleep(Duration::from_secs(20));
+            let upto = std::env::var("DMB_ALLOC_SITES_RELEASE").ok().and_then(|text| text.parse::<usize>().ok());
+            if match upto {
+                Some(tier) if (2..housekeeping::SESSION_RELEASE).contains(&tier) => self.diag_release_tiers(tier),
+                Some(0) => false,
+                _ => self.release_for_retire(),
+            } {
+                bytes = self.reclaim_allocator(transport::private_bytes());
+            }
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -449,6 +468,8 @@ impl Shared {
 }
 const RECLAIM_LOG_MIN_BYTES: u64 = 64 << 20;
 static PRESSURE_RECLAIMED: Mutex<Option<Instant>> = Mutex::new(None);
+#[cfg(feature = "allocation-sites")]
+static DIAG_RELEASED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
 static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
 struct Permit(Arc<Shared>, usize);
