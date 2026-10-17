@@ -286,7 +286,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /datum/relation_definition/slot/proc/accepts_plan_of()
 	if(!accepts_planned)
 		accepts_planned = TRUE
-		var/list/parts = accepts_requirements()
+		var/list/parts = entry_flatten(list(accepts_requirements()))
 		if(length(parts))
 			accepts_plan = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
 	return accepts_plan
@@ -295,7 +295,7 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 /datum/relation_definition/slot/proc/fits_plan_of()
 	if(!fits_planned)
 		fits_planned = TRUE
-		var/list/parts = fits_requirements()
+		var/list/parts = entry_flatten(list(fits_requirements()))
 		if(length(parts))
 			fits_plan = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
 	return fits_plan
