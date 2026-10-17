@@ -495,13 +495,13 @@ PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot ent
 	declare_report("hook on [A.holder?.type]: part [part.kind] cannot run in a hook (an effect, says() or plays() can)")
 
 /// A needs hook's verdict: null to let the action go on, else the refusal reason. The hook's children are requirements (the part engine's
-/// req_* constructors, or a legacy requirement with a form in the new engine), asked in the action's own context.
+/// req_* constructors), asked in the action's own context.
 /proc/act_needs_refusal(datum/act/A, datum/hook/H)
 	if(istype(A, /datum/act/insert) || istype(A, /datum/act/remove))
 		var/datum/act/action/F = A
 		return op_transfer_action_requirement(F, H)
 	for(var/child in H.entry.children)
-		if(istype(child, /datum/entry/part/req) || istype(child, /datum/requirement))
+		if(istype(child, /datum/entry/part/req))
 			if(!op_req_holds(A, child))
 				return op_req_refusal(A, child)
 	return null

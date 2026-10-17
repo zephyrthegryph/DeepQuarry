@@ -445,7 +445,6 @@
 #include "dq_ui_pins_admin.dm"
 #include "dq_ui_pins_other.dm"
 #include "dq_ui_outputs_tests.dm"
-#include "dx_op_ctx_tests.dm"
 #include "dx_menu_order.dm"
 #include "dx_menu_order_golden.dm"
 #include "dq_ability_tests.dm"
