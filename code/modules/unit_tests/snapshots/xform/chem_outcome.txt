@@ -1,0 +1,736 @@
+distilling/ale => important=0; p0=8; p50=8; end50=ale:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/beer => important=0; p0=8; p50=8; end50=beer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/berserkjuice => important=0; p0=12; p50=12; end50=berserkmed:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
+distilling/bicaridaze => important=0; p0=8; p50=8; end50=bicaridaze:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/biomass => important=0; p0=24; p50=24; end50=biomass:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/concentrate_radium => important=0; p0=4; p50=4; end50=concentrated_radium:4 uranium:1; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/condense_carbon => important=0; p0=0.0903; p50=0.0903; end50=carbon:0.0903 coolant:0.0382; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_fuel => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 fuel:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_methane => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 toxin:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_nitrogen => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 nitrogen:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_nitrox => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 nitrogen:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_oxygen => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 oxygen:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/condense_phoron => important=0; p0=0.0903; p50=0.0903; end50=coolant:0.0382 phoron:0.0903; gas50=2.7; spawned50=-; p100=0.0903; below=0; above=0
+distilling/cryogel => important=0; p0=4; p50=4; end50=cryoslurry:4; gas50=2.7; spawned50=/obj/effect/effect/smoke/elemental/frost+6; p100=4; below=0; above=0
+distilling/cyanide => important=0; p0=4; p50=4; end50=cyanide:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/deathclawmutagen => important=0; p0=8; p50=8; end50=deathclawmutagen:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/dermalaze => important=0; p0=8; p50=8; end50=dermalaze:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/drinks/berrytea => important=0; p0=24; p50=24; end50=berrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/berrytea_decaf => important=0; p0=24; p50=24; end50=berryteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/cherrytea => important=0; p0=24; p50=24; end50=cherrytea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/coffee => important=0; p0=20; p50=20; end50=coffee:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/drinks/decaftea => important=0; p0=20; p50=20; end50=teadecaf:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/drinks/greenteafresh => important=0; p0=40; p50=40; end50=freshteagreen:40; gas50=2.7; spawned50=-; p100=40; below=0; above=0
+distilling/drinks/hot_coco => important=0; p0=20; p50=20; end50=hot_coco:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/drinks/hot_ramen => important=0; p0=12; p50=12; end50=hot_ramen:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
+distilling/drinks/lemontea => important=0; p0=24; p50=24; end50=lemontea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/lemontea_decaf => important=0; p0=24; p50=24; end50=lemonteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/limetea => important=0; p0=24; p50=24; end50=limetea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/limetea_decaf => important=0; p0=24; p50=24; end50=limeteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/matcha => important=0; p0=8; p50=8; end50=matcha:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/drinks/matcha_latte => important=0; p0=20; p50=20; end50=matcha_latte:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/drinks/minttea => important=0; p0=24; p50=24; end50=minttea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/minttea_decaf => important=0; p0=24; p50=24; end50=mintteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/orangetea => important=0; p0=24; p50=24; end50=orangetea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/orangetea_decaf => important=0; p0=24; p50=24; end50=orangeteadecaf:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/drinks/tea => important=0; p0=20; p50=20; end50=tea:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/drinks/watermelontea => important=0; p0=24; p50=24; end50=watermelontea:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/energybooster => important=0; p0=8; p50=8; end50=energybooster:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/ethanol => important=0; p0=8; p50=8; end50=ethanol:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/eznutrient => important=0; p0=4; p50=4; end50=eznutrient:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/fertilizer => important=0; p0=12; p50=12; end50=fertilizer:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
+distilling/fuel_phoron => important=0; p0=3; p50=3; end50=phoron:3; gas50=2.7; spawned50=-; p100=3; below=1; above=1
+distilling/heatnullifer => important=0; p0=8; p50=8; end50=heatnullifer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/hydrogen => important=0; p0=8; p50=8; end50=hydrogen:8 platinum:1; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/inaprovalaze => important=0; p0=8; p50=8; end50=inaprovalaze:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/juggernog => important=0; p0=20; p50=20; end50=juggernog:20; gas50=2.7; spawned50=-; p100=20; below=0; above=0
+distilling/leftforzed => important=0; p0=4; p50=4; end50=left4zed:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/lichpowder => important=0; p0=8; p50=8; end50=lichpowder:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/marker_ink_black => important=0; p0=4; p50=4; end50=marker_ink_black:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_blue => important=0; p0=4; p50=4; end50=marker_ink_blue:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_brown => important=0; p0=4; p50=4; end50=marker_ink_brown:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_green => important=0; p0=4; p50=4; end50=marker_ink_green:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_grey => important=0; p0=4; p50=4; end50=marker_ink_grey:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_orange => important=0; p0=4; p50=4; end50=marker_ink_orange:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_purple => important=0; p0=4; p50=4; end50=marker_ink_purple:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_red => important=0; p0=4; p50=4; end50=marker_ink_red:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/marker_ink_yellow => important=0; p0=4; p50=4; end50=marker_ink_yellow:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/mineralized_carbon => important=0; p0=4; p50=4; end50=carbon:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/mineralized_sodium => important=0; p0=4; p50=4; end50=sodium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/necroxadone => important=0; p0=8; p50=8; end50=necroxadone:8 phoron:5; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/oceaniccure => important=0; p0=8; p50=8; end50=oceaniccure:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/oxygen => important=0; p0=4; p50=4; end50=oxygen:4 platinum:1; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/phoenixbreath => important=0; p0=24; p50=24; end50=phoenixbreath:24; gas50=2.7; spawned50=-; p100=24; below=0; above=0
+distilling/reduce_salt => important=0; p0=2; p50=2; end50=sodium:2; gas50=2.7; spawned50=-; p100=2; below=0; above=0
+distilling/robustharvest => important=0; p0=4; p50=4; end50=robustharvest:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/sacid => important=0; p0=4; p50=4; end50=sacid:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/senseenhancer => important=0; p0=8; p50=8; end50=senseenhancer:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/spacomycaze => important=0; p0=8; p50=8; end50=spacomycaze:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+distilling/sugar => important=0; p0=3; p50=3; end50=sugar:3 water:1; gas50=2.7; spawned50=-; p100=3; below=1; above=1
+distilling/synthplas => important=0; p0=12; p50=12; end50=synthblood_dilute:12; gas50=2.7; spawned50=-; p100=12; below=0; above=0
+distilling/titanium_refine => important=0; p0=4; p50=4; end50=titanium:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/toxin => important=0; p0=4; p50=4; end50=toxin:4; gas50=2.7; spawned50=-; p100=4; below=0; above=0
+distilling/tricorlidaze => important=0; p0=8; p50=8; end50=tricorlidaze:8; gas50=2.7; spawned50=-; p100=8; below=0; above=0
+instant/adranol => important=0; match=1; fired=instant/adranol; end=adranol:12; spawned=-; contract=1; uses=-
+instant/alizene => important=0; match=1; fired=instant/alizene; end=alizene:12; spawned=-; contract=1; uses=-
+instant/alkysine => important=0; match=1; fired=instant/alkysine; end=alkysine:8; spawned=-; contract=1; uses=-
+instant/aluminum_paint => important=0; match=1; fired=instant/aluminum_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/ammonia => important=0; match=1; fired=instant/ammonia; end=ammonia:12; spawned=-; contract=1; uses=-
+instant/amorphorovir => important=0; match=1; fired=instant/amorphorovir; end=amorphorovir:4 phoron:5; spawned=-; contract=1; uses=-
+instant/androgynorovir => important=0; match=1; fired=instant/androgynorovir; end=androgynorovir:4; spawned=-; contract=1; uses=-
+instant/androgynorovir_bootleg => important=0; match=1; fired=instant/androgynorovir_bootleg; end=androgynorovir:4; spawned=-; contract=1; uses=-
+instant/androrovir => important=0; match=1; fired=instant/androrovir; end=androrovir:4; spawned=-; contract=1; uses=-
+instant/androrovir_bootleg => important=0; match=1; fired=instant/androrovir_bootleg; end=androrovir:4; spawned=-; contract=1; uses=-
+instant/antibodies => important=0; match=1; fired=instant/antibodies; end=antibodies:2 inaprovaline:0.1; spawned=-; contract=1; uses=-
+instant/aphrodisiac => important=0; match=1; fired=instant/aphrodisiac; end=aphrodisiac:24; spawned=-; contract=1; uses=-
+instant/arithrazine => important=0; match=1; fired=instant/arithrazine; end=arithrazine:8; spawned=-; contract=1; uses=-
+instant/artificial_sustenance => important=0; match=1; fired=instant/artificial_sustenance; end=a_sustenance:4; spawned=-; contract=1; uses=-
+instant/banana_juice_metal_paint => important=0; match=1; fired=instant/banana_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/banana_juice_paint => important=0; match=1; fired=instant/banana_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/benzilate => important=0; match=1; fired=instant/benzilate; end=benzilate:8; spawned=-; contract=1; uses=-
+instant/berry_juice_metal_paint => important=0; match=1; fired=instant/berry_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/berry_juice_paint => important=0; match=1; fired=instant/berry_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/bicaridine => important=0; match=1; fired=instant/bicaridine; end=bicaridine:8; spawned=-; contract=1; uses=-
+instant/biomass => important=0; match=1; fired=instant/biomass; end=biomass:24; spawned=-; contract=1; uses=-
+instant/bliss => important=0; match=1; fired=instant/bliss; end=bliss:12; spawned=-; contract=1; uses=-
+instant/blob_reconstitution => important=0; match=0; fired=-; end=phoron:240; spawned=-; contract=0; uses=-
+instant/blob_reconstitution/domination => important=0; match=0; fired=-; end=hydrophoron:160 mutagen:80 peridaxon:80; spawned=-; contract=0; uses=-
+instant/bloodsealer => important=0; match=1; fired=instant/bloodsealer; end=bloodsealer:8; spawned=-; contract=1; uses=-
+instant/blood_paint => important=0; match=1; fired=instant/blood_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/blue_metal_paint => important=0; match=1; fired=instant/blue_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/blue_paint => important=0; match=1; fired=instant/blue_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/brown_metal_paint => important=0; match=1; fired=instant/brown_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/brown_paint => important=0; match=1; fired=instant/brown_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/bullvalene => important=0; match=1; fired=instant/bullvalene; end=bullvalene:4; spawned=-; contract=1; uses=-
+instant/burncard => important=0; match=1; fired=instant/burncard; end=burncard:8; spawned=-; contract=1; uses=-
+instant/calciumcarbonate => important=0; match=1; fired=instant/calciumcarbonate; end=calciumcarbonate:8; spawned=-; contract=1; uses=-
+instant/carbon_paint => important=0; match=1; fired=instant/carbon_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/carpetdye => important=0; match=1; fired=instant/carpetdye; end=liquidcarpetb:20; spawned=-; contract=1; uses=-
+instant/carpetdye/blue => important=0; match=1; fired=instant/carpetdye/blue; end=liquidcarpetblu:20; spawned=-; contract=1; uses=-
+instant/carpetdye/clown => important=0; match=1; fired=instant/carpetdye/clown; end=liquidcarpetc:20; spawned=-; contract=1; uses=-
+instant/carpetdye/orange => important=0; match=1; fired=instant/carpetdye/orange; end=liquidcarpeto:20; spawned=-; contract=1; uses=-
+instant/carpetdye/purple => important=0; match=1; fired=instant/carpetdye/purple; end=liquidcarpetp:20; spawned=-; contract=1; uses=-
+instant/carpetdye/sblu => important=0; match=1; fired=instant/carpetdye/sblu; end=liquidcarpetsblu:20; spawned=-; contract=1; uses=-
+instant/carpetdye/tur => important=0; match=1; fired=instant/carpetdye/tur; end=liquidcarpettur:20; spawned=-; contract=1; uses=-
+instant/carpetify => important=0; match=1; fired=instant/carpetify; end=-; spawned=/obj/item/stack/tile/carpet+1; contract=0; uses=-
+instant/carpetify/bcarpet => important=0; match=1; fired=instant/carpetify/bcarpet; end=-; spawned=/obj/item/stack/tile/carpet/bcarpet+1; contract=0; uses=-
+instant/carpetify/blucarpet => important=0; match=1; fired=instant/carpetify/blucarpet; end=-; spawned=/obj/item/stack/tile/carpet/blucarpet+1; contract=0; uses=-
+instant/carpetify/clowncarpet => important=0; match=1; fired=instant/carpetify/clowncarpet; end=-; spawned=/obj/item/stack/tile/carpet/gaycarpet+1; contract=0; uses=-
+instant/carpetify/ocarpet => important=0; match=1; fired=instant/carpetify/ocarpet; end=-; spawned=/obj/item/stack/tile/carpet/oracarpet+1; contract=0; uses=-
+instant/carpetify/pcarpet => important=0; match=1; fired=instant/carpetify/pcarpet; end=-; spawned=/obj/item/stack/tile/carpet/purcarpet+1; contract=0; uses=-
+instant/carpetify/sblucarpet => important=0; match=1; fired=instant/carpetify/sblucarpet; end=-; spawned=/obj/item/stack/tile/carpet/sblucarpet+1; contract=0; uses=-
+instant/carpetify/turcarpet => important=0; match=1; fired=instant/carpetify/turcarpet; end=-; spawned=/obj/item/stack/tile/carpet/turcarpet+1; contract=0; uses=-
+instant/carpotoxin => important=0; match=1; fired=instant/carpotoxin; end=carpotoxin:8 sifsap:2; spawned=-; contract=1; uses=-
+instant/carrot_juice_metal_paint => important=0; match=1; fired=instant/carrot_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/carrot_juice_paint => important=0; match=1; fired=instant/carrot_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/carthatoline => important=0; match=1; fired=instant/carthatoline; end=carthatoline:8 phoron:0.6; spawned=-; contract=1; uses=-
+instant/chemsmoke => important=0; match=1; fired=instant/chemsmoke; end=-; spawned=/obj/effect/effect/smoke/chem+1; contract=0; uses=-
+instant/chloralhydrate => important=0; match=1; fired=instant/chloralhydrate; end=chloralhydrate:4; spawned=-; contract=1; uses=-
+instant/citalopram => important=0; match=1; fired=instant/citalopram; end=citalopram:12; spawned=-; contract=1; uses=-
+instant/claridyl => important=0; match=1; fired=instant/claridyl; end=claridyl:4; spawned=-; contract=1; uses=-
+instant/cleansingagent => important=0; match=1; fired=instant/cleansingagent; end=cleansingagent:8; spawned=-; contract=1; uses=-
+instant/clonexadone => important=0; match=1; fired=instant/clonexadone; end=clonexadone:8 phoron:4.6; spawned=-; contract=1; uses=-
+instant/concrete => important=0; match=1; fired=instant/concrete; end=-; spawned=/obj/item/stack/material/concrete+1; contract=0; uses=-
+instant/condensedcapsaicin => important=0; match=1; fired=instant/condensedcapsaicin; end=condensedcapsaicin:4 phoron:5; spawned=-; contract=1; uses=-
+instant/coolant => important=1; match=1; fired=instant/coolant; end=coolant:12; spawned=-; contract=1; uses=-
+instant/cordradaxon => important=0; match=1; fired=instant/cordradaxon; end=cordradaxon:8 phoron:5; spawned=-; contract=1; uses=-
+instant/corophizine => important=0; match=1; fired=instant/corophizine; end=corophizine:8 phoron:4.6; spawned=-; contract=1; uses=-
+instant/cryoxadone => important=0; match=1; fired=instant/cryoxadone; end=cryoxadone:12; spawned=-; contract=1; uses=-
+instant/cryptobiolin => important=0; match=1; fired=instant/cryptobiolin; end=cryptobiolin:12; spawned=-; contract=1; uses=-
+instant/cube/sagaru => important=0; match=1; fired=instant/cube/sagaru; end=-; spawned=/obj/item/reagent_containers/food/snacks/monkeycube/sarucube+4; contract=0; uses=-
+instant/curea => important=0; match=1; fired=instant/curea; end=curea:16; spawned=-; contract=1; uses=-
+instant/dermaline => important=0; match=1; fired=instant/dermaline; end=dermaline:12; spawned=-; contract=1; uses=-
+instant/deuterium => important=0; match=1; fired=instant/deuterium; end=deuterium:12; spawned=-; contract=1; uses=-
+instant/dexalin => important=0; match=1; fired=instant/dexalin; end=dexalin:4 phoron:0.6; spawned=-; contract=1; uses=-
+instant/dexalinp => important=0; match=1; fired=instant/dexalinp; end=dexalinp:12; spawned=-; contract=1; uses=-
+instant/diethylamine => important=0; match=1; fired=instant/diethylamine; end=diethylamine:8; spawned=-; contract=1; uses=-
+instant/dontcrossthebeams => important=0; match=1; fired=instant/dontcrossthebeams; end=-; spawned=-; contract=0; uses=-
+instant/drinks/acidspit => important=0; match=1; fired=instant/drinks/acidspit; end=acidspit:24; spawned=-; contract=1; uses=-
+instant/drinks/alliescocktail => important=0; match=1; fired=instant/drinks/alliescocktail; end=alliescocktail:8; spawned=-; contract=1; uses=-
+instant/drinks/aloe => important=0; match=1; fired=instant/drinks/aloe; end=aloe:12; spawned=-; contract=1; uses=-
+instant/drinks/amasec => important=0; match=1; fired=instant/drinks/amasec; end=amasec:40; spawned=-; contract=1; uses=-
+instant/drinks/americano => important=0; match=1; fired=instant/drinks/americano; end=americano:12; spawned=-; contract=1; uses=-
+instant/drinks/andalusia => important=0; match=1; fired=instant/drinks/andalusia; end=andalusia:12; spawned=-; contract=1; uses=-
+instant/drinks/angelskiss => important=0; match=1; fired=instant/drinks/angelskiss; end=angelskiss:12; spawned=-; contract=1; uses=-
+instant/drinks/angelswrath => important=0; match=1; fired=instant/drinks/angelswrath; end=angelswrath:24; spawned=-; contract=1; uses=-
+instant/drinks/antifreeze => important=0; match=1; fired=instant/drinks/antifreeze; end=antifreeze:12; spawned=-; contract=1; uses=-
+instant/drinks/appleade => important=0; match=1; fired=instant/drinks/appleade; end=appleade:12; spawned=-; contract=1; uses=-
+instant/drinks/applejuice => important=0; match=1; fired=instant/drinks/applejuice; end=applejuice:12; spawned=-; contract=1; uses=-
+instant/drinks/appletini => important=0; match=1; fired=instant/drinks/appletini; end=appletini:12; spawned=-; contract=1; uses=-
+instant/drinks/arachnidslammer => important=0; match=1; fired=instant/drinks/arachnidslammer; end=arachnidslammer:12; spawned=-; contract=1; uses=-
+instant/drinks/arnoldpalmer => important=0; match=1; fired=instant/drinks/arnoldpalmer; end=arnold_palmer:8; spawned=-; contract=1; uses=-
+instant/drinks/atomicbomb => important=0; match=1; fired=instant/drinks/atomicbomb; end=atomicbomb:40; spawned=-; contract=1; uses=-
+instant/drinks/b52 => important=0; match=1; fired=instant/drinks/b52; end=b52:12; spawned=-; contract=1; uses=-
+instant/drinks/bahama_mama => important=0; match=1; fired=instant/drinks/bahama_mama; end=bahama_mama:24; spawned=-; contract=1; uses=-
+instant/drinks/balloon => important=0; match=1; fired=instant/drinks/balloon; end=balloon:8; spawned=-; contract=1; uses=-
+instant/drinks/bananahonk => important=0; match=1; fired=instant/drinks/bananahonk; end=bananahonk:12; spawned=-; contract=1; uses=-
+instant/drinks/barefoot => important=0; match=1; fired=instant/drinks/barefoot; end=barefoot:12; spawned=-; contract=1; uses=-
+instant/drinks/beepsky_smash => important=0; match=1; fired=instant/drinks/beepsky_smash; end=beepskysmash:8; spawned=-; contract=1; uses=-
+instant/drinks/berrycordial => important=0; match=1; fired=instant/drinks/berrycordial; end=berrycordial:20; spawned=-; contract=1; uses=-
+instant/drinks/berryshake => important=0; match=1; fired=instant/drinks/berryshake; end=berryshake:8; spawned=-; contract=1; uses=-
+instant/drinks/bigbeer => important=0; match=1; fired=instant/drinks/bigbeer; end=bigbeer:12; spawned=-; contract=1; uses=-
+instant/drinks/bilk => important=0; match=1; fired=instant/drinks/bilk; end=bilk:8; spawned=-; contract=1; uses=-
+instant/drinks/binmanbliss => important=0; match=1; fired=instant/drinks/binmanbliss; end=binmanbliss:8; spawned=-; contract=1; uses=-
+instant/drinks/bitters => important=0; match=1; fired=instant/drinks/bitters; end=bitters:20 enzyme:5; spawned=-; contract=1; uses=-
+instant/drinks/blackeye => important=0; match=1; fired=instant/drinks/blackeye; end=black_eye:4; spawned=-; contract=1; uses=-
+instant/drinks/black_russian => important=0; match=1; fired=instant/drinks/black_russian; end=blackrussian:12; spawned=-; contract=1; uses=-
+instant/drinks/bloody_mary => important=0; match=1; fired=instant/drinks/bloody_mary; end=bloodymary:24; spawned=-; contract=1; uses=-
+instant/drinks/bluecuracao => important=0; match=1; fired=instant/drinks/bluecuracao; end=bluecuracao:40 enzyme:5; spawned=-; contract=1; uses=-
+instant/drinks/bluetrain => important=0; match=1; fired=instant/drinks/bluetrain; end=bluetrain:20; spawned=-; contract=1; uses=-
+instant/drinks/booger => important=0; match=1; fired=instant/drinks/booger; end=booger:20; spawned=-; contract=1; uses=-
+instant/drinks/bookwyrm => important=0; match=1; fired=instant/drinks/bookwyrm; end=bookwyrm:12; spawned=-; contract=1; uses=-
+instant/drinks/brave_bull => important=0; match=1; fired=instant/drinks/brave_bull; end=bravebull:12; spawned=-; contract=1; uses=-
+instant/drinks/breve => important=0; match=1; fired=instant/drinks/breve; end=breve:20; spawned=-; contract=1; uses=-
+instant/drinks/brownstar => important=0; match=1; fired=instant/drinks/brownstar; end=brownstar:12; spawned=-; contract=1; uses=-
+instant/drinks/brownstar_decaf => important=0; match=1; fired=instant/drinks/brownstar_decaf; end=brownstar_decaf:12; spawned=-; contract=1; uses=-
+instant/drinks/bubbleteabanana => important=0; match=1; fired=instant/drinks/bubbleteabanana; end=bubbleteabanana:40; spawned=-; contract=1; uses=-
+instant/drinks/bubbleteacherry => important=0; match=1; fired=instant/drinks/bubbleteacherry; end=bubbleteacherry:40; spawned=-; contract=1; uses=-
+instant/drinks/bubbleteacoffee => important=0; match=1; fired=instant/drinks/bubbleteacoffee; end=bubbleteacoffee:40; spawned=-; contract=1; uses=-
+instant/drinks/bubbleteastrawberry => important=0; match=1; fired=instant/drinks/bubbleteastrawberry; end=bubbleteastrawberry:40; spawned=-; contract=1; uses=-
+instant/drinks/bubbleteawatermelon => important=0; match=1; fired=instant/drinks/bubbleteawatermelon; end=bubbleteawatermelon:40; spawned=-; contract=1; uses=-
+instant/drinks/bulldog => important=0; match=1; fired=instant/drinks/bulldog; end=bulldog:16; spawned=-; contract=1; uses=-
+instant/drinks/burnout => important=0; match=1; fired=instant/drinks/burnout; end=burnout:12; spawned=-; contract=1; uses=-
+instant/drinks/cafe_latte => important=0; match=1; fired=instant/drinks/cafe_latte; end=cafe_latte:8; spawned=-; contract=1; uses=-
+instant/drinks/cappuccino => important=0; match=1; fired=instant/drinks/cappuccino; end=cappuccino:24; spawned=-; contract=1; uses=-
+instant/drinks/changeling_sting => important=0; match=1; fired=instant/drinks/changeling_sting; end=changelingsting:12; spawned=-; contract=1; uses=-
+instant/drinks/choccymilk => important=0; match=1; fired=instant/drinks/choccymilk; end=choccymilk:16; spawned=-; contract=1; uses=-
+instant/drinks/chocoshake => important=0; match=1; fired=instant/drinks/chocoshake; end=chocoshake:8; spawned=-; contract=1; uses=-
+instant/drinks/chrysanthemum => important=0; match=1; fired=instant/drinks/chrysanthemum; end=chrysanthemum:8; spawned=-; contract=1; uses=-
+instant/drinks/cider => important=0; match=1; fired=instant/drinks/cider; end=cider:40 enzyme:5; spawned=-; contract=1; uses=-
+instant/drinks/cloverclub => important=0; match=1; fired=instant/drinks/cloverclub; end=cloverclub:20; spawned=-; contract=1; uses=-
+instant/drinks/coffeeshake => important=0; match=1; fired=instant/drinks/coffeeshake; end=coffeeshake:8; spawned=-; contract=1; uses=-
+instant/drinks/cogchamp => important=0; match=1; fired=instant/drinks/cogchamp; end=cogchamp:12; spawned=-; contract=1; uses=-
+instant/drinks/coldfront => important=0; match=1; fired=instant/drinks/coldfront; end=coldfront:12; spawned=-; contract=1; uses=-
+instant/drinks/collinsmix => important=0; match=1; fired=instant/drinks/collinsmix; end=collins_mix:16; spawned=-; contract=1; uses=-
+instant/drinks/cortado => important=0; match=1; fired=instant/drinks/cortado; end=cortado:16; spawned=-; contract=1; uses=-
+instant/drinks/crevice_spike => important=0; match=1; fired=instant/drinks/crevice_spike; end=crevice_spike:24; spawned=-; contract=1; uses=-
+instant/drinks/cuba_libre => important=0; match=1; fired=instant/drinks/cuba_libre; end=cubalibre:12; spawned=-; contract=1; uses=-
+instant/drinks/daiquiri => important=0; match=1; fired=instant/drinks/daiquiri; end=daiquiri:24; spawned=-; contract=1; uses=-
+instant/drinks/deathbell => important=0; match=1; fired=instant/drinks/deathbell; end=deathbell:12; spawned=-; contract=1; uses=-
+instant/drinks/debugger => important=0; match=1; fired=instant/drinks/debugger; end=debugger:20; spawned=-; contract=1; uses=-
+instant/drinks/demonsblood => important=0; match=1; fired=instant/drinks/demonsblood; end=demonsblood:24; spawned=-; contract=1; uses=-
+instant/drinks/devilskiss => important=0; match=1; fired=instant/drinks/devilskiss; end=devilskiss:12; spawned=-; contract=1; uses=-
+instant/drinks/doctor_delight => important=0; match=1; fired=instant/drinks/doctor_delight; end=doctorsdelight:24; spawned=-; contract=1; uses=-
+instant/drinks/dreamcream => important=0; match=1; fired=instant/drinks/dreamcream; end=dreamcream:16; spawned=-; contract=1; uses=-
+instant/drinks/driestmartini => important=0; match=1; fired=instant/drinks/driestmartini; end=driestmartini:8; spawned=-; contract=1; uses=-
+instant/drinks/driverspunch => important=0; match=1; fired=instant/drinks/driverspunch; end=driverspunch:12; spawned=-; contract=1; uses=-
+instant/drinks/duplex => important=0; match=1; fired=instant/drinks/duplex; end=duplex:16; spawned=-; contract=1; uses=-
+instant/drinks/eggnog => important=0; match=1; fired=instant/drinks/eggnog; end=eggnog:60; spawned=-; contract=1; uses=-
+instant/drinks/elysiumfacepunch => important=0; match=1; fired=instant/drinks/elysiumfacepunch; end=elysiumfacepunch:8; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer => important=0; match=1; fired=instant/drinks/enragedarachnidslammer; end=enragedarachnidslammer:20; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer1 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer1; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer10 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer10; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer2 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer2; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer3 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer3; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer4 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer4; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer5 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer5; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer6 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer6; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer7 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer7; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer8 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer8; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/enragedarachnidslammer9 => important=0; match=1; fired=instant/drinks/enragedarachnidslammer9; end=enragedarachnidslammer:0.4; spawned=-; contract=1; uses=-
+instant/drinks/entdraught => important=0; match=1; fired=instant/drinks/entdraught; end=entdraught:12; spawned=-; contract=1; uses=-
+instant/drinks/erebusmoonrise => important=0; match=1; fired=instant/drinks/erebusmoonrise; end=erebusmoonrise:12; spawned=-; contract=1; uses=-
+instant/drinks/erikasurprise => important=0; match=1; fired=instant/drinks/erikasurprise; end=erikasurprise:24; spawned=-; contract=1; uses=-
+instant/drinks/euphoria => important=0; match=1; fired=instant/drinks/euphoria; end=euphoria:12; spawned=-; contract=1; uses=-
+instant/drinks/fauxfizz => important=0; match=1; fired=instant/drinks/fauxfizz; end=fauxfizz:24; spawned=-; contract=1; uses=-
+instant/drinks/fetching_fizz => important=0; match=1; fired=instant/drinks/fetching_fizz; end=fetching_fizz:12; spawned=-; contract=1; uses=-
+instant/drinks/firepunch => important=0; match=1; fired=instant/drinks/firepunch; end=firepunch:12; spawned=-; contract=1; uses=-
+instant/drinks/flapper => important=0; match=1; fired=instant/drinks/flapper; end=flapper:12; spawned=-; contract=1; uses=-
+instant/drinks/flat_white => important=0; match=1; fired=instant/drinks/flat_white; end=flat_white:12; spawned=-; contract=1; uses=-
+instant/drinks/fringe_weaver => important=0; match=1; fired=instant/drinks/fringe_weaver; end=fringe_weaver:40; spawned=-; contract=1; uses=-
+instant/drinks/fusionnaire => important=0; match=1; fired=instant/drinks/fusionnaire; end=fusionnaire:36; spawned=-; contract=1; uses=-
+instant/drinks/galacticpanic => important=0; match=1; fired=instant/drinks/galacticpanic; end=galacticpanic:24; spawned=-; contract=1; uses=-
+instant/drinks/gargle_blaster => important=0; match=1; fired=instant/drinks/gargle_blaster; end=gargleblaster:24; spawned=-; contract=1; uses=-
+instant/drinks/ginzamary => important=0; match=1; fired=instant/drinks/ginzamary; end=ginzamary:20; spawned=-; contract=1; uses=-
+instant/drinks/gin_fizz => important=0; match=1; fired=instant/drinks/gin_fizz; end=ginfizz:12; spawned=-; contract=1; uses=-
+instant/drinks/gin_tonic => important=0; match=1; fired=instant/drinks/gin_tonic; end=gintonic:12; spawned=-; contract=1; uses=-
+instant/drinks/glowingappletini => important=0; match=1; fired=instant/drinks/glowingappletini; end=glowingappletini:24; spawned=-; contract=1; uses=-
+instant/drinks/godka => important=0; match=1; fired=instant/drinks/godka; end=enzyme:5 godka:4 holywater:1; spawned=-; contract=1; uses=-
+instant/drinks/godsake => important=0; match=1; fired=instant/drinks/godsake; end=godsake:12; spawned=-; contract=1; uses=-
+instant/drinks/goldschlager => important=0; match=1; fired=instant/drinks/goldschlager; end=goldschlager:40; spawned=-; contract=1; uses=-
+instant/drinks/grapejuice => important=0; match=1; fired=instant/drinks/grapejuice; end=grapejuice:12; spawned=-; contract=1; uses=-
+instant/drinks/grapesoda => important=0; match=1; fired=instant/drinks/grapesoda; end=grapesoda:12; spawned=-; contract=1; uses=-
+instant/drinks/graveyard => important=0; match=1; fired=instant/drinks/graveyard; end=graveyard:16; spawned=-; contract=1; uses=-
+instant/drinks/grenadine => important=0; match=1; fired=instant/drinks/grenadine; end=enzyme:5 grenadine:40; spawned=-; contract=1; uses=-
+instant/drinks/grog => important=0; match=1; fired=instant/drinks/grog; end=grog:8; spawned=-; contract=1; uses=-
+instant/drinks/grubshake => important=0; match=1; fired=instant/drinks/grubshake; end=grubshake:120; spawned=-; contract=1; uses=-
+instant/drinks/hachi => important=0; match=1; fired=instant/drinks/hachi; end=hachi:20; spawned=-; contract=1; uses=-
+instant/drinks/hairoftherat => important=0; match=1; fired=instant/drinks/hairoftherat; end=hairoftherat:12; spawned=-; contract=1; uses=-
+instant/drinks/hearty_punch => important=0; match=1; fired=instant/drinks/hearty_punch; end=hearty_punch:4; spawned=-; contract=1; uses=-
+instant/drinks/highpower => important=0; match=1; fired=instant/drinks/highpower; end=highpower:12; spawned=-; contract=1; uses=-
+instant/drinks/hippiesdelight => important=0; match=1; fired=instant/drinks/hippiesdelight; end=hippiesdelight:8; spawned=-; contract=1; uses=-
+instant/drinks/hiveminderaser => important=0; match=1; fired=instant/drinks/hiveminderaser; end=hiveminderaser:16; spawned=-; contract=1; uses=-
+instant/drinks/holywine => important=0; match=1; fired=instant/drinks/holywine; end=holywater:5 holywine:40; spawned=-; contract=1; uses=-
+instant/drinks/holy_mary => important=0; match=1; fired=instant/drinks/holy_mary; end=holymary:24; spawned=-; contract=1; uses=-
+instant/drinks/honeyshot => important=0; match=1; fired=instant/drinks/honeyshot; end=honeyshot:12; spawned=-; contract=1; uses=-
+instant/drinks/hooch => important=0; match=1; fired=instant/drinks/hooch; end=hooch:12; spawned=-; contract=1; uses=-
+instant/drinks/horchata => important=0; match=1; fired=instant/drinks/horchata; end=horchata:20; spawned=-; contract=1; uses=-
+instant/drinks/icecoffee => important=0; match=1; fired=instant/drinks/icecoffee; end=icecoffee:12; spawned=-; contract=1; uses=-
+instant/drinks/icecoffee/alt => important=0; match=1; fired=instant/drinks/icecoffee/alt; end=icecoffee:12; spawned=-; contract=1; uses=-
+instant/drinks/iced_beer => important=0; match=1; fired=instant/drinks/iced_beer; end=iced_beer:40; spawned=-; contract=1; uses=-
+instant/drinks/iced_beer2 => important=0; match=1; fired=instant/drinks/iced_beer2; end=iced_beer:24; spawned=-; contract=1; uses=-
+instant/drinks/icetea => important=0; match=1; fired=instant/drinks/icetea; end=icetea:12; spawned=-; contract=1; uses=-
+instant/drinks/ichor_mead => important=0; match=1; fired=instant/drinks/ichor_mead; end=ichor_mead:8; spawned=-; contract=1; uses=-
+instant/drinks/irishcarbomb => important=0; match=1; fired=instant/drinks/irishcarbomb; end=irishcarbomb:8; spawned=-; contract=1; uses=-
+instant/drinks/irish_coffee => important=0; match=1; fired=instant/drinks/irish_coffee; end=irishcoffee:8; spawned=-; contract=1; uses=-
+instant/drinks/irish_cream => important=0; match=1; fired=instant/drinks/irish_cream; end=irishcream:12; spawned=-; contract=1; uses=-
+instant/drinks/italiancrisis => important=0; match=1; fired=instant/drinks/italiancrisis; end=italiancrisis:8; spawned=-; contract=1; uses=-
+instant/drinks/jackbrew => important=0; match=1; fired=instant/drinks/jackbrew; end=jackbrew:8; spawned=-; contract=1; uses=-
+instant/drinks/jellyshot => important=0; match=1; fired=instant/drinks/jellyshot; end=jellyshot:20; spawned=-; contract=1; uses=-
+instant/drinks/kahlua => important=0; match=1; fired=instant/drinks/kahlua; end=enzyme:5 kahlua:20; spawned=-; contract=1; uses=-
+instant/drinks/kiraspecial => important=0; match=1; fired=instant/drinks/kiraspecial; end=kiraspecial:12; spawned=-; contract=1; uses=-
+instant/drinks/lemonade => important=0; match=1; fired=instant/drinks/lemonade; end=lemonade:12; spawned=-; contract=1; uses=-
+instant/drinks/longislandicedtea => important=0; match=1; fired=instant/drinks/longislandicedtea; end=longislandicedtea:24; spawned=-; contract=1; uses=-
+instant/drinks/long_black => important=0; match=1; fired=instant/drinks/long_black; end=long_black:8; spawned=-; contract=1; uses=-
+instant/drinks/lotus => important=0; match=1; fired=instant/drinks/lotus; end=lotus:8; spawned=-; contract=1; uses=-
+instant/drinks/lovemaker => important=0; match=1; fired=instant/drinks/lovemaker; end=lovemaker:24; spawned=-; contract=1; uses=-
+instant/drinks/love_potion => important=0; match=1; fired=instant/drinks/love_potion; end=lovepotion:12; spawned=-; contract=1; uses=-
+instant/drinks/lowpower => important=0; match=1; fired=instant/drinks/lowpower; end=lowpower:12; spawned=-; contract=1; uses=-
+instant/drinks/macchiato => important=0; match=1; fired=instant/drinks/macchiato; end=macchiato:12; spawned=-; contract=1; uses=-
+instant/drinks/manager_summoner => important=0; match=1; fired=instant/drinks/manager_summoner; end=manager_summoner:12; spawned=-; contract=1; uses=-
+instant/drinks/manhattan => important=0; match=1; fired=instant/drinks/manhattan; end=manhattan:12; spawned=-; contract=1; uses=-
+instant/drinks/manhattan_proj => important=0; match=1; fired=instant/drinks/manhattan_proj; end=manhattan_proj:40; spawned=-; contract=1; uses=-
+instant/drinks/manly_dorf => important=0; match=1; fired=instant/drinks/manly_dorf; end=manlydorf:12; spawned=-; contract=1; uses=-
+instant/drinks/margarita => important=0; match=1; fired=instant/drinks/margarita; end=margarita:12; spawned=-; contract=1; uses=-
+instant/drinks/martini => important=0; match=1; fired=instant/drinks/martini; end=martini:12; spawned=-; contract=1; uses=-
+instant/drinks/mauna_loa => important=0; match=1; fired=instant/drinks/mauna_loa; end=mauna_loa:20; spawned=-; contract=1; uses=-
+instant/drinks/mead => important=0; match=1; fired=instant/drinks/mead; end=enzyme:5 mead:8; spawned=-; contract=1; uses=-
+instant/drinks/melonade => important=0; match=1; fired=instant/drinks/melonade; end=melonade:12; spawned=-; contract=1; uses=-
+instant/drinks/melonliquor => important=0; match=1; fired=instant/drinks/melonliquor; end=enzyme:5 melonliquor:40; spawned=-; contract=1; uses=-
+instant/drinks/melonspritzer => important=0; match=1; fired=instant/drinks/melonspritzer; end=melonspritzer:24; spawned=-; contract=1; uses=-
+instant/drinks/milkshake => important=0; match=1; fired=instant/drinks/milkshake; end=milkshake:20; spawned=-; contract=1; uses=-
+instant/drinks/mintapplesparkle => important=0; match=1; fired=instant/drinks/mintapplesparkle; end=mintapplesparkle:12; spawned=-; contract=1; uses=-
+instant/drinks/mintjulep => important=0; match=1; fired=instant/drinks/mintjulep; end=mintjulep:16; spawned=-; contract=1; uses=-
+instant/drinks/mocha => important=0; match=1; fired=instant/drinks/mocha; end=mocha:40; spawned=-; contract=1; uses=-
+instant/drinks/mocha/alt => important=0; match=1; fired=instant/drinks/mocha/alt; end=mocha:40; spawned=-; contract=1; uses=-
+instant/drinks/mojito => important=0; match=1; fired=instant/drinks/mojito; end=mojito:20; spawned=-; contract=1; uses=-
+instant/drinks/monstertamer => important=0; match=1; fired=instant/drinks/monstertamer; end=monstertamer:8; spawned=-; contract=1; uses=-
+instant/drinks/moonshine => important=0; match=1; fired=instant/drinks/moonshine; end=enzyme:5 moonshine:40; spawned=-; contract=1; uses=-
+instant/drinks/morningafter => important=0; match=1; fired=instant/drinks/morningafter; end=morningafter:24; spawned=-; contract=1; uses=-
+instant/drinks/mudslide => important=0; match=1; fired=instant/drinks/mudslide; end=mudslide:8; spawned=-; contract=1; uses=-
+instant/drinks/narsour => important=0; match=1; fired=instant/drinks/narsour; end=narsour:12; spawned=-; contract=1; uses=-
+instant/drinks/natunabrandy => important=0; match=1; fired=instant/drinks/natunabrandy; end=natunabrandy:12; spawned=-; contract=1; uses=-
+instant/drinks/negroni => important=0; match=1; fired=instant/drinks/negroni; end=negroni:12; spawned=-; contract=1; uses=-
+instant/drinks/newyorksour => important=0; match=1; fired=instant/drinks/newyorksour; end=newyorksour:24; spawned=-; contract=1; uses=-
+instant/drinks/nuclearwaste_radium => important=0; match=1; fired=instant/drinks/nuclearwaste_radium; end=nuclearwaste:8; spawned=-; contract=1; uses=-
+instant/drinks/nuclearwaste_uranium => important=0; match=1; fired=instant/drinks/nuclearwaste_uranium; end=nuclearwaste:12; spawned=-; contract=1; uses=-
+instant/drinks/nuka_cola => important=0; match=1; fired=instant/drinks/nuka_cola; end=nuka_cola:20; spawned=-; contract=1; uses=-
+instant/drinks/oilslick => important=0; match=1; fired=instant/drinks/oilslick; end=oilslick:12; spawned=-; contract=1; uses=-
+instant/drinks/oldfashioned => important=0; match=1; fired=instant/drinks/oldfashioned; end=oldfashioned:20; spawned=-; contract=1; uses=-
+instant/drinks/orangejuice => important=0; match=1; fired=instant/drinks/orangejuice; end=orangejuice:12; spawned=-; contract=1; uses=-
+instant/drinks/originalsin => important=0; match=1; fired=instant/drinks/originalsin; end=applejuice:1 originalsin:4; spawned=-; contract=1; uses=-
+instant/drinks/paloma => important=0; match=1; fired=instant/drinks/paloma; end=paloma:12; spawned=-; contract=1; uses=-
+instant/drinks/patron => important=0; match=1; fired=instant/drinks/patron; end=patron:40; spawned=-; contract=1; uses=-
+instant/drinks/peanutmilkshake => important=0; match=1; fired=instant/drinks/peanutmilkshake; end=peanutmilkshake:20; spawned=-; contract=1; uses=-
+instant/drinks/phoron_special => important=0; match=1; fired=instant/drinks/phoron_special; end=phoronspecial:24; spawned=-; contract=1; uses=-
+instant/drinks/pilk => important=0; match=1; fired=instant/drinks/pilk; end=pilk:8; spawned=-; contract=1; uses=-
+instant/drinks/pineappleade => important=0; match=1; fired=instant/drinks/pineappleade; end=pineappleade:20; spawned=-; contract=1; uses=-
+instant/drinks/pink_russian => important=0; match=1; fired=instant/drinks/pink_russian; end=pinkrussian:12; spawned=-; contract=1; uses=-
+instant/drinks/piscosour => important=0; match=1; fired=instant/drinks/piscosour; end=piscosour:12; spawned=-; contract=1; uses=-
+instant/drinks/protein_shake => important=0; match=1; fired=instant/drinks/protein_shake; end=protein_shake:20; spawned=-; contract=1; uses=-
+instant/drinks/protein_shake/banana => important=0; match=1; fired=instant/drinks/protein_shake/banana; end=banana_protein_shake:20; spawned=-; contract=1; uses=-
+instant/drinks/protein_shake/chocolate => important=0; match=1; fired=instant/drinks/protein_shake/chocolate; end=chocolate_protein_shake:20; spawned=-; contract=1; uses=-
+instant/drinks/protein_shake/strawberry => important=0; match=1; fired=instant/drinks/protein_shake/strawberry; end=strawberry_protein_shake:20; spawned=-; contract=1; uses=-
+instant/drinks/protein_shake/vanilla => important=0; match=1; fired=instant/drinks/protein_shake/vanilla; end=vanilla_protein_shake:20; spawned=-; contract=1; uses=-
+instant/drinks/pwine => important=0; match=1; fired=instant/drinks/pwine; end=enzyme:5 pwine:40; spawned=-; contract=1; uses=-
+instant/drinks/redspaceflush => important=0; match=1; fired=instant/drinks/redspaceflush; end=redspaceflush:24; spawned=-; contract=1; uses=-
+instant/drinks/red_mead => important=0; match=1; fired=instant/drinks/red_mead; end=red_mead:8; spawned=-; contract=1; uses=-
+instant/drinks/rewriter => important=0; match=1; fired=instant/drinks/rewriter; end=rewriter:8; spawned=-; contract=1; uses=-
+instant/drinks/robustin => important=0; match=1; fired=instant/drinks/robustin; end=robustin:16; spawned=-; contract=1; uses=-
+instant/drinks/rotgut => important=0; match=1; fired=instant/drinks/rotgut; end=rotgut:32; spawned=-; contract=1; uses=-
+instant/drinks/royrogers => important=0; match=1; fired=instant/drinks/royrogers; end=roy_rogers:28; spawned=-; contract=1; uses=-
+instant/drinks/rum_and_cola => important=0; match=1; fired=instant/drinks/rum_and_cola; end=rumandcola:12; spawned=-; contract=1; uses=-
+instant/drinks/russianroulette => important=0; match=1; fired=instant/drinks/russianroulette; end=russianroulette:24; spawned=-; contract=1; uses=-
+instant/drinks/sake => important=0; match=1; fired=instant/drinks/sake; end=enzyme:5 sake:40; spawned=-; contract=1; uses=-
+instant/drinks/sakebomb => important=0; match=1; fired=instant/drinks/sakebomb; end=sakebomb:12; spawned=-; contract=1; uses=-
+instant/drinks/saketini => important=0; match=1; fired=instant/drinks/saketini; end=saketini:8; spawned=-; contract=1; uses=-
+instant/drinks/sbagliato => important=0; match=1; fired=instant/drinks/sbagliato; end=sbagliato:12; spawned=-; contract=1; uses=-
+instant/drinks/sbiten => important=0; match=1; fired=instant/drinks/sbiten; end=sbiten:40; spawned=-; contract=1; uses=-
+instant/drinks/screamingviking => important=0; match=1; fired=instant/drinks/screamingviking; end=screamingviking:24; spawned=-; contract=1; uses=-
+instant/drinks/screwdriver => important=0; match=1; fired=instant/drinks/screwdriver; end=screwdrivercocktail:12; spawned=-; contract=1; uses=-
+instant/drinks/scsatw => important=0; match=1; fired=instant/drinks/scsatw; end=scsatw:24; spawned=-; contract=1; uses=-
+instant/drinks/sexonthebeach => important=0; match=1; fired=instant/drinks/sexonthebeach; end=sexonthebeach:24; spawned=-; contract=1; uses=-
+instant/drinks/shirleytemple => important=0; match=1; fired=instant/drinks/shirleytemple; end=shirley_temple:20; spawned=-; contract=1; uses=-
+instant/drinks/shroomjuice => important=0; match=1; fired=instant/drinks/shroomjuice; end=shroomjuice:12; spawned=-; contract=1; uses=-
+instant/drinks/silencer => important=0; match=1; fired=instant/drinks/silencer; end=silencer:12; spawned=-; contract=1; uses=-
+instant/drinks/singulo => important=0; match=1; fired=instant/drinks/singulo; end=singulo:40; spawned=-; contract=1; uses=-
+instant/drinks/sitonmyface => important=0; match=1; fired=instant/drinks/sitonmyface; end=sitonmyface:12; spawned=-; contract=1; uses=-
+instant/drinks/slimeshot => important=0; match=1; fired=instant/drinks/slimeshot; end=slimeshot:20; spawned=-; contract=1; uses=-
+instant/drinks/slimeslam => important=0; match=1; fired=instant/drinks/slimeslam; end=slimeslammer:12; spawned=-; contract=1; uses=-
+instant/drinks/snowwhite => important=0; match=1; fired=instant/drinks/snowwhite; end=snowwhite:8; spawned=-; contract=1; uses=-
+instant/drinks/sodaoil => important=0; match=1; fired=instant/drinks/sodaoil; end=sodaoil:24; spawned=-; contract=1; uses=-
+instant/drinks/soemmerfire => important=0; match=1; fired=instant/drinks/soemmerfire; end=soemmerfire:12; spawned=-; contract=1; uses=-
+instant/drinks/soy_latte => important=0; match=1; fired=instant/drinks/soy_latte; end=soy_latte:8; spawned=-; contract=1; uses=-
+instant/drinks/spacebeer => important=0; match=1; fired=instant/drinks/spacebeer; end=beer:40 enzyme:5; spawned=-; contract=1; uses=-
+instant/drinks/spacersbrew => important=0; match=1; fired=instant/drinks/spacersbrew; end=spacersbrew:20; spawned=-; contract=1; uses=-
+instant/drinks/spiderdrink => important=0; match=1; fired=instant/drinks/spiderdrink; end=spiderdrink:40; spawned=-; contract=1; uses=-
+instant/drinks/squirt_cider => important=0; match=1; fired=instant/drinks/squirt_cider; end=squirt_cider:12; spawned=-; contract=1; uses=-
+instant/drinks/sugarrush => important=0; match=1; fired=instant/drinks/sugarrush; end=sugarrush:12; spawned=-; contract=1; uses=-
+instant/drinks/suidream => important=0; match=1; fired=instant/drinks/suidream; end=suidream:12; spawned=-; contract=1; uses=-
+instant/drinks/sweettea => important=0; match=1; fired=instant/drinks/sweettea; end=sweettea:12; spawned=-; contract=1; uses=-
+instant/drinks/syndicatebomb => important=0; match=1; fired=instant/drinks/syndicatebomb; end=syndicatebomb:8; spawned=-; contract=1; uses=-
+instant/drinks/tamagozake => important=0; match=1; fired=instant/drinks/tamagozake; end=tamagozake:60; spawned=-; contract=1; uses=-
+instant/drinks/tequila_sunrise => important=0; match=1; fired=instant/drinks/tequila_sunrise; end=tequilasunrise:12; spawned=-; contract=1; uses=-
+instant/drinks/thirteenloko => important=0; match=1; fired=instant/drinks/thirteenloko; end=thirteenloko:12; spawned=-; contract=1; uses=-
+instant/drinks/threemileisland => important=0; match=1; fired=instant/drinks/threemileisland; end=threemileisland:40; spawned=-; contract=1; uses=-
+instant/drinks/tokyorose => important=0; match=1; fired=instant/drinks/tokyorose; end=tokyorose:8; spawned=-; contract=1; uses=-
+instant/drinks/tropicalfizz => important=0; match=1; fired=instant/drinks/tropicalfizz; end=tropicalfizz:32; spawned=-; contract=1; uses=-
+instant/drinks/unsweettea => important=0; match=1; fired=instant/drinks/unsweettea; end=unsweettea:8; spawned=-; contract=1; uses=-
+instant/drinks/vesper => important=0; match=1; fired=instant/drinks/vesper; end=vesper:16; spawned=-; contract=1; uses=-
+instant/drinks/vienna => important=0; match=1; fired=instant/drinks/vienna; end=vienna:12; spawned=-; contract=1; uses=-
+instant/drinks/vilelemon => important=0; match=1; fired=instant/drinks/vilelemon; end=vilelemon:24; spawned=-; contract=1; uses=-
+instant/drinks/virginsexonthebeach => important=0; match=1; fired=instant/drinks/virginsexonthebeach; end=virginsexonthebeach:20; spawned=-; contract=1; uses=-
+instant/drinks/virginsip => important=0; match=1; fired=instant/drinks/virginsip; end=virginsip:8; spawned=-; contract=1; uses=-
+instant/drinks/virgin_mojito => important=0; match=1; fired=instant/drinks/virgin_mojito; end=virginmojito:20; spawned=-; contract=1; uses=-
+instant/drinks/vodka => important=0; match=1; fired=instant/drinks/vodka; end=enzyme:5 vodka:40; spawned=-; contract=1; uses=-
+instant/drinks/vodkamartini => important=0; match=1; fired=instant/drinks/vodkamartini; end=vodkamartini:12; spawned=-; contract=1; uses=-
+instant/drinks/vodka_tonic => important=0; match=1; fired=instant/drinks/vodka_tonic; end=vodkatonic:12; spawned=-; contract=1; uses=-
+instant/drinks/voxdelight => important=0; match=1; fired=instant/drinks/voxdelight; end=voxdelight:16; spawned=-; contract=1; uses=-
+instant/drinks/watermelonjuice => important=0; match=1; fired=instant/drinks/watermelonjuice; end=watermelonjuice:12; spawned=-; contract=1; uses=-
+instant/drinks/whiskeysoda => important=0; match=1; fired=instant/drinks/whiskeysoda; end=whiskeysoda:12; spawned=-; contract=1; uses=-
+instant/drinks/whiskeysour => important=0; match=1; fired=instant/drinks/whiskeysour; end=whiskeysour:16; spawned=-; contract=1; uses=-
+instant/drinks/whiskey_cola => important=0; match=1; fired=instant/drinks/whiskey_cola; end=whiskeycola:12; spawned=-; contract=1; uses=-
+instant/drinks/white_russian => important=0; match=1; fired=instant/drinks/white_russian; end=whiterussian:12; spawned=-; contract=1; uses=-
+instant/drinks/windgarita => important=0; match=1; fired=instant/drinks/windgarita; end=windgarita:24; spawned=-; contract=1; uses=-
+instant/drinks/wine => important=0; match=1; fired=instant/drinks/wine; end=enzyme:5 redwine:40; spawned=-; contract=1; uses=-
+instant/drinks/winebrandy => important=0; match=1; fired=instant/drinks/winebrandy; end=enzyme:10 winebrandy:20; spawned=-; contract=1; uses=-
+instant/drinks/wormblood => important=0; match=1; fired=instant/drinks/wormblood; end=wormblood:8; spawned=-; contract=1; uses=-
+instant/drinks/xanaducannon => important=0; match=1; fired=instant/drinks/xanaducannon; end=xanaducannon:8; spawned=-; contract=1; uses=-
+instant/dryagent => important=0; match=1; fired=instant/dryagent; end=dryagent:16 phoron:4.6; spawned=-; contract=1; uses=-
+instant/dyloteane => important=0; match=1; fired=instant/dyloteane; end=dyloteane:4; spawned=-; contract=1; uses=-
+instant/dyloteane/super => important=0; match=1; fired=instant/dyloteane; end=dyloteane:4 sugar:4; spawned=-; contract=1; uses=-
+instant/dylovene => important=0; match=1; fired=instant/dylovene; end=anti_toxin:12; spawned=-; contract=1; uses=-
+instant/eden => important=0; match=1; fired=instant/eden; end=eden:4; spawned=-; contract=1; uses=-
+instant/eden/snake => important=0; match=1; fired=instant/eden/snake; end=eden_snake:4; spawned=-; contract=1; uses=-
+instant/emp_pulse => important=0; match=1; fired=instant/emp_pulse; end=-; spawned=-; contract=0; uses=-
+instant/ethylredoxrazine => important=0; match=1; fired=instant/ethylredoxrazine; end=ethylredoxrazine:12; spawned=-; contract=1; uses=-
+instant/explosion_potassium => important=0; match=1; fired=instant/explosion_potassium; end=-; spawned=/obj/effect/effect/sparks+2; contract=0; uses=-
+instant/falter_virus => important=0; match=1; fired=instant/falter_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/firefightingfoam => important=0; match=1; fired=instant/firefightingfoam; end=firefoam:4 fluorine:10; spawned=-; contract=1; uses=-
+instant/firefightingfoamqol => important=0; match=1; fired=instant/firefightingfoamqol; end=firefoam:9; spawned=-; contract=1; uses=-
+instant/flamecure => important=0; match=1; fired=instant/flamecure; end=flamecure:8; spawned=-; contract=1; uses=-
+instant/flash_powder => important=0; match=1; fired=instant/flash_powder; end=-; spawned=/obj/effect/effect/sparks+2; contract=0; uses=-
+instant/foam => important=0; match=1; fired=instant/foam; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
+instant/foam/softdrink => important=0; match=1; fired=instant/foam/softdrink; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
+instant/foaming_agent => important=0; match=1; fired=instant/foaming_agent; end=foaming_agent:4; spawned=-; contract=1; uses=-
+instant/food/barbecue => important=0; match=1; fired=instant/food/barbecue; end=barbecue:16; spawned=-; contract=1; uses=-
+instant/food/blondiemix => important=0; match=1; fired=instant/food/blondiemix; end=blondiemix:60; spawned=-; contract=1; uses=-
+instant/food/browniemix => important=0; match=1; fired=instant/food/browniemix; end=browniemix:60; spawned=-; contract=1; uses=-
+instant/food/butter => important=0; match=1; fired=instant/food/butter; end=-; spawned=/obj/item/reagent_containers/food/snacks/spreads/butter+4; contract=0; uses=-
+instant/food/cakebatter => important=0; match=1; fired=instant/food/cakebatter; end=cakebatter:240; spawned=-; contract=1; uses=-
+instant/food/cheesewheel => important=0; match=1; fired=instant/food/cheesewheel; end=enzyme:5; spawned=/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel+4; contract=0; uses=-
+instant/food/chocolate_bar => important=0; match=1; fired=instant/food/chocolate_bar; end=enzyme:5; spawned=/obj/item/reagent_containers/food/snacks/chocolatebar+4; contract=0; uses=-
+instant/food/chocolate_bar2 => important=0; match=1; fired=instant/food/chocolate_bar2; end=enzyme:5; spawned=/obj/item/reagent_containers/food/snacks/chocolatebar+4; contract=0; uses=-
+instant/food/coating/batter => important=0; match=1; fired=instant/food/coating/batter; end=batter:80; spawned=-; contract=1; uses=-
+instant/food/coating/beerbatter => important=0; match=1; fired=instant/food/coating/beerbatter; end=beerbatter:80; spawned=-; contract=1; uses=-
+instant/food/cookingoilcorn => important=0; match=1; fired=instant/food/cookingoilcorn; end=cookingoil:40 enzyme:5; spawned=-; contract=1; uses=-
+instant/food/cookingoilpeanut => important=0; match=1; fired=instant/food/cookingoilpeanut; end=cookingoil:40 enzyme:5; spawned=-; contract=1; uses=-
+instant/food/dough => important=0; match=1; fired=instant/food/dough; end=-; spawned=/obj/item/reagent_containers/food/snacks/dough+4; contract=0; uses=-
+instant/food/hell_ramen => important=0; match=1; fired=instant/food/hell_ramen; end=hell_ramen:24; spawned=-; contract=1; uses=-
+instant/food/ketchup => important=0; match=1; fired=instant/food/ketchup; end=ketchup:16; spawned=-; contract=1; uses=-
+instant/food/mayonnaise => important=0; match=1; fired=instant/food/mayonnaise; end=mayo:60; spawned=-; contract=1; uses=-
+instant/food/meatball => important=0; match=1; fired=instant/food/meatball; end=enzyme:5; spawned=/obj/item/reagent_containers/food/snacks/meatball+12; contract=0; uses=-
+instant/food/mustard => important=0; match=1; fired=instant/food/mustard; end=mustard:16; spawned=-; contract=1; uses=-
+instant/food/peanutbutter => important=0; match=1; fired=instant/food/peanutbutter; end=enzyme:5 peanutbutter:12; spawned=-; contract=1; uses=-
+instant/food/soysauce => important=0; match=1; fired=instant/food/soysauce; end=soysauce:20; spawned=-; contract=1; uses=-
+instant/food/syntiflesh => important=0; match=1; fired=instant/food/syntiflesh; end=-; spawned=/obj/item/reagent_containers/food/snacks/meat/syntiflesh+4; contract=0; uses=-
+instant/food/tofu => important=0; match=1; fired=instant/food/tofu; end=enzyme:5; spawned=/obj/item/reagent_containers/food/snacks/tofu+4; contract=0; uses=-
+instant/food/vinegar_apple => important=0; match=1; fired=instant/food/vinegar_apple; end=vinegar:16 yeast:5; spawned=-; contract=1; uses=-
+instant/food/vinegar_grape => important=0; match=1; fired=instant/food/vinegar_grape; end=vinegar:16 yeast:5; spawned=-; contract=1; uses=-
+instant/gastirodaxon => important=0; match=1; fired=instant/gastirodaxon; end=gastirodaxon:12 phoron:5; spawned=-; contract=1; uses=-
+instant/glucose => important=0; match=1; fired=instant/glucose; end=glucose:4; spawned=-; contract=1; uses=-
+instant/glycerol => important=0; match=1; fired=instant/glycerol; end=glycerol:4; spawned=-; contract=1; uses=-
+instant/grape_juice_metal_paint => important=0; match=1; fired=instant/grape_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/grape_juice_paint => important=0; match=1; fired=instant/grape_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/green_metal_paint => important=0; match=1; fired=instant/green_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/green_paint => important=0; match=1; fired=instant/green_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/grey_paint => important=0; match=1; fired=instant/grey_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/gynorovir => important=0; match=1; fired=instant/gynorovir; end=gynorovir:4; spawned=-; contract=1; uses=-
+instant/gynorovir_bootleg => important=0; match=1; fired=instant/gynorovir_bootleg; end=gynorovir:4; spawned=-; contract=1; uses=-
+instant/hannoa => important=0; match=1; fired=instant/hannoa; end=hannoa:4; spawned=-; contract=1; uses=-
+instant/hepanephrodaxon => important=0; match=1; fired=instant/hepanephrodaxon; end=hepanephrodaxon:8 phoron:5; spawned=-; contract=1; uses=-
+instant/hydrophoron => important=0; match=1; fired=instant/hydrophoron; end=hydrophoron:8; spawned=-; contract=1; uses=-
+instant/hyperzine => important=0; match=1; fired=instant/hyperzine; end=hyperzine:12; spawned=-; contract=1; uses=-
+instant/hyronalin => important=0; match=1; fired=instant/hyronalin; end=hyronalin:8; spawned=-; contract=1; uses=-
+instant/ickypak => important=0; match=1; fired=instant/ickypak; end=ickypak:20; spawned=-; contract=1; uses=-
+instant/imidazoline => important=0; match=1; fired=instant/imidazoline; end=imidazoline:8; spawned=-; contract=1; uses=-
+instant/immunosuprizine => important=0; match=1; fired=instant/immunosuprizine; end=immunosuprizine:8 phoron:5; spawned=-; contract=1; uses=-
+instant/impedrezene => important=0; match=1; fired=instant/impedrezene; end=impedrezene:8; spawned=-; contract=1; uses=-
+instant/inaprovaline => important=0; match=1; fired=instant/inaprovaline; end=inaprovaline:12; spawned=-; contract=1; uses=-
+instant/instanttea/green => important=0; match=1; fired=instant/instanttea/green; end=instantteagreen:40; spawned=-; contract=1; uses=-
+instant/instantteapowder/green => important=0; match=1; fired=instant/instantteapowder/green; end=instantteapowdergreen:40; spawned=-; contract=1; uses=-
+instant/ironfoam => important=0; match=1; fired=instant/ironfoam; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
+instant/kelotane => important=1; match=1; fired=instant/kelotane; end=kelotane:8; spawned=-; contract=1; uses=-
+instant/left4zed => important=0; match=1; fired=instant/left4zed; end=left4zed:12; spawned=-; contract=1; uses=-
+instant/lemon_juice_metal_paint => important=0; match=1; fired=instant/lemon_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/lemon_juice_paint => important=0; match=1; fired=instant/lemon_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/leporazine => important=0; match=1; fired=instant/leporazine; end=leporazine:8 phoron:5; spawned=-; contract=1; uses=-
+instant/lexorin => important=0; match=1; fired=instant/lexorin; end=lexorin:12; spawned=-; contract=1; uses=-
+instant/lime_juice_metal_paint => important=0; match=1; fired=instant/lime_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/lime_juice_paint => important=0; match=1; fired=instant/lime_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/lipostipo => important=0; match=1; fired=instant/lipostipo; end=lipostipo:12; spawned=-; contract=1; uses=-
+instant/lipozilase => important=0; match=1; fired=instant/lipozilase; end=lipozilase:8; spawned=-; contract=1; uses=-
+instant/lipozine => important=0; match=1; fired=instant/lipozine; end=lipozine:12; spawned=-; contract=1; uses=-
+instant/liquidhealer => important=0; match=1; fired=instant/liquidhealer; end=liquidhealer:24; spawned=-; contract=1; uses=-
+instant/livingagent => important=0; match=1; fired=instant/livingagent; end=livingagent:8; spawned=-; contract=1; uses=-
+instant/lube => important=0; match=1; fired=instant/lube; end=lube:16; spawned=-; contract=1; uses=-
+instant/luminol => important=0; match=1; fired=instant/luminol; end=luminol:24; spawned=-; contract=1; uses=-
+instant/lye => important=0; match=1; fired=instant/lye; end=lye:12; spawned=-; contract=1; uses=-
+instant/macrocillin => important=0; match=1; fired=instant/macrocillin; end=macrocillin:4; spawned=-; contract=1; uses=-
+instant/malish_qualem => important=0; match=1; fired=instant/malish_qualem; end=malish-qualem:8 phoron:5; spawned=-; contract=1; uses=-
+instant/meatcolony => important=0; match=1; fired=instant/meatcolony; end=protein:240; spawned=-; contract=1; uses=-
+instant/metalfoam => important=0; match=1; fired=instant/metalfoam; end=-; spawned=/obj/effect/effect/foam+1; contract=0; uses=-
+instant/metal_paint => important=0; match=1; fired=instant/metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/methylphenidate => important=0; match=1; fired=instant/methylphenidate; end=methylphenidate:12; spawned=-; contract=1; uses=-
+instant/microcillin => important=0; match=1; fired=instant/microcillin; end=microcillin:4; spawned=-; contract=1; uses=-
+instant/milk_paint => important=0; match=1; fired=instant/milk_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/mindbreaker => important=0; match=1; fired=instant/mindbreaker; end=mindbreaker:12; spawned=-; contract=1; uses=-
+instant/mix_virus => important=0; match=1; fired=instant/mix_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_10 => important=0; match=1; fired=instant/mix_virus/mix_virus_10; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_11 => important=0; match=1; fired=instant/mix_virus/mix_virus_11; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_12 => important=0; match=1; fired=instant/mix_virus/mix_virus_12; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_2 => important=0; match=1; fired=instant/mix_virus/mix_virus_2; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_3 => important=0; match=1; fired=instant/mix_virus; end=blood:1 phoron:4; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_4 => important=0; match=1; fired=instant/mix_virus/mix_virus_4; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_5 => important=0; match=1; fired=instant/mix_virus/mix_virus_5; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_6 => important=0; match=1; fired=instant/mix_virus/mix_virus_6; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_7 => important=0; match=1; fired=instant/mix_virus/mix_virus_7; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_8 => important=0; match=1; fired=instant/mix_virus/mix_virus_8; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/mix_virus_9 => important=0; match=1; fired=instant/mix_virus/mix_virus_9; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/picky => important=0; match=1; fired=instant/mix_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/picky/size => important=0; match=1; fired=instant/mix_virus/picky/size; end=blood:1; spawned=-; contract=0; uses=-
+instant/mix_virus/rem_virus => important=0; match=1; fired=instant/mix_virus/rem_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/mortiferin => important=0; match=1; fired=instant/mortiferin; end=mortiferin:8 phoron:5; spawned=-; contract=1; uses=-
+instant/mutagen => important=0; match=1; fired=instant/mutagen; end=mutagen:12; spawned=-; contract=1; uses=-
+instant/myelamine => important=0; match=1; fired=instant/myelamine; end=myelamine:8; spawned=-; contract=1; uses=-
+instant/myelamine_sap => important=0; match=1; fired=instant/myelamine_sap; end=myelamine:4; spawned=-; contract=1; uses=-
+instant/napalm => important=0; match=1; fired=instant/napalm; end=-; spawned=-; contract=0; uses=-
+instant/neoliquidfire => important=0; match=1; fired=instant/neoliquidfire; end=neoliquidfire:4 phoron:4.6; spawned=-; contract=1; uses=-
+instant/neotane => important=0; match=1; fired=instant/neotane; end=neotane:8; spawned=-; contract=1; uses=-
+instant/neurotoxin => important=0; match=1; fired=instant/neurotoxin; end=neurotoxin:8; spawned=-; contract=1; uses=-
+instant/neuter_virus => important=0; match=1; fired=instant/neuter_virus; end=blood:1; spawned=-; contract=0; uses=-
+instant/neutralize_carpotoxin => important=0; match=1; fired=instant/neutralize_carpotoxin; end=protein:4; spawned=-; contract=1; uses=-
+instant/neutralize_neurotoxic_protein => important=0; match=1; fired=instant/neutralize_neurotoxic_protein; end=protein:8; spawned=-; contract=1; uses=-
+instant/neutralize_spidertoxin => important=0; match=1; fired=instant/neutralize_spidertoxin; end=protein:4; spawned=-; contract=1; uses=-
+instant/nitroglycerin => important=1; match=1; fired=instant/nitroglycerin; end=nitroglycerin:8; spawned=-; contract=1; uses=-
+instant/normalcillin => important=0; match=1; fired=instant/normalcillin; end=normalcillin:4; spawned=-; contract=1; uses=-
+instant/numbingenzyme => important=0; match=1; fired=instant/numbingenzyme; end=numbenzyme:16; spawned=-; contract=1; uses=-
+instant/nutrient => important=0; match=1; fired=instant/nutrient; end=nutriment:12 water:5; spawned=-; contract=1; uses=-
+instant/orange_juice_metal_paint => important=0; match=1; fired=instant/orange_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/orange_juice_paint => important=0; match=1; fired=instant/orange_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/orange_metal_paint => important=0; match=1; fired=instant/orange_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/orange_paint => important=0; match=1; fired=instant/orange_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/osteodaxon => important=0; match=1; fired=instant/osteodaxon; end=osteodaxon:8 phoron:4.6; spawned=-; contract=1; uses=-
+instant/oxycodone => important=0; match=1; fired=instant/oxycodone; end=oxycodone:4 phoron:5; spawned=-; contract=1; uses=-
+instant/pacid => important=0; match=1; fired=instant/pacid; end=pacid:12; spawned=-; contract=1; uses=-
+instant/paracetamol => important=0; match=1; fired=instant/paracetamol; end=paracetamol:8; spawned=-; contract=1; uses=-
+instant/paroxetine => important=0; match=1; fired=instant/paroxetine; end=paroxetine:12; spawned=-; contract=1; uses=-
+instant/performancepeaker => important=0; match=1; fired=instant/performancepeaker; end=performancepeaker:8; spawned=-; contract=1; uses=-
+instant/peridaxon => important=0; match=1; fired=instant/peridaxon; end=peridaxon:8 phoron:5; spawned=-; contract=1; uses=-
+instant/peridaxon_ch => important=0; match=1; fired=instant/peridaxon_ch; end=peridaxon:48; spawned=-; contract=1; uses=-
+instant/phenethylamine => important=0; match=1; fired=instant/phenethylamine; end=phenethylamine:8; spawned=-; contract=1; uses=-
+instant/plantbgone => important=0; match=1; fired=instant/plantbgone; end=plantbgone:20; spawned=-; contract=1; uses=-
+instant/plantcolony => important=0; match=1; fired=instant/plantcolony; end=nutriment:240; spawned=-; contract=1; uses=-
+instant/plastication => important=0; match=1; fired=instant/plastication; end=-; spawned=/obj/item/stack/material/plastic+1; contract=0; uses=-
+instant/poisonberry_juice_metal_paint => important=0; match=1; fired=instant/poisonberry_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/poisonberry_juice_paint => important=0; match=1; fired=instant/poisonberry_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/potassium_chloride => important=0; match=1; fired=instant/potassium_chloride; end=potassium_chloride:8; spawned=-; contract=1; uses=-
+instant/potassium_chlorophoride => important=0; match=1; fired=instant/potassium_chlorophoride; end=potassium_chlorophoride:16; spawned=-; contract=1; uses=-
+instant/potato_juice_metal_paint => important=0; match=1; fired=instant/potato_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/potato_juice_paint => important=0; match=1; fired=instant/potato_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/promethean_brain_revival => important=0; match=0; fired=-; end=phoron:160; spawned=-; contract=0; uses=-
+instant/prussian_blue => important=0; match=1; fired=instant/prussian_blue; end=prussian_blue:28; spawned=-; contract=1; uses=-
+instant/purifyingagent => important=0; match=1; fired=instant/purifyingagent; end=purifyingagent:8; spawned=-; contract=1; uses=-
+instant/purple_metal_paint => important=0; match=1; fired=instant/purple_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/purple_paint => important=0; match=1; fired=instant/purple_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/qerr_quem => important=0; match=1; fired=instant/qerr_quem; end=qerr_quem:16; spawned=-; contract=1; uses=-
+instant/quadcord => important=0; match=1; fired=instant/quadcord; end=quadcord:12; spawned=-; contract=1; uses=-
+instant/red_metal_paint => important=0; match=1; fired=instant/red_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/red_paint => important=0; match=1; fired=instant/red_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/respirodaxon => important=0; match=1; fired=instant/respirodaxon; end=phoron:1 respirodaxon:8; spawned=-; contract=1; uses=-
+instant/rezadone => important=0; match=1; fired=instant/rezadone; end=rezadone:12; spawned=-; contract=1; uses=-
+instant/robustharvest => important=0; match=1; fired=instant/robustharvest; end=robustharvest:12; spawned=-; contract=1; uses=-
+instant/ryetalyn => important=0; match=1; fired=instant/ryetalyn; end=ryetalyn:8; spawned=-; contract=1; uses=-
+instant/silicate => important=0; match=1; fired=instant/silicate; end=silicate:12; spawned=-; contract=1; uses=-
+instant/sizeoxadone => important=0; match=1; fired=instant/sizeoxadone; end=phoron:5 sizeoxadone:8; spawned=-; contract=1; uses=-
+instant/slime/amber_goop => important=0; match=1; fired=instant/slime/amber_goop; end=slime_goop:120; spawned=-; contract=1; uses=0
+instant/slime/amber_random_food => important=0; match=1; fired=instant/slime/amber_random_food; end=-; spawned=/obj/item/reagent_containers/food/snacks/burger/bacon+1,/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket+1,/obj/item/reagent_containers/food/snacks/loadedbakedpotato+1,/obj/item/reagent_containers/food/snacks/monkeycube/wrapped/neaeracube+1; contract=0; uses=0
+instant/slime/amber_slimefood => important=0; match=1; fired=instant/slime/amber_slimefood; end=-; spawned=/obj/item/slimepotion/feeding+1; contract=0; uses=0
+instant/slime/amber_snack => important=0; match=1; fired=instant/slime/amber_snack; end=-; spawned=/obj/item/reagent_containers/food/snacks/slime+4; contract=0; uses=0
+instant/slime/bluespace_chaotic_tele => important=0; match=1; fired=instant/slime/bluespace_chaotic_tele; end=-; spawned=-; contract=0; uses=0
+instant/slime/bluespace_crystals => important=0; match=1; fired=instant/slime/bluespace_crystals; end=-; spawned=/obj/item/slime_crystal+5; contract=0; uses=0
+instant/slime/bluespace_pouch => important=0; match=1; fired=instant/slime/bluespace_pouch; end=-; spawned=/obj/item/storage/backpack/holding/slime+1; contract=0; uses=0
+instant/slime/bluespace_teleporter => important=0; match=1; fired=instant/slime/bluespace_teleporter; end=-; spawned=/obj/item/disposable_teleporter/slime+1; contract=0; uses=0
+instant/slime/blue_calm => important=0; match=1; fired=instant/slime/blue_calm; end=-; spawned=-; contract=0; uses=0
+instant/slime/blue_cryotoxin => important=0; match=1; fired=instant/slime/blue_cryotoxin; end=cryotoxin:120; spawned=-; contract=1; uses=0
+instant/slime/blue_frostoil => important=0; match=1; fired=instant/slime/blue_frostoil; end=frostoil:120; spawned=-; contract=1; uses=0
+instant/slime/blue_stability => important=0; match=1; fired=instant/slime/blue_stability; end=-; spawned=/obj/item/slimepotion/stabilizer+1; contract=0; uses=0
+instant/slime/carpfren => important=0; match=1; fired=instant/slime/carpfren; end=-; spawned=/mob/living/simple_mob/animal/space/carp/station+1; contract=0; uses=0
+instant/slime/cerulean_enhancer => important=0; match=1; fired=instant/slime/cerulean_enhancer; end=-; spawned=/obj/item/slimepotion/enhancer+1; contract=0; uses=0
+instant/slime/cerulean_potion_mimic => important=0; match=1; fired=instant/slime/cerulean_potion_mimic; end=-; spawned=/obj/item/slimepotion/mimic+1; contract=0; uses=0
+instant/slime/cerulean_random_potion => important=0; match=1; fired=instant/slime/cerulean_random_potion; end=-; spawned=/obj/item/slimepotion/infertility+1; contract=0; uses=0
+instant/slime/cerulean_reinvigoration => important=0; match=1; fired=instant/slime/cerulean_reinvigoration; end=-; spawned=/obj/item/slimepotion/reinvigoration+1; contract=0; uses=0
+instant/slime/dark_blood => important=0; match=1; fired=instant/slime/dark_blood; end=-; spawned=/obj/item/stack/material/void_opal+1; contract=0; uses=0
+instant/slime/dark_blue_cold_snap => important=0; match=1; fired=instant/slime/dark_blue_cold_snap; end=-; spawned=-; contract=0; uses=0
+instant/slime/dark_blue_death => important=0; match=1; fired=instant/slime/dark_blue_death; end=-; spawned=/obj/item/slimepotion/death+1; contract=0; uses=0
+instant/slime/dark_blue_ice => important=0; match=1; fired=instant/slime/dark_blue_ice; end=ice:20; spawned=-; contract=1; uses=0
+instant/slime/dark_blue_temp_resist => important=0; match=1; fired=instant/slime/dark_blue_temp_resist; end=-; spawned=-; contract=0; uses=0
+instant/slime/dark_carpotoxin => important=0; match=1; fired=instant/slime/dark_carpotoxin; end=-; spawned=/mob/living/simple_mob/slime/xenobio/oceanic+1; contract=0; uses=0
+instant/slime/dark_deathblood => important=0; match=1; fired=instant/slime/dark_deathblood; end=-; spawned=/obj/item/stack/material/painite+1; contract=0; uses=0
+instant/slime/dark_liquidfire => important=0; match=1; fired=instant/slime/dark_liquidfire; end=-; spawned=-; contract=0; uses=0
+instant/slime/dark_liquidlife => important=0; match=1; fired=instant/slime/dark_liquidlife; end=-; spawned=-; contract=0; uses=0
+instant/slime/dark_neofire => important=0; match=1; fired=instant/slime/dark_neofire; end=healing_nanites:120; spawned=-; contract=1; uses=0
+instant/slime/dark_purple_blood => important=0; match=1; fired=instant/slime/dark_purple_blood; end=blood:120; spawned=-; contract=1; uses=0
+instant/slime/dark_purple_phoron => important=0; match=1; fired=instant/slime/dark_purple_phoron; end=phoron:120; spawned=-; contract=1; uses=0
+instant/slime/dark_spidertoxin => important=0; match=1; fired=instant/slime/dark_spidertoxin; end=-; spawned=/obj/effect/spider/eggcluster/royal/space+1; contract=0; uses=0
+instant/slime/dreamscale => important=0; match=1; fired=instant/slime/dreamscale; end=-; spawned=/obj/item/stack/material/dreamscale+1; contract=0; uses=0
+instant/slime/emerald_agility => important=0; match=1; fired=instant/slime/emerald_agility; end=-; spawned=-; contract=0; uses=0
+instant/slime/emerald_hell => important=0; match=1; fired=instant/slime/emerald_hell; end=-; spawned=-; contract=0; uses=0
+instant/slime/emerald_hyperzine => important=0; match=1; fired=instant/slime/emerald_hyperzine; end=hyperzine:120; spawned=-; contract=1; uses=0
+instant/slime/emerald_speed => important=0; match=1; fired=instant/slime/emerald_speed; end=-; spawned=-; contract=0; uses=0
+instant/slime/gold_hostile_mob => important=0; match=1; fired=instant/slime/gold_hostile_mob; end=-; spawned=/mob/living/simple_mob/animal/space/alien/sentinel+1; contract=0; uses=0
+instant/slime/gold_materials_gold => important=0; match=1; fired=instant/slime/gold_materials_gold; end=-; spawned=/obj/item/stack/material/gold+1; contract=0; uses=0
+instant/slime/gold_random_mobs => important=0; match=1; fired=instant/slime/gold_random_mobs; end=-; spawned=/mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white+1,/mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo+1,/mob/living/simple_mob/vore/alienanimals/space_jellyfish+1; contract=0; uses=0
+instant/slime/gold_safe_mob => important=0; match=1; fired=instant/slime/gold_safe_mob; end=-; spawned=/mob/living/simple_mob/vore/squirrel+1; contract=0; uses=0
+instant/slime/green_emitter => important=0; match=1; fired=instant/slime/green_emitter; end=-; spawned=/obj/item/slime_irradiator+1; contract=0; uses=0
+instant/slime/green_radium => important=0; match=1; fired=instant/slime/green_radium; end=radium:120; spawned=-; contract=1; uses=0
+instant/slime/green_radpulse => important=0; match=1; fired=instant/slime/green_radpulse; end=-; spawned=-; contract=0; uses=1
+instant/slime/green_uranium => important=0; match=1; fired=instant/slime/green_uranium; end=-; spawned=/obj/item/stack/material/uranium+1; contract=0; uses=0
+instant/slime/grey_monkey => important=0; match=1; fired=instant/slime/grey_monkey; end=-; spawned=/obj/item/reagent_containers/food/snacks/monkeycube+5; contract=0; uses=0
+instant/slime/grey_new_slime => important=0; match=1; fired=instant/slime/grey_new_slime; end=-; spawned=/mob/living/simple_mob/slime/xenobio+1; contract=0; uses=0
+instant/slime/grey_slimejelly => important=0; match=1; fired=instant/slime/grey_slimejelly; end=slimejelly:120; spawned=-; contract=1; uses=0
+instant/slime/light_pink_docility => important=0; match=1; fired=instant/slime/light_pink_docility; end=-; spawned=/obj/item/slimepotion/docility+1; contract=0; uses=0
+instant/slime/light_pink_friendship => important=0; match=1; fired=instant/slime/light_pink_friendship; end=-; spawned=/obj/item/slimepotion/friendship+1; contract=0; uses=0
+instant/slime/light_pink_loyalty => important=0; match=1; fired=instant/slime/light_pink_loyalty; end=-; spawned=/obj/item/slimepotion/loyalty+1; contract=0; uses=0
+instant/slime/light_pink_obedience => important=0; match=1; fired=instant/slime/light_pink_obedience; end=-; spawned=/obj/item/slimepotion/obedience+1; contract=0; uses=0
+instant/slime/metal_materials_adv => important=0; match=1; fired=instant/slime/metal_materials_adv; end=-; spawned=/obj/item/stack/material/glass/phoronglass+1,/obj/item/stack/material/plasteel+1; contract=0; uses=0
+instant/slime/metal_materials_basic => important=0; match=1; fired=instant/slime/metal_materials_basic; end=-; spawned=/obj/item/stack/material/log+1,/obj/item/stack/material/plastic+1,/obj/item/stack/material/wood+1; contract=0; uses=0
+instant/slime/metal_materials_steel => important=0; match=1; fired=instant/slime/metal_materials_steel; end=-; spawned=/obj/item/stack/material/steel+1; contract=0; uses=0
+instant/slime/metal_materials_weird => important=0; match=1; fired=instant/slime/metal_materials_weird; end=-; spawned=/obj/item/stack/material/fur/wool+1,/obj/item/stack/material/leather+1,/obj/item/stack/material/snow+1; contract=0; uses=0
+instant/slime/nightmareblood => important=0; match=1; fired=instant/slime/nightmareblood; end=-; spawned=/obj/item/stack/material/valhollide+1; contract=0; uses=0
+instant/slime/nightmarejelly => important=0; match=1; fired=instant/slime/nightmarejelly; end=-; spawned=-; contract=0; uses=0
+instant/slime/nightmarephoron => important=0; match=1; fired=instant/slime/nightmarephoron; end=-; spawned=-; contract=0; uses=0
+instant/slime/nightmareslime => important=0; match=1; fired=instant/slime/nightmareslime; end=-; spawned=/mob/living/simple_mob/slime/xenobio/nightmare+1; contract=0; uses=0
+instant/slime/nightmarewater => important=0; match=1; fired=instant/slime/nightmarewater; end=-; spawned=-; contract=0; uses=0
+instant/slime/nuclear_emitter => important=0; match=1; fired=instant/slime/green_emitter; end=-; spawned=/obj/item/slime_irradiator+1; contract=0; uses=0
+instant/slime/nuclear_radium => important=0; match=1; fired=instant/slime/green_radium; end=radium:120; spawned=-; contract=1; uses=0
+instant/slime/nuclear_radpulse => important=0; match=1; fired=instant/slime/nuclear_radpulse; end=-; spawned=-; contract=0; uses=0
+instant/slime/nuclear_uranium => important=0; match=1; fired=instant/slime/green_uranium; end=-; spawned=/obj/item/stack/material/uranium+1; contract=0; uses=0
+instant/slime/obj/item/slime_extract/plague_jelly => important=0; match=1; fired=instant/slime/obj/item/slime_extract/plague_jelly; end=slimejelly:120; spawned=-; contract=1; uses=0
+instant/slime/oceanboon => important=0; match=1; fired=instant/slime/oceanboon; end=-; spawned=-; contract=0; uses=0
+instant/slime/oceancarp => important=0; match=1; fired=instant/slime/oceancarp; end=carpotoxin:120; spawned=-; contract=1; uses=0
+instant/slime/oil_explosion => important=0; match=1; fired=instant/slime/oil_explosion; end=-; spawned=-; contract=0; uses=0
+instant/slime/oil_fakesplosion => important=0; match=1; fired=instant/slime/oil_fakesplosion; end=-; spawned=-; contract=0; uses=0
+instant/slime/oil_fuel => important=0; match=1; fired=instant/slime/oil_fuel; end=fuel:120; spawned=-; contract=1; uses=0
+instant/slime/oil_oil => important=0; match=1; fired=instant/slime/oil_oil; end=cookingoil:120; spawned=-; contract=1; uses=0
+instant/slime/orange_fire => important=0; match=1; fired=instant/slime/orange_fire; end=-; spawned=-; contract=0; uses=0
+instant/slime/orange_heatwave => important=0; match=1; fired=instant/slime/orange_heatwave; end=-; spawned=-; contract=0; uses=0
+instant/slime/orange_pyrotoxin => important=0; match=1; fired=instant/slime/orange_pyrotoxin; end=thermite_v:120; spawned=-; contract=1; uses=0
+instant/slime/orange_smoke => important=0; match=1; fired=instant/slime/orange_smoke; end=-; spawned=/obj/effect/effect/smoke/chem+1; contract=0; uses=0
+instant/slime/pink_bone_fix => important=0; match=1; fired=instant/slime/pink_bone_fix; end=slime_bone_fixer:120; spawned=-; contract=1; uses=0
+instant/slime/pink_clotting => important=0; match=1; fired=instant/slime/pink_clotting; end=slime_bleed_fixer:120; spawned=-; contract=1; uses=0
+instant/slime/pink_heal_pulse => important=0; match=1; fired=instant/slime/pink_heal_pulse; end=-; spawned=-; contract=0; uses=0
+instant/slime/pink_organ_fix => important=0; match=1; fired=instant/slime/pink_organ_fix; end=slime_organ_fixer:120; spawned=-; contract=1; uses=0
+instant/slime/plague_toxin => important=0; match=1; fired=instant/slime/plague_toxin; end=neurophage_nanites:120; spawned=-; contract=1; uses=0
+instant/slime/purple_fertility => important=0; match=1; fired=instant/slime/purple_fertility; end=-; spawned=/obj/item/slimepotion/fertility+1; contract=0; uses=0
+instant/slime/purple_infertility => important=0; match=1; fired=instant/slime/purple_infertility; end=-; spawned=/obj/item/slimepotion/infertility+1; contract=0; uses=0
+instant/slime/purple_shrink => important=0; match=1; fired=instant/slime/purple_shrink; end=-; spawned=/obj/item/slimepotion/shrink+1; contract=0; uses=0
+instant/slime/purple_steroid => important=0; match=1; fired=instant/slime/purple_steroid; end=-; spawned=/obj/item/slimepotion/steroid+1; contract=0; uses=0
+instant/slime/rainbow_colors => important=0; match=1; fired=instant/slime/rainbow_colors; end=-; spawned=-; contract=0; uses=0
+instant/slime/rainbow_random_extract => important=0; match=1; fired=instant/slime/rainbow_random_extract; end=-; spawned=/obj/item/slime_extract/red+1; contract=0; uses=0
+instant/slime/rainbow_random_slime => important=0; match=1; fired=instant/slime/rainbow_random_slime; end=-; spawned=/mob/living/simple_mob/slime/xenobio/cerulean+1; contract=0; uses=0
+instant/slime/rainbow_unity => important=0; match=1; fired=instant/slime/rainbow_unity; end=-; spawned=/obj/item/slimepotion/unity+1; contract=0; uses=0
+instant/slime/redspace_fire => important=0; match=1; fired=instant/slime/redspace_fire; end=neoliquidfire:120; spawned=-; contract=1; uses=0
+instant/slime/redspace_smoke => important=0; match=1; fired=instant/slime/redspace_smoke; end=-; spawned=/obj/effect/effect/smoke/chem+1; contract=0; uses=0
+instant/slime/redspace_sound => important=0; match=1; fired=instant/slime/redspace_sound; end=-; spawned=/mob/living/simple_mob/slime/xenobio/sound+1; contract=0; uses=0
+instant/slime/red_enrage => important=0; match=1; fired=instant/slime/red_enrage; end=-; spawned=-; contract=0; uses=0
+instant/slime/red_ferality => important=0; match=1; fired=instant/slime/red_ferality; end=-; spawned=/obj/item/slimepotion/ferality+1; contract=0; uses=0
+instant/slime/red_hotsauce => important=0; match=1; fired=instant/slime/red_hotsauce; end=capsaicin:120; spawned=-; contract=1; uses=0
+instant/slime/red_mutation => important=0; match=1; fired=instant/slime/red_mutation; end=-; spawned=/obj/item/slimepotion/mutator+1; contract=0; uses=0
+instant/slime/ruby_brute_juice => important=0; match=1; fired=instant/slime/ruby_brute_juice; end=berserkmed:120; spawned=-; contract=1; uses=0
+instant/slime/ruby_pull => important=0; match=1; fired=instant/slime/ruby_pull; end=-; spawned=-; contract=0; uses=0
+instant/slime/ruby_push => important=0; match=1; fired=instant/slime/ruby_push; end=-; spawned=-; contract=0; uses=0
+instant/slime/ruby_swole => important=0; match=1; fired=instant/slime/ruby_swole; end=-; spawned=-; contract=0; uses=0
+instant/slime/sapphire_mutation => important=0; match=1; fired=instant/slime/sapphire_mutation; end=mutationtoxin:120; spawned=-; contract=1; uses=0
+instant/slime/sapphire_plushies => important=0; match=1; fired=instant/slime/sapphire_plushies; end=-; spawned=/obj/item/toy/plushie/crimson_fox+1,/obj/item/toy/plushie/dragon/green_east+1,/obj/item/toy/plushie/nymph+1,/obj/item/toy/plushie/pink_fox+1; contract=0; uses=0
+instant/slime/sapphire_promethean => important=0; match=1; fired=instant/slime/sapphire_promethean; end=-; spawned=/obj/item/slime_cube+1; contract=0; uses=0
+instant/slime/sapphire_sapience => important=0; match=1; fired=instant/slime/sapphire_sapience; end=-; spawned=/obj/item/slimepotion/sapience+1; contract=0; uses=0
+instant/slime/secertslime => important=0; match=1; fired=instant/slime/secertslime; end=-; spawned=/mob/living/simple_mob/slime/xenobio/redspace+1; contract=0; uses=0
+instant/slime/senseenhancer => important=0; match=1; fired=instant/slime/senseenhancer; end=senseenhancer:120; spawned=-; contract=1; uses=0
+instant/slime/sepia_new_slime => important=0; match=1; fired=instant/slime/sepia_new_slime; end=-; spawned=/mob/living/simple_mob/slime/xenobio/sepia+1; contract=0; uses=0
+instant/slime/silver_materials_adv => important=0; match=1; fired=instant/slime/silver_materials_adv; end=-; spawned=/obj/item/stack/material/osmium+1; contract=0; uses=0
+instant/slime/silver_materials_basic => important=0; match=1; fired=instant/slime/silver_materials_basic; end=-; spawned=/obj/item/stack/material/uranium+2; contract=0; uses=0
+instant/slime/silver_materials_random => important=0; match=1; fired=instant/slime/silver_materials_random; end=-; spawned=/obj/item/stack/material/aluminium+1,/obj/item/stack/material/cloth+1,/obj/item/stack/material/glass/phoronglass+1; contract=0; uses=0
+instant/slime/silver_materials_silver => important=0; match=1; fired=instant/slime/silver_materials_silver; end=-; spawned=/obj/item/stack/material/silver+1; contract=0; uses=0
+instant/slime/slime_mindbreaker => important=0; match=1; fired=instant/slime/slime_mindbreaker; end=mindbreaker:120; spawned=-; contract=1; uses=0
+instant/slime/soulstone => important=0; match=1; fired=instant/slime/soulstone; end=-; spawned=/obj/item/soulstone+1; contract=0; uses=0
+instant/slime/soundblood => important=0; match=1; fired=instant/slime/soundblood; end=-; spawned=/obj/item/stack/material/quartz+1; contract=0; uses=0
+instant/slime/soundjelly => important=0; match=1; fired=instant/slime/soundjelly; end=-; spawned=/obj/item/stack/material/glass/plastitanium+1; contract=0; uses=0
+instant/slime/soundphoron => important=0; match=1; fired=instant/slime/soundphoron; end=-; spawned=-; contract=0; uses=0
+instant/slime/soundwater => important=0; match=1; fired=instant/slime/soundwater; end=-; spawned=/mob/living/simple_mob/slime/xenobio/sound+1; contract=0; uses=0
+instant/slime/virusdish => important=0; match=1; fired=instant/slime/virusdish; end=-; spawned=-; contract=0; uses=0
+instant/slime/warplague => important=0; match=1; fired=instant/slime/warplague; end=-; spawned=/mob/living/simple_mob/slime/xenobio/nuclear+1; contract=0; uses=0
+instant/slime/waterdupe => important=0; match=1; fired=instant/slime/waterdupe; end=water:120; spawned=-; contract=1; uses=0
+instant/slime/yellow_battery => important=0; match=1; fired=instant/slime/yellow_battery; end=-; spawned=/obj/item/cell/slime+1; contract=0; uses=0
+instant/slime/yellow_emp => important=0; match=1; fired=instant/slime/yellow_emp; end=-; spawned=-; contract=0; uses=0
+instant/slime/yellow_flashlight => important=0; match=1; fired=instant/slime/yellow_flashlight; end=-; spawned=/obj/item/flashlight/slime+1; contract=0; uses=0
+instant/slime/yellow_lightning => important=0; match=1; fired=instant/slime/yellow_lightning; end=-; spawned=-; contract=0; uses=0
+instant/slimeify => important=0; match=1; fired=instant/slimeify; end=advmutationtoxin:4; spawned=-; contract=1; uses=-
+instant/soapification => important=0; match=1; fired=instant/soapification; end=-; spawned=/obj/item/soap+4; contract=0; uses=-
+instant/soapification/alt => important=0; match=1; fired=instant/soapification/alt; end=-; spawned=/obj/item/soap+4; contract=0; uses=-
+instant/soapification/gibs => important=0; match=1; fired=instant/soapification/gibs; end=-; spawned=/obj/item/soap/homemade+4; contract=0; uses=-
+instant/sodiumchloride => important=0; match=1; fired=instant/sodiumchloride; end=sodiumchloride:8; spawned=-; contract=1; uses=-
+instant/solidification => important=0; match=1; fired=instant/solidification; end=-; spawned=/obj/item/stack/material/iron+1; contract=0; uses=-
+instant/solidification/aluminium => important=0; match=1; fired=instant/solidification/aluminium; end=-; spawned=/obj/item/stack/material/aluminium+1; contract=0; uses=-
+instant/solidification/copper => important=0; match=1; fired=instant/solidification/copper; end=-; spawned=/obj/item/stack/material/copper+1; contract=0; uses=-
+instant/solidification/deuterium => important=0; match=1; fired=instant/solidification/deuterium; end=-; spawned=/obj/item/stack/material/deuterium+1; contract=0; uses=-
+instant/solidification/gold => important=0; match=1; fired=instant/solidification/gold; end=-; spawned=/obj/item/stack/material/gold+1; contract=0; uses=-
+instant/solidification/hydrogen => important=0; match=1; fired=instant/solidification/hydrogen; end=-; spawned=/obj/item/stack/material/mhydrogen+1; contract=0; uses=-
+instant/solidification/phoron => important=0; match=1; fired=instant/solidification/phoron; end=-; spawned=/obj/item/stack/material/phoron+1; contract=0; uses=-
+instant/solidification/plasteel => important=0; match=1; fired=instant/solidification,instant/solidification/platinum; end=carbon:80; spawned=/obj/item/stack/material/iron+1,/obj/item/stack/material/platinum+1; contract=0; uses=-
+instant/solidification/platinum => important=0; match=1; fired=instant/solidification/platinum; end=-; spawned=/obj/item/stack/material/platinum+1; contract=0; uses=-
+instant/solidification/silver => important=0; match=1; fired=instant/solidification/silver; end=-; spawned=/obj/item/stack/material/silver+1; contract=0; uses=-
+instant/solidification/steel => important=0; match=1; fired=instant/solidification; end=carbon:80 frostoil:20; spawned=/obj/item/stack/material/iron+1; contract=0; uses=-
+instant/solidification/uranium => important=0; match=1; fired=instant/solidification/uranium; end=-; spawned=/obj/item/stack/material/uranium+1; contract=0; uses=-
+instant/soporific => important=0; match=1; fired=instant/soporific; end=stoxin:20; spawned=-; contract=1; uses=-
+instant/sorbitol => important=0; match=1; fired=instant/sorbitol; end=sorbitol:8; spawned=-; contract=1; uses=-
+instant/souldew => important=0; match=1; fired=instant/souldew; end=souldew:12; spawned=-; contract=1; uses=-
+instant/spaceacillin => important=0; match=1; fired=instant/spaceacillin; end=spaceacillin:8; spawned=-; contract=1; uses=-
+instant/space_cleaner => important=0; match=1; fired=instant/space_cleaner; end=cleaner:8; spawned=-; contract=1; uses=-
+instant/sterilizine => important=0; match=1; fired=instant/sterilizine; end=sterilizine:12; spawned=-; contract=1; uses=-
+instant/stimm => important=0; match=1; fired=instant/stimm; end=fuel:1 stimm:8; spawned=-; contract=1; uses=-
+instant/succubi_paralize => important=0; match=1; fired=instant/succubi_paralize; end=succubi_paralize:8; spawned=-; contract=1; uses=-
+instant/surfactant => important=0; match=1; fired=instant/surfactant; end=fluorosurfactant:20; spawned=-; contract=1; uses=-
+instant/synaptizine => important=0; match=1; fired=instant/synaptizine; end=synaptizine:12; spawned=-; contract=1; uses=-
+instant/talum_quem => important=0; match=1; fired=instant/talum_quem; end=talum_quem:16; spawned=-; contract=1; uses=-
+instant/tercozolam => important=0; match=1; fired=instant/tercozolam; end=tercozolam:12; spawned=-; contract=1; uses=-
+instant/thermite => important=0; match=1; fired=instant/thermite; end=thermite:12; spawned=-; contract=1; uses=-
+instant/titanium_oxidation => important=0; match=1; fired=instant/titanium_oxidation; end=titanium_diox:4; spawned=-; contract=1; uses=-
+instant/tomato_juice_metal_paint => important=0; match=1; fired=instant/tomato_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/tomato_juice_paint => important=0; match=1; fired=instant/tomato_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/toxin/oilslide => important=0; match=1; fired=instant/toxin/oilslide; end=oilslide:12; spawned=-; contract=1; uses=-
+instant/tramadol => important=0; match=1; fired=instant/tramadol; end=tramadol:12; spawned=-; contract=1; uses=-
+instant/tricordrazine => important=0; match=1; fired=instant/tricordrazine; end=tricordrazine:8; spawned=-; contract=1; uses=-
+instant/unsorbitol => important=0; match=1; fired=instant/unsorbitol; end=unsorbitol:20; spawned=-; contract=1; uses=-
+instant/vermicetol => important=0; match=1; fired=instant/vermicetol; end=phoron:4.6 vermicetol:12; spawned=-; contract=1; uses=-
+instant/virus_food => important=0; match=1; fired=instant/virus_food; end=virusfood:20; spawned=-; contract=1; uses=-
+instant/virus_food_adranol => important=0; match=1; fired=instant/virus_food_adranol; end=adranolvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_mutagen => important=0; match=1; fired=instant/virus_food_mutagen; end=mutagenvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_mutagen_inaprovaline => important=0; match=1; fired=instant/virus_food_mutagen_inaprovaline; end=sugarvirusfood:8; spawned=-; contract=1; uses=-
+instant/virus_food_mutagen_sugar => important=0; match=1; fired=instant/virus_food_mutagen_sugar; end=sugarvirusfood:8; spawned=-; contract=1; uses=-
+instant/virus_food_phoron => important=0; match=1; fired=instant/virus_food_phoron; end=phoronvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_phoron_adranol => important=0; match=1; fired=instant/virus_food_phoron_adranol; end=weakphoronvirusfood:8; spawned=-; contract=1; uses=-
+instant/virus_food_size => important=0; match=1; fired=instant/virus_food_size; end=sizevirusfood:8; spawned=-; contract=1; uses=-
+instant/virus_food_uranium => important=0; match=1; fired=instant/virus_food_uranium; end=uraniumvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_uranium_stable => important=0; match=1; fired=instant/virus_food_uranium_stable; end=stableuraniumvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_uranium_stable_alt => important=0; match=1; fired=instant/virus_food_uranium_stable_alt; end=stableuraniumvirusfood:4; spawned=-; contract=1; uses=-
+instant/virus_food_uranium_unstable => important=0; match=1; fired=instant/virus_food_uranium_unstable; end=unstableuraniumvirusfood:4; spawned=-; contract=1; uses=-
+instant/water => important=0; match=1; fired=instant/water; end=water:4; spawned=-; contract=1; uses=-
+instant/watermelon_juice_metal_paint => important=0; match=1; fired=instant/watermelon_juice_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/watermelon_juice_paint => important=0; match=1; fired=instant/watermelon_juice_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/xenolazarus => important=0; match=1; fired=instant/xenolazarus; end=-; spawned=-; contract=0; uses=-
+instant/yellow_metal_paint => important=0; match=1; fired=instant/yellow_metal_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/yellow_paint => important=0; match=1; fired=instant/yellow_paint; end=paint:20; spawned=-; contract=1; uses=-
+instant/zombiepowder => important=0; match=1; fired=instant/zombiepowder; end=zombiepowder:8; spawned=-; contract=1; uses=-
+instant/zombiepowder/alt => important=0; match=1; fired=instant/zombiepowder/alt; end=zombiepowder:8; spawned=-; contract=1; uses=-
+
