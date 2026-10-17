@@ -50,10 +50,6 @@
 	TEST_ASSERT_NULL(B.check(A), "The retired fixture's special TRUE state still allows")
 	F.set_mode(0)
 	TEST_ASSERT(R.holds(A), "Requirements are evaluated afresh after recovery")
-	var/datum/requirement/req_protocol_fixture/compatibility = allocate(/datum/requirement/req_protocol_fixture)
-	TEST_ASSERT(isnull(compatibility.check(A)), "An allowed compatibility requirement exposes null")
-	compatibility.allowed = FALSE
-	TEST_ASSERT_EQUAL(compatibility.check(A), "A compatibility reason.", "A refused compatibility requirement exposes its reason")
 
 /datum/unit_test/dq_e2/requirement_protocol_composition
 

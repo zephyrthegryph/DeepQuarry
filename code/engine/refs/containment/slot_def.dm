@@ -82,7 +82,7 @@
 
 	// ---- Operations (operations/routes.dm) ----
 	/// AFF_* mask of what the holder can do through this slot (a hand: hold, manipulate,
-	/// hold small, interface). ops_provider() picks the slot that gives an op's affordance.
+	/// hold small, interface). the provider picks the slot that gives an op's affordance.
 	var/provides = NONE
 	/// BAY_*: the compartment of the holder this slot sits in; paths cross that bay's boundary.
 	var/at
