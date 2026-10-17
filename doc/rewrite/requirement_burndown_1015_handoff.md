@@ -1,5 +1,11 @@
 # Requirement retirement handoff (2026-10-15)
 
+> 2026-10-17 refresh: merged current `origin/master` at `82f2b87547cf` on `5963d97922`.
+> The production `REQ_*(` inventory is 141 lines on that master and zero after this merge; the boolean-requirement baseline remains zero.
+> Master’s internal-storage admission guard, pilot constructor test and private-notes setter are preserved; acceptance preference setters remain in place.
+> No change against master remains under `tools/dmb`, build tooling or `code/engine/change`.
+> The earlier receipt below is historical. A new lane-ready proof is pending on this merged code; 85 explicit selectors include the changed acceptance/constraint/consent tests and both mandatory pins.
+
 Branch: `codex/req-burndown`. Final lane-ready verification is pending; this document does not claim a stamp or a completed gate.
 
 ## Result and counts
