@@ -116,32 +116,26 @@ CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)
 	orion_menu(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_new_game(datum/act/op/A)
 	orion_newgame(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_continue(datum/act/op/A)
 	orion_continue(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_continue(datum/act/op/A)
 	orion_blackhole(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_around(datum/act/op/A)
 	orion_pastblack(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_killcrew(datum/act/op/A)
 	orion_killcrew(A.actor)
-	SStgui.update_uis(src)
 	return OP_OK
 
 /obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_close(datum/act/op/A)

@@ -624,7 +624,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 	var/list/data = list()
 	data["temp"] = temptext || ""
 	data["selfdestructing"] = !!selfdestructing
-	if(ishuman(user) || isAI(user))
+	if(ui_viewer_fact(user, "person_console"))
 		data["recognized"] = !!is_special_character(user)
 		data["connection_severed"] = (charges < 1) && !is_special_character(user)
 		data["user_ref"] = "\ref[user]"

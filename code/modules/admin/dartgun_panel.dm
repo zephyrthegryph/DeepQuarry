@@ -52,14 +52,12 @@ CAPABILITIES(/obj/item/gun/projectile/dartgun)
 		dartgun_set_mixing(user, idx, FALSE)
 	else
 		dartgun_set_mixing(user, idx, TRUE)
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/item/gun/projectile/dartgun/proc/ui_act_eject_beaker(datum/act/op/A, index)
 	var/mob/user = A.actor
 	var/idx = index
 	dartgun_eject_beaker(user, idx)
-	SStgui.update_uis(src)
 	return TRUE
 
 /obj/item/gun/projectile/dartgun/proc/ui_act_eject_cart(datum/act/op/A)

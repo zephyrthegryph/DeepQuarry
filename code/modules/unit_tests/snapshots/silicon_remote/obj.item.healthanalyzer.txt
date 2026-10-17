@@ -1,0 +1,3 @@
+@obj robot|none
++4 menu: Toggle Guidance (refused: You can't do that.)
+@obj ai|none

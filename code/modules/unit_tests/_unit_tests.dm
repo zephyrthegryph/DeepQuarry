@@ -416,6 +416,14 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_silicon_remote_pins.dm"
+#include "dq_machinery_silicon_boundary_tests.dm"
+#include "dq_module_silicon_boundary_tests.dm"
+#include "dq_object_silicon_boundary_tests.dm"
+#include "dq_silicon_physical_tests.dm"
+#include "dq_pin_constructor_repairs.dm"
+#include "dq_silicon_device_tests.dm"
+#include "dq_silicon_residual_tests.dm"
 #include "dq_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_hop_kinds.dm"
@@ -1330,6 +1338,10 @@
 #include "gameplay\hands_and_menus.dm"
 #include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
+#include "dq_casino_prompt_flow_tests.dm"
+#include "dq_machine_refresh_dartgun_pin.dm"
+#include "dq_native_machine_refresh_tests.dm"
+#include "dq_spasm_use_flow_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

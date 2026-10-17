@@ -294,6 +294,8 @@ CAPABILITIES(/obj/machinery/recharge_station)
 	op("recharge_station_drag_insert", inputs(item(/mob), menu()), needs(req(/mob, because = MSG(recharge_station/needs_mob)), req_adjacent(), req_capable()), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in recharger"), then(PROC_REF(interaction_drag_insert)))
 	op("recharge_station_eject", menu(), label("Eject Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("recharge_station_enter", menu(), label("Enter Recharger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_enter)))
+	// Bumps and forced loading are physiological world transactions, not wireless input.
+	op("recharge_station_admit", ai(), ungated(), by(0), reach(REACH_ANY), needs(req(PROC_REF(station_empty), silent = TRUE), req(/mob/living, of = ON_ACTOR, silent = TRUE), req(PROC_REF(passenger_admission))), then(PROC_REF(admit_passenger)))
 
 /// Something walked into it (the bump action's notice).
 /obj/machinery/recharge_station/proc/bumped_into(datum/act/A)
@@ -302,55 +304,43 @@ CAPABILITIES(/obj/machinery/recharge_station)
 	go_in(L)
 
 /obj/machinery/recharge_station/proc/go_in(mob/living/L)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-
-	if(occupant)
-		return
-
-	if(isrobot(L))
-		var/mob/living/silicon/robot/R = L
-
-		if(R.incapacitated())
-			return
-
-		if(!R.cell)
-			return
-
-		if(istype(R, /mob/living/silicon/robot/platform))
-			to_chat(R, span_warning("You are too large to fit into \the [src]."))
-			return
-
-		add_fingerprint(R)
-		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, R))
-			return
-		work_start(src)
-		refresh_gauge()
+	var/datum/op_result/result = perform_op(L, src, "recharge_station_admit", origin = ORIGIN_SYSTEM)
+	if(result?.outcome == ACT_COMMITTED)
 		return 1
 
-	else if(ispAI(L))
-		var/mob/living/silicon/pai/P = L
+/// The body owns admission policy; the station does not infer its controller kind.
+/obj/machinery/recharge_station/proc/passenger_admission(datum/act/op/A)
+	var/mob/living/passenger = A.actor
+	return passenger.recharge_station_admission(src)
 
-		if(P.incapacitated())
-			return
+/obj/machinery/recharge_station/proc/admit_passenger(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, A.actor))
+		return OP_DECLINE
+	work_start(src)
+	refresh_gauge()
+	return OP_OK
 
-		add_fingerprint(P)
-		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, P))
-			return
-		work_start(src)
-		refresh_gauge()
-		return 1
+/mob/living/proc/recharge_station_admission(obj/machinery/recharge_station/station)
+	return /datum/msg/req_silent
 
-	else if(istype(L,  /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = L
-		if(HAS_SYNTHETIC_BIOLOGY(H) || H.wearing_rig)
-			add_fingerprint(H)
-			if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, H))
-				return
-			work_start(src)
-			refresh_gauge()
-			return 1
-	else
-		return
+/mob/living/silicon/robot/recharge_station_admission(obj/machinery/recharge_station/station)
+	if(incapacitated() || !cell)
+		return /datum/msg/req_silent
+	return null
+
+/mob/living/silicon/robot/platform/recharge_station_admission(obj/machinery/recharge_station/station)
+	var/reason = ..()
+	if(!isnull(reason))
+		return reason
+	return "You are too large to fit into \the [station]."
+
+/mob/living/silicon/pai/recharge_station_admission(obj/machinery/recharge_station/station)
+	return incapacitated() ? /datum/msg/req_silent : null
+
+/mob/living/carbon/human/recharge_station_admission(obj/machinery/recharge_station/station)
+	// Forced loading and bumps historically admit unconscious synthetic/rig wearers.
+	return (HAS_SYNTHETIC_BIOLOGY(src) || wearing_rig) ? null : /datum/msg/req_silent
 
 /obj/machinery/recharge_station/proc/go_out()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
