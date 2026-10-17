@@ -32,7 +32,8 @@
 /// or null if it can. Checks both sides; changes nothing. `check_removal = FALSE`
 /// skips the source side, for a caller that asked the thing's current place
 /// itself (the one-call transfer's release_refusal(), ownership/transfer.dm).
-/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor, check_removal = TRUE)
+/// `units` (a quantity slot only): ask about that many units of `thing`, not everything it carries (a partial insert).
+/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor, check_removal = TRUE, units = null)
 	if(!istype(thing) || QDELETED(thing))
 		return "it is gone"
 	if(!holder || QDELETED(holder))
@@ -66,7 +67,7 @@
 	if(def.capacity_model != SLOT_CAPACITY_NONE)
 		var/limit = def.capacity_for(holder)
 		if(limit != INFINITY)
-			var/cost = def.cost(holder, thing)
+			var/cost = (def.quantity && !isnull(units)) ? def.unit_cost(holder, thing) * units : def.cost(holder, thing)
 			if(dest.current_used(id) + def.latent_used(holder) + cost > limit)
 				return "there's no room for it"
 	return reason_text(op_transfer_precheck(holder, /datum/act/insert, thing, id, actor))
@@ -295,6 +296,29 @@ READS_AS(/atom/proc/slot_occupancy, SLOT_OCCUPANCY_KEY)
 				. += entry.path
 
 READS_AS(/atom/proc/slot_kinds, SLOT_OCCUPANCY_KEY)
+
+/// How many units of `thing` fit into `slot_id` (null: the default slot) of this holder now: INFINITY when the slot has no limit, 0 when it is full or
+/// there is no such slot. A thing carries one unit unless it is a quantity (slot_units()); the answer is whole units of it. A producer asks this
+/// before it makes or takes anything, then move_into()s that many (move_into(amount =)).
+/atom/proc/slot_room(atom/movable/thing, slot_id)
+	var/datum/ledger/L = dq_ledger(src)
+	var/datum/relation_definition/slot/def = L?.def_by_id(slot_id || L.default_id)
+	if(!def)
+		return 0
+	return def.room_for(src, thing)
+
+/// How many units this thing carries: 1, unless it is a quantity (a stack: its amount). What a quantity slot costs it by.
+/atom/movable/proc/slot_units()
+	return 1
+
+/// A new thing carrying `units` of this one's units, made out of it (this one keeps the rest), not yet anywhere; null when it cannot be split.
+/// A quantity thing overrides this and slot_unsplit().
+/atom/movable/proc/slot_split(units)
+	return null
+
+/// Puts back what slot_split() took: `part` (a split-off piece that did not land) goes back into this one.
+/atom/movable/proc/slot_unsplit(atom/movable/part)
+	return FALSE
 
 /// The limit of `slot_id` on this holder, or null when it has none.
 /atom/proc/slot_capacity(slot_id)
