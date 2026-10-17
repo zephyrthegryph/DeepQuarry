@@ -1195,8 +1195,7 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 		if(PP.pai)
 			continue
 		count++
-		PP.cut_overlays()
-		PP.add_overlay("pai-ghostalert")
+		PP.setEmotion(PAI_EMOTION_GHOST_ALERT)
 		PP.alertUpdate()
 		after(PP, 1 MINUTE, TYPE_PROC_REF(/obj/item/paicard, clear_invite_overlay))
 	return count

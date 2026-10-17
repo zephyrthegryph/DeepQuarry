@@ -38,7 +38,7 @@ CAPABILITIES(/obj/structure/prop)
 
 /obj/structure/prop/proc/change_state(state)
 	SHOULD_CALL_PARENT(TRUE)
-	src.state = state
+	set_state(state)
 
 /// Helper so admins can varedit the state easily.
 /obj/structure/prop/vv_edit_var(var_name, var_value)

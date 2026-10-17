@@ -1,3 +1,8 @@
+/// The screen shows the ghost invitation (a ghost flashed the unoccupied cards), instead of a face.
+#define PAI_EMOTION_GHOST_ALERT 17
+/// The card of a pAI that died: the screen is off and cracked.
+#define PAI_EMOTION_DEAD 18
+
 /obj/item/paicard
 	name = "personal AI device"
 	icon = 'icons/obj/pda.dmi'
@@ -418,10 +423,13 @@ CAPABILITIES(/obj/item/paicard)
 /obj/item/paicard/draw(datum/look/look)
 	..()
 	var/static/list/faces = list(
-		1 = "pai-neutral", 2 = "pai-what", 3 = "pai-happy", 4 = "pai-cat", 5 = "pai-extremely-happy", 6 = "pai-face", 7 = "pai-laugh", 8 = "pai-sad",
-		9 = "pai-angry", 10 = "pai-silly", 11 = "pai-nose", 12 = "pai-smirk", 13 = "pai-exclamation", 14 = "pai-question", 15 = "pai-blank", 16 = "pai-off")
-	var/face = faces[current_emotion]
-	look.overlay(look_overlay_image(icon, face, color = face_color), when = !isnull(face))
+		"pai-neutral", "pai-what", "pai-happy", "pai-cat", "pai-extremely-happy", "pai-face", "pai-laugh", "pai-sad",
+		"pai-angry", "pai-silly", "pai-nose", "pai-smirk", "pai-exclamation", "pai-question", "pai-blank", "pai-off",
+		"pai-ghostalert", "pai-off") // indexed by emotion; 17 is PAI_EMOTION_GHOST_ALERT, 18 PAI_EMOTION_DEAD
+	var/face = (current_emotion >= 1 && current_emotion <= length(faces)) ? faces[current_emotion] : null
+	// The ghost invitation is untinted; a dead card is cracked over its dark screen.
+	look.overlay(look_overlay_image(icon, face, color = (current_emotion == PAI_EMOTION_GHOST_ALERT) ? null : face_color), when = !isnull(face))
+	look.overlay("pai-dead", when = (current_emotion == PAI_EMOTION_DEAD))
 
 /obj/item/paicard/proc/alertUpdate()
 	if(pai)

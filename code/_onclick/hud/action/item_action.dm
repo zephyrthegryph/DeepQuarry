@@ -32,7 +32,7 @@
 /// Applies (or, when disabled, removes) the target item's appearance on `current_button`.
 /datum/action/item_action/proc/apply_item_overlay(atom/movable/screen/movable/action_button/current_button, force)
 	if(!item_overlay)
-		current_button.item_overlay_appearance = null
+		current_button.set_item_overlay_appearance(null)
 		return
 
 	var/atom/movable/muse = action_target()
@@ -51,7 +51,7 @@
 	muse_appearance.pixel_x = 0
 	muse_appearance.pixel_y = 0
 
-	current_button.item_overlay_appearance = muse_appearance
+	current_button.set_item_overlay_appearance(muse_appearance)
 
 /datum/action/item_action/vv_edit_var(var_name, var_value)
 	. = ..()

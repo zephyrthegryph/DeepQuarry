@@ -4725,7 +4725,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 	var/image/J = image(I)
 	J.alpha = 200
 	J.blend_mode = BLEND_OVERLAY
-	coating_look = J
+	set_coating_look(J)
 
 	if (user)
 		act_message(user, src, MSG_SELF(span_notice("You dip %T% into \the [coating().name]")), \
@@ -4744,7 +4744,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
 		var/image/J = image(I)
 		J.alpha = 200
-		coating_look = J //replaces the raw-batter look
+		set_coating_look(J) //replaces the raw-batter look
 
 		if (do_coating_prefix == 1)
 			name = "[coating().coated_adj] [name]"

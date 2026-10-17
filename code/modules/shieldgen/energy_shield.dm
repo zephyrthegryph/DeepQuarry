@@ -82,7 +82,7 @@
 
 	if(gen())
 		rel_add(gen(), nameof(/obj/machinery/power/shield_generator::damaged_segments), src)
-	disabled_for += duration
+	set_disabled_for(disabled_for + duration)
 
 	set_density(0)
 	update_visuals()
@@ -97,8 +97,8 @@
 		diffuse(5)
 		return
 
-	disabled_for = max(0, disabled_for - 1)
-	diffused_for = max(0, diffused_for - 1)
+	set_disabled_for(max(0, disabled_for - 1))
+	set_diffused_for(max(0, diffused_for - 1))
 
 	if(!disabled_for && !diffused_for)
 		set_density(1)
@@ -113,7 +113,7 @@
 		take_damage(duration * rand(8, 12), SHIELD_DAMTYPE_EM)
 		return
 
-	diffused_for = max(duration, 0)
+	set_diffused_for(max(duration, 0))
 	if(gen())
 		rel_add(gen(), nameof(/obj/machinery/power/shield_generator::damaged_segments), src)
 

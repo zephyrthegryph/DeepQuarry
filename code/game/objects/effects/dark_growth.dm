@@ -28,13 +28,13 @@
 		choice = "overlay-[rand(1,6)]"
 	if(flip == 2)
 		choice = "overlay-[rand(7,12)]"
-	glow_state = choice
+	set_glow_state(choice)
 	if(prob(10))
 		if(flip == 1)
 			choiceb = "overlay-[rand(7,12)]"
 		if(flip == 2)
 			choiceb = "overlay-[rand(1,6)]"
-		glow_extra_state = choiceb
+		set_glow_extra_state(choiceb)
 
 /obj/effect/dark/draw(datum/look/look)
 	..()
@@ -45,8 +45,8 @@
 	. = ..()
 	if(!isliving(O))
 		return
-	glow_state = null
-	glow_extra_state = null
+	set_glow_state(null)
+	set_glow_extra_state(null)
 	if(prob(5))
 		add_glow()
 	if(istype(O, /mob/living/carbon/human))

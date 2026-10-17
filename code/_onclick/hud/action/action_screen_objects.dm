@@ -16,13 +16,6 @@
 	/// The linked item's appearance shown on our button
 	var/mutable_appearance/item_overlay_appearance
 
-/// The button is its background, the item's picture and the action's own overlay.
-/atom/movable/screen/movable/action_button/draw(datum/look/look)
-	..()
-	look.underlay(button_underlay)
-	look.overlay(item_overlay_appearance)
-	look.overlay(button_overlay)
-
 	/// Where we are currently placed on the hud. SCRN_OBJ_DEFAULT asks the linked action what it thinks
 	var/location = SCRN_OBJ_DEFAULT
 	/// A unique bitflag, combined with the name of our linked action this lets us persistently remember any user changes to our position
@@ -30,6 +23,13 @@
 	/// The last thing we hovered over (a relation view)
 	/// God I hate how dragging works
 	var/atom/last_hovored
+
+/// The button is its background, the item's picture and the action's own overlay.
+/atom/movable/screen/movable/action_button/draw(datum/look/look)
+	..()
+	look.underlay(button_underlay)
+	look.overlay(item_overlay_appearance)
+	look.overlay(button_overlay)
 
 // a button leaves its hud's layout and its action's viewers.
 /atom/movable/screen/movable/action_button/on_destroy(force)

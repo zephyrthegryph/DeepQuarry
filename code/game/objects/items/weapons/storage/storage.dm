@@ -804,10 +804,6 @@ CAPABILITIES(/atom/movable/storage_slot)
 /// The backdrop bar images (start, middle, end) behind the stored item, as they looked when the slot was laid out.
 /atom/movable/storage_slot/var/list/bars
 
-/atom/movable/storage_slot/proc/set_bars(list/new_bars)
-	ASSERT(islist(new_bars))
-	bars = new_bars
-
 /atom/movable/storage_slot/draw(datum/look/look)
 	..()
 	for(var/bar in bars)

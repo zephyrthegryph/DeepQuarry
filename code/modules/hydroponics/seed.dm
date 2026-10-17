@@ -825,7 +825,7 @@
 			if (get_trait(TRAIT_PRODUCT_COLOUR))
 				if (istype(product,/obj/item/reagent_containers/food))
 					var/obj/item/reagent_containers/food/food = product
-					food.filling_color = get_trait(TRAIT_PRODUCT_COLOUR)
+					food.set_filling_color(get_trait(TRAIT_PRODUCT_COLOUR))
 
 			if(reagent_mod && reagent_mod_amount)
 				product.reagents.add_reagent(reagent_mod,reagent_mod_amount)

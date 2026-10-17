@@ -231,7 +231,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 			rel_take(assy, nameof(assy.a_right))
 			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 			destroyed(assy, user)
-	last_gauge_pressure = 0
+	set_last_gauge_pressure(0)
 	update_gauge()
 /obj/item/tank/proc/wirecutter_act_timed_done2(mob/user)
 	to_chat(user, span_notice("You quickly clip the wire from the tank."))
@@ -407,6 +407,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	..()
 	if(wired)
 		look.overlay("bomb_assembly")
+		look.watch(proxyassembly)
 		var/obj/item/assembly_holder/assembly = proxyassembly?.assembly
 		if(assembly)
 			look.watch_look(assembly)
@@ -429,7 +430,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	if(gauge_pressure == last_gauge_pressure)
 		return
 
-	last_gauge_pressure = gauge_pressure
+	set_last_gauge_pressure(gauge_pressure)
 
 /obj/item/tank/proc/check_status()
 	//Handle exploding, leaking, and rupturing of the tank

@@ -276,7 +276,7 @@ BLOOD_VOLUME_SURVIVE = 40
 
 	var/obj/effect/decal/cleanable/blood/drip/drop = B
 	if(istype(drop) && drips && drips.len && !large)
-		LAZYOR(drop.drips, drips)
+		drop.include_drips(drips)
 
 	// If there's no data to copy, call it quits here.
 	if(!istype(source))

@@ -135,7 +135,7 @@ CAPABILITIES(/obj/singularity)
 		if (STAGE_ONE)
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_ONE
+			set_current_size(STAGE_ONE)
 			set_icon('icons/obj/singularity.dmi')
 			set_icon_state("singularity_s1")
 			set_pixel_x(0)
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/singularity)
 		if (STAGE_TWO) //1 to 3 does not check for the turfs if you put the gens right next to a 1x1 then its going to eat them.
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_TWO
+			set_current_size(STAGE_TWO)
 			set_icon('icons/effects/96x96.dmi')
 			set_icon_state("singularity_s3")
 			set_pixel_x(-32)
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/singularity)
 			if ((check_turfs_in(1, 2)) && (check_turfs_in(2, 2)) && (check_turfs_in(4, 2)) && (check_turfs_in(8, 2)))
 				name = "gravitational singularity"
 				desc = "A gravitational singularity."
-				current_size = STAGE_THREE
+				set_current_size(STAGE_THREE)
 				set_icon('icons/effects/160x160.dmi')
 				set_icon_state("singularity_s5")
 				set_pixel_x(-64)
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/singularity)
 			if ((check_turfs_in(1, 3)) && (check_turfs_in(2, 3)) && (check_turfs_in(4, 3)) && (check_turfs_in(8, 3)))
 				name = "gravitational singularity"
 				desc = "A gravitational singularity."
-				current_size = STAGE_FOUR
+				set_current_size(STAGE_FOUR)
 				set_icon('icons/effects/224x224.dmi')
 				set_icon_state("singularity_s7")
 				set_pixel_x(-96)
@@ -202,7 +202,7 @@ CAPABILITIES(/obj/singularity)
 		if(STAGE_FIVE) //This one also lacks a check for gens because it eats everything.
 			name = "gravitational singularity"
 			desc = "A gravitational singularity."
-			current_size = STAGE_FIVE
+			set_current_size(STAGE_FIVE)
 			set_icon('icons/effects/288x288.dmi')
 			set_icon_state("singularity_s9")
 			set_pixel_x(-128)
@@ -217,7 +217,7 @@ CAPABILITIES(/obj/singularity)
 		if(STAGE_SUPER)//SUPERSINGULO
 			name = "super gravitational singularity"
 			desc = "A gravitational singularity with the properties of supermatter. <b>It has the power to destroy worlds.</b>"
-			current_size = STAGE_SUPER
+			set_current_size(STAGE_SUPER)
 			set_icon('icons/effects/352x352.dmi')
 			set_icon_state("singularity_s11")//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
 			set_pixel_x(-160)
@@ -460,11 +460,11 @@ CAPABILITIES(/obj/singularity)
 	)
 
 /obj/singularity/proc/on_capture()
-	chained = 1
+	set_chained(1)
 	move_self = 0
 
 /obj/singularity/proc/on_release()
-	chained = 0
+	set_chained(0)
 	move_self = 1
 
 /// The chain around a captured singularity, in the size it has now.

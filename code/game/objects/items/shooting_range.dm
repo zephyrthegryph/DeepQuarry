@@ -34,7 +34,7 @@
 	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
-		marks = null
+		set_marks(null)
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
 	return OP_OK
 
@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/target)
 			virtualIcon.DrawBox(null, B.b1x1, B.b1y,  B.b1x2, B.b1y) // horizontal line, left to right
 			virtualIcon.DrawBox(null, B.b2x, B.b2y1,  B.b2x, B.b2y2) // vertical line, top to bottom
 
-		LAZYADD(marks, bmark) // the decal, drawn over the face
+		add_marks(bmark) // the decal, drawn over the face
 
 		set_icon(virtualIcon) // apply bulletholes over decals
 

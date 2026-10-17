@@ -394,10 +394,10 @@
 		"1000" = STAGE_FOUR, "1999" = STAGE_FOUR, "2000" = STAGE_FIVE, "49999" = STAGE_FIVE, "50000" = STAGE_SUPER)
 	for(var/e in expected)
 		S.set_energy(text2num(e))
-		S.current_size = STAGE_SUPER // never expand during the sweep
+		S.set_current_size(STAGE_SUPER) // never expand during the sweep
 		S.check_energy()
 		TEST_ASSERT_EQUAL(S.allowed_size, expected[e], "energy [e] allows size [expected[e]]")
-	S.current_size = STAGE_ONE
+	S.set_current_size(STAGE_ONE)
 	S.set_energy(300)
 	S.check_energy()
 	TEST_ASSERT_EQUAL(S.current_size, STAGE_TWO, "energy 300 grows a stage-one singularity to stage two")
@@ -477,7 +477,7 @@
 	qdel(S)
 	var/obj/singularity/big = pp_singularity(run[3], 100)
 	big.move_self = 1
-	big.current_size = STAGE_FIVE
+	big.set_current_size(STAGE_FIVE)
 	TEST_ASSERT(big.move(turn(dir, 180)), "a stage-five singularity ignores containment: it never checks the turfs it steps to")
 	qdel(big)
 

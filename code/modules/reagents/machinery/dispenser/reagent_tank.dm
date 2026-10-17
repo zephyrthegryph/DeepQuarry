@@ -216,7 +216,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
 	rel_take(src, nameof(rig))
-	rig_look = null
+	set_rig_look(null)
 
 /// What a rigged tank shows of the assembly on it: a flat snapshot, nudged onto the tank.
 /obj/structure/reagent_dispensers/fueltank/var/icon/rig_look
@@ -243,7 +243,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	var/icon/test = getFlatIcon(H)
 	test.Shift(NORTH,1)
 	test.Shift(EAST,6)
-	rig_look = test
+	set_rig_look(test)
 
 /obj/structure/reagent_dispensers/fueltank/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

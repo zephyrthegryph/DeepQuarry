@@ -30,7 +30,7 @@
 /turf/simulated/proc/wet_floor(wet_val = 1)
 	if(wet >= TURFSLIP_ICE)	//Can't mop up ice
 		return
-	wet = wet_val
+	set_wet(wet_val)
 	if(after_pending(src, "wet_cleanup_timer"))
 		cancel_after(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
@@ -39,14 +39,14 @@
 		after(src, 40 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 
 /turf/simulated/proc/wet_floor_finish()
-	wet = TURFSLIP_DRY
+	set_wet(TURFSLIP_DRY)
 	if(after_pending(src, "wet_cleanup_timer"))
 		cancel_after(src, "wet_cleanup_timer")
 
 /turf/simulated/proc/freeze_floor()
 	if(!wet) // Water is required for it to freeze.
 		return
-	wet = TURFSLIP_ICE
+	set_wet(TURFSLIP_ICE)
 	after(src, 5 MINUTES, PROC_REF(snow_dries))
 
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
@@ -170,5 +170,5 @@
 	verb_store_refresh(src, /turf/simulated/proc/climb_wall)
 
 /turf/simulated/proc/snow_dries()
-	wet = TURFSLIP_DRY
+	set_wet(TURFSLIP_DRY)
 

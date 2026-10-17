@@ -57,8 +57,8 @@
 	var/list/shortcut_cache
 	var/list/shortcut_cat_order
 	var/list/notifying_programs
-	/// A pen is in its slot (drawn as the pen on the edge); a new PDA holds one.
-	var/pen_slotted = FALSE
+	/// A pen is in its slot (drawn as the pen on the edge); a new PDA holds one (Initialize makes it).
+	var/pen_slotted = TRUE
 	/// The flashlight app has the light on (drawn as the lit lamp).
 	var/flashlight_lit = FALSE
 	var/retro_mode = 0
@@ -180,7 +180,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	update_programs()
 	cartridge?.update_programs(src) // declared child from default_cartridge
 	new /obj/item/pen(src)
-	pen_slotted = TRUE
 
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
@@ -364,10 +363,10 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(M.get_active_hand() == null)
 				M.put_in_hands(O)
 				to_chat(user, span_notice("You remove \the [O] from \the [src]."))
-				pen_slotted = FALSE
+				set_pen_slotted(FALSE)
 				return
 		O.forceMove(get_turf(src))
-		pen_slotted = FALSE
+		set_pen_slotted(FALSE)
 	else
 		to_chat(user, span_notice("This PDA does not have a pen in it."))
 
@@ -494,7 +493,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
 				return OP_PASS
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
-			pen_slotted = TRUE
+			set_pen_slotted(TRUE)
 	return OP_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

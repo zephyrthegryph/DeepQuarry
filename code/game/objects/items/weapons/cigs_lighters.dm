@@ -703,6 +703,8 @@ CAPABILITIES(/obj/item/flame/lighter)
 	configure(item_thrown(force = 4))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
+	rolls(nameof(cheap_pattern), PROC_REF(roll_cheap_pattern))
+	rolls(nameof(cheap_color), PROC_REF(roll_cheap_color))
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)
 /obj/item/flame/lighter/random
@@ -712,13 +714,17 @@ CAPABILITIES(/obj/item/flame/lighter)
 /obj/item/flame/lighter/var/cheap_pattern
 /obj/item/flame/lighter/var/cheap_color
 
-// Randomizes Cheap Lighters on Spawn
-// ALLOW(init/INSTANCE_STATE): each cheap lighter rolls its own pattern and colour per instance
-/obj/item/flame/lighter/Initialize(mapload)
-	. = ..()
-	if(cheap_look)
-		cheap_pattern = "lighter-[pick("trans","tall","matte")]"
-		cheap_color = pick(available_colors)
+/// Rolled before init (rolls()): a cheap lighter's pattern; a zippo has none.
+/obj/item/flame/lighter/proc/roll_cheap_pattern(datum/roller/R)
+	if(!cheap_look)
+		return null
+	return "lighter-[R.choose(list("trans", "tall", "matte"))]"
+
+/// Rolled before init (rolls()): a cheap lighter's colour; a zippo has none.
+/obj/item/flame/lighter/proc/roll_cheap_color(datum/roller/R)
+	if(!cheap_look)
+		return null
+	return R.choose(available_colors)
 
 /obj/item/flame/lighter/draw(datum/look/look)
 	..()

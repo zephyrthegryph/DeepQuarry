@@ -317,7 +317,7 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	C.forceMove(src)
 
 	if(load_item_visible)
-		load_image = look_overlay_image(of = C, layer = layer, pixel_x = C.pixel_x + load_offset_x, pixel_y = C.pixel_y + load_offset_y)
+		set_load_image(look_overlay_image(of = C, layer = layer, pixel_x = C.pixel_x + load_offset_x, pixel_y = C.pixel_y + load_offset_y))
 
 /obj/vehicle/train/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/vehicle/train/engine)
 		rel_set(src, nameof(load), dummy_load.actual_load)
 		dummy_load.actual_load = null
 		spent(dummy_load, src)
-		load_image = null
+		set_load_image(null)
 	..()
 
 //-------------------------------------------

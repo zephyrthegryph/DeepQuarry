@@ -348,7 +348,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	var/list/beast_options = A.arg("options")
 	var/chosen_beast = A.arg("beast")
 
-	glamour_shift = TRUE
+	set_glamour_shift(TRUE)
 	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(chosen_beast, beast_options[chosen_beast]))
 
 /mob/living/proc/polymorph_living_failed(datum/act/op/A)
@@ -379,7 +379,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 
 /// The end of a polymorph, a second after the animation starts.
 /mob/living/proc/finish_polymorph(chosen_beast, beast_type)
-	glamour_shift = FALSE
+	set_glamour_shift(FALSE)
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction

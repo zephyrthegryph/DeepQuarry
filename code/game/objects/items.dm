@@ -593,6 +593,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	look.watch(forensic_data)
 	if(forensic_data?.has_blooddna() && !istype(src, /obj/item/melee/energy))
 		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	// Under a UV light, blood that is not otherwise on the item (washed away, or only the luminol's trace) glows.
+	look.overlay(item_stain_image(type, icon, icon_state, COLOR_LUMINOL), when = dq_get_was_bloodied(src) && dq_get_fluorescent(src) == 2 && !forensic_data?.has_blooddna())
 	if(gurgled)
 		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
 	// Digestion eats the item one quarter at a time: a layer of residue per stage.

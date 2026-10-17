@@ -559,7 +559,7 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 				if(istype(W, /obj/item/healthanalyzer))
 					user.drop_item()
 					consume(W, user)
-					build_step++
+					set_build_step(build_step + 1)
 					to_chat(user, span_notice("You add the health sensor to [src]."))
 					name = "First aid/robot arm/health analyzer assembly"
 
@@ -570,7 +570,7 @@ CAPABILITIES(/obj/item/firstaid_arm_assembly)
 					to_chat(user, span_notice("You complete the Medibot! Beep boop."))
 					var/turf/T = get_turf(src)
 					var/mob/living/bot/medbot/S = new /mob/living/bot/medbot(T)
-					S.skin = skin
+					S.set_skin(skin)
 					S.name = created_name
 					consume(src, user)
 	return OP_PASS

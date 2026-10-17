@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/coin/uranium)
 			balloon_alert(user, "there is a string already attached to \the [src]")
 			return OP_PASS
 		if (CC.use(1))
-			string_attached = 1
+			set_string_attached(1)
 			balloon_alert(user, "string attached to \the [src]")
 		else
 			balloon_alert(user, "the coil seems to be empty...")
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/item/coin/uranium)
 	if(!string_attached)
 		return OP_DECLINE
 	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
-	string_attached = null
+	set_string_attached(null)
 	balloon_alert(user, "string detached")
 	return OP_OK
 

@@ -43,7 +43,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
 		M.Translate((width-1)/2 * ICON_SIZE_X, (height-1)/2 * ICON_SIZE_Y)
 		var/mutable_appearance/scaled_background = new(highlighted ? highlighted_background : standard_background)
 		scaled_background.transform = M
-		background_overlay = scaled_background
+		set_background_overlay(scaled_background)
 
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_size(width, height, do_refresh = TRUE)
 	if(!aiEye) // Exploit fix

@@ -17,7 +17,7 @@
 	var/cur_bubble_appearance = custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
 		cur_bubble_appearance = speech_bubble_appearance()
-	active_thinking_indicator = mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_thinking", FLOAT_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE))
+	set_active_thinking_indicator(mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_thinking", FLOAT_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE)))
 	active_thinking_indicator.pixel_x = get_oversized_icon_offsets()["x"]
 	active_thinking_indicator.pixel_y = get_oversized_icon_offsets()["y"]
 
@@ -25,7 +25,7 @@
 /mob/proc/remove_thinking_indicator()
 	if(!active_thinking_indicator)
 		return FALSE
-	active_thinking_indicator = null
+	set_active_thinking_indicator(null)
 
 /** Creates a typing indicator over the mob. Note: Prefs are checked in /client/proc/start_typing() */
 /mob/proc/create_typing_indicator()
@@ -34,7 +34,7 @@
 	var/cur_bubble_appearance = custom_speech_bubble
 	if(!cur_bubble_appearance || cur_bubble_appearance == "default")
 		cur_bubble_appearance = speech_bubble_appearance()
-	active_typing_indicator = mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_typing", ABOVE_MOB_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE))
+	set_active_typing_indicator(mutable_appearance('icons/mob/talk_vr.dmi', "[cur_bubble_appearance]_typing", ABOVE_MOB_LAYER, appearance_flags=(KEEP_APART|RESET_COLOR|PIXEL_SCALE)))
 	active_typing_indicator.pixel_x = get_oversized_icon_offsets()["x"]
 	active_typing_indicator.pixel_y = get_oversized_icon_offsets()["y"]
 
@@ -42,7 +42,7 @@
 /mob/proc/remove_typing_indicator()
 	if(!active_typing_indicator)
 		return FALSE
-	active_typing_indicator = null
+	set_active_typing_indicator(null)
 
 /** Removes any indicators and marks the mob as not speaking IC. */
 /mob/proc/remove_all_indicators()

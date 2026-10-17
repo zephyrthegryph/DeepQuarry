@@ -58,5 +58,5 @@ CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 		var/list/shown = list()
 		for(var/i in images)
 			shown += images[i]
-		box.box_images = shown
+		box.set_box_images(shown)
 

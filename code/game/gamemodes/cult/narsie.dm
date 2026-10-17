@@ -314,17 +314,17 @@ CAPABILITIES(/obj/singularity/narsie/large)
 		to_chat(target, span_danger("[capname] HAS CHOSEN YOU TO LEAD HIM TO HIS NEXT MEAL."))
 
 /obj/singularity/narsie/on_capture()
-	chained = 1
+	set_chained(1)
 	move_self = 0
 	set_icon_state("narsie-small-chains")
 
 /obj/singularity/narsie/on_release()
-	chained = 0
+	set_chained(0)
 	move_self = 1
 	set_icon_state("narsie-small")
 
 /obj/singularity/narsie/large/on_capture()
-	chained = 1
+	set_chained(1)
 	move_self = 0
 	set_icon_state("narsie-chains")
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 			M.see_narsie(src)
 
 /obj/singularity/narsie/large/on_release()
-	chained = 0
+	set_chained(0)
 	move_self = 1
 	set_icon_state("narsie")
 

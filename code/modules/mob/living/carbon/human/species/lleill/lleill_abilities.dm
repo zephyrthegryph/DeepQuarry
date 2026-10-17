@@ -736,7 +736,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/list/beast_options = A.arg("options")
 	var/chosen_beast = A.arg("beast")
 
-	glamour_shift = TRUE
+	set_glamour_shift(TRUE)
 	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(chosen_beast, beast_options[chosen_beast], energy_cost))
 	species.update_lleill_hud(src)
 
@@ -890,7 +890,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 
 /// The end of a beast shift, a second after the animation starts.
 /mob/living/carbon/human/proc/finish_beast_shift(chosen_beast, beast_type, energy_cost)
-	glamour_shift = FALSE
+	set_glamour_shift(FALSE)
 	var/mob/living/new_mob = spawn_beast_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction

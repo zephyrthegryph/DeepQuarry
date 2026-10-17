@@ -2587,5 +2587,5 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		if(istype(T, /turf/simulated/floor))
 			var/turf/simulated/floor/F = T
 			if(F.wet)
-				F.wet = 0
+				F.set_wet(0)
 	return

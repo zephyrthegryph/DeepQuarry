@@ -15,11 +15,11 @@
 /mob/living/proc/add_status_indicator(thing)
 	if(get_status_indicator(thing)) // No duplicates, please.
 		return
-	LAZYADD(status_indicators, "[thing]")
+	add_status_indicators("[thing]")
 
 // Similar to above but removes it instead, and nulls the list if it becomes empty as a result.
 /mob/living/proc/remove_status_indicator(thing)
-	LAZYREMOVE(status_indicators, "[thing]")
+	remove_status_indicators("[thing]")
 
 /mob/living/proc/get_status_indicator(thing)
 	return (("[thing]" in status_indicators) ? "[thing]" : null)

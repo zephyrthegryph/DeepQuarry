@@ -52,11 +52,11 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 /// Which of the random decal overlays this extinguisher wears (0: none), rolled when it spawns.
 /obj/item/extinguisher/var/overlay_choice = 0
 
-// ALLOW(init/INSTANCE_STATE): each extinguisher rolls its own decal overlay per instance
-/obj/item/extinguisher/Initialize(mapload)
-	if(rand_overlays)
-		overlay_choice = rand(1,rand_overlays)
-	. = ..()
+/// Rolled before init (rolls()): which decal overlay this extinguisher wears (0: none).
+/obj/item/extinguisher/proc/roll_overlay_choice(datum/roller/R)
+	if(!rand_overlays)
+		return 0
+	return R.number(1, rand_overlays)
 
 /obj/item/extinguisher/draw(datum/look/look)
 	..()
@@ -68,6 +68,7 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
+	rolls(nameof(overlay_choice), PROC_REF(roll_overlay_choice))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")))
 	configure(item_sounds(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))

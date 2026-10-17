@@ -39,7 +39,7 @@
 		var/image/I = image(icon = new_master.icon, icon_state = new_master.icon_state, dir = SOUTH)
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
-		alert.item_picture = I
+		alert.set_item_picture(I)
 		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
 		alert.set_icon_state("[initial(alert.icon_state)][severity]")
@@ -491,7 +491,7 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 			var/image/I = image(icon = ui_style, icon_state = "template")
 			I.color = ui_color
 			I.alpha = ui_alpha
-			alert.style_underlay = I
+			alert.set_style_underlay(I)
 
 		switch(i)
 			if(1)

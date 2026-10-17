@@ -28,7 +28,7 @@
 // The cached inv_overlay var remains on the accessory.
 /obj/item/clothing/accessory/proc/get_inv_overlay()
 	if(!inv_overlay)
-		inv_overlay = GLOB.clothing_appearance_handler.build_inv_overlay(src)
+		set_inv_overlay(GLOB.clothing_appearance_handler.build_inv_overlay(src))
 	return inv_overlay
 
 /// The on-mob overlay. Pure: built from the accessory's inputs on every draw and not stored.

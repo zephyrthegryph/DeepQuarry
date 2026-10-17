@@ -40,7 +40,7 @@
 		rel_add(SM, nameof(SM.friends), src.owner_ref())
 	brain.ally_by_effect(src, owner_ref()) // the spell is the source: the standing goes with it
 
-	rel_add(L, nameof(L.attached_overlays), look_image('icons/obj/spells.dmi', "controlled"))
+	L.add_attached_overlays(look_image('icons/obj/spells.dmi', "controlled"))
 	rel_add(src, nameof(controlled_mobs), L)
 
 /obj/item/spell/control/proc/deselect(mob/living/L)
@@ -59,7 +59,7 @@
 		rel_remove(SM, nameof(SM.friends), owner_ref())
 	unstanding(L, owner_ref(), src)
 
-	rel_remove(L, nameof(L.attached_overlays), look_image('icons/obj/spells.dmi', "controlled"))
+	L.remove_attached_overlays(look_image('icons/obj/spells.dmi', "controlled"))
 	rel_remove(src, nameof(controlled_mobs), L)
 
 /obj/item/spell/control/proc/move_all(turf/T)

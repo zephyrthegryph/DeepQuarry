@@ -258,7 +258,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 /obj/effect/overmap/visitable/proc/distress(mob/user)
 	if(has_distress_beacon)
 		return FALSE
-	has_distress_beacon = TRUE
+	set_has_distress_beacon(TRUE)
 	admin_chat_message(message = "Overmap panic button hit on z[z] ([name]) by '[user?.ckey || "Unknown"]'", color = "#FF2222")
 	// start: Making the rescue beacon more generic rather then upstreams
 	var/message = "This is an automated distress signal from a MIL-DTL-93352-compliant beacon transmitting on [PUB_FREQ*0.1]kHz. \

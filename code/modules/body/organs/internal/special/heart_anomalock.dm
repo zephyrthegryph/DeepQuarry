@@ -63,7 +63,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/living/carbon/human/organ_owner)
 	if(organ_owner)
-		organ_owner.shock_aura = FALSE
+		organ_owner.set_shock_aura(FALSE)
 	if(after_pending(src, "lightning_timer"))
 		cancel_after(src, "lightning_timer")
 	set_lightning_overlay(null)

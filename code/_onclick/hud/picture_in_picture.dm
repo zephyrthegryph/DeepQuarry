@@ -68,7 +68,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 /atom/movable/screen/movable/pic_in_pic/proc/add_buttons()
 	var/matrix/M = matrix()
 	M.Translate(0, (height + 0.25) * world.icon_size)
-	move_tab_overlay = look_appearance('icons/hud/pic_in_pic.dmi', "move", plane = PLANE_PLAYER_HUD)
+	set_move_tab_overlay(look_appearance('icons/hud/pic_in_pic.dmi', "move", plane = PLANE_PLAYER_HUD))
 	move_tab_overlay.transform = M
 
 	if(!button_x)
@@ -130,7 +130,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 		M.Translate((width-1)/2 * ICON_SIZE_X, (height-1)/2 * ICON_SIZE_Y)
 		var/mutable_appearance/scaled_background = new(standard_background)
 		scaled_background.transform = M
-		background_overlay = scaled_background
+		set_background_overlay(scaled_background)
 
 /atom/movable/screen/movable/pic_in_pic/proc/set_view_size(width, height, do_refresh = TRUE)
 	width = CLAMP(width, 0, 10)
@@ -140,8 +140,8 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 
 	y_off = (-height * ICON_SIZE_Y) - (ICON_SIZE_Y / 2)
 
-	background_overlay = null
-	move_tab_overlay = null
+	set_background_overlay(null)
+	set_move_tab_overlay(null)
 	add_background()
 	add_buttons()
 	if(do_refresh)

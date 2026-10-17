@@ -183,7 +183,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/icecream)
 
 /obj/item/reagent_containers/food/snacks/icecream/proc/add_ice_cream(flavour_name)
 	name = "[flavour_name] icecream"
-	scoop_flavour = flavour_name
+	set_scoop_flavour(flavour_name)
 	desc = "Delicious [cone_type] cone with a dollop of [flavour_name] ice cream."
 	ice_creamed = 1
 

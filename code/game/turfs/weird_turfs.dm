@@ -17,7 +17,7 @@
 	. = ..()
 	if(!isliving(O))
 		return
-	glow_state = null
+	set_glow_state(null)
 	if(prob(5))
 		add_glow()
 	if(ishuman(O))
@@ -41,7 +41,7 @@
 /turf/simulated/floor/weird_things/dark/var/glow_state
 
 /turf/simulated/floor/weird_things/dark/proc/add_glow()
-	glow_state = "overlay-[rand(1,6)]"
+	set_glow_state("overlay-[rand(1,6)]")
 
 /turf/simulated/floor/weird_things/dark/draw(datum/look/look)
 	..()

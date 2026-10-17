@@ -41,7 +41,7 @@
 	if(!anchored || !operable())
 		return
 
-	plant = prepare_icon(emagged() ? "emagged" : null)
+	set_plant(prepare_icon(emagged() ? "emagged" : null))
 	set_plant_flickered_out(FALSE)
 	set_glow(src, GLOW(2, null, null))
 	set_use_power(USE_POWER_ACTIVE)

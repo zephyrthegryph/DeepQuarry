@@ -94,11 +94,11 @@
 /mob/living/simple_mob/mechanical/mecha/var/deflecting = FALSE
 
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()
-	deflecting = TRUE
+	set_deflecting(TRUE)
 	after(src, 1 SECOND, PROC_REF(deflect_sprite_end), key = "deflect_sprite")
 
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite_end()
-	deflecting = FALSE
+	set_deflecting(FALSE)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))

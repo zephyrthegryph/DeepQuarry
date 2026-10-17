@@ -138,7 +138,7 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 
 /obj/machinery/hyperpad/centre/proc/animate_discharge(obj/machinery/hyperpad/Pad)
 	if(Pad)
-		Pad.pad_lit = FALSE
+		Pad.set_pad_lit(FALSE)
 
 /obj/machinery/hyperpad/centre/proc/doteleport(mob/user)
 	if(!src || QDELETED(src))
@@ -180,14 +180,14 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 			limit += 1
 			do_teleport(ROI, locate((linked_pad().x - xadjust), (linked_pad().y - yadjust), linked_pad().z), effectin = tele1, effectout = tele2, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg', channel = TELEPORT_CHANNEL_QUANTUM)
 
-	pad_lit = FALSE
+	set_pad_lit(FALSE)
 	for(var/obj/machinery/hyperpad/P in linked)
-		P.pad_lit = FALSE
+		P.set_pad_lit(FALSE)
 	start_charge()
 
 /obj/machinery/hyperpad/centre/proc/start_charge()
-	pad_tint = newcolor
-	pad_lit = TRUE
+	set_pad_tint(newcolor)
+	set_pad_lit(TRUE)
 
 	var/timer = teleport_cooldown/8
 	for(var/obj/machinery/hyperpad/P in linked)
@@ -196,8 +196,8 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, tint)
 	if(Pad && tint)
-		Pad.pad_tint = tint
-		Pad.pad_lit = TRUE
+		Pad.set_pad_tint(tint)
+		Pad.set_pad_lit(TRUE)
 
 /// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre

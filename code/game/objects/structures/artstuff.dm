@@ -135,7 +135,7 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 		return FALSE
 	if(grid?[x]?[y])
 		grid[x][y] = color
-	used = TRUE
+	set_used(TRUE)
 	. = TRUE
 
 /obj/item/canvas/proc/ui_act_finalize(datum/act/op/A)
@@ -165,8 +165,8 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	var/result = rustg_dmi_create_png(png_filename,"[width]","[height]",get_data_string())
 	if(result)
 		CRASH("Error generating painting png : [result]")
-	generated_icon = new(png_filename)
-	icon_generated = TRUE
+	set_generated_icon(icon(png_filename))
+	set_icon_generated(TRUE)
 
 /obj/item/canvas/proc/get_data_string()
 	var/list/data = list()
@@ -528,8 +528,8 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 
 	new_canvas.fill_grid_from_icon(I)
-	new_canvas.generated_icon = I
-	new_canvas.icon_generated = TRUE
+	new_canvas.set_generated_icon(I)
+	new_canvas.set_icon_generated(TRUE)
 	new_canvas.set_finalized(TRUE)
 	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name
@@ -622,8 +622,8 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return 0
 
 	new_canvas.fill_grid_from_icon(I)
-	new_canvas.generated_icon = I
-	new_canvas.icon_generated = TRUE
+	new_canvas.set_generated_icon(I)
+	new_canvas.set_icon_generated(TRUE)
 	new_canvas.set_finalized(TRUE)
 	new_canvas.set_painting_name(title)
 	new_canvas.author_name = author_name

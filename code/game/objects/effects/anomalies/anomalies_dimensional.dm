@@ -32,9 +32,7 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 	..()
 	look.overlay(look_appearance('icons/effects/effects.dmi', "dimensional_overlay"))
 	if(theme)
-		var/mutable_appearance/theme_icon = mutable_appearance(theme.icon, theme.icon_state, FLOAT_LAYER - 1, appearance_flags = appearance_flags | RESET_TRANSFORM)
-		theme_icon.blend_mode = BLEND_INSET_OVERLAY
-		look.overlay(theme_icon)
+		look.overlay(look_overlay_image(theme.icon, theme.icon_state, layer = FLOAT_LAYER - 1, appearance_flags = appearance_flags | RESET_TRANSFORM, blend_mode = BLEND_INSET_OVERLAY))
 
 /obj/effect/anomaly/dimensional/anomalyEffect(seconds_per_tick)
 	. = ..()

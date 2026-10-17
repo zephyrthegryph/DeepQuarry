@@ -60,12 +60,12 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 				spell_holder.client.screen -= O
 			O.handle_icon_updates = 0
 		showing = 0
-		panel_state = closed_state
+		set_panel_state(closed_state)
 	else if(forced_state != 1)
 		open_spellmaster()
 		update_spells(1)
 		showing = 1
-		panel_state = open_state
+		set_panel_state(open_state)
 
 /atom/movable/screen/movable/spell_master/proc/open_spellmaster()
 	var/list/screen_loc_xy = splittext(screen_loc,",")
@@ -211,21 +211,21 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 			if(spell.charge_counter > 0)
 				var/icon/partial_charge = icon(src.icon, "[spell_base]_spell_ready")
 				partial_charge.Crop(1, 1, partial_charge.Width(), round(partial_charge.Height() * spell.charge_counter / spell.charge_max))
-				last_charged_icon = partial_charge
+				set_last_charged_icon(partial_charge)
 			else if(last_charged_icon)
-				last_charged_icon = null
+				set_last_charged_icon(null)
 		else
 			set_icon_state("[spell_base]_spell_ready")
 			if(last_charged_icon)
-				last_charged_icon = null
+				set_last_charged_icon(null)
 	else
 		set_icon_state("[spell_base]_spell_ready")
 
-	hud_state_shown = spell.hud_state
+	set_hud_state_shown(spell.hud_state)
 
 	last_charge = spell.charge_counter
 
-	silenced = spell.silenced ? TRUE : FALSE
+	set_silenced(spell.silenced ? TRUE : FALSE)
 
 CAPABILITIES(/atom/movable/screen/spell)
 	ref_one(nameof(spell))

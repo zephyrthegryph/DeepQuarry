@@ -168,14 +168,14 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 	. = OP_OK
 	if(istype(O,/obj/item/vox/armalis_armour))
 		user.drop_item(O)
-		armour = O
+		set_armour(O)
 		movement_cooldown = 4
 		set_endurance(endurance + 200)
 		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
 		return
 	if(istype(O,/obj/item/vox/armalis_amp))
 		user.drop_item(O)
-		amp = O
+		set_amp(O)
 		act_message(src, O, MSG_SELF(span_notice("You quickly outfit %U% in %T%.")), MSG_OTHERS(span_notice("%U% is quickly outfitted in %T% by [user].")))
 		return
 

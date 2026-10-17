@@ -54,7 +54,7 @@
 
 /atom/movable/screen/inventory/MouseExited()
 	..()
-	hover_overlay = null
+	set_hover_overlay(null)
 
 /atom/movable/screen/close
 	name = "close"
@@ -1107,11 +1107,11 @@ CAPABILITIES(/atom/movable/screen/ammo)
 	var/hud_state_empty = ammo_type[2]
 
 	if(rounds == 0)
-		ammo_state = null
+		set_ammo_state(null)
 		if(warned)
-			empty_state = hud_state_empty
+			set_empty_state(hud_state_empty)
 		else
-			empty_state = null
+			set_empty_state(null)
 			warned = TRUE
 			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
 			F.set_icon_state("frame")
@@ -1120,10 +1120,10 @@ CAPABILITIES(/atom/movable/screen/ammo)
 			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, hud_state_empty), keeps_dead = TRUE)
 	else
 		warned = FALSE
-		empty_state = null
-		ammo_state = hud_state
+		set_empty_state(null)
+		set_ammo_state(hud_state)
 
-	rounds_text = num2text(rounds)
+	set_rounds_text(num2text(rounds))
 
 /// The ammo counter: the empty or loaded light, then the round digits (ones, tens, hundreds; over 999 shows 999).
 /atom/movable/screen/ammo/draw(datum/look/look)
@@ -1176,13 +1176,13 @@ CAPABILITIES(/atom/movable/screen/ammo)
 		else
 			item_overlay.color = "#00ff00"
 
-		hover_overlay = item_overlay
+		set_hover_overlay(item_overlay)
 
 /atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, empty_light_state)
 	if(user?.client)
 		user.client.screen -= F
 	spent(F, user)
-	empty_state = empty_light_state
+	set_empty_state(empty_light_state)
 
 /// The hud this screen object belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/proc/owner_hud() as /datum/hud

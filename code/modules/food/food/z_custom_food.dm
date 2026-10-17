@@ -58,13 +58,13 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 	if(!fullyCustom && !stackIngredients && LAZYLEN(food_layers))
 		var/newcolor = S.filling_color != "#FFFFFF" ? S.filling_color : AverageColor(getFlatIcon(S, S.dir, 0), 1, 1)
 		filling.color = BlendRGB(filling.color, newcolor, 1/ingredients.len)
-		food_layers = list(image(filling)) // the one filling, in its new colour
+		set_food_layers(list(image(filling))) // the one filling, in its new colour
 	else
 		var/image/layer = generateFilling(S)
 		if(!fullyCustom && !stackIngredients)
-			food_layers = list(layer) // a plain dish holds its one filling
+			set_food_layers(list(layer)) // a plain dish holds its one filling
 		else
-			LAZYADD(food_layers, layer)
+			add_food_layers(layer)
 
 	updateName()
 	to_chat(user, span_notice("You add the [S.name] to the [src.name]."))

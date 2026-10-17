@@ -88,9 +88,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 		tint = tint_ovr
 
 	if(H.tail_style?.clip_mask_state)
-		tail_lower_dirs.Cut()
+		clear_tail_lower_dirs()
 	else if(H.tail_style)
-		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
+		set_tail_lower_dirs(H.tail_style.lower_layer_dirs.Copy())
 
 	set_max_integrity(H.get_endurance() + 100)
 	original_int = H.vitality() * H.get_endurance() + 100
@@ -131,9 +131,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 			tinted.layer = old_image.layer
 			new_image = tinted
 			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-				tail_image = tinted
+				set_tail_image(tinted)
 				continue
-		LAZYADD(statue_layers, new_image)
+		add_statue_layers(new_image)
 
 	initial_sleep = H.status_units(STAT_SLEEPING)
 	initial_blind = H.status_units(STAT_BLINDED)

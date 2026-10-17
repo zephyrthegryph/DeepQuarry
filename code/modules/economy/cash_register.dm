@@ -37,7 +37,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/proc/set_up_register(datum/act/timer/A)
 	set_machine_id("[station_name()] RETAIL #[GLOB.num_financial_terminals++]")
-	cash_stored = rand(10, 70)*10
+	set_cash_stored(rand(10, 70)*10)
 	if(GLOB.economy_init && account_to_connect)
 		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
 
@@ -60,7 +60,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	if(cash_open)
 		if(cash_stored)
 			spawn_money(cash_stored, loc, user)
-			cash_stored = 0
+			set_cash_stored(0)
 			return OP_OK
 		open_cash_box(user)
 		return OP_OK
@@ -92,7 +92,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		var/obj/item/spacecash/SC = O
 		if(cash_open)
 			to_chat(user, "You neatly sort the cash into the box.")
-			cash_stored += SC.worth
+			set_cash_stored(cash_stored + SC.worth)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				H.drop_from_inventory(SC)
@@ -609,9 +609,9 @@ CAPABILITIES(/obj/machinery/cash_register)
 	if(user.stat) return
 
 	if(cash_open)
-		cash_open = 0
+		set_cash_open(0)
 	else if(!cash_locked)
-		cash_open = 1
+		set_cash_open(1)
 	else
 		to_chat(user, span_warning("The cash box is locked."))
 

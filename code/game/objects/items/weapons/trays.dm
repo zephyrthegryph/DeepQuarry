@@ -20,13 +20,7 @@
 /obj/item/tray/draw(datum/look/look)
 	..()
 	for(var/obj/item/I in carrying)
-		look.watch(I)
-		var/carried_color
-		if(istype(I, /obj/item/material))
-			var/obj/item/material/O = I
-			if(O.applies_material_colour)
-				carried_color = O.color
-		look.overlay(look_overlay_image(I.icon, I.icon_state, layer = layer + I.layer*0.01, color = carried_color))
+		look.show_copy_of(I, layer + 0.01) // the carried item's own picture, just above the tray
 
 /obj/item/tray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/tray_sound = SFX_ITEMS_TRAYHIT_MIX

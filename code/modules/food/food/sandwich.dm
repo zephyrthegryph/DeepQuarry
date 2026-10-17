@@ -66,8 +66,8 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 
 		LAZYADD(new_looks, list(list(O.filling_color, pick(list(-1,0,1)))))
 
-	layer_looks = new_looks
-	top_jitter = pick(list(-1,0,1))
+	set_layer_looks(new_looks)
+	set_top_jitter(pick(list(-1,0,1)))
 
 	name = lowertext("[fullname] sandwich")
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"

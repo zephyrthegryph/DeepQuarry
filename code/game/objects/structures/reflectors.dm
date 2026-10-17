@@ -72,7 +72,7 @@
 
 /obj/structure/reflector/proc/setAngle(new_angle)
 	if(can_rotate)
-		rotation_angle = new_angle
+		set_rotation_angle(new_angle)
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
 	var/angle_key = num2text(pangle)

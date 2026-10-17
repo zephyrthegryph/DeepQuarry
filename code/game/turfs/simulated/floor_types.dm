@@ -41,7 +41,7 @@
 	new_dest.interior_corner = my_turf().interior_corner
 	new_dest.takes_underlays = my_turf().takes_underlays
 	new_dest.under_turf = my_turf().under_turf
-	new_dest.join_flags = my_turf().join_flags
+	new_dest.set_join_flags(my_turf().join_flags)
 	new_dest.join_group = my_turf().join_group
 	new_dest.lighting_build_overlay()
 
@@ -106,11 +106,11 @@ CAPABILITIES(/turf/simulated/shuttle)
 // For joined corners touching static lighting turfs, add an overlay to cancel out that part of our lighting overlay.
 /turf/simulated/shuttle/proc/update_breaklights()
 	if(!(join_flags in GLOB.cornerdirs)) //We're not joined at an angle
-		breaks_light = FALSE
+		set_breaks_light(FALSE)
 		return
 	//Dynamic lighting dissolver
 	var/turf/T = get_step(src, turn(join_flags,180))
-	breaks_light = !T || !T.dynamic_lighting || !get_area(T).dynamic_lighting
+	set_breaks_light(!T || !T.dynamic_lighting || !get_area(T).dynamic_lighting)
 
 /turf/simulated/shuttle/draw(datum/look/look)
 	..()
