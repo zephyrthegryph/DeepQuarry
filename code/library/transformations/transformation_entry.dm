@@ -156,6 +156,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 
 /// The instance that owns the rule's procs.
 /datum/xform/proc/owner_of()
+	RETURN_TYPE(/transformation)
 	return GLOB.xform_owners[rule_type]
 
 /// How far one step of the rule goes in `holder`, in reaction units, given its stoichiometric `reaction_limit` (react still caps it at the limit).
