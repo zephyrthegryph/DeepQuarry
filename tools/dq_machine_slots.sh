@@ -32,6 +32,12 @@
 # blocks the queue. The same protocol is implemented in tools/build/lib/machine_slots.ts for the build tool; keep the
 # two in sync (the selftest and tools/build/lib/machine_slots.test.ts check they agree).
 #
+# Lane classes (tools/dq_lane_pool.sh): a compiler lane (worktree pool-c1/pool-c2, or DQ_LANE_CLASS=compiler) has first claim on every class
+# above, the way the merge worktree does: priority 0, so it goes to the front of each queue and takes the next slot that frees up; and it
+# may hold ONE slot beyond the cargo cap (DQ_SLOTS_COMPILER_EXTRA_CARGO, default 1) so a compiler build never waits for a game lane's
+# cargo. A light lane (pool-light, or DQ_LANE_CLASS=light) never compiles DM or runs a test world: dm_compile and test_world refuse
+# there with exit 64.
+#
 # Waiting prints the class, your place in the queue and who holds the slots every 30 s. DQ_SLOT_PRIORITY=0 forces the
 # front of the queue for a caller that is not the merge worktree.
 
@@ -107,9 +113,28 @@ _slots_worktree() {
 	git rev-parse --show-toplevel 2>/dev/null || pwd
 }
 
-_slots_priority() { # worktree -> 0 (merge worktree, front of the queue) or 1
+_slots_is_lane() { # <worktree> <compiler|light>: is this worktree a compiler / light lane slot (or declared one with DQ_LANE_CLASS)?
+	[ "${DQ_LANE_CLASS:-}" = "$2" ] && return 0
+	case "$2:$(basename "$(_slots_norm "$1")")" in compiler:pool-c[0-9]*|light:pool-light) return 0 ;; esac
+	return 1
+}
+
+_slots_priority() { # worktree -> 0 (merge worktree or compiler lane, front of the queue) or 1
 	if [ -n "${DQ_SLOT_PRIORITY:-}" ]; then echo "$DQ_SLOT_PRIORITY"; return; fi
-	if [ "$(_slots_norm "$1")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then echo 0; else echo 1; fi
+	if [ "$(_slots_norm "$1")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then echo 0; return; fi
+	if _slots_is_lane "$1" compiler; then echo 0; else echo 1; fi
+}
+
+_slots_extra() { # class worktree -> slots beyond the cap this caller may hold (a compiler lane: one cargo slot)
+	[ "$1" = cargo ] && _slots_is_lane "$2" compiler && { echo "${DQ_SLOTS_COMPILER_EXTRA_CARGO:-1}"; return; }
+	echo 0
+}
+
+_slots_refuse_light() { # class worktree: a light lane never compiles DM or runs a test world
+	case "$1" in dm_compile|test_world) ;; *) return 0 ;; esac
+	_slots_is_lane "$2" light || return 0
+	echo "REFUSED: $2 is a light lane: it never runs a DM compile or a test world ($1). Light lanes are for docs, tooling scripts and Rust/compiler-only changes; lease a general lane (tools/dq_lane_pool.sh lease <branch>) for work that needs the game build." >&2
+	exit 64
 }
 
 _slots_winpid() { cat "/proc/$1/winpid" 2>/dev/null || echo "$1"; }
@@ -194,6 +219,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 
 _slots_acquire() {
 	local cls="${1:?class}" label="${2:-}" max root d top prio usable now name waited=0 last=0 i pos
+	_slots_refuse_light "$cls" "$(_slots_worktree)"
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
 	root="$(slots_dir)"
@@ -202,6 +228,7 @@ _slots_acquire() {
 	top="$(_slots_worktree)"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
+	usable=$((usable + $(_slots_extra "$cls" "$top")))
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
@@ -327,6 +354,7 @@ _slots_group_acquire() {
 	local owners=() dirs=()
 	SLOTS_GROUP_DIRS=()
 	SLOTS_GROUP_CLASS="$cls"
+	_slots_refuse_light "$cls" "$(_slots_worktree)"
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
 	root="$(slots_dir)"
@@ -335,6 +363,7 @@ _slots_group_acquire() {
 	top="$(_slots_worktree)"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
+	usable=$((usable + $(_slots_extra "$cls" "$top")))
 	[ "$want" -le "$usable" ] || want="$usable"
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
@@ -635,7 +664,7 @@ slots_run() { # class [--label TEXT] -- command...
 	trap 'slots_release' EXIT
 	trap 'slots_release; exit 130' INT
 	trap 'slots_release; exit 143' TERM
-	slots_acquire "$cls" "${label:0:80}"
+	slots_acquire "$cls" "${label:0:80}" || { rc=$?; slots_release; return "$rc"; }
 	"$@"
 	rc=$?
 	slots_release
@@ -725,6 +754,10 @@ slots_selftest() {
 	[ -z "$(ls "$tmp/test_world" | grep '^slot')" ] || { echo "FAIL: a group left slots behind"; ok=0; }
 	unset DQ_SLOTS_TEST_WORLD
 	rm -rf "$tmp"
+	# lane classes: a compiler worktree is priority 0 with one extra cargo slot; a light worktree is refused a compile or test world
+	[ "$(_slots_priority /x/pool-c2)" = 0 ] && [ "$(_slots_priority /x/pool-3)" = 1 ] && [ "$(_slots_extra cargo /x/pool-c1)" = 1 ] && [ "$(_slots_extra cargo /x/pool-3)" = 0 ] && [ "$(_slots_extra dm_compile /x/pool-c1)" = 0 ] 		|| { echo "FAIL: compiler lane priority / extra cargo slot"; ok=0; }
+	( DQ_SLOT_WORKTREE=/x/pool-light bash "$0" run test_world --label light -- true ) >/dev/null 2>&1; [ $? -eq 64 ] || { echo "FAIL: a light lane must be refused a test world (exit 64)"; ok=0; }
+	( DQ_SLOT_WORKTREE=/x/pool-light bash "$0" run cargo --label light -- true ) >/dev/null 2>&1 || { echo "FAIL: a light lane may take a cargo slot"; ok=0; }
 	if [ "$ok" -eq 1 ]; then echo "selftest: ok"; return 0; fi
 	echo "selftest: FAILED"
 	return 1

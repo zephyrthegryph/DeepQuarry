@@ -3,13 +3,21 @@
 #
 #   bash tools/dq_lane_pool.sh lease <branch> [--base REF]   # prints the worktree path; one per lane
 #   bash tools/dq_lane_pool.sh lease <branch> --wait [--timeout MIN]  # queue (first come first served) instead of failing when full
+#   bash tools/dq_lane_pool.sh lease <branch> --class general|compiler|light   # which slots (below); a tools/dmb* branch is compiler
 #   bash tools/dq_lane_pool.sh release [<branch>|--path P] [--force] [--keep-outputs]
 #   bash tools/dq_lane_pool.sh status                          # who holds which slot, how big each worktree is
 #   bash tools/dq_lane_pool.sh path <branch>                   # the leased path of a branch (exit 1 if none)
 #
+# Classes (what the lane is, not how important): general = pool-1..N (a game lane: DM compile, test worlds); compiler = pool-c1, pool-c2
+# (DQ_LANE_POOL_COMPILER, default 2), reserved: general lanes never take them, and a compiler lane is served ahead of the general queue
+# (it uses a free general slot too when both reserved ones are held); light = pool-light, ONE shared slot for small work that needs no
+# game build (docs, lane tooling scripts, Rust/compiler-only changes): it never runs a DM compile or a test world (tools/dq_machine_slots.sh
+# refuses them there), the lane edits, commits, pushes and releases within minutes, and `bash tools/dq_land.sh --light` lands every pushed
+# light branch in one batched merge (tools/dq_land_batch.sh). Compiler holders also get first claim on the machine slots.
+#
 # Why: a fresh worktree is a 24k-file checkout (minutes), cold caches (analyzer, icons, node_modules, compile cache) and about 1.5 GB
-# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 3) under E:/projects/dq-wt/pool-N, created
-# once and reused for the life of the machine. At most DQ_LANE_POOL_SIZE lanes run at once: a 4th lease is refused.
+# of build output that nobody deletes. The pool is DQ_LANE_POOL_SIZE worktrees (default 8) under E:/projects/dq-wt/pool-N, created
+# once and reused for the life of the machine. At most DQ_LANE_POOL_SIZE general lanes run at once: one more lease is refused.
 #
 # lease <branch>
 #   - Refuses when every slot is held ("pool full", with the holders). A lease whose lane is finished (clean worktree, branch tip already
@@ -35,7 +43,8 @@
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 
-POOL_SIZE="${DQ_LANE_POOL_SIZE:-3}"
+POOL_SIZE="${DQ_LANE_POOL_SIZE:-8}"
+COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -47,6 +56,20 @@ die() { echo "dq_lane_pool: $*" >&2; exit "${DIE_CODE:-1}"; }
 say() { echo "dq_lane_pool: $*" >&2; }
 
 slot_path() { echo "$POOL_DIR/pool-$1"; }
+slots_general() { seq 1 "$POOL_SIZE"; }
+slots_compiler() { local k; for k in $(seq 1 "$COMPILER_SLOTS"); do echo "c$k"; done; }
+slots_all() { slots_general; slots_compiler; echo light; }
+slots_for_class() { # the slots a class may take, in the order it tries them
+	case "$1" in
+		compiler) slots_compiler; slots_general ;;
+		light) echo light ;;
+		*) slots_general ;;
+	esac
+}
+lane_class() { # <branch> <explicit class or empty>
+	case "${2:-}" in compiler|light|general) echo "$2"; return ;; '') ;; *) die "--class must be general, compiler or light" ;; esac
+	case "$1" in tools/dmb*) echo compiler ;; *) echo general ;; esac
+}
 lease_file() { echo "$STATE_DIR/pool-$1.lease"; }
 lease_get() { sed -n "s/^$2=//p" "$(lease_file "$1")" 2>/dev/null | head -n 1; }
 
@@ -171,8 +194,8 @@ slot_idle_minutes() { # <slot> <worktree>: minutes since the lease, the worktree
 }
 
 reclaim_finished() { # called under the lock: drop leases whose lane is done
-	local i wt branch
-	for i in $(seq 1 "$POOL_SIZE"); do
+	local i wt branch idle_limit
+	for i in $(slots_all); do
 		[ -f "$(lease_file "$i")" ] || continue
 		wt="$(slot_path "$i")"
 		branch="$(lease_get "$i" branch)"
@@ -183,7 +206,8 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 		fi
 		# A lane that lands several merges in a row (a wave per merge) is merged and clean between merges while its agent is still
 		# working in the slot, so a merged lane is reclaimed only once nothing has touched its worktree for a while (or by release).
-		if [ "$(slot_idle_minutes "$i" "$wt")" -lt "$RECLAIM_IDLE_MIN" ]; then
+		idle_limit="$RECLAIM_IDLE_MIN"; [ "$i" = light ] && idle_limit="${DQ_LANE_POOL_LIGHT_IDLE_MIN:-30}"   # a light lane lasts minutes
+		if [ "$(slot_idle_minutes "$i" "$wt")" -lt "$idle_limit" ]; then
 			continue
 		fi
 		if merged_into_master "$REPO" "$branch" && [ "$(git -C "$REPO" rev-parse "refs/heads/$branch")" != "$(lease_get "$i" start)" ]; then
@@ -220,23 +244,34 @@ queue_position() { # <ticket>: 1 when it is the oldest live ticket
 }
 
 cmd_lease() {
-	local wait=0 timeout_min=240 args=() ticket pos last_pos="" start rc out
+	local wait=0 timeout_min=240 args=() ticket pos last_pos="" start rc out class="" branch="" prefix="" skip=0 a
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--wait) wait=1 ;;
 			--timeout) shift; timeout_min="${1:?--timeout needs minutes}" ;;
+			--class) shift; class="${1:?--class needs general, compiler or light}" ;;
 			*) args+=("$1") ;;
 		esac
 		shift
 	done
+	for a in ${args[@]+"${args[@]}"}; do # the branch: the first word that is not a flag or a flag's value
+		if [ "$skip" -eq 1 ]; then skip=0; continue; fi
+		case "$a" in --base) skip=1 ;; -*) ;; *) [ -n "$branch" ] || branch="$a" ;; esac
+	done
+	class="$(lane_class "$branch" "$class")"
+	args+=(--class "$class")
+	case "$class" in
+		light) QUEUE_DIR="$STATE_DIR/queue-light" ;;   # its own queue: the one shared slot never waits behind game lanes, nor they behind it
+		compiler) prefix="0-" ;;                         # sorts ahead of the general tickets (plain timestamps) in the same dir
+	esac
 	[ "$wait" -eq 1 ] || { lease_once "${args[@]}"; return; }
 	mkdir -p "$QUEUE_DIR"
-	ticket="$QUEUE_DIR/$(date +%s%N)-$$.ticket"
+	ticket="$QUEUE_DIR/${prefix}$(date +%s%N)-$$.ticket"
 	printf 'pid=%s
 branch=%s
 since=%s
-' "$$" "${args[*]}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$ticket"
-	trap 'rm -f "$ticket"' EXIT
+' "$$" "$branch" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$ticket"
+	trap 'rm -f "${ticket:-}"' EXIT
 	start=$(date +%s)
 	while :; do
 		queue_prune
@@ -259,10 +294,11 @@ since=%s
 }
 
 lease_once() {
-	local branch="" base="origin/master" i wt held=0 free="" skipped=""
+	local branch="" base="origin/master" i wt held=0 free="" skipped="" class="" nslots=0
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--base) shift; base="${1:?--base needs a ref}" ;;
+			--class) shift; class="${1:?--class needs a value}" ;;
 			-*) die "unknown argument: $1" ;;
 			*) [ -z "$branch" ] || die "one branch per lease"; branch="$1" ;;
 		esac
@@ -271,12 +307,13 @@ lease_once() {
 	[ -n "$branch" ] || die "usage: dq_lane_pool.sh lease <branch>"
 	git check-ref-format --branch "$branch" >/dev/null 2>&1 || die "'$branch' is not a valid branch name"
 	case "$branch" in master|main|rewrite/integ-current) die "'$branch' is not a lane branch" ;; esac
+	class="$(lane_class "$branch" "$class")"
 
 	git -C "$REPO" fetch -q origin || say "warning: git fetch failed; using the last fetched origin/master"
 	git -C "$REPO" rev-parse -q --verify "$base" >/dev/null || die "no such base: $base"
 	lock_take
 	# A lane that already holds a slot gets it back.
-	for i in $(seq 1 "$POOL_SIZE"); do
+	for i in $(slots_all); do
 		if [ -f "$(lease_file "$i")" ] && [ "$(lease_get "$i" branch)" = "$branch" ]; then
 			wt="$(slot_path "$i")"
 			if [ -d "$wt" ] && [ "$(git -C "$wt" symbolic-ref -q --short HEAD)" = "$branch" ]; then
@@ -286,17 +323,17 @@ lease_once() {
 		fi
 	done
 	reclaim_finished
-	for i in $(seq 1 "$POOL_SIZE"); do [ -f "$(lease_file "$i")" ] && held=$((held + 1)); done
-	if [ "$held" -ge "$POOL_SIZE" ]; then
-		echo "dq_lane_pool: POOL FULL: $held of $POOL_SIZE lane worktrees are in use; at most $POOL_SIZE lanes run at once (DQ_LANE_POOL_SIZE)." >&2
-		for i in $(seq 1 "$POOL_SIZE"); do
+	for i in $(slots_for_class "$class"); do nslots=$((nslots + 1)); [ -f "$(lease_file "$i")" ] && held=$((held + 1)); done
+	if [ "$nslots" -eq 0 ] || [ "$held" -ge "$nslots" ]; then
+		echo "dq_lane_pool: POOL FULL ($class lanes): $held of $nslots worktrees are in use; at most $POOL_SIZE general lanes run at once (DQ_LANE_POOL_SIZE)." >&2
+		for i in $(slots_for_class "$class"); do
 			echo "  pool-$i: $(lease_get "$i" branch) since $(lease_get "$i" since) ($(lease_get "$i" owner))" >&2
 		done
 		echo "  Finish one lane (dq_lane_ready.sh, merge, then 'bash tools/dq_lane_pool.sh release <branch>') and ask again, or wait." >&2
 		lock_drop
 		return 3
 	fi
-	for i in $(seq 1 "$POOL_SIZE"); do
+	for i in $(slots_for_class "$class"); do
 		[ -f "$(lease_file "$i")" ] && continue
 		wt="$(slot_path "$i")"
 		if [ -d "$wt" ] && ! wt_clean "$wt"; then skipped="$skipped pool-$i"; continue; fi
@@ -330,11 +367,12 @@ lease_once() {
 		echo "branch=$branch"
 		echo "since=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "owner=${DQ_LANE_OWNER:-${USERNAME:-${USER:-unknown}}}"
+		echo "class=$class"
 		echo "base=$base"
 		echo "start=$(git -C "$wt" rev-parse HEAD)"
 	} >"$(lease_file "$i")"
 	lock_drop
-	say "leased pool-$i to $branch ($(git -C "$wt" rev-parse --short HEAD) = $base); release with: bash tools/dq_lane_pool.sh release $branch"
+	say "leased pool-$i ($class) to $branch ($(git -C "$wt" rev-parse --short HEAD) = $base); release with: bash tools/dq_lane_pool.sh release $branch"
 	echo "$wt"
 }
 
@@ -354,7 +392,7 @@ cmd_release() {
 		target="$(git rev-parse --show-toplevel 2>/dev/null)" || die "usage: dq_lane_pool.sh release [<branch>|--path P]"
 	fi
 	lock_take
-	for i in $(seq 1 "$POOL_SIZE"); do
+	for i in $(slots_all); do
 		[ -f "$(lease_file "$i")" ] || continue
 		if [ "$(lease_get "$i" branch)" = "$target" ] || [ "$(slot_path "$i")" = "$target" ] || [ "$(cd "$(slot_path "$i")" 2>/dev/null && pwd)" = "$(cd "$target" 2>/dev/null && pwd)" ]; then found="$i"; break; fi
 	done
@@ -367,8 +405,8 @@ cmd_release() {
 
 cmd_status() {
 	local i wt held=0
-	echo "lane pool: $POOL_SIZE slot(s) under $POOL_DIR (state $STATE_DIR)"
-	for i in $(seq 1 "$POOL_SIZE"); do
+	echo "lane pool: $POOL_SIZE general + $COMPILER_SLOTS compiler + light slot(s) under $POOL_DIR (state $STATE_DIR)"
+	for i in $(slots_all); do
 		wt="$(slot_path "$i")"
 		if [ -f "$(lease_file "$i")" ]; then
 			held=$((held + 1))
@@ -379,18 +417,25 @@ cmd_status() {
 			echo "  pool-$i  free    (not created yet: the first lease checks it out)"
 		fi
 	done
-	echo "  $held of $POOL_SIZE leased"
+	echo "  $held leased"
 	queue_prune
 	local t n=0
 	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
 		n=$((n + 1))
 		echo "  queue $n: $(sed -n 's/^branch=//p' "$t") since $(sed -n 's/^since=//p' "$t")"
 	done
+	QUEUE_DIR="$STATE_DIR/queue-light"; queue_prune; n=0
+	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
+		n=$((n + 1))
+		echo "  light queue $n: $(sed -n 's/^branch=//p' "$t") since $(sed -n 's/^since=//p' "$t")"
+	done
+	[ -d "$STATE_DIR/light-queue" ] && for t in "$STATE_DIR"/light-queue/*.q; do [ -e "$t" ] && echo "  waiting to land (bash tools/dq_land.sh --light): $(sed -n 's/^branch=//p' "$t")"; done
+	return 0
 }
 
 cmd_path() {
 	local i
-	for i in $(seq 1 "$POOL_SIZE"); do
+	for i in $(slots_all); do
 		if [ -f "$(lease_file "$i")" ] && [ "$(lease_get "$i" branch)" = "${1:-}" ]; then slot_path "$i"; return 0; fi
 	done
 	return 1

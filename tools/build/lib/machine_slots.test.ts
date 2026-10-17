@@ -211,3 +211,29 @@ describe('agrees with tools/dq_machine_slots.sh', () => {
     await childDone;
   }, 60000);
 });
+
+describe('lane classes', () => {
+  test('a compiler lane holds one cargo slot beyond the cap and a game lane waits behind it', async () => {
+    process.env.DQ_SLOTS_CARGO = '1';
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-3';
+    const game = await acquireSlot('cargo', 'game', quiet);
+    expect(game).not.toBeNull();
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-c1';
+    const t0 = Date.now();
+    const compiler = await acquireSlot('cargo', 'compiler', quiet);
+    expect(Date.now() - t0).toBeLessThan(1500);
+    expect(compiler).not.toBeNull();
+    expect(fs.existsSync(path.join(tmp, 'cargo', 'slot.2', 'owner'))).toBe(true);
+    compiler?.release();
+    game?.release();
+  });
+
+  test('a light lane never takes a DM compile or a test world slot', async () => {
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-light';
+    await expect(acquireSlot('dm_compile', 'light', quiet)).rejects.toThrow(/light lane/);
+    await expect(acquireSlot('test_world', 'light', quiet)).rejects.toThrow(/light lane/);
+    const cargo = await acquireSlot('cargo', 'light', quiet);
+    expect(cargo).not.toBeNull();
+    cargo?.release();
+  });
+});

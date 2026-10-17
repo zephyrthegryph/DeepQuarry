@@ -74,9 +74,32 @@ function worktree(): string {
   return process.env.DQ_SLOT_WORKTREE ?? process.env.DQ_BUILD_ROOT ?? process.cwd();
 }
 
+/** Is this worktree a compiler or light lane slot (pool-c1/pool-c2, pool-light), or declared one with DQ_LANE_CLASS? (_slots_is_lane in dq_machine_slots.sh) */
+function isLane(top: string, kind: 'compiler' | 'light'): boolean {
+  if (process.env.DQ_LANE_CLASS === kind) return true;
+  const base = norm(top).split('/').pop() ?? '';
+  return kind === 'compiler' ? /^pool-c[0-9]/.test(base) : base === 'pool-light';
+}
+
+/** The merge worktree and a compiler lane go to the front of every queue (priority 0). */
 function priorityOf(top: string): number {
   if (process.env.DQ_SLOT_PRIORITY !== undefined && process.env.DQ_SLOT_PRIORITY !== '') return Number(process.env.DQ_SLOT_PRIORITY);
-  return norm(top) === norm(process.env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base') ? 0 : 1;
+  if (norm(top) === norm(process.env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base')) return 0;
+  return isLane(top, 'compiler') ? 0 : 1;
+}
+
+/** Slots beyond the cap a caller may hold: a compiler lane gets one extra cargo slot (_slots_extra). */
+function extraSlots(cls: SlotClass, top: string): number {
+  if (cls !== 'cargo' || !isLane(top, 'compiler')) return 0;
+  const n = Number(process.env.DQ_SLOTS_COMPILER_EXTRA_CARGO ?? '1');
+  return Number.isInteger(n) && n >= 0 ? n : 1;
+}
+
+/** A light lane never compiles DM or runs a test world (_slots_refuse_light). */
+function refuseLight(cls: SlotClass, top: string): void {
+  if ((cls === 'dm_compile' || cls === 'test_world') && isLane(top, 'light')) {
+    throw new Error(`REFUSED: ${top} is a light lane: it never runs a DM compile or a test world (${cls}). Lease a general lane (tools/dq_lane_pool.sh lease <branch>) for work that needs the game build.`);
+  }
 }
 
 function readFields(file: string): Record<string, string> {
@@ -211,10 +234,11 @@ export function slotGroupSize(cls: SlotClass, want: number): number {
  * run hands one back as its world finishes. Returns [] when the class is off.
  */
 export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
+  refuseLight(cls, worktree());
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return [];
   const prio = priorityOf(worktree());
-  const usable = usableSlots(cls, max, prio);
+  const usable = usableSlots(cls, max, prio) + extraSlots(cls, worktree());
   want = Math.min(Math.max(want, 1), usable);
   const dir = path.join(slotsDir(), cls);
   try {
