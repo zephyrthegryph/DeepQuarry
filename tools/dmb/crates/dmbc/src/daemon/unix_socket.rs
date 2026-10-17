@@ -225,6 +225,14 @@ pub(in crate::daemon) fn private_bytes() -> Option<u64> {
     None
 }
 
+/// `MemAvailable` of /proc/meminfo: memory the machine can hand out without swapping.
+pub(in crate::daemon) fn available_physical_bytes() -> Option<u64> {
+    let text = std::fs::read_to_string("/proc/meminfo").ok()?;
+    let line = text.lines().find(|line| line.starts_with("MemAvailable:"))?;
+    let kib: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
+    Some(kib * 1024)
+}
+
 pub(in crate::daemon) fn set_timeout(
     stream: &mut Stream,
     timeout: std::time::Duration,

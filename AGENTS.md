@@ -245,7 +245,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
   `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
-  dirty slot and never discards anything); a 4th concurrent lane is refused ("POOL FULL"). `... release <branch>` retires the dmbc
+  dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
+  `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
   binary and `data/analyze-cache` warm; a merged lane's slot is also reclaimed by the next lease. Do not `git worktree add` a lane
   worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.
