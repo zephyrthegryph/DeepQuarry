@@ -205,12 +205,22 @@ fn run_build_attempt(
     let engine_bytes = if embedded_engine {
         Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
     } else {
+        // A compile accepts only the pinned template (checked below against the embedded copy), so where the caller keeps the
+        // file says nothing about the build. Reading it through the capture recorded its PATH as a non-text input, and every
+        // worktree keeps its own copy: a body edit compiled from another worktree was declined as "non-text input changed:
+        // <template A> / <template B>" and took the full path. A live compile reads it unrecorded; recording and replay (which
+        // must reproduce every read) and the analysis commands (whose catalog does depend on it) keep the recorded read.
+        let unrecorded = executable && matches!(input_provider, dmbc::frozen_inputs::Inputs::Live);
         engine_template
             .as_ref()
             .map(|path| {
-                inputs_capture
-                    .read_binary(path)
-                    .map_err(|error| format!("engine template {}: {error}", path.display()))
+                if unrecorded {
+                    std::fs::read(path).map_err(|error| format!("engine template {}: {error}", path.display()))
+                } else {
+                    inputs_capture
+                        .read_binary(path)
+                        .map_err(|error| format!("engine template {}: {error}", path.display()))
+                }
             })
             .transpose()?
     };
