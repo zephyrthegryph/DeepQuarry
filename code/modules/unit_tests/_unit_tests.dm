@@ -374,6 +374,7 @@
 #include "dq_tail_animation.dm"
 #include "dq_profile_records.dm"
 #include "dq_shuttle_tests.dm"
+#include "dq_roundstart_regression_tests.dm"
 #include "dq_state_tests.dm"
 #include "dq_sys_loot_tests.dm"
 #include "dq_lifecycle_tests.dm"
