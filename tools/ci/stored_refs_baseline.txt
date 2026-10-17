@@ -51,8 +51,6 @@ var	code/datums/gear/loadout_standard_kit.dm	@/datum/controller/global_vars::gea
 var	code/datums/interactions/presentation.dm	@/client::screentip
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/observer_turf_entered::arrived
-var	code/datums/operations/req.dm	@/datum/req/on_route::inner
-var	code/datums/operations/routes.dm	@/datum/capability/compartment::route_gate
 var	code/datums/reactions/notices.dm	@/datum/notice/shoes_step::wearer
 var	code/datums/status_effects/_status_effect.dm	@/datum/status_effect::owner
 var	code/datums/status_effects/_status_effect.dm	@/atom/movable/screen/alert/status_effect::attached_effect
@@ -111,10 +109,6 @@ var	code/engine/lifeforms/forms.dm	@/datum/lifeform_plan::tooltip
 var	code/engine/lifeforms/input.dm	@/datum/act/input::over
 var	code/engine/lifeforms/lifetimes.dm	@/datum/notice/ended::by
 var	code/engine/lifeforms/params.dm	@/datum/make_args::by
-var	code/engine/parts/operation_context.dm	@/datum/operation_context::actor
-var	code/engine/parts/operation_context.dm	@/datum/operation_context::target
-var	code/engine/parts/operation_context.dm	@/datum/operation_context::held
-var	code/engine/parts/operation_context.dm	@/datum/operation_context::authority
 var	code/engine/parts/provider.dm	@/datum/prov::source
 var	code/engine/parts/resolve.dm	@/datum/op_cand::holder
 var	code/engine/parts/resolve.dm	@/datum/op_cand::activation
@@ -590,7 +584,6 @@ list	code/datums/gear/_gear.dm	@/datum/controller/global_vars::loadout_categorie
 list	code/datums/gear/_gear.dm	@/datum/controller/global_vars::gear_datums
 list	code/datums/gear/_gear.dm	@/datum/loadout_category::gear
 list	code/datums/locations/locations.dm	@/datum/locations::children
-list	code/datums/operations/req.dm	@/datum/controller/global_vars::reqs_interned
 list	code/datums/underwear/underwear.dm	@/datum/category_item/underwear::tweaks
 list	code/engine/actions/change.dm	@/datum/controller/global_vars::hook_change_pending
 list	code/engine/actions/every.dm	@/datum/controller/global_vars::every_hop_watches
