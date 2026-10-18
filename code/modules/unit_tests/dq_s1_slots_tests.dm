@@ -212,9 +212,10 @@
 	// The insert needs() of the receiving holder refuses a trinket; the remove never ended committed.
 	var/datum/act_plan/picky_plan = act_plan_for(picky, /datum/act/insert)
 	TEST_ASSERT_EQUAL(length(picky_plan.needs), 2, "the picky rack has two insert needs hooks")
-	TEST_ASSERT(!rack.slot_transfer(trinket, picky), "the picky rack takes only gizmos (landed in [trinket.loc], reason [GLOB.act_last_reason])")
+	var/refusal = rack.slot_transfer_reason(trinket, picky)
+	TEST_ASSERT(refusal, "the picky rack takes only gizmos (landed in [trinket.loc], reason [refusal])")
 	TEST_ASSERT_EQUAL(trinket.loc, rack, "refused: nothing moved")
-	TEST_ASSERT_EQUAL(GLOB.act_last_reason, /datum/msg/s1/no_trinkets, "the reason is the requirement's")
+	TEST_ASSERT_EQUAL(refusal, /datum/msg/s1/no_trinkets, "the reason is the requirement's")
 	TEST_ASSERT_EQUAL(rack.removed_heard, 0, "a refused transfer publishes no removal")
 	TEST_ASSERT_EQUAL(picky.inserted_heard, 0, "and no insertion")
 	// A gizmo is right, but only the steward may.

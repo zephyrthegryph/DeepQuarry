@@ -7,8 +7,8 @@
 //      can_unequip and NODROP; a storage item's or any other ledger slot's removal rules) and it can
 //      enter the holder (the holder's ledger slot, its capacity and accepts). The holder's
 //      /datum/act/insert hooks run as well, so a requirement written as extend(/datum/act/insert,
-//      needs(...)) refuses a transfer like any other insert. A refusal changes nothing, returns FALSE and
-//      leaves its reason in GLOB.act_last_reason; with an `actor` the actor is told why;
+//      needs(...)) refuses a transfer like any other insert. A refusal changes nothing and returns FALSE
+//      (move_into_reason() and move_into_attempt() answer why); with an `actor` the actor is told why;
 //   2. the release: the current place lets the item go through its own procs, so its bookkeeping runs (a
 //      mob's HUD, slot redraw and dropped(); a storage's HUD and on_exit_storage()), and it lands in
 //      the holder (in `ledger_slot` when given);
@@ -46,12 +46,24 @@
 		return dq_ledger_refusal(thing, holder, ledger_slot || slot_id, actor, units = units)
 	return own_transfer_refusal(holder, thing, is_var ? ledger_slot : (ledger_slot || slot_id), actor, units)
 
-/// Puts `item` into `holder`'s place `slot_id`: the one transfer. TRUE when it is there now (or already was), FALSE when refused
-/// (nothing changed; the reason is in GLOB.act_last_reason and `actor` was told). See the header for the full contract.
+/// Puts `item` into `holder`'s place `slot_id`: the one transfer. TRUE when it is there now (or already was; a quantity move answers the units that
+/// landed), FALSE when refused (nothing changed; `actor` was told). See the header for the full contract.
 /proc/move_into(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
+	var/result = move_into_attempt(holder, slot_id, item, actor, ledger_slot, force, log, key, amount)
+	return istype(result, /datum/act_refusal) ? FALSE : result
+
+/// move_into() that answers why: null when `item` is in `holder`'s `slot_id` now, else the refusal reason (text or a /datum/msg).
+/proc/move_into_reason(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
+	var/result = move_into_attempt(holder, slot_id, item, actor, ledger_slot, force, log, key, amount)
+	if(!istype(result, /datum/act_refusal))
+		return null
+	var/datum/act_refusal/refused = result
+	return refused.reason || /datum/msg/op/not_available
+
+/// The transfer itself: TRUE or the units that landed, or a /datum/act_refusal (its outcome says whether a hook refused or took the insert over).
+/proc/move_into_attempt(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
 	if(!isdatum(holder) || QDELETED(holder) || !isdatum(item))
-		GLOB.act_last_reason = "there is nowhere to put it"
-		return FALSE
+		return act_refusal_of(ACT_REFUSED, "there is nowhere to put it")
 	var/atom/movable/thing = ismovable(item) ? item : null
 	var/is_var = move_into_var_place(holder, slot_id)
 	var/list/entry = null
@@ -62,17 +74,14 @@
 		entry = own_decls.entries[slot_id]
 		if(!entry || entry[OWNE_KIND] != OWNK_OWN)
 			OWN_REPORT("move_into: [holder.type].[slot_id] is not declared owns_one/owns_many")
-			GLOB.act_last_reason = "[slot_id] isn't an owned var of [holder.type]"
-			return FALSE
+			return act_refusal_of(ACT_REFUSED, "[slot_id] isn't an owned var of [holder.type]")
 		if(!own_guard(holder, item, "move_into([slot_id])") || !own_type_ok(holder, slot_id, entry, item))
-			GLOB.act_last_reason = "it doesn't go there"
-			return FALSE
+			return act_refusal_of(ACT_REFUSED, "it doesn't go there")
 		shape = !isnull(key) ? MOVE_SHAPE_KEYED : (entry[OWNE_LIST] ? MOVE_SHAPE_MANY : MOVE_SHAPE_ONE)
 		if(shape == MOVE_SHAPE_ONE && holder.vars[slot_id] == item)
 			return TRUE // already the var's value: nothing to move or write
 	else if(!thing)
-		GLOB.act_last_reason = "it can't be moved"
-		return FALSE
+		return act_refusal_of(ACT_REFUSED, "it can't be moved")
 	var/into_slot = is_var ? ledger_slot : (ledger_slot || slot_id)
 	// A quantity: how many units go, decided before anything is touched (the checks below are asked about exactly that many).
 	var/units = null
@@ -92,11 +101,13 @@
 			reason = move_into_refusal(holder, slot_id, item, actor, ledger_slot, units)
 		if(!reason && thing && moves)
 			GLOB.act_next_actor = actor
-			F = ACT_TRY(holder, insert, thing, is_var ? slot_id : into_slot, units)
+			F = ACT_ATTEMPT(holder, insert, thing, is_var ? slot_id : into_slot, units)
 			GLOB.act_next_actor = null
-			if(isnull(F))
-				hook_outcome = GLOB.act_last_outcome // refused or taken over by a hook: put_in() reports the two differently
-				reason = GLOB.act_last_reason || "it can't go there"
+			if(ACT_REFUSED_BY(F))
+				var/datum/act_refusal/hooked = F
+				F = null
+				hook_outcome = hooked.outcome // refused or taken over by a hook: put_in() reports the two differently
+				reason = hooked.reason || "it can't go there"
 	if(reason)
 		act_cancel(F)
 		return move_into_failed(holder, slot_id, item, actor, reason, hook_outcome)
@@ -167,20 +178,11 @@
 		return FALSE
 	return !isatom(holder) || op_var_slot(holder, slot_id)
 
-/// move_into() that answers why (admission.md wave 2): null when `item` is in `holder`'s `slot_id` now, else the refusal reason. Library code
-/// reads this, never the engine's last-action side channel.
-/proc/move_into_reason(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
-	if(move_into(holder, slot_id, item, actor, ledger_slot, force, log, key, amount))
-		return null
-	return GLOB.act_last_reason || /datum/msg/op/not_available
-
-/// A transfer that did not happen (the caller already cancelled its insert action, whose own reason ours replaces): the reason and outcome
-/// are left where put_in() reads them, the world log has the line and `actor` is told why (null: already told). Returns FALSE.
+/// A transfer that did not happen (the caller already cancelled its insert action, whose own reason ours replaces): the world log has the line and
+/// `actor` is told why (null: already told). Returns the /datum/act_refusal move_into_attempt() answers.
 /proc/move_into_failed(datum/holder, slot_id, datum/item, mob/actor, reason, outcome = ACT_REFUSED)
-	GLOB.act_last_reason = reason
-	GLOB.act_last_outcome = outcome
 	var/refusal = "MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason]"
 	boot_noise_note(refusal)
 	log_world(refusal)
 	transfer_feedback_provider().send(actor, holder, item, reason)
-	return FALSE
+	return act_refusal_of(outcome, reason)

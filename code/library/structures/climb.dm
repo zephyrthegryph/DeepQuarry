@@ -123,10 +123,11 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		A.reason = /datum/msg/climb/blocked
 		return OP_REFUSED
 	GLOB.act_next_actor = climber
-	var/datum/act/climb/C = ACT_TRY(climber, climb, holder)
+	var/C = ACT_ATTEMPT(climber, climb, holder)
 	GLOB.act_next_actor = null
-	if(isnull(C))
-		A.reason = act_refusal()
+	if(ACT_REFUSED_BY(C))
+		var/datum/act_refusal/refused_C = C
+		A.reason = refused_C.reason || /datum/msg/op/not_available
 		log_world("CLIMB: [climber] onto [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	climber.forceMove(destination)

@@ -99,7 +99,22 @@ GLOBAL_VAR(act_next_authority)
 
 /// Runs the hooks of the action: needs, instead, adjusts. Returns the act (the caller goes on), or null (refused or taken over: the act is
 /// ended and released here).
-/proc/act_resolve(datum/act/action/A)
+/// Why an ACT_ATTEMPT did not go ahead: the outcome (ACT_REFUSED or ACT_REPLACED), the refusal reason and the taker's reply. Made only for a caller
+/// that asked (act_answer); ACT_TRY keeps its null.
+/datum/act_refusal
+	var/outcome = ACT_REFUSED
+	var/reason
+	var/reply
+
+/proc/act_refusal_of(outcome, reason = null, reply = null)
+	RETURN_TYPE(/datum/act_refusal)
+	var/datum/act_refusal/R = new
+	R.outcome = outcome
+	R.reason = reason
+	R.reply = reply
+	return R
+
+/proc/act_resolve(datum/act/action/A, answer = FALSE)
 	var/datum/act_plan/P = act_plan_for(A.holder, A.type)
 	var/forced = isnum(A.authority) && (A.authority & AUTH_ADMIN)
 	for(var/datum/hook/H as anything in P.needs)
@@ -115,7 +130,7 @@ GLOBAL_VAR(act_next_authority)
 		if(reason)
 			A.reason = reason
 			act_end(A, ACT_REFUSED)
-			return null
+			return answer ? act_refusal_of(ACT_REFUSED, reason) : null
 	for(var/datum/hook/H as anything in P.instead)
 		if(!hook_conditions_hold(H, A.holder))
 			continue
@@ -135,8 +150,9 @@ GLOBAL_VAR(act_next_authority)
 		GLOB.act_chain.len--
 		A.holder = entered_from // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 		if(took)
+			var/reply = A.reply
 			act_end(A, ACT_REPLACED)
-			return null
+			return answer ? act_refusal_of(ACT_REPLACED, null, reply) : null
 	for(var/datum/hook/H as anything in P.adjusts)
 		if(!hook_conditions_hold(H, A.holder))
 			continue
@@ -221,11 +237,6 @@ GLOBAL_VAR(act_next_authority)
 /// How the last action that ended (act_end) ended and why: ACT_TRY returns null for a refused action and a taken-over one alike, and the op engine's
 /// put_in() reports the two differently (OP_REFUSED, OP_REPLACED).
 GLOBAL_VAR(act_last_outcome)
-GLOBAL_VAR(act_last_reason)
-/// Why the last ACT_TRY that returned null was refused or taken over (a /datum/msg, text, or the generic refusal): the one reader outside the engine's
-/// own code, which may not name GLOB.act_last_reason (legacy_forms banned_outside).
-/proc/act_refusal()
-	return GLOB.act_last_reason || /datum/msg/op/not_available
 /// What the hook that took the last ended action over answered (the value its then() handler returned, or what it set in A.reply): the payload of a
 /// veto. Read it right after ACT_TRY returned null with ACT_TAKEN_OVER.
 GLOBAL_VAR(act_last_reply)
@@ -234,7 +245,6 @@ GLOBAL_VAR(act_last_reply)
 /proc/act_end(datum/act/action/A, outcome)
 	A.outcome = outcome
 	GLOB.act_last_outcome = outcome
-	GLOB.act_last_reason = A.reason
 	GLOB.act_last_reply = A.reply
 	var/notice_type = act_notice_type(A.type)
 	var/datum/holder = A.holder

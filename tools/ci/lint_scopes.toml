@@ -709,7 +709,6 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "act_last_reason @ code/engine/;code/modules/unit_tests/;code/tests/ = the last action's reason is the engine's side channel: library and content read move_into_reason() or act_refusal() (doc/rewrite/proposals/admission.md wave 2)",
   "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
@@ -756,6 +755,7 @@ banned = [
   "cond_any = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
   "req_acceptance_either = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
   "req_acceptance_both = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
+  "act_last_reason = the last action's reason has no side channel: ACT_ATTEMPT() answers a /datum/act_refusal; move_into_reason()/slot_transfer_reason() answer why a transfer did not happen (doc/rewrite/proposals/admission.md wave 2)",
   "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/modules/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
   "hold_effect_factors = a body effect application's own factors() entry (/datum/body_effect_origin, code/modules/body/body_effects.dm): the stat layer holds its table on the mob",
   "hold_reagent_factors = a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): its factors() entries read the volume from the body and the stat layer holds the tables on the mob",

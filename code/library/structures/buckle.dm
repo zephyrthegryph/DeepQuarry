@@ -147,10 +147,11 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	if(!istype(victim) || QDELETED(holder))
 		return OP_FAILED
 	GLOB.act_next_actor = A.actor
-	var/datum/act/buckle/B = ACT_TRY(holder, buckle, victim)
+	var/B = ACT_ATTEMPT(holder, buckle, victim)
 	GLOB.act_next_actor = null
-	if(isnull(B))
-		A.reason = act_refusal()
+	if(ACT_REFUSED_BY(B))
+		var/datum/act_refusal/refused_B = B
+		A.reason = refused_B.reason || /datum/msg/op/not_available
 		log_world("BUCKLE: [victim] to [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	if(victim.loc != holder.loc)
@@ -233,10 +234,11 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 		A.reason = /datum/msg/buckle/nobody
 		return OP_REFUSED
 	GLOB.act_next_actor = A.actor
-	var/datum/act/unbuckle/U = ACT_TRY(holder, unbuckle, occupant)
+	var/U = ACT_ATTEMPT(holder, unbuckle, occupant)
 	GLOB.act_next_actor = null
-	if(isnull(U))
-		A.reason = act_refusal()
+	if(ACT_REFUSED_BY(U))
+		var/datum/act_refusal/refused_U = U
+		A.reason = refused_U.reason || /datum/msg/op/not_available
 		log_world("BUCKLE: [occupant] from [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	if(!holder.unbuckle_mob(occupant))
