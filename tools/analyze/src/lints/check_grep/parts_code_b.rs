@@ -162,6 +162,14 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
         Part::new(
+            "accessories_species_list_banned",
+            "accessories: species list banned",
+            "A sprite accessory names its species set, species_allowed = ACCESSORY_X (code/__defines/clothing.dm); only the base default in sprite_accessories.dm lists species (doc/rewrite/proposals/admission.md wave 3).",
+            Files::Code,
+            line(r"^\s+species_allowed = list\("),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",
