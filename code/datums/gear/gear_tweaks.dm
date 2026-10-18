@@ -1,8 +1,5 @@
 #define LOADOUT_BAN_STRING "Custom loadout"
 
-/// Loadout tweaks are made once with their gear at world setup and shared: never deleted in a round (relations proposal wave 2).
-LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gear_tweak)
-
 /datum/gear_tweak/proc/get_contents(metadata)
 	return
 
@@ -132,7 +129,6 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 	else
 		I.set_color(metadata)
 
-GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recolor, new)
 
 /datum/gear_tweak/matrix_recolor
 
@@ -288,7 +284,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 Custom Name
 */
 
-GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 
 /datum/gear_tweak/custom_name
 	var/list/valid_custom_names
@@ -325,7 +320,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 /*
 Custom Description
 */
-GLOBAL_DATUM_INIT(gear_tweak_free_desc, /datum/gear_tweak/custom_desc, new)
 
 /datum/gear_tweak/custom_desc
 	var/list/valid_custom_desc
@@ -363,7 +357,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_desc, /datum/gear_tweak/custom_desc, new)
 Toggle Digestable
 */
 
-GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestable, new)
 
 /datum/gear_tweak/toggle_digestable
 
