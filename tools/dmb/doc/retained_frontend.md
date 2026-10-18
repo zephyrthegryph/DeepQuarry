@@ -478,3 +478,14 @@ built again; the engine payload, executors, shared procedure code and the direct
 variants are stashed, they go first when the session degrades (tier 3), and a query for a variant that is not the active one says so.
 This is the interim shape of "the session is the query database and the defines are inputs" (`incremental_core.md`): when the `Db`
 lands the stash becomes per-query reddening and the patch base a persisted dependency index.
+
+### Stashed variants go first under pressure; the compiler is published again (2026-10-17)
+
+Measured after the variant stash landed: one session holding production and test is 16 GB private (production 9 GB, the stashed
+test variant about 7 GB). Under pressure housekeeping now drops the stashed variants (`tier=stashed-variants` in the lifecycle log)
+before it degrades or releases the variant the session serves. A worktree switch is not a variant: every checkout syncs into the
+one compile root per project, so the switch is a changed input set of the same session (patch, or a stored-record hit when it
+returns to a tree already built), and nothing is discarded for it. Separately, `build.sh dmbc` had stopped publishing: its Juke
+target compared source mtimes against `dmb-bin/current`, which every checkout's publish rewrites, so after a cache miss the target
+was "up to date" and `current` stayed on an old compiler (23d9d283) while newer dmbc changes landed; the target now decides by the
+source content key alone.
