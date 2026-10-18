@@ -63,7 +63,7 @@ listener for the hook, `A.target` the observed entity); the hook ends with `unob
 |---|---|---|
 | returned a veto flag (`COMPONENT_*` bit 0) | `instead(when(PROC_REF(g)))` for a pure gate, `instead(then(PROC_REF(h)))` when the handler acts; `instead()` for an unconditional takeover | `var/datum/act/x/F = ACT_ATTEMPT(E, x, ...)`; `if(!F) return` (refused or taken over); `act_done(F)` when the action goes on, `act_cancel(F)` for a question that only asks |
 | returned a veto flag only when it applied | the `then` handler returns `HOOK_DECLINE` when it does not apply; any other value takes the action over and is the reply | the same |
-| returned a value with the veto (an `ITEM_INTERACT_*` result, a name, `TRUE` to say handled) | the handler returns the value; the caller reads `ACT_REPLY` after `if(!F)` and `ACT_TAKEN_OVER` says it was taken over rather than refused | `if(!F) return ACT_TAKEN_OVER ? ACT_REPLY : ITEM_INTERACT_BLOCKING` |
+| returned a value with the veto (an `ITEM_INTERACT_*` result, a name, `TRUE` to say handled) | the handler returns the value; the caller reads `ACT_REPLY(F)` after `if(ACT_REFUSED_BY(F))` and `ACT_TAKEN_OVER(F)` says it was taken over rather than refused | `if(ACT_REFUSED_BY(F)) return ACT_TAKEN_OVER(F) ? ACT_REPLY(F) : ITEM_INTERACT_BLOCKING` |
 | ORed flags into `event.result` or changed a payload list in place (several listeners may) | `adjusts_with(PROC_REF(h))`: `h(datum/act/A)` writes the act's typed fields (`A.protection \|= ...`); it never takes the action over and every one runs, in order | `x = ACT_FINAL(F, field, local)` after the `ACT_ATTEMPT` |
 | only watched (an after-fact event) | `observe(source, /datum/notice/x, listener, then(PROC_REF(h)))`, the existing form | none |
 
