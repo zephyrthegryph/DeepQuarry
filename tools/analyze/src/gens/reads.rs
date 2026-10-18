@@ -71,7 +71,7 @@ impl Generator for Reads {
         if !handlers.is_empty() || cx.markers("READ_LOOKUP").next().is_some() {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
-                let ann = Annotations::get(&sem, &decls);
+                let ann = Annotations::shared(cx.tree, &sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(cx.tree);
                 for marker in decls.markers_named("READ_LOOKUP") {

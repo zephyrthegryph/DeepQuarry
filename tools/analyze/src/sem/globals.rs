@@ -58,6 +58,22 @@ pub struct GlobalIndex {
 }
 
 impl GlobalIndex {
+    /// A digest of the index (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut h = blake3::Hasher::new();
+        for set in [&self.runtime_written, &self.written, &self.runtime_field_written] {
+            let mut v: Vec<&String> = set.iter().collect();
+            v.sort();
+            for x in v {
+                h.update(x.as_bytes());
+                h.update(b"\n");
+            }
+            h.update(b"|");
+        }
+        h.update(&self.boot_procs.to_le_bytes());
+        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    }
+
     /// True when `var` (a `GLOB` field or a real global) is never changed after the world booted.
     pub fn constant_after_init(&self, var: &str) -> bool {
         !self.runtime_written.contains(var)
@@ -77,6 +93,8 @@ impl GlobalIndex {
         let mut nodes: Vec<(Node, Facts)> = Vec::new();
         let global_vars: HashSet<String> = sem.objtree.root().get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect();
         let glob_fields: HashSet<String> = sem.ty("/datum/controller/global_vars").map(|t| t.get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect()).unwrap_or_default();
+        // Every body is scanned on its own: on all cores, kept in definition order.
+        let mut procs: Vec<(String, dreammaker::objtree::ProcRef)> = Vec::new();
         for t in sem.objtree.iter_types() {
             let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
             for p in t.iter_self_procs() {
@@ -87,12 +105,22 @@ impl GlobalIndex {
                 if super::reads::is_test_code(sem.rel(p.get().location)) {
                     continue;
                 }
-                let Some(code) = &p.get().code else { continue };
-                let mut facts = Facts::default();
-                let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
-                scan(code, &locals, &global_vars, &glob_fields, &mut facts);
-                nodes.push(((path.clone(), p.name().to_string()), facts));
+                if p.get().code.is_none() {
+                    continue;
+                }
+                procs.push((path.clone(), p));
             }
+        }
+        let scanned: Vec<Facts> = super::par_map(&procs, |(_, p)| {
+            let mut facts = Facts::default();
+            let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
+            if let Some(code) = &p.get().code {
+                scan(code, &locals, &global_vars, &glob_fields, &mut facts);
+            }
+            facts
+        });
+        for ((path, p), facts) in procs.iter().zip(scanned) {
+            nodes.push(((path.clone(), p.name().to_string()), facts));
         }
         // Who defines each name, and who calls it.
         let mut defined: HashMap<&str, Vec<usize>> = HashMap::new();

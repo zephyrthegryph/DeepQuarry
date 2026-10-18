@@ -1,5 +1,9 @@
 //! `analyze`: the one lint engine. Usage: `analyze --help`.
 
+/// The model, the walk store and every walk allocate millions of small values.
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
@@ -120,6 +124,8 @@ fn main() -> ExitCode {
     let code = real_main();
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();
+    dq_analyze::sem::model_store::finish();
+    dq_analyze::sem::walk_cache::finish();
     code
 }
 

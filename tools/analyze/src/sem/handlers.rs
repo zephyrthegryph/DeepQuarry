@@ -81,10 +81,10 @@ fn compute(tree: &Tree) -> Analysis {
         return an;
     }
     let Some(sem) = super::sem_for(tree) else { return an };
-    let ann = Annotations::get(&sem, &decls);
+    let ann = Annotations::shared(tree, &sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);
-    let written = super::reads::WriteIndex::build(&sem);
+    let written: &super::reads::WriteIndex = sem.write_index();
     let mut seen = std::collections::HashSet::new();
     // The typed fields every ACTION() declares.
     let action_fields: std::collections::HashSet<String> = decls
@@ -107,9 +107,13 @@ fn compute(tree: &Tree) -> Analysis {
         });
         jobs[i].3 |= h.role.reads_covered();
     }
+    let t_jobs = started.elapsed();
     let walked: Vec<(ReadSet, Option<ReadSet>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
         (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
     });
+    let t_walked = started.elapsed();
+    // Which handlers are analyzed is decided in order (the first of duplicates); each analysis is independent and runs on all cores.
+    let mut kept: Vec<(HandlerRef, String)> = Vec::new();
     for h in refs {
         let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
         if on.is_empty() {
@@ -118,6 +122,11 @@ fn compute(tree: &Tree) -> Analysis {
         if !seen.insert((on.clone(), h.proc.clone(), h.form, h.rel.clone(), h.line)) {
             continue;
         }
+        kept.push((h, on));
+    }
+    let analyzed: Vec<Analyzed> = super::par_map_deep(&kept, |(h, on)| {
+        let h = h.clone();
+        let on = on.clone();
         let pr = sem.proc_ref(&on, &h.proc);
         let (proc_found, def, params, returns) = match pr {
             Some(p) if !p.is_builtin() => {
@@ -180,12 +189,15 @@ fn compute(tree: &Tree) -> Analysis {
                 }
             }
         }
-        an.handlers.push(Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx });
-    }
+        Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx }
+    });
+    an.handlers.extend(analyzed);
+    let t_loop = started.elapsed();
     let graph = DepGraph::from_derives(&sem, &eng);
     an.cycles = graph.cycles();
     an.graph = Some(graph);
     // READS_AS accessors whose own reads are neither tracked nor constant must have a producer for their key.
+    let t_graph = started.elapsed();
     for ((ty, name), (key, _via)) in &ann.reads_as {
         let set = eng.analyze(ty, name);
         let mut vars = Vec::new();
@@ -204,11 +216,15 @@ fn compute(tree: &Tree) -> Analysis {
         }
     }
     an.accessor_gaps.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
+    let t_reads_as = started.elapsed();
     let footprint = sem.footprint();
     if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem/handlers walked {} handlers (targeted + closed) in {:.1?}", an.handlers.len(), started.elapsed());
         eprintln!("analyze: sem footprint: {} handlers, {} files consulted", an.handlers.len(), footprint.len());
     }
     super::incremental::capture(tree, &sem, footprint);
+    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        eprintln!("analyze: sem/handlers phases: setup {:.1?}, walks {:.1?}, per-handler {:.1?}, graph {:.1?}, READS_AS {:.1?}, capture {:.1?}", t_jobs, t_walked - t_jobs, t_loop - t_walked, t_graph - t_loop, t_reads_as - t_graph, started.elapsed() - t_reads_as);
+    }
     an
 }

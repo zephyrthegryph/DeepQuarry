@@ -28,7 +28,7 @@ if [ -n "${DQ_ANALYZE_NO_BUILD:-}" ] && [ -x "$bin" ]; then
 	exit 0
 fi
 # The release binary goes through the build tool's analyze-build target: it restores the binary from the
-# shared content-addressed cache (DQ_ANALYZE_CACHE, E:/dq-cache/analyze-bin) when another worktree already
+# shared content-addressed cache (DQ_ANALYZE_BIN_CACHE, E:/dq-cache/analyze-bin) when another worktree already
 # built these sources, and builds and stores it otherwise. A fresh worktree then needs no cargo build.
 if [ "$profile" != "debug" ] && [ -z "${DQ_ANALYZE_DIRECT_CARGO:-}" ]; then
 	"$root/tools/build/build.sh" analyze-build >&2 || {

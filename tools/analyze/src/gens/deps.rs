@@ -280,12 +280,18 @@ pub fn analyzed_legacy(tree: &crate::tree::Tree) -> std::sync::Arc<Option<DepsAn
 fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let started = std::time::Instant::now();
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
-    let sem = crate::sem::sem_for(tree)?;
+    // The presentation reactions' reads come from the text alone: found while the model loads.
+    let (reaction_pairs, sem) = std::thread::scope(|s| {
+        let pairs = std::thread::Builder::new().stack_size(64 << 20).spawn_scoped(s, || crate::lints::derived_reads::reaction_read_pairs(tree, &tree.select(&crate::tree::CODE_DM))).expect("spawn");
+        let sem = crate::sem::sem_for(tree);
+        (pairs.join().expect("reaction reads"), sem)
+    });
+    let sem = sem?;
     let decls = Decls::get(tree);
-    let ann = Annotations::get(&sem, &decls);
+    let ann = Annotations::shared(tree, &sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree) } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let t_setup = started.elapsed();
-    let written = WriteIndex::build(&sem);
+    let written: &WriteIndex = sem.write_index();
     let set_calls = super::auto_tracked::set_calls(tree);
     let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
     let t_written = started.elapsed();
@@ -293,6 +299,10 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
     if let Some(an) = handlers::analyzed(tree) {
+        // The first handler of each consumer decides (as `entry().or_insert_with` did); judging each is independent and runs on all cores,
+        // the bookkeeping in order.
+        let mut firsts: Vec<&handlers::Analyzed> = Vec::new();
+        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
         for a in &an.handlers {
             if !a.h.role.reads_covered() || a.h.cap_proc {
                 continue;
@@ -301,17 +311,28 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             if closed && a.h.role == crate::sem::hooks::Role::Contribution && !handled.sampled.is_empty() {
                 sampled.entry(format!("{}::{}", a.on, a.h.proc)).or_default().extend(handled.sampled.iter().cloned());
             }
-            consumers.entry(format!("{}::{}", a.on, a.h.proc)).or_insert_with(|| {
-                if closed {
-                    // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
-                    note_reads(handled, &mut reads);
-                    untracked_of(handled, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
-                } else {
-                    let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
-                    note_reads(&set, &mut reads);
-                    untracked_of(&set, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
-                }
-            });
+            if seen.insert(format!("{}::{}", a.on, a.h.proc)) {
+                firsts.push(a);
+            }
+        }
+        let judged: Vec<(Option<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&firsts, |a| {
+            let output = a.h.role == crate::sem::hooks::Role::Output;
+            if closed {
+                // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
+                let handled = a.closed.as_ref().expect("filtered above");
+                (None, untracked_of(handled, &eng, written, output))
+            } else {
+                let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
+                let u = untracked_of(&set, &eng, written, output);
+                (Some(set), u)
+            }
+        });
+        for (a, (set, untracked)) in firsts.into_iter().zip(judged) {
+            match &set {
+                Some(set) => note_reads(set, &mut reads),
+                None => note_reads(a.closed.as_ref().expect("filtered above"), &mut reads),
+            }
+            consumers.insert(format!("{}::{}", a.on, a.h.proc), untracked);
         }
     }
     let t_handlers = started.elapsed();
@@ -371,8 +392,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     // The presentation reactions (Life steps, HUD, sight, canmove) read holder vars too: reactive code the handler roles do not cover.
     {
-        let files = tree.select(&crate::tree::CODE_DM);
-        for (owner, var) in crate::lints::derived_reads::reaction_read_pairs(tree, &files) {
+        for (owner, var) in reaction_pairs {
             if let Some(declaring) = sem.var_owner(&owner, &var) {
                 reads.insert((declaring, var));
             }
