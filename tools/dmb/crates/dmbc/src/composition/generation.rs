@@ -58,6 +58,10 @@ pub(super) struct PatchSlot {
     /// A body patch is relative to its base alone (body digests, link footprints, inputs, archive);
     /// what needs the retained model (string appends, structural patches) declines on an alternate.
     alternates: Vec<Arc<PatchSlot>>,
+    /// On an alternate only: the retained model of that build (with `model_rows`/`model_anchor` it
+    /// describes the alternate's image), so string-literal and structural patches work there too.
+    /// Released with the wire images under memory pressure.
+    generation: Option<Arc<Generation>>,
 }
 /// How many earlier patch bases a session keeps (`DMB_PATCH_ALTERNATES`, default 2, 0 disables).
 fn alternate_limit() -> usize {
@@ -281,8 +285,11 @@ impl RetainedGeneration {
             // The previous base becomes an alternate, unless it has the same skeleton as one kept.
             let mut alternates = std::mem::take(&mut slot.alternates);
             if alternate_limit() > 0 && slot.base.is_some() && slot.image.is_some() && slot.link.is_some() {
+                // Composition has not encoded this request's model yet: `current` is still the previous build's.
+                let generation = self.current.lock().unwrap_or_else(|e| e.into_inner()).clone();
                 let previous = Arc::new(PatchSlot {
                     alternates: Vec::new(),
+                    generation,
                     ..std::mem::take(&mut *slot)
                 });
                 let key = previous.base.as_ref().map(|base| base.skeleton_key());
@@ -302,6 +309,7 @@ impl RetainedGeneration {
                 model_rows: Vec::new(),
                 model_anchor: None,
                 alternates,
+                generation: None,
             };
         });
     }
@@ -566,10 +574,18 @@ impl RetainedGeneration {
         };
         let mut alternates = std::mem::take(&mut slot.alternates);
         let chosen = alternates.remove(position);
+        let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        let previous_generation = current.take();
+        // The alternate's own model (if still retained) becomes current; its model rows and anchor
+        // describe that model, so string and structural patches can edit it.
+        *current = chosen.generation.clone();
+        let keeps_model = current.is_some();
+        drop(current);
         let previous = std::mem::replace(
             &mut *slot,
             PatchSlot {
                 alternates: Vec::new(),
+                generation: None,
                 ..(*chosen).clone()
             },
         );
@@ -578,15 +594,17 @@ impl RetainedGeneration {
                 0,
                 Arc::new(PatchSlot {
                     alternates: Vec::new(),
+                    generation: previous_generation,
                     ..previous
                 }),
             );
         }
         alternates.truncate(alternate_limit());
         slot.alternates = alternates;
-        // The retained model belongs to the build that was current; it does not describe this base.
-        slot.model_rows.clear();
-        slot.model_anchor = None;
+        if !keeps_model {
+            slot.model_rows.clear();
+            slot.model_anchor = None;
+        }
         true
     }
     /// The patch base, its link answers and the image they describe.
@@ -679,6 +697,21 @@ impl RetainedGeneration {
             .current
             .lock()
             .unwrap_or_else(|error| error.into_inner()) = None;
+        // Alternates drop their models too; their compact slots stay.
+        let strip = |slot: &mut PatchSlot| {
+            for alternate in &mut slot.alternates {
+                if alternate.generation.is_some() {
+                    *alternate = Arc::new(PatchSlot {
+                        generation: None,
+                        model_rows: Vec::new(),
+                        model_anchor: None,
+                        ..(**alternate).clone()
+                    });
+                }
+            }
+        };
+        strip(&mut self.patch.lock().unwrap_or_else(|error| error.into_inner()));
+        self.visit_published(|old| strip(&mut old.patch.lock().unwrap_or_else(|error| error.into_inner())));
         // The compact patch slot (row image, link answers, source base) stays:
         // it is what lets the next body edit skip whole-program compilation.
     }

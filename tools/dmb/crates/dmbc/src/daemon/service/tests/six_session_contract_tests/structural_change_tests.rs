@@ -267,3 +267,30 @@ fn alternating_skeletons_patch_against_their_own_base_and_match_fresh_bytes() {
         compare_revision(&shared, &roots);
     }
 }
+
+#[test]
+fn alternating_skeletons_patch_string_literal_edits_and_match_fresh_bytes() {
+    // String-literal edits append to the string table of the retained model; an alternate base
+    // keeps its own model, so these patch too. Every revision must equal a fresh compile.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    let words = "/proc/words()\n    return \"alpha\"\n";
+    let lane_a = format!("{TREE}{words}");
+    let lane_b = format!(
+        "{}{words}",
+        TREE.replace("    var/own = 2\n", "    var/extra = 5\n    var/own = 2\n")
+    );
+    let literal = |source: &str, text: &str| source.replace("\"alpha\"", &format!("\"{text}\""));
+    for source in [
+        lane_a.clone(),
+        lane_b.clone(),
+        literal(&lane_a, "beta"),
+        literal(&lane_b, "gamma"),
+        literal(&lane_a, "delta"),
+        lane_b.clone(),
+    ] {
+        edit_all(&roots, &source);
+        compare_revision(&shared, &roots);
+    }
+}
