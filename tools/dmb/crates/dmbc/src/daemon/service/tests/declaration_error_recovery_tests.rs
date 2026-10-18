@@ -82,6 +82,6 @@ fn missing_initializer_type_preserves_published_rosters_and_new_type_recovery_ma
         &mut crate::runner_host::BuildHost::one_shot(),
     );
     assert!(diagnostics.is_empty());
-    assert_eq!(recovered, published(fresh.unwrap(), &fresh_destination));
+    assert_equivalent_outputs(&recovered, &published(fresh.unwrap(), &fresh_destination), "recovered vs fresh");
     assert_ne!(recovered.0, initial.0);
 }

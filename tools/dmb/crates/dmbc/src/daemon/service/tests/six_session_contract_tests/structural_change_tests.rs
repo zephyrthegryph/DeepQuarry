@@ -69,7 +69,9 @@ fn structural_scenarios_edit_and_revert_match_fresh_bytes() {
         // Reverting a removed var adds it back, an append patch with stable
         // numbering: equivalent to a fresh build (compare_revision), not identical.
         if label != "removed var" {
-            assert_eq!(reverted, initial, "reverting the {label} edit must reproduce the initial bytes");
+            if !dm_link::stable_assignment_enabled() {
+                assert_eq!(reverted, initial, "reverting the {label} edit must reproduce the initial bytes");
+            }
         }
     }
 }
@@ -105,7 +107,10 @@ fn chained_structural_edits_match_fresh_bytes_and_revert() {
         seen.push(edited);
     }
     edit_all(&roots, TREE);
-    assert_eq!(compare_revision(&shared, &roots), initial);
+    let reverted = compare_revision(&shared, &roots);
+    if !dm_link::stable_assignment_enabled() {
+        assert_eq!(reverted, initial);
+    }
 }
 
 #[test]
@@ -208,7 +213,10 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         let applied = crate::body_patch::applied(&roots.manifest(0)) - before;
         assert_eq!(applied, u64::from(patches), "{label}: append patch applied");
         edit_all(&roots, TREE);
-        assert_eq!(compare_revision(&shared, &roots), initial, "{label}: revert reproduces initial bytes");
+        let reverted = compare_revision(&shared, &roots);
+        if !dm_link::stable_assignment_enabled() {
+            assert_eq!(reverted, initial, "{label}: revert reproduces initial bytes");
+        }
     }
 }
 
@@ -395,4 +403,23 @@ fn shadowing_moving_and_removing_a_callable_name_match_fresh_bytes() {
         // compare_revision asserts the retained output is equivalent to a fresh compile.
         compare_revision(&shared, &roots);
     }
+}
+
+#[test]
+fn types_added_between_existing_types_match_fresh_structurally() {
+    // Under DMB_STABLE_LINK=1 the added type takes the next class index instead of its source
+    // position; compare_revision gates the output on structural equivalence with a fresh build.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    edit_all(&roots, TREE);
+    compare_revision(&shared, &roots);
+    let added = TREE.replace(
+        "/datum/base/child\n",
+        "/datum/base/added_early\n    value = 4\n    proc/added_call()\n        return 6\n/datum/base/child\n",
+    );
+    edit_all(&roots, &added);
+    compare_revision(&shared, &roots);
+    edit_all(&roots, TREE);
+    compare_revision(&shared, &roots);
 }

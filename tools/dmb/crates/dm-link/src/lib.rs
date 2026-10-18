@@ -182,6 +182,58 @@ pub struct LinkTables {
     bindings: BindingTables,
     content: Arc<BTreeMap<Key, EntryContent>>,
 }
+/// `DMB_STABLE_LINK=1`: keep every surviving previous index and append new keys.
+pub fn stable_assignment_enabled() -> bool {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("DMB_STABLE_LINK").is_some_and(|value| value == "1"))
+}
+/// Stable numbering for additions. A table whose previous keys all survive pins
+/// them at their previous indexes and appends its fresh keys in the current
+/// order; a table that lost a key keeps the fresh full order (it renumbers).
+/// Output is then equivalent to, not byte-identical with, a fresh build.
+pub(crate) fn stabilize(
+    inventory: &mut LinkInventory,
+    present: impl Fn(&Key) -> bool,
+    previous: &BindingTables,
+) {
+    let pinned: BTreeSet<Key> = inventory.fixed.iter().map(|(key, _)| *key).collect();
+    let mut by_table: BTreeMap<Table, Vec<(Key, u32)>> = BTreeMap::new();
+    for (key, index) in previous.assignments() {
+        if !pinned.contains(key) {
+            by_table.entry(key.table()).or_default().push((*key, *index));
+        }
+    }
+    for (table, rows) in by_table {
+        if rows.iter().any(|(key, _)| !present(key))
+            || inventory
+                .reserved_prefixes
+                .get(&table)
+                .is_some_and(|prefix| rows.iter().any(|(_, index)| index < prefix))
+        {
+            continue;
+        }
+        let highest = rows.iter().map(|(_, index)| *index).max().unwrap_or(0);
+        let used: BTreeSet<u32> = rows.iter().map(|(_, index)| *index).collect();
+        if inventory
+            .fixed
+            .iter()
+            .any(|(key, index)| key.table() == table && (*index > highest || used.contains(index)))
+        {
+            continue;
+        }
+        let kept: BTreeSet<Key> = rows.iter().map(|(key, _)| *key).collect();
+        if let Some(order) = inventory
+            .orders
+            .remove(&table)
+            .or_else(|| inventory.append_orders.remove(&table))
+        {
+            inventory
+                .append_orders
+                .insert(table, order.into_iter().filter(|key| !kept.contains(key)).collect());
+        }
+        inventory.fixed.extend(rows);
+    }
+}
 impl LinkTables {
     pub fn index(&self, key: Key) -> Option<u32> {
         self.bindings.assignments().get(&key).copied()
@@ -327,6 +379,10 @@ impl LinkTables {
         }
         let captured =
             retain_recipe.then(|| assignment_recipe::AssignmentRecipe::capture(&inventory));
+        let mut inventory = inventory;
+        if let Some(previous) = previous.filter(|_| stable_assignment_enabled()) {
+            stabilize(&mut inventory, |key| content.contains_key(key), previous);
+        }
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {

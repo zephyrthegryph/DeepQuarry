@@ -69,6 +69,6 @@ fn implied_type_errors_match_fresh_current_include_and_recover_without_replacing
         &mut crate::runner_host::BuildHost::one_shot(),
     );
     assert!(diagnostics.is_empty());
-    assert_eq!(recovered, published(fresh.unwrap(), &fresh_destination));
+    assert_equivalent_outputs(&recovered, &published(fresh.unwrap(), &fresh_destination), "recovered vs fresh");
     assert_ne!(recovered.0, initial.0);
 }
