@@ -10,6 +10,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	var/one_time_use = FALSE
 	var/precision = 1
 
+/// A closed hub points at itself: let go of it, or the deleted portal holds itself (a cycle never freed).
+/obj/structure/dark_portal/on_destroy(force)
+	locked = null
+	..()
+
 /obj/structure/dark_portal/proc/close_portal()
 	return
 

@@ -15,6 +15,7 @@
 		return 3
 
 /obj/item/mecha_parts/mecha_equipment/speedboost/detach()
-	chassis.step_in = initial(chassis.step_in)
+	if(chassis) // a part detached from no exosuit (a fresh one deleted) has no speed to give back
+		chassis.step_in = initial(chassis.step_in)
 	..()
 	return
