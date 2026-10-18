@@ -808,7 +808,7 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	interact_offline = TRUE
 	density = FALSE
 
-/obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
+/obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, authority = null, silent = TRUE)
 	. = ..()
 	M.set_pixel_y(8)
 	act_message(M, src, others = span_notice("%U%, hops up onto %T% and begins running!"))

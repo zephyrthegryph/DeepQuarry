@@ -100,7 +100,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 				to_chat(rider, span_warning("As you come to your senses, you realize you aren't riding [teleatom] anymore!"))
 				continue
 
-			teleatom.buckle_mob(rider, TRUE)
+			teleatom.buckle_mob(rider, GLOB.authority_forced)
 
 /proc/tele_play_specials(atom/movable/teleatom, atom/location, datum/effect/effect/system/effect, sound)
 	if(!location)

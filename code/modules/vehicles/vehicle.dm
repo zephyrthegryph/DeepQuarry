@@ -74,7 +74,7 @@ CAPABILITIES(/obj/vehicle)
 
 //BUCKLE HOOKS
 
-/obj/vehicle/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
+/obj/vehicle/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
 	. = ..()
 	M.refresh_submersion()
 	if(riding_datum)

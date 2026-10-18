@@ -91,8 +91,8 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 
-/mob/living/carbon/human/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
-	if(forced)
+/mob/living/carbon/human/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
+	if(authority_skips(authority, SKIP_REQUIREMENTS))
 		return ..() // Skip our checks
 	if(is_incorporeal(src) || is_incorporeal(M))
 		return FALSE

@@ -392,7 +392,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 // Rykka
 
-/obj/machinery/photocopier/buckle_refusal(mob/living/M, forced = FALSE, can_do_spont_vore = FALSE)
+/obj/machinery/photocopier/buckle_refusal(mob/living/M, authority = null, can_do_spont_vore = FALSE)
 	. = ..()
 	if(.)
 		return .

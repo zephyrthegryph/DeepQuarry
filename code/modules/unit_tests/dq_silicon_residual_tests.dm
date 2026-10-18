@@ -128,7 +128,7 @@
 	TEST_ASSERT(bed_floor, "the fixture has a distinct neighboring floor for real movement unbuckling")
 	var/obj/structure/bed/bed = allocate(/obj/structure/bed, bed_floor)
 	R.forceMove(bed_floor)
-	TEST_ASSERT(bed.buckle_mob(R, forced = TRUE), "the real bed buckles the actual robot")
+	TEST_ASSERT(bed.buckle_mob(R, authority = GLOB.authority_forced), "the real bed buckles the actual robot")
 	TEST_ASSERT_EQUAL(R.buckled_to(), bed, "the real buckle link names the fixture bed")
 	TEST_ASSERT(!R.incapacitated(), "a robot's unrestrained partial buckle is outside the unchanged default incapacity mask")
 	TEST_ASSERT_EQUAL(station.go_in(R), 1, "the real partially buckled robot retains its historical forced admission")

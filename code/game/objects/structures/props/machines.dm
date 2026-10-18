@@ -663,7 +663,7 @@
 	vis_contents += AM
 	if(ismob(AM))
 		var/mob/M = AM
-		buckle_mob(M, TRUE, FALSE)
+		buckle_mob(M, GLOB.authority_forced, FALSE)
 
 	// TRAP THEM
 	change_state("closed")

@@ -776,8 +776,8 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	return values
 
-/mob/living/simple_mob/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
-	if(forced)
+/mob/living/simple_mob/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
+	if(authority_skips(authority, SKIP_REQUIREMENTS))
 		return ..() // Skip our checks
 	if(!riding_datum)
 		return FALSE
