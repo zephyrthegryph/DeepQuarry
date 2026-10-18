@@ -104,6 +104,37 @@ fresh compile of every revision) and a production-tree A/B:
 4. **Dirty-set full path for what remains**: lowering, initializers and ABI visit only units whose own
    inputs or recorded reads changed under the declaration delta; link and composition stay whole-program.
 
+### General path for declaration edits (decided 2026-10-18)
+
+Every declaration edit is a changed-input set on the one full path; no new special-case patcher. The
+append patch stays only while it is faster and is retired when the general path matches it.
+
+What stable IDs can and cannot buy, from the link code (`dm_link::LinkTables::build`): type, procedure
+and string indexes follow the fresh inventory order (`inventory.orders`), and that order is observable
+(`typesof`, proc tables, `vars`). Appending keeps every existing index for additions. A removal or a
+parent change cannot leave a tombstone row in the class or procedure table without changing what the
+game sees, so it renumbers; renumbering is a relocation of the words of every unit that references a
+moved index, which is the link pass itself (about 3 s), not relowering. So the plan is:
+
+1. **Dirty-set visiting (no ID changes).** Lowering, initializers, ABI and startup reuse every unit
+   whose inputs and recorded reads are unchanged without visiting it: carry domain versions across
+   revisions for domains the declaration delta does not touch (today 627k versions are re-issued per
+   request, 1-2.5 s), and keep the previous request's completed inputs keyed by unit identity so a clean
+   unit is not claimed and rebound (1.5 s). Link and composition stay whole-program. Expected: a hot
+   declaration edit drops by the lowering, initializer and ABI visiting cost (about 6-10 s of 25 s).
+2. **Per-class records as queries.** `class_projection` and `materialize_members` build every class
+   record each request (whole-program). Key each class record by its owner's resolved rows and its
+   parent's record; rebuild only changed owners and their descendants. This is what an added type needs.
+3. **Stable IDs for additions, relocation for removals.** Link keeps the previous assignment for every
+   surviving key and appends new keys (the append patch's numbering); a removal or reparent renumbers
+   by relocating words, never relowering. Composition writes changed sections only.
+4. **Model persistence.** The retained composed model is released under memory pressure, which turns
+   the next declaration edit into a cold composition (seen 2026-10-18). Persist the model's row image
+   and link answers on disk with the patch base so a released model is reloaded, not rebuilt.
+
+Each step is proven by the six-session structural scenarios against fresh compiles and an interleaved
+production-tree A/B.
+
 ## Coordination and risks
 
 - The memory lane owns `SessionKey`, `BuildHost` keying and the budget. The session becomes the `Db`: eviction is by query kind,
