@@ -5,8 +5,6 @@ var	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::global_annou
 var	code/_global_vars/silo.dm	@/datum/controller/global_vars::ore_silo_default
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/_onclick/hud/skybox.dm	@/client::skybox
-var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::owner
-var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::previous
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/system/atoms::active_batch
 var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
@@ -127,7 +125,6 @@ list	code/_helpers/null_safety.dm	var/static/list/instances = list()
 list	code/controllers/subsystems/assets.dm	@/datum/system/assets::cache
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_pending
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_loose
-list	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::after_inits
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::subject_identities
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_rules
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_windows

@@ -1553,9 +1553,9 @@ exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/cont
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak"]
 # Holder types whose instances live for one call or one resolution and are dropped with it (relations proposal D8, reviewed per type):
-# a reservation (lives until its op ends; the subtypes outside code/engine/parts/resource.dm too), one dispatch's context (code/datums/capabilities/dispatch.dm), op candidates, the resolution record, op sources and provider rows (code/engine/parts/resolve.dm, provider.dm), examine rows
+# a materialize frame (open only while one load initializes, code/controllers/subsystems/atoms_batch.dm), a reservation (lives until its op ends; the subtypes outside code/engine/parts/resource.dm too), one dispatch's context (code/datums/capabilities/dispatch.dm), op candidates, the resolution record, op sources and provider rows (code/engine/parts/resolve.dm, provider.dm), examine rows
 # (code/engine/present/examine.dm), constructor arguments (code/engine/lifeforms/params.dm), one serializer run's context (code/engine/state/serializer.dm).
-transient_types = ["/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
+transient_types = ["/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
 
 # rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.
 [lint.rel_write_undeclared]
