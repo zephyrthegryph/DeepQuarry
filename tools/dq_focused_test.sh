@@ -525,6 +525,8 @@ look_prepare() {
 		if [[ "${DQ_WORLD_PARAMS:-}" == *look-types=* ]]; then
 			# A hand-narrowed run names its own types (DQ_WORLD_PARAMS look-types=<file>): keep them, never widen to the stale set.
 			echo "== look pins: hand-narrowed to the types in DQ_WORLD_PARAMS"
+			local narrowed="${DQ_WORLD_PARAMS##*look-types=}"
+			LOOK_PARAMS="$LOOK_PARAMS&look-types=${narrowed%%&*}" # the look worlds get their own params (W_PARAMS), not DQ_WORLD_PARAMS
 		elif [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
 			stale="data/look-types.$$.txt"
 			focus_files+=("$stale")
