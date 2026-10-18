@@ -8,7 +8,7 @@ use super::*;
 fn build(shared: &Arc<Shared>, roots: &Roots) -> (crate::publish::OutputPair, Vec<u8>, Vec<u8>) {
     let mut retained = request(roots, 0, false);
     retained.no_cache = false;
-    let slot = shared.slot(retained.project.clone(), &retained.defines, Some(&retained));
+    let slot = shared.slot(retained.project.clone(), Some(&retained));
     let token = control::Cancellation::default();
     let _latest = LatestRequest::register(&slot, RequestKey::of(&retained, &retained.project), token.clone());
     let _binding = control::bind(token);
