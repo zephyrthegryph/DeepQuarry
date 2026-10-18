@@ -20,6 +20,7 @@
 #include "engine\p1_fixtures.dm"
 #include "engine\p2_fixtures.dm"
 #include "engine\s1_fixtures.dm"
+#include "engine\qty_fixtures.dm"
 #include "engine\p2_storage_fixtures.dm"
 #include "engine\gap_fixtures.dm"
 #include "engine\proximity_fixtures.dm"

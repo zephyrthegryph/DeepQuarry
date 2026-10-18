@@ -682,6 +682,7 @@
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
+#include "dq_slot_quantity_tests.dm"
 #include "interim_fax_actor.dm"
 #include "interim_crystal_consumption.dm"
 #include "interim_prerelease_consequences.dm"
@@ -1314,6 +1315,7 @@
 #include "dq_machinery_last_conversion_pin.dm"
 
 #include "dq_requirement_protocol_pin.dm"
+#include "dq_requirement_burndown_pin.dm"
 #include "dq_requirement_protocol_tests.dm"
 #include "dq_requirement_boundary_pin_tests.dm"
 #include "dq_requirement_machine_selection_tests.dm"

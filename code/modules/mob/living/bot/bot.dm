@@ -683,7 +683,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	release_vore_contents()
 	revoke(src, granted_verb(/mob/proc/insidePanel), src)
 	no_vore = TRUE
-	vore_prefs.devourable = FALSE
+	vore_prefs.set_devourable(FALSE)
 	vore_prefs.feeding = FALSE
 	vore_prefs.can_be_drop_pred = FALSE
 

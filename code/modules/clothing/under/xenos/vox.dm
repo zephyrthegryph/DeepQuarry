@@ -3,7 +3,6 @@
 	starting_accessories = list(/obj/item/clothing/accessory/storage/vox)	// Dont' start with a backback, so free webbing
 	flags = PHORONGUARD
 
-TYPE_TABLE(/obj/item/clothing/under/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/under/vox/vox_casual
 	name = "alien clothing"
@@ -34,3 +33,7 @@ CAPABILITIES(/obj/item/clothing/under/vox/vox_casual)
 	. = ..()
 	hold.max_storage_space = slots * ITEMSIZE_COST_NORMAL
 	hold.restrict_hold(null, ITEMSIZE_NORMAL)
+
+
+CAPABILITIES(/obj/item/clothing/under/vox)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
