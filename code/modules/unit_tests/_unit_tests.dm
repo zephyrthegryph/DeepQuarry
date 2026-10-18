@@ -339,6 +339,7 @@
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
 #include "dq_ownership_transfer_tests.dm"
+#include "dq_circuit_kit_delete_tests.dm"
 #include "dq_destroy_guard_tests.dm"
 #include "dq_pool_tests.dm"
 #include "dq_foundation_look_tests.dm"
