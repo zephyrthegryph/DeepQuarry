@@ -9,9 +9,7 @@
 //!                                  contribution a declaration names, every STAT formula and every draw() whose reads are not all tracked
 //! GLOB.generated_untracked_leaves  "<type>" = list(<var>, ...)   vars a declaration of the type names as a condition or a contribution's value
 //!                                  (nameof(v) inside contributes(), contributes_to() or a when() around one) that nothing publishes
-//! GLOB.generated_draw_reads        "<type>" = list(<var>, ...)   the holder vars the type's own draw() (and the parents it calls) reads
-//! GLOB.generated_draw_hop_reads    "<type>" = list("loc.<var>", "turf.<rel>.<var>", ...)   what that draw reads up to three hops away (a container,
-//!                                  turf or area hop, then relations): a publish of the var there, or of a link, redraws the thing (draw_hop_published(), refs/hops.dm)
+//! (What each draw() reads on the holder and up to three hops away is the change graph's plan: `gen plans`, GLOB.generated_plans.)
 //! ```
 //!
 //! An untracked read is a var that is not tracked, a relation, a stat, a derived value or constant (`ReadsEngine::classify`, the same test as
@@ -68,11 +66,11 @@ pub struct Untracked {
 
 /// The hops an output's subscriptions follow only one step from the holder: a draw (or another derived output) redraws from its own vars, from
 /// the entities it declares it watches (`look.watch()`, a derived() hop over a relation), and from a var one container, turf or area hop away
-/// (`generated_draw_hop_reads`, heard by `draw_hop_published()`). A read deeper through one of them (`hat.loc.species`, `loc.loc.x`) is an input
+/// (the plan's PLAN_DRAW_HOP keys, heard by `draw_hop_published()`). A read deeper through one of them (`hat.loc.species`, `loc.loc.x`) is an input
 /// an output cannot hear change. Stat inputs, conditions and requirements hear every depth.
 const DRAW_PSEUDO_HOPS: &[&str] = &["loc", "turf", "area"];
 
-/// A draw hears this read through `generated_draw_hop_reads`: one container, turf or area hop off the holder.
+/// A draw hears this read through its plan's PLAN_DRAW_HOP keys: one container, turf or area hop off the holder.
 pub fn draw_hop_heard(r: &crate::sem::reads::Read) -> bool {
     r.root == "holder" && r.hop_ok && !r.hops.is_empty() && r.hops.len() <= DRAW_HOP_DEPTH && DRAW_PSEUDO_HOPS.contains(&r.hops[0].as_str())
 }
@@ -607,16 +605,7 @@ impl Generator for Deps {
         let rows: Vec<String> = by_type.iter().map(|(t, vs)| format!("\t{} = list({})", quote(t), vs.iter().map(|v| quote(v)).collect::<Vec<_>>().join(", "))).collect();
         emit_table(out, "generated_untracked_leaves", &rows);
         out.blank();
-        out.doc("\"<type>\" -> the holder vars its own draw() (and the parent draws it calls) reads: a change of any of them redraws an exact type too");
-        out.doc("(derived_compile(), code/engine/change/derived.dm), so a draw needs no hand-written drawn_from().");
-        let rows: Vec<String> = an
-            .draw_reads
-            .iter()
-            .filter(|(_, ks)| !ks.is_empty())
-            .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
-            .collect();
-        emit_table(out, "generated_draw_reads", &rows);
-        out.blank();
+        // The holder vars and hop reads of each draw() are the change graph's plans now (`gen plans`, GLOB.generated_plans).
         out.doc("\"<type>\" -> the published keys its own draw() (and the parent draws it calls) reads through a READS_AS accessor: a PUBLISH_CHANGE of one");
         out.doc("redraws the thing (publish_key_changed(), code/engine/stats/recompute.dm), so a draw needs no hand-written on_change() for a key it reads.");
         let rows: Vec<String> = an
@@ -626,16 +615,6 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_keys", &rows);
-        out.blank();
-        out.doc("\"<type>\" -> what its own draw() (and the parent draws it calls) reads one container, turf or area hop away, as \"<hop>.<var>\": a");
-        out.doc("change of the var on what the thing is in, stands on or is in redraws it (draw_hop_published(), code/engine/refs/hops.dm).");
-        let rows: Vec<String> = an
-            .draw_hops
-            .iter()
-            .filter(|(_, ks)| !ks.is_empty())
-            .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
-            .collect();
-        emit_table(out, "generated_draw_hop_reads", &rows);
     }
 }
 

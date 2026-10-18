@@ -52,7 +52,7 @@ CAPABILITIES(/obj/gdeps_probe)
 	TEST_ASSERT(!GLOB.generated_untracked_reads["/obj/gdeps_probe::level_low"], "level_low reads only tracked state")
 	var/list/leaves = GLOB.generated_untracked_leaves["/obj/gdeps_probe"]
 	TEST_ASSERT(islist(leaves) && ("raw_ok" in leaves) && !("gauge" in leaves), "the untracked leaf is raw_ok alone: [json_encode(leaves)]")
-	var/list/drawn = GLOB.generated_draw_reads["/obj/gdeps_lamp"]
+	var/list/drawn = plan_keys(/obj/gdeps_lamp, PLAN_DRAW) // the change graph plan holds what a draw reads
 	TEST_ASSERT(islist(drawn) && ("glow_level" in drawn), "the lamp's draw reads glow_level: [json_encode(drawn)]")
 	// A real stat input: the machine's area power read follows its area's channel vars through power_area, all of them published.
 	var/list/area_power = GLOB.generated_reads_table["/obj/machinery::area_gives_power"]
