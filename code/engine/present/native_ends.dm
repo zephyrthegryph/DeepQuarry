@@ -10,13 +10,23 @@
 /proc/vis_add(atom/holder, thing)
 	if(!holder || isnull(thing) || (isdatum(thing) && QDELETED(thing)))
 		return
-	holder.vis_contents += thing
+	if(ismovable(holder))
+		var/atom/movable/M = holder // typed per kind: the native compiler resolves vis_contents storage on /atom/movable and /turf, not /atom
+		M.vis_contents += thing
+	else if(isturf(holder))
+		var/turf/T = holder
+		T.vis_contents += thing
 
 /// Stops showing `thing` (an atom, or a list) through `holder`.
 /proc/vis_remove(atom/holder, thing)
 	if(!holder || isnull(thing))
 		return
-	holder.vis_contents -= thing
+	if(ismovable(holder))
+		var/atom/movable/M = holder
+		M.vis_contents -= thing
+	else if(isturf(holder))
+		var/turf/T = holder
+		T.vis_contents -= thing
 
 /// Puts `thing` (a screen object, or a list) on client `C`'s screen.
 /proc/client_screen_add(client/C, thing)
