@@ -63,7 +63,6 @@ GLOBAL_LIST_INIT(syndicate_access, list(ACCESS_MAINT_TUNNELS, ACCESS_SYNDICATE, 
 
 // Ores (for mining)
 GLOBAL_LIST_EMPTY(ore_data)
-GLOBAL_LIST_EMPTY(alloy_data)
 
 // Strings which corraspond to bodypart covering flags, useful for outputting what something covers.
 GLOBAL_LIST_INIT(string_part_flags, list(
@@ -216,10 +215,6 @@ GLOBAL_LIST_EMPTY(mannequins)
 	for(var/oretype in paths)
 		var/datum/ore/OD = new oretype()
 		GLOB.ore_data[OD.name] = OD
-
-	paths = subtypesof(/datum/alloy)
-	for(var/alloytype in paths)
-		GLOB.alloy_data += new alloytype()
 
 	//Closet appearances
 	GLOB.closet_appearances = GLOB.decls_repository.get_decls_of_type(/datum/decl/closet_appearance)

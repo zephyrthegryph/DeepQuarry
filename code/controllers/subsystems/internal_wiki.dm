@@ -814,10 +814,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	data["alloys"] = null
 	if(O.alloy)
 		var/list/alloy_list = list()
-		for(var/datum/alloy/A in GLOB.alloy_data)
-			for(var/req in A.requires)
-				if(O.name == req )
-					var/datum/material/M = get_material_by_name(A.metaltag)
+		for(var/datum/xform/A as anything in xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING))
+			for(var/list/req as anything in A.takes)
+				if(O.name == req[2])
+					var/datum/material/M = get_material_by_name(A.id)
 					alloy_list.Add(M.display_name)
 					break
 		data["alloys"] = alloy_list

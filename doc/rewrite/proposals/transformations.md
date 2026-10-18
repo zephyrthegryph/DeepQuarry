@@ -687,3 +687,7 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   calls it, so mixing an important reaction has never messaged admins. The log proc is kept and takes a rule; no listener is registered, so behaviour is unchanged.
   The contract event is still emitted by the settle, and the pins count it.
 * **Boot cost (D14).** `xform_build()` logs how long the compile took (`Transformations compiled: n rule(s) in s`).
+* **Wave 3, alloys.** The eight alloys are `/transformation/smelting/*` (`code/modules/mining/alloys.dm`), `medium = MEDIUM_ORE_STOCK`, `regime = REGIME_SMELTING`,
+  `id` the material made. The processor (`machine_processing.dm`) walks `xform_rules_in()` with the legacy loop unchanged (every taken ore set to alloy, once per
+  alloy per tick); no generic ore settle was built, since one caller has it. `product_mod` became the sheet count written out. `/datum/alloy` and `alloy_data`
+  are hard-banned.
