@@ -1578,3 +1578,7 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 [lint.player_link]
 exempt_prefixes = ["code/engine/_generated/"]
 exempt_files = ["code/modules/mob/bind_player.dm"]
+
+# native_ref_write (doc/rewrite/proposals/relations.md D11): the engine's own presentation code and tests are exempt; the rest is a ratchet.
+[lint.native_ref_write]
+exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
