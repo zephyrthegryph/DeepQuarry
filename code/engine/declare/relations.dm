@@ -214,6 +214,22 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		if(cond in holder.vars)
 			return !!holder.vars[cond]
 		return !!op_pure_call(holder, cond)
+	// not(), all_of() and any_of() with no condition among their arguments (all_of() with none) are requirement parts: read them as the same tree.
+	if(istype(cond, /datum/entry/part/req/negation))
+		var/datum/entry/part/req/negation/N = cond
+		return !condition_holds(holder, N.children[1])
+	if(istype(cond, /datum/entry/part/req/all))
+		var/datum/entry/part/req/all/every = cond
+		for(var/member in every.children)
+			if(!condition_holds(holder, member))
+				return FALSE
+		return TRUE
+	if(istype(cond, /datum/entry/part/req/any))
+		var/datum/entry/part/req/any/some = cond
+		for(var/member in some.children)
+			if(condition_holds(holder, member))
+				return TRUE
+		return FALSE
 	return !!cond
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
@@ -224,16 +240,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		return cap_key_get(holder, id)
 	return FALSE
 
-/// not(), all_of() and any_of() are the requirement language's names (E2 owns them); a condition tree of the stat and activation layers is
-/// written with these until the two meet.
-/proc/cond_not(cond)
-	return list("not", cond)
-
-/proc/cond_all(...)
-	return list("all") + args
-
-/proc/cond_any(...)
-	return list("any") + args
+// A condition tree of the stat and activation layers is written with not(), all_of() and any_of() (code/engine/parts/cond.dm), the requirement
+// language's own combinators: given a condition they build the ("not" | "all" | "any", ...) tree condition_holds() reads.
 
 /// cond_config(/datum/config_entry/flag/x): the server's config flag (read when the condition is asked; config does not change in a round).
 /proc/cond_config(entry_type)

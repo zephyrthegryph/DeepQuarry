@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/multitool)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MULTITOOL, pickup = SFX_ITEMS_PICKUP_MULTITOOL))
 	ref_one(nameof(selected_io), /datum/integrated_io)
 	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu
-	op("menu", in_hand(), when(cond_not(nameof(uplink))),
+	op("menu", in_hand(), when(not(nameof(uplink))),
 		asks(/datum/prompt/choice, fields = list("title" = "Multitool Menu", "question" = computed(PROC_REF(menu_question)), "choices" = list("Switch Mode", "Clear Buffers", "Cancel"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(no_wired_connection)),
 		then(PROC_REF(menu_chosen)))
 	// an uplink multitool opens its hidden uplink instead

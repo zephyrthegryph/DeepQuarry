@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/solar_assembly)
 	op("glass", stack(/obj/item/stack/material, 2), label("Add glass"), wait(0), when(req(PROC_REF(held_is_glass))),
 		needs(req(PROC_REF(on_floor)), req_is(nameof(anchored), TRUE, because = MSG(solar_assembly/unanchored))),
 		says(MSG(solar_assembly/glassed)), then(PROC_REF(glassed)))
-	op("electronics", item(/obj/item/tracker_electronics), label("Insert electronics"), wait(0), when(cond_not(nameof(tracker))),
+	op("electronics", item(/obj/item/tracker_electronics), label("Insert electronics"), wait(0), when(not(nameof(tracker))),
 		says(MSG(solar_assembly/electronics_in)), then(PROC_REF(electronics_in)))
 	op("take_electronics", tool(TOOL_CROWBAR), label("Take out the electronics"), wait(0), when(nameof(tracker)),
 		says(MSG(solar_assembly/electronics_out)), then(PROC_REF(electronics_out)))

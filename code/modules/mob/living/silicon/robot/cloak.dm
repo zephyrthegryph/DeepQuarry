@@ -14,7 +14,7 @@ CAPABILITIES(/obj/item/borg/cloak)
 	op("strength", menu(), label("Toggle Cloak Strength"), needs(carried()), then(PROC_REF(cloak_ask_level)))
 	op("toggle", menu(), label("Toggle Cloak"), needs(carried()), then(PROC_REF(cloak_toggled)))
 	/// Draws power while cloaked at a non-zero strength.
-	every(2 SECONDS, then(PROC_REF(cloak_step)), when = cond_all(nameof(active), nameof(cloak_strength)))
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = all_of(nameof(active), nameof(cloak_strength)))
 
 /// Using the cloak in hand, or its menu entry: ask the strength.
 /obj/item/borg/cloak/proc/cloak_ask_level(datum/act/op/A)

@@ -585,7 +585,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 	param(nameof(color), pos = 2)
 	param(nameof(material_id), pos = 3)
-	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = cond_not(nameof(color)))
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = not(nameof(color)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).

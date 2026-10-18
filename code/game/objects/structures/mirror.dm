@@ -15,7 +15,7 @@
 
 CAPABILITIES(/obj/structure/mirror)
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
-	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(cond_not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_wrench", tool(TOOL_WRENCH), when(nameof(glass)), wait(0), then(PROC_REF(wrench_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))

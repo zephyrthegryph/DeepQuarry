@@ -21,8 +21,8 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio)
 	// every slime of a colour shares its mutation table; each is numbered and named for it
 	per_type(nameof(slime_mutation), TYPE_PROC_REF(/datum, per_type_own))
 	rolls(nameof(number), range_of(1, 1000))
-	rolls(nameof(name), PROC_REF(roll_slime_name), from = list(nameof(number)), when = cond_not(nameof(harmless)))
-	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)), when = cond_not(nameof(harmless)))
+	rolls(nameof(name), PROC_REF(roll_slime_name), from = list(nameof(number)), when = not(nameof(harmless)))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)), when = not(nameof(harmless)))
 
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)

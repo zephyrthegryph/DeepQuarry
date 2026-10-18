@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 		then(PROC_REF(install_liner)))
 	op("refill_jetpack", item(/obj/item/tank/jetpack), label("Pulse-pressurize jetpack"), wait(0), when(PROC_REF(actor_is_robot)),
 		says(MSG(canister/jetpack)), then(PROC_REF(refill_jetpack)))
-	extend("melee_hit", when(cond_not(req(/obj/item/tank))), when(cond_not(req(/obj/item/analyzer))), when(cond_not(req(/obj/item/pda))))
+	extend("melee_hit", when(not(req(/obj/item/tank))), when(not(req(/obj/item/analyzer))), when(not(req(/obj/item/pda))))
 	op("weld_apart", tool(TOOL_WELDER), label("Deconstruct"), wait(2 SECONDS), needs(req(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))),
 		says(MSG(canister/deconstructed)), then(PROC_REF(welded_apart)))
 

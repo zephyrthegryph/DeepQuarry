@@ -521,7 +521,7 @@ mod context_tests {
 
     #[test]
     fn change_value_getter_is_an_output_but_handler_is_a_reaction() {
-        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(cond_all(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
+        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(all_of(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
         let value = found.iter().find(|h| h.proc == "value").unwrap();
         assert_eq!(value.ctx, Ctx::Eval);
         assert_eq!(value.role, Role::Output);

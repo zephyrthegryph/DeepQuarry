@@ -125,8 +125,8 @@ CAPABILITIES(/mob/living/silicon/ai)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
 	// a dummy (the announcer) carries no PDA or communicator
-	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(cond_not(nameof(is_dummy)), /obj/item/communicator/integrated))
-	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(cond_not(nameof(is_dummy)), /obj/item/pda/ai))
+	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(not(nameof(is_dummy)), /obj/item/communicator/integrated))
+	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(not(nameof(is_dummy)), /obj/item/pda/ai))
 	// its radio and laws exist before its parents' init: the welcome message lists the radio's channels, and a malf round shows the laws
 	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated, starts = /obj/item/radio/headset/heads/ai_integrated, early = TRUE)
 	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(start_laws), early = TRUE)

@@ -35,7 +35,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/passive/chicken, REGISTRY_CHIC
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 	op("chicken_item", item(/obj/item), then(PROC_REF(chicken_interaction_item)))
-	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = not(nameof(body_color)))
 	look_from(nameof(body_color), state = "chicken_*", living = "chicken_*", dead = "chicken_*_dead")
 	rolls(nameof(pixel_x), range_of(-6, 6))
 	rolls(nameof(pixel_y), range_of(0, 10))

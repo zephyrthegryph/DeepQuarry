@@ -211,7 +211,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 /// while it is off. A plain proc returning entries (the pump and the scrubber share it).
 /proc/huge_portable_controls()
 	return list(without("ui_open"), without("cell_in"), without("cell_out"), without("tank_bay.holding.insert"), without("port"),
-		op("console_only", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), says(MSG(huge_portable/console_only)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
+		op("console_only", hand(), label("Use"), wait(0), when(not(req(/obj/item))), says(MSG(huge_portable/console_only)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
 		op("swallow_cell", item(/obj/item/cell), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
 		op("swallow_tank", item(/obj/item/tank), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
 		op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, is_off), because = MSG(huge_portable/turn_off))),

@@ -39,7 +39,7 @@ STAT(/obj/e3_machine, e3_stun, MAX, base = 0, units = LIFE_CYCLE, reapply = REAP
 
 
 CAPABILITIES(/obj/e3_machine)
-	contributes(STAT_E3_OPERABLE, cond_not(nameof(broken)))
+	contributes(STAT_E3_OPERABLE, not(nameof(broken)))
 	contributes(STAT_E3_DRAW, 2)
 	when(nameof(e3_on), contributes(STAT_E3_DRAW, 10))
 	contributes(STAT_E3_CAN_RUN, STAT_E3_OPERABLE)

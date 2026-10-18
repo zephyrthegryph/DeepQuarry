@@ -203,14 +203,14 @@ MSG_DEF(cryobag/injector_out, "You pry the injector out of %T%.", "%U% pries the
 CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(tank_type), starts_args = NO_LOC) // in nullspace, so opening the bag does not eject it
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
-	extend("door", when(cond_not(nameof(used))))
+	extend("door", when(not(nameof(used))))
 	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req(PROC_REF(bare_hand_or_menu))),
 		confirms("Are you sure you want to open it? It will expire upon opening it."),
 		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
-	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
-	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
+	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
+	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(not(nameof(opened))), priority(OP_PRIORITY_PART),
 		needs(req(PROC_REF(can_insert_injector))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
-	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
+	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
 		needs(req(PROC_REF(injector_removable))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
 
 

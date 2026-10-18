@@ -20,7 +20,7 @@ cap_keys(CAP_POPUP_COVER, RAISED = MSG(popup_cover/lowered), MOVING = MSG(popup_
 /datum/capability/lib/popup_cover/entries()
 	return list(
 		on_change(raised_while, ANY, then(CAP_PROC(condition_moved))),
-		when(cond_any(POPUP_COVER_RAISED, POPUP_COVER_MOVING), contributes(STAT_DENSITY, TRUE, priority = PRIORITY_FORCE)))
+		when(any_of(POPUP_COVER_RAISED, POPUP_COVER_MOVING), contributes(STAT_DENSITY, TRUE, priority = PRIORITY_FORCE)))
 
 /// The condition changed: the cover starts toward it, unless it is already moving (the move ends by looking again).
 /datum/capability/lib/popup_cover/proc/condition_moved(datum/act/A)

@@ -273,7 +273,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
 	configure(light_glow(range = 3))
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(active), not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 
 /obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)
 

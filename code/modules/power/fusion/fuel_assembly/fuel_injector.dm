@@ -38,7 +38,7 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	op("set_id", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Fuel Injector", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
-	op("insert", item(/obj/item/fuel_assembly), label("Insert fuel rod"), wait(0), when(cond_not(req(/obj/item/fuel_assembly/blitz))),
+	op("insert", item(/obj/item/fuel_assembly), label("Insert fuel rod"), wait(0), when(not(req(/obj/item/fuel_assembly/blitz))),
 		needs(req_is(nameof(injecting), FALSE, because = MSG(fuel_injector/running))), then(PROC_REF(rod_inserted)))
 	op("insert_blitz", item(/obj/item/fuel_assembly/blitz), label("Insert fuel rod"), wait(0),
 		needs(req_is(nameof(injecting), FALSE, because = MSG(fuel_injector/running))),

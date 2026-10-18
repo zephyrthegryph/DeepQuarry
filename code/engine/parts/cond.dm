@@ -1,7 +1,7 @@
 // Conditions and requirements (doc/rewrite/final_api.html, section 9 "Conditions and requirements"; section 21 "Conditions, requirements and the
 // one signature"; section 19 "E2, parts": "the requirement protocol (conditions, req_* constructors, reasons from MSG_DEF)").
 //
-// A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, cond_not()/cond_all()/cond_any(), a
+// A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, not()/all_of()/any_of(), a
 // PROC_REF(x) whose proc takes (datum/act/A) and returns TRUE or FALSE, or a library requirement read as a boolean. It is what when() takes.
 // A REQUIREMENT is a condition plus a reason: it is what needs() takes. req(PROC_REF(x)) calls a pure callback returning null to allow,
 // or text/a message to refuse. Library constructors carry defaults; because = overrides the returned/default reason.
@@ -52,7 +52,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 // ---- evaluating conditions ----
 
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
-/// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
+/// not/all_of/any_of, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
 	lookup_reads_prepare(A.holder, A)
 	var/previous_pure_depth = GLOB.op_pure_depth
@@ -602,6 +602,33 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/full = islist(value) ? length(value) > 0 : !isnull(value)
 	return full == src.args["want_full"]
 
+/// not(x, because =): the negation. Of a requirement, a requirement (req_not); of a condition of the stat and activation layers (a var name,
+/// a stat or key id, a condition tree), a condition tree, which has no reason to give (admission.md D1: one set of combinators).
+/proc/not(cond, because = null)
+	if(istype(cond, /datum/entry/part/req))
+		return req_not(cond, because)
+	if(!isnull(because))
+		CRASH("not(): because = is a requirement's reason; [cond] is a condition")
+	return list("not", cond)
+
+/// True when `x` is a condition of the stat and activation layers rather than a requirement part: a var name, a PROC_REF, a stat or key id, or a
+/// condition tree (a list whose head is its text operator), or a simulation property condition (cond_measure(), an entry that is not a requirement).
+/// all_of() and any_of() build a condition tree when any argument is one.
+/proc/op_is_condition_form(x)
+	if(isnull(x) || istype(x, /datum/entry/part/req))
+		return FALSE
+	if(islist(x))
+		var/list/L = x
+		if(!length(L))
+			return FALSE
+		if(istext(L[1]))
+			return TRUE
+		for(var/item in L)
+			if(op_is_condition_form(item))
+				return TRUE
+		return FALSE
+	return TRUE
+
 /// req_not(r, because =): the negation of a requirement.
 /proc/req_not(datum/entry/part/req/inner, because = null)
 	return part_make(/datum/entry/part/req/negation, list("because" = because), list(inner))
@@ -617,8 +644,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return !R.holds(A)
 
-/// all_of(r...): every requirement holds; the first failing one's reason is reported.
+/// all_of(r...): every requirement holds; the first failing one's reason is reported. With a condition among them, a condition tree.
 /proc/all_of(...)
+	for(var/arg in args)
+		if(op_is_condition_form(arg))
+			return list("all") + args
 	return part_make(/datum/entry/part/req/all, null, entry_flatten(args))
 
 /datum/entry/part/req/all
@@ -641,8 +671,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return R.refusal(A)
 	return default_reason
 
-/// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder").
+/// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder"). With a condition among them, a condition tree.
 /proc/any_of(...)
+	for(var/arg in args)
+		if(op_is_condition_form(arg))
+			return list("any") + args
 	return part_make(/datum/entry/part/req/any, null, entry_flatten(args))
 
 /datum/entry/part/req/any

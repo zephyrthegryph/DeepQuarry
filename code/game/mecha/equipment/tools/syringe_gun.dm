@@ -355,7 +355,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 	owns_one(nameof(MyBeam), /datum/beam)
 	ref_one(nameof(Target))
 	op("toggle_drone", topic("toggle_drone"), then(PROC_REF(topic_toggle_drone)))
-	every(2 SECONDS, then(PROC_REF(crisis_drone_step)), when = cond_not(nameof(jammed)))
+	every(2 SECONDS, then(PROC_REF(crisis_drone_step)), when = not(nameof(jammed)))
 
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/var/jammed = FALSE
