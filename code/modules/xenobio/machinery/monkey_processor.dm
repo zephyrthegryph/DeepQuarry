@@ -10,12 +10,7 @@
 	name = T_BOARD("monkey processor")
 	build_path = /obj/machinery/processor/monkey
 
-/obj/machinery/processor/monkey/can_insert(atom/movable/AM)
-	if(istype(AM, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = AM
-		if(!istype(H.species, /datum/species/monkey))
-			return FALSE
-		if(H.stat != DEAD)
-			return FALSE
-		return TRUE
-	return FALSE
+/// A monkey processor takes only a dead monkey.
+/obj/machinery/processor/monkey/insert_refusal(atom/movable/AM)
+	var/mob/living/carbon/human/H = AM
+	return (istype(H) && istype(H.species, /datum/species/monkey) && H.stat == DEAD) ? null : msg_reason("\The [src] cannot process \the [AM] at this time.")
