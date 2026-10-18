@@ -210,17 +210,14 @@ list	code/controllers/subsystems/assets.dm	@/datum/system/assets::cache
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_pending
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_loose
 list	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::after_inits
-list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::definitions
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::subject_identities
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_rules
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_windows
 list	code/controllers/subsystems/internal_wiki.dm	@/datum/system/internal_wiki::spoiler_entries
-list	code/controllers/subsystems/job.dm	@/datum/system/job::department_datums
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::sources_queue
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::sunlight_queue
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::planet_shandlers
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::z_to_pshandler
-list	code/controllers/subsystems/persistence.dm	@/datum/system/persistence::persistence_datums
 list	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::cells
 list	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::eyes
 list	code/controllers/subsystems/shuttles.dm	@/datum/system/shuttles::shuttles
