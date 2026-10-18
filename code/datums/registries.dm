@@ -82,13 +82,23 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	return "registry:[id]"
 
 /// The store adopts this registry's list on first use (the store is a proc static: it may not exist yet while globals initialize).
+/// FALSE while globals initialize (the store is not built yet): the registry keeps its own list then, and the store indexes those members
+/// when it adopts the list on the first call after.
 /datum/registry/proc/store_ready()
 	PRIVATE_PROC(TRUE)
-	return member_adopt_ordered(store_key(), members)
+	if(!istype(kernel_membership(), /datum/kernel_membership))
+		return FALSE
+	member_adopt_ordered(store_key(), members)
+	return TRUE
 
 /// Joins a member. Only join_registries() and registry_join() call this.
 /datum/registry/proc/add(datum/member)
-	store_ready()
+	if(!store_ready())
+		if(!(member in members))
+			members += member
+			if(keyed)
+				file_member(member)
+		return
 	if(!member_join(store_key(), member))
 		return
 	if(keyed)
@@ -98,7 +108,12 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /datum/registry/proc/remove(datum/member)
 	if(dq_batch_defer_registry_leave(src, member))
 		return // qdel_batch() removes every doomed member in one pass
-	store_ready()
+	if(!store_ready())
+		if(member in members)
+			members -= member
+			if(keyed)
+				unfile_member(member)
+		return
 	if(!member_is(store_key(), member))
 		return
 	member_leave(store_key(), member, all = TRUE)
@@ -108,7 +123,10 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
 /// of `leaving` leaves at once.
 /datum/registry/proc/remove_many(list/leaving)
-	store_ready()
+	if(!store_ready())
+		for(var/datum/member as anything in leaving)
+			remove(member)
+		return
 	if(keyed)
 		for(var/datum/member as anything in leaving)
 			if(member_is(store_key(), member))
@@ -117,7 +135,8 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 
 /// TRUE if `member` is in this registry.
 /datum/registry/proc/has(datum/member)
-	store_ready()
+	if(!store_ready())
+		return member in members
 	return member_is(store_key(), member)
 
 /// The live member list, in join order. Read-only.

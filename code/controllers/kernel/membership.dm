@@ -29,8 +29,7 @@
 	var/list/roles_by_key = list()
 	/// key -> TRUE for an ordered key (a registry's): its member list keeps join order and may be reordered in place by its owner (a sorted
 	/// registry), so index_by_key[key] is a presence set there, not a position, and a leave is a list removal (relations proposal D12).
-	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
-	var/list/ordered_keys = list()
+	var/list/ordered_keys
 	/// member -> list of keys it belongs to, for teardown and systems_of().
 	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/keys_of = list()
@@ -84,7 +83,7 @@
 		return FALSE
 	var/list/members = M.members_by_key[key]
 	members += member
-	index[member] = M.ordered_keys[key] ? TRUE : length(members)
+	index[member] = M.ordered_keys?[key] ? TRUE : length(members)
 	var/list/keys = M.keys_of[member]
 	if(!keys)
 		keys = M.keys_of[member] = list()
@@ -126,7 +125,7 @@
 		if(length(held))
 			return FALSE
 	var/list/members = M.members_by_key[key]
-	if(M.ordered_keys[key])
+	if(M.ordered_keys?[key])
 		members -= member // join order kept (a registry's list)
 	else
 		var/last = length(members)
@@ -158,7 +157,7 @@
 		return
 	if(M.keys_of[D])
 		for(var/key in member_keys(D))
-			if(M.ordered_keys[key])
+			if(M.ordered_keys?[key])
 				continue // a registry key: the registry's own leave (leave_registries(), on dematerialize) unfiles its sub-indexes too
 			leave(key, D, all = TRUE)
 	if(M.members_by_key[D])
@@ -211,9 +210,9 @@
 /// list object so every holder of it keeps seeing the live members. Any members already in it are indexed. Idempotent.
 /proc/member_adopt_ordered(key, list/members)
 	var/datum/kernel_membership/M = kernel_membership()
-	if(M.ordered_keys[key])
+	if(M.ordered_keys?[key])
 		return M.members_by_key[key]
-	M.ordered_keys[key] = TRUE
+	LAZYSET(M.ordered_keys, key, TRUE)
 	M.members_by_key[key] = members
 	var/list/index = M.index_by_key[key] = list()
 	var/list/sources = M.sources_by_key[key] = list()
