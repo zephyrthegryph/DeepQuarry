@@ -243,3 +243,27 @@ fn appends_after_body_patches_edit_the_model_with_those_patches_applied() {
         count += 1;
     }
 }
+
+#[test]
+fn alternating_skeletons_patch_against_their_own_base_and_match_fresh_bytes() {
+    // A shared compile root alternates between lanes whose declarations differ. Each lane's
+    // body edit may patch against that lane's earlier base; the bytes must still equal fresh.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    let lane_a = TREE.to_string();
+    let lane_b = TREE.replace("    var/own = 2\n", "    var/extra = 5\n    var/own = 2\n");
+    let body_edit = |source: &str, value: &str| source.replace("        return 1\n", &format!("        return {value}\n"));
+    for source in [
+        lane_a.clone(),
+        lane_b.clone(),
+        body_edit(&lane_a, "2"),
+        body_edit(&lane_b, "3"),
+        body_edit(&lane_a, "4"),
+        lane_b.clone(),
+    ] {
+        edit_all(&roots, &source);
+        // compare_revision asserts each retained output is equivalent to a fresh compile.
+        compare_revision(&shared, &roots);
+    }
+}

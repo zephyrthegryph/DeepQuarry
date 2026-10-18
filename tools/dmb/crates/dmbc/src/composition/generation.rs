@@ -52,6 +52,22 @@ pub(super) struct PatchSlot {
     /// structural patch needs it, so a body edit does not cost a model update.
     model_rows: Vec<(usize, Arc<Vec<u32>>)>,
     model_anchor: Option<u128>,
+    /// Patch bases of earlier full builds with a different declaration skeleton, most recent first.
+    /// A shared compile root alternates between lanes whose trees differ in declarations; each lane's
+    /// next body edit patches against its own earlier base instead of compiling the whole program.
+    /// A body patch is relative to its base alone (body digests, link footprints, inputs, archive);
+    /// what needs the retained model (string appends, structural patches) declines on an alternate.
+    alternates: Vec<Arc<PatchSlot>>,
+}
+/// How many earlier patch bases a session keeps (`DMB_PATCH_ALTERNATES`, default 2, 0 disables).
+fn alternate_limit() -> usize {
+    static LIMIT: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+    *LIMIT.get_or_init(|| {
+        std::env::var("DMB_PATCH_ALTERNATES")
+            .ok()
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(2)
+    })
 }
 /// A single latest successful generation; no history or source authority retained.
 pub struct RetainedGeneration {
@@ -261,7 +277,20 @@ impl RetainedGeneration {
         initializers: Vec<crate::symbolic::PositionedCode>,
     ) {
         self.attempt.with_pending(|_| {
-            *self.patch.lock().unwrap_or_else(|e| e.into_inner()) = PatchSlot {
+            let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+            // The previous base becomes an alternate, unless it has the same skeleton as one kept.
+            let mut alternates = std::mem::take(&mut slot.alternates);
+            if alternate_limit() > 0 && slot.base.is_some() && slot.image.is_some() && slot.link.is_some() {
+                let previous = Arc::new(PatchSlot {
+                    alternates: Vec::new(),
+                    ..std::mem::take(&mut *slot)
+                });
+                let key = previous.base.as_ref().map(|base| base.skeleton_key());
+                alternates.retain(|kept| kept.base.as_ref().map(|base| base.skeleton_key()) != key);
+                alternates.insert(0, previous);
+            }
+            alternates.truncate(alternate_limit());
+            *slot = PatchSlot {
                 link: Some(Arc::new(PatchLink {
                     tables: tables.clone(),
                     mobs: mobs.clone(),
@@ -272,6 +301,7 @@ impl RetainedGeneration {
                 fields: None,
                 model_rows: Vec::new(),
                 model_anchor: None,
+                alternates,
             };
         });
     }
@@ -516,6 +546,48 @@ impl RetainedGeneration {
         self.publication
             .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.as_ref().map(|base| base.dmb_hash()))
             .flatten()
+    }
+    /// Make the patch base `wanted` accepts current: the current one if it does, else the most recent
+    /// alternate that does, which swaps with the current base. Returns whether an alternate was swapped in.
+    pub(crate) fn select_patch_base(
+        &self,
+        wanted: impl Fn(&crate::body_patch::BodyPatchBase) -> bool,
+    ) -> bool {
+        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        if slot.base.as_deref().is_some_and(&wanted) {
+            return false;
+        }
+        let Some(position) = slot
+            .alternates
+            .iter()
+            .position(|kept| kept.base.as_deref().is_some_and(&wanted))
+        else {
+            return false;
+        };
+        let mut alternates = std::mem::take(&mut slot.alternates);
+        let chosen = alternates.remove(position);
+        let previous = std::mem::replace(
+            &mut *slot,
+            PatchSlot {
+                alternates: Vec::new(),
+                ..(*chosen).clone()
+            },
+        );
+        if previous.base.is_some() && previous.image.is_some() && previous.link.is_some() {
+            alternates.insert(
+                0,
+                Arc::new(PatchSlot {
+                    alternates: Vec::new(),
+                    ..previous
+                }),
+            );
+        }
+        alternates.truncate(alternate_limit());
+        slot.alternates = alternates;
+        // The retained model belongs to the build that was current; it does not describe this base.
+        slot.model_rows.clear();
+        slot.model_anchor = None;
+        true
     }
     /// The patch base, its link answers and the image they describe.
     pub(crate) fn patch_base(
