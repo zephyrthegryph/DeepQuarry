@@ -1357,50 +1357,96 @@ impl GetSize for NodeIndex {}
 // ----------------------------------------------------------------------------
 // Incremental update (DeepQuarry's analyzer, tools/analyze/src/sem/model_store.rs)
 
+/// What one file contributes to a tree: every item located in it, by type. [`ObjectTree::splice_patch`] puts it in place of what the
+/// file contributed before.
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
+pub struct FilePatch {
+    pub types: Vec<PatchType>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
+pub struct PatchType {
+    pub path: String,
+    /// The type's location, when it is in the file.
+    pub location: Option<Location>,
+    pub vals: Vec<(String, VarValue)>,
+    pub var_decls: Vec<(String, VarDeclaration)>,
+    pub procs: Vec<(String, Vec<ProcValue>)>,
+    pub proc_decls: Vec<(String, ProcDeclaration)>,
+}
+
 impl ObjectTree {
-    /// Replaces what `file` contributes to this tree with what it contributes to `partial`: a tree parsed from the same file list (so
-    /// `file` has the same id in both) holding the new text of `file` after every file whose preprocessor state it needs.
-    ///
-    /// Only an edit that leaves the structure alone is accepted: the same types, var and proc definitions in the same order, the same
-    /// declarations and the same var value expressions. What may change is every proc body, parameter default and location in `file`.
-    /// Anything else is an `Err` and the caller parses the whole tree: the result is then the tree a full parse of the new text gives.
-    pub fn splice_file(&mut self, file: crate::FileId, partial: &ObjectTree) -> Result<usize, String> {
-        use std::collections::HashMap;
+    /// Everything located in `file`.
+    pub fn file_patch(&self, file: crate::FileId) -> FilePatch {
         let in_file = |l: &Location| l.file == file;
-        // What `partial` holds in `file`, by (type path, name).
-        let mut p_type_loc: HashMap<&str, Location> = HashMap::new();
-        let mut p_vals: HashMap<(&str, &str), &VarValue> = HashMap::new();
-        let mut p_var_decls: HashMap<(&str, &str), &VarDeclaration> = HashMap::new();
-        let mut p_procs: HashMap<(&str, &str), Vec<&ProcValue>> = HashMap::new();
-        let mut p_proc_decls: HashMap<(&str, &str), &ProcDeclaration> = HashMap::new();
-        for t in &partial.graph {
-            if in_file(&t.location) {
-                p_type_loc.insert(t.path.as_str(), t.location);
-            }
+        let mut out = FilePatch::default();
+        for t in &self.graph {
+            let mut pt = PatchType { path: t.path.clone(), location: in_file(&t.location).then_some(t.location), ..Default::default() };
             for (name, tv) in &t.vars {
                 if in_file(&tv.value.location) {
-                    p_vals.insert((t.path.as_str(), name.as_str()), &tv.value);
+                    pt.vals.push((name.clone(), tv.value.clone()));
                 }
                 if let Some(d) = &tv.declaration {
                     if in_file(&d.location) {
-                        p_var_decls.insert((t.path.as_str(), name.as_str()), d);
+                        pt.var_decls.push((name.clone(), d.clone()));
                     }
                 }
             }
             for (name, tp) in &t.procs {
-                let vals: Vec<&ProcValue> = tp.value.iter().filter(|v| in_file(&v.location)).collect();
+                let vals: Vec<ProcValue> = tp.value.iter().filter(|v| in_file(&v.location)).cloned().collect();
                 if !vals.is_empty() {
-                    p_procs.insert((t.path.as_str(), name.as_str()), vals);
+                    pt.procs.push((name.clone(), vals));
                 }
                 if let Some(d) = &tp.declaration {
                     if in_file(&d.location) {
-                        p_proc_decls.insert((t.path.as_str(), name.as_str()), d);
+                        pt.proc_decls.push((name.clone(), d.clone()));
                     }
                 }
             }
+            if pt.location.is_some() || !pt.vals.is_empty() || !pt.var_decls.is_empty() || !pt.procs.is_empty() || !pt.proc_decls.is_empty() {
+                out.types.push(pt);
+            }
+        }
+        out
+    }
+
+    /// Replaces what `file` contributes to this tree with what it contributes to `partial`: a tree parsed from the same file list (so
+    /// `file` has the same id in both) holding the new text of `file` after every file whose preprocessor state it needs.
+    pub fn splice_file(&mut self, file: crate::FileId, partial: &ObjectTree) -> Result<usize, String> {
+        self.splice_patch(file, &partial.file_patch(file))
+    }
+
+    /// Replaces what `file` contributes to this tree with `patch` ([`ObjectTree::file_patch`] of a tree holding its new text).
+    ///
+    /// Only an edit that leaves the structure alone is accepted: the same types, var and proc definitions in the same order, the same
+    /// declarations and the same var value expressions. What may change is every proc body, parameter default and location in `file`.
+    /// Anything else is an `Err` and the caller parses the whole tree: the result is then the tree a full parse of the new text gives.
+    pub fn splice_patch(&mut self, file: crate::FileId, patch: &FilePatch) -> Result<usize, String> {
+        use std::collections::HashMap;
+        let in_file = |l: &Location| l.file == file;
+        let mut p_type_loc: HashMap<&str, Location> = HashMap::new();
+        let mut p_vals: HashMap<(&str, &str), &VarValue> = HashMap::new();
+        let mut p_var_decls: HashMap<(&str, &str), &VarDeclaration> = HashMap::new();
+        let mut p_procs: HashMap<(&str, &str), &Vec<ProcValue>> = HashMap::new();
+        let mut p_proc_decls: HashMap<(&str, &str), &ProcDeclaration> = HashMap::new();
+        for t in &patch.types {
+            if let Some(l) = t.location {
+                p_type_loc.insert(t.path.as_str(), l);
+            }
+            for (name, v) in &t.vals {
+                p_vals.insert((t.path.as_str(), name.as_str()), v);
+            }
+            for (name, d) in &t.var_decls {
+                p_var_decls.insert((t.path.as_str(), name.as_str()), d);
+            }
+            for (name, vals) in &t.procs {
+                p_procs.insert((t.path.as_str(), name.as_str()), vals);
+            }
+            for (name, d) in &t.proc_decls {
+                p_proc_decls.insert((t.path.as_str(), name.as_str()), d);
+            }
         }
         let mut changed = 0usize;
-        let mut seen_vals = 0usize;
         let mut seen_var_decls = 0usize;
         let mut seen_procs = 0usize;
         let mut seen_proc_decls = 0usize;
@@ -1421,7 +1467,6 @@ impl ObjectTree {
                     tv.value.location = p.location;
                     tv.value.expression = p.expression.clone();
                     tv.value.docs = p.docs.clone();
-                    seen_vals += 1;
                 }
                 if let Some(d) = tv.declaration.as_mut() {
                     if in_file(&d.location) {
@@ -1444,13 +1489,15 @@ impl ObjectTree {
                         return Err(format!("proc {path}/{name}: {} definitions, now {}", mine.len(), p.len()));
                     }
                     for (i, v) in mine.iter().zip(p.iter()) {
-                        if tp.value[*i].parameters.len() != v.parameters.len() || tp.value[*i].code.is_some() != v.code.is_some() {
+                        let same_params = tp.value[*i].parameters.len() == v.parameters.len()
+                            && tp.value[*i].parameters.iter().zip(v.parameters.iter()).all(|(a, b)| a.name == b.name && a.var_type == b.var_type && a.input_type == b.input_type);
+                        if !same_params || tp.value[*i].code.is_some() != v.code.is_some() {
                             return Err(format!("proc {path}/{name}: the signature changed"));
                         }
                         if tp.value[*i].code != v.code || tp.value[*i].parameters != v.parameters || tp.value[*i].location != v.location {
                             changed += 1;
                         }
-                        tp.value[*i] = (*v).clone();
+                        tp.value[*i] = v.clone();
                     }
                     seen_procs += 1;
                 }
@@ -1472,18 +1519,31 @@ impl ObjectTree {
         if seen_var_decls != p_var_decls.len() || seen_procs != p_procs.len() || seen_proc_decls != p_proc_decls.len() {
             return Err("the file defines something new".to_string());
         }
-        for ((path, name), _) in &p_vals {
-            let Some(&ix) = self.types.get(*path).or(if path.is_empty() { Some(&NodeIndex(0)) } else { None }) else {
-                return Err(format!("var value {path}/{name}: no such type"));
-            };
-            let Some(tv) = self.graph[ix.index()].vars.get(*name) else { return Err(format!("var value {path}/{name} is new")) };
-            if in_file(&tv.value.location) {
-                continue;
+        for (path, name) in p_vals.keys() {
+            let ix = if path.is_empty() { Some(NodeIndex(0)) } else { self.types.get(*path).copied() };
+            let Some(ix) = ix else { return Err(format!("var value {path}/{name}: no such type")) };
+            if self.graph[ix.index()].vars.get(*name).is_none() {
+                return Err(format!("var value {path}/{name} is new"));
             }
-            // Overridden by a later file in the whole tree: this file's value never shows.
         }
-        let _ = seen_vals;
         Ok(changed)
+    }
+}
+
+impl ObjectTree {
+    /// The type graph in `n` slices (each serializes on its own) and the path index: see [`ObjectTree::from_parts`].
+    pub fn parts(&self, n: usize) -> (Vec<&[Type]>, &BTreeMap<String, NodeIndex>) {
+        let size = self.graph.len().div_ceil(n.max(1)).max(1);
+        (self.graph.chunks(size).collect(), &self.types)
+    }
+
+    /// The tree [`ObjectTree::parts`] described, its slices concatenated in order.
+    pub fn from_parts(slices: Vec<Vec<Type>>, types: BTreeMap<String, NodeIndex>) -> ObjectTree {
+        let mut graph = Vec::with_capacity(slices.iter().map(|s| s.len()).sum());
+        for s in slices {
+            graph.extend(s);
+        }
+        ObjectTree { graph, types }
     }
 }
 

@@ -285,7 +285,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let ann = Annotations::get(&sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree) } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let t_setup = started.elapsed();
-    let written = WriteIndex::build(&sem);
+    let written: &WriteIndex = sem.write_index();
     let set_calls = super::auto_tracked::set_calls(tree);
     let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
     let t_written = started.elapsed();

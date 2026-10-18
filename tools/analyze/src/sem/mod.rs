@@ -160,12 +160,8 @@ impl Sem {
         };
         let t_build = std::time::Instant::now();
         let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
-        let model_store::Parsed { objtree, files: file_list, errors } = parsed;
-        let t_env = std::time::Instant::now();
-        let env_key = if real { model_store::environment(tree, root, &dme_path, &file_list) } else { 0 };
-        if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
-            eprintln!("analyze: model environment in {:.1?}", t_env.elapsed());
-        }
+        let model_store::Parsed { objtree, files: file_list, errors, env, structure } = parsed;
+        let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
@@ -286,7 +282,7 @@ impl Sem {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: Default::default(), globals: Default::default(), writes: Default::default() })
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -563,7 +559,7 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
         all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
         all.iter().map(|e| format!("{}", e)).collect()
     };
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors })
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None })
 }
 
 fn tempfile_dir(root: &Path) -> PathBuf {

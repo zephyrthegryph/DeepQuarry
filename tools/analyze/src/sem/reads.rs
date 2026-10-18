@@ -298,6 +298,28 @@ pub struct ProcSummary {
     pub writes: Vec<String>,
 }
 
+/// What of the declarations a walk can see (see `ReadsEngine::context`).
+fn walk_decls_digest(d: &Decls) -> u128 {
+    let mut rows: Vec<String> = Vec::new();
+    for (t, vs) in &d.tracked {
+        let mut v: Vec<&String> = vs.iter().collect();
+        v.sort();
+        rows.push(format!("t|{}|{:?}", t, v));
+    }
+    for (t, vs) in &d.relations {
+        let mut v: Vec<&String> = vs.iter().collect();
+        v.sort();
+        rows.push(format!("r|{}|{:?}", t, v));
+    }
+    for m in d.markers_named("STAT") {
+        rows.push(format!("s|{:?}", m.args));
+    }
+    rows.sort();
+    let h = blake3::hash(rows.join("
+").as_bytes());
+    u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
+}
+
 impl Annotations {
     /// A digest of every annotation, independent of map order (`walk_cache`).
     pub fn digest(&self) -> u128 {
@@ -671,7 +693,9 @@ impl<'a> ReadsEngine<'a> {
             h.update(self.flavor().as_bytes());
             h.update(&self.sem.structure_digest().to_le_bytes());
             let t1 = t0.elapsed();
-            h.update(&self.decls.key.to_le_bytes());
+            // Of the declarations, a walk reads the tracked vars, the relations and the STAT markers' arguments (`is_tracked`,
+            // `is_relation`, `is_stat`), never where a marker sits: a line moved by an edit above it is no change.
+            h.update(&walk_decls_digest(self.decls).to_le_bytes());
             h.update(&self.ann.digest().to_le_bytes());
             let t2 = t0.elapsed();
             h.update(&self.globals().digest().to_le_bytes());

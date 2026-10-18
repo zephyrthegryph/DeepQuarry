@@ -84,7 +84,7 @@ fn compute(tree: &Tree) -> Analysis {
     let ann = Annotations::get(&sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);
-    let written = super::reads::WriteIndex::build(&sem);
+    let written: &super::reads::WriteIndex = sem.write_index();
     let mut seen = std::collections::HashSet::new();
     // The typed fields every ACTION() declares.
     let action_fields: std::collections::HashSet<String> = decls
@@ -112,6 +112,8 @@ fn compute(tree: &Tree) -> Analysis {
         (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
     });
     let t_walked = started.elapsed();
+    // Which handlers are analyzed is decided in order (the first of duplicates); each analysis is independent and runs on all cores.
+    let mut kept: Vec<(HandlerRef, String)> = Vec::new();
     for h in refs {
         let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
         if on.is_empty() {
@@ -120,6 +122,11 @@ fn compute(tree: &Tree) -> Analysis {
         if !seen.insert((on.clone(), h.proc.clone(), h.form, h.rel.clone(), h.line)) {
             continue;
         }
+        kept.push((h, on));
+    }
+    let analyzed: Vec<Analyzed> = super::par_map_deep(&kept, |(h, on)| {
+        let h = h.clone();
+        let on = on.clone();
         let pr = sem.proc_ref(&on, &h.proc);
         let (proc_found, def, params, returns) = match pr {
             Some(p) if !p.is_builtin() => {
@@ -182,8 +189,9 @@ fn compute(tree: &Tree) -> Analysis {
                 }
             }
         }
-        an.handlers.push(Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx });
-    }
+        Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx }
+    });
+    an.handlers.extend(analyzed);
     let t_loop = started.elapsed();
     let graph = DepGraph::from_derives(&sem, &eng);
     an.cycles = graph.cycles();
