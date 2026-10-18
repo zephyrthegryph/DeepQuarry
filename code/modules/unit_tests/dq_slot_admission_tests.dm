@@ -139,3 +139,13 @@
 	var/datum/msg/instance/M = msg_reason("the gloves are in the way")
 	TEST_ASSERT_EQUAL(reason_text(M), "the gloves are in the way", "an instance reads as its text")
 	TEST_ASSERT_EQUAL(req_refusal_value(M), M, "a requirement may return an instance")
+
+/datum/unit_test/dq_slot_admission_requirement_reason
+
+/datum/unit_test/dq_slot_admission_requirement_reason/Run()
+	var/obj/adm_fixture/holder = allocate(/obj/adm_fixture, test_floor())
+	var/datum/entry/part/req/R = req(TYPE_PROC_REF(/obj/adm_fixture, takes_paper_type))
+	TEST_ASSERT_NULL(requirement_reason(R, holder, /obj/item/paper), "a type path is asked without making the thing")
+	TEST_ASSERT_EQUAL(requirement_reason(R, holder, /obj/item/flashlight), /datum/msg/adm/papers_only, "and refused with the requirement's reason")
+	var/obj/item/paper/page = allocate(/obj/item/paper, test_floor())
+	TEST_ASSERT_NULL(requirement_reason(R, holder, page), "an instance is asked the same way")

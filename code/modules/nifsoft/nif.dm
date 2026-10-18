@@ -412,56 +412,55 @@ MSG_DEF_SELF(nif/not_for_chassis, "That software is not supported on your chassi
 MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic life.")
 
 /// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
-/obj/item/nif/proc/install_refusal(datum/nifsoft/path)
-	if(stat == NIF_TEMPFAIL)
+/// req_nif_takes(): the NIF (the holder) can take this software (the candidate: a /datum/nifsoft instance or its type path) now. One rule for the
+/// shop, the install and anything that asks first (admission.md D2g); it reads the NIF's state, its installed set and the wearer's biology.
+/proc/req_nif_takes()
+	return part_make(/datum/entry/part/req/nif_takes)
+
+/datum/entry/part/req/nif_takes
+	part_name = "req_nif_takes"
+	default_reason = /datum/msg/nif/tempfail
+
+/datum/entry/part/req/nif_takes/holds(datum/act/op/A)
+	return isnull(refusal(A))
+
+/datum/entry/part/req/nif_takes/refusal(datum/act/op/A)
+	var/obj/item/nif/N = A.holder
+	var/soft = A.target
+	if(!istype(N))
+		return default_reason
+	var/datum/nifsoft/as_type = ispath(soft) ? soft : null
+	var/datum/nifsoft/as_soft = istype(soft, /datum/nifsoft) ? soft : null
+	if(!as_type && !as_soft)
+		return default_reason
+	if(N.stat == NIF_TEMPFAIL)
 		return /datum/msg/nif/tempfail
-	if(nifsofts[initial(path.list_pos)])
+	var/list_pos = as_soft ? as_soft.list_pos : initial(as_type.list_pos)
+	if(N.nifsofts[list_pos])
 		return /datum/msg/nif/already_installed
-	if(human)
-		var/applies_to = initial(path.applies_to)
-		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
+	if(N.human)
+		var/applies_to = as_soft ? as_soft.applies_to : initial(as_type.applies_to)
+		var/synth = HAS_SYNTHETIC_BIOLOGY(N.human)
 		if(synth && !(applies_to & NIF_SYNTHETIC))
 			return /datum/msg/nif/not_for_chassis
 		if(!synth && !(applies_to & NIF_ORGANIC))
 			return /datum/msg/nif/not_for_organics
 	return null
 
-/obj/item/nif/proc/can_install(datum/nifsoft/path)
-	if(stat == NIF_TEMPFAIL)
-		return FALSE
-
-	if(nifsofts[initial(path.list_pos)])
-		notify("The software \"[initial(path.name)]\" is already installed.", TRUE)
-		return FALSE
-
-	if(human)
-		var/applies_to = initial(path.applies_to)
-		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
-		if(synth && !(applies_to & NIF_SYNTHETIC))
-			notify("The software \"[initial(path.name)]\" is not supported on your chassis type.",TRUE)
-			return FALSE
-		if(!synth && !(applies_to & NIF_ORGANIC))
-			notify("The software \"[initial(path.name)]\" is not supported in organic life.",TRUE)
-			return FALSE
-
-	return TRUE
+/// Why this NIF won't take `soft` (a /datum/nifsoft or its type path) now, or null.
+/obj/item/nif/proc/install_refusal(soft)
+	return requirement_reason(req_nif_takes(), src, soft)
 
 //Install a piece of software
 /obj/item/nif/proc/install(datum/nifsoft/new_soft)
-	if(stat == NIF_TEMPFAIL) return FALSE
-
-	if(nifsofts[new_soft.list_pos])
-		return FALSE
-
-	if(human)
-		var/applies_to = new_soft.applies_to
-		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
-		if(synth && !(applies_to & NIF_SYNTHETIC))
+	var/why = install_refusal(new_soft)
+	if(why)
+		// The wearer hears the biology refusals, as before; a failed NIF or a second copy is refused quietly.
+		if(why == /datum/msg/nif/not_for_chassis)
 			notify("The software \"[new_soft]\" is not supported on your chassis type.",TRUE)
-			return FALSE
-		if(!synth && !(applies_to & NIF_ORGANIC))
+		else if(why == /datum/msg/nif/not_for_organics)
 			notify("The software \"[new_soft]\" is not supported in organic life.",TRUE)
-			return FALSE
+		return FALSE
 
 	wear(new_soft.wear)
 	rel_add(src, nameof(nifsofts), new_soft, new_soft.list_pos)
