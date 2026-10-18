@@ -73,7 +73,7 @@ impl Generator for Reads {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
-                let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+                let eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(cx.tree);
                 for marker in decls.markers_named("READ_LOOKUP") {
                     let name = marker.args.first().and_then(|p| p.strip_prefix("/proc/"));
                     let Some(decl) = name.and_then(|n| ann.lookups.get(n)) else {
@@ -91,7 +91,23 @@ impl Generator for Reads {
                         }
                     }
                 }
-                for h in &handlers {
+                // Each handler's closed walk is independent and is the cost of this generator: walk the distinct ones in parallel, then
+                // fold them in declaration order (diagnostics keep the order a sequential pass gave them).
+                let mut jobs: Vec<usize> = Vec::new();
+                {
+                    let mut queued = BTreeSet::new();
+                    for (i, h) in handlers.iter().enumerate() {
+                        let id = format!("{}::{}", h.owner, h.proc);
+                        if queued.contains(&id) || sem.proc_ref(&h.owner, &h.proc).is_none() {
+                            continue;
+                        }
+                        queued.insert(id);
+                        jobs.push(i);
+                    }
+                }
+                let walked = crate::sem::par_map_deep(&jobs, |&i| eng.analyze_handler(&handlers[i].owner, &handlers[i].proc, handlers[i].ctx.type_path()));
+                let mut walked_by_handler: std::collections::HashMap<usize, crate::sem::reads::ReadSet> = jobs.into_iter().zip(walked).collect();
+                for (i, h) in handlers.iter().enumerate() {
                     let id = format!("{}::{}", h.owner, h.proc);
                     if rows.contains_key(&id) {
                         continue;
@@ -100,7 +116,10 @@ impl Generator for Reads {
                         out.diag(&h.rel, h.line, format!("handler `{}` is not a proc of {}", h.proc, h.owner));
                         continue;
                     }
-                    let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+                    let set = match walked_by_handler.remove(&i) {
+                        Some(set) => set,
+                        None => eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path()),
+                    };
                     for d in &set.diags {
                         // The closed walk enters the engine's own bodies. What it cannot resolve there (a `vars[]` dispatcher, an unannotated engine
                         // helper, a Verdigris FFI call) is the engine's to declare with PROC_SUMMARY, and is listed by `analyze sem closure`;
