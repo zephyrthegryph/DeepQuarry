@@ -8,7 +8,7 @@
 // refresh_settle_created() at boot. A type whose default look is not empty keeps its forced first draw.
 
 /// Type path -> TRUE (the default look is empty: no first draw) or FALSE (a first draw is kept). Absent: not sampled yet.
-GLOBAL_LIST_EMPTY(type_look_stamp) // ALLOW(cache): a per-type verdict recorded once from a fresh instance's first refresh
+GLOBAL_LIST_EMPTY(type_look_stamp)
 /// Fresh entities the stamp spared a first refresh (the draw-queue test and the boot log read it).
 GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
