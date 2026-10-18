@@ -397,7 +397,18 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         let version = self
             .domain_memo
-            .get_or_issue(domain, || self.issued_domain_version(domain));
+            .get_or_issue(domain, || {
+                let version = self.issued_domain_version(domain);
+                trace_domain(domain, || {
+                    format!(
+                        "version={version:?} tree_version={:?} catalog={:?} callable_issuer={:?}",
+                        self.tree.domain_version(domain),
+                        self.catalog_domain(domain),
+                        self.callable_issuer,
+                    )
+                });
+                version
+            });
         if version.is_none() {
             self.trace_unversioned(domain);
         }
@@ -812,3 +823,15 @@ mod owner_domain_tests;
 #[cfg(test)]
 #[path = "engine_host/nameof_native_tests.rs"]
 mod nameof_native_tests;
+
+/// `DMB_TRACE_DOMAIN=<text>`: print each issued domain version whose debug form contains the text.
+fn trace_domain(domain: dm_ir::ReadDomain, detail: impl FnOnce() -> String) {
+    static FILTER: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    let Some(filter) = FILTER.get_or_init(|| std::env::var("DMB_TRACE_DOMAIN").ok()) else {
+        return;
+    };
+    let label = format!("{domain:?}");
+    if label.contains(filter.as_str()) {
+        eprintln!("detail trace domain {label}: {}", detail());
+    }
+}
