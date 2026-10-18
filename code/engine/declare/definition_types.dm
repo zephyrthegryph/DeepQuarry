@@ -352,6 +352,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 
 // ===================================================================== clocks
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clock_definition)
 /datum/clock_definition
 	parent_type = /datum/core_definition
 	abstract_type = /datum/clock_definition
@@ -362,6 +364,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 
 // ===================================================================== services
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/service_definition)
 /// Global observers: wake_on_any = list(type = mask). on_changes(E, bits)
 /// runs once per tick per entity with the union of bits.
 /datum/service_definition

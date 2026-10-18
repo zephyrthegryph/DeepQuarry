@@ -252,13 +252,7 @@ list	code/datums/gear/_gear.dm	@/datum/controller/global_vars::gear_datums
 list	code/datums/gear/_gear.dm	@/datum/loadout_category::gear
 list	code/datums/locations/locations.dm	@/datum/locations::children
 list	code/datums/underwear/underwear.dm	@/datum/category_item/underwear::tweaks
-list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::clocks
-list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::clock_by_id
-list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::services
 list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::pipelines
-list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::type_tables
-list	code/engine/declare/definition_tables.dm	@/datum/scheduler_type_table::services
-list	code/engine/declare/graph.dm	@/datum/state_graph::edges
 list	code/engine/io/db.dm	@/datum/io/sql::rows
 list	code/engine/present/appearance_builder.dm	@/datum/look::vis
 list	code/game/area/areas.dm	@/area::all_doors

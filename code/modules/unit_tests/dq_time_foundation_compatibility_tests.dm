@@ -62,8 +62,11 @@
 	TEST_ASSERT_NULL(second_registry.behaviour_by_type[/datum/scheduled_behaviour], "Registry definition indexes are distinct mutable lists")
 	qdel(first_registry, TRUE) // a registry is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 	qdel(second_registry, TRUE)
-	var/datum/scheduler_type_table/first_table = allocate(/datum/scheduler_type_table)
-	var/datum/scheduler_type_table/second_table = allocate(/datum/scheduler_type_table)
+	var/datum/scheduler_type_table/first_table = new
+	var/datum/scheduler_type_table/second_table = new
+	TEST_ASSERT(first_table != second_table, "two type tables are distinct")
+	qdel(first_table, TRUE) // kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
+	qdel(second_table, TRUE)
 
 /datum/unit_test/dq_time_foundation_null_providers/Run()
 	var/datum/time_scheduler_factory/saved_factory = GLOB.time_scheduler_factory

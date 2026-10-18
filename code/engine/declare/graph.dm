@@ -85,6 +85,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_graph)
 	/// The entries the graph was compiled from (a deployment re-compiles them under its own op prefix).
 	var/list/entries_raw
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/graph_edge)
 /// One edge: a way into a stage.
 /datum/graph_edge
 	var/into
