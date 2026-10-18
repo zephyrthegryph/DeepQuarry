@@ -44,7 +44,7 @@ const REF_MACROS: &[&str] = &["PROC_REF", "TYPE_PROC_REF", "GLOBAL_PROC_REF"];
 
 type Node = (String, String);
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct GlobalIndex {
     /// Global vars (`GLOB.x` as `x`, a real global as its name) written by a proc that is not boot-only.
     runtime_written: HashSet<String>,
@@ -58,6 +58,22 @@ pub struct GlobalIndex {
 }
 
 impl GlobalIndex {
+    /// A digest of the index (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut h = blake3::Hasher::new();
+        for set in [&self.runtime_written, &self.written, &self.runtime_field_written] {
+            let mut v: Vec<&String> = set.iter().collect();
+            v.sort();
+            for x in v {
+                h.update(x.as_bytes());
+                h.update(b"\n");
+            }
+            h.update(b"|");
+        }
+        h.update(&self.boot_procs.to_le_bytes());
+        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    }
+
     /// True when `var` (a `GLOB` field or a real global) is never changed after the world booted.
     pub fn constant_after_init(&self, var: &str) -> bool {
         !self.runtime_written.contains(var)
@@ -74,9 +90,10 @@ impl GlobalIndex {
     }
 
     pub fn build(sem: &Sem) -> GlobalIndex {
-        let mut nodes: Vec<(Node, Facts)> = Vec::new();
-        let global_vars: HashSet<String> = sem.objtree.root().get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect();
+                let global_vars: HashSet<String> = sem.objtree.root().get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect();
         let glob_fields: HashSet<String> = sem.ty("/datum/controller/global_vars").map(|t| t.get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect()).unwrap_or_default();
+        // Every body is scanned on its own: on all cores, kept in definition order.
+        let mut procs: Vec<(String, dreammaker::objtree::ProcRef)> = Vec::new();
         for t in sem.objtree.iter_types() {
             let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
             for p in t.iter_self_procs() {
@@ -87,104 +104,127 @@ impl GlobalIndex {
                 if super::reads::is_test_code(sem.rel(p.get().location)) {
                     continue;
                 }
-                let Some(code) = &p.get().code else { continue };
-                let mut facts = Facts::default();
-                let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
+                if !p.get().code.has_body() {
+                    continue;
+                }
+                procs.push((path.clone(), p));
+            }
+        }
+        // A scan reads the body and the global var names: kept per file between runs (`body_facts`).
+        let ctx = {
+            let mut g: Vec<&String> = global_vars.iter().collect();
+            g.sort();
+            let mut f: Vec<&String> = glob_fields.iter().collect();
+            f.sort();
+            let h = blake3::hash(format!("{:?}|{:?}", g, f).as_bytes());
+            u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
+        };
+        let refs: Vec<dreammaker::objtree::ProcRef> = procs.iter().map(|(_, p)| *p).collect();
+        super::body_facts::indexed(sem, "globals", ctx, &refs, |p| {
+            let mut facts = Facts::default();
+            let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
+            if let Some(code) = &*p.get().code {
                 scan(code, &locals, &global_vars, &glob_fields, &mut facts);
+            }
+            facts
+        }, |scanned: Vec<Facts>| {
+            let mut nodes: Vec<(Node, Facts)> = Vec::new();
+            for ((path, p), facts) in procs.iter().zip(scanned) {
                 nodes.push(((path.clone(), p.name().to_string()), facts));
             }
-        }
-        // Who defines each name, and who calls it.
-        let mut defined: HashMap<&str, Vec<usize>> = HashMap::new();
-        for (i, (n, _)) in nodes.iter().enumerate() {
-            defined.entry(n.1.as_str()).or_default().push(i);
-        }
-        let mut callers: HashMap<&str, Vec<usize>> = HashMap::new();
-        let mut referenced: HashSet<&str> = HashSet::new();
-        for (i, (_, f)) in nodes.iter().enumerate() {
-            for c in &f.calls {
-                callers.entry(c.as_str()).or_default().push(i);
+            // Who defines each name, and who calls it.
+            let mut defined: HashMap<&str, Vec<usize>> = HashMap::new();
+            for (i, (n, _)) in nodes.iter().enumerate() {
+                defined.entry(n.1.as_str()).or_default().push(i);
             }
-            for r in &f.refs {
-                referenced.insert(r.as_str());
+            let mut callers: HashMap<&str, Vec<usize>> = HashMap::new();
+            let mut referenced: HashSet<&str> = HashSet::new();
+            for (i, (_, f)) in nodes.iter().enumerate() {
+                for c in &f.calls {
+                    callers.entry(c.as_str()).or_default().push(i);
+                }
+                for r in &f.refs {
+                    referenced.insert(r.as_str());
+                }
             }
-        }
-        let is_root = |n: &Node| -> bool {
-            if n.0 == "/datum/controller/global_vars" && n.1.starts_with("InitGlobal") {
-                return true;
+            let is_root = |n: &Node| -> bool {
+                if n.0 == "/datum/controller/global_vars" && n.1.starts_with("InitGlobal") {
+                    return true;
+                }
+                if n.0 == "/world" && n.1 == "New" {
+                    return true;
+                }
+                if BOOT_ONCE.contains(&n.1.as_str()) && n.0 == "/" {
+                    return true;
+                }
+                (sem.is_subtype(&n.0, "/datum/system") || sem.is_subtype(&n.0, "/datum/world_service") || sem.is_subtype(&n.0, "/datum/controller")) && BOOT_PROCS.contains(&n.1.as_str())
+            };
+            let roots: Vec<bool> = nodes.iter().map(|(n, _)| is_root(n)).collect();
+            // What the roots reach.
+            let mut boot = vec![false; nodes.len()];
+            let mut stack: Vec<usize> = Vec::new();
+            for (i, r) in roots.iter().enumerate() {
+                if *r {
+                    boot[i] = true;
+                    stack.push(i);
+                }
             }
-            if n.0 == "/world" && n.1 == "New" {
-                return true;
-            }
-            if BOOT_ONCE.contains(&n.1.as_str()) && n.0 == "/" {
-                return true;
-            }
-            (sem.is_subtype(&n.0, "/datum/system") || sem.is_subtype(&n.0, "/datum/world_service") || sem.is_subtype(&n.0, "/datum/controller")) && BOOT_PROCS.contains(&n.1.as_str())
-        };
-        let roots: Vec<bool> = nodes.iter().map(|(n, _)| is_root(n)).collect();
-        // What the roots reach.
-        let mut boot = vec![false; nodes.len()];
-        let mut stack: Vec<usize> = Vec::new();
-        for (i, r) in roots.iter().enumerate() {
-            if *r {
-                boot[i] = true;
-                stack.push(i);
-            }
-        }
-        while let Some(i) = stack.pop() {
-            for c in &nodes[i].1.calls {
-                for &d in defined.get(c.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
-                    if !boot[d] {
-                        boot[d] = true;
-                        stack.push(d);
+            while let Some(i) = stack.pop() {
+                for c in &nodes[i].1.calls {
+                    for &d in defined.get(c.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
+                        if !boot[d] {
+                            boot[d] = true;
+                            stack.push(d);
+                        }
                     }
                 }
             }
-        }
-        // Drop what something outside the set can also call, or what a callback names.
-        loop {
-            let mut changed = false;
-            for i in 0..nodes.len() {
-                if !boot[i] || roots[i] {
-                    continue;
+            // Drop what something outside the set can also call, or what a callback names.
+            loop {
+                let mut changed = false;
+                for i in 0..nodes.len() {
+                    if !boot[i] || roots[i] {
+                        continue;
+                    }
+                    let name = nodes[i].0 .1.as_str();
+                    let outside = referenced.contains(name) || callers.get(name).map(|cs| cs.iter().any(|&c| !boot[c])).unwrap_or(false);
+                    if outside {
+                        boot[i] = false;
+                        changed = true;
+                    }
                 }
-                let name = nodes[i].0 .1.as_str();
-                let outside = referenced.contains(name) || callers.get(name).map(|cs| cs.iter().any(|&c| !boot[c])).unwrap_or(false);
-                if outside {
-                    boot[i] = false;
-                    changed = true;
+                if !changed {
+                    break;
                 }
             }
-            if !changed {
-                break;
-            }
-        }
-        let mut out = GlobalIndex { boot_procs: boot.iter().filter(|b| **b).count(), ..Default::default() };
-        for (i, (_, f)) in nodes.iter().enumerate() {
-            for w in &f.writes {
-                out.written.insert(w.clone());
+            let mut out = GlobalIndex { boot_procs: boot.iter().filter(|b| **b).count(), ..Default::default() };
+            for (i, (_, f)) in nodes.iter().enumerate() {
+                for w in &f.writes {
+                    out.written.insert(w.clone());
+                    if !boot[i] {
+                        out.runtime_written.insert(w.clone());
+                    }
+                }
                 if !boot[i] {
-                    out.runtime_written.insert(w.clone());
+                    out.runtime_field_written.extend(f.field_writes.iter().cloned());
                 }
             }
-            if !boot[i] {
-                out.runtime_field_written.extend(f.field_writes.iter().cloned());
-            }
-        }
-        out
+            out
+        })
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 struct Facts {
+    // Ordered sets: `body_facts` digests them.
     /// Names this body can call (`f()`, `x.f()`, `..()` as the proc's own name is not known here, so parent calls are skipped).
-    calls: HashSet<String>,
+    calls: std::collections::BTreeSet<String>,
     /// Names a PROC_REF-family macro or a CALLBACK takes.
-    refs: HashSet<String>,
+    refs: std::collections::BTreeSet<String>,
     /// Global vars written.
-    writes: HashSet<String>,
+    writes: std::collections::BTreeSet<String>,
     /// Names of vars written on any object (`x = ..`, `a.x = ..`, `a.x[i] = ..`, `a.x.Add(..)`, `a.x++`).
-    field_writes: HashSet<String>,
+    field_writes: std::collections::BTreeSet<String>,
 }
 
 /// The global var an lvalue-ish expression names: `GLOB.x` (+ index steps) or a real global `x` (+ index steps), and whether anything but

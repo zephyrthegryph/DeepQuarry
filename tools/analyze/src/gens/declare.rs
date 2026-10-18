@@ -61,14 +61,13 @@ fn quote(s: &str) -> String {
 
 /// The ids a `#define` outside the generated file already gives.
 fn defined_elsewhere(cx: &GenCx, out_rel: &str) -> BTreeSet<String> {
-    let mut set = BTreeSet::new();
-    for f in cx.tree.select(&crate::tree::CODE_DM) {
-        if f.rel == out_rel {
-            continue;
-        }
+    // Per file, cached by content: an edit reads one file.
+    let files = cx.tree.select(&crate::tree::CODE_DM);
+    let per: Vec<Vec<String>> = crate::incr::facts("gen-defines-per-file", &files, |f| {
         let text = f.text();
+        let mut names = Vec::new();
         if !text.contains("#define") {
-            continue;
+            return names;
         }
         for line in text.lines() {
             let t = line.trim_start();
@@ -77,10 +76,17 @@ fn defined_elsewhere(cx: &GenCx, out_rel: &str) -> BTreeSet<String> {
                 if let Some(rest) = rest.strip_prefix("define") {
                     let name: String = rest.trim_start().chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
                     if !name.is_empty() {
-                        set.insert(name);
+                        names.push(name);
                     }
                 }
             }
+        }
+        names
+    });
+    let mut set = BTreeSet::new();
+    for (f, names) in files.iter().zip(per) {
+        if f.rel != out_rel {
+            set.extend(names);
         }
     }
     set

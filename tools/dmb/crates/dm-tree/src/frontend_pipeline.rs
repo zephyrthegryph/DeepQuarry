@@ -48,9 +48,9 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     build_with_executor(project, provider, defines, config, memo, &executor)
 }
 
-/// `DMB_FRONTEND_REVISION`: `0` or unset builds every pass in full; `verify` also derives the plan
-/// and expansion from the previous revision and logs any difference (the full result is used);
-/// `1` uses the derived ones whenever their preconditions hold.
+/// `DMB_FRONTEND_REVISION`: `0` builds every pass in full; `verify` also derives the plan and
+/// expansion from the previous revision and logs any difference (the full result is used); `1` or
+/// unset (the default since 2026-10-18) uses the derived ones whenever their preconditions hold.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RevisionMode {
     Off,
@@ -60,9 +60,9 @@ enum RevisionMode {
 impl RevisionMode {
     fn from_env() -> Self {
         match std::env::var("DMB_FRONTEND_REVISION").as_deref() {
-            Ok("1") => Self::On,
+            Ok("0") => Self::Off,
             Ok("verify") => Self::Verify,
-            _ => Self::Off,
+            _ => Self::On,
         }
     }
 }

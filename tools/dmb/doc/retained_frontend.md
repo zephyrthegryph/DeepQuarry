@@ -321,7 +321,13 @@ Timing, body edit in a directive-free leaf file (same machine state, seconds fro
 `frontend` stage mark 3.0 to 2.4-2.5 (the plan is ready at 1.4-1.5, the clone of the previous plan
 and the 5.9k provider touches are about 0.4 of that); client wall 7.2 to 6.1-6.3.
 
-Not yet: the default stays off until the other passes (declaration parsing, origins, bodies) take
+Default flipped to on (2026-10-18, lane `tools/dmb-decl-patch`): `verify` on the production tree over a
+body edit, a line-shifting comment, a two-file edit, a new var and a new proc in a leaf file, a revert and
+three lane-alternating body edits logged 8 "plan edit equals the full plan" and 8 "expansion edit equals
+the full expansion" and no mismatch; edits outside F1's preconditions logged "plan full". The patched
+outputs were byte-identical to the full path. `DMB_FRONTEND_REVISION=0` turns it off.
+
+Earlier note: the default stayed off until the other passes (declaration parsing, origins, bodies) take
 the same edit and the whole edit matrix has been verified. The previous plan is cloned
 (about 200 MB of region lines) because `DirectivePlan` is a plain value; sharing the regions behind
 an `Arc` would remove the clone and the touches' only other cost.

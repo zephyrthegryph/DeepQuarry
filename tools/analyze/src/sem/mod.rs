@@ -26,6 +26,9 @@ pub mod layering;
 pub mod keys;
 pub mod gen;
 pub mod incremental;
+pub mod model_store;
+pub mod walk_cache;
+pub mod body_facts;
 pub mod oracle;
 pub mod procs;
 pub mod reads;
@@ -100,6 +103,14 @@ pub struct Sem {
     pub(crate) layering_owner_defs: HashMap<String, Vec<String>>,
     touched: std::sync::Mutex<std::collections::HashSet<dreammaker::FileId>>,
     touched_rel: std::sync::Mutex<std::collections::HashSet<String>>,
+    /// Built from the real `.dme` (not a partial or fixture model): its walks may be kept between runs (`walk_cache`).
+    full: bool,
+    /// The macro environment ([`model_store::environment`]) and each file's content key: a proc body digests as its file's key.
+    env_key: u128,
+    file_keys: HashMap<dreammaker::FileId, u128>,
+    structure: std::sync::OnceLock<u128>,
+    globals: std::sync::OnceLock<globals::GlobalIndex>,
+    writes: std::sync::OnceLock<reads::WriteIndex>,
 }
 
 impl Sem {
@@ -149,49 +160,9 @@ impl Sem {
             (p, Some(dir))
         };
         let t_build = std::time::Instant::now();
-        // The preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own thread and streams batches of
-        // tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the preprocessor's registers
-        // the files (every `Location` names one of its file ids, so paths are looked up there), and the errors of both are kept.
-        let (objtree, ctx, parse_ctx) = {
-            const BATCH: usize = 8192;
-            let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
-            let dme_for_pp = dme_path.clone();
-            let pp_thread = std::thread::Builder::new()
-                .name("dm-preprocess".into())
-                .stack_size(64 * 1024 * 1024)
-                .spawn(move || -> Result<dreammaker::Context, String> {
-                    let ctx = dreammaker::Context::default();
-                    {
-                        let pp = dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?;
-                        let mut batch = Vec::with_capacity(BATCH);
-                        for tok in dreammaker::indents::IndentProcessor::new(&ctx, pp) {
-                            batch.push(tok);
-                            if batch.len() == BATCH {
-                                if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
-                                    break;
-                                }
-                            }
-                        }
-                        if !batch.is_empty() {
-                            let _ = tx.send(batch);
-                        }
-                    }
-                    Ok(ctx)
-                })
-                .map_err(|e| format!("preprocessor thread: {}", e))?;
-            let parse_ctx = dreammaker::Context::default();
-            let tree = {
-                let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
-                parser.enable_procs();
-                let (_fatal, tree) = parser.parse_object_tree_2();
-                tree
-            };
-            let ctx = match pp_thread.join() {
-                Ok(r) => r?,
-                Err(_) => return Err("preprocessor thread panicked".to_string()),
-            };
-            (tree, ctx, parse_ctx)
-        };
+        let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
+        let model_store::Parsed { objtree, files: file_list, errors, env, structure, .. } = parsed;
+        let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
@@ -201,7 +172,7 @@ impl Sem {
             }
             let r = files
                 .entry(loc.file)
-                .or_insert_with(|| crate::util::rel_slash(&ctx.file_path(loc.file).to_path_buf(), root))
+                .or_insert_with(|| crate::util::rel_slash(&file_list.get_path(loc.file).to_path_buf(), root))
                 .clone();
             Some(r)
         };
@@ -230,14 +201,6 @@ impl Sem {
         for v in def_index.values_mut() {
             v.sort();
         }
-        let errors = {
-            let pp_errors = ctx.errors();
-            let parse_errors = parse_ctx.errors();
-            let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
-            // One context interleaved them in stream order; by location is the same order.
-            all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
-            all.iter().map(|e| format!("{}", e)).collect()
-        };
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
@@ -246,43 +209,45 @@ impl Sem {
         let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
         let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
         let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
-        for file in tree.select(&CODE_DM) {
+        // What a file's text says (cached by content, `incr::facts`), replayed against this model in file order (the lists keep the order a
+        // sequential scan gave them): only an edited file is read and scanned again.
+        let code_files = tree.select(&CODE_DM);
+        let events: Vec<Vec<LayerEvent>> = crate::incr::facts("sem-layering", &code_files, |file| layering_events(file.code().text.as_str(), &capability_type, &capability_def));
+        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&events, |evs| {
+            let mut owners: Vec<String> = Vec::new();
+            let mut types: Vec<String> = Vec::new();
             let mut parents: Vec<(usize, String)> = Vec::new();
-            for raw in file.code().text.lines() {
-                let text = raw.trim();
-                if text.is_empty() { continue; }
-                // An uninitialized absolute field declaration can carry no
-                // useful value/declaration location in ObjectTree. Its explicit
-                // owner is still an actual definition, not a typed reference.
-                let declaration = text.split_whitespace().next().unwrap_or("");
-                if declaration.starts_with('/') {
-                    if let Some((owner, member)) = declaration.split_once("/var/") {
-                        if !member.is_empty() && objtree.find(owner).is_some() {
-                            layering_owner_defs.entry(owner.to_string()).or_default().push(file.rel.clone());
+            for e in evs {
+                match e {
+                    LayerEvent::Owner(owner) => {
+                        if objtree.find(owner).is_some() {
+                            owners.push(owner.clone());
+                        }
+                    }
+                    LayerEvent::Type(t) => types.push(t.clone()),
+                    LayerEvent::Indent(indent) => {
+                        while parents.last().is_some_and(|(n, _)| *n >= *indent as usize) { parents.pop(); }
+                    }
+                    LayerEvent::Header(indent, header) => {
+                        let path = if header.starts_with('/') { header.clone() }
+                            else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
+                            else { continue; };
+                        if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
+                        if objtree.find(&path).is_some() {
+                            types.push(path.clone());
+                            parents.push((*indent as usize, path));
                         }
                     }
                 }
-                if let Some(cap) = capability_type.captures(text) {
-                    layering_type_defs.entry(cap[1].to_string()).or_default().push(file.rel.clone());
-                }
-                if let Some(cap) = capability_def.captures(text) {
-                    layering_type_defs.entry(format!("/datum/capability/def/{}", &cap[1])).or_default().push(file.rel.clone());
-                }
-                let indent = raw.len() - raw.trim_start().len();
-                while parents.last().is_some_and(|(n, _)| *n >= indent) { parents.pop(); }
-                // A bare type header is a definition. Typed arguments, locals,
-                // member declarations and proc definitions are only references.
-                let header = text.trim_end_matches('{').trim();
-                if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
-                    let path = if header.starts_with('/') { header.to_string() }
-                        else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
-                        else { continue; };
-                    if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
-                    if objtree.find(&path).is_some() {
-                        layering_type_defs.entry(path.clone()).or_default().push(file.rel.clone());
-                        parents.push((indent, path));
-                    }
-                }
+            }
+            (owners, types)
+        });
+        for (file, (owners, types)) in code_files.iter().zip(scanned) {
+            for o in owners {
+                layering_owner_defs.entry(o).or_default().push(file.rel.clone());
+            }
+            for t in types {
+                layering_type_defs.entry(t).or_default().push(file.rel.clone());
             }
         }
         for ty in objtree.iter_types() {
@@ -306,7 +271,8 @@ impl Sem {
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
+        let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -363,6 +329,81 @@ impl Sem {
 
     /// A var visible on `ty` (declared on it or an ancestor), with its declared type.
     pub fn var_decl(&self, ty: &str, name: &str) -> Option<VarSig> {
+        walk_cache::record(|| walk_cache::Dep::Var(ty.to_string(), name.to_string()));
+        self.var_decl_unrecorded(ty, name)
+    }
+
+    /// Which global vars change after boot: a function of the model, built once for every engine.
+    pub fn global_index(&self) -> &globals::GlobalIndex {
+        self.globals.get_or_init(|| globals::GlobalIndex::build(self))
+    }
+
+    /// Which var names are written anywhere: a function of the model, built once for every engine.
+    pub fn write_index(&self) -> &reads::WriteIndex {
+        self.writes.get_or_init(|| reads::WriteIndex::build(self))
+    }
+
+    /// Whether this model's walks may be kept between runs.
+    pub fn cacheable(&self) -> bool {
+        self.full && self.env_key != 0
+    }
+
+    /// A digest of where `loc` is: its file's content in this macro environment (a location in an unchanged file is unchanged).
+    pub(crate) fn location_key(&self, loc: Location) -> u128 {
+        if loc.is_builtins() {
+            return 1;
+        }
+        let k = self.file_keys.get(&loc.file).copied().unwrap_or(2);
+        let mut h = blake3::Hasher::new();
+        h.update(&self.env_key.to_le_bytes());
+        h.update(&k.to_le_bytes());
+        h.update(self.files.get(&loc.file).map(|s| s.as_str()).unwrap_or("").as_bytes());
+        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    }
+
+    /// A digest of the tree's structure without any location or body: types and parents, each var's declaration and initial constant,
+    /// each proc's definitions (parameters, whether it has a body) and declaration. What a walk can see of the tree besides the bodies it
+    /// enters and the var declarations it looks up.
+    pub fn structure_digest(&self) -> u128 {
+        *self.structure.get_or_init(|| {
+            let mut h = blake3::Hasher::new();
+            for t in self.objtree.iter_types() {
+                let ty = t.get();
+                h.update(ty.path.as_bytes());
+                h.update(b"<");
+                if let Some(p) = t.parent_type() {
+                    h.update(p.get().path.as_bytes());
+                }
+                for (name, v) in &ty.vars {
+                    h.update(b"|v");
+                    h.update(name.as_bytes());
+                    if let Some(d) = &v.declaration {
+                        h.update(format!("{}:{}:{:?}", d.var_type.flags.bits(), d.var_type.type_path.join("/"), d.var_type.input_type).as_bytes());
+                    }
+                    h.update(format!("={:?}", v.value.constant).as_bytes());
+                }
+                for (name, p) in &ty.procs {
+                    h.update(b"|p");
+                    h.update(name.as_bytes());
+                    for value in &p.value {
+                        h.update(b"(");
+                        for prm in value.parameters.iter() {
+                            h.update(format!("{}:{}:{}:{:?},", prm.name, prm.var_type.flags.bits(), prm.var_type.type_path.join("/"), prm.input_type).as_bytes());
+                        }
+                        h.update(if value.code.has_body() { b")b" } else { b")n" });
+                    }
+                    if let Some(d) = &p.declaration {
+                        h.update(format!("d{:?}{}{:?}", d.kind, d.flags.bits(), d.return_type).as_bytes());
+                    }
+                }
+                h.update(b"\n");
+            }
+            u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+        })
+    }
+
+    /// [`var_decl`](Self::var_decl) without recording a walk dependency.
+    pub fn var_decl_unrecorded(&self, ty: &str, name: &str) -> Option<VarSig> {
         let t = self.ty(ty)?;
         let d = t.get_var_declaration(name)?;
         let flags = d.var_type.flags;
@@ -448,6 +489,153 @@ impl Sem {
     }
 }
 
+/// Parses `dme_path` with dreammaker: the preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own
+/// thread and streams batches of tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the
+/// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
+/// files to register first, in order, so they get the same ids as in the parse that produced that list (`model_store`).
+pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<String>) -> Result<model_store::Parsed, String> {
+    parse_source(dme_path, preregister, Source::Dme(text), false)
+}
+
+/// What the preprocessor reads.
+pub(crate) enum Source {
+    /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
+    Dme(Option<String>),
+    /// Files read one after the other, starting with the macro state the stored history had at the start of the first: (registered path,
+    /// path on disk). See `model_store`.
+    Alone(std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>, Vec<(PathBuf, PathBuf)>),
+}
+
+/// [`parse_dme`] with the source spelled out; `history` also returns the parse's macro history (`Parsed::defines`).
+pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool) -> Result<model_store::Parsed, String> {
+    const BATCH: usize = 8192;
+    let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
+    let dme_for_pp = dme_path.to_path_buf();
+    let pre: Vec<PathBuf> = preregister.to_vec();
+    type Out = (dreammaker::Context, Option<dreammaker::preprocessor::StoredDefineHistory>);
+    let pp_thread = std::thread::Builder::new()
+        .name("dm-preprocess".into())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(move || -> Result<Out, String> {
+            let _acct = CpuGuard(std::panic::Location::caller(), if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 });
+            let ctx = dreammaker::Context::default();
+            for p in &pre {
+                ctx.register_file(p);
+            }
+            let stored = {
+                let mut pp = match source {
+                    Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
+                    Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
+                    Source::Alone(hist, files) => {
+                        let Some((first, _)) = files.first() else { return Err("nothing to parse".to_string()) };
+                        let fid = ctx.get_file(first).ok_or("the first file is not registered")?;
+                        let mut pp = dreammaker::preprocessor::DefineHistory::from_stored(&hist).branch_at_file(fid, &ctx);
+                        // An include stack: the first file is read first.
+                        // Registered under its relative path, `__FILE__` the path an include from the .dme resolves to (the .dme's directory
+                        // joined with the include text), as in the full parse.
+                        let env_dir = dme_for_pp.parent().map(|p| p.to_path_buf()).unwrap_or_default();
+                        for (reg, abs) in files.iter().rev() {
+                            let f = std::fs::File::open(abs).map_err(|e| format!("{}: {}", abs.display(), e))?;
+                            let shown = if reg.is_absolute() { reg.clone() } else { env_dir.join(reg.to_string_lossy().replace('\\', "/")) };
+                            pp.push_file_as(reg, shown, f).map_err(|e| e.to_string())?;
+                        }
+                        pp
+                    }
+                };
+                let mut batch = Vec::with_capacity(BATCH);
+                for tok in dreammaker::indents::IndentProcessor::new(&ctx, &mut pp) {
+                    batch.push(tok);
+                    if batch.len() == BATCH {
+                        if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
+                            break;
+                        }
+                    }
+                }
+                if !batch.is_empty() {
+                    let _ = tx.send(batch);
+                }
+                history.then(|| pp.finalize().to_stored())
+            };
+            Ok((ctx, stored))
+        })
+        .map_err(|e| format!("preprocessor thread: {}", e))?;
+    let parse_ctx = dreammaker::Context::default();
+    let objtree = {
+        let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
+        parser.enable_procs();
+        let (_fatal, mut tree) = parser.parse_object_tree_2();
+        // A proc's body range ends in whatever file came next; nothing reads it (model_store splices files parsed alone).
+        tree.drop_body_ranges();
+        tree
+    };
+    let (ctx, defines) = match pp_thread.join() {
+        Ok(r) => r?,
+        Err(_) => return Err("preprocessor thread panicked".to_string()),
+    };
+    let errors = {
+        let pp_errors = ctx.errors();
+        let parse_errors = parse_ctx.errors();
+        let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
+        // One context interleaved them in stream order; by location is the same order.
+        all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
+        all.iter().map(|e| format!("{}", e)).collect()
+    };
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
+}
+
+/// One line of a file as the layering index reads it (see `Sem::build_with`).
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+enum LayerEvent {
+    /// `/type/var/x`: the type owns a field (if the model has the type).
+    Owner(String),
+    /// A `CAPABILITY_TYPE` / `CAPABILITY_DEF` marker's type.
+    Type(String),
+    /// A non-empty line's indent (pops the header stack).
+    Indent(u32),
+    /// A bare type header at an indent.
+    Header(u32, String),
+}
+
+fn layering_events(code: &str, capability_type: &regex::Regex, capability_def: &regex::Regex) -> Vec<LayerEvent> {
+    let mut out = Vec::new();
+    let mut headers: Vec<usize> = Vec::new();
+    for raw in code.lines() {
+        let text = raw.trim();
+        if text.is_empty() { continue; }
+        // An uninitialized absolute field declaration can carry no
+        // useful value/declaration location in ObjectTree. Its explicit
+        // owner is still an actual definition, not a typed reference.
+        let declaration = text.split_whitespace().next().unwrap_or("");
+        if declaration.starts_with('/') {
+            if let Some((owner, member)) = declaration.split_once("/var/") {
+                if !member.is_empty() {
+                    out.push(LayerEvent::Owner(owner.to_string()));
+                }
+            }
+        }
+        if let Some(cap) = capability_type.captures(text) {
+            out.push(LayerEvent::Type(cap[1].to_string()));
+        }
+        if let Some(cap) = capability_def.captures(text) {
+            out.push(LayerEvent::Type(format!("/datum/capability/def/{}", &cap[1])));
+        }
+        let indent = raw.len() - raw.trim_start().len();
+        // An indent can only pop a header stack entry at or past it: kept only while some earlier header could be on the stack.
+        if headers.last().is_some_and(|n| *n >= indent) {
+            while headers.last().is_some_and(|n| *n >= indent) { headers.pop(); }
+            out.push(LayerEvent::Indent(indent as u32));
+        }
+        // A bare type header is a definition. Typed arguments, locals,
+        // member declarations and proc definitions are only references.
+        let header = text.trim_end_matches('{').trim();
+        if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
+            out.push(LayerEvent::Header(indent as u32, header.to_string()));
+            headers.push(indent);
+        }
+    }
+    out
+}
+
 fn tempfile_dir(root: &Path) -> PathBuf {
     static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = std::process::id();
@@ -485,15 +673,22 @@ impl crate::lint::Cx<'_> {
 /// The memoized semantic model of `tree`.
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
     let b = tree.memo("sem/model", || SemBox {
-        sem: match Sem::build(&tree.root, tree) {
-            Ok(s) => Some(s),
-            Err(e) => {
-                eprintln!("analyze: semantic model unavailable: {}", e);
-                None
+        sem: {
+            walk_cache::prefetch();
+            match Sem::build(&tree.root, tree) {
+                Ok(s) => Some(s),
+                Err(e) => {
+                    eprintln!("analyze: semantic model unavailable: {}", e);
+                    None
+                }
             }
         },
     });
     if b.sem.is_some() {
+        model_store::save_later(b.clone());
+        if b.sem.as_ref().map(|s| s.full).unwrap_or(false) {
+            walk_cache::set_model(b.clone());
+        }
         Some(SemHandle(b))
     } else {
         None
@@ -523,6 +718,17 @@ impl Sem {
     }
 }
 
+/// Adds a worker thread's CPU time to `util::cpu_account` (under `DQ_CPU_ACCOUNT`) when it ends.
+struct CpuGuard(&'static std::panic::Location<'static>, u64);
+
+impl Drop for CpuGuard {
+    fn drop(&mut self) {
+        if crate::util::cpu_accounting() {
+            crate::util::cpu_account(format!("par_map at {}:{}", self.0.file(), self.0.line()), crate::util::thread_cpu_ms().saturating_sub(self.1));
+        }
+    }
+}
+
 /// `items.iter().map(f).collect()` on plain OS threads, in order.
 ///
 /// The semantic layer's memoized values (`Decls`, the write index, ...) are built inside `Tree::memo`, i.e. under a
@@ -530,7 +736,9 @@ impl Sem {
 /// and a stolen task that needs the same cell blocks on the init this very thread is running (or two inits wait on
 /// each other): a deadlock the stress run hit about one cold run in six. Scoped threads never steal engine work.
 /// [`par_map`] on threads with a stack deep enough for the read walk (a followed proc is a few frames of a large recursive evaluator).
+#[track_caller]
 pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 {
         return items.iter().map(f).collect();
@@ -544,6 +752,8 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
                 std::thread::Builder::new()
                     .stack_size(256 << 20)
                     .spawn_scoped(s, || {
+                        let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                        let _acct = CpuGuard(caller, c0);
                         let mut local: Vec<(usize, R)> = Vec::new();
                         loop {
                             let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);
@@ -568,7 +778,9 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
     all.into_iter().map(|(_, r)| r).collect()
 }
 
+#[track_caller]
 pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 || items.len() < 64 {
         return items.iter().map(f).collect();
@@ -580,6 +792,8 @@ pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec
         let handles: Vec<_> = (0..n)
             .map(|_| {
                 s.spawn(|| {
+                    let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                    let _acct = CpuGuard(caller, c0);
                     let mut local: Vec<(usize, R)> = Vec::new();
                     loop {
                         let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);

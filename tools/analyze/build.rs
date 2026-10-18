@@ -48,6 +48,7 @@ fn main() {
     let src = manifest.join("src");
 
     println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=vendor");
     println!("cargo:rerun-if-changed=build.rs");
 
     // ---- module discovery -----------------------------------------------------------------
@@ -75,6 +76,8 @@ fn main() {
     // ---- engine hash ---------------------------------------------------------------------
     let mut files = Vec::new();
     collect(&src, &mut files);
+    // The vendored parser shapes the stored model (sem/model_store.rs): its sources key the cache too.
+    collect(&manifest.join("vendor"), &mut files);
     files.push(manifest.join("build.rs"));
     files.push(manifest.join("Cargo.toml"));
     let mut hasher = blake3_lite::Hasher::new();

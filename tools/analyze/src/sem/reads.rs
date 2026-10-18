@@ -83,7 +83,7 @@ pub struct LookupBound {
     pub lookup: String,
     pub argument: LookupArgument,
 }
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LookupRead {
     pub binding: LookupBound,
     pub field: String,
@@ -104,7 +104,7 @@ pub struct LookupDeclaration {
     pub result: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ReadKind {
     /// A var on an entity.
     Var,
@@ -119,7 +119,7 @@ pub enum ReadKind {
 }
 
 /// One read: a var (or key) on the entity reached from `root` through `hops`.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Read {
     /// `holder`, or the context hop (`actor`, `held`, `target`, ...).
     pub root: String,
@@ -153,7 +153,7 @@ impl Read {
 }
 
 /// Something the analysis could not resolve, or a rule violation found while walking a body.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct Diag {
     /// `unannotated_global`, `dynamic_read`, `unknown_field`, `unknown_call`, `hop_not_relation`, `ffi_call`.
     pub rule: &'static str,
@@ -165,7 +165,7 @@ pub struct Diag {
 }
 
 /// A write or an observable call in a followed body (the purity check classifies these).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct Effect {
     /// `assign` (a var write), `call`.
     pub kind: &'static str,
@@ -178,28 +178,95 @@ pub struct Effect {
     pub line: u32,
 }
 
-#[derive(Default, Debug, Clone)]
+/// Reading ordered collections back in bulk: the stored order is the sorted order, and building a tree from a sorted run is linear (one
+/// insert at a time is not). Same bytes as serde's own encoding.
+mod bulk {
+    use serde::{Deserialize, Deserializer};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    pub fn set<'de, D: Deserializer<'de>, T: Deserialize<'de> + Ord>(d: D) -> Result<BTreeSet<T>, D::Error> {
+        Ok(Vec::<T>::deserialize(d)?.into_iter().collect())
+    }
+
+    pub fn map<'de, D: Deserializer<'de>, K: Deserialize<'de> + Ord, V: Deserialize<'de>>(d: D) -> Result<BTreeMap<K, V>, D::Error> {
+        Ok(Vec::<(K, V)>::deserialize(d)?.into_iter().collect())
+    }
+}
+
+/// [`Diag`] as `walk_cache` reads it back (the rule name interned).
+#[derive(serde::Deserialize)]
+struct DiagStored {
+    rule: String,
+    closed_only: bool,
+    rel: String,
+    line: u32,
+    msg: String,
+}
+
+impl<'de> serde::Deserialize<'de> for Diag {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Diag, D::Error> {
+        DiagStored::deserialize(d).map(Diag::from)
+    }
+}
+
+impl From<DiagStored> for Diag {
+    fn from(d: DiagStored) -> Diag {
+        Diag { rule: super::walk_cache::intern(d.rule), closed_only: d.closed_only, rel: d.rel, line: d.line, msg: d.msg }
+    }
+}
+
+/// [`Effect`] as `walk_cache` reads it back.
+#[derive(serde::Deserialize)]
+struct EffectStored {
+    kind: String,
+    name: String,
+    owner: String,
+    proc: String,
+    rel: String,
+    line: u32,
+}
+
+impl<'de> serde::Deserialize<'de> for Effect {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Effect, D::Error> {
+        EffectStored::deserialize(d).map(Effect::from)
+    }
+}
+
+impl From<EffectStored> for Effect {
+    fn from(e: EffectStored) -> Effect {
+        Effect { kind: super::walk_cache::intern(e.kind), name: e.name, owner: e.owner, proc: e.proc, rel: e.rel, line: e.line }
+    }
+}
+
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ReadSet {
+    #[serde(deserialize_with = "bulk::set")]
     pub reads: BTreeSet<Read>,
     /// Context scalar/object fields read through the act (`A.dt` -> "dt"), with a line each.
+    #[serde(deserialize_with = "bulk::map")]
     pub ctx_fields: BTreeMap<String, (String, u32)>,
     /// Where each read was first seen: (file, line).
+    #[serde(deserialize_with = "bulk::map")]
     pub sites: BTreeMap<Read, (String, u32)>,
     pub diags: Vec<Diag>,
     /// Failures of declared numeric lookup contracts, also present in diags.
     pub lookup_diags: Vec<Diag>,
     pub effects: Vec<Effect>,
     /// `type::proc` bodies the walk followed (for the graph and for incremental invalidation).
+    #[serde(deserialize_with = "bulk::set")]
     pub followed: BTreeSet<String>,
     /// Procs in an opaque (engine-internal) directory the walk reached but did not enter, with the call site: what they read is
     /// invisible to the graph, so a consumer that calls one cannot prove its inputs complete (`gen deps`, `untracked_inputs`).
+    #[serde(deserialize_with = "bulk::map")]
     pub opaque: BTreeMap<String, (String, u32)>,
     /// Reads the framework makes of its own state: an engine body reading a var an engine file declares (`holder.rx`, the stat record).
     /// They stay in `reads` (the subscriptions are complete) but are not inputs a stat or a look can be stale on: `gen deps` and the lints
     /// leave them out. Closed walk only; a read also made from outside the engine is not in this set.
+    #[serde(deserialize_with = "bulk::set")]
     pub internal: BTreeSet<Read>,
     /// Where a `read_once(...)` sample sits (file, line) in a body the walk entered. A draw or a stat input must not sample: the look or the
     /// value is made from it once and never follows (`untracked_inputs` rule `sampled_in_look`).
+    #[serde(deserialize_with = "bulk::set")]
     pub sampled: BTreeSet<(String, u32)>,
 }
 
@@ -253,7 +320,53 @@ pub struct ProcSummary {
     pub writes: Vec<String>,
 }
 
+/// What of the declarations a walk can see (see `ReadsEngine::context`).
+fn walk_decls_digest(d: &Decls) -> u128 {
+    let mut rows: Vec<String> = Vec::new();
+    for (t, vs) in &d.tracked {
+        let mut v: Vec<&String> = vs.iter().collect();
+        v.sort();
+        rows.push(format!("t|{}|{:?}", t, v));
+    }
+    for (t, vs) in &d.relations {
+        let mut v: Vec<&String> = vs.iter().collect();
+        v.sort();
+        rows.push(format!("r|{}|{:?}", t, v));
+    }
+    for m in d.markers_named("STAT") {
+        rows.push(format!("s|{:?}", m.args));
+    }
+    rows.sort();
+    let h = blake3::hash(rows.join("
+").as_bytes());
+    u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
+}
+
 impl Annotations {
+    /// A digest of every annotation, independent of map order (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut rows: Vec<String> = Vec::new();
+        rows.extend(self.reads_as.iter().map(|(k, v)| format!("ra|{:?}|{:?}", k, v)));
+        rows.extend(self.reads_from.iter().map(|(k, v)| format!("rf|{:?}|{:?}", k, v)));
+        rows.extend(self.lookups.iter().map(|(k, v)| format!("lk|{:?}|{:?}", k, v)));
+        rows.extend(self.relations.iter().map(|(k, v)| {
+            let mut v: Vec<&String> = v.iter().collect();
+            v.sort();
+            format!("rel|{:?}|{:?}", k, v)
+        }));
+        rows.extend(self.accessors.iter().map(|(k, v)| format!("acc|{:?}|{:?}", k, v)));
+        rows.extend(self.capkey_accessors.iter().map(|(k, v)| format!("ck|{:?}|{:?}", k, v)));
+        rows.extend(self.summaries.iter().map(|(k, v)| format!("sum|{:?}|{:?}", k, v)));
+        rows.sort();
+        let h = blake3::hash(rows.join("\n").as_bytes());
+        u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
+    }
+
+    /// [`get`](Self::get) once per tree: every engine of a run reads the same annotations.
+    pub fn shared(tree: &crate::tree::Tree, sem: &Sem, decls: &Decls) -> std::sync::Arc<Annotations> {
+        tree.memo("sem/annotations", || Annotations::get(sem, decls))
+    }
+
     pub fn get(sem: &Sem, decls: &Decls) -> Annotations {
         let mut a = Annotations::default();
         for m in decls.markers_named("READS_AS") {
@@ -339,7 +452,7 @@ impl Annotations {
             let Some(tp) = ty.get().procs.get(proc_name) else { continue };
             let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for value in &tp.value {
-                let Some(code) = &value.code else { continue };
+                let Some(code) = &*value.code else { continue };
                 super::ast::walk_block(code, &mut |e, _| {
                     if let Some((n, args)) = super::ast::as_call(e) {
                         if calls.contains(&n) {
@@ -453,16 +566,18 @@ pub struct ReadsEngine<'a> {
 pub struct EngineCaches {
     overrides_cache: std::sync::Mutex<HashMap<(String, String), std::sync::Arc<Vec<String>>>>,
     definers: std::sync::OnceLock<HashMap<String, Vec<String>>>,
-    globals: std::sync::OnceLock<super::globals::GlobalIndex>,
-    writes: std::sync::OnceLock<WriteIndex>,
     /// What a context-free walk of a proc found (closed walk only), by (owner, proc, receiver, argument shapes): see `Walk::run_proc`.
     memo: std::sync::RwLock<HashMap<MemoKey, std::sync::Arc<MemoNode>>>,
+    /// The digest of everything a walk of this engine consults besides the bodies and var declarations it records (`walk_cache`).
+    context: std::sync::OnceLock<u128>,
 }
 
 /// One memoized context-free walk: what its own body found, and the memoized walks it calls.
 struct MemoNode {
     own: ReadSet,
     children: Vec<(MemoKey, bool)>,
+    /// What computing it read (`walk_cache`), its own nodes included: a walk that reaches it read all of that.
+    deps: Vec<u64>,
     /// Neither it nor anything it calls found anything: a consumer that reaches it records nothing.
     trivial: bool,
 }
@@ -552,7 +667,7 @@ impl<'a> ReadsEngine<'a> {
             for t in self.sem.objtree.iter_types() {
                 let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
                 for p in t.iter_self_procs() {
-                    if !p.is_builtin() && p.get().code.is_some() {
+                    if !p.is_builtin() && p.get().code.has_body() {
                         m.entry(p.name().to_string()).or_default().push(path.clone());
                     }
                 }
@@ -571,12 +686,12 @@ impl<'a> ReadsEngine<'a> {
 
     /// Which global vars change after boot (built once; the closed walk classifies global reads with it).
     pub fn globals(&self) -> &super::globals::GlobalIndex {
-        self.caches.globals.get_or_init(|| super::globals::GlobalIndex::build(self.sem))
+        self.sem.global_index()
     }
 
     /// Which var names are written anywhere (built once).
     pub fn write_index(&self) -> &WriteIndex {
-        self.caches.writes.get_or_init(|| WriteIndex::build(self.sem))
+        self.sem.write_index()
     }
 
     pub fn with_opaque(mut self, dirs: &[&str]) -> Self {
@@ -586,6 +701,46 @@ impl<'a> ReadsEngine<'a> {
 
     /// The reads of `ty`'s proc `name` as a handler on an instance of `ty`.
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
+        std::sync::Arc::unwrap_or_clone(self.analyze_shared(ty, name))
+    }
+
+    /// [`analyze`](Self::analyze) without copying a stored result.
+    pub fn analyze_shared(&self, ty: &str, name: &str) -> std::sync::Arc<ReadSet> {
+        if !self.sem.cacheable() {
+            return std::sync::Arc::new(self.analyze_uncached(ty, name));
+        }
+        super::walk_cache::walk(|| format!("{}|a|{}|{}", self.flavor(), ty, name), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_uncached(ty, name))
+    }
+
+    /// Which engine walked: the stored results of one kind never serve another.
+    fn flavor(&self) -> String {
+        format!("{}|{}", self.opaque_dirs.join(","), self.virtual_dispatch)
+    }
+
+    /// See [`EngineCaches::context`].
+    pub fn context(&self) -> u128 {
+        *self.caches.context.get_or_init(|| {
+            let t0 = std::time::Instant::now();
+            let mut h = blake3::Hasher::new();
+            h.update(self.flavor().as_bytes());
+            h.update(&self.sem.structure_digest().to_le_bytes());
+            let t1 = t0.elapsed();
+            // Of the declarations, a walk reads the tracked vars, the relations and the STAT markers' arguments (`is_tracked`,
+            // `is_relation`, `is_stat`), never where a marker sits: a line moved by an edit above it is no change.
+            h.update(&walk_decls_digest(self.decls).to_le_bytes());
+            h.update(&self.ann.digest().to_le_bytes());
+            let t2 = t0.elapsed();
+            h.update(&self.globals().digest().to_le_bytes());
+            let t3 = t0.elapsed();
+            h.update(&self.write_index().digest().to_le_bytes());
+            if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+                eprintln!("analyze: walk context ({}): structure {:.1?}, annotations {:.1?}, globals {:.1?}, writes {:.1?}", self.flavor(), t1, t2 - t1, t3 - t2, t0.elapsed() - t3);
+            }
+            u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+        })
+    }
+
+    fn analyze_uncached(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
@@ -599,6 +754,18 @@ impl<'a> ReadsEngine<'a> {
     /// (the hook form's context, section 8): `A` is bound to that type, so `A.actor` resolves
     /// against the fields that context really carries.
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
+        std::sync::Arc::unwrap_or_clone(self.analyze_handler_shared(ty, name, ctx_ty))
+    }
+
+    /// [`analyze_handler`](Self::analyze_handler) without copying a stored result.
+    pub fn analyze_handler_shared(&self, ty: &str, name: &str, ctx_ty: &str) -> std::sync::Arc<ReadSet> {
+        if !self.sem.cacheable() {
+            return std::sync::Arc::new(self.analyze_handler_uncached(ty, name, ctx_ty));
+        }
+        super::walk_cache::walk(|| format!("{}|h|{}|{}|{}", self.flavor(), ty, name, ctx_ty), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_handler_uncached(ty, name, ctx_ty))
+    }
+
+    fn analyze_handler_uncached(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
@@ -728,12 +895,24 @@ impl Decls {
 
 /// Which var names are written anywhere in a proc body (outside constructors), for the "constant"
 /// class: a var nobody writes after init is readable but not reactive. Name-based and conservative.
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct WriteIndex {
     written: HashSet<String>,
 }
 
 impl WriteIndex {
+    /// A digest of the written names (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut v: Vec<&String> = self.written.iter().collect();
+        v.sort();
+        let mut h = blake3::Hasher::new();
+        for x in v {
+            h.update(x.as_bytes());
+            h.update(b"\n");
+        }
+        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    }
+
     pub fn is_written(&self, var: &str) -> bool {
         self.written.contains(var)
     }
@@ -741,12 +920,19 @@ impl WriteIndex {
     pub fn build(sem: &Sem) -> WriteIndex {
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
         // Plain threads, not rayon: this runs under a memo init (see `par_map`).
-        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| proc_writes(*p));
-        let mut w = WriteIndex::default();
-        for s in sets {
-            w.written.extend(s);
-        }
-        w
+        // Sorted: `body_facts` digests the facts.
+        let fact = |p: ProcRef| -> Vec<String> {
+            let mut v: Vec<String> = proc_writes(p).into_iter().collect();
+            v.sort();
+            v
+        };
+        super::body_facts::indexed(sem, "writes", 0, &procs, fact, |sets: Vec<Vec<String>>| {
+            let mut w = WriteIndex::default();
+            for s in sets {
+                w.written.extend(s);
+            }
+            w
+        })
     }
 }
 
@@ -755,7 +941,7 @@ pub fn proc_writes(p: ProcRef) -> HashSet<String> {
     let mut s = HashSet::new();
     let name = p.name();
     let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
-    if let Some(code) = &p.get().code {
+    if let Some(code) = &*p.get().code {
         collect_writes(code, ctor, &mut s);
     }
     s
@@ -926,7 +1112,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if context_free {
             let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act);
             let outer = self.override_depth > 0 || self.engine_depth > 0;
-            let known = self.eng.caches.memo.read().unwrap().get(&key).map(|n| n.trivial);
+            let node = self.eng.caches.memo.read().unwrap().get(&key).cloned();
+            if let Some(n) = &node {
+                super::walk_cache::extend(&n.deps);
+            }
+            let known = node.map(|n| n.trivial);
             if known == Some(true) {
                 return None;
             }
@@ -937,7 +1127,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let saved_children = std::mem::take(&mut self.children);
                 let saved_ix = std::mem::take(&mut self.diag_ix);
                 let (saved_override, saved_engine, saved_depth) = (std::mem::take(&mut self.override_depth), std::mem::take(&mut self.engine_depth), std::mem::take(&mut self.depth));
+                super::walk_cache::push_frame();
                 self.enter(p, this, bind, first_is_ctx, no_act, &owner);
+                let node_deps = super::walk_cache::pop_frame();
+                super::walk_cache::extend(&node_deps);
                 self.override_depth = saved_override;
                 self.engine_depth = saved_engine;
                 self.depth = saved_depth;
@@ -950,7 +1143,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty() && own.sampled.is_empty();
                 let trivial = bare && children.iter().all(|(c, _)| memo.get(c).map(|n| n.trivial).unwrap_or(false));
                 drop(memo);
-                self.eng.caches.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
+                self.eng.caches.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, deps: node_deps, trivial }));
                 if trivial {
                     return None;
                 }
@@ -1019,6 +1212,7 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
+        super::walk_cache::record(|| super::walk_cache::Dep::Proc(owner.to_string(), p.name().to_string()));
         if let Some(summary) = self.eng.ann.summaries.get(&(owner.to_string(), p.name().to_string())) {
             self.apply_summary(owner, p.name(), summary, &this, bind);
             return None;
@@ -1035,7 +1229,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 return None;
             }
         }
-        let Some(code) = &value.code else { return None };
+        let Some(code) = &*value.code else { return None };
         let mut fr = Frame { proc: p, rel: self.rel_of(p), this, locals: HashMap::new(), narrow: HashMap::new(), ret: None };
         for (i, prm) in value.parameters.iter().enumerate() {
             let declared = type_str(&prm.var_type);

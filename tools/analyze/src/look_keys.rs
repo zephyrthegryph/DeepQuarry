@@ -452,7 +452,7 @@ impl<'a> Model<'a> {
             names.sort_by(|a, b| a.0.cmp(b.0));
             for (name, tp) in names {
                 // A builtin or a bodiless declaration draws nothing.
-                if tp.value.is_empty() || tp.value.iter().all(|v| v.code.is_none()) {
+                if tp.value.is_empty() || tp.value.iter().all(|v| !v.code.has_body()) {
                     continue;
                 }
                 let start = pdefs.len() as u32;
@@ -734,17 +734,17 @@ impl<'a> Model<'a> {
             let ty = type_string(&p.var_type.type_path);
             note_local(&mut locals, &p.name, ty);
         }
-        if let Some(code) = &pd.val.code {
+        if let Some(code) = &*pd.val.code {
             collect_locals(code, &mut locals);
         }
         let mut edges: BTreeSet<(String, Kind, u8)> = BTreeSet::new();
         let mut stmt_set: HashSet<*const Expression> = HashSet::new();
-        if let Some(code) = &pd.val.code {
+        if let Some(code) = &*pd.val.code {
             collect_stmt_exprs(code, &mut stmt_set);
         }
         let mut dynamic: Vec<String> = Vec::new();
         let mut visit = |e: &Expression| self.visit_expr(e, pd, owner_path, &locals, &stmt_set, &mut edges, &mut dynamic);
-        if let Some(code) = &pd.val.code {
+        if let Some(code) = &*pd.val.code {
             ast::walk_block(code, &mut |e, _| visit(e));
         }
         for p in pd.val.parameters.iter() {
@@ -1782,7 +1782,7 @@ fn proc_texts(sem: &Sem, only: &[String]) -> HashMap<ProcKey, u128> {
         let t = ty.get();
         let owner = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
         for (name, tp) in &t.procs {
-            if tp.value.is_empty() || tp.value.iter().all(|v| v.code.is_none()) {
+            if tp.value.is_empty() || tp.value.iter().all(|v| !v.code.has_body()) {
                 continue;
             }
             let mut seen: HashMap<&str, u32> = HashMap::new();

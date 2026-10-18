@@ -132,7 +132,7 @@ impl Lint for SemHandlers {
                             for (_name, tp) in ty.get().procs.iter() {
                                 for v in &tp.value {
                                     let rel = sem.rel(v.location);
-                                    let (true, Some(code)) = (set.contains(rel), &v.code) else { continue };
+                                    let (true, Some(code)) = (set.contains(rel), &*v.code) else { continue };
                                     let (acts, locals) = act_idents(&v.parameters, code, &try_calls);
                                     let mut found: Vec<Found> = Vec::new();
                                     context_escape(code, &acts, &locals, &mut found);

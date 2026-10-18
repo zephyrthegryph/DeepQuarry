@@ -121,7 +121,7 @@ impl Frontend for TextFrontend {
     fn analyze(&self, _root: &Path, tree: &Tree) -> Result<Program, String> {
         let files: Vec<&crate::tree::SourceFile> = tree.select(&crate::tree::CODE_DM);
         let mut program = Program { frontend: "text", ..Default::default() };
-        let table = crate::dm::dx::type_vars(&files);
+        let table = crate::dm::dx::type_vars_in(tree, &files);
         for (path, vars) in table {
             let t = program.types.entry(path.clone()).or_insert_with(|| TypeInfo { path, ..Default::default() });
             let mut names: Vec<&String> = vars.iter().collect();

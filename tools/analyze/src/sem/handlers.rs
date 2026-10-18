@@ -26,11 +26,11 @@ pub struct Analyzed {
     /// Definition site of the proc: (file, line, params, has body).
     pub def: Option<(String, u32)>,
     pub params: Vec<Vec<String>>,
-    pub set: Option<ReadSet>,
+    pub set: Option<Arc<ReadSet>>,
     /// The same handler over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides,
     /// global procs walked, global state classified. `sem/reads`, `untracked_inputs` and the generated subscriptions judge this one;
     /// `set` (the targeted walk) is what the purity and context checks of `sem/handlers` read.
-    pub closed: Option<ReadSet>,
+    pub closed: Option<Arc<ReadSet>>,
     /// Return-protocol violations of the top-level body (conditions and requirements).
     pub returns: Vec<super::checks::Found>,
     /// Reads of a var that is not tracked, a relation, a stat, a derived value or constant:
@@ -81,10 +81,10 @@ fn compute(tree: &Tree) -> Analysis {
         return an;
     }
     let Some(sem) = super::sem_for(tree) else { return an };
-    let ann = Annotations::get(&sem, &decls);
+    let ann = Annotations::shared(tree, &sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);
-    let written = super::reads::WriteIndex::build(&sem);
+    let written: &super::reads::WriteIndex = sem.write_index();
     let mut seen = std::collections::HashSet::new();
     // The typed fields every ACTION() declares.
     let action_fields: std::collections::HashSet<String> = decls
@@ -107,9 +107,16 @@ fn compute(tree: &Tree) -> Analysis {
         });
         jobs[i].3 |= h.role.reads_covered();
     }
-    let walked: Vec<(ReadSet, Option<ReadSet>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
-        (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
+    let t_jobs = started.elapsed();
+    // `analyze gen` reads only the closed walks; the targeted walk, the return checks and the context checks are what the `sem/handlers`
+    // lint reads (`impure`, `bad_ctx`, `returns`), so a gen run leaves them out.
+    let lint_facts = !super::incremental::gen_mode();
+    let walked: Vec<(Option<Arc<ReadSet>>, Option<Arc<ReadSet>>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
+        (lint_facts.then(|| eng.analyze_handler_shared(on, proc, ctx)), closed.then(|| closed_eng.analyze_handler_shared(on, proc, ctx)))
     });
+    let t_walked = started.elapsed();
+    // Which handlers are analyzed is decided in order (the first of duplicates); each analysis is independent and runs on all cores.
+    let mut kept: Vec<(HandlerRef, String)> = Vec::new();
     for h in refs {
         let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
         if on.is_empty() {
@@ -118,8 +125,18 @@ fn compute(tree: &Tree) -> Analysis {
         if !seen.insert((on.clone(), h.proc.clone(), h.form, h.rel.clone(), h.line)) {
             continue;
         }
+        kept.push((h, on));
+    }
+    let analyzed: Vec<Analyzed> = super::par_map_deep(&kept, |(h, on)| {
+        let h = h.clone();
+        let on = on.clone();
         let pr = sem.proc_ref(&on, &h.proc);
         let (proc_found, def, params, returns) = match pr {
+            Some(p) if !p.is_builtin() && !lint_facts => {
+                let v = p.get();
+                let params = v.parameters.iter().map(|p| p.var_type.type_path.to_vec()).collect();
+                (true, Some((sem.rel(v.location).to_string(), v.location.line)), params, Vec::new())
+            }
             Some(p) if !p.is_builtin() => {
                 let b = sem.proc_body(p);
                 let params = b.params.iter().map(|p| p.var_type.type_path.to_vec()).collect();
@@ -138,7 +155,7 @@ fn compute(tree: &Tree) -> Analysis {
             _ => (false, None, Vec::new(), Vec::new()),
         };
         let walk = if proc_found && !h.cap_proc { job_ix.get(&(on.clone(), h.proc.clone(), h.ctx.type_path().to_string())).map(|&i| &walked[i]) } else { None };
-        let set = walk.map(|w| w.0.clone());
+        let set = walk.and_then(|w| w.0.clone());
         let closed = if h.role.reads_covered() { walk.and_then(|w| w.1.clone()) } else { None };
         let mut unknown = Vec::new();
         if let (Some(set), true) = (&closed, h.role.reads_covered()) {
@@ -180,12 +197,15 @@ fn compute(tree: &Tree) -> Analysis {
                 }
             }
         }
-        an.handlers.push(Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx });
-    }
+        Analyzed { h, on, proc_found, def, params, set, closed, returns, unknown, impure, type_found, bad_ctx }
+    });
+    an.handlers.extend(analyzed);
+    let t_loop = started.elapsed();
     let graph = DepGraph::from_derives(&sem, &eng);
     an.cycles = graph.cycles();
     an.graph = Some(graph);
     // READS_AS accessors whose own reads are neither tracked nor constant must have a producer for their key.
+    let t_graph = started.elapsed();
     for ((ty, name), (key, _via)) in &ann.reads_as {
         let set = eng.analyze(ty, name);
         let mut vars = Vec::new();
@@ -204,11 +224,15 @@ fn compute(tree: &Tree) -> Analysis {
         }
     }
     an.accessor_gaps.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
+    let t_reads_as = started.elapsed();
     let footprint = sem.footprint();
     if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem/handlers walked {} handlers (targeted + closed) in {:.1?}", an.handlers.len(), started.elapsed());
         eprintln!("analyze: sem footprint: {} handlers, {} files consulted", an.handlers.len(), footprint.len());
     }
     super::incremental::capture(tree, &sem, footprint);
+    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        eprintln!("analyze: sem/handlers phases: setup {:.1?}, walks {:.1?}, per-handler {:.1?}, graph {:.1?}, READS_AS {:.1?}, capture {:.1?}", t_jobs, t_walked - t_jobs, t_loop - t_walked, t_graph - t_loop, t_reads_as - t_graph, started.elapsed() - t_reads_as);
+    }
     an
 }

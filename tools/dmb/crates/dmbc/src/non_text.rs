@@ -163,7 +163,9 @@ mod tests {
         .unwrap();
         let descriptors =
             crate::map_output::descriptors(&frontend, &projection, &captured.maps).unwrap();
-        assert_ne!(descriptors.initializers[2], descriptors.initializers[5]);
-        assert_eq!(descriptors.initializers[2], descriptors.initializers[8]);
+        // Equal areas are shared across maps (one area descriptor for all three), so the object of map n sits at 2 + 2n.
+        assert_eq!(descriptors.initializers.len(), 8);
+        assert_ne!(descriptors.initializers[2], descriptors.initializers[4]);
+        assert_eq!(descriptors.initializers[2], descriptors.initializers[6]);
     }
 }

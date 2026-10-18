@@ -201,6 +201,48 @@ fn count(s: &str, c: char) -> usize {
     s.chars().filter(|&x| x == c).count()
 }
 
+/// [`type_vars`] of every `.dm` file of the tree, each file's table cached by content (`incr::facts`) and built once per run: only an
+/// edited file is scanned again.
+pub fn type_vars_by_file(tree: &crate::tree::Tree) -> std::sync::Arc<HashMap<String, Vec<(String, Vec<String>)>>> {
+    tree.memo("dx/type-vars-by-file", || {
+        let files = tree.select(&crate::tree::CODE_DM);
+        let per: Vec<Vec<(String, Vec<String>)>> = crate::incr::facts("dx-type-vars", &files, |f| {
+            let mut v: Vec<(String, Vec<String>)> = type_vars(&[f])
+                .into_iter()
+                .map(|(k, s)| {
+                    let mut s: Vec<String> = s.into_iter().collect();
+                    s.sort();
+                    (k, s)
+                })
+                .collect();
+            v.sort();
+            v
+        });
+        files.iter().map(|f| f.rel.clone()).zip(per).collect()
+    })
+}
+
+/// [`type_vars`] of `files` (files of `tree`), from [`type_vars_by_file`].
+pub fn type_vars_in(tree: &crate::tree::Tree, files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {
+    let by = type_vars_by_file(tree);
+    let mut table: HashMap<String, HashSet<String>> = HashMap::new();
+    for f in files {
+        match by.get(&f.rel) {
+            Some(rows) => {
+                for (t, vs) in rows {
+                    table.entry(t.clone()).or_default().extend(vs.iter().cloned());
+                }
+            }
+            None => {
+                for (t, vs) in type_vars(&[f]) {
+                    table.entry(t).or_default().extend(vs);
+                }
+            }
+        }
+    }
+    table
+}
+
 /// `type_vars`: `{type path: var names}` declared in the files (both `/T/var/x` and a `var/x` line
 /// inside a `/T` block, and grouped `var` blocks).
 pub fn type_vars(files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {

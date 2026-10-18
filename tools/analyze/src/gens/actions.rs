@@ -368,7 +368,7 @@ fn declared_elsewhere(cx: &GenCx, notice: &str) -> BTreeSet<String> {
         Some(rest) if name_chars(rest) => mentions.iter().filter(|(rel, m)| rel != "code/engine/_generated/actions.dm" && m.iter().any(|run| run.starts_with(rest))).filter_map(|(rel, _)| cx.tree.get(rel)).collect(),
         _ => cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| f.rel != "code/engine/_generated/actions.dm" && f.code().text.contains(notice)).collect(),
     };
-    let table = crate::dm::dx::type_vars(&files);
+    let table = crate::dm::dx::type_vars_in(cx.tree, &files);
     table.get(notice).map(|v| v.iter().cloned().collect()).unwrap_or_default()
 }
 

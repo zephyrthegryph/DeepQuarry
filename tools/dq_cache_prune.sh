@@ -20,7 +20,7 @@ CACHE="${DQ_CACHE_ROOT:-E:/dq-cache}"
 WT_ROOT="${DQ_WT_ROOT:-E:/projects/dq-wt}"
 rm_path() { if [ "$dry" -eq 1 ]; then echo "would remove $1"; else rm -rf "$1"; fi; }
 
-ab="${DQ_ANALYZE_CACHE:-$CACHE/analyze-bin}"
+ab="${DQ_ANALYZE_BIN_CACHE:-$CACHE/analyze-bin}"
 if [ -d "$ab" ]; then
 	keep="${DQ_ANALYZE_KEEP:-12}"
 	live="$(ls "$WT_ROOT"/*/tools/analyze/target/*/analyze*.key "$WT_ROOT"/../CHOMPStation2/tools/analyze/target/*/analyze*.key 2>/dev/null | xargs -r cat 2>/dev/null | tr -d '\r' | sort -u)"

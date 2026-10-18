@@ -72,10 +72,16 @@ impl InsertionLines {
     }
 }
 
-fn mentions(text: &[u8], name: &[u8]) -> usize {
+fn mention_offsets(text: &[u8], name: &[u8]) -> Vec<usize> {
     memchr::memmem::find_iter(text, name)
         .filter(|&at| word_at(text, at, name))
-        .count()
+        .collect()
+}
+/// Index of the body whose expanded text contains `at`, if any (bodies are in expanded order).
+fn body_at(bodies: &[dm_tree::frontend::BodyOccurrence], at: usize) -> Option<usize> {
+    let after = bodies.partition_point(|body| body.expanded_span.start as usize <= at);
+    let index = after.checked_sub(1)?;
+    (at < bodies[index].expanded_span.end as usize).then_some(index)
 }
 
 pub(super) fn try_append_patch<R: dm_ir::Resolver>(
@@ -108,17 +114,6 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     for field in &appended.fields {
         *appended_names.entry(field.name).or_default() += 1;
     }
-    for (&name, &count) in &appended_names {
-        let spelling = symbols.text(name).ok_or("appended name has no spelling")?;
-        if crate::class_projection::recognizes_callback(name) || spelling.starts_with("Mouse") {
-            return Err("appended callable is a header callback".into());
-        }
-        // Each declaration header names it once; any other mention could be a
-        // call or reference whose lowering depends on the new callable.
-        if mentions(text, spelling.as_bytes()) != count {
-            return Err(format!("{spelling} is referenced outside its declaration"));
-        }
-    }
     dm_profile::request_mark("append.names_checked");
     // Split current bodies into aligned (existing) and inserted (appended).
     let shape = request.shape;
@@ -142,6 +137,41 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     }
     if aligned.len() != base.shape.bodies.len() || inserted.len() != appended.members.len() {
         return Err("appended bodies do not align with the patch base".into());
+    }
+    // Bodies that mention an appended name are relowered: their lowering may now resolve the name to
+    // the new member. A mention outside every body (a var default, an initializer) declines.
+    let ordered_bodies = frontend
+        .bodies
+        .windows(2)
+        .all(|pair| pair[0].expanded_span.end <= pair[1].expanded_span.start);
+    let mut mentioning = std::collections::BTreeSet::new();
+    for (&name, &count) in &appended_names {
+        let spelling = symbols.text(name).ok_or("appended name has no spelling")?;
+        if crate::class_projection::recognizes_callback(name) || spelling.starts_with("Mouse") {
+            return Err("appended callable is a header callback".into());
+        }
+        // Each declaration header names it once; any other mention outside a body could be a
+        // reference whose meaning depends on the new member.
+        let mut outside = 0usize;
+        for at in mention_offsets(text, spelling.as_bytes()) {
+            // A body span includes its declaration header: a mention inside an appended body (its
+            // own header) counts with the declarations, a mention inside an existing body relowers it.
+            match ordered_bodies.then(|| body_at(&frontend.bodies, at)).flatten() {
+                Some(index) if !inserted.contains(&index) => {
+                    mentioning.insert(index);
+                }
+                // A new body naming another appended member is lowered anyway; only the member's
+                // own declaration counts against the declaration total.
+                Some(index)
+                    if tree
+                        .member(frontend.bodies[index].member)
+                        .is_some_and(|member| member.name != name) => {}
+                _ => outside += 1,
+            }
+        }
+        if outside != count {
+            return Err(format!("{spelling} is referenced outside its declaration and bodies"));
+        }
     }
     let mut lines = InsertionLines {
         aligned: HashMap::new(),
@@ -201,10 +231,13 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         .zip(&base.shape.bodies)
         // Dense declaration/member IDs (part of the body digest) shift on
         // insertion; identity is owner/name/occurrence, so compare position
-        // and text only.
+        // and text only. Unchanged bodies that mention an appended name are relowered too.
         .filter(|(&index, old)| {
             let new = &shape.bodies[index];
-            new.text != old.text || new.line != old.line || new.path != old.path
+            new.text != old.text
+                || new.line != old.line
+                || new.path != old.path
+                || mentioning.contains(&index)
         })
         .map(|(&index, _)| index)
         .collect();
@@ -267,7 +300,21 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     for contribution in lowered.contributions {
         let record = contribution.patch_record();
         let identity = record.record.identity();
-        if base.units.contains_key(&identity) {
+        if let Some(old) = base.units.get(&identity) {
+            // An existing body may now reference appended members (new link keys, resolved through
+            // the extended tables below) and own new literals (appended strings). Everything that
+            // shapes its procedure record (frame, ABI, features, instances, helpers) must match.
+            let (new_parts, old_parts) = (record.footprint(), old.footprint());
+            for ((name, new), (_, old)) in new_parts.iter().zip(&old_parts) {
+                if new != old && !matches!(*name, "strings" | "value_strings" | "inventory") {
+                    return Err(format!("unit {identity:?} link footprint changed: {name}"));
+                }
+            }
+            if new_parts.iter().zip(&old_parts).any(|((name, new), (_, old))| {
+                new != old && matches!(*name, "strings" | "value_strings")
+            }) {
+                entries.extend(record.record.string_entries());
+            }
             existing.push((contribution, record));
             continue;
         }
@@ -314,9 +361,6 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         });
         if (record.modified || old.modified) && !moved_only {
             return Err(format!("unit {identity:?} has modified instances"));
-        }
-        if record.footprint() != old.footprint() {
-            return Err(format!("unit {identity:?} link footprint changed"));
         }
         let words = record
             .record
@@ -427,6 +471,10 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
             declared.sort_by_key(|m| std::cmp::Reverse(m.0));
             undeclared.into_iter().chain(declared).map(|m| m.2).collect()
         };
+        // Global procs belong to no class list: the root owns no class record.
+        if owner == SymbolId::of("/") && tables.index(dm_link::Key::Type(owner)).is_none() {
+            continue;
+        }
         let class = tables
             .index(dm_link::Key::Type(owner))
             .ok_or("owner type has no class index")?;

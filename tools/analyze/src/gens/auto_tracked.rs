@@ -95,14 +95,17 @@ fn declared_reactive(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 pub fn writes_outside_setters(sem: &crate::sem::Sem) -> HashSet<String> {
     // The generated setters and list mutators write the vars they are generated for: counting them would keep a var tracked because it was tracked.
     let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.get().location), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
-    let sets: Vec<HashSet<String>> = crate::sem::par_map(&procs, |p| {
-        let mut w = crate::sem::reads::proc_writes(*p);
+    // Per proc, kept between runs by file (`body_facts`); sorted, as the facts are digested.
+    let fact = |p: dreammaker::objtree::ProcRef| -> Vec<String> {
+        let mut w = crate::sem::reads::proc_writes(p);
         if let Some(v) = p.name().strip_prefix("set_") {
             w.remove(v);
         }
-        w
-    });
-    sets.into_iter().flatten().collect()
+        let mut v: Vec<String> = w.into_iter().collect();
+        v.sort();
+        v
+    };
+    crate::sem::body_facts::indexed(sem, "writes-outside-setters", 0, &procs, fact, |sets: Vec<Vec<String>>| sets.into_iter().flatten().collect::<HashSet<String>>())
 }
 
 /// `writes_outside_setters`, computed once per tree.
@@ -194,9 +197,13 @@ pub fn typed_set_calls(tree: &Tree) -> Arc<HashMap<String, BTreeSet<String>>> {
                 work.push((path.clone(), p));
             }
         }
-        let found: Vec<Vec<(String, String)>> = crate::sem::par_map(&work, |(owner, p)| {
+        // Per proc, kept between runs by file (`body_facts`): a hit reads the body and the declared types of vars (the structure).
+        let refs: Vec<dreammaker::objtree::ProcRef> = work.iter().map(|(_, p)| *p).collect();
+        let fact = |p: dreammaker::objtree::ProcRef| -> Vec<(String, String)> {
+            let owner = if p.ty().get().path.is_empty() { "/".to_string() } else { p.ty().get().path.clone() };
+            let owner = &owner;
             let mut hits: Vec<(String, String)> = Vec::new();
-            let Some(code) = &p.get().code else { return hits };
+            let Some(code) = &*p.get().code else { return hits };
             let mut locals: HashMap<String, String> = HashMap::new();
             for prm in p.get().parameters.iter() {
                 if !prm.var_type.type_path.is_empty() {
@@ -232,11 +239,13 @@ pub fn typed_set_calls(tree: &Tree) -> Arc<HashMap<String, BTreeSet<String>>> {
                 }
             });
             hits
-        });
-        for (n, t) in found.into_iter().flatten() {
-            out.entry(n).or_default().insert(t);
-        }
-        out
+        };
+        crate::sem::body_facts::indexed(&sem, "typed-set-calls", sem.structure_digest(), &refs, fact, |found: Vec<Vec<(String, String)>>| {
+            for (n, t) in found.into_iter().flatten() {
+                out.entry(n).or_default().insert(t);
+            }
+            out
+        })
     })
 }
 

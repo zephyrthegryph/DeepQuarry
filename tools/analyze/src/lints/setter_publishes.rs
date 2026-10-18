@@ -111,7 +111,7 @@ impl Lint for SetterPublishes {
                 if rel.starts_with("code/engine/_generated/") {
                     continue;
                 }
-                let Some(code) = &v.code else { continue };
+                let Some(code) = &*v.code else { continue };
                 let mut w = std::collections::HashSet::new();
                 crate::sem::reads::collect_writes_pub(code, &mut w);
                 let writes = w.contains(var.as_str());
