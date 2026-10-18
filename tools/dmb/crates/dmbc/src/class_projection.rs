@@ -130,7 +130,7 @@ pub fn project(
     order: &[OccurrenceId],
     evaluator: &dyn CapturedFieldEvaluator,
 ) -> Result<ClassProjection, ProjectionError> {
-    project_inner(source, order, evaluator, None, None)
+    project_inner(source, order, evaluator, None, None, None)
 }
 pub fn project_classified(
     source: &TreeSnapshot,
@@ -158,14 +158,17 @@ pub fn project_classified_with_artifacts(
     if plan.source.tree.identity() != source.tree.identity() {
         return Err(ProjectionError::IdentityMismatch);
     }
+    let phase = dm_profile::detail_timer("init.projection.admit_ledger");
     let ledger = crate::class_initialization::admit_lowered_borrowed(plan, classified, units)
         .map_err(ProjectionError::Unsupported)?;
+    drop(phase);
     let mut projection = project_inner(
         source,
         order,
         &NoEvaluation,
         Some(ledger.as_slice()),
         artifacts,
+        Some(&NoEvaluation),
     )?;
     for write in &classified.writes {
         projection.source_features.union(write.source_features);
@@ -235,6 +238,8 @@ fn project_inner(
     evaluator: &dyn CapturedFieldEvaluator,
     defaults: Option<&[crate::class_initialization::BorrowedDefault<'_>]>,
     artifacts: Option<&ClassProjections>,
+    // The same evaluator, when it may be shared across threads to compute missed owners in parallel.
+    parallel: Option<&(dyn CapturedFieldEvaluator + Sync)>,
 ) -> Result<ClassProjection, ProjectionError> {
     let mut method_request = artifacts.map(ClassProjections::begin_methods);
     if source.tree.identity() != source.occurrences.tree_identity() {
@@ -245,6 +250,7 @@ fn project_inner(
         return Err(ProjectionError::IncompleteOrder);
     }
     let tree = &source.tree;
+    let phase = dm_profile::detail_timer("init.projection.types");
     let (types, type_construction) = match artifacts {
         Some(artifacts) => {
             let issued = artifacts.types.obtain(tree);
@@ -252,6 +258,8 @@ fn project_inner(
         }
         None => (type_roster::produce(tree.types()), Default::default()),
     };
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.projection.default_index");
     let mut seen = HashSet::new();
     let mut fields = Vec::new();
     let mut field_placements = FieldPlacements::default();
@@ -269,7 +277,13 @@ fn project_inner(
     let mut retention = artifacts
         .filter(|_| defaults.is_some())
         .and_then(|store| store.begin(source, order, &default_index));
+    if let (Some(request), Some(parallel)) = (retention.as_mut(), parallel) {
+        let _phase = dm_profile::detail_timer("init.projection.prefetch");
+        request.prefetch(tree, parallel);
+    }
     let mut method_inputs = Vec::new();
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.projection.members");
     for &id in order {
         if !seen.insert(id) {
             return Err(ProjectionError::IncompleteOrder);
@@ -320,13 +334,18 @@ fn project_inner(
             }
         }
     }
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.projection.retention_finish");
     if let Some(request) = retention {
         request.finish();
     }
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.projection.methods");
     let methods = match method_request {
         Some(request) => request.finish(),
         None => Arc::new(method_roster::MethodRoster::produce(method_inputs)),
     };
+    drop(phase);
     Ok(ClassProjection {
         source_features: Default::default(),
         type_construction,

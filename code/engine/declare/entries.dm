@@ -111,8 +111,14 @@
 /// A reference to another entity: the holder does not own it. Declared by `ref_one(nameof(v), type, ...)`.
 /// `by = nameof(id)` finds the targets by id: the instances of `type` whose id var (also `id`) equals the holder's. When the two ends keep the id in
 /// differently named vars (a pad's map_pad_link_id names the map_pad_id of its partner), `by` is the holder's var and `target_key` the target's (nameof(map_pad_id), or nameof(/obj/machinery/doorbell_chime::id_tag) when the holder type has no var of that name).
-/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null)
-	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key))
+/// Optional starts creates the initial target but does not turn this view into ownership.
+/// Its spatial container (if any) owns it; an independent target outlives this reference.
+/// The constructor arguments and early/starts_after phases are the same as owns_one().
+/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null)
+	if(!isnull(starts) && by)
+		declare_report("ref_one(): starts and keyed lookup by cannot both initialize the same reference")
+		return null
+	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after))
 
 /proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null)
 	return entry_make(ENTRY_REF_MANY, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key))
@@ -187,8 +193,8 @@
 
 /// A slot: an object that lives inside the holder (section 6). Backed by the containment ledger; the entry is the declaration the
 /// ledger, the reach gate and the state-graph's SLOT_CONSTRUCTION read.
-/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null)
-	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args))
+/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null, unit = null, quantity = FALSE)
+	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args, "unit" = unit, "quantity" = quantity))
 
 // DM gives a proc named arguments only when it declares them, so a constructor that takes entries and then options (`when(cond, a, b, reads =
 // ...)`) declares ENTRY_SLOTS positional slots for the entries and the options by name. More than that many entries go in one list (a

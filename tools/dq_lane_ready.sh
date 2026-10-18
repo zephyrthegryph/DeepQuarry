@@ -48,7 +48,7 @@ while [ $# -gt 0 ]; do
 		--tests) shift; read -r -a more <<<"${1:-}"; tests+=("${more[@]}") ;;
 		--tests-file) shift; while IFS= read -r l; do l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"; [ -n "$l" ] && tests+=("$l"); done <"${1:?--tests-file needs a file}" ;;
 		--covers) shift; covers+=("${1:?--covers needs a glob}") ;;
-		--no-pins) pins=0 ;;
+		--no-pins) pins=0; export DQ_NO_PINS=1 ;;
 		--no-merge) merge=0 ;;
 		--reuse-gates) reuse_gates=1 ;;
 		--lite) lite=1 ;;
@@ -57,6 +57,14 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
+
+if [ "${DQ_NO_PINS:-0}" = 1 ]; then
+	filtered_tests=()
+	for t in "${tests[@]}"; do
+		if proof_test_enabled "$t"; then filtered_tests+=("$t"); else echo "== no-pins: excluded $t"; fi
+	done
+	tests=("${filtered_tests[@]}")
+fi
 
 die() { echo "dq_lane_ready: $1" >&2; exit "${2:-1}"; }
 
@@ -136,6 +144,7 @@ if [ -f "$gameplay_file" ]; then
 	while IFS= read -r l; do
 		l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"
 		[ -n "$l" ] || continue
+		proof_test_enabled "$l" || continue
 		case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac
 	done <"$gameplay_file"
 fi

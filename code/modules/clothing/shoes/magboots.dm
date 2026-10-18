@@ -21,7 +21,6 @@
 	resistance_flags = FIRE_PROOF
 
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
 	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
@@ -32,6 +31,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	configure(item_persistence(preserve = 1))
+	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
 	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))

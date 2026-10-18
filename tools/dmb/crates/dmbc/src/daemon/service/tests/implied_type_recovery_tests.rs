@@ -13,7 +13,6 @@ fn implied_type_errors_match_fresh_current_include_and_recover_without_replacing
     let initial_request = request(&roots, 0, false);
     let slot = shared.slot(
         initial_request.project.clone(),
-        &initial_request.defines,
         Some(&initial_request),
     );
     let destination = initial_request.artifact_directory.as_ref().unwrap().clone();

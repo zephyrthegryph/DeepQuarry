@@ -93,9 +93,30 @@ fn save_types(stamp: &str, env: Hash, map: &BTreeMap<String, String>) {
 }
 
 fn load() -> Option<Record> {
-    let stamp = crate::incr::stamp()?;
-    let r: Record = crate::incr::de(&std::fs::read(path()?).ok()?).ok()?;
-    (r.stamp == stamp).then_some(r)
+    let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
+    let Some(stamp) = crate::incr::stamp() else {
+        if trace { eprintln!("analyze: sem record: caching is off"); }
+        return None;
+    };
+    let bytes = match std::fs::read(path()?) {
+        Ok(b) => b,
+        Err(e) => {
+            if trace { eprintln!("analyze: sem record: read failed: {}", e); }
+            return None;
+        }
+    };
+    let r: Record = match crate::incr::de(&bytes) {
+        Ok(r) => r,
+        Err(e) => {
+            if trace { eprintln!("analyze: sem record: decode failed: {}", e); }
+            return None;
+        }
+    };
+    if r.stamp != stamp {
+        if trace { eprintln!("analyze: sem record: stamp differs ({} vs {})", r.stamp, stamp); }
+        return None;
+    }
+    Some(r)
 }
 
 fn save(r: &Record) {
@@ -198,6 +219,9 @@ pub(crate) fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)>
         files.insert(rel, h);
     }
     let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.hash)).collect();
+    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        eprintln!("analyze: sem env parts: dme {:x} decls {:x} defines {:x}", dme, decls.key, crate::incr::ctx_key(&defines));
+    }
     let env = crate::incr::ctx_key(&(dme, decls.key, defines));
     Some((env, files))
 }
@@ -382,6 +406,22 @@ fn pending(tree: &Tree) -> Arc<Pending> {
 /// stored record describes exactly this tree already (another consumer of the model ran first) its
 /// results are kept and the footprint is widened by what this run consulted.
 pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
+    let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    capture_unlocked(tree, sem, footprint);
+}
+
+/// Generators render in parallel (`gen::run_stage`): one capture (load, compare, collect, save) at a time, so two consumers of the model
+/// never build competing records and lose each other's entries.
+static RECORD_LOCK: Mutex<()> = Mutex::new(());
+
+/// [`capture`] then [`store_gen`], as one step against other captures.
+pub fn capture_and_store_gen(tree: &Tree, sem: &Sem, footprint: Vec<String>, name: &str, g: GenCache) {
+    let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    capture_unlocked(tree, sem, footprint);
+    store_gen(tree, name, g);
+}
+
+fn capture_unlocked(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
     let Some((env, now)) = environment(tree) else { return };
     let Some(stamp) = crate::incr::stamp() else { return };
     let same = |r: &Record| r.env == env && r.files.len() == now.len() && r.files.iter().all(|(k, f)| now.get(k) == Some(&f.fkey));

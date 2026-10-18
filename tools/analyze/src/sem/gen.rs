@@ -166,6 +166,18 @@ pub fn system_types(system: &str) -> Vec<String> {
 /// The vars a system declares: `(some candidate type exists, its vars)`. Reads only the files that name the
 /// system's type, not the whole tree.
 pub fn system_vars(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
+    // A pure function of the tree and the system name, asked once per accessor: one answer per system.
+    type Answers = std::sync::Mutex<std::collections::HashMap<String, (bool, std::collections::HashSet<String>)>>;
+    let answers: Arc<Answers> = tree.memo("sem/system_vars", || Answers::default());
+    if let Some(known) = answers.lock().unwrap().get(system) {
+        return known.clone();
+    }
+    let computed = system_vars_uncached(tree, system);
+    answers.lock().unwrap().insert(system.to_string(), computed.clone());
+    computed
+}
+
+fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
     let types = system_types(system);
     // Which files mention `/datum/world_service/<system>` or `/datum/system/<system>` (as a substring of the
     // comment-stripped text, like `contains`): per-file facts, read once per content change.
@@ -336,9 +348,10 @@ pub fn render(g: &dyn Generator, cx: &GenCx) -> (String, Vec<GenDiag>) {
             eprintln!("analyze: gen {} generated (full model used: {})", g.name(), used.is_some());
         }
         if let Some(sem) = used {
-            super::incremental::capture(cx.tree, &sem, sem.footprint());
-            super::incremental::store_gen(
+            super::incremental::capture_and_store_gen(
                 cx.tree,
+                &sem,
+                sem.footprint(),
                 g.name(),
                 super::incremental::GenCache { text: out.body.clone(), diags: out.diags.iter().map(|d| (d.rel.clone(), d.line, d.msg.clone())).collect() },
             );
@@ -385,28 +398,45 @@ pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage:
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
     tree.prewarm_dm();
-    let cx = GenCx::new(tree, root);
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();
     let mut out = Vec::new();
     let test_types = test_only_types(tree);
     if trace {
         eprintln!("analyze: gen test-only types {} ms (cumulative {} ms)", began.elapsed().as_millis(), began.elapsed().as_millis());
     }
-    for g in registry() {
-        if !names.is_empty() && !names.iter().any(|n| n == g.name()) {
-            continue;
-        }
-        if stage.is_some_and(|st| st != g.stage()) {
-            continue;
-        }
-        let step = std::time::Instant::now();
-        let (text, diags) = render(g.as_ref(), &cx);
-        let rendered = step.elapsed().as_millis();
-        let mut file_out = GenOut::default();
-        let files = g.files(&cx, &mut file_out);
-        if trace {
-            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis());
-        }
+    let gens: Vec<Box<dyn Generator>> = registry()
+        .into_iter()
+        .filter(|g| names.is_empty() || names.iter().any(|n| n == g.name()))
+        .filter(|g| !stage.is_some_and(|st| st != g.stage()))
+        .collect();
+    // The generators of one stage read the same tree and none reads another's output from it (that is what the stages are for), so they
+    // render at once, each with its own context: the ones that need only declarations finish while the model parses. Their results are
+    // written and reported in registry order, as a sequential pass did.
+    let rendered: Vec<((String, Vec<GenDiag>), Vec<(String, String)>, GenOut)> = std::thread::scope(|s| {
+        let handles: Vec<_> = gens
+            .iter()
+            .map(|g| {
+                std::thread::Builder::new()
+                    .name(format!("gen-{}", g.name()))
+                    .stack_size(256 << 20)
+                    .spawn_scoped(s, || {
+                        let cx = GenCx::new(tree, root);
+                        let step = std::time::Instant::now();
+                        let r = render(g.as_ref(), &cx);
+                        let rendered = step.elapsed().as_millis();
+                        let mut file_out = GenOut::default();
+                        let files = g.files(&cx, &mut file_out);
+                        if trace {
+                            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis());
+                        }
+                        (r, files, file_out)
+                    })
+                    .expect("spawn a generator thread")
+            })
+            .collect();
+        handles.into_iter().map(|h| h.join().expect("a generator thread panicked")).collect()
+    });
+    for (g, ((text, diags), files, file_out)) in gens.iter().zip(rendered) {
         let mut diags = diags;
         diags.extend(file_out.diags);
         for (rel, file_text) in files {

@@ -9,7 +9,7 @@ fn queued_host_can_release_all_tiers_without_losing_slot_or_daemon_owners() {
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join("queued.dme");
     std::fs::write(&path, b"").unwrap();
-    let slot = shared.slot(path.clone(), &BTreeMap::new(), None);
+    let slot = shared.slot(path.clone(), None);
     // Idle past the window in which the newest session is shielded from pressure, so the tiers apply.
     *slot.last.lock().unwrap() = Instant::now() - housekeeping::MRU_PROTECTED - Duration::from_secs(1);
     let deadline = admission_deadline::AdmissionDeadline::new(Instant::now());
@@ -32,7 +32,7 @@ fn a_session_whose_project_is_gone_is_released_whole_and_flags_the_daemon() {
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join("gone.dme");
     std::fs::write(&path, b"").unwrap();
-    drop(shared.slot(path.clone(), &BTreeMap::new(), None));
+    drop(shared.slot(path.clone(), None));
     shared.housekeep(Instant::now(), false, false);
     assert_eq!(shared.slots.lock().unwrap().len(), 1, "an existing project stays retained");
     std::fs::remove_dir_all(&directory).unwrap();
@@ -49,15 +49,16 @@ fn over_budget_sheds_the_least_recently_used_project_whole_and_keeps_the_newest(
     std::fs::create_dir_all(&directory).unwrap();
     let now = Instant::now();
     for (index, name) in ["old", "mid", "new"].into_iter().enumerate() {
-        let path = directory.join(format!("{name}.dme"));
+        let path = directory.join(name).join("project.dme");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, b"").unwrap();
-        let slot = shared.slot(path, &BTreeMap::new(), None);
+        let slot = shared.slot(path, None);
         *slot.last.lock().unwrap() = now - Duration::from_secs(30 - index as u64 * 10);
     }
     shared.housekeep(now, true, true);
     let kept = |shared: &Arc<Shared>| {
         let mut names: Vec<_> = shared.slots.lock().unwrap().keys()
-            .map(|key| key.manifest.file_stem().unwrap().to_string_lossy().into_owned()).collect();
+            .map(|key| key.manifest.file_name().unwrap().to_string_lossy().into_owned()).collect();
         names.sort();
         names
     };
@@ -72,8 +73,8 @@ fn over_budget_sheds_the_least_recently_used_project_whole_and_keeps_the_newest(
 #[test]
 fn retiring_releases_every_idle_session_once_and_skips_a_building_one() {
     let shared = shared();
-    let idle = shared.slot("E:/fixture/retire-idle.dme".into(), &BTreeMap::new(), None);
-    let building = shared.slot("E:/fixture/retire-building.dme".into(), &BTreeMap::new(), None);
+    let idle = shared.slot("E:/fixture/retire-idle/project.dme".into(), None);
+    let building = shared.slot("E:/fixture/retire-building/project.dme".into(), None);
     let guard = building.host.lock().unwrap();
     assert!(shared.release_for_retire());
     assert_eq!(idle.idle_tier.load(Ordering::Acquire), 7);
@@ -88,7 +89,7 @@ fn retiring_releases_every_idle_session_once_and_skips_a_building_one() {
 #[test]
 fn pressure_never_releases_a_currently_borrowed_host() {
     let shared = shared();
-    let slot = shared.slot("E:/fixture/active.dme".into(), &BTreeMap::new(), None);
+    let slot = shared.slot("E:/fixture/active.dme".into(), None);
     let _host = slot.host.lock().unwrap();
     for _ in 0..4 { shared.housekeep(Instant::now(), true, true); }
     assert_eq!(slot.idle_tier.load(Ordering::Acquire), 0);
@@ -123,7 +124,7 @@ fn soft_pressure_defers_another_build_but_preserves_single_build_progress() {
 #[test]
 fn same_slot_follower_waits_without_consuming_global_permit_and_can_cancel() {
     let shared = shared();
-    let slot = shared.slot("E:/fixture/serial.dme".into(), &BTreeMap::new(), None);
+    let slot = shared.slot("E:/fixture/serial.dme".into(), None);
     let deadline = admission_deadline::AdmissionDeadline::new(Instant::now());
     let _head = slot.lock_request_until(&deadline).unwrap();
     let token = control::Cancellation::default();

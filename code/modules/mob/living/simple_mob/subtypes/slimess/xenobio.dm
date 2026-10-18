@@ -22,36 +22,32 @@
 	icon_state = "sepia slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/sepia
 
-/datum/decl/chemical_reaction/instant/slime/senseenhancer
-	name = "Slime Sense Enhancer"
-	id = "sepia_sh"
-	result = REAGENT_ID_SENSEENHANCER
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/sepia
+/transformation/chem/instant/slime/senseenhancer
 
-/datum/decl/chemical_reaction/instant/slime/secertslime
-	name = "Secert Slime "
-	id = "sepia_swapm"
-	result = null
-	required_reagents = list(REAGENT_ID_BLOOD = 5, REAGENT_ID_WATER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sepia
+CAPABILITIES(/transformation/chem/instant/slime/senseenhancer)
+	configure(transformation(name = "Slime Sense Enhancer", id = "sepia_sh", takes = list(reagent(REAGENT_ID_PHORON, 5)),
+		makes = list(reagent(REAGENT_ID_SENSEENHANCER, 30)), holds = subject_is(/obj/item/slime_extract/sepia)))
 
-/datum/decl/chemical_reaction/instant/slime/secertslime/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/secertslime
+
+CAPABILITIES(/transformation/chem/instant/slime/secertslime)
+	configure(transformation(name = "Secert Slime ", id = "sepia_swapm", takes = list(reagent(REAGENT_ID_BLOOD, 5), reagent(REAGENT_ID_WATER, 5)),
+		made = 1, holds = subject_is(/obj/item/slime_extract/sepia),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/secertslime, on_reaction)))
+
+/transformation/chem/instant/slime/secertslime/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/redspace(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/sepia_new_slime
-	name = "Slime Spawn"
-	id = "m_sepia_spawn"
-	result = null
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sepia
+/transformation/chem/instant/slime/sepia_new_slime
 
-/datum/decl/chemical_reaction/instant/slime/sepia_new_slime/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/sepia_new_slime)
+	configure(transformation(name = "Slime Spawn", id = "m_sepia_spawn", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/sepia),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sepia_new_slime, on_reaction)))
+
+/transformation/chem/instant/slime/sepia_new_slime/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sepia(get_turf(holder.my_atom))
 	..()
@@ -80,33 +76,31 @@
 	slime_type = /mob/living/simple_mob/slime/xenobio/redspace
 
 
-/datum/decl/chemical_reaction/instant/slime/redspace_fire
-	name = "Slime Living Fire"
-	id = "m_liquid_fire"
-	result = REAGENT_ID_NEOLIQUIDFIRE
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/redspace
+/transformation/chem/instant/slime/redspace_fire
 
-/datum/decl/chemical_reaction/instant/slime/soulstone
-	name = "Slime Soulstone"
-	id = "m_redspace_soulstone"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/redspace
+CAPABILITIES(/transformation/chem/instant/slime/redspace_fire)
+	configure(transformation(name = "Slime Living Fire", id = "m_liquid_fire", takes = list(reagent(REAGENT_ID_PHORON, 5)),
+		makes = list(reagent(REAGENT_ID_NEOLIQUIDFIRE, 30)), holds = subject_is(/obj/item/slime_extract/redspace)))
 
-/datum/decl/chemical_reaction/instant/slime/soulstone/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soulstone
+
+CAPABILITIES(/transformation/chem/instant/slime/soulstone)
+	configure(transformation(name = "Slime Soulstone", id = "m_redspace_soulstone", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/redspace),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soulstone, on_reaction)))
+
+/transformation/chem/instant/slime/soulstone/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/soulstone(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/redspace_smoke
-	name = "Slime Smoke"
-	id = "m_redspace_smoke"
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/redspace
+/transformation/chem/instant/slime/redspace_smoke
 
-/datum/decl/chemical_reaction/instant/slime/redspace_smoke/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
+	configure(transformation(name = "Slime Smoke", id = "m_redspace_smoke", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/redspace),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_smoke, on_reaction)))
+
+/transformation/chem/instant/slime/redspace_smoke/proc/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
@@ -116,13 +110,11 @@
 	..()
 
 
-/datum/decl/chemical_reaction/instant/slime/slime_mindbreaker
-	name = "Slime Pyrotoxin"
-	id = "m_redspace_mindbreaker"
-	result = REAGENT_ID_MINDBREAKER
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/redspace
+/transformation/chem/instant/slime/slime_mindbreaker
+
+CAPABILITIES(/transformation/chem/instant/slime/slime_mindbreaker)
+	configure(transformation(name = "Slime Pyrotoxin", id = "m_redspace_mindbreaker", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)),
+		makes = list(reagent(REAGENT_ID_MINDBREAKER, 30)), holds = subject_is(/obj/item/slime_extract/redspace)))
 
 
 /mob/living/simple_mob/slime/xenobio/dark
@@ -146,82 +138,80 @@
 	icon_state = "oil slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark
 
-/datum/decl/chemical_reaction/instant/slime/dark_neofire
-	name = "Slime Healing Liquid"
-	id = "m_liquid_healing"
-	result = REAGENT_ID_HEALINGNANITES
-	required_reagents = list(REAGENT_ID_NEOLIQUIDFIRE = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_neofire
 
-/datum/decl/chemical_reaction/instant/slime/dark_liquidfire
-	name = "Slime Secert Guard"
-	id = "m_slime_guardian"
-	required_reagents = list(REAGENT_ID_LIQUIDFIRE = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+CAPABILITIES(/transformation/chem/instant/slime/dark_neofire)
+	configure(transformation(name = "Slime Healing Liquid", id = "m_liquid_healing", takes = list(reagent(REAGENT_ID_NEOLIQUIDFIRE, 5)),
+		makes = list(reagent(REAGENT_ID_HEALINGNANITES, 30)), holds = subject_is(/obj/item/slime_extract/dark)))
+
+/transformation/chem/instant/slime/dark_liquidfire
+
+CAPABILITIES(/transformation/chem/instant/slime/dark_liquidfire)
+	configure(transformation(name = "Slime Secert Guard", id = "m_slime_guardian", takes = list(reagent(REAGENT_ID_LIQUIDFIRE, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidfire, on_reaction)))
 
 
-/datum/decl/chemical_reaction/instant/slime/dark_liquidfire/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_liquidfire/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/feysight, 10 MINUTES, src)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/dark_deathblood
-	name = "Slime Secert Painite"
-	id = "m_slime_painite"
-	required_reagents = list(REAGENT_ID_DEATHBLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_deathblood
 
-/datum/decl/chemical_reaction/instant/slime/dark_deathblood/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dark_deathblood)
+	configure(transformation(name = "Slime Secert Painite", id = "m_slime_painite", takes = list(reagent(REAGENT_ID_DEATHBLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_deathblood, on_reaction)))
+
+/transformation/chem/instant/slime/dark_deathblood/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/painite(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/dark_liquidlife
-	name = "Slime Secert Overcharge"
-	id = "m_slime_darkspeed"
-	required_reagents = list(REAGENT_ID_LIQUIDLIFE = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_liquidlife
 
-/datum/decl/chemical_reaction/instant/slime/dark_liquidlife/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
+	configure(transformation(name = "Slime Secert Overcharge", id = "m_slime_darkspeed", takes = list(reagent(REAGENT_ID_LIQUIDLIFE, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidlife, on_reaction)))
+
+/transformation/chem/instant/slime/dark_liquidlife/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(49, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/sprinting, 5 MINUTES, src)
 	..()
 
 
-/datum/decl/chemical_reaction/instant/slime/dark_carpotoxin
-	name = "Slime Dark Secert "
-	id = "m_fish_slime"
-	required_reagents = list(REAGENT_ID_CARPOTOXIN = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_carpotoxin
 
-/datum/decl/chemical_reaction/instant/slime/dark_carpotoxin/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dark_carpotoxin)
+	configure(transformation(name = "Slime Dark Secert ", id = "m_fish_slime", takes = list(reagent(REAGENT_ID_CARPOTOXIN, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_carpotoxin, on_reaction)))
+
+/transformation/chem/instant/slime/dark_carpotoxin/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/oceanic(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/dark_spidertoxin
-	name = "Slime Secert Dark Spooder"
-	id = "m_slime_darkspooder"
-	required_reagents = list(REAGENT_ID_SPIDERTOXIN = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_spidertoxin
 
-/datum/decl/chemical_reaction/instant/slime/dark_spidertoxin/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dark_spidertoxin)
+	configure(transformation(name = "Slime Secert Dark Spooder", id = "m_slime_darkspooder", takes = list(reagent(REAGENT_ID_SPIDERTOXIN, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_spidertoxin, on_reaction)))
+
+/transformation/chem/instant/slime/dark_spidertoxin/proc/on_reaction(datum/reagents/holder)
 	new /obj/effect/spider/eggcluster/royal/space(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/dark_blood
-	name = "Slime Secert Void Opal"
-	id = "m_slime_voidopal"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dark
+/transformation/chem/instant/slime/dark_blood
 
-/datum/decl/chemical_reaction/instant/slime/dark_blood/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dark_blood)
+	configure(transformation(name = "Slime Secert Void Opal", id = "m_slime_voidopal", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dark),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blood, on_reaction)))
+
+/transformation/chem/instant/slime/dark_blood/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/void_opal(get_turf(holder.my_atom))
 	..()
 
@@ -245,33 +235,29 @@
 	icon_state = "emerald slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/plague
 
-/datum/decl/chemical_reaction/instant/slime/plague_toxin
-	name = "Slime Living Fire"
-	id = "m_plague_toxin"
-	result = REAGENT_ID_NEUROPHAGENANITES
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/plague
+/transformation/chem/instant/slime/plague_toxin
+
+CAPABILITIES(/transformation/chem/instant/slime/plague_toxin)
+	configure(transformation(name = "Slime Living Fire", id = "m_plague_toxin", takes = list(reagent(REAGENT_ID_PHORON, 5)),
+		makes = list(reagent(REAGENT_ID_NEUROPHAGENANITES, 30)), holds = subject_is(/obj/item/slime_extract/plague)))
 
 
-/datum/decl/chemical_reaction/instant/slime/virusdish
-	name = "Virus dish"
-	id = "m_plague_dish"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/plague
+/transformation/chem/instant/slime/virusdish
 
-/datum/decl/chemical_reaction/instant/slime/virusdish/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/virusdish)
+	configure(transformation(name = "Virus dish", id = "m_plague_dish", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/plague),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/virusdish, on_reaction)))
+
+/transformation/chem/instant/slime/virusdish/proc/on_reaction(datum/reagents/holder)
 	// new /obj/item/virusdish(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/obj/item/slime_extract/plague_jelly
-	name = "Slime Smoke"
-	id = "m_slimejelly_alt"
-	result = REAGENT_ID_SLIMEJELLY
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/plague
+/transformation/chem/instant/slime/obj/item/slime_extract/plague_jelly
+
+CAPABILITIES(/transformation/chem/instant/slime/obj/item/slime_extract/plague_jelly)
+	configure(transformation(name = "Slime Smoke", id = "m_slimejelly_alt", takes = list(reagent(REAGENT_ID_WATER, 5)),
+		makes = list(reagent(REAGENT_ID_SLIMEJELLY, 30)), holds = subject_is(/obj/item/slime_extract/plague)))
 
 
 /mob/living/simple_mob/slime/xenobio/oceanic
@@ -321,53 +307,49 @@
 	icon_state = "blue slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/oceanic
 
-/datum/decl/chemical_reaction/instant/slime/carpfren
-	name = "Carp Friend"
-	id = "m_carp_friends"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/oceanic
+/transformation/chem/instant/slime/carpfren
 
-/datum/decl/chemical_reaction/instant/slime/carpfren/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/carpfren)
+	configure(transformation(name = "Carp Friend", id = "m_carp_friends", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/oceanic),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/carpfren, on_reaction)))
+
+/transformation/chem/instant/slime/carpfren/proc/on_reaction(datum/reagents/holder)
 	new /mob/living/simple_mob/animal/space/carp/station(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/oceancarp
-	name = "Slime Carptoxi"
-	id = "m_slime_carptox"
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result = REAGENT_ID_CARPOTOXIN
-	result_amount = 30
-	required = /obj/item/slime_extract/oceanic
+/transformation/chem/instant/slime/oceancarp
 
-/datum/decl/chemical_reaction/instant/slime/waterdupe
-	name = "Water Duplication"
-	id = "m_slime_water"
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result = REAGENT_ID_WATER
-	result_amount = 30
-	required = /obj/item/slime_extract/oceanic
+CAPABILITIES(/transformation/chem/instant/slime/oceancarp)
+	configure(transformation(name = "Slime Carptoxi", id = "m_slime_carptox", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)),
+		makes = list(reagent(REAGENT_ID_CARPOTOXIN, 30)), holds = subject_is(/obj/item/slime_extract/oceanic)))
 
-/datum/decl/chemical_reaction/instant/slime/oceanboon
-	name = "Carp Boon"
-	id = "m_carp_boon"
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/oceanic
+/transformation/chem/instant/slime/waterdupe
 
-/datum/decl/chemical_reaction/instant/slime/oceanboon/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/waterdupe)
+	configure(transformation(name = "Water Duplication", id = "m_slime_water", takes = list(reagent(REAGENT_ID_WATER, 5)),
+		makes = list(reagent(REAGENT_ID_WATER, 30)), holds = subject_is(/obj/item/slime_extract/oceanic)))
+
+/transformation/chem/instant/slime/oceanboon
+
+CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
+	configure(transformation(name = "Carp Boon", id = "m_carp_boon", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/oceanic),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oceanboon, on_reaction)))
+
+/transformation/chem/instant/slime/oceanboon/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(21, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/healingtide, 10 MINUTES, src)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/warplague
-	name = "Nuclear Slime Summon"
-	id = "m_nuclear_slime"
-	required_reagents = list(REAGENT_ID_MINDBREAKER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/plague
+/transformation/chem/instant/slime/warplague
 
-/datum/decl/chemical_reaction/instant/slime/warplague/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/warplague)
+	configure(transformation(name = "Nuclear Slime Summon", id = "m_nuclear_slime", takes = list(reagent(REAGENT_ID_MINDBREAKER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/plague),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/warplague, on_reaction)))
+
+/transformation/chem/instant/slime/warplague/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/nuclear(get_turf(holder.my_atom))
 	..()
@@ -414,14 +396,14 @@
 	icon_state = "green slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/nuclear
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_radpulse
-	name = "Slime Radiation Pulse"
-	id = "m_green_radpulse2"
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/nuclear
+/transformation/chem/instant/slime/nuclear_radpulse
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_radpulse/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
+	configure(transformation(name = "Slime Radiation Pulse", id = "m_green_radpulse2", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/nuclear),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_radpulse, on_reaction)))
+
+/transformation/chem/instant/slime/nuclear_radpulse/proc/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
@@ -429,36 +411,34 @@
 	..()
 
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_emitter
-	name = "Slime Radiation Emitter"
-	id = "m_green_emitter2"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/green
+/transformation/chem/instant/slime/nuclear_emitter
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_emitter/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nuclear_emitter)
+	configure(transformation(name = "Slime Radiation Emitter", id = "m_green_emitter2", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/green),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_emitter, on_reaction)))
+
+/transformation/chem/instant/slime/nuclear_emitter/proc/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()
 
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_radium
-	name = "Slime Radium"
-	id = "m_green_radium2"
-	result = REAGENT_ID_RADIUM
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 30
-	required = /obj/item/slime_extract/green
+/transformation/chem/instant/slime/nuclear_radium
+
+CAPABILITIES(/transformation/chem/instant/slime/nuclear_radium)
+	configure(transformation(name = "Slime Radium", id = "m_green_radium2", takes = list(reagent(REAGENT_ID_WATER, 5)),
+		makes = list(reagent(REAGENT_ID_RADIUM, 30)), holds = subject_is(/obj/item/slime_extract/green)))
 
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_uranium
-	name = "Slime Uranium"
-	id = "m_green_uranium2"
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/green
+/transformation/chem/instant/slime/nuclear_uranium
 
-/datum/decl/chemical_reaction/instant/slime/nuclear_uranium/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nuclear_uranium)
+	configure(transformation(name = "Slime Uranium", id = "m_green_uranium2", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/green),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_uranium, on_reaction)))
+
+/transformation/chem/instant/slime/nuclear_uranium/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/uranium(get_turf(holder.my_atom), 10)
 	..()
 
@@ -481,25 +461,26 @@
 	icon_state = "grey slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/dream
 
-/datum/decl/chemical_reaction/instant/slime/dreamscale
-	name = "dream scale creation "
-	id = "m_dreamscale_slime"
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dream
+/transformation/chem/instant/slime/dreamscale
 
-/datum/decl/chemical_reaction/instant/slime/dreamscale/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/dreamscale)
+	configure(transformation(name = "dream scale creation ", id = "m_dreamscale_slime", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dream),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dreamscale, on_reaction)))
+
+/transformation/chem/instant/slime/dreamscale/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/dreamscale(get_turf(holder.my_atom), 10)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/nightmareslime
-	name = "Nightmare Slime Summon "
-	id = "m_nightmare_slime"
-	required_reagents = list(REAGENT_ID_BLOOD = 5, REAGENT_ID_PHORON = 5, REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/dream
+/transformation/chem/instant/slime/nightmareslime
 
-/datum/decl/chemical_reaction/instant/slime/nightmareslime/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
+	configure(transformation(name = "Nightmare Slime Summon ", id = "m_nightmare_slime",
+		takes = list(reagent(REAGENT_ID_BLOOD, 5), reagent(REAGENT_ID_PHORON, 5), reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/dream),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmareslime, on_reaction)))
+
+/transformation/chem/instant/slime/nightmareslime/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/nightmare(get_turf(holder.my_atom))
 	..()
@@ -559,50 +540,50 @@
 	icon_state = "oil slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/nightmare
 
-/datum/decl/chemical_reaction/instant/slime/nightmarewater
-	name = "nightmare water"
-	id = "m_nightmare_water"
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/nightmare
+/transformation/chem/instant/slime/nightmarewater
 
-/datum/decl/chemical_reaction/instant/slime/nightmarewater/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
+	configure(transformation(name = "nightmare water", id = "m_nightmare_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/nightmare),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarewater, on_reaction)))
+
+/transformation/chem/instant/slime/nightmarewater/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(3, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/faraday, 1 MINUTES, src)
 		L.apply_body_effect(/datum/body_effect/blastshield, 1 MINUTES, src)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/nightmarejelly
-	name = "nightmare jelly"
-	id = "m_nightmare_jelly"
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/nightmare
+/transformation/chem/instant/slime/nightmarejelly
 
-/datum/decl/chemical_reaction/instant/slime/nightmarejelly/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nightmarejelly)
+	configure(transformation(name = "nightmare jelly", id = "m_nightmare_jelly", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/nightmare),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarejelly, on_reaction)))
+
+/transformation/chem/instant/slime/nightmarejelly/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
 		L.lingering_poison(2, 3 MINUTES)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/nightmareblood
-	name = "nightmare blood"
-	id = "m_nightmare_blood"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/nightmare
+/transformation/chem/instant/slime/nightmareblood
 
-/datum/decl/chemical_reaction/instant/slime/nightmareblood/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nightmareblood)
+	configure(transformation(name = "nightmare blood", id = "m_nightmare_blood", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/nightmare),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmareblood, on_reaction)))
+
+/transformation/chem/instant/slime/nightmareblood/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/valhollide(get_turf(holder.my_atom), 5)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/nightmarephoron
-	name = "nightmare phoron"
-	id = "m_nightmare_phoron"
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/nightmare
+/transformation/chem/instant/slime/nightmarephoron
 
-/datum/decl/chemical_reaction/instant/slime/nightmarephoron/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
+	configure(transformation(name = "nightmare phoron", id = "m_nightmare_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/nightmare),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarephoron, on_reaction)))
+
+/transformation/chem/instant/slime/nightmarephoron/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 1 MINUTES, src)
 	..()
@@ -610,14 +591,14 @@
 
 
 
-/datum/decl/chemical_reaction/instant/slime/redspace_sound
-	name = "Slime Sound Creation"
-	id = "m_make_sound"
-	required_reagents = list(REAGENT_ID_MINDBREAKER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/redspace
+/transformation/chem/instant/slime/redspace_sound
 
-/datum/decl/chemical_reaction/instant/slime/redspace_sound/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/redspace_sound)
+	configure(transformation(name = "Slime Sound Creation", id = "m_make_sound", takes = list(reagent(REAGENT_ID_MINDBREAKER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/redspace),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_sound, on_reaction)))
+
+/transformation/chem/instant/slime/redspace_sound/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sound(get_turf(holder.my_atom))
 	..()
@@ -664,49 +645,49 @@
 	icon_state = "silver slime extract"
 	slime_type = /mob/living/simple_mob/slime/xenobio/sound
 
-/datum/decl/chemical_reaction/instant/slime/soundblood
-	name = "sound blood"
-	id = "m_sound_blood"
-	required_reagents = list(REAGENT_ID_BLOOD = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sound
+/transformation/chem/instant/slime/soundblood
 
-/datum/decl/chemical_reaction/instant/slime/soundblood/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/soundblood)
+	configure(transformation(name = "sound blood", id = "m_sound_blood", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/sound),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundblood, on_reaction)))
+
+/transformation/chem/instant/slime/soundblood/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/quartz(get_turf(holder.my_atom), 5)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/soundphoron
-	name = "sound phoron"
-	id = "m_sound_phoron"
-	required_reagents = list(REAGENT_ID_PHORON = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sound
+/transformation/chem/instant/slime/soundphoron
 
-/datum/decl/chemical_reaction/instant/slime/soundphoron/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
+	configure(transformation(name = "sound phoron", id = "m_sound_phoron", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/sound),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundphoron, on_reaction)))
+
+/transformation/chem/instant/slime/soundphoron/proc/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/aura/soothingsong, 10 MINUTES, src)
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/soundwater
-	name = "sound water"
-	id = "m_sound_water"
-	required_reagents = list(REAGENT_ID_WATER = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sound
+/transformation/chem/instant/slime/soundwater
 
-/datum/decl/chemical_reaction/instant/slime/soundwater/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/soundwater)
+	configure(transformation(name = "sound water", id = "m_sound_water", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/sound),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundwater, on_reaction)))
+
+/transformation/chem/instant/slime/soundwater/proc/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sound(get_turf(holder.my_atom))
 	..()
 
-/datum/decl/chemical_reaction/instant/slime/soundjelly
-	name = "sound slimejelly"
-	id = "m_sound_slimejelly"
-	required_reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	result_amount = 1
-	required = /obj/item/slime_extract/sound
+/transformation/chem/instant/slime/soundjelly
 
-/datum/decl/chemical_reaction/instant/slime/soundjelly/on_reaction(datum/reagents/holder)
+CAPABILITIES(/transformation/chem/instant/slime/soundjelly)
+	configure(transformation(name = "sound slimejelly", id = "m_sound_slimejelly", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
+		holds = subject_is(/obj/item/slime_extract/sound),
+		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundjelly, on_reaction)))
+
+/transformation/chem/instant/slime/soundjelly/proc/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/glass/plastitanium(get_turf(holder.my_atom), 5)
 	..()
 

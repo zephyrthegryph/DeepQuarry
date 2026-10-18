@@ -70,7 +70,7 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 	repair_damage(max_integrity)
 	return OP_OK
 
-/// Predicate clause: the held item is (or contains) a lit welding tool (the legacy REQ_PROC form, for the interactions that still use it).
+/// Boolean tool query: the held item is (or contains) a lit welding tool.
 /proc/dq_held_welder_lit(mob/actor, atom/target, obj/item/held)
 	var/obj/item/weldingtool/welder = held?.get_welder()
 	return welder?.isOn() ? TRUE : FALSE

@@ -240,6 +240,22 @@ The whole-tree scans the generators do (the defined types of every file, which f
 `SYSTEM_DEF`) read the `.dm` tree on all cores first (`Tree::prewarm_dm`); the first two are per-file facts cached by content
 (`gen-defined-types`, `notice-mentions`), so a run after an edit reads only the edited files for them.
 
+**The closed walks are shared.** Every closed `ReadsEngine` of one tree (`gen/deps`, `sem/handlers`, `gen reads`) is made with
+`closed_shared(tree)` and shares one memo of context-free walks, override lists and the global/write indexes, so the handlers the
+first consumer walked cost the later ones a lookup (`gen reads` after an edit: 8-12 s to about 4 s). The handler, `CAP_ENTRIES`, `STAT`
+formula and `draw()` walks of `gen/deps` and `gen reads` run in parallel and are folded in declaration order.
+
+**The parse is pipelined.** `Sem::build` runs dreammaker's preprocessor (lexing, macros, includes) on its own thread and streams token
+batches to the parser, and the `dev-fast` profile builds dependencies with release code generation (`opt-level 3`, 16 units): the
+full-model parse after a DM edit went from 17-19 s to 10-12 s.
+
+**The generators of a stage render at once**, each on its own thread with its own context, and are written and reported in registry order: the ones that read only declarations (actions, declare, stats, system_accessors) finish while the model parses. The process skips freeing the model at exit (3 s). `analyze gen` after a DM edit: about 57 s before this lane, 29-34 s now.
+
+**The machine-wide lint cache.** `src/shared.rs`: the per-file results in `data/analyze-cache/` are keyed by content, so a worktree whose
+cache is stamped for another analyzer build or scope list first copies the files of `E:/dq-cache/analyze-cache/<stamp>/`
+(`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`
+goes from about 64 s to 2 s. Four stamps and 4 GB are kept (`tools/dq_cache_prune.sh` applies the same rule).
+
 ### `analyze look-keys` (the look plan)
 
 `analyze look-keys [--out FILE] [--explain TYPE] [--no-cache]` writes one line per concrete /obj, /mob and /turf type: its key (a

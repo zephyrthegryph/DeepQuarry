@@ -121,7 +121,6 @@ impl Sem {
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
         let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { std::env::current_dir().map_err(|e| e.to_string())?.join(root) };
         let root = abs_root.as_path();
-        let ctx = dreammaker::Context::default();
         let dme = root.join("deepquarry.dme");
         let real = only.is_none() && std::fs::read_to_string(&dme).map(|t| t.contains("#include")).unwrap_or(false);
         let (dme_path, _keep) = if real {
@@ -149,14 +148,51 @@ impl Sem {
             std::fs::write(&p, text).map_err(|e| format!("synth dme: {}", e))?;
             (p, Some(dir))
         };
-        let objtree = {
-            let pp = dreammaker::preprocessor::Preprocessor::new(&ctx, dme_path.clone()).map_err(|e| format!("{}: {}", dme_path.display(), e))?;
-            let indents = dreammaker::indents::IndentProcessor::new(&ctx, pp);
-            let mut parser = dreammaker::parser::Parser::new(&ctx, indents);
-            parser.enable_procs();
-            let (_fatal, tree) = parser.parse_object_tree_2();
-            tree
+        let t_build = std::time::Instant::now();
+        // The preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own thread and streams batches of
+        // tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the preprocessor's registers
+        // the files (every `Location` names one of its file ids, so paths are looked up there), and the errors of both are kept.
+        let (objtree, ctx, parse_ctx) = {
+            const BATCH: usize = 8192;
+            let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
+            let dme_for_pp = dme_path.clone();
+            let pp_thread = std::thread::Builder::new()
+                .name("dm-preprocess".into())
+                .stack_size(64 * 1024 * 1024)
+                .spawn(move || -> Result<dreammaker::Context, String> {
+                    let ctx = dreammaker::Context::default();
+                    {
+                        let pp = dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?;
+                        let mut batch = Vec::with_capacity(BATCH);
+                        for tok in dreammaker::indents::IndentProcessor::new(&ctx, pp) {
+                            batch.push(tok);
+                            if batch.len() == BATCH {
+                                if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
+                                    break;
+                                }
+                            }
+                        }
+                        if !batch.is_empty() {
+                            let _ = tx.send(batch);
+                        }
+                    }
+                    Ok(ctx)
+                })
+                .map_err(|e| format!("preprocessor thread: {}", e))?;
+            let parse_ctx = dreammaker::Context::default();
+            let tree = {
+                let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
+                parser.enable_procs();
+                let (_fatal, tree) = parser.parse_object_tree_2();
+                tree
+            };
+            let ctx = match pp_thread.join() {
+                Ok(r) => r?,
+                Err(_) => return Err("preprocessor thread panicked".to_string()),
+            };
+            (tree, ctx, parse_ctx)
         };
+        let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
         let rel_of = |loc: Location, files: &mut HashMap<dreammaker::FileId, String>| -> Option<String> {
@@ -194,10 +230,18 @@ impl Sem {
         for v in def_index.values_mut() {
             v.sort();
         }
-        let errors = ctx.errors().iter().filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).map(|e| format!("{}", e)).collect();
+        let errors = {
+            let pp_errors = ctx.errors();
+            let parse_errors = parse_ctx.errors();
+            let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
+            // One context interleaved them in stream order; by location is the same order.
+            all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
+            all.iter().map(|e| format!("{}", e)).collect()
+        };
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
+        let t_indexed = t_build.elapsed();
         let mut layering_type_defs: HashMap<String, Vec<String>> = HashMap::new();
         let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
         let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
@@ -258,6 +302,9 @@ impl Sem {
             for (_, owner, _) in definitions {
                 layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
             }
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
     }

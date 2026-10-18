@@ -11,7 +11,7 @@
 
 /datum/unit_test/dq_world_lanes_f3_lazy_services/Run()
 	TEST_ASSERT(length(SSchemistry.ready().chemical_reagents), "the chemistry service has no reagents")
-	TEST_ASSERT(length(SSchemistry.ready().chemical_reactions), "the chemistry service has no reactions")
+	TEST_ASSERT(length(xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT)), "no chemical transformation was compiled")
 	TEST_ASSERT(SSchemistry.initialized, "SSchemistry.ready() did not mark the service initialized")
 	TEST_ASSERT(length(SSsounds.ready().talk_sound_map), "the sound service has no talk sounds")
 	TEST_ASSERT(SSsounds.ready().random_available_channel(), "the sound service handed out no channel")

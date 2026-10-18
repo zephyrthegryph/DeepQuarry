@@ -353,8 +353,8 @@ CAPABILITIES(/obj/item/stack)
 		return transfer
 	return 0
 
-//creates a new stack with the specified amount
-/obj/item/stack/proc/split(tamount)
+//creates a new stack with the specified amount; detached = TRUE leaves it in nullspace, for a caller that places it itself (slot_split)
+/obj/item/stack/proc/split(tamount, detached = FALSE)
 	if (!amount)
 		return null
 	if(uses_charge)
@@ -368,7 +368,7 @@ CAPABILITIES(/obj/item/stack)
 
 	var/orig_amount = src.amount
 	if (transfer && src.use(transfer))
-		var/obj/item/stack/newstack = new src.type(loc, transfer)
+		var/obj/item/stack/newstack = new src.type(detached ? null : loc, transfer)
 		newstack.set_color(color)
 		copy_stack_properties(newstack)
 		if (prob(transfer/orig_amount * 100))
@@ -376,6 +376,21 @@ CAPABILITIES(/obj/item/stack)
 			transfer_blooddna_to(newstack)
 		return newstack
 	return null
+
+/// A stack is a quantity: the units it carries are its amount (a slot declared quantity = TRUE costs it by them).
+/obj/item/stack/slot_units()
+	return get_amount()
+
+/// A part of this stack, not yet anywhere, for a partial insert; this one keeps the rest. Null for a charge-fed stack.
+/obj/item/stack/slot_split(units)
+	return split(units, TRUE)
+
+/// A part that did not land goes back into this stack.
+/obj/item/stack/slot_unsplit(obj/item/stack/part)
+	if(!istype(part) || QDELETED(part))
+		return FALSE
+	part.merge(src)
+	return TRUE
 
 /// Called by split() on the freshly constructed stack so subtypes whose identity
 /// is per-instance state (a runtime material, a feedstock lot) rather than the

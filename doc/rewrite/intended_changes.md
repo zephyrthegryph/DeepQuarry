@@ -4895,55 +4895,19 @@ Affected requirement-pin classes:
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
 
-## Base-state homes and deterministic probe selection
 
-This lane preserves transform composition, strict cooldown boundaries, per-character option copying, heat configuration and actor identity. Burning retains its original fields and ownership. Human body-plan replacement explicitly preserves the seven former holder fields; it does not add them to appearance copying. The user-approved deterministic look sampler retains plan filtering and existing 24/200 coverage limits, with lexical selection so native/BYOND variable enumeration cannot change coverage. No golden rows have been blessed in this lane.
+## Requirement retirement: pure admission previews
 
-## Appearance race-name prompt migration
+- `/obj/item/gripper/syndicate`: the medical-gripper type union no longer contributes a middle null list element. `MEDICAL_GRIPPER` ended with a comma, and this table added another delimiter before the next macro, causing the old predicate compiler to error instead of answer any candidate. Removing that terminal comma preserves every declared allowed type and makes the intended union usable. The old requirement pin records the exact two compiler diagnostics; only this class changes from declaration ERROR to its real native candidate admissions. The table originated in `0dfa07f646` (2026-09-23).
+- Native `restrict_hold()` overrides: an oversized candidate now reports its real numeric size refusal instead of the bare text `size`. The old call supplied the size-class unit twice, accidentally binding the second unit as `because`. Removing that duplicate argument preserves the same inclusive threshold and ordered type rejection; only that defective refusal row is intentionally changed.
+- `/obj/item/storage/backpack/saddlebag_common`: checking whether a wearer can use the saddlebag no longer changes its worn sprite. The existing synchronous `item_equipped` notice selects the actual taur sprite through the existing setter when equipment commits. Refusal text, permitted taur shapes and real equip/unequip behavior remain unchanged.
+- `/obj/item/clothing/head/fluff/avida`: admission preview no longer switches the ear-dependent worn sprite. The always-allow legacy clause becomes a declared empty acceptance contribution, and the existing synchronous equip notice applies the same primary/secondary-ear selection on real equip. This is the intentional preview-purity change; it does not authorize unrelated pin changes.
 
-The species-name UI action now uses a native asks step and the identity-profile setter. Its existing silent race-edit permission is a requirement, checked before opening and on answering, so a forbidden edit no longer opens a question whose answer would be ignored. Prompt text, default, empty-answer behavior and accepted species name are unchanged. The existing UI-data pin now drives the real UI op with its declared interactive stand-in. No golden rows are re-blessed. The proposed burning context migration was withdrawn; production fire appearance and cooling-watch ownership remain unchanged.
 
-## Look fixture native-roll stream isolation (2026-10-16)
+### Requirement lane verification repairs (2026-10-15)
 
-The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
-
-## Master operation-key pin catch-up (2026-10-16)
-
-51 mob conversion-pin files add only the devour key declared by master 2136172edc4 (code/modules/combat_ai/integration/mob_living.dm); two mecha files remove only ai_use_equipment retired by master f13b84652d. Expanded menu and click rows are byte-identical. These are stale key inventories on master, independent of the initializer/base-variable migrations; no behavior rows or refusal text are blessed.
-
-## Slime eye-state golden repair (2026-10-16)
-
-Master eee5bf967e restored six stale generic slime baby-eyes rows: the has_eye_glow probes for xenobio/bluespace, rainbow and rainbow/kendrick. Their unchanged draw logic derives eyes from each type's color-prefixed life state. Restore exactly those six color-prefixed eye states; no random realization or unrelated look row is promoted.
-
-### Correct the slime sampler diagnosis
-
-The six generic slime-eye rows remain unchanged after all. The earlier base-vars note attributed their change to master eee5bf967e, but the execution trace proves that sorted consuming probes normalize a hidden icon_living cache before eye probes. The sampler now detects scalar-state drift despite a restored visible look and uses fresh instances; a real slime regression compares the complete reuse/fallback output with forced-fresh sampling. The six provisional promotions have been removed. Native game appearance is unchanged. Queued explosion work is also finished before the sampler resets its block, preventing delayed products from reaching the next test.
-
-### Native random sampling in base-variable verification
-
-The shared type-local native roller repair (dcaf665db3, carried here with identical sampler code) changes only sampled constructor realizations: drone shell; simple-mob coat/style/tints/experiment effects; cigarette, gum and lollipop variants; blob direction; toilet lid/open state. State rows follow synx, shadekin, lamia and raptor variants. Pilot catslug's isolated 25% native roll specifically yields 51.8255%, so its callback does not open ghost joining. The bounded row replacements come from the completed object-init sweep using this same stream, retain uncaptured types and unchanged rows, and exclude the six slime cache-order rows. None changes production randomness or gameplay. The next gate verifies these against this branch's own code.
-
-## Prone density stat consistency (BASE repair)
-
-The existing living update_canmove wrote raw density FALSE while prone and reset the type default while standing, bypassing the composed density stat. A background staleness sweep in BASE gate8a reported cached0/fresh1 just before interim_mining_conflict_data began. The proven DECL e37ef75e92 repair now applies here: prone posture contributes FALSE with its own conditional stat source. Recovery removes that contribution, retaining independent density holds and naturally non-dense subtype defaults. No mining state or snapshot is changed.
-
-## Internal-storage admission and HUD expiry (BASE verification repair)
-
-The typed internal-storage owner link introduced upstream in 5b0a2f09d0 ran before rejecting non-item locations. Native keeps_if() now rejects turf/null owners before setup binds the same valid item and inherits its name. This reapplies the previously approved object-init repair; it fixes the actual constructor runtime rather than blessing its incomplete conversion capture.
-
-The HUD safety-refresh migration now permits refresh exactly at its saved world-time deadline, matching the original boundary. Its test stages the native deadline directly because injected kernel time does not advance world.time. No cooldown duration changes.
-
-## Optical zoom lifetime state (base-vars retirement)
-
-Active optical zoom is the real reciprocal remote-view association rather than a duplicate item boolean. Destroying an item view after its host reference was lost now clears zoom; retiring an older view cannot clear a replacement association for the same device. Previously lifecycle_unbind cleared the boolean only inside a host_mob && host_item guard. Labels become shared optical type configuration with per-item copy-on-write; null/empty fallback, gun scope text and connected-client pixel code are unchanged. Native lifecycle tests do not claim live-client rendering coverage.
-
-### Master prompt-op projection changes (201c0431de)
-
-Master commit `201c0431de48a3569167d8199653abcac3222db9` converted disposal and radiocarbon scanner rerun prompts to declared asks. Disposal and deliveryChute no longer offer the inert Use multitool menu row while their default charging mode silently refuses reconfiguration. The radiocarbon scanner now declares the glass-specific use_container op, changing its glass-held menu projection (Open controls and Use), plain-click label (Open controls), and op key inventory. These six diagnostic classes span three type files; neither production file differs from master. Refresh only those exact expanded row deltas, retaining existing inherited base blocks and all unrelated pins. No appearance pins or runtime failures are blessed.
-
-### Native-roll appearance pin follow-up (29f5247cd9)
-
-The isolated look creator stream changes sampled fixture realizations, while production constructor distributions remain unchanged. Refresh only the reviewed synx/shadekin/lamia state colors and variants, vehicle state colors, native robot/passive-creature appearances, sampled clothing/candy/ecig palettes, EMF/stamps/container/stationery colors, blob direction, frostbelle/Sif trees, toilet position and vehicle tree colors. These affect four state and fifteen tree files. Preserve all uncovered type rows and inherited bases. Hydroponics, pressure-sensor and terrain differences are excluded: they require clean fixture restoration, not new goldens. The existing native-roll allocation/order/reuse regressions remain required.
+- Master `5b0a2f09d0` typed internal storage ownership and cloning-console scanner references without normalizing their old producers. Internal storage now rejects non-item locations before linking, through `keeps_if()` and `setup()`; an absent scanner returns null instead of numeric zero. Valid ownership, names and scanner search ordering are unchanged. Focused constructor tests cover both accepted and rejected cases. Existing runtime-free pin rows are retained.
+- Master `f13b84652d` removed the dead mecha AI-attack surface. The stale `ai_use_equipment` key is therefore removed from the Mecha/Ripley conversion-pin inventories; expanded menu and click rows are identical; this requirement conversion does not change click ranking.
 ## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
 
 The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
@@ -5001,6 +4965,53 @@ and their physical-check order are retained. Pin changes are limited to these de
 rotation rows and the existing flip-refusal presentation; no different permitted movement,
 remote reach, cuff grip or storage-drop behavior is intended.
 
+
+## Declarative lifecycle burn-down (2026-10-15)
+
+* Petrification statues now release their own mute consequence before
+  the destruction transaction spills the occupant. Previously `on_destroy()` ran after
+  contents resolution; its `dump_contents()` saw an empty statue, leaving mute
+  on the released human. Source-scoped injury stasis already ended automatically. The old-code capture explicitly records that defect; the native
+  ending regression asserts the repaired state. Ordinary occupant survival and placement
+  remain unchanged.
+* Gargoyle construction applies the transient human argument when the parameter is bound.
+  The former ordinary setup read it after `keep = FALSE` had dropped it, so the real
+  constructor could not petrify its supplied subject. The regression uses the actual
+  constructor rather than invoking the setup callback by hand.
+* Lattice and NT-pod fixed icon states are type defaults. Their constructed appearance is
+  unchanged; editor previews now show the same fixed state without requiring Initialize.
+* Reflector overlays use native draw composition over the actual displayed angle instead
+  of retaining a mutable image. Locked reflectors retain their previous visible angle.
+* Privacy switches redraw when the protected area's flags change outside the switch
+  action. PDA pen/ID/notification changes were withdrawn: their existing raw physical
+  contents have no simulator-neutral native draw dependency, so their source is unchanged.
+
+These entries do not authorize unrelated snapshot re-records. Correlated archaeological,
+telecube and hotspot construction jobs retain their world-RNG and child-constructor order.
+The flipper's pre-passenger emag attempt still declines and does not subvert the card.
+
+## Living posture density and assailant references (2026-10-15)
+
+Master's human grab path records the actual living attacker in `LAssailant`, but
+both its variable and borrowed relation were restricted to carbon mobs. The real
+sakimm AI grab therefore raised an incompatible-reference runtime. Both types now
+accept `/mob/living`; attribution and the relation's deletion cleanup are unchanged.
+
+Master's knockdown/recovery path wrote the composed density stat through the base
+atom setter. In a longer run its cached prone value could survive standing up,
+although a fresh stat computation returned the dense type default. Living posture
+now contributes nonblocking density only while tracked `lying` is true. Standing
+removes that contribution and retains type defaults and independent sources' holds.
+The focused regressions warm the prone cache, recover, preserve an independent
+nonblocking hold, release that hold when its source dies, and cover a naturally
+nonblocking living subtype. No snapshot re-record is authorized by this correction.
+
+The two healer smoke fixtures failed on pristine master because their actual
+patient's consent had devourable/digestable disabled. The fixture now explicitly
+grants devouring, digestion and healing consent through the test setter before
+asking the real healer AI to select a patient. Production consent gates are unchanged;
+no patient predicate is bypassed. All new verification remains pending.
+
 ## Constructor absence cases after typed reference declarations (2026-10-15)
 
 Master commit `5b0a2f09d0` (2026-10-13) declared typed references for internal storage's item owner and the cloning console's scanner without changing their older producer paths. Internal storage attempted to link its turf before rejecting a non-item owner, and cloning's scanner lookup returned numeric zero when absent. Both now raised typed-reference errors instead of producing the existing conversion goldens.
@@ -5023,6 +5034,7 @@ Verification of this copied cleanup remains pending the coordinating lane's gate
 
 ### Master devour operation key (2026-10-15)
 
+Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. A fresh capture proves all 51 inherited mob conversion-pin differences are solely that added key; expanded menu, click and wire rows are identical. Only the existing key lines are updated, retaining snapshot factoring.
 Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
 
 ### Casino wheel questions and prize-price leaf (2026-10-15)
@@ -5077,6 +5089,7 @@ For the upload computer, the old effect immediately returned for a silicon befor
 ### Silent alternative requirements
 
 An any_of composed entirely of silent refusals now remains a non-null silent refusal. It still rejects direct invocation; mixed visible reasons remain visible, and an empty composition retains its default refusal. This restores the wooden toilet's existing clientless-borg menu behavior rather than re-blessing the generic refused row. Focused tests cover composition, actual menu/direct-op behavior, and the real toilet guard.
+
 
 ### Pilot helm lookup: reject nullspace destinations
 
@@ -5164,3 +5177,54 @@ The silicon lane retains current master's plan filtering before the cap, both ex
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+
+### Declaration lane: inherited mecha keys and native privacy fixture writes
+
+Master `f13b84652d` (October 13, 2026, 19:32:27 -0500; “Delete the dead mecha AI-attack surface; drop unused ALLOWs; log R9”) removes `ai_use_equipment`. The fresh declaration-lane capture differs only in that key on `/obj/mecha` and `/obj/mecha/working/ripley`: all expanded menus, clicks and other keys are identical. Only those two literal key rows are refreshed, preserving existing base factoring and encoding.
+
+The declaration privacy fixtures previously used the test helper `set_var`, a raw assignment that does not publish tracked dependencies. They now use the existing `/area.set_flags` for both initial setup and the live admin-style edit, and restore original flags through that same setter. The strict `privacy0` to `privacy1` assertion remains, with an additional assertion that the flag was actually enabled. This corrects fixture publication; it changes no production privacy behavior and authorizes no appearance-pin re-records.
+# Closet density composition (2026-10-17)
+
+Closet doors now publish their density through the existing native door-state hold,
+as machinery doors do. Opening records passable and closing records solid instead
+of toggling the currently composed value. This repairs a stale density detected by
+the containment conservation test and preserves the closed state when a stronger
+independent density hold is later released. Non-dense wall lockers remain passable.
+Direct regression: `dq_closet_density_state`; conservation regression:
+`dq_containment_conservation_fuzz/representative`. No snapshots are re-recorded.
+
+## Declaration repair verification (2026-10-17)
+
+`setup(with_params = TRUE)` consumes constructor-only parameters before an opted-in
+holder's ordinary setup hooks. Holders without that phase retain master's existing
+setup-before-drop ordering, including setup hooks that read transient parameters.
+`dq_decl_parameter_setup` exercises both orders, rejected construction and cleanup
+after a completion hook throws. No snapshots are used.
+
+The reflector draw introduced on master by `7ef26a99fa` conditioned its visible
+rotation on whether rotation was unlocked. Locking therefore reset its displayed
+orientation while its reflection angle stayed unchanged. The draw now uses the
+stored angle regardless of lock state; the lock still prevents angle edits.
+`dq_decl_visual/reflector` verifies the real overlay transform before and after
+locking. No snapshots are re-recorded.
+
+## Native base-state homes (2026-10-18)
+
+Base-variable state moves to its existing native owner: sparse runtime state,
+configuration profiles, body/status snapshots, the HUD state, relations and the
+live optical-view association. Type defaults and explicit-null subtype overrides
+remain intact. Body-plan replacement preserves the seven former holder fields.
+
+The race-name UI action uses a declared question and the identity-profile setter.
+Its existing edit permission is checked before opening and when answered; a
+forbidden edit no longer opens a question whose answer would be ignored. Accepted
+names, prompt text, defaults and empty-answer behavior stay the same.
+
+The HUD safety refresh admits the original exact deadline. Optical teardown clears
+a lost viewer's zoom, while teardown of an older view cannot clear a replacement
+association. Headless tests cover state and lifecycle, not live-client rendering.
+
+Withdrawn look-probe selection, random-stream and sampler-lifetime changes are not
+part of this branch. Existing snapshots stay at master's versions; verification
+uses focused behavior tests only, with no snapshot runs or re-records.

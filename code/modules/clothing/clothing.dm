@@ -291,17 +291,26 @@ CAPABILITIES(/obj/item/clothing/ears)
 
 CAPABILITIES(/obj/item/clothing/ears/offear)
 	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
+	derives(nameof(name), PROC_REF(containing_item_field))
+	derives(nameof(desc), PROC_REF(containing_item_field))
+	derives(nameof(icon), PROC_REF(containing_item_field))
+	derives(nameof(icon_state), PROC_REF(containing_item_field))
+	derives(nameof(dir), PROC_REF(containing_item_field))
 
-// ALLOW(init/INSTANCE_STATE): copies the look of the item it is made inside
-/obj/item/clothing/ears/offear/Initialize(mapload)
-	. = ..()
-	if(isobj(loc))
-		var/obj/O = loc
-		name = O.name
-		desc = O.desc
-		icon = O.icon
-		icon_state = O.icon_state
-		set_dir(O.dir)
+/// A one-time constructor snapshot, not a live link to the original item's later appearance.
+/obj/item/clothing/ears/offear/proc/containing_item_field(target)
+	var/obj/O = isobj(loc) ? loc : src
+	switch(target)
+		if(nameof(name))
+			return O.name
+		if(nameof(desc))
+			return O.desc
+		if(nameof(icon))
+			return O.icon
+		if(nameof(icon_state))
+			return O.icon_state
+		if(nameof(dir))
+			return O.dir
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //Gloves
@@ -592,6 +601,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
@@ -614,7 +624,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	return holding ? null : "there is no knife in it"
 
 
-TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
 /obj/item/clothing/shoes/Initialize(mapload)
 	. = ..()
@@ -886,13 +895,14 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_persistence(preserve = 1))
+	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(limb_clearance)), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
 
-TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()

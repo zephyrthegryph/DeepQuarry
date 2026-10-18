@@ -98,6 +98,7 @@
 
 CAPABILITIES(/obj/effect/hotspot)
 	configure(lighting_config(system = OVERLAY_LIGHT))
+	setup(PROC_REF(ignite_hotspot))
 	configure(light_glow(range = LIGHT_RANGE_FIRE, power = 1, color = LIGHT_COLOR_FIRE))
 	// A hotspot burns as kernel work instead of SSair's hotspot pass: one step every SSair tick (the cadence the pass had) for as long as it
 	// exists, in the game and post-game run levels. It never idles -- a hotspot that has nothing left to burn deletes itself.
@@ -124,9 +125,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 /obj/effect/hotspot/var/starting_volume
 /obj/effect/hotspot/var/starting_temperature
 
-// ALLOW(init/INSTANCE_STATE): a hotspot joins a hot group, exposes its turf, and faces a random way
-/obj/effect/hotspot/Initialize(mapload)
-	. = ..()
+/// The declared ignition job preserves group merge, exposure and facing as one ordered operation.
+/obj/effect/hotspot/proc/ignite_hotspot()
 	if(!isnull(starting_volume))
 		volume = starting_volume
 
@@ -152,7 +152,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
 	if(!perform_exposure())
 		if (QDELETED(src))
 			return
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	if(QDELETED(src)) // It is actually possible for this hotspot to become qdeleted in perform_exposure() if another hotspot gets created (for example in fire_act() of fuel pools)
 		return // In this case, we want to just leave and let the new hotspot take over.

@@ -776,6 +776,8 @@ impl Candidates<'_> {
         prepared: &crate::procedure_policy::PreparedUnit,
         backing: Option<&dm_cache::MappedPayload>,
     ) -> ProcedureLookup<'host> {
+        static READS: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_reads_check");
+        static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_rebind");
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
             ..Default::default()
@@ -815,6 +817,7 @@ impl Candidates<'_> {
                 if !matches_key(v.key.as_ref()) || v.identity != identity {
                     continue;
                 }
+                let reads_timer = READS.time();
                 let mut promotion = v.promotion();
                 let current_versions = CurrentReads::versions(host, &promotion.queries);
                 let pending_reads = match v.transparent_reads(host) {
@@ -824,7 +827,9 @@ impl Candidates<'_> {
                         continue;
                     }
                 };
+                drop(reads_timer);
                 let verification_reads = context.verify.then(|| v.verification_reads());
+                let _rebind_timer = REBIND.time();
                 match v.rebind_with_backing(
                     ProcedureReplayContext {
                         frontend: context.frontend,
@@ -877,15 +882,18 @@ impl Candidates<'_> {
                 continue;
             }
             result.miss = Some(crate::lowering_memo::MemoMissReason::NoExactVariant);
+            let reads_timer = READS.time();
             let changed = match &value {
                 Candidate::Executable(v) => read_mismatch(&v.reads, &v.versions, host),
                 Candidate::Failure(v) => read_mismatch(&v.reads, &v.versions, host),
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
+            drop(reads_timer);
             if let Some(query) = changed {
                 result.changed_query.get_or_insert(query);
                 continue;
             }
+            let _rebind_timer = REBIND.time();
             match value {
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
                 Candidate::Failure(v) => {

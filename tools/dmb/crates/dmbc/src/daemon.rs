@@ -7,6 +7,10 @@ use std::{
 mod build_admission;
 pub mod control;
 mod cache_gc;
+/// One cache pass with the configured size and age caps (`dmbc --cache-gc`).
+pub fn cache_gc_once() -> String {
+    cache_gc::run_configured()
+}
 pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
@@ -184,7 +188,7 @@ pub fn route(
                     compiler,
                     retiring,
                 } if version == protocol::VERSION && compiler == identity && !retiring => {
-                    transport::set_timeout(&mut stream, Duration::from_secs(600))?;
+                    transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
                     protocol::send(&mut stream, &protocol::Request::Build(request))?;
                     loop {
                         match protocol::receive::<protocol::Reply>(&mut stream)? {

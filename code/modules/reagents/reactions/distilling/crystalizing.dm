@@ -1,32 +1,20 @@
 // Crystalizing (temps under 0)
-/datum/decl/chemical_reaction/distilling/sugar
-	name = "Crystalizing Sugar"
-	id = "distill_sugar"
-	result = REAGENT_ID_SUGAR
-	required_reagents = list(REAGENT_ID_CARBON = 5)
-	catalysts = list(REAGENT_ID_WATER = 1, REAGENT_ID_SUGAR = 1) // Rebuild the crystals!
-	result_amount = 0.5
+/transformation/chem/distilling/sugar
 
-	temp_shift = -1
-
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_O2
+CAPABILITIES(/transformation/chem/distilling/sugar)
+	configure(transformation(name = "Crystalizing Sugar", id = "distill_sugar", takes = list(reagent(REAGENT_ID_CARBON, 5)),
+		catalysts = list(reagent(REAGENT_ID_WATER, 1), reagent(REAGENT_ID_SUGAR, 1)), makes = list(reagent(REAGENT_ID_SUGAR, 0.5)),
+		energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T0C -10, T0C -5), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_O2, 1))))
 
 // crystal growth
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/sugar, distilling_temp_range, list(T0C -10, T0C -5))
 
-/datum/decl/chemical_reaction/distilling/fuel_phoron
-	name = "Crystalizing Phoron"
-	id = "distill_phoron_fuel"
-	result = REAGENT_ID_PHORON
-	required_reagents = list(REAGENT_ID_FUEL = 1, REAGENT_ID_MERCURY = 1)
-	catalysts = list(REAGENT_ID_PHORON = 1) // Rebuild the crystals!
-	result_amount = 0.5
+/transformation/chem/distilling/fuel_phoron
 
-	temp_shift = 1
-
-	require_xgm_gas = GAS_N2
-	rejects_xgm_gas = GAS_O2
+CAPABILITIES(/transformation/chem/distilling/fuel_phoron)
+	configure(transformation(name = "Crystalizing Phoron", id = "distill_phoron_fuel",
+		takes = list(reagent(REAGENT_ID_FUEL, 1), reagent(REAGENT_ID_MERCURY, 1)), catalysts = list(reagent(REAGENT_ID_PHORON, 1)),
+		makes = list(reagent(REAGENT_ID_PHORON, 0.5)), energy = per_step(1 * 1000),
+		holds = xform_all(temperature_in(T0C -70, T0C -25), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
 
 // crystal growth
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/fuel_phoron, distilling_temp_range, list(T0C -70, T0C -25))

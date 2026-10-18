@@ -162,6 +162,9 @@
 /// Each thing costs what the slot definition's cost() says.
 #define SLOT_CAPACITY_UNITS 4
 
+/// move_into(amount =): move as many units as the slot has room for, up to everything the thing carries.
+#define QUANTITY_ALL INFINITY
+
 // ---- Drop policies: what the base Destroy() does with a slot's contents ----
 /// Move them to the holder's drop location. Deleted if there is none.
 #define SLOT_DROP_SPILL 1

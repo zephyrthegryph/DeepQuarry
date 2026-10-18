@@ -93,43 +93,62 @@
 	var/obj/item/clothing/suit/barding/B = allocate(/obj/item/clothing/suit/barding, H.loc)
 	var/datum/sprite_accessory/tail/taur/drake/drake = allocate(/datum/sprite_accessory/tail/taur/drake)
 	var/datum/sprite_accessory/tail/taur/horse/horse = allocate(/datum/sprite_accessory/tail/taur/horse)
-	H.tail_style = null // Actual old untracked selector; feature migration must route its real setter later.
+	rel_set(H, nameof(H.tail_style), null)
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "you need a drake-taur half to wear this", "Clientless real human is refused by drake fit")
-	H.tail_style = drake
+	rel_set(H, nameof(H.tail_style), drake)
 	TEST_ASSERT_NULL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "Real drake accessory shape allows drake cloak")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "you need a horse-taur half to wear this", "Other real taur shape stays refused")
-	H.tail_style = horse
+	rel_set(H, nameof(H.tail_style), horse)
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "Real horse shape permits barding")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "you need a drake-taur half to wear this", "Changing real selector invalidates earlier allowed shape")
 
 /datum/unit_test/dq_acceptance_final24_boundary/saddlebag_effect/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	var/obj/item/storage/backpack/saddlebag_common/B = allocate(/obj/item/storage/backpack/saddlebag_common, H.loc)
-	H.tail_style = null
-	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), lowertext(B.no_message), "Exact old dynamic lowercase rejection")
+	var/turf/floor = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, floor)
+	var/obj/item/storage/backpack/saddlebag_common/B = allocate(/obj/item/storage/backpack/saddlebag_common, floor)
+	rel_set(H, nameof(H.tail_style), null)
+	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), lowertext(B.no_message), "Exact dynamic lowercase rejection survives native requirement")
 	var/datum/sprite_accessory/tail/taur/horse/T = allocate(/datum/sprite_accessory/tail/taur/horse)
-	H.tail_style = T
+	rel_set(H, nameof(H.tail_style), T)
+	var/preview_state = B.item_state
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "Actual taur permits common saddlebag")
-	TEST_ASSERT_EQUAL(B.item_state, "[B.icon_base]_[T.icon_sprite_tag]", "Old query effect recorded honestly before draw relocation")
+	TEST_ASSERT_EQUAL(B.item_state, preview_state, "Pure admission preview does not mutate appearance")
+	TEST_ASSERT(H.equip_to_slot_if_possible(B, SLOT_ID_BACK, disable_warning = TRUE), "Actual native equip commits saddlebag")
+	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_BACK), B, "Saddlebag really occupies the wearer slot")
+	TEST_ASSERT_EQUAL(B.item_state, "[B.icon_base]_[T.icon_sprite_tag]", "Real synchronous equipment notice selects the original taur sprite")
+	TEST_ASSERT(H.unEquip(B, target = floor), "Actual saddlebag removal succeeds")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_BACK), "Removal clears actual slot")
 
 /datum/unit_test/dq_acceptance_final24_boundary/avida_effect/Run()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	var/obj/item/clothing/head/fluff/avida/I = allocate(/obj/item/clothing/head/fluff/avida, H.loc)
-	H.ear_style = null
-	H.ear_secondary_style = null
+	var/turf/floor = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, floor)
+	var/obj/item/clothing/head/fluff/avida/I = allocate(/obj/item/clothing/head/fluff/avida, floor)
+	rel_set(H, nameof(H.ear_style), null)
+	rel_set(H, nameof(H.ear_secondary_style), null)
+	var/before = I.item_state
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Ear clause always permits admission")
-	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Old query changes no-ear appearance; native requirement must not retain this effect")
+	TEST_ASSERT_EQUAL(I.item_state, before, "No-ear preview remains pure")
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_HEAD, disable_warning = TRUE), "Actual no-ear equip succeeds")
+	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Committed no-ear equip preserves the old appearance")
+	TEST_ASSERT(H.unEquip(I, target = floor), "Actual no-ear removal succeeds")
 	var/datum/sprite_accessory/ears/bnnuy/E = allocate(/datum/sprite_accessory/ears/bnnuy)
-	H.ear_style = E
+	rel_set(H, nameof(H.ear_style), E)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Real allowed primary ear retains admission")
-	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Old query restores original look for actual Bnnuy ears")
-	H.ear_style = null
-	H.ear_secondary_style = E
-	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Real secondary ear also retains admission")
-	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Actual secondary ear picks original look")
-	H.ear_secondary_style = null
+	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Primary-ear preview does not mutate the last committed appearance")
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_HEAD, disable_warning = TRUE), "Actual primary-ear equip succeeds")
+	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Committed primary Bnnuy ears select original look")
+	TEST_ASSERT(H.unEquip(I, target = floor), "Actual primary-ear removal succeeds")
+	rel_set(H, nameof(H.ear_style), null)
+	rel_set(H, nameof(H.ear_secondary_style), E)
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_HEAD, disable_warning = TRUE), "Actual secondary-ear equip succeeds")
+	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "Committed secondary Bnnuy ears select original look")
+	TEST_ASSERT(H.unEquip(I, target = floor), "Actual secondary-ear removal succeeds")
+	rel_set(H, nameof(H.ear_secondary_style), null)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "No-ear recovery still admits")
-	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Real selector clearing restores old no-ear effect")
+	TEST_ASSERT_EQUAL(I.item_state, initial(I.item_state), "No-ear recovery preview stays pure")
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_HEAD, disable_warning = TRUE), "Actual cleared-ear equip succeeds")
+	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Committed selector clearing restores original no-ear effect")
+	TEST_ASSERT(H.unEquip(I, target = floor), "Actual final removal succeeds")
 
 /datum/unit_test/dq_acceptance_final24_boundary/named_owner_denial/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -151,5 +170,5 @@
 	for(var/list/row as anything in cases)
 		var/obj/item/I = allocate(row[1], H.loc)
 		TEST_ASSERT_EQUAL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), row[2], "Real production owner gate retains exact refusal for [I.type]")
-	// Nikki RIG requires separate constructor repair before honest old capture; no fake chest substituted.
+	// Nikki RIG has separate real chest-ownership and equipment regression coverage.
 	// Genuine-client positive ownership coverage is explicitly not supplied by this test.

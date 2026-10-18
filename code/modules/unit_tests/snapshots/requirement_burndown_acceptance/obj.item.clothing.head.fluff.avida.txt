@@ -1,0 +1,2 @@
+equip wearer=Human: ALLOW
+

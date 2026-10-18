@@ -424,7 +424,9 @@ play server): 40% of compiles took the hit or patch path, session hit rate 9.1%.
   (`resident::isolate_development_build`): its daemon, discovery endpoint and sessions are private and it never touches the
   published daemon. An explicit `DMB_DAEMON_NAMESPACE` still wins.
 * A daemon leaves for idleness (`DMB_DAEMON_IDLE_EXIT_SECS`, default 1 hour), for memory (below), on `--daemon-retire`, or, as a
-  **superseded published version** (`<bin>/current` names another id), once it has had no connection or build for 2 minutes.
+  **superseded published version** (`<bin>/current` names another id), once it has had no connection or build for 30 minutes. Which version a checkout runs is chosen by its own compiler sources
+  (`<bin>/by-key/<cache key>`, or `<bin>/by-tree/<hash>` for a dirty compiler tree), never by whoever built last; `<bin>/current` is only
+  the default for a checkout that has not built, and a publish moves it only forward along history (`<bin>/current.commit`).
 * The caller-namespace registry in `tools/build/lib/dmbc_daemons.ts` keeps its count cap for explicit namespaces (bench,
   experiments) but never retires a namespace used in the last 10 minutes.
 
@@ -437,3 +439,53 @@ shield) under half the reserve. A compile is admitted only while available memor
 project and kind (hot or cold) caused (default 2 GB hot, 12 GB cold) on top of the reserve: `Shared::await_memory` releases idle
 sessions of other projects least recently used first, then waits for running builds, and with nothing left to release or after 5
 minutes admits the build and logs the shortfall (a machine that is too small slows down instead of refusing every build).
+
+## Daemon-wide retained budget and superseded-daemon reaper (lane `tools/dmb-session-memory`, 2026-10-17)
+
+Measured on the live daemon's logs (`E:/dq-cache/dmb-daemon/compile-stats.jsonl`, `lifecycle.log`, pid 9292, 8 lanes): the shared
+compile roots work, two sessions (`deepquarry.dme`, `deepquarry.test.dme`) serve every worktree. 330 compiles went through
+them; 137 were hit or patch (4% of compile time) and 193 full (96%). Full-compile causes: new daemon version after a publish 86
+(`no-session`), old fixed cap 52, old path keying 22, other eviction 16, cross-tree declaration change in a hot session 17 (mean
+88 s, peak 22 GB with two sessions because the old state lives through the rebuild).
+
+* **Budget.** `DMB_DAEMON_MEMORY_BUDGET_GB` (default 20 for now, so production and test sessions stay resident; lower it as sessions shrink) is the daemon-wide retained budget on top of the machine-pressure policy:
+  over it, `Shared::enforce_retained_budget` releases the least recently used idle session whole, after every build and before a
+  build is admitted (against its expected growth). The newest session and any building session are never released, so a lone
+  session larger than the budget stays resident. Policy: `soft_memory::budget_victim` (tests in `soft_memory.rs`).
+* **Superseded daemons.** The 12:40 daemon (version `ebfc6fb0e7c801a8`) was last active 16:43, heartbeating, not busy: its binary
+  predates the superseded-version exit and only had the 1 hour idle exit, and a newer daemon never retired older ones. A daemon
+  of the current published version now asks every registered, live, not busy peer of another published version in the same `<bin>`
+  that has been idle for 2 minutes to retire, through the `<pid>.retire` flag every registry-aware build honors in its heartbeat
+  (`resident::retire_superseded_peers`, checked every 30 s; test `current_daemon_asks_only_idle_live_superseded_peers...`).
+* Baseline (plain release build, 4 workers, machine busy): cold production compile 159.5 s, peak 9.33 GB, private after 9.03 GB.
+
+### Admission respects the budget (2026-10-17)
+
+With the 20 GB budget landed the daemon still released an idle session at admission ("available 10.0 GB, build needs 10.3 GB above
+a 8.0 GB reserve"): the estimate is a full compile's growth, charged even for a build that will patch. Admission now releases an
+idle session only for a real shortage (available memory under the reserve, default lowered 8 to 4 GB) or when the daemon would pass
+its budget with the build (`soft_memory::admission_may_shed`); the retained budget itself is enforced separately and releases the
+least recently used idle session.
+
+### One session per project, one state per variant (2026-10-17)
+
+`SessionKey` is the project directory plus compiler (engine bytes, bootstrap), not a manifest file and not a define set. The
+compile root is one per project (`rootKey`: `deepquarry`, `deepquarry.test`, `deepquarry.bench` share it). `BuildHost::engine`
+no longer discards everything when only the project path or defines change: `switch_variant` stashes the define-dependent state of
+the variant it leaves (procedure memo, semantic tree, ABI, startup, initializers, class projections, link bindings, the retained
+generation that is the patch base, resources, maps, symbolic memo) under its configuration and restores it when that variant is
+built again; the engine payload, executors, shared procedure code and the directive/expansion/fragment memo are shared. At most 3
+variants are stashed, they go first when the session degrades (tier 3), and a query for a variant that is not the active one says so.
+This is the interim shape of "the session is the query database and the defines are inputs" (`incremental_core.md`): when the `Db`
+lands the stash becomes per-query reddening and the patch base a persisted dependency index.
+
+### Stashed variants go first under pressure; the compiler is published again (2026-10-17)
+
+Measured after the variant stash landed: one session holding production and test is 16 GB private (production 9 GB, the stashed
+test variant about 7 GB). Under pressure housekeeping now drops the stashed variants (`tier=stashed-variants` in the lifecycle log)
+before it degrades or releases the variant the session serves. A worktree switch is not a variant: every checkout syncs into the
+one compile root per project, so the switch is a changed input set of the same session (patch, or a stored-record hit when it
+returns to a tree already built), and nothing is discarded for it. Separately, `build.sh dmbc` had stopped publishing: its Juke
+target compared source mtimes against `dmb-bin/current`, which every checkout's publish rewrites, so after a cache miss the target
+was "up to date" and `current` stayed on an old compiler (23d9d283) while newer dmbc changes landed; the target now decides by the
+source content key alone.

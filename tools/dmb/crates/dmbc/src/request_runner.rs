@@ -335,6 +335,19 @@ fn run_build_attempt(
             {
                 let pair_verification_started = Instant::now();
                 if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
+                    // The patch base describes the last image this session built. A stored record that serves another image
+                    // (an edit was reverted, or an earlier state came back) must not be answered as a hit while that base
+                    // stays behind: every later edit would be compared with the wrong build and fall off the patch path. Leave
+                    // this record and let the patch path take the change; its result becomes the new base.
+                    if let Some(base_image) = host.patch_base_image_hash().filter(|base| *base != pair.dmb_hash) {
+                        dmbc::daemon_eprintln!(
+                            "native session hit skipped: stored image {:032x} differs from the patch base image {:032x}; patching from the base",
+                            pair.dmb_hash,
+                            base_image
+                        );
+                        // Every older record is for an image the base does not describe either; validating them is wasted time.
+                        break;
+                    }
                     let pair_verification_seconds =
                         pair_verification_started.elapsed().as_secs_f64();
                     let output_validation_started = Instant::now();
@@ -955,7 +968,10 @@ fn run_build_attempt(
                 std::env::var("DMB_RESOLVER_MEMO_ENTRIES")
                     .ok()
                     .and_then(|value| value.parse().ok())
-                    .unwrap_or(65_536),
+                    // A full compile asks about 4.2M queries, 0.9M of them distinct. At the old 64k budget 88 % of the
+                    // asks missed, and replaying cached procedures re-resolved their reads (41 CPU-s on a fresh
+                    // session); 2M entries retain every distinct answer (about 80 MB for the request).
+                    .unwrap_or(2_097_152),
             );
             let mut prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
                 &frontend,

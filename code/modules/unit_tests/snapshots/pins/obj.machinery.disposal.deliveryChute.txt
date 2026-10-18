@@ -32,6 +32,7 @@ human|/obj/item/multitool menu: Force Eject
 human|/obj/item/multitool menu: Insert
 human|/obj/item/multitool menu: Toggle flush
 human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
 human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Alt-click
 human|/obj/item/weldingtool menu: Force Eject
