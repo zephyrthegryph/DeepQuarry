@@ -204,6 +204,21 @@ impl Shared {
                 Err(std::sync::TryLockError::Poisoned(error)) => error.into_inner(),
                 Err(std::sync::TryLockError::WouldBlock) => continue,
             };
+            // Under pressure the other variants' stashed state (another define set's patch base, about 7 GB for the test build)
+            // goes before anything of the variant the session is serving: it is recomputable, and keeping the active variant
+            // resident is what saves the next compile. One pass drops only the stash; the session degrades on a later pass if
+            // memory is still short.
+            if pressured && key.manifest.exists() && host.stashed_variants() > 0 {
+                drop(slots);
+                let before = transport::private_bytes();
+                let dropped = host.release_stashed_variants();
+                super::super::emit_stderr(format_args!(
+                    "dmbd idle release tier=stashed-variants dropped={dropped} project={} hard={hard} private-before={before:?} private-after={:?}",
+                    key.manifest.display(),
+                    transport::private_bytes(),
+                ));
+                continue;
+            }
             if next == SESSION_RELEASE && Arc::strong_count(&slot) == 2 {
                 let removed = slots.remove(&key);
                 drop(slots);
