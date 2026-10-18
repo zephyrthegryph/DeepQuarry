@@ -121,6 +121,8 @@ pub struct ProcedureMemo {
     publisher: Option<Arc<CachePublisher>>,
     staging_errors: Arc<Mutex<Vec<String>>>,
     explanation_limit: usize,
+    /// Owner of this request's ABI disk transport on a retained store (detaches when the request ends).
+    pub(crate) abi_disk: Option<crate::driver_facts::AbiDiskLease>,
 }
 pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + Send + Sync;
 #[derive(Clone)]
@@ -272,6 +274,7 @@ impl ProcedureMemo {
             publisher: None,
             staging_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
+            abi_disk: None,
         }
     }
     /// Request-local facade: only immutable resident results survive requests.
@@ -328,6 +331,7 @@ impl ProcedureMemo {
             publisher: None,
             staging_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
+            abi_disk: None,
         }
     }
     pub fn with_disk_only(policy: u128, snapshot: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
@@ -354,6 +358,8 @@ impl ProcedureMemo {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> crate::lowering_memo_wire::ProcedureLookup<'host> {
+        static LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_lookup");
+        let _timer = LOOKUP.time();
         let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return crate::lowering_memo_wire::ProcedureLookup {
                 miss: Some(MemoMissReason::RecordAbsent),
@@ -365,12 +371,16 @@ impl ProcedureMemo {
             snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
                 let candidates = {
                     let _profile = dm_profile::item("lowering.disk_lookup_decode");
+                    static DECODE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_decode");
+                    let _timer = DECODE.time();
                     crate::lowering_memo_wire::candidates(bytes)?
                 };
                 // Validate the complete typed envelope before replaying any reads.
                 // Only exact semantic admission makes this mapped record reachable.
                 let result = {
                     let _profile = dm_profile::item("lowering.disk_validate_replay");
+                    static VALIDATE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_validate");
+                    let _timer = VALIDATE.time();
                     candidates.procedure_matching_backed(
                         &|candidate| key.matches(candidate, None, tail),
                         identity,
