@@ -522,6 +522,43 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             // when this owner's source declarations are unchanged. Such reads
             // are not certified by a local owner token.
             if matches!(self.tree.resolve(query), M::Unsupported(_)) {
+                // A positive answer from the pinned method catalogs (a native receiver method such as
+                // `list.Cut`) is a function of the certified Unsupported source answer and those
+                // immutable catalogs, provided the source-dependent namespace absence cannot apply
+                // (the name is a native callable name). Without a version every procedure calling
+                // such a method failed its unchanged-input certificate on every full compile.
+                let native_name = match query {
+                    Q::Proc { name, .. }
+                    | Q::HasMemberProc { name, .. }
+                    | Q::ProcedureValue { name, .. }
+                    | Q::MethodProcedureValue { name, .. } => Some(name),
+                    _ => None,
+                };
+                if let Some(name) = native_name {
+                    let absence_cannot_apply = match &self.variable_absence {
+                        None => true,
+                        Some(coverage) => coverage.payload.native_callable_names.contains(&name),
+                    };
+                    let positive = self
+                        .retained_methods
+                        .as_ref()
+                        .and_then(|catalog| catalog.resolve(query))
+                        .or_else(|| {
+                            self.intrinsic_methods
+                                .as_ref()
+                                .and_then(|catalog| catalog.resolve(query))
+                        });
+                    if absence_cannot_apply && positive.is_some() {
+                        // The catalogs: the pinned providers (callable issuer) and any retained ones.
+                        let mut bytes = b"dm-native-method-catalogs-v1".to_vec();
+                        bytes.extend_from_slice(&self.callable_issuer?.to_le_bytes());
+                        if let Some(retained) = &self.retained_methods {
+                            bytes.extend_from_slice(&retained.identity().to_le_bytes());
+                        }
+                        let catalogs = xxhash_rust::xxh3::xxh3_64(&bytes);
+                        return Some((u128::from(base) << 64) | u128::from(catalogs));
+                    }
+                }
                 let name = match query {
                     Q::Proc { name, .. } | Q::HasMemberProc { name, .. } | Q::GlobalProc(name) => {
                         name
