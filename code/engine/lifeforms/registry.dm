@@ -96,11 +96,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 			var/atom/movable/AM = holder
 			AM.lifeform_moves |= LIFEFORM_MOVES_REGISTRY
 
-/proc/registry_teardown(datum/holder, datum/lifeform_plan/P)
-	for(var/datum/centry/C as anything in P.registries)
-		var/datum/entry/E = C.item
-		registry_unfile(holder, E.args["id"])
-
 /// Files `holder` in the entry's registry under its current key and place.
 /proc/registry_file(datum/holder, datum/entry/E)
 	var/id = E.args["id"]

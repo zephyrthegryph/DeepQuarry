@@ -113,6 +113,7 @@ GLOBAL_REAL(Kernel, /datum/controller/kernel)
 
 	if(!GLOB)
 		new /datum/controller/global_vars
+	registries_adopt_into_store() // the membership store takes over the registries' lists (relations proposal D12)
 
 /datum/controller/kernel/proc/shutdown_kernel()
 	processing = FALSE

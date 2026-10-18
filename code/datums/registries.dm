@@ -119,6 +119,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	member_leave(store_key(), member, all = TRUE)
 	if(keyed)
 		unfile_member(member)
+	registry_unfile(member, id) // the registry() entry's key/z/area index (code/engine/lifeforms/registry.dm): the one leave path clears it too
 
 /// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
 /// of `leaving` leaves at once.
@@ -127,10 +128,11 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 		for(var/datum/member as anything in leaving)
 			remove(member)
 		return
-	if(keyed)
-		for(var/datum/member as anything in leaving)
-			if(member_is(store_key(), member))
+	for(var/datum/member as anything in leaving)
+		if(member_is(store_key(), member))
+			if(keyed)
 				unfile_member(member)
+			registry_unfile(member, id)
 	member_leave_many(store_key(), leaving)
 
 /// TRUE if `member` is in this registry.
@@ -220,20 +222,23 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// declares. Before the store exists (global init) the declared walk is the fallback.
 /datum/proc/leave_registries()
 	if(!istype(kernel_membership(), /datum/kernel_membership))
-		for(var/datum/registry/registry as anything in type_registries())
+		for(var/datum/registry/registry as anything in type_registries()) // only while globals initialize: the store is not built yet
 			if(!skips_registry(registry.id))
 				registry.remove(src)
 		return
-	var/datum/kernel_membership/M = kernel_membership()
 	for(var/key in member_keys(src))
 		if(copytext(key, 1, 10) != "registry:")
 			continue
 		var/datum/registry/registry = build_registries()[copytext(key, 10)]
 		registry?.remove(src)
-	// A registry the store has not adopted yet still holds members joined while globals initialized.
-	for(var/datum/registry/registry as anything in type_registries())
-		if(!M.ordered_keys?[registry.store_key()] && !skips_registry(registry.id))
-			registry.remove(src)
+
+/// After global init (the kernel's preboot): the store adopts every registry's list, indexing the members that joined while it did not exist
+/// yet, so leave_registries() finds every membership through the store.
+/proc/registries_adopt_into_store()
+	var/list/registries = build_registries()
+	for(var/id in registries)
+		var/datum/registry/registry = registries[id]
+		member_adopt_ordered(registry.store_key(), registry.members)
 
 /// Puts `member` in conditional registry `id` (idempotent). Its type must
 /// declare REGISTRY_MEMBERSHIP() for `id`. It leaves again with

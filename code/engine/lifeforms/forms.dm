@@ -245,8 +245,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 		return
 	if(P.lives_while)
 		lives_while_teardown(holder)
-	if(P.registries)
-		registry_teardown(holder, P)
 	if(P.radios)
 		radio_listen_teardown(holder, P)
 	if(P.adjacencies)
