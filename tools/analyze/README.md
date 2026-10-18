@@ -249,6 +249,8 @@ formula and `draw()` walks of `gen/deps` and `gen reads` run in parallel and are
 batches to the parser, and the `dev-fast` profile builds dependencies with release code generation (`opt-level 3`, 16 units): the
 full-model parse after a DM edit went from 17-19 s to 10-12 s.
 
+**The generators of a stage render at once**, each on its own thread with its own context, and are written and reported in registry order: the ones that read only declarations (actions, declare, stats, system_accessors) finish while the model parses. The process skips freeing the model at exit (3 s). `analyze gen` after a DM edit: about 57 s before this lane, 29-34 s now.
+
 **The machine-wide lint cache.** `src/shared.rs`: the per-file results in `data/analyze-cache/` are keyed by content, so a worktree whose
 cache is stamped for another analyzer build or scope list first copies the files of `E:/dq-cache/analyze-cache/<stamp>/`
 (`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`
