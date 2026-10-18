@@ -9,6 +9,8 @@ var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
 var	code/controllers/subsystems/proximity.dm	@/client::proximity_eye
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
+var	code/defines/procs/announce.dm	@/datum/controller/global_vars::priority_announcement
+var	code/defines/procs/announce.dm	@/datum/controller/global_vars::command_announcement
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::activation
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
 var	code/engine/declare/table.dm	@/datum/centry::item
@@ -38,6 +40,8 @@ var	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::sco
 var	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::functions
 var	code/modules/scripting/Parser/Parser.dm	@/datum/n_Parser::blocks
 var	code/modules/scripting/Parser/Parser.dm	@/datum/n_Parser::global_block
+var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_up
+var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_down
 var	code/modules/shieldgen/directional_shield.dm	@/obj/effect/directional_shield::projector
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwallgen::attached
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::U
