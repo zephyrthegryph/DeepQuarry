@@ -129,9 +129,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 		return
 	switch(sunlight_only)
 		if(SUNLIGHT_ONLY)
-			affected_turf.vis_contents -= pshandler.vis_overhead
+			vis_remove(affected_turf, pshandler.vis_overhead)
 		if(SUNLIGHT_ONLY_SHADE)
-			affected_turf.vis_contents -= pshandler.vis_shade
+			vis_remove(affected_turf, pshandler.vis_shade)
 		if(FALSE)
 			affected_turf.underlays -= current_underlay
 
@@ -139,9 +139,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 
 	switch(onlysun)
 		if(SUNLIGHT_ONLY)
-			affected_turf.vis_contents += pshandler.vis_overhead
+			vis_add(affected_turf, pshandler.vis_overhead)
 		if(SUNLIGHT_ONLY_SHADE)
-			affected_turf.vis_contents += pshandler.vis_shade
+			vis_add(affected_turf, pshandler.vis_shade)
 		if(FALSE)
 			affected_turf.underlays |= current_underlay
 

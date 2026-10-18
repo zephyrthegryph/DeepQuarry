@@ -226,6 +226,6 @@ CAPABILITIES(/atom/movable/screen/ghost)
 	if(client && apply_to_client)
 		client.screen = list()
 		if(length(HUD.adding))
-			client.screen += HUD.adding
-		client.screen += client.void
+			client_screen_add(client, HUD.adding)
+		client_screen_add(client, client.void)
 

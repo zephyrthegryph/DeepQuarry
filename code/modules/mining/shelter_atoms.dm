@@ -329,7 +329,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 				preview_render += image('icons/misc/debug_group.dmi',S ,"blue")
 		else
 			preview_render += image('icons/misc/debug_group.dmi',S ,"blue")
-	user.client.images += preview_render
+	client_images_add(user.client, preview_render)
 	return preview_render
 
 /obj/item/survivalcapsule/proc/remove_preview(mob/user, list/preview_render, fade_time = 1 SECOND)
@@ -342,7 +342,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 /obj/item/survivalcapsule/proc/delete_preview_render(mob/user, list/preview_render)
 	if(user?.client)
-		user.client.images -= preview_render
+		client_images_remove(user.client, preview_render)
 
 /obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
 	var/status = template().check_deploy(deploy_location, is_ship)

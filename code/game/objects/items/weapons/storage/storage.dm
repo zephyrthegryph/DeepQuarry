@@ -759,7 +759,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		var/atom/movable/storage_slot/SS = add_catcher(I)
 		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
 		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
-		bar_start.vis_contents += SS
+		vis_add(bar_start, SS)
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
 

@@ -462,7 +462,7 @@
 			if(!shown)
 				client.screen |= overlay
 		else if(shown)
-			client.screen -= overlay
+			client_screen_remove(client, overlay)
 	for(var/overlay in claims)
 		if(!(overlay in owned))
 			client.screen |= overlay

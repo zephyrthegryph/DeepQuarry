@@ -66,7 +66,7 @@
 		var/obj/item/robotic_multibelt/toolbelt = I
 		toolbelt.original_state()
 	if(client)
-		client.screen -= I
+		client_screen_remove(client, I)
 	for(var/datum/action/A as anything in I.actions)
 		A.Remove(src)
 	// Back into the module holder so it can be used again later. The slot

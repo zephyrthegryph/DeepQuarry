@@ -307,12 +307,12 @@
 	if(client)
 		client.screen = list()
 
-		client.screen += hud_elements
+		client_screen_add(client, hud_elements)
 		if(length(HUD.adding))
-			client.screen += HUD.adding
+			client_screen_add(client, HUD.adding)
 		if(length(HUD.hotkeybuttons))
-			client.screen += HUD.hotkeybuttons
-		client.screen += client.void
+			client_screen_add(client, HUD.hotkeybuttons)
+		client_screen_add(client, client.void)
 
 	HUD.inventory_shown = 0
 
@@ -322,10 +322,10 @@
 	set desc = "This disables or enables the user interface buttons which can be used with hotkeys."
 
 	if(hud_used.hotkey_ui_hidden)
-		client.screen += hud_used.hotkeybuttons
+		client_screen_add(client, hud_used.hotkeybuttons)
 		hud_used.hotkey_ui_hidden = 0
 	else
-		client.screen -= hud_used.hotkeybuttons
+		client_screen_remove(client, hud_used.hotkeybuttons)
 		hud_used.hotkey_ui_hidden = 1
 
 //Used for new human mobs created by cloning/goleming/etc.

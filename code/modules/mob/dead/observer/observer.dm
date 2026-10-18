@@ -901,7 +901,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 	if(!iconRemoved)
 		var/image/J = image('icons/mob/mob.dmi', loc = src, icon_state = icon)
-		client.images += J
+		client_images_add(client, J)
 
 /mob/observer/dead/verb/toggle_interactions()
 

@@ -43,10 +43,10 @@
 			rel_set(H, nameof(H.buildhelp), B)
 			rel_set(H, nameof(H.buildmode), C)
 			rel_set(H, nameof(H.buildquit), D)
-			M.client.screen += A
-			M.client.screen += B
-			M.client.screen += C
-			M.client.screen += D
+			client_screen_add(M.client, A)
+			client_screen_add(M.client, B)
+			client_screen_add(M.client, C)
+			client_screen_add(M.client, D)
 			H.cl_ckey = M.client.ckey // clients are not datums: held by ckey
 
 /obj/effect/bmode//Cleaning up the tree a bit

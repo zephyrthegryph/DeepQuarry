@@ -22,7 +22,7 @@
 		var/cache_id = "\ref[overlay]@{[world.time]}"
 		rel_add(src, nameof(vis_overlay_cache), overlay, cache_id)
 		. = overlay
-	thing.vis_contents += overlay
+	vis_add(thing, overlay)
 
 	if(!isatom(thing))
 		return overlay
@@ -31,7 +31,7 @@
 	return overlay
 
 /datum/system/vis_overlays/proc/remove_vis_overlay(atom/movable/thing, list/overlays)
-	thing.vis_contents -= overlays
+	vis_remove(thing, overlays)
 	if(!isatom(thing))
 		return
 	// `overlays` may be a single overlay, or a list (even thing.managed_vis_overlays itself).

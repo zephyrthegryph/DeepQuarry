@@ -160,7 +160,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 		if(watcher.client)
 			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
 			if(QDELETED(watcher))
-				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
+				client_images_remove(watcher.client, holomap_datum.station_map) // no timer on a dying mob
 			else
 				after(watcher, 0.5 SECONDS, GLOBAL_PROC_REF(remove_client_image), with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
 		unobserve(watcher, /datum/notice/movable_attempted_move, src)
@@ -237,4 +237,4 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
 /// after() target: takes an image off a mob's client screen (after a fade-out).
 /proc/remove_client_image(mob/M, image/I)
-	M.client?.images -= I
+	client_images_remove(M.client, I)

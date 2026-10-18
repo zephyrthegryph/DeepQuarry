@@ -124,7 +124,7 @@ CAPABILITIES(/datum/sun_holder)
 		SVO.set_alpha(new_alpha)
 
 /atom/movable/sun_visuals/proc/apply_to_turf(turf/T)
-	T.vis_contents += src
+	vis_add(T, src)
 	T.dynamic_lumcount += 0.5
 	T.set_luminosity(1, TRUE)
 
@@ -145,7 +145,7 @@ CAPABILITIES(/datum/sun_holder)
 				// Inner corner
 				else
 					OL = spreads["i[direction]"]
-				dirturf.vis_contents += OL
+				vis_add(dirturf, OL)
 				dirturf.set_luminosity(1)
 				dirturf.outdoors_adjacent = TRUE
 				LAZYINITLIST(localspreads)
@@ -162,7 +162,7 @@ CAPABILITIES(/datum/sun_holder)
 			if(TL && TR && TL.is_outdoors() != TR.is_outdoors())
 				continue
 			var/atom/movable/sun_visuals_overlap/OL = spreads["[direction]"]
-			dirturf.vis_contents += OL
+			vis_add(dirturf, OL)
 			dirturf.set_luminosity(1)
 			dirturf.outdoors_adjacent = TRUE
 			LAZYINITLIST(localspreads)
@@ -173,13 +173,13 @@ CAPABILITIES(/datum/sun_holder)
 		LAZYSET(turfs_providing_spreads, T, localspreads)
 
 /atom/movable/sun_visuals/proc/remove_from_turf(turf/T)
-	T.vis_contents -= src
+	vis_remove(T, src)
 	T.dynamic_lumcount -= 0.5
 	T.set_luminosity(0, TRUE)
 	var/list/applied = LAZYACCESS(turfs_providing_spreads, T)
 	if(LAZYLEN(applied))
 		for(var/turf/old as anything in applied)
-			old.vis_contents -= applied[old]
+			vis_remove(old, applied[old])
 			var/old_lit = FALSE
 			for(var/direction in GLOB.alldirs)
 				var/turf/CT = get_step(old, direction)

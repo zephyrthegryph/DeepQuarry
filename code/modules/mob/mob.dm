@@ -492,7 +492,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		log_game("[key] AM failed due to disconnect.")
 		return
 	client.screen.Cut()
-	client.screen += client.void
+	client_screen_add(client, client.void)
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
 		return
@@ -1288,11 +1288,11 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/cloak()
 	. = ..()
 	if(client && dq_get_cloaked_selfimage(src))
-		client.images += dq_get_cloaked_selfimage(src)
+		client_images_add(client, dq_get_cloaked_selfimage(src))
 
 /mob/uncloak()
 	if(client && dq_get_cloaked_selfimage(src))
-		client.images -= dq_get_cloaked_selfimage(src)
+		client_images_remove(client, dq_get_cloaked_selfimage(src))
 	return ..()
 
 /mob/get_cloaked_selfimage()

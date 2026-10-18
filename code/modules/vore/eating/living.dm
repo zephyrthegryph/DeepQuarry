@@ -1514,7 +1514,7 @@
 		screen_icon.screen_loc = ui_ai_pda_send
 	if(owner_of(screen_icon) != HUD)
 		own_move(screen_icon, HUD, nameof(HUD.other_important))
-	user.client?.screen += screen_icon
+	client_screen_add(user.client, screen_icon)
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

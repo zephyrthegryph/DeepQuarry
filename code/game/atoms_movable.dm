@@ -140,7 +140,7 @@
 
 	vis_contents.Cut()
 	for(var/atom/movable/A as anything in vis_locs)
-		A.vis_contents -= src
+		vis_remove(A, src)
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)

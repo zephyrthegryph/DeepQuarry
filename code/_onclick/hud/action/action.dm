@@ -290,7 +290,7 @@ CAPABILITIES(/datum/action)
 	rel_set(button, nameof(button.our_hud), our_hud)
 	rel_add(src, nameof(viewers), button)
 	if(viewer.client)
-		viewer.client.screen += button
+		client_screen_add(viewer.client, button)
 
 	button.load_position(viewer)
 	viewer.update_action_buttons()

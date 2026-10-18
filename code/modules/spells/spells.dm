@@ -12,7 +12,7 @@
 	if(spell_masters)
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			spell_master.toggle_open()
-			client.screen -= spell_master
+			client_screen_remove(client, spell_master)
 
 // TODO: Investigate if this matters
 // /mob/Stat()
@@ -41,7 +41,7 @@
 
 	var/atom/movable/screen/movable/spell_master/new_spell_master = new master_type //we're here because either we didn't find our type, or we have no spell masters to attach to
 	if(client)
-		src.client.screen += new_spell_master
+		client_screen_add(src.client, new_spell_master)
 	rel_set(new_spell_master, nameof(new_spell_master.spell_holder), src)
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)

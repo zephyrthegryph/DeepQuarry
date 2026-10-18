@@ -72,12 +72,12 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 	//remove old
 	if(ismob(oldloc))
 		var/mob/particle_mob = oldloc
-		particle_mob.vis_contents -= src
+		vis_remove(particle_mob, src)
 
 	// If we're sitting in a mob, we want to emit from it too, for vibes and shit
 	if(ismob(attached.loc))
 		var/mob/particle_mob = attached.loc
-		particle_mob.vis_contents += src
+		vis_add(particle_mob, src)
 
 /// Sets the particles position to the passed coordinates
 /obj/effect/abstract/particle_holder/proc/set_particle_position(x = 0, y = 0, z = 0)

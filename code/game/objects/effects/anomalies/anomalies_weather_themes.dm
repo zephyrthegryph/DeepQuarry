@@ -53,13 +53,13 @@ CAPABILITIES(/datum/anomalous_weather)
 	if(visuals in T.vis_contents)
 		WARNING("Was asked to add weather to [T.x], [T.y], [T.z] despite already having us in it's vis contents")
 		return
-	T.vis_contents += visuals
+	vis_add(T, visuals)
 
 /datum/anomalous_weather/proc/remove_from_turf(turf/T)
 	if(!(visuals in T.vis_contents))
 		WARNING("Was asked to remove weather from [T.x], [T.y], [T.z] despite it not having us in it's vis contents")
 		return
-	T.vis_contents -= visuals
+	vis_remove(T, visuals)
 
 /datum/anomalous_weather/proc/affect_turf(turf/to_affect)
 	if(iswall(to_affect) || isopenturf(to_affect))

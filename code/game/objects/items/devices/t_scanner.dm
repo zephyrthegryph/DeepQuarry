@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/t_scanner)
 			user_client().images -= LAZYACCESS(active_scanned, scanned)
 	if(new_client)
 		for(var/scanned in active_scanned)
-			new_client.images += LAZYACCESS(active_scanned, scanned)
+			client_images_add(new_client, LAZYACCESS(active_scanned, scanned))
 	else
 		LAZYCLEARLIST(active_scanned)
 

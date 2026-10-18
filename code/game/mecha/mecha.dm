@@ -1852,7 +1852,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		set_dir(dir_in)
 		play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR, 0.5)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
-			occupant.client.images += dq_get_cloaked_selfimage(src)
+			client_images_add(occupant.client, dq_get_cloaked_selfimage(src))
 		play_entered_noise(occupant)
 		return 1
 	else
@@ -1924,7 +1924,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
-			occupant.client.images -= dq_get_cloaked_selfimage(src)
+			client_images_remove(occupant.client, dq_get_cloaked_selfimage(src))
 		if(istype(mob_container, /obj/item/mmi))
 			var/obj/item/mmi/mmi = mob_container
 			mmi.forceMove(src.loc)
@@ -2839,12 +2839,12 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	. = ..()
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
-		occupant.client.images += dq_get_cloaked_selfimage(src)
+		client_images_add(occupant.client, dq_get_cloaked_selfimage(src))
 
 /obj/mecha/uncloak()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
-		occupant.client.images -= dq_get_cloaked_selfimage(src)
+		client_images_remove(occupant.client, dq_get_cloaked_selfimage(src))
 	return ..()
 
 /obj/mecha/proc/update_cell_alerts()

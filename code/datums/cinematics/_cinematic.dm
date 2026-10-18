@@ -129,7 +129,7 @@ CAPABILITIES(/datum/cinematic)
 
 	rel_add(src, nameof(watching), watching_client)
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
-	watching_client.screen += screen
+	client_screen_add(watching_client, screen)
 	// Clients cannot be hooked; a client that goes away leaves a null the loops skip.
 
 /// Simple helper for playing sounds from the cinematic.

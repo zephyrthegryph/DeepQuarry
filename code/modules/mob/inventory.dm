@@ -436,7 +436,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	if(!move_into(src, SLOT_ID_BODY, I, src))
 		return FALSE
 	if(client)
-		client.screen -= I
+		client_screen_remove(client, I)
 	slot_vacated(id, I)
 	on_equipment_changed()
 	return TRUE
@@ -470,7 +470,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 		return 1
 	var/id = inventory_slot_id(item_dropping)
 	if (src.client)
-		src.client.screen -= item_dropping
+		client_screen_remove(src.client, item_dropping)
 	item_dropping.reset_plane_and_layer()
 	item_dropping.screen_loc = null
 	if(isitem(item_dropping))

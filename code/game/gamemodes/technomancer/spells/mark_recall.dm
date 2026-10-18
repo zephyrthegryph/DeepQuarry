@@ -30,7 +30,7 @@ CAPABILITIES(/datum/technomancer_marker)
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()
 	..()
-	caster?.client?.images -= I
+	client_images_remove(caster.client, I)
 	image_anchor(I, null)
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.

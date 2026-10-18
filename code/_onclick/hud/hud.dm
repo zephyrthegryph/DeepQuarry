@@ -486,23 +486,23 @@ CAPABILITIES(/datum/hud)
 	if(hud_used.hud_shown)
 		hud_used.hud_shown = 0
 		if(hud_used.adding)
-			client.screen -= hud_used.adding
+			client_screen_remove(client, hud_used.adding)
 		if(hud_used.other)
-			client.screen -= hud_used.other
+			client_screen_remove(client, hud_used.other)
 		if(hud_used.hotkeybuttons)
-			client.screen -= hud_used.hotkeybuttons
+			client_screen_remove(client, hud_used.hotkeybuttons)
 		if(hud_used.other_important)
-			client.screen -= hud_used.other_important
+			client_screen_remove(client, hud_used.other_important)
 	else
 		hud_used.hud_shown = 1
 		if(hud_used.adding)
-			client.screen += hud_used.adding
+			client_screen_add(client, hud_used.adding)
 		if(hud_used.other && hud_used.inventory_shown)
-			client.screen += hud_used.other
+			client_screen_add(client, hud_used.other)
 		if(hud_used.other_important)
-			client.screen += hud_used.other_important
+			client_screen_add(client, hud_used.other_important)
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
-			client.screen += hud_used.hotkeybuttons
+			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.healths)
 			client.screen |= hud_used?.healths
 		if(hud_used?.internals)
@@ -512,8 +512,8 @@ CAPABILITIES(/datum/hud)
 
 		if(hud_used?.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
-		client.screen += hud_used?.zone_sel				//This one is a special snowflake
-		client.screen += hud_used.toggle_palette
+		client_screen_add(client, hud_used?.zone_sel)				//This one is a special snowflake
+		client_screen_add(client, hud_used.toggle_palette)
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()
@@ -530,18 +530,18 @@ CAPABILITIES(/datum/hud)
 		//Due to some poor coding some things need special treatment:
 		//These ones are a part of 'adding', 'other' or 'hotkeybuttons' but we want them to stay
 		if(!full)
-			client.screen += hud_used.l_hand_hud_object	//we want the hands to be visible
-			client.screen += hud_used.r_hand_hud_object	//we want the hands to be visible
+			client_screen_add(client, hud_used.l_hand_hud_object)	//we want the hands to be visible
+			client_screen_add(client, hud_used.r_hand_hud_object)	//we want the hands to be visible
 			if(hud_used.combat_mode_button)
-				client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
+				client_screen_add(client, hud_used.combat_mode_button)		//we want the combat mode button visible
 				hud_used.combat_mode_button.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
 		else
-			client.screen -= hud_used?.healths
-			client.screen -= hud_used?.internals
-			client.screen -= hud_used?.gun_setting_icon
+			client_screen_remove(client, hud_used?.healths)
+			client_screen_remove(client, hud_used?.internals)
+			client_screen_remove(client, hud_used?.gun_setting_icon)
 
 		//These ones are not a part of 'adding', 'other' or 'hotkeybuttons' but we want them gone.
-		client.screen -= hud_used?.zone_sel	//zone_sel is a mob variable for some reason.
+		client_screen_remove(client, hud_used?.zone_sel)	//zone_sel is a mob variable for some reason.
 
 //Similar to button_pressed_F12() but keeps zone_sel, gun_setting_icon, and healths.
 /mob/proc/toggle_zoom_hud()
@@ -557,22 +557,22 @@ CAPABILITIES(/datum/hud)
 	if(hud_used.hud_shown)
 		hud_used.hud_shown = 0
 		if(hud_used.adding)
-			client.screen -= hud_used.adding
+			client_screen_remove(client, hud_used.adding)
 		if(hud_used.other)
-			client.screen -= hud_used.other
+			client_screen_remove(client, hud_used.other)
 		if(hud_used.hotkeybuttons)
-			client.screen -= hud_used.hotkeybuttons
-		client.screen -= hud_used?.internals
+			client_screen_remove(client, hud_used.hotkeybuttons)
+		client_screen_remove(client, hud_used?.internals)
 		if(hud_used.combat_mode_button)
-			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
+			client_screen_add(client, hud_used.combat_mode_button)		//we want the combat mode button visible
 	else
 		hud_used.hud_shown = 1
 		if(hud_used.adding)
-			client.screen += hud_used.adding
+			client_screen_add(client, hud_used.adding)
 		if(hud_used.other && hud_used.inventory_shown)
-			client.screen += hud_used.other
+			client_screen_add(client, hud_used.other)
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
-			client.screen += hud_used.hotkeybuttons
+			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.internals)
 			client.screen |= hud_used?.internals
 		if(hud_used.combat_mode_button)
@@ -583,7 +583,7 @@ CAPABILITIES(/datum/hud)
 	update_action_buttons(TRUE)
 
 /mob/proc/add_click_catcher()
-	client.screen += client.void
+	client_screen_add(client, client.void)
 
 /mob/new_player/add_click_catcher()
 	return
@@ -610,8 +610,8 @@ CAPABILITIES(/datum/hud)
 	if(client)
 		client.screen = list()
 
-		client.screen += hud_elements
-		client.screen += client.void
+		client_screen_add(client, hud_elements)
+		client_screen_add(client, client.void)
 
 /* TGMC Ammo HUD Port
  * These procs call to screen_objects.dm's respective procs.

@@ -178,7 +178,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 
 	if(do_weather)
 		for(var/turf/T as anything in turfs_to_use)
-			T.vis_contents += visuals
+			vis_add(T, visuals)
 
 /obj/effect/fake_sun/warm
 	name = "warm fake sun"

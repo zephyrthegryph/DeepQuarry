@@ -51,7 +51,7 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 		var/obj/effect/abstract/shared_particle_holder/first_holder = new(null, particle_type, particle_flags)
 		first_holder.shared_users = 1
 		GLOB.shared_particles[particle_key] = list(entity_handle(first_holder))
-		play_pretend.vis_contents += first_holder
+		vis_add(play_pretend, first_holder)
 		return first_holder
 
 	var/list/type_holders = GLOB.shared_particles[particle_key]
@@ -68,12 +68,12 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 	if (length(live_holders) < pool_size)
 		var/obj/effect/abstract/shared_particle_holder/new_holder = new(null, particle_type, particle_flags)
 		type_holders += entity_handle(new_holder)
-		play_pretend.vis_contents += new_holder
+		vis_add(play_pretend, new_holder)
 		new_holder.shared_users = 1
 		return new_holder
 
 	var/obj/effect/abstract/shared_particle_holder/particle_holder = pick(live_holders)
-	play_pretend.vis_contents += particle_holder
+	vis_add(play_pretend, particle_holder)
 	particle_holder.shared_users++
 	return particle_holder
 
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
 		if (!(particle_holder in play_pretend.vis_contents))
 			continue
 
-		play_pretend.vis_contents -= particle_holder
+		vis_remove(play_pretend, particle_holder)
 		particle_holder.shared_users--
 		if (particle_holder.shared_users <= 0)
 			type_holders -= holder_handle

@@ -279,7 +279,7 @@ CAPABILITIES(/datum/radial_menu)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
 			info_button.set_plane(PLANE_PLAYER_HUD_ABOVE)
 			info_button.set_layer(RADIAL_CONTENT_LAYER)
-			E.vis_contents += info_button
+			vis_add(E, info_button)
 
 /datum/radial_menu/New()
 	rel_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
@@ -342,7 +342,7 @@ CAPABILITIES(/datum/radial_menu)
 	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
 	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
 	menu_holder.appearance_flags |= KEEP_APART|RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
-	menu_holder.vis_contents += elements + close_button
+	vis_add(menu_holder, elements + close_button)
 	current_user().images += menu_holder
 
 /datum/radial_menu/proc/hide()

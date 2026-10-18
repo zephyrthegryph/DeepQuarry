@@ -43,7 +43,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 	if(remove_images)
 		var/client/client = eye.GetViewerClient()
 		if(client)
-			client.images -= obscured
+			client_images_remove(client, obscured)
 	rel_remove(eye, nameof(eye.visibleChunks), src)
 	rel_remove(src, nameof(seenby), eye)
 	if(visible > 0)
@@ -93,7 +93,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 					continue
 				var/client/client = m.GetViewerClient()
 				if(client)
-					client.images -= t.obfuscations[obfuscation.type]
+					client_images_remove(client, t.obfuscations[obfuscation.type])
 
 	for(var/turf/t as anything in visRemoved)
 		if(obscuredTurfs[t])
@@ -110,7 +110,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 					continue
 				var/client/client = m.GetViewerClient()
 				if(client)
-					client.images += t.obfuscations[obfuscation.type]
+					client_images_add(client, t.obfuscations[obfuscation.type])
 	updating = 0
 
 /datum/chunk/proc/acquireVisibleTurfs(list/visible)

@@ -663,7 +663,7 @@
 	AM.add_filter("podmask", 1, alpha_mask_filter(render_source = "nt_podmask[REF(src)]", flags = MASK_INVERSE))
 	AM.set_pixel_y(12)
 	AM.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_DIR
-	vis_contents += AM
+	vis_add(src, AM)
 	if(ismob(AM))
 		var/mob/M = AM
 		buckle_mob(M, TRUE, FALSE)
@@ -673,7 +673,7 @@
 
 /obj/structure/prop/machine/nt_pod/proc/unduct(atom/movable/AM)
 	// Geddout
-	vis_contents -= AM
+	vis_remove(src, AM)
 	if(ismob(AM))
 		var/mob/M = AM
 		unbuckle_mob(M, TRUE)

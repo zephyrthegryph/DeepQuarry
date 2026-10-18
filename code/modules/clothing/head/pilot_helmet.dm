@@ -156,8 +156,8 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 /obj/item/clothing/head/pilot/dropped(mob/user, equipping, slot)
 	. = ..()
 	if(user.client)
-		user.client.screen -= pilot_hud
-		user.client.images -= raw_images
+		client_screen_remove(user.client, pilot_hud)
+		client_images_remove(user.client, raw_images)
 
 /obj/item/clothing/head/pilot/alt
 	name = "pilot helmet"

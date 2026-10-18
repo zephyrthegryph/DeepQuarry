@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/nif)
 // Deletes its button from the hud that owns it. Hooks and the owner ref are core work.
 /datum/nif_menu/on_destroy(force)
 	if(screen_icon)
-		owner?.client?.screen -= screen_icon
+		client_screen_remove(owner.client, screen_icon)
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
 			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/item/nif)
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
-	user.client?.screen += screen_icon
+	client_screen_add(user.client, screen_icon)
 
 	grant(user, granted_verb(/mob/living/carbon/human/proc/nif_menu), src)
 

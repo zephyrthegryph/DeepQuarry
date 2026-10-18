@@ -1620,11 +1620,11 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(!LAZYLEN(traitor_hud_images))
 		return
 	traitor_hud_client = client
-	client.images += traitor_hud_images
+	client_images_add(client, traitor_hud_images)
 
 /mob/living/silicon/robot/proc/clear_traitor_hud()
 	if(traitor_hud_client && LAZYLEN(traitor_hud_images))
-		traitor_hud_client.images -= traitor_hud_images
+		client_images_remove(traitor_hud_client, traitor_hud_images)
 	traitor_hud_client = null
 	traitor_hud_images = null
 

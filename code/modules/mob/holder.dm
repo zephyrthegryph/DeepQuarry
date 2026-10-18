@@ -81,7 +81,7 @@
 	rel_set(src, nameof(held_mob), held)
 	original_vis_flags = held.vis_flags
 	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
-	vis_contents += held
+	vis_add(src, held)
 	name = held.name
 	original_transform = held.transform
 	held.transform = null
