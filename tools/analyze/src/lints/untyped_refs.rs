@@ -89,7 +89,7 @@ fn is_value_call(e: &Expression) -> bool {
         name,
         "rand" | "prob" | "round" | "floor" | "ceil" | "abs" | "min" | "max" | "sqrt" | "sin" | "cos" | "num2text" | "text2num" | "list2params" | "length" | "lowertext"
             | "uppertext" | "copytext" | "replacetext" | "findtext" | "jointext" | "get_dist" | "nameof" | "REF" | "ckey" | "trim" | "clamp" | "text" | "isnull"
-            | "istype" | "ispath" | "islist" | "isnum" | "istext" | "time2text" | "addtext" | "splittext" | "json_encode" | "sanitize"
+            | "istype" | "ispath" | "islist" | "isnum" | "istext" | "time2text" | "addtext" | "splittext" | "json_encode" | "sanitize" | "text2path"
     )
 }
 

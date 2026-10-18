@@ -118,7 +118,6 @@ call	code/datums/vending/stored_item.dm	@/datum/stored_item::item_name
 call	code/defines/obj/weapon.dm	@/obj/item/stock_parts::rating
 call	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::id
 call	code/engine/actions/reactions.dm	@/datum/reaction::global_handler
-call	code/engine/actions/reactions.dm	@/datum/reaction::declared_by
 call	code/engine/change/lookup_reads.dm	@/datum/lookup_read_binding::reader_ref
 call	code/engine/declare/capability_def.dm	@/datum/capability::selector
 call	code/engine/declare/definition_types.dm	@/datum/scheduled_behaviour::system_key
@@ -225,16 +224,12 @@ call	code/game/turfs/simulated/wall_icon.dm	@/turf/simulated/wall::smooth_key_se
 call	code/game/turfs/turf.dm	@/turf::thermal_conductivity
 call	code/game/turfs/turf_edges.dm	@/turf/simulated::edge_key_sent
 call	code/library/machine/fabricator.dm	@/datum/fab_run::coefficient
-call	code/library/transformations/transformation_entry.dm	@/datum/xform::data_proc
-call	code/library/transformations/transformation_entry.dm	@/datum/xform::then_proc
-call	code/library/transformations/transformation_entry.dm	@/datum/xform::subject_type
 call	code/modules/admin/admin.dm	@/datum/player_info::rank
 call	code/modules/admin/holder2.dm	@/datum/controller/global_vars::href_token
 call	code/modules/admin/holder2.dm	@/datum/admins::href_token
 call	code/modules/admin/holder2.dm	@/datum/admins::feedback_link_pending
 call	code/modules/admin/modify_robot.dm	@/datum/eventkit/modify_robot::selected_ai
 call	code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm	@/datum/SDQL_parser::query_type
-call	code/modules/admin/verbs/buildmode.dm	@/obj/effect/bmode/buildmode::objholder
 call	code/modules/admin/verbs/secrets.dm	@/datum/secrets_menu::is_debugger
 call	code/modules/admin/verbs/secrets.dm	@/datum/secrets_menu::is_funmin
 call	code/modules/alarm/alarm.dm	@/datum/alarm_source::source_name
@@ -284,7 +279,6 @@ call	code/modules/contracts/medical_trial_side_contracts.dm	@/datum/contract_doc
 call	code/modules/contracts/opportunity_broker.dm	@/datum/contract_opportunity_observation::value
 call	code/modules/contracts/social_framework.dm	@/datum/contract/social::minimum_grade_ratio
 call	code/modules/contracts/social_framework.dm	@/datum/contract/social::success_grade_ratio
-call	code/modules/customitems/item_spawning.dm	@/datum/custom_item::item_path
 call	code/modules/detectivework/tools/swabs.dm	@/obj/item/forensics/swab::gsr
 call	code/modules/economy/Accounts.dm	@/datum/transaction::time
 call	code/modules/economy/cargo_market.dm	@/datum/cargo_market_listing::unit_price
@@ -472,7 +466,6 @@ call	code/modules/shuttles/shuttles_web.dm	@/datum/shuttle/autodock/web_shuttle:
 call	code/modules/skybox_service.dm	@/datum/skybox_settings::color
 call	code/modules/spells/spell_code.dm	@/datum/spell::name
 call	code/modules/spells/spell_code.dm	@/datum/spell::invocation
-call	code/modules/spells/targeted/projectile/projectile.dm	@/datum/spell/targeted/projectile::proj_type
 call	code/modules/stockmarket/articles.dm	@/datum/article::headline
 call	code/modules/stockmarket/articles.dm	@/datum/article::subtitle
 call	code/modules/stockmarket/articles.dm	@/datum/article::article

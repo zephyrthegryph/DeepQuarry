@@ -67,7 +67,6 @@ list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::player_laws
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::starting_legal_nifsoft
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::starting_illegal_nifsoft
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::virusDB
-list	code/_helpers/null_safety.dm	var/static/list/instances = list()
 list	code/controllers/subsystems/assets.dm	@/datum/system/assets::cache
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_pending
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_loose
@@ -89,7 +88,6 @@ list	code/datums/datum.dm	@/datum::open_tguis
 list	code/datums/locations/locations.dm	@/datum/locations::children
 list	code/game/area/areas.dm	@/area::all_doors
 list	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::client_huds
-list	code/game/machinery/camera/camera_assembly.dm	@/obj/item/camera_assembly::possible_upgrades
 list	code/game/machinery/frame.dm	@/datum/controller/global_vars::construction_frame_wall
 list	code/game/machinery/frame.dm	@/datum/controller/global_vars::construction_frame_floor
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
