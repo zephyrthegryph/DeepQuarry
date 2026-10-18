@@ -202,3 +202,36 @@ CAPABILITIES(/datum/relations_weak_holder)
 /datum/unit_test/relations_client_handle_forms/Run()
 	TEST_ASSERT_NULL(resolve_handle("@nobody"), "a bare ckey handle names nothing")
 	TEST_ASSERT_NULL(resolve_handle("@nobody#1"), "a handle of a ckey that is not connected names nothing")
+
+/// A subtype's links() end over a var an ancestor declares as a plain ref_one refines it into a pair: no declaration report, and both ends are
+/// maintained (the blob resource's overmind, an ancestor ref_one, is one end of links(... /mob/observer/blob::resource_blobs)).
+/datum/relations_refine_base
+	var/datum/relations_refine_hub/hub
+
+CAPABILITIES(/datum/relations_refine_base)
+	ref_one(nameof(hub))
+
+/datum/relations_refine_base/linked
+
+/datum/relations_refine_hub
+	var/list/members
+
+CAPABILITIES(/datum/relations_refine_base/linked)
+	links(/datum/relations_refine_base/linked::hub, /datum/relations_refine_hub::members, b_many = TRUE)
+
+/datum/unit_test/relations_link_refines_ancestor_ref
+
+/datum/unit_test/relations_link_refines_ancestor_ref/Run()
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/datum/relations_refine_base/linked/L = new
+	var/datum/relations_refine_hub/H = new
+	rel_set(L, nameof(L.hub), H)
+	TEST_ASSERT(L in H.members, "the subtype's end is a pair: the hub lists it")
+	var/obj/structure/blob/resource/R = allocate(/obj/structure/blob/resource, test_floor())
+	TEST_ASSERT_EQUAL(own_table_of(R).entries[nameof(R.overmind)][OWNE_ARG], RELS_PAIR, "the blob resource's overmind is the pair's end")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "an ancestor ref refined by a link reports nothing: [json_encode(capture)]")
+	qdel(L)
+	TEST_ASSERT(!length(H.members), "the pair clears with its end")
+	qdel(H)

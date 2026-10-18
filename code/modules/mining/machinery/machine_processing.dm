@@ -26,7 +26,7 @@
 	. = ..()
 	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
-		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
+		rel_set(machine(), nameof(/obj/machinery/mineral/processing_unit::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		return INITIALIZE_HINT_QDEL
@@ -48,7 +48,6 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
-	ref_one(nameof(machine))
 
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(datum/act/op/A)
 	var/mob/user = A.actor
@@ -273,6 +272,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /// arrives (on_input_entered()).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	links(/obj/machinery/mineral/processing_unit::console, /obj/machinery/mineral/processing_unit_console::machine) // the machine and its console name each other (D3)
 	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 	ref_one(nameof(input))

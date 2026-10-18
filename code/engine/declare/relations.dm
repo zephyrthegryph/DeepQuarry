@@ -294,6 +294,11 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			// relation, and the pair would silently not be maintained at this end (doc/rewrite/proposals/relations.md D3).
 			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_PARTNER] == back && (existing[OWNE_ARG] == RELS_PAIR || existing[OWNE_ARG] == RELS_SYMMETRIC))
 				continue
+			// A plain reference (an ancestor's ref_one/ref_many) that a subtype's links() makes one end of a pair is refined, not contradicted:
+			// the pair entry replaces it, so the partner end is maintained (a skip left it stale; a report broke every such subtype).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_ARG] == RELS_PLAIN && !existing[OWNE_EXTRA] && !!existing[OWNE_LIST] == !!E.args["[end]_many"])
+				existing = null
+		if(existing)
 			OWN_REPORT("[T.owner_type].[var_name] is an end of links([E.args["a_type"]]::[E.args["a_var"]], [E.args["b_type"]]::[E.args["b_var"]]) and is also declared [own_kind_name(existing[OWNE_KIND])]: one declaration per var")
 			continue
 		var/is_list = !!E.args["[end]_many"]
@@ -306,7 +311,7 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			entry.len = OWNE_CONFLICT
 			entry[OWNE_CONFLICT] = TRUE
 		T.entries[var_name] = entry
-		LAZYADD(T.ref_vars, var_name)
+		LAZYOR(T.ref_vars, var_name)
 		T.empty = FALSE
 
 /// The var name a target_key names: the plain name, or the var of nameof(/type::var) (the holder type has no such var of its own).
