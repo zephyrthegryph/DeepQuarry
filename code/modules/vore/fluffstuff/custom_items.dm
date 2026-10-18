@@ -1,3 +1,7 @@
+MSG_DEF_SELF(custom_items/the_necklace_never_quite_gets, "the necklace never quite gets past your head")
+MSG_DEF_SELF(custom_items/the_collar_doesnt_fit_you, "the collar doesn't fit you")
+MSG_DEF_SELF(custom_items/these_dont_look_like_they, "these don't look like they were made to fit you")
+
 /* TUTORIAL
 	"icon" is the file with the HUD/ground icon for the item
 	"icon_state" is the iconstate in this file for the item
@@ -1146,7 +1150,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
@@ -1273,8 +1277,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 
 
 CAPABILITIES(/obj/item/rig/nikki)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = "the necklace never quite gets past your head"), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets)), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
@@ -1656,7 +1660,7 @@ CAPABILITIES(/obj/item/dice/loaded/ceph)
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("bricker98", because = "the collar doesn't fit you"), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("bricker98", because = MSG(custom_items/the_collar_doesnt_fit_you)), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
 
@@ -1676,4 +1680,4 @@ CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
 
 
 CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("radiantaurora", because = "these don't look like they were made to fit you"), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("radiantaurora", because = MSG(custom_items/these_dont_look_like_they)), mode = ACCEPTANCE_APPEND)

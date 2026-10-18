@@ -432,7 +432,7 @@ CAPABILITIES(/datum/system/power)
     </ul>
   </div>
   <pre><code>CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)            <span class="c">// the occupant and the cell's gas trade heat while it works and they are inside</span>
-	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
+	when(all_of(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
 
 CAPABILITIES(/obj/machinery/space_heater)                              <span class="c">// a heat pump on the room's air, paid from the cell in machine_step()</span>
 	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE))
@@ -3464,7 +3464,7 @@ CAPABILITIES(/obj/machinery/door/airlock)                <span class="c">// the 
 
 	section(ctrl_click, "hammer on it (combat), hold it open (grab), ring the bell")
 	op("hold_open", inputs(hand(), item(/obj/item)), gesture(GESTURE_CTRL), stance(I_GRAB), priority(above("hammer")),
-		when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), then(PROC_REF(hold_door_open)))
+		when(not(req(/mob/living/silicon, of = ON_ACTOR))), needs(req_adjacent()), then(PROC_REF(hold_door_open)))
 
 	section(controls, "the remote control window and a silicon's gestures over its link")
 	interface("AiAirlock")

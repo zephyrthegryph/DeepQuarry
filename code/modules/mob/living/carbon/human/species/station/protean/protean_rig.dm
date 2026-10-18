@@ -312,7 +312,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/mob/spacesuit.dmi'))
 

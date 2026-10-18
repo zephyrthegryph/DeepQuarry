@@ -110,7 +110,7 @@ CAPABILITIES(/obj/structure/ghost_pod/manual)
 	var/auto_done = FALSE
 
 CAPABILITIES(/obj/structure/ghost_pod/automatic)
-	every(PROC_REF(auto_delay), then(PROC_REF(auto_trigger)), when = cond_all(cond_not(nameof(used)), cond_not(nameof(auto_done))))
+	every(PROC_REF(auto_delay), then(PROC_REF(auto_trigger)), when = all_of(not(nameof(used)), not(nameof(auto_done))))
 
 /// The every() delay: delay_to_self_open until the first try, then delay_to_try_again.
 /obj/structure/ghost_pod/automatic/proc/auto_delay(datum/act/A)

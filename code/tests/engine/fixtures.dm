@@ -53,7 +53,7 @@ CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, key 
 
 /datum/e0_cap/phase_shift/entries()
 	return list(
-		op("shift", label("Phase shift"), menu(button = "phase_shift", bind = "shift+f"), 			when(cond_not(CAP_PROC(is_phased))), 			costs(RES_DARK_ENERGY, cost), 			grants(/datum/e0_cap/phased, on = ON_HOLDER)), // the grant lands on the op's own holder, so its source is this activation: it ends with the ability
+		op("shift", label("Phase shift"), menu(button = "phase_shift", bind = "shift+f"), 			when(not(CAP_PROC(is_phased))), 			costs(RES_DARK_ENERGY, cost), 			grants(/datum/e0_cap/phased, on = ON_HOLDER)), // the grant lands on the op's own holder, so its source is this activation: it ends with the ability
 		op("unshift", label("Phase back in"), menu(button = "phase_shift", bind = "shift+f"), 			when(CAP_PROC(is_phased)), 			then(CAP_PROC(shift_back))))
 
 /datum/e0_cap/phase_shift/proc/is_phased(datum/act/A)

@@ -150,7 +150,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/datum/act/buckle/B = ACT_TRY(holder, buckle, victim)
 	GLOB.act_next_actor = null
 	if(isnull(B))
-		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
+		A.reason = act_refusal()
 		log_world("BUCKLE: [victim] to [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	if(victim.loc != holder.loc)
@@ -236,7 +236,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/datum/act/unbuckle/U = ACT_TRY(holder, unbuckle, occupant)
 	GLOB.act_next_actor = null
 	if(isnull(U))
-		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
+		A.reason = act_refusal()
 		log_world("BUCKLE: [occupant] from [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	if(!holder.unbuckle_mob(occupant))

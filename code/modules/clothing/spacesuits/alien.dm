@@ -23,7 +23,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
 
 CAPABILITIES(/obj/item/clothing/suit/space/skrell)
 	acceptance("fit", fits(list(SPECIES_SKRELL, SPECIES_HUMAN)), mode = ACCEPTANCE_REPLACE)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/skrell)
 
 CAPABILITIES(/obj/item/clothing/suit/space/vox)
 	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 

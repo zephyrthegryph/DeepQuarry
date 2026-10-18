@@ -21,7 +21,7 @@ CAPABILITIES(/obj/item/assembly/infra)
 	op("visible", ui_act("visible"), then(PROC_REF(ui_act_visible)))
 	rotatable()
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	every(2 SECONDS, then(PROC_REF(infra_step)), when = cond_all(nameof(secured), nameof(on)))
+	every(2 SECONDS, then(PROC_REF(infra_step)), when = all_of(nameof(secured), nameof(on)))
 
 /obj/item/assembly/infra/var/on = FALSE
 

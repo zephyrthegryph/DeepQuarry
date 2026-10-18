@@ -167,6 +167,13 @@
 		return FALSE
 	return !isatom(holder) || op_var_slot(holder, slot_id)
 
+/// move_into() that answers why (admission.md wave 2): null when `item` is in `holder`'s `slot_id` now, else the refusal reason. Library code
+/// reads this, never the engine's last-action side channel.
+/proc/move_into_reason(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
+	if(move_into(holder, slot_id, item, actor, ledger_slot, force, log, key, amount))
+		return null
+	return GLOB.act_last_reason || /datum/msg/op/not_available
+
 /// A transfer that did not happen (the caller already cancelled its insert action, whose own reason ours replaces): the reason and outcome
 /// are left where put_in() reads them, the world log has the line and `actor` is told why (null: already told). Returns FALSE.
 /proc/move_into_failed(datum/holder, slot_id, datum/item, mob/actor, reason, outcome = ACT_REFUSED)

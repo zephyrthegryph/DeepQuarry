@@ -6,7 +6,7 @@
 //
 // The condition or key is evaluated at the drain (act_drain_point(): the start of the kernel's D, P and R phases), and the parts run there, once
 // per drain however many of its reads changed. A condition's edge is ENTER (became true) or EXIT (became false); ANY (= ENTER | EXIT) on a key
-// compares values. Reads: a var name, a stat id (both its var and its stat key), a capability state key, cond_not/all/any of those, or a
+// compares values. Reads: a var name, a stat id (both its var and its stat key), a capability state key, not/all_of/any_of of those, or a
 // proc of the holder x(datum/act/A) whose own-var reads E5 generated. A read through a relation hop (nameof(terminal.charge)) watches the relation
 // var itself (rewriting it re-reads the far end) AND the far var's own changes: a hop path registers its last segment in GLOB.change_hop_keys, so a
 // write of that var on any entity is published, and hooks_change_hop_published() walks the relations back along the path to the entities that read

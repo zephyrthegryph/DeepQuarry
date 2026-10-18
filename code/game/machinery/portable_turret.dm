@@ -910,7 +910,7 @@ MSG_DEF_SELF(turret_frame/stuck_gun, "It is stuck to your hand, you cannot put i
 		stage(STAGE_TURRET_FRAME_SHUT, tool(TOOL_SCREWDRIVER), wait(0), undo = list(tool(TOOL_SCREWDRIVER), wait(0))),
 		stage(STAGE_TURRET_FRAME_ARMOURED, stack(/obj/item/stack/material/steel, 2), wait(0), undo = list(tool(TOOL_CROWBAR), wait(0), when(nameof(/atom/movable::anchored)))),
 		stage(STAGE_TURRET_FRAME_DONE, tool(TOOL_WELDER), wait(3 SECONDS), then(TYPE_PROC_REF(/obj/machinery/porta_turret_construct, finished))),
-		dismantle(tool(TOOL_CROWBAR), wait(0), when(cond_not(nameof(/atom/movable::anchored))),
+		dismantle(tool(TOOL_CROWBAR), wait(0), when(not(nameof(/atom/movable::anchored))),
 			spawns(/obj/item/stack/material/steel, 5)))
 
 /obj/machinery/porta_turret_construct

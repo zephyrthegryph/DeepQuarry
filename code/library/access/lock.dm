@@ -41,7 +41,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		extend(TAG_UI, needs(req_unlocked_for_actor(id = "lock"))),
 		extend(TAG_CONTROL, needs(req_unlocked_for_actor(id = "lock"))),
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),
-		examine_line(MSG(lock/is_unlocked), when = cond_not(LOCK_LOCKED)))
+		examine_line(MSG(lock/is_unlocked), when = not(LOCK_LOCKED)))
 
 /datum/capability/lib/lock/brings_wires()
 	return wire ? list(wire) : null

@@ -33,7 +33,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	configure(light_glow(range = 5, color = "#3e0000"))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	/// Surges near players while intact; a broken pylon does nothing until repaired.
-	every(2 SECONDS, then(PROC_REF(pylon_step)), when = cond_all(cond_not(nameof(isbroken)), STAT_RELEVANCE))
+	every(2 SECONDS, then(PROC_REF(pylon_step)), when = all_of(not(nameof(isbroken)), STAT_RELEVANCE))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

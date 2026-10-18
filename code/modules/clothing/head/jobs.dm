@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
 	show_examine = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/det)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 
 

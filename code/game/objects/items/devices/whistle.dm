@@ -1,3 +1,6 @@
+MSG_DEF_SELF(hailer/fried, "the hailer is fried, the tiny input screen just shows a waving ASCII penis")
+MSG_DEF_SELF(hailer/fried_slot, "The hailer is fried. You can't even fit the sequencer into the input slot.")
+
 /obj/item/hailer
 	name = "hailer"
 	desc = "Used by obese officers to save their breath for running."
@@ -16,9 +19,9 @@ CAPABILITIES(/obj/item/hailer)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
-	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req(PROC_REF(unfried), because = "the hailer is fried, the tiny input screen just shows a waving ASCII penis")),
+	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req(PROC_REF(unfried), because = MSG(hailer/fried))),
 		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Please enter new message (leave blank to reset).")), then(PROC_REF(message_picked)))
-	emag(list(needs(req(PROC_REF(unfried), because = "The hailer is fried. You can't even fit the sequencer into the input slot.")), then(PROC_REF(overloaded))), repeatable = TRUE)
+	emag(list(needs(req(PROC_REF(unfried), because = MSG(hailer/fried_slot))), then(PROC_REF(overloaded))), repeatable = TRUE)
 
 /obj/item/hailer/proc/set_hailer_message()
 	set name = "Set Hailer Message"

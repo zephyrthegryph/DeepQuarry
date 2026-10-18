@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/meter)
 	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req(PROC_REF(panel_open_now))),
 		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(id_entered)))
-	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
+	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
 	ref_one(nameof(target))
 
 /obj/machinery/meter/Initialize(mapload)

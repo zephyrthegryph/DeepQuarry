@@ -222,6 +222,10 @@ GLOBAL_VAR(act_next_authority)
 /// put_in() reports the two differently (OP_REFUSED, OP_REPLACED).
 GLOBAL_VAR(act_last_outcome)
 GLOBAL_VAR(act_last_reason)
+/// Why the last ACT_TRY that returned null was refused or taken over (a /datum/msg, text, or the generic refusal): the one reader outside the engine's
+/// own code, which may not name GLOB.act_last_reason (legacy_forms banned_outside).
+/proc/act_refusal()
+	return GLOB.act_last_reason || /datum/msg/op/not_available
 /// What the hook that took the last ended action over answered (the value its then() handler returned, or what it set in A.reply): the payload of a
 /// veto. Read it right after ACT_TRY returned null with ACT_TAKEN_OVER.
 GLOBAL_VAR(act_last_reply)

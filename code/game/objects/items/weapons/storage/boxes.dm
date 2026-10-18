@@ -38,9 +38,9 @@
 
 CAPABILITIES(/obj/item/storage/box)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
-	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
-	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))
-	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up)))
+	op("fold", in_hand(), when(all_of(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
+	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(all_of(PROC_REF(crumples), not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))
+	op("crumple", in_hand(), priority(below("fold")), when(all_of(PROC_REF(crumples), any_of(PROC_REF(cannot_fold), not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up)))
 
 /// Used in hand, a box that dumps its contents does that and nothing else.
 /obj/item/storage/box/proc/used_to_empty()

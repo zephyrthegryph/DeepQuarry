@@ -897,7 +897,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 CAPABILITIES(/obj/item/clothing/suit)
 	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(limb_clearance)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

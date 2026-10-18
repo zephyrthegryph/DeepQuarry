@@ -5,7 +5,7 @@
 //! counts the hand-written gates the path system replaces, so their number can only fall:
 //!
 //!   when_door      `when(COVER_OPEN)`, `when(PANEL_OPEN)`, `when(nameof(opened))`, `when(nameof(panel_open))`: an op silenced while a door is
-//!                  shut (an op of the outside that works while it is shut, `when(cond_not(nameof(opened)))`, is not a path and is not counted)
+//!                  shut (an op of the outside that works while it is shut, `when(not(nameof(opened)))`, is not a path and is not counted)
 //!   req_door       `req_is(COVER_OPEN, ...)`, `req_is(PANEL_OPEN, ...)`, `req_panel_closed()`: a door's state as a requirement
 //!                  (a cover's own `req_is(COVER_REMOVED, FALSE)` is its state, not a path, and is not counted)
 //!   req_built_put  `req_built(...)` on a line that puts something in (an `.insert` op key, `put_in`): a staged slot written by hand;

@@ -49,7 +49,7 @@
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
-	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = not(nameof(body_color)))
 	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 
 /mob/living/simple_mob/vore/rabbit/life_type_post_due()

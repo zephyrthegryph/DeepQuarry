@@ -1,4 +1,4 @@
-// Body slots (doc/rewrite/containment.md Â�6, roadmap C3).
+// Body slots (doc/rewrite/containment.md §6, roadmap C3).
 //
 // A mob's slots belong to its body plan. Each plan returns its slot list from
 // /datum/body/proc/slot_def_types(); the mob hands it to the ledger through

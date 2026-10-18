@@ -46,8 +46,8 @@ MSG_DEF(robobag/tag_removed, "You remove %I% from %T%.", "%U% removes the tag fr
 // and gives the tag back to an alt-click.
 CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 	owns_one(nameof(corptag), /obj/item/clothing/accessory/badge)
-	op("scan_robot", item(/obj/item/robotanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(robot_analyser_used)))
-	op("swap_tag", item(/obj/item/clothing/accessory/badge), label("Attach tag"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(tag_swapped)))
+	op("scan_robot", item(/obj/item/robotanalyzer), label("Scan"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(robot_analyser_used)))
+	op("swap_tag", item(/obj/item/clothing/accessory/badge), label("Attach tag"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(tag_swapped)))
 	op("remove_tag", hand(), gesture(GESTURE_ALT), label("Remove tag"), when(req(PROC_REF(has_tag))), then(PROC_REF(tag_removed)))
 
 /// There is a tag on the bag.

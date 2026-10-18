@@ -55,7 +55,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
 			feed = TRUE, \
 			examine_range = 2),
-		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
+		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)

@@ -46,12 +46,12 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 			sets(COVER_REMOVED, TRUE), sets(COVER_OPEN, TRUE), says(MSG(cover/pried_off)))
 	if(replace)
 		entries += op("replace", replace, label("Replace cover"), \
-			when(broken || cond_any(COVER_REMOVED, cond_not(STAT_OPERABLE))), \
+			when(broken || any_of(COVER_REMOVED, not(STAT_OPERABLE))), \
 			space ? needs(req_space_empty(space)) : null, \
 			sets(COVER_REMOVED, FALSE), sets(COVER_OPEN, FALSE), says(MSG(cover/refitted)))
-	entries += look_layer(LOOK_COVER_OPEN, when = cond_all(COVER_OPEN, cond_not(COVER_REMOVED)))
+	entries += look_layer(LOOK_COVER_OPEN, when = all_of(COVER_OPEN, not(COVER_REMOVED)))
 	entries += examine_line(MSG(cover/removed_examine), when = COVER_REMOVED)
-	entries += examine_line(MSG(cover/open_examine), when = cond_all(COVER_OPEN, cond_not(COVER_REMOVED)))
+	entries += examine_line(MSG(cover/open_examine), when = all_of(COVER_OPEN, not(COVER_REMOVED)))
 	return entries
 
 /// What cover.open just did: opened or closed.

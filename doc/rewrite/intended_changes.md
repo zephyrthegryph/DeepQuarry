@@ -5184,6 +5184,17 @@ The look sweep previously seeded only host rand(), while native rolls() also use
 Master `f13b84652d` (October 13, 2026, 19:32:27 -0500; “Delete the dead mecha AI-attack surface; drop unused ALLOWs; log R9”) removes `ai_use_equipment`. The fresh declaration-lane capture differs only in that key on `/obj/mecha` and `/obj/mecha/working/ripley`: all expanded menus, clicks and other keys are identical. Only those two literal key rows are refreshed, preserving existing base factoring and encoding.
 
 The declaration privacy fixtures previously used the test helper `set_var`, a raw assignment that does not publish tracked dependencies. They now use the existing `/area.set_flags` for both initial setup and the live admin-style edit, and restore original flags through that same setter. The strict `privacy0` to `privacy1` assertion remains, with an additional assertion that the flag was actually enabled. This corrects fixture publication; it changes no production privacy behavior and authorizes no appearance-pin re-records.
+## Admission (lane rewrite/admission, `doc/rewrite/proposals/admission.md`)
+
+* **Dressing someone through the strip menu judges the stripper** (D2m). `equip_to_slot_if_possible()` and `equip_refusal()` take the actor; the strip
+  menu passes the user, so the equip catalog and an item's own `extend(/datum/act/equip, needs(...))` see who puts the item on. The catalog's rules all
+  read the wearer, so what is refused is unchanged today; the refusal is shown to the actor.
+* **A slot refusal is text again.** `dq_ledger_refusal()`, `dq_constraint_refusal()` and `equip_refusal()` return a slot requirement's `/datum/msg`
+  reason as its text (`reason_text()`); since the slot-admission merge a closet, folder or mixed `accepts` refusal had leaked the message type path to
+  callers that print it.
+* **Raw-string reasons are message types** with the same text ("it doesn't take that", "only legcuffs go there", "it isn't made for a holster", the
+  hailer and AI-core admin reasons): no visible change.
+* **A refusal check outside a menu records no reads** (D9): `acceptance_reason()` asks an override's read metadata only while a menu frame is open.
 # Closet density composition (2026-10-17)
 
 Closet doors now publish their density through the existing native door-state hold,

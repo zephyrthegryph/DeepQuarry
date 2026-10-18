@@ -28,7 +28,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
 MSG_DEF_SELF(zaddat/has_been_customized, "This shroud has already been customized.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 1))
 	op("zaddat_custom_suit_verb", menu(), label("Customize Shroud"), needs(carried(), req_is(nameof(has_been_customized), FALSE, because = MSG(zaddat/has_been_customized))), then(PROC_REF(zaddat_custom_suit_verb)))

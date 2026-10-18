@@ -88,8 +88,15 @@
 	var/datum/entry/part/acceptance_plan/override = LAZYACCESS(overrides, channel)
 	return override ? override : table_of(declarer).acceptance_channels?[channel]
 
+/// The largest reads_level of the plan's requirements (REQ_READS_TYPE for an empty plan).
+/datum/entry/part/acceptance_plan/proc/req_level()
+	. = REQ_READS_TYPE
+	for(var/datum/entry/part/req/R as anything in children)
+		. = max(., R.req_level())
+
 /datum/entry/part/acceptance_plan/proc/check(datum/act/op/A)
-	op_menu_record_reads(read_keys(A))
+	if(GLOB.op_menu_read_frame) // the recorder is a no-op without an open menu frame: do not build and copy the read pairs for nothing
+		op_menu_record_reads(read_keys(A))
 	for(var/datum/entry/part/req/R as anything in children)
 		var/why = op_req_check(A, R)
 		if(!isnull(why))
@@ -127,7 +134,8 @@
 	try
 		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
 		op_pure_begin()
-		op_menu_record_reads(declarer.acceptance_override_reads())
+		if(GLOB.op_menu_read_frame)
+			op_menu_record_reads(declarer.acceptance_override_reads())
 		. = P ? P.check(A) : null
 	catch(var/exception/fault)
 		// Unwind the query and any nested requirement guard that faulted.

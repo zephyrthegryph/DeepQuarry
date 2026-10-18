@@ -35,8 +35,10 @@ ACTION(injure, kind, amount, zone, atom/cause, flags)
 ACTION(body_status, notice = /datum/notice/body_status_changed)
 ACTION(insert, atom/movable/item, slot_id, amount)
 ACTION(remove, atom/movable/item, slot_id)
-ACTION(equip, obj/item/item, slot_id)
-ACTION(unequip, obj/item/item, slot_id)
+// equip and unequip run on the item (holder = the item, target = the wearer), so an item type's extend(/datum/act/equip, needs(...)) is its own
+// rule and the body slot's accepts the wearer's (admission.md D2k).
+ACTION(equip, mob/wearer, slot_id)
+ACTION(unequip, mob/wearer, slot_id)
 ACTION(buckle, mob/living/buckled)
 ACTION(unbuckle, mob/living/unbuckled)
 ACTION(climb, atom/climbed)

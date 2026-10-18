@@ -104,8 +104,8 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
-	rolls(nameof(name), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
-	rolls(nameof(desc), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
+	rolls(nameof(name), PROC_REF(crewed_as), when = not(nameof(pilot_type)))
+	rolls(nameof(desc), PROC_REF(crewed_as), when = not(nameof(pilot_type)))
 	rolls(nameof(say_list_type), PROC_REF(crewed_as), when = nameof(pilot_type))
 
 /// A mecha with no pilot is a drone's, and says so; a piloted one talks like a mercenary (rolls()).

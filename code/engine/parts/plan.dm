@@ -723,7 +723,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 					return "[same_input], intent [op_intent_name(intent)]"
 	return null
 
-/// Are two ops' when conditions mutually exclusive? (when(c) against when(cond_not(c)), req_is(K) against req_is(K, FALSE).)
+/// Are two ops' when conditions mutually exclusive? (when(c) against when(not(c)), req_is(K) against req_is(K, FALSE).)
 /proc/op_conds_exclusive(datum/op_plan/A, datum/op_plan/B)
 	for(var/cond_a in A.conds)
 		for(var/cond_b in B.conds)
@@ -733,8 +733,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 
 /// Can `cond_a` and `cond_b` never both hold? any_of(...) excludes a condition when every alternative does, all_of(...) when one conjunct does, so
 /// any_of(req_is(a), req_is(b)) excludes all_of(req_is(a, FALSE), req_is(b, FALSE)) (and the other way round); the leaves are compared one by one.
+/// What `cond` negates: the inner condition of a ("not", x) tree or of a not(requirement) part, else null.
+/proc/op_cond_negated_inner(cond)
+	if(islist(cond))
+		var/list/L = cond
+		return (length(L) == 2 && L[1] == "not") ? L[2] : null
+	if(istype(cond, /datum/entry/part/req/negation))
+		var/datum/entry/part/req/negation/N = cond
+		return length(N.children) ? N.children[1] : null
+	return null
+
 /proc/op_cond_negates(cond_a, cond_b)
-	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
+	var/inner_b = op_cond_negated_inner(cond_b)
+	if(!isnull(inner_b) && inner_b == cond_a)
 		return TRUE
 	if(istype(cond_a, /datum/entry/part/req/any) || istype(cond_a, /datum/entry/part/req/all))
 		return op_cond_group_negates(cond_a, cond_b)
@@ -758,16 +769,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	return TRUE
 
 /proc/op_cond_leaf_negates(cond_a, cond_b)
-	if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && cond_b[2] == cond_a)
+	var/inner_b = op_cond_negated_inner(cond_b)
+	if(!isnull(inner_b) && inner_b == cond_a)
 		return TRUE
-	// req_actor_kind(T) against req_actor_kind(T, not = TRUE), or against cond_not(req_actor_kind(T)): one actor is of a kind or it is not
+	// req_actor_kind(T) against req_actor_kind(T, not = TRUE), or against not(req_actor_kind(T)): one actor is of a kind or it is not
 	if(istype(cond_a, /datum/entry/part/req/actor_kind))
 		var/datum/entry/part/req/actor_kind/KA = cond_a
 		if(istype(cond_b, /datum/entry/part/req/actor_kind))
 			var/datum/entry/part/req/actor_kind/KB = cond_b
 			return !!KA.args["not"] != !!KB.args["not"] && actor_kind_same_types(KA.args["types"], KB.args["types"])
-		if(islist(cond_b) && length(cond_b) == 2 && cond_b[1] == "not" && istype(cond_b[2], /datum/entry/part/req/actor_kind))
-			var/datum/entry/part/req/actor_kind/KN = cond_b[2]
+		if(istype(inner_b, /datum/entry/part/req/actor_kind))
+			var/datum/entry/part/req/actor_kind/KN = inner_b
 			return !!KA.args["not"] == !!KN.args["not"] && actor_kind_same_types(KA.args["types"], KN.args["types"])
 	if(istype(cond_a, /datum/entry/part/req/graph_at) && istype(cond_b, /datum/entry/part/req/graph_at))
 		return graph_at_exclusive(cond_a, cond_b)
