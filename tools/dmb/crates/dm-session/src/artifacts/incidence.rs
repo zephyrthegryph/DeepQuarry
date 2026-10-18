@@ -39,23 +39,93 @@ impl<D: Ord + Clone> Interner<D> {
         self.table[id as usize].as_ref()
     }
 }
+/// A distinct set of variant ids. Most sets here hold a handful of ids, where a `BTreeSet` still allocates a full node, so a
+/// small set is a sorted `Vec`; a set past `SMALL_IDS` (a domain read by thousands of variants) becomes a `BTreeSet` so a
+/// removal never moves a long tail.
+#[derive(Clone)]
+enum Ids {
+    Small(Vec<u64>),
+    Large(BTreeSet<u64>),
+}
+const SMALL_IDS: usize = 32;
+impl Default for Ids {
+    fn default() -> Self {
+        Self::Small(Vec::new())
+    }
+}
+impl Ids {
+    fn insert(&mut self, id: u64) {
+        match self {
+            Self::Small(ids) => {
+                if let Err(at) = ids.binary_search(&id) {
+                    if ids.len() < SMALL_IDS {
+                        ids.insert(at, id);
+                    } else {
+                        let mut large: BTreeSet<u64> = ids.drain(..).collect();
+                        large.insert(id);
+                        *self = Self::Large(large);
+                    }
+                }
+            }
+            Self::Large(ids) => {
+                ids.insert(id);
+            }
+        }
+    }
+    fn remove(&mut self, id: &u64) {
+        match self {
+            Self::Small(ids) => {
+                if let Ok(at) = ids.binary_search(id) {
+                    ids.remove(at);
+                }
+            }
+            Self::Large(ids) => {
+                ids.remove(id);
+            }
+        }
+    }
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    fn len(&self) -> usize {
+        match self {
+            Self::Small(ids) => ids.len(),
+            Self::Large(ids) => ids.len(),
+        }
+    }
+    fn iter(&self) -> Box<dyn Iterator<Item = &u64> + '_> {
+        match self {
+            Self::Small(ids) => Box::new(ids.iter()),
+            Self::Large(ids) => Box::new(ids.iter()),
+        }
+    }
+}
+impl<'a> IntoIterator for &'a Ids {
+    type Item = &'a u64;
+    type IntoIter = Box<dyn Iterator<Item = &'a u64> + 'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
 struct Leaf<Q, A, D> {
     owner: Arc<[Observation<Q, A, D>]>,
-    subscribers: BTreeSet<u64>,
+    subscribers: Ids,
 }
+/// A variant's rows never change after insertion (an update removes and reinserts it), so they are sorted boxed slices: a
+/// `BTreeSet` node is allocated for even one element (hundreds of bytes per set, three sets per variant, 87k+ variants).
 struct Variant {
     bucket: u128,
-    leaves: BTreeSet<LeafId>,
-    certificates: BTreeSet<(DomainId, u128)>,
-    uncovered: BTreeSet<DomainId>,
+    leaves: Box<[LeafId]>,
+    certificates: Box<[(DomainId, u128)]>,
+    uncovered: Box<[DomainId]>,
 }
 /// SAME live scheduling index. Addresses identify allocations, never validity.
 pub(super) struct Incidence<Q, A, D> {
     interner: Interner<D>,
     leaves: BTreeMap<LeafId, Leaf<Q, A, D>>,
     variants: BTreeMap<u64, Variant>,
-    certificates: BTreeMap<(DomainId, u128), BTreeSet<u64>>,
-    uncovered: BTreeMap<DomainId, BTreeSet<u64>>,
+    certificates: BTreeMap<(DomainId, u128), Ids>,
+    uncovered: BTreeMap<DomainId, Ids>,
     conflicting: BTreeSet<u64>,
     // Drop of generic artifact owners has no domain trait bounds. Only the
     // Ord+Clone insertion path can populate this index and installs its exact
@@ -89,16 +159,16 @@ impl<Q, A, D> Incidence<Q, A, D> {
             return 0;
         };
         let mut bytes = scalar_slot::<u64, Variant>()
-            .saturating_add(row.leaves.len().saturating_mul(scalar_slot::<LeafId, ()>()))
+            .saturating_add(row.leaves.len().saturating_mul(std::mem::size_of::<LeafId>()))
             .saturating_add(
                 row.certificates
                     .len()
-                    .saturating_mul(scalar_slot::<(DomainId, u128), ()>()),
+                    .saturating_mul(std::mem::size_of::<(DomainId, u128)>()),
             )
             .saturating_add(
                 row.uncovered
                     .len()
-                    .saturating_mul(scalar_slot::<DomainId, ()>()),
+                    .saturating_mul(std::mem::size_of::<DomainId>()),
             );
         for id in &row.leaves {
             if let Some(leaf) = self.leaves.get(id) {
@@ -111,14 +181,14 @@ impl<Q, A, D> Incidence<Q, A, D> {
         for certificate in &row.certificates {
             if self.certificates.contains_key(certificate) {
                 bytes = bytes
-                    .saturating_add(scalar_slot::<(DomainId, u128), BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<(DomainId, u128), Ids>())
                     .saturating_add(scalar_slot::<u64, ()>());
             }
         }
         for domain in &row.uncovered {
             if self.uncovered.contains_key(domain) {
                 bytes = bytes
-                    .saturating_add(scalar_slot::<DomainId, BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<DomainId, Ids>())
                     .saturating_add(scalar_slot::<u64, ()>());
             }
         }
@@ -158,7 +228,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             return;
         };
         self.conflicting.remove(&variant);
-        for domain in previous.uncovered {
+        for domain in previous.uncovered.into_vec() {
             #[cfg(test)]
             {
                 self.removal_visits += 1;
@@ -172,7 +242,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                 self.uncovered.remove(&domain);
             }
         }
-        for certificate in previous.certificates {
+        for certificate in previous.certificates.into_vec() {
             #[cfg(test)]
             {
                 self.removal_visits += 1;
@@ -186,7 +256,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                 self.certificates.remove(&certificate);
             }
         }
-        for id in previous.leaves {
+        for id in previous.leaves.into_vec() {
             let leaf = self.leaves.get_mut(&id).expect("indexed receipt leaf");
             leaf.subscribers.remove(&variant);
             if !leaf.subscribers.is_empty() {
@@ -220,7 +290,7 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             }
             let leaf = self.leaves.entry(id).or_insert_with(|| Leaf {
                 owner: owner.clone(),
-                subscribers: BTreeSet::new(),
+                subscribers: Ids::default(),
             });
             debug_assert!(Arc::ptr_eq(owner, &leaf.owner));
             leaf.subscribers.insert(variant);
@@ -244,17 +314,14 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                 })
                 .or_insert(Some(*version));
         }
-        let mut row = Variant {
-            bucket,
-            leaves: ids,
-            certificates: BTreeSet::new(),
-            uncovered: BTreeSet::new(),
-        };
+        let mut certificates = Vec::new();
+        let mut uncovered = Vec::new();
+        // `domains` is a BTreeSet, so both lists come out sorted and distinct.
         for domain in domains {
             match supplied.get(&domain) {
                 None => {
                     self.uncovered.entry(domain).or_default().insert(variant);
-                    row.uncovered.insert(domain);
+                    uncovered.push(domain);
                 }
                 Some(None) => {
                     self.conflicting.insert(variant);
@@ -265,10 +332,16 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                         .entry(certificate)
                         .or_default()
                         .insert(variant);
-                    row.certificates.insert(certificate);
+                    certificates.push(certificate);
                 }
             }
         }
+        let row = Variant {
+            bucket,
+            leaves: ids.into_iter().collect(),
+            certificates: certificates.into_boxed_slice(),
+            uncovered: uncovered.into_boxed_slice(),
+        };
         self.variants.insert(variant, row);
     }
     pub(super) fn certificate_domains(&self) -> Vec<D> {
