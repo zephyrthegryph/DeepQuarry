@@ -84,9 +84,16 @@ mod tests {
         owner.release_prepared_for_pressure();
         let changed = build("/datum/catalog_probe\n/datum/new_type\n/proc/p()\n    return 7\n");
         let (changed_host, _) = prepare_retained(&changed, &engine, Some(&owner)).unwrap();
-        assert_ne!(
+        // A member's runtime-catalog version names its own membership: another type joining the
+        // catalog leaves it alone, while the joining type's own domain changes.
+        assert_eq!(
             changed_host.domain_version(query.domain()),
             Some(original_version)
+        );
+        let joined = dm_ir::ResolveQuery::RuntimeType(dm_ir::SymbolId::of("/datum/new_type"));
+        assert_ne!(
+            changed_host.domain_version(joined.domain()),
+            host_before_join_version(&first, &engine, &owner, joined)
         );
         owner.release_prepared_for_pressure();
         let other_engine = session
@@ -98,9 +105,21 @@ mod tests {
             )
             .unwrap();
         let (other, _) = prepare_retained(&changed, &other_engine, Some(&owner)).unwrap();
-        assert_ne!(
+        // The same template gives the same catalog schema and membership, so the same answer and
+        // version; owner-specific facts keep their own process-local certificates.
+        assert_eq!(
             other.domain_version(query.domain()),
             changed_host.domain_version(query.domain())
         );
+    }
+
+    fn host_before_join_version(
+        frontend: &ColdFrontend,
+        engine: &Arc<crate::runner_host::RetainedEngine>,
+        owner: &RetainedHostFacts,
+        query: dm_ir::ResolveQuery,
+    ) -> Option<u128> {
+        let (host, _) = prepare_retained(frontend, engine, Some(owner)).unwrap();
+        host.domain_version(query.domain())
     }
 }
