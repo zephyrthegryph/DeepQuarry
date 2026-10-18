@@ -65,7 +65,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: &["stored_refs"],
-    lists: &["exempt_types"],
+    lists: &["exempt_types", "transient_types"],
 };
 
 struct StoredRefs;
@@ -144,6 +144,12 @@ pub(crate) fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
 /// `relations_pooled_release_resets_every_field` proves it per type. doc/rewrite/proposals/relations.md D7.
 pub(crate) fn pooled_holder(sem: &Sem, owner: &str) -> bool {
     owner != "/datum/pooled" && sem.is_subtype(owner, "/datum/pooled")
+}
+
+/// A holder type in `[lint.stored_refs.lists] transient_types`: a record that lives for one call or one resolution and is dropped with it (an op
+/// candidate, a provider row), reviewed per type (relations proposal D8: "one run's scratch under a reviewed type"). Its fields are not stored refs.
+pub(crate) fn transient_holder(sem: &Sem, transient: &[String], owner: &str) -> bool {
+    transient.iter().any(|t| t == owner || sem.is_subtype(owner, t))
 }
 
 pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
@@ -433,6 +439,7 @@ impl Lint for StoredRefs {
         }
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
+        let transient: Vec<String> = cx.list("transient_types").to_vec();
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;
         let mut emitted: HashSet<(String, String, u32)> = HashSet::new();
@@ -476,7 +483,7 @@ impl Lint for StoredRefs {
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if pooled_holder(sem, &owner) || declared_by_relation(sem, &rels, &owner, &name) {
+            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
             put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));
@@ -515,7 +522,7 @@ impl Lint for StoredRefs {
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
-                    if pooled_holder(sem, &o) || declared_by_relation(sem, &rels, &o, &v) {
+                    if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }
                     let Some(sig) = sem.var_decl(&o, &v) else { continue };
