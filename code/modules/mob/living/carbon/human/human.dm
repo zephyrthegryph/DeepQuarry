@@ -314,9 +314,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 //repurposed proc. Now it combines get_id_name() and get_face_name() to determine a mob's name variable. Made into a seperate proc as it'll be useful elsewhere
 /mob/living/carbon/human/get_visible_name()
-	var/datum/act/name_visible/shown = ACT_TRY(src, name_visible)
-	if(!shown)
-		return ACT_REPLY
+	var/datum/act/name_visible/shown = ACT_ATTEMPT(src, name_visible)
+	if(ACT_REFUSED_BY(shown))
+		return ACT_REPLY(shown)
 	act_cancel(shown)
 
 	if(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).hides&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible

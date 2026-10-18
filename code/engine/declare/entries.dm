@@ -193,8 +193,8 @@
 
 /// A slot: an object that lives inside the holder (section 6). Backed by the containment ledger; the entry is the declaration the
 /// ledger, the reach gate and the state-graph's SLOT_CONSTRUCTION read.
-/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null, unit = null, quantity = FALSE)
-	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args, "unit" = unit, "quantity" = quantity))
+/proc/slot(slot_id, accepts = null, capacity = null, exposure = null, at = null, on_destroy = null, starts = null, starts_args = null, key = null, unit = null, quantity = FALSE, fits = null, replace = null, replace_by = null)
+	return entry_make(ENTRY_SLOT, key, list("id" = slot_id, "accepts" = accepts, "capacity" = capacity, "exposure" = exposure, "at" = at, "on_destroy" = on_destroy, "starts" = starts, "starts_args" = starts_args, "unit" = unit, "quantity" = quantity, "fits" = fits, "replace" = replace, "replace_by" = replace_by))
 
 // DM gives a proc named arguments only when it declares them, so a constructor that takes entries and then options (`when(cond, a, b, reads =
 // ...)`) declares ENTRY_SLOTS positional slots for the entries and the options by name. More than that many entries go in one list (a
@@ -203,7 +203,7 @@
 #define ENTRY_SLOT_LIST list(p1, p2, p3, p4, p5, p6)
 
 /// Entries that exist while a condition holds (an activation whose scope is the condition and whose source is the holder's type).
-/// `cond` is a condition as section 5 lists them: nameof(v), a stat or cap key id, cond_not()/cond_all()/cond_any() of those, or a PROC_REF.
+/// `cond` is a condition as section 5 lists them: nameof(v), a stat or cap key id, not()/all_of()/any_of() of those, or a PROC_REF.
 /// `reads` is the var names a PROC_REF condition reads, written by hand until E5's generated reads replace it.
 /proc/when(cond, ENTRY_SLOTS, list/reads = null)
 	return entry_make(ENTRY_WHEN, null, list("cond" = cond, "reads" = reads), entry_flatten(ENTRY_SLOT_LIST))

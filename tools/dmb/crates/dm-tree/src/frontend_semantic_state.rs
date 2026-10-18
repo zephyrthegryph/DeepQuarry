@@ -37,7 +37,12 @@ impl RetainedSemanticTree {
         defines: &std::collections::BTreeMap<String, String>,
         revision: super::FrontendRevision,
     ) {
-        self.previous = Some((project.to_path_buf(), defines.clone(), revision));
+        // The replaced revision usually owns the last references to the previous request's tree,
+        // syntax and body arena.
+        release_in_background(
+            self.previous
+                .replace((project.to_path_buf(), defines.clone(), revision)),
+        );
     }
     pub(super) fn previous_frontend(
         &self,
@@ -483,16 +488,24 @@ impl RetainedSemanticTree {
                 .entry
                 .as_mut()
                 .expect("updated tree has its retained producer");
-            entry.occurrence_index = occurrences.target_index();
-            entry.tree = Arc::clone(&tree);
-            entry.index = index.expect("updated tree has its exact contribution index");
+            // The previous request's tree, index and occurrence index are freed off the request path.
+            let replaced_index = std::mem::replace(
+                &mut entry.occurrence_index,
+                occurrences.target_index(),
+            );
+            let replaced_tree = std::mem::replace(&mut entry.tree, Arc::clone(&tree));
+            let replaced_contributions = std::mem::replace(
+                &mut entry.index,
+                index.expect("updated tree has its exact contribution index"),
+            );
+            release_in_background((replaced_index, replaced_tree, replaced_contributions));
             let _capture_timer = dm_profile::detail_timer("tree.update.capture_dependencies");
             if spliced_dependencies {
                 // Dense IDs moved: reissue the stable-key graph for the next edit.
                 let previous = entry.metadata_dependencies.take();
                 entry.metadata_dependencies =
                     crate::metadata_update::MetadataDependencies::capture(&tree, &entry.index);
-                drop(previous);
+                release_in_background(previous);
             }
             entry.symbol_catalog = adapted.symbol_catalog.clone();
             entry.symbols = symbol_owner;
@@ -644,3 +657,12 @@ mod callable_lifecycle_tests;
 #[cfg(test)]
 #[path = "frontend_semantic_symbol_tests.rs"]
 mod symbol_owner_tests;
+
+/// Free a previous request's large owners on a helper thread: dropping a whole tree, syntax roster
+/// or index took seconds on the request path, and nothing observes when the memory returns. Without
+/// a thread (spawn failure) the value is dropped right here.
+pub(crate) fn release_in_background<T: Send + 'static>(value: T) {
+    let _ = std::thread::Builder::new()
+        .name("dmb-release".into())
+        .spawn(move || drop(value));
+}

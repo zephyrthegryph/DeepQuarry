@@ -804,6 +804,15 @@ impl InputSnapshot {
                 next.files.insert(path.clone(), old.clone());
             }
         }
+        if self.files.len() > 1000 && std::env::var_os("DMB_TIMINGS_DETAIL").is_some() {
+            eprintln!(
+                "detail inputs.validate counts: files={} to_hash={} folders={} negatives={} exact={exact}",
+                self.files.len(),
+                to_hash.len(),
+                self.folders.len(),
+                self.negative_files.len()
+            );
+        }
         // A validation that stops at the first change probes one file before fanning out: a changed tree usually shows in the
         // first file, and the stop must not cost a read of every other file.
         let mut digests = Vec::with_capacity(to_hash.len());

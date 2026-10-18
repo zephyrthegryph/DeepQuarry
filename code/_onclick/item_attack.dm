@@ -30,8 +30,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	SHOULD_CALL_PARENT(TRUE)
 	if(!user)
 		CRASH("attack_self was called without a user!")
-	var/datum/act/attack_self/use = ACT_TRY(src, attack_self, user)
-	if(!use)
+	var/datum/act/attack_self/use = ACT_ATTEMPT(src, attack_self, user)
+	if(ACT_REFUSED_BY(use))
 		return TRUE
 	act_done(use)
 	// The item's in_hand() ops: the Z key and an item's action button reach them here (a click on the held item resolves them in the inbox first).
@@ -51,8 +51,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
  */
 
 /obj/item/proc/pre_attack(atom/A, mob/user, params) //do stuff before attackby!
-	var/datum/act/pre_attack/swing = ACT_TRY(src, pre_attack, A, user, params)
-	if(!swing)
+	var/datum/act/pre_attack/swing = ACT_ATTEMPT(src, pre_attack, A, user, params)
+	if(ACT_REFUSED_BY(swing))
 		return TRUE
 	act_done(swing)
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
@@ -137,9 +137,9 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /// Emits the tool-act event, then invokes the corresponding focused hook.
 /atom/proc/tool_act(mob/user, obj/item/tool, tool_quality, secondary = FALSE)
 	// A hook on the atom (a dormant core repaired on its body) takes the tool use over and answers the ITEM_INTERACT_* result.
-	var/datum/act/tool_act/use = ACT_TRY(src, tool_act, tool_quality, secondary, user, tool)
-	if(!use)
-		return ACT_TAKEN_OVER ? ACT_REPLY : ITEM_INTERACT_BLOCKING
+	var/datum/act/tool_act/use = ACT_ATTEMPT(src, tool_act, tool_quality, secondary, user, tool)
+	if(ACT_REFUSED_BY(use))
+		return ACT_TAKEN_OVER(use) ? ACT_REPLY(use) : ITEM_INTERACT_BLOCKING
 	act_cancel(use)
 	var/result = NONE
 	// Dormant material assemblies intentionally own no signal handlers. A
@@ -169,8 +169,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /// The gate every item use on `target` passes: a hook on the target (observe(target, /datum/act/attackby, ...), a capability's extend()) may stop it.
 /// TRUE when something did. The use is announced (/datum/notice/attacked_by) when nothing stopped it.
 /proc/attackby_stopped(atom/target, obj/item/W, mob/user, click_parameters)
-	var/datum/act/attackby/use = ACT_TRY(target, attackby, W, user, click_parameters)
-	if(!use)
+	var/datum/act/attackby/use = ACT_ATTEMPT(target, attackby, W, user, click_parameters)
+	if(ACT_REFUSED_BY(use))
 		return TRUE
 	act_done(use)
 	return FALSE

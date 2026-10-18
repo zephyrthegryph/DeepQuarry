@@ -189,7 +189,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/numberlock)
 	without("lock.toggle")
 	without("lock.toggle_worn")
 	without("lock_with_item")
-	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(cond_not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
+	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
 		begins(MSG(lootsafe/locked_with_code)), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), then(PROC_REF(code_entered)))
 	op("analyse", tool(TOOL_MULTITOOL), label("Analyse the lock"), when(LOCK_LOCKED), priority(OP_PRIORITY_PART + 5), wait(0), then(PROC_REF(code_analysed)))
 
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure/lootsafe/devillock)
 	without("lock.toggle")
 	without("lock.toggle_worn")
 	without("lock_with_item")
-	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(cond_not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
+	op("enter_code", inputs(hand(), item(/obj/item)), label("Enter code"), when(LOCK_LOCKED), when(not(nameof(opened))), priority(OP_PRIORITY_NORMAL + 1),
 		begins(MSG(lootsafe/locked_with_code)), asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(code_question)), "title" = "Deca-Code Lock")), then(PROC_REF(code_entered)))
 	op("analyse", tool(TOOL_MULTITOOL), label("Analyse the lock"), when(LOCK_LOCKED), priority(OP_PRIORITY_PART + 5), wait(0), then(PROC_REF(code_analysed)))
 

@@ -190,8 +190,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 		return
 	// Listeners add what they shield (adjusts_with writes the act's protection): the flags of every one combine with the atom's own.
 	var/protection = emp_protection_flags & EMP_PROTECT_ALL
-	var/datum/act/emp/pulse = ACT_TRY(src, emp, severity, protection)
-	if(!pulse)
+	var/datum/act/emp/pulse = ACT_ATTEMPT(src, emp, severity, protection)
+	if(ACT_REFUSED_BY(pulse))
 		return protection
 	protection = ACT_FINAL(pulse, protection, protection)
 	act_done(pulse)
@@ -206,8 +206,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
-	var/datum/act/shoot/round = ACT_TRY(src, shoot, P, def_zone)
-	if(!round)
+	var/datum/act/shoot/round = ACT_ATTEMPT(src, shoot, P, def_zone)
+	if(ACT_REFUSED_BY(round))
 		return
 	act_done(round)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
@@ -357,8 +357,8 @@ SETTER(/atom, density)
 SETTER(/atom, invisibility)
 
 /atom/proc/ex_act(strength = 3)
-	var/datum/act/explode/blast = ACT_TRY(src, explode, strength)
-	if(!blast)
+	var/datum/act/explode/blast = ACT_ATTEMPT(src, explode, strength)
+	if(ACT_REFUSED_BY(blast))
 		return COMPONENT_IGNORE_EXPLOSION
 	act_done(blast)
 	return NONE

@@ -217,10 +217,11 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 //set del_on_fail to have it delete W if it fails to equip
 //set disable_warning to disable the 'you are unable to equip that' warning.
 //unset redraw_mob to prevent the mob from being redrawn at the end.
-/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, disable_warning = 0, redraw_mob = 1, ignore_obstructions = 1)
+/// `actor`: who dresses this mob (a stripper); null means the mob itself. The equip checks judge the actor, not the wearer.
+/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, disable_warning = 0, redraw_mob = 1, ignore_obstructions = 1, mob/actor = null)
 	if(!W)
 		return 0
-	if(W.equip_refusal(src, slot, disable_warning, ignore_obstructions) || !equip_to_slot(W, slot, redraw_mob))
+	if(W.equip_refusal(src, slot, disable_warning, ignore_obstructions, actor = actor) || !equip_to_slot(W, slot, redraw_mob))
 		if(del_on_fail)
 			spent(W)
 		else if(!disable_warning)

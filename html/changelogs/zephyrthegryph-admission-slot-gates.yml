@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Slots take a type list and requirements together in accepts, a fits requirement, and a replace policy (REPLACE, REPLACE_IF_BETTER); slot predicates are gone for requirements, and slot_transfer takes an admin_authority grant"
+  - bugfix: "Putting clothing on someone else through the strip menu now checks the person doing it, not the person being dressed"
+  - code_imp: "Items can declare their own equip rules on the equip action; req_removable() covers canremove, NODROP and NOSTRIP"

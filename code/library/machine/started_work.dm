@@ -26,9 +26,9 @@ cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = M
 	holder_hooks = HOLDER_HOOK_INIT
 
 /datum/capability/lib/started_work/entries()
-	var/gate = when ? cond_all(STARTED_WORK_ACTIVE, when) : STARTED_WORK_ACTIVE
+	var/gate = when ? all_of(STARTED_WORK_ACTIVE, when) : STARTED_WORK_ACTIVE
 	if(!unpowered)
-		gate = cond_all(gate, STAT_OPERABLE) // an unpowered or broken machine's work parks and costs nothing
+		gate = all_of(gate, STAT_OPERABLE) // an unpowered or broken machine's work parks and costs nothing
 	. = list(
 		every(interval, then(CAP_PROC(run_step)), when = gate),
 		on_change(STAT_OPERABLE, ANY, then(CAP_PROC(condition_changed))))

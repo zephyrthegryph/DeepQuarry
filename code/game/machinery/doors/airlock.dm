@@ -186,7 +186,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
 		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable))), then(PROC_REF(panel_toggled)))
-	extend("weld_shut.toggle", priority(above("repair")), when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP)))))
+	extend("weld_shut.toggle", priority(above("repair")), when(any_of(not(PROC_REF(damaged)), not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	// Touching a live door shocks you instead of doing what you meant. Window buttons and a silicon's link are not touches.

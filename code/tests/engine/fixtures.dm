@@ -53,7 +53,7 @@ CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, key 
 
 /datum/e0_cap/phase_shift/entries()
 	return list(
-		op("shift", label("Phase shift"), menu(button = "phase_shift", bind = "shift+f"), 			when(cond_not(CAP_PROC(is_phased))), 			costs(RES_DARK_ENERGY, cost), 			grants(/datum/e0_cap/phased, on = ON_HOLDER)), // the grant lands on the op's own holder, so its source is this activation: it ends with the ability
+		op("shift", label("Phase shift"), menu(button = "phase_shift", bind = "shift+f"), 			when(not(CAP_PROC(is_phased))), 			costs(RES_DARK_ENERGY, cost), 			grants(/datum/e0_cap/phased, on = ON_HOLDER)), // the grant lands on the op's own holder, so its source is this activation: it ends with the ability
 		op("unshift", label("Phase back in"), menu(button = "phase_shift", bind = "shift+f"), 			when(CAP_PROC(is_phased)), 			then(CAP_PROC(shift_back))))
 
 /datum/e0_cap/phase_shift/proc/is_phased(datum/act/A)
@@ -115,11 +115,11 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture)
 	rel_grants(nameof(species))
 	hands()
 
-/// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
-/// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.
+/// Delivers one beam hit to this mob as a world action: ACT_ATTEMPT(src, hit_projectile, packet), act_done(). Returns the act's
+/// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_ATTEMPT.
 /mob/living/simple_mob/e0_fixture/proc/e0_beam_hit()
-	var/datum/act/hit/projectile/H = ACT_TRY(src, hit_projectile, null)
-	if(!H)
+	var/datum/act/hit/projectile/H = ACT_ATTEMPT(src, hit_projectile, null)
+	if(ACT_REFUSED_BY(H))
 		return null
 	if(H == ACT_PASS)
 		return ACT_COMMITTED

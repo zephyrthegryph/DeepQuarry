@@ -622,7 +622,7 @@ CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	ref_one(nameof(shown_item), /obj/item)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(current_pocket))
@@ -867,68 +867,68 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bucket/cyborg)
 
 
 CAPABILITIES(/obj/item/gripper/engineering)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/drone)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/omni)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(OMNI_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(OMNI_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/miner)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(MINER_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(MINER_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/security)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SECURITY_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SECURITY_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/paperwork)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(PAPERWORK_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(PAPERWORK_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/medical)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/research)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/circuit)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(CIRCUIT_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(CIRCUIT_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/service)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SERVICE_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SERVICE_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/gravekeeper)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(GRAVEYARD_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(GRAVEYARD_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/scene)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SCENE_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SCENE_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/no_use/organ)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(ORGAN_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(ORGAN_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/no_use/organ/robotics)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(ROBOTICS_ORGAN_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(ROBOTICS_ORGAN_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/no_use/mech)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(EXOSUIT_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(EXOSUIT_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/no_use/loader)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(SHEET_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/gripper/syndicate)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/tank)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
 	// during rounds are never touched, and an intact, sealed tank lying about has no reason to explode spontaneously.
-	every(2 SECONDS, then(PROC_REF(tank_step)), when = cond_any(nameof(leaking), nameof(seal_damaged), nameof(handled)))
+	every(2 SECONDS, then(PROC_REF(tank_step)), when = any_of(nameof(leaking), nameof(seal_damaged), nameof(handled)))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
 	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state))

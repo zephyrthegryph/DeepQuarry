@@ -153,6 +153,17 @@ CAPABILITIES(/datum/simulation_condition)
 	return node
 
 /datum/simulation_condition_compiler/proc/build(spec, negate = FALSE, datum/simulation_condition/parent = null)
+	// all_of(), any_of() and not() over conditions build ("all" | "any" | "not", ...) trees; with no condition among their arguments (all_of() with none
+	// at all) they are requirement parts, read here as the same groups.
+	if(istype(spec, /datum/entry/part/req/negation))
+		var/datum/entry/part/req/negation/N = spec
+		if(length(N.children) != 1)
+			error("not() needs one condition")
+			return null
+		return build(N.children[1], !negate, parent)
+	if(istype(spec, /datum/entry/part/req/all) || istype(spec, /datum/entry/part/req/any))
+		var/datum/entry/part/req/R = spec
+		spec = list(istype(R, /datum/entry/part/req/any) ? "any" : "all") + (R.children || list())
 	if(islist(spec))
 		var/list/L = spec
 		if(!length(L))
@@ -161,7 +172,7 @@ CAPABILITIES(/datum/simulation_condition)
 		var/form = L[1]
 		if(form == "not")
 			if(length(L) != 2)
-				error("cond_not needs one condition")
+				error("not() needs one condition")
 				return null
 			return build(L[2], !negate, parent)
 		if(!(form in list("all", "any")))

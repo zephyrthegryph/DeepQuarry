@@ -378,3 +378,30 @@ fn raw_capture_retains_the_provider_payload_allocation() {
         captured.resources.inputs[0].named.shared_data()
     ));
 }
+
+#[test]
+fn piecewise_literal_discovery_equals_the_whole_text_scan() {
+    let source = "/proc/a()\n    return 'icons/a.dmi'\n/proc/b()\n    return \"[x] text\"\n/proc/c()\n    return {\"multi\nline\"}\n/obj/x\n    icon = 'icons/x.dmi'\n";
+    let whole = discover_literals(source).unwrap();
+    let starts: Vec<usize> = ["/proc/b", "/proc/c", "/obj/x"]
+        .iter()
+        .map(|marker| source.find(marker).unwrap())
+        .collect();
+    let mut boundaries = starts.clone();
+    boundaries.push(source.len());
+    assert_eq!(discover_literals_in_pieces(source, &boundaries).unwrap(), whole);
+    assert_eq!(discover_literals_in_pieces(source, &[]).unwrap(), whole);
+    // A boundary that is not a char boundary falls back to the whole scan.
+    let accented = "/proc/a()\n    return 'é.dmi'\n";
+    let inside = accented.find('é').unwrap() + 1;
+    assert_eq!(
+        discover_literals_in_pieces(accented, &[inside]).unwrap(),
+        discover_literals(accented).unwrap()
+    );
+    // The first error is the same error at the same offset.
+    let broken = "/proc/a()\n    return 'ok.dmi'\n/proc/b()\n    return 'bad[x].dmi'\n";
+    let split = broken.find("/proc/b").unwrap();
+    let whole_error = format!("{:?}", discover_literals(broken).unwrap_err());
+    let piece_error = format!("{:?}", discover_literals_in_pieces(broken, &[split]).unwrap_err());
+    assert_eq!(whole_error, piece_error);
+}

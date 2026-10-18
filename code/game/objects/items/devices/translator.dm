@@ -14,7 +14,7 @@
 
 CAPABILITIES(/obj/item/universal_translator)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	op("enable", in_hand(), label("Enable translator"), when(cond_not(nameof(translation_enabled))),
+	op("enable", in_hand(), label("Enable translator"), when(not(nameof(translation_enabled))),
 		needs(carried(), req(PROC_REF(language_supported))),
 		asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0),
 		then(PROC_REF(language_picked)))

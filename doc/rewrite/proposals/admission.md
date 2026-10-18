@@ -43,13 +43,16 @@ Evidence base: `origin/master` at `1c1d649c08` (17 Oct 2026). Every `file:line` 
 
 - **Requirement.** A check on a typed act context (`datum/act/A`). It returns **null** to allow, or a **`/datum/msg`** reason: a type for a fixed
   reason (`MSG(slot/too_large)`), an instance when the reason carries detail (**new**; today detail is smuggled through the `%DETAIL%` template of
-  `/datum/msg/req_refused`, `code/engine/parts/reasons.dm:5`, or through raw text). It never writes, publishes or messages (purity, enforced by
+  `/datum/msg/req_refused`, `code/engine/parts/reasons.dm:5`, or through raw text). A detailed reason is a message instance, `msg_reason("too big: 3 > 2")` (**resolved**: `/datum/msg/instance`,
+  `code/engine/present/messages.dm`). It never writes, publishes or messages (purity, enforced by
   `op_pure_begin()` around every evaluation, `engine/parts/acceptance.dm:156-164`). No booleans, no text, no `TRUE`-or-reason.
 - **Condition.** The same check read without its reason: `holds = isnull(check)`. A library part implements `holds()` and `refusal()` apart, so a
   condition never builds a reason (`cond.dm:151-152`: `check()` is `holds(A) ? null : refusal(A)`). A requirement is accepted wherever a condition
   is. This is the state master already has: `requirement_bool` bans the boolean constructor and `boolean_callback`, and requirement callbacks
   return null or the exact refusal (`doc/requirements_hard_ban_1010_handoff.md`, merged; `cond.dm:228`).
-- **Combinators.** `all_of`, `any_of`, `not(r, because =)`, and nothing else. `any_of` joins its reasons ("needs a wrench or a welder"),
+- **Combinators.** `all_of`, `any_of`, `not(r, because =)`, and `with_reason(r, because)` (**resolved**, 18 Oct: a variadic proc rejects a named
+  argument it does not declare, BYOND's "bad arg name", tested by `dq_slot_admission_with_reason`; so `any_of(..., because =)` cannot exist and a
+  combinator gets its reason from the wrapper), and nothing else. `any_of` joins its reasons ("needs a wrench or a welder"),
   `all_of` reports the first failure (`cond.dm:614-647`).
 - **Reason type.** `/datum/msg` only (`code/engine/present/messages.dm:15`). Retired: raw strings (85 `because = "` sites, about 15 literal reason returns in
   `library/requirements/acceptance.dm`, `pred_holding_knife_holds` returning "there is no knife in it" at `clothing.dm:615`), `TRUE`-or-reason procs
@@ -231,7 +234,7 @@ slot(CONTAINER_SLOT_INTERNALS, accepts = req_part_of_circuit(), replace = REPLAC
 // the RPED op is item(/obj/item/storage/part_replacer) + put_in(CONTAINER_SLOT_INTERNALS) per candidate part
 ```
 
-`OP_REPLACED` already exists (`vocabulary.dm:32`, `act.dm:254-262`) but means "a hook took the action over". A displaced occupant needs its own outcome name (**open**).
+`OP_REPLACED` already exists (`vocabulary.dm:32`, `act.dm:254-262`) but means "a hook took the action over". A displaced occupant needs its own outcome name (**resolved**: DISPLACED, the move flag `LEDGER_MOVE_DISPLACED` its `on_unslotted()` sees; `OP_REPLACED` keeps its meaning).
 
 **D2f. Partial and quantity insertion** (rounds, sheets, reagent units). Today `move_into` is all or nothing; a speedloader is a hand-written loop that checks
 `length(loaded) >= max_shells` per round (`projectile.dm:612-630`), reaching into `rel_move`.

@@ -67,6 +67,7 @@ pub(super) fn parse_declarations_with_state(
         .map_or(fresh_chunks.as_slice(), |roster| roster.spans().as_slice());
     let descriptor_scan = parse_start.elapsed();
     drop(profile_scan);
+    let keys_timer = dm_profile::detail_timer("decl.retained_keys");
     let retained_keys = retained.map(|state| {
         let keys: Vec<_> = chunks
             .iter()
@@ -77,6 +78,8 @@ pub(super) fn parse_declarations_with_state(
         state.retain(&keys);
         keys
     });
+    drop(keys_timer);
+    let workers_timer = dm_profile::detail_timer("decl.workers");
     let region_hits = std::sync::atomic::AtomicUsize::new(0);
     let independent_hits = std::sync::atomic::AtomicUsize::new(0);
     let facts_hits = std::sync::atomic::AtomicUsize::new(0);
@@ -365,6 +368,8 @@ pub(super) fn parse_declarations_with_state(
     let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
     ordered.sort_by_key(|(index, _, _, _, _)| *index);
+    drop(workers_timer);
+    let adopt_timer = dm_profile::detail_timer("decl.adopt_authored");
     if let Some(state) = retained {
         if ordered.iter().all(|(_, _, _, _, current)| current.is_ok()) {
             state
@@ -376,7 +381,9 @@ pub(super) fn parse_declarations_with_state(
                 .ok_or_else(|| vec![internal("exact authored declaration adoption failed")])?;
         }
     }
+    drop(adopt_timer);
     let merge_start = Instant::now();
+    let _merge_timer = dm_profile::detail_timer("decl.ordered_merge");
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
     let mut updated = std::collections::BTreeMap::new();
     let mut adapted = crate::SharedAdaptedDeclarations {

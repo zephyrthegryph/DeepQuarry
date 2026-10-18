@@ -87,7 +87,7 @@
 CAPABILITIES(/obj/item/mail/blank)
 	// a blank envelope is sealed or opened in hand, not unwrapped
 	without("unwrap")
-	op("seal", in_hand(), label("Seal"), when(cond_not(nameof(sealed))), wait(1.5 SECONDS), then(PROC_REF(seal_done)))
+	op("seal", in_hand(), label("Seal"), when(not(nameof(sealed))), wait(1.5 SECONDS), then(PROC_REF(seal_done)))
 	op("open", in_hand(), label("Open"), when(nameof(sealed)), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(),
 		wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a pen addresses a sealed envelope (to a player picked from the directory)

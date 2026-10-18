@@ -48,7 +48,7 @@
 CAPABILITIES(/obj/machinery/feeder)
 	owns_one(nameof(beaker), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(attached), /mob/living/carbon/human)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_used)), wait(1.5 SECONDS), then(PROC_REF(screwdriver_act_timed_done)))
 	op("insert_beaker", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(beaker), FALSE, because = MSG(feeder/beaker))), then(PROC_REF(interaction_insert_beaker)))

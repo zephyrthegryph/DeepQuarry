@@ -22,6 +22,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/msg)
 	/// MSG_DISPLAY_*: how a refusal is shown to the actor (MSG_BALLOON declares a balloon alert).
 	var/display = MSG_DISPLAY_CHAT
 
+/// A refusal whose text carries detail ("too big: 3 > 2", "the gloves are in the way"): a message instance, not a DEF singleton (admission.md D1,
+/// the instance form). A pure requirement makes one with msg_reason(); it is read and shown like a type (reason_text(), op_tell()), and kept by
+/// nothing, so it goes when its refusal is dropped.
+/datum/msg/instance
+
+/// msg_reason(self_text, display =): the message instance for one refusal's text.
+/proc/msg_reason(self_text, display = MSG_DISPLAY_CHAT)
+	RETURN_TYPE(/datum/msg/instance)
+	var/datum/msg/instance/M = new
+	M.self = self_text
+	M.display = display
+	return M
+
 /// The singleton for a template type.
 /proc/msg_def(msg_type)
 	var/datum/msg/def = GLOB.msg_defs[msg_type]

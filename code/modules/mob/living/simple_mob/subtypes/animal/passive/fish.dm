@@ -28,8 +28,8 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
 	configure(butchery_config(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish))
-	rolls(nameof(default_pixel_x), range_of(-12, 12), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_x))))
-	rolls(nameof(default_pixel_y), range_of(-6, 10), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_y))))
+	rolls(nameof(default_pixel_x), range_of(-12, 12), when = all_of(nameof(randomize_location), not(nameof(default_pixel_x))))
+	rolls(nameof(default_pixel_y), range_of(-6, 10), when = all_of(nameof(randomize_location), not(nameof(default_pixel_y))))
 
 // Makes the AI unable to willingly go on land.
 /mob/living/simple_mob/animal/passive/fish/IMove(turf/newloc, safety = TRUE)

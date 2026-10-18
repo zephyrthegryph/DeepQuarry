@@ -5,8 +5,8 @@
 	if(!target || QDELETED(target))
 		return FALSE
 	var/datum/damage_packet/packet = damage_packet(user, user, null, null, DAMAGE_PACKET_SILENT, 0, user ? get_dir(user, target) : 0, null, DAMAGE_ENTRY_GENERIC)
-	var/datum/act/hit/generic/G = ACT_TRY(target, hit_generic, packet, user, damage, attack_verb)
-	if(!G)
+	var/datum/act/hit/generic/G = ACT_ATTEMPT(target, hit_generic, packet, user, damage, attack_verb)
+	if(ACT_REFUSED_BY(G))
 		packet.release()
 		return FALSE
 	damage = ACT_FINAL(G, damage, damage)
@@ -59,8 +59,8 @@
  * the touch there. Overrides call ..() at the point the old attack_hand did.
  */
 /atom/proc/hand_gate(mob/user)
-	var/datum/act/attack_hand/touch = ACT_TRY(src, attack_hand, user)
-	if(!touch)
+	var/datum/act/attack_hand/touch = ACT_ATTEMPT(src, attack_hand, user)
+	if(ACT_REFUSED_BY(touch))
 		return TRUE
 	act_done(touch)
 	return FALSE

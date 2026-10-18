@@ -734,8 +734,8 @@
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 
-	var/datum/act/fall/fall_act = ACT_TRY(src, fall, landing, drop_mob)
-	if(!fall_act)
+	var/datum/act/fall/fall_act = ACT_ATTEMPT(src, fall, landing, drop_mob)
+	if(ACT_REFUSED_BY(fall_act))
 		return
 	act_done(fall_act)
 

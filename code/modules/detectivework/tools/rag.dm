@@ -43,9 +43,9 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 	extend("wiper.soak", then(PROC_REF(name_refreshed)))
 	extend("wiper.wring_into", then(PROC_REF(name_refreshed)))
 	op("stamp_out", in_hand(), when(nameof(rag_lit)), label("Stamp it out"), then(PROC_REF(stamped_out)))
-	op("wring_out", in_hand(), when(cond_not(nameof(rag_lit))), label("Wring it out"),
+	op("wring_out", in_hand(), when(not(nameof(rag_lit))), label("Wring it out"),
 		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out)))
-	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
+	op("light", item(/obj/item/flame), when(not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
 	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
 	every(2 SECONDS, then(PROC_REF(rag_step)), when = nameof(rag_lit))
 

@@ -1,7 +1,7 @@
 /mob/living/carbon/human/GetAltName()
-	var/datum/act/name_alt/alt = ACT_TRY(src, name_alt)
-	if(!alt)
-		return ACT_REPLY
+	var/datum/act/name_alt/alt = ACT_ATTEMPT(src, name_alt)
+	if(ACT_REFUSED_BY(alt))
+		return ACT_REPLY(alt)
 	act_cancel(alt)
 
 	if(absorbed && isbelly(loc))
@@ -96,9 +96,9 @@
 
 /mob/living/carbon/human/GetVoice()
 	// A hook on the mob may speak for it (shadekin phase hiding): the voice it answers replaces the rest. Nothing is allocated when nothing hooks it.
-	var/datum/act/name_voice/voice = ACT_TRY(src, name_voice)
-	if(!voice)
-		return ACT_REPLY
+	var/datum/act/name_voice/voice = ACT_ATTEMPT(src, name_voice)
+	if(ACT_REFUSED_BY(voice))
+		return ACT_REPLY(voice)
 	act_cancel(voice)
 
 	// Normal voice determination logic

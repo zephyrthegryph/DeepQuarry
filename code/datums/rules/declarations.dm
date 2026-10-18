@@ -366,7 +366,7 @@
 	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(AMMO_COOK_OFF_TEMPERATURE))
 
 /datum/rule/integrity_breaks/rule_condition()
-	return cond_all(cond_measure(PROP_INTEGRITY_FAILURE, SIM_COMPARE_GT, RATIO(0)), cond_compare(PROP_INTEGRITY_RATIO, SIM_COMPARE_LTE, PROP_INTEGRITY_FAILURE))
+	return all_of(cond_measure(PROP_INTEGRITY_FAILURE, SIM_COMPARE_GT, RATIO(0)), cond_compare(PROP_INTEGRITY_RATIO, SIM_COMPARE_LTE, PROP_INTEGRITY_FAILURE))
 
 /datum/rule/damage_flavour/light/rule_condition()
 	return cond_measure(PROP_INTEGRITY_RATIO, SIM_COMPARE_LT, RATIO(0.75))

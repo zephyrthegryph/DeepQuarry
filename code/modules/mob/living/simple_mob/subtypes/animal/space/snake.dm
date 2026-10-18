@@ -217,6 +217,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snakesnack)
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
-	rolls(nameof(snack_colour), pick_one(list("yellow", "green", "pink", "blue")), when = cond_not(nameof(snack_colour)))
+	rolls(nameof(snack_colour), pick_one(list("yellow", "green", "pink", "blue")), when = not(nameof(snack_colour)))
 	look_from(nameof(snack_colour), state = "snack_*")
 	rolls(nameof(desc), PROC_REF(colour_desc), from = list(nameof(snack_colour)))

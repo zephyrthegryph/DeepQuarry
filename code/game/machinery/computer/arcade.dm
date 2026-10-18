@@ -26,7 +26,7 @@
 
 CAPABILITIES(/obj/machinery/computer/arcade)
 	configure(machine_interaction_config(clicksound = TRAIT_NONE))
-	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
+	rolls(nameof(rolled_board), PROC_REF(roll_board), when = not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
 	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(arcade_emp)))

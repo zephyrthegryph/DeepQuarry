@@ -57,7 +57,7 @@
 CAPABILITIES(/obj/structure/reagent_dispensers)
 	reagents(5000)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
-	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it
+	extend("melee_hit", when(not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
 	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))
@@ -374,7 +374,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_NORMAL), label("Fasten or unfasten"), starts(PROC_REF(fingerprinted)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("remove_cupholder", tool(TOOL_SCREWDRIVER), label("Take the cup dispenser off"), when(nameof(cupholder)), wait(0), then(PROC_REF(cupholder_removed)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), when(cond_not(nameof(cupholder))), needs(req(PROC_REF(bottle_refusal), silent = TRUE)), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(2 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), when(not(nameof(cupholder))), needs(req(PROC_REF(bottle_refusal), silent = TRUE)), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(2 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /// A cooler with its bottle starts full (reagents()).
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()

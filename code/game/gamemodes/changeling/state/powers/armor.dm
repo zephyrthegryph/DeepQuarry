@@ -42,7 +42,7 @@
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL | DROPDEL | NOSTRIP))
 
 

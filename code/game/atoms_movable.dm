@@ -157,8 +157,8 @@
 	if(!loc || !newloc)
 		return FALSE
 
-	var/datum/act/pre_move/step = ACT_TRY(src, pre_move, direct, newloc)
-	if(!step)
+	var/datum/act/pre_move/step = ACT_ATTEMPT(src, pre_move, direct, newloc)
+	if(ACT_REFUSED_BY(step))
 		return FALSE
 	act_cancel(step)
 
@@ -359,8 +359,8 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	var/datum/act/cross/crossing = ACT_TRY(src, cross, AM)
-	if(!crossing)
+	var/datum/act/cross/crossing = ACT_ATTEMPT(src, cross, AM)
+	if(ACT_REFUSED_BY(crossing))
 		return FALSE
 	act_done(crossing)
 	return CanPass(AM, loc)
@@ -389,8 +389,8 @@
 /// action runs on the bumped atom, whose hooks (extend(/datum/act/bump, ...), on_notice(/datum/notice/bumped, ...)) answer it; a refused or
 /// taken-over bump stops there. A type not converted yet still answers through its legacy Bumped(), which runs after the notice.
 /atom/movable/proc/bump_into(atom/A)
-	var/datum/act/bump/B = ACT_TRY(A, bump, src, A, get_dir(src, A))
-	if(!B)
+	var/datum/act/bump/B = ACT_ATTEMPT(A, bump, src, A, get_dir(src, A))
+	if(ACT_REFUSED_BY(B))
 		return
 	act_done(B)
 	if(QDELETED(A))

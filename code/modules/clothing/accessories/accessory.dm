@@ -1612,4 +1612,4 @@ CAPABILITIES(/obj/item/clothing/accessory/scarf/teshari/neckscarf)
 	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete)
-	acceptance("hold", req_acceptance_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("hold", req_acceptance_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

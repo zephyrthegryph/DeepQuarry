@@ -522,7 +522,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 
 CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	// a multitool programs the tint id while the window is loose: from a buffered tint button, else as asked
-	op("program", tool(TOOL_MULTITOOL), wait(0), label("Program"), when(cond_not(nameof(anchored))),
+	op("program", tool(TOOL_MULTITOOL), wait(0), label("Program"), when(not(nameof(anchored))),
 		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "default" = "id", "encode" = FALSE, "timeout" = 0), when = PROC_REF(asks_id)),
 		then(PROC_REF(window_id_entered)))
 
@@ -602,7 +602,7 @@ MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut
 CAPABILITIES(/obj/machinery/button/windowtint)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
 	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
-	op("set_id", tool(TOOL_MULTITOOL), wait(0), label("Set ID"), when(cond_not(nameof(id))),
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), label("Set ID"), when(not(nameof(id))),
 		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0)),
 		needs(req_is(nameof(id), FALSE, because = /datum/msg/req_silent)), then(PROC_REF(button_id_entered)))
 	op("store_id", tool(TOOL_MULTITOOL), wait(0), label("Store ID"), when(nameof(id)), then(PROC_REF(id_stored)))

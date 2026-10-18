@@ -28,7 +28,6 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	H.set_admission_ready(TRUE)
 	TEST_ASSERT_NULL(D.refusal(H, I, M), "Real setter permits candidate with correct mover/destination/slot context")
 	TEST_ASSERT_EQUAL(D.refusal(H2, I, M), "slot not ready", "Shared definition never binds state to first holder")
-	var/old_reason = GLOB.act_last_reason
 	TEST_ASSERT(move_into(H, "dq-native-slot", I, M), "Native requirement permits real transfer")
 	TEST_ASSERT_EQUAL(I.loc, H, "Real insertion changes custody")
 	var/datum/ledger/after_insert = dq_ledger(H)
@@ -40,7 +39,6 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	TEST_ASSERT(move_into(H2, "dq-native-slot", I, M), "Real transfer to another holder removes candidate from old slot")
 	TEST_ASSERT_EQUAL(I.loc, H2, "Real removal/adoption updates custody")
 	TEST_ASSERT(!(I in dq_ledger(H).slots["dq-native-slot"]), "Actual old ledger slot is empty")
-	GLOB.act_last_reason = old_reason
 
 /datum/unit_test/dq_native_equipment_wearer_mover/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -55,7 +53,6 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	TEST_ASSERT(mover.equip_to_slot(U, SLOT_ID_UNIFORM), "Only actual mover initially wears uniform")
 	var/datum/relation_definition/slot/D = dq_ledger(wearer).def_by_id(SLOT_ID_POCKET_L)
 	TEST_ASSERT_EQUAL(D.refusal(wearer, I, mover), "you need a jumpsuit first", "Native catalog checks wearer rather than dressed mover")
-	var/old_reason = GLOB.act_last_reason
 	TEST_ASSERT(!move_into(wearer, SLOT_ID_POCKET_L, I, mover), "Real transfer refuses naked wearer despite dressed mover")
 	TEST_ASSERT_EQUAL(I.loc, T, "Refusal leaves real custody untouched")
 	TEST_ASSERT_NULL(wearer.get_equipped_item(SLOT_ID_POCKET_L), "Refusal leaves actual destination empty")
@@ -69,4 +66,3 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	TEST_ASSERT(move_into(B, CONTAINER_SLOT_STORAGE, I, mover), "Distinct mover performs real removal into actual storage")
 	TEST_ASSERT_NULL(wearer.get_equipped_item(SLOT_ID_POCKET_L), "Actual wearer slot empties after removal")
 	TEST_ASSERT_EQUAL(I.loc, B, "Actual removed candidate reaches storage")
-	GLOB.act_last_reason = old_reason

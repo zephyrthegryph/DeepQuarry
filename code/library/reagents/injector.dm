@@ -27,7 +27,7 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 
 /datum/capability/lib/injector/entries()
 	return list(
-		op("inject", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(goes_slowly))), priority(OP_PRIORITY_PART), label("Inject"),
+		op("inject", at_target(/mob/living/carbon/human), when(not(CAP_PROC(goes_slowly))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free)),
 				req(CAP_PROC(limb_there))),
 			then(CAP_PROC(skin_holds_up))),

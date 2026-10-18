@@ -127,8 +127,8 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /mob/proc/hud_available()
 	if(!client)
 		return FALSE
-	var/datum/act/draw_hud/draw = ACT_TRY(src, draw_hud)
-	if(!draw)
+	var/datum/act/draw_hud/draw = ACT_ATTEMPT(src, draw_hud)
+	if(ACT_REFUSED_BY(draw))
 		return FALSE
 	act_cancel(draw)
 	return TRUE

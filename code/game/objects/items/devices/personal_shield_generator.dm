@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 	drag_onto(PROC_REF(drop_input))
 	// the screwdriver takes the cell out; a built-in shield cell asks first, because taking it out destroys it
-	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(req(PROC_REF(cell_builtin)))), then(PROC_REF(screwdriver_used)))
+	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(not(req(PROC_REF(cell_builtin)))), then(PROC_REF(screwdriver_used)))
 	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(req(PROC_REF(cell_builtin))), needs(req(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
 		asks(/datum/prompt/choice, fields = list("title" = "Selection List", "question" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "choices" = list("Cancel", "Remove"), "buttons" = TRUE, "timeout" = 0)),
 		then(PROC_REF(destroy_cell_answered)))

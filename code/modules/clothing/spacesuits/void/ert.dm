@@ -11,7 +11,7 @@
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
 	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX, SPECIES_TESHARI, SPECIES_ALTEVIAN), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 

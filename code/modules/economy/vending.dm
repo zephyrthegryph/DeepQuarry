@@ -137,7 +137,7 @@ CAPABILITIES(/obj/machinery/vending)
 	ref_one(nameof(currently_vending), /datum/stored_item/vending_product)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vending_blast_malfunction)))
 	on_change(nameof(coin), ANY, then(PROC_REF(coin_changed)))
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(timed_work_frame)), when = cond_all(STAT_OPERABLE, PROC_REF(timed_work_wanted)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(timed_work_frame)), when = all_of(STAT_OPERABLE, PROC_REF(timed_work_wanted)))
 	after_init(0, then(PROC_REF(slogans_start)))
 
 	section(window, "The vendor's window and the buttons in it")
