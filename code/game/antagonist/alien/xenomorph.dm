@@ -22,8 +22,6 @@
 
 /datum/antagonist/xenos/New(no_reference)
 	..()
-	if(!no_reference)
-		antag_xenomorphs() = src
 
 /datum/antagonist/xenos/attempt_random_spawn()
 	if(CONFIG_GET(flag/aliens_allowed)) ..()

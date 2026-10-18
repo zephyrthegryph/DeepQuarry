@@ -20,8 +20,6 @@
 
 /datum/antagonist/deathsquad/New(no_reference)
 	..()
-	if(!no_reference)
-		antag_deathsquad() = src
 
 /datum/antagonist/deathsquad/attempt_spawn()
 	if(..())
