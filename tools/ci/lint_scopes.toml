@@ -753,6 +753,8 @@ banned = [
   "cond_not = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
   "cond_all = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
   "cond_any = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
+  "req_acceptance_either = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
+  "req_acceptance_both = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
   "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/modules/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
   "hold_effect_factors = a body effect application's own factors() entry (/datum/body_effect_origin, code/modules/body/body_effects.dm): the stat layer holds its table on the mob",
   "hold_reagent_factors = a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): its factors() entries read the volume from the body and the stat layer holds the tables on the mob",

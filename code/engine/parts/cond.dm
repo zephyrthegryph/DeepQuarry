@@ -629,6 +629,24 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		return FALSE
 	return TRUE
 
+/// with_reason(r, because): the requirement r, refused with `because` instead of its own reason. A variadic proc cannot take a named argument it
+/// does not declare (BYOND: "bad arg name"), so any_of()/all_of() have no because =; wrap them: with_reason(any_of(a, b), MSG(x)).
+/proc/with_reason(datum/entry/part/req/inner, because)
+	if(!istype(inner))
+		CRASH("with_reason(): [inner] is not a requirement")
+	return part_make(/datum/entry/part/req/with_reason, list("because" = because), list(inner))
+
+/datum/entry/part/req/with_reason
+	part_name = "with_reason"
+
+/datum/entry/part/req/with_reason/read_keys(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.read_keys(A)
+
+/datum/entry/part/req/with_reason/holds(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.holds(A)
+
 /// req_not(r, because =): the negation of a requirement.
 /proc/req_not(datum/entry/part/req/inner, because = null)
 	return part_make(/datum/entry/part/req/negation, list("because" = because), list(inner))

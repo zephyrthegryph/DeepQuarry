@@ -116,3 +116,26 @@
 	TEST_ASSERT(!take_off.holds(A), "canremove = FALSE keeps it on")
 	TEST_ASSERT_EQUAL(take_off.refusal(A), /datum/msg/slot/not_removable, "with the removal reason")
 	A.release()
+
+/datum/unit_test/dq_slot_admission_with_reason
+
+/datum/unit_test/dq_slot_admission_with_reason/Run()
+	// A variadic proc refuses a named argument it does not declare ("bad arg name"), so any_of(..., because =) cannot exist: with_reason() gives a
+	// combinator its reason.
+	var/datum/entry/part/req/R = with_reason(any_of(req_self_held(), req_empty_hand()), MSG(slot/too_big_for_pocket))
+	var/datum/act/op/A = take(/datum/act/op)
+	var/obj/item/flashlight/lamp = allocate(/obj/item/flashlight, test_floor())
+	A.held = lamp
+	A.target = test_floor()
+	TEST_ASSERT(!R.holds(A), "neither member holds")
+	TEST_ASSERT_EQUAL(R.refusal(A), /datum/msg/slot/too_big_for_pocket, "the wrapper's reason replaces the joined ones")
+	A.target = lamp
+	TEST_ASSERT(R.holds(A), "a member holds, so the wrapper holds")
+	A.release()
+
+/datum/unit_test/dq_slot_admission_message_instance
+
+/datum/unit_test/dq_slot_admission_message_instance/Run()
+	var/datum/msg/instance/M = msg_reason("the gloves are in the way")
+	TEST_ASSERT_EQUAL(reason_text(M), "the gloves are in the way", "an instance reads as its text")
+	TEST_ASSERT_EQUAL(req_refusal_value(M), M, "a requirement may return an instance")

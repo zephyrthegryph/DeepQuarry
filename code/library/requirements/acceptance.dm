@@ -1,3 +1,12 @@
+MSG_DEF_SELF(slot/fits_you, "it fits you")
+MSG_DEF_SELF(slot/needs_held, "needs something in hand")
+MSG_DEF_SELF(slot/needs_jumpsuit, "you need a jumpsuit first")
+MSG_DEF_SELF(slot/needs_both_ears, "it needs both ears free")
+MSG_DEF_SELF(slot/nothing_to_attach_to, "you're not wearing anything you can attach it to")
+MSG_DEF_SELF(slot/no_backpack, "you have no backpack")
+MSG_DEF_SELF(slot/nowhere, "there's nowhere to put it")
+MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
+
 // Native ordered acceptance requirements and their actual state dependencies.
 // Requirement results are null to allow or the exact refusal reason.
 /datum/entry/part/req/acceptance_leaf/holds(datum/act/op/A)
@@ -53,12 +62,12 @@
 	if(fits != !!src.args["negate"])
 		return null
 	if(src.args["negate"])
-		return "it fits you"
+		return MSG(slot/fits_you)
 	if(exclude)
-		return "it doesn't fit a [bodytype]"
+		return msg_reason("it doesn't fit a [bodytype]")
 	if(length(names) > 3)
-		return "it isn't made for a [bodytype]"
-	return "it only fits [english_list(names, and_text = " or ")]"
+		return msg_reason("it isn't made for a [bodytype]")
+	return msg_reason("it only fits [english_list(names, and_text = " or ")]")
 
 // Size requirements carry an explicit numeric size-class unit.
 /proc/req_acceptance_max_size(size, unit, because = null)
@@ -69,14 +78,14 @@
 
 /datum/entry/part/req/acceptance_leaf/max_size/acceptance_reason(datum/act/op/A)
 	if(!A?.target)
-		return "needs something in hand"
+		return MSG(slot/needs_held)
 	var/current = dq_property(A.target, PROP_SIZE_CLASS)
 	if(isnull(current))
 		var/datum/property_def/D = dq_property_registry().defs[PROP_SIZE_CLASS]
-		return "[lowertext(D.name || D.id)] unknown"
+		return msg_reason("[lowertext(D.name || D.id)] unknown")
 	if(current <= src.args["max_size"])
 		return null
-	return "too big: [dq_format_measure(current, PROP_UNIT_SIZE_CLASS)] > [dq_format_measure(src.args["max_size"], PROP_UNIT_SIZE_CLASS)]"
+	return msg_reason("too big: [dq_format_measure(current, PROP_UNIT_SIZE_CLASS)] > [dq_format_measure(src.args["max_size"], PROP_UNIT_SIZE_CLASS)]")
 
 /proc/req_acceptance_tag(tag_id, exclude = FALSE, because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because))
@@ -87,14 +96,14 @@
 		return null
 	var/datum/property_def/D = dq_property_registry().defs[src.args["tag"]]
 	var/adjective = D.adjective || lowertext(D.name || D.id)
-	return src.args["exclude"] ? "must not be [adjective]" : "must be [adjective]"
+	return msg_reason(src.args["exclude"] ? "must not be [adjective]" : "must be [adjective]")
 
 /datum/entry/part/req/acceptance_leaf/has_uniform/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
 	var/obj/item/I = A?.target
 	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_UNIFORM) || !(SLOT_ID_UNIFORM in dq_equip_slots_of(H)))
 		return null
-	return "you need a jumpsuit first"
+	return MSG(slot/needs_jumpsuit)
 
 
 /datum/entry/part/req/acceptance_leaf/glove_layering/acceptance_reason(datum/act/op/A)
@@ -106,24 +115,24 @@
 	if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/accessory))
 		var/obj/item/clothing/accessory/ring = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(ring.glove_level >= new_gloves.glove_level)
-			return "\the [ring] is in the way"
+			return msg_reason("\the [ring] is in the way")
 	else if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/worn = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(worn.glove_level >= new_gloves.glove_level || worn.overgloves)
-			return "\the [worn] are in the way"
+			return msg_reason("\the [worn] are in the way")
 	return null
 
 
 /datum/entry/part/req/acceptance_leaf/left_ear_free/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
 	var/obj/item/I = A?.target
-	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_L)) ? "it needs both ears free" : null
+	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_L)) ? MSG(slot/needs_both_ears) : null
 
 
 /datum/entry/part/req/acceptance_leaf/right_ear_free/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
 	var/obj/item/I = A?.target
-	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_R)) ? "it needs both ears free" : null
+	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_R)) ? MSG(slot/needs_both_ears) : null
 
 
 /datum/entry/part/req/acceptance_leaf/accessory_attachable/acceptance_reason(datum/act/op/A)
@@ -133,7 +142,7 @@
 		for(var/obj/item/clothing/W in H.get_worn_clothing())
 			if(W.can_attach_accessory(I))
 				return null
-	return "you're not wearing anything you can attach it to"
+	return MSG(slot/nothing_to_attach_to)
 
 
 /datum/entry/part/req/acceptance_leaf/backpack_takes/acceptance_reason(datum/act/op/A)
@@ -141,20 +150,20 @@
 	var/obj/item/I = A?.target
 	var/obj/item/storage/backpack/B = ishuman(H) ? H.get_equipped_item(SLOT_ID_BACK) : null
 	if(!istype(B))
-		return "you have no backpack"
+		return MSG(slot/no_backpack)
 	return dq_ledger_refusal(I, B, CONTAINER_SLOT_STORAGE, H)
 
 /datum/entry/part/req/acceptance_leaf/suit_storage_takes/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
 	var/obj/item/I = A?.target
 	if(!istype(H))
-		return "there's nowhere to put it"
+		return MSG(slot/nowhere)
 	var/obj/item/suit = H.get_equipped_item(SLOT_ID_SUIT)
 	if(!suit)
-		return "you need a suit first"
+		return MSG(slot/needs_suit)
 	// Engine must distinguish absent/cleared channel from a declared unconstrained channel.
 	if(!dq_constraint_present(suit, CONSTRAINT_SUIT_STORAGE))
-		return "\the [suit] has no suit storage"
+		return msg_reason("\the [suit] has no suit storage")
 	if(istype(I, /obj/item/pda) || istype(I, /obj/item/pen))
 		return null
 	return dq_constraint_refusal(suit, CONSTRAINT_SUIT_STORAGE, I, H, A.mover)

@@ -220,6 +220,10 @@
 /// changed, HUD, factor recompute) that a moment-later qdel would waste.
 /// Always combined with LEDGER_MOVE_FORCED.
 #define LEDGER_MOVE_DESTROYING (1<<1)
+/// A slot's replace policy (REPLACE, REPLACE_IF_BETTER) gave this occupant up so a newcomer fits (admission.md D2e): the occupant was
+/// DISPLACED, the outcome named like the act outcomes (committed, refused, replaced). Passed to on_unslotted() so a hook can tell a displacement
+/// from a removal. Always combined with LEDGER_MOVE_FORCED (the refusal check already asked whether it may leave).
+#define LEDGER_MOVE_DISPLACED (1<<2)
 
 // ---- J5: the move hook gate (atom/movable/var/move_hooks) ----
 // One shared mechanism for anything that needs to react to every move of a

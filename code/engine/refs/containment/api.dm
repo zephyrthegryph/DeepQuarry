@@ -140,7 +140,7 @@
 	if(!isturf(where) && !(where && where != holder && dq_slot_defs_for(where)))
 		where = get_turf(holder)
 	log_world("SLOT_REPLACE: [displaced] leaves [holder] ([id]) for [thing]; it goes to [where || "nullspace"]")
-	holder.slot_remove(displaced, where, null, LEDGER_MOVE_FORCED)
+	holder.slot_remove(displaced, where, null, LEDGER_MOVE_FORCED | LEDGER_MOVE_DISPLACED)
 
 /// Take `thing` out of this holder's slots to `destination`. A destination
 /// with slots makes this a transfer into its default slot. `flags` may carry
