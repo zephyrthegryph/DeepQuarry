@@ -107,11 +107,6 @@ list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/immutabl
 list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/air_templates = list()
 list	code/ATMOSPHERICS/rust_pipenets.dm	@/datum/system/air::rust_pipe_region_networks
 list	code/ATMOSPHERICS/xgm_compat.dm	var/static/list/xgm_id_to_type
-list	code/_global_vars/lists/mapping.dm	@/datum/controller/global_vars::holdingfacility
-list	code/_global_vars/lists/mapping.dm	@/datum/controller/global_vars::tdome1
-list	code/_global_vars/lists/mapping.dm	@/datum/controller/global_vars::tdome2
-list	code/_global_vars/lists/mapping.dm	@/datum/controller/global_vars::tdomeobserve
-list	code/_global_vars/lists/mapping.dm	@/datum/controller/global_vars::tdomeadmin
 list	code/_global_vars/mobs.dm	@/datum/controller/global_vars::deadmins
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::supply_drop
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::mannequins
