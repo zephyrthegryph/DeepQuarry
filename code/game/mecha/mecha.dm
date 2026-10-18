@@ -1393,7 +1393,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 	if(istype(W, /obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/E = W
-		if(E.can_attach(src))
+		if(isnull(E.attach_refusal(src)))
 			user.drop_item()
 			E.attach(src)
 			act_message(user, src, MSG_SELF("You attach [W] to %T%"), MSG_OTHERS("%U% attaches [W] to %T%"))

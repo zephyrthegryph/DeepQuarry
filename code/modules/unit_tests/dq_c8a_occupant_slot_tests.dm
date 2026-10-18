@@ -134,7 +134,7 @@
 	var/turf/T = test_floor()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/clamp = allocate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp, T)
-	TEST_ASSERT(clamp.can_attach(mech), "the clamp should be attachable to a bare ripley")
+	TEST_ASSERT(isnull(clamp.attach_refusal(mech)), "the clamp should be attachable to a bare ripley")
 	clamp.attach(mech)
 	TEST_ASSERT_EQUAL(clamp.loc, mech, "attached equipment should be inside the mech")
 	TEST_ASSERT(clamp in mech.slot_contents(MECHA_SLOT_EQUIPMENT), "attached equipment should be listed in the mech's hardpoint slot")
