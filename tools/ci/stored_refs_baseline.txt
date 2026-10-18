@@ -11,10 +11,6 @@ var	code/controllers/subsystems/atoms_batch.dm	@/datum/system/atoms::active_batc
 var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
 var	code/controllers/subsystems/proximity.dm	@/client::proximity_eye
-var	code/datums/capabilities/dispatch.dm	@/datum/dispatch_context::user
-var	code/datums/capabilities/dispatch.dm	@/datum/dispatch_context::target
-var	code/datums/capabilities/dispatch.dm	@/datum/dispatch_context::held
-var	code/datums/capabilities/dispatch.dm	@/datum/dispatch_context::ui
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
 var	code/datums/interactions/presentation.dm	@/client::screentip
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
