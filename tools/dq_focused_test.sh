@@ -818,7 +818,7 @@ run_worlds() {
 		local look_logs=() run_dir
 		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
 			[[ "${W_LABEL[$i]}" == look* ]] || continue
-			run_dir="$(sed -n 's/.*logs in \(data\/logs\/run[0-9]*\)\..*//p' "${W_LOG[$i]}" | tail -n 1)"
+			run_dir="$(sed -n 's/.*logs in \(data\/logs\/run[0-9]*\)\..*/\1/p' "${W_LOG[$i]}" | tail -n 1)"
 			[ -n "$run_dir" ] && [ -f "$run_dir/tests.log" ] && look_logs+=("$run_dir/tests.log")
 		done
 		[ ${#look_logs[@]} -gt 0 ] && "${PYTHON:-python3}" tools/dq_look_shard.py record "$LOOK_COSTS_FILE" "${look_logs[@]}" || true
