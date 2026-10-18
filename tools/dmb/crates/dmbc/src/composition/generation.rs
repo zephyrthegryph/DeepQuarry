@@ -511,6 +511,12 @@ impl RetainedGeneration {
             .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.is_some())
             .unwrap_or(false)
     }
+    /// Hash of the DMB image the published patch base describes; None without a base.
+    pub(crate) fn patch_base_image_hash(&self) -> Option<u128> {
+        self.publication
+            .with_published(|old| old.patch.lock().unwrap_or_else(|e| e.into_inner()).base.as_ref().map(|base| base.dmb_hash()))
+            .flatten()
+    }
     /// The patch base, its link answers and the image they describe.
     pub(crate) fn patch_base(
         &self,

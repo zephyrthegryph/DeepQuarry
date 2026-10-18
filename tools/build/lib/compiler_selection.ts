@@ -166,9 +166,11 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
     throw new Error(`Native compiler does not support requested DreamMaker options: ${unsupported.join(', ')}.`);
   }
   const configuredExecutable = nativeCompilerPath();
-  const template = nativeTemplatePath();
-  if (!configuredExecutable || !template) {
-    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the shared build (E:/dq-cache/dmb-target/release/dmbc, DQ_DMBC_BIN overrides) and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
+  // The compile accepts only the one pinned engine template and the compiler carries it (`include_bytes!`), so the client passes
+  // no template and no bootstrap flag: nothing ties a compiler version to a tree's copy of the file, and one latest compiler
+  // serves every checkout. (Analysis commands still take an explicit --engine-template.)
+  if (!configuredExecutable) {
+    throw new Error('Native compiler requires DQ_NATIVE_COMPILER, or the shared build (E:/dq-cache/dmb-bin, DQ_DMBC_BIN overrides; run `tools/build/build.sh dmbc`).');
   }
   // Resolve path-bearing configuration in the caller's cwd, before the child
   // switches to its captured namespace. PATH commands stay explicitly unobserved.
@@ -177,7 +179,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   const workers = nativeWorkers();
   // Existing stage events stream through Juke while the child is running, so
   // an external watchdog retains the last observed stage even without a result.
-  const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
+  const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--workers', workers];
   if (nativeNoDaemon()) args.push('--no-daemon');
   for (const define of options.defines ?? []) args.push(`-D${define}`);
   if (options.warningsAsErrors) args.push('--warnings-as-errors');

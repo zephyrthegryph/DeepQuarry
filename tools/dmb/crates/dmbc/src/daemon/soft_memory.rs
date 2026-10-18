@@ -44,6 +44,13 @@ pub(super) fn budget_victim<K: Clone>(sessions: &[(K, std::time::Instant, bool)]
         .min_by_key(|(_, last, _)| *last)
         .map(|(key, _, _)| key.clone())
 }
+/// Whether admitting a build that will add `need` bytes may release an idle session. Sessions are released for the retained budget
+/// (`enforce_retained_budget`) and for a real shortage, never because an estimate of the build plus the reserve exceeds what is free
+/// right now: that estimate (a full compile's growth, about 10 GB, even for a build that will patch) evicted resident sessions on a
+/// machine with plenty of memory left. `available` below the reserve is a shortage; so is the daemon passing its budget with the build.
+pub(super) fn admission_may_shed(available: u64, need: u64, reserve: u64, private: u64, budget: u64) -> bool {
+    available < reserve || private.saturating_add(need) > budget
+}
 /// Ceiling above which the compact symbolic core, generation and link bindings
 /// may be evicted. Below it pressure sheds only transient buffers, so the next
 /// edit stays resident. DMB_DAEMON_HARD_PRIVATE_BYTES overrides; the default is
@@ -76,7 +83,7 @@ fn parse(value: Option<&OsStr>) -> io::Result<u64> {
 // Adaptive budget. A fixed 8 GB budget evicted retained sessions while gigabytes of RAM were free (one DeepQuarry session is
 // about 10 GB private), and a fixed number says nothing about the player's machine. Unless the budget is set explicitly, the
 // limits follow what the machine has: pressure means "available physical memory is running out", not "this process is big".
-//   hard      available physical memory < reserve (default 8 GB, DMB_DAEMON_FREE_RESERVE_GB), or private >= ceiling
+//   hard      available physical memory < reserve (default 4 GB, DMB_DAEMON_FREE_RESERVE_GB), or private >= ceiling
 //   soft      available physical memory < reserve + SOFT_MARGIN, or private >= ceiling
 //   emergency available physical memory < reserve / 2: even the newest session loses its shield
 // A compile is admitted only while available memory covers its expected growth on top of the reserve (see `Shared::await_memory`).
@@ -84,7 +91,7 @@ fn parse(value: Option<&OsStr>) -> io::Result<u64> {
 // keeps the fixed limits above.
 use std::sync::atomic::{AtomicU64, Ordering};
 
-pub(super) const DEFAULT_RESERVE: u64 = 8_000_000_000;
+pub(super) const DEFAULT_RESERVE: u64 = 4_000_000_000;
 pub(super) const SOFT_MARGIN: u64 = 4_000_000_000;
 /// Private-bytes ceiling in adaptive mode: a runaway guard, never the working limit.
 pub(super) const ADAPTIVE_CEILING: u64 = 40_000_000_000;
@@ -143,6 +150,16 @@ pub(super) fn adaptive_pressure(private: u64) -> Option<Pressure> {
 #[cfg(test)]
 mod adaptive_tests {
     use super::*;
+    #[test]
+    fn admission_sheds_for_a_shortage_or_the_budget_never_for_a_full_compile_estimate() {
+        const GB: u64 = 1_000_000_000;
+        // 10 GB free, a build that may need 10.3 GB, 4 GB reserve, 9 GB resident of a 20 GB budget: nothing is released.
+        assert!(!admission_may_shed(10 * GB, 10_300_000_000, 4 * GB, 9 * GB, 20 * GB));
+        // Memory really short (under the reserve): release.
+        assert!(admission_may_shed(3 * GB, GB, 4 * GB, 9 * GB, 20 * GB));
+        // The budget would be passed with this build: release.
+        assert!(admission_may_shed(30 * GB, 12 * GB, 4 * GB, 15 * GB, 20 * GB));
+    }
     #[test]
     fn budget_releases_least_recently_used_idle_session_never_the_newest() {
         use std::time::{Duration, Instant};

@@ -20,6 +20,17 @@ fn main() {
 fn main_inner() {
     // Below normal priority before any worker thread or daemon exists (DMB_PRIORITY=normal opts out).
     dmbc::priority::apply_from_env();
+    // One latest compiler: an executable of a superseded published version hands the whole invocation to the current one (same
+    // arguments, same standard streams and exit status), so a process that resolved an older version still reaches the one
+    // daemon. A daemon never forwards (it retires itself), and the forwarded process is never forwarded again.
+    if std::env::var_os("DMB_FORWARDED").is_none() && std::env::args().nth(1).as_deref() != Some("--serve-daemon") {
+        if let Some(target) = dmbc::daemon::resident::forward_target() {
+            match std::process::Command::new(&target).args(std::env::args_os().skip(1)).env("DMB_FORWARDED", "1").status() {
+                Ok(status) => std::process::exit(status.code().unwrap_or(1)),
+                Err(error) => eprintln!("dmbc: could not forward to the current compiler {}: {error}; running this version", target.display()),
+            }
+        }
+    }
     // A development build gets a private daemon namespace before any endpoint is computed (never touches the published daemon).
     if std::env::var_os("DMB_DAEMON_NAMESPACE").is_none() && dmbc::daemon::resident::provenance_of_self() == dmbc::daemon::resident::Provenance::Development {
         if let Ok(identity) = dmbc::daemon::compiler_identity() {
@@ -73,6 +84,11 @@ fn main_inner() {
         let records = dmbc::compile_stats::load(&directory);
         println!("compile statistics from {}", dmbc::compile_stats::stats_path(&directory).display());
         print!("{}", dmbc::compile_stats::summary(&records, since_ms));
+        return;
+    }
+    if arguments.first().map(String::as_str) == Some("--cache-gc") {
+        // One pass of the shared per-file cache's size and age caps (tools/dq_cache_prune.sh); a running daemon runs the same pass.
+        println!("{}", dmbc::daemon::cache_gc_once());
         return;
     }
     if arguments.first().map(String::as_str) == Some("--daemon-retire") {
