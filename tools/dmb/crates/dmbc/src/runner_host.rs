@@ -712,6 +712,10 @@ impl BuildHost {
                 && engine.configuration.project.file_name() == project.file_name()
         })
     }
+    /// How many other variants this session keeps stashed.
+    pub(crate) fn stashed_variants(&self) -> usize {
+        self.variants.len()
+    }
     /// Drop every stashed variant (their state is recomputable). Returns how many were dropped.
     pub(crate) fn release_stashed_variants(&mut self) -> usize {
         let dropped = self.variants.len();
