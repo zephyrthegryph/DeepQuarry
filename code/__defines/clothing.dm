@@ -211,3 +211,13 @@ NOTICE: Do not leave trailing commas!!!!
 #define ACCESSORY_TESHARI list(SPECIES_TESHARI)
 #define ACCESSORY_VOX list(SPECIES_VOX)
 #define ACCESSORY_WEREBEAST list(SPECIES_WEREBEAST)
+#define FIT_REFIT_ALL_BUT_TESHARI_AND_VOX "refit_all_but_teshari_and_vox"
+#define FIT_REFIT_ALL_BUT_TESHARI "refit_all_but_teshari"
+#define FIT_REFIT_ALL "refit_all"
+#define FIT_REFIT_HUMANOID "refit_humanoid"
+#define FIT_REFIT_SERGAL "refit_sergal"
+#define FIT_REFIT_TAJARAN "refit_tajaran"
+#define FIT_REFIT_TESHARI "refit_teshari"
+#define FIT_REFIT_UNATHI "refit_unathi"
+#define FIT_REFIT_VOX "refit_vox"
+#define FIT_REFIT_VULPKANIN "refit_vulpkanin"

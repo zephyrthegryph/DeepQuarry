@@ -92,8 +92,8 @@
 	var/mob/living/carbon/human/dresser = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/head/soft/adm_fixture/hat = allocate(/obj/item/clothing/head/soft/adm_fixture, T)
 	// The item's extend(/datum/act/equip, needs(...)) runs last, with the real actor (a stripper is judged as himself, not as the victim).
-	TEST_ASSERT_NULL(hat.equip_refusal(wearer, SLOT_ID_HEAD, TRUE), "the wearer may put the hat on")
-	TEST_ASSERT_EQUAL(hat.equip_refusal(wearer, SLOT_ID_HEAD, TRUE, actor = dresser), reason_text(/datum/msg/adm/dress_yourself), "someone else putting it on is refused by the hat's own rule")
+	TEST_ASSERT_NULL(hat.equip_refusal(wearer, SLOT_ID_HEAD), "the wearer may put the hat on")
+	TEST_ASSERT_EQUAL(hat.equip_refusal(wearer, SLOT_ID_HEAD, actor = dresser), reason_text(/datum/msg/adm/dress_yourself), "someone else putting it on is refused by the hat's own rule")
 	TEST_ASSERT(!wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE, actor = dresser), "the strip-equip path passes the dresser")
 	TEST_ASSERT(wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE), "the wearer dresses himself")
 	TEST_ASSERT_EQUAL(wearer.get_equipped_item(SLOT_ID_HEAD), hat, "and wears it")
@@ -160,3 +160,29 @@
 		TEST_ASSERT(H.latent_contents_enabled(), "[path] keeps latent contents")
 		for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(H))
 			TEST_ASSERT(def.accepts_level() <= REQ_READS_TYPE, "[path] slot [def.slot_id] admits by type, so latent entries are judged without making them")
+
+/datum/unit_test/dq_slot_admission_robot_synth_install
+
+/datum/unit_test/dq_slot_admission_robot_synth_install/Run()
+	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, test_floor())
+	TEST_ASSERT_NOTNULL(D.module, "a drone starts with its module")
+	TEST_ASSERT_EQUAL(D.synth_install_refusal(/obj/item/paper), /datum/msg/robot/not_a_synth, "a non-synth type is refused")
+	var/datum/matter_synth/present = length(D.module.synths) ? D.module.synths[1] : null
+	TEST_ASSERT_NOTNULL(present, "the drone module carries a matter synth")
+	TEST_ASSERT_EQUAL(D.synth_install_refusal(present.type), /datum/msg/robot/synth_installed, "a synth it already has is refused")
+	var/missing
+	for(var/path in list(/datum/matter_synth/cloth, /datum/matter_synth/wood, /datum/matter_synth/plastic, /datum/matter_synth/plasteel, /datum/matter_synth/wire))
+		var/has = FALSE
+		for(var/datum/matter_synth/S in D.module.synths)
+			if(istype(S, path))
+				has = TRUE
+		if(!has)
+			missing = path
+			break
+	TEST_ASSERT_NOTNULL(missing, "some synth kind is missing from the drone")
+	TEST_ASSERT_NULL(D.synth_install_refusal(missing), "and that kind installs")
+	var/before = length(D.module.synths)
+	D.add_new_material(missing)
+	TEST_ASSERT_EQUAL(length(D.module.synths), before + 1, "add_new_material() installs it through the same rule")
+	D.add_new_material(missing)
+	TEST_ASSERT_EQUAL(length(D.module.synths), before + 1, "and refuses a second one")

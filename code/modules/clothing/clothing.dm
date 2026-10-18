@@ -176,20 +176,20 @@ DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_im
 
 	switch(target_species)
 		if(SPECIES_HUMAN, SPECIES_SKRELL)	//humanoid bodytypes
-			restrict_fit(SPECIES_HUMANOID_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_HUMANOID)
 		if(SPECIES_UNATHI)
-			restrict_fit(SPECIES_UNATHI_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_UNATHI)
 		if(SPECIES_TAJARAN)
-			restrict_fit(SPECIES_TAJARAN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_TAJARAN)
 		if(SPECIES_VULPKANIN)
-			restrict_fit(SPECIES_VULPKANIN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_VULPKANIN)
 		if(SPECIES_SERGAL)
-			restrict_fit(SPECIES_SERGAL_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_SERGAL)
 		if("Metamorphic")
 			if(sprite_sheets[SPECIES_TESHARI]) //We have a custom teshari species sprite. Sorry teshari, but otherwise the fallback looks awful on you.
-				restrict_fit(SPECIES_ALL_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL)
 			else
-				restrict_fit(SPECIES_ALL_BUT_TESHARI_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL_BUT_TESHARI)
 		else
 			restrict_fit(list(target_species))
 

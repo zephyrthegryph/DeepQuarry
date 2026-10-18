@@ -14,7 +14,7 @@ MSG_DEF_SELF(slot/not_strippable, "It can't be stripped.")
 	default_reason = /datum/msg/slot/not_removable
 
 /datum/entry/part/req/removable/holds(datum/act/op/A)
-	var/obj/item/I = A.held
+	var/obj/item/I = A.held || A.target
 	if(!istype(I))
 		return TRUE
 	if(!I.canremove || has_trait(I, TRAIT_NODROP))
@@ -22,7 +22,7 @@ MSG_DEF_SELF(slot/not_strippable, "It can't be stripped.")
 	return !src.args["strip"] || !(I.flags & NOSTRIP)
 
 /datum/entry/part/req/removable/refusal(datum/act/op/A)
-	var/obj/item/I = A.held
+	var/obj/item/I = A.held || A.target
 	if(src.args["because"])
 		return req_reason_value(A, src.args["because"], default_reason)
 	if(istype(I) && I.canremove && !has_trait(I, TRAIT_NODROP))

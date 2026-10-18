@@ -229,7 +229,7 @@
 				var/expected = text2num(masks[n], 36)
 				var/actual = 0
 				for(var/slot in 1 to length(golden_order))
-					if(!I.equip_refusal(H, golden_order[slot], TRUE))
+					if(!I.equip_refusal(H, golden_order[slot]))
 						actual |= (1 << (slot - 1))
 				cells += length(golden_order)
 				if(actual != expected)
@@ -349,17 +349,17 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 
 	// Pockets need a jumpsuit, then take small things.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "pocket without a jumpsuit")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L), "you need a jumpsuit first", "pocket without a jumpsuit")
 	H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
-	TEST_ASSERT_NULL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "pen into a pocket")
+	TEST_ASSERT_NULL(pen.equip_refusal(H, SLOT_ID_POCKET_L), "pen into a pocket")
 	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
-	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "too big for a pocket", "toolbox into a pocket")
+	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L), "too big for a pocket", "toolbox into a pocket")
 
 	// The slot tag (the old slot_flags check) gives a reason too.
-	TEST_ASSERT(findtext(wrench.equip_refusal(H, SLOT_ID_HEAD, TRUE), "worn on the head"), "wrench on the head")
+	TEST_ASSERT(findtext(wrench.equip_refusal(H, SLOT_ID_HEAD), "worn on the head"), "wrench on the head")
 
 	// Suit storage asks the worn suit.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_SUIT_STORAGE, TRUE), "you need a suit first", "suit storage without a suit")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_SUIT_STORAGE), "you need a suit first", "suit storage without a suit")
 
 	// Fit: Teshari-only goggles refuse a human with a reason, and fit a Teshari.
 	var/obj/item/clothing/glasses/aerogelgoggles/goggles = allocate(/obj/item/clothing/glasses/aerogelgoggles, T)

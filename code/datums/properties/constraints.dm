@@ -23,7 +23,7 @@
 /// A query retains the wearer independently from the actual mover.
 /proc/dq_constraint_refusal(obj/item/I, kind, atom/thing, mob/actor, mob/mover = null)
 	var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
-	return reason_text(acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer)))
+	return reason_text(acceptance_reason(I, kind, I, thing, wearer, mover || actor))
 
 /obj/item/proc/clear_constraint(kind)
 	remove_constraint_overrides(kind)
@@ -72,4 +72,4 @@
 
 /proc/dq_constraint_read_keys(obj/item/I, kind, atom/movable/thing, mob/actor, mob/mover = null)
 	var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
-	return acceptance_read_keys(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer))
+	return acceptance_read_keys(I, kind, I, thing, wearer, mover || actor)

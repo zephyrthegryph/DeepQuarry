@@ -119,20 +119,20 @@
 			. += list(pair.Copy())
 
 // Direct fields use the existing bounded pooled act contract.
-/proc/acceptance_act(datum/declarer, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, wearer_is_actor = FALSE, query_type = /datum/act/op/acceptance)
-	return query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, null, options, query_type)
+/proc/acceptance_act(datum/declarer, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, query_type = /datum/act/op/acceptance)
+	return query_admission_query(declarer, candidate, mover, wearer, mover, destination, slot_id, null, options, query_type)
 
 // One immutable precompiled plan and one pooled query. Every evaluation path releases it.
 // Consumer needs presence separately because empty suit-storage is NOT unconstrained storage.
 /proc/acceptance_declared(datum/declarer, channel)
 	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(declarer, channel)
 	return P && P.args["declared"] && !P.args["empty"]
-/proc/acceptance_reason(datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, wearer_is_actor = FALSE)
+/proc/acceptance_reason(datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null)
 	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(declarer, channel)
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
+		A = query_admission_query(declarer, candidate, mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
 		op_pure_begin()
 		if(GLOB.op_menu_read_frame)
 			op_menu_record_reads(declarer.acceptance_override_reads())
@@ -144,12 +144,12 @@
 		throw fault
 	op_pure_end()
 	acceptance_act_release(A)
-/proc/acceptance_read_keys(datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, wearer_is_actor = FALSE)
+/proc/acceptance_read_keys(datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null)
 	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(declarer, channel)
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
+		A = query_admission_query(declarer, candidate, mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
 		op_pure_begin()
 		. = P ? P.read_keys(A) : declarer.acceptance_override_reads()
 	catch(var/exception/fault)
@@ -176,11 +176,11 @@
 		A.release()
 
 // Evaluate an already-compiled slot plan without changing holder overrides or publishing.
-/proc/acceptance_plan_query(datum/entry/part/acceptance_plan/P, datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, wearer_is_actor = FALSE, reads_only = FALSE)
+/proc/acceptance_plan_query(datum/entry/part/acceptance_plan/P, datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, reads_only = FALSE)
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, null, /datum/act/op/acceptance)
+		A = query_admission_query(declarer, candidate, mover, wearer, mover, destination, slot_id, channel, null, /datum/act/op/acceptance)
 		op_pure_begin()
 		. = reads_only ? P.read_keys(A) : P.check(A)
 	catch(var/exception/fault)

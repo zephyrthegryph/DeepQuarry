@@ -5219,3 +5219,10 @@ orientation while its reflection angle stayed unchanged. The draw now uses the
 stored angle regardless of lock state; the lock still prevents angle edits.
 `dq_decl_visual/reflector` verifies the real overlay transform before and after
 locking. No snapshots are re-recorded.
+* **The strip menu refuses an item stuck to its wearer (TRAIT_NODROP)** up front, through `req_removable()`, with the same "You cannot remove ..." line;
+  before, the click went through and the removal failed later.
+* **Equip and fit checks judge the real actor everywhere** (D2m): `wearer_is_actor` is gone, so an acceptance query's actor is the mover; an item's fit
+  and equip constraints and the vore consent channels (predator as mover) read the same wearer as before.
+* **equip_refusal() tells nobody** (wave 4): the check lost `disable_warning`; equip_to_slot_if_possible() and the cigarette packet show the reason
+  ("You can't wear X there: ...") themselves, as before. The slot-reach check inside it no longer prints its own "something is in the way"
+  line a second time.
