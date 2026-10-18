@@ -8,7 +8,6 @@ var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_
 var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_collar_tag
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/_onclick/hud/skybox.dm	@/client::skybox
-var	code/controllers/kernel/urgent.dm	@/datum/urgent_request::member
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::owner
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::previous
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/system/atoms::active_batch
@@ -207,9 +206,6 @@ list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::starting_lega
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::starting_illegal_nifsoft
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::virusDB
 list	code/_helpers/null_safety.dm	var/static/list/instances = list()
-list	code/controllers/kernel/kernel.dm	@/datum/controller/kernel::urgent_queue
-list	code/controllers/kernel/work_item.dm	@/datum/work_item::urgent_pending
-list	code/controllers/measure/meter.dm	@/datum/km_stats_set::systems
 list	code/controllers/subsystems/assets.dm	@/datum/system/assets::cache
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_pending
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_loose
