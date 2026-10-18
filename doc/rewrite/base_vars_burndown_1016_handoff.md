@@ -4,8 +4,8 @@ Branch: `codex/base-vars-burndown`.
 
 ## Current source
 
-The branch's 151-site reduction was 527 to 376 before the current master merge.
-The merged result will be measured again with the shrink-only baseline update.
+The merged source reduces the baseline from 527 to 376 (151 removed rows),
+confirmed by analyze baseline --update --lint base_vars. Generation passed.
 State moves to sparse state, native configuration profiles, body/status snapshots,
 the HUD state, relations and the optical-view association. No base-type variables,
 shadow state or new ALLOW annotations are added.
@@ -22,8 +22,9 @@ full suite will run. The two branch-only tests depending on the withdrawn look
 allocator are removed; the master look harness and snapshot records are retained.
 Historical sampler and pin-based verification is superseded, not reused as a stamp.
 
-Current compile, ratchet and behavior results are pending. A successful lane-ready
-run and the normal landing protocol are required before this branch is done.
+The final compile, ratchet and behavior verdict belongs to the lane-ready note on
+the pushed tip and the normal landing receipt. Earlier logs do not substitute for
+that stamp.
 
 ## Limits
 
