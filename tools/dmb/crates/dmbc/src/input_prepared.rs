@@ -162,6 +162,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         if let Some(hit) = hit {
             counters::HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let refreshed = proof.expect("admitted prepared input proof");
+            // The structure check is memoized on the proof; doing it here keeps it out of the
+            // shared snapshot lock, which every prepared input of the request takes.
+            refreshed.check_structure()?;
             let merge_timer = MERGE.time();
             self.snapshot
                 .lock()

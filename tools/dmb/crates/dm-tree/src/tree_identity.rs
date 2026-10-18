@@ -14,7 +14,22 @@ pub(crate) fn declaration_identity_view(
 ) -> u128 {
     declaration_identity_rows(rows.iter().map(|row| (row, None)), fields)
 }
-fn update_row(bytes: &mut Xxh3, skeleton: &Skeleton, fingerprint: Option<u128>) {
+/// Byte sink of the identity rows: the streaming hasher, or a buffer hashed in one call (the same
+/// digest; one update per field over 344k rows cost a few hundred ms per request).
+trait RowSink {
+    fn update(&mut self, bytes: &[u8]);
+}
+impl RowSink for Xxh3 {
+    fn update(&mut self, bytes: &[u8]) {
+        Xxh3::update(self, bytes);
+    }
+}
+impl RowSink for Vec<u8> {
+    fn update(&mut self, bytes: &[u8]) {
+        self.extend_from_slice(bytes);
+    }
+}
+fn update_row(bytes: &mut impl RowSink, skeleton: &Skeleton, fingerprint: Option<u128>) {
     match skeleton {
         Skeleton::Type {
             path,
@@ -129,11 +144,12 @@ fn projected_identity_rows<'a>(
     rows: impl IntoIterator<Item = (&'a Skeleton, Option<u128>)>,
     fields: &[dm_ir::OpaqueFieldBase],
 ) -> u128 {
-    let mut bytes = Xxh3::new();
+    let mut buffer: Vec<u8> = Vec::with_capacity(1 << 22);
+    let bytes = &mut buffer;
     bytes.update(b"dm-tree-v3\0");
     for (path, explicit_parent) in parents {
         update_row(
-            &mut bytes,
+            bytes,
             &Skeleton::Type {
                 path,
                 explicit_parent,
@@ -142,9 +158,11 @@ fn projected_identity_rows<'a>(
         );
     }
     for (row, fingerprint) in rows {
-        update_row(&mut bytes, row, fingerprint);
+        update_row(bytes, row, fingerprint);
     }
-    finish_identity(bytes, fields)
+    let mut hasher = Xxh3::new();
+    hasher.update(&buffer);
+    finish_identity(hasher, fields)
 }
 
 pub(crate) fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
