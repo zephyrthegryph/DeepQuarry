@@ -51,8 +51,6 @@ var	code/game/antagonist/station/traitor.dm	@/datum/controller/global_vars::trai
 var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
 var	code/game/objects/structures/transit_tubes.dm	@/obj/structure/transit_tube_pod::air_contents
-var	code/library/machine/wires.dm	@/datum/wire_def::cut_source
-var	code/library/machine/wires.dm	@/datum/wire_def::pulse_source
 var	code/library/reagents/reagent_flow.dm	@/datum/reservation/reagents::sink
 var	code/library/reagents/reagent_flow.dm	@/datum/reservation/reagents::peer
 var	code/modules/admin/callproc/callproc.dm	@/datum/controller/global_vars::AdminProcCallHandler

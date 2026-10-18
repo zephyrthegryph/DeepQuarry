@@ -60,6 +60,7 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 
 // ---- the wire definitions ----
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/wire_def) // made once at world setup and kept for the round: a reference to one pins nothing deleted
 /// One wire, defined once (WIRE_DEF): its name and what cutting, pulsing and mending it does on the capability that brings it.
 /datum/wire_def
 	var/id
@@ -72,6 +73,7 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 	var/datum/wire_hold_source/cut_source
 	var/datum/wire_hold_source/pulse_source
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/wire_hold_source) // made once at world setup and kept for the round: a reference to one pins nothing deleted
 /// The source of a wire's holds on a holder's stat ("the Primary Power wire, cut").
 /datum/wire_hold_source
 	var/wire
