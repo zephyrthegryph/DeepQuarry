@@ -166,6 +166,18 @@ pub fn system_types(system: &str) -> Vec<String> {
 /// The vars a system declares: `(some candidate type exists, its vars)`. Reads only the files that name the
 /// system's type, not the whole tree.
 pub fn system_vars(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
+    // A pure function of the tree and the system name, asked once per accessor: one answer per system.
+    type Answers = std::sync::Mutex<std::collections::HashMap<String, (bool, std::collections::HashSet<String>)>>;
+    let answers: Arc<Answers> = tree.memo("sem/system_vars", || Answers::default());
+    if let Some(known) = answers.lock().unwrap().get(system) {
+        return known.clone();
+    }
+    let computed = system_vars_uncached(tree, system);
+    answers.lock().unwrap().insert(system.to_string(), computed.clone());
+    computed
+}
+
+fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
     let types = system_types(system);
     // Which files mention `/datum/world_service/<system>` or `/datum/system/<system>` (as a substring of the
     // comment-stripped text, like `contains`): per-file facts, read once per content change.
