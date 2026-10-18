@@ -660,3 +660,41 @@ Section 17 rows that are **wrong or incomplete** against this design:
 10. Section 19 migration: add this document's waves 0 to 8 as the E2 content sequence; note the retirement of `/datum/req` as a prerequisite of any native `req_access`.
 11. Section 21 decisions: record the null-or-reason requirement decision and the one-reason-type (`/datum/msg`) decision.
 12. Section 22 layout: library requirements move to `code/library/requirements/` without the `acceptance` file name; fit categories live in `code/library/clothing/`.
+
+## 7. Census at the end of wave 2 (18 Oct 2026, `rewrite/admission` at `267576fccd`, content only: tests and generated files excluded)
+
+The exact counts wave 0 promised, by `git grep -c -E` on the pattern named. `codex/req-burndown` (merged into master 17 Oct) retired the `REQ_*`
+predicate tables, `/datum/predicate` and the `HOLD_*` macros before this lane reached wave 8, so their rows are zero here.
+
+| Form (pattern) | Lines | Files | Wave |
+|---|---:|---:|---|
+| `REQ_*(` predicate macros | 0 | 0 | 8: done by req-burndown |
+| `/datum/predicate` | 0 | 0 | 8: done |
+| `HOLD_ONLY/NOT/MAX_SIZE` | 0 | 0 | 5: done |
+| `fit_spec`, `equip_spec`, `hold_spec`, `suit_storage_spec` tables | 0 | 0 | 3-5: done (one comment left in `__defines/clothing.dm`) |
+| `cond_not/cond_all/cond_any` | 0 | 0 | 1: done, hard-banned |
+| `because = "..."` outside tests | 0 | 0 | 2: done, hard-banned |
+| `GLOB.act_last_reason`, `ACT_TRY`, last-outcome/reply globals | 0 | 0 | 2: done, hard-banned |
+| `acceptance("channel", ...)` declarations | 150 | 43 | 8 |
+| `acceptance(CONSTRAINT_*, ...)` declarations | 176 | 40 | 3-5 |
+| `CONSTRAINT_FIT/EQUIP/HOLD/SUIT_STORAGE` (all uses) | 199 | 49 | 3-5 |
+| `req_acceptance_*` leaves | 224 | 62 | 1 (rename) |
+| `fits(` | 102 | 52 | 3 |
+| `species_allowed =` | 122 | 7 | 3 |
+| `sprite_sheets(_obj) = list(` | 81 | 39 | 3 |
+| `SPECIES_*_CAN_WEAR` | 17 | 2 | 3 |
+| `canremove` | 116 | 45 | 4 |
+| `NOSTRIP` | 21 | 17 | 4 |
+| `disable_warning` | 25 | 7 | 4 |
+| `ignore_obstruction` | 10 | 3 | 4 |
+| `wearer_is_actor` | 11 | 3 | 4 |
+| `dq_equip_refusal` | 2 | 1 | 4 |
+| `LEDGER_MOVE_FORCED` | 20 | 10 | 6 (authority grant) |
+| `insert_refusal(` | 17 | 9 | 6 |
+| `op("...insert...")` | 83 | 68 | 6 |
+| `CanPass(` (all, incl. callers) | 106 | - | 7 |
+| `trans_to(` | 42 | 23 | 7 |
+| `is_job_whitelisted` / `is_alien_whitelisted` | 23 | 13 | 7 |
+
+**Purity report (D5).** req-burndown converted the two confirmed impure previews (saddlebag `taur_fit`, Avida `match_ears`) to pure requirements with the
+appearance set through equipment notices (its handoff, `intended_changes.md`); no `REQ_ON` proc is left to audit.
