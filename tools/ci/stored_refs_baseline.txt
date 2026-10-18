@@ -108,7 +108,6 @@ list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/air_temp
 list	code/ATMOSPHERICS/rust_pipenets.dm	@/datum/system/air::rust_pipe_region_networks
 list	code/ATMOSPHERICS/xgm_compat.dm	var/static/list/xgm_id_to_type
 list	code/_global_vars/mobs.dm	@/datum/controller/global_vars::deadmins
-list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::supply_drop
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::mannequins
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::overlay_cache
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::admin_laws
