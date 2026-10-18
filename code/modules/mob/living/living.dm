@@ -47,7 +47,7 @@
 		own_clear(tf_mob_holder, nameof(tf_mob_holder.vore_organs), OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
-		set_tf_mob_holder(null)
+		rel_set(src, nameof(tf_mob_holder), null)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())

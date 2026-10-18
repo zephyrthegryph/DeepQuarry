@@ -1,7 +1,7 @@
 
 /mob/living/simple_mob
 	// What do you hit the mob with (on help) to get something from it?
-	var/obj/harvest_tool // a type path, never an instance
+	var/harvest_tool // a type path, never an instance
 	// How long do we have to wait until it's harvestable again?
 	var/harvest_cooldown = 10 MINUTES
 	// How long does it take to harvest?

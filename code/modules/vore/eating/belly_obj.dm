@@ -654,7 +654,7 @@ CAPABILITIES(/obj/belly)
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
-		M.set_tf_mob_holder(null)
+		rel_set(M, nameof(M.tf_mob_holder), null)
 
 	// If digested prey is also a pred... anyone inside their bellies gets moved up.
 	if(is_vore_predator(M))

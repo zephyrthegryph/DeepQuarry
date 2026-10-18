@@ -599,7 +599,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "cig paper"
 	volume = 25
-	var/obj/item/clothing/mask/smokable/cigarette/crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint
+	var/crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint
 
 /obj/item/reagent_containers/rollingpaper/blunt
 	name = "blunt wrap"

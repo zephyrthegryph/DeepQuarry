@@ -440,6 +440,29 @@ impl Lint for StoredRefs {
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
         let transient: Vec<String> = cx.list("transient_types").to_vec();
+        // param(nameof(v), ..., keep = FALSE) in a CAPABILITIES block: init builds from the value and params_drop() puts the var back to its default when
+        // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
+        let mut init_only: Vec<(String, String)> = Vec::new();
+        {
+            let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
+            let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
+            for f in &files {
+                let mut cur: Option<String> = None;
+                for line in f.code().lines() {
+                    if let Some(c) = head.captures(line) {
+                        cur = Some(c.s(1).to_string());
+                        continue;
+                    }
+                    if !(line.starts_with('\t') || line.starts_with(' ')) && !line.trim().is_empty() {
+                        cur = None;
+                    }
+                    if let (Some(t), Some(c)) = (cur.as_ref(), param.captures(line)) {
+                        init_only.push((t.clone(), c.s(1).to_string()));
+                    }
+                }
+            }
+        }
+        let init_only_var = |owner: &str, name: &str| init_only.iter().any(|(t, v)| v == name && (t == owner || sem.is_subtype(owner, t) || sem.is_subtype(t, owner)));
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;
         let mut emitted: HashSet<(String, String, u32)> = HashSet::new();
@@ -483,7 +506,7 @@ impl Lint for StoredRefs {
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || declared_by_relation(sem, &rels, &owner, &name) {
+            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || init_only_var(&owner, &name) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
             put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));

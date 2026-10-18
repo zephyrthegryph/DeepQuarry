@@ -55,20 +55,8 @@ var	code/game/antagonist/station/stowaway.dm	@/datum/controller/global_vars::sto
 var	code/game/antagonist/station/thug.dm	@/datum/controller/global_vars::thugs
 var	code/game/antagonist/station/traitor.dm	@/datum/controller/global_vars::traitors
 var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
-var	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::assembly_at_make
-var	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::make_from
 var	code/game/mecha/mecha.dm	@/obj/mecha::wreck
-var	code/game/objects/effects/decals/posters/posters.dm	@/obj/structure/sign/poster::hung_from
-var	code/game/objects/effects/spiders.dm	@/obj/effect/spider/eggcluster::laid_by
-var	code/game/objects/effects/spiders.dm	@/obj/effect/spider/spiderling::laid_by
-var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/decoy::mimiced_atom
-var	code/game/objects/effects/temporary_visuals/miscellaneous.dm	@/obj/effect/temp_visual/impact_effect/monochrome_laser::hit_by
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
-var	code/game/objects/items/weapons/cigs_lighters.dm	@/obj/item/reagent_containers/rollingpaper::crafted_type
-var	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	@/obj/structure/closet/secure_closet/mind::owner
-var	code/game/objects/structures/crates_lockers/closets/statue.dm	@/obj/structure/closet/statue::statue_of
-var	code/game/objects/structures/droppod.dm	@/obj/structure/drop_pod::cargo_at_make
-var	code/game/objects/structures/gargoyle.dm	@/obj/structure/gargoyle::petrified
 var	code/game/objects/structures/transit_tubes.dm	@/obj/structure/transit_tube_pod::air_contents
 var	code/library/machine/wires.dm	@/datum/wire_def::cut_source
 var	code/library/machine/wires.dm	@/datum/wire_def::pulse_source
@@ -76,7 +64,6 @@ var	code/library/reagents/reagent_flow.dm	@/datum/reservation/reagents::sink
 var	code/library/reagents/reagent_flow.dm	@/datum/reservation/reagents::peer
 var	code/modules/admin/callproc/callproc.dm	@/datum/controller/global_vars::AdminProcCallHandler
 var	code/modules/admin/view_variables_panel.dm	@/client::dq_vv_panel
-var	code/modules/blob2/core_chunk.dm	@/obj/item/blobcore_chunk::parent_blob_type
 var	code/modules/client/client defines.dm	@/client::holder
 var	code/modules/client/client defines.dm	@/client::fakeConversations
 var	code/modules/client/client defines.dm	@/client::tooltips
@@ -103,13 +90,7 @@ var	code/modules/mining/fulton.dm	@/obj/effect/extraction_holder::stored_obj
 var	code/modules/mining/machinery/machine_processing.dm	@/obj/machinery/mineral/processing_unit::console
 var	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/stacking_machine::console
 var	code/modules/mining/resonator.dm	@/obj/effect/resonance::creator
-var	code/modules/mob/living/butchering.dm	@/mob/living::meat_type
-var	code/modules/mob/living/carbon/human/species/species.dm	@/datum/species::move_trail
-var	code/modules/mob/living/life/living_systems.dm	@/mob/living::tf_mob_holder
 var	code/modules/mob/living/silicon/ai/multicam.dm	@/datum/controller/global_vars::ai_camera_room_landmark
-var	code/modules/mob/living/simple_mob/harvesting.dm	@/mob/living/simple_mob::harvest_tool
-var	code/modules/mob/living/simple_mob/overmap_mob.dm	@/obj/effect/overmap/visitable/simplemob::parent_mob_type
-var	code/modules/mob/living/simple_mob/overmap_mob.dm	@/obj/effect/overmap/visitable/ship/simplemob::parent_mob_type
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	@/mob/living/simple_mob/vore/aggressive/rat/tame::food
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::ai_slot
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::stored_pen
@@ -121,19 +102,14 @@ var	code/modules/nifsoft/nifsoft.dm	@/obj/item/disk/nifsoft::stored_synthetic
 var	code/modules/nifsoft/software/10_combat.dm	@/datum/controller/global_vars::unarmed_hardclaws
 var	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::parent_human
 var	code/modules/nifsoft/software/14_commlink.dm	@/obj/item/communicator/commlink::nifsoft
-var	code/modules/overmap/bluespace_rift.dm	@/obj/effect/overmap/bluespace_rift::pair_at_make
 var	code/modules/overmap/ships/landable.dm	@/obj/effect/shuttle_landmark/visiting_shuttle::core_landmark
 var	code/modules/pda/pda.dm	@/obj/item/pda::lastapp
 var	code/modules/pda/radio.dm	@/obj/item/radio/integrated::active
 var	code/modules/player_tips/player_tips_service.dm	@/datum/system/player_tips::player_tips
-var	code/modules/power/light_construct.dm	@/obj/machinery/light_construct::fixture_at_make
-var	code/modules/power/lighting.dm	@/obj/item/light::fixture_at_make
-var	code/modules/power/lighting.dm	@/obj/machinery/light::construct_at_make
 var	code/modules/power/solar_service.dm	@/datum/controller/global_vars::sun
 var	code/modules/projectiles/gun.dm	@/obj/item/gun::auto_target
 var	code/modules/projectiles/gun.dm	@/obj/item/gun::last_moved_mob
 var	code/modules/projectiles/projectile_effects.dm	@/datum/projectile_effects::turf_effect_callback
-var	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::built_from_construct
 var	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::button
 var	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/button/garbosystem::grinder
 var	code/modules/research/message_server.dm	@/datum/controller/global_vars::blackbox
@@ -169,8 +145,6 @@ var	code/modules/tickets/tickets.dm	@/datum/tickets::astatclick
 var	code/modules/tickets/tickets.dm	@/datum/tickets::cstatclick
 var	code/modules/tickets/tickets.dm	@/datum/tickets::rstatclick
 var	code/modules/tickets/tickets.dm	@/obj/effect/statclick/ticket::ticket_datum
-var	code/modules/vore/eating/leave_remains.dm	@/obj/item/digestion_remains::pred_at_make
-var	code/modules/vore/eating/leave_remains.dm	@/obj/item/digestion_remains::prey_at_make
 var	code/modules/vore/eating/special_bellies.dm	@/obj/belly/special/teleporter::target
 var	code/modules/vore/eating/vore.dm	@/client::prefs_vr
 var	code/modules/xenoarcheaology/boulder.dm	@/obj/structure/boulder::geological_data_static

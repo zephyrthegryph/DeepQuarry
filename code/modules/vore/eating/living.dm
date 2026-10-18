@@ -729,7 +729,7 @@
 					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 					return
 				to_chat(src,span_notice("You have no body."))
-				src.set_tf_mob_holder(null)
+				rel_set(src, nameof(tf_mob_holder), null)
 				return
 			if(ourmob.ckey)
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
