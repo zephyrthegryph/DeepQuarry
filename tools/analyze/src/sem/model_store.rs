@@ -34,6 +34,30 @@ pub struct Parsed {
     pub errors: Vec<String>,
 }
 
+/// The macro environment of a full model: the `.dme` and every registered file holding a `#define`, `#undef` or `#include`. Two models
+/// of one environment parse a file's text the same way, so a proc body is a function of its file's content (`walk_cache`).
+pub fn environment(tree: &Tree, root: &Path, dme_path: &Path, files: &dreammaker::FileList) -> Hash {
+    let mut paths = Vec::new();
+    files.for_each(|p| paths.push(p.to_path_buf()));
+    let rows: Vec<Option<Hash>> = super::par_map(&paths, |p| text_of(tree, root, p).map(|t| if mutates_macros(&t) { key_of(tree, root, p) } else { 0 }));
+    let mut h = blake3::Hasher::new();
+    h.update(&std::fs::read(dme_path).map(|b| h128(&b)).unwrap_or(0).to_le_bytes());
+    for (p, r) in paths.iter().zip(rows) {
+        match r {
+            Some(0) => {}
+            Some(k) => {
+                h.update(norm_in(root, p).as_bytes());
+                h.update(&k.to_le_bytes());
+            }
+            None => {
+                h.update(b"?");
+                h.update(norm_in(root, p).as_bytes());
+            }
+        }
+    }
+    u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+}
+
 #[derive(Serialize)]
 struct StoredRef<'a> {
     engine: &'a str,
@@ -129,7 +153,11 @@ pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, Strin
     let store = dir.join(FILE);
     let dme_hash = std::fs::read(dme_path).map(|b| h128(&b)).unwrap_or(0);
     let t0 = std::time::Instant::now();
-    let reused = match load(&store) {
+    let loaded = load(&store);
+    if trace() {
+        eprintln!("analyze: model store: read the stored model in {:.1?}", t0.elapsed());
+    }
+    let reused = match loaded {
         Some(s) if s.engine == engine() && s.dme == dme_hash => update(root, tree, dme_path, s),
         Some(_) => Err("the analyzer or the .dme changed".to_string()),
         None => Err("no stored model".to_string()),
@@ -230,7 +258,11 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Stored) -> Result<(P
             synth.push_str(line);
             synth.push('\n');
         }
+        let tp = std::time::Instant::now();
         let partial = super::parse_dme(dme_path, &s.paths, Some(synth))?;
+        if trace() {
+            eprintln!("analyze: model store: partial parse in {:.1?}", tp.elapsed());
+        }
         if partial.files.get_id(target) != Some(fid) {
             return Err("the partial parse named the file differently".to_string());
         }

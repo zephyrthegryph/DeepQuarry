@@ -83,7 +83,7 @@ pub struct LookupBound {
     pub lookup: String,
     pub argument: LookupArgument,
 }
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LookupRead {
     pub binding: LookupBound,
     pub field: String,
@@ -104,7 +104,7 @@ pub struct LookupDeclaration {
     pub result: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ReadKind {
     /// A var on an entity.
     Var,
@@ -119,7 +119,7 @@ pub enum ReadKind {
 }
 
 /// One read: a var (or key) on the entity reached from `root` through `hops`.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Read {
     /// `holder`, or the context hop (`actor`, `held`, `target`, ...).
     pub root: String,
@@ -153,7 +153,7 @@ impl Read {
 }
 
 /// Something the analysis could not resolve, or a rule violation found while walking a body.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct Diag {
     /// `unannotated_global`, `dynamic_read`, `unknown_field`, `unknown_call`, `hop_not_relation`, `ffi_call`.
     pub rule: &'static str,
@@ -165,7 +165,7 @@ pub struct Diag {
 }
 
 /// A write or an observable call in a followed body (the purity check classifies these).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct Effect {
     /// `assign` (a var write), `call`.
     pub kind: &'static str,
@@ -178,7 +178,52 @@ pub struct Effect {
     pub line: u32,
 }
 
-#[derive(Default, Debug, Clone)]
+/// [`Diag`] as `walk_cache` reads it back (the rule name interned).
+#[derive(serde::Deserialize)]
+struct DiagStored {
+    rule: String,
+    closed_only: bool,
+    rel: String,
+    line: u32,
+    msg: String,
+}
+
+impl<'de> serde::Deserialize<'de> for Diag {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Diag, D::Error> {
+        DiagStored::deserialize(d).map(Diag::from)
+    }
+}
+
+impl From<DiagStored> for Diag {
+    fn from(d: DiagStored) -> Diag {
+        Diag { rule: super::walk_cache::intern(d.rule), closed_only: d.closed_only, rel: d.rel, line: d.line, msg: d.msg }
+    }
+}
+
+/// [`Effect`] as `walk_cache` reads it back.
+#[derive(serde::Deserialize)]
+struct EffectStored {
+    kind: String,
+    name: String,
+    owner: String,
+    proc: String,
+    rel: String,
+    line: u32,
+}
+
+impl<'de> serde::Deserialize<'de> for Effect {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Effect, D::Error> {
+        EffectStored::deserialize(d).map(Effect::from)
+    }
+}
+
+impl From<EffectStored> for Effect {
+    fn from(e: EffectStored) -> Effect {
+        Effect { kind: super::walk_cache::intern(e.kind), name: e.name, owner: e.owner, proc: e.proc, rel: e.rel, line: e.line }
+    }
+}
+
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ReadSet {
     pub reads: BTreeSet<Read>,
     /// Context scalar/object fields read through the act (`A.dt` -> "dt"), with a line each.
@@ -254,6 +299,25 @@ pub struct ProcSummary {
 }
 
 impl Annotations {
+    /// A digest of every annotation, independent of map order (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut rows: Vec<String> = Vec::new();
+        rows.extend(self.reads_as.iter().map(|(k, v)| format!("ra|{:?}|{:?}", k, v)));
+        rows.extend(self.reads_from.iter().map(|(k, v)| format!("rf|{:?}|{:?}", k, v)));
+        rows.extend(self.lookups.iter().map(|(k, v)| format!("lk|{:?}|{:?}", k, v)));
+        rows.extend(self.relations.iter().map(|(k, v)| {
+            let mut v: Vec<&String> = v.iter().collect();
+            v.sort();
+            format!("rel|{:?}|{:?}", k, v)
+        }));
+        rows.extend(self.accessors.iter().map(|(k, v)| format!("acc|{:?}|{:?}", k, v)));
+        rows.extend(self.capkey_accessors.iter().map(|(k, v)| format!("ck|{:?}|{:?}", k, v)));
+        rows.extend(self.summaries.iter().map(|(k, v)| format!("sum|{:?}|{:?}", k, v)));
+        rows.sort();
+        let h = blake3::hash(rows.join("\n").as_bytes());
+        u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
+    }
+
     pub fn get(sem: &Sem, decls: &Decls) -> Annotations {
         let mut a = Annotations::default();
         for m in decls.markers_named("READS_AS") {
@@ -453,16 +517,18 @@ pub struct ReadsEngine<'a> {
 pub struct EngineCaches {
     overrides_cache: std::sync::Mutex<HashMap<(String, String), std::sync::Arc<Vec<String>>>>,
     definers: std::sync::OnceLock<HashMap<String, Vec<String>>>,
-    globals: std::sync::OnceLock<super::globals::GlobalIndex>,
-    writes: std::sync::OnceLock<WriteIndex>,
     /// What a context-free walk of a proc found (closed walk only), by (owner, proc, receiver, argument shapes): see `Walk::run_proc`.
     memo: std::sync::RwLock<HashMap<MemoKey, std::sync::Arc<MemoNode>>>,
+    /// The digest of everything a walk of this engine consults besides the bodies and var declarations it records (`walk_cache`).
+    context: std::sync::OnceLock<u128>,
 }
 
 /// One memoized context-free walk: what its own body found, and the memoized walks it calls.
 struct MemoNode {
     own: ReadSet,
     children: Vec<(MemoKey, bool)>,
+    /// What computing it read (`walk_cache`), its own nodes included: a walk that reaches it read all of that.
+    deps: Vec<u64>,
     /// Neither it nor anything it calls found anything: a consumer that reaches it records nothing.
     trivial: bool,
 }
@@ -571,12 +637,12 @@ impl<'a> ReadsEngine<'a> {
 
     /// Which global vars change after boot (built once; the closed walk classifies global reads with it).
     pub fn globals(&self) -> &super::globals::GlobalIndex {
-        self.caches.globals.get_or_init(|| super::globals::GlobalIndex::build(self.sem))
+        self.sem.global_index()
     }
 
     /// Which var names are written anywhere (built once).
     pub fn write_index(&self) -> &WriteIndex {
-        self.caches.writes.get_or_init(|| WriteIndex::build(self.sem))
+        self.sem.write_index()
     }
 
     pub fn with_opaque(mut self, dirs: &[&str]) -> Self {
@@ -586,6 +652,39 @@ impl<'a> ReadsEngine<'a> {
 
     /// The reads of `ty`'s proc `name` as a handler on an instance of `ty`.
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
+        if !self.sem.cacheable() {
+            return self.analyze_uncached(ty, name);
+        }
+        super::walk_cache::walk(|| format!("{}|a|{}|{}", self.flavor(), ty, name), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_uncached(ty, name))
+    }
+
+    /// Which engine walked: the stored results of one kind never serve another.
+    fn flavor(&self) -> String {
+        format!("{}|{}", self.opaque_dirs.join(","), self.virtual_dispatch)
+    }
+
+    /// See [`EngineCaches::context`].
+    pub fn context(&self) -> u128 {
+        *self.caches.context.get_or_init(|| {
+            let t0 = std::time::Instant::now();
+            let mut h = blake3::Hasher::new();
+            h.update(self.flavor().as_bytes());
+            h.update(&self.sem.structure_digest().to_le_bytes());
+            let t1 = t0.elapsed();
+            h.update(&self.decls.key.to_le_bytes());
+            h.update(&self.ann.digest().to_le_bytes());
+            let t2 = t0.elapsed();
+            h.update(&self.globals().digest().to_le_bytes());
+            let t3 = t0.elapsed();
+            h.update(&self.write_index().digest().to_le_bytes());
+            if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+                eprintln!("analyze: walk context ({}): structure {:.1?}, annotations {:.1?}, globals {:.1?}, writes {:.1?}", self.flavor(), t1, t2 - t1, t3 - t2, t0.elapsed() - t3);
+            }
+            u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+        })
+    }
+
+    fn analyze_uncached(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
@@ -599,6 +698,13 @@ impl<'a> ReadsEngine<'a> {
     /// (the hook form's context, section 8): `A` is bound to that type, so `A.actor` resolves
     /// against the fields that context really carries.
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
+        if !self.sem.cacheable() {
+            return self.analyze_handler_uncached(ty, name, ctx_ty);
+        }
+        super::walk_cache::walk(|| format!("{}|h|{}|{}|{}", self.flavor(), ty, name, ctx_ty), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_handler_uncached(ty, name, ctx_ty))
+    }
+
+    fn analyze_handler_uncached(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
         let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, rel: String::new(), override_depth: 0, engine_depth: 0, no_act: false, children: Vec::new(), computing: HashSet::new(), merged: HashSet::new(), diag_ix: HashMap::new() };
@@ -734,6 +840,18 @@ pub struct WriteIndex {
 }
 
 impl WriteIndex {
+    /// A digest of the written names (`walk_cache`).
+    pub fn digest(&self) -> u128 {
+        let mut v: Vec<&String> = self.written.iter().collect();
+        v.sort();
+        let mut h = blake3::Hasher::new();
+        for x in v {
+            h.update(x.as_bytes());
+            h.update(b"\n");
+        }
+        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    }
+
     pub fn is_written(&self, var: &str) -> bool {
         self.written.contains(var)
     }
@@ -926,7 +1044,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if context_free {
             let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act);
             let outer = self.override_depth > 0 || self.engine_depth > 0;
-            let known = self.eng.caches.memo.read().unwrap().get(&key).map(|n| n.trivial);
+            let node = self.eng.caches.memo.read().unwrap().get(&key).cloned();
+            if let Some(n) = &node {
+                super::walk_cache::extend(&n.deps);
+            }
+            let known = node.map(|n| n.trivial);
             if known == Some(true) {
                 return None;
             }
@@ -937,7 +1059,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let saved_children = std::mem::take(&mut self.children);
                 let saved_ix = std::mem::take(&mut self.diag_ix);
                 let (saved_override, saved_engine, saved_depth) = (std::mem::take(&mut self.override_depth), std::mem::take(&mut self.engine_depth), std::mem::take(&mut self.depth));
+                super::walk_cache::push_frame();
                 self.enter(p, this, bind, first_is_ctx, no_act, &owner);
+                let node_deps = super::walk_cache::pop_frame();
+                super::walk_cache::extend(&node_deps);
                 self.override_depth = saved_override;
                 self.engine_depth = saved_engine;
                 self.depth = saved_depth;
@@ -950,7 +1075,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty() && own.sampled.is_empty();
                 let trivial = bare && children.iter().all(|(c, _)| memo.get(c).map(|n| n.trivial).unwrap_or(false));
                 drop(memo);
-                self.eng.caches.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
+                self.eng.caches.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, deps: node_deps, trivial }));
                 if trivial {
                     return None;
                 }
@@ -1019,6 +1144,7 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn enter(&mut self, p: ProcRef<'a>, this: Val, bind: &[Val], first_is_ctx: bool, no_act: bool, owner: &str) -> Option<Val> {
+        super::walk_cache::record(|| super::walk_cache::Dep::Proc(owner.to_string(), p.name().to_string()));
         if let Some(summary) = self.eng.ann.summaries.get(&(owner.to_string(), p.name().to_string())) {
             self.apply_summary(owner, p.name(), summary, &this, bind);
             return None;

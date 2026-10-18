@@ -121,6 +121,7 @@ fn main() -> ExitCode {
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();
     dq_analyze::sem::model_store::finish();
+    dq_analyze::sem::walk_cache::finish();
     code
 }
 

@@ -405,7 +405,18 @@ fn pending(tree: &Tree) -> Arc<Pending> {
 /// After a full analysis: the facts of every included file, to be completed by [`store`]. When the
 /// stored record describes exactly this tree already (another consumer of the model ran first) its
 /// results are kept and the footprint is widened by what this run consulted.
+/// Off for `analyze gen`: the record's footprint is every file the walks reached, nearly the whole tree, so after an edit it is never
+/// valid there; the parsed model and the walks are kept by `model_store` and `walk_cache` instead. The lints (`analyze check`) keep it.
+static CAPTURE_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn disable_capture() {
+    CAPTURE_OFF.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
+    if CAPTURE_OFF.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
     let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     capture_unlocked(tree, sem, footprint);
 }
@@ -416,6 +427,9 @@ static RECORD_LOCK: Mutex<()> = Mutex::new(());
 
 /// [`capture`] then [`store_gen`], as one step against other captures.
 pub fn capture_and_store_gen(tree: &Tree, sem: &Sem, footprint: Vec<String>, name: &str, g: GenCache) {
+    if CAPTURE_OFF.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
     let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     capture_unlocked(tree, sem, footprint);
     store_gen(tree, name, g);
