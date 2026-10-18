@@ -192,6 +192,22 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	echo "${out:- nobody}"
 }
 
+# A single-slot waiter goes when it heads the queue, or when everything ahead of it is a group (a multi-world run) that has not yet
+# waited out its patience: one focused world must not wait 25 minutes behind a five-world request collecting slots. A group past its
+# patience (DQ_SLOTS_GROUP_PATIENCE_SEC, default 120) blocks like any head again and then takes what is free, so groups are delayed,
+# never starved.
+_slots_single_may_go() { # dir name
+	local d="$1" name="$2" q now queued
+	now="$(date +%s)"
+	for q in $(ls "$d/queue" 2>/dev/null | sort); do
+		[ "$q" = "$name" ] && return 0
+		grep -q '^group=' "$d/queue/$q" 2>/dev/null || return 1
+		queued="$(_slots_field "$d/queue/$q" queued)"
+		[ $(( now - ${queued:-$now} )) -lt "${DQ_SLOTS_GROUP_PATIENCE_SEC:-120}" ] || return 1
+	done
+	return 1
+}
+
 _slots_acquire() {
 	local cls="${1:?class}" label="${2:-}" max root d top prio usable now name waited=0 last=0 i pos
 	max="$(slots_capacity "$cls")"
@@ -209,7 +225,7 @@ _slots_acquire() {
 	SLOTS_T_QUEUED="$now"
 	while true; do
 		_slots_reap "$d"
-		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+		if _slots_single_may_go "$d" "$name"; then
 			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
@@ -339,11 +355,20 @@ _slots_group_acquire() {
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
 	SLOTS_GROUP_T_QUEUED="$now"
+	local free take
 	while true; do
 		_slots_reap "$d"
-		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+		# The head takes slots only when it can take all it wants at once, or (past its patience) whatever is free, at least one: it does
+		# not sit on a partial group while single worlds wait behind it. A smaller group starts its other worlds as its slots come back.
+		free=0
+		take=0
+		for ((i = 1; i <= usable; i++)); do [ -d "$d/slot.$i" ] || free=$((free + 1)); done
+		if [ "$have" -gt 0 ] || [ "$free" -ge "$want" ]; then take="$want"
+		elif [ "$waited" -ge "${DQ_SLOTS_GROUP_PATIENCE_SEC:-120}" ] && [ "$free" -ge 1 ]; then take="$free"; fi
+		if [ "$take" -gt 0 ] && [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+			[ "$take" -lt "$want" ] && want="$take"
 			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
