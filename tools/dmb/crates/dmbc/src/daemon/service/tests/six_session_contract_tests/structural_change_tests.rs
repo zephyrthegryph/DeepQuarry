@@ -349,3 +349,31 @@ fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
         );
     }
 }
+
+#[test]
+fn appends_after_a_memory_pressure_release_recover_the_model_and_match_fresh_bytes() {
+    // Memory pressure releases the retained composed model. The next structural patch rebuilds it
+    // from the retained image instead of falling back to a full compile.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    edit_all(&roots, TREE);
+    compare_revision(&shared, &roots);
+    let applied = |roots: &Roots| crate::body_patch::applied(&roots.manifest(0));
+    let appended_var = TREE.replace("    var/own = 2\n", "    var/own = 2\n    var/added_probe = 5\n");
+    let appended_proc = format!("{appended_var}/datum/base/proc/added_probe_proc()\n    return 41\n");
+    let mut count = applied(&roots);
+    for (label, source) in [("append a var", appended_var.as_str()), ("append a proc after a release", appended_proc.as_str())] {
+        if label.ends_with("release") {
+            for index in 0..6 {
+                let request = request(&roots, index, false);
+                let slot = shared.slot(request.project.clone(), Some(&request));
+                slot.lock_host().unwrap().release_idle_artifacts();
+            }
+        }
+        edit_all(&roots, source);
+        compare_revision(&shared, &roots);
+        assert_eq!(applied(&roots), count + 1, "{label}: did not patch");
+        count += 1;
+    }
+}
