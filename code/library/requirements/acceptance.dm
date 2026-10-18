@@ -15,6 +15,9 @@
 	var/list/paths = ispath(types) ? list(types) : types
 	if(!islist(paths))
 		CRASH("acceptance type must be a path or list of paths")
+	for(var/path in paths)
+		if(!ispath(path))
+			CRASH("acceptance type list contains a non-type path")
 	return part_make(/datum/entry/part/req/acceptance_leaf/type, list("types" = paths.Copy(), "exclude" = exclude, "because" = because))
 
 /datum/entry/part/req/acceptance_leaf/type/acceptance_reason(datum/act/op/A)
@@ -174,28 +177,9 @@
 /proc/req_acceptance_suit_storage_takes(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because))
 
-// Resolve only actual registered property dependency providers.
+// Resolve only actual registered provider contracts, including contributors.
 /proc/acceptance_property_read_keys(datum/thing, property)
-	. = list()
-	if(!thing)
-		return
-	var/datum/property_registry/R = dq_property_registry()
-	for(var/datum/property_provider/P as anything in R.contributors[property])
-		if(istype(thing, P.applies_to))
-			CRASH("acceptance property contributor [P.type] needs native dependency metadata")
-	var/datum/property_provider/base = R.base_provider(thing.type, property)
-	if(istype(base, /datum/property_provider/type_var/tag/slot_flag))
-		var/obj/item/I = thing
-		if(istype(I))
-			. += list(list(I, ITEM_WORN_KEY))
-		return
-	if(property == PROP_SIZE_CLASS && base?.state_var == "w_class")
-		var/obj/O = thing
-		if(istype(O))
-			. += list(list(O, nameof(O.w_class)))
-		return
-	if(base)
-		CRASH("acceptance property base [base.type] needs native dependency metadata")
+	return dq_property_registry().read_keys(thing, property)
 
 /datum/entry/part/req/acceptance_leaf/type/read_keys(datum/act/op/A)
 	return null
@@ -324,4 +308,23 @@
 		return FALSE
 	return TRUE
 
+// Named requirements shared by the remaining custom-fit declarations.
+/proc/req_wearer_ckey(required_key, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/wearer_ckey, list("required_key" = required_key, "because" = because))
 
+/datum/entry/part/req/acceptance_leaf/wearer_ckey/acceptance_reason(datum/act/op/A)
+	return A?.wearer?.ckey == src.args["required_key"] ? null : src.args["because"]
+
+/datum/entry/part/req/acceptance_leaf/wearer_ckey/read_keys(datum/act/op/A)
+	return A?.wearer ? list(list(A.wearer, MOB_KEY_CLIENT)) : null
+
+/proc/req_taur_shape(shape, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/taur_shape, list("shape" = shape, "because" = because))
+
+/datum/entry/part/req/acceptance_leaf/taur_shape/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A?.wearer
+	return istype(H) && istype(H.tail_style, src.args["shape"]) ? null : src.args["because"]
+
+/datum/entry/part/req/acceptance_leaf/taur_shape/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A?.wearer
+	return istype(H) ? list(list(H, nameof(H.tail_style))) : null
