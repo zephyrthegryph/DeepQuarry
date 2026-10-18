@@ -83,6 +83,14 @@
 	var/soulcatcher_pref_flags = NONE			//Default disabled
 	var/persistend_edit_mode = FALSE
 
+// Native consent requirements subscribe to these mutable profile fields.
+TRACKED_DATA(/datum/record/vore_prefs, devourable)
+TRACKED_DATA(/datum/record/vore_prefs, digestable)
+TRACKED_DATA(/datum/record/vore_prefs, absorbable)
+TRACKED_DATA(/datum/record/vore_prefs, permit_healbelly)
+TRACKED_DATA(/datum/record/vore_prefs, strip_pref)
+TRACKED_DATA(/datum/record/vore_prefs, contaminate_pref)
+
 // The belly sprites' colours and multiply flags: a human's look reads them.
 TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_color)
 TRACKED_DATA(/datum/record/vore_prefs, vore_sprite_multiply)

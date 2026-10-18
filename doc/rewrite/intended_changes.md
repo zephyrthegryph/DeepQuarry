@@ -4895,6 +4895,19 @@ Affected requirement-pin classes:
   One row (`christmas_tree | seed 104439`, an `a_gift/advanced` that rolls `chaos`) differed between a solo world and a 50-test world because
   its stream hashes the world's creation serial; the recorded row is the fixed-seed one.
 
+
+## Requirement retirement: pure admission previews
+
+- `/obj/item/gripper/syndicate`: the medical-gripper type union no longer contributes a middle null list element. `MEDICAL_GRIPPER` ended with a comma, and this table added another delimiter before the next macro, causing the old predicate compiler to error instead of answer any candidate. Removing that terminal comma preserves every declared allowed type and makes the intended union usable. The old requirement pin records the exact two compiler diagnostics; only this class changes from declaration ERROR to its real native candidate admissions. The table originated in `0dfa07f646` (2026-09-23).
+- Native `restrict_hold()` overrides: an oversized candidate now reports its real numeric size refusal instead of the bare text `size`. The old call supplied the size-class unit twice, accidentally binding the second unit as `because`. Removing that duplicate argument preserves the same inclusive threshold and ordered type rejection; only that defective refusal row is intentionally changed.
+- `/obj/item/storage/backpack/saddlebag_common`: checking whether a wearer can use the saddlebag no longer changes its worn sprite. The existing synchronous `item_equipped` notice selects the actual taur sprite through the existing setter when equipment commits. Refusal text, permitted taur shapes and real equip/unequip behavior remain unchanged.
+- `/obj/item/clothing/head/fluff/avida`: admission preview no longer switches the ear-dependent worn sprite. The always-allow legacy clause becomes a declared empty acceptance contribution, and the existing synchronous equip notice applies the same primary/secondary-ear selection on real equip. This is the intentional preview-purity change; it does not authorize unrelated pin changes.
+
+
+### Requirement lane verification repairs (2026-10-15)
+
+- Master `5b0a2f09d0` typed internal storage ownership and cloning-console scanner references without normalizing their old producers. Internal storage now rejects non-item locations before linking, through `keeps_if()` and `setup()`; an absent scanner returns null instead of numeric zero. Valid ownership, names and scanner search ordering are unchanged. Focused constructor tests cover both accepted and rejected cases. Existing runtime-free pin rows are retained.
+- Master `f13b84652d` removed the dead mecha AI-attack surface. The stale `ai_use_equipment` key is therefore removed from the Mecha/Ripley conversion-pin inventories; expanded menu and click rows are identical; this requirement conversion does not change click ranking.
 ## Body factors on the stat store (rewrite/stat-layer, doc/rewrite/proposals/stat_layer.md)
 
 The body's factors are stats on `/mob/living` now, composed by the stat engine; the body's private fold (`body.factors`, `recompute_factors()`) is gone.
@@ -5021,6 +5034,7 @@ Verification of this copied cleanup remains pending the coordinating lane's gate
 
 ### Master devour operation key (2026-10-15)
 
+Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. A fresh capture proves all 51 inherited mob conversion-pin differences are solely that added key; expanded menu, click and wire rows are identical. Only the existing key lines are updated, retaining snapshot factoring.
 Master `2136172edc` (October 15, 17:13:57 -0500; “Delete the task engine; a devour waits as an op”) adds the native AI `devour` operation. The 51 inherited mob conversion-pin inventories gain only that key. The expanded menu, click and wire rows are unchanged, as confirmed by the fresh requirements-lane capture on the same master. These records add only `devour` to each existing key line, preserving other lane-specific entries and factoring.
 
 ### Casino wheel questions and prize-price leaf (2026-10-15)
@@ -5170,3 +5184,12 @@ The look sweep previously seeded only host rand(), while native rolls() also use
 Master `f13b84652d` (October 13, 2026, 19:32:27 -0500; “Delete the dead mecha AI-attack surface; drop unused ALLOWs; log R9”) removes `ai_use_equipment`. The fresh declaration-lane capture differs only in that key on `/obj/mecha` and `/obj/mecha/working/ripley`: all expanded menus, clicks and other keys are identical. Only those two literal key rows are refreshed, preserving existing base factoring and encoding.
 
 The declaration privacy fixtures previously used the test helper `set_var`, a raw assignment that does not publish tracked dependencies. They now use the existing `/area.set_flags` for both initial setup and the live admin-style edit, and restore original flags through that same setter. The strict `privacy0` to `privacy1` assertion remains, with an additional assertion that the flag was actually enabled. This corrects fixture publication; it changes no production privacy behavior and authorizes no appearance-pin re-records.
+# Closet density composition (2026-10-17)
+
+Closet doors now publish their density through the existing native door-state hold,
+as machinery doors do. Opening records passable and closing records solid instead
+of toggling the currently composed value. This repairs a stale density detected by
+the containment conservation test and preserves the closed state when a stronger
+independent density hold is later released. Non-dense wall lockers remain passable.
+Direct regression: `dq_closet_density_state`; conservation regression:
+`dq_containment_conservation_fuzz/representative`. No snapshots are re-recorded.

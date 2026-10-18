@@ -51,11 +51,28 @@ impl From<crate::request::BuildCommand> for RequestCommand {
         }
     }
 }
+/// What an engine template is, for keying sessions and requests: its bytes, not where a checkout keeps it. Every worktree has its
+/// own copy of `native_template.bin`, and keying by path gave each worktree its own ~10 GB session of the same variant (reported
+/// as `variant-mismatch` misses and, with two of them resident, `hard-memory-limit` evictions). An unreadable file falls back to
+/// its path so a bad request still gets a session of its own and fails the same way it always did.
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+enum EngineIdentity {
+    Content(u128),
+    Path(PathBuf),
+}
+impl EngineIdentity {
+    fn of(path: &std::path::Path) -> Self {
+        match std::fs::read(path) {
+            Ok(bytes) => Self::Content(xxhash_rust::xxh3::xxh3_128(&bytes)),
+            Err(_) => Self::Path(path.to_path_buf()),
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
     command: RequestCommand,
     defines: BTreeMap<String, String>,
-    engine: Option<PathBuf>,
+    engine: Option<EngineIdentity>,
     bootstrap: bool,
     destination: PathBuf,
     output_store: Option<PathBuf>,
@@ -67,7 +84,7 @@ impl RequestKey {
         Self {
             command: request.command.into(),
             defines: request.defines.clone(),
-            engine: request.engine_template.clone(),
+            engine: request.engine_template.as_deref().map(EngineIdentity::of),
             bootstrap: request.bootstrap_catalog,
             destination: request.artifact_directory.as_ref().map_or_else(
                 || manifest.to_path_buf(),
@@ -127,7 +144,7 @@ struct Slot {
 struct SessionKey {
     manifest: PathBuf,
     defines: BTreeMap<String, String>,
-    engine: Option<PathBuf>,
+    engine: Option<EngineIdentity>,
     bootstrap: bool,
 }
 impl SessionKey {
@@ -139,7 +156,7 @@ impl SessionKey {
         Self {
             manifest,
             defines: defines.clone(),
-            engine: config.and_then(|request| request.engine_template.clone()),
+            engine: config.and_then(|request| request.engine_template.as_deref()).map(EngineIdentity::of),
             bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
         }
     }
@@ -159,6 +176,20 @@ fn take_eviction(key: &SessionKey) -> Option<String> {
     let mut ledger = EVICTIONS.lock().unwrap_or_else(|e| e.into_inner());
     let at = ledger.iter().position(|(old, _)| old == key)?;
     ledger.remove(at).map(|(_, why)| why)
+}
+/// How long a build waits for memory before it is admitted anyway.
+const MEMORY_WAIT: Duration = Duration::from_secs(300);
+const HOT_GROWTH_DEFAULT: u64 = 2_000_000_000;
+const COLD_GROWTH_DEFAULT: u64 = 12_000_000_000;
+/// What the last build of each (project, hot or cold) grew the process by, so admission asks for what a build really needs.
+static GROWTH: Mutex<BTreeMap<(PathBuf, bool), u64>> = Mutex::new(BTreeMap::new());
+fn expected_growth(key: &SessionKey, hot: bool) -> u64 {
+    let learned = GROWTH.lock().unwrap_or_else(|e| e.into_inner()).get(&(key.manifest.clone(), hot)).copied();
+    // 15% over the last observation: growth varies a little build to build.
+    learned.map_or(if hot { HOT_GROWTH_DEFAULT } else { COLD_GROWTH_DEFAULT }, |bytes| bytes + bytes / 7)
+}
+fn note_growth(key: &SessionKey, hot: bool, growth: u64) {
+    GROWTH.lock().unwrap_or_else(|e| e.into_inner()).insert((key.manifest.clone(), hot), growth);
 }
 /// Samples the process's private bytes every 100 ms while a request runs and keeps the maximum.
 struct PeakSampler {
@@ -243,11 +274,122 @@ struct Shared {
     connections: AtomicUsize,
 }
 impl Shared {
+    /// Soft pressure: the machine is running short of available memory (adaptive budget), or this process passed its fixed soft limit.
     fn under_memory_pressure(&self, bytes: u64) -> bool {
-        bytes >= self.soft_private_bytes
+        soft_memory::adaptive_pressure(bytes).map_or(bytes >= self.soft_private_bytes, |pressure| pressure.soft)
     }
     fn over_hard_ceiling(&self, bytes: u64) -> bool {
-        bytes >= soft_memory::hard(self.soft_private_bytes).unwrap_or(u64::MAX)
+        soft_memory::adaptive_pressure(bytes)
+            .map_or_else(|| bytes >= soft_memory::hard(self.soft_private_bytes).unwrap_or(u64::MAX), |pressure| pressure.hard)
+    }
+    /// True when available physical memory is below half the reserve: even the newest session may be degraded.
+    fn memory_emergency(&self) -> bool {
+        soft_memory::adaptive_pressure(transport::private_bytes().unwrap_or(0)).is_some_and(|pressure| pressure.emergency)
+    }
+    /// Admission by memory (adaptive budget only). A compile is expected to grow the process by `expected_growth` (what this
+    /// session's last build of the same kind grew it, else a conservative default); it starts only while the machine would still
+    /// have the reserve free afterwards. When it would not: idle sessions of other projects are released least recently used
+    /// first, then the request waits for running builds to finish. Progress guarantee: with nothing left to release or wait for,
+    /// or after `MEMORY_WAIT`, the build is admitted anyway and the shortfall is logged, so a machine that is simply too small
+    /// slows down instead of refusing every build.
+    fn await_memory(&self, key: &SessionKey, hot: bool) -> io::Result<()> {
+        // The daemon-wide budget applies to every mode: a build is admitted against what it is expected to add.
+        self.enforce_retained_budget(Some(key), expected_growth(key, hot).min(soft_memory::retained_budget() / 2));
+        let Some(reserve) = soft_memory::adaptive_reserve() else { return Ok(()) };
+        let need = expected_growth(key, hot);
+        let started = Instant::now();
+        loop {
+            let Some(available) = soft_memory::available() else { return Ok(()) };
+            if available >= reserve.saturating_add(need) {
+                return Ok(());
+            }
+            control::checkpoint()?;
+            if self.shed_one_idle(key, available, need, reserve) {
+                continue;
+            }
+            let running = *self.running.lock().unwrap_or_else(|e| e.into_inner());
+            if running == 0 || started.elapsed() >= MEMORY_WAIT {
+                super::emit_stderr(format_args!(
+                    "dmbd memory admission: admitting {} {} build with {:.1} GB available, needs {:.1} GB above a {:.1} GB reserve (nothing left to release, running builds={running}, waited {:.0}s)",
+                    key.manifest.display(),
+                    if hot { "hot" } else { "cold" },
+                    available as f64 / 1e9,
+                    need as f64 / 1e9,
+                    reserve as f64 / 1e9,
+                    started.elapsed().as_secs_f64()
+                ));
+                return Ok(());
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        }
+    }
+    /// Release the least recently used idle session of another project. False when there is none to release.
+    fn shed_one_idle(&self, keep: &SessionKey, available: u64, need: u64, reserve: u64) -> bool {
+        let victim = {
+            let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+            let key = slots
+                .iter()
+                .filter(|(other, slot)| *other != keep && Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok())
+                .min_by_key(|(_, slot)| *slot.last.lock().unwrap_or_else(|e| e.into_inner()))
+                .map(|(other, _)| other.clone());
+            key.and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
+        };
+        let Some((key, slot)) = victim else { return false };
+        note_eviction(&key, "memory-pressure");
+        let before = transport::private_bytes();
+        drop(slot);
+        let after = self.reclaim_allocator(transport::private_bytes());
+        super::emit_stderr(format_args!(
+            "dmbd memory admission: released idle session {} for {} (available {:.1} GB, build needs {:.1} GB above a {:.1} GB reserve) private-before={before:?} private-after={after:?}",
+            key.manifest.display(),
+            keep.manifest.display(),
+            available as f64 / 1e9,
+            need as f64 / 1e9,
+            reserve as f64 / 1e9
+        ));
+        true
+    }
+    /// The daemon-wide retained-memory budget (`soft_memory::retained_budget`, default 20 GB): while the process holds more private
+    /// memory than that and another idle session exists, release the least recently used idle session whole. The most recently used
+    /// session and any session that is building are never released for the budget, so a lone session larger than the budget stays
+    /// resident. `reserve` is memory a build about to be admitted will add. True when anything was released.
+    fn enforce_retained_budget(&self, keep: Option<&SessionKey>, reserve: u64) -> bool {
+        let budget = soft_memory::retained_budget();
+        let mut released = false;
+        loop {
+            let Some(private) = transport::private_bytes() else { return released };
+            if private.saturating_add(reserve) <= budget {
+                return released;
+            }
+            let victim = {
+                let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+                let sessions: Vec<(SessionKey, Instant, bool)> = slots
+                    .iter()
+                    .map(|(key, slot)| {
+                        let idle = Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok();
+                        // The session being admitted counts as the newest even before its use is recorded.
+                        let last = if keep == Some(key) { Instant::now() } else { *slot.last.lock().unwrap_or_else(|e| e.into_inner()) };
+                        (key.clone(), last, idle)
+                    })
+                    .collect();
+                soft_memory::budget_victim(&sessions).and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
+            };
+            let Some((key, slot)) = victim else { return released };
+            note_eviction(&key, "memory-budget");
+            drop(slot);
+            let after = self.reclaim_allocator(transport::private_bytes());
+            released = true;
+            super::emit_stderr(format_args!(
+                "dmbd memory budget: released least recently used idle session {} (budget {:.1} GB, private-before={private} private-after={after:?}, reserved for admission {:.1} GB)",
+                key.manifest.display(),
+                budget as f64 / 1e9,
+                reserve as f64 / 1e9
+            ));
+            if after.is_none_or(|bytes| bytes >= private) {
+                // The release returned nothing (allocator slack): do not walk every remaining session on one sample.
+                return released;
+            }
+        }
     }
     /// Return freed pages to the OS before any pressure decision. Freed-but-
     /// committed allocator pages (transient composition/encode peaks, exited
@@ -455,6 +597,9 @@ impl Shared {
                 bytes = self.reclaim_allocator(transport::private_bytes());
             }
         }
+        if self.enforce_retained_budget(None, 0) {
+            bytes = transport::private_bytes();
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -491,10 +636,18 @@ impl Drop for Connection {
     }
 }
 pub(super) fn serve() -> io::Result<()> {
-    // Registers this daemon and retires the least recently used idle peers beyond DQ_DMBC_MAX_DAEMONS, whatever binary they run.
-    let mut registration = super::resident::register_and_enforce();
+    // Registers this daemon. Registration never retires another daemon: each compiler version has its own.
+    let mut registration = super::resident::register();
     let max_workers = admission_limits::max_workers()?;
     let soft_private_bytes = soft_memory::startup()?;
+    match soft_memory::enable_adaptive()? {
+        Some(reserve) => super::emit_stderr(format_args!(
+            "dmbd adaptive memory budget: reserve={reserve} soft-margin={} ceiling={} (explicit limits and DMB_DAEMON_ADAPTIVE=0 turn it off)",
+            soft_memory::SOFT_MARGIN,
+            soft_memory::ADAPTIVE_CEILING
+        )),
+        None => super::emit_stderr(format_args!("dmbd fixed memory budget (adaptive budget off or unavailable)")),
+    }
     super::emit_stderr(format_args!(
         "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit={soft_private_bytes} hard-private-limit={}",
         std::process::id(),
@@ -540,6 +693,7 @@ pub(super) fn serve() -> io::Result<()> {
             })?;
     }
     let mut beat = Instant::now();
+    let mut peers_checked = Instant::now();
     let mut retiring_since: Option<Instant> = None;
     let mut beat_retiring = false;
     loop {
@@ -553,6 +707,26 @@ pub(super) fn serve() -> io::Result<()> {
             beat = Instant::now();
             let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
                 || shared.connections.load(Ordering::Acquire) > 0;
+            let running_now = *shared.running.lock().unwrap_or_else(|e| e.into_inner());
+            let connections_now = shared.connections.load(Ordering::Acquire);
+            if !retiring
+                && super::resident::superseded_idle_due(
+                    super::resident::provenance_of_self(),
+                    activity.elapsed(),
+                    running_now,
+                    connections_now,
+                )
+            {
+                super::emit_stderr(format_args!(
+                    "dmbd retiring: a newer compiler version is published and no client of this version has been active for {}s",
+                    super::resident::SUPERSEDED_IDLE.as_secs()
+                ));
+                shared.retire();
+            }
+            if !retiring && peers_checked.elapsed() >= Duration::from_secs(30) {
+                peers_checked = Instant::now();
+                let _ = super::resident::retire_superseded_peers();
+            }
             if let Some(registration) = registration.as_mut() {
                 if registration.beat(busy, retiring) && !retiring {
                     super::emit_stderr(format_args!(
@@ -684,7 +858,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 let key = SessionKey {
                     manifest: std::fs::canonicalize(&request.project)?,
                     defines: request.defines.clone(),
-                    engine: request.engine_template.clone(),
+                    engine: request.engine_template.as_deref().map(EngineIdentity::of),
                     bootstrap: request.bootstrap_catalog,
                 };
                 let slot = shared
@@ -786,6 +960,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             let key = RequestKey::of(&request, &path);
             let session_key = SessionKey::of(path.clone(), &request.defines, Some(&request));
             let session_state = shared.probe(&session_key);
+            let session_state_hot = session_state.hot;
             let stats_context = (
                 request.command == crate::request::BuildCommand::Compile,
                 path.clone(),
@@ -811,6 +986,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )
                 }
             };
+            if let Err(error) = shared.await_memory(&session_key, session_state_hot) {
+                return protocol::send(
+                    &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
+                    &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                );
+            }
             let _permit = match shared.acquire_accepted_until(&accepted, request.workers, &admission) {
                 Ok(permit) => permit,
                 Err(error) => {
@@ -848,6 +1029,9 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             *slot.last.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
             let private_after = transport::private_bytes();
             let peak = sampler.finish().max(private_before).max(private_after);
+            if let (Some(before), Some(peak)) = (private_before, peak) {
+                note_growth(&session_key, session_state_hot, peak.saturating_sub(before));
+            }
             if stats_context.0 {
                 let error = match &outcome {
                     Ok(Ok(_)) => None,
@@ -1201,5 +1385,28 @@ mod tests {
             &engine,
             &shared.slot(path, &one, Some(&request))
         ));
+    }
+    #[test]
+    fn engine_templates_are_keyed_by_content_not_by_checkout_path() {
+        let shared = shared();
+        let directory = std::env::temp_dir().join(format!("dmbd-engine-key-{}", std::process::id()));
+        std::fs::create_dir_all(directory.join("a")).unwrap();
+        std::fs::create_dir_all(directory.join("b")).unwrap();
+        let (a, b, other) = (directory.join("a/t.bin"), directory.join("b/t.bin"), directory.join("b/other.bin"));
+        std::fs::write(&a, b"template").unwrap();
+        std::fs::write(&b, b"template").unwrap();
+        std::fs::write(&other, b"different").unwrap();
+        let path = PathBuf::from("E:/fixture/project.dme");
+        let args = vec!["compile".into(), path.to_string_lossy().into_owned()];
+        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
+        request.engine_template = Some(a);
+        let first = shared.slot(path.clone(), &BTreeMap::new(), Some(&request));
+        request.engine_template = Some(b);
+        assert!(Arc::ptr_eq(&first, &shared.slot(path.clone(), &BTreeMap::new(), Some(&request))));
+        request.engine_template = Some(other);
+        assert!(!Arc::ptr_eq(&first, &shared.slot(path, &BTreeMap::new(), Some(&request))));
+        let _ = std::fs::remove_dir_all(&directory);
     }
 }

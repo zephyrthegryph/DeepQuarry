@@ -14,7 +14,6 @@
 	containment_slot_factory()
 	state_construction()
 	state_registry_adapter()
-	requirement_composer()
 	property_environment()
 
 /datum/time_scheduler/proc/drain_presentation()

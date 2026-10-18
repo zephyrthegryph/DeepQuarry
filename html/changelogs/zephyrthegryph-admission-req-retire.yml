@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The old /datum/req requirement system is retired: req_empty_hand, req_self_held, req_access and req_stance are native requirement parts, and the op_ctx, flyweight and compatibility-adapter code is gone"

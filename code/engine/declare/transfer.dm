@@ -17,6 +17,9 @@
 //      shape (owns_one: set; owns_many: add; with `key`, put under the key of an associative owns_many).
 //      The var is the holder's one-item slot (op_var_slot()); any other `slot_id` is a ledger slot id and
 //      the item is only placed there (null: the holder's default slot);
+//   3b. a quantity (move_into(amount = N | QUANTITY_ALL), into a slot declared quantity = TRUE): only as many units as the slot has room for
+//      (slot_room()) are checked and then split off the thing (slot_split(): the rest stays where it was, nothing is taken before every check
+//      passed), and the call returns how many units landed (a number above 0 is also TRUE);
 //   4. the record: state_changed(holder), the fingerprint and, with `log`, the log line (dispatch_record()),
 //      when an `actor` did it; the insert action's notice goes out.
 //
@@ -31,7 +34,8 @@
 
 /// Why `item` can't be moved into `holder`'s place `slot_id` (its ledger slot `ledger_slot`) by `actor`, or null.
 /// Checks both sides and changes nothing; the same reason move_into() gives.
-/proc/move_into_refusal(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null)
+/// `units`: a partial insert's unit count (see move_into(amount =)).
+/proc/move_into_refusal(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, units = null)
 	if(!ismovable(item) || QDELETED(item))
 		return "it is gone"
 	var/atom/movable/thing = item
@@ -39,12 +43,12 @@
 	if(!is_var && isatom(holder) && !dq_slot_defs_for(holder))
 		return "[holder] can't hold anything"
 	if(!is_var && thing.loc == holder) // between the holder's own ledger slots (an equip slot to another): only the slot rules apply
-		return dq_ledger_refusal(thing, holder, ledger_slot || slot_id, actor)
-	return own_transfer_refusal(holder, thing, is_var ? ledger_slot : (ledger_slot || slot_id), actor)
+		return dq_ledger_refusal(thing, holder, ledger_slot || slot_id, actor, units = units)
+	return own_transfer_refusal(holder, thing, is_var ? ledger_slot : (ledger_slot || slot_id), actor, units)
 
 /// Puts `item` into `holder`'s place `slot_id`: the one transfer. TRUE when it is there now (or already was), FALSE when refused
 /// (nothing changed; the reason is in GLOB.act_last_reason and `actor` was told). See the header for the full contract.
-/proc/move_into(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null)
+/proc/move_into(datum/holder, slot_id, datum/item, mob/actor = null, ledger_slot = null, force = FALSE, log = null, key = null, amount = null)
 	if(!isdatum(holder) || QDELETED(holder) || !isdatum(item))
 		GLOB.act_last_reason = "there is nowhere to put it"
 		return FALSE
@@ -70,6 +74,14 @@
 		GLOB.act_last_reason = "it can't be moved"
 		return FALSE
 	var/into_slot = is_var ? ledger_slot : (ledger_slot || slot_id)
+	// A quantity: how many units go, decided before anything is touched (the checks below are asked about exactly that many).
+	var/units = null
+	var/atom/movable/whole = null
+	if(!isnull(amount) && thing && !is_var)
+		var/plan = move_into_units(holder, into_slot, thing, amount)
+		if(istext(plan))
+			return move_into_failed(holder, slot_id, item, actor, plan)
+		units = plan
 	var/moves = is_var ? (!!thing && own_wants_transfer(holder, slot_id, thing, entry, actor, TRUE, ledger_slot)) : TRUE
 	// The checks, both sides, and then the insert action's hooks.
 	var/reason = null
@@ -77,10 +89,10 @@
 	var/hook_outcome = ACT_REFUSED
 	if(!force)
 		if(moves)
-			reason = move_into_refusal(holder, slot_id, item, actor, ledger_slot)
+			reason = move_into_refusal(holder, slot_id, item, actor, ledger_slot, units)
 		if(!reason && thing && moves)
 			GLOB.act_next_actor = actor
-			F = ACT_TRY(holder, insert, thing, is_var ? slot_id : into_slot)
+			F = ACT_TRY(holder, insert, thing, is_var ? slot_id : into_slot, units)
 			GLOB.act_next_actor = null
 			if(isnull(F))
 				hook_outcome = GLOB.act_last_outcome // refused or taken over by a hook: put_in() reports the two differently
@@ -88,7 +100,15 @@
 	if(reason)
 		act_cancel(F)
 		return move_into_failed(holder, slot_id, item, actor, reason, hook_outcome)
-	var/atom/from = thing?.loc
+	// Every check passed: now the part leaves the whole (it stays in its place with the rest of its units).
+	if(units && units < thing.slot_units())
+		whole = thing
+		thing = whole.slot_split(units)
+		if(!thing)
+			act_cancel(F)
+			return move_into_failed(holder, slot_id, item, actor, "it can't be split")
+		item = thing
+	var/atom/from = whole ? whole.loc : thing?.loc
 	if(moves)
 		var/landed = FALSE
 		if(!is_var && from == holder) // already in the holder: the ledger slot changes, nothing is released
@@ -99,6 +119,8 @@
 			landed = own_transfer_land(holder, slot_id, thing, into_slot, actor, force)
 		if(!landed)
 			log_world("MOVE_INTO: [item] from [from || "nullspace"] didn't land in [holder] ([slot_id || "default"])")
+			if(whole)
+				whole.slot_unsplit(thing)
 			act_cancel(F)
 			return move_into_failed(holder, slot_id, item, null, "it won't go into [holder]")
 		if(is_var)
@@ -122,7 +144,22 @@
 	if(actor)
 		own_transfer_record(holder, item, actor, log)
 	act_done(F)
-	return TRUE
+	return units || TRUE
+
+/// How many units of `thing` a move_into(amount =) into ledger slot `slot_id` of `holder` carries: a number of whole units, or a reason text when
+/// none fit. Null when the slot takes no quantities (the thing goes whole, as ever). The unit count is what the slot has room for (slot_room()), at
+/// most the `amount` asked (QUANTITY_ALL: everything) and at most what the thing carries.
+/proc/move_into_units(datum/holder, slot_id, atom/movable/thing, amount)
+	var/atom/place = holder
+	var/datum/ledger/L = isatom(place) ? dq_ledger(place) : null
+	var/datum/relation_definition/slot/def = L?.def_by_id(slot_id || L.default_id)
+	if(!def?.quantity)
+		return null
+	var/have = thing.slot_units()
+	var/units = min(amount, have, def.room_for(place, thing))
+	if(units < 1)
+		return "there's no room for it"
+	return round(units)
 
 /// Is `slot_id` a var of the holder (an owned one-item or list place), rather than a ledger slot id?
 /proc/move_into_var_place(datum/holder, slot_id)

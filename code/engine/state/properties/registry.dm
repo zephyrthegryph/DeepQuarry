@@ -266,3 +266,22 @@
 /// Whether instance `thing` has tag `tag`.
 /proc/dq_has_tag(datum/thing, tag)
 	return dq_property(thing, tag) ? TRUE : FALSE
+
+/// Native requirement dependencies: an unproved provider must fail closed.
+/datum/property_registry/proc/read_keys(datum/thing, id)
+	. = list()
+	if(!thing)
+		return
+	for(var/datum/property_provider/P as anything in contributors[id])
+		if(!istype(thing, P.applies_to))
+			continue
+		var/list/keys = P.read_keys(thing)
+		if(!islist(keys))
+			CRASH("property contributor [P.type] needs native dependency metadata")
+		. += keys
+	var/datum/property_provider/base = base_provider(thing.type, id)
+	if(base)
+		var/list/keys = base.read_keys(thing)
+		if(!islist(keys))
+			CRASH("property base [base.type] needs native dependency metadata")
+		. += keys
