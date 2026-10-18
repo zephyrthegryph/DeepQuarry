@@ -64,3 +64,20 @@ GLOBAL_LIST_EMPTY(runtime_key_ids)
 		if(GLOB.runtime_key_ids[name] == id)
 			return name
 	return null
+
+/// "<type>|<bit>" -> the keys of the type's plan that carry `bit` (a list, or 0 for none). Filled on first use.
+GLOBAL_LIST_EMPTY(plan_keys_cache)
+
+/// The keys of `type`'s plan that carry PLAN_* `bit`, or null: what the type's draw reads (PLAN_DRAW) or reads a hop away (PLAN_DRAW_HOP).
+/proc/plan_keys(type, bit)
+	var/cache_key = "[type]|[bit]"
+	var/known = GLOB.plan_keys_cache[cache_key]
+	if(!isnull(known))
+		return known || null
+	var/list/plan = plan_of(type)
+	var/list/keys
+	for(var/key in plan)
+		if(plan[key] & bit)
+			LAZYADD(keys, key)
+	GLOB.plan_keys_cache[cache_key] = keys || 0
+	return keys
