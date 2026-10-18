@@ -202,10 +202,16 @@ impl Transport {
         pure: Option<&[u8]>,
         recording: &dyn Resolver,
     ) -> Option<PreparedUnit> {
+        static PROOF: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_proof");
+        static CANDIDATE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_candidate");
+        static REPLAY: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_reads_replay");
+        let proof_timer = PROOF.time();
         let proof = InputsProof::capture(&current.inputs, pure)?;
         if !self.admit_engine(&current.inputs, pure) {
             return None;
         }
+        drop(proof_timer);
+        let _candidate_timer = CANDIDATE.time();
         let snapshot = self.disk.snapshot()?;
         let accepted = std::cell::RefCell::new(None);
         snapshot.get_candidate(self.key(9, key), |bytes, symbols| {
@@ -219,6 +225,7 @@ impl Transport {
                 if wire.key != key || wire.identity != identity || wire.proof != proof {
                     continue;
                 }
+                let _replay_timer = REPLAY.time();
                 if !wire.reads.iter().all(|(query, answer)| {
                     let value = recording.resolve(*query);
                     portable(&value) && value.canonical_bytes() == *answer

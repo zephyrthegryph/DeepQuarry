@@ -38,7 +38,15 @@ pub struct BatchSpool {
     entries: BTreeMap<RecordKey, Entry>,
     symbols: BTreeMap<u64, Extent>,
     failed: bool,
+    /// Spool bytes already proven to fit on the volume. One free-space query covers many
+    /// small records (a request appends tens of thousands), instead of one query each.
+    headroom: u64,
+    /// End of the spool and whether the file cursor is there (a duplicate check reads elsewhere).
+    end: Option<u64>,
+    at_end: bool,
 }
+/// Free space proven per query beyond the record being written.
+const HEADROOM_CHUNK: u64 = 64 << 20;
 #[derive(Debug, Default)]
 pub struct BatchReport {
     pub segment: Option<u128>,
@@ -103,6 +111,9 @@ impl Cache {
             entries: BTreeMap::new(),
             symbols: BTreeMap::new(),
             failed: false,
+            headroom: 0,
+            end: None,
+            at_end: false,
         })
     }
 }
@@ -189,10 +200,30 @@ impl BatchSpool {
         Ok(())
     }
     fn write(&mut self, bytes: &[u8]) -> Result<Extent, CacheError> {
-        self.cache.check_population_space(bytes.len() as u64)?;
+        let len = bytes.len() as u64;
+        if len > self.headroom {
+            // Prove a chunk beyond this record; near a full volume fall back to the exact need.
+            let chunk = len.saturating_add(HEADROOM_CHUNK);
+            self.headroom = match self.cache.check_population_space(chunk) {
+                Ok(()) => chunk,
+                Err(_) => {
+                    self.cache.check_population_space(len)?;
+                    len
+                }
+            };
+        }
         let file = self.file.as_mut().ok_or_else(|| invalid("closed batch"))?;
-        let at = file.seek(SeekFrom::End(0))?;
+        let at = match self.end {
+            Some(end) if self.at_end => end,
+            Some(end) => file.seek(SeekFrom::Start(end))?,
+            None => file.seek(SeekFrom::End(0))?,
+        };
+        // A failed write leaves the cursor unknown; the spool is marked failed by the caller.
+        self.at_end = false;
         file.write_all(bytes)?;
+        self.headroom -= len;
+        self.end = Some(at + len);
+        self.at_end = true;
         Ok(Extent {
             at,
             len: bytes.len() as u64,
@@ -203,6 +234,7 @@ impl BatchSpool {
             return Ok(false);
         }
         let file = self.file.as_mut().ok_or_else(|| invalid("closed batch"))?;
+        self.at_end = false;
         file.seek(SeekFrom::Start(extent.at))?;
         let mut buffer = [0; COPY_BYTES];
         for chunk in bytes.chunks(COPY_BYTES) {
