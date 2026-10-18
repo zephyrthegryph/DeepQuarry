@@ -955,7 +955,10 @@ fn run_build_attempt(
                 std::env::var("DMB_RESOLVER_MEMO_ENTRIES")
                     .ok()
                     .and_then(|value| value.parse().ok())
-                    .unwrap_or(65_536),
+                    // A full compile asks about 4.2M queries, 0.9M of them distinct. At the old 64k budget 88 % of the
+                    // asks missed, and replaying cached procedures re-resolved their reads (41 CPU-s on a fresh
+                    // session); 2M entries retain every distinct answer (about 80 MB for the request).
+                    .unwrap_or(2_097_152),
             );
             let mut prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
                 &frontend,

@@ -154,6 +154,18 @@ impl InitializerAssemblies {
             disk.visit_storage(visit);
         }
     }
+    /// Request view with this request's disk transport (a retained store has none of its own).
+    pub(crate) fn for_request_with_disk(
+        &self,
+        publishable: bool,
+        disk: Option<Arc<super::disk::Transport>>,
+    ) -> Arc<Self> {
+        let view = self.for_request(publishable);
+        match disk {
+            Some(disk) => Arc::new(Arc::try_unwrap(view).ok().expect("fresh view").with_disk_transport(disk)),
+            None => view,
+        }
+    }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         Arc::new(Self {
             disk: self.disk.clone(),
