@@ -511,7 +511,7 @@ Fresh worktrees should not pay cold build costs:
 
 - **Analyzer.** `analyze-build` runs cargo in the worktree's own `tools/analyze/target` (compiled dependencies
   come from sccache) and records the source key in `<binary>.key`. The content-keyed binary cache
-  (`DQ_ANALYZE_CACHE`) serves unchanged sources instantly; its key includes the cargo profile, so binaries of
+  (`DQ_ANALYZE_BIN_CACHE`; `DQ_ANALYZE_CACHE` is the analyzer's own lint-cache directory, a different thing) serves unchanged sources instantly; its key includes the cargo profile, so binaries of
   different profiles never mix. Do not point several worktrees at one cargo target (`DQ_ANALYZE_TARGET=<dir>`
   exists and is a hazard): cargo names a path package by its path inside the workspace and judges it fresh by
   mtime, so a worktree can link another worktree's library or cache a binary built from other sources under its

@@ -305,9 +305,18 @@
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
 	lookup_reads_prepare(A.holder, A)
 	// Lazy caches the requirements read are refreshed here, outside the purity guard, so a requirement never writes one.
-	A.holder?.settle_for_reads()
-	A.actor?.settle_for_reads()
-	A.target?.settle_for_reads()
+	// Settling refreshes caches before anything is read; it is not an admission read, so an enclosing menu read neither records nor is marked
+	// uncacheable by what it touches (a mob's body settle sampled read_once() and made every human's menu rebuild on each read).
+	var/list/menu_frame = GLOB.op_menu_read_frame
+	GLOB.op_menu_read_frame = null
+	try
+		A.holder?.settle_for_reads()
+		A.actor?.settle_for_reads()
+		A.target?.settle_for_reads()
+	catch(var/exception/settle_fault)
+		GLOB.op_menu_read_frame = menu_frame
+		throw settle_fault
+	GLOB.op_menu_read_frame = menu_frame
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try

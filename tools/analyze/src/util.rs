@@ -91,6 +91,88 @@ pub fn under<S: AsRef<str>>(path: &str, roots: &[S]) -> bool {
         })
 }
 
+/// CPU time this process has used so far, in milliseconds (for the traces; 0 where unknown).
+pub fn cpu_ms() -> u64 {
+    #[cfg(windows)]
+    {
+        #[repr(C)]
+        struct FileTime {
+            lo: u32,
+            hi: u32,
+        }
+        extern "system" {
+            fn GetCurrentProcess() -> isize;
+            fn GetProcessTimes(p: isize, c: *mut FileTime, e: *mut FileTime, k: *mut FileTime, u: *mut FileTime) -> i32;
+        }
+        let z = || FileTime { lo: 0, hi: 0 };
+        let (mut c, mut e, mut k, mut u) = (z(), z(), z(), z());
+        // SAFETY: plain out-parameters of a documented kernel32 call on the current process.
+        let ok = unsafe { GetProcessTimes(GetCurrentProcess(), &mut c, &mut e, &mut k, &mut u) };
+        if ok == 0 {
+            return 0;
+        }
+        let t = |f: &FileTime| ((f.hi as u64) << 32 | f.lo as u64) / 10_000;
+        t(&k) + t(&u)
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
+/// CPU time of the calling thread so far, in milliseconds (0 where unknown).
+pub fn thread_cpu_ms() -> u64 {
+    #[cfg(windows)]
+    {
+        #[repr(C)]
+        struct FileTime {
+            lo: u32,
+            hi: u32,
+        }
+        extern "system" {
+            fn GetCurrentThread() -> isize;
+            fn GetThreadTimes(t: isize, c: *mut FileTime, e: *mut FileTime, k: *mut FileTime, u: *mut FileTime) -> i32;
+        }
+        let z = || FileTime { lo: 0, hi: 0 };
+        let (mut c, mut e, mut k, mut u) = (z(), z(), z(), z());
+        // SAFETY: plain out-parameters of a documented kernel32 call on the current thread.
+        let ok = unsafe { GetThreadTimes(GetCurrentThread(), &mut c, &mut e, &mut k, &mut u) };
+        if ok == 0 {
+            return 0;
+        }
+        let t = |f: &FileTime| ((f.hi as u64) << 32 | f.lo as u64) / 10_000;
+        t(&k) + t(&u)
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
+static CPU_ACCOUNT: std::sync::Mutex<std::collections::BTreeMap<String, u64>> = std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+/// Whether `DQ_CPU_ACCOUNT` is set: worker threads add their CPU time to a table printed at exit.
+pub fn cpu_accounting() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| std::env::var_os("DQ_CPU_ACCOUNT").is_some())
+}
+
+pub fn cpu_account(tag: String, ms: u64) {
+    *CPU_ACCOUNT.lock().unwrap().entry(tag).or_default() += ms;
+}
+
+pub fn cpu_account_report() {
+    if !cpu_accounting() {
+        return;
+    }
+    let mut v: Vec<(String, u64)> = CPU_ACCOUNT.lock().unwrap().iter().map(|(k, v)| (k.clone(), *v)).collect();
+    v.sort_by(|a, b| b.1.cmp(&a.1));
+    eprintln!("CPU total {} ms (main thread {} ms)", cpu_ms(), thread_cpu_ms());
+    for (k, ms) in v.iter().take(30) {
+        eprintln!("CPU {:>6} ms {}", ms, k);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

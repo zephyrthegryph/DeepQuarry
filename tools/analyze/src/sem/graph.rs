@@ -43,7 +43,7 @@ impl DepGraph {
             }
             for (name, tp) in ty.get().procs.iter() {
                 if let Some(var) = name.strip_prefix("derive_") {
-                    if tp.value.iter().any(|v| v.code.is_some()) {
+                    if tp.value.iter().any(|v| v.code.has_body()) {
                         owners.push((path.clone(), var.to_string(), name.clone()));
                     }
                 }

@@ -134,7 +134,7 @@ impl Generator for Stats {
         let rows = rows(cx, out);
         // The generator's own previous output declares the vars it wrote: it must not count them as the types' own.
         let files: Vec<_> = cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| !f.rel.ends_with("_generated/stats.dm")).collect();
-        let vars = crate::dm::dx::type_vars(&files);
+        let vars = crate::dm::dx::type_vars_in(cx.tree, &files);
         // Every type a marker names must be a type the tree defines somewhere (a typo is a DM error otherwise).
         let _ = split_args;
         emit(cx, out, &rows, &vars, false);
