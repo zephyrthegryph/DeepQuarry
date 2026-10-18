@@ -194,3 +194,11 @@ CAPABILITIES(/datum/relations_weak_holder)
 	TEST_ASSERT(!length(capture), "weak writes report nothing: [json_encode(capture)]")
 	qdel(H)
 	qdel(U)
+
+/// D10: a client handle names one connection ("@ckey#n"). The old bare "@ckey" form names nothing, and a connection number that is not the live
+/// client's resolves null (a reconnect is a new /client with a new number). A test world has no client, so this pins the resolver's forms.
+/datum/unit_test/relations_client_handle_forms
+
+/datum/unit_test/relations_client_handle_forms/Run()
+	TEST_ASSERT_NULL(resolve_handle("@nobody"), "a bare ckey handle names nothing")
+	TEST_ASSERT_NULL(resolve_handle("@nobody#1"), "a handle of a ckey that is not connected names nothing")

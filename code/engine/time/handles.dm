@@ -39,13 +39,19 @@ GLOBAL_LIST_EMPTY(om_handle_texts)
 /// Handle text -> slot id, for every taken slot (a parked one too). A text leaves it when its slot is freed, so a stale handle misses.
 GLOBAL_ALIST_EMPTY(om_handle_ids)
 
+/// The last connection number a client handle took (entity_handle() of a client).
+GLOBAL_VAR_INIT(client_handle_gen, 0)
+
+/// This connection's number in its handle, 0 until entity_handle() is first called on it: a reconnect is a new /client with a new number.
+/client/var/tmp/handle_gen = 0
+
 /// The datum's handle slot, 0 until entity_handle() is first called on it.
 /datum/var/tmp/om_hid = 0
 
 /// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
 /// A turf's handle is its key (own_key(): its position, led by a scramble so the strings hash well), with "#<generation>" once its z-level has
 /// been released and reused: turfs are never deleted and a turf's position survives ChangeTurf() (which resets the turf's vars).
-/// A client's is "@ckey", resolved through GLOB.directory.
+/// A client's is "@ckey#connection", resolved through GLOB.directory and null for any other connection of that ckey.
 /proc/entity_handle(datum/D)
 	READS_FROM() // a handle is the datum's stable id: the slot table it reads is identity bookkeeping, not state a draw or condition depends on
 	if(isturf(D))
@@ -55,7 +61,11 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 		return gen ? "[key]#[gen]" : key
 	if(isclient(D))
 		var/client/C = D
-		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
+		// A client is its ckey and its connection: "@ckey#n". It reads null while that player is disconnected and never names the client of a
+		// later connection (relations proposal D10); a need that survives a reconnect keeps the ckey or the persistent_client.
+		if(!C.handle_gen)
+			C.handle_gen = ++GLOB.client_handle_gen
+		return "@[C.ckey]#[C.handle_gen]"
 	if(!isdatum(D) || QDELETED(D))
 		return null
 	var/id = D.om_hid
@@ -206,8 +216,12 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 			if(ref_hash && text2num(copytext(h, ref_hash + 1)) != relation_z_generation(ref_turf.z))
 				return null
 			return ref_turf
-		if(64) // "@": a client's ckey
-			return GLOB.directory[copytext(h, 2)]
+		if(64) // "@ckey#n": a client's ckey and connection
+			var/at = findtext(h, "#")
+			if(!at)
+				return null
+			var/client/C = GLOB.directory[copytext(h, 2, at)]
+			return (C && C.handle_gen == text2num(copytext(h, at + 1))) ? C : null
 	var/packed = GLOB.om_turf_pos[h]
 	if(packed)
 		// A plain turf handle seen before: the position is a number. A released z-level (generation moved on) stops it resolving.
