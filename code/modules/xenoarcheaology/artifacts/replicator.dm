@@ -155,7 +155,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	interface("XenoarchReplicator")
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
-	op("insert", item(/obj/item), label("Insert"), needs(req(PROC_REF(can_insert_holds), because = PROC_REF(can_insert_refusal))), then(PROC_REF(insert_op)))
+	op("insert", item(/obj/item), label("Insert"), needs(req(PROC_REF(insert_refusal))), then(PROC_REF(insert_op)))
 
 /// /obj/machinery/replicator's window data.
 /obj/machinery/replicator/ui_data(datum/act/eval/A)
@@ -184,24 +184,17 @@ CAPABILITIES(/obj/machinery/replicator)
 			visible_message(fail_message)
 
 /// Requirement: no armblades, no grabs (an item that cannot be let go of). What is in the hand needs no accessibility check.
-/obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)
+/// Why the held item cannot go in, or null: one null-or-reason requirement (admission.md D6), not a TRUE-or-text check.
+/obj/machinery/replicator/proc/insert_refusal(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(!istype(held) || !held.canremove)
-		return "you cannot put [held] into the machine"
-	return TRUE
+		return msg_reason("you cannot put [held] into the machine")
+	return null
 
 /// The insert op: it passes the actor and the item to interaction_insert(), which the vore and clothing replicators override.
 /obj/machinery/replicator/proc/insert_op(datum/act/op/A)
 	interaction_insert(A.actor, A.held)
 	return OP_OK
-
-/// can_insert() reads TRUE to allow, or a reason text.
-/obj/machinery/replicator/proc/can_insert_holds(datum/act/op/A)
-	var/answer = read_once(can_insert(A.actor, src, A.held))
-	return answer == TRUE ? null : (istext(answer) ? answer : /datum/msg/req_failed)
-
-/obj/machinery/replicator/proc/can_insert_refusal(datum/act/op/A)
-	var/why = read_once(can_insert(A.actor, src, A.held))
-	return istext(why) ? why : null
 
 /obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W)
 	user.drop_item()
@@ -309,10 +302,11 @@ CAPABILITIES(/obj/machinery/replicator)
 
 
 /// Requirement: also no possessed or vore-blacklisted items.
-/obj/machinery/replicator/vore/can_insert(mob/living/user, atom/target, obj/item/held)
+/obj/machinery/replicator/vore/insert_refusal(datum/act/op/A)
 	. = ..()
-	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
-		return "you cannot put [held] into the machine"
+	var/obj/item/held = A.held
+	if(isnull(.) && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
+		return msg_reason("you cannot put [held] into the machine")
 
 /obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W)
 	return consent_insert_stage(user, W, list())
@@ -530,10 +524,11 @@ CAPABILITIES(/obj/machinery/replicator)
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 /// Requirement: also no possessed or vore-blacklisted items.
-/obj/machinery/replicator/clothing/can_insert(mob/living/user, atom/target, obj/item/held)
+/obj/machinery/replicator/clothing/insert_refusal(datum/act/op/A)
 	. = ..()
-	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
-		return "you cannot put [held] into the machine"
+	var/obj/item/held = A.held
+	if(isnull(.) && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
+		return msg_reason("you cannot put [held] into the machine")
 
 /obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W)
 	return consent_insert_stage(user, W, list())
