@@ -693,6 +693,7 @@ CAPABILITIES(/atom/movable/screen/component_button)
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
 CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
+	after_init(0, then(PROC_REF(lay_out_layers))) // its layers are stacked once Initialize() returns (relations proposal D11)
 	ref_one(nameof(owner))
 	ref_one(nameof(extras_holder))
 	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
@@ -709,16 +710,13 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
-	/**
-	 * The vis_contents layout is: this(frame,extras_holder(),mask(bg(map)))
-	 * bg is set to BLEND_MULTIPLY against the mask to crop it.
-	 */
 
-	mask_full.vis_contents.Add(bg)
-	mask_ping.vis_contents.Add(bg)
-	frame.vis_contents.Add(powbutton,mapbutton)
-	vis_contents.Add(frame)
-
+/// The vis_contents layout is: this(frame, extras_holder(), mask(bg(map))); bg is set to BLEND_MULTIPLY against the mask to crop it.
+/atom/movable/screen/movable/mapper_holder/proc/lay_out_layers(datum/act/timer/A)
+	vis_add(mask_full, bg)
+	vis_add(mask_ping, bg)
+	vis_add(frame, list(powbutton, mapbutton))
+	vis_add(src, frame)
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)

@@ -28,10 +28,6 @@ raw_write	code/_onclick/hud/picture_in_picture.dm	if(length(viewing_turfs)) popu
 raw_write	code/_onclick/hud/radial.dm	E.vis_contents.Cut()
 raw_write	code/_onclick/hud/radial.dm	E.vis_contents.Cut()
 raw_write	code/_onclick/hud/robot.dm	client.screen = list()
-raw_write	code/_onclick/hud/screen_objects.dm	mask_full.vis_contents.Add(bg)
-raw_write	code/_onclick/hud/screen_objects.dm	mask_ping.vis_contents.Add(bg)
-raw_write	code/_onclick/hud/screen_objects.dm	frame.vis_contents.Add(powbutton,mapbutton)
-raw_write	code/_onclick/hud/screen_objects.dm	vis_contents.Add(frame)
 raw_write	code/_onclick/hud/screen_objects.dm	vis_contents.Add(mask_ping)
 raw_write	code/_onclick/hud/screen_objects.dm	vis_contents.Add(mask_full)
 raw_write	code/_onclick/hud/screen_objects.dm	bg.vis_contents.Cut()
@@ -43,7 +39,6 @@ raw_write	code/game/antagonist/antagonist_update.dm	antag.current.client.images 
 raw_write	code/game/antagonist/antagonist_update.dm	antag.current.client.images |= get_indicator(antag, player)
 raw_write	code/game/antagonist/antagonist_update.dm	player.current.client.images |= get_indicator(player, antag)
 raw_write	code/game/atoms_movable.dm	vis_contents.Cut()
-raw_write	code/game/gamemodes/cult/ritual.dm	our_ai.client.images += blood_image
 raw_write	code/game/gamemodes/technomancer/instability.dm	client?.screen |= meter
 raw_write	code/game/gamemodes/technomancer/spells/mark_recall.dm	user.client?.images |= I
 raw_write	code/game/machinery/computer/bodycamera.dm	bpinboard.vis_contents = list(thing)
@@ -65,7 +60,6 @@ raw_write	code/game/objects/items/devices/gps.dm	holder_ref().client.screen -= c
 raw_write	code/game/objects/items/devices/gps.dm	holder_ref().client.screen -= compass
 raw_write	code/game/objects/items/weapons/storage/storage.dm	bar_start.vis_contents.Cut()
 raw_write	code/game/objects/structures/crates_lockers/__closets.dm	vis_contents |= door_obj
-raw_write	code/game/objects/structures/props/machines.dm	vis_contents += mask
 raw_write	code/modules/admin/verbs/smite.dm	T_dest.vis_contents.Cut()
 raw_write	code/modules/admin/verbs/smite.dm	T.vis_contents.Cut()
 raw_write	code/modules/admin/verbs/smite.dm	T.vis_contents.Cut()

@@ -67,9 +67,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	. = ..()
 	blood_image = image(loc = src)
 	blood_image.override = 1
-	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(our_ai.client)
-			our_ai.client.images += blood_image
 
 
 // the rune's blood image comes off every AI client that was shown it.
@@ -85,6 +82,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
 CAPABILITIES(/obj/effect/rune)
+	after_init(0, then(PROC_REF(show_to_ais))) // the AIs see the blood image once Initialize() returns (relations proposal D11)
 	ref_one(nameof(manifest_user))
 	ref_one(nameof(manifest_dummy))
 	op("erase_rune", item(/obj/item/book/tome), label("Erase rune"), then(PROC_REF(interaction_erase_rune)))
@@ -684,3 +682,9 @@ CAPABILITIES(/obj/item/book/tome/imbued)
 	if (. || (clean_types & CLEAN_TYPE_RUNES))
 		consume(src)
 		return TRUE
+
+/// Every AI with a client sees this rune's blood image.
+/obj/effect/rune/proc/show_to_ais(datum/act/timer/A)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(our_ai.client)
+			client_images_add(our_ai.client, blood_image)
