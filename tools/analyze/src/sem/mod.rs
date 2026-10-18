@@ -149,6 +149,7 @@ impl Sem {
             std::fs::write(&p, text).map_err(|e| format!("synth dme: {}", e))?;
             (p, Some(dir))
         };
+        let t_build = std::time::Instant::now();
         let objtree = {
             let pp = dreammaker::preprocessor::Preprocessor::new(&ctx, dme_path.clone()).map_err(|e| format!("{}: {}", dme_path.display(), e))?;
             let indents = dreammaker::indents::IndentProcessor::new(&ctx, pp);
@@ -157,6 +158,7 @@ impl Sem {
             let (_fatal, tree) = parser.parse_object_tree_2();
             tree
         };
+        let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
         let rel_of = |loc: Location, files: &mut HashMap<dreammaker::FileId, String>| -> Option<String> {
@@ -198,6 +200,7 @@ impl Sem {
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
+        let t_indexed = t_build.elapsed();
         let mut layering_type_defs: HashMap<String, Vec<String>> = HashMap::new();
         let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
         let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
@@ -258,6 +261,9 @@ impl Sem {
             for (_, owner, _) in definitions {
                 layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
             }
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
     }

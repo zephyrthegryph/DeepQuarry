@@ -5,6 +5,7 @@
 #
 #   analyze-bin/<source hash>/analyze.exe   keep the newest DQ_ANALYZE_KEEP (default 12) and every key a live worktree's binary was built from
 #                                            (a 15 MB binary per analyzer source change had grown to 6.3 GB)
+#   analyze-cache/<stamp>/                  the analyzer's shared per-file results: newest DQ_ANALYZE_SHARED_KEEP (4) directories, DQ_ANALYZE_SHARED_MAX_MB (4096) MB
 #   tree-proofs/<tree>.proof                keep the newest DQ_PROOF_KEEP (default 200); tools/dq_merge_gates.sh prunes them too
 #   look-manifest/<digest>.tsv              keep the newest DQ_LOOK_MANIFEST_KEEP (default 6)
 # Run by hand or from the pool's release; nothing here touches a worktree, .git or a lock.
@@ -28,6 +29,29 @@ if [ -d "$ab" ]; then
 		rm_path "$d"
 	done < <(ls -dt "$ab"/*/ 2>/dev/null | sed 's#/$##')
 	echo "analyze-bin: $(ls -d "$ab"/*/ 2>/dev/null | wc -l) entries kept; $(( before / 1024 )) MB before, $(( $(du -sk "$ab" | cut -f1) / 1024 )) MB after$([ "$dry" -eq 1 ] && echo ' (dry run: nothing removed)')"
+fi
+# analyze-cache/<stamp key>/  the per-file results every worktree's analyzer shares (tools/analyze/src/shared.rs): keep the DQ_ANALYZE_SHARED_KEEP
+# (default 4) most recently used stamp directories and at most DQ_ANALYZE_SHARED_MAX_MB (default 4096) MB, never the newest one; leftover scratch
+# files an interrupted copy made go too. "Used" is the mtime of each directory's .used file (touched by every seed and publish).
+sc="${DQ_ANALYZE_SHARED_CACHE:-$CACHE/analyze-cache}"
+if [ -d "$sc" ]; then
+	skeep="${DQ_ANALYZE_SHARED_KEEP:-4}"
+	smax_kb=$(( ${DQ_ANALYZE_SHARED_MAX_MB:-4096} * 1024 ))
+	n=0; total_kb=0
+	while IFS= read -r d; do
+		d="${d%/}"
+		case "$(basename "$d")" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) ;; *) continue ;; esac
+		[ "$dry" -eq 1 ] || find "$d" -name '*.tmp*' -mmin +60 -delete 2>/dev/null
+		n=$((n + 1))
+		kb="$(du -sk "$d" 2>/dev/null | cut -f1)"
+		total_kb=$((total_kb + ${kb:-0}))
+		# The newest directory (n = 1) is always kept.
+		if [ "$n" -gt 1 ] && { [ "$n" -gt "$skeep" ] || [ "$total_kb" -gt "$smax_kb" ]; }; then
+			total_kb=$((total_kb - ${kb:-0}))
+			rm_path "$d"
+		fi
+	done < <(ls -dt "$sc"/*/ 2>/dev/null | while read -r x; do echo "$(stat -c %Y "$x/.used" 2>/dev/null || stat -c %Y "$x") $x"; done | sort -rn | cut -d' ' -f2-)
+	echo "analyze-cache: $(ls -d "$sc"/*/ 2>/dev/null | wc -l) stamp dirs kept, $(( $(du -sk "$sc" | cut -f1) / 1024 )) MB$([ "$dry" -eq 1 ] && echo ' (dry run: nothing removed)')"
 fi
 prune_newest() { # <dir> <glob> <keep>
 	[ -d "$1" ] || return 0

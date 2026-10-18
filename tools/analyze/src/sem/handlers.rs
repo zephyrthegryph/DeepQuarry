@@ -83,7 +83,7 @@ fn compute(tree: &Tree) -> Analysis {
     let Some(sem) = super::sem_for(tree) else { return an };
     let ann = Annotations::get(&sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
-    let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed();
+    let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);
     let written = super::reads::WriteIndex::build(&sem);
     let mut seen = std::collections::HashSet::new();
     // The typed fields every ACTION() declares.

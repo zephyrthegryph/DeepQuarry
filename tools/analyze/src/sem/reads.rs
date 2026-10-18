@@ -443,6 +443,14 @@ pub struct ReadsEngine<'a> {
     /// A call on a typed receiver also runs every override in the receiver's subtypes (the union over all of them): a virtual call reads
     /// whatever any override reads. Off for the lints, whose baselines were taken without it; on for the generated subscriptions.
     pub virtual_dispatch: bool,
+    /// What the engine learns as it walks: pure functions of the model, the declarations and the walk's settings. A closed engine made with
+    /// [`closed_shared`](ReadsEngine::closed_shared) shares one set per tree, so every generator and lint that walks handlers closed (gen/deps,
+    /// sem/handlers, gen reads) reuses the context-free walks the first one did instead of redoing them.
+    caches: std::sync::Arc<EngineCaches>,
+}
+
+#[derive(Default)]
+pub struct EngineCaches {
     overrides_cache: std::sync::Mutex<HashMap<(String, String), std::sync::Arc<Vec<String>>>>,
     definers: std::sync::OnceLock<HashMap<String, Vec<String>>>,
     globals: std::sync::OnceLock<super::globals::GlobalIndex>,
@@ -512,7 +520,7 @@ struct Walk<'a, 'e> {
 
 impl<'a> ReadsEngine<'a> {
     pub fn new(sem: &'a Sem, decls: &'a Decls, ann: &'a Annotations) -> ReadsEngine<'a> {
-        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new(), virtual_dispatch: false, overrides_cache: Default::default(), definers: Default::default(), globals: Default::default(), writes: Default::default(), memo: Default::default() }
+        ReadsEngine { sem, decls, ann, opaque_dirs: Vec::new(), virtual_dispatch: false, caches: Default::default() }
     }
 
     /// The closed walk: nothing is skipped (engine bodies are walked, or carry a `PROC_SUMMARY`) and a virtual call is the union of its
@@ -523,13 +531,23 @@ impl<'a> ReadsEngine<'a> {
         self
     }
 
+    /// [`closed`](Self::closed), sharing what it learns with every other closed engine of `tree` (one model, one set of declarations per
+    /// tree, so the annotations and therefore every walk's result are the same). A walk's result does not depend on which walks ran before
+    /// it: the memo holds context-free walks, each computed from a fresh walk state, exactly as one engine already shares them between the
+    /// handlers it walks in parallel.
+    pub fn closed_shared(self, tree: &crate::tree::Tree) -> Self {
+        let mut s = self.closed();
+        s.caches = tree.memo("sem/closed-walk-caches", EngineCaches::default);
+        s
+    }
+
     /// The subtypes of `ty` (not `ty` itself) that define their own `name`, sorted.
     pub fn overrides(&self, ty: &str, name: &str) -> std::sync::Arc<Vec<String>> {
         let key = (ty.to_string(), name.to_string());
-        if let Some(v) = self.overrides_cache.lock().unwrap().get(&key) {
+        if let Some(v) = self.caches.overrides_cache.lock().unwrap().get(&key) {
             return v.clone();
         }
-        let definers = self.definers.get_or_init(|| {
+        let definers = self.caches.definers.get_or_init(|| {
             let mut m: HashMap<String, Vec<String>> = HashMap::new();
             for t in self.sem.objtree.iter_types() {
                 let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
@@ -547,18 +565,18 @@ impl<'a> ReadsEngine<'a> {
         });
         let out: Vec<String> = definers.get(name).map(|d| d.iter().filter(|o| o.as_str() != ty && self.sem.is_subtype(o, ty)).cloned().collect()).unwrap_or_default();
         let out = std::sync::Arc::new(out);
-        self.overrides_cache.lock().unwrap().insert(key, out.clone());
+        self.caches.overrides_cache.lock().unwrap().insert(key, out.clone());
         out
     }
 
     /// Which global vars change after boot (built once; the closed walk classifies global reads with it).
     pub fn globals(&self) -> &super::globals::GlobalIndex {
-        self.globals.get_or_init(|| super::globals::GlobalIndex::build(self.sem))
+        self.caches.globals.get_or_init(|| super::globals::GlobalIndex::build(self.sem))
     }
 
     /// Which var names are written anywhere (built once).
     pub fn write_index(&self) -> &WriteIndex {
-        self.writes.get_or_init(|| WriteIndex::build(self.sem))
+        self.caches.writes.get_or_init(|| WriteIndex::build(self.sem))
     }
 
     pub fn with_opaque(mut self, dirs: &[&str]) -> Self {
@@ -908,7 +926,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         if context_free {
             let key: MemoKey = (owner.clone(), p.name().to_string(), this.root.clone(), this.ty.clone(), bind.iter().map(|v| (v.root.clone(), v.ty.clone())).collect(), no_act);
             let outer = self.override_depth > 0 || self.engine_depth > 0;
-            let known = self.eng.memo.read().unwrap().get(&key).map(|n| n.trivial);
+            let known = self.eng.caches.memo.read().unwrap().get(&key).map(|n| n.trivial);
             if known == Some(true) {
                 return None;
             }
@@ -928,11 +946,11 @@ impl<'a, 'e> Walk<'a, 'e> {
                 let children = std::mem::replace(&mut self.children, saved_children);
                 self.diag_ix = saved_ix;
                 self.computing.remove(&key);
-                let memo = self.eng.memo.read().unwrap();
+                let memo = self.eng.caches.memo.read().unwrap();
                 let bare = own.reads.is_empty() && own.diags.is_empty() && own.lookup_diags.is_empty() && own.opaque.is_empty() && own.ctx_fields.is_empty() && own.sampled.is_empty();
                 let trivial = bare && children.iter().all(|(c, _)| memo.get(c).map(|n| n.trivial).unwrap_or(false));
                 drop(memo);
-                self.eng.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
+                self.eng.caches.memo.write().unwrap().insert(key.clone(), std::sync::Arc::new(MemoNode { own, children, trivial }));
                 if trivial {
                     return None;
                 }
@@ -953,7 +971,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             if !self.merged.insert(key.clone()) {
                 continue;
             }
-            let Some(node) = self.eng.memo.read().unwrap().get(&key).cloned() else { continue };
+            let Some(node) = self.eng.caches.memo.read().unwrap().get(&key).cloned() else { continue };
             self.merge(&node.own, outer);
             for (child, flag) in node.children.iter().rev() {
                 if !self.merged.contains(child) {
