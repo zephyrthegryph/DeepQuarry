@@ -399,9 +399,45 @@ impl RetainedGeneration {
             && !slot.model_rows.is_empty()
             && slot.base.as_ref().is_some_and(|base| base.dmb_hash() == base_hash)
     }
+    /// Rebuild a released retained model from the patch slot's row image: memory pressure drops the
+    /// model (`release_wire_images`), which used to send the next structural or string patch to a
+    /// full compile. The image is the published DMB; decoding it gives the model back, accepted only
+    /// when it re-encodes to exactly those bytes. Its patch rows are then already in the model.
+    fn recover_model(&self) {
+        static RECOVERED: dm_profile::Accumulator = dm_profile::Accumulator::new("generation.model_recovery");
+        let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        if current.is_some() {
+            return;
+        }
+        let Some(image) = self.patch.lock().unwrap_or_else(|e| e.into_inner()).image.clone() else {
+            return;
+        };
+        let _timer = RECOVERED.time();
+        let encoded = image.rows.image().clone();
+        let Ok(model) = Dmb::from_bytes(encoded.bytes()) else {
+            return;
+        };
+        let Ok(reencoded) = encode_model(&model, None) else {
+            return;
+        };
+        if reencoded.content_hash() != encoded.content_hash() {
+            crate::daemon_eprintln!("native patch: released model does not re-encode from its image; not recovered");
+            return;
+        }
+        *current = Some(Arc::new(Generation {
+            inputs: CertifiedGenerationInputs::after_validation(model),
+            encoded,
+        }));
+        drop(current);
+        let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+        slot.model_rows.clear();
+        slot.model_anchor = None;
+        crate::daemon_eprintln!("native patch: released model recovered from the retained image");
+    }
     /// A copy of the retained model that describes the published image `base_hash`: the model
     /// itself when it does, else the model with the code rows body patches spliced since.
     fn model_for(&self, base_hash: u128) -> Result<Dmb, String> {
+        self.recover_model();
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         let generation = current.as_ref().ok_or("retained model released")?;
         let mut model = generation.inputs.model.clone();
@@ -431,6 +467,7 @@ impl RetainedGeneration {
         &self,
         base_hash: u128,
     ) -> Option<std::collections::BTreeMap<dm_link::Table, u32>> {
+        self.recover_model();
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         let generation = current.as_ref()?;
         if generation.encoded.content_hash() != base_hash
