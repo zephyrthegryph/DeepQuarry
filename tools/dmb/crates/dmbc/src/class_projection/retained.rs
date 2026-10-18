@@ -276,8 +276,11 @@ impl ClassProjections {
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         };
+        // Owners are independent: compare each with its retained projection in parallel (43k owners).
+        use rayon::prelude::*;
+        let keys: Vec<_> = keys.into_iter().collect();
         let owners =
-            keys.into_iter()
+            keys.into_par_iter()
                 .filter_map(|(owner, key)| {
                     let Some((key, inputs, pending)) = key else {
                         self.declined.fetch_add(1, Ordering::Relaxed);
