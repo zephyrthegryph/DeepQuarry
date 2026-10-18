@@ -93,6 +93,10 @@ struct Owner<'a> {
     rejected_local_input: bool,
     recorder: RecordingResolver<'a, dm_tree::SemanticTree>,
     next: usize,
+    /// This owner's members in source order with the default `produce` is given, for [`Request::prefetch`].
+    pending: Vec<(dm_tree::MemberId, Option<&'a DefaultValue>)>,
+    /// Contributions computed ahead by [`Request::prefetch`], consumed in order by `produce`.
+    prefetched: std::collections::VecDeque<Result<MemberContribution, ProjectionError>>,
 }
 pub(super) struct Request<'a> {
     store: &'a ClassProjections,
@@ -227,8 +231,15 @@ impl ClassProjections {
     ) -> Option<Request<'a>> {
         let tree = source.tree.as_ref();
         let keys = (|| {
-            let mut keys: HashMap<SymbolId, Option<(Vec<u8>, Vec<CurrentMemberInput<'_>>)>> =
-                HashMap::new();
+            #[allow(clippy::type_complexity)]
+            let mut keys: HashMap<
+                SymbolId,
+                Option<(
+                    Vec<u8>,
+                    Vec<CurrentMemberInput<'_>>,
+                    Vec<(dm_tree::MemberId, Option<&'a DefaultValue>)>,
+                )>,
+            > = HashMap::new();
             // This scan issues no diagnostics or semantic queries: uncertain input
             // declines retention, leaving original encounter/error order to produce.
             for &id in order {
@@ -241,7 +252,7 @@ impl ClassProjections {
                 let slot = keys.entry(owner).or_insert_with(|| {
                     let mut key = b"dmbc-owner-projection-v2-exact-input-roster\0".to_vec();
                     key.extend_from_slice(&owner.bits().to_le_bytes());
-                    Some((key, Vec::new()))
+                    Some((key, Vec::new(), Vec::new()))
                 });
                 // A source-bearing default disqualifies only its own type. All
                 // occurrences still pass current membership/default admission.
@@ -253,10 +264,11 @@ impl ClassProjections {
                 if matches!(default, Some(DefaultValue::Scalar(value)) if source_bearing(value)) {
                     *slot = None;
                 }
-                let Some((_, inputs)) = slot.as_mut() else {
+                let Some((_, inputs, pending)) = slot.as_mut() else {
                     continue;
                 };
                 inputs.push(CurrentMemberInput { member, default });
+                pending.push((member_id, defaults.get(&id).copied()));
             }
             Some(keys)
         })();
@@ -267,7 +279,7 @@ impl ClassProjections {
         let owners =
             keys.into_iter()
                 .filter_map(|(owner, key)| {
-                    let Some((key, inputs)) = key else {
+                    let Some((key, inputs, pending)) = key else {
                         self.declined.fetch_add(1, Ordering::Relaxed);
                         return None;
                     };
@@ -300,6 +312,7 @@ impl ClassProjections {
                             .map(CurrentMemberInput::into_owned)
                             .collect()
                     };
+                    let pending = if hit.is_some() { Vec::new() } else { pending };
                     Some((
                         owner,
                         Owner {
@@ -310,6 +323,8 @@ impl ClassProjections {
                             rejected_local_input,
                             recorder: RecordingResolver::new(tree),
                             next: 0,
+                            pending,
+                            prefetched: Default::default(),
                         },
                     ))
                 })
@@ -346,6 +361,11 @@ impl Request<'_> {
         };
         let index = owner.next;
         owner.next += 1;
+        if let Some(prefetched) = owner.prefetched.pop_front() {
+            let contribution = prefetched?;
+            owner.produced.push(contribution.clone());
+            return Ok(contribution);
+        }
         if let Some(hit) = &owner.hit {
             if let Some(contribution) = hit.values.get(index) {
                 return Ok(contribution.clone());
@@ -373,6 +393,51 @@ impl Request<'_> {
         let contribution = member_contribution::produce(tree, member_id, default, true, evaluator)?;
         owner.produced.push(contribution.clone());
         Ok(contribution)
+    }
+    /// Compute every missed owner's contributions in parallel, each owner's members in source order with
+    /// the same reads `produce` records, so the source-ordered pass only places them. A fresh session or
+    /// a cold compile misses every owner (300k members); a hot one misses only changed owners.
+    pub(super) fn prefetch(
+        &mut self,
+        tree: &dm_tree::SemanticTree,
+        evaluator: &(dyn CapturedFieldEvaluator + Sync),
+    ) {
+        use rayon::prelude::*;
+        self.owners.par_iter_mut().for_each(|(path, owner)| {
+            if owner.hit.is_some() || owner.next != 0 {
+                return;
+            }
+            let path = *path;
+            for (member_id, default) in std::mem::take(&mut owner.pending) {
+                let Some(member) = tree.member(member_id) else {
+                    owner.prefetched.push_back(Err(ProjectionError::MissingMember));
+                    break;
+                };
+                owner.recorder.resolve(ResolveQuery::Ancestry(path));
+                match member.kind {
+                    MemberKind::Var => {
+                        owner.recorder.resolve(ResolveQuery::VarStorage {
+                            owner: path,
+                            name: member.name,
+                        });
+                    }
+                    MemberKind::Proc | MemberKind::Verb => {
+                        owner.recorder.resolve(ResolveQuery::OverrideChain {
+                            owner: path,
+                            name: member.name,
+                            verb: member.kind == MemberKind::Verb,
+                        });
+                    }
+                }
+                let contribution =
+                    member_contribution::produce(tree, member_id, default, true, evaluator);
+                let failed = contribution.is_err();
+                owner.prefetched.push_back(contribution);
+                if failed {
+                    break;
+                }
+            }
+        });
     }
     pub(super) fn finish(self) {
         for owner in self.owners.into_values() {

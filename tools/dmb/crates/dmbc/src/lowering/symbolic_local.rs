@@ -240,8 +240,13 @@ impl SessionSymbolicMemo {
         if host.observes_reads() {
             return None;
         }
+        static MATCH: dm_profile::Accumulator = dm_profile::Accumulator::new("local.match");
+        static CLAIM: dm_profile::Accumulator = dm_profile::Accumulator::new("local.claim_rebind");
+        static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("local.rebind");
+        static SHARE: dm_profile::Accumulator = dm_profile::Accumulator::new("local.share_code");
         let attempt = self.attempt.as_ref()?;
         let observer = crate::lowering_memo::RecordingResolver::new(host);
+        let match_timer = MATCH.time();
         // A failed weak issuer witness cannot consume the semantic certificate
         // needed by ordinary exact-key/ABI admission later in this same request.
         let mut seen = 0usize;
@@ -254,6 +259,7 @@ impl SessionSymbolicMemo {
                 .as_ref()
                 .is_some_and(|local| local.matches(roster, row, policy, record).is_some())
         });
+        drop(match_timer);
         if qualified.is_empty() {
             let reason = if seen == 0 {
                 Decline::NoRecordAtAll
@@ -278,6 +284,7 @@ impl SessionSymbolicMemo {
         }
         for candidate in qualified {
             let mut completed = None;
+            let claim_timer = CLAIM.time();
             let claimed = attempt
                 .with_pending(|leases| {
                     leases.records.claim_current(
@@ -292,6 +299,7 @@ impl SessionSymbolicMemo {
                             };
                             // Modified descriptors are reissued against the current parsed
                             // body by the same admission path as ordinary candidates.
+                            let _rebind_timer = REBIND.time();
                             completed = self.rebind_record(
                                 record,
                                 host,
@@ -309,9 +317,11 @@ impl SessionSymbolicMemo {
                     )
                 })
                 .flatten();
+            drop(claim_timer);
             if claimed.is_some() {
                 let mut input = completed?;
                 if let Input::Reused(value) = &mut input.inner {
+                    let _share_timer = SHARE.time();
                     self.share_current_code(value);
                 }
                 return Some(input);
