@@ -22,7 +22,7 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		entries += entry_make(ENTRY_SPACE_SLOT, null, list("var" = slot_var, "space" = at))
 		at_space += global.at(at)
 		// every space a cell bay sits in today is behind a cover: the cell shows while the cover is open and on
-		visible = cond_all(slot_var, COVER_OPEN, cond_not(COVER_REMOVED))
+		visible = all_of(slot_var, COVER_OPEN, not(COVER_REMOVED))
 	entries += op("insert", item(accepts), put_in(slot_var), at_space, fits ? needs(fits) : null)
 	entries += op("take", hand(), ungated(), when(slot_var), take_out(slot_var), at_space)
 	entries += look_layer(LOOK_CELL, when = visible)

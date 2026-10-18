@@ -189,7 +189,7 @@ MSG_DEF_SELF(backup_implanter/wrenched, span_notice("You wrench the implanter in
 CAPABILITIES(/obj/structure/backup_implanter_ch)
 	op("self_implant", hand(), label("Get implanted"), when(req_actor_kind(/mob/living/carbon)), begins(MSG(backup_implanter/injecting)), wait(2.5 SECONDS), then(PROC_REF(self_implant_done)))
 	op("unwrench", tool(TOOL_WRENCH), when(nameof(anchored)), begins(MSG(backup_implanter/unwrenching)), wait(1.5 SECONDS), then(PROC_REF(unwrench_done)), says(MSG(backup_implanter/unwrenched)))
-	op("wrench", tool(TOOL_WRENCH), when(cond_not(nameof(anchored))), begins(MSG(backup_implanter/wrenching)), wait(1.5 SECONDS), then(PROC_REF(wrench_done)), says(MSG(backup_implanter/wrenched)))
+	op("wrench", tool(TOOL_WRENCH), when(not(nameof(anchored))), begins(MSG(backup_implanter/wrenching)), wait(1.5 SECONDS), then(PROC_REF(wrench_done)), says(MSG(backup_implanter/wrenched)))
 
 /obj/structure/backup_implanter_ch/proc/self_implant_done(datum/act/op/A)
 	var/mob/user = A.actor

@@ -95,7 +95,7 @@ CAPABILITIES(/obj/structure/catwalk)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))
 	op("slice", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Slice apart"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice)))
-	op("plate", item(/obj/item/stack/tile/floor), label("Plate"), when(cond_not(nameof(plated_tile))), begins(MSG(catwalk/plate_begins)), wait(1 SECOND), then(PROC_REF(plate_done)))
+	op("plate", item(/obj/item/stack/tile/floor), label("Plate"), when(not(nameof(plated_tile))), begins(MSG(catwalk/plate_begins)), wait(1 SECOND), then(PROC_REF(plate_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)

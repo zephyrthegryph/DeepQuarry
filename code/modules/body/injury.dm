@@ -65,8 +65,8 @@
 	if(in_godmode(src))
 		return 0
 	// A hook on the mob refuses the injury (a stasis field) or changes its amount in flight (a cluster that soaks it): doc section 8.
-	var/datum/act/injure/hit = ACT_TRY(src, injure, kind, amount, zone, source, flags)
-	if(!hit)
+	var/datum/act/injure/hit = ACT_ATTEMPT(src, injure, kind, amount, zone, source, flags)
+	if(ACT_REFUSED_BY(hit))
 		return 0
 	amount = ACT_FINAL(hit, amount, amount)
 	act_done(hit)

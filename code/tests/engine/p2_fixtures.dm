@@ -100,7 +100,7 @@ CAPABILITIES(/obj/machinery/p2_box)
 	cell_bay(nameof(cell), at = SPACE_HATCH)
 	interface("P2Box")
 	look_layer("p2-label", when = nameof(label_shown))
-	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown)))
+	examine_line(MSG(p2/ui_forbidden), when = not(nameof(label_shown)))
 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed)))
 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), begins(PROC_REF(fit_begins)), then(PROC_REF(fitted_now)))
 

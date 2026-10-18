@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/mmi)
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
-	owns_one(nameof(mind_host), /datum/mind_host, starts = when(cond_not(nameof(hosts_no_mind)), /datum/mind_host)) // it holds a mind
+	owns_one(nameof(mind_host), /datum/mind_host, starts = when(not(nameof(hosts_no_mind)), /datum/mind_host)) // it holds a mind
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("mmi_self", in_hand(), label("Upend"), then(PROC_REF(mmi_self)))

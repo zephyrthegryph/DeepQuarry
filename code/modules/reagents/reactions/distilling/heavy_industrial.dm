@@ -1,201 +1,128 @@
 // Heavy chemicals
-/datum/decl/chemical_reaction/distilling/titanium_refine
-	name = REAGENT_TITANIUM
-	id = "distill_titanium"
-	result = REAGENT_ID_TITANIUM
-	required_reagents = list(REAGENT_ID_TITANIUMDIOX = 1, REAGENT_ID_CHLORINE = 4, REAGENT_ID_SODIUM = 1)
-	result_amount = 1
+/transformation/chem/distilling/titanium_refine
 
-	temp_shift = -1
+CAPABILITIES(/transformation/chem/distilling/titanium_refine)
+	configure(transformation(name = REAGENT_TITANIUM, id = "distill_titanium",
+		takes = list(reagent(REAGENT_ID_TITANIUMDIOX, 1), reagent(REAGENT_ID_CHLORINE, 4), reagent(REAGENT_ID_SODIUM, 1)),
+		makes = list(reagent(REAGENT_ID_TITANIUM, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 900, T20C + 1100), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
 
-	require_xgm_gas = GAS_N2
-	rejects_xgm_gas = GAS_O2
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/titanium_refine, distilling_temp_range, list(T20C + 900, T20C + 1100))
+/transformation/chem/distilling/concentrate_radium
 
-/datum/decl/chemical_reaction/distilling/concentrate_radium
-	name = REAGENT_CONCENTRATEDRADIUM
-	id = "distill_conrad"
-	result = REAGENT_ID_CONCENTRATEDRADIUM
-	required_reagents = list(REAGENT_ID_RADIUM = 5, REAGENT_ID_LEAD = 1)
-	catalysts = list(REAGENT_ID_URANIUM = 1)
-	result_amount = 1
+CAPABILITIES(/transformation/chem/distilling/concentrate_radium)
+	configure(transformation(name = REAGENT_CONCENTRATEDRADIUM, id = "distill_conrad",
+		takes = list(reagent(REAGENT_ID_RADIUM, 5), reagent(REAGENT_ID_LEAD, 1)), catalysts = list(reagent(REAGENT_ID_URANIUM, 1)),
+		makes = list(reagent(REAGENT_ID_CONCENTRATEDRADIUM, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 1500, T20C + 2000), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
 
-	temp_shift = -1
 
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_N2
+/transformation/chem/distilling/cyanide
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/concentrate_radium, distilling_temp_range, list(T20C + 1500, T20C + 2000))
+CAPABILITIES(/transformation/chem/distilling/cyanide)
+	configure(transformation(name = REAGENT_CYANIDE, id = "distill_cyanide",
+		takes = list(reagent(REAGENT_ID_CARBON, 1), reagent(REAGENT_ID_NITROGEN, 1), reagent(REAGENT_ID_WATER, 2)),
+		makes = list(reagent(REAGENT_ID_CYANIDE, 1)),
+		holds = xform_all(temperature_in(T0C + 150, T0C + 170), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_O2, 1))))
 
-/datum/decl/chemical_reaction/distilling/cyanide
-	name = REAGENT_CYANIDE
-	id = "distill_cyanide"
-	result = REAGENT_ID_CYANIDE
-	required_reagents = list(REAGENT_ID_CARBON = 1, REAGENT_ID_NITROGEN = 1, REAGENT_ID_WATER = 2)
-	result_amount = 1
 
-	temp_shift = 0
+/transformation/chem/distilling/sacid
 
-	require_xgm_gas = GAS_N2
-	rejects_xgm_gas = GAS_O2
+CAPABILITIES(/transformation/chem/distilling/sacid)
+	configure(transformation(name = REAGENT_SACID, id = "distill_sacid", takes = list(reagent(REAGENT_ID_HYDROGEN, 2), reagent(REAGENT_ID_SULFUR, 1)),
+		makes = list(reagent(REAGENT_ID_SACID, 1)), energy = per_step(5 * 1000),
+		holds = xform_all(temperature_in(T0C + 200, T0C + 300), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_N2, 1))))
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/cyanide, distilling_temp_range, list(T0C + 150, T0C + 170))
 
-/datum/decl/chemical_reaction/distilling/sacid
-	name = REAGENT_SACID
-	id = "distill_sacid"
-	result = REAGENT_ID_SACID
-	required_reagents = list(REAGENT_ID_HYDROGEN = 2, REAGENT_ID_SULFUR = 1)
-	result_amount = 1
+/transformation/chem/distilling/toxin
 
-	temp_shift = 5
+CAPABILITIES(/transformation/chem/distilling/toxin)
+	configure(transformation(name = REAGENT_TOXIN, id = "distill_rawtoxin", takes = list(reagent(REAGENT_ID_SACID, 2), reagent(REAGENT_ID_CYANIDE, 1)),
+		makes = list(reagent(REAGENT_ID_TOXIN, 1)), energy = per_step(2 * 1000),
+		holds = xform_all(temperature_in(T0C + 120, T0C + 580), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_N2
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/sacid, distilling_temp_range, list(T0C + 200, T0C + 300))
-
-/datum/decl/chemical_reaction/distilling/toxin
-	name = REAGENT_TOXIN
-	id = "distill_rawtoxin"
-	result = REAGENT_ID_TOXIN
-	required_reagents = list(REAGENT_ID_SACID = 2, REAGENT_ID_CYANIDE = 1)
-	result_amount = 1
-
-	temp_shift = 2
-
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_N2
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/toxin, distilling_temp_range, list(T0C + 120, T0C + 580))
 
 
 // Marker ink for paint production
-/datum/decl/chemical_reaction/distilling/marker_ink_black
-	name = REAGENT_MARKERINKBLACK
-	id = "distill_marker_black"
-	result = REAGENT_ID_MARKERINKBLACK
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_CARBON = 1)
-	result_amount = 1
+/transformation/chem/distilling/marker_ink_black
 
-	temp_shift = -1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_black)
+	configure(transformation(name = REAGENT_MARKERINKBLACK, id = "distill_marker_black",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_CARBON, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKBLACK, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_black, distilling_temp_range, list(T20C + 90, T20C + 160))
+/transformation/chem/distilling/marker_ink_red
 
-/datum/decl/chemical_reaction/distilling/marker_ink_red
-	name = REAGENT_MARKERINKRED
-	id = "distill_marker_red"
-	result = REAGENT_ID_MARKERINKRED
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_IRON = 1)
-	result_amount = 1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_red)
+	configure(transformation(name = REAGENT_MARKERINKRED, id = "distill_marker_red",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_IRON, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKRED, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	temp_shift = -1
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
+/transformation/chem/distilling/marker_ink_yellow
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_red, distilling_temp_range, list(T20C + 90, T20C + 160))
+CAPABILITIES(/transformation/chem/distilling/marker_ink_yellow)
+	configure(transformation(name = REAGENT_MARKERINKYELLOW, id = "distill_marker_yellow",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_SULFUR, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKYELLOW, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-/datum/decl/chemical_reaction/distilling/marker_ink_yellow
-	name = REAGENT_MARKERINKYELLOW
-	id = "distill_marker_yellow"
-	result = REAGENT_ID_MARKERINKYELLOW
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_SULFUR = 1)
-	result_amount = 1
 
-	temp_shift = -1
+/transformation/chem/distilling/marker_ink_green
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
+CAPABILITIES(/transformation/chem/distilling/marker_ink_green)
+	configure(transformation(name = REAGENT_MARKERINKGREEN, id = "distill_marker_green",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_COPPER, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKGREEN, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_yellow, distilling_temp_range, list(T20C + 90, T20C + 160))
 
-/datum/decl/chemical_reaction/distilling/marker_ink_green
-	name = REAGENT_MARKERINKGREEN
-	id = "distill_marker_green"
-	result = REAGENT_ID_MARKERINKGREEN
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_COPPER = 1)
-	result_amount = 1
+/transformation/chem/distilling/marker_ink_blue
 
-	temp_shift = -1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_blue)
+	configure(transformation(name = REAGENT_MARKERINKBLUE, id = "distill_marker_blue",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_PRUSSIANBLUE, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKBLUE, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_green, distilling_temp_range, list(T20C + 90, T20C + 160))
+/transformation/chem/distilling/marker_ink_grey
 
-/datum/decl/chemical_reaction/distilling/marker_ink_blue
-	name = REAGENT_MARKERINKBLUE
-	id = "distill_marker_blue"
-	result = REAGENT_ID_MARKERINKBLUE
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_PRUSSIANBLUE = 1)
-	result_amount = 1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_grey)
+	configure(transformation(name = REAGENT_MARKERINKGREY, id = "distill_marker_grey",
+		takes = list(reagent(REAGENT_ID_LUBE, 1), reagent(REAGENT_ID_ETHANOL, 1), reagent(REAGENT_ID_TIN, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKGREY, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	temp_shift = -1
-
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_blue, distilling_temp_range, list(T20C + 90, T20C + 160))
-
-/datum/decl/chemical_reaction/distilling/marker_ink_grey
-	name = REAGENT_MARKERINKGREY
-	id = "distill_marker_grey"
-	result = REAGENT_ID_MARKERINKGREY
-	required_reagents = list(REAGENT_ID_LUBE = 1, REAGENT_ID_ETHANOL = 1, REAGENT_ID_TIN = 1)
-	result_amount = 1
-
-	temp_shift = -1
-
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_grey, distilling_temp_range, list(T20C + 90, T20C + 160))
 
 
 // Secondary distillation for markers
-/datum/decl/chemical_reaction/distilling/marker_ink_orange
-	name = REAGENT_MARKERINKORANGE
-	id = "distill_marker_orange"
-	result = REAGENT_ID_MARKERINKORANGE
-	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKYELLOW = 1)
-	result_amount = 1
+/transformation/chem/distilling/marker_ink_orange
 
-	temp_shift = -1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_orange)
+	configure(transformation(name = REAGENT_MARKERINKORANGE, id = "distill_marker_orange",
+		takes = list(reagent(REAGENT_ID_MARKERINKRED, 1), reagent(REAGENT_ID_MARKERINKYELLOW, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKORANGE, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_orange, distilling_temp_range, list(T20C + 90, T20C + 160))
+/transformation/chem/distilling/marker_ink_purple
 
-/datum/decl/chemical_reaction/distilling/marker_ink_purple
-	name = REAGENT_MARKERINKPURPLE
-	id = "distill_marker_purple"
-	result = REAGENT_ID_MARKERINKPURPLE
-	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKBLUE = 1)
-	result_amount = 1
+CAPABILITIES(/transformation/chem/distilling/marker_ink_purple)
+	configure(transformation(name = REAGENT_MARKERINKPURPLE, id = "distill_marker_purple",
+		takes = list(reagent(REAGENT_ID_MARKERINKRED, 1), reagent(REAGENT_ID_MARKERINKBLUE, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKPURPLE, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	temp_shift = -1
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
+/transformation/chem/distilling/marker_ink_brown
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_purple, distilling_temp_range, list(T20C + 90, T20C + 160))
+CAPABILITIES(/transformation/chem/distilling/marker_ink_brown)
+	configure(transformation(name = REAGENT_MARKERINKBROWN, id = "distill_marker_brown",
+		takes = list(reagent(REAGENT_ID_MARKERINKRED, 1), reagent(REAGENT_ID_MARKERINKGREY, 1)),
+		makes = list(reagent(REAGENT_ID_MARKERINKBROWN, 1)), energy = per_step(-1 * 1000),
+		holds = xform_all(temperature_in(T20C + 90, T20C + 160), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-/datum/decl/chemical_reaction/distilling/marker_ink_brown
-	name = REAGENT_MARKERINKBROWN
-	id = "distill_marker_brown"
-	result = REAGENT_ID_MARKERINKBROWN
-	required_reagents = list(REAGENT_ID_MARKERINKRED = 1, REAGENT_ID_MARKERINKGREY = 1)
-	result_amount = 1
-
-	temp_shift = -1
-
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/marker_ink_brown, distilling_temp_range, list(T20C + 90, T20C + 160))

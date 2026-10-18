@@ -239,7 +239,7 @@ def plan_override(proc):
                     pname = "roll_%s" % var
                     plan.procs.append((pname, ["	return %s" % to_roller(expr)]))
                     gen = "PROC_REF(%s)" % pname
-                plan.entries.append("rolls(nameof(%s), %s, when = cond_not(nameof(%s)))" % (var, gen, var))
+                plan.entries.append("rolls(nameof(%s), %s, when = not(nameof(%s)))" % (var, gen, var))
                 rolled.append(var)
                 i += 2 if body_stmt else 1
                 continue

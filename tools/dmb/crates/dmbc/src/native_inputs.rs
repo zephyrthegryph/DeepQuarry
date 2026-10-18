@@ -82,6 +82,7 @@ impl NativeInputs {
         executor: &dm_exec::BuildExecutor,
         hints: Vec<PathBuf>,
     ) -> Result<Self, NativeInputError> {
+        let manifest_timer = dm_profile::detail_timer("inputs.manifest");
         let project = canonical_path(project);
         let manifest = prepare_source(provider, &project).map_err(|message| {
             NativeInputError::RequiredSourceRead {
@@ -114,6 +115,8 @@ impl NativeInputs {
             .collect::<Vec<_>>();
         // Resolve filesystem paths on the existing pool. Retaining in manifest
         // order afterwards preserves which alias supplies the first capture.
+        drop(manifest_timer);
+        let canonical_timer = dm_profile::detail_timer("inputs.canonical_paths");
         let chunk_size = candidates.len().div_ceil(executor.workers()).max(1);
         executor.scope(|scope| {
             for paths in candidates.chunks_mut(chunk_size) {
@@ -126,6 +129,8 @@ impl NativeInputs {
             }
         });
         candidates.retain(|path| seen.insert(path.clone()));
+        drop(canonical_timer);
+        let _prepare_timer = dm_profile::detail_timer("inputs.prepare_sources");
         let worker_count = if candidates.is_empty() {
             0
         } else {

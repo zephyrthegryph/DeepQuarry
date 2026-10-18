@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 		transfer_default = nameof(amount_per_transfer_from_this),
 		transfer_min = nameof(min_transfer_amount),
 		transfer_max = nameof(max_transfer_amount))
-	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand)))
+	op("open", in_hand(), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand)))
 	extend("reagent_container.drink", then(PROC_REF(sipped)))
 	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped)))
 	rolls(nameof(cant_open), PROC_REF(roll_cant_open))

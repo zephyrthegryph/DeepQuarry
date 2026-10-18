@@ -606,3 +606,35 @@ workspace crates and builds once more with `CARGO_INCREMENTAL=0`. A real compile
 What is still slow and is not fixed here: the test compile of a cold tree takes the one machine-wide `dmb_root_deepquarry.test` compile-root slot (waits of 171 s
 seen) and the test worlds queue for `test_world` slots; those are the load of five lanes sharing one machine, and a lane proof (outside the lock) absorbs them
 instead of the merge. The production compile (`dm` job, 200-330 s) and the test job overlap, so a proof's wall time is the longer of the two.
+
+## 26. Batch landing by one lander (17 October 2026)
+
+Lanes no longer push. A finished lane commits everything on its branch, runs its own focused tests (and `dq_lane_ready.sh` if it
+wants a stamp; it no longer has to), and sends the main session `READY <branch> <worktree> [<sha>] — <summary>; tests: <names>`. The
+main session forwards it to the batch lander, the only agent that runs `dq_push_master.sh`.
+
+The lander, per batch:
+
+1. `export DQ_MERGE_SESSION=batch-lander`; `WT="$(bash tools/dq_merge_worktree.sh --lanes "<branches>")"` (the lock and
+   `E:/projects/dq-wt/merge-base` moved to origin/master). If the worktree holds an unpushed batch from an interrupted push, adopt it
+   (`--adopt --lanes <branch>`, every named lane must be in HEAD; name a commit with `git branch batch/<name> <sha>` when the lane's
+   tip moved on past what was merged), then `--join` the new lanes.
+2. In `$WT`: `git merge --no-ff --no-edit <branch or sha>` for each READY lane, the sha the lane reported (a lane that committed
+   more since is not taken past what it said is ready). Resolve conflicts as usual; two lanes carrying the same fix keep one.
+3. One gate for the whole batch: `bash tools/dq_merge_gates.sh --lanes "<the merged shas>" --tests "<every lane's focused tests>"`.
+   Name the exact commits you merged, not branch names: a lane named by branch whose tip moved past what you merged is not "in HEAD",
+   so the gates hand the batch to `dq_merge_batch.sh`, which starts again from origin/master with every branch tip and bounces any
+   lane that conflicts, discarding the conflicts you resolved by hand (seen 2026-10-18).
+   Look pins run only when the batch touches DM, map, icon, sound, skin or analyzer files.
+4. Green: `bash tools/dq_push_master.sh`. With one pusher master does not move under the gate, so the push honors the gate's stamp
+   on the exact HEAD and repeats nothing.
+5. Red: bisect the batch. Re-take the worktree with the lanes minus half, gate, and repeat until the breaking lane is found
+   (`dq_known_failures.sh --check` first separates known and flaky failures). Land the rest, and report the breaking lane to the
+   main session with the failing test and its log path.
+
+Polling: wait on a result line with an `until` loop whose timeout is at most 120 s, or run the step with `run_in_background` and
+wait for the notification; never block 10 minutes at a time.
+
+The merge worktree compiles in its own compile root (`E:/dq-cache/dmb-roots/deepquarry-merge`, `compile_root.ts rootKeyFor`): every
+gate there is master plus a batch, so its daemon session patches from the previous gate's tree instead of waiting behind lanes in the
+shared root and recompiling their trees (measured: a gate's test compile waited 315 s for the shared root, then ran a full compile).

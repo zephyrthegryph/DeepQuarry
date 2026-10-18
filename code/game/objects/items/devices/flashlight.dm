@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/flashlight)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
-	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = cond_all(nameof(on), nameof(power_use)))
+	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = all_of(nameof(on), nameof(power_use)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	drag_onto(PROC_REF(mousedrop_input))
 	op("switch", in_hand(), needs(req(PROC_REF(can_switch))), then(PROC_REF(interaction_self)))

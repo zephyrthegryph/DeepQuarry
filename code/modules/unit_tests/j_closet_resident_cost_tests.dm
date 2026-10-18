@@ -12,7 +12,6 @@
 	resident.set_w_class(ITEMSIZE_SMALL)
 	candidate.set_w_class(ITEMSIZE_NORMAL)
 	C.set_storage_capacity(C.storage_cost_of(resident) + C.storage_cost_of(candidate))
-	var/old_reason = GLOB.act_last_reason
 	TEST_ASSERT(move_into(C, CONTAINER_SLOT_INTERIOR, resident), "Actual finite closet contains resident")
 	TEST_ASSERT_EQUAL(resident.loc, C, "Resident has real closet custody")
 	var/list/reads = dq_ledger_read_keys(candidate, C, CONTAINER_SLOT_INTERIOR, null, FALSE)
@@ -35,4 +34,3 @@
 	TEST_ASSERT(has_pair(reads, nested, nameof(nested.storage_cost)), "Nested closet cost branch watches exact storage cost")
 	var/obj/effect/other = allocate(/obj/effect, T)
 	TEST_ASSERT_EQUAL(length(D.cost_read_keys(C, other)), 0, "Constant fallback cost has no fabricated dependency")
-	GLOB.act_last_reason = old_reason

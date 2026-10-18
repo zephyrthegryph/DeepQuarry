@@ -38,6 +38,8 @@ impl Ctx {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Role {
     Condition,
+    /// A pure boolean evaluated only during lifecycle setup, never subscribed reactively.
+    InitCondition,
     Requirement,
     BooleanRequirement,
     Effect,
@@ -51,12 +53,12 @@ pub enum Role {
 impl Role {
     /// Pure roles: evaluated with the no-write, no-publish, no-message guard.
     pub fn pure(&self) -> bool {
-        matches!(self, Role::Condition | Role::Requirement | Role::BooleanRequirement | Role::Output | Role::Contribution | Role::Reason)
+        matches!(self, Role::Condition | Role::InitCondition | Role::Requirement | Role::BooleanRequirement | Role::Output | Role::Contribution | Role::Reason)
     }
 
     /// Conditions and explicit transitional requirements answer TRUE/FALSE.
     pub fn boolean(&self) -> bool {
-        matches!(self, Role::Condition | Role::BooleanRequirement)
+        matches!(self, Role::Condition | Role::InitCondition | Role::BooleanRequirement)
     }
 
     /// Roles whose result feeds the dependency graph (what they read subscribes).
@@ -300,6 +302,11 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         let mut ctx = if in_asks_when || in_op_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
         let mut role = f.role;
+        // registry(when =) decides initial membership once. Rekey/movement only watches
+        // its key; treating this predicate as a persistent input invents a subscription.
+        if f.kw == "when" && bs == be && enclosing_call_start(body, start, "registry").is_some() {
+            role = Role::InitCondition;
+        }
         if matches!(f.kw, "then" | "when") {
             let mut outer: Option<&(usize, usize, usize)> = None;
             for r in &ranges {
@@ -344,14 +351,28 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
 
 /// The innermost operation containing this reference; ordinary op when() is evaluated by op_cond with the full operation context.
 fn enclosing_op_start(body: &str, pos: usize) -> Option<usize> {
+    enclosing_call_start(body, pos, "op")
+}
+
+fn enclosing_call_start(body: &str, pos: usize, name: &str) -> Option<usize> {
     let bytes = body.as_bytes();
     let mut found = None;
     let mut i = 0;
     while i < pos {
+        if bytes[i] == b'"' || bytes[i] == b'\'' {
+            let quote = bytes[i];
+            i += 1;
+            while i < pos {
+                if bytes[i] == b'\\' { i += 2; continue; }
+                if bytes[i] == quote { i += 1; break; }
+                i += 1;
+            }
+            continue;
+        }
         if bytes[i].is_ascii_alphabetic() || bytes[i] == b'_' {
             let begin = i;
             while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
-            if &body[begin..i] == "op" {
+            if &body[begin..i] == name {
                 let mut open = i;
                 while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
                 if bytes.get(open) == Some(&b'(') && matching_paren(body, open).is_some_and(|close| pos > open && pos < close) { found = Some(open); }
@@ -521,7 +542,7 @@ mod context_tests {
 
     #[test]
     fn change_value_getter_is_an_output_but_handler_is_a_reaction() {
-        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(cond_all(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
+        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(all_of(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
         let value = found.iter().find(|h| h.proc == "value").unwrap();
         assert_eq!(value.ctx, Ctx::Eval);
         assert_eq!(value.role, Role::Output);
@@ -609,4 +630,24 @@ mod context_tests {
         assert_eq!(later.ctx, Ctx::Timer, "a delayed effect receives a timer rather than its enclosing notice");
         assert!(later.ui_args.is_none(), "timer callbacks do not inherit UI invocation parameters");
     }
+    #[test]
+    fn registry_when_is_pure_but_init_only_while_live_conditions_remain_reactive() {
+        let found = handlers("CAPABILITIES(/obj/probe)\n\tregistry(\"joins\", when = PROC_REF(initial_join))\n\top(\"use\", when(PROC_REF(live_gate)), then(PROC_REF(effect)))\n\tevery(1, then(PROC_REF(step)), when = PROC_REF(periodic_gate))\n");
+        let initial = found.iter().find(|h| h.proc == "initial_join").unwrap();
+        assert_eq!(initial.role, Role::InitCondition);
+        assert!(initial.role.pure() && initial.role.boolean());
+        assert!(!initial.role.reads_covered());
+        for name in ["live_gate", "periodic_gate"] {
+            let live = found.iter().find(|h| h.proc == name).unwrap();
+            assert_eq!(live.role, Role::Condition);
+            assert!(live.role.reads_covered());
+        }
+    }
+
+    #[test]
+    fn quoted_registry_text_does_not_hide_a_live_condition() {
+        let found = handlers("CAPABILITIES(/obj/probe)\n\top(\"registry(fake(\", when(PROC_REF(live_gate)), then(PROC_REF(effect)))\n");
+        assert_eq!(found.iter().find(|h| h.proc == "live_gate").unwrap().role, Role::Condition);
+    }
+
 }

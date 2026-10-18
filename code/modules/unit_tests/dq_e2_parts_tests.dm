@@ -237,7 +237,7 @@
 	GLOB.declare_report_capture = list()
 	table_compile(/obj/e2_box, null, list( \
 		op("g", hand(), when("opened"), then("note_pry")), \
-		op("h", hand(), when(cond_not("opened")), then("note_key"))), "test:3")
+		op("h", hand(), when(not("opened")), then("note_key"))), "test:3")
 	var/list/exclusive = GLOB.declare_report_capture
 	GLOB.declare_report_capture = null
 	TEST_ASSERT_EQUAL(length(exclusive), 0, "mutually exclusive when() parts do not clash: [jointext(exclusive, " | ")]")

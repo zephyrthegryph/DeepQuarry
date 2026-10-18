@@ -175,7 +175,7 @@ CAPABILITIES(/obj/machinery/door/window)
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), costs(RES_FUEL, 1),
 		needs(req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), then(PROC_REF(repaired)), says(MSG(windoor/repaired)))
 	op("crowbar_shut", tool(TOOL_CROWBAR), when(nameof(density)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(nothing_done)))
-	op("pry_out", tool(TOOL_CROWBAR), label("Pry out of the frame"), when(cond_not(nameof(density))), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS),
+	op("pry_out", tool(TOOL_CROWBAR), label("Pry out of the frame"), when(not(nameof(density))), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS),
 		then(PROC_REF(pried_out)))
 
 /// A crowbar does nothing to a shut windoor (it neither opens it as a touch nor pries it out).

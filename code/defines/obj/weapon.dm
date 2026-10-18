@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/bikehorn)
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_thrown(force = 3))
 	configure(item_combat(attack_verbs = list("HONKED")))
-	op("honk", in_hand(), label("Honk"), when(cond_not(nameof(special_handling))), then(PROC_REF(honked)))
+	op("honk", in_hand(), label("Honk"), when(not(nameof(special_handling))), then(PROC_REF(honked)))
 
 /obj/item/bikehorn/proc/honked(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, cooldown))

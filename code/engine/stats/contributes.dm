@@ -13,7 +13,7 @@
 // source or the relation goes. It is a contributes_to entry whose value is a table.
 //
 // A contribution's second argument is a CONDITION when the stat is boolean and a VALUE when it is not: nameof(v) (a var), a PROC_REF (a holder proc
-// x(datum/act/A), which returns the boolean or the number), another stat's id, a capability key id, cond_not()/cond_all()/cond_any() of those, or a
+// x(datum/act/A), which returns the boolean or the number), another stat's id, a capability key id, not()/all_of()/any_of() of those, or a
 // constant. An enclosing when(cond, ...) gates the contribution: its condition is one of the stat's inputs, so the stat is right the moment the
 // condition flips. `reads` is the var names a PROC_REF reads ("var", "rel.var" one hop, or SYSTEM_READ(system, "var")), written by hand until E5's
 // generated reads replace it.
@@ -398,7 +398,7 @@ PROC_SUMMARY(/proc/stat_register_keys) // vars[] / call() dispatcher: the walk c
 		if(CV_TREE)
 			stat_collect_tree_inputs(E, spec, keys, untracked)
 
-/// The inputs of a condition tree or a leaf (a var name, a stat or key id, cond_not/all/any of those, a PROC_REF: its generated reads).
+/// The inputs of a condition tree or a leaf (a var name, a stat or key id, not/all_of/any_of of those, a PROC_REF: its generated reads).
 PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/stat_collect_tree_inputs(datum/E, cond, list/keys, list/untracked)
 	if(islist(cond))

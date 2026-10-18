@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN)), mode = ACCEPTANCE_REPLACE)
 	ref_one(nameof(tacknife), /obj/item/material/knife)
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETAIL, flags = THICKMATERIAL | AIRTIGHT))
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/clothing/head/lightrig)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/lightrig)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(hides = HIDEJUMPSUIT))
 
 

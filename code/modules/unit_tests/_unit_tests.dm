@@ -193,6 +193,7 @@
 #include "dq_init_codemod_tests.dm"
 #include "dq_leftovers_behaviour.dm"
 #include "dq_decl_starts_tests.dm"
+#include "dq_decl_lifecycle_tests.dm"
 #include "dq_lifecycle_forms_tests.dm"
 #include "dq_lifeform_adjacency_tests.dm"
 #include "dq_lifeform_contents_tests.dm"
@@ -307,7 +308,6 @@
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_destroy_transaction_tests.dm"
-#include "dq_decl_lifecycle_tests.dm"
 #include "dq_lifecycle_diag_tests.dm"
 #include "dq_inventory_tests.dm"
 #include "dq_mob_memlist_tests.dm"
@@ -684,6 +684,7 @@
 #include "dq_p2_food_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
 #include "dq_slot_quantity_tests.dm"
+#include "dq_slot_admission_tests.dm"
 #include "interim_fax_actor.dm"
 #include "interim_crystal_consumption.dm"
 #include "interim_prerelease_consequences.dm"
@@ -1348,6 +1349,12 @@
 #include "dq_machine_refresh_dartgun_pin.dm"
 #include "dq_native_machine_refresh_tests.dm"
 #include "dq_spasm_use_flow_tests.dm"
+#include "dq_decl_cleanup_tests.dm"
+#include "dq_decl_remaining_starts_tests.dm"
+#include "dq_decl_reference_starts_tests.dm"
+#include "dq_decl_archaeological_find_tests.dm"
+#include "dq_decl_landmark_registration_tests.dm"
+#include "dq_decl_visual_state_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -22,13 +22,13 @@ CAPABILITY_TYPE(doors, CAP_DOORS, /datum/capability/lib/doors, key = NONE, open 
 
 /datum/capability/lib/doors/entries()
 	var/list/by_touch = list(inputs(hand(), item(/obj/item)), \
-		when(cond_not(nameof(/obj/machinery/door::operating))), \
+		when(not(nameof(/obj/machinery/door::operating))), \
 		when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), \
 		needs(req_access(), req_is(STAT_OPERABLE, because = MSG(door/unpowered))), \
 		wait(0))
 	return list(
 		op("open", by_touch, priority(OP_PRIORITY_NORMAL), when(nameof(/obj/machinery/door::density)), then(CAP_PROC(open_door))),
-		op("close", by_touch, priority(OP_PRIORITY_NORMAL), when(cond_not(nameof(/obj/machinery/door::density))), then(CAP_PROC(close_door))),
+		op("close", by_touch, priority(OP_PRIORITY_NORMAL), when(not(nameof(/obj/machinery/door::density))), then(CAP_PROC(close_door))),
 		on_op("doors.open", then(CAP_PROC(denied)), outcome = ACT_REFUSED))
 
 /// The touch worked: the door's own mechanism opens it.

@@ -518,9 +518,10 @@ fn capture_with_resource_operation<
             .map_err(|error| format!("nontext capture: {error:?}"))
     })?;
     let demand = timed(observer, CaptureStage::ResourceDemand, || {
-        dm_resources::capture::discover_demand(
+        dm_resources::capture::discover_demand_in_pieces(
             &frontend.plan,
             &frontend.expanded,
+            &frontend.syntax.chunk_boundaries(),
             &captured.assets.literals,
             &captured.assets.skins,
         )

@@ -5,7 +5,7 @@
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/explorer)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 

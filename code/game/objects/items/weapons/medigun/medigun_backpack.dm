@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
 	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
-	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
+	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = all_of(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
 	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
 	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
 	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))

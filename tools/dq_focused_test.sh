@@ -480,7 +480,17 @@ case "$split_mode" in
 	auto) if [ ${#main_group[@]} -gt 0 ] && [ $(( ${#slow_group[@]} + ${#look_group[@]} )) -gt 0 ]; then do_split=1; fi ;;
 esac
 if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
-if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
+# A long main list runs as several worlds from the one .dmb: each world costs a boot (about 30 s), and one world ran the 251-test
+# batch gate in 640 s (2026-10-18). DQ_MAIN_WORLD_TESTS selectors per world (default 60), at most DQ_MAIN_WORLDS worlds (default 4).
+main_worlds=1
+main_per="${DQ_MAIN_WORLD_TESTS:-60}"
+main_max="${DQ_MAIN_WORLDS:-4}"
+if [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [[ "$main_per" =~ ^[1-9][0-9]*$ ]] && [[ "$main_max" =~ ^[1-9][0-9]*$ ]] 	&& [ ${#main_group[@]} -gt "$main_per" ]; then
+	main_worlds=$(( (${#main_group[@]} + main_per - 1) / main_per ))
+	[ "$main_worlds" -gt "$main_max" ] && main_worlds="$main_max"
+	[ "$main_worlds" -gt 1 ] && do_split=1
+fi
+if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; main_worlds=1; fi
 # A look bless is sharded like a look run: each world writes its own partial rows (look-bless-dir) and tools/dq_look_bless_merge.py joins
 # them into the snapshot files after the worlds end. --look-shards=1 keeps the unsharded bless.
 look_bless=0
@@ -696,7 +706,15 @@ run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
 	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
-	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
+	if [ ${#main_group[@]} -gt 0 ] && [ "${main_worlds:-1}" -gt 1 ]; then
+		# Round-robin, so the slow tests of one lane (listed together) spread over the worlds.
+		local m k chunk
+		for ((m = 0; m < main_worlds; m++)); do
+			chunk=()
+			for ((k = m; k < ${#main_group[@]}; k += main_worlds)); do chunk+=("${main_group[$k]}"); done
+			add_world "main$m" "" "" "${chunk[@]}"
+		done
+	elif [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
 	if [ ${#slow_group[@]} -gt 0 ]; then add_world slow "" "" "${slow_group[@]}"; fi
 	if [ ${#sweep_group[@]} -gt 0 ]; then
 		for ((i = 0; i < sweep_shards; i++)); do add_world "sweep$i" "$i/$sweep_shards" "" "${sweep_group[@]}"; done

@@ -120,11 +120,6 @@ CAPABILITIES(/datum/reagents)
 /datum/reagents/proc/get_temperature()
 	return my_atom ? my_atom.get_temperature() : T20C
 
-/// Returns the chemistry service reaction lookup list used by handle_reactions().
-/// Subtypes override this to select a different reaction bucket (e.g. distilled_reactions_by_reagent).
-/datum/reagents/proc/get_reaction_lookup()
-	return SSchemistry.ready().instant_reactions_by_reagent
-
 /// Returns TRUE if this holder type tracks and passes belly-reagent state when processing reactions.
 /// Distilling holders override this to return FALSE.
 /datum/reagents/proc/supports_belly_reagents()
@@ -137,37 +132,17 @@ CAPABILITIES(/datum/reagents)
 	if(!notice_wanted(src, /datum/notice/reagents_holder_reacted))
 		return
 	var/datum/notice/reagents_holder_reacted/N = notice_take(/datum/notice/reagents_holder_reacted)
-	N.chemical_reaction = effect_reactions
+	N.rules = effect_reactions
 	notice_publish(src, N)
 
+/// Settles the holder's reagents: every transformation of its regime that holds goes until none does (code/library/transformations/transformation_settle.dm).
+/// Returns how many transformations fired.
 /datum/reagents/proc/handle_reactions()
 	if(QDELETED(my_atom))
 		return FALSE
 	if(my_atom.flags & NOREACT)
 		return FALSE
-	var/reaction_occurred
-	var/list/eligible_reactions = list()
-	var/list/effect_reactions = list()
-	var/from_belly
-	var/list/reaction_lookup = get_reaction_lookup()
-	var/belly_tracking = supports_belly_reagents()
-	do
-		from_belly = FALSE
-		reaction_occurred = FALSE
-		for(var/datum/reagent/R as anything in reagent_list)
-			if(reaction_lookup[R.id])
-				eligible_reactions |= reaction_lookup[R.id]
-				if(belly_tracking && !from_belly)
-					from_belly = R.from_belly
-
-		for(var/datum/decl/chemical_reaction/C as anything in eligible_reactions)
-			if(C.can_happen(src) && C.react_step(src, from_belly))
-				effect_reactions |= C
-				reaction_occurred = TRUE
-		eligible_reactions.len = 0
-	while(reaction_occurred)
-	for(var/datum/decl/chemical_reaction/C as anything in effect_reactions)
-		C.post_reaction(src)
+	var/list/effect_reactions = xform_settle_reagents(src)
 	update_total()
 	on_reactions_handled(effect_reactions)
 	return effect_reactions.len

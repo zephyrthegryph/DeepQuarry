@@ -1,7 +1,7 @@
 // look_from(): a family of icon states named after one key var (doc/rewrite/framework_gaps.md, "Mob init burn-down forms").
 //
 //	CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
-//		rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+//		rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = not(nameof(body_color)))
 //		look_from(nameof(body_color), state = "chicken_*", living = "chicken_*", dead = "chicken_*_dead")
 //	CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
 //		rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))

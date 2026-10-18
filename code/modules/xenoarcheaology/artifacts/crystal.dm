@@ -5,6 +5,7 @@
 	density = TRUE
 
 CAPABILITIES(/obj/structure/crystal)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	rolls(nameof(icon_state), pick_one(list("ano70", "ano80")))
 	rolls(nameof(desc), PROC_REF(roll_desc))
 
@@ -15,7 +16,7 @@ CAPABILITIES(/obj/structure/crystal)
 // the crystal shatters into shards.
 DESTROY_EFFECTS(/obj/structure/crystal, new /datum/destroy_effects_data(message = "%SRC% shatters!", message_class = "bolddanger"))
 
-/obj/structure/crystal/on_destroy(force)
+/obj/structure/crystal/ending_consequences(cause, datum/by)
 	for(var/chance in list(75, 50, 25))
 		if(prob(chance))
 			new /obj/item/material/shard/phoron(src.loc)

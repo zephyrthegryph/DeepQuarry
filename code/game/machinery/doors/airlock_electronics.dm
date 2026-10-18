@@ -33,7 +33,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access_all)))
 	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok)), any_of(req_actor_kind(/mob/living/carbon/human, because = MSG(airlock_electronics/cant_use)), req_actor_kind(/mob/living/silicon, because = MSG(airlock_electronics/cant_use)))))
-	extend("ui_open", when(cond_any(req_actor_kind(/mob/living/carbon/human), req_actor_kind(/mob/living/silicon/robot))))
+	extend("ui_open", when(any_of(req_actor_kind(/mob/living/carbon/human), req_actor_kind(/mob/living/silicon/robot))))
 
 /obj/item/airlock_electronics/proc/ui_user_ok(datum/act/op/A)
 	var/mob/user = A.actor

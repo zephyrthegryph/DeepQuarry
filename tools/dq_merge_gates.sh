@@ -158,6 +158,7 @@ elif [ "$run_tests" -eq 1 ] && [ "${DQ_NO_PINS:-0}" != 1 ] && [ "$snapshot_outpu
 		fi
 	fi
 fi
+lap "look pins"
 sha="$(git rev-parse HEAD)"
 short="${sha:0:12}"
 mkdir -p data/merge-gates
@@ -204,6 +205,7 @@ add_test ${tests_arg[@]+"${tests_arg[@]}"}
 lane_rows=()
 unstamped=()
 if [ -n "$lanes" ]; then
+	lap "test list (smoke and gameplay)"
 	echo "== lanes: stamps against origin/master"
 	# shellcheck disable=SC2086  # a list of refs
 	mapfile -t lane_rows < <(bash tools/dq_lane_check.sh $lanes)

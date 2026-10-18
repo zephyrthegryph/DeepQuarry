@@ -458,8 +458,8 @@
 /// TRUE when a hook on the owner takes the status question over: the body is held alive (a dormant nanoform core) and neither death nor
 /// unconsciousness is asked. A question, not a change: the action ends refused for whoever listens for that.
 /datum/body/proc/status_held()
-	var/datum/act/body_status/question = ACT_TRY(owner, body_status)
-	if(!question)
+	var/datum/act/body_status/question = ACT_ATTEMPT(owner, body_status)
+	if(ACT_REFUSED_BY(question))
 		return TRUE
 	act_cancel(question)
 	return FALSE

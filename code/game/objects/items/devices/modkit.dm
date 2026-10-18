@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/modkit)
 	op("refit", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Refit hardsuit"),
 		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req(PROC_REF(refit_allowed))), then(PROC_REF(refitted)))
 	op("discard_spent", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Discard spent kit"),
-		when(cond_not(PROC_REF(has_refit_parts))), needs(req_adjacent()), then(PROC_REF(spent_discarded)))
+		when(not(PROC_REF(has_refit_parts))), needs(req_adjacent()), then(PROC_REF(spent_discarded)))
 
 /obj/item/modkit/proc/has_refit_parts(datum/act/op/A)
 	return !!parts

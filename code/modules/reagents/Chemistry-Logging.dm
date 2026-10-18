@@ -1,7 +1,7 @@
 
 GLOBAL_LIST_EMPTY(chemical_reaction_logs)
 
-/proc/log_chemical_reaction(atom/A, datum/decl/chemical_reaction/R, multiplier)
+/proc/log_chemical_reaction(atom/A, datum/xform/R, multiplier)
 	if(!A || !R)
 		return
 
@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(chemical_reaction_logs)
 
 	GLOB.chemical_reaction_logs += "\[[time_stamp()]\] [logstr]"
 
-	if(R.log_is_important)
+	if(R.important)
 		message_admins(logstr)
 	log_admin(logstr)
 

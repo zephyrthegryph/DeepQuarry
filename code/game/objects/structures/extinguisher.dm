@@ -22,10 +22,10 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
 	// the wrench opens or shuts a cabinet that holds an extinguisher, and takes an empty one off the wall
 	op("wrench_toggle", tool(TOOL_WRENCH), label("Use"), wait(0), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(nameof(has_extinguisher)), then(PROC_REF(toggled)))
-	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(cond_not(nameof(has_extinguisher))),
+	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(not(nameof(has_extinguisher))),
 		begins(MSG(extinguisher_cabinet/unwrenching)), says(MSG(extinguisher_cabinet/unwrenched)), then(PROC_REF(unwrenched)))
 	rolls(ROLL_PIXEL, WALL_OFFSET(27, 27), when = nameof(building))
-	owns_one(nameof(has_extinguisher), starts = when(cond_not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost), on_destroy = ON_DESTROY_CONTAINED)
+	owns_one(nameof(has_extinguisher), starts = when(not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost), on_destroy = ON_DESTROY_CONTAINED)
 
 /// A cabinet built on a wall (its constructor param).
 /obj/structure/extinguisher_cabinet/var/building = FALSE

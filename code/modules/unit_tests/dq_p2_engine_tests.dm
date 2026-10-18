@@ -31,14 +31,16 @@
 	var/obj/p2_hit/taker/hooked = allocate(/obj/p2_hit/taker)
 	var/obj/p2_hit/plain/plain = allocate(/obj/p2_hit/plain)
 	var/answered_hooked = deliver(hooked, DAMAGE_ENTRY_EMP)
-	var/outcome = GLOB.act_last_outcome
 	var/integrity_after_emp = hooked.get_integrity()
 	var/answered_plain = deliver(plain, DAMAGE_ENTRY_EMP)
 	var/hooked_projectile = deliver(hooked, DAMAGE_ENTRY_PROJECTILE) // the hook is on the emp hit only: a projectile lands
 	TEST_ASSERT_EQUAL(hooked.took, 1, "the instead handler ran once")
 	TEST_ASSERT_EQUAL(answered_hooked, 0, "a taken-over hit applies nothing")
 	TEST_ASSERT_EQUAL(integrity_after_emp, hooked.max_integrity, "the sink did not run: integrity is unchanged")
-	TEST_ASSERT_EQUAL(outcome, ACT_REPLACED, "the hit ended replaced")
+	var/datum/damage_packet/probe = damage_packet(null, null, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, DAMAGE_ENTRY_EMP, 1)
+	var/answer = ACT_ATTEMPT(hooked, hit_emp, probe)
+	probe.release()
+	TEST_ASSERT(ACT_TAKEN_OVER(answer), "the hit ends replaced, and ACT_ATTEMPT answers so")
 	TEST_ASSERT(hooked_projectile > 0 && hooked.get_integrity() < hooked.max_integrity, "a projectile on the same type is not taken over")
 	TEST_ASSERT(answered_plain > 0, "the unhooked sibling took the damage")
 	TEST_ASSERT_EQUAL(plain.get_integrity(), plain.max_integrity - answered_plain, "its integrity went down by what landed")
@@ -66,7 +68,11 @@
 	var/answered = deliver(H, 0, 40, FIRE)
 	TEST_ASSERT_EQUAL(answered, 0, "a refused hit lands nothing")
 	TEST_ASSERT_EQUAL(H.get_integrity(), H.max_integrity, "integrity is unchanged")
-	TEST_ASSERT_EQUAL(GLOB.act_last_outcome, ACT_REFUSED, "the fire hit ended refused")
+	var/datum/damage_packet/probe = damage_packet(null, null, null, null, DAMAGE_PACKET_SILENT, 0, 0, FIRE, 0, 1)
+	probe.add(DAMAGE_BLUNT, 40)
+	var/answer = ACT_ATTEMPT(H, hit_fire, probe)
+	probe.release()
+	TEST_ASSERT(ACT_REFUSED_BY(answer) && !ACT_TAKEN_OVER(answer), "the fire hit ends refused, not taken over")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // on_notice(/datum/notice/hit/blob) fires after the sink.

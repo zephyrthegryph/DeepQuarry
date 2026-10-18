@@ -43,8 +43,8 @@ CAPABILITIES(/obj/structure/disposalpipe/trunk)
 		return ..()		// so do base transfer proc
 
 	if(linked())
-		var/datum/act/send_disposal/send = ACT_TRY(src, send_disposal, H)
-		if(!send)
+		var/datum/act/send_disposal/send = ACT_ATTEMPT(src, send_disposal, H)
+		if(ACT_REFUSED_BY(send))
 			return //Sent, and handled. Our job is done.
 		act_cancel(send)
 
