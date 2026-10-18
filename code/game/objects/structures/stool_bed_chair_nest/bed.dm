@@ -27,7 +27,6 @@
 	var/can_unpad = TRUE
 	var/can_dismantle = TRUE
 
-
 /// What a draw reads of the frame and the padding: shared material definitions, which never change, so the look reads them through these and does
 /// not watch them (the redraw comes from the tracked material / padding_material vars).
 /obj/structure/bed/proc/material_icon_colour()
@@ -69,7 +68,6 @@
 	if(padding)
 		set_padding_material(get_material_by_name(padding))
 
-
 /obj/structure/bed/get_material()
 	return material
 
@@ -95,11 +93,6 @@
 		look.identity(name = "[material_display_name()] [initial(name)]")
 		look.identity(desc = "[initial(desc)] It's made of [material_use_name()].")
 
-/obj/structure/bed/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return TRUE
-	return ..()
-
 MSG_DEF_SELF(bed/already_padded, "It is already padded.")
 MSG_DEF_SELF(bed/not_padding, "You cannot pad that with that.")
 MSG_DEF_SELF(bed/no_padding, "It has no padding to remove.")
@@ -110,6 +103,7 @@ MSG_DEF(bed/padded, "You add padding to %T%.", "%U% adds padding to %T%.")
 MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the padding from %T%.")
 
 CAPABILITIES(/obj/structure/bed)
+	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	buckle()
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
 		needs(req(PROC_REF(can_be_padded))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))

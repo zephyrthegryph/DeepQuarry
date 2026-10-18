@@ -55,6 +55,7 @@ DECLARE_SHARED_CACHE(reagent_fill_overlays, GLOBAL_PROC_REF(build_reagent_fill_o
 		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 
 CAPABILITIES(/obj/machinery/iv_drip)
+	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	ref_one(nameof(attached), /mob/living/carbon/human)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
 	drag_onto(PROC_REF(drop_input))
@@ -217,12 +218,6 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 			. += span_notice("No chemicals are attached.")
 
 		. += span_notice("[attached() ? attached() : "No one"] is attached.")
-
-/obj/machinery/iv_drip/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
-		return TRUE
-	return ..()
-
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human
