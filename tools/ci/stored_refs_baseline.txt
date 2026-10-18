@@ -95,8 +95,6 @@ var	code/modules/player_tips/player_tips_service.dm	@/datum/system/player_tips::
 var	code/modules/power/solar_service.dm	@/datum/controller/global_vars::sun
 var	code/modules/projectiles/projectile_effects.dm	@/datum/projectile_effects::turf_effect_callback
 var	code/modules/research/message_server.dm	@/datum/controller/global_vars::blackbox
-var	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/synthprinter::connected
-var	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/resleever::connected
 var	code/modules/scripting/AST/Statements.dm	@/datum/node/statement/FunctionCall::object_owned
 var	code/modules/scripting/AST/Statements.dm	@/datum/node/statement/VariableAssignment::object_owned
 var	code/modules/scripting/AST/Statements.dm	@/datum/node/statement/VariableDeclaration::object_owned
