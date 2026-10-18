@@ -130,7 +130,7 @@ CAPABILITIES(/datum/relations_refuse_dock)
 	var/checked = 0
 	for(var/T in subtypesof(/datum/pooled))
 		var/datum/pooled/proto = T
-		if(initial(proto.abstract_type) == T || findtext("[T]", "/unit_test"))
+		if(initial(proto.abstract_type) == T || T == /datum/pool_probe) // the probe counts its own resets on purpose (dq_foundation_look_tests.dm)
 			continue
 		var/datum/pooled/P = take(T)
 		var/list/fresh = P.snapshot()

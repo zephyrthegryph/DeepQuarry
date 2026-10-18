@@ -95,7 +95,7 @@
 	var/created = factory && native && feedback && made_scheduler
 	for(var/datum/probe in list(made_scheduler, factory, native, feedback))
 		if(probe)
-			qdel(probe)
+			qdel(probe, TRUE) // providers are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 	TEST_ASSERT_NULL(problem, "An early provider lookup from null globals completes without a runtime")
 	TEST_ASSERT(created, "Every uninitialized provider accessor creates its actual provider")
 	TEST_ASSERT(reused, "Repeated lookups retain the same provider identities")
