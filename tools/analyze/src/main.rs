@@ -117,6 +117,13 @@ fn options(args: &Args, root: &Path) -> Options {
 }
 
 fn main() -> ExitCode {
+    let code = real_main();
+    // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
+    dq_analyze::shared::publish();
+    code
+}
+
+fn real_main() -> ExitCode {
     dq_analyze::tree::start_watchdog();
     let args = parse(std::env::args().collect());
     let root = find_root(args.root.clone());

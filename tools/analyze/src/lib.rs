@@ -22,6 +22,7 @@ pub mod pat;
 pub mod run;
 pub mod sem;
 pub mod scopes;
+pub mod shared;
 pub mod strip;
 pub mod tree;
 pub mod util;

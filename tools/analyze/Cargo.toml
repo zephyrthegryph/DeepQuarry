@@ -55,3 +55,10 @@ opt-level = 2
 lto = false
 incremental = true
 codegen-units = 256
+
+# Dependencies (dreammaker's parser is most of a cold `analyze gen`) are built once, so they get release code generation: few codegen
+# units, no incremental. Only this crate stays incremental.
+[profile.dev-fast.package."*"]
+opt-level = 3
+codegen-units = 16
+incremental = false
