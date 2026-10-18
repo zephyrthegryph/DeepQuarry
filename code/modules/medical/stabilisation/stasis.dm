@@ -15,8 +15,8 @@
 //   - metabolism and hunger                                    the chemicals stage
 //   - breathing (so oxygen debt stops accumulating)            the breathing stage
 //   - blood loss and regeneration                              the blood stage
-//   - the human live/dead stages (organs, defib timer, ...)    run_if NOT_OF(FACT("in_stasis"))
-// P2-S6: every one of those declares run_if NOT_OF(FACT("in_stasis")), so the pipeline skips
+//   - the human live/dead stages (organs, defib timer, ...)    run_if "not in stasis" (a negated in_stasis frame fact)
+// P2-S6: every one of those declares run_if "not in stasis" (a negated in_stasis frame fact), so the pipeline skips
 // paused frames and no system asks. inStasisNow() remains for code outside the life pipeline.
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops. STAT_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.

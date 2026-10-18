@@ -92,9 +92,6 @@
 #define AGG_MAX 6
 #define AGG_CUSTOM 7
 
-/// A parameterised check spec: CHECK(/datum/requirement_definition/in_range, 1). `path` must be a literal type path.
-#define CHECK(path, arg) list(path = arg)
-
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
 
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
@@ -121,8 +118,6 @@
 /// F.abort() scopes. FRAME: stop now, nothing idles this frame. REST: stop now, keep the
 /// idles already decided.
 #define OM_ABORT_FRAME 1
-/// A frame fact in a run_if spec: FACT("alive"), NOT_OF(FACT("in_stasis")).
-#define FACT(name) list(/datum/requirement_definition/fact = name)
 /// /datum/work_pipeline/var/run_mode bits (compiled at boot).
 #define OM_PIPE_MODE_HOOKS (1<<0)
 #define OM_PIPE_MODE_FACTS (1<<1)
