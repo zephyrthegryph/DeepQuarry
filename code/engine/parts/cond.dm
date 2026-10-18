@@ -356,17 +356,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return FALSE
 	return FALSE
 
-/// req_tag(TAG): the target carries the tag.
-/proc/req_tag(tag_id)
-	return part_make(/datum/entry/part/req/tagged, list("tag" = tag_id))
-
-/datum/entry/part/req/tagged
-	part_name = "req_tag"
-	default_reason = /datum/msg/req_wrong_state
-
-/datum/entry/part/req/tagged/holds(datum/act/op/A)
-	return op_has_tag(A.target, src.args["tag"])
-
 /// req_capable(ignoring = ...): the actor can act now (no stun, restraint, absorption).
 /proc/req_capable(ignoring = 0)
 	return part_make(/datum/entry/part/req/capable, list("ignoring" = ignoring))
@@ -637,8 +626,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		CRASH("requirement_reason(): [R] is not a requirement")
 	var/datum/act/op/A = take(/datum/act/op)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
-	A.target = candidate // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
-	A.actor = actor // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
+	A.target = candidate
+	A.actor = actor
 	try
 		. = op_req_check(A, R)
 	catch(var/exception/fault)

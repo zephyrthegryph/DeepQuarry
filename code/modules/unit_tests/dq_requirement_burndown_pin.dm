@@ -337,7 +337,7 @@
 /obj/item/dq_native_override_pin
 
 CAPABILITIES(/obj/item/dq_native_override_pin)
-	acceptance(CONSTRAINT_HOLD, req_acceptance_type(list(/obj/item/pen), because = "it doesn't take that"), req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
+	acceptance(CONSTRAINT_HOLD, req_type(list(/obj/item/pen), because = "it doesn't take that"), req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
 
 // Give the actual size provider a distinct declared type baseline, independent
 // of whether a live field is part of this type's saved-state schema.

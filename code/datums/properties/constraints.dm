@@ -39,9 +39,9 @@
 			continue
 		parts += R
 	if(!isnull(types))
-		parts += req_acceptance_type(types, because = MSG(slot/doesnt_take))
+		parts += req_type(types, because = MSG(slot/doesnt_take))
 	if(!isnull(max_size))
-		parts += req_acceptance_max_size(max_size, PROP_UNIT_SIZE_CLASS)
+		parts += req_max_size(max_size, PROP_UNIT_SIZE_CLASS)
 	set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, parts, mode = length(parts) ? ACCEPTANCE_REPLACE : ACCEPTANCE_EMPTY))
 
 /// Only an actual source constraint replaces the receiver's existing policy.

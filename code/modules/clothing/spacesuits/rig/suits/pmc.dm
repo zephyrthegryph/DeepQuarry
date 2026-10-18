@@ -125,4 +125,4 @@ CAPABILITIES(/obj/item/rig/pmc/engineer)
 		)
 
 CAPABILITIES(/obj/item/rig/pmc)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT, /obj/item/storage/firstaid), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT, /obj/item/storage/firstaid), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

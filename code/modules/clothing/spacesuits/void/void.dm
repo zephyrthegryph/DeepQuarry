@@ -56,7 +56,7 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	acceptance(CONSTRAINT_FIT, fits_category(FIT_HUMANOID_HYBRID_SKRELL), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))

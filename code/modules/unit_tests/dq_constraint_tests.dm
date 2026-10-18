@@ -325,7 +325,7 @@
 
 	// The same answer through the storage slot: its refusal is the storage capability's.
 	var/datum/relation_definition/slot/storage/def = dq_slot_def(/datum/relation_definition/slot/storage)
-	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
+	TEST_ASSERT_EQUAL(reason_text(def.refusal(wallet, wrench, null)), reason_text(wallet.insert_refusal(wrench, null)), "slot_def and storage give the same reason")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
 

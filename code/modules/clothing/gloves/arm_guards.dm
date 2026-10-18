@@ -7,7 +7,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
-	acceptance("equip", req_acceptance_arm_clearance(), mode = ACCEPTANCE_APPEND)
+	acceptance("equip", req_arm_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = HANDS|ARMS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
 
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/clothing/gloves/arm_guard/flexitac)
 	icon = 'icons/inventory/hands/item.dmi'
 	icon = 'icons/inventory/hands/mob.dmi'
 
-/proc/req_acceptance_arm_clearance()
+/proc/req_arm_clearance()
 	return part_make(/datum/entry/part/req/acceptance_leaf/arm_clearance, list())
 
 

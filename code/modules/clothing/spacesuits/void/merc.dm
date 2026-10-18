@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc)
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/merc)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
 
@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc/fire)
 	slowdown = 1
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/merc/fire)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.7))
 
 

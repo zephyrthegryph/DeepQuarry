@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/clothing/head/vrwizard)
 	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
 
 CAPABILITIES(/obj/item/clothing/suit/vrwizard)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/clothing/head/darkvrwizard)
 	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
 
 CAPABILITIES(/obj/item/clothing/suit/darkvrwizard)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Candy section

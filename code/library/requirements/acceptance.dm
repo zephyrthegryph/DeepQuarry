@@ -20,7 +20,7 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 /datum/entry/part/req/acceptance_leaf/proc/acceptance_reason(datum/act/op/A)
 	return /datum/msg/req_failed
 
-/proc/req_acceptance_type(types, exclude = FALSE, because = null)
+/proc/req_type(types, exclude = FALSE, because = null)
 	var/list/paths = ispath(types) ? list(types) : types
 	if(!islist(paths))
 		CRASH("acceptance type must be a path or list of paths")
@@ -70,7 +70,7 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 	return msg_reason("it only fits [english_list(names, and_text = " or ")]")
 
 // Size requirements carry an explicit numeric size-class unit.
-/proc/req_acceptance_max_size(size, unit, because = null)
+/proc/req_max_size(size, unit, because = null)
 	var/datum/property_def/D = dq_property_registry().defs[PROP_SIZE_CLASS]
 	if(!D || D.kind != PROP_KIND_MEASURE || unit != D.unit || !isnum(size))
 		CRASH("acceptance size limit must use the size-class property's numeric unit")
@@ -89,7 +89,7 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		return null
 	return msg_reason("too big: [dq_format_measure(current, PROP_UNIT_SIZE_CLASS)] > [dq_format_measure(src.args["max_size"], PROP_UNIT_SIZE_CLASS)]")
 
-/proc/req_acceptance_tag(tag_id, exclude = FALSE, because = null)
+/proc/req_tag(tag_id, exclude = FALSE, because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because))
 
 /datum/entry/part/req/acceptance_leaf/property_tag
@@ -172,25 +172,25 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		return null
 	return dq_constraint_refusal(suit, CONSTRAINT_SUIT_STORAGE, I, H, A.mover)
 
-/proc/req_acceptance_has_uniform(because = null)
+/proc/req_has_uniform(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/has_uniform, list("because" = because))
 
-/proc/req_acceptance_glove_layering(because = null)
+/proc/req_glove_layering(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/glove_layering, list("because" = because))
 
-/proc/req_acceptance_left_ear_free(because = null)
+/proc/req_left_ear_free(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/left_ear_free, list("because" = because))
 
-/proc/req_acceptance_right_ear_free(because = null)
+/proc/req_right_ear_free(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/right_ear_free, list("because" = because))
 
-/proc/req_acceptance_accessory_attachable(because = null)
+/proc/req_accessory_attachable(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/accessory_attachable, list("because" = because))
 
-/proc/req_acceptance_backpack_takes(because = null)
+/proc/req_backpack_takes(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/backpack_takes, list("because" = because))
 
-/proc/req_acceptance_suit_storage_takes(because = null)
+/proc/req_suit_storage_takes(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because))
 
 // Resolve only actual registered provider contracts, including contributors.

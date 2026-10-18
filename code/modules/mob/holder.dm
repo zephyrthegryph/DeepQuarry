@@ -430,4 +430,4 @@ CAPABILITIES(/obj/item/holder/fish)
 
 CAPABILITIES(/obj/item/holder/protoblob)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

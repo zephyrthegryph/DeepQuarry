@@ -7,7 +7,7 @@
 	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 

@@ -21,7 +21,7 @@
 	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
 
 /datum/relation_definition/slot/folder_pages/accepts_requirements()
-	return req_acceptance_tag(TAG_PAPERWORK, because = MSG(folder/only_paper))
+	return req_tag(TAG_PAPERWORK, because = MSG(folder/only_paper))
 
 MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
 

@@ -1150,7 +1150,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(/obj/item/shield/fluff/wolfgirlshield), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
@@ -1278,7 +1278,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 
 CAPABILITIES(/obj/item/rig/nikki)
 	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))

@@ -20,7 +20,7 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
 
 CAPABILITIES(/obj/item/rig/breacher)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.75))
 
 
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
 CAPABILITIES(/obj/item/rig/vox)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2))
 
@@ -217,7 +217,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/engineering)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/item/rig/vox/engineering)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/security)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.5, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 

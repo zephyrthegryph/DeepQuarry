@@ -32,7 +32,7 @@
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
-	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
+	acceptance("equip", req_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
@@ -152,7 +152,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
 	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 
-/proc/req_acceptance_overshoe_clearance()
+/proc/req_overshoe_clearance()
 	return part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list())
 
 

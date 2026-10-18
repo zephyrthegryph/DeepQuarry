@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
@@ -219,7 +219,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
 	hoodtype = /obj/item/clothing/head/tesh_hood
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER|HIDETIE))
 
@@ -512,7 +512,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak)
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
@@ -544,7 +544,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 

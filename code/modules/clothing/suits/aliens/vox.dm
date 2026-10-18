@@ -8,6 +8,6 @@
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vox_scrap)
 	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_type(list(POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 	configure(item_protection(siemens = 1))

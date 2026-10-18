@@ -9,7 +9,7 @@
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
-	acceptance("equip", req_acceptance_leg_clearance(), mode = ACCEPTANCE_APPEND)
+	acceptance("equip", req_leg_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = LEGS|FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)
 	desc = "Good for Roman around."
 	icon_state = "ge_boots"
 
-/proc/req_acceptance_leg_clearance()
+/proc/req_leg_clearance()
 	return part_make(/datum/entry/part/req/acceptance_leaf/leg_clearance, list())
 
 
