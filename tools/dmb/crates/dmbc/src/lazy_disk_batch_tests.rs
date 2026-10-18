@@ -88,14 +88,14 @@ fn failed_or_abandoned_request_drops_private_spool_without_publication() {
         assert_eq!(segments(&root.0), 0);
         // Error/cancellation drops the request owner without calling finish.
     }
-    assert_eq!(std::fs::read_dir(&root.0).unwrap().count(), 0);
+    assert_eq!(published_entries(&root.0), 0);
     let disk = LazyDisk::new(root.0.clone());
     disk.append_records(vec![record(1, 1, b"private")]).unwrap();
     let mut malformed = record(2, 2, b"broken");
     malformed.payload = Arc::from(b"DMCVAR01".as_slice());
     assert!(disk.append_records(vec![malformed]).is_err());
     assert!(disk.finish_batch().is_err());
-    assert_eq!(std::fs::read_dir(&root.0).unwrap().count(), 0);
+    assert_eq!(published_entries(&root.0), 0);
 }
 #[test]
 fn unused_request_finishes_without_creating_cache_directory() {
@@ -120,5 +120,15 @@ fn abandoned_coordinator_closes_batch_even_when_producer_handle_survives() {
         .append_records(vec![record(2, 2, b"late")])
         .is_err());
     assert!(producer.finish_batch().is_err());
-    assert_eq!(std::fs::read_dir(&root.0).unwrap().count(), 0);
+    assert_eq!(published_entries(&root.0), 0);
+}
+
+/// Entries a request published in the cache root. The private spool directory (`dm-cache` `.batch-spools-v2`) is created up front
+/// and stays, empty, after an abandoned request; it is not publication (the dm-cache batch tests treat it the same way).
+fn published_entries(root: &std::path::Path) -> usize {
+    let private = root.join(".batch-spools-v2");
+    if private.exists() {
+        assert_eq!(std::fs::read_dir(&private).unwrap().count(), 0, "an abandoned request leaves no spool file");
+    }
+    std::fs::read_dir(root).unwrap().filter(|entry| entry.as_ref().unwrap().path() != private).count()
 }
