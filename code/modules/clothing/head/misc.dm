@@ -968,4 +968,4 @@ CAPABILITIES(/obj/item/clothing/head/halo/alt)
 	icon_state = "eulrhat"
 
 CAPABILITIES(/obj/item/clothing/head/fedora/brown)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

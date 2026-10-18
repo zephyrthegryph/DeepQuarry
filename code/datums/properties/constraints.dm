@@ -114,7 +114,7 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(I, kind) ? null : acceptance_plan_for(I, kind)
 	if(native_plan)
 		var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
-		return acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer))
+		return reason_text(acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer)))
 	var/datum/predicate/P = dq_constraint(I, kind)
 	return P?.why_not(actor, thing, null)
 
@@ -159,7 +159,7 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 				continue
 			parts += R
 		if(!isnull(types))
-			parts += req_acceptance_type(types, because = "it doesn't take that")
+			parts += req_acceptance_type(types, because = MSG(slot/doesnt_take))
 		if(!isnull(max_size))
 			parts += req_acceptance_max_size(SIZE_CLASS(max_size), PROP_UNIT_SIZE_CLASS)
 		set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, parts, mode = ACCEPTANCE_REPLACE))

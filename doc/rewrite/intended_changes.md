@@ -5115,3 +5115,15 @@ The silicon lane retains current master's plan filtering before the cap, both ex
 ## Look fixture native-roll stream isolation (2026-10-16)
 
 The look sweep previously seeded only host rand(), while native rolls() also used the random round seed, placement coordinates and creation history. Test allocations now use a fresh type-named creator stream for both initial and fresh-probe instances, restoring the caller's seed, serial and creator stack. This changes only the fixture's sampled realization, not production distributions or draw logic. Randomized appearance pin changes require this cause; unrelated differences remain failures. A regression compares two native draws across distinct turfs and unrelated allocations.
+
+## Admission (lane rewrite/admission, `doc/rewrite/proposals/admission.md`)
+
+* **Dressing someone through the strip menu judges the stripper** (D2m). `equip_to_slot_if_possible()` and `equip_refusal()` take the actor; the strip
+  menu passes the user, so the equip catalog and an item's own `extend(/datum/act/equip, needs(...))` see who puts the item on. The catalog's rules all
+  read the wearer, so what is refused is unchanged today; the refusal is shown to the actor.
+* **A slot refusal is text again.** `dq_ledger_refusal()`, `dq_constraint_refusal()` and `equip_refusal()` return a slot requirement's `/datum/msg`
+  reason as its text (`reason_text()`); since the slot-admission merge a closet, folder or mixed `accepts` refusal had leaked the message type path to
+  callers that print it.
+* **Raw-string reasons are message types** with the same text ("it doesn't take that", "only legcuffs go there", "it isn't made for a holster", the
+  hailer and AI-core admin reasons): no visible change.
+* **A refusal check outside a menu records no reads** (D9): `acceptance_reason()` asks an override's read metadata only while a menu frame is open.

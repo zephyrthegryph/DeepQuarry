@@ -351,7 +351,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', hides = HIDETIE|HIDEHOLSTER))
 
@@ -372,7 +372,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
 
@@ -426,7 +426,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	//Variants
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
@@ -684,7 +684,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
 	//Bonnie Suit
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
 
@@ -979,7 +979,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -1095,7 +1095,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/hairflowerpin)
 	blood_overlay_type = "coat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -1246,7 +1246,7 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 	icon_state = "chococoat"
 
 CAPABILITIES(/obj/item/clothing/suit/chococoat)
-	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
@@ -1376,7 +1376,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = CHEST|ARMS))
 	configure(item_protection(permeability = 0.50))
 

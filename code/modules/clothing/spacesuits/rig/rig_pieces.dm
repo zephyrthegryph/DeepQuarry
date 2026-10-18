@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/clothing/head/lightrig)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/lightrig)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(hides = HIDEJUMPSUIT))
 
 

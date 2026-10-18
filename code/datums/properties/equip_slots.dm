@@ -69,7 +69,7 @@
 	// (its body part, then the catalog) whether it takes the item.
 	if(!def)
 		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
-	. = def.refusal(M, I, actor)
+	. = reason_text(def.refusal(M, I, actor))
 	if(.)
 		return .
 	// Capacity: one item per equip slot, unless this one goes on over it.
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/native_equipment_acceptance)
 	acceptance(SLOT_ID_EAR_R, any_of(req_acceptance_tag(TAG_WEAR_EARS), req_acceptance_tag(TAG_WEAR_TWO_EARS)), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_TINY, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_WEAR_EARS)), "too big for an ear"), any_of(req_acceptance_tag(TAG_WEAR_TWO_EARS, exclude = TRUE), req_acceptance_left_ear_free()), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_TIE, req_acceptance_tag(TAG_WEAR_TIE), req_acceptance_accessory_attachable(), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_HANDCUFFED, req_acceptance_both(list(req_acceptance_type(/obj/item/handcuffs), req_acceptance_type(/obj/item/handcuffs/legcuffs, exclude = TRUE)), "only handcuffs go there"), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_LEGCUFFED, req_acceptance_type(/obj/item/handcuffs/legcuffs, because = "only legcuffs go there"), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_LEGCUFFED, req_acceptance_type(/obj/item/handcuffs/legcuffs, because = MSG(slot/only_legcuffs)), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_IN_BACKPACK, req_acceptance_backpack_takes(), mode = ACCEPTANCE_REPLACE)
 
 /proc/req_acceptance_either(list/parts, because)
@@ -141,7 +141,7 @@ CAPABILITIES(/datum/native_equipment_acceptance)
 
 /// The catalog's answer for `candidate` in `wearer`'s `slot`; the actor is `mover` (who puts it there), the wearer when null (admission.md D2m).
 /proc/dq_native_equip_slot_reason(mob/wearer, slot, atom/movable/candidate, mob/mover)
-	return acceptance_reason(GLOB.native_equipment_acceptance, slot, wearer, candidate, wearer, mover || wearer, slot)
+	return reason_text(acceptance_reason(GLOB.native_equipment_acceptance, slot, wearer, candidate, wearer, mover || wearer, slot))
 
 /proc/dq_native_equip_slot_reads(mob/wearer, slot, atom/movable/candidate, mob/mover)
 	return acceptance_read_keys(GLOB.native_equipment_acceptance, slot, wearer, candidate, wearer, mover || wearer, slot)

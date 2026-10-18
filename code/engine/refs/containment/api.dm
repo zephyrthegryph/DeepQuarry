@@ -59,7 +59,8 @@
 		. = dq_ledger_removal_refusal(thing, actor)
 		if(.)
 			return .
-	. = def.refusal(holder, thing, actor)
+	// The slot's own answer may be a /datum/msg (a requirement's reason); this proc answers in text, like every other reason it gives.
+	. = reason_text(def.refusal(holder, thing, actor))
 	if(.)
 		return .
 	if(def.keyed)
@@ -92,7 +93,7 @@
 	if(!entry)
 		return null
 	var/datum/relation_definition/slot/def = from.def_by_id(entry[LEDGER_E_SLOT])
-	. = def.removal_refusal(source, thing, actor)
+	. = reason_text(def.removal_refusal(source, thing, actor))
 	if(.)
 		return .
 	return reason_text(op_transfer_precheck(source, /datum/act/remove, thing, entry[LEDGER_E_SLOT], actor))

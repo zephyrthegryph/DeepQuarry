@@ -16,7 +16,7 @@
 	lamp.set_anchored(TRUE)
 	var/why = dq_ledger_refusal(lamp, holder, "adm_mixed", null)
 	TEST_ASSERT_NOTNULL(why, "an anchored flashlight is the right type but fails the requirement")
-	TEST_ASSERT(findtext("[why]", "fastened down"), "and the reason is the requirement's: [why]")
+	TEST_ASSERT_EQUAL(why, reason_text(/datum/msg/slot/fastened_down), "and the reason is the requirement's, as text")
 
 /datum/unit_test/dq_slot_admission_fits_comes_after_accepts
 

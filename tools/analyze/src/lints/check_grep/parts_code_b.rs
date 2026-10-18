@@ -146,6 +146,14 @@ pub fn parts() -> Vec<Part> {
             line(r"\buse_tool\("),
         ),
         Part::new(
+            "requirements_raw_string_reason",
+            "requirements: raw-string reason banned",
+            "A requirement's reason is a /datum/msg (doc/rewrite/proposals/admission.md D1): because = MSG(x) with MSG_DEF_SELF(x, \"...\") beside the type, never because = \"text\". Tests that pin the literal form are exempt.",
+            Files::Code,
+            line(r#"\bbecause = ""#),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",
