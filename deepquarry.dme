@@ -679,6 +679,7 @@
 #include "code\engine\present\appearance_builder.dm"
 #include "code\library\present\appearance_adapters.dm"
 #include "code\engine\change\refresh.dm"
+#include "code\engine\change\look_stamp.dm"
 #include "code\library\present\ui_transport.dm"
 #include "code\datums\capabilities\timed.dm"
 #include "code\engine\present\type_verbs.dm"
