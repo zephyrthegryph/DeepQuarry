@@ -311,7 +311,7 @@ job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells 
 job_dm() {
 	# Never "up to date": DreamChecker runs inside the dm target and the push script's checks read this log.
 	rm -f deepquarry.dmb
-	DQ_DREAMCHECKER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
+	DQ_DREAMCHECKER=1 DQ_DREAMCHECKER_AFTER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
 }
 job_ratchets() {
 	bash tools/ci/check_ratchets.sh || return 1
