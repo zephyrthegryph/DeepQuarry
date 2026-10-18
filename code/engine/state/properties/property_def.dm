@@ -38,3 +38,15 @@
 	aggregator = PROP_AGG_OR
 	min_value = 0
 	max_value = 1
+
+/// Format a numeric property in its declared unit, preserving refusal text.
+/proc/dq_format_measure(value, unit)
+	if(isnull(value))
+		return "unknown"
+	var/text = "[round(value, 0.01)]"
+	switch(unit)
+		if(PROP_UNIT_SIZE_CLASS)
+			return "size [text]"
+		if(PROP_UNIT_RATIO, null)
+			return text
+	return "[text] [unit]"

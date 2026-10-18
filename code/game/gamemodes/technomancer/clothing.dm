@@ -5,10 +5,10 @@
 	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 
 CAPABILITIES(/obj/item/clothing/suit/technomancer)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
 	configure(item_protection(siemens = 0.75))
 
-TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS))))
 
 /obj/item/clothing/under/technomancer
 	name = "initiate's jumpsuit"
