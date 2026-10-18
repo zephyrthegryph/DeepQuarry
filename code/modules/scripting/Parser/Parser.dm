@@ -155,7 +155,7 @@ CAPABILITIES(/datum/n_Parser)
 	NextToken()
 	if(t)
 		rel_set(stmt, nameof(stmt.value), new t())
-		stmt.value:exp=new/datum/node/expression/value/variable(stmt.var_name)
+		stmt.value:exp=new/datum/node/expression/value/variable(name) // its own identifier: the statement owns var_name
 		stmt.value:exp2=ParseExpression()
 	else
 		rel_set(stmt, nameof(stmt.value), ParseExpression())
