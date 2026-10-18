@@ -49,6 +49,7 @@ use evaluator::LexicalAbiEvaluator;
 pub(crate) mod abi_artifacts;
 mod abi_scheduler;
 pub use abi_artifacts::AbiArtifacts;
+pub(crate) use abi_artifacts::AbiDiskLease;
 
 /// Captured boundary facts are explicit; a missing entry never means Fresh.
 /// Discovery must certify Fresh only with complete named-procedure absence.
