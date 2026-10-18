@@ -10,7 +10,7 @@
 	var/obj/item/clothing/under/color/grey/suit = allocate(/obj/item/clothing/under/color/grey)
 	var/obj/item/clothing/under/color/grey/control = allocate(/obj/item/clothing/under/color/grey)
 	suit.has_sensor = 1
-	TEST_ASSERT(user.equip_to_slot_if_possible(suit, SLOT_ID_UNIFORM, disable_warning = TRUE), "real uniform equips on actual human")
+	TEST_ASSERT(user.equip_to_slot_if_possible(suit, SLOT_ID_UNIFORM, quiet = TRUE), "real uniform equips on actual human")
 	TEST_ASSERT(!user.stat && !user.restrained(), "real initial actor is conscious and unrestrained")
 	TEST_ASSERT(isnull(suit.sensor_mode_refusal(user, TRUE)), "ordinary equipped sensor controls allow current actor")
 	var/original_control_mode = control.sensor_mode

@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/rig/breacher/fancy)
 /obj/item/clothing/head/helmet/space/rig/breacher
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
-	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_UNATHI), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_combat(force = 5))
 
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/rig/vox)
 /obj/item/clothing/head/helmet/space/rig/vox
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE))
 
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/vox)
 		)
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0))
 
 
@@ -256,13 +256,13 @@ CAPABILITIES(/obj/item/rig/vox/security)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/breacher)
-	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_UNATHI), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/breacher)
-	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_UNATHI), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)

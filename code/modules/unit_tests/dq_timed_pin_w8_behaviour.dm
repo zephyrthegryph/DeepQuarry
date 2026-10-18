@@ -261,7 +261,7 @@
 	// eyes that are already covered are told so
 	setup_scene()
 	var/obj/item/clothing/glasses/sunglasses/S = allocate(/obj/item/clothing/glasses/sunglasses, run_loc_floor_bottom_left)
-	TEST_ASSERT(user.equip_to_slot_if_possible(S, SLOT_ID_EYES, disable_warning = TRUE), "the glasses go on")
+	TEST_ASSERT(user.equip_to_slot_if_possible(S, SLOT_ID_EYES, quiet = TRUE), "the glasses go on")
 	refused("already wearing something on their eyes")
 	target = null
 	tidy()
@@ -285,7 +285,7 @@
 /datum/unit_test/dq_timed_pin_w8/tape_mouth/extra_pin()
 	setup_scene()
 	var/obj/item/clothing/mask/gas/M = allocate(/obj/item/clothing/mask/gas, run_loc_floor_bottom_left)
-	TEST_ASSERT(user.equip_to_slot_if_possible(M, SLOT_ID_MASK, disable_warning = TRUE), "the mask goes on")
+	TEST_ASSERT(user.equip_to_slot_if_possible(M, SLOT_ID_MASK, quiet = TRUE), "the mask goes on")
 	refused("already wearing a mask")
 	target = null
 	tidy()

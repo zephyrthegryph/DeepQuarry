@@ -8,7 +8,7 @@
 	TEST_ASSERT(evidence.add_prints(H), "the cigarette acquires fingerprint evidence")
 	var/list/prints = evidence.get_prints().Copy()
 	TEST_ASSERT(length(prints), "the transfer fixture contains an actual fingerprint")
-	TEST_ASSERT(H.equip_to_slot_if_possible(cig, SLOT_ID_MASK, disable_warning = TRUE), "the cigarette is worn before burning out")
+	TEST_ASSERT(H.equip_to_slot_if_possible(cig, SLOT_ID_MASK, quiet = TRUE), "the cigarette is worn before burning out")
 	var/handle = entity_handle(cig)
 	cig.die(TRUE)
 	own_turf_contents(T)
@@ -29,7 +29,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/mask/smokable/pipe/pipe = allocate(/obj/item/clothing/mask/smokable/pipe, T)
-	TEST_ASSERT(H.equip_to_slot_if_possible(pipe, SLOT_ID_MASK, disable_warning = TRUE), "the pipe is worn before emptying")
+	TEST_ASSERT(H.equip_to_slot_if_possible(pipe, SLOT_ID_MASK, quiet = TRUE), "the pipe is worn before emptying")
 	pipe.reagents.add_reagent(REAGENT_ID_NICOTINE, 5)
 	pipe.set_smoketime(5 SECONDS)
 	var/handle = entity_handle(pipe)

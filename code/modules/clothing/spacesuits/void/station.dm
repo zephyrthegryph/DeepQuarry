@@ -572,10 +572,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/veymed)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_NO_DIONA_VOX), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_NO_DIONA_VOX), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/exploration)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

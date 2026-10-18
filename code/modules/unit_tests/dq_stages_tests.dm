@@ -15,7 +15,7 @@
 	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T)
 	coil.set_amount(10)
 	var/obj/item/clothing/glasses/welding/goggles = allocate(/obj/item/clothing/glasses/welding, T)
-	TEST_ASSERT(H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, disable_warning = TRUE), "the welder's goggles go on (the weld's flash would knock the welder out)")
+	TEST_ASSERT(H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, quiet = TRUE), "the welder's goggles go on (the weld's flash would knock the welder out)")
 
 	H.put_in_active_hand(wrench)
 	TEST_ASSERT(dq_stages_menu_has(H, C, "state_0_1"), "a loose assembly offers the wrench-down step")
@@ -109,7 +109,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	H.teleop = H
 	var/obj/item/clothing/glasses/welding/goggles = allocate(/obj/item/clothing/glasses/welding, T)
-	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, disable_warning = TRUE)
+	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, quiet = TRUE)
 	var/obj/item/crossbowframe/F = allocate(/obj/item/crossbowframe, T)
 	var/obj/item/stack/rods/rods = allocate(/obj/item/stack/rods, T)
 	rods.set_amount(10)
@@ -148,7 +148,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	H.teleop = H
 	var/obj/item/clothing/glasses/welding/goggles = allocate(/obj/item/clothing/glasses/welding, T)
-	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, disable_warning = TRUE)
+	H.equip_to_slot_if_possible(goggles, SLOT_ID_EYES, quiet = TRUE)
 	var/obj/machinery/nuclearbomb/N = allocate(/obj/machinery/nuclearbomb, T)
 	N.set_anchored(TRUE)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)

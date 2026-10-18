@@ -94,6 +94,9 @@ MSG_DEF_SELF(slot/fastened_down, "it is fastened down")
 
 /datum/entry/part/req/loose
 	part_name = "req_loose"
+	// Type-level (admission.md D8): an item's or structure's anchored state is its type's at creation, and a mob, the one candidate that answers by
+	// its own rules, is never latent. So a closet's interior takes latent entries without materializing them.
+	reads_level = REQ_READS_TYPE
 	default_reason = /datum/msg/slot/fastened_down
 
 /datum/entry/part/req/loose/holds(datum/act/op/A)

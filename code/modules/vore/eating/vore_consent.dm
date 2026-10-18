@@ -61,7 +61,7 @@ CAPABILITIES(/datum/vore_consent_requirements)
 /proc/vore_consent_refusal(channel, mob/living/predator, mob/living/prey)
 	if(!acceptance_declared(GLOB.vore_consent_requirements, channel))
 		CRASH("Unknown vore consent requirement [channel]")
-	return reason_text(acceptance_reason(GLOB.vore_consent_requirements, channel, prey, prey, predator, predator, wearer_is_actor = TRUE))
+	return reason_text(acceptance_reason(GLOB.vore_consent_requirements, channel, prey, prey, predator, predator))
 
 /datum/digest_mode
 	/// The native consent channel needed by this mode, or null.

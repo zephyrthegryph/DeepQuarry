@@ -695,7 +695,7 @@
 	dq_give_zone_sel(user)
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/clothing/mask/gas/M = allocate(/obj/item/clothing/mask/gas, run_loc_floor_bottom_left)
-	TEST_ASSERT(patient.equip_to_slot_if_possible(M, SLOT_ID_MASK, disable_warning = TRUE), "the mask goes on")
+	TEST_ASSERT(patient.equip_to_slot_if_possible(M, SLOT_ID_MASK, quiet = TRUE), "the mask goes on")
 	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, run_loc_floor_bottom_left)
 	hold(user, B)
 	test_chat_clear()

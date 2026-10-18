@@ -1885,7 +1885,7 @@
 /datum/sprite_accessory/hair/vox
 	name = "Long Vox braid"
 	icon_state = "vox_longbraid"
-	species_allowed = list(SPECIES_VOX)
+	species_allowed = ACCESSORY_VOX
 
 /datum/sprite_accessory/hair/vox/braid_short
 	name = "Short Vox Braid"
