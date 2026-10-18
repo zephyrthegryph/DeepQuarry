@@ -323,7 +323,9 @@ job_ratchets() {
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
-	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
+	# Without sccache: through it the test build linked rlibs of the vendored dreammaker crates as staticlibs (E0462, E0786, internal
+	# compiler errors) on two gates in a row; the same build without the wrapper is clean (5 min cold, incremental after that).
+	CARGO_BUILD_RUSTC_WRAPPER="" RUSTC_WRAPPER="" bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)
