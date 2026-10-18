@@ -45,7 +45,6 @@ raw_write	code/game/machinery/computer/bodycamera.dm	bpinboard.vis_contents = li
 raw_write	code/game/machinery/computer/bodycamera.dm	bpinboard.vis_contents = null
 raw_write	code/game/machinery/computer/camera.dm	pinboard.vis_contents = list(thing)
 raw_write	code/game/machinery/computer/camera.dm	pinboard.vis_contents = null
-raw_write	code/game/objects/effects/particle_holder.dm	lie_about_areas.vis_contents += src
 raw_write	code/game/objects/items.dm	if(user.client) user.client.screen |= src
 raw_write	code/game/objects/items/blueprints.dm	user.client.images.Remove(i)
 raw_write	code/game/objects/items/devices/communicator/UI_tgui.dm	cam_screen.vis_contents = list(target)

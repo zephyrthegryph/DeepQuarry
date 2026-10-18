@@ -104,16 +104,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	/*
-	pinboard = new()
-	pinboard.icon = icon
-	pinboard.icon_state = "pinboard"
-	pinboard.layer = 0.1
-	pinboard.vis_flags = VIS_UNDERLAY|VIS_INHERIT_ID|VIS_INHERIT_PLANE
-	pinboard.appearance_flags = KEEP_TOGETHER
-	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	vis_contents += pinboard
-	*/
 
 	. = ..()
 

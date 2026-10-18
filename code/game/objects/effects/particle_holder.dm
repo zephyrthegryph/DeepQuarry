@@ -15,6 +15,7 @@
 	var/atom/parent
 
 CAPABILITIES(/obj/effect/abstract/particle_holder)
+	after_init(0, then(PROC_REF(show_on_parent))) // it shows through its parent once Initialize() returns (relations proposal D11)
 	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
@@ -39,9 +40,6 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	particles = new particle_path()
-	// /atom doesn't have vis_contents, /turf and /atom/movable do
-	var/atom/movable/lie_about_areas = get_parent()
-	lie_about_areas.vis_contents += src
 	observe(get_parent(), /datum/notice/qdeleting, src, then(PROC_REF(parent_deleted)))
 
 	if(particle_flags & PARTICLE_ATTACH_MOB)
@@ -86,3 +84,7 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 /// Relation view: parent (reads null once it is gone).
 /obj/effect/abstract/particle_holder/proc/get_parent() as /atom
 	return parent
+
+/// Shows the particles through the parent (vis_contents lives on /turf and /atom/movable; vis_add() picks the kind).
+/obj/effect/abstract/particle_holder/proc/show_on_parent(datum/act/timer/A)
+	vis_add(get_parent(), src)

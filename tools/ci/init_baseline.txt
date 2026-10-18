@@ -291,16 +291,6 @@ init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/s
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::mask
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::rel_set
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.add_filter
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::expr
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.icon
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.icon_state
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.layer
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.vis_flags
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.appearance_flags
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.add_filter
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::vis_contents
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::expr
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::radio.listening
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::radio.broadcasting
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::radio.set_frequency
@@ -760,8 +750,6 @@ init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/pa
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::moveToNullspace
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::mouse_opacity
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::particles
-init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::lie_about_areas
-init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::lie_about_areas.vis_contents
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::observe
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::if
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::observe
