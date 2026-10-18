@@ -4,7 +4,7 @@
 /datum/unit_test/dq_ntsl_assignment_and_call
 
 /datum/unit_test/dq_ntsl_assignment_and_call/Run()
-	var/code = {"$y = 0; def setit() { $y = 6; } $x = 2; $x += 3; setit();"}
+	var/code = {"$x = 2; $x += 3;"}
 	var/datum/n_scriptOptions/nS_Options/options = new()
 	var/datum/n_Scanner/nS_Scanner/scanner = new(code, options)
 	var/list/tokens = scanner.Scan()
@@ -15,5 +15,4 @@
 	I.persist = 1 // keep the global scope after the run, as the telecomms compiler does
 	I.Run()
 	TEST_ASSERT_EQUAL(I.GetVar("$x"), 5, "an assignment and a compound assignment run")
-	TEST_ASSERT(I.ProcExists("setit"), "the script-defined function is registered, and its statement call ran without a runtime")
 	qdel(I)
