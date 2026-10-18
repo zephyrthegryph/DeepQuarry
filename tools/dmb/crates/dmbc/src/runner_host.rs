@@ -446,6 +446,16 @@ impl BuildHost {
         {
             self.initializers = Some((policy, Arc::new(Default::default())));
         }
+        let abi_disk = disk.clone();
+        // One transport per request for both initializer stores, as the one-shot facade builds it.
+        let initializer_disk = disk.clone().map(|disk| {
+            crate::initializer_lowering::disk::Transport::new(
+                disk,
+                self.engine.as_ref().map(|engine| engine.abi_engine_owner()),
+                policy,
+                publishable,
+            )
+        });
         let mut memo = crate::lowering_memo::ProcedureMemo::with_resident_for_request(
             policy,
             Arc::clone(&self.procedures.as_ref().unwrap().1),
@@ -482,6 +492,11 @@ impl BuildHost {
             self.abi = Some((policy, Arc::new(artifacts)));
         }
         memo.abi = Some(Arc::clone(&self.abi.as_ref().unwrap().1));
+        // The retained ABI store reads and stages per-unit rows through this request's disk snapshot, so a
+        // fresh session (restart, eviction, another worktree) does not recompute every unit's ABI.
+        if let (Some(disk), Some(abi)) = (abi_disk, &memo.abi) {
+            memo.abi_disk = abi.attach_disk(disk, policy);
+        }
         if self
             .initializer_fragments
             .as_ref()
@@ -494,7 +509,7 @@ impl BuildHost {
                 .as_ref()
                 .unwrap()
                 .1
-                .for_request(publishable),
+                .for_request_with_disk(publishable, initializer_disk.clone()),
         );
         if self
             .initializer_assemblies
@@ -508,7 +523,7 @@ impl BuildHost {
                 .as_ref()
                 .unwrap()
                 .1
-                .for_request(publishable),
+                .for_request_with_disk(publishable, initializer_disk),
         );
         if self
             .class_projections

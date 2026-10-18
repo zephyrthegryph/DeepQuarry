@@ -26,10 +26,18 @@ pub(crate) enum Artifact {
     Unit(Arc<UnitArtifact>),
     Batch(Arc<batch::Recipe>),
 }
+/// Owner of one request's ABI disk transport (see [`AbiArtifacts::attach_disk`]).
+pub(crate) struct AbiDiskLease(#[allow(dead_code)] Arc<disk::Transport>);
+
 pub struct AbiArtifacts {
     pub(super) store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
-    disk: Option<disk::Transport>,
+    /// Disk transport of the current request. Weak: the request's `AbiDiskLease` owns it, so a retained
+    /// store never keeps a cache snapshot alive between requests.
+    disk: std::sync::RwLock<std::sync::Weak<disk::Transport>>,
+    /// Strong owner of the transport of a one-shot store (`with_disk`); retained stores leave it empty.
+    #[allow(dead_code)]
+    pinned_disk: Option<Arc<disk::Transport>>,
     groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
@@ -55,7 +63,8 @@ impl Default for AbiArtifacts {
         Self {
             store: dm_session::ObservedArtifactStore::current_revision(),
             engine_owner: None,
-            disk: None,
+            disk: std::sync::RwLock::new(std::sync::Weak::new()),
+            pinned_disk: None,
             groups: Default::default(),
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
@@ -110,10 +119,25 @@ impl AbiArtifacts {
         disk: Arc<crate::runner_host::disk::LazyDisk>,
         policy: u128,
     ) -> Self {
-        Self {
-            disk: Some(disk::Transport::new(disk, policy, Arc::clone(&engine))),
-            ..Self::with_engine_owner(engine)
-        }
+        let mut store = Self::with_engine_owner(Arc::clone(&engine));
+        let transport = Arc::new(disk::Transport::new(disk, policy, engine));
+        *store.disk.write().unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
+        store.pinned_disk = Some(transport);
+        store
+    }
+
+    /// Attach this request's disk snapshot to a retained store so a fresh session (restart, eviction,
+    /// another worktree) hydrates ABI rows from disk instead of recomputing every unit, and stages the
+    /// rows this request computes. Dropping the returned lease detaches it. `None` without an engine owner.
+    pub(crate) fn attach_disk(
+        &self,
+        disk: Arc<crate::runner_host::disk::LazyDisk>,
+        policy: u128,
+    ) -> Option<AbiDiskLease> {
+        let engine = Arc::clone(self.engine_owner.as_ref()?);
+        let transport = Arc::new(disk::Transport::new(disk, policy, engine));
+        *self.disk.write().unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
+        Some(AbiDiskLease(transport))
     }
 
     pub(crate) fn engine_owner(&self) -> Option<&Arc<crate::runner_host::EnginePayload>> {
@@ -321,7 +345,12 @@ pub(super) fn prepare(
     let portable_policy = evaluator
         .pure_calls
         .map_or(Some(None), |calls| calls.immutable_policy_bytes().map(Some));
-    let disk = store.disk.as_ref().filter(|_| portable_policy.is_some());
+    let transport = store.disk.read().unwrap_or_else(|error| error.into_inner()).upgrade();
+    let disk = transport.as_deref().filter(|_| portable_policy.is_some());
+    static DISK_LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_lookup");
+    static DISK_STAGE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_stage");
+    static RECOMPUTE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.recompute");
+    let lookup_timer = DISK_LOOKUP.time();
     let transported = disk.and_then(|disk| {
         current.as_ref().and_then(|current| {
             disk.lookup(
@@ -333,10 +362,13 @@ pub(super) fn prepare(
             )
         })
     });
+    drop(lookup_timer);
+    let was_transported = transported.is_some();
     let mut unit = if let Some(unit) = transported {
         store.reused.fetch_add(1, Ordering::Relaxed);
         unit
     } else {
+        let _timer = RECOMPUTE.time();
         recording.record_declaration_occurrence(issued_identity);
         store.recomputed.fetch_add(1, Ordering::Relaxed);
         policy.prepare_view(metadata, parsed, &recorded_context)?
@@ -350,7 +382,9 @@ pub(super) fn prepare(
         );
         let inputs = Arc::clone(&unit.inputs);
         let semantic_reads = recording.reads();
-        if let Some(disk) = disk {
+        // A row hydrated from disk is already there: staging it again would only grow its bucket.
+        if let Some(disk) = disk.filter(|_| !was_transported) {
+            let _timer = DISK_STAGE.time();
             disk.stage(
                 &key,
                 issued_identity,
