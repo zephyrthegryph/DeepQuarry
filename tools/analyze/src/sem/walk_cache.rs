@@ -17,7 +17,7 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Mutex, OnceLock, RwLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 use serde::{Deserialize, Serialize};
 
@@ -164,7 +164,7 @@ struct EntryRef<'a> {
 }
 
 /// A stored walk: context, dependency ids with their digests, result.
-type Kept = (u128, Vec<(u64, u64)>, ReadSet);
+type Kept = (u128, Vec<(u64, u64)>, Arc<ReadSet>);
 
 /// The store is a base file and a delta of the walks made since: a run that walked a few things rewrites the delta only, and the base
 /// when the delta has grown past a quarter of it.
@@ -177,12 +177,12 @@ struct Loaded {
 
 static LOADED: OnceLock<Option<Loaded>> = OnceLock::new();
 /// The walks this run made: key -> (context, dep ids, result).
-static FRESH: OnceLock<Mutex<HashMap<String, (u128, Vec<u64>, ReadSet)>>> = OnceLock::new();
+static FRESH: OnceLock<Mutex<HashMap<String, (u128, Vec<u64>, Arc<ReadSet>)>>> = OnceLock::new();
 static HITS: AtomicUsize = AtomicUsize::new(0);
 static MISSES: AtomicUsize = AtomicUsize::new(0);
 static DIFFERED: AtomicUsize = AtomicUsize::new(0);
 
-fn fresh() -> &'static Mutex<HashMap<String, (u128, Vec<u64>, ReadSet)>> {
+fn fresh() -> &'static Mutex<HashMap<String, (u128, Vec<u64>, Arc<ReadSet>)>> {
     FRESH.get_or_init(Default::default)
 }
 
@@ -203,7 +203,7 @@ fn read_file(path: &std::path::Path) -> HashMap<String, Kept> {
             table.entry(*id).or_insert(d);
         }
     }
-    st.entries.into_iter().map(|e| (e.key, (e.context, e.deps.iter().map(|&i| ids[i as usize]).collect(), e.set))).collect()
+    st.entries.into_iter().map(|e| (e.key, (e.context, e.deps.iter().map(|&i| ids[i as usize]).collect(), Arc::new(e.set)))).collect()
 }
 
 fn loaded() -> Option<&'static Loaded> {
@@ -301,24 +301,36 @@ fn digest_dep(sem: &Sem, d: &Dep) -> u64 {
 }
 
 /// A stored result for `key`, when its context and every dependency still digest the same.
-fn lookup(key: &str, context: u128, sem: &Sem, digests: &Digests) -> Option<ReadSet> {
+fn lookup(key: &str, context: u128, sem: &Sem, digests: &Digests) -> Option<Arc<ReadSet>> {
+    let why = std::env::var_os("DQ_WALK_WHY").is_some();
     let l = loaded()?;
-    let (ctx, ds, set) = l.delta.get(key).or_else(|| l.base.get(key))?;
+    let Some((ctx, ds, set)) = l.delta.get(key).or_else(|| l.base.get(key)) else {
+        if why {
+            eprintln!("analyze: walk cache: miss {}: not stored", key);
+        }
+        return None;
+    };
     if *ctx != context {
+        if why {
+            eprintln!("analyze: walk cache: miss {}: context", key);
+        }
         return None;
     }
     for (id, g) in ds {
         if digests.get(sem, *id) != *g {
+            if why {
+                eprintln!("analyze: walk cache: miss {}: {:?} changed", key, deps().read().unwrap().get(id));
+            }
             return None;
         }
     }
-    Some(set.clone())
+    Some(Arc::clone(set))
 }
 
 /// Serves `key` from the store or walks it (recording what it reads) and keeps the result.
-pub fn walk(key: impl FnOnce() -> String, context: impl FnOnce() -> u128, sem: &Sem, digests: &Digests, run: impl FnOnce() -> ReadSet) -> ReadSet {
+pub fn walk(key: impl FnOnce() -> String, context: impl FnOnce() -> u128, sem: &Sem, digests: &Digests, run: impl FnOnce() -> ReadSet) -> Arc<ReadSet> {
     if !enabled() {
-        return run();
+        return Arc::new(run());
     }
     let t0 = std::time::Instant::now();
     let key = key();
@@ -335,7 +347,7 @@ pub fn walk(key: impl FnOnce() -> String, context: impl FnOnce() -> u128, sem: &
         return walk_verify(key, c, run);
     }
     push_frame();
-    let set = run();
+    let set = Arc::new(run());
     let ids = pop_frame();
     MISSES.fetch_add(1, Ordering::Relaxed);
     fresh().lock().unwrap().insert(key, (context, ids, set.clone()));
@@ -346,18 +358,18 @@ static T_CTX: AtomicUsize = AtomicUsize::new(0);
 static T_LOOKUP: AtomicUsize = AtomicUsize::new(0);
 
 /// `DQ_WALK_VERIFY`: walks a served key anyway and counts a difference.
-fn walk_verify(key: String, cached: ReadSet, run: impl FnOnce() -> ReadSet) -> ReadSet {
+fn walk_verify(key: String, cached: Arc<ReadSet>, run: impl FnOnce() -> ReadSet) -> Arc<ReadSet> {
     push_frame();
     let set = run();
     let _ = pop_frame();
     HITS.fetch_add(1, Ordering::Relaxed);
-    let a = bincode::serialize(&cached).unwrap_or_default();
+    let a = bincode::serialize(&*cached).unwrap_or_default();
     let b = bincode::serialize(&set).unwrap_or_default();
     if a != b {
         DIFFERED.fetch_add(1, Ordering::Relaxed);
         eprintln!("analyze: walk cache: VERIFY: stored result of {} differs from a fresh walk", key);
     }
-    set
+    Arc::new(set)
 }
 
 static DIGESTS: OnceLock<Digests> = OnceLock::new();
@@ -438,11 +450,11 @@ pub fn finish() {
     let mut delta: Vec<Row<'_>> = Vec::new();
     for (k, (c, ds, set)) in &l.delta {
         if !fresh.contains_key(k) && valid(ds) {
-            delta.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), set));
+            delta.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), &**set));
         }
     }
     for (k, (c, ids, set)) in &fresh {
-        delta.push((k.as_str(), *c, ids.clone(), set));
+        delta.push((k.as_str(), *c, ids.clone(), &**set));
     }
     delta.sort_by(|a, b| a.0.cmp(b.0));
     let rebase = l.base.is_empty() || delta.len() * 4 > l.base.len();
@@ -452,7 +464,7 @@ pub fn finish() {
         let mut more: Vec<Row<'_>> = Vec::new();
         for (k, (c, ds, set)) in &l.base {
             if !have.contains(k.as_str()) && valid(ds) {
-                more.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), set));
+                more.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), &**set));
             }
         }
         all.extend(more);

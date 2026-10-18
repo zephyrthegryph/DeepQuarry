@@ -213,6 +213,11 @@ fn base_id(s: &Base) -> Hash {
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
 }
 
+/// Whether a stored model exists for this worktree (a warm run: most of the tree is known).
+pub fn stored(_root: &Path) -> bool {
+    enabled() && crate::incr::dir().map(|d| d.join(FILE).exists()).unwrap_or(false)
+}
+
 /// The model of the real `.dme`: the stored one brought up to date, or a full parse.
 pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, String> {
     if !enabled() {

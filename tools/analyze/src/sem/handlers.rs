@@ -26,11 +26,11 @@ pub struct Analyzed {
     /// Definition site of the proc: (file, line, params, has body).
     pub def: Option<(String, u32)>,
     pub params: Vec<Vec<String>>,
-    pub set: Option<ReadSet>,
+    pub set: Option<Arc<ReadSet>>,
     /// The same handler over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides,
     /// global procs walked, global state classified. `sem/reads`, `untracked_inputs` and the generated subscriptions judge this one;
     /// `set` (the targeted walk) is what the purity and context checks of `sem/handlers` read.
-    pub closed: Option<ReadSet>,
+    pub closed: Option<Arc<ReadSet>>,
     /// Return-protocol violations of the top-level body (conditions and requirements).
     pub returns: Vec<super::checks::Found>,
     /// Reads of a var that is not tracked, a relation, a stat, a derived value or constant:
@@ -108,8 +108,8 @@ fn compute(tree: &Tree) -> Analysis {
         jobs[i].3 |= h.role.reads_covered();
     }
     let t_jobs = started.elapsed();
-    let walked: Vec<(ReadSet, Option<ReadSet>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
-        (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
+    let walked: Vec<(Arc<ReadSet>, Option<Arc<ReadSet>>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
+        (eng.analyze_handler_shared(on, proc, ctx), closed.then(|| closed_eng.analyze_handler_shared(on, proc, ctx)))
     });
     let t_walked = started.elapsed();
     // Which handlers are analyzed is decided in order (the first of duplicates); each analysis is independent and runs on all cores.

@@ -353,8 +353,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             queued.insert(id.clone());
             work.push((id, h));
         }
-        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(_, h)| {
-            let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+        let walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(_, h)| {
+            let set = eng.analyze_handler_shared(&h.owner, &h.proc, h.ctx.type_path());
             let untracked = untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output);
             (set, untracked)
         });
@@ -377,8 +377,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 work.push((owner.clone(), name.to_string()));
             }
         }
-        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(owner, name)| {
-            let set = eng.analyze_handler(owner, name, "/datum/act/eval");
+        let walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(owner, name)| {
+            let set = eng.analyze_handler_shared(owner, name, "/datum/act/eval");
             let untracked = untracked_of(&set, &eng, &written, false);
             (set, untracked)
         });
@@ -419,8 +419,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     draws.clear();
     // Each draw's closed walk is independent: run them in parallel, then fold the results in the order the definitions came.
-    let draw_walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&draw_work, |(owner, _)| {
-        let set = eng.analyze(owner, "draw");
+    let draw_walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&draw_work, |(owner, _)| {
+        let set = eng.analyze_shared(owner, "draw");
         let untracked = untracked_of(&set, &eng, &written, true);
         (set, untracked)
     });

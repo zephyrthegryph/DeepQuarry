@@ -91,6 +91,35 @@ pub fn under<S: AsRef<str>>(path: &str, roots: &[S]) -> bool {
         })
 }
 
+/// CPU time this process has used so far, in milliseconds (for the traces; 0 where unknown).
+pub fn cpu_ms() -> u64 {
+    #[cfg(windows)]
+    {
+        #[repr(C)]
+        struct FileTime {
+            lo: u32,
+            hi: u32,
+        }
+        extern "system" {
+            fn GetCurrentProcess() -> isize;
+            fn GetProcessTimes(p: isize, c: *mut FileTime, e: *mut FileTime, k: *mut FileTime, u: *mut FileTime) -> i32;
+        }
+        let z = || FileTime { lo: 0, hi: 0 };
+        let (mut c, mut e, mut k, mut u) = (z(), z(), z(), z());
+        // SAFETY: plain out-parameters of a documented kernel32 call on the current process.
+        let ok = unsafe { GetProcessTimes(GetCurrentProcess(), &mut c, &mut e, &mut k, &mut u) };
+        if ok == 0 {
+            return 0;
+        }
+        let t = |f: &FileTime| ((f.hi as u64) << 32 | f.lo as u64) / 10_000;
+        t(&k) + t(&u)
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -679,8 +679,13 @@ impl<'a> ReadsEngine<'a> {
 
     /// The reads of `ty`'s proc `name` as a handler on an instance of `ty`.
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
+        std::sync::Arc::unwrap_or_clone(self.analyze_shared(ty, name))
+    }
+
+    /// [`analyze`](Self::analyze) without copying a stored result.
+    pub fn analyze_shared(&self, ty: &str, name: &str) -> std::sync::Arc<ReadSet> {
         if !self.sem.cacheable() {
-            return self.analyze_uncached(ty, name);
+            return std::sync::Arc::new(self.analyze_uncached(ty, name));
         }
         super::walk_cache::walk(|| format!("{}|a|{}|{}", self.flavor(), ty, name), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_uncached(ty, name))
     }
@@ -727,8 +732,13 @@ impl<'a> ReadsEngine<'a> {
     /// (the hook form's context, section 8): `A` is bound to that type, so `A.actor` resolves
     /// against the fields that context really carries.
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
+        std::sync::Arc::unwrap_or_clone(self.analyze_handler_shared(ty, name, ctx_ty))
+    }
+
+    /// [`analyze_handler`](Self::analyze_handler) without copying a stored result.
+    pub fn analyze_handler_shared(&self, ty: &str, name: &str, ctx_ty: &str) -> std::sync::Arc<ReadSet> {
         if !self.sem.cacheable() {
-            return self.analyze_handler_uncached(ty, name, ctx_ty);
+            return std::sync::Arc::new(self.analyze_handler_uncached(ty, name, ctx_ty));
         }
         super::walk_cache::walk(|| format!("{}|h|{}|{}|{}", self.flavor(), ty, name, ctx_ty), || self.context(), self.sem, super::walk_cache::digests(), || self.analyze_handler_uncached(ty, name, ctx_ty))
     }
@@ -863,7 +873,7 @@ impl Decls {
 
 /// Which var names are written anywhere in a proc body (outside constructors), for the "constant"
 /// class: a var nobody writes after init is readable but not reactive. Name-based and conservative.
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct WriteIndex {
     written: HashSet<String>,
 }
@@ -888,12 +898,19 @@ impl WriteIndex {
     pub fn build(sem: &Sem) -> WriteIndex {
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
         // Plain threads, not rayon: this runs under a memo init (see `par_map`).
-        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| proc_writes(*p));
-        let mut w = WriteIndex::default();
-        for s in sets {
-            w.written.extend(s);
-        }
-        w
+        // Sorted: `body_facts` digests the facts.
+        let fact = |p: ProcRef| -> Vec<String> {
+            let mut v: Vec<String> = proc_writes(p).into_iter().collect();
+            v.sort();
+            v
+        };
+        super::body_facts::indexed(sem, "writes", 0, &procs, fact, |sets: Vec<Vec<String>>| {
+            let mut w = WriteIndex::default();
+            for s in sets {
+                w.written.extend(s);
+            }
+            w
+        })
     }
 }
 

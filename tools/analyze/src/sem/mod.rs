@@ -28,6 +28,7 @@ pub mod gen;
 pub mod incremental;
 pub mod model_store;
 pub mod walk_cache;
+pub mod body_facts;
 pub mod oracle;
 pub mod procs;
 pub mod reads;
@@ -208,45 +209,34 @@ impl Sem {
         let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
         let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
         let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
-        // Per file on all cores, folded in file order (the lists keep the order a sequential scan gave them).
+        // What a file's text says (cached by content, `incr::facts`), replayed against this model in file order (the lists keep the order a
+        // sequential scan gave them): only an edited file is read and scanned again.
         let code_files = tree.select(&CODE_DM);
-        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&code_files, |file| {
+        let events: Vec<Vec<LayerEvent>> = crate::incr::facts("sem-layering", &code_files, |file| layering_events(file.code().text.as_str(), &capability_type, &capability_def));
+        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&events, |evs| {
             let mut owners: Vec<String> = Vec::new();
             let mut types: Vec<String> = Vec::new();
             let mut parents: Vec<(usize, String)> = Vec::new();
-            for raw in file.code().text.lines() {
-                let text = raw.trim();
-                if text.is_empty() { continue; }
-                // An uninitialized absolute field declaration can carry no
-                // useful value/declaration location in ObjectTree. Its explicit
-                // owner is still an actual definition, not a typed reference.
-                let declaration = text.split_whitespace().next().unwrap_or("");
-                if declaration.starts_with('/') {
-                    if let Some((owner, member)) = declaration.split_once("/var/") {
-                        if !member.is_empty() && objtree.find(owner).is_some() {
-                            owners.push(owner.to_string());
+            for e in evs {
+                match e {
+                    LayerEvent::Owner(owner) => {
+                        if objtree.find(owner).is_some() {
+                            owners.push(owner.clone());
                         }
                     }
-                }
-                if let Some(cap) = capability_type.captures(text) {
-                    types.push(cap[1].to_string());
-                }
-                if let Some(cap) = capability_def.captures(text) {
-                    types.push(format!("/datum/capability/def/{}", &cap[1]));
-                }
-                let indent = raw.len() - raw.trim_start().len();
-                while parents.last().is_some_and(|(n, _)| *n >= indent) { parents.pop(); }
-                // A bare type header is a definition. Typed arguments, locals,
-                // member declarations and proc definitions are only references.
-                let header = text.trim_end_matches('{').trim();
-                if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
-                    let path = if header.starts_with('/') { header.to_string() }
-                        else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
-                        else { continue; };
-                    if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
-                    if objtree.find(&path).is_some() {
-                        types.push(path.clone());
-                        parents.push((indent, path));
+                    LayerEvent::Type(t) => types.push(t.clone()),
+                    LayerEvent::Indent(indent) => {
+                        while parents.last().is_some_and(|(n, _)| *n >= *indent as usize) { parents.pop(); }
+                    }
+                    LayerEvent::Header(indent, header) => {
+                        let path = if header.starts_with('/') { header.clone() }
+                            else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
+                            else { continue; };
+                        if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
+                        if objtree.find(&path).is_some() {
+                            types.push(path.clone());
+                            parents.push((*indent as usize, path));
+                        }
                     }
                 }
             }
@@ -586,6 +576,59 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         all.iter().map(|e| format!("{}", e)).collect()
     };
     Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
+}
+
+/// One line of a file as the layering index reads it (see `Sem::build_with`).
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+enum LayerEvent {
+    /// `/type/var/x`: the type owns a field (if the model has the type).
+    Owner(String),
+    /// A `CAPABILITY_TYPE` / `CAPABILITY_DEF` marker's type.
+    Type(String),
+    /// A non-empty line's indent (pops the header stack).
+    Indent(u32),
+    /// A bare type header at an indent.
+    Header(u32, String),
+}
+
+fn layering_events(code: &str, capability_type: &regex::Regex, capability_def: &regex::Regex) -> Vec<LayerEvent> {
+    let mut out = Vec::new();
+    let mut headers: Vec<usize> = Vec::new();
+    for raw in code.lines() {
+        let text = raw.trim();
+        if text.is_empty() { continue; }
+        // An uninitialized absolute field declaration can carry no
+        // useful value/declaration location in ObjectTree. Its explicit
+        // owner is still an actual definition, not a typed reference.
+        let declaration = text.split_whitespace().next().unwrap_or("");
+        if declaration.starts_with('/') {
+            if let Some((owner, member)) = declaration.split_once("/var/") {
+                if !member.is_empty() {
+                    out.push(LayerEvent::Owner(owner.to_string()));
+                }
+            }
+        }
+        if let Some(cap) = capability_type.captures(text) {
+            out.push(LayerEvent::Type(cap[1].to_string()));
+        }
+        if let Some(cap) = capability_def.captures(text) {
+            out.push(LayerEvent::Type(format!("/datum/capability/def/{}", &cap[1])));
+        }
+        let indent = raw.len() - raw.trim_start().len();
+        // An indent can only pop a header stack entry at or past it: kept only while some earlier header could be on the stack.
+        if headers.last().is_some_and(|n| *n >= indent) {
+            while headers.last().is_some_and(|n| *n >= indent) { headers.pop(); }
+            out.push(LayerEvent::Indent(indent as u32));
+        }
+        // A bare type header is a definition. Typed arguments, locals,
+        // member declarations and proc definitions are only references.
+        let header = text.trim_end_matches('{').trim();
+        if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
+            out.push(LayerEvent::Header(indent as u32, header.to_string()));
+            headers.push(indent);
+        }
+    }
+    out
 }
 
 fn tempfile_dir(root: &Path) -> PathBuf {

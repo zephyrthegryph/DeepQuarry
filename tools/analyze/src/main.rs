@@ -126,6 +126,9 @@ fn main() -> ExitCode {
     dq_analyze::shared::publish();
     dq_analyze::sem::model_store::finish();
     dq_analyze::sem::walk_cache::finish();
+    for (k, n) in dq_analyze::tree::TEXT_PROBE.lock().unwrap().iter() {
+        eprintln!("TEXT {} {}", n, k);
+    }
     code
 }
 

@@ -207,7 +207,7 @@ fn system_vars_uncached(tree: &Tree, system: &str) -> (bool, std::collections::H
     } else {
         tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| types.iter().any(|t| f.code().text.contains(t.as_str()))).collect()
     };
-    let table = crate::dm::dx::type_vars(&files);
+    let table = crate::dm::dx::type_vars_in(tree, &files);
     let mut vars = std::collections::HashSet::new();
     let mut known = false;
     for t in &types {
@@ -397,7 +397,11 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
 pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>) -> Vec<GenResult> {
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
-    tree.prewarm_dm();
+    // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with a stored model reads the
+    // few files whose cached facts changed.
+    if std::env::var_os("DQ_PREWARM").is_some() || !super::model_store::stored(root) {
+        tree.prewarm_dm();
+    }
     let dme = std::fs::read_to_string(root.join("deepquarry.dme")).unwrap_or_default();
     let mut out = Vec::new();
     let test_types = test_only_types(tree);
@@ -427,7 +431,7 @@ pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage:
                         let mut file_out = GenOut::default();
                         let files = g.files(&cx, &mut file_out);
                         if trace {
-                            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis());
+                            eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms, cpu {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis(), crate::util::cpu_ms());
                         }
                         (r, files, file_out)
                     })
