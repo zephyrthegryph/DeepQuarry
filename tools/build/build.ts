@@ -90,7 +90,7 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
+import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -919,15 +919,9 @@ const storeDmbcBuild = (): void => {
 export const DmbcTarget = new Juke.Target({
   // An explicit compiler is never rebuilt here; a shared-cache hit needs no cargo.
   onlyWhen: () => !process.env.DQ_NATIVE_COMPILER && !dmbcBinOverride() && !dmbcCacheHit(),
-  inputs: [
-    'tools/dmb/Cargo.toml',
-    'tools/dmb/Cargo.lock',
-    'tools/dmb/build.rs',
-    'tools/dmb/src/**/*.rs',
-    'tools/dmb/crates/**/Cargo.toml',
-    'tools/dmb/crates/**/*.rs',
-  ],
-  outputs: [sharedDmbcPointer()],
+  // No inputs/outputs: `dmbcCacheHit` already decides by the content key of the sources. The shared `current` pointer is rewritten
+  // by every checkout's publish (same id), so an mtime comparison against it skipped the build of a newer compiler ("up to date")
+  // and master's compiler changes were never published. Cargo is incremental, so a dirty tree's private build is cheap.
   executes: async () => {
     if (dmbcStaged) {
       const staged = dmbcStaged;
