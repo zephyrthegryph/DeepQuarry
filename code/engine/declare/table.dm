@@ -9,6 +9,8 @@
 // Errors are reported as `file:line: [rule] message -- hint`. In a test build a report fails the run (stack_trace), unless a test
 // captures them (GLOB.declare_report_capture); `declare_report()` is the one place.
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/centry)
 /// One compiled item: an interned entry (or capability definition), where it came from, the capability that brought it, and the
 /// when() blocks it sits inside. Immutable once built; tables of a parent and its subtypes share them.
 /datum/centry

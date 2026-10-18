@@ -29,6 +29,8 @@
 //	destroy:  on_ending() runs, the "ended" notice goes out with its cause, then registries, radio and adjacency are left
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 /// The forms one type declares, resolved from its compiled table once and shared by every instance of the type. Read-only after build.
 /datum/lifeform_plan
 	var/owner_type

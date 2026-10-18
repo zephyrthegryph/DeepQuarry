@@ -19,6 +19,8 @@
 
 // ===================================================================== behaviours
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 /datum/scheduled_behaviour
 	parent_type = /datum/core_definition
 	abstract_type = /datum/scheduled_behaviour
@@ -196,6 +198,8 @@
 
 // ===================================================================== relations
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 /datum/relation_definition
 	parent_type = /datum/core_definition
 	abstract_type = /datum/relation_definition
@@ -270,6 +274,8 @@
 
 // ===================================================================== checks
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/requirement_definition)
 /datum/requirement_definition
 	parent_type = /datum/core_definition
 	abstract_type = /datum/requirement_definition
@@ -287,6 +293,8 @@
 
 // ===================================================================== derived
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/derived_definition)
 /datum/derived_definition
 	parent_type = /datum/core_definition
 	abstract_type = /datum/derived_definition
