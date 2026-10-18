@@ -637,8 +637,8 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		CRASH("requirement_reason(): [R] is not a requirement")
 	var/datum/act/op/A = take(/datum/act/op)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
-	A.target = candidate // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
-	A.actor = actor // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
+	A.target = candidate
+	A.actor = actor
 	try
 		. = op_req_check(A, R)
 	catch(var/exception/fault)
