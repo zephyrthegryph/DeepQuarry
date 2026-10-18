@@ -1491,7 +1491,17 @@ GLOBAL_VAR(boot_unclean)
 
 	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 	//We have to call this manually because del_text can preceed us, and SSticker doesn't fire in the post game
-	SSticker.declare_completion()
+	log_test("Unit-test suite: declaring the round complete.")
+	try
+		SSticker.declare_completion()
+	catch(var/exception/fault)
+		log_test("Unit-test suite: declare_completion() failed ([fault] at [fault.file]:[fault.line]); rebooting anyway.")
+	// A focused run has no players to read the round-end report: reboot now instead of on the ticker's after() timer. A sharded sweep
+	// world (dq_fresh_look_default) logged its suite finished and then never rebooted: no "Reboot:" line in 3 minutes, so the watchdog
+	// had to kill it and the run counted as unclean with every test passed. Reboot() writes the result markers (FinishTestRun()).
+	if(unit_test_is_focused_run())
+		log_test("Unit-test suite: rebooting the world (focused run).")
+		world.Reboot()
 
 /datum/map_template/unit_tests
 	name = "Unit Tests Zone"

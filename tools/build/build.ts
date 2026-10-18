@@ -1064,15 +1064,26 @@ export const DmTarget = new Juke.Target({
     } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
-    const results = await Promise.allSettled([
-      checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve(),
+    const compile = () =>
       DreamMaker(`${DME_NAME}.dme`, {
         defines: ['CBT', ...get(DefineParameter)],
         warningsAsErrors: get(WarningParameter).includes('error'),
         ignoreWarningCodes: get(NoWarningParameter),
         namedDmVersion: get(DmVersionParameter),
-      }),
-    ]);
+      });
+    const check = () => (checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve());
+    // DQ_DREAMCHECKER_AFTER=1 (the merge gates set it): DreamChecker starts when the compile has finished, not beside it. On a loaded
+    // machine the two peaks together (the compiler daemon's 9-25 GB and DreamChecker's whole-tree parse) ended in "memory allocation
+    // failed" inside DreamChecker; the gate's production compile is not its critical path, so the extra minutes cost nothing there.
+    const sequential = process.env.DQ_DREAMCHECKER_AFTER === '1';
+    let results: PromiseSettledResult<unknown>[];
+    if (sequential) {
+      const made = await Promise.allSettled([compile()]);
+      const checked = await Promise.allSettled([check()]);
+      results = [checked[0], made[0]];
+    } else {
+      results = await Promise.allSettled([check(), compile()]);
+    }
     if (results[0].status === 'rejected') {
       fs.rmSync(`${DME_NAME}.dmb`, { force: true });
       Juke.logger.error('dream-checker failed (see above); the .dmb was removed');
