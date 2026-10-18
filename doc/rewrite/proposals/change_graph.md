@@ -202,7 +202,13 @@ re-queue through `breaks_light`.
 flashes, derived values, side effects, periodic work; mobs never). For such a type a fresh atom is not queued at creation, the drain
 drops a queued one still on its creation mark, and `refresh_settle_created()` runs after `kernel_members_ready()`: one sample per type
 still pending, then the fresh atoms of stamped types leave the queue. A type whose default look is not empty keeps its first draw
-(that is the forced-draw list for now: every drawing type); stamping a cached non-empty appearance is the next part of step 5. The
+(that is the forced-draw list for now: every drawing type); stamping a cached non-empty appearance was examined next and is not safe as a type-level cache: a mapped atom's var edits
+(`dir`, `icon_state`, `name`, a machine's mapped flags) are instance state the draw reads, and neither the fresh-look sweep (two fresh
+instances on one tile) nor the stamp can see them, so a type's cached look would be wrong for every edited instance; the saving would be
+the draw() call only (the apply still runs). It becomes possible once the step 2 plan knows each draw's reads: a type whose draw reads no
+var a map edit can set may share a cached look. The whole-type sweep (`dq_fresh_look_default`, sharded as a sweep pin) found 6 types
+with an instance-dependent first look (the preset laptops open or closed at random; the blackbox recorder deletes a second instance;
+redgates) and the runtimes fixed on this branch. The
 `init_baseline.txt` filter the section above names needs the reads of each draw (an `Initialize` row is every statement, so as a list
 it would force every type); it comes with the generated plans of step 2. Tests: `dq_draw_queue_default_look`,
 `dq_draw_queue_space_requeue`.
