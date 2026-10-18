@@ -401,10 +401,12 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 let version = self.issued_domain_version(domain);
                 trace_domain(domain, || {
                     format!(
-                        "version={version:?} tree_version={:?} catalog={:?} callable_issuer={:?}",
+                        "version={version:?} tree_version={:?} catalog={:?} callable_issuer={:?} source_version={:?} issuer={:?}",
                         self.tree.domain_version(domain),
                         self.catalog_domain(domain),
                         self.callable_issuer,
+                        self.variable_absence.as_ref().map(|c| c.source.domain_version(domain)),
+                        self.variable_absence.as_ref().map(|c| c.issuer),
                     )
                 });
                 version
@@ -447,6 +449,67 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             self.tree.resolve(query),
             self.resolve_current(query),
         );
+    }
+
+    /// An Unsupported tree variable answer that the captured declaration source answers
+    /// positively resolves to that declaration (see `resolve`), provided neither method
+    /// catalog intercepts it. Version it by both source tokens and the pinned providers.
+    fn captured_declaration_version(&self, query: Q, base: u64) -> Option<u128> {
+        if !matches!(
+            query,
+            Q::Var { .. } | Q::DeclaredVarType { .. } | Q::VarStorage { .. } | Q::StaticVar { .. }
+        ) {
+            return None;
+        }
+        let coverage = self.variable_absence.as_ref()?;
+        let catalogs_silent = self
+            .retained_methods
+            .as_ref()
+            .and_then(|catalog| catalog.resolve(query))
+            .is_none()
+            && self
+                .intrinsic_methods
+                .as_ref()
+                .and_then(|catalog| catalog.resolve(query))
+                .is_none();
+        if !catalogs_silent {
+            return None;
+        }
+        if matches!(
+            dm_ir::Resolver::resolve(coverage.source.as_ref(), query),
+            M::Unsupported(_) | M::Missing
+        ) {
+            // An undeclared-type member the captured source still holds keeps the
+            // Unsupported answer; any other outcome reaches source-dependent absence.
+            let (owner, name) = match query {
+                Q::Var { owner, name }
+                | Q::DeclaredVarType { owner, name }
+                | Q::VarStorage { owner, name }
+                | Q::StaticVar { owner, name } => (owner, name),
+                _ => return None,
+            };
+            if !matches!(
+                dm_ir::Resolver::resolve(coverage.source.as_ref(), Q::HasMemberVar { owner, name }),
+                M::Presence(true)
+            ) {
+                return None;
+            }
+        }
+        let source = coverage
+            .source
+            .domain_version(dm_ir::ReadDomain::OwnerVariable(query))?;
+        let mut bytes = b"dm-captured-declaration-v1".to_vec();
+        bytes.extend_from_slice(&base.to_le_bytes());
+        bytes.extend_from_slice(&source.to_le_bytes());
+        bytes.extend_from_slice(&self.callable_issuer?.to_le_bytes());
+        // The answer never consults the runtime type mappings (only the absence branch
+        // does), so the immutable configuration and runtime policy suffice.
+        bytes.extend_from_slice(&self.configuration_identity().to_le_bytes());
+        if let Some(retained) = &self.retained_methods {
+            bytes.extend_from_slice(&retained.identity().to_le_bytes());
+        }
+        let combined = xxhash_rust::xxh3::xxh3_64(&bytes);
+        variable_negative::qualified(combined, coverage.issuer?, false)
     }
 
     fn issued_domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
@@ -493,7 +556,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             // Only an unchanged positive/current source answer may use the
             // local certificate. Native absence fallback remains uncertified.
             if matches!(self.tree.resolve(query), M::Unsupported(_)) {
-                return None;
+                return self.captured_declaration_version(query, base);
             }
             let provider = match &self.variable_absence {
                 Some(coverage) => coverage.issuer?,

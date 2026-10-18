@@ -79,6 +79,27 @@ mod tests {
             "old immutable receipts remain stable"
         );
     }
+    #[test]
+    fn selected_inventory_rebuilds_keep_unchanged_name_receipts() {
+        let retained = RetainedStorage::default();
+        let mut tree = capture(
+            &retained,
+            "/datum/a
+    var/static/shared = 1
+/datum/b
+    var/other = 2
+",
+            true,
+        );
+        let token = version(&tree, "shared").unwrap();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        // A declaration delta reduces only the selected names. An unrelated name and a
+        // reselected name whose inputs are unchanged keep their receipts.
+        tree.rebuild_inventory_selectors(&HashSet::from([SymbolId::of("other")]), &executor);
+        assert_eq!(version(&tree, "shared"), Some(token));
+        tree.rebuild_inventory_selectors(&HashSet::from([SymbolId::of("shared")]), &executor);
+        assert_eq!(version(&tree, "shared"), Some(token));
+    }
 }
 struct UniqueHost<'a>(&'a SemanticTree);
 impl ObservationHost<StorageQuery, StorageAnswer, ()> for UniqueHost<'_> {
