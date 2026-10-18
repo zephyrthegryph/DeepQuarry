@@ -36,16 +36,13 @@
 
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
-	if(self_recharge)
-		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
-	else
-		if(cell_type)
-			rel_set(src, nameof(power_supply), new cell_type(src))
-		else
-			rel_clear(src, nameof(power_supply))
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
 		power_supply.set_charge(charge_cost*rand(0,power_supply.maxcharge/charge_cost))
+
+/// The gun starts with its own spatial cell; this view never owns a borrowed generator cell.
+/obj/item/gun/energy/proc/start_power_supply(current, mapload)
+	return self_recharge ? /obj/item/cell/device/weapon : cell_type
 
 /obj/item/gun/energy/get_cell()
 	return power_supply
@@ -173,7 +170,7 @@ MSG_DEF(energy_gun/cell_loaded, span_notice("You insert %I% into %T%."), "%U% in
 // power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
-	ref_one(nameof(power_supply))
+	ref_one(nameof(power_supply), starts = PROC_REF(start_power_supply))
 	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharge_due)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("load_cell", item(/obj/item/cell), priority(OP_PRIORITY_PART), label("Insert cell"), starts(PROC_REF(cell_load_started)), begins(MSG(energy_gun/cell_loading)), wait(PROC_REF(cell_load_time)), then(PROC_REF(cell_load_done)))

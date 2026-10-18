@@ -61,8 +61,11 @@
 	if(can_atmos_pass != ATMOS_PASS_YES && isturf(loc))
 		update_nearby_tiles()
 
+/// Native subtype ending hooks chain here; generic legacy spill stays at its original LINKS phase.
+/obj/proc/ending_consequences(cause, datum/by)
+	return
+
 /obj/on_destroy(force)
-	// I really am an idiot why did I make it this way
 	if(micro_target)
 		for(var/thing in contents_of(src))
 			if(!ismob(thing))

@@ -6,11 +6,12 @@
 	icon_state = "privacy0"
 	COOLDOWN_DECLARE(use_cooldown)
 
-/obj/structure/privacyswitch/Initialize(mapload)
+/// Privacy follows the area's tracked flags, including edits made outside this switch.
+/obj/structure/privacyswitch/draw(datum/look/look)
+	..()
 	var/area/A = get_area(src)
-	if(A?.flag_check(AREA_BLOCK_GHOST_SIGHT))
-		icon_state = "privacy1"
-	. = ..()
+	look.watch(A)
+	look.state(A?.flag_check(AREA_BLOCK_GHOST_SIGHT) ? "privacy1" : "privacy0")
 
 MSG_DEF_SELF(privacy_switch/cooling_down, "the area can not be altered so soon again")
 
@@ -35,13 +36,11 @@ CAPABILITIES(/obj/structure/privacyswitch)
 
 	if(A.flag_check(AREA_BLOCK_GHOST_SIGHT))
 		A.set_flags(A.flags ^ AREA_BLOCK_GHOST_SIGHT)
-		set_icon_state("privacy0")
 		GLOB.ghostnet.removeArea(A)
 		to_chat(user, span_notice("The area is no longer protected from ghost vison."))
 		log_and_message_admins("toggled ghost vision in [A] on.", user)
 	else
 		A.set_flags(A.flags ^ AREA_BLOCK_GHOST_SIGHT)
-		set_icon_state("privacy1")
 		GLOB.ghostnet.addArea(A)
 		to_chat(user, span_notice("The area is now protected from ghost vison."))
 		log_and_message_admins("toggled ghost vision in [A] off.", user)

@@ -80,6 +80,10 @@
 	var/mob/living/H
 	if(scenario == SMOKE_HEAL)
 		H = allocate(/mob/living/carbon/human/dq_ai_test_wounded, ai_floor(1))
+		// A synthetic fixture is not a player opting into vore; explicitly grant this scenario's actual consent.
+		set_var(H.vore_prefs, nameof(H.vore_prefs.devourable), TRUE)
+		set_var(H.vore_prefs, nameof(H.vore_prefs.digestable), TRUE)
+		set_var(H.vore_prefs, nameof(H.vore_prefs.permit_healbelly), TRUE)
 		B.admin_standing(H, DQ_DISPOSITION_FRIENDLY)
 		var/list/started_heal = drive_port_creature(S, H, 20, FALSE)
 		clean_port_arena()

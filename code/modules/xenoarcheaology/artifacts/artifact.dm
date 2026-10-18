@@ -52,7 +52,6 @@ CAPABILITIES(/obj/machinery/artifact)
 	else
 		set_icon_num(rand(0, 15))
 
-	icon_state = "ano[icon_num]0"
 	if(icon_num == 7 || icon_num == 8 || icon_num == 15)
 		name = "large crystal"
 		desc = pick("It shines faintly as it catches the light.",
