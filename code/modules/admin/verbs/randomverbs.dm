@@ -101,11 +101,10 @@ CAPABILITIES(/datum/prompt/text/admin_narrate)
 
 /datum/prompt/text/admin_narrate/prepare(datum/act/A)
 	..()
-	var/datum/request/request = src
 	var/mob/captured_subject = subject
 	subject_required = !isnull(captured_subject)
-	rel_clear(request, nameof(request.subject))
-	rel_set(request, nameof(request.subject), captured_subject)
+	rel_clear(src, nameof(subject))
+	rel_set(src, nameof(subject), captured_subject)
 
 /datum/prompt/text/admin_narrate/recheck_extra()
 	return subject_required && QDELETED(subject) ? "gone" : null

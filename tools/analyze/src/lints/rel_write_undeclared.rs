@@ -133,6 +133,28 @@ impl Lint for RelWriteUndeclared {
                 }
             }
         }
+        // The path form `nameof(/type::var)`: the holder type is named in the argument, so a text scan finds it.
+        let path_form = crate::pat!(r"(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)");
+        for f in cx.files() {
+            if !f.rel.ends_with(".dm") {
+                continue;
+            }
+            for (i, line) in f.code().lines().enumerate() {
+                for c in path_form.captures_iter(line).iter() {
+                    let (verb, ty, var) = (c.s(1), c.s(2), c.s(3));
+                    if is_declared(sem, &rels, Some(ty), var) {
+                        continue;
+                    }
+                    let at = (i + 1) as u32;
+                    if seen.insert((f.rel.to_string(), at, var.to_string())) {
+                        let decl = sem.var_owner(ty, var).unwrap_or_default();
+                        let listy = sem.var_decl(ty, var).map(|d| d.is_list()).unwrap_or(false) || matches!(verb, "rel_add" | "rel_remove" | "rel_take_all");
+                        let file = sem.var_decl(ty, var).map(|d| d.file).unwrap_or_default();
+                        found.push((f.rel.to_string(), at, format!("{} writes `{}` of {}, which no relation declares [decl {}::{} many={} keyed=0 at={}]", verb, var, ty, decl, var, listy as u8, file)));
+                    }
+                }
+            }
+        }
         found.sort();
         for (rel, line, msg) in found {
             out.site_in_msg("undeclared", &rel, line as usize, msg);
@@ -145,7 +167,7 @@ fn is_declared(sem: &Sem, rels: &std::collections::HashMap<String, Vec<String>>,
     let Some(types) = rels.get(var) else { return false };
     match ty {
         None => true,
-        Some(t) => types.iter().any(|d| d == t || sem.is_subtype(t, d) || sem.is_subtype(d, t)),
+        Some(t) => types.iter().any(|d| d == t || sem.is_subtype(t, d)),
     }
 }
 

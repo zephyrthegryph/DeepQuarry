@@ -510,7 +510,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				rel_set(A, nameof(A.target_up), B) // pair: sets B.target_down
+				rel_set(A, nameof(/obj/structure/ladder::target_up), B) // pair: sets B.target_down
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				log_admin("BUILDMODE: [key_name(user)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
