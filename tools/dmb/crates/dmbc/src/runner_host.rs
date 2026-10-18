@@ -74,9 +74,36 @@ pub struct BuildHost {
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
     )>,
+    /// The define-dependent state of every other (project, defines) variant this session has built, kept so switching back to
+    /// a variant resumes its patch base instead of a full compile. Define-independent owners (engine payload, executors, the
+    /// directive/expansion/fragment memo, prepared sources) are shared by all variants and never stashed.
+    variants: std::collections::BTreeMap<EngineConfiguration, VariantState>,
 }
 
-#[derive(Eq, PartialEq)]
+/// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
+const MAX_STASHED_VARIANTS: usize = 3;
+
+struct VariantState {
+    engine: Arc<RetainedEngine>,
+    procedures: Option<(u128, ProcedureValues)>,
+    semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
+    query_state: Arc<std::sync::Mutex<query_snapshot::QueryState>>,
+    maps: Option<(u128, Arc<crate::map_memo::RetainedMaps>)>,
+    initializers: Option<(u128, Arc<crate::initializer_policy::InitializerArtifacts>)>,
+    startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
+    abi: Option<(u128, Arc<crate::driver_facts::AbiArtifacts>)>,
+    initializer_fragments: Option<(u128, Arc<crate::initializer_lowering::InitializerFragments>)>,
+    initializer_assemblies: Option<(u128, Arc<crate::initializer_lowering::InitializerAssemblies>)>,
+    class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
+    required_types: Option<(u128, Arc<crate::required_types::RequiredTypeArtifacts>)>,
+    link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
+    generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
+    host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
+    resources: Option<Arc<resources::Resources>>,
+    symbolic: Option<(u128, Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>)>,
+}
+
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 struct EngineConfiguration {
     project: PathBuf,
     defines: BTreeMap<String, String>,
@@ -122,6 +149,7 @@ impl Default for BuildHost {
             query_state: Arc::default(),
             maps: None,
             symbolic: None,
+            variants: Default::default(),
             initializers: None,
             startup: None,
             abi: None,
@@ -244,6 +272,7 @@ impl BuildHost {
             query_state: Arc::default(),
             maps: None,
             symbolic: None,
+            variants: Default::default(),
             initializers: None,
             startup: None,
             abi: None,
@@ -328,6 +357,11 @@ impl BuildHost {
     /// A session that only answered an unchanged-input hit retains artifacts but no patch base.
     pub(crate) fn retains_patch_base(&self) -> bool {
         self.generation.as_ref().is_some_and(|(_, generation)| generation.has_patch_base())
+    }
+    /// The image the retained patch base describes (None without one): a stored-record hit that would serve a different
+    /// image must not leave the base behind (see `request_runner`).
+    pub(crate) fn patch_base_image_hash(&self) -> Option<u128> {
+        self.generation.as_ref().and_then(|(_, generation)| generation.patch_base_image_hash())
     }
     /// Retain map answers across requests; disk snapshots remain request-local.
     pub(crate) fn map_memo(
@@ -580,6 +614,96 @@ impl BuildHost {
         Ok((memo, execution, self.semantic.as_mut()))
     }
 
+    /// Leave the current variant (stash its define-dependent state) and enter `configuration` (restore it, or start it empty on the
+    /// shared engine payload). Never touches the define-independent owners.
+    fn switch_variant(&mut self, configuration: EngineConfiguration) -> Arc<RetainedEngine> {
+        let leaving = self.engine.take().expect("a retained engine is being left");
+        let semantic_enabled = self.semantic.is_some();
+        let stash = VariantState {
+            engine: Arc::clone(&leaving),
+            procedures: self.procedures.take(),
+            semantic: self.semantic.take(),
+            query_state: std::mem::take(&mut self.query_state),
+            maps: self.maps.take(),
+            initializers: self.initializers.take(),
+            startup: self.startup.take(),
+            abi: self.abi.take(),
+            initializer_fragments: self.initializer_fragments.take(),
+            initializer_assemblies: self.initializer_assemblies.take(),
+            class_projections: self.class_projections.take(),
+            required_types: self.required_types.take(),
+            link_bindings: self.link_bindings.take(),
+            generation: self.generation.take(),
+            host_facts: self.host_facts.take(),
+            resources: self.resources.take(),
+            symbolic: self.symbolic.take(),
+        };
+        self.variants.insert(leaving.configuration.clone(), stash);
+        // A bounded number of variants stay: the session is "this tree under a few define sets" (production, test, bench).
+        // The variant being entered leaves the stash below, so it is never the one dropped here.
+        while self.variants.len() > MAX_STASHED_VARIANTS + usize::from(self.variants.contains_key(&configuration)) {
+            let Some(victim) = self.variants.keys().find(|key| **key != configuration).cloned() else {
+                break;
+            };
+            self.variants.remove(&victim);
+        }
+        let retained = if let Some(state) = self.variants.remove(&configuration) {
+            let engine = Arc::clone(&state.engine);
+            self.procedures = state.procedures;
+            self.semantic = state.semantic;
+            self.query_state = state.query_state;
+            self.maps = state.maps;
+            self.initializers = state.initializers;
+            self.startup = state.startup;
+            self.abi = state.abi;
+            self.initializer_fragments = state.initializer_fragments;
+            self.initializer_assemblies = state.initializer_assemblies;
+            self.class_projections = state.class_projections;
+            self.required_types = state.required_types;
+            self.link_bindings = state.link_bindings;
+            self.generation = state.generation;
+            self.host_facts = state.host_facts;
+            self.resources = state.resources;
+            self.symbolic = state.symbolic;
+            engine
+        } else {
+            let retained = Arc::new(RetainedEngine {
+                configuration,
+                payload: Arc::clone(&leaving.payload),
+            });
+            if semantic_enabled {
+                self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
+                    &retained.payload.normalized,
+                )));
+            }
+            retained
+        };
+        self.engine_generation = self.engine_generation.saturating_add(1);
+        self.rich_generation = self.rich_generation.saturating_add(1);
+        self.engine = Some(Arc::clone(&retained));
+        retained
+    }
+    /// True when the active variant is this manifest under exactly these defines. A session holds several variants; queries read
+    /// the active one, so a query for another variant must say so instead of answering from the wrong tree.
+    pub(crate) fn serves_variant(&self, project: &std::path::Path, defines: &BTreeMap<String, String>) -> bool {
+        // A build admits the pinned target defines (DM_VERSION, DM_BUILD) before it reaches the host; a query names the
+        // caller's defines, so admit them the same way before comparing.
+        let mut admitted = defines.clone();
+        if crate::pinned_target::admit_defines(&mut admitted).is_err() {
+            return false;
+        }
+        self.engine.as_ref().is_none_or(|engine| {
+            (engine.configuration.defines == admitted || &engine.configuration.defines == defines)
+                && engine.configuration.project.file_name() == project.file_name()
+        })
+    }
+    /// Drop every stashed variant (their state is recomputable). Returns how many were dropped.
+    pub(crate) fn release_stashed_variants(&mut self) -> usize {
+        let dropped = self.variants.len();
+        self.variants.clear();
+        dropped
+    }
+
     pub(crate) fn engine(
         &mut self,
         project: PathBuf,
@@ -598,7 +722,18 @@ impl BuildHost {
             if retained.configuration == configuration && retained.bytes.as_ref() == bytes {
                 return Ok(Arc::clone(retained));
             }
+            // Same engine bytes, bootstrap and schema, a different project path or define set: this is a variant switch, not a
+            // new compiler. The define-independent owners stay; the define-dependent state of the variant being left is kept
+            // under its configuration, and the target variant's own state (patch base included) is brought back if this
+            // session has built it before.
+            if retained.bytes.as_ref() == bytes
+                && retained.configuration.bootstrap_catalog == configuration.bootstrap_catalog
+                && retained.configuration.schema == configuration.schema
+            {
+                return Ok(self.switch_variant(configuration));
+            }
         }
+        self.variants.clear();
         let payload = if let Some(shared) = &self.shared_engines {
             shared.capture(
                 bytes,
@@ -714,6 +849,35 @@ mod tests {
         let a_memo = a.procedure_memo(1, None, true).unwrap();
         let b_memo = b.procedure_memo(1, None, true).unwrap();
         assert!(!Arc::ptr_eq(&a_memo.values, &b_memo.values));
+    }
+    #[test]
+    fn a_variant_switch_keeps_each_variants_state_and_shares_the_engine_payload() {
+        let mut host = BuildHost::with_shared_engines(Arc::new(EnginePayloads::default()));
+        let testing = || BTreeMap::from([("CITESTING".to_string(), "1".to_string())]);
+        let production = capture(&mut host, BTreeMap::new());
+        let maps = |policy| Some((policy, Arc::new(crate::map_memo::RetainedMaps::current_revision())));
+        host.maps = maps(7);
+        // The test define set is another variant of the same session: its own empty state, the same engine payload.
+        let test = capture(&mut host, testing());
+        assert!(!Arc::ptr_eq(&production, &test));
+        assert!(Arc::ptr_eq(&production.payload, &test.payload));
+        assert!(host.maps.is_none(), "a new variant starts with no define-dependent state");
+        assert!(host.semantic.is_some());
+        host.maps = maps(9);
+        // Switching back resumes production's state (its patch base lives there), not a fresh one.
+        let back = capture(&mut host, BTreeMap::new());
+        assert!(Arc::ptr_eq(&back, &production));
+        assert_eq!(host.maps.as_ref().map(|(policy, _)| *policy), Some(7));
+        let again = capture(&mut host, testing());
+        assert!(Arc::ptr_eq(&again, &test));
+        assert_eq!(host.maps.as_ref().map(|(policy, _)| *policy), Some(9));
+        assert!(host.serves_variant(std::path::Path::new("E:/fixture/world.dme"), &testing()));
+        assert!(!host.serves_variant(std::path::Path::new("E:/fixture/world.dme"), &BTreeMap::new()));
+        // Stashed variants are recomputable and go first under pressure.
+        assert_eq!(host.release_stashed_variants(), 1);
+        let cold = capture(&mut host, BTreeMap::new());
+        assert!(!Arc::ptr_eq(&cold, &production));
+        assert!(host.maps.is_none());
     }
     fn worker_ids(
         executor: &dm_exec::BuildExecutor,

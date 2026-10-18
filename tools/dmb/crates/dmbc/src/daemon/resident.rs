@@ -127,7 +127,7 @@ impl Drop for Registration {
 }
 
 /// Register this daemon in the machine registry (heartbeat, busy flag, retire flag). Registration never retires or counts other
-/// daemons: a daemon leaves only for idleness (`idle_exit`), for being a superseded version nobody uses (`superseded_idle_due`),
+/// daemons: a daemon leaves only for idleness (`idle_exit`), for being a superseded version nobody uses (`superseded`),
 /// or on an explicit `--daemon-retire`. A newcomer never replaces an incumbent; each compiler version has its own daemon and
 /// its own sessions, and a development build runs in a private namespace (`isolate_development_build`).
 /// Failure to register is logged and never prevents the daemon from serving.
@@ -164,18 +164,21 @@ pub(super) fn register() -> Option<Registration> {
 }
 
 /// Where a compiler executable comes from. The shared published layout is `<bin>/v/<id>/dmbc` with `<bin>/current` naming the id
-/// new compiles use (tools/build/lib/dmbc_cache.ts).
+/// every compile uses (tools/build/lib/dmbc_cache.ts).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Provenance {
     /// The version `<bin>/current` names right now.
     Current,
-    /// A published version that is no longer current.
+    /// The version `<bin>/next` names: published and being prewarmed (its session is built for the tree while the current
+    /// daemon still serves); it becomes `current` once warm.
+    Candidate,
+    /// A published version that is neither current nor the candidate: a newer compiler is current.
     Superseded,
     /// Anything else: a worktree build, a cargo output, an explicit `DQ_DMBC_BIN`, a test fixture.
     Development,
 }
 
-fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> Provenance {
+fn provenance_of(exe: &Path, read_pointer: impl Fn(&Path, &str) -> Option<String>) -> Provenance {
     let (Some(version), Some(versions)) = (exe.parent(), exe.parent().and_then(Path::parent)) else {
         return Provenance::Development;
     };
@@ -184,8 +187,10 @@ fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> 
     let Some(bin) = versions.parent().filter(|_| published) else {
         return Provenance::Development;
     };
-    match read_current(bin) {
-        Some(current) if current.eq_ignore_ascii_case(id) => Provenance::Current,
+    let is = |pointer: &str| read_pointer(bin, pointer).is_some_and(|value| value.eq_ignore_ascii_case(id));
+    match read_pointer(bin, "current") {
+        Some(_) if is("current") => Provenance::Current,
+        Some(_) if is("next") => Provenance::Candidate,
         Some(_) => Provenance::Superseded,
         None => Provenance::Development,
     }
@@ -193,7 +198,7 @@ fn provenance_of(exe: &Path, read_current: impl Fn(&Path) -> Option<String>) -> 
 
 pub fn provenance_of_self() -> Provenance {
     std::env::current_exe().map_or(Provenance::Development, |exe| {
-        provenance_of(&exe, |bin| fs::read_to_string(bin.join("current")).ok().map(|text| text.trim().to_owned()))
+        provenance_of(&exe, |bin, pointer| fs::read_to_string(bin.join(pointer)).ok().map(|text| text.trim().to_owned()))
     })
 }
 
@@ -209,11 +214,26 @@ pub fn isolate_development_build(identity: u128) {
     std::env::set_var("DMB_DAEMON_NAMESPACE", &name[..20]);
 }
 
-/// A superseded published version leaves once it has had no connection or build for this long: its clients are pinned to an
-/// older `current`, and when none of them is left it only holds memory.
+/// How long an older-build daemon (one without the immediate self-exit) must be idle before the current daemon asks it to retire.
 pub(super) const SUPERSEDED_IDLE: Duration = Duration::from_secs(120);
-pub(super) fn superseded_idle_due(provenance: Provenance, idle: Duration, running: usize, connections: usize) -> bool {
-    provenance == Provenance::Superseded && running == 0 && connections == 0 && idle >= SUPERSEDED_IDLE
+
+/// A published version that is not `<bin>/current` is superseded: one latest compiler serves everyone, so the daemon finishes its
+/// in-flight builds, refuses new ones and exits as soon as nothing is running; clients resolve `current` per compile and reach the
+/// new daemon (an old executable that still gets invoked forwards to it, see `forward_target`).
+pub(super) fn superseded(provenance: Provenance) -> bool {
+    provenance == Provenance::Superseded
+}
+
+/// The latest published compiler, when this executable is a superseded published version: where an old client forwards a request.
+pub fn forward_target() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    if provenance_of_self() != Provenance::Superseded {
+        return None;
+    }
+    let bin = exe.parent()?.parent()?.parent()?;
+    let id = fs::read_to_string(bin.join("current")).ok()?.trim().to_owned();
+    let target = bin.join("v").join(&id).join(exe.file_name()?);
+    target.is_file().then_some(target)
 }
 
 /// The published layout `<bin>/v/<id>/dmbc` split into (`<bin>`, id) when `exe` is a published compiler.
@@ -227,7 +247,7 @@ fn published_parts(exe: &Path) -> Option<(PathBuf, String)> {
 
 /// Peers (by pid) of a superseded published version that nobody is using: registered under the same `<bin>`, a version other than
 /// `current`, alive (fresh heartbeat), not building, not already retiring, and idle for `SUPERSEDED_IDLE`. A superseded daemon
-/// retires itself (`superseded_idle_due`), but only a daemon that is new enough to contain that check does; the compiler that
+/// retires itself (`superseded`), but only a daemon that is new enough to contain that check does; the compiler that
 /// published a newer version is the one party that is certain to, so it asks the older ones to drain through the same
 /// `<pid>.retire` flag every earlier registry-aware build already honors in its heartbeat. A peer that never registered cannot be
 /// seen here and still leaves by its own idle exit.
@@ -373,26 +393,28 @@ mod tests {
     }
 
     #[test]
-    fn provenance_separates_current_superseded_and_development_builds() {
-        let current = |_: &Path| Some("ebfc6fb0e7c801a8".to_owned());
+    fn provenance_separates_current_candidate_superseded_and_development_builds() {
+        let pointers = |_: &Path, name: &str| match name {
+            "current" => Some("ebfc6fb0e7c801a8".to_owned()),
+            "next" => Some("aaaaaaaaaaaaaaaa".to_owned()),
+            _ => None,
+        };
         let exe = |id: &str| PathBuf::from(format!("E:/dq-cache/dmb-bin/v/{id}/dmbc.exe"));
-        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), current), Provenance::Current);
-        assert_eq!(provenance_of(&exe("3ac37341c288ea49"), current), Provenance::Superseded);
-        assert_eq!(provenance_of(&PathBuf::from("E:/dq-cache/dmb-bin/dmbc.exe"), current), Provenance::Development);
-        assert_eq!(provenance_of(&PathBuf::from("E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe"), current), Provenance::Development);
-        assert_eq!(provenance_of(&exe("not-a-version-id!"), current), Provenance::Development);
-        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), |_: &Path| None), Provenance::Development);
+        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), pointers), Provenance::Current);
+        assert_eq!(provenance_of(&exe("aaaaaaaaaaaaaaaa"), pointers), Provenance::Candidate);
+        assert_eq!(provenance_of(&exe("3ac37341c288ea49"), pointers), Provenance::Superseded);
+        assert_eq!(provenance_of(&PathBuf::from("E:/dq-cache/dmb-bin/dmbc.exe"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&PathBuf::from("E:/projects/dq-wt/x/tools/dmb/target/release/dmbc.exe"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&exe("not-a-version-id!"), pointers), Provenance::Development);
+        assert_eq!(provenance_of(&exe("ebfc6fb0e7c801a8"), |_: &Path, _: &str| None), Provenance::Development);
     }
 
     #[test]
-    fn only_an_idle_superseded_version_retires_itself() {
-        let long = SUPERSEDED_IDLE;
-        assert!(superseded_idle_due(Provenance::Superseded, long, 0, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long - Duration::from_secs(1), 0, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long, 1, 0));
-        assert!(!superseded_idle_due(Provenance::Superseded, long, 0, 1));
-        assert!(!superseded_idle_due(Provenance::Current, Duration::from_secs(86_400), 0, 0));
-        assert!(!superseded_idle_due(Provenance::Development, Duration::from_secs(86_400), 0, 0));
+    fn only_a_published_version_that_is_not_current_is_superseded() {
+        assert!(superseded(Provenance::Superseded));
+        assert!(!superseded(Provenance::Current));
+        assert!(!superseded(Provenance::Candidate));
+        assert!(!superseded(Provenance::Development));
     }
 
     #[test]

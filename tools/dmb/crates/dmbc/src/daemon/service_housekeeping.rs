@@ -349,7 +349,7 @@ mod tests {
         };
         let now = Instant::now();
         // The project must exist on disk: housekeeping drops sessions whose manifest is gone.
-        let only = shared.slot(std::env::temp_dir(), &BTreeMap::new(), None);
+        let only = shared.slot(std::env::temp_dir(), None);
         *only.last.lock().unwrap() = now - Duration::from_secs(60);
         drop(only);
         // Hard pressure, as after every build of a session larger than the whole budget: nothing is degraded or released.
@@ -381,10 +381,10 @@ mod tests {
         let now = Instant::now();
         let last = now - SESSION_IDLE - Duration::from_secs(1);
         for name in ["f", "e", "d", "c", "b", "a"] {
-            let slot = shared.slot(PathBuf::from(name), &BTreeMap::new(), None);
+            let slot = shared.slot(PathBuf::from(name), None);
             *slot.last.lock().unwrap() = last;
         }
-        let active = shared.slot(PathBuf::from("active"), &BTreeMap::new(), None);
+        let active = shared.slot(PathBuf::from("active"), None);
         *active.last.lock().unwrap() = last - Duration::from_secs(1);
         shared.housekeep(now, false, false);
         let remaining = shared
