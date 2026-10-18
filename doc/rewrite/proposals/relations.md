@@ -212,7 +212,8 @@ Assoc lists keyed by datum are references the lint does not see. Verified long-l
 
 **Done (2026-10-18):** phase 1 (registries in the store, ordered keys, a registry keeps its own list while globals initialize and the store adopts
 it), phase 2 (the key/z/area index is the store's sub-index of the registry key; `GLOB.lifeform_indexes` gone), phase 3 (a datum leaves the
-registries the store lists for it, through each registry, in `leave_registries()`; the declared walk only covers registries not yet adopted).
+registries the store lists for it, through each registry, in `leave_registries()`, which also unfiles the key/z/area place, so the
+lifeform registry teardown is gone; the store is made on first use, so it exists from global init and there is no per-type walk or fallback).
 `registry_mirror_join` stays: it is the engine's hook into `/datum/registry` (code/datums), which code/engine may not name (layering), and it
 already writes through the store. `GLOB.radio_listen_tuned/via` stay as they are (two engine globals, exempt by path).
 
