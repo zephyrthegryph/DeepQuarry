@@ -9,15 +9,10 @@ var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
 var	code/controllers/subsystems/proximity.dm	@/client::proximity_eye
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
-var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
-var	code/datums/om_events/signal_events.dm	@/datum/definition_event/observer_turf_entered::arrived
 var	code/defines/procs/announce.dm	@/datum/controller/global_vars::priority_announcement
 var	code/defines/procs/announce.dm	@/datum/controller/global_vars::command_announcement
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::activation
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
-var	code/engine/declare/definition_types.dm	@/datum/definition_event::entity
-var	code/engine/declare/definition_types.dm	@/datum/relation_edge::source
-var	code/engine/declare/definition_types.dm	@/datum/relation_edge::target
 var	code/engine/declare/table.dm	@/datum/centry::item
 var	code/engine/present/appearance_builder.dm	@/datum/controller/global_vars::look_builder
 var	code/game/antagonist/alien/borer.dm	@/datum/controller/global_vars::borers
@@ -117,9 +112,6 @@ list	code/controllers/subsystems/tgui.dm	@/datum/system/tgui::asset_generations
 list	code/datums/containment/latency_policy.dm	@/datum/controller/global_vars::latency_sweep_holders
 list	code/datums/datum.dm	@/datum::open_tguis
 list	code/datums/locations/locations.dm	@/datum/locations::children
-list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::pipelines
-list	code/engine/io/db.dm	@/datum/io/sql::rows
-list	code/engine/present/appearance_builder.dm	@/datum/look::vis
 list	code/game/area/areas.dm	@/area::all_doors
 list	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::client_huds
 list	code/game/machinery/camera/camera_assembly.dm	@/obj/item/camera_assembly::possible_upgrades
