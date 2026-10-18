@@ -96,15 +96,15 @@ CAPABILITIES(/obj/effect/landmark)
 			simulated = TRUE
 			// always use this list with get_turf
 		if("Holding Facility")
-			GLOB.holdingfacility += get_turf(src) // a turf, never deleted (the landmark sits on it)
+			GLOB.holdingfacility += loc
 		if("tdome1")
-			GLOB.tdome1 += get_turf(src) // a turf, never deleted (the landmark sits on it)
+			GLOB.tdome1 += loc
 		if("tdome2")
-			GLOB.tdome2 += get_turf(src) // a turf, never deleted (the landmark sits on it)
+			GLOB.tdome2 += loc
 		if("tdomeadmin")
-			GLOB.tdomeadmin += get_turf(src) // a turf, never deleted (the landmark sits on it)
+			GLOB.tdomeadmin += loc
 		if("tdomeobserve")
-			GLOB.tdomeobserve += get_turf(src) // a turf, never deleted (the landmark sits on it)
+			GLOB.tdomeobserve += loc
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)
