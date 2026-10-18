@@ -2,13 +2,15 @@
 /mob/living/carbon/human/beacon_topic_gate_actor
 	var/permits_topics = TRUE
 	var/access_denials = 0
-	/// Denied CanUseObjTopic consultations. Access feedback (access_denials) is sent only by direct UI checks and topic refusal dispatch,
-	/// never by requirement evaluation (code/game/objects/objs.dm), so a menu or UI op proves its gate by consulting it.
-	var/topic_denials = 0
+
+/// Denied CanUseObjTopic consultations. Access feedback (access_denials) is sent only by direct UI checks and topic refusal dispatch, never by
+/// requirement evaluation (code/game/objects/objs.dm), so a menu or UI op proves its gate by consulting it. The count is a test global, not
+/// state of the actor: the consultation runs inside a pure requirement evaluation, where a tracked write is a purity violation.
+GLOBAL_VAR_INIT(beacon_topic_gate_denials, 0)
 
 /mob/living/carbon/human/beacon_topic_gate_actor/CanUseObjTopic(obj/O)
 	if(!permits_topics)
-		set_topic_denials(topic_denials + 1)
+		GLOB.beacon_topic_gate_denials++
 	return permits_topics
 
 /mob/living/carbon/human/beacon_topic_gate_actor/access_denied_feedback(obj/O)
@@ -35,6 +37,7 @@
 
 /datum/unit_test/dq_e2/beacon_topic_gate_request
 /datum/unit_test/dq_e2/beacon_topic_gate_request/run_gate()
+	GLOB.beacon_topic_gate_denials = 0
 	var/mob/living/carbon/human/beacon_topic_gate_actor/user = allocate(/mob/living/carbon/human/beacon_topic_gate_actor, test_floor())
 	user.enable_godmode()
 	var/obj/machinery/syndicate_beacon/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/topic_gate_probe, get_turf(user))
@@ -43,7 +46,7 @@
 	user.set_permits_topics(FALSE)
 	test_menu(user, B, "beacon_talk")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Denied topic access prevents the real beacon question from opening")
-	TEST_ASSERT(user.topic_denials > 0, "The actual CanUseObjTopic gate refuses the request")
+	TEST_ASSERT(GLOB.beacon_topic_gate_denials > 0, "The actual CanUseObjTopic gate refuses the request")
 	TEST_ASSERT_EQUAL(B.offers_accepted, 0, "Denied admission executes no offer effect")
 	user.set_permits_topics(TRUE)
 	test_menu(user, B, "beacon_talk")
@@ -64,6 +67,7 @@
 
 /datum/unit_test/dq_e2/beacon_topic_gate_ui
 /datum/unit_test/dq_e2/beacon_topic_gate_ui/run_gate()
+	GLOB.beacon_topic_gate_denials = 0
 	var/mob/living/carbon/human/beacon_topic_gate_actor/user = allocate(/mob/living/carbon/human/beacon_topic_gate_actor, test_floor())
 	user.enable_godmode()
 	var/obj/machinery/syndicate_beacon/virgo/topic_gate_probe/B = allocate(/obj/machinery/syndicate_beacon/virgo/topic_gate_probe, get_turf(user))
@@ -72,7 +76,7 @@
 	user.set_permits_topics(FALSE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 0, "Inherited UI topic admission blocks the real transfer op")
-	TEST_ASSERT(user.topic_denials > 0, "The UI op really checked CanUseObjTopic")
+	TEST_ASSERT(GLOB.beacon_topic_gate_denials > 0, "The UI op really checked CanUseObjTopic")
 	user.set_permits_topics(TRUE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 1, "Allowed inherited UI admission reaches its actual op handler")
