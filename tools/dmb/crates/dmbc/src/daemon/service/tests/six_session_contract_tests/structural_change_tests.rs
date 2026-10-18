@@ -377,3 +377,22 @@ fn appends_after_a_memory_pressure_release_recover_the_model_and_match_fresh_byt
         count += 1;
     }
 }
+
+#[test]
+fn shadowing_moving_and_removing_a_callable_name_match_fresh_bytes() {
+    // A cached negative or positive callable answer must not survive a shadowing member, a move of
+    // the declaration to another type, or the removal of the last declaration of the name.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    let global = format!("{TREE}/proc/pick_value()\n    return 2\n/datum/base/proc/user()\n    return pick_value()\n");
+    let shadowed = format!("{global}/datum/base/proc/pick_value()\n    return 1\n");
+    let moved = format!("{global}/datum/base/child/proc/pick_value()\n    return 3\n");
+    let removed_member = global.clone();
+    let removed_last = format!("{TREE}/datum/base/proc/user()\n    return 4\n");
+    for source in [&global, &shadowed, &moved, &removed_member, &removed_last, &global] {
+        edit_all(&roots, source);
+        // compare_revision asserts the retained output is equivalent to a fresh compile.
+        compare_revision(&shared, &roots);
+    }
+}
