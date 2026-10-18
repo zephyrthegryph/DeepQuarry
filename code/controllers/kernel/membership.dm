@@ -38,7 +38,9 @@
 
 /// The one membership store.
 /proc/kernel_membership()
-	var/static/datum/kernel_membership/store = new
+	var/static/datum/kernel_membership/store
+	if(!store)
+		store = new // made on first use, so it exists from global init on (a static initializer ran after the globals that join registries)
 	return store
 
 /// The store's member list for `key`, created (empty) if no member joined yet. The store keeps this one list for
@@ -49,8 +51,6 @@
 	if(!key)
 		return null
 	var/datum/kernel_membership/M = kernel_membership()
-	if(!istype(M)) // global init: the store's static is not built yet (the engine resolves the list on first run)
-		return null
 	if(!M.index_by_key[key])
 		M.index_by_key[key] = list()
 		M.members_by_key[key] = list()
@@ -155,8 +155,6 @@
 /// itself a key (a datum used as a system), every member leaves it. Costs one lookup for a datum with neither.
 /proc/member_teardown(datum/D)
 	var/datum/kernel_membership/M = kernel_membership()
-	if(!istype(M)) // global init: the store's static is not built yet, and nothing has joined
-		return
 	if(M.keys_of[D])
 		for(var/key in member_keys(D))
 			if(M.ordered_keys?[key])

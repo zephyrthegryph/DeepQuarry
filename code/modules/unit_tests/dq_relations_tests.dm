@@ -250,7 +250,7 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	TEST_ASSERT_NULL(GLOB.client_images_by_loc[P], "a dying atom drops its images from the index")
 
 /// D12: a member that joined a registry while globals initialized (the global message listener, made by GLOB) is in the membership store once
-/// the kernel's preboot adopts the registries, so the one leave path finds it.
+/// the store (made on first use, so it exists from global init) recorded the join, so the one leave path finds it.
 /datum/unit_test/relations_registry_global_init_members_adopted
 
 /datum/unit_test/relations_registry_global_init_members_adopted/Run()

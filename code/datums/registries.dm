@@ -82,23 +82,13 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	return "registry:[id]"
 
 /// The store adopts this registry's list on first use (the store is a proc static: it may not exist yet while globals initialize).
-/// FALSE while globals initialize (the store is not built yet): the registry keeps its own list then, and the store indexes those members
-/// when it adopts the list on the first call after.
 /datum/registry/proc/store_ready()
 	PRIVATE_PROC(TRUE)
-	if(!istype(kernel_membership(), /datum/kernel_membership))
-		return FALSE
 	member_adopt_ordered(store_key(), members)
-	return TRUE
 
 /// Joins a member. Only join_registries() and registry_join() call this.
 /datum/registry/proc/add(datum/member)
-	if(!store_ready())
-		if(!(member in members))
-			members += member
-			if(keyed)
-				file_member(member)
-		return
+	store_ready()
 	if(!member_join(store_key(), member))
 		return
 	if(keyed)
@@ -108,12 +98,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /datum/registry/proc/remove(datum/member)
 	if(dq_batch_defer_registry_leave(src, member))
 		return // qdel_batch() removes every doomed member in one pass
-	if(!store_ready())
-		if(member in members)
-			members -= member
-			if(keyed)
-				unfile_member(member)
-		return
+	store_ready()
 	if(!member_is(store_key(), member))
 		return
 	member_leave(store_key(), member, all = TRUE)
@@ -124,10 +109,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
 /// of `leaving` leaves at once.
 /datum/registry/proc/remove_many(list/leaving)
-	if(!store_ready())
-		for(var/datum/member as anything in leaving)
-			remove(member)
-		return
+	store_ready()
 	for(var/datum/member as anything in leaving)
 		if(member_is(store_key(), member))
 			if(keyed)
@@ -137,8 +119,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 
 /// TRUE if `member` is in this registry.
 /datum/registry/proc/has(datum/member)
-	if(!store_ready())
-		return member in members
+	store_ready()
 	return member_is(store_key(), member)
 
 /// The live member list, in join order. Read-only.
@@ -219,26 +200,14 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// is never left behind and nothing removes itself by hand.
 /// One leave path (relations proposal D12): the membership store knows every registry this datum is in (its "registry:<id>" keys), so it leaves
 /// those, through each registry (which unfiles its keyed lists and defers to a batched destroy), instead of walking every registry its type
-/// declares. Before the store exists (global init) the declared walk is the fallback.
+/// declares.
 /datum/proc/leave_registries()
-	if(!istype(kernel_membership(), /datum/kernel_membership))
-		for(var/datum/registry/registry as anything in type_registries()) // only while globals initialize: the store is not built yet
-			if(!skips_registry(registry.id))
-				registry.remove(src)
-		return
 	for(var/key in member_keys(src))
 		if(copytext(key, 1, 10) != "registry:")
 			continue
 		var/datum/registry/registry = build_registries()[copytext(key, 10)]
 		registry?.remove(src)
 
-/// After global init (the kernel's preboot): the store adopts every registry's list, indexing the members that joined while it did not exist
-/// yet, so leave_registries() finds every membership through the store.
-/proc/registries_adopt_into_store()
-	var/list/registries = build_registries()
-	for(var/id in registries)
-		var/datum/registry/registry = registries[id]
-		member_adopt_ordered(registry.store_key(), registry.members)
 
 /// Puts `member` in conditional registry `id` (idempotent). Its type must
 /// declare REGISTRY_MEMBERSHIP() for `id`. It leaves again with
