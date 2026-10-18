@@ -24,7 +24,8 @@ impl SessionSymbolicMemo {
         self.attempt.as_ref()?;
         let owner = self.publication.as_ref()?;
         if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "2") {
-            for (reason, members) in owner.values.rejection_summary(admission, 8) {
+            let limit = std::env::var("DMB_ROSTER_REJECTIONS").ok().and_then(|value| value.parse().ok()).unwrap_or(8);
+            for (reason, members) in owner.values.rejection_summary(admission, limit) {
                 eprintln!("detail unchanged-roster rejection: {members} variants: {reason}");
             }
         }

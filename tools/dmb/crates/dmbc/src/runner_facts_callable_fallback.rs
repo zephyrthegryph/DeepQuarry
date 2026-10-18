@@ -70,6 +70,15 @@ impl crate::engine_host::CallableFallbackReceipts for Scope {
                 None,
             );
         }
+        if std::env::var("DMB_TRACE_DOMAIN").is_ok_and(|filter| filter.contains(&format!("{}", name.bits()))) {
+            let mut present = false;
+            self.store.visit_storage(|view| {
+                if let dm_session::ObservedArtifactStorageView::Entry { key: stored, .. } = view {
+                    present |= stored.as_ref() == key.as_slice();
+                }
+            });
+            eprintln!("detail trace fallback {name:?}: issuing a new receipt (key stored={present})");
+        }
         static NEXT: AtomicU64 = AtomicU64::new(1);
         let token = NEXT
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| v.checked_add(1))
@@ -110,20 +119,12 @@ impl RetainedHostFacts {
             .fallback_scope
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        let retained = current
-            .as_ref()
-            .map(|previous| {
-                previous
-                    .queried
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner())
-                    .iter()
-                    .filter(|name| scope.names.contains(name))
-                    .copied()
-                    .map(key)
-                    .collect::<BTreeSet<_>>()
-            })
-            .unwrap_or_default();
+        // Keep the receipt of every name still in the exclusion set, not only the names the previous
+        // request queried: a body patch queries a handful, and pruning the rest reissued every other
+        // receipt on the next full compile, so each procedure reading one (a member lookup of a global
+        // proc such as `to_chat`) failed its unchanged-input certificate. A receipt is one token and
+        // the exclusion set bounds them.
+        let retained = scope.names.iter().copied().map(key).collect::<BTreeSet<_>>();
         let mut keys = Vec::new();
         self.values.visit_storage(|view| {
             if let dm_session::ObservedArtifactStorageView::Entry { key, .. } = view {
@@ -142,18 +143,10 @@ impl RetainedHostFacts {
             .fallback_scope
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        // Every receipt of a name in the current exclusion set survives (see `attach_fallback`).
         current
             .as_ref()
-            .map(|scope| {
-                scope
-                    .queried
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner())
-                    .iter()
-                    .copied()
-                    .map(key)
-                    .collect()
-            })
+            .map(|scope| scope.names.iter().copied().map(key).collect())
             .unwrap_or_default()
     }
     pub(super) fn census_fallback(&self, census: &mut crate::heap_census::HeapCensus) {
