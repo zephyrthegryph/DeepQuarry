@@ -283,10 +283,12 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let sem = crate::sem::sem_for(tree)?;
     let decls = Decls::get(tree);
     let ann = Annotations::get(&sem, &decls);
-    let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed() } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
+    let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree) } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
+    let t_setup = started.elapsed();
     let written = WriteIndex::build(&sem);
     let set_calls = super::auto_tracked::set_calls(tree);
     let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
+    let t_written = started.elapsed();
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
@@ -312,35 +314,59 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             });
         }
     }
+    let t_handlers = started.elapsed();
     // A capability's entries() (CAP_ENTRIES) names holder procs too (powered()'s TYPE_PROC_REF(/obj/machinery, power_available)): judged here only,
     // not by sem/reads, so the runtime learns what they cannot see.
-    for h in crate::sem::hooks::discover_in(&decls, &[crate::sem::decls::CAP_ENTRIES]) {
-        if !h.role.reads_covered() || h.cap_proc || h.owner.is_empty() {
-            continue;
-        }
-        let id = format!("{}::{}", h.owner, h.proc);
-        if consumers.contains_key(&id) || sem.proc_ref(&h.owner, &h.proc).is_none() {
-            continue;
-        }
-        let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
-        note_reads(&set, &mut reads);
-        consumers.insert(id, untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output));
-    }
-    // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
-    for m in decls.markers_named("STAT") {
-        let Some(owner) = m.args.first() else { continue };
-        for arg in &m.args {
-            let compact = arg.replace(' ', "");
-            let Some(name) = compact.strip_prefix("formula=PROC_REF(").and_then(|r| r.strip_suffix(')')) else { continue };
-            if sem.proc_ref(owner, name).is_none() {
+    // The walks are the cost and each is independent: the distinct ones run in parallel, their bookkeeping in declaration order.
+    {
+        let mut work: Vec<(String, crate::sem::hooks::HandlerRef)> = Vec::new();
+        let mut queued: BTreeSet<String> = BTreeSet::new();
+        for h in crate::sem::hooks::discover_in(&decls, &[crate::sem::decls::CAP_ENTRIES]) {
+            if !h.role.reads_covered() || h.cap_proc || h.owner.is_empty() {
                 continue;
             }
+            let id = format!("{}::{}", h.owner, h.proc);
+            if consumers.contains_key(&id) || queued.contains(&id) || sem.proc_ref(&h.owner, &h.proc).is_none() {
+                continue;
+            }
+            queued.insert(id.clone());
+            work.push((id, h));
+        }
+        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(_, h)| {
+            let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+            let untracked = untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output);
+            (set, untracked)
+        });
+        for ((id, _), (set, untracked)) in work.into_iter().zip(walked) {
+            note_reads(&set, &mut reads);
+            consumers.insert(id, untracked);
+        }
+    }
+    // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
+    {
+        let mut work: Vec<(String, String)> = Vec::new();
+        for m in decls.markers_named("STAT") {
+            let Some(owner) = m.args.first() else { continue };
+            for arg in &m.args {
+                let compact = arg.replace(' ', "");
+                let Some(name) = compact.strip_prefix("formula=PROC_REF(").and_then(|r| r.strip_suffix(')')) else { continue };
+                if sem.proc_ref(owner, name).is_none() {
+                    continue;
+                }
+                work.push((owner.clone(), name.to_string()));
+            }
+        }
+        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(owner, name)| {
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
+            let untracked = untracked_of(&set, &eng, &written, false);
+            (set, untracked)
+        });
+        for ((owner, name), (set, untracked)) in work.into_iter().zip(walked) {
             note_reads(&set, &mut reads);
             if !set.sampled.is_empty() {
                 sampled.entry(format!("{}::{}", owner, name)).or_default().extend(set.sampled.iter().cloned());
             }
-            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
+            consumers.entry(format!("{}::{}", owner, name)).or_insert(untracked);
         }
     }
     // The presentation reactions (Life steps, HUD, sight, canmove) read holder vars too: reactive code the handler roles do not cover.
@@ -352,12 +378,14 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
         }
     }
+    let t_stat = started.elapsed();
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_hops: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
     let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
+    let mut draw_work: Vec<(String, String)> = Vec::new();
     for d in crate::sem::procs::proc_defs(&sem, &["draw"]) {
         if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) {
             continue;
@@ -366,14 +394,24 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         if draws.contains(&id) {
             continue;
         }
-        let set = eng.analyze(&d.owner, "draw");
+        draws.insert(id.clone());
+        draw_work.push((d.owner.clone(), id));
+    }
+    draws.clear();
+    // Each draw's closed walk is independent: run them in parallel, then fold the results in the order the definitions came.
+    let draw_walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&draw_work, |(owner, _)| {
+        let set = eng.analyze(owner, "draw");
+        let untracked = untracked_of(&set, &eng, &written, true);
+        (set, untracked)
+    });
+    for ((owner, id), (set, untracked)) in draw_work.into_iter().zip(draw_walked) {
         note_reads(&set, &mut reads);
         if !set.sampled.is_empty() {
             sampled.entry(id.clone()).or_default().extend(set.sampled.iter().cloned());
         }
-        let keys = draw_reads.entry(d.owner.clone()).or_default();
-        let published = draw_keys.entry(d.owner.clone()).or_default();
-        let hopped = draw_hops.entry(d.owner.clone()).or_default();
+        let keys = draw_reads.entry(owner.clone()).or_default();
+        let published = draw_keys.entry(owner.clone()).or_default();
+        let hopped = draw_hops.entry(owner.clone()).or_default();
         for r in &set.reads {
             if r.kind == ReadKind::Var && draw_hop_heard(r) {
                 hopped.insert(format!("{}.{}", r.hops.join("."), r.var));
@@ -387,9 +425,10 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 published.insert(crate::gens::reads::canonical_read_key(&r.kind, &r.var, &capability_keys, &defines));
             }
         }
-        consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
+        consumers.insert(id.clone(), untracked);
         draws.insert(id);
     }
+    let t_draws = started.elapsed();
     // A window host's ui_data(A) is an output whether or not a CAPABILITIES block names an interface() for it (an inherited or implicit window):
     // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
     {
@@ -408,6 +447,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
         }
     }
+    let t_ui = started.elapsed();
     let mut leaves = Vec::new();
     let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {
@@ -439,6 +479,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     leaves.dedup();
     if trace {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
+        eprintln!("analyze: gen/deps phases: sem+setup {:.1?}, written/set-calls {:.1?}, handler loop {:.1?}, cap entries+stat {:.1?}, draws {:.1?}, ui_data {:.1?}, markers {:.1?}", t_setup, t_written - t_setup, t_handlers - t_written, t_stat - t_handlers, t_draws - t_stat, t_ui - t_draws, started.elapsed() - t_ui);
     }
     let mut candidates: BTreeSet<(String, String)> = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
     // A var written through a generated setter stays tracked after its last reader goes (the calls `analyze fix` wrote must keep compiling), and

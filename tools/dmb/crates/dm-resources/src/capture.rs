@@ -540,9 +540,18 @@ fn search_context(
     root: &Path,
     directories: &[PathBuf],
 ) -> Result<CapturedSearchContext, CaptureError> {
-    let mut bytes = b"dm-terminal-resource-search-v1\0project-first/reverse-file-dir\0".to_vec();
+    // The identity names the search structure relative to the project root, never where the checkout lives:
+    // two worktrees with the same FILE_DIR layout share it, so cached ABI rows and procedure keys stay valid
+    // across a worktree switch. Every lookup answer is still a recorded read checked against current files.
+    let mut bytes =
+        b"dm-terminal-resource-search-v2\0project-first/reverse-file-dir/root-relative\0".to_vec();
     for path in std::iter::once(root).chain(directories.iter().map(PathBuf::as_path)) {
-        let text = path
+        let (tag, relative) = match path.strip_prefix(root) {
+            Ok(relative) => (b'r', relative),
+            Err(_) => (b'a', path),
+        };
+        bytes.push(tag);
+        let text = relative
             .to_str()
             .ok_or_else(|| CaptureError::Invalid("resource search path is not UTF-8".into()))?
             .replace('\\', "/");
