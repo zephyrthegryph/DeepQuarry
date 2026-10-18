@@ -120,9 +120,6 @@ var	code/modules/stockmarket/stockmarket.dm	@/datum/controller/global_vars::stoc
 var	code/modules/tgui_input/say_modal/modal.dm	@/client::tgui_say
 var	code/modules/tgui_panel/external.dm	@/client::tgui_panel
 var	code/modules/tickets/tickets.dm	@/datum/controller/global_vars::tickets
-var	code/modules/tickets/tickets.dm	@/datum/tickets::astatclick
-var	code/modules/tickets/tickets.dm	@/datum/tickets::cstatclick
-var	code/modules/tickets/tickets.dm	@/datum/tickets::rstatclick
 var	code/modules/vore/eating/special_bellies.dm	@/obj/belly/special/teleporter::target
 var	code/modules/vore/eating/vore.dm	@/client::prefs_vr
 var	code/modules/xenoarcheaology/boulder.dm	@/obj/structure/boulder::geological_data_static

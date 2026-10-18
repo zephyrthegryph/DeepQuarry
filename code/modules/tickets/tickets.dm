@@ -98,9 +98,9 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!astatclick)
-		astatclick = new(null, null, AHELP_ACTIVE) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
-		cstatclick = new(null, null, AHELP_CLOSED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
-		rstatclick = new(null, null, AHELP_RESOLVED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		rel_set(src, nameof(astatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_ACTIVE))
+		rel_set(src, nameof(cstatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_CLOSED))
+		rel_set(src, nameof(rstatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_RESOLVED))
 	var/list/L = list()
 	var/num_adm_tickets_disconnected = 0
 	var/num_men_tickets_disconnected = 0
