@@ -4,13 +4,11 @@
 var	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::global_announcer
 var	code/_global_vars/silo.dm	@/datum/controller/global_vars::ore_silo_default
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
-var	code/_onclick/hud/skybox.dm	@/client::skybox
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/system/atoms::active_batch
 var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
 var	code/controllers/subsystems/proximity.dm	@/client::proximity_eye
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
-var	code/datums/interactions/presentation.dm	@/client::screentip
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/observer_turf_entered::arrived
 var	code/defines/procs/announce.dm	@/datum/controller/global_vars::priority_announcement
@@ -50,23 +48,13 @@ var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
 var	code/game/objects/structures/transit_tubes.dm	@/obj/structure/transit_tube_pod::air_contents
 var	code/modules/admin/callproc/callproc.dm	@/datum/controller/global_vars::AdminProcCallHandler
-var	code/modules/admin/view_variables_panel.dm	@/client::dq_vv_panel
 var	code/modules/client/client defines.dm	@/client::holder
-var	code/modules/client/client defines.dm	@/client::fakeConversations
-var	code/modules/client/client defines.dm	@/client::tooltips
-var	code/modules/client/client defines.dm	@/client::volume_panel
 var	code/modules/client/client defines.dm	@/client::persistent_client
 var	code/modules/client/client defines.dm	@/client::void
-var	code/modules/client/client defines.dm	@/client::loot_panel
-var	code/modules/client/client_session.dm	@/client::session
-var	code/modules/client/shock.dm	@/client::tgui_shocker
-var	code/modules/client/statpanel_service.dm	@/client::stat_panel
 var	code/modules/debugging/debugger.dm	@/::Debugger
 var	code/modules/debugging/tracy.dm	@/::Tracy
 var	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::vendor_account
 var	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::station_account
-var	code/modules/keybindings/keybind_editor.dm	@/client::keybind_editor
-var	code/modules/media/mediamanager.dm	@/client::media
 var	code/modules/metrics/metrics_capture.dm	@/datum/controller/global_vars::tick_frame
 var	code/modules/mob/living/silicon/ai/multicam.dm	@/datum/controller/global_vars::ai_camera_room_landmark
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	@/mob/living/simple_mob/vore/aggressive/rat/tame::food
@@ -87,10 +75,7 @@ var	code/modules/security levels/security levels.dm	@/datum/controller/global_va
 var	code/modules/shieldgen/directional_shield.dm	@/obj/effect/directional_shield::projector
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwallgen::attached
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::U
-var	code/modules/tgui_input/say_modal/modal.dm	@/client::tgui_say
-var	code/modules/tgui_panel/external.dm	@/client::tgui_panel
 var	code/modules/vore/eating/special_bellies.dm	@/obj/belly/special/teleporter::target
-var	code/modules/vore/eating/vore.dm	@/client::prefs_vr
 var	code/modules/xenoarcheaology/boulder.dm	@/obj/structure/boulder::geological_data_static
 var	code/modules/xenoarcheaology/tools/suspension_generator.dm	@/obj/machinery/suspension_gen::auth_card
 list	code/ATMOSPHERICS/SSair.dm	@/datum/system/air::planetary

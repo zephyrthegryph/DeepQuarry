@@ -84,7 +84,7 @@
 	client.apply_keybindings()
 
 	if(!client.tooltips)
-		client.tooltips = new(client)
+		rel_set(client, nameof(client.tooltips), new /datum/tooltip(client))
 
 	var/turf/T = get_turf(src)
 	if(isturf(T))

@@ -219,7 +219,7 @@ CAPABILITIES(/datum/view_variables_panel)
 	if(!islist && !isdatum(thing))
 		return
 	if(!dq_vv_panel)
-		dq_vv_panel = new /datum/view_variables_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
+		rel_set(src, nameof(dq_vv_panel), new /datum/view_variables_panel(src))
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
 	dq_vv_panel.tgui_interact(requester)
