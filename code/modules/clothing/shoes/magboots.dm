@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		return
 
 	if(shoes)
-		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
+		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
 		rel_take(src, nameof(shoes))
 

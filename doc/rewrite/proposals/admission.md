@@ -713,3 +713,9 @@ names are hard-banned.
    skipped), the item's fit and equip constraints, then its own `extend(/datum/act/equip, needs(...))`. `equip_refusal()` becomes
    `ACT_ATTEMPT(I, equip, wearer, slot)` read through the answer; `dq_equip_refusal` and `dq_equip_item_refusal` are deleted.
 3. `ignore_obstruction`, `ignore_obstructions` and `dq_equip_refusal` are hard-banned in the same commit.
+
+*Landed (18 Oct, admission lane).* Steps 1 and 3 as written: `skips`/`quiet` on the grant, `skip_authority()`, `GLOB.authority_dressing` (SKIP_COVERING) as
+`equip_to_slot_if_possible`'s default and `authority = null` for the tape (the only callers that checked covering). Step 2 is taken half way: the
+pipeline is the item's own `equip_refusal(M, slot, go_over_slot, actor, authority)` (the global `dq_equip_refusal`/`dq_equip_item_refusal` are deleted and
+banned; the item part is `wearer_constraint_refusal()`), still ending in `/datum/act/equip`'s needs(). Moving the earlier steps into the act needs the act
+to carry `go_over_slot` and the authority, which the generated act arguments do not yet; that is left with wave 8's evaluator merge.

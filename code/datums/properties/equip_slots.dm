@@ -28,18 +28,11 @@
 /// Why `M` can't equip this in `slot`, or null if it can.
 /// `go_over_slot`: allow an occupied slot. Null uses the item's TAG_WEAR_OVER.
 /// `actor`: who puts it on `M` (a stripper dressing a victim); null means `M` itself.
+/// `authority`: a /datum/authority_grant whose skips leave checks out (SKIP_COVERING: what covers the slot is not in the way).
 /// A refusal check: it tells nobody (admission.md wave 4: feedback is the caller's, not a parameter of the check). equip_feedback() shows a reason.
-/obj/item/proc/equip_refusal(mob/M, slot, ignore_obstruction = FALSE, go_over_slot = null, mob/actor = null)
-	return dq_equip_refusal(src, M, slot, ignore_obstruction, go_over_slot, actor)
-
-/// Tells `who` why this item can't be worn in a slot (the reason equip_refusal() answered).
-/obj/item/proc/equip_feedback(mob/who, reason)
-	if(who && reason)
-		to_chat(who, span_warning("You can't wear \the [src] there: [reason]."))
-
 /// The stated order (admission.md D2h): the wearer has the slot, the slot's holder state and catalog, occupancy, reach, the item's
 /// own fit and equip constraints, then the needs() an item type declares on /datum/act/equip (its holder is the item, its target the wearer).
-/proc/dq_equip_refusal(obj/item/I, mob/M, slot, ignore_obstruction, go_over_slot, mob/actor = null)
+/obj/item/proc/equip_refusal(mob/M, slot, go_over_slot = null, mob/actor = null, authority = null)
 	if(!slot || !M)
 		return "there's nowhere to put it"
 	if(!actor)
@@ -53,38 +46,42 @@
 				return "you have nowhere to wear it"
 		if(!acceptance_declared(GLOB.native_equipment_acceptance, slot))
 			return "you have nowhere to wear it"
-		. = dq_native_equip_slot_reason(M, slot, I, actor)
+		. = dq_native_equip_slot_reason(M, slot, src, actor)
 		if(.)
 			return .
-		return dq_equip_item_refusal(I, M, slot, actor)
+		return wearer_constraint_refusal(M, slot, actor)
 	// The mob's slot list says whether it has the slot; the slot's definition
 	// (its body part, then its native acceptance requirements) whether it takes the item.
 	if(!def)
 		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
-	. = reason_text(def.refusal(M, I, actor))
+	. = reason_text(def.refusal(M, src, actor))
 	if(.)
 		return .
 	// Capacity: one item per equip slot, unless this one goes on over it.
 	if(isnull(go_over_slot))
-		go_over_slot = HAS_TAG(I, TAG_WEAR_OVER)
+		go_over_slot = HAS_TAG(src, TAG_WEAR_OVER)
 	var/obj/item/present = M.get_equipped_item(slot)
-	if(present && present != I && !go_over_slot)
+	if(present && present != src && !go_over_slot)
 		return "you're already wearing \the [present] there"
-	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, null))
+	if(!authority_skips(authority, SKIP_COVERING) && !M.slot_is_accessible(slot, src, null))
 		return "something is in the way"
-	return dq_equip_item_refusal(I, M, slot, actor)
+	return wearer_constraint_refusal(M, slot, actor)
 
-/// The item's own constraints on its wearer: fit (except in pockets and suit
-/// storage) and equip.
-/proc/dq_equip_item_refusal(obj/item/I, mob/M, slot, mob/actor = null)
+/// Tells `who` why this item can't be worn in a slot (the reason equip_refusal() answered).
+/obj/item/proc/equip_feedback(mob/who, reason)
+	if(who && reason)
+		to_chat(who, span_warning("You can't wear \the [src] there: [reason]."))
+
+/// The item's own constraints on its wearer: fit (except in pockets and suit storage) and equip, then the equip action's needs().
+/obj/item/proc/wearer_constraint_refusal(mob/M, slot, mob/actor = null)
 	if(slot != SLOT_ID_POCKET_L && slot != SLOT_ID_POCKET_R && slot != SLOT_ID_SUIT_STORAGE)
-		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, M, actor)
+		. = dq_constraint_refusal(src, CONSTRAINT_FIT, src, M, actor)
 		if(.)
 			return .
-	. = dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, M, actor)
+	. = dq_constraint_refusal(src, CONSTRAINT_EQUIP, src, M, actor)
 	if(.)
 		return .
-	return reason_text(op_transfer_precheck(I, /datum/act/equip, M, slot, actor || M))
+	return reason_text(op_transfer_precheck(src, /datum/act/equip, M, slot, actor || M))
 
 /// The equip slots a human's species has.
 /proc/dq_equip_slots_of(mob/living/carbon/human/H)
