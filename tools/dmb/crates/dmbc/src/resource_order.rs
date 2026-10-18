@@ -131,9 +131,17 @@ fn collect_key(
     prefix_imports: &[Arc<str>],
     suffix_imports: &[Arc<str>],
 ) -> u128 {
-    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    // The same bytes the streaming hasher saw, gathered into one buffer and hashed once (the digest
+    // is identical): a million small `update` calls over the allocation ledger took 1.4 s per request.
+    struct Buffer(Vec<u8>);
+    impl Buffer {
+        fn update(&mut self, bytes: &[u8]) {
+            self.0.extend_from_slice(bytes);
+        }
+    }
+    let mut hash = Buffer(Vec::with_capacity(ledger.events.len() * 24 + 64));
     hash.update(b"dmb-resource-phase-order-v1\0");
-    let id = |hash: &mut xxhash_rust::xxh3::Xxh3, value: SymbolId| {
+    let id = |hash: &mut Buffer, value: SymbolId| {
         hash.update(&value.bits().to_le_bytes());
     };
     for event in ledger.events.iter() {
@@ -203,7 +211,7 @@ fn collect_key(
             hash.update(b"\0");
         }
     }
-    hash.digest128()
+    xxhash_rust::xxh3::xxh3_128(&hash.0)
 }
 
 pub fn collect<R: Resolver>(

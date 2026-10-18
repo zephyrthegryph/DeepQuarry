@@ -23,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 
 CAPABILITIES(/obj/structure/micro_tunnel)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole
 	op("use", inputs(hand(), remote()), label("Use"), when(PROC_REF(actor_outside)), needs(req_adjacent()),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
@@ -62,7 +63,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 // the tunnel collapses and spits out the micros inside it.
 DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(message = "%SRC% collapses!"))
 
-/obj/structure/micro_tunnel/on_destroy(force)
+/obj/structure/micro_tunnel/ending_consequences(cause, datum/by)
 	for(var/mob/thing in contents_of(src))
 		visible_message(span_warning("\The [thing] tumbles out!"))
 		thing.forceMove(get_turf(src.loc))

@@ -6,6 +6,7 @@
 //   pressure_in(lo, hi)           the pressure of the air around the subject is within [lo, hi]; false when there is no air.
 //   ambient_gas_over(gas, moles)  the air around the subject holds more than `moles` of the gas.   ambient_gas_under(gas, moles): fewer than.
 //   subject_is(type)              the subject is the type (a slime extract): also an index key, so such a rule is only a candidate in that subject.
+//   subject_var_over(name, n)     the subject's var `name` is above n (a slime extract with uses left). Read by name off the subject's atom; false when it has none.
 //   appliance(flags)              the subject is a kitchen appliance of one of the types.
 //   xform_all(c...), xform_any(c...), xform_not(c)    combinators.
 //   TYPE_PROC_REF(/type, x)       a proc of the rule's type, called as x(subject), returning TRUE or FALSE (counted: a rule with one is not `plain`). A static block is
@@ -37,6 +38,10 @@
 /proc/subject_is(subject_type)
 	RETURN_TYPE(/datum/entry)
 	return xform_cond("subject_is", list("type" = subject_type))
+
+/proc/subject_var_over(var_name, value)
+	RETURN_TYPE(/datum/entry)
+	return xform_cond("subject_var_over", list("var" = var_name, "value" = value))
 
 /proc/appliance(flags)
 	RETURN_TYPE(/datum/entry)
@@ -123,6 +128,11 @@
 			return LINDA_GAS_AMT(air, E.args["gas"]) < E.args["moles"]
 		if("subject_is")
 			return istype(xform_atom_of(subject), E.args["type"])
+		if("subject_var_over")
+			var/atom/thing = xform_atom_of(subject)
+			if(!thing || !(E.args["var"] in thing.vars))
+				return FALSE
+			return thing.vars[E.args["var"]] > E.args["value"]
 		if("appliance")
 			var/atom/thing = xform_atom_of(subject)
 			if(!thing || !("appliancetype" in thing.vars))

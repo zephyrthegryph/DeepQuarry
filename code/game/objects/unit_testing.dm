@@ -17,24 +17,33 @@ CAPABILITIES(/obj/distilling_tester)
 /obj/distilling_tester/return_air()
 	return GM
 
+/// A tester takes no heat from a transformation: the test reads the reagents, not the room.
+/obj/distilling_tester/xform_air_sink()
+	return null
+
 /// Tests set the temperature directly.
 /obj/distilling_tester/get_temperature()
 	return current_temp
 
-/obj/distilling_tester/proc/test_distilling(datum/decl/chemical_reaction/distilling/D, temp_prog)
+/obj/distilling_tester/proc/test_distilling(datum/xform/D, temp_prog)
 	QDEL_SWAP(GM,new())
-	if(D.require_xgm_gas)
-		GM.adjust_gas(D.require_xgm_gas, 100) // XGM .gas[id] assign → LINDA adjust
+	var/list/ambient = xform_cond_ambient(D.holds)
+	var/require_gas = ambient[1]
+	var/rejects_gas = ambient[2]
+	var/minimum_pressure = ambient[3]
+	if(require_gas)
+		GM.adjust_gas(require_gas, 100) // XGM .gas[id] assign → LINDA adjust
 	else
-		if(D.rejects_xgm_gas == GAS_N2)
+		if(rejects_gas == GAS_N2)
 			GM.adjust_gas(GAS_O2, (100) - LINDA_GAS_AMT(GM, GAS_O2))
 		else
 			GM.adjust_gas(GAS_N2, (100) - LINDA_GAS_AMT(GM, GAS_N2))
-	if(D.minimum_xgm_pressure)
-		heat_set(GM, (D.minimum_xgm_pressure * CELL_VOLUME) / (LINDA_GAS_AMT(GM, D.require_xgm_gas) * R_IDEAL_GAS_EQUATION)) // XGM .gas[id] → LINDA
+	if(minimum_pressure)
+		heat_set(GM, (minimum_pressure * CELL_VOLUME) / (LINDA_GAS_AMT(GM, require_gas) * R_IDEAL_GAS_EQUATION)) // XGM .gas[id] → LINDA
 
 	// Try this 10 times, We need to know if something is blocking at multiple temps.
 	// If it passes unit test, it might still be awful to make though, gotta find the right gas mix!
-	current_temp = LERP( TYPE_TABLE_GET(D, distilling_temp_range)[1], TYPE_TABLE_GET(D, distilling_temp_range)[2], temp_prog)
+	var/list/window = D.bands[1]
+	current_temp = LERP(window[1], window[2], temp_prog)
 	reagents.handle_reactions()
 

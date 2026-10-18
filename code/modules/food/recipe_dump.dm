@@ -1,11 +1,13 @@
 ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink recipe info and images for wiki or other use.", ADMIN_CATEGORY_SERVER_ADMIN)
 	//////////////////////// DRINK
 	var/list/drink_recipes = list()
-	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.ready().chemical_reactions)
-		drink_recipes[CR.type] = list("Result" = CR.name,
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		if(!ispath(CR.rule_type, /transformation/chem/instant/drinks))
+			continue
+		drink_recipes[CR.rule_type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
-								"Reagents" = (CR.required_reagents || list()),
-								"Catalysts" = (CR.catalysts || list()))
+								"Reagents" = (CR.reagent_takes || list()),
+								"Catalysts" = (CR.reagent_catalysts || list()))
 
 	//////////////////////// FOOD
 	var/list/food_recipes = subtypesof(/datum/recipe)
@@ -34,11 +36,13 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 		spent(R)
 
 	//////////////////////// FOOD+ (basically condiments, tofu, cheese, soysauce, etc)
-	for(var/datum/decl/chemical_reaction/instant/food/CR in SSchemistry.ready().chemical_reactions)
-		food_recipes[CR.type] = list("Result" = CR.name,
+	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
+		if(!ispath(CR.rule_type, /transformation/chem/instant/food))
+			continue
+		food_recipes[CR.rule_type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
-								"Reagents" = (CR.required_reagents || list()),
-								"Catalysts" = (CR.catalysts || list()),
+								"Reagents" = (CR.reagent_takes || list()),
+								"Catalysts" = (CR.reagent_catalysts || list()),
 								"Fruit" = list(),
 								"Ingredients" = list(),
 								"Image" = null)

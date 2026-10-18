@@ -283,19 +283,14 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	spent(src)
 	return 1
 
-/datum/decl/chemical_reaction/instant/promethean_brain_revival
-	name = "Promethean Revival"
-	id = "prom_revival"
-	result = null
-	required_reagents = list(REAGENT_ID_PHORON = 40)
-	result_amount = 1
+/transformation/chem/instant/promethean_brain_revival
 
-/datum/decl/chemical_reaction/instant/promethean_brain_revival/can_happen(datum/reagents/holder)
-	if(holder.my_atom && istype(holder.my_atom, /obj/item/organ/internal/brain/slime))
-		return ..()
-	return FALSE
+CAPABILITIES(/transformation/chem/instant/promethean_brain_revival)
+	configure(transformation(name = "Promethean Revival", id = "prom_revival", takes = list(reagent(REAGENT_ID_PHORON, 40)), made = 1,
+		holds = subject_is(/obj/item/organ/internal/brain/slime),
+		then = TYPE_PROC_REF(/transformation/chem/instant/promethean_brain_revival, on_reaction)))
 
-/datum/decl/chemical_reaction/instant/promethean_brain_revival/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/promethean_brain_revival/proc/on_reaction(datum/reagents/holder)
 	var/obj/item/organ/internal/brain/slime/brain = holder.my_atom
 	if(brain.reviveBody())
 		brain.visible_message(span_notice("[brain] bubbles, surrounding itself with a rapidly expanding mass of slime!"))

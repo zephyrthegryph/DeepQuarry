@@ -13,32 +13,34 @@
 
 /datum/unit_test/dq_chem_reaction_progress_pin/Run()
 	var/list/rows = list()
-	var/list/decls = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
+	var/list/decls = list()
+	for(var/datum/xform/X as anything in dq_chem_rules())
+		decls["[X.rule_type]"] = X
 	var/list/paths = list()
 	for(var/path in decls)
 		paths += path
 	sortTim(paths, GLOBAL_PROC_REF(cmp_text_asc))
 	for(var/path in paths)
-		var/datum/decl/chemical_reaction/C = decls[path]
-		if(!length(C.required_reagents))
+		var/datum/xform/C = decls[path]
+		if(!length(C.reagent_takes))
 			continue
 		for(var/k in list(1, 4.3, 25, 150))
 			for(var/with_product in list(FALSE, TRUE))
 				var/datum/reagents/H = new /datum/reagents(1000000)
 				var/limit = INFINITY
-				for(var/id in C.required_reagents)
-					var/ratio = C.required_reagents[id]
+				for(var/id in C.reagent_takes)
+					var/ratio = C.reagent_takes[id]
 					H.add_reagent(id, ratio * k, safety = 1)
-				for(var/id in C.required_reagents)
-					limit = min(limit, H.get_reagent_amount(id) / C.required_reagents[id])
+				for(var/id in C.reagent_takes)
+					limit = min(limit, H.get_reagent_amount(id) / C.reagent_takes[id])
 				if(with_product && C.result && C.result_amount)
 					H.add_reagent(C.result, C.result_amount * k * 0.5, safety = 1)
-				var/progress = C.calc_reaction_progress(H, limit)
+				var/progress = C.progress(H, limit)
 				rows += "[path] k=[k] product=[with_product] limit=[round(limit, 0.0001)] progress=[round(progress, 0.0001)]"
 				qdel(H)
 	var/dir = "[DQ_SNAPSHOT_ROOT]chem_math/"
 	var/list/bad = list()
-	var/failure = dq_snapshot_compare(dir, "chem_math", list(/datum/decl/chemical_reaction = rows), dq_snapshot_read_dir(dir, bad), null)
+	var/failure = dq_snapshot_compare(dir, "chem_math", list(/transformation/chem = rows), dq_snapshot_read_dir(dir, bad), null)
 	TEST_ASSERT(isnull(failure), failure)
 
 /datum/unit_test/dq_chem_metabolism_pin

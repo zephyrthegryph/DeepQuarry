@@ -970,7 +970,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )),
                 );
             }
-            transport::set_timeout(&mut stream, Duration::from_secs(600))?;
+            transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
             let path = std::fs::canonicalize(&request.project)?;
             let accepted = match shared.accept_request() {
                 Ok(accepted) => accepted,

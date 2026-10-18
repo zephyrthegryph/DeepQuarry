@@ -45,3 +45,10 @@
 
 /// Most settle passes one settle may make before it stops and logs (a fixed point that never settles is a bug in a rule set).
 #define XFORM_MAX_PASSES 20000
+
+// Gas condensing (code/modules/reagents/reactions/distilling/gas_condensing.dm): moles of the gas a step takes, units of the product it makes, the heat it
+// books (kelvin-ish units, times 1000 joules) and the coolant it uses. Here because the generated declarations name them before that file is read.
+#define CONDENSING_RATE 50
+#define CONDENSING_RESULT 0.5
+#define CONDENSING_HEAT 2
+#define COOLANT_CONSUMPTION_RATE 0.01
