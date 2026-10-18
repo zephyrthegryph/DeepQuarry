@@ -1,7 +1,8 @@
 # Vendored SpacemanDMM crates
 
-`dreammaker`, `interval-tree` and `builtins-proc-macro` from SpacemanDMM `suite-1.11` (commit 0290db5), GPL-3.0
-(`LICENSE-SpacemanDMM`). Changed here, for `src/sem/model_store.rs` (the parsed model kept between runs):
+`dreammaker`, `interval-tree` and `builtins-proc-macro` from SpacemanDMM (https://github.com/SpaceManiac/SpacemanDMM, by Tad Hardesty and contributors;
+`interval-tree` originally by coco), tag `suite-1.11`, commit 0290db5c752fa292f9824521515b603a2afd11dc. GPL-3.0: the license is
+`LICENSE-SpacemanDMM` and a copy in each crate (`LICENSE`). Changed here, for `src/sem/model_store.rs` (the parsed model kept between runs):
 
 - `serde` derives on the AST, object tree, constants, docs, `FileId` and `Location` (bitflags types serialize their bits);
   `indexmap` and `ordered-float` with their `serde` features;
