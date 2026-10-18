@@ -55,6 +55,8 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	return "<a href='byond://?_src_=holder;[HrefToken()];viewruntime=[REF(src)][back_to_param]'>[linktext]</a>"
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/error_viewer/error_cache)
 /datum/error_viewer/error_cache
 	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
 	var/list/error_sources
