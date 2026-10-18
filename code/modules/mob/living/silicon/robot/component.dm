@@ -50,7 +50,7 @@ CAPABILITIES(/datum/robot_component)
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
 		set_max_damage(comp.max_damage)
-		idle_usage = comp.idle_usage
+		set_idle_usage(comp.idle_usage)
 		active_usage = comp.active_usage
 	else if(istype(wrapped, /obj/item/cell))
 		var/obj/item/cell/cell = wrapped
@@ -65,7 +65,7 @@ CAPABILITIES(/datum/robot_component)
 	. = wrapped
 	carry_afflictions_out()
 	set_max_damage(initial(max_damage))
-	idle_usage = initial(idle_usage)
+	set_idle_usage(initial(idle_usage))
 	active_usage = initial(active_usage)
 	set_installed(ROBOT_PART_MISSING)
 	rel_take(src, nameof(wrapped))
@@ -87,7 +87,7 @@ CAPABILITIES(/datum/robot_component)
 		wrapped.icon_state = brokenstate
 	set_installed(ROBOT_PART_DESTROYED)
 	set_max_damage(initial(max_damage))
-	idle_usage = initial(idle_usage)
+	set_idle_usage(initial(idle_usage))
 	active_usage = initial(active_usage)
 	log_runtime("ROBOT_PART: [owner ? key_name(owner) : "ownerless"] lost [name] (slot [slot]).")
 	owner?.on_part_changed(src)

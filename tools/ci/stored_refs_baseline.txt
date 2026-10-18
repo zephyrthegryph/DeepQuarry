@@ -226,7 +226,6 @@ var	code/modules/overmap/ships/landable.dm	@/obj/effect/shuttle_landmark/visitin
 var	code/modules/paperwork/clipboard.dm	@/obj/item/clipboard::haspen
 var	code/modules/pda/messenger_plugins.dm	@/datum/data/pda/messenger_plugin::messenger
 var	code/modules/pda/pda.dm	@/obj/item/pda::scanmode
-var	code/modules/pda/pda.dm	@/obj/item/pda::current_app
 var	code/modules/pda/pda.dm	@/obj/item/pda::lastapp
 var	code/modules/pda/radio.dm	@/obj/item/radio/integrated::active
 var	code/modules/player_tips/player_tips_service.dm	@/datum/system/player_tips::player_tips

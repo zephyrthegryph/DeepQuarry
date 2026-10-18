@@ -33,9 +33,10 @@ CAPABILITIES(/datum/prompt/choice/vv_edit)
 
 /datum/prompt/choice/vv_edit/prepare(datum/act/A)
 	..()
+	var/datum/request/request = src
 	var/atom/captured_subject = subject
-	rel_clear(src, nameof(subject))
-	rel_set(src, nameof(subject), captured_subject)
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
 
 /datum/prompt/choice/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null
@@ -58,9 +59,10 @@ CAPABILITIES(/datum/prompt/number/vv_edit)
 
 /datum/prompt/number/vv_edit/prepare(datum/act/A)
 	..()
+	var/datum/request/request = src
 	var/atom/captured_subject = subject
-	rel_clear(src, nameof(subject))
-	rel_set(src, nameof(subject), captured_subject)
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
 
 /datum/prompt/number/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null
@@ -76,9 +78,10 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 
 /datum/prompt/yes_no/vv_edit/prepare(datum/act/A)
 	..()
+	var/datum/request/request = src
 	var/atom/captured_subject = subject
-	rel_clear(src, nameof(subject))
-	rel_set(src, nameof(subject), captured_subject)
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
 
 /datum/prompt/yes_no/vv_edit/recheck_extra()
 	return QDELETED(subject) ? "gone" : null

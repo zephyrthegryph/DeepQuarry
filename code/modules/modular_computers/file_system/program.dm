@@ -55,7 +55,7 @@ CAPABILITIES(/datum/computer_file/program)
 
 /datum/computer_file/program/clone()
 	var/datum/computer_file/program/temp = ..()
-	temp.required_access = required_access
+	temp.set_required_access(required_access)
 	temp.set_filedesc(filedesc)
 	temp.set_program_icon_state(program_icon_state)
 	temp.requires_ntnet = requires_ntnet

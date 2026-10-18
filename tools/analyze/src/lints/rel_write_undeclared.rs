@@ -167,7 +167,9 @@ fn is_declared(sem: &Sem, rels: &std::collections::HashMap<String, Vec<String>>,
     let Some(types) = rels.get(var) else { return false };
     match ty {
         None => true,
-        Some(t) => types.iter().any(|d| d == t || sem.is_subtype(t, d)),
+        Some(t) => // A declaration on a subtype counts: the static type is often a base (a `/datum/request` view of a prompt), and the runtime
+        // check reports the write the static view cannot decide.
+        types.iter().any(|d| d == t || sem.is_subtype(t, d) || sem.is_subtype(d, t)),
     }
 }
 

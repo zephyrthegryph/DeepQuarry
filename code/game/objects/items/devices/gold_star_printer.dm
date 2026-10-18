@@ -67,8 +67,9 @@ CAPABILITIES(/datum/prompt/choice/gold_sticker)
 /datum/prompt/choice/gold_sticker/prepare(datum/act/A)
 	..()
 	var/mob/captured_asker = asker
-	rel_clear(src, nameof(asker))
-	rel_set(src, nameof(asker), captured_asker)
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.asker))
+	rel_set(request, nameof(request.asker), captured_asker)
 	question = "[asker] is attempting to stick a [owner] on you. Will you allow this?"
 
 /datum/prompt/choice/gold_sticker/recheck_extra()
