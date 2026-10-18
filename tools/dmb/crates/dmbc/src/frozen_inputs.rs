@@ -189,6 +189,13 @@ impl Journal {
     }
 }
 impl SnapshotProvider for Inputs {
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        match self {
+            // Only the live file system is read in parallel; recording and replay keep their ordered journal.
+            Self::Live => FileSystemInputs.digest_many(paths),
+            _ => paths.iter().map(|path| self.digest(path)).collect(),
+        }
+    }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         if let Self::Replay(journal) = self {
             let index = journal
@@ -510,5 +517,8 @@ impl SnapshotProvider for ProofStampedInputs<'_> {
     }
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
         self.inner.digest(path)
+    }
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        self.inner.digest_many(paths)
     }
 }

@@ -124,7 +124,6 @@ fn actual_service_queries_preserve_exact_failed_build_snapshots_and_recover_curr
     let destination = initial_request.artifact_directory.clone().unwrap();
     let slot = shared.slot(
         initial_request.project.clone(),
-        &initial_request.defines,
         Some(&initial_request),
     );
     let (initial, diagnostics) =
