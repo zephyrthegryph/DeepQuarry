@@ -236,17 +236,27 @@ pub fn prefetch() {
     }
 }
 
-/// The current digest of each dependency, computed once per run.
+/// The current digest of each dependency, computed once per run: every dependency the store names on all cores at the first lookup
+/// (read without a lock after that), the ones this run's walks add as they come.
 pub struct Digests {
+    pre: OnceLock<HashMap<u64, u64>>,
     map: RwLock<HashMap<u64, u64>>,
 }
 
 impl Digests {
     pub fn new() -> Digests {
-        Digests { map: RwLock::new(HashMap::new()) }
+        Digests { pre: OnceLock::new(), map: RwLock::new(HashMap::new()) }
     }
 
     fn get(&self, sem: &Sem, id: u64) -> u64 {
+        let pre = self.pre.get_or_init(|| {
+            let table: Vec<(u64, Dep)> = deps().read().unwrap().iter().map(|(k, d)| (*k, d.clone())).collect();
+            let gs: Vec<u64> = super::par_map(&table, |(_, d)| digest_dep(sem, d));
+            table.into_iter().map(|(k, _)| k).zip(gs).collect()
+        });
+        if let Some(v) = pre.get(&id) {
+            return *v;
+        }
         if let Some(v) = self.map.read().unwrap().get(&id) {
             return *v;
         }

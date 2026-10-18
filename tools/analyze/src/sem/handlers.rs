@@ -81,7 +81,7 @@ fn compute(tree: &Tree) -> Analysis {
         return an;
     }
     let Some(sem) = super::sem_for(tree) else { return an };
-    let ann = Annotations::get(&sem, &decls);
+    let ann = Annotations::shared(tree, &sem, &decls);
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let closed_eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree);
     let written: &super::reads::WriteIndex = sem.write_index();

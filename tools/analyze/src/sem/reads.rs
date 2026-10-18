@@ -340,6 +340,11 @@ impl Annotations {
         u128::from_le_bytes(h.as_bytes()[..16].try_into().unwrap())
     }
 
+    /// [`get`](Self::get) once per tree: every engine of a run reads the same annotations.
+    pub fn shared(tree: &crate::tree::Tree, sem: &Sem, decls: &Decls) -> std::sync::Arc<Annotations> {
+        tree.memo("sem/annotations", || Annotations::get(sem, decls))
+    }
+
     pub fn get(sem: &Sem, decls: &Decls) -> Annotations {
         let mut a = Annotations::default();
         for m in decls.markers_named("READS_AS") {

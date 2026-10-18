@@ -34,6 +34,8 @@ const DELTA: &str = "sem-model-delta.bin";
 const MAX_SPLICED: usize = 12;
 /// A delta of more files than this is folded into a new base.
 const REBASE_AT: usize = 48;
+/// ... or when the patches are about this large (an estimate: 2 KB a proc).
+const REBASE_BYTES: usize = 12 << 20;
 
 pub struct Parsed {
     pub objtree: ObjectTree,
@@ -377,7 +379,9 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         eprintln!("analyze: model store: verify ok");
     }
     let env = s.env;
-    if patched > REBASE_AT {
+    // Fold into a new base past REBASE_AT files or REBASE_BYTES of patches (a big file's patch is most of a delta's read time).
+    let delta_bytes: usize = patches.iter().map(|(_, _, p)| p.types.iter().map(|t| t.procs.len() * 2048 + t.vals.len() * 256).sum::<usize>()).sum();
+    if patched > REBASE_AT || delta_bytes > REBASE_BYTES {
         // Fold the patches into a new base (written on a side thread once the model is in the memo).
         let (keys, directive) = (now, s.directive.clone());
         let dir = crate::incr::dir().ok_or("no cache dir")?;
