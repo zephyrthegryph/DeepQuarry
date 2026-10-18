@@ -140,25 +140,36 @@ struct Slot {
     last: Mutex<Instant>,
     idle_tier: AtomicUsize,
 }
+/// A session is a project directory under one compiler (engine bytes, bootstrap): not a manifest file and not a define set.
+/// Production, test and bench builds of one tree, and a worktree switch, are different inputs of the same session; the host keeps
+/// each (project, defines) variant's own state (`BuildHost::engine`, `switch_variant`) and shares everything define-independent.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct SessionKey {
+    /// The project directory (the compile root); a manifest path is reduced to its directory.
     manifest: PathBuf,
-    defines: BTreeMap<String, String>,
     engine: Option<EngineIdentity>,
     bootstrap: bool,
 }
 impl SessionKey {
     fn of(
         manifest: PathBuf,
-        defines: &BTreeMap<String, String>,
         config: Option<&crate::request::BuildRequest>,
     ) -> Self {
         Self {
-            manifest,
-            defines: defines.clone(),
+            manifest: session_root(manifest),
             engine: config.and_then(|request| request.engine_template.as_deref()).map(EngineIdentity::of),
             bootstrap: config.is_some_and(|request| request.bootstrap_catalog),
         }
+    }
+}
+/// The directory a manifest belongs to; anything that is not a `.dme` file path is already a directory.
+fn session_root(manifest: PathBuf) -> PathBuf {
+    let is_manifest = manifest
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("dme"));
+    match manifest.parent() {
+        Some(parent) if is_manifest && !parent.as_os_str().is_empty() => parent.to_path_buf(),
+        _ => manifest,
     }
 }
 /// Why recent sessions disappeared (bounded, newest last), so the next compile of that session can say why it missed.
@@ -293,6 +304,8 @@ impl Shared {
     /// or after `MEMORY_WAIT`, the build is admitted anyway and the shortfall is logged, so a machine that is simply too small
     /// slows down instead of refusing every build.
     fn await_memory(&self, key: &SessionKey, hot: bool) -> io::Result<()> {
+        // The daemon-wide budget applies to every mode: a build is admitted against what it is expected to add.
+        self.enforce_retained_budget(Some(key), expected_growth(key, hot).min(soft_memory::retained_budget() / 2));
         let Some(reserve) = soft_memory::adaptive_reserve() else { return Ok(()) };
         let need = expected_growth(key, hot);
         let started = Instant::now();
@@ -302,7 +315,10 @@ impl Shared {
                 return Ok(());
             }
             control::checkpoint()?;
-            if self.shed_one_idle(key, available, need, reserve) {
+            let private = transport::private_bytes().unwrap_or(0);
+            if soft_memory::admission_may_shed(available, need, reserve, private, soft_memory::retained_budget())
+                && self.shed_one_idle(key, available, need, reserve)
+            {
                 continue;
             }
             let running = *self.running.lock().unwrap_or_else(|e| e.into_inner());
@@ -346,6 +362,48 @@ impl Shared {
             reserve as f64 / 1e9
         ));
         true
+    }
+    /// The daemon-wide retained-memory budget (`soft_memory::retained_budget`, default 20 GB): while the process holds more private
+    /// memory than that and another idle session exists, release the least recently used idle session whole. The most recently used
+    /// session and any session that is building are never released for the budget, so a lone session larger than the budget stays
+    /// resident. `reserve` is memory a build about to be admitted will add. True when anything was released.
+    fn enforce_retained_budget(&self, keep: Option<&SessionKey>, reserve: u64) -> bool {
+        let budget = soft_memory::retained_budget();
+        let mut released = false;
+        loop {
+            let Some(private) = transport::private_bytes() else { return released };
+            if private.saturating_add(reserve) <= budget {
+                return released;
+            }
+            let victim = {
+                let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+                let sessions: Vec<(SessionKey, Instant, bool)> = slots
+                    .iter()
+                    .map(|(key, slot)| {
+                        let idle = Arc::strong_count(slot) == 1 && slot.host.try_lock().is_ok();
+                        // The session being admitted counts as the newest even before its use is recorded.
+                        let last = if keep == Some(key) { Instant::now() } else { *slot.last.lock().unwrap_or_else(|e| e.into_inner()) };
+                        (key.clone(), last, idle)
+                    })
+                    .collect();
+                soft_memory::budget_victim(&sessions).and_then(|key| slots.remove(&key).map(|slot| (key, slot)))
+            };
+            let Some((key, slot)) = victim else { return released };
+            note_eviction(&key, "memory-budget");
+            drop(slot);
+            let after = self.reclaim_allocator(transport::private_bytes());
+            released = true;
+            super::emit_stderr(format_args!(
+                "dmbd memory budget: released least recently used idle session {} (budget {:.1} GB, private-before={private} private-after={after:?}, reserved for admission {:.1} GB)",
+                key.manifest.display(),
+                budget as f64 / 1e9,
+                reserve as f64 / 1e9
+            ));
+            if after.is_none_or(|bytes| bytes >= private) {
+                // The release returned nothing (allocator slack): do not walk every remaining session on one sample.
+                return released;
+            }
+        }
     }
     /// Return freed pages to the OS before any pressure decision. Freed-but-
     /// committed allocator pages (transient composition/encode peaks, exited
@@ -424,12 +482,11 @@ impl Shared {
     fn slot(
         &self,
         path: PathBuf,
-        defines: &BTreeMap<String, String>,
         config: Option<&crate::request::BuildRequest>,
     ) -> Arc<Slot> {
         let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
         let slot = slots
-            .entry(SessionKey::of(path, defines, config))
+            .entry(SessionKey::of(path, config))
             .or_insert_with(|| {
                 Arc::new(Slot {
                     request_serial: Mutex::new(()),
@@ -553,6 +610,9 @@ impl Shared {
                 bytes = self.reclaim_allocator(transport::private_bytes());
             }
         }
+        if self.enforce_retained_budget(None, 0) {
+            bytes = transport::private_bytes();
+        }
         let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
         // A running build's transient peak is not retained state: only the
         // hard ceiling may act during one.
@@ -646,34 +706,45 @@ pub(super) fn serve() -> io::Result<()> {
             })?;
     }
     let mut beat = Instant::now();
+    let mut peers_checked = Instant::now();
     let mut retiring_since: Option<Instant> = None;
     let mut beat_retiring = false;
+    let mut superseded_exit = false;
+    let mut check_superseded = Instant::now();
     loop {
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
         if retiring && retiring_since.is_none() {
             retiring_since = Some(Instant::now());
         }
+        // One latest compiler: when `current` moves past this version the daemon drains and exits (checked every second).
+        if !superseded_exit && check_superseded.elapsed() >= Duration::from_secs(1) {
+            check_superseded = Instant::now();
+            if super::resident::superseded(super::resident::provenance_of_self()) {
+                superseded_exit = true;
+                super::emit_stderr(format_args!(
+                    "dmbd retiring: a newer compiler version is current; finishing in-flight builds, refusing new ones, then exiting"
+                ));
+                shared.retire();
+            }
+        }
+        if superseded_exit
+            && incoming.is_none()
+            && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
+            && shared.connections.load(Ordering::Acquire) == 0
+        {
+            super::emit_stderr(format_args!("dmbd exiting pid={}: superseded and idle", std::process::id()));
+            return Ok(());
+        }
         if beat.elapsed() >= Duration::from_secs(5) || retiring != beat_retiring {
             beat_retiring = retiring;
             beat = Instant::now();
             let busy = *shared.running.lock().unwrap_or_else(|e| e.into_inner()) > 0
                 || shared.connections.load(Ordering::Acquire) > 0;
-            let running_now = *shared.running.lock().unwrap_or_else(|e| e.into_inner());
-            let connections_now = shared.connections.load(Ordering::Acquire);
-            if !retiring
-                && super::resident::superseded_idle_due(
-                    super::resident::provenance_of_self(),
-                    activity.elapsed(),
-                    running_now,
-                    connections_now,
-                )
-            {
-                super::emit_stderr(format_args!(
-                    "dmbd retiring: a newer compiler version is published and no client of this version has been active for {}s",
-                    super::resident::SUPERSEDED_IDLE.as_secs()
-                ));
-                shared.retire();
+            // A current daemon also reaps idle superseded daemons of older builds that lack the immediate self-exit above.
+            if !retiring && peers_checked.elapsed() >= Duration::from_secs(30) {
+                peers_checked = Instant::now();
+                let _ = super::resident::retire_superseded_peers();
             }
             if let Some(registration) = registration.as_mut() {
                 if registration.beat(busy, retiring) && !retiring {
@@ -804,8 +875,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     ));
                 }
                 let key = SessionKey {
-                    manifest: std::fs::canonicalize(&request.project)?,
-                    defines: request.defines.clone(),
+                    manifest: session_root(std::fs::canonicalize(&request.project)?),
                     engine: request.engine_template.as_deref().map(EngineIdentity::of),
                     bootstrap: request.bootstrap_catalog,
                 };
@@ -838,6 +908,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                         "query session is building; retry after completion",
                     )
                 })?;
+                if !host.serves_variant(&request.project, &request.defines) {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "query session holds another define set or manifest as its active variant; build this one first",
+                    ));
+                }
                 let tree = host.query_tree().ok_or_else(|| {
                     io::Error::new(
                         io::ErrorKind::NotFound,
@@ -906,7 +982,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 }
             };
             let key = RequestKey::of(&request, &path);
-            let session_key = SessionKey::of(path.clone(), &request.defines, Some(&request));
+            let session_key = SessionKey::of(path.clone(), Some(&request));
             let session_state = shared.probe(&session_key);
             let session_state_hot = session_state.hot;
             let stats_context = (
@@ -915,7 +991,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 path.file_name().map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
                 request.workers,
             );
-            let slot = shared.slot(path, &request.defines, Some(&request));
+            let slot = shared.slot(path, Some(&request));
             let token = control::Cancellation::default();
             let _latest = LatestRequest::register(&slot, key, token.clone());
             protocol::send(&mut stream, &Reply::Accepted)?;
@@ -1123,8 +1199,8 @@ mod tests {
     fn each_manifest_retains_one_host_and_idle_owner_can_be_evicted() {
         let shared = shared();
         let path = PathBuf::from("E:/fixture/one.dme");
-        let first = shared.slot(path.clone(), &BTreeMap::new(), None);
-        let second = shared.slot(path.clone(), &BTreeMap::new(), None);
+        let first = shared.slot(path.clone(), None);
+        let second = shared.slot(path.clone(), None);
         assert!(Arc::ptr_eq(&first, &second));
         *first.last.lock().unwrap() = Instant::now() - housekeeping::SESSION_IDLE - Duration::from_secs(1);
         shared.trim();
@@ -1186,11 +1262,7 @@ mod tests {
     #[test]
     fn supersession_is_configuration_scoped_and_old_completion_preserves_newest() {
         let shared = shared();
-        let slot = shared.slot(
-            PathBuf::from("E:/fixture/project.dme"),
-            &BTreeMap::new(),
-            None,
-        );
+        let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"), None);
         let key = RequestKey {
             command: RequestCommand::Compile,
             defines: BTreeMap::new(),
@@ -1263,7 +1335,7 @@ mod tests {
     fn captured_input_destinations_preserve_independent_requests() {
         let shared = shared();
         let manifest = PathBuf::from("E:/fixture/project.dme");
-        let slot = shared.slot(manifest.clone(), &BTreeMap::new(), None);
+        let slot = shared.slot(manifest.clone(), None);
         let args = vec!["compile".into(), manifest.to_string_lossy().into_owned()];
         let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
             panic!("build expected")
@@ -1291,11 +1363,10 @@ mod tests {
     fn define_sets_retain_independent_hosts_and_cancelled_waiter_exits_immediately() {
         let shared = shared();
         let path = PathBuf::from("E:/fixture/project.dme");
-        let plain = shared.slot(path.clone(), &BTreeMap::new(), None);
-        let defines = BTreeMap::from([("MODE".into(), "1".into())]);
-        let alternate = shared.slot(path.clone(), &defines, None);
-        assert!(!Arc::ptr_eq(&plain, &alternate));
-        assert!(Arc::ptr_eq(&alternate, &shared.slot(path, &defines, None)));
+        // Define sets are inputs of one session, not separate sessions: the manifest file name does not key it either.
+        let plain = shared.slot(path.clone(), None);
+        let alternate = shared.slot(path.with_file_name("project.test.dme"), None);
+        assert!(Arc::ptr_eq(&plain, &alternate));
         let _busy = plain.host.lock().unwrap();
         let token = control::Cancellation::default();
         token.cancel();
@@ -1306,32 +1377,23 @@ mod tests {
         );
     }
     #[test]
-    fn session_keys_use_structural_define_order_and_exact_engine_configuration() {
+    fn session_keys_use_the_project_directory_and_exact_engine_configuration() {
         let shared = shared();
         let path = PathBuf::from("E:/fixture/project.dme");
-        let one = BTreeMap::from([("A".into(), "1".into()), ("B".into(), "2".into())]);
-        let reversed = BTreeMap::from([("B".into(), "2".into()), ("A".into(), "1".into())]);
-        let first = shared.slot(path.clone(), &one, None);
-        assert!(Arc::ptr_eq(
-            &first,
-            &shared.slot(path.clone(), &reversed, None)
-        ));
-        let different = BTreeMap::from([("A".into(), "1B2".into())]);
-        assert!(!Arc::ptr_eq(
-            &first,
-            &shared.slot(path.clone(), &different, None)
-        ));
+        let first = shared.slot(path.clone(), None);
+        assert!(Arc::ptr_eq(&first, &shared.slot(PathBuf::from("E:/fixture"), None)));
+        assert!(!Arc::ptr_eq(&first, &shared.slot(PathBuf::from("E:/other/project.dme"), None)));
         let args = vec!["compile".into(), path.to_string_lossy().into_owned()];
         let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
             panic!("build expected")
         };
         request.engine_template = Some("E:/fixture/engine.bin".into());
-        let engine = shared.slot(path.clone(), &one, Some(&request));
+        let engine = shared.slot(path.clone(), Some(&request));
         assert!(!Arc::ptr_eq(&first, &engine));
         request.bootstrap_catalog = true;
         assert!(!Arc::ptr_eq(
             &engine,
-            &shared.slot(path, &one, Some(&request))
+            &shared.slot(path, Some(&request))
         ));
     }
     #[test]
@@ -1350,11 +1412,11 @@ mod tests {
             panic!("build expected")
         };
         request.engine_template = Some(a);
-        let first = shared.slot(path.clone(), &BTreeMap::new(), Some(&request));
+        let first = shared.slot(path.clone(), Some(&request));
         request.engine_template = Some(b);
-        assert!(Arc::ptr_eq(&first, &shared.slot(path.clone(), &BTreeMap::new(), Some(&request))));
+        assert!(Arc::ptr_eq(&first, &shared.slot(path.clone(), Some(&request))));
         request.engine_template = Some(other);
-        assert!(!Arc::ptr_eq(&first, &shared.slot(path, &BTreeMap::new(), Some(&request))));
+        assert!(!Arc::ptr_eq(&first, &shared.slot(path, Some(&request))));
         let _ = std::fs::remove_dir_all(&directory);
     }
 }

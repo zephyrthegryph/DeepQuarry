@@ -557,10 +557,10 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-TYPE_TABLE(/obj/item/storage/backpack/saddlebag, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag/proc/taur_fit, null))))
 
-/obj/item/storage/backpack/saddlebag/proc/taur_fit(mob/living/carbon/human/H)
-	return (istype(H) && istype(H.tail_style, taurtype)) ? TRUE : lowertext(no_message)
+/obj/item/storage/backpack/saddlebag/proc/taur_fit(datum/act/op/query)
+	var/mob/living/carbon/human/H = query.wearer
+	return (istype(H) && istype(H.tail_style, taurtype)) ? null : lowertext(no_message)
 
 /* If anyone wants to make some... this is how you would.
 /obj/item/storage/backpack/saddlebag/spider
@@ -580,15 +580,14 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag, equip_spec, dq_spec_join(..(), 
 	slowdown = 0.5 //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag_common/proc/taur_fit, null))))
 
 /// Any taur half; the bags take the look of the wearer's.
-/obj/item/storage/backpack/saddlebag_common/proc/taur_fit(mob/living/carbon/human/H)
+/obj/item/storage/backpack/saddlebag_common/proc/taur_fit(datum/act/op/query)
+	var/mob/living/carbon/human/H = query.wearer
 	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
 	if(!istype(TT))
 		return lowertext(no_message)
-	set_item_state("[icon_base]_[TT.icon_sprite_tag]")	//icon_sprite_tag is something like "deer"
-	return TRUE
+	return null
 
 
 
@@ -720,3 +719,20 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 	slowdown = 0.5
+
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag)
+	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(taur_fit)), mode = ACCEPTANCE_APPEND)
+
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
+	on_notice(/datum/notice/item_equipped, then(PROC_REF(apply_equipped_taur)))
+	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(taur_fit)), mode = ACCEPTANCE_APPEND)
+
+
+/obj/item/storage/backpack/saddlebag_common/proc/apply_equipped_taur(datum/act/notice/A)
+	var/datum/notice/item_equipped/event = A
+	var/mob/living/carbon/human/H = event.equipper
+	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
+	if(istype(TT))
+		set_item_state("[icon_base]_[TT.icon_sprite_tag]")

@@ -90,7 +90,8 @@ import {
   verdigrisCacheDir,
   verdigrisCacheKey,
 } from './lib/verdigris_cache';
-import { dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, pruneDmbcVersions, publishDmbc, restoreDmbc, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
+import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, sharedDmbcPointer, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
+import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -854,8 +855,15 @@ const DMBD_EXE = sharedDmbcExe('dmbd');
 // A fresh worktree copies the compiler from the shared content-addressed cache (lib/dmbc_cache.ts) instead of
 // running cargo; a build with inputs that differ from HEAD bypasses it and stores nothing.
 let dmbcPendingStore: { cache: string; key: string; commit: string } | null = null;
+// A candidate compiler staged by a cache hit, to be warmed and promoted by the target's executes.
+let dmbcStaged: { id: string; plan: Extract<PrewarmDecision, { variant: unknown }> } | null = null;
+// Everyone runs `current`, the latest compiler, resolved per compile. A checkout therefore builds the compiler only when its tree is
+// ahead of `current` (the commit that set it is an ancestor of HEAD) and the shared cache has no entry for its sources; a checkout
+// behind or equal to `current` has nothing to do. A checkout whose compiler sources are dirty builds privately (see below).
 const dmbcCacheHit = (): boolean => {
   dmbcPendingStore = null;
+  dmbcStaged = null;
+  if (compilerSourcesDirty()) return false;
   const cache = dmbcCacheDir();
   if (!cache) return false;
   const k = dmbcCacheKey(process.cwd());
@@ -863,9 +871,29 @@ const dmbcCacheHit = (): boolean => {
     Juke.logger.info(`dmbc cache: bypassed (${k.bypass})`);
     return false;
   }
+  if (currentIsCommit(k.commit) || !mayAdvanceCurrent(process.cwd(), k.commit)) {
+    Juke.logger.info('dmbc: this tree is not ahead of the current compiler; using it');
+    return true;
+  }
   try {
-    if (restoreDmbc(cache, k.key)) {
+    const dir = cachedDmbcDir(cache, k.key);
+    if (dir) {
       Juke.logger.info(`dmbc cache: hit ${k.key} (${cache})`);
+      const binDir = sharedDmbcBinDir();
+      const forTree = { root: process.cwd(), commit: k.commit };
+      const plan = planPrewarm(binDir);
+      if (!('skipped' in plan)) {
+        // Stage it as a candidate and warm it first (the target's `executes` does that, then promotes it to current).
+        const id = stageDmbcVersion(dir, binDir, forTree);
+        if (id) {
+          dmbcStaged = { id, plan };
+          return false;
+        }
+        plan.release();
+      } else {
+        Juke.logger.info(`dmbc prewarm skipped: ${plan.skipped}`);
+      }
+      publishDmbcVersion(dir, binDir, forTree);
       pruneDmbcVersions();
       return true;
     }
@@ -881,7 +909,8 @@ const storeDmbcBuild = (): void => {
   if (!pending) return;
   dmbcPendingStore = null;
   try {
-    storeDmbc(pending.cache, pending.key, pending.commit, sharedDmbcExe('dmbc'), sharedDmbcExe('dmbd'));
+    const built = `${sharedDmbcBuildTarget()}/release`;
+    storeDmbc(pending.cache, pending.key, pending.commit, `${built}/dmbc${process.platform === 'win32' ? '.exe' : ''}`, `${built}/dmbd${process.platform === 'win32' ? '.exe' : ''}`);
     Juke.logger.info(`dmbc cache: stored ${pending.key}`);
   } catch (error) {
     Juke.logger.warn(`dmbc cache: store failed: ${error instanceof Error ? error.message : error}`);
@@ -900,6 +929,14 @@ export const DmbcTarget = new Juke.Target({
   ],
   outputs: [sharedDmbcPointer()],
   executes: async () => {
+    if (dmbcStaged) {
+      const staged = dmbcStaged;
+      dmbcStaged = null;
+      const binDir = sharedDmbcBinDir();
+      await warmAndPromote(staged.plan, binDir, staged.id, (variant) => runPrewarmBuild(process.cwd(), binDir, staged.id, variant), (message) => Juke.logger.info(message));
+      pruneDmbcVersions();
+      return;
+    }
     // Cargo builds in a private target and the result is published as an immutable version (lib/dmbc_cache.ts publishDmbcVersion):
     // a compile that is running keeps the version it started with. Sweep the aside copies the old in-place publication left.
     const binDir = sharedDmbcBinDir();
@@ -914,7 +951,9 @@ export const DmbcTarget = new Juke.Target({
     // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
     const slots = 'tools/dq_machine_slots.sh';
     const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
-    const target = sharedDmbcBuildTarget();
+    // Compiler development builds into a private target and publishes nothing; every other build shares one target.
+    const privateBuild = compilerSourcesDirty();
+    const target = privateBuild ? devCompilerDir() : sharedDmbcBuildTarget();
     const runCargo = (args: string[], extraEnv: Record<string, string> = {}) =>
       fs.existsSync(slots)
         ? Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...args], { env: { ...process.env, CARGO_TARGET_DIR: target, ...extraEnv }, throw: false })
@@ -937,7 +976,27 @@ export const DmbcTarget = new Juke.Target({
       result = await runCargo(cargo, { CARGO_INCREMENTAL: '0' });
     }
     if (result.code !== 0) throw new Error(`dmbc: cargo build failed (exit ${result.code})`);
-    publishDmbc(`${sharedDmbcBuildTarget()}/release`);
+    if (privateBuild) {
+      Juke.logger.info(`dmbc: private compiler build at ${target}/release (not published; this checkout runs it)`);
+      return;
+    }
+    const published = dmbcCacheKey(process.cwd());
+    const builtDir = `${sharedDmbcBuildTarget()}/release`;
+    if ('bypass' in published) {
+      publishDmbc(builtDir);
+    } else {
+      const binDir = sharedDmbcBinDir();
+      const forTree = { root: process.cwd(), commit: published.commit };
+      const plan = planPrewarm(binDir);
+      const id = 'skipped' in plan ? null : stageDmbcVersion(builtDir, binDir, forTree);
+      if (!('skipped' in plan) && id) {
+        await warmAndPromote(plan, binDir, id, (variant) => runPrewarmBuild(process.cwd(), binDir, id, variant), (message) => Juke.logger.info(message));
+      } else {
+        if (!('skipped' in plan)) plan.release();
+        else Juke.logger.info(`dmbc prewarm skipped: ${plan.skipped}`);
+        publishDmbc(builtDir, forTree);
+      }
+    }
     pruneDmbcVersions();
     storeDmbcBuild();
   },
@@ -1019,6 +1078,22 @@ export const DmTarget = new Juke.Target({
       throw results[0].reason;
     }
     if (results[1].status === 'rejected') throw results[1].reason;
+  },
+});
+
+/** `prewarm --prewarm-variant=production|test`: compile one variant and nothing else (lib/dmbc_prewarm.ts runs it with the candidate compiler). */
+export const PrewarmVariantParameter = new Juke.Parameter({ type: 'string' });
+export const PrewarmTarget = new Juke.Target({
+  parameters: [PrewarmVariantParameter],
+  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisBindingsCheckTarget, GenTarget, MapBoundsTarget],
+  executes: async ({ get }) => {
+    const variant = get(PrewarmVariantParameter) === 'test' ? 'test' : 'production';
+    Juke.logger.info(`prewarm: compiling the ${variant} variant`);
+    if (variant === 'test') {
+      await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    } else {
+      await DreamMaker(`${DME_NAME}.dme`, { defines: ['CBT'], warningsAsErrors: false });
+    }
   },
 });
 

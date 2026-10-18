@@ -28,6 +28,9 @@ impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
     fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
         self.provider.digest(path)
     }
+    fn digest_many(&self, paths: &[&PathBuf]) -> Vec<io::Result<(Stamp, u128)>> {
+        self.provider.digest_many(paths)
+    }
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
         self.provider.list(path)
     }

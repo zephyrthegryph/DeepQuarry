@@ -34,3 +34,12 @@
 #define VPANEL_LIQUIDS_TAB 10
 
 #define VORE_RESIZE_COST 125
+
+// Native ordered consent requirement channels.
+#define VORE_CONSENT_DEVOURABLE "vore.consent.devourable"
+#define VORE_CONSENT_DEVOUR "vore.consent.devour"
+#define VORE_CONSENT_DIGEST "vore.consent.digest"
+#define VORE_CONSENT_ABSORB "vore.consent.absorb"
+#define VORE_CONSENT_HEAL "vore.consent.heal"
+#define VORE_CONSENT_STRIP "vore.consent.strip"
+#define VORE_CONSENT_AFFECT_WORN "vore.consent.affect_worn"
