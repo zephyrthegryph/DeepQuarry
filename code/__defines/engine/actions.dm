@@ -2,25 +2,23 @@
 // section 19 "E4, actions and hooks"). The act types, act_<name>() and the notices come from `ACTION()` (tools/analyze/src/gens/actions.rs,
 // code/engine/_generated/actions.dm); the engine is code/engine/actions/.
 
-/// Tries a world action: `var/datum/act/fall/F = ACT_TRY(src, fall, T, M)` is `act_fall(src, T, M)`. The result is the final act after every
-/// adjusts(); ACT_PASS when nothing hooks the action and no listener wants its notice (nothing is allocated); or null when it was refused or
-/// taken over. Every path of the caller then ends it with act_done(F) or act_cancel(F) (the pairing lint, tools/analyze sem/handlers).
-/// The token is the action's name with an underscore for a slash: ACT_TRY(src, hit_projectile, packet).
-#define ACT_TRY(E, token, args...) act_##token(E, ##args)
-/// ACT_TRY that answers why: the final act, ACT_PASS, or (refused or taken over) a /datum/act_refusal carrying the outcome, the reason and the
-/// taker's reply. Test it with ACT_REFUSED_BY(R). A caller that reports a refusal uses this, never a side channel (admission.md wave 2).
+/// Tries a world action: `var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)` is `act_fall(src, T, M, act_answer = TRUE)`. The result is the final act
+/// after every adjusts(); ACT_PASS when nothing hooks the action and no listener wants its notice (nothing is allocated); or, refused or taken over,
+/// a /datum/act_refusal carrying the outcome, the reason and the taker's reply (ACT_REFUSED_BY(F), ACT_TAKEN_OVER(F), ACT_REPLY(F)). Every path of
+/// the caller that has a real act ends it with act_done(F) or act_cancel(F) (the pairing lint, tools/analyze sem/handlers); both ignore a refusal.
+/// The token is the action's name with an underscore for a slash: ACT_ATTEMPT(src, hit_projectile, packet).
 #define ACT_ATTEMPT(E, token, args...) act_##token(E, ##args, act_answer = TRUE)
 /// Was an ACT_ATTEMPT result refused or taken over?
 #define ACT_REFUSED_BY(R) istype(R, /datum/act_refusal)
-/// The final value of an action's field: the act's own field when ACT_TRY returned a real act (an adjusts() may have changed it), the caller's
+/// The final value of an action's field: the act's own field when ACT_ATTEMPT returned a real act (an adjusts() may have changed it), the caller's
 /// local when it returned ACT_PASS (nothing could have adjusted it). `ACT_FINAL(F, landing, T)`.
 #define ACT_FINAL(F, field, local) ((F) == ACT_PASS ? (local) : F.field)
 
-/// After ACT_TRY returned null: TRUE when a hook took the action over (an instead, ACT_REPLACED) rather than refused it. A caller that has a result to give
-/// back reads it with ACT_REPLY: `if(!hit) { if(ACT_TAKEN_OVER) return ACT_REPLY; return FALSE }`.
-#define ACT_TAKEN_OVER (GLOB.act_last_outcome & ACT_REPLACED)
-/// The answer of the hook that took the last action over (see ACT_TAKEN_OVER); null when it answered nothing.
-#define ACT_REPLY (GLOB.act_last_reply)
+/// TRUE when the ACT_ATTEMPT result R was taken over by a hook (an instead, ACT_REPLACED) rather than refused. A caller that has a result to give back
+/// reads it with ACT_REPLY(R): `if(ACT_REFUSED_BY(hit)) { if(ACT_TAKEN_OVER(hit)) return ACT_REPLY(hit); return FALSE }`.
+#define ACT_TAKEN_OVER(R) act_refusal_taken_over(R)
+/// The answer of the hook that took R over (see ACT_TAKEN_OVER); null when it answered nothing or R was not taken over.
+#define ACT_REPLY(R) act_refusal_reply(R)
 /// What a then() handler of an instead returns to leave the action to the next taker (it did not apply after all). Any other value takes the action
 /// over and is the reply.
 #define HOOK_DECLINE "hook_decline"

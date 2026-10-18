@@ -76,8 +76,8 @@ CAPABILITIES(/obj/e4_fixture/nester)
 
 /obj/e4_fixture/nester/proc/again(datum/act/A)
 	runs++
-	var/datum/act/e4_nest/F = ACT_TRY(src, e4_nest)
-	if(!F)
+	var/datum/act/e4_nest/F = ACT_ATTEMPT(src, e4_nest)
+	if(ACT_REFUSED_BY(F))
 		refused++ // taken over again (the run before the cap) or refused at the cap: both end the nested action without an act
 		return
 	act_cancel(F)

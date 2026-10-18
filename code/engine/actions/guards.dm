@@ -7,7 +7,7 @@
 // included) then observers (observe(source, before_op(GUARD_X), listener, handler)), and returns the first refusal.
 // It replaces the om `before/*` veto events (om_emit() == EVENT_VETO).
 //
-// No entity asks a guard any more: a refusable world event is an action (ACT_TRY(src, stumbled_into, M) with an
+// No entity asks a guard any more: a refusable world event is an action (ACT_ATTEMPT(src, stumbled_into, M) with an
 // extend(/datum/act/stumbled_into, instead(...)) in the holder's CAPABILITIES block), and reactions() is a system's.
 // What is left here answers the legacy before_op(GUARD_X) a system or a test fixture still declares.
 //

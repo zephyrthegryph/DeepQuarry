@@ -59,8 +59,8 @@ CAPABILITIES(/obj/lanea_fixture)
 
 /// Begins the runtiming action: the caller wraps it in safe_call().
 /proc/lanea_try_boom(obj/lanea_fixture/F)
-	var/datum/act/lanea_boom/A = ACT_TRY(F, lanea_boom)
-	if(A)
+	var/datum/act/lanea_boom/A = ACT_ATTEMPT(F, lanea_boom)
+	if(!ACT_REFUSED_BY(A))
 		act_cancel(A)
 
 /datum/unit_test/dq_lane_a

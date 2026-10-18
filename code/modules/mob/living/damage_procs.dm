@@ -21,8 +21,8 @@
 			// P2-F7: check_protection is honoured: callers that pass 0 (DNA scanners and
 			// injectors dosing from inside the suit) skip the radiation armour.
 			var/rad_protection = check_protection ? radiation_protection_fraction() : 1
-			var/datum/act/irradiate/dose = ACT_TRY(src, irradiate, effect, blocked, check_protection, rad_protection)
-			if(dose)
+			var/datum/act/irradiate/dose = ACT_ATTEMPT(src, irradiate, effect, blocked, check_protection, rad_protection)
+			if(!ACT_REFUSED_BY(dose))
 				act_done(dose)
 				add_radiation(effect * rad_protection)
 		if(STUTTER)

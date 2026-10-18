@@ -21,7 +21,7 @@
 #define ACT_DECLINED (1<<4)
 /// Filter only: every outcome.
 #define ACT_ANY (ACT_COMMITTED | ACT_REFUSED | ACT_REPLACED | ACT_ROLL_FAILED)
-/// ACT_TRY's shared "nothing hooks this action" constant (section 8). Carries no fields; act_done()/act_cancel() ignore it.
+/// ACT_ATTEMPT's shared "nothing hooks this action" constant (section 8). Carries no fields; act_done()/act_cancel() ignore it.
 #define ACT_PASS (-1)
 /// Synchronous nesting depth of actions and notices before a notice is queued and an action is refused.
 #define ACT_MAX_DEPTH 8

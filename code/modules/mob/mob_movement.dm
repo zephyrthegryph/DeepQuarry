@@ -221,8 +221,8 @@
 		return
 
 	// Relaymove could handle it
-	var/datum/act/relay_movement/relay = ACT_TRY(my_mob, relay_movement, direct)
-	if(!relay)
+	var/datum/act/relay_movement/relay = ACT_ATTEMPT(my_mob, relay_movement, direct)
+	if(ACT_REFUSED_BY(relay))
 		return TRUE
 	act_cancel(relay)
 

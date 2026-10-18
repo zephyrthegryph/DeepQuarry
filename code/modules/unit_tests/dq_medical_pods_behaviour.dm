@@ -19,8 +19,8 @@
 
 /// The occupant presses a direction key: the movement its client would relay to the machine it is inside.
 /proc/medpod_struggle(mob/living/M)
-	var/datum/act/relay_movement/relay = ACT_TRY(M, relay_movement, NORTH)
-	if(!relay)
+	var/datum/act/relay_movement/relay = ACT_ATTEMPT(M, relay_movement, NORTH)
+	if(ACT_REFUSED_BY(relay))
 		return
 	act_cancel(relay)
 	if(isobj(M.loc))
