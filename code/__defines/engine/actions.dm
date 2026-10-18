@@ -7,6 +7,11 @@
 /// taken over. Every path of the caller then ends it with act_done(F) or act_cancel(F) (the pairing lint, tools/analyze sem/handlers).
 /// The token is the action's name with an underscore for a slash: ACT_TRY(src, hit_projectile, packet).
 #define ACT_TRY(E, token, args...) act_##token(E, ##args)
+/// ACT_TRY that answers why: the final act, ACT_PASS, or (refused or taken over) a /datum/act_refusal carrying the outcome, the reason and the
+/// taker's reply. Test it with ACT_REFUSED_BY(R). A caller that reports a refusal uses this, never a side channel (admission.md wave 2).
+#define ACT_ATTEMPT(E, token, args...) act_##token(E, ##args, act_answer = TRUE)
+/// Was an ACT_ATTEMPT result refused or taken over?
+#define ACT_REFUSED_BY(R) istype(R, /datum/act_refusal)
 /// The final value of an action's field: the act's own field when ACT_TRY returned a real act (an adjusts() may have changed it), the caller's
 /// local when it returned ACT_PASS (nothing could have adjusted it). `ACT_FINAL(F, landing, T)`.
 #define ACT_FINAL(F, field, local) ((F) == ACT_PASS ? (local) : F.field)

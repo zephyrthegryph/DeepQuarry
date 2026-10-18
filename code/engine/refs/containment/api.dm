@@ -204,63 +204,69 @@
  * insert and always runs both as world actions, with their hooks (ACT_TRY of /datum/act/remove on this holder, then /datum/act/insert on
  * `new_holder`, each carrying `actor`): a belly's consent requirement or a bay's accepts is a needs() hook that refuses it like any other
  * move, an instead() takes it over, and the notices of both go out when it lands. Then both ledger checks run (dq_ledger_refusal()) and the move
- * commits. A refused or taken-over transfer changes nothing; the reason is GLOB.act_last_reason. Returns TRUE when it landed.
+ * commits. A refused or taken-over transfer changes nothing. Returns TRUE when it landed; slot_transfer_reason() answers why it did not.
  *
  * `authority` is an AUTH_* mask; only AUTH_ADMIN forces the transfer: the needs() hooks and both ledger refusals are skipped, the actions, their
  * instead()/adjusts() hooks and notices and the commit bookkeeping still run. There is no other bypass.
  */
 /atom/proc/slot_transfer(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
+	return isnull(slot_transfer_reason(thing, new_holder, slot_id, actor, authority))
+
+/// slot_transfer() that answers why: null when `thing` landed, else the refusal reason (text or a /datum/msg).
+/atom/proc/slot_transfer_reason(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
 	var/datum/ledger/L = dq_ledger(src)
 	var/list/entry = L?.entries[thing]
-	if(!entry || !new_holder || QDELETED(new_holder))
-		return FALSE
+	if(!entry)
+		return "it isn't in [src]"
+	if(!new_holder || QDELETED(new_holder))
+		return "there is nowhere to put it"
 	if(istype(authority, /datum/authority_grant))
 		var/datum/authority_grant/granted = authority
 		log_world("SLOT_TRANSFER: authority [granted.reason || "unstated"] granted by [granted.granted_by]")
 		authority = granted.mask
 	if(!isnull(authority) && !isnum(authority))
 		stack_trace("slot_transfer(): authority is an AUTH_* mask or a /datum/authority_grant, got [authority]")
-		return FALSE
+		return "the transfer's authority is malformed"
 	var/forced = !!(authority & AUTH_ADMIN)
 	var/from_slot = entry[LEDGER_E_SLOT]
 	GLOB.act_next_actor = actor
 	GLOB.act_next_authority = authority
-	var/datum/act/remove/leaving = ACT_TRY(src, remove, thing, from_slot)
+	var/leaving = ACT_ATTEMPT(src, remove, thing, from_slot)
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
-	if(isnull(leaving))
-		log_world("SLOT_TRANSFER: [thing] out of [src] ([from_slot]) refused or taken over ([GLOB.act_last_reason])")
-		return FALSE
+	if(ACT_REFUSED_BY(leaving))
+		var/datum/act_refusal/kept = leaving
+		log_world("SLOT_TRANSFER: [thing] out of [src] ([from_slot]) refused or taken over ([reason_text(kept.reason)])")
+		return kept.reason || /datum/msg/op/not_available
 	GLOB.act_next_actor = actor
 	GLOB.act_next_authority = authority
-	var/datum/act/insert/entering = ACT_TRY(new_holder, insert, thing, slot_id)
+	var/entering = ACT_ATTEMPT(new_holder, insert, thing, slot_id)
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
-	if(isnull(entering))
-		var/refused_for = GLOB.act_last_reason
-		var/refused_how = GLOB.act_last_outcome
+	if(ACT_REFUSED_BY(entering))
+		var/datum/act_refusal/refused = entering
 		act_cancel(leaving)
-		GLOB.act_last_reason = refused_for // cancelling the removal must not hide why the insert was refused
-		GLOB.act_last_outcome = refused_how
-		log_world("SLOT_TRANSFER: [thing] into [new_holder] ([slot_id || "default"]) refused or taken over ([GLOB.act_last_reason])")
-		return FALSE
-	var/into_slot = ACT_FINAL(entering, slot_id, slot_id)
+		log_world("SLOT_TRANSFER: [thing] into [new_holder] ([slot_id || "default"]) refused or taken over ([reason_text(refused.reason)])")
+		return refused.reason || /datum/msg/op/not_available
+	var/datum/act/insert/entered = entering
+	var/into_slot = ACT_FINAL(entered, slot_id, slot_id)
 	var/landed = FALSE
+	var/failed_for = null
 	if(forced)
 		log_world("SLOT_TRANSFER: FORCED [thing] from [src] ([from_slot]) to [new_holder] ([into_slot || "default"]) by [actor ? key_name(actor) : "the game"]")
 		landed = dq_ledger_force_move(thing, new_holder, LEDGER_MOVE_FORCED, into_slot)
-	else if(!dq_ledger_refusal(thing, new_holder, into_slot, actor))
-		landed = dq_ledger_commit(thing, new_holder, into_slot)
+	else
+		failed_for = dq_ledger_refusal(thing, new_holder, into_slot, actor)
+		if(!failed_for)
+			landed = dq_ledger_commit(thing, new_holder, into_slot)
 	if(!landed)
-		var/failed_for = GLOB.act_last_reason
 		act_cancel(entering)
 		act_cancel(leaving)
-		GLOB.act_last_reason = failed_for
-		return FALSE
+		return failed_for || "it won't go into [new_holder]"
 	TEST_REC_TRANSFER(thing, src, new_holder, into_slot)
 	act_done(leaving)
 	act_done(entering)
-	return TRUE
+	return null
 
 /// An authority a caller is granted for one transfer: who granted it (a log name, never a reference), why, and which AUTH_* bits it carries.
 /// slot_transfer(authority =) takes this or a bare mask; the grant is logged. (admission.md D2j: the datum replaces forced/silent flags; a `quiet`
