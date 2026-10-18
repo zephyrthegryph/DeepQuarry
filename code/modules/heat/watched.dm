@@ -72,7 +72,7 @@ READS_AS(/proc/watched, WATCHED_KEY)
 		return !!T.lighting_object?.lum_watch?[jointext(levels, ",")]
 	if(source == WATCH_CHARGE)
 		var/obj/machinery/power/smes/S = A
-		var/list/row = SSwatched.charge_watches[entity_handle(S)]
+		var/list/row = SSwatched.charge_watches[ref_token(S)]
 		if(!row || row[3] != S.vg_entity)
 			return FALSE
 		for(var/level in levels)
@@ -104,7 +104,7 @@ SYSTEM_DEF(watched)
 /// This system's entity handle (taken on first use: handles do not exist yet while the systems are made).
 /datum/system/watched/proc/watch_owner()
 	if(!watch_owner_ref)
-		watch_owner_ref = entity_handle(src)
+		watch_owner_ref = ref_token(src)
 	return watch_owner_ref
 
 /datum/system/watched/reactions()
@@ -113,7 +113,7 @@ SYSTEM_DEF(watched)
 
 /// Queues a band watch on `A`'s `source` over `levels`.
 /datum/system/watched/proc/request(atom/A, source, list/levels)
-	pending += list(list(entity_handle(A), source, levels.Copy()))
+	pending += list(list(ref_token(A), source, levels.Copy()))
 	wake_work_item(PROC_REF(arm_pending))
 
 /datum/system/watched/proc/arm_pending(dt)
@@ -125,7 +125,7 @@ SYSTEM_DEF(watched)
 	pending = list()
 	charge_prune()
 	for(var/list/row as anything in rows)
-		var/atom/A = resolve_handle(row[1])
+		var/atom/A = resolve_token(row[1])
 		if(!isatom(A) || QDELETED(A) || watched_armed(A, row[2], row[3]))
 			continue
 		if(row[2] == WATCH_CHARGE)
@@ -156,7 +156,7 @@ SYSTEM_DEF(watched)
 
 /// `T`'s lighting changed this tick: checked once at the next pass (coalesced per turf).
 /datum/system/watched/proc/lum_changed(turf/T)
-	var/handle = entity_handle(T)
+	var/handle = ref_token(T)
 	if(lum_pending[handle])
 		return
 	lum_pending[handle] = TRUE
@@ -167,7 +167,7 @@ SYSTEM_DEF(watched)
 	var/list/turfs = lum_pending
 	lum_pending = list()
 	for(var/handle in turfs)
-		var/turf/T = resolve_handle(handle)
+		var/turf/T = resolve_token(handle)
 		var/datum/lighting_object/O = T?.lighting_object
 		if(!O?.lum_watch)
 			continue
@@ -199,7 +199,7 @@ SYSTEM_DEF(watched)
 /datum/system/watched/proc/charge_arm(obj/machinery/power/smes/S, list/levels)
 	if(!S.vg_entity)
 		return
-	var/handle = entity_handle(S)
+	var/handle = ref_token(S)
 	// Readers with different levels share the one watch (the hybrid unit's gate reads its capacity, the modify requirement its 1%): it watches
 	// every level asked of this entity, a crossing of any republishes, and each reader keeps its own band. Past CHARGE_LEVELS_MAX the oldest go.
 	var/list/merged = list()
@@ -232,7 +232,7 @@ SYSTEM_DEF(watched)
 /// Drops the charge watches whose SMES is gone.
 /datum/system/watched/proc/charge_prune()
 	for(var/handle in charge_watches.Copy())
-		var/atom/S = resolve_handle(handle)
+		var/atom/S = resolve_token(handle)
 		if(!isatom(S) || QDELETED(S))
 			charge_forget(handle)
 
@@ -240,7 +240,7 @@ SYSTEM_DEF(watched)
 /datum/system/watched/proc/charge_changed(datum/native_watch/world/watch, reason, source, source_kind)
 	charge_wakes++
 	var/handle = charge_owners["[watch.handle]"]
-	var/atom/S = handle ? resolve_handle(handle) : null
+	var/atom/S = handle ? resolve_token(handle) : null
 	if(!isatom(S) || QDELETED(S))
 		if(handle)
 			charge_forget(handle)

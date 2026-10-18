@@ -80,7 +80,7 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 		var/client/C = value
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
-		var/h = entity_handle(value)
+		var/h = ref_token(value)
 		return h ? list("rerun_h" = h) : null
 	return value
 

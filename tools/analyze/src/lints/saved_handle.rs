@@ -1,7 +1,7 @@
 //! `saved_handle`: a handle written to a save (doc/rewrite/proposals/relations.md D10).
 //!
-//! Handles are per round and per connection (`entity_handle()` is "id:generation"; a client handle names a connection). A save stores ids,
-//! ckeys or names; on load a relation re-links by `by =`. The lint rejects an `entity_handle()` (or `client_handle()`) result written to a
+//! Handles are per round and per connection (`ref_token()` is "id:generation"; a client handle names a connection). A save stores ids,
+//! ckeys or names; on load a relation re-links by `by =`. The lint rejects an `ref_token()` (or `client_handle()`) result written to a
 //! savefile entry (`S[...] <<`, `S[...] =`, `WRITE_FILE`, `to_file`). A hard ban: nothing is baselined.
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
@@ -30,7 +30,7 @@ struct SavedHandle {
 
 impl SavedHandle {
     fn new() -> SavedHandle {
-        SavedHandle { save: Pat::new(r"(?:\bS\s*\[[^\]]*\]\s*(?:<<|=(?!=))|\b(?:WRITE_FILE|to_file)\s*\()[^\n]*\b(?:entity_handle|client_handle)\s*\(") }
+        SavedHandle { save: Pat::new(r"(?:\bS\s*\[[^\]]*\]\s*(?:<<|=(?!=))|\b(?:WRITE_FILE|to_file)\s*\()[^\n]*\b(?:ref_token|client_handle)\s*\(") }
     }
 }
 

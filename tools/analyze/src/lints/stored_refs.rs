@@ -5,7 +5,7 @@
 //! collector's check fails and the object hard-deletes (a full reference walk on the live server). The
 //! declared forms clear themselves: `owns_one`/`owns_many`/`ref_one`/`ref_many`/`links()`/`slot()` (and
 //! the legacy `owns()`/`rel_one()`/`rel_many()` tables and `OWN`/`REL` lines that still declare them on
-//! master). A weak ref is a handle (`entity_handle()` / `resolve_handle()`): text, never a reference.
+//! master). A weak ref is a handle (`ref_token()` / `resolve_token()`): text, never a reference.
 //!
 //! On the typed model (the full dreammaker parse, `Cx::sem()`), two rules:
 //!
@@ -43,8 +43,8 @@ use crate::tree::CODE_DM;
 const BASELINE: &str = "tools/ci/stored_refs_baseline.txt";
 
 const H_VAR: &str = "declare the var: owns_one/ref_one/links()/slot() in the type's CAPABILITIES block (or its relations() table), which clears it when \
-the other end is deleted; or keep a weak ref (entity_handle(x), read back with resolve_handle()). doc/rewrite/proposals/reference_storage.md";
-const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_many/a many links() end) or holds handles (entity_handle(x)); a cache or \
+the other end is deleted; or keep a weak ref (ref_token(x), read back with resolve_token()). doc/rewrite/proposals/reference_storage.md";
+const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_many/a many links() end) or holds handles (ref_token(x)); a cache or \
 pool keys by a handle or a type, never by the object. doc/rewrite/proposals/reference_storage.md";
 
 static META: Meta = Meta {

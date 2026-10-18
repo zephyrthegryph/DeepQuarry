@@ -194,12 +194,12 @@ CAPABILITIES(/datum/own_test_child)
 	var/cleared = rel_drop_z(fake_z)
 	TEST_ASSERT(isnull(H.view) && cleared == 1, "releasing the z-level clears views naming its turfs ([cleared])")
 	// A turf handle carries the z-level's generation.
-	var/h = entity_handle(T)
-	TEST_ASSERT_EQUAL(resolve_handle(h), T, "a turf handle resolves on a live z-level")
+	var/h = ref_token(T)
+	TEST_ASSERT_EQUAL(resolve_token(h), T, "a turf handle resolves on a live z-level")
 	relation_z_generation_bump(T.z)
-	TEST_ASSERT(isnull(resolve_handle(h)), "a turf handle stops resolving once its z-level generation moves on")
+	TEST_ASSERT(isnull(resolve_token(h)), "a turf handle stops resolving once its z-level generation moves on")
 	GLOB.om_z_generations[T.z]-- // the test map's z-level was not really released
-	TEST_ASSERT_EQUAL(resolve_handle(h), T, "and resolves again once the generation is back")
+	TEST_ASSERT_EQUAL(resolve_token(h), T, "and resolves again once the generation is back")
 	qdel(H)
 
 /datum/unit_test/ownership_proto
@@ -308,26 +308,26 @@ CAPABILITIES(/datum/own_test_child)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	rel_set(H, nameof(H.view), A)
-	var/h = entity_handle(A)
+	var/h = ref_token(A)
 	var/id = entity_handle_park(A)
 	qdel(A)
 	TEST_ASSERT(isnull(H.view), "the view clears when the collapsed thing goes")
-	TEST_ASSERT(isnull(resolve_handle(h)), "a parked handle resolves to nothing")
+	TEST_ASSERT(isnull(resolve_token(h)), "a parked handle resolves to nothing")
 	var/datum/own_test_child/B = new
 	entity_handle_unpark(B, id)
-	TEST_ASSERT_EQUAL(resolve_handle(h), B, "the re-materialized thing takes over the old handle")
+	TEST_ASSERT_EQUAL(resolve_token(h), B, "the re-materialized thing takes over the old handle")
 	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
 	rel_forward_identity(B, C)
 	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity re-points views to the successor")
-	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and hands it the handle slot")
+	TEST_ASSERT_EQUAL(resolve_token(h), C, "and hands it the handle slot")
 	// A successor of another family (an airlock torn down into an assembly) is a new thing:
 	// the views and handle stay with the original and end with it.
 	var/datum/own_test_holder/other = new
 	rel_forward_identity(C, other)
 	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity leaves views on the original for a successor of another family")
-	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and keeps the handle slot")
+	TEST_ASSERT_EQUAL(resolve_token(h), C, "and keeps the handle slot")
 	qdel(other)
 	qdel(B)
 	qdel(C)

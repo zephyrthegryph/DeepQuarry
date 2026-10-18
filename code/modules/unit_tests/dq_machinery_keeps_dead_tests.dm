@@ -183,14 +183,14 @@
 	var/turf/destination = locate(1, 1, surface.z == 1 ? 2 : 1)
 	TEST_ASSERT(destination && destination.z != surface.z, "the independent destination is on a different level from the live pod")
 	var/obj/machinery/transportpod/M = allocate(/obj/machinery/transportpod, surface)
-	var/handle = entity_handle(destination)
-	var/owner_handle = entity_handle(M)
+	var/handle = ref_token(destination)
+	var/owner_handle = ref_token(M)
 	after(M, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/transportpod, arrive), key = "j6_arrive", with = list(destination), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(M, "j6_arrive"), "the real arrival timer captures the live destination handle")
 	// Turf positions survive ChangeTurf: release-generation invalidation, not turf qdel,
 	// is the real way an independent destination handle becomes dead.
 	relation_z_generation_bump(destination.z)
-	TEST_ASSERT_NULL(resolve_handle(handle), "the real generation API invalidates the captured destination")
-	TEST_ASSERT_EQUAL(resolve_handle(owner_handle), M, "the timer owner remains independently live after destination invalidation")
+	TEST_ASSERT_NULL(resolve_token(handle), "the real generation API invalidates the captured destination")
+	TEST_ASSERT_EQUAL(resolve_token(owner_handle), M, "the timer owner remains independently live after destination invalidation")
 	test_time(0.6 SECONDS)
 	TEST_ASSERT(QDELETED(M), "the live pod still runs its unload and expiry tail with the destination gone")

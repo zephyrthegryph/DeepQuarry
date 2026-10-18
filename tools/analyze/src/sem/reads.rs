@@ -1453,7 +1453,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 }
             }
         }
-        // Handle resolution (`resolve_handle()` and its keyed fallbacks) looks a handle up in the world's registries (`GLOB.directory` for a
+        // Handle resolution (`resolve_token()` and its keyed fallbacks) looks a handle up in the world's registries (`GLOB.directory` for a
         // client's handle). A handle that resolves to null is the deletion signal the lifecycle already publishes, so the lookup is bookkeeping, not an input.
         if fr.rel == HANDLE_RESOLUTION_FILE {
             return true;
@@ -2294,14 +2294,14 @@ TRACKED(/datum/thing, charge)
 
     #[test]
     fn a_handle_resolution_reads_the_registries_as_bookkeeping() {
-        let handles = "/proc/resolve_handle(h)
+        let handles = "/proc/resolve_token(h)
 	return GLOB.dyn
 ";
         let content = "/datum/thing
 	var/charge = 0
 TRACKED(/datum/thing, charge)
 /datum/thing/proc/probe(h)
-	return resolve_handle(h) + charge
+	return resolve_token(h) + charge
 /datum/thing/proc/direct()
 	return GLOB.dyn + charge
 ";
@@ -2310,7 +2310,7 @@ TRACKED(/datum/thing, charge)
         let ann = Annotations::get(&sem, &decls);
         let closed = ReadsEngine::new(&sem, &decls, &ann).closed();
         let via = closed.analyze("/datum/thing", "probe");
-        assert!(via.diags.iter().all(|d| d.rule != "untracked_global"), "resolve_handle() is engine bookkeeping: {:?}", via.diags);
+        assert!(via.diags.iter().all(|d| d.rule != "untracked_global"), "resolve_token() is engine bookkeeping: {:?}", via.diags);
         let direct = closed.analyze("/datum/thing", "direct");
         assert!(direct.diags.iter().any(|d| d.rule == "untracked_global" && d.msg == "GLOB.dyn"), "a content read of the same global is still found: {:?}", direct.diags);
         std::fs::remove_dir_all(root).unwrap();

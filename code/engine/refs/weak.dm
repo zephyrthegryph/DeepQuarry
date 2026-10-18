@@ -1,6 +1,6 @@
 // Weak references (doc/rewrite/proposals/relations.md D5): ref_one/ref_many(nameof(v), type, weak = TRUE).
 //
-// The var holds an entity_handle() of its target (a list of handles for a many). It pins nothing: the target is collected as if nobody named
+// The var holds an ref_token() of its target (a list of handles for a many). It pins nothing: the target is collected as if nobody named
 // it, and the generated accessor v() (analyze gen declare, weak_get()) reads null once it is gone, or after a z-level recycle for a turf.
 // Nothing is indexed, published or run when the target dies, so a reader that must react to the death declares a normal ref_one. Writes go
 // through rel_set / rel_add / rel_remove / rel_clear, which dispatch here on OWNK_WEAK.
@@ -25,7 +25,7 @@
 		if(!isdatum(value))
 			OWN_REPORT("[holder.type].[var_name] is a weak reference: refused [value], not a datum")
 		return null
-	var/handle = isnull(value) ? null : entity_handle(value)
+	var/handle = isnull(value) ? null : ref_token(value)
 	if(holder.vars[var_name] == handle)
 		return value
 	holder.vars[var_name] = handle
@@ -41,7 +41,7 @@
 		if(!isdatum(value))
 			OWN_REPORT("[holder.type].[var_name] is a weak reference: refused [value], not a datum")
 		return null
-	var/handle = entity_handle(value)
+	var/handle = ref_token(value)
 	var/list/L = holder.vars[var_name]
 	if(islist(L) && (handle in L))
 		return value
@@ -59,7 +59,7 @@
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
 		return FALSE
-	var/handle = entity_handle(value)
+	var/handle = ref_token(value)
 	if(!(handle in L))
 		return FALSE
 	L -= handle
@@ -84,12 +84,12 @@
 	if(isnull(value))
 		return null
 	if(!islist(value))
-		return resolve_handle(value)
+		return resolve_token(value)
 	. = list()
 	var/list/L = value
 	var/list/gone
 	for(var/handle in L)
-		var/datum/D = resolve_handle(handle)
+		var/datum/D = resolve_token(handle)
 		if(D)
 			. += D
 		else

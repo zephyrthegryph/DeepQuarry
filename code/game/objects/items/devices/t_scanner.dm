@@ -11,7 +11,7 @@
 
 	var/scan_range = 1
 
-	var/list/active_scanned //assoc list of handles (entity_handle) of the objects being scanned, mapped to their overlay
+	var/list/active_scanned //assoc list of handles (ref_token) of the objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/t_scanner)
 	var/list/scanned = get_scanned_objects(scan_range)
 	var/list/scanned_by_h = list()
 	for(var/obj/O in scanned)
-		var/object_h = entity_handle(O)
+		var/object_h = ref_token(O)
 		if(object_h)
 			scanned_by_h[object_h] = O
 	var/list/update_remove = list()

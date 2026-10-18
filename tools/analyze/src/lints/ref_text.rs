@@ -2,7 +2,7 @@
 //! (doc/rewrite/proposals/relations.md D9).
 //!
 //! A REF text may be built and resolved inside one request (a Topic href `?src=[REF(src)]`). It is never stored: a var, a list member or
-//! key, a deferred argument holds a relation (possibly `weak = TRUE`) in content, or an `entity_handle()` token in data.
+//! key, a deferred argument holds a relation (possibly `weak = TRUE`) in content, or an `ref_token()` token in data.
 //!
 //! Rules:
 //! * `stored`: a `REF(...)` result assigned to a var, added to a list, or used as a list key.
@@ -14,9 +14,9 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
-const H_STORED: &str = "do not store a REF() text: hold a relation (ref_one / ref_many, weak = TRUE when only a null check is needed) in content, or an entity_handle() token in data; \
+const H_STORED: &str = "do not store a REF() text: hold a relation (ref_one / ref_many, weak = TRUE when only a null check is needed) in content, or an ref_token() token in data; \
 build and resolve a REF text inside one request only. doc/rewrite/proposals/relations.md D9";
-const H_MACRO: &str = "a \\ref[] text is built and resolved inside one request (a Topic href); anything that outlives the request holds a relation or an entity_handle() token. \
+const H_MACRO: &str = "a \\ref[] text is built and resolved inside one request (a Topic href); anything that outlives the request holds a relation or an ref_token() token. \
 doc/rewrite/proposals/relations.md D9";
 
 static META: Meta = Meta {

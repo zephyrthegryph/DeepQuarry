@@ -20,7 +20,7 @@
 #define OWNK_PROTO 3
 /// A light relation edge: a framework-maintained view var (1:1, or a list for 1:N).
 #define OWNK_REL 4
-/// A weak reference (ref_one/ref_many(weak = TRUE)): the var holds an entity_handle() (a list of them for a many), read back through the generated
+/// A weak reference (ref_one/ref_many(weak = TRUE)): the var holds an ref_token() (a list of them for a many), read back through the generated
 /// accessor (weak_get()). No reverse index, nothing published to the target, nothing runs when it dies: the accessor reads null. relations proposal D5.
 #define OWNK_WEAK 5
 

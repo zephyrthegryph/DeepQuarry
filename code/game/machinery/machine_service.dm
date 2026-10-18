@@ -198,14 +198,14 @@ SYSTEM_DEF(machines)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]
-		var/obj/machinery/atmospherics/M = resolve_handle(transfer[1])
+		var/obj/machinery/atmospherics/M = resolve_token(transfer[1])
 		var/actual = (islist(actual_moles) && i <= length(actual_moles)) ? actual_moles[i] : 0
 		if(!M || QDELETED(M))
 			continue
 		M.pump_transaction_committed(actual)
 		if(actual < MINIMUM_MOLES_TO_PUMP)
 			continue
-		var/datum/gas_mixture/destination = resolve_handle(transfer[8])
+		var/datum/gas_mixture/destination = resolve_token(transfer[8])
 		if(!destination)
 			continue // the sink is gone: no power, flow or turf update for this entry
 		var/source_moles = max(transfer[6], MINIMUM_MOLES_TO_PUMP)

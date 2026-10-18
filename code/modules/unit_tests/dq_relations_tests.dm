@@ -200,8 +200,8 @@ CAPABILITIES(/datum/relations_weak_holder)
 /datum/unit_test/relations_client_handle_forms
 
 /datum/unit_test/relations_client_handle_forms/Run()
-	TEST_ASSERT_NULL(resolve_handle("@nobody"), "a bare ckey handle names nothing")
-	TEST_ASSERT_NULL(resolve_handle("@nobody#1"), "a handle of a ckey that is not connected names nothing")
+	TEST_ASSERT_NULL(resolve_token("@nobody"), "a bare ckey handle names nothing")
+	TEST_ASSERT_NULL(resolve_token("@nobody#1"), "a handle of a ckey that is not connected names nothing")
 
 /// A subtype's links() end over a var an ancestor declares as a plain ref_one refines it into a pair: no declaration report, and both ends are
 /// maintained (the blob resource's overmind, an ancestor ref_one, is one end of links(... /mob/observer/blob::resource_blobs)).

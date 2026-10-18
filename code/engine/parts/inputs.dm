@@ -48,7 +48,7 @@
 		if(result)
 			return result
 	// The ops had their say: the mob's click handling below must not resolve them a second time (the router's route_click() only classifies and performs).
-	var/actor_key = entity_handle(actor)
+	var/actor_key = ref_token(actor)
 	GLOB.op_click_resolved[actor_key] = TRUE
 	try
 		E.actor.op_compatibility_click(E.target, E.params)

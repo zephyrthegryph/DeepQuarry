@@ -720,6 +720,8 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
+  "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "/datum/req = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement_composer = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",

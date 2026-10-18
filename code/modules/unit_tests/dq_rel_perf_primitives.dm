@@ -88,19 +88,19 @@
 	relprim_done("findtext", t)
 	t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
-		sink = entity_handle(M)
-	relprim_done("entity_handle first call", t)
+		sink = ref_token(M)
+	relprim_done("ref_token first call", t)
 	t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
-		sink = entity_handle(M)
-	relprim_done("entity_handle repeat", t)
+		sink = ref_token(M)
+	relprim_done("ref_token repeat", t)
 	var/list/handles = list()
 	for(var/datum/relperf_member/M as anything in made)
-		handles += entity_handle(M)
+		handles += ref_token(M)
 	t = REALTIMEOFDAY
 	for(var/h in handles)
-		sink = resolve_handle(h)
-	relprim_done("resolve_handle", t)
+		sink = resolve_token(h)
+	relprim_done("resolve_token", t)
 	t = REALTIMEOFDAY
 	for(var/datum/relperf_member/M as anything in made)
 		qdel(M)

@@ -1,9 +1,9 @@
 // Private Notes / OOC Notes — structured TGUI panels via dedicated panel datums.
 // Owner edits gated to user==host; OOC view is open to anyone.
 
-/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_private_notes_panels)
-/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
+/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 
 // ---- Private Notes --------------------------------------------------------
@@ -66,10 +66,10 @@ CAPABILITIES(/datum/private_notes_panel)
 		set_private_notes(" ")
 		return
 	var/key = "[REF(src)]"
-	var/datum/private_notes_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_private_notes_panels, key))
+	var/datum/private_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_private_notes_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_private_notes_panels[key] = entity_handle(panel)
+		GLOB.dq_private_notes_panels[key] = ref_token(panel)
 	panel.tgui_interact(user)
 
 // ---- OOC Notes ------------------------------------------------------------
@@ -194,9 +194,9 @@ CAPABILITIES(/datum/ooc_notes_panel)
 	if(!identity().ooc_notes)
 		return
 	var/key = "[REF(src)]"
-	var/datum/ooc_notes_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
+	var/datum/ooc_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
 	if(!panel)
 		panel = new(src)
-		GLOB.dq_ooc_notes_panels[key] = entity_handle(panel)
+		GLOB.dq_ooc_notes_panels[key] = ref_token(panel)
 	panel.tgui_interact(user)
 

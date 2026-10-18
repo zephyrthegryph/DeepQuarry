@@ -136,7 +136,7 @@ GLOBAL_VAR(refuse_capture)
  */
 /proc/dispatch_record(mob/user, datum/target, action, log, list/details)
 #ifdef UNIT_TESTS
-	GLOB.dispatch_last_record = list("user" = entity_handle(user), "target" = entity_handle(target), "action" = action, "log" = log)
+	GLOB.dispatch_last_record = list("user" = ref_token(user), "target" = ref_token(target), "action" = action, "log" = log)
 #endif
 	if(isatom(target) && isliving(user))
 		var/atom/A = target

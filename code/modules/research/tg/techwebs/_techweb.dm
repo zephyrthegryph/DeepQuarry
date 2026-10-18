@@ -76,7 +76,7 @@
 	var/list/published_papers
 	/**
 	  * Assoc list of nodes queued for automatic research when there are enough points available
-	  * research_queue_nodes[node_id] = entity_handle(user_enqueued) (a handle: the queue never keeps a mob alive; read the name with queue_node_names())
+	  * research_queue_nodes[node_id] = ref_token(user_enqueued) (a handle: the queue never keeps a mob alive; read the name with queue_node_names())
 	*/
 	var/list/research_queue_nodes
 
@@ -337,7 +337,7 @@ CAPABILITIES(/datum/techweb)
 	return techweb_point_display_generic(research_points || list())
 
 /datum/techweb/proc/enqueue_node(id, mob/user)
-	var/user_h = entity_handle(user)
+	var/user_h = ref_token(user)
 	var/queue_first = FALSE
 	if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_user = user
@@ -365,13 +365,13 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/queue_node_names()
 	. = list()
 	for(var/node_id in research_queue_nodes)
-		var/mob/queued_by = resolve_handle(research_queue_nodes[node_id])
+		var/mob/queued_by = resolve_token(research_queue_nodes[node_id])
 		.[node_id] = queued_by ? "[queued_by]" : "unknown"
 
 /datum/techweb/proc/dequeue_node(id, mob/user)
 	if(!(id in research_queue_nodes))
 		return FALSE
-	if(LAZYACCESS(research_queue_nodes, id) != entity_handle(user))
+	if(LAZYACCESS(research_queue_nodes, id) != ref_token(user))
 		return FALSE
 
 	remove_research_queue_nodes(id)
