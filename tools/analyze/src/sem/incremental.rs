@@ -406,6 +406,22 @@ fn pending(tree: &Tree) -> Arc<Pending> {
 /// stored record describes exactly this tree already (another consumer of the model ran first) its
 /// results are kept and the footprint is widened by what this run consulted.
 pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
+    let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    capture_unlocked(tree, sem, footprint);
+}
+
+/// Generators render in parallel (`gen::run_stage`): one capture (load, compare, collect, save) at a time, so two consumers of the model
+/// never build competing records and lose each other's entries.
+static RECORD_LOCK: Mutex<()> = Mutex::new(());
+
+/// [`capture`] then [`store_gen`], as one step against other captures.
+pub fn capture_and_store_gen(tree: &Tree, sem: &Sem, footprint: Vec<String>, name: &str, g: GenCache) {
+    let _g = RECORD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    capture_unlocked(tree, sem, footprint);
+    store_gen(tree, name, g);
+}
+
+fn capture_unlocked(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
     let Some((env, now)) = environment(tree) else { return };
     let Some(stamp) = crate::incr::stamp() else { return };
     let same = |r: &Record| r.env == env && r.files.len() == now.len() && r.files.iter().all(|(k, f)| now.get(k) == Some(&f.fkey));
