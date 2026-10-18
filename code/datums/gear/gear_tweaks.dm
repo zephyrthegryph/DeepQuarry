@@ -1,5 +1,8 @@
 #define LOADOUT_BAN_STRING "Custom loadout"
 
+/// Loadout tweaks are made once with their gear at world setup and shared: never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gear_tweak)
+
 /datum/gear_tweak/proc/get_contents(metadata)
 	return
 

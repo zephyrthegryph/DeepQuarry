@@ -3,9 +3,6 @@
 # `analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.
 var	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::global_announcer
 var	code/_global_vars/silo.dm	@/datum/controller/global_vars::ore_silo_default
-var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_free_color_choice
-var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_implant_location
-var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_collar_tag
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/_onclick/hud/skybox.dm	@/client::skybox
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::owner
@@ -21,13 +18,6 @@ var	code/datums/capabilities/dispatch.dm	@/datum/dispatch_context::ui
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
 var	code/datums/character_identity.dm	@/mob/living::own_identity
 var	code/datums/containment/latency_policy.dm	@/datum/controller/global_vars::latency_sweep
-var	code/datums/gear/gear_tweak_recolor.dm	@/datum/controller/global_vars::gear_tweak_unified_recolor
-var	code/datums/gear/gear_tweaks.dm	@/datum/controller/global_vars::gear_tweak_free_matrix_recolor
-var	code/datums/gear/gear_tweaks.dm	@/datum/controller/global_vars::gear_tweak_free_name
-var	code/datums/gear/gear_tweaks.dm	@/datum/controller/global_vars::gear_tweak_free_desc
-var	code/datums/gear/gear_tweaks.dm	@/datum/controller/global_vars::gear_tweak_free_digestable
-var	code/datums/gear/loadout_item_tf.dm	@/datum/controller/global_vars::gear_tweak_item_tf_spawn
-var	code/datums/gear/loadout_standard_kit.dm	@/datum/controller/global_vars::gear_tweak_pda_ringtone
 var	code/datums/interactions/presentation.dm	@/client::screentip
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/observer_turf_entered::arrived
@@ -225,11 +215,7 @@ list	code/controllers/subsystems/shuttles.dm	@/datum/system/shuttles::sectors_to
 list	code/controllers/subsystems/tgui.dm	@/datum/system/tgui::asset_generations
 list	code/datums/containment/latency_policy.dm	@/datum/controller/global_vars::latency_sweep_holders
 list	code/datums/datum.dm	@/datum::open_tguis
-list	code/datums/gear/_gear.dm	@/datum/controller/global_vars::loadout_categories
-list	code/datums/gear/_gear.dm	@/datum/controller/global_vars::gear_datums
-list	code/datums/gear/_gear.dm	@/datum/loadout_category::gear
 list	code/datums/locations/locations.dm	@/datum/locations::children
-list	code/datums/underwear/underwear.dm	@/datum/category_item/underwear::tweaks
 list	code/engine/declare/definition_registry.dm	@/datum/definition_registry::pipelines
 list	code/engine/io/db.dm	@/datum/io/sql::rows
 list	code/engine/present/appearance_builder.dm	@/datum/look::vis
