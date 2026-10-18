@@ -446,6 +446,7 @@ impl Lint for StoredRefs {
         {
             let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
             let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
+            let successor = crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");
             for f in &files {
                 let mut cur: Option<String> = None;
                 for line in f.code().lines() {
@@ -458,6 +459,13 @@ impl Lint for StoredRefs {
                     }
                     if let (Some(t), Some(c)) = (cur.as_ref(), param.captures(line)) {
                         init_only.push((t.clone(), c.s(1).to_string()));
+                    }
+                    // owns_*(successor = nameof(v)): the hand-over target, set in on_destroy() as the holder goes (a relation view there
+                    // would be cleared before the hand-over reads it), so it is never stored past the holder's own teardown.
+                    if let Some(t) = cur.as_ref() {
+                        for c in successor.captures_iter(line).iter() {
+                            init_only.push((t.clone(), c.s(1).to_string()));
+                        }
                     }
                 }
             }

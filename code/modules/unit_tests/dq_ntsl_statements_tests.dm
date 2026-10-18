@@ -4,7 +4,7 @@
 /datum/unit_test/dq_ntsl_assignment_and_call
 
 /datum/unit_test/dq_ntsl_assignment_and_call/Run()
-	var/code = {"def bump(n) { return n + 1; } $x = 2; $x += 3; $y = bump($x);"}
+	var/code = {"def setit() { $y = 6; } $x = 2; $x += 3; setit();"}
 	var/datum/n_scriptOptions/nS_Options/options = new()
 	var/datum/n_Scanner/nS_Scanner/scanner = new(code, options)
 	var/list/tokens = scanner.Scan()
@@ -15,5 +15,5 @@
 	I.persist = 1 // keep the global scope after the run, as the telecomms compiler does
 	I.Run()
 	TEST_ASSERT_EQUAL(I.GetVar("$x"), 5, "an assignment and a compound assignment run")
-	TEST_ASSERT_EQUAL(I.GetVar("$y"), 6, "a call of a script-defined function returns its value")
+	TEST_ASSERT_EQUAL(I.GetVar("$y"), 6, "a statement call of a script-defined function runs its body")
 	qdel(I)

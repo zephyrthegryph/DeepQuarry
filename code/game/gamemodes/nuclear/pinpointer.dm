@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/pinpointer)
 
 /obj/item/pinpointer/proc/pinpointer_step(datum/act/timer/A)
 	if(!the_disk())
-		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
+		rel_set(src, nameof(the_disk), live_nuclear_disk())
 		if(!the_disk())
 			set_icon_state("pinonnull")
 			return
@@ -247,7 +247,7 @@ CAPABILITIES(/obj/item/pinpointer/nukeop)
 		return		//Get outta here
 
 	if(!the_disk())
-		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
+		rel_set(src, nameof(the_disk), live_nuclear_disk())
 		if(!the_disk())
 			set_icon_state("pinonnull")
 			return
@@ -398,3 +398,10 @@ CAPABILITIES(/obj/item/pinpointer/advpinpointer)
 	if(!istype(user) || QDELETED(user) || !istype(device) || QDELETED(device))
 		return "gone"
 	return can_see(user, device, 1) ? null : "can't see it"
+
+/// The nuclear disk to point at: one that is not being deleted (a disk mid-teardown refuses new links).
+/proc/live_nuclear_disk()
+	for(var/obj/item/disk/nuclear/D in REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
+		if(!QDELETED(D))
+			return D
+	return null

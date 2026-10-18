@@ -303,7 +303,6 @@ CAPABILITIES(/obj/mecha)
 	ref_many(nameof(afflictions))
 	ref_many(nameof(micro_utility_equipment))
 	ref_many(nameof(micro_weapon_equipment))
-	ref_one(nameof(wreck))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
@@ -456,7 +455,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		rel_set(src, nameof(wreck), WR)
+		set_wreck(WR)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)
