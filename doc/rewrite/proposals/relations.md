@@ -185,6 +185,31 @@ Assoc lists keyed by datum are references the lint does not see. Verified long-l
 - Datum-keyed assoc **sets** on long-lived vars move to the membership store (`code/controllers/kernel/membership.dm`: `member_join`, swap-remove O(1), leave on dematerialize). The lint gains assoc-key coverage (D8).
 - **Merge** `kernel_membership` (`membership.dm`: members/index/sources/role/keys_of) and `lifeform_index` (`code/engine/lifeforms/registry.dm:33-44`: by_key/by_z/by_area/filed, one per registry id, plus `GLOB.radio_listen_tuned` / `radio_listen_via` at 169-170) into **one store**: one set of keys, one leave-on-delete path, one GC-sweep subject. Design of the merged keys (system type, capability type, registry id) is **(unverified)**; the constraint is no behaviour change for `members_of`, `registry_get`, `registry_all`, `REGISTRY_MEMBERS`.
 
+#### D12 design (2026-10-18, implementation lane)
+
+**Measured** (boot profile of the unit-test map, `boot_profile=1`, branch rewrite/relations at ae5f99f664): the three stores are cheap at boot.
+`/datum/registry/add` 2202 calls, 0.003 s; `join_registries` 1960 calls, 0.029 s total; `member_join` (kernel_membership) 21 calls; `lifeform_index`
+(`registry()` entries) 2 files; `member_teardown` 1481 calls, 0.004 s; `after_init_wait` 12239 calls, 0.019 s. The whole membership work is under
+0.1 s of boot, so the merge is about one leave path and one GC-sweep subject, not speed. (Southern Cross has about 5x the atoms; still small.)
+
+**Today, three stores:** `kernel_membership` (system and capability-work members: swap-remove, unordered, sources and roles), `/datum/registry`
+(the `REGISTRY_*` member lists, join order, keyed and conditional variants; 210 `registry_join/leave` call lines), and `lifeform_index` (the
+`registry()` entry's key/z/area index, mirrored into `/datum/registry` by `registry_mirror_join`).
+
+**The one store:** `kernel_membership`, with
+- **keys in one space:** a system type, a capability type (as today), and `"registry:<id>"`;
+- **ordered keys:** a key declared ordered keeps join order (leave is a list removal, as `/datum/registry` does now); system keys stay swap-remove.
+  `REGISTRY_MEMBERS(id)`, `registry_get` (first member) and `registry_all` keep their order, so their readers see no change;
+- **sub-indexes per key:** by registry key, by z, by area (what `lifeform_index` and the keyed `/datum/registry` hold), maintained by the store;
+- **one leave path:** `keys_of[member]` covers every key, so `member_teardown()` replaces `leave_registries()`, `dq_lifecycle_leave_registries()`
+  and `registry_unfile()`; the batch destroy's `remove_many` becomes the store's bulk leave;
+- **one GC-sweep subject:** `dq_gc_sweep` asserts the store holds no swept subject.
+
+**Phases** (each behaviour-preserving, pinned by the existing registry and membership tests):
+1. `/datum/registry` add/remove/has go through the store under `"registry:<id>"` (ordered); its `members` var is the store's list for that key.
+2. `lifeform_index` becomes the store's sub-indexes; `registry_mirror_join` goes.
+3. The three teardown paths fold into `member_teardown()`; `GLOB.radio_listen_tuned/via` join as a keyed sub-index.
+
 ### D13. One native player link (approved item 10)
 Writes to a mob's `key`, `ckey` or `client`: about 104 non-test lines by a dot-write grep (`\.(key|ckey|client) =`; the task quoted 97) **(grep, approximate)**, for example `observer.key = key` (`code/modules/mob/new_player/lobby_browser.dm:189`), `replacement.key = key` (`login.dm:7`). The persistent client link exists: `persistent_client.mob` is a pair with `mob.persistent_client` written by `rel_set` (`code/modules/client/persistent_client.dm:75-83`), and `client`/`persistent_client` are plain vars with a tracked setter (`persistent_client.dm:60-72`, `code/modules/client/client procs.dm:255-259, 406`).
 - One choke point `bind_player(mob, key)` does the native assignment (`mob.key =`) and updates the persistent client relation; every other `.key/.ckey/.client` write is a lint finding (`player_link`, ratchet then ban).
