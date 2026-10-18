@@ -688,6 +688,8 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17
+transform_ratchet_on_bespoke_then_tails = 132
+transform_ratchet_on_bespoke_data_procs = 42
 generic_hit_ratchet_on_attack_generic_overrides = 38
 
 [lint.op_order]
@@ -720,6 +722,23 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
+  "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
+  "calc_reaction_progress = /datum/xform/proc/progress() (code/library/transformations/transformation_entry.dm)",
+  "react_step = xform_step() (code/library/transformations/transformation_settle.dm)",
+  "get_reaction_lookup = the holder's xform_regime(); the compiled index is xform_bucket_table(medium, regime)",
+  "chemical_reactions = GLOB.xform_rules / xform_rules_in(MEDIUM_REAGENTS, regime): the compiled transformations",
+  "chemical_reactions_by_product = xform_makers_of(MEDIUM_REAGENTS, REGIME_INSTANT, product)",
+  "distilled_reactions_by_product = xform_makers_of(MEDIUM_REAGENTS, REGIME_DISTILLING, product)",
+  "instant_reactions_by_reagent = xform_bucket_table(MEDIUM_REAGENTS, REGIME_INSTANT)",
+  "distilled_reactions_by_reagent = xform_bucket_table(MEDIUM_REAGENTS, REGIME_DISTILLING)",
+  "initialize_chemical_reactions = the transformations compile at world setup (static_entries); nothing builds them lazily",
+  "distilling_temp_range = holds = temperature_in(lo, hi) in the transformation() entry; a rule's bands are its bands list",
+  "log_is_important = important = TRUE in the transformation() entry",
+  "temp_shift = energy = per_step(joules) in the transformation() entry",
+  "consumes_xgm_gas = takes_ambient = list(gas(id, moles)) in the transformation() entry",
+  "minimum_xgm_pressure = holds = pressure_in(lo, hi) in the transformation() entry",
+  "maximum_xgm_pressure = holds = pressure_in(lo, hi) in the transformation() entry",
   "/datum/req = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement_composer = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",

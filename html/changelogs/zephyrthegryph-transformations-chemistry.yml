@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Chemical reactions (instant, distilling and slime) are now declared as transformations and settled by the compiled transformation index; the old reaction datums are gone. Outcomes are held identical by recorded pins."

@@ -1,130 +1,77 @@
 // Condensing atmo gasses into reagents
 // If there is ever work done converting atmogas back and forth from reagent to gas then this should be tuned to avoid creating something from nothing!
-#define CONDENSING_RATE 50
-#define CONDENSING_RESULT 0.5
-#define CONDENSING_HEAT 2
-#define COOLANT_CONSUMPTION_RATE 0.01
+// The condensing constants are in code/__defines/transformations.dm: the generated declarations are read before this file.
 
-/datum/decl/chemical_reaction/distilling/condense_oxygen
-	name = "Condensing Oxygen"
-	id = "condense_oxygen"
-	result = REAGENT_ID_OXYGEN
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_OXYGEN = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_oxygen
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_oxygen)
+	configure(transformation(name = "Condensing Oxygen", id = "condense_oxygen", takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)),
+		blocked_by = list(reagent(REAGENT_ID_OXYGEN, 0.1)), makes = list(reagent(REAGENT_ID_OXYGEN, CONDENSING_RESULT)),
+		energy = per_step(CONDENSING_HEAT * 1000), takes_ambient = list(gas(GAS_O2, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(54.36, 90.19), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_oxygen, distilling_temp_range, list(54.36, 90.19))
 
-/datum/decl/chemical_reaction/distilling/condense_nitrogen
-	name = "Condensing Nitrogen"
-	id = "condense_nitrogen"
-	result = REAGENT_ID_NITROGEN
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_NITROGEN = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_nitrogen
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_N2
-	rejects_xgm_gas = GAS_PHORON
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_nitrogen)
+	configure(transformation(name = "Condensing Nitrogen", id = "condense_nitrogen",
+		takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)), blocked_by = list(reagent(REAGENT_ID_NITROGEN, 0.1)),
+		makes = list(reagent(REAGENT_ID_NITROGEN, CONDENSING_RESULT)), energy = per_step(CONDENSING_HEAT * 1000),
+		takes_ambient = list(gas(GAS_N2, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(63.15, 77.36), ambient_gas_over(GAS_N2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_nitrogen, distilling_temp_range, list(63.15, 77.36))
 
-/datum/decl/chemical_reaction/distilling/condense_nitrox
-	name = "Condensing Nitrous Oxide"
-	id = "condense_nitro"
-	result = REAGENT_ID_NITROGEN // Figure out something better
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_NITROGEN = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_nitrox
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_N2O
-	rejects_xgm_gas = GAS_PHORON
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_nitrox)
+	configure(transformation(name = "Condensing Nitrous Oxide", id = "condense_nitro",
+		takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)), blocked_by = list(reagent(REAGENT_ID_NITROGEN, 0.1)),
+		makes = list(reagent(REAGENT_ID_NITROGEN, CONDENSING_RESULT)), energy = per_step(CONDENSING_HEAT * 1000),
+		takes_ambient = list(gas(GAS_N2O, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(0, 182.3), ambient_gas_over(GAS_N2O, 10), ambient_gas_under(GAS_PHORON, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_nitrox, distilling_temp_range, list(0, 182.3))
 
-/datum/decl/chemical_reaction/distilling/condense_carbon
-	name = "Condensing Carbon Dioxide"
-	id = "condense_carbon"
-	result = REAGENT_ID_CARBON
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_CARBON = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_carbon
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_CO2
-	rejects_xgm_gas = GAS_PHORON
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_carbon)
+	configure(transformation(name = "Condensing Carbon Dioxide", id = "condense_carbon",
+		takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)), blocked_by = list(reagent(REAGENT_ID_CARBON, 0.1)),
+		makes = list(reagent(REAGENT_ID_CARBON, CONDENSING_RESULT)), energy = per_step(CONDENSING_HEAT * 1000),
+		takes_ambient = list(gas(GAS_CO2, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(54.36, 90.19), ambient_gas_over(GAS_CO2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_carbon, distilling_temp_range, list(54.36, 90.19))
 
-/datum/decl/chemical_reaction/distilling/condense_phoron
-	name = "Condensing Phoron"
-	id = "condense_phoron"
-	result = REAGENT_ID_PHORON
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_PHORON = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_phoron
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_O2
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_phoron)
+	configure(transformation(name = "Condensing Phoron", id = "condense_phoron", takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)),
+		blocked_by = list(reagent(REAGENT_ID_PHORON, 0.1)), makes = list(reagent(REAGENT_ID_PHORON, CONDENSING_RESULT)),
+		energy = per_step(CONDENSING_HEAT * 1000), takes_ambient = list(gas(GAS_PHORON, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(14.60, 52.99), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_O2, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_phoron, distilling_temp_range, list(14.60, 52.99))
 
-/datum/decl/chemical_reaction/distilling/condense_fuel
-	name = "Condensing Volatiles"
-	id = "condense_fuel"
-	result = REAGENT_ID_FUEL
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_FUEL = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_fuel
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_VOLATILE_FUEL
-	rejects_xgm_gas = GAS_O2
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_fuel)
+	configure(transformation(name = "Condensing Volatiles", id = "condense_fuel", takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)),
+		blocked_by = list(reagent(REAGENT_ID_FUEL, 0.1)), makes = list(reagent(REAGENT_ID_FUEL, CONDENSING_RESULT)),
+		energy = per_step(CONDENSING_HEAT * 1000), takes_ambient = list(gas(GAS_VOLATILE_FUEL, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(91.60, 120.19), ambient_gas_over(GAS_VOLATILE_FUEL, 10), ambient_gas_under(GAS_O2, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_fuel, distilling_temp_range, list(91.60, 120.19))
 
-/datum/decl/chemical_reaction/distilling/condense_methane
-	name = "Condensing Methane"
-	id = "condense_methane"
-	result = REAGENT_ID_TOXIN
-	required_reagents = list(REAGENT_ID_COOLANT = COOLANT_CONSUMPTION_RATE)
-	inhibitors = list(REAGENT_ID_TOXIN = 0.1) // Used to limit the reaction
-	result_amount = CONDENSING_RESULT
+/transformation/chem/distilling/condense_methane
 
-	temp_shift = CONDENSING_HEAT
-
-	require_xgm_gas = GAS_CH4
-	rejects_xgm_gas = GAS_O2
-	consumes_xgm_gas = CONDENSING_RATE
+CAPABILITIES(/transformation/chem/distilling/condense_methane)
+	configure(transformation(name = "Condensing Methane", id = "condense_methane", takes = list(reagent(REAGENT_ID_COOLANT, COOLANT_CONSUMPTION_RATE)),
+		blocked_by = list(reagent(REAGENT_ID_TOXIN, 0.1)), makes = list(reagent(REAGENT_ID_TOXIN, CONDENSING_RESULT)),
+		energy = per_step(CONDENSING_HEAT * 1000), takes_ambient = list(gas(GAS_CH4, CONDENSING_RATE)),
+		holds = xform_all(temperature_in(90.7, 111.65), ambient_gas_over(GAS_CH4, 10), ambient_gas_under(GAS_O2, 1))))
 
 // kelvin
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_methane, distilling_temp_range, list(90.7, 111.65))
 
-#undef CONDENSING_RATE
-#undef CONDENSING_RESULT
-#undef CONDENSING_HEAT
-#undef COOLANT_CONSUMPTION_RATE

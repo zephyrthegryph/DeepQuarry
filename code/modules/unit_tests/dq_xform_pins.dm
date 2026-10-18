@@ -1,6 +1,6 @@
 /**
  * Transformation pins (doc/rewrite/proposals/transformations.md, section 12): the outcome of every chemical rule, recorded on the legacy code
- * (/datum/decl/chemical_reaction) before any of it moved, and kept byte-identical through the conversion.
+ * (the old /datum/decl/chemical_reaction types) before any of it moved, and kept byte-identical through the conversion to transformations.
  *
  *   dq_xform_outcome_pin   every rule settled once on a canonical subject (each input at four times its minimum, the catalysts present, the subject
  *                          its `required` type names): which rules fired and in what order, what the subject holds at the end of the fixed point,
@@ -10,8 +10,8 @@
  *                          subject holding the union of their inputs; the winner and the leftovers. This is the pin that proves a change of ordering.
  *
  * Rows are `key => value` text, one file per test under code/modules/unit_tests/snapshots/xform/. A rule's key is its type path below the root of
- * the rule types (`instant/carthatoline`, `distilling/biomass`, `instant/slime/grey_new_slime`), which a conversion keeps. The recorders read rules
- * through /datum/xform_pin_rule, which dq_xform_pin_rules() fills; that builder is the only part that follows the declaration form.
+ * the rule types (`instant/carthatoline`, `distilling/biomass`, `instant/slime/grey_new_slime`), which the conversion kept. The recorders read rules
+ * through /datum/xform_pin_rule, which dq_xform_pin_rules() fills from the compiled rules.
  *
  * An empty or missing file is recorded by the next run; `bash tools/dq_focused_test.sh --bless <test>` rewrites it. Record on one unsharded world.
  * Every row seeds the global rng first, so a rule whose tail rolls dice is reproducible.
@@ -48,47 +48,49 @@
 	var/rejects_gas
 	var/min_pressure
 	var/max_pressure
-	/// The legacy declaration, while the rules are declared as /datum/decl/chemical_reaction.
-	var/datum/decl/chemical_reaction/decl
+	/// The compiled rule.
+	var/datum/xform/rule
+
+/// Every chemical rule of the compiled tables, in order: what the chemistry tests walk.
+/proc/dq_chem_rules()
+	. = list()
+	for(var/datum/xform/X as anything in GLOB.xform_rules)
+		if(X.medium == MEDIUM_REAGENTS && ispath(X.rule_type, /transformation/chem))
+			. += X
 
 /// Every chemical rule as a pin record, key => record, in no particular order (callers sort the keys).
 /proc/dq_xform_pin_rules()
 	. = list()
-	var/root_length = length("/datum/decl/chemical_reaction/") + 1
-	var/list/decls = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
-	for(var/path in decls)
-		var/datum/decl/chemical_reaction/C = decls[path]
-		if(!length(C.required_reagents))
-			continue
+	var/root_length = length("/transformation/chem/") + 1
+	for(var/datum/xform/X as anything in dq_chem_rules())
 		var/datum/xform_pin_rule/R = new
-		R.key = copytext("[path]", root_length)
-		R.takes = C.required_reagents
-		R.catalysts = C.catalysts
-		R.blocked_by = C.inhibitors
-		R.result = C.result
-		R.result_amount = C.result_amount
-		R.important = !!C.log_is_important
-		R.decl = C
-		if(istype(C, /datum/decl/chemical_reaction/distilling))
-			var/datum/decl/chemical_reaction/distilling/D = C
+		R.key = copytext("[X.rule_type]", root_length)
+		R.takes = X.reagent_takes
+		R.catalysts = X.reagent_catalysts
+		R.blocked_by = X.reagent_blocked
+		R.result = X.result
+		R.result_amount = X.result_amount
+		R.important = X.important
+		R.rule = X
+		R.subject_type = X.subject_type
+		if(X.regime == REGIME_DISTILLING)
 			R.family = DQ_XFORM_FAMILY_DISTILLING
-			var/list/window = TYPE_TABLE_GET(D, distilling_temp_range)
+			var/list/window = X.bands[1]
 			R.temp_lo = window[1]
 			R.temp_hi = window[2]
-			R.require_gas = D.require_xgm_gas
-			R.rejects_gas = D.rejects_xgm_gas
-			R.min_pressure = D.minimum_xgm_pressure
-			R.max_pressure = D.maximum_xgm_pressure
-		else if(istype(C, /datum/decl/chemical_reaction/instant/slime))
-			var/datum/decl/chemical_reaction/instant/slime/S = C
+			var/list/ambient = xform_cond_ambient(X.holds)
+			R.require_gas = ambient[1]
+			R.rejects_gas = ambient[2]
+			R.min_pressure = ambient[3]
+			R.max_pressure = ambient[4]
+		else if(ispath(X.rule_type, /transformation/chem/instant/slime))
 			R.family = DQ_XFORM_FAMILY_SLIME
-			R.subject_type = S.required
 		.[R.key] = R
 
-/// The key of the rule a reaction notice names (the legacy notice carries declarations).
+/// The key of the rule a reaction notice names.
 /proc/dq_xform_pin_key_of(thing)
-	var/datum/decl/chemical_reaction/C = thing
-	return copytext("[C.type]", length("/datum/decl/chemical_reaction/") + 1)
+	var/datum/xform/X = thing
+	return copytext("[X.rule_type]", length("/transformation/chem/") + 1)
 
 /// The sorted keys of a record list.
 /proc/dq_xform_sorted_keys(list/rules)
@@ -233,7 +235,7 @@
 /datum/unit_test/dq_xform_outcome_pin/proc/on_reacted(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagents_holder_reacted/event = N
-	for(var/rule in event.chemical_reaction)
+	for(var/rule in event.rules)
 		fired_keys += dq_xform_pin_key_of(rule)
 
 /// Settles `subject` once and returns the row text of what happened. `before_scene` is dq_xform_scene() of the subject's turf before the fill.
@@ -275,9 +277,9 @@
 	qdel(subject)
 	return text
 
-/// Whether the rule's own test passes on a holder right now (the legacy declaration's can_happen()).
+/// Whether the rule's own test passes on a holder right now (xform_matches(): the old can_happen()).
 /datum/unit_test/dq_xform_outcome_pin/proc/matches(datum/xform_pin_rule/R, datum/reagents/H)
-	return R.decl.can_happen(H)
+	return xform_matches(R.rule, H)
 
 /// A distilling rule at the ends and the middle of its window, and a degree outside it either way.
 /datum/unit_test/dq_xform_outcome_pin/proc/distilling_row(datum/xform_pin_rule/R, obj/distilling_tester/D, turf/T)
@@ -311,7 +313,7 @@
 /datum/unit_test/dq_xform_overlap_pin/proc/on_reacted(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/reagents_holder_reacted/event = N
-	for(var/rule in event.chemical_reaction)
+	for(var/rule in event.rules)
 		fired_keys += dq_xform_pin_key_of(rule)
 
 /// The rules that share their first input (the bucket the legacy index put them in), per family: anchor text => list of records.
@@ -368,3 +370,24 @@
 	var/row = "fired=[length(fired_keys) ? jointext(fired_keys, ",") : "-"]; end=[dq_xform_contents_text(subject.reagents)]; spawned=[dq_xform_scene_delta(T, subject, scene)]"
 	qdel(subject)
 	return row
+
+// ---- the debug path ----
+
+/// The audit and observability a reaction carried survive the conversion: an important rule is still marked and still logs, and a product still emits its
+/// contract event. (Nothing calls log_chemical_reaction() on master, so nothing registers it on the notice either; the proc and the mark are what is kept.)
+/datum/unit_test/dq_xform_debug_path
+
+/datum/unit_test/dq_xform_debug_path/Run()
+	var/datum/xform/K = xform_of(/transformation/chem/instant/kelotane)
+	TEST_ASSERT(K, "kelotane is a compiled rule")
+	TEST_ASSERT(K.important, "a rule marked important keeps the mark")
+	var/before = length(GLOB.chemical_reaction_logs)
+	log_chemical_reaction(test_floor(), K, 1)
+	TEST_ASSERT_EQUAL(length(GLOB.chemical_reaction_logs), before + 1, "the chemistry log takes the rule's entry")
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker, test_floor())
+	B.reagents.maximum_volume = 1000
+	var/emitted = dq_xform_contract_emissions()
+	B.reagents.add_reagent(REAGENT_ID_SILICON, 5)
+	B.reagents.add_reagent(REAGENT_ID_CARBON, 5)
+	TEST_ASSERT(B.reagents.has_reagent(REAGENT_ID_KELOTANE), "the rule fired")
+	TEST_ASSERT(dq_xform_contract_emissions() > emitted, "its product emitted a contract event")

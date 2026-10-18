@@ -131,16 +131,16 @@
 /// can a chemist make with it? Same source data, opposite direction.
 /proc/_dq_build_used_in_index()
 	var/list/out = list()
-	if(!SSchemistry.ready().chemical_reactions)
-		return out
-	for(var/datum/decl/chemical_reaction/CR in SSchemistry.ready().chemical_reactions)
-		if(CR.wiki_flag & WIKI_SPOILER)
+	for(var/datum/xform/CR as anything in GLOB.xform_rules)
+		if(CR.medium != MEDIUM_REAGENTS || !ispath(CR.rule_type, /transformation/chem))
+			continue
+		if(CR.wiki & WIKI_SPOILER)
 			continue
 		var/result = CR.result
 		if(!result)
 			continue
 		// Required ingredients: this reagent is an ingredient of `result`.
-		for(var/RQ in CR.required_reagents)
+		for(var/RQ in CR.reagent_takes)
 			LAZYINITLIST(out[RQ])
 			out[RQ] |= list(list(
 				"id"   = result,
@@ -148,7 +148,7 @@
 			))
 		// Catalysts go in the same "used in" bucket so a chemist
 		// looking up phoron sees every reaction it accelerates.
-		for(var/CL in CR.catalysts)
+		for(var/CL in CR.reagent_catalysts)
 			LAZYINITLIST(out[CL])
 			out[CL] |= list(list(
 				"id"   = result,
@@ -160,54 +160,50 @@
 /// Recipe(s) that produce this reagent. Returns a list of entries —
 /// most reagents have one recipe but a few have multiple paths.
 /proc/_dq_reagent_recipe(reagent_id)
-	if(!SSchemistry.ready().chemical_reactions_by_product)
-		return null
-	var/list/reactions = SSchemistry.ready().chemical_reactions_by_product[reagent_id]
+	var/list/reactions = xform_makers_of(MEDIUM_REAGENTS, REGIME_INSTANT, reagent_id)
 	var/list/out = list()
 	if(length(reactions))
-		for(var/datum/decl/chemical_reaction/CR in reactions)
-			if(CR.wiki_flag & WIKI_SPOILER)
+		for(var/datum/xform/CR as anything in reactions)
+			if(CR.wiki & WIKI_SPOILER)
 				continue
 			out += list(_dq_reagent_recipe_entry(CR))
-	if(SSchemistry.ready().distilled_reactions_by_product)
-		var/list/distilled = SSchemistry.ready().distilled_reactions_by_product[reagent_id]
-		if(length(distilled))
-			for(var/datum/decl/chemical_reaction/distilling/CR in distilled)
-				if(CR.wiki_flag & WIKI_SPOILER)
-					continue
-				out += list(_dq_reagent_recipe_entry(CR, distilling = TRUE))
+	var/list/distilled = xform_makers_of(MEDIUM_REAGENTS, REGIME_DISTILLING, reagent_id)
+	if(length(distilled))
+		for(var/datum/xform/CR as anything in distilled)
+			if(CR.wiki & WIKI_SPOILER)
+				continue
+			out += list(_dq_reagent_recipe_entry(CR, distilling = TRUE))
 	return length(out) ? out : null
 
 
-/proc/_dq_reagent_recipe_entry(datum/decl/chemical_reaction/CR, distilling = FALSE)
+/proc/_dq_reagent_recipe_entry(datum/xform/CR, distilling = FALSE)
 	var/list/entry = list()
 	entry["distilling"] = distilling
 	entry["result_amount"] = CR.result_amount
 	var/list/reqs = list()
-	for(var/RQ in CR.required_reagents)
+	for(var/RQ in CR.reagent_takes)
 		reqs += list(list(
 			"id"     = RQ,
 			"name"   = dq_reagent_display_name(RQ),
-			"amount" = LAZYACCESS(CR.required_reagents, RQ),
+			"amount" = LAZYACCESS(CR.reagent_takes, RQ),
 		))
 	entry["required"] = reqs
 	var/list/catal = list()
-	for(var/CL in CR.catalysts)
+	for(var/CL in CR.reagent_catalysts)
 		catal += list(list(
 			"id"   = CL,
 			"name" = dq_reagent_display_name(CL),
 		))
 	entry["catalysts"] = catal
 	var/list/inhib = list()
-	for(var/IH in CR.inhibitors)
+	for(var/IH in CR.reagent_blocked)
 		inhib += list(list(
 			"id"   = IH,
 			"name" = dq_reagent_display_name(IH),
 		))
 	entry["inhibitors"] = inhib
 	if(distilling)
-		var/datum/decl/chemical_reaction/distilling/D = CR
-		var/list/temp_range = TYPE_TABLE_GET(D, distilling_temp_range)
+		var/list/temp_range = length(CR.bands) ? CR.bands[1] : null
 		if(temp_range)
 			entry["temp_min"] = temp_range[1]
 			entry["temp_max"] = temp_range[2]

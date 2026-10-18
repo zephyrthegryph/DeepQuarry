@@ -1,56 +1,36 @@
 // Hydroponics refinery fun
-/datum/decl/chemical_reaction/distilling/fertilizer
-	name = REAGENT_FERTILIZER
-	id = "distill_fertilizer"
-	result = REAGENT_ID_FERTILIZER
-	required_reagents = list(REAGENT_ID_WATER = 5, REAGENT_ID_NUTRIMENT = 1, REAGENT_ID_PHOSPHORUS = 1, REAGENT_ID_SULFUR = 1)
-	result_amount = 3
+/transformation/chem/distilling/fertilizer
 
-	temp_shift = 0
+CAPABILITIES(/transformation/chem/distilling/fertilizer)
+	configure(transformation(name = REAGENT_FERTILIZER, id = "distill_fertilizer",
+		takes = list(reagent(REAGENT_ID_WATER, 5), reagent(REAGENT_ID_NUTRIMENT, 1), reagent(REAGENT_ID_PHOSPHORUS, 1), reagent(REAGENT_ID_SULFUR, 1)),
+		makes = list(reagent(REAGENT_ID_FERTILIZER, 3)),
+		holds = xform_all(temperature_in(T20C + 40, T20C + 60), ambient_gas_over(GAS_CO2, 10), ambient_gas_under(GAS_N2, 1))))
 
-	require_xgm_gas = GAS_CO2
-	rejects_xgm_gas = GAS_N2
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/fertilizer, distilling_temp_range, list(T20C + 40, T20C + 60))
+/transformation/chem/distilling/eznutrient
 
-/datum/decl/chemical_reaction/distilling/eznutrient
-	name = REAGENT_EZNUTRIENT
-	id = "distill_eznutriment"
-	result = REAGENT_ID_EZNUTRIENT
-	required_reagents = list(REAGENT_ID_FERTILIZER = 1, REAGENT_ID_CALCIUM = 1, REAGENT_ID_CARBON = 2)
-	result_amount = 1
+CAPABILITIES(/transformation/chem/distilling/eznutrient)
+	configure(transformation(name = REAGENT_EZNUTRIENT, id = "distill_eznutriment",
+		takes = list(reagent(REAGENT_ID_FERTILIZER, 1), reagent(REAGENT_ID_CALCIUM, 1), reagent(REAGENT_ID_CARBON, 2)),
+		makes = list(reagent(REAGENT_ID_EZNUTRIENT, 1)),
+		holds = xform_all(temperature_in(T0C + 10, T0C + 50), ambient_gas_over(GAS_O2, 10), ambient_gas_under(GAS_PHORON, 1))))
 
-	temp_shift = 0
 
-	require_xgm_gas = GAS_O2
-	rejects_xgm_gas = GAS_PHORON
+/transformation/chem/distilling/leftforzed
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/eznutrient, distilling_temp_range, list(T0C + 10, T0C + 50))
+CAPABILITIES(/transformation/chem/distilling/leftforzed)
+	configure(transformation(name = REAGENT_LEFT4ZED, id = "distill_leftforzed",
+		takes = list(reagent(REAGENT_ID_FERTILIZER, 1), reagent(REAGENT_ID_RADIUM, 2), reagent(REAGENT_ID_CALCIUM, 2)),
+		makes = list(reagent(REAGENT_ID_LEFT4ZED, 1)), energy = per_step(2 * 1000),
+		holds = xform_all(temperature_in(T0C + 40, T0C + 80), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
 
-/datum/decl/chemical_reaction/distilling/leftforzed
-	name = REAGENT_LEFT4ZED
-	id = "distill_leftforzed"
-	result = REAGENT_ID_LEFT4ZED
-	required_reagents = list(REAGENT_ID_FERTILIZER = 1, REAGENT_ID_RADIUM = 2, REAGENT_ID_CALCIUM = 2)
-	result_amount = 1
 
-	temp_shift = 2
+/transformation/chem/distilling/robustharvest
 
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_N2
+CAPABILITIES(/transformation/chem/distilling/robustharvest)
+	configure(transformation(name = REAGENT_ROBUSTHARVEST, id = "distill_robustharvest",
+		takes = list(reagent(REAGENT_ID_FERTILIZER, 1), reagent(REAGENT_ID_CARBON, 2), reagent(REAGENT_ID_BICARIDINE, 1)),
+		makes = list(reagent(REAGENT_ID_ROBUSTHARVEST, 1)), energy = per_step(2 * 1000),
+		holds = xform_all(temperature_in(T0C + 40, T0C + 80), ambient_gas_over(GAS_PHORON, 10), ambient_gas_under(GAS_N2, 1))))
 
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/leftforzed, distilling_temp_range, list(T0C + 40, T0C + 80))
-
-/datum/decl/chemical_reaction/distilling/robustharvest
-	name = REAGENT_ROBUSTHARVEST
-	id = "distill_robustharvest"
-	result = REAGENT_ID_ROBUSTHARVEST
-	required_reagents = list(REAGENT_ID_FERTILIZER = 1, REAGENT_ID_CARBON = 2, REAGENT_ID_BICARIDINE = 1)
-	result_amount = 1
-
-	temp_shift = 2
-
-	require_xgm_gas = GAS_PHORON
-	rejects_xgm_gas = GAS_N2
-
-TYPE_TABLE(/datum/decl/chemical_reaction/distilling/robustharvest, distilling_temp_range, list(T0C + 40, T0C + 80))
