@@ -703,5 +703,13 @@ appearance set through equipment notices (its handoff, `intended_changes.md`); n
 *state* (sealed, locked on: 53 reads, most of them the rig deciding what it is), and `NOSTRIP` is item flag data. What wave 4 removes is their use
 as *gates*: removal is asked through `req_removable()` (strip menu) and the pure `mob_can_unequip()`; banning the names would only rename state.
 `ignore_obstruction` stays as the equip check's explicit "skip the covering check" mode (tape over clothes) until the authority datum carries
-skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k). `disable_warning` and the `*_spec` table
+skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k); both are scheduled as **wave 6b** (below) and banned there. `disable_warning` and the `*_spec` table
 names are hard-banned.
+
+**Wave 6b (scheduled 18 Oct): equip through the equip action, skips through the authority.**
+1. `/datum/authority_grant` gains `skips` (a bit set: `SKIP_COVERING`, `SKIP_REQUIREMENTS`) and `quiet`; `equip_to_slot_if_possible(ignore_obstructions =)` becomes
+   an authority with `SKIP_COVERING` (the tape blindfold and muzzle are its two callers).
+2. `/datum/act/equip` on the item runs the whole pipeline: the slot exists, holder state and catalog (the body slot), occupancy, reach (unless
+   skipped), the item's fit and equip constraints, then its own `extend(/datum/act/equip, needs(...))`. `equip_refusal()` becomes
+   `ACT_ATTEMPT(I, equip, wearer, slot)` read through the answer; `dq_equip_refusal` and `dq_equip_item_refusal` are deleted.
+3. `ignore_obstruction`, `ignore_obstructions` and `dq_equip_refusal` are hard-banned in the same commit.
