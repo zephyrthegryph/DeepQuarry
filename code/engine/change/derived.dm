@@ -376,19 +376,10 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		T.derived_by_name = dvars
 	return T.exact ? T : null
 
-/// The holder vars the draw() D's type runs reads, as the build generated them: the nearest type (D's own or an ancestor) that defines a draw.
+/// The holder vars the draw() D's type runs reads, from the change graph's plan (code/engine/change/plan.dm): the nearest type (D's own or an
+/// ancestor) that defines a draw.
 /proc/derived_generated_draw_reads(datum/D)
-	var/list/table = GLOB.generated_draw_reads
-	if(!length(table))
-		return null
-	var/path = D.type
-	while(path)
-		var/list/reads = table["[path]"]
-		if(reads)
-			return reads
-		var/datum/typed = path
-		path = initial(typed.parent_type)
-	return null
+	return plan_keys(D.type, PLAN_DRAW)
 
 GLOBAL_LIST_EMPTY(draw_key_names) // key -> TRUE: some type's draw reads it (built from generated_draw_keys on the first publication)
 GLOBAL_VAR_INIT(draw_key_names_built, FALSE)

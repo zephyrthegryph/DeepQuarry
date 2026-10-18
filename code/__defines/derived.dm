@@ -26,6 +26,9 @@
 #define DEP_VALUES (((1 << DEP_VALUE_MAX) - 1) << DEP_VALUE_SHIFT)
 /// A plain state_changed(E): everything is re-derived.
 #define DEP_ALL (DEP_OUTPUTS | DEP_LEGACY | DEP_VALUES)
+/// Beside DEP_ALL on a fresh atom's creation mark (caps_init()); any real mark clears it (refresh_mark()). An entity still carrying it is in
+/// its type's default state, so a type whose default look is empty skips it (the default-look stamp, code/engine/change/look_stamp.dm).
+#define DEP_CREATED (1<<17)
 
 // ---- derived() entry kinds ----
 #define DKIND_RUNS 1
@@ -44,3 +47,9 @@
 #define DERIVED_EVAL_BEGIN
 #define DERIVED_EVAL_END
 #endif
+
+// ---- the change graph's plan bits (code/engine/change/plan.dm, generated in code/engine/_generated/plans.dm) ----
+/// The type's own draw() reads the key on the holder.
+#define PLAN_DRAW (1<<0)
+/// The type's draw() reads the key one container, turf or area hop away ("<hop>.<var>").
+#define PLAN_DRAW_HOP (1<<1)

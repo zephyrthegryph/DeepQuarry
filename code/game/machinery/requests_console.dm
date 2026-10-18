@@ -323,7 +323,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 /obj/machinery/requests_console/preset
 	name = ""
 	department = ""
-	departmentType = ""
+	departmentType = 0
 	announcementConsole = TRUE
 
 // Departments
