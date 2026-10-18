@@ -770,6 +770,7 @@ fn compose_records_access(
     let phase = dm_profile::detail_timer("compose.members_headers");
     if let Some((plan, values)) = projection {
         let members_profile = dm_profile::stage("composition.member_records");
+        let _mh_members = dm_profile::detail_timer("compose.mh.members");
         let field_records = crate::class_projection::materialize_members_with_roster(
             &mut dmb,
             plan,
@@ -792,7 +793,9 @@ fn compose_records_access(
             generation.capture_field_records(field_records);
         }
         drop(members_profile);
+        drop(_mh_members);
         let headers_profile = dm_profile::stage("composition.authored_headers");
+        let _mh_headers = dm_profile::detail_timer("compose.mh.headers");
         crate::class_projection::finalize_headers_retained(
             &mut dmb,
             engine_bytes,
@@ -805,7 +808,9 @@ fn compose_records_access(
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
         drop(headers_profile);
+        drop(_mh_headers);
         let _profile = dm_profile::stage("composition.callback_flags");
+        let _mh_callbacks = dm_profile::detail_timer("compose.mh.callbacks");
         crate::class_projection::materialize_callback_flags(&mut dmb, plan, &batch.tables)
             .map_err(|e| unsupported(format!("class callbacks {e:?}")))?;
     }
