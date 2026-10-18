@@ -85,6 +85,21 @@ impl Generator for Plans {
                 }
             }
         }
+        for (t, links) in &an.draw_links {
+            for v in links {
+                plans.entry(t.as_str()).or_default().entry(v.clone()).or_default().insert("PLAN_DRAW");
+                names.insert(v.clone());
+            }
+        }
+        let mut verbs: BTreeMap<&str, BTreeMap<&str, &BTreeSet<String>>> = BTreeMap::new();
+        for (id, (vars, _)) in &an.verb_reads {
+            if let Some((t, proc_name)) = id.rsplit_once("::") {
+                verbs.entry(proc_name).or_default().insert(t, vars);
+                for v in vars {
+                    names.insert(v.clone());
+                }
+            }
+        }
         for (_, v) in &an.reads {
             names.insert(v.clone());
         }
@@ -121,7 +136,24 @@ impl Generator for Plans {
         out.blank();
         out.doc("\"<type>\" -> TRUE: a draw() whose reads the walk could not resolve (an untracked or unresolved read). D5: until the walk resolves it, a");
         out.doc("write to such a type marks every output (plan_fallback, counted in GLOB.plan_fallbacks).");
+        for (proc_name, by_type) in &verbs {
+            out.blank();
+            out.doc(format!("\"<type>\" -> list(\"<var>\", ...): what the type's own {}() reads on the holder (a hop chain counts by its first link). It", proc_name));
+            out.doc("refreshes on the draw's bit (DEP_DRAW), so a write may skip that bit only when neither the draw nor the verb outputs read the var.");
+            let rows: Vec<(String, String)> = by_type
+                .iter()
+                .map(|(t, vars)| (quote(t), format!("list({})", vars.iter().map(|v| quote(v)).collect::<Vec<_>>().join(", "))))
+                .collect();
+            emit_table(out, &format!("generated_plan_{}", proc_name), &rows);
+        }
         let mut fallbacks: BTreeSet<&str> = BTreeSet::new();
+        for (id, (_, unresolved)) in &an.verb_reads {
+            if *unresolved {
+                if let Some((t, _)) = id.rsplit_once("::") {
+                    fallbacks.insert(t);
+                }
+            }
+        }
         for id in &an.draws {
             if an.consumers.get(id).is_some_and(|u| !u.is_empty()) {
                 if let Some((t, _)) = id.rsplit_once("::") {

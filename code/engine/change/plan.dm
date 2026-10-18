@@ -79,3 +79,56 @@ DECLARE_SHARED_CACHE(change_plan_keys, GLOBAL_PROC_REF(plan_keys_build), SC_NEVE
 /// The keys of `type`'s plan that carry PLAN_* `bit`: what the type's draw reads (PLAN_DRAW) or reads a hop away (PLAN_DRAW_HOP). Read only.
 /proc/plan_keys(type, bit)
 	return CACHED2(change_plan_keys, type, bit)
+
+// ---- narrowing a write's redraw (step 3c) ----
+
+#define PLAN_SPARE 1
+#define PLAN_KEEP 2
+
+/// The nearest row of `table` ("<type>" -> list(var, ...)) for `type`, or null.
+/proc/plan_nearest_row(list/table, type)
+	var/path = type
+	while(path)
+		var/list/row = table?["[path]"]
+		if(row)
+			return row
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return null
+
+/// TRUE when the generator could not resolve a draw or verb output of `type` or an ancestor (D5).
+/proc/plan_type_fallback(type)
+	return !!plan_nearest_row(GLOB.generated_plan_fallbacks, type)
+
+/// Builds plan_spares_draw()'s entry for (E's type, var_name): PLAN_SPARE when nothing that refreshes on DEP_DRAW reads the var.
+/proc/plan_spares_build(atom/E, var_name)
+	if(plan_type_fallback(E.type))
+		return PLAN_KEEP // D5: the walk could not resolve an output; every write redraws it
+	var/list/plan = plan_of(E.type)
+	if(!length(plan))
+		return PLAN_KEEP // no generated draw: the base draw (capabilities, look layers) is not in a plan yet
+	if(plan[var_name] & PLAN_DRAW)
+		return PLAN_KEEP
+	var/list/hidden = plan_nearest_row(GLOB.generated_plan_hidden_verbs, E.type)
+	if(hidden && (var_name in hidden))
+		return PLAN_KEEP
+	var/list/granted = plan_nearest_row(GLOB.generated_plan_granted_verbs, E.type)
+	if(granted && (var_name in granted))
+		return PLAN_KEEP
+	// What the plans do not cover yet: capability draws and verbs, declared look layers.
+	if(length(caps_of(E)) || present_declares_look(E) || look_table_has_layers(table_of(E)))
+		return PLAN_KEEP
+	return PLAN_SPARE
+
+DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_NEVER)
+
+/// TRUE when a write of `var_name` on E needs no redraw (look and verbs, DEP_DRAW): E is an atom (not a mob: species and traits grant verbs no
+/// plan sees) whose type's generated plans say neither its draw nor its verb outputs read the var. Asked by state_changed() for a type that
+/// declares no dependencies (one that does is narrowed by its derived table already).
+/proc/plan_spares_draw(datum/E, var_name)
+	if(!isatom(E) || ismob(E))
+		return FALSE
+	return CACHED_KEY(change_plan_spares, "[E.type]|[var_name]", E, var_name) == PLAN_SPARE
+
+#undef PLAN_SPARE
+#undef PLAN_KEEP

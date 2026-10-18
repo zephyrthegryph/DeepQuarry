@@ -253,6 +253,12 @@ pub struct DepsAnalysis {
     pub draw_keys: BTreeMap<String, BTreeSet<String>>,
     /// "<type>" -> what its own draw() reads one container, turf or area hop away, as "<hop>.<var>".
     pub draw_hops: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the first segment of every hop chain its own draw() reads (a link var on the holder, `cell` of `cell.charge`): a write of the
+    /// link changes what the draw sees. The change graph's plans (`gen plans`) mark these PLAN_DRAW too.
+    pub draw_links: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>::hidden_verbs" / "<type>::granted_verbs" -> the holder vars (and hop chains' first segments) that proc reads, and whether its
+    /// walk left a read unresolved: the verb outputs share the draw's refresh bit, so the plans need them before a write may skip a redraw.
+    pub verb_reads: BTreeMap<String, (BTreeSet<String>, bool)>,
     /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
     /// set `gens::auto_tracked` turns into tracked vars.
     pub reads: BTreeSet<(String, String)>,
@@ -405,6 +411,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_hops: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_links: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
     let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     let mut draw_work: Vec<(String, String)> = Vec::new();
@@ -434,7 +441,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         let keys = draw_reads.entry(owner.clone()).or_default();
         let published = draw_keys.entry(owner.clone()).or_default();
         let hopped = draw_hops.entry(owner.clone()).or_default();
+        let linked = draw_links.entry(owner.clone()).or_default();
         for r in &set.reads {
+            if r.root == "holder" && r.kind == ReadKind::Var && !r.hops.is_empty() {
+                linked.insert(r.hops[0].trim_end_matches("[]").to_string());
+            }
             if r.kind == ReadKind::Var && draw_hop_heard(r) {
                 hopped.insert(format!("{}.{}", r.hops.join("."), r.var));
             }
@@ -449,6 +460,34 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         consumers.insert(id.clone(), untracked);
         draws.insert(id);
+    }
+    // The verb outputs (hidden_verbs(), granted_verbs()) refresh on the draw's bit: what each override reads, for the plans.
+    let mut verb_work: Vec<(String, String)> = Vec::new();
+    {
+        let mut seen = BTreeSet::new();
+        for d in crate::sem::procs::proc_defs(&sem, &["hidden_verbs", "granted_verbs"]) {
+            if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) || !seen.insert(format!("{}::{}", d.owner, d.name)) {
+                continue;
+            }
+            verb_work.push((d.owner.clone(), d.name.clone()));
+        }
+    }
+    let verb_walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&verb_work, |(owner, name)| {
+        let set = eng.analyze_shared(owner, name);
+        let untracked = untracked_of(&set, &eng, &written, true);
+        (set, untracked)
+    });
+    let mut verb_reads: BTreeMap<String, (BTreeSet<String>, bool)> = BTreeMap::new();
+    for ((owner, name), (set, untracked)) in verb_work.into_iter().zip(verb_walked) {
+        note_reads(&set, &mut reads);
+        let mut vars = BTreeSet::new();
+        for r in &set.reads {
+            if r.root == "holder" && r.kind == ReadKind::Var {
+                vars.insert(if r.hops.is_empty() { r.var.clone() } else { r.hops[0].trim_end_matches("[]").to_string() });
+            }
+        }
+        let unresolved = untracked.iter().any(|u| u.what.starts_with('?'));
+        verb_reads.insert(format!("{}::{}", owner, name), (vars, unresolved));
     }
     let t_draws = started.elapsed();
     let c_draws = crate::util::cpu_ms();
@@ -513,7 +552,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
     candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates, sampled })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, draw_links, verb_reads, reads, candidates, sampled })
 }
 
 struct Deps;

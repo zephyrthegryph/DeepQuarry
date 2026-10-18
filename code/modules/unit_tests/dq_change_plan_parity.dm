@@ -36,3 +36,34 @@
 	TEST_ASSERT_EQUAL(change_key_id("dq_plan_parity_runtime_only_key"), runtime_id, "and keeps its id")
 	TEST_ASSERT_EQUAL(change_key_name(runtime_id), "dq_plan_parity_runtime_only_key", "and names itself")
 	GLOB.runtime_key_ids -= "dq_plan_parity_runtime_only_key"
+
+/// A drawn fixture with no capabilities: its draw reads `lit`; `spare` is read by nothing that refreshes on the draw bit.
+/obj/dq_plan_lamp
+	icon = 'icons/obj/lighting.dmi'
+	icon_state = "lamp0"
+	var/lit = FALSE
+	var/spare = 0
+
+/obj/dq_plan_lamp/draw(datum/look/look)
+	..()
+	if(lit)
+		look.state("lamp1")
+
+/// Step 3c: a write the plan says no draw or verb output reads skips the redraw; one it reads still redraws.
+/datum/unit_test/dq_change_plan_narrows_redraw
+
+/datum/unit_test/dq_change_plan_narrows_redraw/Run()
+	var/obj/dq_plan_lamp/L = allocate(/obj/dq_plan_lamp, test_floor())
+	refresh_flush()
+	TEST_ASSERT("lit" in plan_keys(/obj/dq_plan_lamp, PLAN_DRAW), "the generated plan holds the draw's read: [json_encode(plan_of(/obj/dq_plan_lamp))]")
+	TEST_ASSERT(!derived_is_exact(L), "the fixture declares no dependencies (the plan is what narrows it)")
+	state_changed(L, CHANGE_EXPLICIT, nameof(/obj/dq_plan_lamp::spare))
+	TEST_ASSERT(!(L.refresh_queued & DEP_DRAW), "a write nothing drawn reads queues no redraw (queued: [L.refresh_queued])")
+	refresh_flush()
+	state_changed(L, CHANGE_EXPLICIT, nameof(/obj/dq_plan_lamp::lit))
+	TEST_ASSERT(L.refresh_queued & DEP_DRAW, "a write the draw reads queues the redraw")
+	refresh_flush()
+	// The verb tables are well formed: type text -> a list of var names.
+	for(var/table in list(GLOB.generated_plan_hidden_verbs, GLOB.generated_plan_granted_verbs))
+		for(var/type_text in table)
+			TEST_ASSERT(islist(table[type_text]), "[type_text]: a verb plan row is a list")

@@ -110,6 +110,9 @@
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
+		// A type that declares nothing still has generated plans: a var neither its draw nor its verb outputs read redraws nothing (plan.dm).
+		if(mask == DEP_ALL && plan_spares_draw(E, var_name))
+			mask &= ~DEP_DRAW
 	// The staleness checker: the graph says no draw reads this var, so the applied look is served as it is (checked at the next presentation drain).
 	if(var_name && GLOB.staleness_on && !(mask & DEP_DRAW))
 		staleness_note_served(E, var_name)
