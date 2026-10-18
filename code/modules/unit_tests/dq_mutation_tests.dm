@@ -30,14 +30,15 @@
 	TEST_ASSERT_EQUAL(M.mutation_count(), 1, "mutation_count() should be 1 after removing one of two mutations")
 
 	M.remove_mutation(XRAY)
-	TEST_ASSERT_EQUAL(M.mutations, null, "removing the last mutation should null out the list again (lazy)")
+	// A tracked list is created on the first add and then kept: an emptied list stays an empty list (tools/analyze/src/gens/tracked_lists.rs).
+	TEST_ASSERT_EQUAL(length(M.mutations), 0, "removing the last mutation empties the list")
 	TEST_ASSERT_EQUAL(M.mutation_count(), 0, "mutation_count() should be 0 after removing every mutation")
 	TEST_ASSERT(!M.has_mutation(XRAY), "has_mutation() should be FALSE once the list is empty again")
 
 	// Removing/checking a mutation that was never added must not runtime and must
 	// not allocate the lazy list.
 	M.remove_mutation(HUSK)
-	TEST_ASSERT_EQUAL(M.mutations, null, "removing a mutation that was never present should not allocate the list")
+	TEST_ASSERT_EQUAL(length(M.mutations), 0, "removing a mutation that was never present changes nothing")
 	TEST_ASSERT(!M.has_mutation(HUSK), "has_mutation() for a never-added mutation should be FALSE")
 
 	qdel(M)
