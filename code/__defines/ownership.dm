@@ -78,6 +78,9 @@
 #define OWNE_TYPE 9
 /// OWN with policy OWN_HAND_OVER: list(the holder's var that names the successor, the successor's var that takes the value), or null.
 #define OWNE_TO 10
+/// REL pair from links(conflict = REFUSE): TRUE when a write that would replace either end's partner is refused (null returned) instead. Only a
+/// refusing pair entry is this long; read it with rel_entry_refuses().
+#define OWNE_CONFLICT 11
 
 /// Registry singletons: PATH and subtypes are shared. GETTER(D) returns the registered
 /// instance D stands for (so D is registered iff GETTER(D) == D).

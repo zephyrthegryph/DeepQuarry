@@ -299,6 +299,9 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			shape = RELS_SYMMETRIC
 		var/on_deleted = E.args["[end]_on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 		var/list/entry = list(OWNK_REL, shape, back, null, is_list, null, on_deleted, E.args["[end]_on_unlink"], E.args["[other]_type"])
+		if(E.args["conflict"] == REFUSE && shape == RELS_PAIR)
+			entry.len = OWNE_CONFLICT
+			entry[OWNE_CONFLICT] = TRUE
 		T.entries[var_name] = entry
 		LAZYADD(T.ref_vars, var_name)
 		T.empty = FALSE

@@ -82,3 +82,40 @@ CAPABILITIES(/datum/relations_stray_holder)
 	TEST_ASSERT(!H.survives_container(), "a mob with no mind and no client does not")
 	var/obj/item/disk/nuclear/disk = allocate(/obj/item/disk/nuclear, T)
 	TEST_ASSERT(disk.survives_container(), "the nuclear disk does")
+
+/// Two ends of a refusing var pair (D3): a dock takes one ship and a ship one dock; a second link on either side is refused.
+/datum/relations_refuse_dock
+	var/datum/relations_refuse_ship/ship
+
+/datum/relations_refuse_ship
+	var/datum/relations_refuse_dock/dock
+
+CAPABILITIES(/datum/relations_refuse_dock)
+	links(/datum/relations_refuse_dock::ship, /datum/relations_refuse_ship::dock, conflict = REFUSE)
+
+/datum/unit_test/relations_var_pair_refuses
+
+/datum/unit_test/relations_var_pair_refuses/Run()
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/datum/relations_refuse_dock/dock = new
+	var/datum/relations_refuse_dock/other_dock = new
+	var/datum/relations_refuse_ship/ship = new
+	var/datum/relations_refuse_ship/other_ship = new
+	TEST_ASSERT_EQUAL(rel_set(dock, nameof(dock.ship), ship), ship, "a free pair links")
+	TEST_ASSERT_EQUAL(ship.dock, dock, "and both ends name each other")
+	TEST_ASSERT_NULL(rel_set(dock, nameof(dock.ship), other_ship), "a dock that holds a ship refuses another")
+	TEST_ASSERT_EQUAL(dock.ship, ship, "the old link stays")
+	TEST_ASSERT_NULL(other_ship.dock, "the refused ship names nothing")
+	TEST_ASSERT_NULL(rel_set(other_dock, nameof(other_dock.ship), ship), "a ship already docked refuses another dock")
+	TEST_ASSERT_EQUAL(ship.dock, dock, "the ship keeps its dock")
+	TEST_ASSERT_NULL(other_dock.ship, "the refused dock names nothing")
+	rel_set(dock, nameof(dock.ship), null)
+	TEST_ASSERT_NULL(ship.dock, "unlinking clears both ends")
+	TEST_ASSERT_EQUAL(rel_set(other_dock, nameof(other_dock.ship), ship), ship, "a freed ship links to another dock")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "a refusal is an answer, not a report: [json_encode(capture)]")
+	qdel(dock)
+	qdel(other_dock)
+	qdel(ship)
+	qdel(other_ship)

@@ -192,6 +192,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!own_type_ok(source, var_name, entry, target))
 		return null
 	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
+	if(target && rel_pair_refuses(source, entry, old, target))
+		return null
 	// A plain replacement publishes its completed value, not a temporary empty view.
 	// Paired links and unlink callbacks keep their existing notification contract.
 	var/defer_source = entry[OWNE_ARG] == RELS_PLAIN && !entry[OWNE_ON_UNLINK]
@@ -227,8 +229,24 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return _rel_map_put(source, var_name, target, key, entry)
 	if(REL_LISTLIKE(L) && rel_list_holds(L, source, var_name, target))
 		return target
+	if(rel_pair_refuses(source, entry, null, target))
+		return null
 	_rel_attach(source, var_name, target, entry)
 	return target
+
+/// TRUE when `entry` is a links(conflict = REFUSE) end and linking source to target would replace a partner: source's own single end already
+/// names `old` (another datum), or target's single end names another holder. The write is refused (the caller returns null) and nothing changes,
+/// as a sparse REFUSE pair does (link_make(), link_state.dm). doc/rewrite/proposals/relations.md D3.
+/proc/rel_pair_refuses(datum/source, list/entry, datum/old, datum/target)
+	if(length(entry) < OWNE_CONFLICT || !entry[OWNE_CONFLICT])
+		return FALSE
+	if(old && old != target)
+		return TRUE
+	var/partner_var = entry[OWNE_PARTNER]
+	if(!isdatum(target) || !(partner_var in target.vars))
+		return FALSE
+	var/theirs = target.vars[partner_var]
+	return isdatum(theirs) && theirs != source
 
 /// Removes `target` from source.var_name (list view), or clears a single view naming it.
 /proc/rel_view_remove(datum/source, var_name, datum/target)

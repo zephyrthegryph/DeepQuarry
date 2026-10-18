@@ -158,8 +158,10 @@
 /proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null, sparse = FALSE, holds_while = null, a_contributes = null, b_contributes = null, conflict = REPLACE)
 	var/list/a = link_end(a_text)
 	var/list/b = link_end(b_text)
-	if(!sparse && (holds_while || a_contributes || b_contributes || conflict != REPLACE))
-		declare_report("links([a_text], [b_text]): holds_while, contributes and conflict are for a sparse pair (sparse = TRUE); a pair of vars always replaces")
+	if(!sparse && (holds_while || a_contributes || b_contributes))
+		declare_report("links([a_text], [b_text]): holds_while and contributes are for a sparse pair (sparse = TRUE)")
+	if(conflict != REPLACE && conflict != REFUSE)
+		declare_report("links([a_text], [b_text]): conflict is REPLACE or REFUSE")
 	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many, "a_on_other_deleted" = a_on_other_deleted, "b_on_other_deleted" = b_on_other_deleted, "a_on_unlink" = a_on_unlink, "b_on_unlink" = b_on_unlink, "sparse" = sparse, "holds_while" = holds_while, "a_contributes" = a_contributes, "b_contributes" = b_contributes, "conflict" = conflict))
 
 /// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block
