@@ -443,6 +443,9 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             gen_store_put(gen_store_key(&e.tree, root), root, &results);
         }
     }
+    // The process ends right after this: freeing the model and every memo of the tree one allocation at a time takes seconds. The OS
+    // reclaims it at once.
+    std::mem::forget(last_tree);
     if clean {
         ExitCode::SUCCESS
     } else {
