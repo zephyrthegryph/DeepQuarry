@@ -180,9 +180,9 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 
 // ---- outputs through the containment ledger (D10) ----
 
-/// Makes an item or stack product of a rule and checks that its place takes it, before anything is spent. Returns the product (in nullspace) or null: the
-/// reason is in GLOB.act_last_reason. Items and stacks never truncate: a refused insert refuses the whole step, as slots always did.
-/proc/xform_prepare_item(datum/holder, slot_id, product_type, amount = 1)
+/// Makes an item or stack product of a rule and checks that its place takes it, before anything is spent. Returns the product (in nullspace) or null; a
+/// `why` list given gets the refusal reason. Items and stacks never truncate: a refused insert refuses the whole step, as slots always did.
+/proc/xform_prepare_item(datum/holder, slot_id, product_type, amount = 1, list/why = null)
 	var/atom/movable/product
 	if(ispath(product_type, /obj/item/stack))
 		product = new product_type(null, amount)
@@ -190,7 +190,7 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 		product = new product_type(null)
 	var/reason = move_into_refusal(holder, slot_id, product)
 	if(reason)
-		GLOB.act_last_reason = reason
+		why?.Add(reason)
 		spent(product)
 		return null
 	return product
@@ -198,8 +198,9 @@ GLOBAL_VAR_INIT(xform_trace, FALSE)
 /// Puts a prepared product into its place: the ledger's one transfer. TRUE when it is there. A refusal here (the place changed since the check) deletes
 /// the product and is logged: the step that spent its inputs for it is a bug of the rule's reservation.
 /proc/xform_commit_item(datum/holder, slot_id, atom/movable/product)
-	if(move_into(holder, slot_id, product))
+	var/refused = move_into_reason(holder, slot_id, product)
+	if(!refused)
 		return TRUE
-	log_world("XFORM: [product] was refused by [holder] ([slot_id || "default"]) after its inputs were spent: [GLOB.act_last_reason]")
+	log_world("XFORM: [product] was refused by [holder] ([slot_id || "default"]) after its inputs were spent: [reason_text(refused)]")
 	spent(product)
 	return FALSE
