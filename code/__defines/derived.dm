@@ -47,3 +47,9 @@
 #define DERIVED_EVAL_BEGIN
 #define DERIVED_EVAL_END
 #endif
+
+// ---- the change graph's plan bits (code/engine/change/plan.dm, generated in code/engine/_generated/plans.dm) ----
+/// The type's own draw() reads the key on the holder.
+#define PLAN_DRAW (1<<0)
+/// The type's draw() reads the key one container, turf or area hop away ("<hop>.<var>").
+#define PLAN_DRAW_HOP (1<<1)

@@ -271,6 +271,22 @@ behavioural test instead (a write to key K redraws exactly the atoms whose look 
 Ratchets: `plan_fallback` (new, baseline = types without a plan, to zero), the `Initialize` ratchet (`init_baseline.txt`, shrink-only,
 drives the forced-draw list), `untracked_inputs` and `raw_write` (unchanged, they are what makes the plans complete).
 
+### Step 2 status (18 October 2026)
+
+Landed: `analyze gen plans` (`tools/analyze/src/gens/plans.rs`, its own generator module) writes `code/engine/_generated/plans.dm`:
+the interned keys (`CGK_<var>`, 5 459 build keys, sorted by name; the `KEY_` prefix was taken by other defines), `GLOB.generated_key_names`,
+the per-type plans (`GLOB.generated_plans`, 779 rows: `PLAN_DRAW` for what a type's draw reads on the holder, `PLAN_DRAW_HOP` for what it
+reads one container, turf or area hop away) and the D5 fallback list (`GLOB.generated_plan_fallbacks`, 3 types whose draw reads are not
+resolved). The runtime side is `code/engine/change/plan.dm`: `plan_of()` (nearest generated row up the chain, cached), `plan_bits()`,
+`plan_is_fallback()` (counted in `GLOB.plan_fallbacks`), `change_key_id()` / `change_key_name()` (runtime-only keys interned above the
+build range). `dq_change_plan_parity`: over all 22 848 atom types the plan answers exactly what `generated_draw_reads` and
+`generated_draw_hop_reads` answer, and every key round-trips; 0 disagreements.
+
+Not yet: the plan covers the draw consumers only (the tables step 3 deletes first); stat inputs, reactions, hooks, lifeforms and
+observers join the plan as step 3 folds each one, with a parity check per consumer. `state_changed()` does not consult the plan yet
+(that is the first change of step 3, so the dispatch and its proof land together). No `plan_fallback` ratchet was added: the fallbacks are
+exactly the `draw_untracked` sites the `untracked_inputs` lint already holds to its baseline.
+
 ## 12. Edits needed in final_api.html section 7 (not made here)
 
 1. **"Execution model" paragraph**: replace "the entity at the end of a single-valued relation edge ... recompute inline" wording with

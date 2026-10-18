@@ -5874,6 +5874,8 @@
 #include "code\library\present\input_tooltips.dm"
 #include "code\engine\_generated\reads.dm"
 #include "code\engine\_generated\deps.dm"
+#include "code\engine\_generated\plans.dm"
+#include "code\engine\change\plan.dm"
 #include "code\engine\actions\admission_query.dm"
 #include "code\engine\_generated\system_accessors.dm"
 #include "code\engine\_generated\declare.dm"
