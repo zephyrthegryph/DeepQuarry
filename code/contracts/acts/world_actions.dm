@@ -1,8 +1,8 @@
 // World actions (doc/rewrite/final_api.html, section 8 "World actions"): the declaration of each action. `analyze gen actions` reads these
-// lines and writes the act type (/datum/act/<name>), act_<name>() (what ACT_TRY calls) and the past-tense notice (/datum/notice/<past>) into
+// lines and writes the act type (/datum/act/<name>), act_<name>() (what ACT_ATTEMPT calls) and the past-tense notice (/datum/notice/<past>) into
 // code/engine/_generated/actions.dm; nothing else is declared by hand.
 //
-// A name with a slash (hit/projectile) is a subtype that inherits its parent's fields; its proc and ACT_TRY token use an underscore. A field
+// A name with a slash (hit/projectile) is a subtype that inherits its parent's fields; its proc and ACT_ATTEMPT token use an underscore. A field
 // named `origin` is declared `origin_turf` (every act has an ORIGIN_* `origin`). Not declared here:
 //   - irradiate, injure and body_status carry the body domain's fields (section 14), declared by the body domain.
 //   - the op action's act type is the op context (context.dm); only its notice, /datum/notice/op_done, is generated.
@@ -46,7 +46,7 @@ ACTION(speak, message, language)
 ACTION(emote, emote_key)
 ACTION(slash, mob/living/slasher, FIXED)
 // Gates the legacy before/ events were: an emit site asks the action first and goes on only when nothing refused or took it over. A caller that has a
-// result to give back (a flag word, a name) reads ACT_REPLY of the hook that took it over. See doc/rewrite/codemod_rules.md.
+// result to give back (a flag word, a name) reads ACT_REPLY(R) of the hook that took it over. See doc/rewrite/codemod_rules.md.
 ACTION(attackby, obj/item/item, mob/user, params, notice = /datum/notice/attacked_by)
 ACTION(attack_hand, mob/user, notice = /datum/notice/hand_attacked)
 ACTION(attack_self, mob/user, notice = /datum/notice/self_attacked)

@@ -115,11 +115,11 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture)
 	rel_grants(nameof(species))
 	hands()
 
-/// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
-/// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.
+/// Delivers one beam hit to this mob as a world action: ACT_ATTEMPT(src, hit_projectile, packet), act_done(). Returns the act's
+/// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_ATTEMPT.
 /mob/living/simple_mob/e0_fixture/proc/e0_beam_hit()
-	var/datum/act/hit/projectile/H = ACT_TRY(src, hit_projectile, null)
-	if(!H)
+	var/datum/act/hit/projectile/H = ACT_ATTEMPT(src, hit_projectile, null)
+	if(ACT_REFUSED_BY(H))
 		return null
 	if(H == ACT_PASS)
 		return ACT_COMMITTED

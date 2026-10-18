@@ -16,7 +16,7 @@
 //
 // The climber waits (the climb is cancelled if it moves, falls unconscious, or the structure moves away). The refusals are one requirement, read again when
 // the wait ends: the climber has to be free to act, next to it, the gate has to allow, and the tile it would stand on must be clear (what stands there that
-// is itself climbable does not count). On success the mob is moved onto the tile; ACT_TRY(climber, climb, structure) runs first, so a hook on the mob can
+// is itself climbable does not count). On success the mob is moved onto the tile; ACT_ATTEMPT(climber, climb, structure) runs first, so a hook on the mob can
 // veto the climb, and its notice (climbed) goes out after.
 //
 // Climbers are the actors of the pending climb ops on the structure (climbers_of()). climb_shake_off(structure, shaker) knocks them off: the structure

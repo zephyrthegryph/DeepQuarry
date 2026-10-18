@@ -277,7 +277,7 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		. += suit.acceptance_override_reads()
 		. += dq_constraint_read_keys(suit, CONSTRAINT_SUIT_STORAGE, I, H, A.mover)
 
-// Backpack read_keys supplied by pure admission worker, never legacy ACT_TRY.
+// Backpack read_keys supplied by pure admission worker, never legacy ACT_ATTEMPT.
 
 /datum/entry/part/req/acceptance_leaf/backpack_takes/read_keys(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.wearer

@@ -201,7 +201,7 @@
 
 /**
  * Move `thing` from one of this holder's slots into `new_holder`'s slot (`slot_id`, null: its default slot). A transfer is a remove and an
- * insert and always runs both as world actions, with their hooks (ACT_TRY of /datum/act/remove on this holder, then /datum/act/insert on
+ * insert and always runs both as world actions, with their hooks (ACT_ATTEMPT of /datum/act/remove on this holder, then /datum/act/insert on
  * `new_holder`, each carrying `actor`): a belly's consent requirement or a bay's accepts is a needs() hook that refuses it like any other
  * move, an instead() takes it over, and the notices of both go out when it lands. Then both ledger checks run (dq_ledger_refusal()) and the move
  * commits. A refused or taken-over transfer changes nothing. Returns TRUE when it landed; slot_transfer_reason() answers why it did not.

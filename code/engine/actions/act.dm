@@ -1,7 +1,7 @@
-// World actions: ACT_TRY, act_done, act_cancel (doc/rewrite/final_api.html, section 8 "World actions", "Outcomes and notices"; section 19 "E4").
+// World actions: ACT_ATTEMPT, act_done, act_cancel (doc/rewrite/final_api.html, section 8 "World actions", "Outcomes and notices"; section 19 "E4").
 //
 // `ACTION()` (code/engine/_generated/actions.dm) writes the act type, `act_<name>()` and the notice of each action. act_<name>() is
-// what ACT_TRY(src, name, fields...) calls, and it does three things in this order:
+// what ACT_ATTEMPT(src, name, fields...) calls, and it does three things in this order:
 //
 //   1. act_wanted(): nothing hooks the action and nothing listens for its notice, for any outcome -> ACT_PASS (nothing allocated).
 //   2. act_begin(): nested actions stop at depth ACT_MAX_DEPTH (a ninth nested action ends ACT_REFUSED, "too deeply nested", logged chain,
@@ -42,7 +42,7 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 	return length(GLOB.act_chain) ? jointext(GLOB.act_chain, " > ") : "(top level)"
 
 /// Who does the next action and under what authority: a caller that starts a world action for an actor (slot_transfer()) sets these just
-/// before ACT_TRY() and clears them after; act_begin() consumes them, so only that one action carries them (a nested action starts clean).
+/// before ACT_ATTEMPT() and clears them after; act_begin() consumes them, so only that one action carries them (a nested action starts clean).
 /// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts() still run.
 GLOBAL_VAR(act_next_actor)
 GLOBAL_VAR(act_next_authority)
@@ -71,8 +71,6 @@ GLOBAL_VAR(act_next_authority)
 /proc/act_begin(act_type, datum/holder)
 	if(GLOB.act_depth >= ACT_MAX_DEPTH)
 		GLOB.act_too_deep++
-		GLOB.act_last_outcome = ACT_REFUSED
-		GLOB.act_last_reply = null
 		var/chain = act_chain_text()
 		TEST_REC_OUTCOME("[act_type]", ACT_REFUSED, /datum/msg/act/too_deeply_nested, null)
 		log_world("ACT: [act_type] on [holder?.type] refused: nested deeper than [ACT_MAX_DEPTH] ([chain])")
@@ -100,7 +98,7 @@ GLOBAL_VAR(act_next_authority)
 /// Runs the hooks of the action: needs, instead, adjusts. Returns the act (the caller goes on), or null (refused or taken over: the act is
 /// ended and released here).
 /// Why an ACT_ATTEMPT did not go ahead: the outcome (ACT_REFUSED or ACT_REPLACED), the refusal reason and the taker's reply. Made only for a caller
-/// that asked (act_answer); ACT_TRY keeps its null.
+/// that asked (act_answer); ACT_ATTEMPT answers it.
 /datum/act_refusal
 	var/outcome = ACT_REFUSED
 	var/reason
@@ -234,18 +232,23 @@ GLOBAL_VAR(act_next_authority)
 		current += opts["by"]
 	walk.vars[field] = current // ALLOW(api): adjusts() names a typed field of the action by its declared path
 
-/// How the last action that ended (act_end) ended and why: ACT_TRY returns null for a refused action and a taken-over one alike, and the op engine's
-/// put_in() reports the two differently (OP_REFUSED, OP_REPLACED).
-GLOBAL_VAR(act_last_outcome)
-/// What the hook that took the last ended action over answered (the value its then() handler returned, or what it set in A.reply): the payload of a
-/// veto. Read it right after ACT_TRY returned null with ACT_TAKEN_OVER.
-GLOBAL_VAR(act_last_reply)
+/// ACT_TAKEN_OVER(R): was the ACT_ATTEMPT result R taken over by a hook?
+/proc/act_refusal_taken_over(R)
+	if(!istype(R, /datum/act_refusal))
+		return FALSE
+	var/datum/act_refusal/refused = R
+	return !!(refused.outcome & ACT_REPLACED)
+
+/// ACT_REPLY(R): what the hook that took R over answered.
+/proc/act_refusal_reply(R)
+	if(!istype(R, /datum/act_refusal))
+		return null
+	var/datum/act_refusal/refused = R
+	return refused.reply
 
 /// Ends the act with `outcome`, delivers its notice to the listeners that asked for that outcome, and releases it.
 /proc/act_end(datum/act/action/A, outcome)
 	A.outcome = outcome
-	GLOB.act_last_outcome = outcome
-	GLOB.act_last_reply = A.reply
 	var/notice_type = act_notice_type(A.type)
 	var/datum/holder = A.holder
 	if(notice_type && !QDELETED(holder) && notice_wanted(holder, notice_type, outcome))
@@ -255,13 +258,13 @@ GLOBAL_VAR(act_last_reply)
 
 /// Ends an action ACT_COMMITTED: publishes its notice and releases the context. A no-op for ACT_PASS.
 /proc/act_done(datum/act/A)
-	if(A == ACT_PASS || !A)
+	if(A == ACT_PASS || !A || istype(A, /datum/act_refusal))
 		return
 	act_end(A, ACT_COMMITTED)
 
 /// A path that decides not to finish: releases the context and ends it ACT_REFUSED, publishing to nobody who has not asked.
 /proc/act_cancel(datum/act/A)
-	if(A == ACT_PASS || !A)
+	if(A == ACT_PASS || !A || istype(A, /datum/act_refusal))
 		return
 	act_end(A, ACT_REFUSED)
 

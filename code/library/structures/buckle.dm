@@ -23,7 +23,7 @@
 // link's own hooks do the rest (the direction, the buckled alert, the riding offsets) and drop the edge if the mob ends up off the structure's tile,
 // and handle_buckled_mob_movement() carries the occupants when the structure moves. Every effect here goes through those two procs, so a structure
 // that has this capability moves its occupants, frees them when it is destroyed and answers M.buckled_to() the way the old system did. The capability
-// adds the ops, the rules (written as requirements, which a menu and an AI read too) and the world actions: ACT_TRY(holder, buckle, M) before the
+// adds the ops, the rules (written as requirements, which a menu and an AI read too) and the world actions: ACT_ATTEMPT(holder, buckle, M) before the
 // relation is written, and its notice (buckled / unbuckled) after, so a hook can veto or react.
 //
 // The rules the capability reads are its own settings above, not the holder's can_buckle / max_buckled_mobs vars (they stay for the types not converted).
