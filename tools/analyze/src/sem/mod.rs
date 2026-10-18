@@ -28,6 +28,7 @@ pub mod gen;
 pub mod incremental;
 pub mod model_store;
 pub mod walk_cache;
+pub mod body_facts;
 pub mod oracle;
 pub mod procs;
 pub mod reads;
@@ -208,45 +209,34 @@ impl Sem {
         let mut layering_owner_defs: HashMap<String, Vec<String>> = HashMap::new();
         let capability_type = regex::Regex::new(r"^CAPABILITY_TYPE\s*\(\s*[^,]+,\s*[^,]+,\s*(/[A-Za-z_][\w/]*)").unwrap();
         let capability_def = regex::Regex::new(r"^CAPABILITY_DEF\s*\(\s*([A-Za-z_]\w*)\s*,").unwrap();
-        // Per file on all cores, folded in file order (the lists keep the order a sequential scan gave them).
+        // What a file's text says (cached by content, `incr::facts`), replayed against this model in file order (the lists keep the order a
+        // sequential scan gave them): only an edited file is read and scanned again.
         let code_files = tree.select(&CODE_DM);
-        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&code_files, |file| {
+        let events: Vec<Vec<LayerEvent>> = crate::incr::facts("sem-layering", &code_files, |file| layering_events(file.code().text.as_str(), &capability_type, &capability_def));
+        let scanned: Vec<(Vec<String>, Vec<String>)> = par_map(&events, |evs| {
             let mut owners: Vec<String> = Vec::new();
             let mut types: Vec<String> = Vec::new();
             let mut parents: Vec<(usize, String)> = Vec::new();
-            for raw in file.code().text.lines() {
-                let text = raw.trim();
-                if text.is_empty() { continue; }
-                // An uninitialized absolute field declaration can carry no
-                // useful value/declaration location in ObjectTree. Its explicit
-                // owner is still an actual definition, not a typed reference.
-                let declaration = text.split_whitespace().next().unwrap_or("");
-                if declaration.starts_with('/') {
-                    if let Some((owner, member)) = declaration.split_once("/var/") {
-                        if !member.is_empty() && objtree.find(owner).is_some() {
-                            owners.push(owner.to_string());
+            for e in evs {
+                match e {
+                    LayerEvent::Owner(owner) => {
+                        if objtree.find(owner).is_some() {
+                            owners.push(owner.clone());
                         }
                     }
-                }
-                if let Some(cap) = capability_type.captures(text) {
-                    types.push(cap[1].to_string());
-                }
-                if let Some(cap) = capability_def.captures(text) {
-                    types.push(format!("/datum/capability/def/{}", &cap[1]));
-                }
-                let indent = raw.len() - raw.trim_start().len();
-                while parents.last().is_some_and(|(n, _)| *n >= indent) { parents.pop(); }
-                // A bare type header is a definition. Typed arguments, locals,
-                // member declarations and proc definitions are only references.
-                let header = text.trim_end_matches('{').trim();
-                if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
-                    let path = if header.starts_with('/') { header.to_string() }
-                        else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
-                        else { continue; };
-                    if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
-                    if objtree.find(&path).is_some() {
-                        types.push(path.clone());
-                        parents.push((indent, path));
+                    LayerEvent::Type(t) => types.push(t.clone()),
+                    LayerEvent::Indent(indent) => {
+                        while parents.last().is_some_and(|(n, _)| *n >= *indent as usize) { parents.pop(); }
+                    }
+                    LayerEvent::Header(indent, header) => {
+                        let path = if header.starts_with('/') { header.clone() }
+                            else if let Some((_, parent)) = parents.last() { format!("{}/{}", parent, header) }
+                            else { continue; };
+                        if path.split('/').any(|part| matches!(part, "var" | "proc" | "verb")) { continue; }
+                        if objtree.find(&path).is_some() {
+                            types.push(path.clone());
+                            parents.push((*indent as usize, path));
+                        }
                     }
                 }
             }
@@ -400,7 +390,7 @@ impl Sem {
                         for prm in value.parameters.iter() {
                             h.update(format!("{}:{}:{}:{:?},", prm.name, prm.var_type.flags.bits(), prm.var_type.type_path.join("/"), prm.input_type).as_bytes());
                         }
-                        h.update(if value.code.is_some() { b")b" } else { b")n" });
+                        h.update(if value.code.has_body() { b")b" } else { b")n" });
                     }
                     if let Some(d) = &p.declaration {
                         h.update(format!("d{:?}{}{:?}", d.kind, d.flags.bits(), d.return_type).as_bytes());
@@ -527,6 +517,7 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         .name("dm-preprocess".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(move || -> Result<Out, String> {
+            let _acct = CpuGuard(std::panic::Location::caller(), if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 });
             let ctx = dreammaker::Context::default();
             for p in &pre {
                 ctx.register_file(p);
@@ -540,9 +531,13 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
                         let fid = ctx.get_file(first).ok_or("the first file is not registered")?;
                         let mut pp = dreammaker::preprocessor::DefineHistory::from_stored(&hist).branch_at_file(fid, &ctx);
                         // An include stack: the first file is read first.
+                        // Registered under its relative path, `__FILE__` the path an include from the .dme resolves to (the .dme's directory
+                        // joined with the include text), as in the full parse.
+                        let env_dir = dme_for_pp.parent().map(|p| p.to_path_buf()).unwrap_or_default();
                         for (reg, abs) in files.iter().rev() {
                             let f = std::fs::File::open(abs).map_err(|e| format!("{}: {}", abs.display(), e))?;
-                            pp.push_file(reg.clone(), f).map_err(|e| e.to_string())?;
+                            let shown = if reg.is_absolute() { reg.clone() } else { env_dir.join(reg.to_string_lossy().replace('\\', "/")) };
+                            pp.push_file_as(reg, shown, f).map_err(|e| e.to_string())?;
                         }
                         pp
                     }
@@ -586,6 +581,59 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         all.iter().map(|e| format!("{}", e)).collect()
     };
     Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
+}
+
+/// One line of a file as the layering index reads it (see `Sem::build_with`).
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+enum LayerEvent {
+    /// `/type/var/x`: the type owns a field (if the model has the type).
+    Owner(String),
+    /// A `CAPABILITY_TYPE` / `CAPABILITY_DEF` marker's type.
+    Type(String),
+    /// A non-empty line's indent (pops the header stack).
+    Indent(u32),
+    /// A bare type header at an indent.
+    Header(u32, String),
+}
+
+fn layering_events(code: &str, capability_type: &regex::Regex, capability_def: &regex::Regex) -> Vec<LayerEvent> {
+    let mut out = Vec::new();
+    let mut headers: Vec<usize> = Vec::new();
+    for raw in code.lines() {
+        let text = raw.trim();
+        if text.is_empty() { continue; }
+        // An uninitialized absolute field declaration can carry no
+        // useful value/declaration location in ObjectTree. Its explicit
+        // owner is still an actual definition, not a typed reference.
+        let declaration = text.split_whitespace().next().unwrap_or("");
+        if declaration.starts_with('/') {
+            if let Some((owner, member)) = declaration.split_once("/var/") {
+                if !member.is_empty() {
+                    out.push(LayerEvent::Owner(owner.to_string()));
+                }
+            }
+        }
+        if let Some(cap) = capability_type.captures(text) {
+            out.push(LayerEvent::Type(cap[1].to_string()));
+        }
+        if let Some(cap) = capability_def.captures(text) {
+            out.push(LayerEvent::Type(format!("/datum/capability/def/{}", &cap[1])));
+        }
+        let indent = raw.len() - raw.trim_start().len();
+        // An indent can only pop a header stack entry at or past it: kept only while some earlier header could be on the stack.
+        if headers.last().is_some_and(|n| *n >= indent) {
+            while headers.last().is_some_and(|n| *n >= indent) { headers.pop(); }
+            out.push(LayerEvent::Indent(indent as u32));
+        }
+        // A bare type header is a definition. Typed arguments, locals,
+        // member declarations and proc definitions are only references.
+        let header = text.trim_end_matches('{').trim();
+        if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
+            out.push(LayerEvent::Header(indent as u32, header.to_string()));
+            headers.push(indent);
+        }
+    }
+    out
 }
 
 fn tempfile_dir(root: &Path) -> PathBuf {
@@ -670,6 +718,17 @@ impl Sem {
     }
 }
 
+/// Adds a worker thread's CPU time to `util::cpu_account` (under `DQ_CPU_ACCOUNT`) when it ends.
+struct CpuGuard(&'static std::panic::Location<'static>, u64);
+
+impl Drop for CpuGuard {
+    fn drop(&mut self) {
+        if crate::util::cpu_accounting() {
+            crate::util::cpu_account(format!("par_map at {}:{}", self.0.file(), self.0.line()), crate::util::thread_cpu_ms().saturating_sub(self.1));
+        }
+    }
+}
+
 /// `items.iter().map(f).collect()` on plain OS threads, in order.
 ///
 /// The semantic layer's memoized values (`Decls`, the write index, ...) are built inside `Tree::memo`, i.e. under a
@@ -677,7 +736,9 @@ impl Sem {
 /// and a stolen task that needs the same cell blocks on the init this very thread is running (or two inits wait on
 /// each other): a deadlock the stress run hit about one cold run in six. Scoped threads never steal engine work.
 /// [`par_map`] on threads with a stack deep enough for the read walk (a followed proc is a few frames of a large recursive evaluator).
+#[track_caller]
 pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 {
         return items.iter().map(f).collect();
@@ -691,6 +752,8 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
                 std::thread::Builder::new()
                     .stack_size(256 << 20)
                     .spawn_scoped(s, || {
+                        let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                        let _acct = CpuGuard(caller, c0);
                         let mut local: Vec<(usize, R)> = Vec::new();
                         loop {
                             let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);
@@ -715,7 +778,9 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
     all.into_iter().map(|(_, r)| r).collect()
 }
 
+#[track_caller]
 pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 || items.len() < 64 {
         return items.iter().map(f).collect();
@@ -727,6 +792,8 @@ pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec
         let handles: Vec<_> = (0..n)
             .map(|_| {
                 s.spawn(|| {
+                    let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                    let _acct = CpuGuard(caller, c0);
                     let mut local: Vec<(usize, R)> = Vec::new();
                     loop {
                         let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);

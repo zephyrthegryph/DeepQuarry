@@ -109,7 +109,7 @@ pub struct ProcValue {
     pub location: Location,
     pub parameters: Box<[Parameter]>,
     pub docs: DocCollection,
-    pub code: Option<Block>,
+    pub code: LazyCode,
     #[get_size(size_fn = heap_size_of_location_range)]
     pub body_range: Option<Range<Location>>,
 }
@@ -755,7 +755,7 @@ impl ObjectTree {
         for node in self.graph.iter_mut() {
             for (_, typroc) in node.procs.iter_mut() {
                 for proc in typroc.value.iter_mut() {
-                    proc.code = None;
+                    proc.code = LazyCode::from(None);
                 }
             }
         }
@@ -1183,7 +1183,7 @@ impl ObjectTreeBuilder {
             location,
             parameters: parameters.into(),
             docs: Default::default(),
-            code,
+            code: LazyCode::from(code),
             body_range,
         };
 
@@ -1559,5 +1559,148 @@ impl ObjectTree {
                 }
             }
         }
+    }
+}
+
+
+// ----------------------------------------------------------------------------
+// Lazily decoded proc bodies (DeepQuarry's analyzer: tools/analyze/src/sem/model_store.rs)
+
+/// A proc body. Parsed, it holds the block; read back from storage, it holds the encoded bytes and decodes them on first use, so a tree read
+/// from disk pays only for the bodies something looks at. Derefs to `Option<Block>`.
+pub struct LazyCode {
+    cell: std::sync::OnceLock<Option<Block>>,
+    raw: Option<Box<[u8]>>,
+}
+
+impl LazyCode {
+    /// Whether the body was read back and not decoded yet.
+    pub fn is_encoded(&self) -> bool {
+        self.cell.get().is_none()
+    }
+
+    /// Whether there is a body, without decoding it (the codec stores an `Option` with a leading tag byte, 1 for `Some`, as bincode
+    /// does: `set_code_codec`).
+    pub fn has_body(&self) -> bool {
+        match (self.cell.get(), &self.raw) {
+            (Some(c), _) => c.is_some(),
+            (None, Some(raw)) => raw.first() == Some(&1),
+            (None, None) => false,
+        }
+    }
+
+    fn get(&self) -> &Option<Block> {
+        self.cell.get_or_init(|| match &self.raw {
+            Some(b) => {
+                DECODED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                if PROBE.load(std::sync::atomic::Ordering::Relaxed) {
+                    let bt = std::backtrace::Backtrace::force_capture().to_string();
+                    let frame = bt.lines().map(|l| l.trim()).filter(|l| l.contains("dq_analyze::")).take(3).collect::<Vec<_>>().join(" <- ");
+                    *PROBES.lock().unwrap().entry(frame).or_default() += 1;
+                }
+                bincode_lite_decode(b)
+            }
+            None => None,
+        })
+    }
+}
+
+/// The encoding of a body is `serde`'s through the crate the caller stores with; the tree only keeps the bytes. The decoder is installed by the
+/// caller (`set_code_decoder`) before a tree with encoded bodies is used.
+static DECODED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Set to record who decodes bodies (`decode_probes`).
+pub static PROBE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static PROBES: std::sync::Mutex<std::collections::BTreeMap<String, usize>> = std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+/// How many stored bodies were decoded so far.
+pub fn decoded_count() -> usize {
+    DECODED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Who decoded bodies (with `PROBE` set): first analyzer frames -> count.
+pub fn decode_probes() -> Vec<(String, usize)> {
+    PROBES.lock().unwrap().iter().map(|(k, v)| (k.clone(), *v)).collect()
+}
+
+static DECODER: std::sync::OnceLock<fn(&[u8]) -> Option<Block>> = std::sync::OnceLock::new();
+static ENCODER: std::sync::OnceLock<fn(&Option<Block>) -> Vec<u8>> = std::sync::OnceLock::new();
+
+/// Installs the functions that encode and decode a body (the analyzer uses bincode).
+pub fn set_code_codec(encode: fn(&Option<Block>) -> Vec<u8>, decode: fn(&[u8]) -> Option<Block>) {
+    let _ = ENCODER.set(encode);
+    let _ = DECODER.set(decode);
+}
+
+fn bincode_lite_decode(b: &[u8]) -> Option<Block> {
+    (DECODER.get().expect("set_code_codec before reading a stored tree"))(b)
+}
+
+impl From<Option<Block>> for LazyCode {
+    fn from(code: Option<Block>) -> LazyCode {
+        let cell = std::sync::OnceLock::new();
+        let _ = cell.set(code);
+        LazyCode { cell, raw: None }
+    }
+}
+
+impl std::ops::Deref for LazyCode {
+    type Target = Option<Block>;
+    fn deref(&self) -> &Option<Block> {
+        self.get()
+    }
+}
+
+impl Clone for LazyCode {
+    fn clone(&self) -> LazyCode {
+        match (self.cell.get(), &self.raw) {
+            (None, Some(raw)) => LazyCode { cell: std::sync::OnceLock::new(), raw: Some(raw.clone()) },
+            _ => LazyCode::from(self.get().clone()),
+        }
+    }
+}
+
+impl PartialEq for LazyCode {
+    fn eq(&self, other: &LazyCode) -> bool {
+        self.get() == other.get()
+    }
+}
+
+impl fmt::Debug for LazyCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+impl GetSize for LazyCode {}
+
+impl serde::Serialize for LazyCode {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        match (self.cell.get(), &self.raw) {
+            (None, Some(raw)) => s.serialize_bytes(raw),
+            _ => {
+                let enc = ENCODER.get().expect("set_code_codec before writing a tree");
+                s.serialize_bytes(&enc(self.get()))
+            }
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for LazyCode {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<LazyCode, D::Error> {
+        struct V;
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = Box<[u8]>;
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str("an encoded proc body")
+            }
+            fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Box<[u8]>, E> {
+                Ok(v.into())
+            }
+            fn visit_byte_buf<E: serde::de::Error>(self, v: Vec<u8>) -> Result<Box<[u8]>, E> {
+                Ok(v.into_boxed_slice())
+            }
+        }
+        let raw = d.deserialize_byte_buf(V)?;
+        Ok(LazyCode { cell: std::sync::OnceLock::new(), raw: Some(raw) })
     }
 }

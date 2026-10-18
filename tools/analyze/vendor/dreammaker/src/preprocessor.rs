@@ -561,6 +561,17 @@ impl<'ctx> Preprocessor<'ctx> {
     */
 
     /// Push a DM file to the top of this preprocessor's stack.
+    /// [`push_file`](Self::push_file) registered under `register` (the path relative to the environment, as an `#include` registers it) while
+    /// `__FILE__` names `path` (the path the include resolved to): what a file included from the `.dme` sees.
+    pub fn push_file_as<R: io::Read + 'static>(&mut self, register: &Path, path: PathBuf, read: R) -> Result<FileId, DMError> {
+        let idx = self.context.register_file(register);
+        self.include_stack.stack.push(Include::File {
+            lexer: Lexer::from_read(self.context, idx, read)?,
+            path,
+        });
+        Ok(idx)
+    }
+
     pub fn push_file<R: io::Read + 'static>(&mut self, path: PathBuf, read: R) -> Result<FileId, DMError> {
         let idx = self.context.register_file(&path);
         self.include_stack.stack.push(Include::File {

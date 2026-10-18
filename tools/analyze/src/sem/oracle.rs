@@ -137,7 +137,7 @@ pub fn entries(sem: &Sem) -> Vec<OracleEntry> {
             continue;
         }
         for value in &tp.value {
-            let Some(code) = &value.code else { continue };
+            let Some(code) = &*value.code else { continue };
             let rel = sem.rel(value.location).to_string();
             walk_block(code, &mut |e, line| {
                 let Some((n, args)) = as_call(e) else { return };

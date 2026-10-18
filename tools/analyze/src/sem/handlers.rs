@@ -26,11 +26,11 @@ pub struct Analyzed {
     /// Definition site of the proc: (file, line, params, has body).
     pub def: Option<(String, u32)>,
     pub params: Vec<Vec<String>>,
-    pub set: Option<ReadSet>,
+    pub set: Option<Arc<ReadSet>>,
     /// The same handler over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual calls the union of their overrides,
     /// global procs walked, global state classified. `sem/reads`, `untracked_inputs` and the generated subscriptions judge this one;
     /// `set` (the targeted walk) is what the purity and context checks of `sem/handlers` read.
-    pub closed: Option<ReadSet>,
+    pub closed: Option<Arc<ReadSet>>,
     /// Return-protocol violations of the top-level body (conditions and requirements).
     pub returns: Vec<super::checks::Found>,
     /// Reads of a var that is not tracked, a relation, a stat, a derived value or constant:
@@ -108,8 +108,11 @@ fn compute(tree: &Tree) -> Analysis {
         jobs[i].3 |= h.role.reads_covered();
     }
     let t_jobs = started.elapsed();
-    let walked: Vec<(ReadSet, Option<ReadSet>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
-        (eng.analyze_handler(on, proc, ctx), closed.then(|| closed_eng.analyze_handler(on, proc, ctx)))
+    // `analyze gen` reads only the closed walks; the targeted walk, the return checks and the context checks are what the `sem/handlers`
+    // lint reads (`impure`, `bad_ctx`, `returns`), so a gen run leaves them out.
+    let lint_facts = !super::incremental::gen_mode();
+    let walked: Vec<(Option<Arc<ReadSet>>, Option<Arc<ReadSet>>)> = super::par_map_deep(&jobs, |(on, proc, ctx, closed)| {
+        (lint_facts.then(|| eng.analyze_handler_shared(on, proc, ctx)), closed.then(|| closed_eng.analyze_handler_shared(on, proc, ctx)))
     });
     let t_walked = started.elapsed();
     // Which handlers are analyzed is decided in order (the first of duplicates); each analysis is independent and runs on all cores.
@@ -129,6 +132,11 @@ fn compute(tree: &Tree) -> Analysis {
         let on = on.clone();
         let pr = sem.proc_ref(&on, &h.proc);
         let (proc_found, def, params, returns) = match pr {
+            Some(p) if !p.is_builtin() && !lint_facts => {
+                let v = p.get();
+                let params = v.parameters.iter().map(|p| p.var_type.type_path.to_vec()).collect();
+                (true, Some((sem.rel(v.location).to_string(), v.location.line)), params, Vec::new())
+            }
             Some(p) if !p.is_builtin() => {
                 let b = sem.proc_body(p);
                 let params = b.params.iter().map(|p| p.var_type.type_path.to_vec()).collect();
@@ -147,7 +155,7 @@ fn compute(tree: &Tree) -> Analysis {
             _ => (false, None, Vec::new(), Vec::new()),
         };
         let walk = if proc_found && !h.cap_proc { job_ix.get(&(on.clone(), h.proc.clone(), h.ctx.type_path().to_string())).map(|&i| &walked[i]) } else { None };
-        let set = walk.map(|w| w.0.clone());
+        let set = walk.and_then(|w| w.0.clone());
         let closed = if h.role.reads_covered() { walk.and_then(|w| w.1.clone()) } else { None };
         let mut unknown = Vec::new();
         if let (Some(set), true) = (&closed, h.role.reads_covered()) {

@@ -26,15 +26,15 @@ impl Generator for SystemAccessors {
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
         // A system declared with SYSTEM_DEF(x) is read through its `SSx` global; a legacy world service through its GLOB var.
         let sys_def = crate::pat!(r"(?m)^\s*SYSTEM_DEF\((\w+)\)");
-        let mut sys_defs: HashSet<String> = HashSet::new();
-        for f in cx.tree.select(&crate::tree::CODE_DM) {
+        // Per file, cached by content: an edit reads one file.
+        let files = cx.tree.select(&crate::tree::CODE_DM);
+        let per: Vec<Vec<String>> = crate::incr::facts("gen-system-defs", &files, |f| {
             if !f.text().contains("SYSTEM_DEF(") {
-                continue;
+                return Vec::new();
             }
-            for c in sys_def.captures_iter(f.text()) {
-                sys_defs.insert(c.s(1).to_string());
-            }
-        }
+            sys_def.captures_iter(f.text()).into_iter().map(|c| c.s(1).to_string()).collect()
+        });
+        let sys_defs: HashSet<String> = per.into_iter().flatten().collect();
         let instance = |system: &str| -> String {
             if sys_defs.contains(system) {
                 format!("SS{}", system)

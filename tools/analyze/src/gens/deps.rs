@@ -291,10 +291,12 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let ann = Annotations::shared(tree, &sem, &decls);
     let eng = if closed { ReadsEngine::new(&sem, &decls, &ann).closed_shared(tree) } else { ReadsEngine::new(&sem, &decls, &ann).with_opaque(handlers::OPAQUE_DIRS) };
     let t_setup = started.elapsed();
+    let c_setup = crate::util::cpu_ms();
     let written: &WriteIndex = sem.write_index();
     let set_calls = super::auto_tracked::set_calls(tree);
     let outside_setters = super::auto_tracked::writes_outside_setters_of(tree, &sem);
     let t_written = started.elapsed();
+    let c_written = crate::util::cpu_ms();
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
@@ -336,6 +338,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
     }
     let t_handlers = started.elapsed();
+    let c_handlers = crate::util::cpu_ms();
     // A capability's entries() (CAP_ENTRIES) names holder procs too (powered()'s TYPE_PROC_REF(/obj/machinery, power_available)): judged here only,
     // not by sem/reads, so the runtime learns what they cannot see.
     // The walks are the cost and each is independent: the distinct ones run in parallel, their bookkeeping in declaration order.
@@ -353,8 +356,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             queued.insert(id.clone());
             work.push((id, h));
         }
-        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(_, h)| {
-            let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+        let walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(_, h)| {
+            let set = eng.analyze_handler_shared(&h.owner, &h.proc, h.ctx.type_path());
             let untracked = untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output);
             (set, untracked)
         });
@@ -377,8 +380,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 work.push((owner.clone(), name.to_string()));
             }
         }
-        let walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(owner, name)| {
-            let set = eng.analyze_handler(owner, name, "/datum/act/eval");
+        let walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&work, |(owner, name)| {
+            let set = eng.analyze_handler_shared(owner, name, "/datum/act/eval");
             let untracked = untracked_of(&set, &eng, &written, false);
             (set, untracked)
         });
@@ -399,6 +402,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
     }
     let t_stat = started.elapsed();
+    let c_stat = crate::util::cpu_ms();
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
@@ -419,8 +423,8 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     }
     draws.clear();
     // Each draw's closed walk is independent: run them in parallel, then fold the results in the order the definitions came.
-    let draw_walked: Vec<(ReadSet, Vec<Untracked>)> = crate::sem::par_map_deep(&draw_work, |(owner, _)| {
-        let set = eng.analyze(owner, "draw");
+    let draw_walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&draw_work, |(owner, _)| {
+        let set = eng.analyze_shared(owner, "draw");
         let untracked = untracked_of(&set, &eng, &written, true);
         (set, untracked)
     });
@@ -449,6 +453,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         draws.insert(id);
     }
     let t_draws = started.elapsed();
+    let c_draws = crate::util::cpu_ms();
     // A window host's ui_data(A) is an output whether or not a CAPABILITIES block names an interface() for it (an inherited or implicit window):
     // every var it reads must publish, or the window never hears a write. The reads count here; nothing is added to the consumer table.
     {
@@ -468,6 +473,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
     }
     let t_ui = started.elapsed();
+    let c_ui = crate::util::cpu_ms();
     let mut leaves = Vec::new();
     let mut named: BTreeSet<(String, String)> = BTreeSet::new();
     for m in decls.markers_named("CAPABILITIES") {
@@ -499,6 +505,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     leaves.dedup();
     if trace {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
+        eprintln!("analyze: gen/deps cpu at: setup {} written {} handlers {} stat {} draws {} ui {} end {}", c_setup, c_written, c_handlers, c_stat, c_draws, c_ui, crate::util::cpu_ms());
         eprintln!("analyze: gen/deps phases: sem+setup {:.1?}, written/set-calls {:.1?}, handler loop {:.1?}, cap entries+stat {:.1?}, draws {:.1?}, ui_data {:.1?}, markers {:.1?}", t_setup, t_written - t_setup, t_handlers - t_written, t_stat - t_handlers, t_draws - t_stat, t_ui - t_draws, started.elapsed() - t_ui);
     }
     let mut candidates: BTreeSet<(String, String)> = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();

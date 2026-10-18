@@ -272,7 +272,7 @@ pub(crate) fn collect_with(sem: &Sem, with_writes: bool) -> Collected {
             for v in &tp.value {
                 if let Some(f) = sem.file_of(v.location) {
                     let params: Vec<String> = v.parameters.iter().map(|p| format!("{}:{:?}:{}", p.name, p.var_type.flags, p.var_type.type_path.join("/"))).collect();
-                    c.shape.entry(f.to_string()).or_default().push(format!("P|{}|{}|{}|{}", path, name, params.join(","), v.code.is_some()));
+                    c.shape.entry(f.to_string()).or_default().push(format!("P|{}|{}|{}|{}", path, name, params.join(","), v.code.has_body()));
                 }
             }
         }
@@ -408,6 +408,11 @@ fn pending(tree: &Tree) -> Arc<Pending> {
 /// Off for `analyze gen`: the record's footprint is every file the walks reached, nearly the whole tree, so after an edit it is never
 /// valid there; the parsed model and the walks are kept by `model_store` and `walk_cache` instead. The lints (`analyze check`) keep it.
 static CAPTURE_OFF: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whether this is an `analyze gen` run (the lints' facts are not needed).
+pub fn gen_mode() -> bool {
+    CAPTURE_OFF.load(std::sync::atomic::Ordering::Relaxed)
+}
 
 pub fn disable_capture() {
     CAPTURE_OFF.store(true, std::sync::atomic::Ordering::Relaxed);

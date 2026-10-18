@@ -243,7 +243,7 @@ fn candidates(sem: &Sem, names: &[&str]) -> Vec<Cand> {
         let owner = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
         for (pname, p) in &t.procs {
             for value in &p.value {
-                let Some(code) = &value.code else { continue };
+                let Some(code) = &*value.code else { continue };
                 let mut found: Vec<(dreammaker::Location, String, usize, bool)> = Vec::new();
                 walk_stmts(code, &mut |e, stmt_level| {
                     if let Expression::Base { term, .. } = e {
