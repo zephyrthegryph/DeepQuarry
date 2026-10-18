@@ -2,8 +2,13 @@
 /mob/living/carbon/human/beacon_topic_gate_actor
 	var/permits_topics = TRUE
 	var/access_denials = 0
+	/// Denied CanUseObjTopic consultations. Access feedback (access_denials) is sent only by direct UI checks and topic refusal dispatch,
+	/// never by requirement evaluation (code/game/objects/objs.dm), so a menu or UI op proves its gate by consulting it.
+	var/topic_denials = 0
 
 /mob/living/carbon/human/beacon_topic_gate_actor/CanUseObjTopic(obj/O)
+	if(!permits_topics)
+		topic_denials++
 	return permits_topics
 
 /mob/living/carbon/human/beacon_topic_gate_actor/access_denied_feedback(obj/O)
@@ -38,7 +43,7 @@
 	user.set_permits_topics(FALSE)
 	test_menu(user, B, "beacon_talk")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Denied topic access prevents the real beacon question from opening")
-	TEST_ASSERT(user.access_denials > 0, "The actual CanUseObjTopic gate reports the denial")
+	TEST_ASSERT(user.topic_denials > 0, "The actual CanUseObjTopic gate refuses the request")
 	TEST_ASSERT_EQUAL(B.offers_accepted, 0, "Denied admission executes no offer effect")
 	user.set_permits_topics(TRUE)
 	test_menu(user, B, "beacon_talk")
@@ -67,7 +72,7 @@
 	user.set_permits_topics(FALSE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 0, "Inherited UI topic admission blocks the real transfer op")
-	TEST_ASSERT(user.access_denials > 0, "The UI op really checked CanUseObjTopic")
+	TEST_ASSERT(user.topic_denials > 0, "The UI op really checked CanUseObjTopic")
 	user.set_permits_topics(TRUE)
 	test_ui(user, B, "transfer_supplies", list("mob_ref" = REF(user)))
 	TEST_ASSERT_EQUAL(B.transfers_attempted, 1, "Allowed inherited UI admission reaches its actual op handler")

@@ -40,4 +40,7 @@ human|/obj/item/card/id click: Click: Open controls
 human|/obj/item menu: Open controls
 human|/obj/item menu: Use
 human|/obj/item click: Click: Open controls
-keys: drag_buckle, ejectItem, inject_radiation, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scanItem, set_scanner_rpm_delta, silicon_hand, ui_open, use, use_item
+human|/obj/item/reagent_containers/glass menu: Open controls
+human|/obj/item/reagent_containers/glass menu: Use
+human|/obj/item/reagent_containers/glass click: Click: Open controls
+keys: drag_buckle, ejectItem, inject_radiation, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scanItem, set_scanner_rpm_delta, silicon_hand, ui_open, use, use_container, use_item
