@@ -1,4 +1,3 @@
-GLOBAL_DATUM(commandos, /datum/antagonist/deathsquad/mercenary)
 
 /datum/antagonist/deathsquad/mercenary
 	id = MODE_COMMANDO
@@ -17,7 +16,6 @@ GLOBAL_DATUM(commandos, /datum/antagonist/deathsquad/mercenary)
 
 /datum/antagonist/deathsquad/mercenary/New()
 	..(1)
-	GLOB.commandos = src
 
 /datum/antagonist/deathsquad/mercenary/equip(mob/living/carbon/human/player)
 
@@ -35,3 +33,7 @@ GLOBAL_DATUM(commandos, /datum/antagonist/deathsquad/mercenary)
 	create_id("Commando", player)
 	create_radio(SYND_FREQ, player)
 	return 1
+
+/// The /datum/antagonist/deathsquad/mercenary template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_commandos() as /datum/antagonist/deathsquad/mercenary
+	return SSantag?.all_antag_types[MODE_COMMANDO]

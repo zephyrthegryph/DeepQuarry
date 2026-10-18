@@ -9,36 +9,10 @@ var	code/controllers/subsystems/mapping.dm	@/datum/system/mapping::engine_loader
 var	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::carried
 var	code/controllers/subsystems/proximity.dm	@/client::proximity_eye
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
-var	code/defines/procs/announce.dm	@/datum/controller/global_vars::priority_announcement
-var	code/defines/procs/announce.dm	@/datum/controller/global_vars::command_announcement
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::activation
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
 var	code/engine/declare/table.dm	@/datum/centry::item
 var	code/engine/present/appearance_builder.dm	@/datum/controller/global_vars::look_builder
-var	code/game/antagonist/alien/borer.dm	@/datum/controller/global_vars::borers
-var	code/game/antagonist/alien/xenomorph.dm	@/datum/controller/global_vars::xenomorphs
-var	code/game/antagonist/outsider/commando.dm	@/datum/controller/global_vars::commandos
-var	code/game/antagonist/outsider/deathsquad.dm	@/datum/controller/global_vars::deathsquad
-var	code/game/antagonist/outsider/ert.dm	@/datum/controller/global_vars::ert
-var	code/game/antagonist/outsider/mercenary.dm	@/datum/controller/global_vars::mercs
-var	code/game/antagonist/outsider/ninja.dm	@/datum/controller/global_vars::ninjas
-var	code/game/antagonist/outsider/raider.dm	@/datum/controller/global_vars::raiders
-var	code/game/antagonist/outsider/shipwreck_survivor.dm	@/datum/controller/global_vars::survivors
-var	code/game/antagonist/outsider/technomancer.dm	@/datum/controller/global_vars::technomancers
-var	code/game/antagonist/outsider/trader.dm	@/datum/controller/global_vars::traders
-var	code/game/antagonist/outsider/wizard.dm	@/datum/controller/global_vars::wizards
-var	code/game/antagonist/station/contract_operative.dm	@/datum/controller/global_vars::contract_operatives
-var	code/game/antagonist/station/cultist.dm	@/datum/controller/global_vars::cult
-var	code/game/antagonist/station/event.dm	@/datum/controller/global_vars::event
-var	code/game/antagonist/station/highlander.dm	@/datum/controller/global_vars::highlanders
-var	code/game/antagonist/station/infiltrator.dm	@/datum/controller/global_vars::infiltrators
-var	code/game/antagonist/station/loyalist.dm	@/datum/controller/global_vars::loyalists
-var	code/game/antagonist/station/renegade.dm	@/datum/controller/global_vars::renegades
-var	code/game/antagonist/station/revolutionary.dm	@/datum/controller/global_vars::revs
-var	code/game/antagonist/station/rogue_ai.dm	@/datum/controller/global_vars::malf
-var	code/game/antagonist/station/stowaway.dm	@/datum/controller/global_vars::stowaways
-var	code/game/antagonist/station/thug.dm	@/datum/controller/global_vars::thugs
-var	code/game/antagonist/station/traitor.dm	@/datum/controller/global_vars::traitors
 var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
 var	code/game/objects/structures/transit_tubes.dm	@/obj/structure/transit_tube_pod::air_contents
@@ -53,7 +27,6 @@ var	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::station
 var	code/modules/metrics/metrics_capture.dm	@/datum/controller/global_vars::tick_frame
 var	code/modules/mob/living/silicon/ai/multicam.dm	@/datum/controller/global_vars::ai_camera_room_landmark
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	@/mob/living/simple_mob/vore/aggressive/rat/tame::food
-var	code/modules/multiz/turf.dm	@/datum/controller/global_vars::openspace_backdrop_one_for_all
 var	code/modules/news/news_init.dm	@/datum/lore/news::news_codex
 var	code/modules/nifsoft/software/10_combat.dm	@/datum/controller/global_vars::unarmed_hardclaws
 var	code/modules/nifsoft/software/14_commlink.dm	@/obj/item/communicator/commlink::nifsoft
@@ -65,8 +38,6 @@ var	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::sco
 var	code/modules/scripting/Interpreter/Interpreter.dm	@/datum/n_Interpreter::functions
 var	code/modules/scripting/Parser/Parser.dm	@/datum/n_Parser::blocks
 var	code/modules/scripting/Parser/Parser.dm	@/datum/n_Parser::global_block
-var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_up
-var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_down
 var	code/modules/shieldgen/directional_shield.dm	@/obj/effect/directional_shield::projector
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwallgen::attached
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::U

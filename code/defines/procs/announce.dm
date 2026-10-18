@@ -3,6 +3,8 @@
 GLOBAL_DATUM_INIT(priority_announcement, /datum/announcement/priority, new(do_log = 0))
 GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, new(do_log = 0, do_newscast = 1))
 
+/// A global singleton made once and never deleted in a round: a reference to one pins nothing (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement)
 /datum/announcement
 	var/title = "Attention"
 	var/announcer = ""

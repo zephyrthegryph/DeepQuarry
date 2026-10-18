@@ -1,4 +1,3 @@
-GLOBAL_DATUM(xenomorphs, /datum/antagonist/xenos)
 
 /datum/antagonist/xenos
 	id = MODE_XENOMORPH
@@ -24,7 +23,7 @@ GLOBAL_DATUM(xenomorphs, /datum/antagonist/xenos)
 /datum/antagonist/xenos/New(no_reference)
 	..()
 	if(!no_reference)
-		GLOB.xenomorphs = src
+		antag_xenomorphs() = src
 
 /datum/antagonist/xenos/attempt_random_spawn()
 	if(CONFIG_GET(flag/aliens_allowed)) ..()
@@ -45,3 +44,7 @@ GLOBAL_DATUM(xenomorphs, /datum/antagonist/xenos)
 
 /datum/antagonist/xenos/place_mob(mob/living/player)
 	player.forceMove(get_turf(pick(get_vents())))
+
+/// The /datum/antagonist/xenos template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_xenomorphs() as /datum/antagonist/xenos
+	return SSantag?.all_antag_types[MODE_XENOMORPH]

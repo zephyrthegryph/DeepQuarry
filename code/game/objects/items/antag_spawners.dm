@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
 
 /obj/item/antag_spawner/technomancer_apprentice/proc/finish_technomancer_spawn(mob/living/carbon/human/H)
 	if(!QDELETED(H))
-		GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
+		antag_technomancers().add_antagonist(H.mind, 0, 1, 0, 0, 0)
 		equip_antag(H)
 	used = 1
 	consume(src, H)
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
 
 /obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
 	if(!QDELETED(R))
-		GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
+		antag_mercs().add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
 	consume(src, R)
 
 /obj/item/antag_spawner/syndicate_drone/protector

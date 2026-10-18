@@ -28,7 +28,7 @@
 		G.set_invisibility(INVISIBILITY_NONE)
 		to_chat(G, span_sinister("You feel relieved as what's left of your soul finally escapes its prison of flesh."))
 
-		rel_add(GLOB.cult, nameof(GLOB.cult.harvested), G.mind)
+		rel_add(antag_cult(), nameof(antag_cult().harvested), G.mind)
 	else
 		dust()
 

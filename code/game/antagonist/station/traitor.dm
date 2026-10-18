@@ -1,4 +1,3 @@
-GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 
 // Inherits most of its vars from the base datum.
 /datum/antagonist/traitor
@@ -16,7 +15,6 @@ GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 
 /datum/antagonist/traitor/New()
 	..()
-	GLOB.traitors = src
 
 /datum/antagonist/traitor/get_extra_panel_options(datum/mind/player)
 	return "<a href='byond://?src=\ref[player];[HrefToken()];common=crystals'>\[set crystals\]</a><a href='byond://?src=\ref[src];[HrefToken()];spawn_uplink=\ref[player.current]'>\[spawn uplink\]</a>"
@@ -179,3 +177,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 	to_chat(killer, span_bold("Your laws have been changed!"))
 	killer.set_zeroth_law(law, law_borg)
 	to_chat(killer, "New law: 0. [law]")
+
+/// The /datum/antagonist/traitor template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_traitors() as /datum/antagonist/traitor
+	return SSantag?.all_antag_types[MODE_TRAITOR]

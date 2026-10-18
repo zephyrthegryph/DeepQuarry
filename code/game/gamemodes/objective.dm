@@ -660,7 +660,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			if(istype(I, loot_path)) total_amount++
 		if(total_amount >= target_amount) return 1
 
-	for(var/datum/mind/raider in GLOB.raiders.current_antagonists)
+	for(var/datum/mind/raider in antag_raiders().current_antagonists)
 		if(raider.current)
 			for(var/obj/O in raider.current.get_contents())
 				if(istype(O, loot_path)) total_amount++
@@ -717,7 +717,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 					S = I
 					total_amount += S.get_amount()
 
-	for(var/datum/mind/raider in GLOB.raiders.current_antagonists)
+	for(var/datum/mind/raider in antag_raiders().current_antagonists)
 		if(raider.current)
 			for(var/obj/item/O in raider.current.get_contents())
 				if(istype(O,/obj/item/stack/material))
@@ -732,7 +732,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Do not leave anyone behind, alive or dead."
 
 /datum/objective/heist/preserve_crew/check_completion()
-	if(GLOB.raiders && GLOB.raiders.is_raider_crew_safe()) return 1
+	if(antag_raiders() && antag_raiders().is_raider_crew_safe()) return 1
 	return 0
 
 //Borer objective(s).
@@ -776,9 +776,9 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/cult/survive/check_completion()
 	var/acolytes_survived = 0
-	if(!GLOB.cult)
+	if(!antag_cult())
 		return 0
-	for(var/datum/mind/cult_mind in GLOB.cult.current_antagonists)
+	for(var/datum/mind/cult_mind in antag_cult().current_antagonists)
 		if (cult_mind.current && cult_mind.current.stat!=2)
 			var/area/A = get_area(cult_mind.current )
 			if ( is_type_in_list(A, GLOB.centcom_areas))
@@ -801,14 +801,14 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/list/possible_targets = list()
 	if(!possible_targets.len)
 		for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-			if(player.mind && !(player.mind in GLOB.cult))
+			if(player.mind && !(player.mind in antag_cult()))
 				possible_targets += player.mind
 	if(possible_targets.len > 0)
 		rel_set(src, nameof(target), pick(possible_targets))
 	if(target) set_explanation_text("Sacrifice [target.name], the [target.assigned_role]. You will need the sacrifice rune (Hell blood join) and three acolytes to do so.")
 
 /datum/objective/cult/sacrifice/check_completion()
-	return (target && GLOB.cult && !GLOB.cult.sacrificed.Find(target))
+	return (target && antag_cult() && !antag_cult().sacrificed.Find(target))
 
 /datum/objective/rev/find_target()
 	..()
@@ -835,7 +835,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		if(H.stat == DEAD || H.restrained())
 			return 1
 		// Check if they're converted
-		if(target in GLOB.revs.current_antagonists)
+		if(target in antag_revs().current_antagonists)
 			return 1
 		var/turf/T = get_turf(H)
 		if(T && isNotStationLevel(T.z))			//If they leave the station they count as dead for this

@@ -1,5 +1,4 @@
 // Infiltrator is a variant of Traitor, except that the traitors are in a team and can communicate with a special headset.
-GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 
 // Inherits most of its vars from the base datum.
 /datum/antagonist/traitor/infiltrator
@@ -16,7 +15,6 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 
 /datum/antagonist/traitor/infiltrator/New()
 	..()
-	GLOB.infiltrators = src
 
 /datum/antagonist/traitor/infiltrator/equip(mob/living/carbon/human/traitor_mob)
 	..() // Give the uplink and other stuff.
@@ -75,3 +73,7 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 	to_chat(killer, span_infoplain(span_bold("Your laws have been changed!")))
 	killer.set_zeroth_law(law, law_borg)
 	to_chat(killer, "New law: 0. [law]")
+
+/// The /datum/antagonist/traitor/infiltrator template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_infiltrators() as /datum/antagonist/traitor/infiltrator
+	return SSantag?.all_antag_types[MODE_INFILTRATOR]

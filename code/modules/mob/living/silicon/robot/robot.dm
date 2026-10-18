@@ -1606,14 +1606,14 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	// TODO: Update to new antagonist system.
 	if(mind && !mind.special_role)
 		mind.special_role = "traitor"
-		rel_add(GLOB.traitors, nameof(/datum/antagonist::current_antagonists), mind)
+		rel_add(antag_traitors(), nameof(/datum/antagonist::current_antagonists), mind)
 	build_traitor_hud()
 
 /mob/living/silicon/robot/proc/build_traitor_hud()
 	clear_traitor_hud()
 	if(!client)
 		return
-	for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
+	for(var/datum/mind/tra in antag_traitors().current_antagonists)
 		if(!tra.current)
 			continue
 		LAZYADD(traitor_hud_images, image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor"))

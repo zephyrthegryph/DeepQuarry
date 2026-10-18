@@ -85,7 +85,7 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 /// Requirement: the actor is a wizard, or has no mind to judge (the old `user.mind && !is_antagonist` gate).
 /proc/dq_actor_is_wizard_or_mindless(mob/actor, atom/target, obj/item/held)
 	READS_FROM(actor)
-	return !actor?.mind || GLOB.wizards.is_antagonist(actor.mind) ? TRUE : FALSE
+	return !actor?.mind || antag_wizards().is_antagonist(actor.mind) ? TRUE : FALSE
 
 /// Old attack_self: the spellbook panel opens via TGUI. Specially handled books leave it to their own self-use.
 

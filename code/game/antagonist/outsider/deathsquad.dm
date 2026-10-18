@@ -1,4 +1,3 @@
-GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
 /datum/antagonist/deathsquad
 	id = MODE_DEATHSQUAD
@@ -22,7 +21,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 /datum/antagonist/deathsquad/New(no_reference)
 	..()
 	if(!no_reference)
-		GLOB.deathsquad = src
+		antag_deathsquad() = src
 
 /datum/antagonist/deathsquad/attempt_spawn()
 	if(..())
@@ -84,3 +83,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 /datum/antagonist/deathsquad/create_antagonist()
 	if(..() && !deployed)
 		deployed = 1
+
+/// The /datum/antagonist/deathsquad template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_deathsquad() as /datum/antagonist/deathsquad
+	return SSantag?.all_antag_types[MODE_DEATHSQUAD]

@@ -583,7 +583,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(check_rights_for(src.client, R_ADMIN|R_FUN|R_EVENT))
 		return FALSE
 
-	return (T && T.holy) && (is_manifest || (mind in GLOB.cult.current_antagonists))
+	return (T && T.holy) && (is_manifest || (mind in antag_cult().current_antagonists))
 
 /mob/observer/dead/verb/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
 	set category = VERB_CAT_GHOST_GAME
@@ -705,7 +705,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	var/ghosts_can_write
 	if(ticker_mode().name == "cult")
-		if(length(GLOB.cult.current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
+		if(length(antag_cult().current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
 	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.

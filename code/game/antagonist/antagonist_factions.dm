@@ -3,7 +3,7 @@
 	set category = VERB_CAT_ABILITIES_ANTAG
 	if(!M.mind)
 		return
-	convert_to_faction(M.mind, GLOB.revs)
+	convert_to_faction(M.mind, antag_revs())
 
 /mob/living/proc/convert_to_faction(datum/mind/player, datum/antagonist/faction)
 
@@ -82,4 +82,4 @@ CAPABILITIES(/datum/prompt/choice/faction_join)
 	set category = VERB_CAT_ABILITIES_ANTAG
 	if(!M.mind)
 		return
-	convert_to_faction(M.mind, GLOB.loyalists)
+	convert_to_faction(M.mind, antag_loyalists())

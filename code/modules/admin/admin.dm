@@ -1162,7 +1162,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 /datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
 	var/mob/living/carbon/human/traitor_human = A.request.value
 	var/client/user = A.request.answerer.client
-	GLOB.traitors.spawn_uplink(traitor_human)
+	antag_traitors().spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")

@@ -1,4 +1,3 @@
-GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 
 /datum/antagonist/revolutionary
 	id = MODE_REVOLUTIONARY
@@ -35,7 +34,6 @@ GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 
 /datum/antagonist/revolutionary/New()
 	..()
-	GLOB.revs = src
 
 /datum/antagonist/revolutionary/create_global_objectives()
 	if(!..())
@@ -48,3 +46,7 @@ GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 		rel_set(rev_obj, nameof(rev_obj.target), player.mind)
 		rev_obj.set_explanation_text("Assassinate, capture or convert [player.real_name], the [player.mind.assigned_role].")
 		rel_add(src, nameof(global_objectives), rev_obj)
+
+/// The /datum/antagonist/revolutionary template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_revs() as /datum/antagonist/revolutionary
+	return SSantag?.all_antag_types[MODE_REVOLUTIONARY]

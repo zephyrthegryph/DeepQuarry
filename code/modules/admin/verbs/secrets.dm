@@ -259,7 +259,7 @@ CAPABILITIES(/datum/secrets_menu)
 	var/action = A.window_action()
 	if(!ui_gate(A))
 		return FALSE
-	GLOB.xenomorphs.attempt_random_spawn()
+	antag_xenomorphs().attempt_random_spawn()
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 
@@ -267,7 +267,7 @@ CAPABILITIES(/datum/secrets_menu)
 	var/action = A.window_action()
 	if(!ui_gate(A))
 		return FALSE
-	GLOB.borers.attempt_random_spawn()
+	antag_borers().attempt_random_spawn()
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

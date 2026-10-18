@@ -276,7 +276,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 
-	if (GLOB.malf && !(mind in GLOB.malf.current_antagonists))
+	if (antag_malf() && !(mind in antag_malf().current_antagonists))
 		show_laws()
 		to_chat(src, span_filter_notice(span_bold("These laws may be changed by other players, or by you being the traitor.")))
 

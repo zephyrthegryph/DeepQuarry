@@ -1,4 +1,3 @@
-GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 
 /datum/antagonist/technomancer
 	id = MODE_TECHNOMANCER
@@ -24,7 +23,6 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 
 /datum/antagonist/technomancer/New()
 	..()
-	GLOB.technomancers = src
 
 /datum/antagonist/technomancer/update_antag_mob(datum/mind/technomancer)
 	..()
@@ -102,3 +100,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 			text += "<br>They've lost their core."
 
 	return text
+
+/// The /datum/antagonist/technomancer template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_technomancers() as /datum/antagonist/technomancer
+	return SSantag?.all_antag_types[MODE_TECHNOMANCER]
