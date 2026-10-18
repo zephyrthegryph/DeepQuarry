@@ -44,6 +44,15 @@ export function variantKey(dme: string): string {
   return path.basename(dme).replace(/\.dme$/i, '').replace(/[^A-Za-z0-9._-]/g, '_');
 }
 
+/**
+ * The compile root of a manifest: the part of its file name before the first dot, so `deepquarry.dme`, `deepquarry.test.dme` and
+ * `deepquarry.bench.dme` share one root (one project directory, hence one resident session). The define sets and the manifest file
+ * differ per build; the session keeps each variant's own state and shares everything that does not depend on the defines.
+ */
+export function rootKey(dme: string): string {
+  return variantKey(dme).split('.')[0] || variantKey(dme);
+}
+
 function normalizeTarget(target: string): string {
   let text = target.replace(/^\\\\\?\\/, '');
   text = path.resolve(text);
@@ -183,7 +192,7 @@ export async function withSharedCompileRoot<T>(
   const manifest = path.resolve(dme);
   const base = path.resolve(worktree);
   if (path.dirname(manifest).toLowerCase() !== base.toLowerCase() || !/\.dme$/i.test(manifest) || !fs.existsSync(manifest)) return undefined;
-  const key = variantKey(manifest);
+  const key = rootKey(manifest);
   const root = path.join(compileRootsDir(env), key);
   const stem = path.basename(manifest).replace(/\.dme$/i, '');
   return await withSlot(`dmb_root_${key}`, `compile root ${key} <- ${base}`, async () => {
