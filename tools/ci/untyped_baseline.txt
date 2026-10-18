@@ -392,7 +392,6 @@ call	code/modules/mob/living/living_defines.dm	@/mob/living::max_nutrition
 call	code/modules/mob/living/living_defines.dm	@/mob/living::tod
 call	code/modules/mob/living/living_defines.dm	@/mob/living::force_max_speed
 call	code/modules/mob/living/living_defines.dm	@/mob/living::custom_link
-call	code/modules/mob/living/silicon/robot/component.dm	@/datum/robot_component::idle_usage
 call	code/modules/mob/living/silicon/robot/component.dm	@/datum/robot_component::active_usage
 call	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	@/obj/item/dogborg/pounce::bluespace
 call	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::modtype

@@ -13,6 +13,8 @@ impl BuildHost {
     /// their consumers finish, but cannot repopulate these detached host slots.
     pub(crate) fn release_idle_compiler_artifacts(&mut self) {
         self.emit_idle_census("before-compiler-release");
+        // Stashed variants are recomputable; they go before the active variant degrades.
+        self.release_stashed_variants();
         self.release_idle_executor();
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;

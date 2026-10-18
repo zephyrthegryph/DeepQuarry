@@ -331,12 +331,14 @@ test('native setup and transport failures preserve errors without fallback', asy
   let executions = 0;
   delete process.env.DQ_NATIVE_COMPILER;
   delete process.env.DQ_NATIVE_ENGINE_TEMPLATE;
-  process.env.DQ_BUILD_ROOT = os.tmpdir(); // no default compiler/template under it
+  process.env.DQ_BUILD_ROOT = os.tmpdir();
+  process.env.DQ_DMBC_BIN_DIR = path.join(os.tmpdir(), 'no-such-dmb-bin'); // no shared compiler either
   await expect(selectedCompiler('project.dme', {}, async () => { calls++; }, async () => {
     executions++;
     return { code: 70, combined: '' };
-  })).rejects.toThrow('requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE');
+  })).rejects.toThrow('requires DQ_NATIVE_COMPILER');
   expect(executions).toBe(0);
+  delete process.env.DQ_DMBC_BIN_DIR;
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   const transport = new Error('cannot start native compiler');
