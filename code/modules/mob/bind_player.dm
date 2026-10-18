@@ -8,7 +8,7 @@
 	if(!M)
 		return null
 	if(as_ckey)
-		bind_player(M, value, as_ckey = TRUE)
+		M.ckey = value
 	else
-		bind_player(M, value)
+		M.key = value
 	return M

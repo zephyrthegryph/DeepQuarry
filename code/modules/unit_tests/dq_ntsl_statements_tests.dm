@@ -14,6 +14,6 @@
 	var/datum/n_Interpreter/I = new(program)
 	I.persist = 1 // keep the global scope after the run, as the telecomms compiler does
 	I.Run()
-	TEST_ASSERT_EQUAL(I.GetVariable("$x"), 5, "an assignment and a compound assignment run")
-	TEST_ASSERT_EQUAL(I.GetVariable("$y"), 6, "a call of a script-defined function returns its value")
+	TEST_ASSERT_EQUAL(I.GetVar("$x"), 5, "an assignment and a compound assignment run")
+	TEST_ASSERT_EQUAL(I.GetVar("$y"), 6, "a call of a script-defined function returns its value")
 	qdel(I)
