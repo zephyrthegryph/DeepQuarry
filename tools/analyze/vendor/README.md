@@ -6,7 +6,10 @@
 
 - `serde` derives on the AST, object tree, constants, docs, `FileId` and `Location` (bitflags types serialize their bits);
   `indexmap` and `ordered-float` with their `serde` features;
-- `ObjectTree::splice_file`: put a file's re-parsed proc bodies and locations into a stored tree;
+- `ObjectTree::file_patch` / `splice_patch` / `splice_file`: what one file contributes to a tree, put in place of what it contributed;
+- `ObjectTree::parts` / `from_parts`: the type graph in slices (stored and decoded on several cores);
+- `Token` and `Punctuation` serde derives, `StoredDefine`, `StoredDefineHistory` and `DefineHistory::to_stored` / `from_stored`: the macro
+  history kept beside the model, so one file can be parsed alone (`branch_at_file`);
 - `ObjectTree::drop_body_ranges`: forget the body ranges (their end lies in whatever file the parse read next).
 
 Everything else is upstream. To move to a new suite, copy the three crates over and re-apply the list above.
