@@ -61,7 +61,7 @@
 /datum/preference_editor/occupation/proc/block_reason(datum/preferences/preferences, datum/job/job)
 	if(job.whitelist_only)
 		var/client/C = preferences.client()
-		if(!C || !is_job_whitelisted(C.mob, job.title))
+		if(!C || job_whitelist_refusal(C.mob, job.title))
 			return "WHITELIST"
 	var/min_age = job.get_min_age()
 	if(min_age && min_age > 0)

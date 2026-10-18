@@ -174,7 +174,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		stopped("declined")
 		return
 	var/client/prey = prey_client()
-	if(!is_alien_whitelisted(prey, GLOB.all_species[prey.prefs.read_preference(/datum/preference/choiced/species)]))
+	if(alien_whitelist_refusal(prey, GLOB.all_species[prey.prefs.read_preference(/datum/preference/choiced/species)]))
 		to_chat(prey, span_notice("You are not whitelisted to play as currently selected character."))
 		to_chat(actor, span_notice("Prey accepted the confirmation, but something went wrong with spawning their character."))
 		retire()

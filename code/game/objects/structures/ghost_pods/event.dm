@@ -124,7 +124,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 /// Is the ghost's loaded species one it is whitelisted for?
 /proc/lurker_whitelisted(mob/observer/dead/user)
 	READS_FROM() // the whitelist and preferences are not round state an op could watch
-	return !user.client || is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)])
+	return !user.client || isnull(alien_whitelist_refusal(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
 
 // The lurker spawner asks with its own words.
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/inhabit_title(datum/act/A)

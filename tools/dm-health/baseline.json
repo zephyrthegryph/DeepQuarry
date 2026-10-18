@@ -546,7 +546,6 @@
   "argument-type:code/game/objects/structures/medical_stand.dm:/obj/structure/medical_stand/add_overlay: add_overlays receives text instead of /list",
   "argument-type:code/game/objects/structures/medical_stand.dm:/obj/structure/medical_stand/add_overlay: add_overlays receives text instead of /list",
   "argument-type:code/game/objects/structures/medical_stand.dm:/obj/structure/medical_stand/add_overlay: add_overlays receives text instead of /list",
-  "argument-type:code/game/objects/structures/mirror.dm:/obj/structure/mirror/raider/is_alien_whitelisted: species receives text instead of /datum/species",
   "argument-type:code/game/objects/structures/tank_dispenser.dm:/obj/structure/dispenser/add_overlay: add_overlays receives text instead of /list",
   "argument-type:code/game/objects/structures/tank_dispenser.dm:/obj/structure/dispenser/add_overlay: add_overlays receives text instead of /list",
   "maybe-null-deref:code/game/objects/structures/transit_tubes.dm:current_tube may still be null on this path",
