@@ -1,0 +1,2 @@
+equip wearer=Human: your face and whoever is meant for this helmet are too different
+

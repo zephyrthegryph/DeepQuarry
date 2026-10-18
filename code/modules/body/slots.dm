@@ -1,4 +1,4 @@
-// Body slots (doc/rewrite/containment.md §6, roadmap C3).
+// Body slots (doc/rewrite/containment.md Â�6, roadmap C3).
 //
 // A mob's slots belong to its body plan. Each plan returns its slot list from
 // /datum/body/proc/slot_def_types(); the mob hands it to the ledger through
@@ -9,9 +9,8 @@
 //      the part map below);
 //   2. the holder's own rules say no (body_slot_refusal(): the species has no
 //      such slot, a simple mob has no hands);
-//   3. the slot's `accepts` predicate says no. For worn slots that is P3's
-//      equip slot predicate (code/datums/properties/equip_slots.dm),
-//      evaluated with the WEARER as PRED_ACTOR, as those predicates expect.
+//   3. native equipment admission refuses, evaluated with wearer and mover
+//      as independent context participants.
 //
 // Part map (humanoid; mirrors the old has_organ_for_slot()):
 //   hand_l            BP_L_HAND
@@ -65,10 +64,7 @@
 		return .
 	if(acceptance_declared(GLOB.native_equipment_acceptance, slot_id))
 		return dq_native_equip_slot_reason(wearer, slot_id, thing, actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		return P.why_not(wearer, thing, null)
-	return null
+	return ..()
 
 // ---- The shared slot ----
 

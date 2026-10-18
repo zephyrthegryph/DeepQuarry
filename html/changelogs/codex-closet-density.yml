@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Closet doors keep collision in sync with their open or closed state, including when another effect controls density."

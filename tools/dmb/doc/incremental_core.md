@@ -59,17 +59,25 @@ pair store write stays whole-file until a later step.
 
 ## Steps (each lands under the interim compiler rule, proven by dmb-equiv against cold)
 
-1. `dm-query` core: revision, red/green, early cutoff, reverse edges, memory accounting (values droppable when recomputable). Tests.
-2. Declaration queries: `file_decls`, `type_rows`, `type_resolved`, `member_resolved` replace `delta_since` and the splice; the
-   lowering memo's reads become query edges. Dirty set of a declaration change = reverse-edge closure.
-3. Stable-ID slot tables for procs, vars, strings, then classes; link emits them. A cold compile builds the same tables.
-4. Incremental link and section-wise publication.
-5. Delete `body_patch`, the append patch, the default patch and the code-motion map once the query path passes the same
-   equivalence suite (add proc, remove proc, add var, remove var, change parent, rename type, add `#define`, test-build switch).
-6. Preprocessing, frontend and resources become queries: directive planning and expansion per file keyed by content hash plus the
+Order revised 2026-10-17 after measuring a hot full compile: link plus composition cost 3-4 s; the rest is per-body and
+per-initializer visiting (lowering 6 s with every unit cached, initializers 3 s, ABI and startup 2.5 s), the frontend (4-6 s) and
+resources (2.4 s). So the first steps make the visiting stages dirty-set driven and keep link and composition whole-program, which
+also gives fresh numbering and output equal to a cold compile.
+
+1. `dm-query` core: revision, red/green, early cutoff, reverse edges, memory accounting. Tests. (landed)
+2. Dirty-set driven lowering, initializers, ABI and startup: the dependency graph is the existing read index in `dm-session`
+   (`incidence.rs`: domain to variant, certified sets) plus `dm-query` for the new declaration queries; a request visits only the
+   units whose own key changed or whose recorded reads are dirty, and reuses retained link inputs for every other unit. Verify mode
+   compares against the full walk. Link and composition stay whole-program.
+3. Preprocessing, frontend and resources become queries: directive planning and expansion per file keyed by content hash plus the
    macros read (reverse index macro to reader regions), declaration parsing per file, resource demand per region and resource
    content per file (keyed by the references actually resolved, not folder listings), so an edit costs only its dependants end to
    end and the 9 s floor goes away. Subsumes `retained_frontend.md` stages 4-7 and the F1-F5 frontend revision steps.
+4. Delete `body_patch`, the append patch, the default patch and the code-motion map once the query path passes the equivalence
+   suite: add proc, remove proc, add var, remove var, change parent, rename type, add `#define`, the test-build switch
+   (`deepquarry.test.dme`) and a worktree switch.
+5. Only if the numbers justify them: stable-ID slot tables for procs, vars, strings and classes, and incremental link and
+   section-wise publication (the sections above describe them).
 
 ## Coordination and risks
 

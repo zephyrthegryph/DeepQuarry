@@ -11,10 +11,9 @@
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/apron)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,   	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = 0))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/apron, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds, \
-	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))))
 
 /obj/item/clothing/suit/storage/apron/white
 	name = "white apron"
@@ -60,11 +59,12 @@ CAPABILITIES(/obj/item/clothing/suit/captunic/capjacket)
 	hoodtype = /obj/item/clothing/head/chaplain_hood
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/storage/bible), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEHOLSTER))
 
 //Chaplain but spookier
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/storage/bible))))
+
 /obj/item/clothing/suit/storage/hooded/chaplain_hoodie/whiteout
 	name = "white robe"
 	desc = "A long, flowing white robe. It looks comfortable, but not very warm."
@@ -91,12 +91,13 @@ CAPABILITIES(/obj/item/clothing/suit/nun)
 	icon_state = "chef"
 
 CAPABILITIES(/obj/item/clothing/suit/chef)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 
 //Chef
 
-TYPE_TABLE(/obj/item/clothing/suit/chef, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/material/knife))))
+
 /obj/item/clothing/suit/chef/classic
 	name = "classic chef's apron"
 	desc = "A basic, dull, white chef's apron."
@@ -143,9 +144,9 @@ CAPABILITIES(/obj/item/clothing/suit/security/navyhos)
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/det_trench)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/det_trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/det_trench/grey
 	name = "grey trenchcoat"
@@ -162,9 +163,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/det_trench/grey)
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/forensics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/forensics/red
 	name = "red jacket"
@@ -197,11 +198,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/forensics, suit_storage_spec, list(HO
 	armor_spec = "rad=20"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,   	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency,   	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */, because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, \
-	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency, \
-	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */)))
 
 /obj/item/clothing/suit/storage/hazardvest/blue
 	name = "blue hazard vest"
@@ -263,9 +262,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/internalaffairs)
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/fr_jacket)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/fr_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
 /obj/item/clothing/suit/storage/toggle/fr_jacket/ems
 	name = "\improper EMS jacket"
@@ -280,11 +279,12 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/fr_jacket, suit_storage_spec, 
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/surgicalapron)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST))
 
 //Mime
 
-TYPE_TABLE(/obj/item/clothing/suit/surgicalapron, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY))))
+
 /obj/item/clothing/suit/suspenders
 	name = "red suspenders"
 	desc = "They suspend the illusion of the mime's play."

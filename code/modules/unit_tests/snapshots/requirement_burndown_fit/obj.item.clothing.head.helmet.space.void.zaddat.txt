@@ -1,0 +1,9 @@
+Human: ALLOW
+Teshari: ALLOW
+Vox: ALLOW
+Werebeast: it only fits Zaddat or Promethean
+Skrell: ALLOW
+Altevian: ALLOW
+Monkey: ALLOW
+no wearer: ALLOW
+
