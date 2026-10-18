@@ -28,11 +28,11 @@
 	TEST_ASSERT_NULL(dq_ledger_refusal(lamp, holder, "adm_fits", null), "a small thing fits")
 	TEST_ASSERT_NOTNULL(dq_ledger_refusal(pack, holder, "adm_fits", null), "a large one does not")
 	var/datum/relation_definition/slot/def = dq_ledger(holder).def_by_id("adm_fits")
-	TEST_ASSERT_EQUAL(def.accepts_level(), REQ_READS_INSTANCE, "a size reads the candidate's own state: instance-level")
+	TEST_ASSERT_EQUAL(def.accepts_level(), REQ_READS_TYPE, "a size class is type data: a pristine instance answers it (D8)")
 	var/datum/relation_definition/slot/types = dq_ledger(holder).def_by_id("adm_types")
 	TEST_ASSERT_EQUAL(types.accepts_level(), REQ_READS_TYPE, "a type list alone is type-level")
 	var/datum/relation_definition/slot/mixed = dq_ledger(holder).def_by_id("adm_mixed")
-	TEST_ASSERT_EQUAL(mixed.accepts_level(), REQ_READS_INSTANCE, "a requirement that reads anchored makes the slot instance-level")
+	TEST_ASSERT_EQUAL(mixed.accepts_level(), REQ_READS_TYPE, "req_loose() is type-level for the items and structures latent holders keep (D8)")
 
 /datum/unit_test/dq_slot_admission_replace_policies
 
@@ -149,3 +149,14 @@
 	TEST_ASSERT_EQUAL(requirement_reason(R, holder, /obj/item/flashlight), /datum/msg/adm/papers_only, "and refused with the requirement's reason")
 	var/obj/item/paper/page = allocate(/obj/item/paper, test_floor())
 	TEST_ASSERT_NULL(requirement_reason(R, holder, page), "an instance is asked the same way")
+
+/// D8: a holder that keeps latent contents admits by type: every slot of the latent holder roots answers from type data alone.
+/datum/unit_test/dq_slot_admission_latent_holders_type_level
+
+/datum/unit_test/dq_slot_admission_latent_holders_type_level/Run()
+	var/list/holders = list(/obj/structure/closet, /obj/item/storage/box, /obj/machinery/vending)
+	for(var/path in holders)
+		var/atom/H = allocate(path, test_floor())
+		TEST_ASSERT(H.latent_contents_enabled(), "[path] keeps latent contents")
+		for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(H))
+			TEST_ASSERT(def.accepts_level() <= REQ_READS_TYPE, "[path] slot [def.slot_id] admits by type, so latent entries are judged without making them")
