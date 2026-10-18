@@ -31,3 +31,15 @@ that stamp.
 Connected-client optical rendering is not covered by the headless lifetime tests.
 Its offset code is unchanged. Five burning fields and disposal-phase references
 remain outside this cohort rather than introducing an unproved replacement.
+
+## Behavior-only repair (2026-10-18)
+
+The first no-pin gate compiled with zero errors and zero DreamChecker diagnostics.
+Its focused world had 111 passes and one failure: the butchery fixture assumed
+simple mobs enabled organ drops, although their declared default is disabled.
+The fixture now enables the policy on one holder and verifies its peer remains
+disabled, testing a real copy-on-write change rather than the wrong default.
+Two stat-panel membership guards use admin_can(client, 0), preserving their
+admin-only behavior and satisfying the branch's existing 102-site ceiling.
+The repair gate selects the failed butchery test and the stat-panel behavior test,
+plus the gate's mandatory behavior smoke tests. No pin output is used.

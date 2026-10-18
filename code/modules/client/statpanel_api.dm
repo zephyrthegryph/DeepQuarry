@@ -29,7 +29,7 @@
 		set_action_tabs(target, target_mob)
 		return TRUE
 
-	if(!target.holder)
+	if(!admin_can(target, 0))
 		return FALSE
 
 	if(target.stat_tab == "MC")

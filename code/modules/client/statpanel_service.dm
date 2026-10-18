@@ -72,7 +72,7 @@ SYSTEM_DEF(statpanels)
 		if(target.stat_tab == "Status" && num_fires % status_wait == 0)
 			set_status_tab(target)
 
-		if(!target.holder)
+		if(!admin_can(target, 0))
 			target.stat_panel.send_message("remove_admin_tabs")
 		else
 			target.stat_panel.send_message("update_split_admin_tabs", FALSE)
