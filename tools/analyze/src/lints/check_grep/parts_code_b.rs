@@ -146,7 +146,7 @@ pub fn parts() -> Vec<Part> {
             line(r"\buse_tool\("),
         ),
         Part::new(
-            "requirements_raw_string_reason",
+            "requirements_raw_string_reason_banned",
             "requirements: raw-string reason banned",
             "A requirement's reason is a /datum/msg (doc/rewrite/proposals/admission.md D1): because = MSG(x) with MSG_DEF_SELF(x, \"...\") beside the type, never because = \"text\". Tests that pin the literal form are exempt.",
             Files::Code,

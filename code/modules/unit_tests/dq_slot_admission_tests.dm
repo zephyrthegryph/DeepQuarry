@@ -112,7 +112,7 @@
 	TEST_ASSERT(take_off.holds(A), "NOSTRIP does not stop its wearer")
 	TEST_ASSERT(!strip_off.holds(A), "but it stops a stripper")
 	TEST_ASSERT_EQUAL(strip_off.refusal(A), /datum/msg/slot/not_strippable, "with the strip reason")
-	cap.canremove = FALSE
+	cap.set_canremove(FALSE)
 	TEST_ASSERT(!take_off.holds(A), "canremove = FALSE keeps it on")
 	TEST_ASSERT_EQUAL(take_off.refusal(A), /datum/msg/slot/not_removable, "with the removal reason")
 	A.release()
