@@ -154,7 +154,10 @@ REGISTRY_DECLARE_CONDITIONAL(technomancer_belongings, REGISTRY_TECHNOMANCER_BELO
 	if(!sorted || !SSticker)
 		sorted = FALSE
 		return ..()
-	dd_insertObjectList(members, member)
+	. = ..() // the store records the member (its list is this one); then it moves to its sorted place
+	if(member in members)
+		members -= member
+		dd_insertObjectList(members, member)
 
 /// Sorts in place: REGISTRY_MEMBERS() hands out this very list.
 /datum/registry/cameras/proc/sort()

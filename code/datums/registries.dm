@@ -70,24 +70,27 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	/// for their whole materialized life. Declared types may join; everyone
 	/// leaves automatically when dematerialized or deleted.
 	var/conditional = FALSE
-	/// Conditional registries only: member -> TRUE, for O(1) membership.
-	var/list/present
 
 /datum/registry/New()
 	members = list()
 	if(keyed)
 		members_by_key = list()
 		member_keys = list()
-	if(conditional)
-		present = list()
+
+/// The store key this registry's members live under (relations proposal D12: one membership store).
+/datum/registry/proc/store_key()
+	return "registry:[id]"
+
+/// The store adopts this registry's list on first use (the store is a proc static: it may not exist yet while globals initialize).
+/datum/registry/proc/store_ready()
+	PRIVATE_PROC(TRUE)
+	return member_adopt_ordered(store_key(), members)
 
 /// Joins a member. Only join_registries() and registry_join() call this.
 /datum/registry/proc/add(datum/member)
-	if(conditional)
-		if(present[member])
-			return
-		present[member] = TRUE
-	members += member
+	store_ready()
+	if(!member_join(store_key(), member))
+		return
 	if(keyed)
 		file_member(member)
 
@@ -95,28 +98,27 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /datum/registry/proc/remove(datum/member)
 	if(dq_batch_defer_registry_leave(src, member))
 		return // qdel_batch() removes every doomed member in one pass
-	if(conditional)
-		if(!present[member])
-			return
-		present -= member
-	members -= member
+	store_ready()
+	if(!member_is(store_key(), member))
+		return
+	member_leave(store_key(), member, all = TRUE)
 	if(keyed)
 		unfile_member(member)
 
 /// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
 /// of `leaving` leaves at once.
 /datum/registry/proc/remove_many(list/leaving)
-	if(conditional)
-		leaving = leaving & present
-		present -= leaving
-	members -= leaving
+	store_ready()
 	if(keyed)
 		for(var/datum/member as anything in leaving)
-			unfile_member(member)
+			if(member_is(store_key(), member))
+				unfile_member(member)
+	member_leave_many(store_key(), leaving)
 
 /// TRUE if `member` is in this registry.
 /datum/registry/proc/has(datum/member)
-	return conditional ? !!present[member] : (member in members)
+	store_ready()
+	return member_is(store_key(), member)
 
 /// The live member list, in join order. Read-only.
 /datum/registry/proc/members()
