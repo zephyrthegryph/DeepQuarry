@@ -70,6 +70,11 @@ fn defined_type(line: &str) -> Option<&str> {
 
 /// The types only test-only files ([`test_only`]) define: a generated line that names one outside [`TEST_GUARD`] breaks the production build.
 pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
+    // Asked by several generators: once per tree.
+    (*tree.memo("gen/test-only-types", || test_only_types_uncached(tree))).clone()
+}
+
+fn test_only_types_uncached(tree: &Tree) -> std::collections::BTreeSet<String> {
     let mut test = std::collections::BTreeSet::new();
     let mut prod = std::collections::HashSet::new();
     let files: Vec<&crate::tree::SourceFile> = tree.files.iter().filter(|f| f.rel.ends_with(".dm") && !f.rel.starts_with(OUT_DIR) && !f.rel.starts_with("code/_generated/")).collect();
