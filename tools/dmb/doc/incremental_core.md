@@ -79,6 +79,31 @@ also gives fresh numbering and output equal to a cold compile.
 5. Only if the numbers justify them: stable-ID slot tables for procs, vars, strings and classes, and incremental link and
    section-wise publication (the sections above describe them).
 
+
+## Declaration changes without a full compile (2026-10-18)
+
+Measured on a hot session (pool-10, 8 workers, machine loaded): an unreferenced added var 11 s and an
+unreferenced added proc 16 s already take the stable-numbering append patch (`body_patch_append.rs`);
+an added type 37 s and a removal 82 s run the full path (frontend 3-5 s, ABI 2, initializers 3, lowering
+9-11, required types 1-2, link 3, composition 3, publication 1-2). Lanes in the shared root hit the full
+path on every declaration edit, and the append patch declined as soon as the new name was used anywhere.
+
+Order of work, each slice proven by the six-session structural scenarios (retained output equivalent to a
+fresh compile of every revision) and a production-tree A/B:
+
+1. **Referenced additions.** A body that mentions an appended name is relowered with the edited bodies
+   (word match over the expanded text; a mention outside every body, such as a var default, declines). An
+   existing unit may change its link inventory and literals: new keys resolve through the append-extended
+   tables, new literals are appended strings. Its procedure record (frame, ABI, features, instances,
+   helpers) must stay equal, so the code-row splice remains sound.
+2. **New types.** Append class records with stable numbering: the type row, its parent chain and
+   proc/verb/var lists built by the existing class projection for that one owner, `typesof` order
+   following the type table (an accepted order difference, as for appended procs).
+3. **Removals and parent changes.** These move class layout and lists; until stable-ID slot tables
+   (step 5) exist they take the full path, made cheaper by the dirty-set stages.
+4. **Dirty-set full path for what remains**: lowering, initializers and ABI visit only units whose own
+   inputs or recorded reads changed under the declaration delta; link and composition stay whole-program.
+
 ## Coordination and risks
 
 - The memory lane owns `SessionKey`, `BuildHost` keying and the budget. The session becomes the `Db`: eviction is by query kind,

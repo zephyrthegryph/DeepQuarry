@@ -170,14 +170,14 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
             true,
         ),
         (
-            "referenced new var (declines)",
+            "referenced new var",
             TREE.replace("    var/own = 2
 ", "    var/own = 2
     var/added_ref = 1
 ").replace("return item.value
 ", "return item.value + item.added_ref
 "),
-            false,
+            true,
         ),
         ("new proc", format!("{TREE}/datum/base/proc/added_probe()\n    return 41\n"), true),
         (
@@ -188,9 +188,9 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
 /proc/other()"),
             true,
         ),
-        ("new override of a called proc (declines)", format!("{TREE}/datum/base/child/result()\n    return own\n"), false),
+        ("new override of a called proc", format!("{TREE}/datum/base/child/result()\n    return own\n"), true),
         (
-            "referenced new proc",
+            "referenced new proc with a new caller that constructs (declines: required types)",
             format!("{TREE}/datum/base/proc/used_probe()\n    return 2\n/proc/caller()\n    var/datum/base/item = new\n    return item.used_probe()\n"),
             false,
         ),
@@ -292,5 +292,60 @@ fn alternating_skeletons_patch_string_literal_edits_and_match_fresh_bytes() {
     ] {
         edit_all(&roots, &source);
         compare_revision(&shared, &roots);
+    }
+}
+
+#[test]
+fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
+    // A new proc or verb that existing bodies call: the mentioning bodies are relowered and linked
+    // against the appended table entries. Every revision must be equivalent to a fresh compile.
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    edit_all(&roots, TREE);
+    compare_revision(&shared, &roots);
+    let mut source = TREE.to_string();
+    // The first root procedure (probe) registers its literals first and never patches; the edits
+    // touch the other bodies.
+    let steps: [(&str, &str, &str); 3] = [
+        (
+            "member proc called by an edited body",
+            "/proc/other()
+    var/datum/base/item = new
+    return item.value
+",
+            "/datum/base/proc/added_bonus()
+    return 11
+/proc/other()
+    var/datum/base/item = new
+    return item.value + item.added_bonus()
+",
+        ),
+        (
+            "global proc called by an edited body",
+            "    return item.value + item.added_bonus()
+",
+            "    return added_twice(item.value) + item.added_bonus()
+/proc/added_twice(x)
+    return x * 2
+",
+        ),
+        (
+            "new string in the calling body",
+            "return added_twice(item.value)",
+            "return added_twice(item.value) + length(\"fresh text\")",
+        ),
+    ];
+    for (label, before, after) in steps {
+        assert!(source.contains(before), "{label} anchor");
+        source = source.replacen(before, after, 1);
+        let applied = crate::body_patch::applied(&roots.manifest(0));
+        edit_all(&roots, &source);
+        compare_revision(&shared, &roots);
+        assert_eq!(
+            crate::body_patch::applied(&roots.manifest(0)),
+            applied + 1,
+            "{label}: did not patch"
+        );
     }
 }
