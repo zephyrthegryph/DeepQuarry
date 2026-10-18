@@ -4,7 +4,7 @@ use super::*;
 fn panic_recovery_keeps_six_hosts_on_shared_engine_and_executor_owners() {
     let shared = shared();
     let hosts = (0..6)
-        .map(|index| shared.slot(PathBuf::from(format!("E:/fixture/recovered-{index}.dme")), &BTreeMap::new(), None))
+        .map(|index| shared.slot(PathBuf::from(format!("E:/fixture/recovered-{index}/project.dme")), None))
         .collect::<Vec<_>>();
     assert_eq!(Arc::strong_count(&shared.engines), 7);
     for slot in &hosts {

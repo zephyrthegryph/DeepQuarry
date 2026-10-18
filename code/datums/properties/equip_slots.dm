@@ -1,14 +1,4 @@
-// Equip slot constraints (doc/rewrite/rules.md §3, roadmap P3).
-//
-// What each equip slot accepts is declared once, in the native catalog at the
-// end of this file (GLOB.native_equipment_acceptance), with the wearer as the
-// context's wearer and the item as the candidate.
-//
-// equip_refusal() asks the mob's ledger slot (C3): the mob's slot list says
-// whether it has the slot, the slot's refusal() whether its body part is there
-// and the catalog takes the item, its capacity whether it is free. Then
-// reachability and the item's own constraints (CONSTRAINT_FIT except in pockets
-// and suit storage, and CONSTRAINT_EQUIP everywhere).
+// Native equipment admission: ordered requirements carry wearer, mover and slot.
 
 /// The old slot_flags enumeration, kept for callers that ask "does this slot
 /// suit this item" without a mob (worn checks in equipped()).
@@ -66,7 +56,7 @@
 			return .
 		return dq_equip_item_refusal(I, M, slot, actor)
 	// The mob's slot list says whether it has the slot; the slot's definition
-	// (its body part, then the catalog) whether it takes the item.
+	// (its body part, then its native acceptance requirements) whether it takes the item.
 	if(!def)
 		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
 	. = reason_text(def.refusal(M, I, actor))
@@ -109,8 +99,8 @@ CAPABILITIES(/datum/native_equipment_acceptance)
 	acceptance(SLOT_ID_BELT, req_acceptance_tag(TAG_WEAR_BELT), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_ID, req_acceptance_tag(TAG_WEAR_ID), req_acceptance_has_uniform(), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_SUIT_STORAGE, req_acceptance_suit_storage_takes(), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_POCKET_L, req_acceptance_has_uniform(), req_acceptance_tag(TAG_NO_POCKET, exclude = TRUE), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_POCKETABLE)), "too big for a pocket"), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_POCKET_R, req_acceptance_has_uniform(), req_acceptance_tag(TAG_NO_POCKET, exclude = TRUE), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_POCKETABLE)), "too big for a pocket"), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_POCKET_L, req_acceptance_has_uniform(), req_acceptance_tag(TAG_NO_POCKET, exclude = TRUE), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_POCKETABLE)), MSG(slot/too_big_for_pocket)), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_POCKET_R, req_acceptance_has_uniform(), req_acceptance_tag(TAG_NO_POCKET, exclude = TRUE), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_POCKETABLE)), MSG(slot/too_big_for_pocket)), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_EYES, req_acceptance_tag(TAG_WEAR_EYES), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_MASK, req_acceptance_tag(TAG_WEAR_MASK), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_GLOVES, req_acceptance_tag(TAG_WEAR_GLOVES), req_acceptance_glove_layering(), mode = ACCEPTANCE_REPLACE)
@@ -118,10 +108,10 @@ CAPABILITIES(/datum/native_equipment_acceptance)
 	acceptance(SLOT_ID_SHOES, req_acceptance_tag(TAG_WEAR_FEET), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_SUIT, req_acceptance_tag(TAG_WEAR_SUIT), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_UNIFORM, req_acceptance_tag(TAG_WEAR_UNIFORM), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_EAR_L, any_of(req_acceptance_tag(TAG_WEAR_EARS), req_acceptance_tag(TAG_WEAR_TWO_EARS)), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_TINY, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_WEAR_EARS)), "too big for an ear"), any_of(req_acceptance_tag(TAG_WEAR_TWO_EARS, exclude = TRUE), req_acceptance_right_ear_free()), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_EAR_R, any_of(req_acceptance_tag(TAG_WEAR_EARS), req_acceptance_tag(TAG_WEAR_TWO_EARS)), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_TINY, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_WEAR_EARS)), "too big for an ear"), any_of(req_acceptance_tag(TAG_WEAR_TWO_EARS, exclude = TRUE), req_acceptance_left_ear_free()), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_EAR_L, any_of(req_acceptance_tag(TAG_WEAR_EARS), req_acceptance_tag(TAG_WEAR_TWO_EARS)), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_TINY, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_WEAR_EARS)), MSG(slot/too_big_for_ear)), any_of(req_acceptance_tag(TAG_WEAR_TWO_EARS, exclude = TRUE), req_acceptance_right_ear_free()), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_EAR_R, any_of(req_acceptance_tag(TAG_WEAR_EARS), req_acceptance_tag(TAG_WEAR_TWO_EARS)), req_acceptance_either(list(req_acceptance_max_size(ITEMSIZE_TINY, PROP_UNIT_SIZE_CLASS), req_acceptance_tag(TAG_WEAR_EARS)), MSG(slot/too_big_for_ear)), any_of(req_acceptance_tag(TAG_WEAR_TWO_EARS, exclude = TRUE), req_acceptance_left_ear_free()), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_TIE, req_acceptance_tag(TAG_WEAR_TIE), req_acceptance_accessory_attachable(), mode = ACCEPTANCE_REPLACE)
-	acceptance(SLOT_ID_HANDCUFFED, req_acceptance_both(list(req_acceptance_type(/obj/item/handcuffs), req_acceptance_type(/obj/item/handcuffs/legcuffs, exclude = TRUE)), "only handcuffs go there"), mode = ACCEPTANCE_REPLACE)
+	acceptance(SLOT_ID_HANDCUFFED, req_acceptance_both(list(req_acceptance_type(/obj/item/handcuffs), req_acceptance_type(/obj/item/handcuffs/legcuffs, exclude = TRUE)), MSG(slot/only_handcuffs)), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_LEGCUFFED, req_acceptance_type(/obj/item/handcuffs/legcuffs, because = MSG(slot/only_legcuffs)), mode = ACCEPTANCE_REPLACE)
 	acceptance(SLOT_ID_IN_BACKPACK, req_acceptance_backpack_takes(), mode = ACCEPTANCE_REPLACE)
 

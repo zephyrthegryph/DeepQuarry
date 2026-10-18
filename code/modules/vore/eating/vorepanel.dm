@@ -549,7 +549,7 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_digest(datum/act/op/A)
-	host().vore_prefs.digestable = !host().vore_prefs.digestable
+	host().vore_prefs.set_digestable(!host().vore_prefs.digestable)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.digestable = host().vore_prefs.digestable
 	set_unsaved_changes(TRUE)
@@ -584,7 +584,7 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_devour(datum/act/op/A)
-	host().vore_prefs.devourable = !host().vore_prefs.devourable
+	host().vore_prefs.set_devourable(!host().vore_prefs.devourable)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.devourable = host().vore_prefs.devourable
 	set_unsaved_changes(TRUE)
@@ -605,7 +605,7 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_absorbable(datum/act/op/A)
-	host().vore_prefs.absorbable = !host().vore_prefs.absorbable
+	host().vore_prefs.set_absorbable(!host().vore_prefs.absorbable)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.absorbable = host().vore_prefs.absorbable
 	set_unsaved_changes(TRUE)
@@ -640,14 +640,14 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_strippref(datum/act/op/A)
-	host().vore_prefs.strip_pref = !host().vore_prefs.strip_pref
+	host().vore_prefs.set_strip_pref(!host().vore_prefs.strip_pref)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.strip_pref = host().vore_prefs.strip_pref
 	set_unsaved_changes(TRUE)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_contaminate_pref(datum/act/op/A)
-	host().vore_prefs.contaminate_pref = !host().vore_prefs.contaminate_pref
+	host().vore_prefs.set_contaminate_pref(!host().vore_prefs.contaminate_pref)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.contaminate_pref = host().vore_prefs.contaminate_pref
 	set_unsaved_changes(TRUE)
@@ -661,7 +661,7 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_healbelly(datum/act/op/A)
-	host().vore_prefs.permit_healbelly = !host().vore_prefs.permit_healbelly
+	host().vore_prefs.set_permit_healbelly(!host().vore_prefs.permit_healbelly)
 	if(host().client.prefs_vr)
 		host().client.prefs_vr.permit_healbelly = host().vore_prefs.permit_healbelly
 	set_unsaved_changes(TRUE)

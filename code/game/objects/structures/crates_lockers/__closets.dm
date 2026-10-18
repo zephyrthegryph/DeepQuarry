@@ -230,6 +230,14 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/dump_contents()
 	slot_empty(CONTAINER_SLOT_INTERIOR, loc)
 
+/// The door state must change the composed density, not overwrite the stat's served value.
+/obj/structure/closet/set_density(new_density)
+	new_density = !!new_density
+	var/old_density = density
+	// Record the door state even when a stronger hold currently masks its result.
+	hold(src, STAT_DENSITY, new_density, SRC_DOOR_STATE, priority = PRIORITY_FORCE)
+	return density != old_density
+
 /obj/structure/closet/proc/open(mob/user)
 	if(opened)
 		return 0
@@ -242,7 +250,7 @@ CAPABILITIES(/obj/structure/closet)
 	set_opened(TRUE)
 	playsound(src, open_sound, 50, 1, -3)
 	if(initial(density))
-		set_density(!density)
+		set_density(FALSE)
 	animate_door()
 	return 1
 
@@ -266,7 +274,7 @@ CAPABILITIES(/obj/structure/closet)
 
 	playsound(src, close_sound, 50, 1, -3)
 	if(initial(density))
-		set_density(!density)
+		set_density(TRUE)
 	animate_door(TRUE)
 	PUBLISH_LEGACY(src, /datum/notice/closet_closed)
 	return 1
@@ -657,3 +665,4 @@ SETTER(/obj/structure/closet, storage_cost)
 	else if(istype(thing, /obj/structure/closet))
 		var/obj/structure/closet/C = thing
 		. += list(list(C, nameof(C.storage_cost)))
+

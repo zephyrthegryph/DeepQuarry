@@ -151,7 +151,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec/huge)
 	*/
 
 /mob/living/simple_mob/vore/fennec/huge/on_death(gibbed)
-	vore_prefs.devourable = TRUE
+	vore_prefs.set_devourable(TRUE)
 	return ..()
 
 /mob/living/simple_mob/vore/fennec/huge/apply_attack(atom/A, damage_to_do, stance = I_HURT)

@@ -1,3 +1,7 @@
+MSG_DEF_SELF(custom_items/the_necklace_never_quite_gets, "the necklace never quite gets past your head")
+MSG_DEF_SELF(custom_items/the_collar_doesnt_fit_you, "the collar doesn't fit you")
+MSG_DEF_SELF(custom_items/these_dont_look_like_they, "these don't look like they were made to fit you")
+
 /* TUTORIAL
 	"icon" is the file with the HUD/ground icon for the item
 	"icon_state" is the iconstate in this file for the item
@@ -481,9 +485,9 @@ CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
 	item_state = "serdy_armor"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
+	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
@@ -1146,11 +1150,11 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
 
-TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1247,10 +1251,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
 
-TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you"))))
 
-/obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "radiantaurora"
+
 
 //Ryumi - Nikki Yumeno
 /obj/item/rig/nikki
@@ -1273,9 +1275,10 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 	glove_type = null
 	boot_type = null
 
-TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 CAPABILITIES(/obj/item/rig/nikki)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets)), mode = ACCEPTANCE_APPEND)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
@@ -1297,10 +1300,8 @@ CAPABILITIES(/obj/item/rig/nikki)
 		return OP_DECLINE
 	return OP_DECLINE
 
-TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
 
-/obj/item/rig/nikki/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "ryumi"
+
 
 //Nickcrazy - Damon Bones Xrim
 /obj/item/clothing/suit/storage/toggle/bomber/bombersec
@@ -1659,12 +1660,11 @@ CAPABILITIES(/obj/item/dice/loaded/ceph)
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("bricker98", because = MSG(custom_items/the_collar_doesnt_fit_you)), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
-TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
 
-/obj/item/remote_scene_tool/tally_necklace/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "bricker98"
+
 
 /obj/item/remote_scene_tool/tally_doll  //A reskinned sticker for the doll, using a custom sprite
 	name = "Talenya's voodoo doll"
@@ -1677,3 +1677,7 @@ TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
 	configure(item_worn(slots = NONE))
+
+
+CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
+	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("radiantaurora", because = MSG(custom_items/these_dont_look_like_they)), mode = ACCEPTANCE_APPEND)

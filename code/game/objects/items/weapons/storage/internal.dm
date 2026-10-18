@@ -1,10 +1,13 @@
 //A storage item intended to be used by other items to provide storage functionality.
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
+MSG_DEF_SELF(internal/it_cant_be_worn, "it can't be worn")
+
 /obj/item/storage/internal
 	preserve_item = 1
 	var/obj/item/master_item
 
 CAPABILITIES(/obj/item/storage/internal)
+	acceptance(CONSTRAINT_EQUIP, req_acceptance_type(list(), because = MSG(internal/it_cant_be_worn)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)
 	keeps_if(PROC_REF(has_item_owner))
@@ -20,7 +23,6 @@ CAPABILITIES(/obj/item/storage/internal)
 	name = master_item().name
 
 /// Internal storage is part of its owner and is never worn on its own.
-TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
 
 //Helper procs to cleanly implement internal storages - storage items that provide inventory slots for other items.
 //These procs are completely optional, it is up to the master item to decide when it's storage get's opened by calling open()

@@ -36,7 +36,6 @@ fn newer_request_cancels_a_real_capacity_waiter_without_taking_a_permit() {
     let occupied = shared.acquire(8).unwrap();
     let slot = shared.slot(
         PathBuf::from("E:/fixture/queue.dme"),
-        &BTreeMap::new(),
         None,
     );
     let request_key = key("E:/fixture/queue.dme");
@@ -85,7 +84,6 @@ fn independent_output_destinations_do_not_cancel_each_other() {
     let shared = shared();
     let slot = shared.slot(
         PathBuf::from("E:/fixture/project.dme"),
-        &BTreeMap::new(),
         None,
     );
     let a = control::Cancellation::default();
@@ -104,7 +102,7 @@ fn independent_output_destinations_do_not_cancel_each_other() {
 fn distinct_analysis_commands_do_not_supersede_each_other_but_same_mode_does() {
     let shared = shared();
     let manifest = PathBuf::from("E:/fixture/analysis/project.dme");
-    let slot = shared.slot(manifest.clone(), &BTreeMap::new(), None);
+    let slot = shared.slot(manifest.clone(), None);
     let args = vec!["analyze".into(), manifest.to_string_lossy().into_owned()];
     let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
         panic!("analysis build expected")

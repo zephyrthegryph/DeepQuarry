@@ -102,6 +102,36 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 		TEST_FAIL("[label]: [problem]")
 	return !length(problems)
 
+/// Real door transitions must keep the served density and its native stat in agreement.
+/datum/unit_test/dq_closet_density_state/Run()
+	var/turf/T = dq_containment_floor()
+	TEST_ASSERT_NOTNULL(T, "A real clear floor is available")
+	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
+	TEST_ASSERT(C.density, "A closed closet starts solid")
+	TEST_ASSERT(C.open(), "The real closet opens")
+	TEST_ASSERT(!C.density, "Opening makes the actual closet passable")
+	TEST_ASSERT_EQUAL(stat_value(C, STAT_DENSITY), FALSE, "The composed stat agrees while open")
+	TEST_ASSERT(C.close(), "The real closet closes")
+	TEST_ASSERT(C.density, "Closing restores actual collision")
+	TEST_ASSERT_EQUAL(stat_value(C, STAT_DENSITY), TRUE, "The composed stat agrees while closed")
+
+	hold(C, STAT_DENSITY, TRUE, src, priority = PRIORITY_FORCE + 1)
+	TEST_ASSERT(C.open(), "An independent density source does not prevent opening")
+	TEST_ASSERT(C.density, "The independent stronger source stays in force")
+	TEST_ASSERT(C.close(), "The closet can close while the other source is active")
+	release(C, STAT_DENSITY, src)
+	TEST_ASSERT(C.density, "Releasing the other source retains the closed door's density")
+	TEST_ASSERT_EQUAL(stat_value(C, STAT_DENSITY), TRUE, "Closing records an absolute state, not a toggle of a masked value")
+	TEST_ASSERT(C.open(), "The closet opens again after the independent source is released")
+	TEST_ASSERT(!C.density, "Opening is still passable after composition")
+
+	var/obj/structure/closet/walllocker/W = allocate(/obj/structure/closet/walllocker, get_step(T, EAST))
+	TEST_ASSERT(!W.density, "A wall locker starts passable")
+	TEST_ASSERT(W.open(), "The real wall locker opens")
+	TEST_ASSERT(!W.density, "Opening does not make a non-dense subtype solid")
+	TEST_ASSERT(W.close(), "The real wall locker closes")
+	TEST_ASSERT(!W.density, "Closing preserves the non-dense subtype")
+
 // ---- Conservation fuzz ----
 
 /datum/unit_test/dq_containment_conservation_fuzz

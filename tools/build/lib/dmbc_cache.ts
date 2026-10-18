@@ -58,12 +58,17 @@ export function sharedDmbcBuildTarget(): string {
 const EXE_SUFFIX = process.platform === 'win32' ? '.exe' : '';
 
 /**
- * The shared binary is immutable per version: `<bin>/v/<id>/{dmbc,dmbd}[.exe]`, `<id>` the content hash of the pair, and
- * `<bin>/current` names the version new compiles use. Publishing writes a new version directory and switches `current`
- * atomically; it never touches a version a compile may be running, so a republish mid-gate cannot change the executable under
- * it ("Native executable changed during compilation"). A process resolves `current` once and keeps that version for its whole
- * life (`pinnedDmbcVersion`); `unpinDmbcVersion` is for a process that has just published and wants its own result. A bin dir
- * with no `current` is the pre-versioning layout `<bin>/dmbc[.exe]`, still honoured.
+ * One latest compiler for everyone. The shared binary is immutable per version: `<bin>/v/<id>/{dmbc,dmbd}[.exe]`, `<id>` the
+ * content hash of the pair, and `<bin>/current` names the version EVERY checkout runs, at any tree, resolved at the start of each
+ * compile (a fix is picked up by the next compile anywhere). `current` only moves forward along master's history: a publish
+ * advances it when its commit descends from (or is) the commit `<bin>/current.commit` recorded, so a lane that restores an older
+ * tree's compiler from the cache can no longer move every other lane back to it, and a checkout behind `current` builds nothing.
+ * The one exception is compiler development: a checkout whose compiler sources are dirty builds into its own private target
+ * (`devCompilerDir`), runs that build, and never publishes, never moves `current` and never touches the shared daemon (the
+ * compiler puts a build outside `<bin>/v` in a private daemon namespace by itself).
+ * Publishing writes a new version directory and never touches a version a compile may be running, so a publish mid-gate cannot
+ * change the executable under it ("Native executable changed during compilation"). A bin dir with no `current` is the
+ * pre-versioning layout `<bin>/dmbc[.exe]`, still honoured.
  */
 const pinned = new Map<string, string | null>();
 
@@ -81,16 +86,36 @@ export function readCurrentDmbcVersion(binDir: string = sharedDmbcBinDir()): str
   return null;
 }
 
+/** The version the next compile runs. Resolved on every call: a process never keeps an older compiler than `current`. */
 export function pinnedDmbcVersion(binDir: string = sharedDmbcBinDir()): string | null {
-  if (!pinned.has(binDir)) pinned.set(binDir, readCurrentDmbcVersion(binDir));
-  return pinned.get(binDir) ?? null;
+  return readCurrentDmbcVersion(binDir);
 }
 
-export function unpinDmbcVersion(binDir: string = sharedDmbcBinDir()): void {
-  pinned.delete(binDir);
+/** Kept for callers that republished and wanted their own result: resolution is no longer cached, so nothing to drop. */
+export function unpinDmbcVersion(_binDir: string = sharedDmbcBinDir()): void {}
+
+/** Private build directory of a checkout that develops the compiler (never shared, never published). */
+export function devCompilerDir(root: string = process.env.DQ_BUILD_ROOT ?? process.cwd()): string {
+  const normal = path.resolve(root).split(path.sep).join('/').toLowerCase();
+  const base = process.platform === 'win32' && fs.existsSync('E:/dq-cache') ? 'E:/dq-cache' : path.join(os.homedir(), '.cache', 'dq');
+  return `${base.split(path.sep).join('/')}/dmb-dev/${createHash('sha256').update(normal).digest('hex').slice(0, 16)}`;
+}
+
+const dirtyMemo = new Map<string, boolean>();
+/** True when the checkout's compiler sources differ from HEAD (compiler development). Decided once per process. */
+export function compilerSourcesDirty(root: string = process.env.DQ_BUILD_ROOT ?? process.cwd()): boolean {
+  if (!dirtyMemo.has(root)) {
+    const key = dmbcCacheKey(root);
+    dirtyMemo.set(root, 'bypass' in key && key.bypass.startsWith('uncommitted'));
+  }
+  return dirtyMemo.get(root) ?? false;
 }
 
 export function sharedDmbcExe(name: 'dmbc' | 'dmbd' = 'dmbc'): string {
+  if (compilerSourcesDirty()) {
+    const own = `${devCompilerDir()}/release/${name}${EXE_SUFFIX}`;
+    if (fs.existsSync(own)) return own;
+  }
   const binDir = sharedDmbcBinDir();
   const id = pinnedDmbcVersion(binDir);
   return id ? `${dmbcVersionDir(binDir, id)}/${name}${EXE_SUFFIX}` : `${binDir}/${name}${EXE_SUFFIX}`;
@@ -150,12 +175,38 @@ function renameWithRetry(from: string, to: string): void {
   }
 }
 
-/**
- * Publish the pair found in `srcDir` as an immutable version and make it current; returns the version id. The directory is
- * assembled under a temporary name and renamed into place (a version either exists whole or not at all), an existing version is
- * never rewritten, and `current` is replaced atomically. Safe against any number of concurrent publishers and running compiles.
- */
-export function publishDmbcVersion(srcDir: string, binDir: string = sharedDmbcBinDir()): string {
+function writePointer(file: string, text: string): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmpPointer = `${file}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmpPointer, `${text}\n`);
+  renameWithRetry(tmpPointer, file);
+}
+
+/** Whether `commit` may become the `current` compiler: it is, or descends from, the commit that set `current`, or none did. */
+export function mayAdvanceCurrent(root: string, commit: string, binDir: string = sharedDmbcBinDir()): boolean {
+  let recorded = '';
+  try {
+    recorded = fs.readFileSync(`${binDir}/current.commit`, 'utf8').trim();
+  } catch {
+    return true;
+  }
+  if (!/^[0-9a-f]{40}$/.test(recorded) || recorded === commit) return true;
+  return spawnSync('git', ['merge-base', '--is-ancestor', recorded, commit], { cwd: root, encoding: 'utf8' }).status === 0;
+}
+
+/** True when `current` was built from `commit` itself: a checkout at that commit has nothing to build or restore. */
+export function currentIsCommit(commit: string, binDir: string = sharedDmbcBinDir()): boolean {
+  try {
+    return fs.readFileSync(`${binDir}/current.commit`, 'utf8').trim() === commit && readCurrentDmbcVersion(binDir) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export type PublishFor = { root: string; commit: string };
+
+/** Install the pair in `srcDir` as the immutable version directory `<bin>/v/<id>` (a no-op when it exists); touches no pointer. */
+export function installDmbcVersionDir(srcDir: string, binDir: string): string {
   const id = dmbcPairId(srcDir);
   const dest = dmbcVersionDir(binDir, id);
   if (!fs.existsSync(`${dest}/dmbc${EXE_SUFFIX}`) || !fs.existsSync(`${dest}/dmbd${EXE_SUFFIX}`)) {
@@ -170,22 +221,77 @@ export function publishDmbcVersion(srcDir: string, binDir: string = sharedDmbcBi
       if (!fs.existsSync(`${dest}/dmbc${EXE_SUFFIX}`)) throw error;
     }
   }
-  if (readCurrentDmbcVersion(binDir) !== id) {
-    const tmpPointer = `${binDir}/current.tmp-${process.pid}-${Date.now()}`;
-    fs.writeFileSync(tmpPointer, `${id}\n`);
-    renameWithRetry(tmpPointer, `${binDir}/current`);
-  }
-  unpinDmbcVersion(binDir);
   return id;
 }
 
 /**
- * Delete versions nobody needs: keep the current one and the `keep` newest others; a version a running daemon or compile still
- * holds cannot be deleted on Windows and is simply tried again next time. Also drops abandoned temporary directories.
+ * Publish the pair found in `srcDir` as an immutable version; returns the version id. The directory is assembled under a
+ * temporary name and renamed into place (a version either exists whole or not at all), an existing version is never rewritten,
+ * and `current` is replaced atomically. Safe against any number of concurrent publishers and running compiles.
+ * With `for_`, `current` (and `current.commit`) move only when the publishing commit descends from the one that set them.
  */
-export function pruneDmbcVersions(keep = 3, binDir: string = sharedDmbcBinDir()): number {
+export function publishDmbcVersion(srcDir: string, binDir: string = sharedDmbcBinDir(), for_?: PublishFor): string {
+  const id = installDmbcVersionDir(srcDir, binDir);
+  if (!for_ || mayAdvanceCurrent(for_.root, for_.commit, binDir)) {
+    if (readCurrentDmbcVersion(binDir) !== id) writePointer(`${binDir}/current`, id);
+    if (for_) writePointer(`${binDir}/current.commit`, for_.commit);
+  }
+  return id;
+}
+
+/** The candidate version being prewarmed (`<bin>/next`), when it exists. */
+export function readNextDmbcVersion(binDir: string = sharedDmbcBinDir()): string | null {
+  try {
+    const id = fs.readFileSync(`${binDir}/next`, 'utf8').trim();
+    if (/^[0-9a-f]{16}$/.test(id) && fs.existsSync(`${dmbcVersionDir(binDir, id)}/dmbc${EXE_SUFFIX}`)) return id;
+  } catch {
+    // no candidate
+  }
+  return null;
+}
+
+/**
+ * Publish the pair as a CANDIDATE instead of the current version: the version directory exists and `<bin>/next` names it, but
+ * `current` stays where it is, so every compile keeps using the old daemon (and its warm sessions) while the candidate's daemon
+ * builds a session for the tree. `promoteDmbcVersion` then makes it current. Returns the id, or null when `current` may not
+ * move to this commit (older tree) or already is this version: there is nothing to stage then.
+ */
+export function stageDmbcVersion(srcDir: string, binDir: string, for_: PublishFor): string | null {
+  const id = dmbcPairId(srcDir);
+  if (!mayAdvanceCurrent(for_.root, for_.commit, binDir)) return null;
+  if (readCurrentDmbcVersion(binDir) === id) {
+    writePointer(`${binDir}/current.commit`, for_.commit);
+    return null;
+  }
+  installDmbcVersionDir(srcDir, binDir);
+  writePointer(`${binDir}/next`, id);
+  writePointer(`${binDir}/next.commit`, for_.commit);
+  return id;
+}
+
+/** Make the staged candidate `id` the current version (and its commit current.commit) and clear the candidate pointers. */
+export function promoteDmbcVersion(binDir: string, id: string): void {
+  let commit = '';
+  try {
+    commit = fs.readFileSync(`${binDir}/next.commit`, 'utf8').trim();
+  } catch {
+    // no recorded commit: current.commit keeps its value
+  }
+  if (readCurrentDmbcVersion(binDir) !== id) writePointer(`${binDir}/current`, id);
+  if (commit) writePointer(`${binDir}/current.commit`, commit);
+  fs.rmSync(`${binDir}/next`, { force: true });
+  fs.rmSync(`${binDir}/next.commit`, { force: true });
+}
+
+/**
+ * Delete versions nobody needs: keep the current one and the `keep` (default 1: the one just superseded) newest others; a version
+ * a running daemon or compile still holds cannot be deleted on Windows and is simply tried again next time. Also drops
+ * abandoned temporary directories and the per-key and per-tree pointer directories an earlier layout left.
+ */
+export function pruneDmbcVersions(keep = 1, binDir: string = sharedDmbcBinDir()): number {
   const current = readCurrentDmbcVersion(binDir);
   let removed = 0;
+  for (const legacy of ['by-key', 'by-tree']) fs.rmSync(`${binDir}/${legacy}`, { recursive: true, force: true });
   const vdir = `${binDir}/v`;
   let entries: string[] = [];
   try {
@@ -221,19 +327,33 @@ export function pruneDmbcVersions(keep = 3, binDir: string = sharedDmbcBinDir())
 }
 
 /** Publish a freshly built compiler pair (a cargo `release` dir) as the new shared version. */
-export function publishDmbc(builtDir: string): string {
-  return publishDmbcVersion(builtDir);
+export function publishDmbc(builtDir: string, for_?: PublishFor): string {
+  return publishDmbcVersion(builtDir, sharedDmbcBinDir(), for_);
 }
 
 /**
  * Make the cached executables the current version. Returns true on a hit. Nothing a running compile uses is touched: the cache
  * entry's pair is published as an immutable version (a no-op when that version already exists) and `current` is switched.
  */
-export function restoreDmbc(cache: string, key: string): boolean {
+/** The cached build for `key` when the entry is complete (and mark it recently used), else null. Publishes nothing. */
+export function cachedDmbcDir(cache: string, key: string): string | null {
+  const dir = path.join(cache, key, 'release');
+  if (!fs.existsSync(path.join(dir, 'manifest.json'))) return null;
+  if (!['dmbc', 'dmbd'].every((name) => fs.existsSync(path.join(dir, `${name}${EXE_SUFFIX}`)))) return null;
+  try {
+    const now = new Date();
+    fs.utimesSync(path.join(cache, key), now, now);
+  } catch {
+    // best effort: pruning keeps recently used entries
+  }
+  return dir.split(path.sep).join('/');
+}
+
+export function restoreDmbc(cache: string, key: string, for_?: PublishFor): boolean {
   const dir = path.join(cache, key, 'release');
   if (!fs.existsSync(path.join(dir, 'manifest.json'))) return false;
   if (!['dmbc', 'dmbd'].every((name) => fs.existsSync(path.join(dir, `${name}${EXE_SUFFIX}`)))) return false;
-  publishDmbcVersion(dir.split(path.sep).join('/'));
+  publishDmbcVersion(dir.split(path.sep).join('/'), sharedDmbcBinDir(), for_);
   try {
     const now = new Date();
     fs.utimesSync(path.join(cache, key), now, now);
