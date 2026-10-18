@@ -30,6 +30,8 @@
 	/// key -> TRUE for an ordered key (a registry's): its member list keeps join order and may be reordered in place by its owner (a sorted
 	/// registry), so index_by_key[key] is a presence set there, not a position, and a leave is a list removal (relations proposal D12).
 	var/list/ordered_keys
+	/// key -> the key's place index (a registry's /datum/lifeform_index: members by registry key, z and area), when it has one.
+	var/list/subindex_by_key
 	/// member -> list of keys it belongs to, for teardown and systems_of().
 	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/keys_of = list()
@@ -250,3 +252,13 @@
 			keys -= key
 			if(!length(keys))
 				M.keys_of -= member
+
+/// The place index the store keeps for `key` (a registry's key/z/area index), or null.
+/proc/member_subindex(key)
+	var/datum/kernel_membership/M = kernel_membership()
+	return M.subindex_by_key?[key]
+
+/// Gives `key` its place index.
+/proc/member_subindex_set(key, datum/index)
+	var/datum/kernel_membership/M = kernel_membership()
+	LAZYSET(M.subindex_by_key, key, index)
