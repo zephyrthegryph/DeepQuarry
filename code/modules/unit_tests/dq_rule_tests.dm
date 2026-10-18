@@ -1,4 +1,4 @@
-// Rules (doc/rewrite/rules.md §4, roadmap P4): compilation to reactor
+// Rules (doc/rewrite/rules.md Â�4, roadmap P4): compilation to reactor
 // triggers, the generated threshold tests, and parity for the rules that
 // replace old code.
 
@@ -108,7 +108,7 @@
 
 	var/datum/rule/band = dq_rule_fixture(/datum/rule/dq_test_band)
 	var/datum/rule_trigger/band_trigger = band.triggers[1]
-	TEST_ASSERT_EQUAL(band_trigger.kind, RULE_TRIGGER_BAND, "REQ_BETWEEN on temperature is a Band watch")
+	TEST_ASSERT_EQUAL(band_trigger.kind, RULE_TRIGGER_BAND, "Native temperature band is a Band watch")
 
 	var/datum/rule/static_only = new /datum/rule/dq_test_static_only
 	TEST_ASSERT(!static_only.compile(), "a rule over static properties only is rejected")
