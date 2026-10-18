@@ -24,9 +24,24 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
             ),
             ReadDomain::RuntimeCatalog(path) => Some((|| {
                 let issuer = self.runtime.issuer?;
-                if self.runtime.aliases.contains_key(&path) || self.runtime.ordinary.contains(&path)
-                {
-                    return Some(u128::from(issuer) << 64);
+                // A member's answer depends only on its own membership (and alias target) under the
+                // catalog's schema and completeness policy, so its version is derived from exactly
+                // that, not from the catalog instance. The catalog lists every source type path; an
+                // added or removed type used to issue a new catalog and change the version of every
+                // RuntimeCatalog domain, sending most procedures to keyed revalidation.
+                let member = |kind: u8, target: SymbolId| {
+                    let mut bytes = b"dm-runtime-catalog-member-v1".to_vec();
+                    bytes.extend_from_slice(&self.runtime.policy_identity.to_le_bytes());
+                    bytes.push(kind);
+                    bytes.extend_from_slice(&path.bits().to_le_bytes());
+                    bytes.extend_from_slice(&target.bits().to_le_bytes());
+                    xxhash_rust::xxh3::xxh3_128(&bytes)
+                };
+                if let Some(&target) = self.runtime.aliases.get(&path) {
+                    return Some(member(1, target));
+                }
+                if self.runtime.ordinary.contains(&path) {
+                    return Some(member(2, path));
                 }
                 if self.runtime.completeness == Completeness::Partial {
                     return None;
