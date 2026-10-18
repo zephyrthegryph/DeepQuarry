@@ -34,6 +34,8 @@ fn post_frontend_pruning_keeps_current_callable_owner_and_releases_detached_pred
     let mut host = BuildHost::default();
     let memo = host.procedure_memo(3, None, true).unwrap();
     let store = Arc::clone(memo.startup.as_ref().unwrap());
+    // A request gets its own view of the host's startup owner (`StartupArtifacts::for_request`); the owner is what must survive.
+    let owner = Arc::clone(&host.startup.as_ref().unwrap().1);
     let pool = dm_exec::BuildExecutor::new(1).unwrap();
     let old = frontend(&mut host, &pool, "/proc/p()\n    return 1\n");
     let weak_old = Arc::downgrade(&old.snapshot.tree);
@@ -74,7 +76,7 @@ fn post_frontend_pruning_keeps_current_callable_owner_and_releases_detached_pred
     assert!(weak_old.upgrade().is_some());
     host.prune_foreign_callable_index();
     assert!(weak_old.upgrade().is_none());
-    assert!(Arc::ptr_eq(&store, &host.startup.as_ref().unwrap().1));
+    assert!(Arc::ptr_eq(&owner, &host.startup.as_ref().unwrap().1));
     assert!(Arc::ptr_eq(
         &successor.snapshot.tree,
         host.query_tree().unwrap()

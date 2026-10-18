@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { copyBackOutputs, releaseCompileRoot, removeLink, rootKey, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
+import { copyBackOutputs, releaseCompileRoot, removeLink, rootKey, rootKeyFor, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
 
 const made: string[] = [];
 function temp(name: string): string {
@@ -33,6 +33,9 @@ test('variant keys are the manifest stem and the feature is on by default', () =
   expect(rootKey('E:/x/deepquarry.dme')).toBe('deepquarry');
   expect(rootKey('E:/x/deepquarry.test.dme')).toBe('deepquarry');
   expect(rootKey('E:/x/deepquarry.bench.dme')).toBe('deepquarry');
+  // The merge worktree has its own root (its gates patch from the previous batch); every other worktree shares one.
+  expect(rootKeyFor('E:/projects/dq-wt/merge-base/deepquarry.test.dme', 'E:/projects/dq-wt/merge-base', {})).toBe('deepquarry-merge');
+  expect(rootKeyFor('E:/projects/dq-wt/pool-2/deepquarry.dme', 'E:/projects/dq-wt/pool-2', {})).toBe('deepquarry');
   expect(sharedRootEnabled({})).toBe(true);
   expect(sharedRootEnabled({ DQ_SHARED_ROOT: '0' })).toBe(false);
 });
