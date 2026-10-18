@@ -314,7 +314,11 @@ After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are in
 - Waves 3-4 (started): content references declared (shield walls, tickets, mining and resleeving pairs, gun, mecha, nifsoft, ...); a subtype's `links()` end refines an ancestor's plain `ref_one`; init-only params (`param(keep = FALSE)`) are not stored refs; dead NTSL statement nodes deleted.
 - Wave 5: D13 done: `bind_player(mob, value, as_ckey)` (`code/modules/mob/bind_player.dm`) is the one native player link; `player_link` is a hard ban. Client-owned panels are not converted yet (the client tears them down by hand in `/client/Destroy()`).
 - Wave 6: D11 started: engine verbs `vis_add/vis_remove`, `client_screen_add/remove`, `client_images_add/remove` (`code/engine/present/native_ends.dm`) are the write path; `native_ref_write` ratchet 345 -> 116. The reverse index and generated teardown for `client.images` are not built.
-- Ratchet: `stored_refs` 691 -> 164.
+- Wave 5: client connection-scoped vars (panels, windows, tooltips, skybox, screentip, session) are declared `ref_one` on `/client` and written through `rel_set`; the global click catcher stays.
+- Wave 7: D21 done: `ref_token` / `resolve_token`; `entity_handle` / `resolve_handle` are banned names (`legacy_forms`).
+- D12 (membership merge) not started: `SSatoms.after_init_pending` and the materialize frames are per-init transient tables on a hot boot path; the merge needs its own design pass.
+- NTSL: the dead object-statement path, `VariableDeclaration` and `ForLoop` (never built by the grammar) are deleted; a compound assignment no longer double-owns its identifier.
+- Ratchet: `stored_refs` 691 -> 149.
 
 ## 8. Comparison with the original design
 
