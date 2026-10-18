@@ -46,12 +46,10 @@ raw_write	code/game/atoms_movable.dm	vis_contents.Cut()
 raw_write	code/game/gamemodes/cult/ritual.dm	our_ai.client.images += blood_image
 raw_write	code/game/gamemodes/technomancer/instability.dm	client?.screen |= meter
 raw_write	code/game/gamemodes/technomancer/spells/mark_recall.dm	user.client?.images |= I
-raw_write	code/game/machinery/computer/bodycamera.dm	vis_contents += bpinboard
 raw_write	code/game/machinery/computer/bodycamera.dm	bpinboard.vis_contents = list(thing)
 raw_write	code/game/machinery/computer/bodycamera.dm	bpinboard.vis_contents = null
 raw_write	code/game/machinery/computer/camera.dm	pinboard.vis_contents = list(thing)
 raw_write	code/game/machinery/computer/camera.dm	pinboard.vis_contents = null
-raw_write	code/game/objects/effects/misc.dm	vis_contents += light_spot
 raw_write	code/game/objects/effects/particle_holder.dm	lie_about_areas.vis_contents += src
 raw_write	code/game/objects/items.dm	if(user.client) user.client.screen |= src
 raw_write	code/game/objects/items/blueprints.dm	user.client.images.Remove(i)
@@ -79,9 +77,6 @@ raw_write	code/modules/entopics/alternate_appearance.dm	M.client.images |= img
 raw_write	code/modules/holomap/mapper.dm	extras_holder.vis_contents = extras
 raw_write	code/modules/holomap/station_holomap.dm	user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 raw_write	code/modules/holomap/station_holomap.dm	user.client.images |= holomap_datum.station_map
-raw_write	code/modules/maint_recycler/code/maint_recycler.dm	src.vis_contents |= hatch
-raw_write	code/modules/maint_recycler/code/maint_recycler.dm	src.vis_contents |= monitor_screen
-raw_write	code/modules/maint_recycler/code/maint_vendor.dm	src.vis_contents |= monitor_screen
 raw_write	code/modules/mob/dead/observer/chunk.dm	if(length(obscured)) client.images += obscured
 raw_write	code/modules/mob/freelook/chunk.dm	if(length(obscured)) client.images += obscured
 raw_write	code/modules/mob/living/carbon/alien/life.dm	src.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)

@@ -294,7 +294,6 @@ init_lines	code/game/machinery/computer/arcade.dm	@/obj/machinery/computer/arcad
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::mask
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::rel_set
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bpinboard.add_filter
-init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::vis_contents
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bradio.listening
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bradio.broadcasting
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bradio.set_frequency
@@ -762,7 +761,6 @@ init_lines	code/game/objects/effects/map_effects/portal.dm	@/obj/effect/map_effe
 init_lines	code/game/objects/effects/mines.dm	@/obj/effect/mine::Initialize::register_dangerous_to_step
 init_lines	code/game/objects/effects/misc.dm	@/obj/effect/temporary_effect/cleave_attack::Initialize::animate
 init_lines	code/game/objects/effects/misc.dm	@/obj/effect/temporary_effect/lightning_strike::Initialize::animate
-init_lines	code/game/objects/effects/misc.dm	@/obj/effect/abstract/directional_lighting::Initialize::vis_contents
 init_lines	code/game/objects/effects/overlays.dm	@/obj/effect/overlay/light_cone::Initialize::apply_standard_transform
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::if
 init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::stack_trace
@@ -1802,12 +1800,10 @@ init_lines	code/modules/lore_codex/codex.dm	@/obj/item/book/codex::Initialize::r
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.icon
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.icon_state
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::hatch.layer
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.plane
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.layer
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.icon
 init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::monitor_screen.icon_state
-init_lines	code/modules/maint_recycler/code/maint_recycler.dm	@/obj/machinery/maint_recycler::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::for
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry.initialize
@@ -1816,7 +1812,6 @@ init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/main
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.layer
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.icon
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::monitor_screen.icon_state
-init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::vis_contents
 init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::shuffle_inplace
 init_lines	code/modules/maint_recycler/code/util.dm	@/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations
 init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST
