@@ -442,6 +442,7 @@
 #include "dq_fresh_look_default.dm"
 #include "dq_draw_queue_default_look.dm"
 #include "dq_change_plan_parity.dm"
+#include "dq_stat_index_oracle.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"
 #include "dq_loot_search_tests.dm"
