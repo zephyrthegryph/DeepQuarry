@@ -181,7 +181,7 @@
 			var/vorgans = join_props["vorgans"]
 			rel_set(cryst, nameof(cryst.bound_mob), new cryst.spawn_mob_type(cryst))
 			cryst.set_spawn_mob_type(null)
-			cryst.bound_mob.key = src.key
+			bind_player(cryst.bound_mob, src.key)
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
 			if(vorgans)
 				cryst.bound_mob.copy_from_prefs_vr()
@@ -383,7 +383,7 @@
 	new_character.force_update_limbs()
 	new_character.update_transform()
 
-	new_character.key = key		//Manually transfer the key to log them in
+	bind_player(new_character, key)		//Manually transfer the key to log them in
 
 	return new_character
 

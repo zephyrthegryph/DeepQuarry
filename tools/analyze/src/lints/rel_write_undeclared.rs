@@ -197,3 +197,8 @@ fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
 pub fn register(reg: &mut Registry) {
     reg.add(RelWriteUndeclared);
 }
+
+/// The statement walk, for the other typed lints of this proposal (player_link).
+pub(crate) fn walk_block_pub(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
+    walk_block(b, f)
+}

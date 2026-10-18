@@ -147,7 +147,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	var/obj/item/paicard/typeb/card = new(target_turf)
 	var/mob/living/silicon/pai/pai = new(card)
 	pai.set_real_name(pai.name)
-	pai.key = choice.key
+	bind_player(pai, choice.key)
 	card.setPersonality(pai)
 	// The new pAI answers these in its own time.
 	pai.offer_admin_spawn_load()
@@ -322,12 +322,12 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 		return
 
 	var/mob/observer/dead/ghost = new/mob/observer/dead(M,1)
-	ghost.ckey = M.ckey
+	bind_player(ghost, M.ckey, as_ckey = TRUE)
 
 	message_admins(span_blue("[key_name_admin(user)] assumed direct control of [M]."))
 	log_admin("[key_name(user)] assumed direct control of [M].")
 	var/mob/adminmob = user.mob
-	M.ckey = user.ckey
+	bind_player(M, user.ckey, as_ckey = TRUE)
 	if( isobserver(adminmob) )
 		replaced_by(adminmob, M)
 	feedback_add_details("admin_verb","ADC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

@@ -372,7 +372,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 
 	if(!player) return
 
-	src.ckey = player.ckey
+	bind_player(src, player.ckey, as_ckey = TRUE)
 
 	if(player.mob && player.mob.mind)
 		player.mob.mind.transfer_to(src)
