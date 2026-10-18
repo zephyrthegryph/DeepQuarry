@@ -424,6 +424,7 @@ pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage:
                     .name(format!("gen-{}", g.name()))
                     .stack_size(256 << 20)
                     .spawn_scoped(s, || {
+                        let c0 = crate::util::thread_cpu_ms();
                         let cx = GenCx::new(tree, root);
                         let step = std::time::Instant::now();
                         let r = render(g.as_ref(), &cx);
@@ -432,6 +433,9 @@ pub fn run_stage(root: &Path, tree: &Tree, names: &[String], check: bool, stage:
                         let files = g.files(&cx, &mut file_out);
                         if trace {
                             eprintln!("analyze: gen {}: render {} ms, files() {} ms (cumulative {} ms, cpu {} ms)", g.name(), rendered, step.elapsed().as_millis() - rendered, began.elapsed().as_millis(), crate::util::cpu_ms());
+                        }
+                        if crate::util::cpu_accounting() {
+                            crate::util::cpu_account(format!("gen {} (own thread)", g.name()), crate::util::thread_cpu_ms().saturating_sub(c0));
                         }
                         (r, files, file_out)
                     })

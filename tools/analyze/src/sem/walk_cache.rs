@@ -144,7 +144,7 @@ struct Entry {
     context: u128,
     /// Indexes into `Stored::deps`.
     deps: Vec<u32>,
-    set: ReadSet,
+    set: LazySet,
 }
 
 /// What [`finish`] serializes: the same layout, borrowing the results.
@@ -160,11 +160,60 @@ struct EntryRef<'a> {
     key: &'a str,
     context: u128,
     deps: Vec<u32>,
-    set: &'a ReadSet,
+    set: &'a LazySet,
 }
 
 /// A stored walk: context, dependency ids with their digests, result.
-type Kept = (u128, Vec<(u64, u64)>, Arc<ReadSet>);
+type Kept = (u128, Vec<(u64, u64)>, LazySet);
+
+/// A stored result: its encoded bytes, decoded on first use (by the walk thread that asks, so a store is read without decoding it).
+pub struct LazySet {
+    raw: Option<Box<[u8]>>,
+    cell: OnceLock<Arc<ReadSet>>,
+}
+
+impl LazySet {
+    fn of(set: Arc<ReadSet>) -> LazySet {
+        let cell = OnceLock::new();
+        let _ = cell.set(set);
+        LazySet { raw: None, cell }
+    }
+
+    fn get(&self) -> Arc<ReadSet> {
+        self.cell
+            .get_or_init(|| Arc::new(self.raw.as_ref().map(|b| crate::incr::de::<ReadSet>(b).expect("a stored walk decodes (the store is stamped with the analyzer build)")).unwrap_or_default()))
+            .clone()
+    }
+}
+
+impl Serialize for LazySet {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        match (&self.raw, self.cell.get()) {
+            (Some(raw), _) => s.serialize_bytes(raw),
+            (None, Some(set)) => s.serialize_bytes(&crate::incr::ser(&**set).map_err(serde::ser::Error::custom)?),
+            (None, None) => s.serialize_bytes(&[]),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for LazySet {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<LazySet, D::Error> {
+        struct V;
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = Box<[u8]>;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("an encoded walk result")
+            }
+            fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Box<[u8]>, E> {
+                Ok(v.into())
+            }
+            fn visit_byte_buf<E: serde::de::Error>(self, v: Vec<u8>) -> Result<Box<[u8]>, E> {
+                Ok(v.into_boxed_slice())
+            }
+        }
+        Ok(LazySet { raw: Some(d.deserialize_byte_buf(V)?), cell: OnceLock::new() })
+    }
+}
 
 /// The store is a base file and a delta of the walks made since: a run that walked a few things rewrites the delta only, and the base
 /// when the delta has grown past a quarter of it.
@@ -177,12 +226,12 @@ struct Loaded {
 
 static LOADED: OnceLock<Option<Loaded>> = OnceLock::new();
 /// The walks this run made: key -> (context, dep ids, result).
-static FRESH: OnceLock<Mutex<HashMap<String, (u128, Vec<u64>, Arc<ReadSet>)>>> = OnceLock::new();
+static FRESH: OnceLock<Mutex<HashMap<String, (u128, Vec<u64>, LazySet)>>> = OnceLock::new();
 static HITS: AtomicUsize = AtomicUsize::new(0);
 static MISSES: AtomicUsize = AtomicUsize::new(0);
 static DIFFERED: AtomicUsize = AtomicUsize::new(0);
 
-fn fresh() -> &'static Mutex<HashMap<String, (u128, Vec<u64>, Arc<ReadSet>)>> {
+fn fresh() -> &'static Mutex<HashMap<String, (u128, Vec<u64>, LazySet)>> {
     FRESH.get_or_init(Default::default)
 }
 
@@ -203,7 +252,7 @@ fn read_file(path: &std::path::Path) -> HashMap<String, Kept> {
             table.entry(*id).or_insert(d);
         }
     }
-    st.entries.into_iter().map(|e| (e.key, (e.context, e.deps.iter().map(|&i| ids[i as usize]).collect(), Arc::new(e.set)))).collect()
+    st.entries.into_iter().map(|e| (e.key, (e.context, e.deps.iter().map(|&i| ids[i as usize]).collect(), e.set))).collect()
 }
 
 fn loaded() -> Option<&'static Loaded> {
@@ -219,6 +268,19 @@ fn loaded() -> Option<&'static Loaded> {
                 let d = read_file(&dir.join(DELTA));
                 (b.join().unwrap_or_default(), d)
             });
+            if std::env::var_os("DQ_WALK_SIZES").is_some() {
+                let mut by: std::collections::BTreeMap<String, (usize, usize)> = Default::default();
+                for (k, (_, _, set)) in base.iter() {
+                    let flavor = k.splitn(3, '|').take(3).collect::<Vec<_>>().join("|");
+                    let fl: String = flavor.chars().rev().take(12).collect::<String>().chars().rev().collect();
+                    let e = by.entry(fl).or_default();
+                    e.0 += 1;
+                    e.1 += set.raw.as_ref().map(|r| r.len()).unwrap_or(0);
+                }
+                for (k, (n, b)) in by {
+                    eprintln!("WALKS {} {} walks {} MB", k, n, b >> 20);
+                }
+            }
             if trace() {
                 eprintln!("analyze: walk cache: loaded {} + {} walks in {:.1?}", base.len(), delta.len(), t0.elapsed());
             }
@@ -231,7 +293,11 @@ fn loaded() -> Option<&'static Loaded> {
 pub fn prefetch() {
     if enabled() {
         let _ = std::thread::Builder::new().name("walk-cache-load".into()).spawn(|| {
+            let c0 = crate::util::thread_cpu_ms();
             loaded();
+            if crate::util::cpu_accounting() {
+                crate::util::cpu_account("walk cache load thread".into(), crate::util::thread_cpu_ms() - c0);
+            }
         });
     }
 }
@@ -316,6 +382,8 @@ fn lookup(key: &str, context: u128, sem: &Sem, digests: &Digests) -> Option<Arc<
         }
         return None;
     }
+    let tv = std::time::Instant::now();
+    let _tv = TimeOn(&T_VALIDATE, tv);
     for (id, g) in ds {
         if digests.get(sem, *id) != *g {
             if why {
@@ -324,7 +392,22 @@ fn lookup(key: &str, context: u128, sem: &Sem, digests: &Digests) -> Option<Arc<
             return None;
         }
     }
-    Some(Arc::clone(set))
+    drop(_tv);
+    let td = std::time::Instant::now();
+    let r = set.get();
+    T_DECODE.fetch_add(td.elapsed().as_micros() as usize, Ordering::Relaxed);
+    Some(r)
+}
+
+static T_VALIDATE: AtomicUsize = AtomicUsize::new(0);
+static T_DECODE: AtomicUsize = AtomicUsize::new(0);
+
+struct TimeOn(&'static AtomicUsize, std::time::Instant);
+
+impl Drop for TimeOn {
+    fn drop(&mut self) {
+        self.0.fetch_add(self.1.elapsed().as_micros() as usize, Ordering::Relaxed);
+    }
 }
 
 /// Serves `key` from the store or walks it (recording what it reads) and keeps the result.
@@ -350,7 +433,7 @@ pub fn walk(key: impl FnOnce() -> String, context: impl FnOnce() -> u128, sem: &
     let set = Arc::new(run());
     let ids = pop_frame();
     MISSES.fetch_add(1, Ordering::Relaxed);
-    fresh().lock().unwrap().insert(key, (context, ids, set.clone()));
+    fresh().lock().unwrap().insert(key, (context, ids, LazySet::of(set.clone())));
     set
 }
 
@@ -385,7 +468,7 @@ pub(crate) fn set_model(b: std::sync::Arc<super::SemBox>) {
     let _ = MODEL.set(b);
 }
 
-type Row<'a> = (&'a str, u128, Vec<u64>, &'a ReadSet);
+type Row<'a> = (&'a str, u128, Vec<u64>, &'a LazySet);
 
 fn write(path: &std::path::Path, entries: &[Row<'_>], sem: &Sem) -> usize {
     let digests = digests();
@@ -432,7 +515,7 @@ fn write(path: &std::path::Path, entries: &[Row<'_>], sem: &Sem) -> usize {
 pub fn finish() {
     let (hits, misses) = (HITS.load(Ordering::Relaxed), MISSES.load(Ordering::Relaxed));
     if trace() && hits + misses > 0 {
-        eprintln!("analyze: walk cache: context {} ms, lookups {} ms (summed over threads)", T_CTX.load(Ordering::Relaxed) / 1000, T_LOOKUP.load(Ordering::Relaxed) / 1000);
+        eprintln!("analyze: walk cache: context {} ms, lookups {} ms (validate {} ms, decode {} ms; summed over threads)", T_CTX.load(Ordering::Relaxed) / 1000, T_LOOKUP.load(Ordering::Relaxed) / 1000, T_VALIDATE.load(Ordering::Relaxed) / 1000, T_DECODE.load(Ordering::Relaxed) / 1000);
         eprintln!("analyze: walk cache: {} walks served, {} walked{}", hits, misses, if verify() { format!(", {} differed", DIFFERED.load(Ordering::Relaxed)) } else { String::new() });
     }
     if misses == 0 {
@@ -450,11 +533,11 @@ pub fn finish() {
     let mut delta: Vec<Row<'_>> = Vec::new();
     for (k, (c, ds, set)) in &l.delta {
         if !fresh.contains_key(k) && valid(ds) {
-            delta.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), &**set));
+            delta.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), set));
         }
     }
     for (k, (c, ids, set)) in &fresh {
-        delta.push((k.as_str(), *c, ids.clone(), &**set));
+        delta.push((k.as_str(), *c, ids.clone(), set));
     }
     delta.sort_by(|a, b| a.0.cmp(b.0));
     let rebase = l.base.is_empty() || delta.len() * 4 > l.base.len();
@@ -464,7 +547,7 @@ pub fn finish() {
         let mut more: Vec<Row<'_>> = Vec::new();
         for (k, (c, ds, set)) in &l.base {
             if !have.contains(k.as_str()) && valid(ds) {
-                more.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), &**set));
+                more.push((k.as_str(), *c, ds.iter().map(|(id, _)| *id).collect(), set));
             }
         }
         all.extend(more);

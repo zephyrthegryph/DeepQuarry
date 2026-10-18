@@ -184,7 +184,7 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
                 for p in &v.parameters {
                     if let Some(t) = type_path(&p.var_type) { w.ty(&t); w.locals.insert(p.name.clone(), t); }
                 }
-                if let Some(code) = &v.code {
+                if let Some(code) = &*v.code {
                     // ..() is a dependency on the nearest parent implementation, not on the overriding body.
                     let mut parent_call = false;
                     super::ast::walk_block(code, &mut |e, _| if let Expression::Base { term, .. } = e { if matches!(term.elem, Term::ParentCall(_)) { parent_call = true; } });

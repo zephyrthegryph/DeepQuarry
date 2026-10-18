@@ -104,7 +104,7 @@ impl GlobalIndex {
                 if super::reads::is_test_code(sem.rel(p.get().location)) {
                     continue;
                 }
-                if p.get().code.is_none() {
+                if !p.get().code.has_body() {
                     continue;
                 }
                 procs.push((path.clone(), p));
@@ -123,7 +123,7 @@ impl GlobalIndex {
         super::body_facts::indexed(sem, "globals", ctx, &refs, |p| {
             let mut facts = Facts::default();
             let locals: HashSet<String> = p.get().parameters.iter().map(|x| x.name.clone()).collect();
-            if let Some(code) = &p.get().code {
+            if let Some(code) = &*p.get().code {
                 scan(code, &locals, &global_vars, &glob_fields, &mut facts);
             }
             facts

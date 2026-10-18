@@ -178,6 +178,21 @@ pub struct Effect {
     pub line: u32,
 }
 
+/// Reading ordered collections back in bulk: the stored order is the sorted order, and building a tree from a sorted run is linear (one
+/// insert at a time is not). Same bytes as serde's own encoding.
+mod bulk {
+    use serde::{Deserialize, Deserializer};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    pub fn set<'de, D: Deserializer<'de>, T: Deserialize<'de> + Ord>(d: D) -> Result<BTreeSet<T>, D::Error> {
+        Ok(Vec::<T>::deserialize(d)?.into_iter().collect())
+    }
+
+    pub fn map<'de, D: Deserializer<'de>, K: Deserialize<'de> + Ord, V: Deserialize<'de>>(d: D) -> Result<BTreeMap<K, V>, D::Error> {
+        Ok(Vec::<(K, V)>::deserialize(d)?.into_iter().collect())
+    }
+}
+
 /// [`Diag`] as `walk_cache` reads it back (the rule name interned).
 #[derive(serde::Deserialize)]
 struct DiagStored {
@@ -225,26 +240,33 @@ impl From<EffectStored> for Effect {
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ReadSet {
+    #[serde(deserialize_with = "bulk::set")]
     pub reads: BTreeSet<Read>,
     /// Context scalar/object fields read through the act (`A.dt` -> "dt"), with a line each.
+    #[serde(deserialize_with = "bulk::map")]
     pub ctx_fields: BTreeMap<String, (String, u32)>,
     /// Where each read was first seen: (file, line).
+    #[serde(deserialize_with = "bulk::map")]
     pub sites: BTreeMap<Read, (String, u32)>,
     pub diags: Vec<Diag>,
     /// Failures of declared numeric lookup contracts, also present in diags.
     pub lookup_diags: Vec<Diag>,
     pub effects: Vec<Effect>,
     /// `type::proc` bodies the walk followed (for the graph and for incremental invalidation).
+    #[serde(deserialize_with = "bulk::set")]
     pub followed: BTreeSet<String>,
     /// Procs in an opaque (engine-internal) directory the walk reached but did not enter, with the call site: what they read is
     /// invisible to the graph, so a consumer that calls one cannot prove its inputs complete (`gen deps`, `untracked_inputs`).
+    #[serde(deserialize_with = "bulk::map")]
     pub opaque: BTreeMap<String, (String, u32)>,
     /// Reads the framework makes of its own state: an engine body reading a var an engine file declares (`holder.rx`, the stat record).
     /// They stay in `reads` (the subscriptions are complete) but are not inputs a stat or a look can be stale on: `gen deps` and the lints
     /// leave them out. Closed walk only; a read also made from outside the engine is not in this set.
+    #[serde(deserialize_with = "bulk::set")]
     pub internal: BTreeSet<Read>,
     /// Where a `read_once(...)` sample sits (file, line) in a body the walk entered. A draw or a stat input must not sample: the look or the
     /// value is made from it once and never follows (`untracked_inputs` rule `sampled_in_look`).
+    #[serde(deserialize_with = "bulk::set")]
     pub sampled: BTreeSet<(String, u32)>,
 }
 
@@ -430,7 +452,7 @@ impl Annotations {
             let Some(tp) = ty.get().procs.get(proc_name) else { continue };
             let path = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
             for value in &tp.value {
-                let Some(code) = &value.code else { continue };
+                let Some(code) = &*value.code else { continue };
                 super::ast::walk_block(code, &mut |e, _| {
                     if let Some((n, args)) = super::ast::as_call(e) {
                         if calls.contains(&n) {
@@ -645,7 +667,7 @@ impl<'a> ReadsEngine<'a> {
             for t in self.sem.objtree.iter_types() {
                 let path = if t.get().path.is_empty() { "/".to_string() } else { t.get().path.clone() };
                 for p in t.iter_self_procs() {
-                    if !p.is_builtin() && p.get().code.is_some() {
+                    if !p.is_builtin() && p.get().code.has_body() {
                         m.entry(p.name().to_string()).or_default().push(path.clone());
                     }
                 }
@@ -919,7 +941,7 @@ pub fn proc_writes(p: ProcRef) -> HashSet<String> {
     let mut s = HashSet::new();
     let name = p.name();
     let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
-    if let Some(code) = &p.get().code {
+    if let Some(code) = &*p.get().code {
         collect_writes(code, ctor, &mut s);
     }
     s
@@ -1207,7 +1229,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 return None;
             }
         }
-        let Some(code) = &value.code else { return None };
+        let Some(code) = &*value.code else { return None };
         let mut fr = Frame { proc: p, rel: self.rel_of(p), this, locals: HashMap::new(), narrow: HashMap::new(), ret: None };
         for (i, prm) in value.parameters.iter().enumerate() {
             let declared = type_str(&prm.var_type);

@@ -241,7 +241,7 @@ fn record_procs(sem: &crate::sem::Sem) -> Vec<(String, u32, String)> {
         }
         for (name, tp) in ty.get().procs.iter() {
             for v in tp.value.iter() {
-                if v.code.is_none() {
+                if !v.code.has_body() {
                     continue;
                 }
                 let Some(rel) = sem.file_of(v.location) else { continue };

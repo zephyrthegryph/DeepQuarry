@@ -390,7 +390,7 @@ impl Sem {
                         for prm in value.parameters.iter() {
                             h.update(format!("{}:{}:{}:{:?},", prm.name, prm.var_type.flags.bits(), prm.var_type.type_path.join("/"), prm.input_type).as_bytes());
                         }
-                        h.update(if value.code.is_some() { b")b" } else { b")n" });
+                        h.update(if value.code.has_body() { b")b" } else { b")n" });
                     }
                     if let Some(d) = &p.declaration {
                         h.update(format!("d{:?}{}{:?}", d.kind, d.flags.bits(), d.return_type).as_bytes());
@@ -517,6 +517,7 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
         .name("dm-preprocess".into())
         .stack_size(64 * 1024 * 1024)
         .spawn(move || -> Result<Out, String> {
+            let _acct = CpuGuard(std::panic::Location::caller(), if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 });
             let ctx = dreammaker::Context::default();
             for p in &pre {
                 ctx.register_file(p);
@@ -530,9 +531,13 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
                         let fid = ctx.get_file(first).ok_or("the first file is not registered")?;
                         let mut pp = dreammaker::preprocessor::DefineHistory::from_stored(&hist).branch_at_file(fid, &ctx);
                         // An include stack: the first file is read first.
+                        // Registered under its relative path, `__FILE__` the path an include from the .dme resolves to (the .dme's directory
+                        // joined with the include text), as in the full parse.
+                        let env_dir = dme_for_pp.parent().map(|p| p.to_path_buf()).unwrap_or_default();
                         for (reg, abs) in files.iter().rev() {
                             let f = std::fs::File::open(abs).map_err(|e| format!("{}: {}", abs.display(), e))?;
-                            pp.push_file(reg.clone(), f).map_err(|e| e.to_string())?;
+                            let shown = if reg.is_absolute() { reg.clone() } else { env_dir.join(reg.to_string_lossy().replace('\\', "/")) };
+                            pp.push_file_as(reg, shown, f).map_err(|e| e.to_string())?;
                         }
                         pp
                     }
@@ -713,6 +718,17 @@ impl Sem {
     }
 }
 
+/// Adds a worker thread's CPU time to `util::cpu_account` (under `DQ_CPU_ACCOUNT`) when it ends.
+struct CpuGuard(&'static std::panic::Location<'static>, u64);
+
+impl Drop for CpuGuard {
+    fn drop(&mut self) {
+        if crate::util::cpu_accounting() {
+            crate::util::cpu_account(format!("par_map at {}:{}", self.0.file(), self.0.line()), crate::util::thread_cpu_ms().saturating_sub(self.1));
+        }
+    }
+}
+
 /// `items.iter().map(f).collect()` on plain OS threads, in order.
 ///
 /// The semantic layer's memoized values (`Decls`, the write index, ...) are built inside `Tree::memo`, i.e. under a
@@ -720,7 +736,9 @@ impl Sem {
 /// and a stolen task that needs the same cell blocks on the init this very thread is running (or two inits wait on
 /// each other): a deadlock the stress run hit about one cold run in six. Scoped threads never steal engine work.
 /// [`par_map`] on threads with a stack deep enough for the read walk (a followed proc is a few frames of a large recursive evaluator).
+#[track_caller]
 pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 {
         return items.iter().map(f).collect();
@@ -734,6 +752,8 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
                 std::thread::Builder::new()
                     .stack_size(256 << 20)
                     .spawn_scoped(s, || {
+                        let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                        let _acct = CpuGuard(caller, c0);
                         let mut local: Vec<(usize, R)> = Vec::new();
                         loop {
                             let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);
@@ -758,7 +778,9 @@ pub fn par_map_deep<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -
     all.into_iter().map(|(_, r)| r).collect()
 }
 
+#[track_caller]
 pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let caller = std::panic::Location::caller();
     let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
     if n <= 1 || items.len() < 64 {
         return items.iter().map(f).collect();
@@ -770,6 +792,8 @@ pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec
         let handles: Vec<_> = (0..n)
             .map(|_| {
                 s.spawn(|| {
+                    let c0 = if crate::util::cpu_accounting() { crate::util::thread_cpu_ms() } else { 0 };
+                    let _acct = CpuGuard(caller, c0);
                     let mut local: Vec<(usize, R)> = Vec::new();
                     loop {
                         let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);

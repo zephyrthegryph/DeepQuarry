@@ -126,6 +126,13 @@ fn main() -> ExitCode {
     dq_analyze::shared::publish();
     dq_analyze::sem::model_store::finish();
     dq_analyze::sem::walk_cache::finish();
+    dq_analyze::util::cpu_account_report();
+    if std::env::var_os("DQ_ANALYZE_TRACE").is_some() {
+        eprintln!("analyze: {} stored proc bodies decoded", dreammaker::objtree::decoded_count());
+        for (k, n) in dreammaker::objtree::decode_probes() {
+            eprintln!("BODY {} {}", n, k);
+        }
+    }
     for (k, n) in dq_analyze::tree::TEXT_PROBE.lock().unwrap().iter() {
         eprintln!("TEXT {} {}", n, k);
     }
@@ -133,6 +140,9 @@ fn main() -> ExitCode {
 }
 
 fn real_main() -> ExitCode {
+    if std::env::var_os("DQ_BODY_PROBE").is_some() {
+        dreammaker::objtree::PROBE.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     dq_analyze::tree::start_watchdog();
     let args = parse(std::env::args().collect());
     let root = find_root(args.root.clone());

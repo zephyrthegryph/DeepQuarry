@@ -218,8 +218,20 @@ pub fn stored(_root: &Path) -> bool {
     enabled() && crate::incr::dir().map(|d| d.join(FILE).exists()).unwrap_or(false)
 }
 
+/// The tree stores proc bodies encoded and decodes one when something reads it (`dreammaker::objtree::LazyCode`): bincode both ways.
+pub fn ensure_codec() {
+    fn enc(c: &Option<dreammaker::ast::Block>) -> Vec<u8> {
+        bincode::serialize(c).unwrap_or_default()
+    }
+    fn dec(b: &[u8]) -> Option<dreammaker::ast::Block> {
+        bincode::deserialize(b).expect("a stored proc body decodes (the store is stamped with the analyzer build)")
+    }
+    dreammaker::objtree::set_code_codec(enc, dec);
+}
+
 /// The model of the real `.dme`: the stored one brought up to date, or a full parse.
 pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, String> {
+    ensure_codec();
     if !enabled() {
         return super::parse_dme(dme_path, &[], None);
     }
@@ -355,6 +367,9 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
             }
             if trace() {
                 eprintln!("analyze: model store: parsed {} alone in {:.1?} ({} error(s) of the partial parse)", crate::util::rel_slash(&abs_in(root, target), root), tp.elapsed(), partial.errors.len());
+                for e in partial.errors.iter().take(3) {
+                    eprintln!("analyze: model store:   {}", e);
+                }
             }
             Ok((i as u32, now[i], partial.objtree.file_patch(fid)))
         });
