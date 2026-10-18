@@ -44,8 +44,8 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	drop_policy = SLOT_DROP_TRANSFER
 	is_default = TRUE
 
-CAPABILITIES(/obj/item/dq_containment_box)
-	acceptance("main", req_acceptance_tag(TAG_SHARP))
+/datum/relation_definition/slot/dq_test_main/accepts_requirements()
+	return req_acceptance_tag(TAG_SHARP, because = "must be sharp")
 
 /// Blocks moves through the pre signals and records what the ledger reported.
 /datum/dq_containment_listener
@@ -413,7 +413,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	var/obj/item/dq_containment_test/item = allocate(/obj/item/dq_containment_test, T)
 
 	// The predicate decides, with its reason.
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(item, folder), "only paper, photos and bundles fit", "folder refuses a non-paper item")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(item, folder)), "only paper, photos and bundles fit", "folder refuses a non-paper item")
 	TEST_ASSERT(!move_into(folder, null, item), "the refused move fails")
 	TEST_ASSERT_EQUAL(item.loc, T, "a refused move changes nothing")
 	TEST_ASSERT_NULL(dq_ledger_refusal(page, folder), "paper fits")
@@ -422,7 +422,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 
 	// Closets refuse what is fastened down.
 	var/obj/item/dq_containment_test/anchored/bolted = allocate(/obj/item/dq_containment_test/anchored, T)
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(bolted, closet), "it is fastened down", "anchored things stay out")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(bolted, closet)), "it is fastened down", "anchored things stay out")
 
 	// Capacity: a crate holds storage_capacity objects.
 	crate.set_storage_capacity(2)

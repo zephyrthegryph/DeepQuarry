@@ -23,7 +23,7 @@
 /// A query retains the wearer independently from the actual mover.
 /proc/dq_constraint_refusal(obj/item/I, kind, atom/thing, mob/actor, mob/mover = null)
 	var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
-	return acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer))
+	return reason_text(acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer)))
 
 /obj/item/proc/clear_constraint(kind)
 	remove_constraint_overrides(kind)
@@ -39,7 +39,7 @@
 			continue
 		parts += R
 	if(!isnull(types))
-		parts += req_acceptance_type(types, because = "it doesn't take that")
+		parts += req_acceptance_type(types, because = MSG(slot/doesnt_take))
 	if(!isnull(max_size))
 		parts += req_acceptance_max_size(max_size, PROP_UNIT_SIZE_CLASS)
 	set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, parts, mode = length(parts) ? ACCEPTANCE_REPLACE : ACCEPTANCE_EMPTY))

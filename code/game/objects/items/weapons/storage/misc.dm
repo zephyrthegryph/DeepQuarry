@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 
 CAPABILITIES(/obj/item/storage/box/donut)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut)))
-	initial_contents(PROC_REF(roll_donuts), when = cond_not(nameof(empty)))
+	initial_contents(PROC_REF(roll_donuts), when = not(nameof(empty)))
 
 /// Rolled contents (initial_contents()): six donuts of the weighted kinds.
 /obj/item/storage/box/donut/proc/roll_donuts(datum/roller/R)

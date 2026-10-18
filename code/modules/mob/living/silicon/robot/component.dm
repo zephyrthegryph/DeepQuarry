@@ -388,7 +388,7 @@ CAPABILITIES(/obj/item)
 	without("melee_hit")
 	owns_one(nameof(carried_afflictions), /datum/carried_afflictions)
 	owns_one(nameof(economic_adoption), /datum/economic_adoption)
-	owns_one(nameof(identity), /datum/identification)
+	owns_one(nameof(identity), /datum/identification, starts = when(nameof(init_hide_identity), nameof(identity_type)), early = TRUE)
 	owns_one(nameof(mind_host), /datum/mind_host)
 	owns_many(nameof(possessed_voice))
 	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty

@@ -30,7 +30,7 @@
 	..()
 	look.state("reflector_base")
 	if(deflector_icon_state)
-		look.overlay(look_overlay_image(icon, deflector_icon_state, transform = ((can_rotate && rotation_angle != -1) ? turn(matrix(), rotation_angle) : null)))
+		look.overlay(look_overlay_image(icon, deflector_icon_state, transform = ((rotation_angle != -1) ? turn(matrix(), rotation_angle) : null)))
 
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()

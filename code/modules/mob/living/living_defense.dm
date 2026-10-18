@@ -202,8 +202,8 @@
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
 
-	var/datum/act/thrown_hit/thrown_hit = ACT_TRY(src, thrown_hit, source, thrower, speed)
-	if(!thrown_hit)
+	var/datum/act/thrown_hit/thrown_hit = ACT_ATTEMPT(src, thrown_hit, source, thrower, speed)
+	if(ACT_REFUSED_BY(thrown_hit))
 		return
 	act_done(thrown_hit)
 

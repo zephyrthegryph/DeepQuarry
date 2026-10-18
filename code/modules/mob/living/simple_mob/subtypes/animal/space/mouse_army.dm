@@ -60,7 +60,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	verb_entry(/mob/living/proc/hide)
 	rolls(nameof(name), PROC_REF(roll_numbered_name))
 	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
-	rolls(nameof(rank), pick_one(list("operative", "pyro", "ammo", "stealth")), when = cond_not(nameof(rank)))
+	rolls(nameof(rank), pick_one(list("operative", "pyro", "ammo", "stealth")), when = not(nameof(rank)))
 	look_from(nameof(rank), state = "mouse_*", item = "mouse_*", living = "mouse_*", dead = "mouse_*_dead", rest = "mouse_*_sleep")
 
 /mob/living/simple_mob/animal/space/mouse_army/Crossed(AM as mob|obj)

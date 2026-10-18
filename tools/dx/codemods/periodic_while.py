@@ -96,7 +96,7 @@ def tree_text(tree):
     if kind == "var":
         return "nameof(%s)" % tree[1]
     if kind == "not":
-        return "cond_not(%s)" % tree_text(tree[1])
+        return "not(%s)" % tree_text(tree[1])
     return "cond_%s(%s)" % (kind, ", ".join(tree_text(x) for x in tree[1]))
 
 
@@ -251,7 +251,7 @@ def main():
 
         r = tracked_here(name)
         if r is not None:
-            return ("cond_not(nameof(%s))" if neg else "nameof(%s)") % name, r, []
+            return ("not(nameof(%s))" if neg else "nameof(%s)") % name, r, []
         if (t, name) in derive:
             # A derived field is inlined as a condition tree when its proc is one `return` of the declared inputs joined by ||, && and !, and no related type
             # redefines it (a tree cannot dispatch on the instance); anything else is residue: a gate is a tracked var or a tree of them.
@@ -277,7 +277,7 @@ def main():
                     return None, "field_kind", None
                 rewrites += ir
             expr = tree_text(tree)
-            return ("cond_not(%s)" % expr if neg else expr), rewrites, [(rel, idx)]
+            return ("not(%s)" % expr if neg else expr), rewrites, [(rel, idx)]
         # an OM_FIELD that tracked_here refused is shared with another legacy form
         if any(n == name and ancestors_or_self(t, u) for (u, n) in omfield):
             return None, "field_shared", None
@@ -349,7 +349,7 @@ def main():
         new_name = "%s_step" % base
         if new_name in all_proc_names or new_name in used_names:
             return "name_clash"
-        when = None if not plan_fields else plan_fields[0] if len(plan_fields) == 1 else "cond_all(%s)" % ", ".join(plan_fields)
+        when = None if not plan_fields else plan_fields[0] if len(plan_fields) == 1 else "all_of(%s)" % ", ".join(plan_fields)
         return {"kind": "while", "decl": (rel, i), "type": t, "interval": CADENCES[cad], "proc": new_name, "when": when, "rewrites": rewrites, "deletes": deletes, "tree_defs": tree_defs}
 
     def check_repeat(t, d):

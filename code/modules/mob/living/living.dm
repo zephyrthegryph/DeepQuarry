@@ -1,8 +1,8 @@
 /mob/living/proc/get_visible_name()
 	// A hook on the mob may name it (shadekin phase hiding); nothing is allocated when nothing hooks it.
-	var/datum/act/name_visible/shown = ACT_TRY(src, name_visible)
-	if(!shown)
-		return ACT_REPLY
+	var/datum/act/name_visible/shown = ACT_ATTEMPT(src, name_visible)
+	if(ACT_REFUSED_BY(shown))
+		return ACT_REPLY(shown)
 	act_cancel(shown)
 
 	if(real_name)
@@ -651,7 +651,6 @@ sparse(/mob/living, vomiting, type = bool)
 		set_canmove(FALSE)
 
 	if(lying)
-		set_density(FALSE)
 		stop_pulling()
 
 		if(!passtable_crawl_checked)
@@ -663,7 +662,6 @@ sparse(/mob/living, vomiting, type = bool)
 				pass_flags |= PASSTABLE
 
 	else
-		set_density(initial(density))
 		if(passtable_reset)
 			passtable_reset = FALSE
 			pass_flags &= ~PASSTABLE

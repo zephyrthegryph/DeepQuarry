@@ -47,6 +47,8 @@
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
+				if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+					. += _own_entry(E.args["var"], null, FALSE, FALSE, FALSE, relation_starts(E))
 				if(by)
 					keyed_target_register(E.args["type"], keyed_var_name(E.args["target_key"]) || by)
 			if(ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
@@ -68,6 +70,16 @@
 			found += E
 	T.owns_scan = found
 	return found
+
+/// Starting-reference metadata stays separate from ownership: no owner stamp or policy
+/// is introduced, only the existing creation/resolution phase and dependency ordering.
+/proc/table_start_entries(datum/type_table/T)
+	var/list/owned_entries = table_owns_entries(T)
+	. = owned_entries.Copy()
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+			. += E
 
 /// table_hook_flags(T), kept on the table once the stat definitions exist: before that stat_table_needs_init() answers from an unbuilt
 /// GLOB.stat_defs, so an early answer is recomputed each time and never kept.
@@ -214,6 +226,22 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		if(cond in holder.vars)
 			return !!holder.vars[cond]
 		return !!op_pure_call(holder, cond)
+	// not(), all_of() and any_of() with no condition among their arguments (all_of() with none) are requirement parts: read them as the same tree.
+	if(istype(cond, /datum/entry/part/req/negation))
+		var/datum/entry/part/req/negation/N = cond
+		return !condition_holds(holder, N.children[1])
+	if(istype(cond, /datum/entry/part/req/all))
+		var/datum/entry/part/req/all/every = cond
+		for(var/member in every.children)
+			if(!condition_holds(holder, member))
+				return FALSE
+		return TRUE
+	if(istype(cond, /datum/entry/part/req/any))
+		var/datum/entry/part/req/any/some = cond
+		for(var/member in some.children)
+			if(condition_holds(holder, member))
+				return TRUE
+		return FALSE
 	return !!cond
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
@@ -224,16 +252,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		return cap_key_get(holder, id)
 	return FALSE
 
-/// not(), all_of() and any_of() are the requirement language's names (E2 owns them); a condition tree of the stat and activation layers is
-/// written with these until the two meet.
-/proc/cond_not(cond)
-	return list("not", cond)
-
-/proc/cond_all(...)
-	return list("all") + args
-
-/proc/cond_any(...)
-	return list("any") + args
+// A condition tree of the stat and activation layers is written with not(), all_of() and any_of() (code/engine/parts/cond.dm), the requirement
+// language's own combinators: given a condition they build the ("not" | "all" | "any", ...) tree condition_holds() reads.
 
 /// cond_config(/datum/config_entry/flag/x): the server's config flag (read when the condition is asked; config does not change in a round).
 /proc/cond_config(entry_type)

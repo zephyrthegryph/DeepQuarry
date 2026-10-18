@@ -48,9 +48,9 @@ CAPABILITIES(/obj/structure/closet/grave)
 	// ALLOW(door_gates): the same shovel smooths or unearths a filled grave, and op_order reads this when() to keep the three apart
 	op("fill", item(/obj/item/shovel), label("Fill in"), when(nameof(opened)), priority(OP_PRIORITY_PART), wait(4 SECONDS), begins(MSG(grave/fill_start)),
 		then(PROC_REF(filled_in)), says(MSG(grave/filled)), on_interrupt(PROC_REF(fill_interrupted)))
-	op("smooth_over", item(/obj/item/shovel), label("Smooth over"), when(cond_not(nameof(opened))), hostile(), priority(OP_PRIORITY_PART), wait(4 SECONDS),
+	op("smooth_over", item(/obj/item/shovel), label("Smooth over"), when(not(nameof(opened))), hostile(), priority(OP_PRIORITY_PART), wait(4 SECONDS),
 		begins(MSG(grave/smooth_start)), then(PROC_REF(smoothed_over)), says(MSG(grave/smoothed)), on_interrupt(PROC_REF(smooth_interrupted)))
-	op("unearth", item(/obj/item/shovel), label("Unearth"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(4 SECONDS),
+	op("unearth", item(/obj/item/shovel), label("Unearth"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), wait(4 SECONDS),
 		begins(MSG(grave/dig_start)), then(PROC_REF(dug_out)), says(MSG(grave/dug)), on_interrupt(PROC_REF(dig_interrupted)))
 
 /obj/structure/closet/grave/CanPass(atom/movable/mover, turf/target)

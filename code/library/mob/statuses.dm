@@ -361,10 +361,10 @@ MSG_DEF_SELF(living_action/unconscious, "You are not conscious.")
 
 /proc/living_action_status_contributions()
 	return list(
-		contributes(STAT_CAN_ACT, cond_not(STAT_STUNNED), reason = MSG(living_action/stunned)),
-		contributes(STAT_CAN_ACT, cond_not(STAT_WEAKENED), reason = MSG(living_action/weakened)),
-		contributes(STAT_CAN_ACT, cond_not(STAT_PARALYZED), reason = MSG(living_action/paralyzed)),
-		contributes(STAT_CAN_ACT, cond_not(STAT_SLEEPING), reason = MSG(living_action/sleeping)),
+		contributes(STAT_CAN_ACT, not(STAT_STUNNED), reason = MSG(living_action/stunned)),
+		contributes(STAT_CAN_ACT, not(STAT_WEAKENED), reason = MSG(living_action/weakened)),
+		contributes(STAT_CAN_ACT, not(STAT_PARALYZED), reason = MSG(living_action/paralyzed)),
+		contributes(STAT_CAN_ACT, not(STAT_SLEEPING), reason = MSG(living_action/sleeping)),
 		contributes(STAT_CAN_ACT, TYPE_PROC_REF(/mob/living, action_is_conscious), reason = MSG(living_action/unconscious), reads = list(nameof(/mob::stat))),
 	)
 

@@ -132,7 +132,7 @@
 	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
 
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
-	var/tmp/mob/living/carbon/LAssailant = null
+	var/tmp/mob/living/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
 	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
@@ -214,7 +214,7 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
-	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
+	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
 	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)

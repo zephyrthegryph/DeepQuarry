@@ -1,6 +1,6 @@
-/// Returns distilled_reactions_by_reagent so handle_reactions() uses the distilling reaction bucket.
-/datum/reagents/distilling/get_reaction_lookup()
-	return SSchemistry.ready().distilled_reactions_by_reagent
+/// Distilling holders run the distilling regime.
+/datum/reagents/distilling/xform_regime()
+	return REGIME_DISTILLING
 
 /// Distilling holders do not track belly-reagent state.
 /datum/reagents/distilling/supports_belly_reagents()
@@ -11,8 +11,8 @@
 	return
 
 // handle_reactions() is fully inherited from /datum/reagents via the three hook overrides above.
-// No logic is duplicated here — get_reaction_lookup(), supports_belly_reagents(), and
-// on_reactions_handled() together select the distilling reaction bucket and suppress the signal.
+// No logic is duplicated here — xform_regime(), supports_belly_reagents(), and
+// on_reactions_handled() together select the distilling regime and suppress the signal.
 
 // ---- Temperature-gated reactions (H3) ----
 // A distilling holder's reactions need a temperature. The holder watches its
@@ -33,15 +33,16 @@ CAPABILITIES(/datum/reagents/distilling)
 	. = ..()
 	watch_reaction_temperatures()
 
-/// The temperature bounds of every distilling reaction the contents could run.
+/// The temperature bounds of every distilling transformation the contents could run: the watch bands of their temperature_in() conditions.
 /datum/reagents/distilling/proc/reaction_temperatures()
 	var/list/levels = list()
-	var/list/lookup = get_reaction_lookup()
 	for(var/datum/reagent/R as anything in reagent_list)
-		for(var/datum/decl/chemical_reaction/distilling/C in lookup[R.id])
-			var/list/temp_range = TYPE_TABLE_GET(C, distilling_temp_range)
-			levels |= temp_range[1]
-			levels |= temp_range[2]
+		for(var/datum/xform/X as anything in xform_candidates(MEDIUM_REAGENTS, REGIME_DISTILLING, R.id))
+			for(var/list/band as anything in X.bands)
+				if(!isnull(band[1]))
+					levels |= band[1]
+				if(!isnull(band[2]))
+					levels |= band[2]
 	return levels
 
 /// (Re)builds the ThresholdSet when the candidate bounds change.

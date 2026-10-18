@@ -240,7 +240,12 @@ mod windows {
             overlapped: *mut c_void,
             completion: *mut c_void,
         ) -> i32;
+        fn GetCurrentThread() -> *mut c_void;
+        fn SetThreadPriority(thread: *mut c_void, priority: i32) -> i32;
     }
+    /// THREAD_PRIORITY_HIGHEST: the daemon runs below normal, and on a loaded machine the starved
+    /// watcher thread delayed every request's sync cookie by seconds. It only drains change events.
+    const WATCHER_PRIORITY: i32 = 2;
     const INVALID: isize = -1;
     const BUFFER_BYTES: usize = 4 * 1024 * 1024;
 
@@ -392,6 +397,10 @@ mod windows {
     }
 
     fn run(handle: *mut c_void, state: &Root) {
+        // SAFETY: the pseudo handle of the calling thread; a failure leaves the default priority.
+        unsafe {
+            SetThreadPriority(GetCurrentThread(), WATCHER_PRIORITY);
+        }
         let mut buffer = vec![0u32; BUFFER_BYTES / 4];
         loop {
             let mut returned = 0u32;

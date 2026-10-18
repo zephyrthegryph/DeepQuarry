@@ -68,7 +68,7 @@ prune_newest "${DQ_LOOK_MANIFEST_DIR:-$CACHE/look-manifest}" '*.tsv' "${DQ_LOOK_
 # Compiler versions: one latest compiler for everyone, so only `current` and the version just superseded are worth keeping.
 bin="${DQ_DMBC_BIN_DIR:-$CACHE/dmb-bin}"
 if [ -d "$bin/v" ]; then
-	cur="$(cat "$bin/current" 2>/dev/null | tr -d '\r\n ')"
+	cur="$(cat "$bin/current" 2>/dev/null | tr -d '\r\n')"
 	keep="${DQ_DMB_VERSION_KEEP:-1}"
 	before="$(du -sk "$bin" 2>/dev/null | cut -f1)"
 	n=0
@@ -85,8 +85,8 @@ if [ -d "$bin/v" ]; then
 fi
 # Per-file dmbc caches: size and age caps by recency of use (the compiler does the work; nothing here reads a cache file).
 if [ "$dry" -eq 0 ] && [ -f "$bin/current" ]; then
-	exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n ')/dmbc.exe"
-	[ -f "$exe" ] || exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n ')/dmbc"
+	exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc.exe"
+	[ -f "$exe" ] || exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc"
 	[ -f "$exe" ] && "$exe" --cache-gc 2>&1 | tail -1
 fi
 dd="${DQ_DMB_DEV_ROOT:-$CACHE/dmb-dev}"

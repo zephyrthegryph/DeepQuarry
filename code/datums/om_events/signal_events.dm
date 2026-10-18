@@ -864,13 +864,13 @@
 /datum/definition_event/qdeleting/New(force)
 	src.force = force
 
-/// Non TG signals: from base of /datum/reagents/proc/handle_reactions(): (list/datum/decl/chemical_reaction)
+/// Non TG signals: from base of /datum/reagents/proc/handle_reactions(): (list/datum/xform)
 /datum/definition_event/reagents_holder_reacted
 	sync = TRUE
-	var/chemical_reaction
+	var/rules
 
-/datum/definition_event/reagents_holder_reacted/New(chemical_reaction)
-	src.chemical_reaction = chemical_reaction
+/datum/definition_event/reagents_holder_reacted/New(rules)
+	src.rules = rules
 
 /// Sent to the obj from base of [/datum/reagent/proc/touch_obj]: (datum/reagent/reagent, amount)
 /datum/definition_event/reagent_expose_obj

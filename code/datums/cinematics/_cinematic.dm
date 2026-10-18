@@ -65,8 +65,8 @@ CAPABILITIES(/datum/cinematic)
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
-	var/datum/act/play_cinematic/play = ACT_TRY(OM_WORLD, play_cinematic, src)
-	if(!play)
+	var/datum/act/play_cinematic/play = ACT_ATTEMPT(OM_WORLD, play_cinematic, src)
+	if(ACT_REFUSED_BY(play))
 		return
 	act_done(play)
 

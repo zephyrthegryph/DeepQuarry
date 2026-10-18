@@ -85,11 +85,13 @@
 			op_merge_units(thing, moving)
 		return OP_REFUSED
 	// The insert is a world action: its hooks may refuse it or take it over, and its notice goes out when it lands. move_into() runs it.
-	if(!move_into(holder, slot_id, moving, A.actor))
+	var/result = move_into_attempt(holder, slot_id, moving, A.actor)
+	if(ACT_REFUSED_BY(result))
+		var/datum/act_refusal/refused = result
 		if(moving != thing)
 			op_merge_units(thing, moving)
-		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
-		return (GLOB.act_last_outcome & ACT_REPLACED) ? OP_REPLACED : OP_REFUSED
+		A.reason = refused.reason || /datum/msg/op/not_available
+		return (refused.outcome & ACT_REPLACED) ? OP_REPLACED : OP_REFUSED
 	if(stack_units)
 		stack_units.moved = TRUE
 	return OP_OK

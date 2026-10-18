@@ -146,8 +146,8 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	insulation_deficit = null
 
 /obj/item/geiger/proc/scan(atom/target, mob/user)
-	var/datum/act/geiger_scan/scan = ACT_TRY(target, geiger_scan, user, src)
-	if(!scan)
+	var/datum/act/geiger_scan/scan = ACT_ATTEMPT(target, geiger_scan, user, src)
+	if(ACT_REFUSED_BY(scan))
 		return // the target answered the scan itself
 	act_cancel(scan)
 

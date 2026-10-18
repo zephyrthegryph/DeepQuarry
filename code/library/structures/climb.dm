@@ -16,7 +16,7 @@
 //
 // The climber waits (the climb is cancelled if it moves, falls unconscious, or the structure moves away). The refusals are one requirement, read again when
 // the wait ends: the climber has to be free to act, next to it, the gate has to allow, and the tile it would stand on must be clear (what stands there that
-// is itself climbable does not count). On success the mob is moved onto the tile; ACT_TRY(climber, climb, structure) runs first, so a hook on the mob can
+// is itself climbable does not count). On success the mob is moved onto the tile; ACT_ATTEMPT(climber, climb, structure) runs first, so a hook on the mob can
 // veto the climb, and its notice (climbed) goes out after.
 //
 // Climbers are the actors of the pending climb ops on the structure (climbers_of()). climb_shake_off(structure, shaker) knocks them off: the structure
@@ -123,10 +123,11 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		A.reason = /datum/msg/climb/blocked
 		return OP_REFUSED
 	GLOB.act_next_actor = climber
-	var/datum/act/climb/C = ACT_TRY(climber, climb, holder)
+	var/C = ACT_ATTEMPT(climber, climb, holder)
 	GLOB.act_next_actor = null
-	if(isnull(C))
-		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
+	if(ACT_REFUSED_BY(C))
+		var/datum/act_refusal/refused_C = C
+		A.reason = refused_C.reason || /datum/msg/op/not_available
 		log_world("CLIMB: [climber] onto [holder] refused or taken over ([A.reason])")
 		return OP_REFUSED
 	climber.forceMove(destination)

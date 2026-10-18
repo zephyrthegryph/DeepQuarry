@@ -8,6 +8,10 @@
 //   holder.slot_lookup(slot_id, key)                  the thing keyed `key` in a keyed slot, or null
 //   dq_ledger_refusal(thing, holder, slot_id, actor)  why a move would fail, or null
 //
+// The stated order of reasons (admission.md D2h): sanity (gone, inside itself, no such holder or slot, already there), release (the source's
+// removal rules and /datum/act/remove needs), the slot's accepts (type list, then requirements), fits, a keyed duplicate, capacity (a replace policy
+// may displace an occupant), then the insert action's needs(). The first refusal is the one a player sees.
+//
 // Each move checks both sides first: the thing can leave its current slot
 // (the slot's removal_refusal() and /datum/act/check_remove), and it can enter
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
@@ -55,7 +59,8 @@
 		. = dq_ledger_removal_refusal(thing, actor)
 		if(.)
 			return .
-	. = def.refusal(holder, thing, actor)
+	// The slot's own answer may be a /datum/msg (a requirement's reason); this proc answers in text, like every other reason it gives.
+	. = reason_text(def.refusal(holder, thing, actor))
 	if(.)
 		return .
 	if(def.keyed)
@@ -68,8 +73,15 @@
 		var/limit = def.capacity_for(holder)
 		if(limit != INFINITY)
 			var/cost = (def.quantity && !isnull(units)) ? def.unit_cost(holder, thing) * units : def.cost(holder, thing)
-			if(dest.current_used(id) + def.latent_used(holder) + cost > limit)
-				return "there's no room for it"
+			var/used_now = dest.current_used(id) + def.latent_used(holder)
+			if(used_now + cost > limit)
+				// A full slot with a replace policy gives up an occupant when that makes room, if the occupant may leave (its remove needs() apply).
+				var/atom/movable/displaced = def.displaced_for(holder, thing)
+				if(!displaced || used_now - def.cost(holder, displaced) + cost > limit)
+					return "there's no room for it"
+				. = dq_ledger_removal_refusal(displaced, actor)
+				if(.)
+					return .
 	return reason_text(op_transfer_precheck(holder, /datum/act/insert, thing, id, actor))
 
 /// Why `thing` can't leave the slot it is in now, or null. Things not in a
@@ -81,7 +93,7 @@
 	if(!entry)
 		return null
 	var/datum/relation_definition/slot/def = from.def_by_id(entry[LEDGER_E_SLOT])
-	. = def.removal_refusal(source, thing, actor)
+	. = reason_text(def.removal_refusal(source, thing, actor))
 	if(.)
 		return .
 	return reason_text(op_transfer_precheck(source, /datum/act/remove, thing, entry[LEDGER_E_SLOT], actor))
@@ -92,6 +104,7 @@
 /proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0)
 	var/datum/ledger/dest = holder.containment_ledger()
 	var/id = slot_id || dest.default_id
+	dq_ledger_make_room(thing, holder, id)
 	if(thing.loc == holder)
 		dest.reslot(thing, id, flags)
 		return TRUE
@@ -108,6 +121,26 @@
 		dest.pending_flags = null
 	var/list/entry = dest.entries?[thing]
 	return entry && entry[LEDGER_E_SLOT] == id
+
+/// A slot with a replace policy that is full gives up the occupant its policy names so `thing` fits (the refusal check already asked whether it may
+/// leave). It goes to where `thing` came from when that is a floor or another holder, else to the holder's turf. Nothing happens for a slot that
+/// refuses when full or has room.
+/proc/dq_ledger_make_room(atom/movable/thing, atom/holder, id)
+	var/datum/ledger/dest = dq_ledger(holder)
+	var/datum/relation_definition/slot/def = dest?.def_by_id(id)
+	if(!def || def.replace == REFUSE || def.capacity_model == SLOT_CAPACITY_NONE)
+		return
+	var/limit = def.capacity_for(holder)
+	if(limit == INFINITY || dest.current_used(id) + def.latent_used(holder) + def.cost(holder, thing) <= limit)
+		return
+	var/atom/movable/displaced = def.displaced_for(holder, thing)
+	if(!displaced)
+		return
+	var/atom/where = thing.loc
+	if(!isturf(where) && !(where && where != holder && dq_slot_defs_for(where)))
+		where = get_turf(holder)
+	log_world("SLOT_REPLACE: [displaced] leaves [holder] ([id]) for [thing]; it goes to [where || "nullspace"]")
+	holder.slot_remove(displaced, where, null, LEDGER_MOVE_FORCED | LEDGER_MOVE_DISPLACED)
 
 /// Take `thing` out of this holder's slots to `destination`. A destination
 /// with slots makes this a transfer into its default slot. `flags` may carry
@@ -168,62 +201,90 @@
 
 /**
  * Move `thing` from one of this holder's slots into `new_holder`'s slot (`slot_id`, null: its default slot). A transfer is a remove and an
- * insert and always runs both as world actions, with their hooks (ACT_TRY of /datum/act/remove on this holder, then /datum/act/insert on
+ * insert and always runs both as world actions, with their hooks (ACT_ATTEMPT of /datum/act/remove on this holder, then /datum/act/insert on
  * `new_holder`, each carrying `actor`): a belly's consent requirement or a bay's accepts is a needs() hook that refuses it like any other
  * move, an instead() takes it over, and the notices of both go out when it lands. Then both ledger checks run (dq_ledger_refusal()) and the move
- * commits. A refused or taken-over transfer changes nothing; the reason is GLOB.act_last_reason. Returns TRUE when it landed.
+ * commits. A refused or taken-over transfer changes nothing. Returns TRUE when it landed; slot_transfer_reason() answers why it did not.
  *
  * `authority` is an AUTH_* mask; only AUTH_ADMIN forces the transfer: the needs() hooks and both ledger refusals are skipped, the actions, their
  * instead()/adjusts() hooks and notices and the commit bookkeeping still run. There is no other bypass.
  */
 /atom/proc/slot_transfer(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
+	return isnull(slot_transfer_reason(thing, new_holder, slot_id, actor, authority))
+
+/// slot_transfer() that answers why: null when `thing` landed, else the refusal reason (text or a /datum/msg).
+/atom/proc/slot_transfer_reason(atom/movable/thing, atom/new_holder, slot_id, mob/actor, authority = null)
 	var/datum/ledger/L = dq_ledger(src)
 	var/list/entry = L?.entries[thing]
-	if(!entry || !new_holder || QDELETED(new_holder))
-		return FALSE
+	if(!entry)
+		return "it isn't in [src]"
+	if(!new_holder || QDELETED(new_holder))
+		return "there is nowhere to put it"
+	if(istype(authority, /datum/authority_grant))
+		var/datum/authority_grant/granted = authority
+		log_world("SLOT_TRANSFER: authority [granted.reason || "unstated"] granted by [granted.granted_by]")
+		authority = granted.mask
 	if(!isnull(authority) && !isnum(authority))
-		stack_trace("slot_transfer(): authority is an AUTH_* mask, got [authority]")
-		return FALSE
+		stack_trace("slot_transfer(): authority is an AUTH_* mask or a /datum/authority_grant, got [authority]")
+		return "the transfer's authority is malformed"
 	var/forced = !!(authority & AUTH_ADMIN)
 	var/from_slot = entry[LEDGER_E_SLOT]
 	GLOB.act_next_actor = actor
 	GLOB.act_next_authority = authority
-	var/datum/act/remove/leaving = ACT_TRY(src, remove, thing, from_slot)
+	var/leaving = ACT_ATTEMPT(src, remove, thing, from_slot)
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
-	if(isnull(leaving))
-		log_world("SLOT_TRANSFER: [thing] out of [src] ([from_slot]) refused or taken over ([GLOB.act_last_reason])")
-		return FALSE
+	if(ACT_REFUSED_BY(leaving))
+		var/datum/act_refusal/kept = leaving
+		log_world("SLOT_TRANSFER: [thing] out of [src] ([from_slot]) refused or taken over ([reason_text(kept.reason)])")
+		return kept.reason || /datum/msg/op/not_available
 	GLOB.act_next_actor = actor
 	GLOB.act_next_authority = authority
-	var/datum/act/insert/entering = ACT_TRY(new_holder, insert, thing, slot_id)
+	var/entering = ACT_ATTEMPT(new_holder, insert, thing, slot_id)
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
-	if(isnull(entering))
-		var/refused_for = GLOB.act_last_reason
-		var/refused_how = GLOB.act_last_outcome
+	if(ACT_REFUSED_BY(entering))
+		var/datum/act_refusal/refused = entering
 		act_cancel(leaving)
-		GLOB.act_last_reason = refused_for // cancelling the removal must not hide why the insert was refused
-		GLOB.act_last_outcome = refused_how
-		log_world("SLOT_TRANSFER: [thing] into [new_holder] ([slot_id || "default"]) refused or taken over ([GLOB.act_last_reason])")
-		return FALSE
-	var/into_slot = ACT_FINAL(entering, slot_id, slot_id)
+		log_world("SLOT_TRANSFER: [thing] into [new_holder] ([slot_id || "default"]) refused or taken over ([reason_text(refused.reason)])")
+		return refused.reason || /datum/msg/op/not_available
+	var/datum/act/insert/entered = entering
+	var/into_slot = ACT_FINAL(entered, slot_id, slot_id)
 	var/landed = FALSE
+	var/failed_for = null
 	if(forced)
 		log_world("SLOT_TRANSFER: FORCED [thing] from [src] ([from_slot]) to [new_holder] ([into_slot || "default"]) by [actor ? key_name(actor) : "the game"]")
 		landed = dq_ledger_force_move(thing, new_holder, LEDGER_MOVE_FORCED, into_slot)
-	else if(!dq_ledger_refusal(thing, new_holder, into_slot, actor))
-		landed = dq_ledger_commit(thing, new_holder, into_slot)
+	else
+		failed_for = dq_ledger_refusal(thing, new_holder, into_slot, actor)
+		if(!failed_for)
+			landed = dq_ledger_commit(thing, new_holder, into_slot)
 	if(!landed)
-		var/failed_for = GLOB.act_last_reason
 		act_cancel(entering)
 		act_cancel(leaving)
-		GLOB.act_last_reason = failed_for
-		return FALSE
+		return failed_for || "it won't go into [new_holder]"
 	TEST_REC_TRANSFER(thing, src, new_holder, into_slot)
 	act_done(leaving)
 	act_done(entering)
-	return TRUE
+	return null
+
+/// An authority a caller is granted for one transfer: who granted it (a log name, never a reference), why, and which AUTH_* bits it carries.
+/// slot_transfer(authority =) takes this or a bare mask; the grant is logged. (admission.md D2j: the datum replaces forced/silent flags; a `quiet`
+/// field arrives with the first feedback path that reads it.)
+/datum/authority_grant
+	var/mask = AUTH_ADMIN
+	var/granted_by = "the game"
+	var/reason
+
+/// A grant of admin authority: `actor` forces a transfer for `reason`.
+/proc/admin_authority(mob/actor, reason, mask = AUTH_ADMIN)
+	RETURN_TYPE(/datum/authority_grant)
+	var/datum/authority_grant/granted = new
+	granted.mask = mask
+	if(actor)
+		granted.granted_by = key_name(actor)
+	granted.reason = reason
+	return granted
 
 /// Remove everything in `slot_id` (null: every slot) to `destination`.
 /// Returns how many things left.

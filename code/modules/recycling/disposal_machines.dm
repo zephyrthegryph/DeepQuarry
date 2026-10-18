@@ -715,8 +715,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(stat_tracking)
 		GLOB.disposals_flush_shift_roundstat++
 
-	var/datum/act/flush_disposal/flush = ACT_TRY(src, flush_disposal, flushed_items, air_contents)
-	if(flush) //If nothing handles it, we'll just expel immediately.
+	var/datum/act/flush_disposal/flush = ACT_ATTEMPT(src, flush_disposal, flushed_items, air_contents)
+	if(!ACT_REFUSED_BY(flush)) //If nothing handles it, we'll just expel immediately.
 		act_cancel(flush)
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)

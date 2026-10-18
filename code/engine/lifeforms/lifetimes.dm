@@ -14,7 +14,7 @@
 //		on_ending(PROC_REF(stop_aiming))
 //
 // A scope is nameof(var) of a var holding a datum (the holder ends when that datum ends or the var stops naming a live one), nameof(var) of a
-// truthy var, or a condition (PROC_REF(x), cond_not/all/any) re-checked when a var in `watches` is written. Each var it reads must publish
+// truthy var, or a condition (PROC_REF(x), not/all_of/any_of) re-checked when a var in `watches` is written. Each var it reads must publish
 // its writes (TRACKED, or a setter calling tracked_changed()). The ending's cause is END_SCOPE, or END_OWNER when the scope datum ended.
 //
 // on_ending(PROC_REF(x)) runs x(cause, by) when the holder ends, however it ends, before the destroy transaction tears anything down.

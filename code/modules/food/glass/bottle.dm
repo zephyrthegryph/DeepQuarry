@@ -16,7 +16,7 @@
 CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	configure(reagent_container(starts_open = FALSE))
-	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = not(nameof(icon_state)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/reagent_containers/glass/bottle/proc/roll_icon_state(datum/roller/R)

@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 
 CAPABILITIES(/obj/item/poi/broken_drone_circuit)
 	// the old attack_self: study the circuit for a while
-	op("analyze", in_hand(), label("Analyze"), when(cond_not(nameof(fried))), begins(MSG(drone_circuit/analyzing)), wait(5 SECONDS), then(PROC_REF(analyzed)))
+	op("analyze", in_hand(), label("Analyze"), when(not(nameof(fried))), begins(MSG(drone_circuit/analyzing)), wait(5 SECONDS), then(PROC_REF(analyzed)))
 	op("analyze_fried", in_hand(), label("Analyze"), when(nameof(fried)), then(PROC_REF(analyzed_fried)))
 	// the old attackby: screwdriver, wirecutters, multitool and analyzer on the blackbox (a fried board is past saving)
 	op("work", item(/obj/item), label("Use"), needs(req_is(nameof(fried), FALSE, because = MSG(drone_circuit/fried))), then(PROC_REF(interaction_item)))

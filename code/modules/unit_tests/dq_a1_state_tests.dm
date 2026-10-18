@@ -57,8 +57,8 @@
 	for(var/act_type in list(/datum/act/stumbled_into, /datum/act/fall, /datum/act/thrown_hit, /datum/act/cross))
 		TEST_ASSERT(act_wanted(H, act_type), "a living mob hooks [act_type]")
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human)
-	var/datum/act/stumbled_into/stumble = ACT_TRY(H, stumbled_into, other)
-	TEST_ASSERT(stumble, "with vore preferences off nobody is eaten: the stumble proceeds")
+	var/datum/act/stumbled_into/stumble = ACT_ATTEMPT(H, stumbled_into, other)
+	TEST_ASSERT(!ACT_REFUSED_BY(stumble), "with vore preferences off nobody is eaten: the stumble proceeds")
 	act_done(stumble)
 
 /// on_change(when =): a holder the gate excludes queues nothing when the key is published.

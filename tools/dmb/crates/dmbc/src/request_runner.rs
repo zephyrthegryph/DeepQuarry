@@ -628,6 +628,7 @@ fn run_build_attempt(
     dm_profile::request_mark("frontend.revision");
     if retains_query_owners {
         // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        let _timer = dm_profile::detail_timer("frontend.remember");
         semantic_state.remember_frontend(&project, &defines, frontend.clone());
     }
     if progress_enabled {

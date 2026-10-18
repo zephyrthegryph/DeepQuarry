@@ -340,7 +340,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			LAZYADD(P.notices, H) // ALLOW(ownership): an engine record the one teardown path drops
 			P.wanted |= H.outcomes
 
-/// TRUE when anything hooks `act_type` on holder, or listens for its notice for any outcome (so ACT_TRY must build a real act).
+/// TRUE when anything hooks `act_type` on holder, or listens for its notice for any outcome (so ACT_ATTEMPT must build a real act).
 /proc/act_wanted(datum/holder, act_type)
 	if(!islist(GLOB?.act_plans) || QDELETED(holder))
 		return FALSE

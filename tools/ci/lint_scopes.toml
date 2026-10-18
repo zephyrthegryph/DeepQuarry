@@ -688,6 +688,8 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17
+transform_ratchet_on_bespoke_then_tails = 132
+transform_ratchet_on_bespoke_data_procs = 42
 generic_hit_ratchet_on_attack_generic_overrides = 38
 
 [lint.op_order]
@@ -720,6 +722,23 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
+  "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
+  "calc_reaction_progress = /datum/xform/proc/progress() (code/library/transformations/transformation_entry.dm)",
+  "react_step = xform_step() (code/library/transformations/transformation_settle.dm)",
+  "get_reaction_lookup = the holder's xform_regime(); the compiled index is xform_bucket_table(medium, regime)",
+  "chemical_reactions = GLOB.xform_rules / xform_rules_in(MEDIUM_REAGENTS, regime): the compiled transformations",
+  "chemical_reactions_by_product = xform_makers_of(MEDIUM_REAGENTS, REGIME_INSTANT, product)",
+  "distilled_reactions_by_product = xform_makers_of(MEDIUM_REAGENTS, REGIME_DISTILLING, product)",
+  "instant_reactions_by_reagent = xform_bucket_table(MEDIUM_REAGENTS, REGIME_INSTANT)",
+  "distilled_reactions_by_reagent = xform_bucket_table(MEDIUM_REAGENTS, REGIME_DISTILLING)",
+  "initialize_chemical_reactions = the transformations compile at world setup (static_entries); nothing builds them lazily",
+  "distilling_temp_range = holds = temperature_in(lo, hi) in the transformation() entry; a rule's bands are its bands list",
+  "log_is_important = important = TRUE in the transformation() entry",
+  "temp_shift = energy = per_step(joules) in the transformation() entry",
+  "consumes_xgm_gas = takes_ambient = list(gas(id, moles)) in the transformation() entry",
+  "minimum_xgm_pressure = holds = pressure_in(lo, hi) in the transformation() entry",
+  "maximum_xgm_pressure = holds = pressure_in(lo, hi) in the transformation() entry",
   "/datum/req = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "/datum/requirement_composer = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
@@ -750,6 +769,15 @@ banned = [
   "op_legacy_req_has_form = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "op_requirement_has_form = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
   "OP_LEGACY_REQ_FORMS = the old /datum/req flyweights and /datum/requirement are gone (doc/rewrite/proposals/admission.md D1): write the native req_* part of code/engine/parts/cond.dm and code/library/requirements/",
+  "cond_not = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
+  "cond_all = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
+  "cond_any = the condition-tree combinators are the requirement language's own (doc/rewrite/proposals/admission.md wave 1): write not(), all_of() or any_of(); given a condition they build the same tree",
+  "req_acceptance_either = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
+  "req_acceptance_both = any_of()/all_of() take no because = (a variadic proc rejects an undeclared named argument): write with_reason(any_of(...), MSG(x)) (doc/rewrite/proposals/admission.md wave 1)",
+  "act_last_reason = the last action's reason has no side channel: ACT_ATTEMPT() answers a /datum/act_refusal; move_into_reason()/slot_transfer_reason() answer why a transfer did not happen (doc/rewrite/proposals/admission.md wave 2)",
+  "ACT_TRY = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
+  "act_last_outcome = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
+  "act_last_reply = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
   "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/modules/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
   "hold_effect_factors = a body effect application's own factors() entry (/datum/body_effect_origin, code/modules/body/body_effects.dm): the stat layer holds its table on the mob",
   "hold_reagent_factors = a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): its factors() entries read the volume from the body and the stat layer holds the tables on the mob",
@@ -1413,7 +1441,7 @@ banned = [
   "om_task_periodic_running = every(interval, then(PROC_REF(x_step)), when = nameof(field)) in the type CAPABILITIES block, with the field written through its setter (every_running(E) asks if it is armed). Left on the cadence: the per-tick lanes (projectiles, throwing, priority status effects) wait for a members-swept every()",
   "DECLARE_PERIODIC = every(interval, then(PROC_REF(x_step)), when = nameof(field)) in the type CAPABILITIES block",
   "DECLARE_PERIODIC_WHILE = every(interval, then(PROC_REF(x_step)), when = nameof(field)) in the type CAPABILITIES block",
-  "DECLARE_PERIODIC_WHILE_ALL = every(interval, then(PROC_REF(x_step)), when = cond_all(nameof(a), cond_not(nameof(b)))) in the type CAPABILITIES block",
+  "DECLARE_PERIODIC_WHILE_ALL = every(interval, then(PROC_REF(x_step)), when = all_of(nameof(a), not(nameof(b)))) in the type CAPABILITIES block",
   "DECLARE_REPEAT = every(delay, then(PROC_REF(x)), when = nameof(field)) in the type CAPABILITIES block",
   "DECLARE_LOOT = loot(table = list(...), ...) in the type's CAPABILITIES block (configure(loot(...)) in a subtype; code/library/loot/loot_entries.dm)",
   "LOOT_TABLE = table = list(...) of the loot() entry",

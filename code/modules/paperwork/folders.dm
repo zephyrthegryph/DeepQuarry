@@ -20,6 +20,11 @@
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
 
+/datum/relation_definition/slot/folder_pages/accepts_requirements()
+	return req_acceptance_tag(TAG_PAPERWORK, because = MSG(folder/only_paper))
+
+MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
+
 /// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
 /obj/item/folder/draw(datum/look/look)
 	..()
@@ -111,7 +116,6 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
-	acceptance(CONTAINER_SLOT_PAGES, req_acceptance_tag(TAG_PAPERWORK, because = "only paper, photos and bundles fit"))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))

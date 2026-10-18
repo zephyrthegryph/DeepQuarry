@@ -26,7 +26,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 CAPABILITIES(/obj/machinery/computer/ship/helm)
 	configure(light_glow(color = "#7faaff"))
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(autopilot), cond_not(nameof(autopilot_disabled))), wakes_on = list(nameof(autopilot), nameof(autopilot_disabled)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(autopilot), not(nameof(autopilot_disabled))), wakes_on = list(nameof(autopilot), nameof(autopilot_disabled)))
 	owns_many(nameof(known_sectors))
 	// The helm's buttons (its window is the overmap console's, opened by the console's own interactions). A navigation entry's name and
 	// coordinates and the autopilot limits are asked in the op (asks()); the handler applies the answers.

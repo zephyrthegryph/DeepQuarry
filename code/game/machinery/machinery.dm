@@ -142,10 +142,10 @@ CAPABILITIES(/obj/machinery)
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
 	extend("melee_hit", when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))))
 	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
-		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
+		when(all_of(req(/mob/living/silicon/robot, of = ON_ACTOR), any_of(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
 		needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
-	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
+	contributes(STAT_OPERABLE, not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read (its generated deps invalidate it). A type that runs on its own supply, or
 	// delays its loss, drops this entry by its key and says its own.
@@ -164,14 +164,14 @@ CAPABILITIES(/obj/machinery)
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
 	section(maintenance, "The panel, deconstruct, secure and weld repair that the type's maintenance_flags offer (machinery_maintenance.dm)")
 	op("machine_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Open maintenance panel"),
-		when(PROC_REF(maint_offers_panel)), when(cond_not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
+		when(PROC_REF(maint_offers_panel)), when(not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
 	op("machine_panel_close", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Close maintenance panel"),
 		// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
 		when(PROC_REF(maint_offers_panel)), when(nameof(panel_open)), says(MSG(interaction/maintenance_panel/close)), then(PROC_REF(toggle_maintenance_panel)))
 	op("machine_deconstruct", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Deconstruct"), when(PROC_REF(maint_offers_frame)),
 		needs(req(PROC_REF(maintenance_panel_open), because = MSG(interaction/maintenance_panel/closed))), then(PROC_REF(maintenance_deconstruct)))
 	op("machine_anchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Secure"),
-		when(PROC_REF(maint_offers_wrench)), when(cond_not(nameof(anchored))), needs(req(PROC_REF(maintenance_panel_shut))),
+		when(PROC_REF(maint_offers_wrench)), when(not(nameof(anchored))), needs(req(PROC_REF(maintenance_panel_shut))),
 		begins(MSG(start/interaction/machine_anchor/secure)), says(MSG(interaction/machine_anchor/secure)), then(PROC_REF(toggle_maintenance_anchor)))
 	op("machine_unanchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Unsecure"),
 		when(PROC_REF(maint_offers_wrench)), when(nameof(anchored)), needs(req(PROC_REF(maintenance_panel_shut))),

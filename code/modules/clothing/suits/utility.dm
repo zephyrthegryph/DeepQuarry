@@ -20,7 +20,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/fire)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = 0))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_pressure = 0.2 * ONE_ATMOSPHERE, max_pressure = 20  * ONE_ATMOSPHERE))
 
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/clothing/head/bomb_hood/security)
 	icon_state = "bombsuitsec"
 
 CAPABILITIES(/obj/item/clothing/suit/bomb_suit/security)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 
 /*
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 
 
 CAPABILITIES(/obj/item/clothing/suit/radiation)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/clothing/suit/radiation)
 	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/paramedic)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO, hides = HIDEHOLSTER))
 
 

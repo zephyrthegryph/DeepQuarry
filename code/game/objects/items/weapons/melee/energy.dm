@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/melee/energy)
 		asks(/datum/prompt/color/blade_recolor, fields = list("title" = "Choose Energy Color", "default" = "lcolor"), step = "colour", when = PROC_REF(recolor_confirmed)),
 		then(PROC_REF(blade_recolored)))
 	owns_one(nameof(bcell), /obj/item/cell)
-	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
+	op("power", in_hand(), when(not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 

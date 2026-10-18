@@ -1001,7 +1001,7 @@ CAPABILITIES(/obj/item/light)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
-	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
+	op("shatter", at_target(), hostile(), when(not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
 	on_change(nameof(status), ANY, then(PROC_REF(status_changed)))
 	param(nameof(fixture_at_make), pos = 1, keep = FALSE)
 
@@ -1407,11 +1407,11 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /// it too (it has no emergency lighting of its own to toggle).
 CAPABILITIES(/obj/machinery/light/flamp)
 	anchor()
-	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
+	op("add_shade", item(/obj/item/lampshade), when(not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
 	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
 	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
 		needs(req(PROC_REF(has_light_in_fitting))), then(PROC_REF(toggle_lamp)))
-	extend("open_casing", when(cond_not(nameof(lamp_shade))))
+	extend("open_casing", when(not(nameof(lamp_shade))))
 
 /obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)
 	return status != LIGHT_EMPTY ? null : /datum/msg/light/no_bulb

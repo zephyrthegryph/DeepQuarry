@@ -1055,7 +1055,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/static/list/ignored = list(
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
-		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
 	)
 	return ignored
 

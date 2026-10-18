@@ -2,7 +2,7 @@
 // "Stats": a status is a stat; section 16.4). The status is a status stat (STAT_SLEEPING, STAT_PARALYZED, ...), held the way a voluntary sleep holds
 // it: no duration, under the activation's source, released when the activation ends.
 //
-//   when(cond_all(nameof(on), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(STAT_SLEEPING), on = ON_CONTENTS))
+//   when(all_of(nameof(on), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(STAT_SLEEPING), on = ON_CONTENTS))
 //       a working cryo cell keeps its occupant asleep; a cell switched off, unpowered or left lets them wake, with no code that releases anything
 //
 // It belongs to a granted or slotted activation (a while_slotted() entry, an op's grants()): a type's own CAPABILITIES list has no activation to scope
