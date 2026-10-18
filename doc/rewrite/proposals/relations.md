@@ -210,6 +210,12 @@ Assoc lists keyed by datum are references the lint does not see. Verified long-l
 2. `lifeform_index` becomes the store's sub-indexes; `registry_mirror_join` goes.
 3. The three teardown paths fold into `member_teardown()`; `GLOB.radio_listen_tuned/via` join as a keyed sub-index.
 
+**Done (2026-10-18):** phase 1 (registries in the store, ordered keys, a registry keeps its own list while globals initialize and the store adopts
+it), phase 2 (the key/z/area index is the store's sub-index of the registry key; `GLOB.lifeform_indexes` gone), phase 3 (a datum leaves the
+registries the store lists for it, through each registry, in `leave_registries()`; the declared walk only covers registries not yet adopted).
+`registry_mirror_join` stays: it is the engine's hook into `/datum/registry` (code/datums), which code/engine may not name (layering), and it
+already writes through the store. `GLOB.radio_listen_tuned/via` stay as they are (two engine globals, exempt by path).
+
 ### D13. One native player link (approved item 10)
 Writes to a mob's `key`, `ckey` or `client`: about 104 non-test lines by a dot-write grep (`\.(key|ckey|client) =`; the task quoted 97) **(grep, approximate)**, for example `observer.key = key` (`code/modules/mob/new_player/lobby_browser.dm:189`), `replacement.key = key` (`login.dm:7`). The persistent client link exists: `persistent_client.mob` is a pair with `mob.persistent_client` written by `rel_set` (`code/modules/client/persistent_client.dm:75-83`), and `client`/`persistent_client` are plain vars with a tracked setter (`persistent_client.dm:60-72`, `code/modules/client/client procs.dm:255-259, 406`).
 - One choke point `bind_player(mob, key)` does the native assignment (`mob.key =`) and updates the persistent client relation; every other `.key/.ckey/.client` write is a lint finding (`player_link`, ratchet then ban).

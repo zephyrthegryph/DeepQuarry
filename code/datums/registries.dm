@@ -215,9 +215,24 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// /atom/on_dematerialize() calls this; the destroy transaction calls it for
 /// every other datum (dq_lifecycle_leave_registries()), so a deleted member
 /// is never left behind and nothing removes itself by hand.
+/// One leave path (relations proposal D12): the membership store knows every registry this datum is in (its "registry:<id>" keys), so it leaves
+/// those, through each registry (which unfiles its keyed lists and defers to a batched destroy), instead of walking every registry its type
+/// declares. Before the store exists (global init) the declared walk is the fallback.
 /datum/proc/leave_registries()
+	if(!istype(kernel_membership(), /datum/kernel_membership))
+		for(var/datum/registry/registry as anything in type_registries())
+			if(!skips_registry(registry.id))
+				registry.remove(src)
+		return
+	var/datum/kernel_membership/M = kernel_membership()
+	for(var/key in member_keys(src))
+		if(copytext(key, 1, 10) != "registry:")
+			continue
+		var/datum/registry/registry = build_registries()[copytext(key, 10)]
+		registry?.remove(src)
+	// A registry the store has not adopted yet still holds members joined while globals initialized.
 	for(var/datum/registry/registry as anything in type_registries())
-		if(!skips_registry(registry.id))
+		if(!M.ordered_keys?[registry.store_key()] && !skips_registry(registry.id))
 			registry.remove(src)
 
 /// Puts `member` in conditional registry `id` (idempotent). Its type must
