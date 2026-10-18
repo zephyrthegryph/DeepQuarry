@@ -117,7 +117,12 @@ lap "gen and fetch"
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
 # repair commit. Only when HEAD is an unpushed merge commit (the merge worktree's batch): a lane-ready run or any other HEAD keeps
 # its sha, which its caller already recorded. `analyze baseline --update` never adds a site or raises a ceiling.
-if [ "$early_reuse" -eq 0 ] && [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null 	&& bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
+# DQ_SHRINK_IN_RATCHETS=1 (the default) moves it into the ratchets job, where the model is already loaded, and records it after the jobs
+# pass (with the look keys): a cold `baseline --update` here cost 120-150 s before any job started.
+shrink_after=0
+if [ "$early_reuse" -eq 0 ] && [ "${DQ_SHRINK_IN_RATCHETS:-1}" = 1 ] && [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
+	shrink_after=1
+elif [ "$early_reuse" -eq 0 ] && [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null 	&& bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
 	"$bin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are" >&2
 	if ! git diff --quiet -- tools/ci; then
 		echo "dq_merge_gates: shrank ratchet baselines into the merge commit:"
@@ -132,6 +137,7 @@ if [ "$early_reuse" -eq 0 ] && [ "${DQ_NO_PINS:-0}" != 1 ]; then
 	bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
 fi
 lap "look keys"
+look_in_tests=0
 # Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
 # its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
 if [ "$early_reuse" -eq 1 ]; then
@@ -146,6 +152,14 @@ elif [ "$run_tests" -eq 1 ] && [ "${DQ_NO_PINS:-0}" != 1 ] && [ "$snapshot_outpu
 		# The look pins write no tests.log lines while probing a large unverified set; the 12 min stall detector (DQ_DD_STALL_MINUTES) killed
 		# them as hung. Raise it to the pin run timeout unless the caller set it (the hard timeout still applies).
 		export DQ_DD_STALL_MINUTES="${DQ_DD_STALL_MINUTES:-${DQ_FOCUS_TIMEOUT_MINUTES:-150}}"
+	fi
+	if [ "${unverified_n:-0}" -gt 0 ] && [ "${DQ_LOOK_IN_TESTS:-1}" = 1 ]; then
+		# The pins ride in the tests job: one compile, their sharded look worlds beside the main worlds, and the production compile and the
+		# ratchets run meanwhile, instead of a whole pin run (1100-1500 s on 16k unverified types) before any job starts. The keys they
+		# verify are recorded into HEAD after every job passed (below). DQ_LOOK_IN_TESTS=0 runs them first, as before.
+		look_in_tests=1
+		echo "== look pins: deferred into the tests job ($unverified_n types)"
+	elif [ "${unverified_n:-0}" -gt 0 ]; then
 		bash tools/dq_focused_test.sh dq_look_state_pin dq_look_tree_pin || { echo "dq_merge_gates: FAILED: the look pins over the unverified types; fix them (or bless explicitly), recommit, rerun" >&2; exit 1; }
 		if ! git diff --quiet -- code/modules/unit_tests/snapshots/look_keys.txt; then
 			git add -- code/modules/unit_tests/snapshots/look_keys.txt
@@ -241,6 +255,11 @@ if [ "$reproof" -eq 1 ]; then
 	add_test "${rp_tests[@]}"
 fi
 if [ "$run_tests" -eq 1 ] && [ ${#tests[@]} -eq 0 ]; then tests=(dq_boot_gate); fi
+if [ "$look_in_tests" -eq 1 ]; then
+	for t in dq_look_state_pin dq_look_tree_pin; do
+		case " ${tests[*]-} " in *" $t "*) ;; *) tests+=("$t") ;; esac
+	done
+fi
 
 # ---- a proof for this exact tree ------------------------------------------------------------------------------------------------
 # dq_lane_ready.sh proves a lane on its merge with master and stores the proof under the TREE hash (tools/dq_proof_cache.sh). If master
@@ -295,6 +314,10 @@ job_dm() {
 job_ratchets() {
 	bash tools/ci/check_ratchets.sh || return 1
 	tools/build/build.sh analyze || return 2
+	if [ "$shrink_after" -eq 1 ]; then
+		local abin
+		abin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$abin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are"
+	fi
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
@@ -365,6 +388,31 @@ else
 fi
 
 git update-index -q --refresh >/dev/null 2>&1
+# The look keys the tests job verified (look_in_tests) go into HEAD now that every job passed: the same record the pre-job pin run made.
+# Only look_keys.txt may differ, and only by verified rows, so the stamps below name the recorded commit.
+# A shrunk baseline (shrink_after) is recorded the same way: it only drops fixed sites, so the ratchet verdict cannot change.
+record_paths=()
+[ "$look_in_tests" -eq 1 ] && record_paths+=(code/modules/unit_tests/snapshots/look_keys.txt)
+[ "$shrink_after" -eq 1 ] && record_paths+=(tools/ci)
+if [ ${#record_paths[@]} -gt 0 ] && [ "$(git rev-parse HEAD)" = "$sha" ] && ! git diff --quiet -- "${record_paths[@]}" 	&& [ -z "$(git diff --name-only -- . "${record_paths[@]/#/:!}")" ] && git diff --cached --quiet; then
+	if [ "$shrink_after" -eq 1 ] && ! git diff --quiet -- tools/ci; then
+		echo "dq_merge_gates: shrank ratchet baselines into the merge commit:"
+		git diff --stat -- tools/ci | tail -n 5
+	fi
+	git add -- "${record_paths[@]}"
+	if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
+		git commit -q --amend --no-edit
+	else
+		git commit -q -m "Record look keys for the types the merge gates probed" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+	fi
+	new_sha="$(git rev-parse HEAD)"
+	for f in data/merge-gates/"$short".*; do [ -e "$f" ] && cp -f "$f" "data/merge-gates/${new_sha:0:12}${f#data/merge-gates/$short}"; done
+	echo "dq_merge_gates: recorded the verified look keys / shrunk baselines into HEAD (${short} -> ${new_sha:0:12})"
+	sha="$new_sha"
+	short="${sha:0:12}"
+	timings="data/merge-gates/$short.timings"
+	tree="$(proof_tree HEAD)"
+fi
 gate_diff_args=()
 if [ "$snapshot_output" -eq 1 ]; then
 	# Lane-ready commits successful pin output itself; every other tracked edit remains forbidden.
