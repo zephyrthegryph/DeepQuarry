@@ -5193,3 +5193,18 @@ the containment conservation test and preserves the closed state when a stronger
 independent density hold is later released. Non-dense wall lockers remain passable.
 Direct regression: `dq_closet_density_state`; conservation regression:
 `dq_containment_conservation_fuzz/representative`. No snapshots are re-recorded.
+
+## Declaration repair verification (2026-10-17)
+
+`setup(with_params = TRUE)` consumes constructor-only parameters before an opted-in
+holder's ordinary setup hooks. Holders without that phase retain master's existing
+setup-before-drop ordering, including setup hooks that read transient parameters.
+`dq_decl_parameter_setup` exercises both orders, rejected construction and cleanup
+after a completion hook throws. No snapshots are used.
+
+The reflector draw introduced on master by `7ef26a99fa` conditioned its visible
+rotation on whether rotation was unlocked. Locking therefore reset its displayed
+orientation while its reflection angle stayed unchanged. The draw now uses the
+stored angle regardless of lock state; the lock still prevents angle edits.
+`dq_decl_visual/reflector` verifies the real overlay transform before and after
+locking. No snapshots are re-recorded.

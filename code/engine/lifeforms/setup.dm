@@ -13,7 +13,8 @@
 
 /// with_params opts into the constructor-completion phase: the complete Initialize
 /// chain has returned, but keep=FALSE arguments have not been dropped yet. Ordinary
-/// setup remains after parameter drop. Rejected constructors run neither phase.
+/// setup on an opted-in holder runs after parameter drop; other holders retain
+/// their existing setup-before-drop ordering. Rejected constructors run neither phase.
 /proc/setup(handler, with_params = FALSE)
 	if(!istext(handler))
 		declare_report("setup(): the hook is PROC_REF(x), got [handler]")

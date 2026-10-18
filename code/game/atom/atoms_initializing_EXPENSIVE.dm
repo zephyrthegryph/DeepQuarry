@@ -43,6 +43,8 @@
 	if(setup_pending?[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !init_discard_pending?[A])
 		try
 			setup_run(A, with_params = TRUE)
+			if(param_drop_pending?[A])
+				params_drop(A)
 		catch(var/exception/e)
 			if(param_drop_pending?[A])
 				params_drop(A)

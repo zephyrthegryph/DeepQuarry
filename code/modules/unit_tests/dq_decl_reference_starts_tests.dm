@@ -91,6 +91,15 @@ CAPABILITIES(/obj/dq_decl_parameter_setup)
 /obj/dq_decl_parameter_setup/fault
 	fail_setup = TRUE
 
+/obj/dq_decl_ordinary_parameter_setup
+	var/payload
+	var/saw_payload
+CAPABILITIES(/obj/dq_decl_ordinary_parameter_setup)
+	param(nameof(payload), pos = 1, keep = FALSE)
+	setup(PROC_REF(remember_payload))
+/obj/dq_decl_ordinary_parameter_setup/proc/remember_payload()
+	saw_payload = payload
+
 /datum/unit_test/dq_decl_parameter_setup
 	var/obj/dq_decl_parameter_setup/captured_holder
 CAPABILITIES(/datum/unit_test/dq_decl_parameter_setup)
@@ -107,6 +116,9 @@ CAPABILITIES(/datum/unit_test/dq_decl_parameter_setup)
 	TEST_ASSERT_NULL(H.payload, "constructor-only input is not retained")
 	TEST_ASSERT(!(H in setup_pending), "completed setup leaves no pending holder")
 	TEST_ASSERT(!(H in param_drop_pending), "completed params leave no pending holder")
+	var/obj/dq_decl_ordinary_parameter_setup/ordinary = allocate(/obj/dq_decl_ordinary_parameter_setup, test_floor(), 47)
+	TEST_ASSERT_EQUAL(ordinary.saw_payload, 47, "ordinary holders retain master's setup-before-drop ordering")
+	TEST_ASSERT_NULL(ordinary.payload, "ordinary holders still drop constructor-only input after setup")
 	rel_clear(src, nameof(captured_holder))
 	var/list/rejected = list()
 	var/obj/dq_decl_parameter_setup/R = new /obj/dq_decl_parameter_setup/rejected(test_floor(), 23, rejected, src)
