@@ -84,6 +84,52 @@ impl<'a> fmt::Display for NameAndDefine<'a> {
 
 type InnerDefineHistory = IntervalTree<Location, (String, Define)>;
 
+/// A [`Define`] without its shared docs pointer, for storage.
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+pub enum StoredDefine {
+    Constant { subst: Vec<Token>, docs: DocCollection },
+    Function { params: Vec<Ident>, subst: Vec<Token>, variadic: bool, docs: DocCollection },
+}
+
+/// A [`DefineHistory`] as plain data (DeepQuarry's analyzer keeps it beside its stored model, `tools/analyze/src/sem/model_store.rs`):
+/// the macro state at the start of any file of the parse, without parsing what came before it.
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
+pub struct StoredDefineHistory {
+    pub env_file: PathBuf,
+    pub last_input_loc: Location,
+    /// (start, end, name, definition) of every definition the parse made.
+    pub entries: Vec<(Location, Location, String, StoredDefine)>,
+}
+
+impl DefineHistory {
+    pub fn to_stored(&self) -> StoredDefineHistory {
+        let entries = self
+            .tree
+            .iter()
+            .map(|(r, (name, d))| {
+                let sd = match d {
+                    Define::Constant { subst, docs } => StoredDefine::Constant { subst: subst.clone(), docs: (**docs).clone() },
+                    Define::Function { params, subst, variadic, docs } => StoredDefine::Function { params: params.clone(), subst: subst.clone(), variadic: *variadic, docs: (**docs).clone() },
+                };
+                (r.start, r.end, name.clone(), sd)
+            })
+            .collect();
+        StoredDefineHistory { env_file: self.env_file.clone(), last_input_loc: self.last_input_loc, entries }
+    }
+
+    pub fn from_stored(s: &StoredDefineHistory) -> DefineHistory {
+        let mut tree = InnerDefineHistory::new();
+        for (start, end, name, d) in &s.entries {
+            let d = match d {
+                StoredDefine::Constant { subst, docs } => Define::Constant { subst: subst.clone(), docs: Rc::new(docs.clone()) },
+                StoredDefine::Function { params, subst, variadic, docs } => Define::Function { params: params.clone(), subst: subst.clone(), variadic: *variadic, docs: Rc::new(docs.clone()) },
+            };
+            tree.insert(range(*start, *end), (name.clone(), d));
+        }
+        DefineHistory { env_file: s.env_file.clone(), last_input_loc: s.last_input_loc, tree }
+    }
+}
+
 /// An interval tree representing historic macro definitions.
 #[derive(Debug)]
 pub struct DefineHistory {

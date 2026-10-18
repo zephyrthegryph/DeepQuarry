@@ -160,7 +160,7 @@ impl Sem {
         };
         let t_build = std::time::Instant::now();
         let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
-        let model_store::Parsed { objtree, files: file_list, errors, env, structure } = parsed;
+        let model_store::Parsed { objtree, files: file_list, errors, env, structure, .. } = parsed;
         let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
@@ -504,26 +504,51 @@ impl Sem {
 /// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
 /// files to register first, in order, so they get the same ids as in the parse that produced that list (`model_store`).
 pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<String>) -> Result<model_store::Parsed, String> {
+    parse_source(dme_path, preregister, Source::Dme(text), false)
+}
+
+/// What the preprocessor reads.
+pub(crate) enum Source {
+    /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
+    Dme(Option<String>),
+    /// Files read one after the other, starting with the macro state the stored history had at the start of the first: (registered path,
+    /// path on disk). See `model_store`.
+    Alone(std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>, Vec<(PathBuf, PathBuf)>),
+}
+
+/// [`parse_dme`] with the source spelled out; `history` also returns the parse's macro history (`Parsed::defines`).
+pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool) -> Result<model_store::Parsed, String> {
     const BATCH: usize = 8192;
     let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
     let dme_for_pp = dme_path.to_path_buf();
     let pre: Vec<PathBuf> = preregister.to_vec();
+    type Out = (dreammaker::Context, Option<dreammaker::preprocessor::StoredDefineHistory>);
     let pp_thread = std::thread::Builder::new()
         .name("dm-preprocess".into())
         .stack_size(64 * 1024 * 1024)
-        .spawn(move || -> Result<dreammaker::Context, String> {
+        .spawn(move || -> Result<Out, String> {
             let ctx = dreammaker::Context::default();
             for p in &pre {
                 ctx.register_file(p);
             }
-            {
-                // `text` stands in for the .dme's own text (includes resolve against the real .dme's directory, as in the full parse).
-                let pp = match text {
-                    Some(t) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
-                    None => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
+            let stored = {
+                let mut pp = match source {
+                    Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
+                    Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
+                    Source::Alone(hist, files) => {
+                        let Some((first, _)) = files.first() else { return Err("nothing to parse".to_string()) };
+                        let fid = ctx.get_file(first).ok_or("the first file is not registered")?;
+                        let mut pp = dreammaker::preprocessor::DefineHistory::from_stored(&hist).branch_at_file(fid, &ctx);
+                        // An include stack: the first file is read first.
+                        for (reg, abs) in files.iter().rev() {
+                            let f = std::fs::File::open(abs).map_err(|e| format!("{}: {}", abs.display(), e))?;
+                            pp.push_file(reg.clone(), f).map_err(|e| e.to_string())?;
+                        }
+                        pp
+                    }
                 };
                 let mut batch = Vec::with_capacity(BATCH);
-                for tok in dreammaker::indents::IndentProcessor::new(&ctx, pp) {
+                for tok in dreammaker::indents::IndentProcessor::new(&ctx, &mut pp) {
                     batch.push(tok);
                     if batch.len() == BATCH {
                         if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
@@ -534,8 +559,9 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
                 if !batch.is_empty() {
                     let _ = tx.send(batch);
                 }
-            }
-            Ok(ctx)
+                history.then(|| pp.finalize().to_stored())
+            };
+            Ok((ctx, stored))
         })
         .map_err(|e| format!("preprocessor thread: {}", e))?;
     let parse_ctx = dreammaker::Context::default();
@@ -547,7 +573,7 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
         tree.drop_body_ranges();
         tree
     };
-    let ctx = match pp_thread.join() {
+    let (ctx, defines) = match pp_thread.join() {
         Ok(r) => r?,
         Err(_) => return Err("preprocessor thread panicked".to_string()),
     };
@@ -559,7 +585,7 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
         all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
         all.iter().map(|e| format!("{}", e)).collect()
     };
-    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None })
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
 }
 
 fn tempfile_dir(root: &Path) -> PathBuf {

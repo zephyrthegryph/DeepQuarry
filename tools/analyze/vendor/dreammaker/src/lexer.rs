@@ -14,7 +14,7 @@ macro_rules! table {
         $($literal:expr, $name:ident $(-> $close:ident)*;)*
     ) => {
         $(#[$attr])*
-        #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+        #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, serde::Serialize, serde::Deserialize)]
         pub enum $enum_ {
             $(
                 $name,
@@ -240,7 +240,7 @@ fn filter_punct<'a>(input: &'a [(&'static str, Punctuation)], filter: &[u8]) -> 
 }
 
 /// A single DM token.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Token {
     /// An end-of-file. Exists as a convenience and is not emitted by the lexer.
     Eof,

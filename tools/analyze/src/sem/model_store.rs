@@ -43,6 +43,8 @@ pub struct Parsed {
     pub env: Option<Hash>,
     /// The structure digest (`Sem::structure_digest`), when the store already knows it: patches never change the structure.
     pub structure: Option<u128>,
+    /// A full parse's macro history: the macro state at the start of every file, so a later run parses one file alone.
+    pub defines: Option<dreammaker::preprocessor::StoredDefineHistory>,
 }
 
 #[derive(Serialize)]
@@ -87,6 +89,7 @@ struct Base {
     env: Hash,
     structure: u128,
     errors: Vec<String>,
+    generation: u128,
     objtree: ObjectTree,
 }
 
@@ -101,6 +104,7 @@ struct Delta {
 /// What [`save_later`] writes: the table of the model just built.
 struct Meta {
     path: PathBuf,
+    defines: Option<dreammaker::preprocessor::StoredDefineHistory>,
     dme: Hash,
     paths: Vec<PathBuf>,
     keys: Vec<Hash>,
@@ -241,13 +245,14 @@ pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, Strin
                 eprintln!("analyze: model store: full parse ({})", why);
             }
             let _ = std::fs::remove_file(dir.join(DELTA));
-            let mut parsed = super::parse_dme(dme_path, &[], None)?;
+            let mut parsed = super::parse_source(dme_path, &[], super::Source::Dme(None), true)?;
             let mut paths = Vec::new();
             parsed.files.for_each(|p| paths.push(p.to_path_buf()));
             let (keys, directive) = table(tree, root, &paths);
             let env = environment_of(root, dme_hash, &paths, &keys, &directive);
             parsed.env = Some(env);
-            *PENDING_META.lock().unwrap() = Some(Meta { path: store, dme: dme_hash, paths, keys, directive, env, errors: parsed.errors.clone() });
+            let defines = parsed.defines.take();
+            *PENDING_META.lock().unwrap() = Some(Meta { path: store, defines, dme: dme_hash, paths, keys, directive, env, errors: parsed.errors.clone() });
             Ok(parsed)
         }
     }
@@ -256,6 +261,16 @@ pub fn obtain(root: &Path, tree: &Tree, dme_path: &Path) -> Result<Parsed, Strin
 /// The file of slice `i` of the base at `path`.
 fn slice_path(path: &Path, generation: u128, i: usize) -> PathBuf {
     path.with_extension(format!("{:032x}.{}.bin", generation, i))
+}
+
+/// The macro history file of the base generation `generation`.
+fn defines_path(path: &Path, generation: u128) -> PathBuf {
+    path.with_extension(format!("{:032x}.defines.bin", generation))
+}
+
+fn load_defines(path: &Path, generation: u128) -> Option<std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>> {
+    let b = std::fs::read(defines_path(path, generation)).ok()?;
+    bincode::deserialize(&b).ok().map(std::sync::Arc::new)
 }
 
 fn load(path: &Path) -> Option<Base> {
@@ -269,7 +284,7 @@ fn load(path: &Path) -> Option<Base> {
         v
     });
     let slices: Option<Vec<_>> = slices.into_iter().collect();
-    Some(Base { engine: s.engine, dme: s.dme, paths: s.paths, keys: s.keys, directive: s.directive, env: s.env, structure: s.structure, errors: s.errors, objtree: ObjectTree::from_parts(slices?, s.types) })
+    Some(Base { engine: s.engine, dme: s.dme, paths: s.paths, keys: s.keys, directive: s.directive, env: s.env, structure: s.structure, errors: s.errors, generation: s.generation, objtree: ObjectTree::from_parts(slices?, s.types) })
 }
 
 fn file_list(paths: &[PathBuf]) -> dreammaker::FileList {
@@ -315,34 +330,19 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
     // The patched files hold no directive either (checked when their patch was made), so the base's flags are the tree's.
     let parsed = to_parse.len();
     if !to_parse.is_empty() {
-        let dme_text = std::fs::read_to_string(dme_path).map_err(|e| e.to_string())?;
+        let hist = load_defines(&crate::incr::dir().ok_or("no cache dir")?.join(FILE), s.generation).ok_or("no stored macro history")?;
         let jobs: Vec<(usize, Option<dreammaker::FileId>)> = to_parse.iter().map(|&i| (i, files.get_id(&s.paths[i]))).collect();
         let made: Vec<Result<(u32, Hash, FilePatch), String>> = super::par_map(&jobs, |&(i, fid)| {
             let target = &s.paths[i];
             let fid = fid.ok_or("no file id")?;
-            // The .dme with only the includes the file's macro state depends on, then the file itself.
-            let keep: std::collections::HashSet<String> = s.paths[..i].iter().enumerate().filter(|(j, _)| s.directive[*j]).map(|(_, p)| norm_in(root, p)).chain(std::iter::once(norm_in(root, target)))
-                // And the file after it: the parser places the end of the file's last statement at the first token that follows, which must
-                // be what follows it in the whole tree, not the end of the synthesized .dme.
-                .chain(s.paths.get(i + 1).map(|p| norm_in(root, p)))
-                .collect();
-            let mut synth = String::with_capacity(dme_text.len());
-            let dme_dir = dme_path.parent().unwrap_or(root);
-            for line in dme_text.lines() {
-                let t = line.trim_start();
-                if let Some(rest) = t.strip_prefix("#include") {
-                    let inc = rest.trim().trim_matches('"');
-                    if keep.contains(&norm_in(root, &dme_dir.join(inc.replace('\\', "/")))) {
-                        synth.push_str(line);
-                    }
-                    synth.push('\n');
-                    continue;
-                }
-                synth.push_str(line);
-                synth.push('\n');
+            // The file alone, from the macro state at its start, then the file after it (the parser places the end of the file's last
+            // statement at the next token, which must be what follows it in the whole tree).
+            let mut read: Vec<(PathBuf, PathBuf)> = vec![(target.clone(), abs_in(root, target))];
+            if let Some(next) = s.paths.get(i + 1) {
+                read.push((next.clone(), abs_in(root, next)));
             }
             let tp = std::time::Instant::now();
-            let partial = super::parse_dme(dme_path, &s.paths, Some(synth))?;
+            let partial = super::parse_source(dme_path, &s.paths, super::Source::Alone(hist.clone(), read), false)?;
             if partial.files.get_id(target) != Some(fid) {
                 return Err("the partial parse named the file differently".to_string());
             }
@@ -382,7 +382,8 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         let (keys, directive) = (now, s.directive.clone());
         let dir = crate::incr::dir().ok_or("no cache dir")?;
         let _ = std::fs::remove_file(dir.join(DELTA));
-        *PENDING_META.lock().unwrap() = Some(Meta { path: dir.join(FILE), dme: s.dme, paths: s.paths.clone(), keys, directive, env, errors: s.errors.clone() });
+        let defines = load_defines(&dir.join(FILE), s.generation).map(|d| (*d).clone());
+        *PENDING_META.lock().unwrap() = Some(Meta { path: dir.join(FILE), defines, dme: s.dme, paths: s.paths.clone(), keys, directive, env, errors: s.errors.clone() });
     } else if parsed > 0 || patched != changed.len() || !known.is_empty() {
         // The delta now describes exactly the files that differ from the base (a file back at its base content needs no patch).
         if let Some(dir) = crate::incr::dir() {
@@ -403,7 +404,7 @@ fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<
         std::mem::forget(patches);
     }
     let structure = s.structure;
-    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure) }, parsed, patched))
+    Ok((Parsed { objtree: s.objtree, files, errors: s.errors, env: Some(env), structure: Some(structure), defines: None }, parsed, patched))
 }
 
 /// Called once the model is in the memo: writes a new base on a side thread when this run parsed the tree or folded the delta.
@@ -427,6 +428,14 @@ pub fn save_later(handle: std::sync::Arc<super::SemBox>) {
         });
         if ok.iter().any(|o| !o) {
             return;
+        }
+        if let Some(d) = &meta.defines {
+            let p = defines_path(&meta.path, generation);
+            let tmp = p.with_extension(format!("tmp{}", std::process::id()));
+            let done = bincode::serialize(d).map(|b| std::fs::write(&tmp, &b).is_ok()).unwrap_or(false) && std::fs::rename(&tmp, &p).is_ok();
+            if !done {
+                return;
+            }
         }
         let r = StoredRef { engine: &engine(), dme: meta.dme, paths: &meta.paths, keys: &meta.keys, directive: &meta.directive, env: meta.env, structure: sem.structure_digest(), errors: &meta.errors, slices: slices.len(), generation, types };
         let Ok(bytes) = bincode::serialize(&r) else { return };
