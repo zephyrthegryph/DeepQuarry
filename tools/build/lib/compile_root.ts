@@ -53,6 +53,18 @@ export function rootKey(dme: string): string {
   return variantKey(dme).split('.')[0] || variantKey(dme);
 }
 
+/**
+ * The compile root a worktree compiles in. The merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) has its own:
+ * every gate there compiles master plus a batch, so its session patches from the previous gate's tree, and it never waits behind
+ * (or is reset to) a lane's tree. Measured 2026-10-17: a gate's test compile waited 315 s for the shared root and then ran a full
+ * compile ("declaration skeleton changed") because lanes with different declarations took turns in it.
+ */
+export function rootKeyFor(dme: string, worktree: string, env: NodeJS.ProcessEnv = process.env): string {
+  const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+  const merge = env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base';
+  return norm(worktree) === norm(merge) ? `${rootKey(dme)}-merge` : rootKey(dme);
+}
+
 function normalizeTarget(target: string): string {
   let text = target.replace(/^\\\\\?\\/, '');
   text = path.resolve(text);
@@ -192,7 +204,7 @@ export async function withSharedCompileRoot<T>(
   const manifest = path.resolve(dme);
   const base = path.resolve(worktree);
   if (path.dirname(manifest).toLowerCase() !== base.toLowerCase() || !/\.dme$/i.test(manifest) || !fs.existsSync(manifest)) return undefined;
-  const key = rootKey(manifest);
+  const key = rootKeyFor(manifest, base, env);
   const root = path.join(compileRootsDir(env), key);
   const stem = path.basename(manifest).replace(/\.dme$/i, '');
   return await withSlot(`dmb_root_${key}`, `compile root ${key} <- ${base}`, async () => {
