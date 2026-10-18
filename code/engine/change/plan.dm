@@ -5,29 +5,29 @@
 // state_changed() still dispatches through today's tables, and dq_change_plan_parity proves the plan answers what they answer for every type.
 // Step 3 moves the dispatch onto the plan and deletes the tables.
 
-/// Type path -> its resolved plan (the nearest generated row up the parent chain), or 0 for none. Filled on first use.
-GLOBAL_LIST_EMPTY(plan_cache)
 /// Writes to a type the generator marked unresolved (D5: such a type keeps marking every output). The plan_fallback count.
 GLOBAL_VAR_INIT(plan_fallbacks, 0)
 /// Runtime-only keys: name -> id above CGK_BUILD_MAX, interned on first use.
 GLOBAL_LIST_EMPTY(runtime_key_ids)
 
-/// The plan of `type`: "<var>" or "<hop>.<var>" -> PLAN_* bits, or null when no draw of the type (or an ancestor) is generated.
-/proc/plan_of(type)
-	var/known = GLOB.plan_cache[type]
-	if(!isnull(known))
-		return known || null
+/// Builds plan_of()'s cache entry: the nearest generated row up `type`'s parent chain (an empty list for none).
+/proc/plan_build(type)
 	var/list/table = GLOB.generated_plans
 	var/path = type
-	var/list/found
 	while(path)
-		found = table?["[path]"]
+		var/list/found = table?["[path]"]
 		if(found)
-			break
+			return found
 		var/datum/typed = path
 		path = initial(typed.parent_type)
-	GLOB.plan_cache[type] = found || 0
-	return found
+	return list()
+
+/// Type path -> its resolved plan, built once (the plans are build output: they never change in a running world).
+DECLARE_SHARED_CACHE(change_plans, GLOBAL_PROC_REF(plan_build), SC_NEVER)
+
+/// The plan of `type`: "<var>" or "<hop>.<var>" -> PLAN_* bits; empty when no draw of the type (or an ancestor) is generated.
+/proc/plan_of(type)
+	return CACHED(change_plans, type)
 
 /// The PLAN_* bits of `key` (a var name, or "<hop>.<var>") on E's type.
 /proc/plan_bits(datum/E, key)
@@ -65,19 +65,17 @@ GLOBAL_LIST_EMPTY(runtime_key_ids)
 			return name
 	return null
 
-/// "<type>|<bit>" -> the keys of the type's plan that carry `bit` (a list, or 0 for none). Filled on first use.
-GLOBAL_LIST_EMPTY(plan_keys_cache)
-
-/// The keys of `type`'s plan that carry PLAN_* `bit`, or null: what the type's draw reads (PLAN_DRAW) or reads a hop away (PLAN_DRAW_HOP).
-/proc/plan_keys(type, bit)
-	var/cache_key = "[type]|[bit]"
-	var/known = GLOB.plan_keys_cache[cache_key]
-	if(!isnull(known))
-		return known || null
+/// Builds plan_keys()'s cache entry: the keys of `type`'s plan that carry `bit` (an empty list for none).
+/proc/plan_keys_build(type, bit)
+	. = list()
 	var/list/plan = plan_of(type)
-	var/list/keys
 	for(var/key in plan)
 		if(plan[key] & bit)
-			LAZYADD(keys, key)
-	GLOB.plan_keys_cache[cache_key] = keys || 0
-	return keys
+			. += key
+
+/// "<type>|<bit>" -> plan_keys_build(), built once.
+DECLARE_SHARED_CACHE(change_plan_keys, GLOBAL_PROC_REF(plan_keys_build), SC_NEVER)
+
+/// The keys of `type`'s plan that carry PLAN_* `bit`: what the type's draw reads (PLAN_DRAW) or reads a hop away (PLAN_DRAW_HOP). Read only.
+/proc/plan_keys(type, bit)
+	return CACHED2(change_plan_keys, type, bit)
