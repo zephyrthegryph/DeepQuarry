@@ -67,3 +67,17 @@
 	for(var/table in list(GLOB.generated_plan_hidden_verbs, GLOB.generated_plan_granted_verbs))
 		for(var/type_text in table)
 			TEST_ASSERT(islist(table[type_text]), "[type_text]: a verb plan row is a list")
+
+/// Step 5: a machine whose look is look layers and capabilities is narrowed by what those read; a var they read still redraws.
+/datum/unit_test/dq_change_plan_narrows_layers
+
+/datum/unit_test/dq_change_plan_narrows_layers/Run()
+	var/obj/machinery/floodlight/M = allocate(/obj/machinery/floodlight, test_floor())
+	refresh_flush()
+	var/list/presented = plan_presentation_reads(M)
+	log_test("narrows layers: [M.type] presentation reads [json_encode(presented)], derived exact [derived_is_exact(M)], activations [length(M.rx?.activations)]; [GLOB.plan_spared_writes] write(s) spared a redraw so far this round")
+	if(derived_is_exact(M))
+		return // a type with declared dependencies is narrowed by its derived table, not here
+	TEST_ASSERT(!isnull(presented), "the floodlight's layers and capabilities have known reads")
+	TEST_ASSERT(!plan_spares_draw(M, "stat") || !("stat" in presented), "a var the layers read is never spared")
+	TEST_ASSERT(plan_spares_draw(M, nameof(/atom::desc)), "a var nothing drawn reads is spared")

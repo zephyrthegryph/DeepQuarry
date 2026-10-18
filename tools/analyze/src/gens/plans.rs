@@ -163,6 +163,19 @@ impl Generator for Plans {
         }
         let rows: Vec<(String, String)> = fallbacks.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_plan_fallbacks", &rows);
+        out.blank();
+        out.doc("\"<capability type>\" -> TRUE: a capability that overrides the legacy draw(holder, look) or hidden_verbs(holder): its reads of the holder");
+        out.doc("are not in any plan, so a holder carrying one keeps redrawing on every write (plan_spares_build(), code/engine/change/plan.dm).");
+        let mut legacy: BTreeSet<String> = BTreeSet::new();
+        if let Some(sem) = cx.sem() {
+            for d in crate::sem::procs::proc_defs(&sem, &["draw", "hidden_verbs"]) {
+                if d.owner.starts_with("/datum/capability/") {
+                    legacy.insert(d.owner.clone());
+                }
+            }
+        }
+        let rows: Vec<(String, String)> = legacy.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
+        emit_table(out, "generated_capability_legacy_outputs", &rows);
     }
 }
 
