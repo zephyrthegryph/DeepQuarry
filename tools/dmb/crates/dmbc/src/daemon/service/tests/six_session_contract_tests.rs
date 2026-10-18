@@ -152,7 +152,6 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                         let fresh = request(roots, index, true);
                         let slot = shared.slot(
                             retained.project.clone(),
-                            &retained.defines,
                             Some(&retained),
                         );
                         let token = control::Cancellation::default();
@@ -214,7 +213,7 @@ fn six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes() {
     let slots = (0..6)
         .map(|index| {
             let request = request(&roots, index, false);
-            shared.slot(request.project.clone(), &request.defines, Some(&request))
+            shared.slot(request.project.clone(), Some(&request))
         })
         .collect::<Vec<_>>();
     for (index, slot) in slots.iter().enumerate() {
@@ -224,7 +223,7 @@ fn six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes() {
         let request = request(&roots, index, true);
         assert!(Arc::ptr_eq(
             slot,
-            &shared.slot(request.project.clone(), &request.defines, Some(&request))
+            &shared.slot(request.project.clone(), Some(&request))
         ));
     }
     let initial = compare_revision(&shared, &roots);
@@ -438,7 +437,6 @@ fn source_rejection_preserves_prior_pair_and_recovery_matches_fresh_current_incl
     let initial_request = request(&roots, 0, false);
     let slot = shared.slot(
         initial_request.project.clone(),
-        &initial_request.defines,
         Some(&initial_request),
     );
     let destination = initial_request.artifact_directory.as_ref().unwrap().clone();
