@@ -260,6 +260,8 @@ CAPABILITIES(/obj/machinery/shieldwall)
 	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shieldwall_blast_drain))))
+	ref_one(nameof(gen_primary), on_other_deleted = OTHER_DELETE_ME) // meaningless without it (D2)
+	ref_one(nameof(gen_secondary), on_other_deleted = OTHER_DELETE_ME) // meaningless without it (D2)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
 /obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)

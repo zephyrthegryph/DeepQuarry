@@ -61,6 +61,7 @@ CAPABILITIES(/obj/effect/energy_field)
 	op("touch_energy_field", hand(), then(PROC_REF(interaction_touch_energy_field)))
 	param(nameof(my_gen), pos = 1, apply = PROC_REF(raise_field))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_blast_drain))))
+	ref_one(nameof(my_gen), on_other_deleted = OTHER_DELETE_ME) // meaningless without it (D2)
 
 /// Old attackby: a forceful hit weakens the field; the item's normal handling carries on.
 /obj/effect/energy_field/proc/interaction_hit_energy_field(datum/act/op/A)

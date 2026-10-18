@@ -114,11 +114,8 @@ var	code/modules/scripting/Parser/Parser.dm	@/datum/n_Parser::global_block
 var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_up
 var	code/modules/security levels/security levels.dm	@/datum/controller/global_vars::security_announcement_down
 var	code/modules/shieldgen/directional_shield.dm	@/obj/effect/directional_shield::projector
-var	code/modules/shieldgen/energy_field.dm	@/obj/effect/energy_field::my_gen
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwallgen::attached
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::U
-var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::gen_primary
-var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::gen_secondary
 var	code/modules/stockmarket/stockmarket.dm	@/datum/controller/global_vars::stockExchange
 var	code/modules/tgui_input/say_modal/modal.dm	@/client::tgui_say
 var	code/modules/tgui_panel/external.dm	@/client::tgui_panel
@@ -126,7 +123,6 @@ var	code/modules/tickets/tickets.dm	@/datum/controller/global_vars::tickets
 var	code/modules/tickets/tickets.dm	@/datum/tickets::astatclick
 var	code/modules/tickets/tickets.dm	@/datum/tickets::cstatclick
 var	code/modules/tickets/tickets.dm	@/datum/tickets::rstatclick
-var	code/modules/tickets/tickets.dm	@/obj/effect/statclick/ticket::ticket_datum
 var	code/modules/vore/eating/special_bellies.dm	@/obj/belly/special/teleporter::target
 var	code/modules/vore/eating/vore.dm	@/client::prefs_vr
 var	code/modules/xenoarcheaology/boulder.dm	@/obj/structure/boulder::geological_data_static

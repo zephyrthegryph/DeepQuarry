@@ -675,6 +675,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 CAPABILITIES(/obj/effect/statclick/ticket)
 	param(nameof(ticket_datum), pos = 1, overrides = TRUE)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(ticket_datum), on_other_deleted = OTHER_DELETE_ME) // meaningless without it (D2)
 
 /obj/effect/statclick/ticket/update()
 	return ..(ticket_datum().name)
