@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/ears/skrell)
-	acceptance("fit", fits(list(SPECIES_SKRELL)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_SKRELL), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_EARS))
 
 

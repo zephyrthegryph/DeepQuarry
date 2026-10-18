@@ -419,7 +419,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	punch_force = 2
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
-	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_NO_DIONA), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -593,7 +593,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_NO_TESHARI_VOX), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))

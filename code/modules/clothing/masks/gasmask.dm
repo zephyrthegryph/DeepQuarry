@@ -140,7 +140,7 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, gasmask_filtered_gases, list(GA
 	return
 
 CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT))
 	op("vox_mask_port_self", in_hand(), label("Feeding port"), then(PROC_REF(vox_mask_port_self)))
 
@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
 	item_state = "vax_mask"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/zaddat)
-	acceptance("fit", fits(list(SPECIES_ZADDAT)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_ZADDAT), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(hides = HIDEEARS))
 

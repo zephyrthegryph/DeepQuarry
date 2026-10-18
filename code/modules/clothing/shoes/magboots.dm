@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		. += "It would be hard to take these off without relaxing your grip first." // Theoretically this message should only be seen by the wearer when the claws are equipped.
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 
 /proc/req_acceptance_overshoe_clearance()
 	return part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list())

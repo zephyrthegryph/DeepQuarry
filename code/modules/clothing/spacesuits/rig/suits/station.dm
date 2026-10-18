@@ -366,7 +366,7 @@ CAPABILITIES(/obj/item/rig/focalpoint)
 	sprite_sheets = null
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0))
 
 // 'Ironhammer' hardsuit
@@ -882,28 +882,28 @@ CAPABILITIES(/obj/item/rig/ch/pursuit)
 		)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/focalpoint)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/focalpoint)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ce/focalpoint)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/rig/hephaestus)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_ENGINEERING, POCKET_BAYSUIT, /obj/item/storage/firstaid, /obj/item/roller), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/hephaestus)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/hephaestus)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/hephaestus)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/hephaestus)
-	acceptance("fit", fits(list(SPECIES_TESHARI, SPECIES_VOX, SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_STANDARD), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/rig/zero)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_BAYSUIT), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)

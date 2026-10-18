@@ -154,6 +154,14 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
         Part::new(
+            "clothing_species_fit_list_banned",
+            "clothing: species fit list banned",
+            "An item names its fit category, fits_category(FIT_X); the species of each category are listed once in code/library/items/fit_categories.dm (doc/rewrite/proposals/admission.md wave 3). Never fits(list(SPECIES_...)) on an item.",
+            Files::Code,
+            line(r"\bfits\(list\("),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",

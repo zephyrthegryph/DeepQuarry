@@ -5761,6 +5761,7 @@
 #include "code\engine\parts\spaces.dm"
 #include "code\library\containers\space_adapters.dm"
 #include "code\library\ui\input.dm"
+#include "code\library\items\fit_categories.dm"
 #include "code\library\items\removable.dm"
 #include "code\library\items\size.dm"
 #include "code\library\machine\cell_bay.dm"

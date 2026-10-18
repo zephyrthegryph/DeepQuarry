@@ -9,4 +9,4 @@
 
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps/teshari)
-	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)

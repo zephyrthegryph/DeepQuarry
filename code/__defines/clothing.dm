@@ -177,3 +177,25 @@ NOTICE: Do not leave trailing commas!!!!
 #define ADD_CLOTHING_TRAIT(mob, trait) add_trait(mob, trait, src)
 /// Wrapper for removing clothing based traits
 #define REMOVE_CLOTHING_TRAIT(mob, trait) remove_trait(mob, trait, src)
+
+// Clothing fit categories (code/library/items/fit_categories.dm lists the bodytypes of each).
+#define FIT_ALTEVIAN "altevian"
+#define FIT_HARDSUIT "hardsuit"
+#define FIT_HUMANOID_HYBRID "humanoid_hybrid"
+#define FIT_HUMANOID_HYBRID_SKRELL "humanoid_hybrid_skrell"
+#define FIT_HUMAN_PROMETHEAN "human_promethean"
+#define FIT_HUMAN_SKRELL "human_skrell"
+#define FIT_MONKEY "monkey"
+#define FIT_NO_DIONA "no_diona"
+#define FIT_NO_DIONA_VOX "no_diona_vox"
+#define FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN "no_diona_vox_teshari_altevian"
+#define FIT_NO_TESHARI "no_teshari"
+#define FIT_NO_TESHARI_VOX "no_teshari_vox"
+#define FIT_PROTEAN_HARDSUIT "protean_hardsuit"
+#define FIT_SKRELL "skrell"
+#define FIT_STANDARD "standard"
+#define FIT_TESHARI "teshari"
+#define FIT_UNATHI "unathi"
+#define FIT_VOX "vox"
+#define FIT_ZADDAT "zaddat"
+#define FIT_ZADDAT_PROMETHEAN "zaddat_promethean"
