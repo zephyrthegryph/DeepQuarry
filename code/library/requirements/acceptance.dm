@@ -144,7 +144,7 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 	var/obj/item/I = A?.target
 	if(ishuman(H))
 		for(var/obj/item/clothing/W in H.get_worn_clothing())
-			if(W.can_attach_accessory(I))
+			if(isnull(W.accessory_refusal(I)))
 				return null
 	return MSG(slot/nothing_to_attach_to)
 

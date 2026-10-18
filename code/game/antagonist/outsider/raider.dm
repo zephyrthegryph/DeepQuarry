@@ -270,7 +270,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	if(holster)
 		var/obj/item/clothing/under/uniform = player.get_equipped_item(SLOT_ID_UNIFORM)
-		if(istype(uniform) && uniform.can_attach_accessory(holster))
+		if(istype(uniform) && isnull(uniform.accessory_refusal(holster)))
 			uniform.attackby(holster, player)
 		else
 			player.put_in_any_hand_if_possible(holster)
