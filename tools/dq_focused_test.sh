@@ -522,7 +522,10 @@ look_prepare() {
 		LOOK_PLAN_FILE="$plan"
 		LOOK_PARAMS="look-plan=$plan"
 		universe="$(wc -l <"$plan" | tr -d ' ')"
-		if [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
+		if [[ "${DQ_WORLD_PARAMS:-}" == *look-types=* ]]; then
+			# A hand-narrowed run names its own types (DQ_WORLD_PARAMS look-types=<file>): keep them, never widen to the stale set.
+			echo "== look pins: hand-narrowed to the types in DQ_WORLD_PARAMS"
+		elif [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
 			stale="data/look-types.$$.txt"
 			focus_files+=("$stale")
 			# The unverified set: types whose current key is not a recorded (probed and matched) row; the script that owns the file defines it.
