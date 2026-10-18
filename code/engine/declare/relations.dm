@@ -44,6 +44,9 @@
 			continue
 		switch(E.kind)
 			if(ENTRY_REF_ONE, ENTRY_REF_MANY)
+				if(E.args["weak"])
+					. += _own_entry(E.args["var"], list(OWNK_WEAK, null, null, null, E.kind == ENTRY_REF_MANY, null, null, null, E.args["type"]), FALSE, FALSE, FALSE)
+					continue
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
@@ -355,6 +358,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			return _own_set(E, var_name, value)
 		if(OWNK_PROTO)
 			return proto_set(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_set(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_set(E, var_name, value, list_state)
@@ -369,6 +374,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return isnull(key) ? _own_add(E, var_name, value) : _own_put(E, var_name, key, value)
+		if(OWNK_WEAK)
+			return weak_add(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_add(E, var_name, value, key, list_state)
@@ -379,6 +386,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_remove(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_remove(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_remove(E, var_name, value, list_state)
@@ -390,6 +399,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_clear(E, var_name, policy)
+		if(OWNK_WEAK)
+			return weak_clear(E, var_name)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_clear(E, var_name, list_state)

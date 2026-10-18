@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Points source.var_name (a single REF view) at `target`, or clears it with null. A pair view
 /// sets the partner's side too; the old partner stops naming source. Returns the target.
-/proc/rel_view_set(datum/source, var_name, datum/target)
+/proc/rel_view_set(datum/source, var_name, datum/target, refusable = FALSE)
 	// Nothing changes (e.g. New() linking null into an empty view): no table needed, which also
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
@@ -193,6 +193,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return null
 	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
 	if(target && rel_pair_refuses(source, entry, old, target))
+		if(!refusable)
+			OWN_REPORT("rel_set([source.type].[var_name]): refused by links(conflict = REFUSE): an end already has a partner (use rel_try_set() where a refusal is an expected answer)")
 		return null
 	// A plain replacement publishes its completed value, not a temporary empty view.
 	// Paired links and unlink callbacks keep their existing notification contract.
@@ -206,7 +208,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return target
 
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
-/proc/rel_view_add(datum/source, var_name, datum/target, key = null)
+/proc/rel_view_add(datum/source, var_name, datum/target, key = null, refusable = FALSE)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
 	if(!entry)
 		return null
@@ -230,9 +232,27 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(REL_LISTLIKE(L) && rel_list_holds(L, source, var_name, target))
 		return target
 	if(rel_pair_refuses(source, entry, null, target))
+		if(!refusable)
+			OWN_REPORT("rel_add([source.type].[var_name]): refused by links(conflict = REFUSE): the target already has a partner (use rel_try_add() where a refusal is an expected answer)")
 		return null
 	_rel_attach(source, var_name, target, entry)
 	return target
+
+/// rel_set() for a write whose refusal by links(conflict = REFUSE) is an expected answer: null, silently. The plain rel_set() reports a refusal
+/// (a test failure), so a refusal nobody expected is never a silent null. doc/rewrite/proposals/relations.md D3.
+/proc/rel_try_set(datum/E, var_name, datum/value)
+	if(E.vars[var_name] == value)
+		return value
+	if(rel_kind(E, var_name) != OWNK_REL)
+		return rel_set(E, var_name, value)
+	. = rel_view_set(E, var_name, value, refusable = TRUE)
+	activations_relation_changed(E, var_name)
+
+/// rel_add() whose refusal by links(conflict = REFUSE) is an expected answer (see rel_try_set()).
+/proc/rel_try_add(datum/E, var_name, datum/value, key = null)
+	if(rel_kind(E, var_name) != OWNK_REL)
+		return rel_add(E, var_name, value, key)
+	return rel_view_add(E, var_name, value, key, refusable = TRUE)
 
 /// TRUE when `entry` is a links(conflict = REFUSE) end and linking source to target would replace a partner: source's own single end already
 /// names `old` (another datum), or target's single end names another holder. The write is refused (the caller returns null) and nothing changes,

@@ -302,6 +302,8 @@ After wave 0, waves 1 to 5 can run in parallel by directory; wave 6 items are in
 - Visual references have no special kind: BYOND built-ins become engine-declared ends of the existing kinds with native storage (D11). The names `vis_one` / `vis_many` and `visual()` are not used.
 - Vending stock uses `SPILL_FRACTION(0.25)`, a general slot destroy policy (D17).
 - `owner_of` is for non-hot code; hot paths keep a `ref_one` back-reference (D6).
+- **REFUSE on a var pair reports on the plain path** (decided 2026-10-17, implementation lane): `rel_set` / `rel_add` refused by `links(conflict = REFUSE)` return null and report (`OWN_REPORT`, a test failure), as D3 says. A caller for which a refusal is an expected answer says so with `rel_try_set` / `rel_try_add` (`code/engine/refs/views.dm`), which return null silently. A silent null on the plain verb would hide bugs. The sparse `link_make()` keeps its FALSE return (its callers already test it).
+- **Pooled records' fields are transient by structure** (decided 2026-10-17): the `stored_refs` lint does not count a field of a `/datum/pooled` subtype (`pooled_holder()` in `tools/analyze/src/lints/stored_refs.rs`), because release resets every field to a fresh instance's value (`pool_reset_plan()` is built from the instance's own vars, so a new field is covered with no declaration). `relations_pooled_release_resets_every_field` checks the same root (`subtypesof(/datum/pooled)`), so the rule and its proof cannot drift. Not a hand list; the old `POOL_DECLARE` form is not covered. D7's "pooled is never a relation target" stands.
 
 ## 8. Comparison with the original design
 

@@ -232,6 +232,8 @@
 			return "PROTO"
 		if(OWNK_REL)
 			return "REL"
+		if(OWNK_WEAK)
+			return "WEAK"
 	return "?[kind]"
 
 /// One type's ownership table. Read-only after build.

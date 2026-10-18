@@ -104,17 +104,20 @@ CAPABILITIES(/datum/relations_refuse_dock)
 	var/datum/relations_refuse_ship/other_ship = new
 	TEST_ASSERT_EQUAL(rel_set(dock, nameof(dock.ship), ship), ship, "a free pair links")
 	TEST_ASSERT_EQUAL(ship.dock, dock, "and both ends name each other")
-	TEST_ASSERT_NULL(rel_set(dock, nameof(dock.ship), other_ship), "a dock that holds a ship refuses another")
+	TEST_ASSERT_NULL(rel_try_set(dock, nameof(dock.ship), other_ship), "a dock that holds a ship refuses another")
 	TEST_ASSERT_EQUAL(dock.ship, ship, "the old link stays")
 	TEST_ASSERT_NULL(other_ship.dock, "the refused ship names nothing")
-	TEST_ASSERT_NULL(rel_set(other_dock, nameof(other_dock.ship), ship), "a ship already docked refuses another dock")
+	TEST_ASSERT_NULL(rel_try_set(other_dock, nameof(other_dock.ship), ship), "a ship already docked refuses another dock")
 	TEST_ASSERT_EQUAL(ship.dock, dock, "the ship keeps its dock")
 	TEST_ASSERT_NULL(other_dock.ship, "the refused dock names nothing")
 	rel_set(dock, nameof(dock.ship), null)
 	TEST_ASSERT_NULL(ship.dock, "unlinking clears both ends")
 	TEST_ASSERT_EQUAL(rel_set(other_dock, nameof(other_dock.ship), ship), ship, "a freed ship links to another dock")
+	TEST_ASSERT(!length(capture), "an expected refusal (rel_try_set) reports nothing: [json_encode(capture)]")
+	rel_set(dock, nameof(dock.ship), ship)
 	set_global("dq_lifecycle_report_capture", null)
-	TEST_ASSERT(!length(capture), "a refusal is an answer, not a report: [json_encode(capture)]")
+	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "refused by links"), "a plain rel_set that is refused reports: [json_encode(capture)]")
+	TEST_ASSERT_EQUAL(ship.dock, other_dock, "and changes nothing")
 	qdel(dock)
 	qdel(other_dock)
 	qdel(ship)
@@ -150,3 +153,44 @@ CAPABILITIES(/datum/relations_refuse_dock)
 		checked++
 	TEST_ASSERT(checked > 0, "some pooled type was checked")
 	qdel(probe)
+
+/// A weak reference (D5): the var holds a handle, the generated accessor reads the target or null, and nothing pins or indexes it.
+/datum/relations_weak_holder
+	var/tmp/watched
+	var/tmp/list/seen
+
+/datum/relations_weak_target
+
+CAPABILITIES(/datum/relations_weak_holder)
+	ref_one(nameof(watched), /datum/relations_weak_target, weak = TRUE)
+	ref_many(nameof(seen), /datum/relations_weak_target, weak = TRUE)
+
+/datum/unit_test/relations_weak_reference
+
+/datum/unit_test/relations_weak_reference/Run()
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/datum/relations_weak_holder/H = new
+	var/datum/relations_weak_target/T = new
+	var/datum/relations_weak_target/U = new
+	TEST_ASSERT_EQUAL(rel_set(H, nameof(H.watched), T), T, "a weak one is written")
+	TEST_ASSERT(istext(H.watched), "the var holds a handle, not the datum")
+	TEST_ASSERT_EQUAL(H.watched(), T, "the accessor reads the target")
+	TEST_ASSERT_EQUAL(rel_kind(H, nameof(H.watched)), OWNK_WEAK, "declared weak")
+	rel_add(H, nameof(H.seen), T)
+	rel_add(H, nameof(H.seen), U)
+	rel_add(H, nameof(H.seen), U)
+	TEST_ASSERT_EQUAL(length(H.seen()), 2, "a weak many holds each member once")
+	TEST_ASSERT(!length(rel_sources(T)), "nothing is indexed on the target")
+	qdel(T)
+	TEST_ASSERT_NULL(H.watched(), "the accessor reads null once the target is gone")
+	var/list/live = H.seen()
+	TEST_ASSERT(length(live) == 1 && live[1] == U, "a weak many reads only live members")
+	rel_remove(H, nameof(H.seen), U)
+	TEST_ASSERT_EQUAL(length(H.seen()), 0, "a member is removed")
+	rel_clear(H, nameof(H.watched))
+	TEST_ASSERT_NULL(H.watched, "cleared")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "weak writes report nothing: [json_encode(capture)]")
+	qdel(H)
+	qdel(U)

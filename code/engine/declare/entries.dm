@@ -111,11 +111,20 @@
 /// A reference to another entity: the holder does not own it. Declared by `ref_one(nameof(v), type, ...)`.
 /// `by = nameof(id)` finds the targets by id: the instances of `type` whose id var (also `id`) equals the holder's. When the two ends keep the id in
 /// differently named vars (a pad's map_pad_link_id names the map_pad_id of its partner), `by` is the holder's var and `target_key` the target's (nameof(map_pad_id), or nameof(/obj/machinery/doorbell_chime::id_tag) when the holder type has no var of that name).
-/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null)
-	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key))
+/// `weak = TRUE` (relations proposal D5): the var stores a generation-checked handle, the build generates the accessor (`v()` reads the datum or
+/// null; a many reads the live members), and nothing is indexed or published. Nothing runs when the target dies, so on_unlink, on_other_deleted and
+/// by = are refused with it: a reader that must react to the death uses a normal ref_one.
+/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, weak = FALSE)
+	ref_weak_check("ref_one", var_name, weak, on_other_deleted, on_unlink, by)
+	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "weak" = !!weak))
 
-/proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null)
-	return entry_make(ENTRY_REF_MANY, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key))
+/proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, weak = FALSE)
+	ref_weak_check("ref_many", var_name, weak, on_other_deleted, on_unlink, by)
+	return entry_make(ENTRY_REF_MANY, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "weak" = !!weak))
+
+/proc/ref_weak_check(form, var_name, weak, on_other_deleted, on_unlink, by)
+	if(weak && (on_other_deleted != OTHER_CLEAR || on_unlink || by))
+		declare_report("[form](\"[var_name]\", weak = TRUE): a weak reference runs nothing when its target dies and finds nothing by id; on_other_deleted, on_unlink and by are for a normal reference")
 
 /// An owned value: the holder owns it and disposes of it by `on_destroy`. starts = is the starting occupant (a type, nameof(type_var),
 /// list(types), PROC_REF, pick_one(), when(cond, T)); starts_args are the constructor arguments of what it creates.
