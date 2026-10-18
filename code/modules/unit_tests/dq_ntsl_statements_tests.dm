@@ -4,7 +4,7 @@
 /datum/unit_test/dq_ntsl_assignment_and_call
 
 /datum/unit_test/dq_ntsl_assignment_and_call/Run()
-	var/code = {"def setit() { $y = 6; } $x = 2; $x += 3; setit();"}
+	var/code = {"$y = 0; def setit() { $y = 6; } $x = 2; $x += 3; setit();"} // $y exists globally first, so the call assigns that one
 	var/datum/n_scriptOptions/nS_Options/options = new()
 	var/datum/n_Scanner/nS_Scanner/scanner = new(code, options)
 	var/list/tokens = scanner.Scan()
