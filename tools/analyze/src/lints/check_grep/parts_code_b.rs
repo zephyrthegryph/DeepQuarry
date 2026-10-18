@@ -220,14 +220,14 @@ pub fn parts() -> Vec<Part> {
         ),
         Part::new(
             "transform_ratchet_on_bespoke_then_tails",
-            "transformations: ratchet on bespoke then tails",
+            "transform: ratchet on bespoke then tails",
             "a chemical transformation with a bespoke then = TYPE_PROC_REF(...) tail over the ratchet. Use the stock parts (says, plays, makes, takes_ambient, energy) and a /datum/notice/transformed listener; the tail count only falls (doc/rewrite/proposals/transformations.md section 6).",
             Files::Code,
             line(r"\bthen = TYPE_PROC_REF\(/transformation/chem/"),
         ),
         Part::new(
             "transform_ratchet_on_bespoke_data_procs",
-            "transformations: ratchet on bespoke data procs",
+            "transform: ratchet on bespoke data procs",
             "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
             Files::Code,
             line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
