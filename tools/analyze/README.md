@@ -251,6 +251,16 @@ full-model parse after a DM edit went from 17-19 s to 10-12 s.
 
 **The generators of a stage render at once**, each on its own thread with its own context, and are written and reported in registry order: the ones that read only declarations (actions, declare, stats, system_accessors) finish while the model parses. The process skips freeing the model at exit (3 s). `analyze gen` after a DM edit: about 57 s before this lane, 29-34 s now.
 
+**The model and the walks are kept between runs** (`src/sem/model_store.rs`, `src/sem/walk_cache.rs`, October 2026). The parsed object
+tree is stored in `data/analyze-cache/sem-model*.bin` (a base in 16 slices decoded on all cores, about 220 MB, plus a small delta of
+per-file patches) with the full parse's macro history. After an edit, each changed file is parsed alone from the macro state at its
+start (about 70 ms) and its definitions are spliced into the stored tree; a structure change, a directive, a define or a `.dme` edit is a
+full parse. Every walk records the procs it entered and the var declarations it read; `walks.bin` (+ `walks-delta.bin`, about 130 MB) keeps
+each result with their digests, so after an edit only the walks that touched the changed file run again. `DQ_MODEL_VERIFY=1` and
+`DQ_WALK_VERIFY=1` re-check every reuse against a full parse / fresh walk (they must report no difference); `DQ_MODEL_STORE=off` and
+`DQ_WALK_CACHE=off` disable them. `analyze gen` after a one-file DM edit: about 4-5 s (30 s before, 57 s at the start of
+`tools/analyze-speed`).
+
 **The machine-wide lint cache.** `src/shared.rs`: the per-file results in `data/analyze-cache/` are keyed by content, so a worktree whose
 cache is stamped for another analyzer build or scope list first copies the files of `E:/dq-cache/analyze-cache/<stamp>/`
 (`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`

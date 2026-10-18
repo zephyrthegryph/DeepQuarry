@@ -11,6 +11,7 @@ the changes listed at the end.
 | analyze binary in a fresh worktree | 2 min 12 s cargo build | 0 s (copied from `E:/dq-cache/analyze-bin`) | content-addressed cache, `DQ_ANALYZE_BIN_CACHE` |
 | `analyze gen` (now runs on every build) | n/a (`--check` in ratchets, 3.5 s) | 2.3-3 s warm, 18-36 s cold | cold after many DM edits: the semantic re-parse |
 | `analyze gen` after a DM edit (`tools/analyze-speed`, 2026-10-17) | 46-58 s under load | 29-34 s | pipelined parse (17-19 s -> 10-12 s), shared closed walks, generators of a stage in parallel; no-op 0.4 s |
+| `analyze gen` after a one-file DM edit, stored model + walks (2026-10-18) | 29-34 s | 4-5 s (6-8 s with the machine near 100%) | `tools/analyze/README.md`, "The model and the walks are kept between runs" |
 | first `analyze check` in a fresh worktree | 64 s | 2 s | lint cache seeded from `E:/dq-cache/analyze-cache` (`tools/analyze/src/shared.rs`) |
 | `verdigris-bindings-check` | 16-49 s every build | 0.13 s when unchanged | it read every DM file; now keyed on the Rust sources and the DM file list |
 | `icon-repack` | 1.5 s alone, 42-74 s inside a build | 6-7 s inside a build | it was starved by the bindings check running beside it |
