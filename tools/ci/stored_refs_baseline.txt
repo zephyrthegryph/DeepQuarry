@@ -8,22 +8,6 @@ var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_
 var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_collar_tag
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/_onclick/hud/skybox.dm	@/client::skybox
-var	code/contracts/acts/context.dm	@/datum/act::holder
-var	code/contracts/acts/context.dm	@/datum/act::activation
-var	code/contracts/acts/context.dm	@/datum/act::source
-var	code/contracts/acts/context.dm	@/datum/act/action::target
-var	code/contracts/acts/context.dm	@/datum/act/action::actor
-var	code/contracts/acts/context.dm	@/datum/act/action::provider
-var	code/contracts/acts/context.dm	@/datum/act/op::wearer
-var	code/contracts/acts/context.dm	@/datum/act/op::mover
-var	code/contracts/acts/context.dm	@/datum/act/op::destination
-var	code/contracts/acts/context.dm	@/datum/act/op::target_atom
-var	code/contracts/acts/context.dm	@/datum/act/op::request
-var	code/contracts/acts/context.dm	@/datum/act/op::answer
-var	code/contracts/acts/context.dm	@/datum/act/eval::actor
-var	code/contracts/acts/context.dm	@/datum/act/notice::target
-var	code/contracts/acts/context.dm	@/datum/act/request::request
-var	code/contracts/acts/context.dm	@/datum/act/request::answer
 var	code/controllers/kernel/urgent.dm	@/datum/urgent_request::member
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::owner
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/materialize_batch::previous
@@ -48,12 +32,10 @@ var	code/datums/gear/loadout_standard_kit.dm	@/datum/controller/global_vars::gea
 var	code/datums/interactions/presentation.dm	@/client::screentip
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/movable_motiontracker::source
 var	code/datums/om_events/signal_events.dm	@/datum/definition_event/observer_turf_entered::arrived
-var	code/datums/reactions/notices.dm	@/datum/notice/shoes_step::wearer
 var	code/defines/procs/announce.dm	@/datum/controller/global_vars::priority_announcement
 var	code/defines/procs/announce.dm	@/datum/controller/global_vars::command_announcement
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::activation
 var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
-var	code/engine/actions/guards.dm	@/datum/guard_ctx::item
 var	code/engine/actions/hooks.dm	@/datum/hook::activation
 var	code/engine/change/delivery.dm	@/datum/rx_listener::source
 var	code/engine/change/delivery.dm	@/datum/rx_listener::listener
@@ -97,10 +79,7 @@ var	code/engine/kernel/requests.dm	@/datum/request::answerer
 var	code/engine/kernel/requests.dm	@/datum/request::waiting
 var	code/engine/kernel/requests.dm	@/datum/request::payer
 var	code/engine/kernel/sequence.dm	@/datum/work_item/sequence::frame
-var	code/engine/kernel/sequence_state.dm	@/datum/seq_frame::entity
 var	code/engine/lifeforms/forms.dm	@/datum/lifeform_plan::tooltip
-var	code/engine/lifeforms/input.dm	@/datum/act/input::over
-var	code/engine/lifeforms/lifetimes.dm	@/datum/notice/ended::by
 var	code/engine/lifeforms/params.dm	@/datum/make_args::by
 var	code/engine/parts/provider.dm	@/datum/prov::source
 var	code/engine/parts/resolve.dm	@/datum/op_cand::holder
@@ -114,8 +93,6 @@ var	code/engine/parts/resolve.dm	@/datum/op_src::activation
 var	code/engine/parts/resource.dm	@/datum/reservation::holder
 var	code/engine/parts/resource.dm	@/datum/reservation::held
 var	code/engine/parts/resource.dm	@/datum/reservation::actor
-var	code/engine/parts/run.dm	@/datum/act/op::result
-var	code/engine/parts/run.dm	@/datum/act/op::pending
 var	code/engine/parts/run.dm	@/datum/pending_op::result
 var	code/engine/parts/run.dm	@/datum/pending_op::act
 var	code/engine/parts/run.dm	@/datum/pending_op::activation
@@ -198,7 +175,6 @@ var	code/modules/mining/machinery/machine_stacking.dm	@/obj/machinery/mineral/st
 var	code/modules/mining/resonator.dm	@/obj/effect/resonance::creator
 var	code/modules/mob/living/butchering.dm	@/mob/living::meat_type
 var	code/modules/mob/living/carbon/human/species/species.dm	@/datum/species::move_trail
-var	code/modules/mob/living/life/life_sequence.dm	@/datum/seq_frame/life::env
 var	code/modules/mob/living/life/living_systems.dm	@/mob/living::tf_mob_holder
 var	code/modules/mob/living/silicon/ai/multicam.dm	@/datum/controller/global_vars::ai_camera_room_landmark
 var	code/modules/mob/living/simple_mob/harvesting.dm	@/mob/living/simple_mob::harvest_tool
@@ -305,7 +281,6 @@ list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::all_weavable
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::virusDB
 list	code/_helpers/null_safety.dm	var/static/list/instances = list()
 list	code/_helpers/traits.dm	@/datum/controller/global_vars::trait_source_singletons
-list	code/contracts/acts/context.dm	@/datum/act/action::args
 list	code/controllers/kernel/kernel.dm	@/datum/controller/kernel::urgent_queue
 list	code/controllers/kernel/work_item.dm	@/datum/work_item::urgent_pending
 list	code/controllers/measure/meter.dm	@/datum/km_stats_set::systems
@@ -393,8 +368,6 @@ list	code/engine/lifeforms/rolls.dm	@/datum/controller/global_vars::roll_rollers
 list	code/engine/lifeforms/setup.dm	@/::setup_pending
 list	code/engine/parts/resolve.dm	@/datum/op_resolution::all
 list	code/engine/parts/resolve.dm	@/datum/op_resolution::ordered
-list	code/engine/parts/run.dm	@/datum/act/op::reservations
-list	code/engine/parts/run.dm	@/datum/act/op::step_answers
 list	code/engine/present/appearance_builder.dm	@/datum/look::vis
 list	code/engine/present/type_verbs.dm	@/datum/controller/global_vars::type_login_verb_entries
 list	code/engine/state/pool.dm	@/datum/object_pool::free

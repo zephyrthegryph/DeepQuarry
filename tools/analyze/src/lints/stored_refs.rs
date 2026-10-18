@@ -139,6 +139,13 @@ pub(crate) fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     out
 }
 
+/// A field of a pooled record (a /datum/pooled subtype) is transient: release() resets every field of the type to its fresh value
+/// (pool_reset_plan(), built from the instance's vars, so a new field is covered with no declaration), and
+/// `relations_pooled_release_resets_every_field` proves it per type. doc/rewrite/proposals/relations.md D7.
+pub(crate) fn pooled_holder(sem: &Sem, owner: &str) -> bool {
+    owner != "/datum/pooled" && sem.is_subtype(owner, "/datum/pooled")
+}
+
 pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
     let Some(types) = rels.get(var) else { return false };
     types.iter().any(|t| t == owner || sem.is_subtype(t, owner) || sem.is_subtype(owner, t))
@@ -469,7 +476,7 @@ impl Lint for StoredRefs {
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if declared_by_relation(sem, &rels, &owner, &name) {
+            if pooled_holder(sem, &owner) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
             put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));
@@ -508,7 +515,7 @@ impl Lint for StoredRefs {
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
-                    if declared_by_relation(sem, &rels, &o, &v) {
+                    if pooled_holder(sem, &o) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }
                     let Some(sig) = sem.var_decl(&o, &v) else { continue };

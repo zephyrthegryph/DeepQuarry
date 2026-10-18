@@ -119,3 +119,34 @@ CAPABILITIES(/datum/relations_refuse_dock)
 	qdel(other_dock)
 	qdel(ship)
 	qdel(other_ship)
+
+/// D7 structural reset check: every pooled type returns every field to its fresh value on release, so a field added later cannot keep a
+/// reference into the next taker's use. This is why the stored_refs lint treats a pooled holder's fields as transient.
+/datum/unit_test/relations_pooled_release_resets_every_field
+
+/datum/unit_test/relations_pooled_release_resets_every_field/Run()
+	set_global("pool_poison", FALSE)
+	var/datum/probe = new
+	var/checked = 0
+	for(var/T in subtypesof(/datum/pooled))
+		var/datum/pooled/proto = T
+		if(initial(proto.abstract_type) == T || findtext("[T]", "/unit_test"))
+			continue
+		var/datum/pooled/P = take(T)
+		var/list/fresh = P.snapshot()
+		var/list/plan = pool_reset_plan(P)
+		for(var/name in plan)
+			if(plan[name] == POOL_RESET_LIST)
+				var/list/L = P.vars[name]
+				L += probe
+			else
+				P.vars[name] = probe
+		P.release()
+		var/datum/pooled/again = take(T)
+		var/list/after = again.snapshot()
+		for(var/name in fresh)
+			TEST_ASSERT_EQUAL(after[name], fresh[name], "[T].[name] is back to its fresh value after release")
+		again.release()
+		checked++
+	TEST_ASSERT(checked > 0, "some pooled type was checked")
+	qdel(probe)
