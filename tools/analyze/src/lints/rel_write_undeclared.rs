@@ -134,7 +134,7 @@ impl Lint for RelWriteUndeclared {
             }
         }
         // The path form `nameof(/type::var)`: the holder type is named in the argument, so a text scan finds it.
-        let path_form = crate::pat!(r"(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)");
+        let path_form = crate::pat!(r"\b(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)");
         for f in cx.files() {
             if !f.rel.ends_with(".dm") {
                 continue;

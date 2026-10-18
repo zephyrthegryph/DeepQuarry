@@ -6,7 +6,6 @@ var	code/_global_vars/silo.dm	@/datum/controller/global_vars::ore_silo_default
 var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_free_color_choice
 var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_implant_location
 var	code/_helpers/_global_objects.dm	@/datum/controller/global_vars::gear_tweak_collar_tag
-var	code/_helpers/radiation.dm	@/datum/radiation_pulse_information::source_ref
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/_onclick/hud/skybox.dm	@/client::skybox
 var	code/contracts/acts/context.dm	@/datum/act::holder
@@ -191,7 +190,6 @@ var	code/modules/factions/reputation.dm	@/datum/controller/global_vars::station_
 var	code/modules/food/kitchen/smartfridge/smartfridge.dm	@/obj/machinery/smartfridge::currently_vending
 var	code/modules/keybindings/keybind_editor.dm	@/client::keybind_editor
 var	code/modules/media/mediamanager.dm	@/client::media
-var	code/modules/media/mediamanager.dm	@/area::media_source
 var	code/modules/medical/stabilisation/stasis.dm	@/datum/controller/global_vars::stasis_rate_source
 var	code/modules/metrics/metrics_capture.dm	@/datum/controller/global_vars::tick_frame
 var	code/modules/mining/fulton.dm	@/obj/effect/extraction_holder::stored_obj
@@ -207,12 +205,8 @@ var	code/modules/mob/living/simple_mob/harvesting.dm	@/mob/living/simple_mob::ha
 var	code/modules/mob/living/simple_mob/overmap_mob.dm	@/obj/effect/overmap/visitable/simplemob::parent_mob_type
 var	code/modules/mob/living/simple_mob/overmap_mob.dm	@/obj/effect/overmap/visitable/ship/simplemob::parent_mob_type
 var	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	@/mob/living/simple_mob/vore/aggressive/rat/tame::food
-var	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	@/datum/ntnet_conversation::operator
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::ai_slot
 var	code/modules/modular_computers/computers/modular_computer/variables.dm	@/obj/item/modular_computer::stored_pen
-var	code/modules/modular_computers/file_system/computer_file.dm	@/datum/computer_file::holder
-var	code/modules/modular_computers/file_system/programs/generic/nttransfer.dm	@/datum/computer_file/program/nttransfer::provided_file
-var	code/modules/modular_computers/file_system/programs/security/digitalwarrant.dm	@/datum/computer_file/program/digitalwarrant::activewarrant_ref
 var	code/modules/multiz/turf.dm	@/datum/controller/global_vars::openspace_backdrop_one_for_all
 var	code/modules/news/news_init.dm	@/datum/controller/global_vars::news_data
 var	code/modules/news/news_init.dm	@/datum/lore/news::news_codex
@@ -223,9 +217,6 @@ var	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::
 var	code/modules/nifsoft/software/14_commlink.dm	@/obj/item/communicator/commlink::nifsoft
 var	code/modules/overmap/bluespace_rift.dm	@/obj/effect/overmap/bluespace_rift::pair_at_make
 var	code/modules/overmap/ships/landable.dm	@/obj/effect/shuttle_landmark/visiting_shuttle::core_landmark
-var	code/modules/paperwork/clipboard.dm	@/obj/item/clipboard::haspen
-var	code/modules/pda/messenger_plugins.dm	@/datum/data/pda/messenger_plugin::messenger
-var	code/modules/pda/pda.dm	@/obj/item/pda::scanmode
 var	code/modules/pda/pda.dm	@/obj/item/pda::lastapp
 var	code/modules/pda/radio.dm	@/obj/item/radio/integrated::active
 var	code/modules/player_tips/player_tips_service.dm	@/datum/system/player_tips::player_tips
@@ -240,14 +231,9 @@ var	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::built_
 var	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/v_garbosystem::button
 var	code/modules/recycling/v_garbosystem.dm	@/obj/machinery/button/garbosystem::grinder
 var	code/modules/research/message_server.dm	@/datum/controller/global_vars::blackbox
-var	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	@/datum/experiment_handler::owner
-var	code/modules/resleeving/computers.dm	@/obj/machinery/computer/transhuman/resleeving::selected_printer
-var	code/modules/resleeving/computers.dm	@/obj/machinery/computer/transhuman/resleeving::selected_sleever
 var	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/synthprinter::connected
 var	code/modules/resleeving/machines.dm	@/obj/machinery/transhuman/resleever::connected
 var	code/modules/rogueminer/asteroid.dm	@/datum/rogue/asteroid::mylandmark
-var	code/modules/rogueminer/controller.dm	@/datum/controller/rogue::current_zone
-var	code/modules/rogueminer/controller.dm	@/datum/controller/rogue::previous_zone
 var	code/modules/rogueminer/landmarks.dm	@/obj/rogue_mobspawner::mymob
 var	code/modules/scripting/AST/Statements.dm	@/datum/node/statement/FunctionCall::object_owned
 var	code/modules/scripting/AST/Statements.dm	@/datum/node/statement/VariableAssignment::object_owned
@@ -269,7 +255,6 @@ var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwallgen::attach
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::U
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::gen_primary
 var	code/modules/shieldgen/sheldwallgen.dm	@/obj/machinery/shieldwall::gen_secondary
-var	code/modules/stockmarket/computer.dm	@/obj/machinery/computer/stockexchange::current_stock
 var	code/modules/stockmarket/stockmarket.dm	@/datum/controller/global_vars::stockExchange
 var	code/modules/tgui_input/say_modal/modal.dm	@/client::tgui_say
 var	code/modules/tgui_panel/external.dm	@/client::tgui_panel

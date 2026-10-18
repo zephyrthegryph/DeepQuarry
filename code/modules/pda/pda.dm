@@ -101,6 +101,7 @@ CAPABILITIES(/obj/item/pda)
 	owns_one(nameof(id), on_destroy = ON_DESTROY_DELETE, only_if = nameof(delete_id), otherwise = ON_DESTROY_SPILL)
 	ref_many(nameof(notifying_programs))
 	ref_one(nameof(current_app))
+	ref_one(nameof(scanmode))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()

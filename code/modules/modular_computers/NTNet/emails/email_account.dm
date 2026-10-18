@@ -123,4 +123,6 @@ CAPABILITIES(/datum/computer_file/data/email_account/service/broadcaster)
 CAPABILITIES(/datum/computer_file/data/email_account)
 	ref_many(nameof(inbox))
 	ref_many(nameof(spam))
+	ref_many(nameof(connected_clients))
+	ref_many(nameof(deleted))
 

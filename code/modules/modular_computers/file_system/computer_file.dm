@@ -61,3 +61,6 @@ GLOBAL_VAR_INIT(file_uid, 0)
 /// The holder this refers to (a relation view: null once that is deleted).
 /datum/computer_file/proc/holder() as /obj/item/computer_hardware/hard_drive
 	return holder
+
+CAPABILITIES(/datum/computer_file)
+	ref_one(nameof(holder))

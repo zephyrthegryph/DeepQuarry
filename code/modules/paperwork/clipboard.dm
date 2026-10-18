@@ -97,6 +97,7 @@ CAPABILITIES(/obj/item/clipboard)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(haspen))
 
 /// /obj/item/clipboard's window data.
 /obj/item/clipboard/ui_data(datum/act/eval/A)

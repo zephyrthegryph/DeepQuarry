@@ -299,6 +299,8 @@ sparse(/mob/living, buildmode_selected_image, type = /image)
 
 CAPABILITIES(/obj/effect/bmode/buildmode)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(coordA))
+	ref_one(nameof(coordB))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /obj/effect/bmode/buildmode/proc/click_input(datum/act/input/A)
