@@ -235,3 +235,16 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	qdel(L)
 	TEST_ASSERT(!length(H.members), "the pair clears with its end")
 	qdel(H)
+
+/// D11: an image shown through client_images_add() is indexed by the atom it rides on, and that atom's death drops the index (no client in a
+/// test world, so this pins the index the teardown walks).
+/datum/unit_test/relations_client_images_index
+
+/datum/unit_test/relations_client_images_index/Run()
+	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
+	var/image/I = image('icons/obj/bureaucracy.dmi', P, "pen")
+	var/list/riding = list(I)
+	GLOB.client_images_by_loc[P] = riding
+	TEST_ASSERT(GLOB.client_images_by_loc[P], "the index names the atom the image rides on")
+	qdel(P)
+	TEST_ASSERT_NULL(GLOB.client_images_by_loc[P], "a dying atom drops its images from the index")

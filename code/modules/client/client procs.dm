@@ -401,6 +401,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
+	client_images_client_gone(src)
 	GLOB.clients -= src
 	SSproximity.eye_remove(src)
 	persistent_client?.set_client(null)

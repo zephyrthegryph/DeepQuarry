@@ -40,14 +40,70 @@
 		return
 	C.screen -= thing
 
+// ---- client.images: the declared end with its reverse index and teardown ----
+// An image shown to a client through these verbs is indexed by the atom it rides on (image.loc) and by its viewers, so the end tears itself
+// down: a dying atom takes its images off every client that sees them (client_images_drop_for(), from /atom/movable/Destroy), and a leaving
+// client takes itself out of every image's viewers (client_images_client_gone(), from /client/Destroy). Images shown by a raw write are not
+// indexed (the native_ref_write ratchet counts those).
+
+GLOBAL_LIST_EMPTY(client_images_by_loc) // atom -> list of images riding on it that some client sees through client_images_add()
+GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was shown to
+
 /// Shows image `thing` (or a list) to client `C`.
 /proc/client_images_add(client/C, thing)
 	if(!C || isnull(thing))
 		return
 	C.images += thing
+	for(var/image/I as anything in (islist(thing) ? thing : list(thing)))
+		if(!istype(I))
+			continue
+		var/list/viewers = GLOB.client_image_viewers[I]
+		if(!viewers)
+			viewers = GLOB.client_image_viewers[I] = list()
+		viewers |= C
+		var/atom/rides = I.loc
+		if(isatom(rides))
+			var/list/riding = GLOB.client_images_by_loc[rides]
+			if(!riding)
+				riding = GLOB.client_images_by_loc[rides] = list()
+			riding |= I
 
 /// Stops showing image `thing` (or a list) to client `C`.
 /proc/client_images_remove(client/C, thing)
 	if(!C || isnull(thing))
 		return
 	C.images -= thing
+	for(var/image/I as anything in (islist(thing) ? thing : list(thing)))
+		client_image_unview(I, C)
+
+/// `C` no longer sees `I`: the index forgets the pair, and the image once nobody sees it.
+/proc/client_image_unview(image/I, client/C)
+	var/list/viewers = GLOB.client_image_viewers[I]
+	if(!viewers)
+		return
+	viewers -= C
+	if(length(viewers))
+		return
+	GLOB.client_image_viewers -= I
+	var/atom/rides = I.loc
+	var/list/riding = isatom(rides) ? GLOB.client_images_by_loc[rides] : null
+	if(riding)
+		riding -= I
+		if(!length(riding))
+			GLOB.client_images_by_loc -= rides
+
+/// Teardown of a dying atom: every image riding on it leaves every client that sees it.
+/proc/client_images_drop_for(atom/A)
+	var/list/riding = GLOB.client_images_by_loc[A]
+	if(!riding)
+		return
+	GLOB.client_images_by_loc -= A
+	for(var/image/I as anything in riding)
+		for(var/client/C as anything in GLOB.client_image_viewers[I])
+			C.images -= I
+		GLOB.client_image_viewers -= I
+
+/// Teardown of a leaving client: it leaves the viewers of every image it was shown through the verbs.
+/proc/client_images_client_gone(client/C)
+	for(var/image/I as anything in C.images)
+		client_image_unview(I, C)

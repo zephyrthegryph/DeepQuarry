@@ -141,6 +141,7 @@
 	vis_contents.Cut()
 	for(var/atom/movable/A as anything in vis_locs)
 		vis_remove(A, src)
+	client_images_drop_for(src) // the images riding on it leave every client (relations proposal D11)
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
