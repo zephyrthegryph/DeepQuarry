@@ -670,12 +670,17 @@ const ANALYZE_PROFILE = process.env.DQ_ANALYZE_PROFILE || (process.env.CI ? 'rel
 const analyzeCargoArgs = (): string[] => ['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml'];
 const ANALYZE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
 
-// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_CACHE, default
+// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_BIN_CACHE, default
 // E:/dq-cache/analyze-bin on Windows, else ~/.cache/dq/analyze-bin; `off` disables it), keyed by a
 // hash of the engine's sources, so a fresh worktree copies the binary instead of a 2 minute cargo
 // build. `<bin>.key` records which sources the binary in the target dir was built from.
 const analyzeCacheDir = (): string | null => {
-  const env = process.env.DQ_ANALYZE_CACHE;
+  // DQ_ANALYZE_CACHE once named this cache too, but the analyzer reads it as its lint-cache directory: set to the binary cache it filled
+  // that directory with lint files. It is the analyzer's alone now.
+  const env = process.env.DQ_ANALYZE_BIN_CACHE;
+  if (process.env.DQ_ANALYZE_CACHE && /analyze-bin/.test(process.env.DQ_ANALYZE_CACHE)) {
+    Juke.logger.warn("DQ_ANALYZE_CACHE points at the binary cache; it moves the analyzer's lint cache. Use DQ_ANALYZE_BIN_CACHE for binaries.");
+  }
   if (env === 'off' || env === '0') return null;
   if (env) return path.resolve(env);
   if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';

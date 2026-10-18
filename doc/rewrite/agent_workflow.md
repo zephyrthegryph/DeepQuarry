@@ -39,7 +39,7 @@ still exists for a quick read-only look.
   compiles `abi.rs` directly, outside `build.ts` (CI, `verdigris/build-*.sh`, rust-analyzer).
 
 **The analyze binary is cached.** A fresh worktree copies the `analyze` binary from
-`E:/dq-cache/analyze-bin/<source hash>/` (`DQ_ANALYZE_CACHE`, `off` disables) instead of a 2 minute
+`E:/dq-cache/analyze-bin/<source hash>/` (`DQ_ANALYZE_BIN_CACHE`, `off` disables) instead of a 2 minute
 cargo build. A miss builds and stores it. `tools/ci/analyze.sh` goes through the same cache.
 
 **The analyzer is built in the worktree's own `tools/analyze/target`, the `dev-fast` profile everywhere** (the gates and the push

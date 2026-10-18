@@ -8,7 +8,7 @@ the changes listed at the end.
 
 | Step | Before | After | Notes |
 |---|---|---|---|
-| analyze binary in a fresh worktree | 2 min 12 s cargo build | 0 s (copied from `E:/dq-cache/analyze-bin`) | content-addressed cache, `DQ_ANALYZE_CACHE` |
+| analyze binary in a fresh worktree | 2 min 12 s cargo build | 0 s (copied from `E:/dq-cache/analyze-bin`) | content-addressed cache, `DQ_ANALYZE_BIN_CACHE` |
 | `analyze gen` (now runs on every build) | n/a (`--check` in ratchets, 3.5 s) | 2.3-3 s warm, 18-36 s cold | cold after many DM edits: the semantic re-parse |
 | `analyze gen` after a DM edit (`tools/analyze-speed`, 2026-10-17) | 46-58 s under load | 29-34 s | pipelined parse (17-19 s -> 10-12 s), shared closed walks, generators of a stage in parallel; no-op 0.4 s |
 | first `analyze check` in a fresh worktree | 64 s | 2 s | lint cache seeded from `E:/dq-cache/analyze-cache` (`tools/analyze/src/shared.rs`) |
