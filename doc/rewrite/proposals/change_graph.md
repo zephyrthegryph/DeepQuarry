@@ -182,6 +182,31 @@ ratchet, the types with an `init_lines` row that write a read var) that shrinks 
 precondition of the stamp) and lists the types it does not (the forced-draw candidates). From step 5 the same test compares the
 look the stamp gave against a dry draw. The normal-tier `representative` covers a curated spread; the whole-type sweep is exhaustive.
 
+**Round-start backlog (measured 17 October 2026, Southern Cross, `dq_draw_queue_space_requeue --full-map`).** Before step 5 every
+fresh atom's first refresh was queued at creation (`caps_init()` marks `DEP_ALL`), and the drain could skip a type's later instances only
+once its first instance had been refreshed and the type's verdict recorded. A map load creates everything before any drain, and a
+clientless world does not advance time (`sleep_offline`), so all of it, about 310 000 space turfs among it, sat in the draw queue until
+a client connected. Measured at boot: **568 934** atoms queued; **162** types still waiting for a verdict; **352 254** fresh atoms of
+types whose default look is empty; **216 518** left (types that draw something, or atoms written since creation). The settle pass
+costs **1.57 s** of boot. On the unit-test map: 44 394 queued, 56 types, 19 504 dropped, 213 ms.
+
+**Re-queues after round start.** In an idle full-map world, 20 deadline passes after boot marked no space turf (the probe in
+`refresh_mark()`, test builds only, counts marks of one type by caller). The paths that do mark one are writes: `update_starlight()`
+(`set_glow()` through the light setters) when a neighbouring turf changes (`ChangeTurf`, `lighting_overlay.dm`), and a real write
+clears the creation mark, so the stamp never hides it. `toggle_transit()` raw-writes `appearance` and marks nothing. Shuttle walls
+re-queue through `breaks_light`.
+
+**What step 5 landed (the empty-default stamp).** `code/engine/change/look_stamp.dm`. The creation mark carries `DEP_CREATED` beside
+`DEP_ALL`; any real mark clears it (`refresh_mark()`). The first fresh instance a drain refreshes records the type's stamp
+(`GLOB.type_look_stamp`): TRUE when the refresh left nothing (no look key, hidden or granted verbs, `cap_engine_state` watches or
+flashes, derived values, side effects, periodic work; mobs never). For such a type a fresh atom is not queued at creation, the drain
+drops a queued one still on its creation mark, and `refresh_settle_created()` runs after `kernel_members_ready()`: one sample per type
+still pending, then the fresh atoms of stamped types leave the queue. A type whose default look is not empty keeps its first draw
+(that is the forced-draw list for now: every drawing type); stamping a cached non-empty appearance is the next part of step 5. The
+`init_baseline.txt` filter the section above names needs the reads of each draw (an `Initialize` row is every statement, so as a list
+it would force every type); it comes with the generated plans of step 2. Tests: `dq_draw_queue_default_look`,
+`dq_draw_queue_space_requeue`.
+
 **No runtime type probe.** `type_derive_flags`, `derive_probing`, `derive_side_probing` and the first-instance-always-queued rule
 exist because the engine did not know what a type derives. The generated plan knows. They are deleted in step 5; D5's fallback
 covers a type without a plan until the ratchet is zero.
@@ -229,7 +254,7 @@ by what uses it. The plan table is per type, shared, built once.
 | 2 | generated plans with interned keys (`analyze gen`); `write()` consults the plan; D5 fallback and the `plan_fallback` ratchet | a parity test that the plan and today's tables agree for every type; `dq_staleness_*`; boot gate |
 | 3 | fold reactions, hooks, lifeforms, observers, pending ops, op caches, stats, draw hops, relation watchers into plan dependents; delete `rx_readers`, `hooks_watching`, `lifeform_watching`, `draw_hop_reads_var`, `derived_mask`, `stat_input_keys` lookups and the backward hop walk | a behavioural test per folded consumer: a write to key K redraws exactly the atoms whose look reads K, once per frame (and runs exactly the hooks, stats and observers that read K); `dq_staleness_*`; the touched systems' tests |
 | 4 | per-class queues and frame stamps replace `refresh_queue`/`done`, `rx_drain` lists and hook pend lists | drain-order tests; once-per-frame redraw test; `dq_staleness_*` |
-| 5 | creation default-look stamp; drop the `caps_init` blanket (forced-draw list); drop the runtime probe | `dq_fresh_look_default` against the stamp; `dq_staleness_*` |
+| 5 | creation default-look stamp (empty defaults landed first, see section 7); drop the `caps_init` blanket (forced-draw list); drop the runtime probe | `dq_fresh_look_default` against the stamp; `dq_staleness_*` |
 | 6 | drop the dispatch blanket | `dq_staleness_*` clean |
 | 7 | split `rx_state` | memory counters; `dq_staleness_*` |
 
