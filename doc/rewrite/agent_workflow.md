@@ -621,7 +621,10 @@ The lander, per batch:
    tip moved on past what was merged), then `--join` the new lanes.
 2. In `$WT`: `git merge --no-ff --no-edit <branch or sha>` for each READY lane, the sha the lane reported (a lane that committed
    more since is not taken past what it said is ready). Resolve conflicts as usual; two lanes carrying the same fix keep one.
-3. One gate for the whole batch: `bash tools/dq_merge_gates.sh --lanes "<branches>" --tests "<every lane's focused tests>"`.
+3. One gate for the whole batch: `bash tools/dq_merge_gates.sh --lanes "<the merged shas>" --tests "<every lane's focused tests>"`.
+   Name the exact commits you merged, not branch names: a lane named by branch whose tip moved past what you merged is not "in HEAD",
+   so the gates hand the batch to `dq_merge_batch.sh`, which starts again from origin/master with every branch tip and bounces any
+   lane that conflicts, discarding the conflicts you resolved by hand (seen 2026-10-18).
    Look pins run only when the batch touches DM, map, icon, sound, skin or analyzer files.
 4. Green: `bash tools/dq_push_master.sh`. With one pusher master does not move under the gate, so the push honors the gate's stamp
    on the exact HEAD and repeats nothing.
