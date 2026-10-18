@@ -8,7 +8,7 @@
 
 /mob/living/carbon/human/beacon_topic_gate_actor/CanUseObjTopic(obj/O)
 	if(!permits_topics)
-		topic_denials++
+		set_topic_denials(topic_denials + 1)
 	return permits_topics
 
 /mob/living/carbon/human/beacon_topic_gate_actor/access_denied_feedback(obj/O)
