@@ -132,12 +132,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, S
 		var/obj/item/gripper/G = held
 		var/obj/item/wrapped = G.get_wrapped_item()
 		if(istype(wrapped))
-			if(equip_to_slot_if_possible(wrapped, slot_to_strip, 0, 1, 1))
+			if(equip_to_slot_if_possible(wrapped, slot_to_strip, 0, 1, 1, actor = user))
 				if(wrapped.loc != src)
 					return
 				G.clear_and_select_item()
 	else if(user.unEquip(held))
-		equip_to_slot_if_possible(held, slot_to_strip, 0, 1, 1)
+		equip_to_slot_if_possible(held, slot_to_strip, 0, 1, 1, actor = user)
 		if(held.loc != src)
 			user.put_in_hands(held)
 

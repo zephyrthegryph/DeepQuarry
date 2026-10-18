@@ -392,7 +392,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 
 	// Closets refuse what is fastened down.
 	var/obj/item/dq_containment_test/anchored/bolted = allocate(/obj/item/dq_containment_test/anchored, T)
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(bolted, closet), "it is fastened down", "anchored things stay out")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(bolted, closet)), "it is fastened down", "anchored things stay out")
 
 	// Capacity: a crate holds storage_capacity objects.
 	crate.set_storage_capacity(2)

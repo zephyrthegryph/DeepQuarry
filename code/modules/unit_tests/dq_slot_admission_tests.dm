@@ -83,3 +83,36 @@
 	var/datum/authority_grant/granted = admin_authority(null, "unit test")
 	TEST_ASSERT(from.slot_transfer(lamp, to, "adm_papers", null, authority = granted), "a granted admin authority forces it")
 	TEST_ASSERT(lamp.loc == to, "and it landed")
+
+/datum/unit_test/dq_slot_admission_equip_action
+
+/datum/unit_test/dq_slot_admission_equip_action/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/dresser = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/head/soft/adm_fixture/hat = allocate(/obj/item/clothing/head/soft/adm_fixture, T)
+	// The item's extend(/datum/act/equip, needs(...)) runs last, with the real actor (a stripper is judged as himself, not as the victim).
+	TEST_ASSERT_NULL(hat.equip_refusal(wearer, SLOT_ID_HEAD, TRUE), "the wearer may put the hat on")
+	TEST_ASSERT_EQUAL(hat.equip_refusal(wearer, SLOT_ID_HEAD, TRUE, actor = dresser), reason_text(/datum/msg/adm/dress_yourself), "someone else putting it on is refused by the hat's own rule")
+	TEST_ASSERT(!wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE, actor = dresser), "the strip-equip path passes the dresser")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE), "the wearer dresses himself")
+	TEST_ASSERT_EQUAL(wearer.get_equipped_item(SLOT_ID_HEAD), hat, "and wears it")
+
+/datum/unit_test/dq_slot_admission_req_removable
+
+/datum/unit_test/dq_slot_admission_req_removable/Run()
+	var/turf/T = test_floor()
+	var/obj/item/clothing/head/soft/cap = allocate(/obj/item/clothing/head/soft, T)
+	var/datum/entry/part/req/take_off = req_removable()
+	var/datum/entry/part/req/strip_off = req_removable(strip = TRUE)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.held = cap
+	TEST_ASSERT(take_off.holds(A), "an ordinary cap comes off")
+	cap.flags |= NOSTRIP
+	TEST_ASSERT(take_off.holds(A), "NOSTRIP does not stop its wearer")
+	TEST_ASSERT(!strip_off.holds(A), "but it stops a stripper")
+	TEST_ASSERT_EQUAL(strip_off.refusal(A), /datum/msg/slot/not_strippable, "with the strip reason")
+	cap.canremove = FALSE
+	TEST_ASSERT(!take_off.holds(A), "canremove = FALSE keeps it on")
+	TEST_ASSERT_EQUAL(take_off.refusal(A), /datum/msg/slot/not_removable, "with the removal reason")
+	A.release()
