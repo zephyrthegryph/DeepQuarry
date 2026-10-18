@@ -698,3 +698,10 @@ predicate tables, `/datum/predicate` and the `HOLD_*` macros before this lane re
 
 **Purity report (D5).** req-burndown converted the two confirmed impure previews (saddlebag `taur_fit`, Avida `match_ears`) to pure requirements with the
 appearance set through equipment notices (its handoff, `intended_changes.md`); no `REQ_ON` proc is left to audit.
+
+**Wave 4 decisions (18 Oct, recorded by the admission lane).** `canremove` and `NOSTRIP` stay: `canremove` is a rig's or a locked item's own tracked
+*state* (sealed, locked on: 53 reads, most of them the rig deciding what it is), and `NOSTRIP` is item flag data. What wave 4 removes is their use
+as *gates*: removal is asked through `req_removable()` (strip menu) and the pure `mob_can_unequip()`; banning the names would only rename state.
+`ignore_obstruction` stays as the equip check's explicit "skip the covering check" mode (tape over clothes) until the authority datum carries
+skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k). `disable_warning` and the `*_spec` table
+names are hard-banned.

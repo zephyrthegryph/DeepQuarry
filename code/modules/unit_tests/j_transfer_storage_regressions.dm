@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/under/hyperfiber/bluespace/U = allocate(/obj/item/clothing/under/hyperfiber/bluespace, T)
 	var/obj/item/storage/backpack/B = allocate(/obj/item/storage/backpack, T)
-	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "Real garment is equipped on actual wearer")
+	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, quiet = TRUE), "Real garment is equipped on actual wearer")
 	var/size_before = H.size_multiplier
 	U.set_original_size(size_before + 0.25)
 	var/restore = U.original_size

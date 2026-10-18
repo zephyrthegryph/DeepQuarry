@@ -144,7 +144,10 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 /mob/proc/canUnEquip(obj/item/I)
 	if(!I) //If there's nothing to drop, the drop is automatically successful.
 		return 1
-	return I.mob_can_unequip(src, inventory_slot_id(I))
+	var/slot = inventory_slot_id(I)
+	. = I.mob_can_unequip(src, slot)
+	if(!. && slot && I.canremove)
+		slot_is_accessible(slot, I, src) // the feedback of a check that tells nobody: what covers it is in the way
 
 /mob/proc/getBackSlot()
 	return SLOT_BACK
@@ -206,28 +209,28 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 
 	return FALSE
 
-/mob/proc/put_in_any_hand_if_possible(obj/item/W, del_on_fail = 0, disable_warning = 1, redraw_mob = 1)
-	if(equip_to_slot_if_possible(W, SLOT_ID_HAND_L, del_on_fail, disable_warning, redraw_mob))
+/mob/proc/put_in_any_hand_if_possible(obj/item/W, del_on_fail = 0, quiet = 1, redraw_mob = 1)
+	if(equip_to_slot_if_possible(W, SLOT_ID_HAND_L, del_on_fail, quiet, redraw_mob))
 		return 1
-	else if(equip_to_slot_if_possible(W, SLOT_ID_HAND_R, del_on_fail, disable_warning, redraw_mob))
+	else if(equip_to_slot_if_possible(W, SLOT_ID_HAND_R, del_on_fail, quiet, redraw_mob))
 		return 1
 	return 0
 
 //This is a SAFE proc. Use this instead of equip_to_slot()!
 //set del_on_fail to have it delete W if it fails to equip
-//set disable_warning to disable the 'you are unable to equip that' warning.
+//set quiet to keep the wearer from hearing why it failed ('you are unable to equip that').
 //unset redraw_mob to prevent the mob from being redrawn at the end.
 /// `actor`: who dresses this mob (a stripper); null means the mob itself. The equip checks judge the actor, not the wearer.
-/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, disable_warning = 0, redraw_mob = 1, ignore_obstructions = 1, mob/actor = null)
+/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, quiet = 0, redraw_mob = 1, ignore_obstructions = 1, mob/actor = null)
 	if(!W)
 		return 0
 	var/refused = W.equip_refusal(src, slot, ignore_obstructions, actor = actor)
 	if(refused || !equip_to_slot(W, slot, redraw_mob))
-		if(refused && !disable_warning)
+		if(refused && !quiet)
 			W.equip_feedback(actor || src, refused)
 		if(del_on_fail)
 			spent(W)
-		else if(!disable_warning)
+		else if(!quiet)
 			to_chat(src, span_red("You are unable to equip that.")) //Only print if del_on_fail is false
 		return 0
 	return 1
@@ -322,7 +325,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 //returns 0 if it cannot, 1 if successful
 /mob/proc/equip_to_appropriate_slot(obj/item/W)
 	for(var/slot in GLOB.slot_equipment_priority)
-		if(equip_to_slot_if_possible(W, slot, del_on_fail=0, disable_warning=1, redraw_mob=1))
+		if(equip_to_slot_if_possible(W, slot, del_on_fail=0, quiet=1, redraw_mob=1))
 			return 1
 
 	return 0

@@ -857,7 +857,7 @@
 	suit.forceMove(T)
 	tank.forceMove(suit)
 	rel_set(suit, nameof(suit.tank), tank)
-	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, disable_warning = TRUE), "the suit is worn by the one with the screwdriver")
+	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, quiet = TRUE), "the suit is worn by the one with the screwdriver")
 	hci_click(H, suit, driver)
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(test_answer(H, tank)?.key, "worn: nothing was asked")

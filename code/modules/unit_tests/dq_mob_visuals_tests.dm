@@ -9,7 +9,7 @@
 	refresh_flush()
 	TEST_ASSERT_NULL(H.look_layers()[UNIFORM_LAYER], "a bare human draws no uniform")
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey, H.loc)
-	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform goes on")
+	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, quiet = TRUE), "the uniform goes on")
 	refresh_flush()
 	var/image/worn = H.look_layers()[UNIFORM_LAYER]
 	TEST_ASSERT(worn, "the worn uniform is drawn on its layer")

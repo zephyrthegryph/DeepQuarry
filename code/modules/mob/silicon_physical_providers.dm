@@ -16,12 +16,12 @@
 
 /// Inventory removal consults the actor's slot model. Silicon grippers have no
 /// equipment slot identifier; their carried items still honor canremove.
-/mob/proc/can_unequip_item(obj/item/I, slot, disable_warning = FALSE)
+/mob/proc/can_unequip_item(obj/item/I, slot)
 	if(!I.canremove || !slot)
 		return 0
-	return slot_is_accessible(slot, I, disable_warning ? null : src) ? 1 : 0
+	return slot_is_accessible(slot, I, null) ? 1 : 0
 
-/mob/living/silicon/can_unequip_item(obj/item/I, slot, disable_warning = FALSE)
+/mob/living/silicon/can_unequip_item(obj/item/I, slot)
 	if(!I.canremove)
 		return 0
 	if(!slot)

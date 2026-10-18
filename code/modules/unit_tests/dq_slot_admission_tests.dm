@@ -94,8 +94,8 @@
 	// The item's extend(/datum/act/equip, needs(...)) runs last, with the real actor (a stripper is judged as himself, not as the victim).
 	TEST_ASSERT_NULL(hat.equip_refusal(wearer, SLOT_ID_HEAD), "the wearer may put the hat on")
 	TEST_ASSERT_EQUAL(hat.equip_refusal(wearer, SLOT_ID_HEAD, actor = dresser), reason_text(/datum/msg/adm/dress_yourself), "someone else putting it on is refused by the hat's own rule")
-	TEST_ASSERT(!wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE, actor = dresser), "the strip-equip path passes the dresser")
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, disable_warning = TRUE), "the wearer dresses himself")
+	TEST_ASSERT(!wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, quiet = TRUE, actor = dresser), "the strip-equip path passes the dresser")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(hat, SLOT_ID_HEAD, quiet = TRUE), "the wearer dresses himself")
 	TEST_ASSERT_EQUAL(wearer.get_equipped_item(SLOT_ID_HEAD), hat, "and wears it")
 
 /datum/unit_test/dq_slot_admission_req_removable

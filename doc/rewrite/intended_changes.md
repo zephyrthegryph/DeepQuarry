@@ -5226,3 +5226,6 @@ locking. No snapshots are re-recorded.
 * **equip_refusal() tells nobody** (wave 4): the check lost `disable_warning`; equip_to_slot_if_possible() and the cigarette packet show the reason
   ("You can't wear X there: ...") themselves, as before. The slot-reach check inside it no longer prints its own "something is in the way"
   line a second time.
+* **Asking whether a bluespace uniform or bracelet may come off no longer resizes the wearer** (wave 4): the size reset moved from
+  `mob_can_unequip()` (a check, run by menus and storage too) to `dropped()`, when it actually comes off. `mob_can_unequip()` and
+  `can_unequip_item()` are pure; `canUnEquip()` still tells the mob what is in the way.

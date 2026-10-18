@@ -52,7 +52,7 @@
 
 /// Equips `I` on `H` in `slot` and returns it.
 /datum/unit_test/dq_timed_pin_w7/proc/h_equip(mob/living/carbon/human/H, obj/item/I, slot)
-	TEST_ASSERT(H.equip_to_slot_if_possible(I, slot, disable_warning = TRUE), "[I] equips to [slot]")
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, slot, quiet = TRUE), "[I] equips to [slot]")
 	return I
 
 /// Steps a mob one tile north (a move that cancels what it is doing).
@@ -569,7 +569,7 @@
 /datum/unit_test/dq_timed_pin_w7/h_straight_jacket_resist/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/clothing/suit/straight_jacket/J = allocate(/obj/item/clothing/suit/straight_jacket, run_loc_floor_bottom_left)
-	TEST_ASSERT(user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, disable_warning = TRUE), "setup: the user wears the jacket")
+	TEST_ASSERT(user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, quiet = TRUE), "setup: the user wears the jacket")
 	test_chat_clear()
 	user.resist()
 	h_started(user, null, "struggle to remove")
@@ -584,7 +584,7 @@
 /datum/unit_test/dq_timed_pin_w7/h_straight_jacket_resist_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/clothing/suit/straight_jacket/J = allocate(/obj/item/clothing/suit/straight_jacket, run_loc_floor_bottom_left)
-	user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, disable_warning = TRUE)
+	user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, quiet = TRUE)
 	user.resist()
 	var/datum/T = h_started(user)
 	test_time(10 SECONDS)

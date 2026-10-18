@@ -478,8 +478,9 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 /obj/item/proc/equipped_robot(mob/user)
 	return
 
-/obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
+/// Can M take this item off `slot`? A pure check: it tells nobody and changes nothing (admission.md wave 4).
+/obj/item/proc/mob_can_unequip(mob/M, slot)
+	return M ? M.can_unequip_item(src, slot) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
