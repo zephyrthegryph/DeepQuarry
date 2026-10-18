@@ -66,6 +66,10 @@
 /datum/property_provider/type_var/tag/sharp/instance_value(datum/D)
 	return normalize(combat_of(D).sharp)
 
+/datum/property_provider/type_var/tag/sharp/read_keys(datum/D)
+	var/obj/item/I = D
+	return istype(I) ? list(list(I, ITEM_COMBAT_KEY)) : list()
+
 /datum/property_def/tag/conductive
 	id = TAG_CONDUCTIVE
 	name = "Conductive"
@@ -104,3 +108,11 @@
 
 /datum/property_provider/type_var/tag/paperwork/read_initial(path)
 	return ispath(path, /obj/item/paper) || ispath(path, /obj/item/photo) || ispath(path, /obj/item/paper_bundle)
+
+/datum/property_provider/type_var/size_class/read_keys(datum/D)
+	var/obj/O = D
+	return istype(O) ? list(list(O, nameof(O.w_class))) : list()
+
+/// This tag reads only the immutable candidate type, never instance state.
+/datum/property_provider/type_var/tag/paperwork/read_keys(datum/D)
+	return list()

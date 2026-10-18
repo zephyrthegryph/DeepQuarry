@@ -14,7 +14,7 @@ SOURCE_DEF(all)
 SOURCE_DEF(under_floor)
 /// A thing its owner keeps out of sight (conceal()).
 SOURCE_DEF(concealed)
-/// A door's swing: open or shut is a hold on its density and opacity (set_density() and set_opacity() on /obj/machinery/door).
+/// A machinery or closet door's state: open or shut is a hold on its density (and a machinery door's opacity).
 SOURCE_DEF(door_state)
 /// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.
 SOURCE_DEF(round_event)

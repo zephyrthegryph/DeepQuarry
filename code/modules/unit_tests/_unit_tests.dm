@@ -1315,6 +1315,7 @@
 #include "dq_machinery_last_conversion_pin.dm"
 
 #include "dq_requirement_protocol_pin.dm"
+#include "dq_requirement_burndown_pin.dm"
 #include "dq_requirement_protocol_tests.dm"
 #include "dq_requirement_boundary_pin_tests.dm"
 #include "dq_requirement_machine_selection_tests.dm"
