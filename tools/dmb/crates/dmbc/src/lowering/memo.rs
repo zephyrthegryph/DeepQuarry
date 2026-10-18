@@ -114,8 +114,10 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
     let recording = crate::lowering_memo::RecordingResolver::new(host);
+    static KEY_PREPARE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.key_prepare");
     let ready = (|| {
         let _profile = dm_profile::item("lowering.abi_key_prepare");
+        let _timer = KEY_PREPARE.time();
         let identity = current_body.source().identity;
         let issued = current_body.input();
         let context = AbiContext {
