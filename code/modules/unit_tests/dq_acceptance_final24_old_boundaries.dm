@@ -91,8 +91,8 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/clothing/suit/drake_cloak/D = allocate(/obj/item/clothing/suit/drake_cloak, H.loc)
 	var/obj/item/clothing/suit/barding/B = allocate(/obj/item/clothing/suit/barding, H.loc)
-	var/datum/sprite_accessory/tail/taur/drake/drake = allocate(/datum/sprite_accessory/tail/taur/drake)
-	var/datum/sprite_accessory/tail/taur/horse/horse = allocate(/datum/sprite_accessory/tail/taur/horse)
+	var/datum/sprite_accessory/tail/taur/drake/drake = new /datum/sprite_accessory/tail/taur/drake // a kept prototype type: not a test allocation
+	var/datum/sprite_accessory/tail/taur/horse/horse = new /datum/sprite_accessory/tail/taur/horse // a kept prototype type: not a test allocation
 	rel_set(H, nameof(H.tail_style), null)
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(D, CONSTRAINT_EQUIP, D, H), "you need a drake-taur half to wear this", "Clientless real human is refused by drake fit")
 	rel_set(H, nameof(H.tail_style), drake)
@@ -108,7 +108,7 @@
 	var/obj/item/storage/backpack/saddlebag_common/B = allocate(/obj/item/storage/backpack/saddlebag_common, floor)
 	rel_set(H, nameof(H.tail_style), null)
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), lowertext(B.no_message), "Exact dynamic lowercase rejection survives native requirement")
-	var/datum/sprite_accessory/tail/taur/horse/T = allocate(/datum/sprite_accessory/tail/taur/horse)
+	var/datum/sprite_accessory/tail/taur/horse/T = new /datum/sprite_accessory/tail/taur/horse // a kept prototype type: not a test allocation
 	rel_set(H, nameof(H.tail_style), T)
 	var/preview_state = B.item_state
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_EQUIP, B, H), "Actual taur permits common saddlebag")
@@ -131,7 +131,7 @@
 	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_HEAD, disable_warning = TRUE), "Actual no-ear equip succeeds")
 	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Committed no-ear equip preserves the old appearance")
 	TEST_ASSERT(H.unEquip(I, target = floor), "Actual no-ear removal succeeds")
-	var/datum/sprite_accessory/ears/bnnuy/E = allocate(/datum/sprite_accessory/ears/bnnuy)
+	var/datum/sprite_accessory/ears/bnnuy/E = new /datum/sprite_accessory/ears/bnnuy // a kept prototype type: not a test allocation
 	rel_set(H, nameof(H.ear_style), E)
 	TEST_ASSERT_NULL(dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H), "Real allowed primary ear retains admission")
 	TEST_ASSERT_EQUAL(I.item_state, "avidahatnoears", "Primary-ear preview does not mutate the last committed appearance")

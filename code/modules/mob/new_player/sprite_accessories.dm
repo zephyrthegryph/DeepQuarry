@@ -24,6 +24,8 @@
  */
 GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Secondary", "Tertiary", "Quaternary"))
 
+/// A prototype made once at world setup and shared, never deleted in a round: a reference to one cannot pin a deleted object (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sprite_accessory)
 /datum/sprite_accessory
 
 	var/icon			// the icon file the accessory is located in
