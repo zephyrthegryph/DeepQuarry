@@ -221,3 +221,6 @@ CAPABILITIES(/obj/structure/extraction_point)
 /// Accessor for the stored_obj var.
 /obj/effect/extraction_holder/proc/stored_obj() as /atom/movable
 	return stored_obj
+
+CAPABILITIES(/obj/effect/extraction_holder)
+	ref_one(nameof(stored_obj))

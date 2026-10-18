@@ -136,6 +136,7 @@ CAPABILITIES(/obj/item/resonator)
 CAPABILITIES(/obj/effect/resonance)
 	param(nameof(creator), pos = 1)
 	param(nameof(timetoburst), pos = 2, apply = PROC_REF(charge))
+	ref_one(nameof(creator))
 
 /// How long the field takes to burst (its constructor param).
 /obj/effect/resonance/var/timetoburst = 0

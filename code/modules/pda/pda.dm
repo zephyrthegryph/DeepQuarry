@@ -102,6 +102,7 @@ CAPABILITIES(/obj/item/pda)
 	ref_many(nameof(notifying_programs))
 	ref_one(nameof(current_app))
 	ref_one(nameof(scanmode))
+	ref_one(nameof(lastapp))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()

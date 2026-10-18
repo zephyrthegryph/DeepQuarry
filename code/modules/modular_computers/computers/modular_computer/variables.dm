@@ -129,6 +129,8 @@ CAPABILITIES(/obj/item/modular_computer)
 	owns_one(nameof(portable_drive), on_destroy = ON_DESTROY_CONTAINED)
 	owns_one(nameof(tesla_link), on_destroy = ON_DESTROY_CONTAINED)
 	ref_many(nameof(idle_threads))
+	ref_one(nameof(ai_slot))
+	ref_one(nameof(stored_pen))
 
 
 /// Whether the computer is turned on. its every() runs its programs while it is.

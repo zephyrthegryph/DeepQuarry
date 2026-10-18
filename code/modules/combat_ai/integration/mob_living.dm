@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	ref_one(nameof(own_identity))
 	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
 	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)

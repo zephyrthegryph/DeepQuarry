@@ -30,6 +30,7 @@ CAPABILITIES(/obj/asteroid_spawner)
 
 CAPABILITIES(/obj/rogue_mobspawner)
 	after_init(0, then(PROC_REF(register_spawn)))
+	ref_one(nameof(mymob))
 
 /obj/rogue_mobspawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))

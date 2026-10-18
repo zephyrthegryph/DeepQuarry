@@ -117,6 +117,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	param(nameof(core_landmark), pos = 1)
 	param(nameof(name), pos = 2, apply = PROC_REF(tag_for_master))
 	lives_while(nameof(core_landmark))
+	ref_one(nameof(core_landmark))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The landmark is tagged for its master's shuttle.
 /obj/effect/shuttle_landmark/visiting_shuttle/proc/tag_for_master(_name)
