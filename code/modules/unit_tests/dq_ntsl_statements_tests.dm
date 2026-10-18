@@ -1,5 +1,5 @@
-// NTSL statements after the dead object-statement path was removed (relations wave 4): an assignment and a call of a script-defined function
-// run, and the interpreter never writes a datum's vars by name from a script.
+// NTSL statements after the dead object-statement path was removed (relations wave 4): an assignment and a compound assignment run, and the
+// interpreter never writes a datum's vars by name from a script.
 
 /datum/unit_test/dq_ntsl_assignment_and_call
 
