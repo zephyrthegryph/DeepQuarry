@@ -245,6 +245,10 @@ The whole-tree scans the generators do (the defined types of every file, which f
 first consumer walked cost the later ones a lookup (`gen reads` after an edit: 8-12 s to about 4 s). The handler, `CAP_ENTRIES`, `STAT`
 formula and `draw()` walks of `gen/deps` and `gen reads` run in parallel and are folded in declaration order.
 
+**The parse is pipelined.** `Sem::build` runs dreammaker's preprocessor (lexing, macros, includes) on its own thread and streams token
+batches to the parser, and the `dev-fast` profile builds dependencies with release code generation (`opt-level 3`, 16 units): the
+full-model parse after a DM edit went from 17-19 s to 10-12 s.
+
 **The machine-wide lint cache.** `src/shared.rs`: the per-file results in `data/analyze-cache/` are keyed by content, so a worktree whose
 cache is stamped for another analyzer build or scope list first copies the files of `E:/dq-cache/analyze-cache/<stamp>/`
 (`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`
