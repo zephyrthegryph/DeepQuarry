@@ -482,7 +482,9 @@ impl RetainedSemanticTree {
                     "update",
                 );
             }
+            let publish_timer = dm_profile::detail_timer("tree.update.publish_selection_owner");
             tree.publish_selection_owner();
+            drop(publish_timer);
             let tree = Arc::new(tree);
             let entry = self
                 .entry
@@ -615,6 +617,7 @@ fn carry_demands(
     path: &str,
 ) {
     let timer = std::time::Instant::now();
+    let _detail = dm_profile::detail_timer("tree.update.carry_demands");
     let change = crate::change_set::StructuralChangeSet::between(
         previous_tree,
         previous,
