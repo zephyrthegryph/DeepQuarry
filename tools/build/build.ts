@@ -722,6 +722,8 @@ const analyzeSourceKey = (): string => {
     // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
     ...analyzeWalk('tools/analyze/src'),
     ...analyzeWalk('tools/analyze/fixtures'),
+    // The vendored parser (tools/analyze/vendor) is compiled into the binary too.
+    ...analyzeWalk('tools/analyze/vendor'),
   ]
     .map((f) => f.replace(/\\/g, '/'))
     .sort();

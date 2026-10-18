@@ -26,6 +26,7 @@ pub mod layering;
 pub mod keys;
 pub mod gen;
 pub mod incremental;
+pub mod model_store;
 pub mod oracle;
 pub mod procs;
 pub mod reads;
@@ -149,49 +150,8 @@ impl Sem {
             (p, Some(dir))
         };
         let t_build = std::time::Instant::now();
-        // The preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own thread and streams batches of
-        // tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the preprocessor's registers
-        // the files (every `Location` names one of its file ids, so paths are looked up there), and the errors of both are kept.
-        let (objtree, ctx, parse_ctx) = {
-            const BATCH: usize = 8192;
-            let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
-            let dme_for_pp = dme_path.clone();
-            let pp_thread = std::thread::Builder::new()
-                .name("dm-preprocess".into())
-                .stack_size(64 * 1024 * 1024)
-                .spawn(move || -> Result<dreammaker::Context, String> {
-                    let ctx = dreammaker::Context::default();
-                    {
-                        let pp = dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?;
-                        let mut batch = Vec::with_capacity(BATCH);
-                        for tok in dreammaker::indents::IndentProcessor::new(&ctx, pp) {
-                            batch.push(tok);
-                            if batch.len() == BATCH {
-                                if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
-                                    break;
-                                }
-                            }
-                        }
-                        if !batch.is_empty() {
-                            let _ = tx.send(batch);
-                        }
-                    }
-                    Ok(ctx)
-                })
-                .map_err(|e| format!("preprocessor thread: {}", e))?;
-            let parse_ctx = dreammaker::Context::default();
-            let tree = {
-                let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
-                parser.enable_procs();
-                let (_fatal, tree) = parser.parse_object_tree_2();
-                tree
-            };
-            let ctx = match pp_thread.join() {
-                Ok(r) => r?,
-                Err(_) => return Err("preprocessor thread panicked".to_string()),
-            };
-            (tree, ctx, parse_ctx)
-        };
+        let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
+        let model_store::Parsed { objtree, files: file_list, errors } = parsed;
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
@@ -201,7 +161,7 @@ impl Sem {
             }
             let r = files
                 .entry(loc.file)
-                .or_insert_with(|| crate::util::rel_slash(&ctx.file_path(loc.file).to_path_buf(), root))
+                .or_insert_with(|| crate::util::rel_slash(&file_list.get_path(loc.file).to_path_buf(), root))
                 .clone();
             Some(r)
         };
@@ -230,14 +190,6 @@ impl Sem {
         for v in def_index.values_mut() {
             v.sort();
         }
-        let errors = {
-            let pp_errors = ctx.errors();
-            let parse_errors = parse_ctx.errors();
-            let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
-            // One context interleaved them in stream order; by location is the same order.
-            all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
-            all.iter().map(|e| format!("{}", e)).collect()
-        };
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
@@ -448,6 +400,69 @@ impl Sem {
     }
 }
 
+/// Parses `dme_path` with dreammaker: the preprocessor (lexing, macro expansion, includes: about a third of the parse) runs on its own
+/// thread and streams batches of tokens to the parser here. A `Context` is not shareable between threads, so each side has its own: the
+/// preprocessor's registers the files (every `Location` names one of its file ids), and the errors of both are kept. `preregister` names
+/// files to register first, in order, so they get the same ids as in the parse that produced that list (`model_store`).
+pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<String>) -> Result<model_store::Parsed, String> {
+    const BATCH: usize = 8192;
+    let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);
+    let dme_for_pp = dme_path.to_path_buf();
+    let pre: Vec<PathBuf> = preregister.to_vec();
+    let pp_thread = std::thread::Builder::new()
+        .name("dm-preprocess".into())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(move || -> Result<dreammaker::Context, String> {
+            let ctx = dreammaker::Context::default();
+            for p in &pre {
+                ctx.register_file(p);
+            }
+            {
+                // `text` stands in for the .dme's own text (includes resolve against the real .dme's directory, as in the full parse).
+                let pp = match text {
+                    Some(t) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
+                    None => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
+                };
+                let mut batch = Vec::with_capacity(BATCH);
+                for tok in dreammaker::indents::IndentProcessor::new(&ctx, pp) {
+                    batch.push(tok);
+                    if batch.len() == BATCH {
+                        if tx.send(std::mem::replace(&mut batch, Vec::with_capacity(BATCH))).is_err() {
+                            break;
+                        }
+                    }
+                }
+                if !batch.is_empty() {
+                    let _ = tx.send(batch);
+                }
+            }
+            Ok(ctx)
+        })
+        .map_err(|e| format!("preprocessor thread: {}", e))?;
+    let parse_ctx = dreammaker::Context::default();
+    let objtree = {
+        let mut parser = dreammaker::parser::Parser::new(&parse_ctx, rx.into_iter().flatten());
+        parser.enable_procs();
+        let (_fatal, mut tree) = parser.parse_object_tree_2();
+        // A proc's body range ends in whatever file came next; nothing reads it (model_store splices files parsed alone).
+        tree.drop_body_ranges();
+        tree
+    };
+    let ctx = match pp_thread.join() {
+        Ok(r) => r?,
+        Err(_) => return Err("preprocessor thread panicked".to_string()),
+    };
+    let errors = {
+        let pp_errors = ctx.errors();
+        let parse_errors = parse_ctx.errors();
+        let mut all: Vec<&dreammaker::DMError> = pp_errors.iter().chain(parse_errors.iter()).filter(|e| matches!(e.severity(), dreammaker::Severity::Error)).collect();
+        // One context interleaved them in stream order; by location is the same order.
+        all.sort_by_key(|e| { let l = e.location(); (l.file, l.line, l.column) });
+        all.iter().map(|e| format!("{}", e)).collect()
+    };
+    Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors })
+}
+
 fn tempfile_dir(root: &Path) -> PathBuf {
     static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = std::process::id();
@@ -494,6 +509,7 @@ pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
         },
     });
     if b.sem.is_some() {
+        model_store::save_later(b.clone());
         Some(SemHandle(b))
     } else {
         None

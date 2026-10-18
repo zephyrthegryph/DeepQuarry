@@ -15,8 +15,8 @@ name = "dq_analyze"
 path = "src/lib.rs"
 
 [dependencies]
-# Parse-aware frontend (the DreamChecker parser), pinned to the suite the build uses (dependencies.sh).
-dreammaker = { git = "https://github.com/SpaceManiac/SpacemanDMM", tag = "suite-1.11" }
+# Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.
+dreammaker = { path = "vendor/dreammaker" }
 regex = "1"
 fancy-regex = "0.14"
 rayon = "1"
@@ -59,6 +59,17 @@ codegen-units = 256
 # Dependencies (dreammaker's parser is most of a cold `analyze gen`) are built once, so they get release code generation: few codegen
 # units, no incremental. Only this crate stays incremental.
 [profile.dev-fast.package."*"]
+opt-level = 3
+codegen-units = 16
+incremental = false
+
+# The vendored parser is a workspace member (a path dependency inside this directory), which `package."*"` does not cover.
+[profile.dev-fast.package.dreammaker]
+opt-level = 3
+codegen-units = 16
+incremental = false
+
+[profile.dev-fast.package.interval-tree]
 opt-level = 3
 codegen-units = 16
 incremental = false

@@ -120,6 +120,7 @@ fn main() -> ExitCode {
     let code = real_main();
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();
+    dq_analyze::sem::model_store::finish();
     code
 }
 
