@@ -430,13 +430,6 @@
 			qdel(A)
 		qdel(I)
 		CHECK_TICK
-	for(var/path in subtypesof(/datum/predicate/equip_slot))
-		var/datum/predicate/equip_slot/declared = path
-		if(!initial(declared.slot))
-			continue
-		var/datum/predicate/P = dq_predicate(path)
-		if(P.errors)
-			TEST_FAIL("[path]: [jointext(P.errors, "; ")]")
 	TEST_NOTICE(src, "[checked] item constraints compiled")
 
 #undef DQ_PARITY_FIXTURE

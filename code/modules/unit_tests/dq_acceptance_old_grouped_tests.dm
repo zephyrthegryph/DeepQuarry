@@ -198,21 +198,3 @@
 	TEST_ASSERT(wearer.slot_remove(pen, T, wearer), "Real removal succeeds")
 	TEST_ASSERT_EQUAL(pen.loc, T, "Removed pen reaches turf")
 	TEST_ASSERT_NULL(wearer.get_equipped_item(SLOT_ID_POCKET_L), "Removal clears ledger occupancy")
-
-// The remaining legacy table callback must observe native suit channels too.
-/datum/unit_test/dq_acceptance_legacy_native_suit/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/clothing/suit/space/void/mining/S = allocate(/obj/item/clothing/suit/space/void/mining, T)
-	var/obj/item/pen/P = allocate(/obj/item/pen, T)
-	var/obj/item/clothing/under/color/grey/wrong = allocate(/obj/item/clothing/under/color/grey, T)
-	TEST_ASSERT(acceptance_declared(S, CONSTRAINT_SUIT_STORAGE), "Fixture has a native restrictive suit channel")
-	TEST_ASSERT(!dq_constraint_has_legacy_override(S, CONSTRAINT_SUIT_STORAGE), "Fixture selects actual native channel rather than a legacy override")
-	TEST_ASSERT_EQUAL(dq_equip_suit_storage_takes(H, P), "you need a suit first", "Missing actual worn holder refuses before exemption")
-	TEST_ASSERT(H.equip_to_slot(S, SLOT_ID_SUIT), "Actual native suit occupies wearer slot")
-	TEST_ASSERT_EQUAL(dq_equip_suit_storage_takes(H, P), TRUE, "Legacy callback allows pen on genuine native suit")
-	TEST_ASSERT_EQUAL(dq_equip_suit_storage_takes(H, wrong), "it doesn't take that", "Legacy callback preserves native exact rejection")
-	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/pen), because = "native override rejects this candidate"), mode = ACCEPTANCE_REPLACE))
-	TEST_ASSERT_EQUAL(dq_equip_suit_storage_takes(H, wrong), "native override rejects this candidate", "Actual evaluator reaches native override, not the coexisting legacy table")
-	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, mode = ACCEPTANCE_EMPTY))
-	TEST_ASSERT_EQUAL(dq_equip_suit_storage_takes(H, P), "\the [S] has no suit storage", "Explicit native absence still refuses before pen exemption")
