@@ -317,6 +317,14 @@ pub struct DeclarationSyntax {
     ordered_chunks: bool,
 }
 impl DeclarationSyntax {
+    /// Expanded-text offsets where each grammar chunk starts and ends. The parser lexes every chunk
+    /// on its own, so no token continues across one of these offsets.
+    pub fn chunk_boundaries(&self) -> Vec<usize> {
+        self.chunks
+            .iter()
+            .flat_map(|chunk| [chunk.offset, chunk.offset + chunk.relative.source_len])
+            .collect()
+    }
     /// Exact current parser header context. Procedure executable children are
     /// deliberately excluded from declaration authority.
     pub fn declaration_header_at(&self, offset: usize) -> Option<ItemKind> {

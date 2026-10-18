@@ -416,6 +416,10 @@ impl BodyPatchBase {
         })
     }
     /// Hash of the image this base describes.
+    /// Declaration skeleton and body count of the build this base describes.
+    pub(crate) fn skeleton_key(&self) -> (u128, usize) {
+        (self.shape.skeleton, self.shape.bodies.len())
+    }
     pub(crate) fn dmb_hash(&self) -> u128 {
         self.dmb_hash
     }
@@ -493,6 +497,11 @@ fn code_row(
 /// Try the fast path. `Err` carries the reason it declined; the caller logs it
 /// and runs the full path. No state is changed unless `Ok` is returned.
 pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Result<Patched, String> {
+    // Prefer a retained base with this build's declaration skeleton (another lane's tree may be current).
+    let wanted = (request.shape.skeleton, request.shape.bodies.len());
+    if request.generation.select_patch_base(|base| base.skeleton_key() == wanted) {
+        crate::daemon_eprintln!("native body patch: switched to the retained base with this declaration skeleton");
+    }
     let (base, link, image) = request
         .generation
         .patch_base()

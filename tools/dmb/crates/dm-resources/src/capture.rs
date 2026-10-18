@@ -124,6 +124,20 @@ pub fn discover_demand(
     extra: &[LiteralRequest],
     additional: &[ResourceRequest],
 ) -> Result<ResourceDemand, CaptureError> {
+    discover_demand_in_pieces(plan, expanded, &[], extra, additional)
+}
+/// [`discover_demand`] lexing the expanded text as independent pieces in parallel. `boundaries` are
+/// offsets where no token can continue across (the frontend's grammar chunk starts and ends, which
+/// the declaration parser already lexes independently); an offset that is not a char boundary, or no
+/// boundaries at all, lexes the text whole. The result, including which error is reported, equals
+/// the whole-text scan: lexical diagnostics anywhere still precede literal admission errors.
+pub fn discover_demand_in_pieces(
+    plan: &DirectivePlan,
+    expanded: &ExpandedRegions,
+    boundaries: &[usize],
+    extra: &[LiteralRequest],
+    additional: &[ResourceRequest],
+) -> Result<ResourceDemand, CaptureError> {
     if !plan.diagnostics.is_empty()
         || !expanded.diagnostics.is_empty()
         || !expanded.lexical_diagnostics.is_empty()
@@ -132,7 +146,13 @@ pub fn discover_demand(
             "resource capture requires successful directive/expansion output".into(),
         ));
     }
-    let mut literals = discover_literals(&expanded.text)?;
+    let mut literals = discover_literals_in_pieces(&expanded.text, boundaries)?;
+    if !boundaries.is_empty()
+        && std::env::var_os("DMB_RESOURCE_DEMAND_VERIFY").is_some_and(|value| value == "1")
+    {
+        let whole = discover_literals(&expanded.text)?;
+        assert_eq!(whole, literals, "piecewise resource literal discovery diverged");
+    }
     let source_literal_count = literals.len();
     literals.extend_from_slice(extra);
     let root = normalize(&plan.project_dir);
@@ -581,6 +601,66 @@ fn normalize(path: &Path) -> PathBuf {
 /// Resource tokens are selected by the DM lexer. Embedded string expressions
 /// are bracket-delimited by lexical tokens and parsed before their tokens are
 /// visited; arbitrary quoted string text never becomes a resource request.
+/// [`discover_literals`] over independent pieces split at `boundaries`, lexed in parallel.
+pub fn discover_literals_in_pieces(
+    source: &str,
+    boundaries: &[usize],
+) -> Result<Vec<LiteralRequest>, CaptureError> {
+    let mut starts: Vec<usize> = std::iter::once(0)
+        .chain(boundaries.iter().copied().filter(|&at| at > 0 && at < source.len()))
+        .collect();
+    starts.sort_unstable();
+    starts.dedup();
+    if starts.len() < 2 || !starts.iter().all(|&at| source.is_char_boundary(at)) {
+        return discover_literals(source);
+    }
+    let pieces: Vec<(usize, usize)> = starts
+        .iter()
+        .zip(starts.iter().skip(1).chain(std::iter::once(&source.len())))
+        .map(|(&start, &end)| (start, end))
+        .collect();
+    type Lexed = (Vec<dm_syntax::Diagnostic>, Vec<SpanToken>);
+    let lex = |(start, end): (usize, usize)| -> Lexed {
+        let mut relevant = Vec::new();
+        let diagnostics = dm_syntax::visit_tokens(&source[start..end], |token| {
+            if matches!(token.kind, TokenKind::Resource | TokenKind::String) {
+                relevant.push(token);
+            }
+        });
+        (diagnostics, relevant)
+    };
+    let threads = std::thread::available_parallelism()
+        .map_or(1, |n| n.get())
+        .min(8)
+        .min(pieces.len());
+    let group = pieces.len().div_ceil(threads.max(1));
+    let lexed: Vec<Lexed> = std::thread::scope(|scope| {
+        let handles: Vec<_> = pieces
+            .chunks(group)
+            .map(|part| scope.spawn(move || part.iter().map(|&piece| lex(piece)).collect::<Vec<_>>()))
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|handle| handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)))
+            .collect()
+    });
+    for (&(start, _), (diagnostics, _)) in pieces.iter().zip(&lexed) {
+        if let Some(error) = diagnostics.first() {
+            return Err(CaptureError::Source {
+                span: Span {
+                    start: start + error.span.start,
+                    end: start + error.span.end,
+                },
+                reason: format!("{:?}", error.kind),
+            });
+        }
+    }
+    let mut found = Vec::new();
+    for (&(start, end), (_, tokens)) in pieces.iter().zip(&lexed) {
+        collect_tokens(&source[start..end], tokens, start, &mut found)?;
+    }
+    Ok(found)
+}
 pub fn discover_literals(source: &str) -> Result<Vec<LiteralRequest>, CaptureError> {
     let mut relevant = Vec::new();
     let diagnostics = dm_syntax::visit_tokens(source, |token| {

@@ -113,13 +113,20 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .lock()
             .map_err(|_| invalid("prepared input roster poisoned"))?
             .push(Arc::clone(&key));
+        static NOW: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.snapshot_now");
+        static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.visit_validate");
+        static MERGE: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.merge");
+        static INSERT: dm_profile::Accumulator = dm_profile::Accumulator::new("prepared.insert");
+        let now_timer = NOW.time();
         let now = self
             .snapshot
             .lock()
             .map_err(|_| invalid("input capture mutex poisoned"))?
             .scanned_ns;
+        drop(now_timer);
         let mut proof = None;
         let mut error = None;
+        let visit_timer = VISIT.time();
         let validate_started = std::time::Instant::now();
         let (hit, _) = owner
             .values
@@ -148,16 +155,20 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             validate_started.elapsed().as_nanos() as u64,
             std::sync::atomic::Ordering::Relaxed,
         );
+        drop(visit_timer);
         if let Some(error) = error {
             return Err(error);
         }
         if let Some(hit) = hit {
             counters::HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let refreshed = proof.expect("admitted prepared input proof");
+            let merge_timer = MERGE.time();
             self.snapshot
                 .lock()
                 .map_err(|_| invalid("input capture mutex poisoned"))?
                 .merge(&refreshed)?;
+            drop(merge_timer);
+            let _insert_timer = INSERT.time();
             let source = Arc::clone(&hit.source);
             owner
                 .values
