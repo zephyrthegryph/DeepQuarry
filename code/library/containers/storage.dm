@@ -176,7 +176,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	if(!isitem(thing))
 		return "that can't go in a container"
 	var/obj/item/W = thing
-	if(actor && actor.isEquipped(W) && !W.mob_can_unequip(actor, actor.inventory_slot_id(W), TRUE))
+	if(actor && actor.isEquipped(W) && !W.mob_can_unequip(actor, actor.inventory_slot_id(W)))
 		return "you can't let go of \the [W]"
 	var/limit = slots_of(holder)
 	if(!isnull(limit) && count_in(holder) >= limit)

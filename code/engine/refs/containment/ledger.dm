@@ -295,23 +295,33 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /// Adopts contents that arrived without a move and forgets things that left
 /// without one. One comparison when nothing changed.
+///
+/// The whole reconciliation is one change to the holder's totals, so it reaches the container once,
+/// after every entry is recorded. Propagating per entry made the container re-read this holder
+/// mid-sync (refresh() -> dq_ledger_contribution() -> dq_ledger_peek() -> sync()), adopting the next
+/// thing one stack frame deeper: a lazily built ledger over hundreds of things (a circuit kit's
+/// boxes, built by their destroy transaction) hit BYOND's recursion limit.
 /datum/ledger/proc/sync()
 	if(length(holder.contents) == tracked)
 		return
+	var/changed = FALSE
 	for(var/atom/movable/thing as anything in entries.Copy())
 		if(thing.loc != holder)
-			note_exit(thing)
+			changed = note_exit(thing, tell_container = FALSE) || changed
 	for(var/atom/movable/thing as anything in holder.contents)
 		// A thing being deleted left its slot in destroy phase 4 (it keeps its loc until phase 7):
 		// note_enter()'s teardown guard never re-adopts it.
 		if(!entries[thing])
-			note_enter(thing)
+			changed = note_enter(thing, tell_container = FALSE) || changed
+	if(changed)
+		propagate()
 
 // ---- Bookkeeping (called from doMove) ----
 
-/datum/ledger/proc/note_enter(atom/movable/thing)
+/// `tell_container` FALSE leaves telling the container to the caller (sync() does it once). TRUE when it recorded `thing`.
+/datum/ledger/proc/note_enter(atom/movable/thing, tell_container = TRUE)
 	if(entries[thing])
-		return
+		return FALSE
 	var/id = default_id
 	if(pending_thing == thing)
 		id = pending_slot
@@ -323,7 +333,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/flags = pending_flags
 	pending_flags = null
 	if(!own_guard(holder, thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
-		return
+		return FALSE
 	var/datum/relation_definition/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
@@ -335,8 +345,10 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	things += thing
 	used[id] += cost
 	tracked++
+	. = TRUE
 	add_snapshot(snapshot)
-	propagate()
+	if(tell_container)
+		propagate()
 	if(thing.containment_move_flags())
 		adjust_hooked(1)
 	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
@@ -353,10 +365,11 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(thing.slot_hooks_enabled())
 		thing.on_slotted(holder, id, flags)
 
-/datum/ledger/proc/note_exit(atom/movable/thing)
+/// `tell_container` as note_enter(). TRUE when it forgot `thing`.
+/datum/ledger/proc/note_exit(atom/movable/thing, tell_container = TRUE)
 	var/list/entry = entries[thing]
 	if(!entry)
-		return
+		return FALSE
 	var/flags = pending_exit_flags
 	pending_exit_flags = null
 	var/id = entry[LEDGER_E_SLOT]
@@ -368,8 +381,10 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	things -= thing
 	used[id] -= entry[LEDGER_E_COST]
 	tracked--
+	. = TRUE
 	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
-	propagate()
+	if(tell_container)
+		propagate()
 	if(thing.containment_move_flags())
 		adjust_hooked(-1)
 	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)

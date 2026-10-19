@@ -429,7 +429,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	slowdown = 2.5
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_ALTEVIAN), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_altevian.dmi'))
 
@@ -446,7 +446,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
 	no_cycle = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_ALTEVIAN), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/inventory/head/mob_altevian.dmi'))
 

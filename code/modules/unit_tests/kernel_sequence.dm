@@ -627,7 +627,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_NULL(def.missed_wake(E), "a step its conditions block is not a miss")
 	E.busy.Cut()
 	E.on = TRUE
-	E.set_heat(7) // a raw write: nothing publishes "heat"
+	set_var(E, nameof(E.heat), 7) // a raw write (set_var() does not go through the tracked setter): nothing publishes "heat"
 	var/datum/seq_step/missed = def.missed_wake(E)
 	TEST_ASSERT_EQUAL(missed?.key, "heat", "the step whose read changed without a publish is the miss")
 	var/list/found = seq_audit(expected = TRUE)

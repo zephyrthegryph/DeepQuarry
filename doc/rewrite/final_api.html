@@ -323,8 +323,8 @@ html { scroll-behavior: smooth; }
   <pre><code>ACTION(fall, turf/landing, mob/living/landed_on)     <span class="c">// a generator marker, not a plain macro. The build step emits /datum/act/fall,</span>
                                                      <span class="c">// act_fall(holder, landing, landed_on) and the notice /datum/notice/fell</span>
 
-var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)      <span class="c">// the final act, after every adjusts(); ACT_PASS (nothing hooks it and no listener wants its notice, nothing allocated); or null (refused or taken over)</span>
-if(!F)
+var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)      <span class="c">// the final act, after every adjusts(); ACT_PASS (nothing hooks it and no listener wants its notice, nothing allocated); or, refused or taken over, a /datum/act_refusal (its outcome, reason and the taker's reply)</span>
+if(ACT_REFUSED_BY(F))           <span class="c">// ACT_TAKEN_OVER(F) tells a takeover from a refusal; ACT_REPLY(F) is the taker's answer</span>
 	return
 ...do the fall to ACT_FINAL(F, landing, T) and ACT_FINAL(F, landed_on, M): the act's fields, not your locals...
 act_done(F)                                          <span class="c">// ends it ACT_COMMITTED and publishes the notice. act_cancel(F) releases without publishing</span></code></pre>
@@ -1759,8 +1759,8 @@ ACTION(op, datum/op_def/op, provider, notice = /datum/notice/op_done)   <span cl
     <p><strong>The notice</strong> is the action's name in the past tense, generated: <code>/datum/notice/fell</code>, <code>inserted</code>, <code>buckled</code>, <code>unbuckled</code>, <code>crossed</code>, <code>uncrossed</code>, <code>removed</code>. A name that already reads as past tense (<code>hit</code>, <code>stumbled_into</code>, <code>round_started</code>) is kept. <code>notice =</code> overrides it, as the <code>op</code> action does. A subtype declared with a slash (<code>hit/projectile</code>) inherits its parent's fields; its proc and <code>ACT_ATTEMPT</code> token use an underscore (<code>act_hit_projectile</code>, <code>hit_projectile</code>).</p>
     <p><strong>Calling one.</strong> The generated <code>act_fall()</code> takes its fields positionally and typed, so DreamChecker checks the call. <code>ACT_ATTEMPT(src, fall, T, M)</code> expands to a table lookup first and builds the context only when something hooks the action:</p>
   </div>
-  <pre><code>var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)   <span class="c">// the final act, after every adjusts(); ACT_PASS (nothing hooks it and no listener wants its notice, nothing allocated); or null (refused or taken over)</span>
-if(!F)
+  <pre><code>var/datum/act/fall/F = ACT_ATTEMPT(src, fall, T, M)   <span class="c">// the final act, after every adjusts(); ACT_PASS (nothing hooks it and no listener wants its notice, nothing allocated); or, refused or taken over, a /datum/act_refusal (its outcome, reason and the taker's reply)</span>
+if(ACT_REFUSED_BY(F))           <span class="c">// ACT_TAKEN_OVER(F) tells a takeover from a refusal; ACT_REPLY(F) is the taker's answer</span>
 	return
 ...do the fall to ACT_FINAL(F, landing, T) and ACT_FINAL(F, landed_on, M): the act's fields, not your locals...
 act_done(F)                      <span class="c">// ends it ACT_COMMITTED, publishes /datum/notice/fell and releases the context; a no-op for ACT_PASS</span>
@@ -1770,7 +1770,7 @@ act_done(F)                      <span class="c">// ends it ACT_COMMITTED, publi
       <li><code>ACT_PASS</code> is one shared constant, so <code>act_done(ACT_PASS)</code> and <code>act_cancel(ACT_PASS)</code> do nothing. It is returned only when nothing hooks the action and no listener wants a notice of it, for any outcome: a listener for the committed notice counts as hooking it, so with only an <code>on_notice</code> listener <code>ACT_ATTEMPT</code> returns a real act, and <code>act_done</code> publishes the committed notice. It carries no fields, because nothing hooked the action and nothing could have adjusted it: <code>ACT_FINAL(F, field, local)</code> reads <code>F.field</code> from a real act and the caller's own <code>local</code> from <code>ACT_PASS</code>, so one line is right on both paths. Only a hook's handler reads the context's fields otherwise.</li>
       <li>A lint requires <code>act_done</code> or <code>act_cancel</code> on every path of the proc that called <code>ACT_ATTEMPT</code>. Forgetting leaks the context and holds its references.</li>
       <li>A <code>FIXED</code> action has no <code>ACT_ATTEMPT</code>: <code>PUBLISH(E, x, args...)</code> announces it (<a href="#hooks">section 10</a>).</li>
-      <li>A taken-over action returns null from <code>ACT_ATTEMPT</code> and ends <code>ACT_REPLACED</code>: its past-tense notice is not published to listeners that have not asked for replaced actions (below).</li>
+      <li>A taken-over action answers a <code>/datum/act_refusal</code> from <code>ACT_ATTEMPT</code> (<code>ACT_TAKEN_OVER(F)</code> is true, <code>ACT_REPLY(F)</code> its answer) and ends <code>ACT_REPLACED</code>: its past-tense notice is not published to listeners that have not asked for replaced actions (below).</li>
     </ul>
     <p><strong>The world actions:</strong> move, z_change, cross, uncross, bump, stumbled_into, fall, thrown_hit, hit (by entry), irradiate, injure, body_status, insert, remove, equip, unequip, speak, emote, buckle, unbuckle, climb, slash and op.</p>
   </div>

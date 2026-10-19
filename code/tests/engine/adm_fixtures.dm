@@ -21,3 +21,10 @@ CAPABILITIES(/obj/item/clothing/head/soft/adm_fixture)
 
 /obj/item/clothing/head/soft/adm_fixture/proc/dressed_by_wearer(datum/act/op/A)
 	return A.actor == A.target ? null : MSG(adm/dress_yourself)
+
+MSG_DEF_SELF(adm/papers_only, "Only paper goes in.")
+
+/// A requirement over a candidate that may be a type path (requirement_reason(), admission.md D2g).
+/obj/adm_fixture/proc/takes_paper_type(datum/act/op/A)
+	var/candidate_type = ispath(A.target) ? A.target : A.target?.type
+	return ispath(candidate_type, /obj/item/paper) ? null : MSG(adm/papers_only)

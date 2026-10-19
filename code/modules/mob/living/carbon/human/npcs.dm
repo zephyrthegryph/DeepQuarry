@@ -20,4 +20,4 @@ CAPABILITIES(/mob/living/carbon/human/monkey/punpun)
 
 
 CAPABILITIES(/obj/item/clothing/under/punpun)
-	acceptance(CONSTRAINT_FIT, fits(list("Monkey")), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_MONKEY), mode = ACCEPTANCE_REPLACE)

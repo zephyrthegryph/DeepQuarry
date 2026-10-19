@@ -9,7 +9,7 @@
 	icon_state = "tesh_cloak_bn"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 
@@ -257,7 +257,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
 	icon_state = "tesharicoat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoat)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 
@@ -268,7 +268,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoat)
 	icon_state = "tesharicoatwhite"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 //Hooded teshari cloaks
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
 	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER|HIDETIE))
 
 
@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
 	item_state_slots = list(slot_r_hand_str = "tesh_hood_bo", slot_l_hand_str = "tesh_hood_bo")
 
 CAPABILITIES(/obj/item/clothing/head/tesh_hood)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_teshari.dmi', hides = BLOCKHAIR, covers = HEAD))
 
 
@@ -434,7 +434,7 @@ CAPABILITIES(/obj/item/clothing/head/tesh_hood)
 	icon_state = "tesh_beltcloak_bo"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //Belted job cloaks
@@ -556,4 +556,4 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/teshari)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)

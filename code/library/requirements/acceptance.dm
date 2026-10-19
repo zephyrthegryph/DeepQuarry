@@ -76,6 +76,8 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 		CRASH("acceptance size limit must use the size-class property's numeric unit")
 	return part_make(/datum/entry/part/req/acceptance_leaf/max_size, list("max_size" = size, "unit" = unit, "because" = because))
 
+/datum/entry/part/req/acceptance_leaf/max_size
+	reads_level = REQ_READS_TYPE // a pristine instance of the type answers it: size class and tags are type data
 /datum/entry/part/req/acceptance_leaf/max_size/acceptance_reason(datum/act/op/A)
 	if(!A?.target)
 		return MSG(slot/needs_held)
@@ -90,6 +92,8 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 /proc/req_acceptance_tag(tag_id, exclude = FALSE, because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because))
 
+/datum/entry/part/req/acceptance_leaf/property_tag
+	reads_level = REQ_READS_TYPE // a pristine instance of the type answers it: size class and tags are type data
 /datum/entry/part/req/acceptance_leaf/property_tag/acceptance_reason(datum/act/op/A)
 	var/has_tag = A?.target && dq_has_tag(A.target, src.args["tag"])
 	if(has_tag != !!src.args["exclude"])

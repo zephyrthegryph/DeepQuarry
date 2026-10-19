@@ -28,16 +28,18 @@
 /// Why `M` can't equip this in `slot`, or null if it can.
 /// `go_over_slot`: allow an occupied slot. Null uses the item's TAG_WEAR_OVER.
 /// `actor`: who puts it on `M` (a stripper dressing a victim); null means `M` itself.
-/// Unless `disable_warning`, the reason is shown to the actor.
-/obj/item/proc/equip_refusal(mob/M, slot, disable_warning = FALSE, ignore_obstruction = FALSE, go_over_slot = null, mob/actor = null)
-	. = dq_equip_refusal(src, M, slot, disable_warning, ignore_obstruction, go_over_slot, actor)
-	var/mob/told = actor || M
-	if(. && !disable_warning && told)
-		to_chat(told, span_warning("You can't wear \the [src] there: [.]."))
+/// A refusal check: it tells nobody (admission.md wave 4: feedback is the caller's, not a parameter of the check). equip_feedback() shows a reason.
+/obj/item/proc/equip_refusal(mob/M, slot, ignore_obstruction = FALSE, go_over_slot = null, mob/actor = null)
+	return dq_equip_refusal(src, M, slot, ignore_obstruction, go_over_slot, actor)
+
+/// Tells `who` why this item can't be worn in a slot (the reason equip_refusal() answered).
+/obj/item/proc/equip_feedback(mob/who, reason)
+	if(who && reason)
+		to_chat(who, span_warning("You can't wear \the [src] there: [reason]."))
 
 /// The stated order (admission.md D2h): the wearer has the slot, the slot's holder state and catalog, occupancy, reach, the item's
 /// own fit and equip constraints, then the needs() an item type declares on /datum/act/equip (its holder is the item, its target the wearer).
-/proc/dq_equip_refusal(obj/item/I, mob/M, slot, disable_warning, ignore_obstruction, go_over_slot, mob/actor = null)
+/proc/dq_equip_refusal(obj/item/I, mob/M, slot, ignore_obstruction, go_over_slot, mob/actor = null)
 	if(!slot || !M)
 		return "there's nowhere to put it"
 	if(!actor)
@@ -68,7 +70,7 @@
 	var/obj/item/present = M.get_equipped_item(slot)
 	if(present && present != I && !go_over_slot)
 		return "you're already wearing \the [present] there"
-	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, disable_warning ? null : M))
+	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, null))
 		return "something is in the way"
 	return dq_equip_item_refusal(I, M, slot, actor)
 
@@ -76,10 +78,10 @@
 /// storage) and equip.
 /proc/dq_equip_item_refusal(obj/item/I, mob/M, slot, mob/actor = null)
 	if(slot != SLOT_ID_POCKET_L && slot != SLOT_ID_POCKET_R && slot != SLOT_ID_SUIT_STORAGE)
-		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, M)
+		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, M, actor)
 		if(.)
 			return .
-	. = dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, M)
+	. = dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, M, actor)
 	if(.)
 		return .
 	return reason_text(op_transfer_precheck(I, /datum/act/equip, M, slot, actor || M))

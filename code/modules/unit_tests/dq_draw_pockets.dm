@@ -124,7 +124,7 @@
 	refresh_flush()
 	TEST_ASSERT(!("l_hand_hud_handcuffs" in dq_overlay_states(left)), "a free hand shows no handcuffs")
 	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, H.loc)
-	TEST_ASSERT(H.equip_to_slot_if_possible(cuffs, SLOT_ID_HANDCUFFED, disable_warning = TRUE), "the cuffs go on")
+	TEST_ASSERT(H.equip_to_slot_if_possible(cuffs, SLOT_ID_HANDCUFFED, quiet = TRUE), "the cuffs go on")
 	refresh_flush()
 	var/list/cuffed = dq_overlay_states(left)
 	TEST_ASSERT(("l_hand_hud_handcuffs" in cuffed), "the hand shows the cuffs, with no sync: [json_encode(cuffed)] (hud [!!left.owner_hud()], mob [left.owner_hud()?.mymob() == H], carbon [iscarbon(left.owner_hud()?.mymob())], cuffed [!!H.get_equipped_item(SLOT_ID_HANDCUFFED)], state [left.icon_state], watchers [length(H.rel_watchers)])")

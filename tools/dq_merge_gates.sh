@@ -311,7 +311,7 @@ job_tests() { gate_tests_with_retry "${tests[@]}"; } # one isolated retry tells 
 job_dm() {
 	# Never "up to date": DreamChecker runs inside the dm target and the push script's checks read this log.
 	rm -f deepquarry.dmb
-	DQ_DREAMCHECKER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
+	DQ_DREAMCHECKER=1 DQ_DREAMCHECKER_AFTER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
 }
 job_ratchets() {
 	bash tools/ci/check_ratchets.sh || return 1
@@ -323,7 +323,9 @@ job_ratchets() {
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
-	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
+	# Without sccache: through it the test build linked rlibs of the vendored dreammaker crates as staticlibs (E0462, E0786, internal
+	# compiler errors) on two gates in a row; the same build without the wrapper is clean (5 min cold, incremental after that).
+	CARGO_BUILD_RUSTC_WRAPPER="" RUSTC_WRAPPER="" bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)

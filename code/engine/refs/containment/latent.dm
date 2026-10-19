@@ -416,6 +416,12 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /atom/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
 	if(!latent_contents_enabled() || !dq_latent_eligible(path))
 		return null
+	// A slot whose accepts reads an instance cannot judge a latent entry (admission.md D8): such a holder must not declare latent contents.
+	var/datum/ledger/admitting = dq_ledger(src)
+	var/datum/relation_definition/slot/def = admitting?.def_by_id(slot_id || admitting.default_id)
+	if(def && def.accepts_level() > REQ_READS_TYPE)
+		stack_trace("latent_add(): [type] ([def.slot_id]) has instance-level accepts; latent entries cannot be judged without making them")
+		return null
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.latent_add(path, n, blob, slot_id)
 

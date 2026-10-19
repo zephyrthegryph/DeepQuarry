@@ -1189,7 +1189,7 @@
 	icon_state = "shadekin-short"
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
-	//species_allowed = list(SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+	//species_allowed = ACCESSORY_SHADEKIN
 
 /datum/sprite_accessory/tail/wartacosushi_tail //brightened +20RGB from matching roboparts
 	name = "Ward-Takahashi Tail"

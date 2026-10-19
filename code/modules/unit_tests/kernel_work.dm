@@ -362,7 +362,6 @@
 	reg.stage_by_type[T.type] = T
 	TEST_ASSERT(!(T.type in original_stages), "the skipped fixture never entered the boot registry")
 	var/datum/work_item/stage/W = stage_work_item(T.type, /datum/test_work_stage_member, 2 SECONDS)
-	own(W)
 	TEST_ASSERT(istype(W), "a canonical engine stage adapts to an actual work item")
 	TEST_ASSERT_EQUAL(W.interval, 2 SECONDS, "it carries the requested cadence")
 	TEST_ASSERT_EQUAL(length(W.reads), 1, "the adapter carries the fixture's genuine ready dependency")
@@ -378,6 +377,9 @@
 	TEST_ASSERT(!W.runnable(null, member), "the actual adapter parks after readiness is removed")
 	TEST_ASSERT(W.runnable(null, null), "without a member the adapter asks nothing of the stage")
 	TEST_ASSERT_EQUAL(W.owner(), W, "the adapter owns itself")
+	// A stage work item is never deleted in play (LIFECYCLE_KEEP_UNLESS_FORCED, code/controllers/kernel/work_item.dm); only this scratch
+	// adapter, which never entered the kernel, is retired, with force.
+	qdel(W, force = TRUE)
 
 /datum/test_work_owner/phases
 	var/list/phase_log = list()

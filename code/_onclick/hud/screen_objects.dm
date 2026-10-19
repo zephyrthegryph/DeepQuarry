@@ -1017,7 +1017,7 @@ CAPABILITIES(/atom/movable/screen/ammo)
 		var/image/item_overlay = image(holding)
 		item_overlay.alpha = 92
 
-		if(holding.equip_refusal(user, slot_id, disable_warning = TRUE))
+		if(holding.equip_refusal(user, slot_id))
 			item_overlay.color = "#ff0000"
 		else
 			item_overlay.color = "#00ff00"

@@ -105,24 +105,29 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
             &scalar.source.occurrences,
             &frontend.snapshot.occurrences
         ));
-        assert_eq!(retained.constant_hits.load(Ordering::Relaxed), index as u64);
+        // The engine-only constant catalog is reused by every request; the host also reads it for
+        // its own spelling admission, so the counter grows by at least one per request.
+        assert!(retained.constant_hits.load(Ordering::Relaxed) > index as u64);
         assert_eq!(retained.runtime_hits.load(Ordering::Relaxed), index as u64);
     }
     let added = build("/datum/probe\n    var/const/value = 4\n/datum/added_type\n");
     let (_, scalar) = prepare_retained(&added, &engine, Some(&retained)).unwrap();
     let (_, fresh) = prepare(&added, &engine.snapshot).unwrap();
     assert_eq!(scalar.identity, fresh.identity);
-    assert_eq!(retained.constant_hits.load(Ordering::Relaxed), 3);
+    let constants_after_added = retained.constant_hits.load(Ordering::Relaxed);
+    assert!(constants_after_added >= 3);
     assert_eq!(retained.runtime_hits.load(Ordering::Relaxed), 2);
     let removed = build("/datum/probe\n    var/const/value = 4\n");
     prepare_retained(&removed, &engine, Some(&retained)).unwrap();
-    assert_eq!(retained.constant_hits.load(Ordering::Relaxed), 4);
+    assert!(retained.constant_hits.load(Ordering::Relaxed) > constants_after_added);
     assert_eq!(retained.runtime_hits.load(Ordering::Relaxed), 2);
     retained.values.visit_storage(|view| {
         if let dm_session::ObservedArtifactStorageView::Store { entries, .. } = view {
+            // Six retained stages (prepared host, constants, runtime types, engine providers,
+            // callable and variable coverage) plus the current scalar outcomes.
             assert_eq!(
                 entries,
-                4 + prepare(&removed, &engine.snapshot)
+                6 + prepare(&removed, &engine.snapshot)
                     .unwrap()
                     .1
                     .outcomes

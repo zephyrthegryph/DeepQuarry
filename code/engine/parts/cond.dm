@@ -629,6 +629,23 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		return FALSE
 	return TRUE
 
+/// requirement_reason(R, holder, candidate, actor): why requirement R refuses `candidate` for `holder` now, or null (admission.md D2g). The candidate may
+/// be anything a slot or an install takes: an atom, a datum (NIF software, a matter synth) or a type path (a shop asking "would this install" before it
+/// charges). Pure: evaluated under the purity guard on a pooled op context (holder, target = candidate, actor).
+/proc/requirement_reason(datum/entry/part/req/R, datum/holder, candidate, mob/actor = null)
+	if(!istype(R))
+		CRASH("requirement_reason(): [R] is not a requirement")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
+	A.target = candidate
+	A.actor = actor
+	try
+		. = op_req_check(A, R)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
+
 /// with_reason(r, because): the requirement r, refused with `because` instead of its own reason. A variadic proc cannot take a named argument it
 /// does not declare (BYOND: "bad arg name"), so any_of()/all_of() have no because =; wrap them: with_reason(any_of(a, b), MSG(x)).
 /proc/with_reason(datum/entry/part/req/inner, because)

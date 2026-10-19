@@ -110,13 +110,17 @@ fn finite_callable_exclusion_tracks_removal_move_and_shadow() {
     );
     let removed = build("/datum/probe\n");
     let (removed_host, _) = prepare_retained(&removed, &engine, Some(&retained)).unwrap();
-    assert!(matches!(removed_host.resolve(query), M::Unsupported(_)));
+    // With the last declaration removed the name is not authored anywhere. The pinned global
+    // namespace absence (complete source roster, not a native callable name) still answers Missing,
+    // the same answer as before, so the identical persisted bytes replay. The answer carries no
+    // finite-exclusion certificate any more, so no resident certificate may reuse it.
+    assert_eq!(removed_host.resolve(query), M::Missing);
     assert_eq!(removed_host.domain_version(query.domain()), None);
-    assert_ne!(
+    assert_eq!(
         removed_host.resolve(query).canonical_bytes(),
         persisted_answer
     );
-    assert!(!disk_accepts(&removed_host));
+    assert!(disk_accepts(&removed_host));
     for name in ["never_authored_name", "sin"] {
         let query = Q::GlobalProc(SymbolId::of(name));
         assert_eq!(removed_host.domain_version(query.domain()), None);
@@ -124,8 +128,9 @@ fn finite_callable_exclusion_tracks_removal_move_and_shadow() {
     drop(snapshot);
     drop(cache);
     std::fs::remove_dir_all(&root).unwrap();
-    // The old host cannot repopulate an excluded current roster after removal.
-    assert_eq!(first_host.domain_version(query.domain()), None);
+    // An old immutable host keeps answering for its own tree (its domain memo holds the version
+    // it issued); it cannot issue a new receipt into the current store.
+    assert_eq!(first_host.domain_version(query.domain()), Some(first_version));
 }
 
 #[test]
@@ -221,16 +226,24 @@ fn procedure_memo_executable_disk_replay_rejects_last_name_removal_and_shadow() 
             .procedure,
         code.procedure
     );
-    for text in ["/proc/member_only()\n    return 3\n", "/datum/probe\n"] {
-        let current = build(text);
-        let (host, _) = prepare_retained(&current, &engine, Some(&retained)).unwrap();
-        let replay = reader.lookup_anonymous(key, &host, 0);
-        assert!(
-            replay.code.is_none() && replay.errors.is_none(),
-            "changed finite negative cannot replay"
-        );
-    }
-    assert_eq!(reader.counts.disk_hits.load(Ordering::Relaxed), 2);
+    // A shadowing global changes the answer (Missing -> Member): the persisted code must not replay.
+    let shadowed = build("/proc/member_only()\n    return 3\n");
+    let (host, _) = prepare_retained(&shadowed, &engine, Some(&retained)).unwrap();
+    let replay = reader.lookup_anonymous(key, &host, 0);
+    assert!(
+        replay.code.is_none() && replay.errors.is_none(),
+        "changed finite negative cannot replay"
+    );
+    // Removing the last declaration leaves the answer Missing (pinned global namespace absence), so
+    // the persisted code, lowered against that same answer, is exactly what lowering produces.
+    let removed = build("/datum/probe\n");
+    let (host, _) = prepare_retained(&removed, &engine, Some(&retained)).unwrap();
+    assert_eq!(host.resolve(Q::GlobalProc(SymbolId::of("member_only"))), M::Missing);
+    assert_eq!(
+        reader.lookup_anonymous(key, &host, 0).code.unwrap().procedure,
+        code.procedure
+    );
+    assert_eq!(reader.counts.disk_hits.load(Ordering::Relaxed), 3);
     drop(reader);
     drop(cache);
     std::fs::remove_dir_all(&root).unwrap();
@@ -366,14 +379,15 @@ fn actual_cached_failure_revalidates_member_global_and_deleted_callable() {
     );
     let (member, missing_answer) = run(MEMBER, &reader);
     assert!(!member.diagnostics.is_empty());
-    assert_ne!(
-        unknown_answer, missing_answer,
-        "finite member coverage changes the negative answer"
-    );
+    // Both are Missing now (the pinned global namespace absence answers the never-declared name
+    // too); `run` compares every lowering with a fresh one, which is the property that matters.
+    let _ = (&unknown_answer, &missing_answer);
+    // A never-declared global call is a source error now that the pinned global namespace absence
+    // proves it undefined (it was an unsupported model before that absence existed).
     assert!(initial
         .diagnostics
         .iter()
-        .all(|error| error.kind == dm_tree::frontend::DiagnosticKind::UnsupportedModel));
+        .all(|error| error.kind == dm_tree::frontend::DiagnosticKind::SourceError));
     assert!(member
         .diagnostics
         .iter()

@@ -169,7 +169,12 @@ impl SemanticTree {
         }
         let carried = kept.len();
         self.owner_callable_demands.seed(kept);
-        self.selection_prune_skippable = change.hierarchy.is_empty();
+        // Pruning only drops demand tokens of owners that no longer exist; an added type or a moved
+        // hierarchy leaves nothing to prune (the full sweep over about 1.3M tokens took ~3 s).
+        self.selection_prune_skippable = change
+            .hierarchy
+            .iter()
+            .all(|owner| previous.lookup_type(*owner).is_none() || self.lookup_type(*owner).is_some());
         Ok((carried, dropped))
     }
 }

@@ -228,19 +228,43 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
   const name = `${prio}-${String(queued).padStart(13, '0')}-${process.pid}`;
   const queueFile = path.join(dir, 'queue', name);
   const identity = `kind=node\npid=${process.pid}\nwinpid=${process.pid}\nworktree=${top}\nlabel=${label}\n`;
-  fs.writeFileSync(queueFile, `${identity}queued=${queued}\n`);
+  fs.writeFileSync(queueFile, `${identity}queued=${queued}\n${want > 1 ? `group=${want}\n` : ''}`);
   let waited = 0;
   let last = 0;
   const taken: HeldSlot[] = [];
   for (;;) {
     reap(dir, log);
-    let first = '';
+    let order: string[] = [];
     try {
-      first = fs.readdirSync(path.join(dir, 'queue')).sort()[0] ?? '';
+      order = fs.readdirSync(path.join(dir, 'queue')).sort();
     } catch {
       // queue vanished: recreated below
     }
-    if (first === name) {
+    // Small requests are not starved (dq_machine_slots.sh _slots_single_may_go): a single slot may pass groups still within their
+    // patience; a group takes slots only when it can take them all at once, or, past its patience, whatever is free.
+    const patience = Number(process.env.DQ_SLOTS_GROUP_PATIENCE_SEC ?? 120);
+    const nowS = Math.floor(Date.now() / 1000);
+    let mayGo = order[0] === name;
+    if (!mayGo && want === 1) {
+      mayGo = true;
+      for (const q of order) {
+        if (q === name) break;
+        const f = readFields(path.join(dir, 'queue', q));
+        if (!f.group || nowS - Number(f.queued || nowS) >= patience) {
+          mayGo = false;
+          break;
+        }
+      }
+    }
+    if (mayGo && want > 1 && taken.length === 0) {
+      let free = 0;
+      for (let i = 1; i <= usable; i++) if (!fs.existsSync(path.join(dir, `slot.${i}`))) free++;
+      if (free < want) {
+        if (waited >= patience && free >= 1) want = free;
+        else mayGo = false;
+      }
+    }
+    if (mayGo) {
       for (let i = 1; i <= usable && taken.length < want; i++) {
         const sd = path.join(dir, `slot.${i}`);
         try {

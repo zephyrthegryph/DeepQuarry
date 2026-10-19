@@ -1964,7 +1964,7 @@ CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff)
 
 CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
 	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(slime_fit)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_NO_TESHARI), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
 
 

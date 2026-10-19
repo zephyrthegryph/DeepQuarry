@@ -37,7 +37,7 @@
 	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator)
 	rel_set(G, nameof(G.bcell), cell)
 	G.damage_cost = 1
-	TEST_ASSERT(H.equip_to_slot_if_possible(G, SLOT_ID_BACK, disable_warning = TRUE), "the shield generator should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(G, SLOT_ID_BACK, quiet = TRUE), "the shield generator should equip")
 	TEST_ASSERT(H.apply_body_effect(effect_type), "the shield should come up")
 	TEST_ASSERT(H.has_body_effect(effect_type), "the shield should stay up while its generator is worn")
 	return G
@@ -199,7 +199,7 @@
 	TEST_ASSERT_EQUAL(H.slowdown, 0, "gear held in the hands should not contribute")
 
 	H.drop_from_inventory(boots)
-	TEST_ASSERT(H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES, disable_warning = TRUE), "the boots should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES, quiet = TRUE), "the boots should equip")
 	TEST_ASSERT_EQUAL(H.slowdown, 1.5, "worn boots should add their slowdown")
 
 	H.drop_from_inventory(boots)

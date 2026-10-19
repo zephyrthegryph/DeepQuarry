@@ -716,17 +716,37 @@ run_worlds() {
 	fi
 	if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -ne 0 ]; then
 		n="$look_shards"
+		if [ "$look_shards_set" -eq 0 ] && [ "$look_bless" -eq 0 ]; then
+			# Every test-world slot the machine has: a world is one DreamDaemon thread, and the slot table never oversubscribes.
+			local cap
+			cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null)"
+			if [[ "$cap" =~ ^[1-9][0-9]*$ ]] && [ "$cap" -gt "$n" ]; then n="$cap"; fi
+		fi
 		if [ "$LOOK_STALE_COUNT" -ge 0 ] && [ "$n" -gt 1 ]; then
 			# Little to probe: fewer worlds (a world costs a boot, about 30 seconds, for about 50 types).
-			n=$(( (LOOK_STALE_COUNT + 49) / 50 ))
-			[ "$n" -lt 1 ] && n=1
-			[ "$n" -gt "$look_shards" ] && n="$look_shards"
+			local fewer=$(( (LOOK_STALE_COUNT + 49) / 50 ))
+			[ "$fewer" -lt 1 ] && fewer=1
+			[ "$fewer" -lt "$n" ] && n="$fewer"
+		fi
+		# Cost-balanced shards (tools/dq_look_shard.py): an incremental run hands each world its own type list, partitioned by the seconds
+		# each type took before (E:/dq-cache/look-costs.tsv, DQ_LOOK_COSTS), instead of the round-robin slice of the sweep.
+		local costs="${DQ_LOOK_COSTS:-}" parts=""
+		if [ -z "$costs" ]; then if [ -d E:/dq-cache ] || [ -d /e/dq-cache ]; then costs="E:/dq-cache/look-costs.tsv"; else costs="$HOME/.cache/dq/look-costs.tsv"; fi; fi
+		if [ "$n" -gt 1 ] && [ -n "$LOOK_STALE_FILE" ] && [ -s "$LOOK_STALE_FILE" ] && [ "$look_bless" -eq 0 ] && [ "${DQ_LOOK_BALANCE:-1}" = 1 ]; then
+			parts="${LOOK_STALE_FILE%.txt}.part"
+			n="$("${PYTHON:-python3}" tools/dq_look_shard.py partition "$LOOK_STALE_FILE" "$n" "$costs" "$parts")" || { parts=""; n="$look_shards"; }
+			for ((i = 0; i < n; i++)); do focus_files+=("$parts.$i.txt"); done
 		fi
 		for ((i = 0; i < n; i++)); do
+			if [ -n "$parts" ]; then
+				add_world "look$i" "" "${LOOK_PARAMS//look-types=$LOOK_STALE_FILE/look-types=$parts.$i.txt}" "${look_group[@]}"
+				continue
+			fi
 			shard=""
 			if [ "$n" -gt 1 ]; then shard="$i/$n"; fi
 			add_world "look$i" "$shard" "$LOOK_PARAMS" "${look_group[@]}"
 		done
+		LOOK_COSTS_FILE="$costs"
 	elif [ "$look_world" -ne 1 ] && [ ${#look_group[@]} -gt 0 ]; then
 		# Unprepared look runs stay full; an incremental plan with zero stale types needs no look world.
 		add_world look "" "" "${look_group[@]}"
@@ -811,6 +831,16 @@ run_worlds() {
 		jsons+=("$j")
 	done
 	SPLIT_JSON="$(node tools/dq_merge_test_runs.js "${jsons[@]}")" || echo "== worlds: could not merge the records (${jsons[*]})" >&2
+	# What each look world's types cost this time, for the next run's balanced shards (tools/dq_look_shard.py).
+	if [ -n "${LOOK_COSTS_FILE:-}" ]; then
+		local look_logs=() run_dir
+		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
+			[[ "${W_LABEL[$i]}" == look* ]] || continue
+			run_dir="$(sed -n 's/.*logs in \(data\/logs\/run[0-9]*\)\..*/\1/p' "${W_LOG[$i]}" | tail -n 1)"
+			[ -n "$run_dir" ] && [ -f "$run_dir/tests.log" ] && look_logs+=("$run_dir/tests.log")
+		done
+		[ ${#look_logs[@]} -gt 0 ] && "${PYTHON:-python3}" tools/dq_look_shard.py record "$LOOK_COSTS_FILE" "${look_logs[@]}" || true
+	fi
 	echo "== worlds: all done in $(( $(date +%s) - began ))s"
 	return "$rc"
 }

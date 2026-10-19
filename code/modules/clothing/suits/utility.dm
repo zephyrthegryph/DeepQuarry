@@ -161,8 +161,8 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/paramedic)
 
 
 CAPABILITIES(/obj/item/clothing/suit/radiation/teshari)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)
 
 
 CAPABILITIES(/obj/item/clothing/head/radiation/teshari)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_TESHARI), mode = ACCEPTANCE_REPLACE)

@@ -8,7 +8,7 @@ These are a bit weird to wrap your head around, because it's not possible to
 add lists together when defining an item... We instead need to provides the
 contents that should be IN the list, and then wrap these macros in a list()
 
-ex: var/list/stores = list(POCKET_GENERIC, POCKET_CULT) in a the suit_storage_spec table
+ex: var/list/stores = list(POCKET_GENERIC, POCKET_CULT) in a suit storage acceptance list
 NOTICE: Do not leave trailing commas!!!!
 */
 
@@ -177,3 +177,47 @@ NOTICE: Do not leave trailing commas!!!!
 #define ADD_CLOTHING_TRAIT(mob, trait) add_trait(mob, trait, src)
 /// Wrapper for removing clothing based traits
 #define REMOVE_CLOTHING_TRAIT(mob, trait) remove_trait(mob, trait, src)
+
+// Clothing fit categories (code/library/items/fit_categories.dm lists the bodytypes of each).
+#define FIT_ALTEVIAN "altevian"
+#define FIT_HARDSUIT "hardsuit"
+#define FIT_HUMANOID_HYBRID "humanoid_hybrid"
+#define FIT_HUMANOID_HYBRID_SKRELL "humanoid_hybrid_skrell"
+#define FIT_HUMAN_PROMETHEAN "human_promethean"
+#define FIT_HUMAN_SKRELL "human_skrell"
+#define FIT_MONKEY "monkey"
+#define FIT_NO_DIONA "no_diona"
+#define FIT_NO_DIONA_VOX "no_diona_vox"
+#define FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN "no_diona_vox_teshari_altevian"
+#define FIT_NO_TESHARI "no_teshari"
+#define FIT_NO_TESHARI_VOX "no_teshari_vox"
+#define FIT_PROTEAN_HARDSUIT "protean_hardsuit"
+#define FIT_SKRELL "skrell"
+#define FIT_STANDARD "standard"
+#define FIT_TESHARI "teshari"
+#define FIT_UNATHI "unathi"
+#define FIT_VOX "vox"
+#define FIT_ZADDAT "zaddat"
+#define FIT_ZADDAT_PROMETHEAN "zaddat_promethean"
+
+// Sprite accessory species sets (admission.md wave 3): an accessory names the set it is drawn for; the species are listed here once.
+#define ACCESSORY_AKULA list(SPECIES_AKULA)
+#define ACCESSORY_EARS_WINGS_COMMON list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_TESHARI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_FENNEC, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_XENOCHIMERA, SPECIES_XENOHYBRID, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_PROTEAN, SPECIES_ALRAUNE, SPECIES_WEREBEAST, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW, SPECIES_ALTEVIAN, SPECIES_LLEILL, SPECIES_HANNER, SPECIES_SPARKLE, SPECIES_PROMETHEAN, SPECIES_ZORREN_DARK)
+#define ACCESSORY_SHADEKIN_EARS_ALL list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_TESHARI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_FENNEC, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_XENOCHIMERA, SPECIES_XENOHYBRID, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_PROTEAN, SPECIES_ALRAUNE, SPECIES_WEREBEAST, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+#define ACCESSORY_XENO_MARKINGS list(SPECIES_HUMAN, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_XENOCHIMERA, SPECIES_XENOHYBRID, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_PROTEAN, SPECIES_ALRAUNE)
+#define ACCESSORY_LLEILL list(SPECIES_LLEILL, SPECIES_HANNER)
+#define ACCESSORY_SERGAL list(SPECIES_SERGAL)
+#define ACCESSORY_SHADEKIN list(SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
+#define ACCESSORY_TESHARI list(SPECIES_TESHARI)
+#define ACCESSORY_VOX list(SPECIES_VOX)
+#define ACCESSORY_WEREBEAST list(SPECIES_WEREBEAST)
+#define FIT_REFIT_ALL_BUT_TESHARI_AND_VOX "refit_all_but_teshari_and_vox"
+#define FIT_REFIT_ALL_BUT_TESHARI "refit_all_but_teshari"
+#define FIT_REFIT_ALL "refit_all"
+#define FIT_REFIT_HUMANOID "refit_humanoid"
+#define FIT_REFIT_SERGAL "refit_sergal"
+#define FIT_REFIT_TAJARAN "refit_tajaran"
+#define FIT_REFIT_TESHARI "refit_teshari"
+#define FIT_REFIT_UNATHI "refit_unathi"
+#define FIT_REFIT_VOX "refit_vox"
+#define FIT_REFIT_VULPKANIN "refit_vulpkanin"

@@ -5,7 +5,7 @@
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
-	acceptance("fit", fits(list(SPECIES_SKRELL, SPECIES_HUMAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_HUMAN_SKRELL), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/skrell)
-	acceptance("fit", fits(list(SPECIES_SKRELL, SPECIES_HUMAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_HUMAN_SKRELL), mode = ACCEPTANCE_REPLACE)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/skrell)
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/vox)
 	flags = PHORONGUARD
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/vox)
-	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT, hides = 0))
 	configure(item_protection(siemens = 0.2))
 

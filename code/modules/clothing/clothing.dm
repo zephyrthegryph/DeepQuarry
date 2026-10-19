@@ -176,20 +176,20 @@ DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_im
 
 	switch(target_species)
 		if(SPECIES_HUMAN, SPECIES_SKRELL)	//humanoid bodytypes
-			restrict_fit(SPECIES_HUMANOID_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_HUMANOID)
 		if(SPECIES_UNATHI)
-			restrict_fit(SPECIES_UNATHI_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_UNATHI)
 		if(SPECIES_TAJARAN)
-			restrict_fit(SPECIES_TAJARAN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_TAJARAN)
 		if(SPECIES_VULPKANIN)
-			restrict_fit(SPECIES_VULPKANIN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_VULPKANIN)
 		if(SPECIES_SERGAL)
-			restrict_fit(SPECIES_SERGAL_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_SERGAL)
 		if("Metamorphic")
 			if(sprite_sheets[SPECIES_TESHARI]) //We have a custom teshari species sprite. Sorry teshari, but otherwise the fallback looks awful on you.
-				restrict_fit(SPECIES_ALL_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL)
 			else
-				restrict_fit(SPECIES_ALL_BUT_TESHARI_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL_BUT_TESHARI)
 		else
 			restrict_fit(list(target_species))
 
@@ -428,7 +428,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	punch_force = 2
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
-	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("fit", fits_category(FIT_NO_DIONA), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -602,7 +602,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance(CONSTRAINT_FIT, fits_category(FIT_NO_TESHARI_VOX), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
