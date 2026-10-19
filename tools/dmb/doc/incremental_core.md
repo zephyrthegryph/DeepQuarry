@@ -144,3 +144,39 @@ production-tree A/B.
   permanent.
 - Risk: the dependency wrapper must see every read. The existing `RecordingResolver` already gates lowering; the same gate must
   cover initializers and class layout. `DMB_QUERY_VERIFY=1` recomputes green queries and compares, as `DMB_DOMAIN_CACHE_VERIFY` does.
+
+## Cross-request reuse of reuse checks (decided 2026-10-18)
+
+A hot added-type compile (about 13.5 s, timing detail off) no longer recomputes much; it re-checks
+everything. Per request: about 630k domain versions are issued (0.5 s wall), about 212k initializer
+writes and 87k procedures each look up, certify and claim their stored result (lookup 1.4, certify
+3.9, claim 2.9 CPU-s). The plan is to carry what did not change from the previous request instead of
+re-proving it.
+
+1. **Carried domain versions.** A tree certificate token is carried across a revision only while the
+   domain's inputs are unchanged (demand-token carry, `inherit_demand_tokens`), and demanded tokens
+   come from one process-wide issuer. So a (domain, token) pair seen with a positive tree answer
+   still has that answer; the host issues its version from the token without resolving the query
+   (`engine_host/carried_positive.rs`, `DMB_CARRY_VERSIONS`). Negative and Unsupported answers still
+   take the full path: they depend on source-wide absence and runtime catalogs.
+2. **Version diff instead of a full roster.** Keep the previous request's issued versions per domain.
+   The certified roster becomes the previous roster minus artifacts whose read domains changed
+   version (the incidence index already maps domain to artifact), so the 630k-domain certify pass is
+   proportional to the changed domains.
+3. **Bulk carry with one claim.** Artifacts of an unchanged roster are claimed into the new request's
+   lease as one set (the previous lease's claims, minus the affected ones), instead of 920k claims.
+   Initializer classification and the lowering roster share this path.
+
+Each step is gated by the six-session equivalence scenarios and an interleaved A/B, behind a flag
+until it is faster and equivalent.
+
+Measured 2026-10-18 (hot added type, quiet machine): step 1 was implemented and reverted. A carried
+(domain, token) memory hit 288k of 344k variable domains, yet roster versions stayed at 0.41-0.43 s.
+Per issued variable domain the token lookup and carry check alone cost about 1.5 us of the ~5 us
+elapsed, and the 55k misses only 0.1 CPU-s: version issuing is many small lock-and-map steps, not
+query resolution. A reader lock on the demand-token map was also neutral. What remains per unit is
+bookkeeping: lowering's claim-and-rebind is about 23 us per procedure (2.1 CPU-s for 87.6k:
+claim, local re-match, rebind, admitted-read recording) and initializer visits about 25 us per
+write. Steps 2-3 therefore have to remove the per-unit claim/observe work itself (one lease-level
+transfer of the previous request's claims and recorded reads), not the version computation.
+
