@@ -263,10 +263,6 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     executor: &dm_exec::BuildExecutor,
 ) -> Result<PreparedCold, ColdError> {
     let total = Instant::now();
-    // One answer table per request, shared by the ABI, initializer and lowering checks.
-    if let Some(db) = memo.and_then(|memo| memo.query_db()) {
-        db.begin_answers(&frontend.snapshot.tree);
-    }
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let roster =
         crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
@@ -286,6 +282,15 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
     measurement.complete();
     dm_profile::request_mark("cold.startup_captured");
+    // One answer table per request, shared by the ABI, initializer and lowering checks. The
+    // static resolver versions every answer (declarations, procedure statics, engine catalogs).
+    if let Some(db) = memo.and_then(|memo| memo.query_db()) {
+        let world = startup
+            .resolver(frontend, resolver)
+            .ok()
+            .and_then(|resolver| resolver.domain_version(dm_ir::ReadDomain::Tree));
+        db.begin_answers(&frontend.snapshot.tree, world);
+    }
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(

@@ -71,29 +71,38 @@ impl ProcedureMemo {
             return;
         }
         if let Some(owner) = &self.symbolic {
+            let _timer = dm_profile::detail_timer("memo.publish.symbolic");
             owner.publish_successful();
         }
         if let Some(owner) = &self.initializers {
+            let _timer = dm_profile::detail_timer("memo.publish.initializers");
             owner.publish_successful();
         }
         if let Some(owner) = &self.startup {
+            let _timer = dm_profile::detail_timer("memo.publish.startup");
             owner.publish_successful();
         }
         if let Some(owner) = &self.initializer_fragments {
+            let _timer = dm_profile::detail_timer("memo.publish.initializer_fragments");
             owner.publish_successful();
         }
         if let Some(owner) = &self.initializer_assemblies {
+            let _timer = dm_profile::detail_timer("memo.publish.initializer_assemblies");
             owner.publish_successful();
         }
         if let Some(owner) = &self.class_projections {
+            let _timer = dm_profile::detail_timer("memo.publish.class_projections");
             owner.publish_successful();
         }
         if let Some(owner) = &self.required_types {
+            let _timer = dm_profile::detail_timer("memo.publish.required_types");
             owner.publish_successful();
         }
         if let Some(owner) = &self.link_bindings {
+            let _timer = dm_profile::detail_timer("memo.publish.link_bindings");
             owner.publish_successful();
         }
+        let _timer = dm_profile::detail_timer("memo.publish.procedures");
         self.publish_procedures();
     }
     pub(crate) fn publish_procedures(&self) -> bool {
