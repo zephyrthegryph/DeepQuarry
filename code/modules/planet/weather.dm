@@ -330,6 +330,13 @@ CAPABILITIES(/datum/weather)
 	mouse_opacity = 0
 	plane = PLANE_PLANETLIGHTING
 
+/atom/movable/weather_visuals/New(loc, start_icon, start_state)
+	if(start_icon)
+		icon = start_icon
+	if(start_state)
+		icon_state = start_state
+	..()
+
 // This is for special effects for specific types of weather, such as lightning flashes in a storm.
 // It's a seperate object to allow the use of flick().
 /atom/movable/weather_visuals/special
