@@ -65,13 +65,10 @@ fn structural_scenarios_edit_and_revert_match_fresh_bytes() {
         let edited = compare_revision(&shared, &roots);
         assert_ne!(edited[0], initial[0], "{label} edit must publish new content");
         edit_all(&roots, TREE);
-        let reverted = compare_revision(&shared, &roots);
+        compare_revision(&shared, &roots);
         // Reverting a removed var adds it back, an append patch with stable
         // numbering: equivalent to a fresh build (compare_revision), not identical.
         if label != "removed var" {
-            if !dm_link::stable_assignment_enabled() {
-                assert_eq!(reverted, initial, "reverting the {label} edit must reproduce the initial bytes");
-            }
         }
     }
 }
@@ -107,10 +104,7 @@ fn chained_structural_edits_match_fresh_bytes_and_revert() {
         seen.push(edited);
     }
     edit_all(&roots, TREE);
-    let reverted = compare_revision(&shared, &roots);
-    if !dm_link::stable_assignment_enabled() {
-        assert_eq!(reverted, initial);
-    }
+    compare_revision(&shared, &roots);
 }
 
 #[test]
@@ -213,10 +207,7 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         let applied = crate::body_patch::applied(&roots.manifest(0)) - before;
         assert_eq!(applied, u64::from(patches), "{label}: append patch applied");
         edit_all(&roots, TREE);
-        let reverted = compare_revision(&shared, &roots);
-        if !dm_link::stable_assignment_enabled() {
-            assert_eq!(reverted, initial, "{label}: revert reproduces initial bytes");
-        }
+        compare_revision(&shared, &roots);
     }
 }
 
@@ -407,8 +398,8 @@ fn shadowing_moving_and_removing_a_callable_name_match_fresh_bytes() {
 
 #[test]
 fn types_added_between_existing_types_match_fresh_structurally() {
-    // Under DMB_STABLE_LINK=1 the added type takes the next class index instead of its source
-    // position; compare_revision gates the output on structural equivalence with a fresh build.
+    // The added type takes the next class index instead of its source position (stable link
+    // numbering); compare_revision gates the output on structural equivalence with a fresh build.
     let roots = Roots::new();
     let mut shared = shared();
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;

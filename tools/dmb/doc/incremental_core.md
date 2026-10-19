@@ -259,6 +259,10 @@ are unchanged stays green without a certificate check. Revalidation must be para
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).
+   (2026-10-19: `DMB_STABLE_LINK` deleted; a retained link always stabilizes against its previous
+   bindings and a build without them (one-shot, cold) numbers in source order. A revert is now
+   equivalent to, not byte-identical with, the initial build; six-session asserts equivalence.
+   Removal/reparent relocation without relinking is still open.)
 6. **Section-wise composition.** `section` queries over the retained model; only changed sections are
    rewritten, then encoded. Body edit must reach about 6 s here. Deletes `body_patch.rs`,
    `body_patch_append.rs`, `body_patch_lines.rs`, patch slots and alternates in
