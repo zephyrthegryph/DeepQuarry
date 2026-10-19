@@ -1586,6 +1586,10 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 # one emitted event (code/engine/declare/definition_types.dm), a draw's look builder (one draw), one SQL request and its answer rows (code/engine/io/db.dm),
 # a relation edge (engine relation storage, ended with its relation; covered by dq_gc_sweep), a materialize frame (open only while one load initializes, code/controllers/subsystems/atoms_batch.dm), a reservation (lives until its op ends; the subtypes outside code/engine/parts/resource.dm too), one dispatch's context (code/datums/capabilities/dispatch.dm), op candidates, the resolution record, op sources and provider rows (code/engine/parts/resolve.dm, provider.dm), examine rows
 # (code/engine/present/examine.dm), constructor arguments (code/engine/lifeforms/params.dm), one serializer run's context (code/engine/state/serializer.dm).
+# A system's hot work queues ("type::var"), reviewed per var (relations proposal wave 2): each entry is drained within a tick or two and
+# the drain skips a deleted member (QDELETED), so a queue never pins a deleted object past its next drain. A declared relation here would
+# add a reverse-index write to every enqueue (thousands per tick for lighting).
+work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/lighting::sunlight_queue", "/datum/system/radiation::dirty_turfs"]
 transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
 
 # rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.

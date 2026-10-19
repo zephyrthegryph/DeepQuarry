@@ -74,8 +74,6 @@ list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::subject_
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_rules
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_windows
 list	code/controllers/subsystems/internal_wiki.dm	@/datum/system/internal_wiki::spoiler_entries
-list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::sources_queue
-list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::sunlight_queue
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::planet_shandlers
 list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::z_to_pshandler
 list	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::cells
@@ -110,7 +108,6 @@ list	code/modules/mob/mob_chunks.dm	@/datum/controller/global_vars::mob_chunks
 list	code/modules/overmap/turfs.dm	@/datum/controller/global_vars::map_sectors
 list	code/modules/paperwork/faxmachine.dm	@/datum/controller/global_vars::adminfaxes
 list	code/modules/power/power_grid.dm	@/datum/power_grid_registry::by_id
-list	code/modules/radiation/radiation_service.dm	@/datum/system/radiation::dirty_turfs
 list	code/modules/reagents/reagents/_reagents.dm	@/datum/reagent::data
 list	code/modules/scripting/AST/Blocks.dm	@/datum/node/BlockDefinition::statements
 list	code/modules/tgs_commands/vorestation.dm	@/datum/controller/global_vars::tgs_flow_senders

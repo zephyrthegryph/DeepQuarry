@@ -65,7 +65,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: &["stored_refs"],
-    lists: &["exempt_types", "transient_types"],
+    lists: &["exempt_types", "transient_types", "work_queues"],
 };
 
 struct StoredRefs;
@@ -440,6 +440,8 @@ impl Lint for StoredRefs {
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
         let transient: Vec<String> = cx.list("transient_types").to_vec();
+        let queues: Vec<String> = cx.list("work_queues").to_vec();
+        let work_queue = |owner: &str, name: &str| queues.iter().any(|q| q == &format!("{}::{}", owner, name));
         // param(nameof(v), ..., keep = FALSE) in a CAPABILITIES block: init builds from the value and params_drop() puts the var back to its default when
         // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
         let mut init_only: Vec<(String, String)> = Vec::new();
@@ -553,7 +555,7 @@ impl Lint for StoredRefs {
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
-                    if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || declared_by_relation(sem, &rels, &o, &v) {
+                    if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || work_queue(&o, &v) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }
                     let Some(sig) = sem.var_decl(&o, &v) else { continue };
