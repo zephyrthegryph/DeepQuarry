@@ -197,6 +197,17 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
     /// in key order. Lets a caller run its routing predicate without holding
     /// whatever lock guards this roster, then consume the chosen slots with
     /// [`take_slots`](Self::take_slots).
+    /// Partition into `count` key-ordered rosters by `shard(key)`, so callers that
+    /// route every lookup by the same shard function stop sharing one lock.
+    pub fn split_by(self, count: usize, shard: impl Fn(&[u8]) -> usize) -> Vec<Self> {
+        let mut parts: Vec<Vec<_>> = (0..count.max(1)).map(|_| Vec::new()).collect();
+        let total = parts.len();
+        for candidate in self.candidates {
+            let index = shard(&candidate.key) % total;
+            parts[index].push(candidate);
+        }
+        parts.into_iter().map(|candidates| Self { candidates }).collect()
+    }
     pub fn prefix_values(&self, prefix: &[u8]) -> Vec<(usize, Arc<T>)> {
         let start = self
             .candidates
