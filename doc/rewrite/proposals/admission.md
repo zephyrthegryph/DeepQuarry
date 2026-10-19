@@ -744,3 +744,7 @@ to carry `go_over_slot` and the authority, which the generated act arguments do 
   still compile to the CONSTRAINT_* channels, so the evaluator swap (holsters and grippers as slot accepts, suit storage as a trait, D4c)
   changes their bodies, not content. Picked over converting holsters/grippers to slots now because their holders are `owns_one` vars,
   which the declared-slot path skips (`declared_slot_defs()`): that is engine work for the relations owner.
+- *Wave 8, one evaluator:* `condition_holds(holder, cond)` is `op_cond()` on a pooled context (`pooled_op_context()`, shared with
+  `requirement_reason()`); `op_cond_eval()` gained the `cond_config()` branch. A requirement inside a stat or activation condition is now
+  evaluated (the old walker answered TRUE for any part that was not not/all_of/any_of); a PROC_REF condition is called with the context
+  as its argument, as an op condition is.

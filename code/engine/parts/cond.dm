@@ -87,6 +87,8 @@ PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot 
 					if(op_cond(A, L[i]))
 						return TRUE
 				return FALSE
+			if("config") // cond_config(): the server's config flag (constant in a round)
+				return !!global.config?.Get(L[2])
 		return FALSE
 	if(istype(cond, /datum/simulation_condition))
 		return FALSE // Simulation trees are evaluated by their rule consumer, not opaque op conditions.
@@ -618,16 +620,22 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 		return FALSE
 	return TRUE
 
+/// A pooled op context for one evaluation outside an op: `holder`, `target` and `actor` set; the caller releases it (A.release()).
+/proc/pooled_op_context(datum/holder, target = null, mob/actor = null)
+	RETURN_TYPE(/datum/act/op)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
+	A.target = target
+	A.actor = actor
+	return A
+
 /// requirement_reason(R, holder, candidate, actor): why requirement R refuses `candidate` for `holder` now, or null (admission.md D2g). The candidate may
 /// be anything a slot or an install takes: an atom, a datum (NIF software, a matter synth) or a type path (a shop asking "would this install" before it
 /// charges). Pure: evaluated under the purity guard on a pooled op context (holder, target = candidate, actor).
 /proc/requirement_reason(datum/entry/part/req/R, datum/holder, candidate, mob/actor = null)
 	if(!istype(R))
 		CRASH("requirement_reason(): [R] is not a requirement")
-	var/datum/act/op/A = take(/datum/act/op)
-	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
-	A.target = candidate
-	A.actor = actor
+	var/datum/act/op/A = pooled_op_context(holder, candidate, actor)
 	try
 		. = op_req_check(A, R)
 	catch(var/exception/fault)
