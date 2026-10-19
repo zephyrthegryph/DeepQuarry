@@ -249,6 +249,18 @@ function recordShadowCompileComparison(artifacts: string, native: CompileOutcome
     Juke.logger.warn(`Shadow compile report unavailable: ${reportError}`);
   }
 }
+/** The compiler daemon's pipe closed under a running request: the daemon died or was stopped (a lane once saw "The pipe has been ended.
+ * (os error 109)" when the shared daemon was killed mid-build). Nothing was decided about the source, so the build client runs the request once
+ * more against a fresh daemon instead of failing the lane. Only this transport loss is retried; every other failure keeps its status. */
+export function droppedDaemonPipe(output: string): boolean {
+  return /The pipe has been ended|os error 109|os error 232|broken pipe|connection reset by peer/i.test(output);
+}
+async function nativeCompileRetryingDroppedPipe<T extends { code: number | null; signal?: string | null; combined: string }>(run: () => Promise<T>): Promise<T> {
+  const first = await run();
+  if (first.code === 0 || first.signal || !droppedDaemonPipe(first.combined)) return first;
+  Juke.logger.warn('Native compile: the compiler daemon dropped the connection mid-build (it died or was stopped); retrying once against a fresh daemon.');
+  return await run();
+}
 export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker, invocation?: CompilerInvocation) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>, capturedInvocation?: CompilerInvocation): Promise<CompiledOutput> {
   const mode = compilerMode();
   const invocation = bindCompilerInvocation(capturedInvocation, options.defines ?? []);
@@ -263,9 +275,9 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     // every worktree. Not for captured invocations (they name their own root) and not when the manifest is not a worktree file.
     const shared = invocation ? undefined : await withSharedCompileRoot(
       nativeRoot(), dme, (outcome: { code: number | null; signal?: string | null }) => outcome.code === 0 && !outcome.signal,
-      (run) => nativeCompile(dme, options, execute, undefined, compilerInvocation(run.root, run.relativeManifest, options.defines ?? [])),
+      (run) => nativeCompileRetryingDroppedPipe(() => nativeCompile(dme, options, execute, undefined, compilerInvocation(run.root, run.relativeManifest, options.defines ?? []))),
       (message) => Juke.logger.info(message));
-    const result = shared ? shared.result : await nativeCompile(dme, options, execute, undefined, invocation);
+    const result = shared ? shared.result : await nativeCompileRetryingDroppedPipe(() => nativeCompile(dme, options, execute, undefined, invocation));
     if (result.code === 0 && !result.signal) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain
