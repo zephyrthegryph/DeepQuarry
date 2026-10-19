@@ -25,6 +25,25 @@ pub struct StructuralChangeSet {
     pub unclassified: Option<&'static str>,
 }
 
+/// A classified change between two trees, kept on the newer one for consumers that retained
+/// answers against the older one (the query database's answer inputs).
+#[derive(Debug)]
+pub struct ChangeSince {
+    pub from_identity: u128,
+    pub set: StructuralChangeSet,
+}
+impl ChangeSince {
+    /// Whether an answer about `name` read through `owner` (its ancestors) may differ.
+    pub fn owner_name_dirty(&self, tree: &SemanticTree, owner: SymbolId, name: SymbolId) -> bool {
+        StructuralChangeSet::under(tree, owner, &self.set.hierarchy)
+            || (self.set.names.contains(&name)
+                && StructuralChangeSet::under(tree, owner, &self.set.member_owners))
+    }
+    /// Whether a name-global answer (any owner) may differ.
+    pub fn name_dirty(&self, name: SymbolId) -> bool {
+        self.set.names.contains(&name) || !self.set.hierarchy.is_empty()
+    }
+}
 impl StructuralChangeSet {
     pub fn between(
         previous_tree: &SemanticTree,
@@ -80,7 +99,7 @@ impl StructuralChangeSet {
         self.rows_changed == 0 && self.hierarchy.is_empty()
     }
     /// True when `owner` or one of its current ancestors is in `roots`.
-    fn under(tree: &SemanticTree, owner: SymbolId, roots: &HashSet<SymbolId>) -> bool {
+    pub(crate) fn under(tree: &SemanticTree, owner: SymbolId, roots: &HashSet<SymbolId>) -> bool {
         if roots.is_empty() {
             return false;
         }

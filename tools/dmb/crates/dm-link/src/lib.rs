@@ -189,11 +189,6 @@ fn link_lap(lap: &mut std::time::Instant, label: &str) {
     }
     *lap = std::time::Instant::now();
 }
-/// `DMB_STABLE_LINK=1`: keep every surviving previous index and append new keys.
-pub fn stable_assignment_enabled() -> bool {
-    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *ENABLED.get_or_init(|| std::env::var_os("DMB_STABLE_LINK").is_some_and(|value| value == "1"))
-}
 /// Stable numbering for additions. A table whose previous keys all survive pins
 /// them at their previous indexes and appends its fresh keys in the current
 /// order; a table that lost a key keeps the fresh full order (it renumbers).
@@ -414,7 +409,9 @@ impl LinkTables {
         let captured =
             retain_recipe.then(|| assignment_recipe::AssignmentRecipe::capture(&inventory));
         let mut inventory = inventory;
-        if let Some(previous) = previous.filter(|_| stable_assignment_enabled()) {
+        // A retained link keeps every surviving index and appends new keys; a fresh build
+        // (no previous bindings) numbers in source order.
+        if let Some(previous) = previous {
             stabilize(&mut inventory, |key| content.contains_key(key), previous);
         }
         link_lap(&mut lap, "link.assign.capture_and_stabilize");

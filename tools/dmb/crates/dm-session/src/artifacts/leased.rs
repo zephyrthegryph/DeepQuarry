@@ -67,7 +67,6 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 leases: BTreeMap::new(),
                 next_lease: 0,
                 claims: BTreeMap::new(),
-                incidence: None,
             }),
             retention: Retention::SharedCurrentRosters(limit),
         })
@@ -109,9 +108,6 @@ fn release<T, Q, A, D>(
     let removed = bucket.remove(index);
     if bucket.is_empty() {
         state.buckets.remove(&hash);
-    }
-    if let Some(index) = &mut state.incidence {
-        index.remove(pointer as u64);
     }
     state.bytes = state.bytes.saturating_sub(removed.weight);
     Some(removed)
@@ -322,8 +318,6 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
             .or(shared_key)
             .unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
-            let incidence_reads = state.incidence.as_ref().map(|_| receipt.reads.clone());
-            let incidence_versions = Arc::clone(&receipt.versions);
             let bucket = state
                 .buckets
                 .entry(hash)
@@ -335,9 +329,6 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 value: Arc::clone(&receipt.value),
                 weight: receipt.weight,
             });
-            if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(pointer as u64, hash, &reads, &incidence_versions);
-            }
             state.bytes = state.bytes.saturating_add(receipt.weight);
         }
         let assign_timer = ASSIGN.time();
@@ -596,8 +587,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         if existing.is_none() && !self.permits_charge(state.bytes, weight) {
             return None;
         }
-        let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
-        let incidence_versions = Arc::clone(&versions);
         let bucket = state
             .buckets
             .entry(hash)
@@ -613,14 +602,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 value: Arc::clone(&value),
                 weight,
             });
-            if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(
-                    Arc::as_ptr(&value) as usize as u64,
-                    hash,
-                    &reads,
-                    &incidence_versions,
-                );
-            }
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)
         };

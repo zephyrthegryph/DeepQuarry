@@ -41,6 +41,39 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
         &self.values[candidate_shard(key)]
     }
 }
+/// Units of the last request proven unchanged by the session's query database: every recorded
+/// answer equals the current one.
+fn proven_roster<'request, 'host, R: Resolver>(
+    db: &crate::query_db::QueryDb,
+    store: &dm_session::ObservedArtifactStore<
+        Record,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
+    admission: &'request RequestAdmission<'host, R>,
+) -> Option<
+    dm_session::UnchangedCandidates<
+        'request,
+        'host,
+        Record,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+        R,
+    >,
+> {
+    use dm_session::ObservationHost;
+    if !admission.allows_certificate_reuse() {
+        return None;
+    }
+    let host = admission.host();
+    let answer = |query: &dm_ir::ResolveQuery| host.answer_for_admission(query);
+    let answers = db.request_answers(&answer);
+    let workers = std::thread::available_parallelism().map_or(8, |n| n.get()).min(8);
+    let proven = db.proven_unchanged(store.variant_snapshot(), &answers, workers);
+    Some(dm_session::UnchangedCandidates::from_proven(admission, proven))
+}
 impl SessionSymbolicMemo {
     pub(in crate::lowering) fn candidate_roster<'request, 'host, R: Resolver>(
         &self,
@@ -48,16 +81,10 @@ impl SessionSymbolicMemo {
     ) -> Option<RequestCandidates<'request, 'host, R>> {
         self.attempt.as_ref()?;
         let owner = self.publication.as_ref()?;
-        if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "2") {
-            let limit = std::env::var("DMB_ROSTER_REJECTIONS").ok().and_then(|value| value.parse().ok()).unwrap_or(8);
-            for (reason, members) in owner.values.rejection_summary(admission, limit) {
-                eprintln!("detail unchanged-roster rejection: {members} variants: {reason}");
-            }
-        }
+        // Stored units are proven by the session's answers; a memo without a query database
+        // (one-shot builds, fixtures) offers no unchanged candidates.
         Some(RequestCandidates {
-            values: owner
-                .values
-                .unchanged_candidate_roster(admission)
+            values: proven_roster(self.query_db.as_deref()?, &owner.values, admission)?
                 .split_by(CANDIDATE_SHARDS, candidate_shard)
                 .into_iter()
                 .map(Mutex::new)
@@ -121,25 +148,5 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .take_slots(&slots)
-    }
-    #[cfg(test)]
-    pub(super) fn take(
-        &self,
-        key: &[u8],
-    ) -> Vec<
-        dm_session::UnchangedCandidate<
-            'request,
-            'host,
-            Record,
-            dm_ir::ResolveQuery,
-            dm_ir::ResolvedMeaning,
-            dm_ir::ReadDomain,
-            R,
-        >,
-    > {
-        self.shard_for(key)
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take(key)
     }
 }

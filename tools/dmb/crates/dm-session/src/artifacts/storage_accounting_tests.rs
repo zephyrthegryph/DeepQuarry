@@ -36,10 +36,6 @@ fn storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps() {
     assert!(empty
         .exclusions
         .contains(&ArtifactStorageExclusion::VariantClaimIndexNodes));
-    assert!(empty
-        .exclusions
-        .contains(&ArtifactStorageExclusion::IncidenceIndexNodes));
-    assert!(empty.incidence.is_none());
     let a = store.lease();
     let b = store.lease();
     let c = store.lease();
@@ -77,41 +73,3 @@ fn storage_accounting_tracks_shared_claims_and_exposes_private_owner_gaps() {
     assert_eq!(*sibling, 11, "store counts never cover escaped owners");
 }
 
-#[test]
-fn storage_accounting_keeps_incidence_counts_separate_from_heap_bytes() {
-    let store = ObservedArtifactStore::<u32, u8, u32, u8>::current_revision();
-    store.enable_incidence();
-    assert_eq!(
-        store.storage_accounting().incidence,
-        Some(ArtifactIncidenceCounts::default())
-    );
-    let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
-    let mut observations = reads(1);
-    observations.push(crate::Observation {
-        query: 1,
-        answer: 2,
-        domain: 1,
-    });
-    store
-        .insert_with_owned(key, observations, vec![], 0, || 11)
-        .unwrap();
-    let report = store.storage_accounting();
-    assert_eq!(counts(report), (1, 1, 0, 0, 0, 0));
-    assert_eq!(
-        report.incidence,
-        Some(ArtifactIncidenceCounts {
-            leaves: 1,
-            variants: 1,
-            domains: 2,
-            subscriptions: 1,
-        })
-    );
-    assert_eq!(report.coverage, ArtifactStorageCoverage::Partial);
-    assert_eq!(store.admitted_bytes(), 0, "weights are not census bytes");
-    store.retain_current_keys(std::iter::empty());
-    assert_eq!(counts(store.storage_accounting()), (0, 0, 0, 0, 0, 0));
-    assert_eq!(
-        store.storage_accounting().incidence,
-        Some(ArtifactIncidenceCounts::default())
-    );
-}

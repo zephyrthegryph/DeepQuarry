@@ -445,14 +445,20 @@ impl BuildHost {
                     crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(owner)
                 },
             );
-            self.symbolic = Some((policy, Arc::new(symbolic)));
+            self.symbolic = Some((policy, Arc::new(symbolic.with_query_db(&self.query_db))));
         }
         if self
             .initializers
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
-            self.initializers = Some((policy, Arc::new(Default::default())));
+            self.initializers = Some((
+                policy,
+                Arc::new(
+                    crate::initializer_policy::InitializerArtifacts::default()
+                        .with_query_db(&self.query_db),
+                ),
+            ));
         }
         let abi_disk = disk.clone();
         // One transport per request for both initializer stores, as the one-shot facade builds it.
@@ -497,7 +503,7 @@ impl BuildHost {
                     crate::driver_facts::AbiArtifacts::with_engine_owner(engine.abi_engine_owner())
                 },
             );
-            self.abi = Some((policy, Arc::new(artifacts)));
+            self.abi = Some((policy, Arc::new(artifacts.with_query_db(&self.query_db))));
         }
         memo.abi = Some(Arc::clone(&self.abi.as_ref().unwrap().1));
         // The retained ABI store reads and stages per-unit rows through this request's disk snapshot, so a

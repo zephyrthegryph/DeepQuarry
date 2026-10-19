@@ -2,7 +2,6 @@ use super::*;
 #[test]
 fn immutable_rebind_preserves_failed_publication_and_replaces_successful_claim() {
     let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
-    store.enable_incidence();
     let publication = Arc::new(crate::ArtifactPublication::default());
     let key: Arc<[u8]> = Arc::from(b"owner".as_slice());
     let ledger: crate::Receipt<_, _, _> = reads(1).into();

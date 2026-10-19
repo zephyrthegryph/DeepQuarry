@@ -77,6 +77,8 @@ pub struct InitializerArtifacts {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    /// The retained session's query database: receipts are certified by its current answers.
+    pub(crate) query_db: Option<Arc<crate::query_db::QueryDb>>,
 }
 impl Default for InitializerArtifacts {
     fn default() -> Self {
@@ -95,10 +97,16 @@ impl Default for InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: None,
         }
     }
 }
 impl InitializerArtifacts {
+    /// Receipts of this store are certified by the session's query database.
+    pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
+        self.query_db = Some(Arc::clone(db));
+        self
+    }
     pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
         self.release_runtime_syntax();
         self.roster.clear();
@@ -142,6 +150,7 @@ impl InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: self.query_db.clone(),
         })
     }
     pub(crate) fn publish_successful(&self) -> bool {
@@ -277,6 +286,7 @@ impl InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: None,
         }
     }
 }

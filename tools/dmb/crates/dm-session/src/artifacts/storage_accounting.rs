@@ -18,7 +18,6 @@ pub enum ArtifactStorageExclusion {
     LeaseRegistryNodes,
     LeaseRosterNodes,
     VariantClaimIndexNodes,
-    IncidenceIndexNodes,
     PayloadObjectsAndChildren,
     ArcControlBlocks,
     AllocatorMetadata,
@@ -30,21 +29,10 @@ const EXCLUSIONS: &[ArtifactStorageExclusion] = &[
     ArtifactStorageExclusion::LeaseRegistryNodes,
     ArtifactStorageExclusion::LeaseRosterNodes,
     ArtifactStorageExclusion::VariantClaimIndexNodes,
-    ArtifactStorageExclusion::IncidenceIndexNodes,
     ArtifactStorageExclusion::PayloadObjectsAndChildren,
     ArtifactStorageExclusion::ArcControlBlocks,
     ArtifactStorageExclusion::AllocatorMetadata,
 ];
-
-/// Logical incidence entries only; private BTree node bytes remain excluded.
-/// Certificate, uncovered-domain and conflict indexes are not enumerated here.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ArtifactIncidenceCounts {
-    pub leaves: usize,
-    pub variants: usize,
-    pub domains: usize,
-    pub subscriptions: usize,
-}
 
 /// One locked diagnostic view of the SAME retained core. These counts describe
 /// indexed owners only: escaped Arcs can outlive their last store claim, and
@@ -65,13 +53,12 @@ pub struct ArtifactStorageAccounting {
     pub claimed_variants: usize,
     /// Sum of reference counts across the physical variant claim index.
     pub claims: usize,
-    pub incidence: Option<ArtifactIncidenceCounts>,
 }
 
 impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     /// Diagnostic only: report cardinalities, never estimate BTree node bytes.
     /// No payload copying, allocation, resolver replay or artifact admission runs.
-    /// Complexity is O(buckets + leases + claimed variants + incidence leaves).
+    /// Complexity is O(buckets + leases + claimed variants).
     /// A separate `visit_storage` call takes a separate lock; callers requiring
     /// consistent combined diagnostics must inspect a quiescent retained core.
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
@@ -90,15 +77,6 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 .values()
                 .map(|(_, claims)| claims.load(std::sync::atomic::Ordering::Acquire))
                 .sum(),
-            incidence: state.incidence.as_ref().map(|index| {
-                let (leaves, variants, domains, subscriptions) = index.counts();
-                ArtifactIncidenceCounts {
-                    leaves,
-                    variants,
-                    domains,
-                    subscriptions,
-                }
-            }),
         }
     }
 }

@@ -124,18 +124,8 @@ fn assert_equivalent_outputs(
             return;
         }
         let text = report.render_text();
-        let appended_only = report.categories.keys().all(|name| matches!(name.as_str(), "order.proc_table" | "order.var_name_strings" | "order.type_table"))
-            && text
-                .lines()
-                .filter(|line| line.contains(": relative order differs"))
-                .all(|line| {
-                    // Stable link numbering appends every re-added or added row.
-                    if dm_link::stable_assignment_enabled() {
-                        return true;
-                    }
-                    let name = line.rsplit('/').next().unwrap_or(line);
-                    ["added_", "early_", "used_", "extra"].iter().any(|prefix| name.starts_with(prefix))
-                });
+        // Stable link numbering appends every re-added or added row: only table order differs.
+        let appended_only = report.categories.keys().all(|name| matches!(name.as_str(), "order.proc_table" | "order.var_name_strings" | "order.type_table"));
         assert!(appended_only, "{context}: outputs are not semantically equivalent
 {text}");
     }
@@ -265,10 +255,7 @@ fn six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes() {
     for index in 0..6 {
         roots.edit(index, SOURCE);
     }
-    let reverted = compare_revision(&shared, &roots);
-    if !dm_link::stable_assignment_enabled() {
-        assert_eq!(reverted, initial);
-    }
+    compare_revision(&shared, &roots);
     assert_eq!(shared.slots.lock().unwrap().len(), 6);
     assert!(slots
         .iter()
@@ -573,7 +560,7 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
     for index in 0..6 {
         roots.edit(index, tree);
     }
-    let initial = compare_revision(&shared, &roots);
+    compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
             .map(|index| crate::body_patch::applied(&roots.manifest(index)))
@@ -609,10 +596,7 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
     for index in 0..6 {
         roots.edit(index, tree);
     }
-    let reverted = compare_revision(&shared, &roots);
-    if !dm_link::stable_assignment_enabled() {
-        assert_eq!(reverted, initial, "the revert must reproduce the initial bytes");
-    }
+    compare_revision(&shared, &roots);
 }
 
 #[test]
