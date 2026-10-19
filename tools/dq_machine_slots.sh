@@ -11,10 +11,10 @@
 #   source tools/dq_machine_slots.sh; slots_acquire <class> [label]; ...; slots_release   # in a script (set a trap)
 #
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
-#   dm_compile      DQ_SLOTS_DM_COMPILE=2       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
-#   test_world      DQ_SLOTS_TEST_WORLD=cpus/3  (2 to 6; 5 on 16 CPUs) one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
+#   dm_compile      DQ_SLOTS_DM_COMPILE=1       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
+#   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
-#   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=2   a focused run holding dq_look_state_pin / dq_look_tree_pin
+#   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=1   a focused run holding dq_look_state_pin / dq_look_tree_pin
 #                                               (DQ_LOOK_PIN_SLOTS is accepted as the old name)
 # Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
 # for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
@@ -54,12 +54,8 @@ slots_cpus() { # logical CPUs of this machine (1 when unknown)
 	echo "$n"
 }
 
-slots_default_test_world() { # one DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6
-	local n
-	n=$(( $(slots_cpus) / 3 ))
-	[ "$n" -lt 2 ] && n=2
-	[ "$n" -gt 6 ] && n=6
-	echo "$n"
+slots_default_test_world() { # 2 by default: the machine is also the user's desktop (gaming while lanes run lagged it badly, 2026-10-19)
+	echo "${DQ_SLOTS_TEST_WORLD_DEFAULT:-2}"
 }
 
 slots_capacity() { # class -> count (0 = off)
@@ -72,10 +68,10 @@ slots_capacity() { # class -> count (0 = off)
 	if [ -z "$val" ] && [ "$cls" = "look_state_pin" ]; then val="${DQ_LOOK_PIN_SLOTS:-}"; fi
 	if [ -z "$val" ]; then
 		case "$cls" in
-			dm_compile) val=2 ;;
+			dm_compile) val=1 ;;
 			test_world) val="$(slots_default_test_world)" ;;
 			cargo) val=1 ;;
-			look_state_pin) val=2 ;;
+			look_state_pin) val=1 ;;
 			*) val=1 ;;
 		esac
 	fi

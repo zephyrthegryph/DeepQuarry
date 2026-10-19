@@ -12,8 +12,8 @@
  * A holder or waiter is dead when its pid is gone or its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600). A dead slot is
  * removed by the next waiter, so a crashed run never blocks the queue.
  *
- * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=2,
- * test_world DQ_SLOTS_TEST_WORLD=cpus/3 (2 to 6), cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=2 (DQ_LOOK_PIN_SLOTS is the old
+ * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=1,
+ * test_world DQ_SLOTS_TEST_WORLD=2, cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=1 (DQ_LOOK_PIN_SLOTS is the old
  * name). Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
  * for another class.
  */
@@ -26,11 +26,12 @@ import path from 'node:path';
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | 'look_state_pin' | (string & {});
 
 /** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
-export function defaultTestWorlds(cpus: number = os.cpus().length): number {
-  return Math.min(Math.max(Math.floor(cpus / 3), 2), 6);
+/** Two test worlds at once by default: the machine is also the user's desktop (2026-10-19). DQ_SLOTS_TEST_WORLD raises it. */
+export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
+  return 2;
 }
 
-const DEFAULTS: Record<string, number> = { dm_compile: 2, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 2 };
+const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 1 };
 const HEARTBEAT_MS = Number(process.env.DQ_SLOTS_HEARTBEAT_SEC ?? 15) * 1000;
 const POLL_MS = Number(process.env.DQ_SLOTS_POLL_SEC ?? 3) * 1000;
 
