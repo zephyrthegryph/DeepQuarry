@@ -192,6 +192,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// Why `W` can't go in right now, or null if it can. One ledger check: the
 /// slot's acceptance and hold constraint, the count and space limits, and
 /// whether `W` can leave where it is. `user` is the mover (may be null).
+/// Text: dq_ledger_refusal() is the boundary that turns the slot's reason (a /datum/msg, admission.md D1) into what a player reads.
 /obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
 	make_contents_real()
 	return dq_ledger_refusal(W, src, CONTAINER_SLOT_STORAGE, user)
