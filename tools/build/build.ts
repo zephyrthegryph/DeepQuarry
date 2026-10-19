@@ -93,6 +93,17 @@ import {
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
+// Every build runs below normal priority, and so does everything it starts (DreamMaker, DreamChecker, dmbc and its daemon, cargo and
+// rustc inherit it): the machine is also the user's desktop, and lanes running beside a game lagged it badly (2026-10-19).
+// DQ_PRIORITY=normal keeps the old behaviour.
+if (process.env.DQ_PRIORITY !== 'normal') {
+  try {
+    os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {
+    // best effort
+  }
+}
+
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a

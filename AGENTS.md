@@ -284,8 +284,10 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   but built in each worktree's own target (never share a cargo target between worktrees), Bun lives in a shared
   per-version dir (`DQ_BUN_CACHE`), and any step over 60 s prints `still running: <step> (<elapsed>)` every
   minute; a silent long step is not a hang.
-- **Machine-wide slots** (`tools/dq_machine_slots.sh`, `doc/rewrite/agent_workflow.md` section 10): at most 2 DM compiles, 3
-  test worlds, 1 cargo build and 2 look-pin runs at once on the machine (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
+- **Machine-wide slots** (`tools/dq_machine_slots.sh`, `doc/rewrite/agent_workflow.md` section 10): at most 1 DM compile, 2
+  test worlds, 1 cargo build and 1 look-pin run at once on the machine (the machine is also the user's desktop), everything we start
+  runs below normal priority (test worlds idle, `DQ_PRIORITY=normal` for neither), and the dmbc daemon keeps at most 8 GB of sessions and
+  12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
   `DQ_SLOTS_CARGO`, `DQ_SLOTS_LOOK_STATE_PIN`); a waiter prints who holds them, the merge worktree goes first, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges

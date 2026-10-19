@@ -61,6 +61,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+. tools/dq_below_normal.sh
 
 RUN_DIR="data/focused-runs"
 
@@ -485,6 +486,14 @@ if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
 main_worlds=1
 main_per="${DQ_MAIN_WORLD_TESTS:-60}"
 main_max="${DQ_MAIN_WORLDS:-4}"
+# No run asks for more worlds than the machine's test_world slots (tools/dq_machine_slots.sh, 2 by default): look shards, sweep shards
+# and main worlds beyond it would only queue, each one a booted DreamDaemon held in memory while it waits.
+world_cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null || true)"
+if [[ "$world_cap" =~ ^[1-9][0-9]*$ ]]; then
+	[ "$look_shards" -gt "$world_cap" ] && look_shards="$world_cap"
+	[ "$sweep_shards" -gt "$world_cap" ] && sweep_shards="$world_cap"
+	[ "$main_max" -gt "$world_cap" ] && main_max="$world_cap"
+fi
 if [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [[ "$main_per" =~ ^[1-9][0-9]*$ ]] && [[ "$main_max" =~ ^[1-9][0-9]*$ ]] 	&& [ ${#main_group[@]} -gt "$main_per" ]; then
 	main_worlds=$(( (${#main_group[@]} + main_per - 1) / main_per ))
 	[ "$main_worlds" -gt "$main_max" ] && main_worlds="$main_max"
