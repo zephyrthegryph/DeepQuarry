@@ -105,8 +105,13 @@
 	if(rx_type_enrols(holder))
 		rx_enrol(holder) // per-instance every() work (reactions/work.dm)
 	if(flags || holder.periodic_cadence || holder.periodic_interval)
+		if(!holder.refresh_queued && !(flags & TYPE_DERIVES_PENDING) && type_look_stamped(holder))
+			return // the type's default look is empty: the stamp is the mapped appearance it already has (look_stamp.dm)
 		// The first refresh is queued, nothing changed: state_changed() would publish a change that did not happen.
+		var/fresh = !holder.refresh_queued
 		refresh_mark(holder, DEP_ALL)
+		if(fresh)
+			holder.refresh_queued |= DEP_CREATED
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /proc/caps_destroy(atom/holder)

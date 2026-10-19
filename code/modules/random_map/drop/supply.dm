@@ -176,3 +176,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 		log_admin("[key_name(user)] dropped supplies at ([user.x],[user.y],[user.z])")
 		new /datum/random_map/droppod/supply(null, user.x-2, user.y-2, user.z, supplied_drops = chosen_loot_types, supplied_drop = chosen_loot_type)
 	spent(src)
+
+CAPABILITIES(/datum/supply_drop_order)
+	ref_one(nameof(admin))
+	ref_many(nameof(open_orders))

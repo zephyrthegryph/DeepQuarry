@@ -471,7 +471,7 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 	op("level", in_hand(), then(PROC_REF(shield_ask_level)))
 	op("set_level", menu(), label("Set shield level"), needs(carried()), then(PROC_REF(shield_ask_level)))
 	/// Cools its flash count or recovers from an overload while either is pending (an overload or a flash count is pending recovery).
-	every(2 SECONDS, then(PROC_REF(shield_step)), when = cond_any(cond_not(nameof(active)), nameof(flash_count)))
+	every(2 SECONDS, then(PROC_REF(shield_step)), when = any_of(not(nameof(active)), nameof(flash_count)))
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.

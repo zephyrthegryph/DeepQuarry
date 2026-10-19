@@ -21,7 +21,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering)
 	slowdown = 1
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 //Engineering HAZMAT Voidsuit
@@ -259,7 +259,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security)
 	slowdown = 1
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO))
 	configure(item_protection(siemens = 0.7))
 
 //Security Crowd Control Voidsuit
@@ -384,7 +384,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/expedition_medical)
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 
@@ -563,22 +563,22 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/salvage)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/mining)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL))
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/veymed)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA_VOX)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA_VOX)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/exploration)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/pilot)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable))

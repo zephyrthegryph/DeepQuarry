@@ -70,24 +70,27 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	/// for their whole materialized life. Declared types may join; everyone
 	/// leaves automatically when dematerialized or deleted.
 	var/conditional = FALSE
-	/// Conditional registries only: member -> TRUE, for O(1) membership.
-	var/list/present
 
 /datum/registry/New()
 	members = list()
 	if(keyed)
 		members_by_key = list()
 		member_keys = list()
-	if(conditional)
-		present = list()
+
+/// The store key this registry's members live under (relations proposal D12: one membership store).
+/datum/registry/proc/store_key()
+	return "registry:[id]"
+
+/// The store adopts this registry's list on first use (the store is a proc static: it may not exist yet while globals initialize).
+/datum/registry/proc/store_ready()
+	PRIVATE_PROC(TRUE)
+	member_adopt_ordered(store_key(), members)
 
 /// Joins a member. Only join_registries() and registry_join() call this.
 /datum/registry/proc/add(datum/member)
-	if(conditional)
-		if(present[member])
-			return
-		present[member] = TRUE
-	members += member
+	store_ready()
+	if(!member_join(store_key(), member))
+		return
 	if(keyed)
 		file_member(member)
 
@@ -95,28 +98,29 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /datum/registry/proc/remove(datum/member)
 	if(dq_batch_defer_registry_leave(src, member))
 		return // qdel_batch() removes every doomed member in one pass
-	if(conditional)
-		if(!present[member])
-			return
-		present -= member
-	members -= member
+	store_ready()
+	if(!member_is(store_key(), member))
+		return
+	member_leave(store_key(), member, all = TRUE)
 	if(keyed)
 		unfile_member(member)
+	registry_unfile(member, id) // the registry() entry's key/z/area index (code/engine/lifeforms/registry.dm): the one leave path clears it too
 
 /// Batched destroy's one pass (code/datums/lifecycle/batch.dm): every member
 /// of `leaving` leaves at once.
 /datum/registry/proc/remove_many(list/leaving)
-	if(conditional)
-		leaving = leaving & present
-		present -= leaving
-	members -= leaving
-	if(keyed)
-		for(var/datum/member as anything in leaving)
-			unfile_member(member)
+	store_ready()
+	for(var/datum/member as anything in leaving)
+		if(member_is(store_key(), member))
+			if(keyed)
+				unfile_member(member)
+			registry_unfile(member, id)
+	member_leave_many(store_key(), leaving)
 
 /// TRUE if `member` is in this registry.
 /datum/registry/proc/has(datum/member)
-	return conditional ? !!present[member] : (member in members)
+	store_ready()
+	return member_is(store_key(), member)
 
 /// The live member list, in join order. Read-only.
 /datum/registry/proc/members()
@@ -194,10 +198,16 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 /// /atom/on_dematerialize() calls this; the destroy transaction calls it for
 /// every other datum (dq_lifecycle_leave_registries()), so a deleted member
 /// is never left behind and nothing removes itself by hand.
+/// One leave path (relations proposal D12): the membership store knows every registry this datum is in (its "registry:<id>" keys), so it leaves
+/// those, through each registry (which unfiles its keyed lists and defers to a batched destroy), instead of walking every registry its type
+/// declares.
 /datum/proc/leave_registries()
-	for(var/datum/registry/registry as anything in type_registries())
-		if(!skips_registry(registry.id))
-			registry.remove(src)
+	for(var/key in member_keys(src))
+		if(copytext(key, 1, 10) != "registry:")
+			continue
+		var/datum/registry/registry = build_registries()[copytext(key, 10)]
+		registry?.remove(src)
+
 
 /// Puts `member` in conditional registry `id` (idempotent). Its type must
 /// declare REGISTRY_MEMBERSHIP() for `id`. It leaves again with

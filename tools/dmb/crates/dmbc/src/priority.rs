@@ -65,6 +65,11 @@ mod os {
             }
         }
     }
+    #[cfg(test)]
+    pub fn set_normal_for_test() {
+        const NORMAL_PRIORITY_CLASS: u32 = 0x0000_0020;
+        assert_ne!(unsafe { SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS) }, 0, "cannot restore Normal");
+    }
     /// The current priority class, for tests and diagnostics.
     pub fn current_class() -> u32 {
         #[link(name = "kernel32")]
@@ -118,6 +123,10 @@ mod tests {
     #[test]
     fn applying_lowers_the_real_priority_class() {
         if std::env::var_os("DMB_PRIORITY_CHILD").is_some() {
+            // The child inherits whatever class launched the test run (agents run cargo at BelowNormal), so start
+            // from Normal explicitly; raising back to Normal needs no privilege on Windows.
+            #[cfg(windows)]
+            os::set_normal_for_test();
             let before = os::current_class();
             assert_eq!(set_below_normal(), Ok(()));
             let after = os::current_class();

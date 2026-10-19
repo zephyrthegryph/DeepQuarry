@@ -27,6 +27,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 
 CAPABILITIES(/datum/effect/effect/system)
 	ref_one(nameof(holder))
+	ref_one(nameof(location))
 
 /datum/effect/effect/system/proc/set_up(n = 3, c = 0, turf/loc)
 	if(n > 10)
@@ -713,3 +714,9 @@ CAPABILITIES(/obj/effect/effect/confetti)
 /datum/effect/effect/system/proc/start_repeatedly(times, interval)
 	for(var/i in 0 to times - 1)
 		after(src, i * interval, PROC_REF(start))
+
+CAPABILITIES(/datum/effect/effect/system/ion_trail_follow)
+	ref_one(nameof(oldposition))
+
+CAPABILITIES(/datum/effect/effect/system/steam_trail_follow)
+	ref_one(nameof(oldposition))

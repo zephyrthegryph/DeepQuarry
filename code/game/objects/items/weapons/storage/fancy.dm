@@ -315,7 +315,9 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 
 		// Instead of running equip_to_slot_if_possible() we check here first,
 		// to avoid dousing cig with reagents if we're not going to equip it
-		if(cig.equip_refusal(user, SLOT_ID_MASK))
+		var/refused = cig.equip_refusal(user, SLOT_ID_MASK)
+		if(refused)
+			cig.equip_feedback(user, refused)
 			return ITEM_INTERACT_FAILURE
 
 		// We call remove_from_storage first to manage the reagent transfer and

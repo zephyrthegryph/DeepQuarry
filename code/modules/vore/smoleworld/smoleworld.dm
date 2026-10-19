@@ -339,7 +339,7 @@ CAPABILITIES(/obj/structure/smoleruins)
 //CAR STUFF < WILL BE MESSED WITH IN A LATER UPDATE COMMENTED OUT FOR NOW
 ///obj/item/smolecar
 ///obj/structure/smolecar
-///obj/structure/bed/chair/wheelchair/smolecar/can_buckle_check(mob/living/M, forced = FALSE)
+///obj/structure/bed/chair/wheelchair/smolecar/buckle_refusal(mob/living/M, authority = null)
 /obj/item/trash/candychunk
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_sugarchunk"

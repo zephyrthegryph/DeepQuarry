@@ -21,7 +21,7 @@
 #define ACT_DECLINED (1<<4)
 /// Filter only: every outcome.
 #define ACT_ANY (ACT_COMMITTED | ACT_REFUSED | ACT_REPLACED | ACT_ROLL_FAILED)
-/// ACT_TRY's shared "nothing hooks this action" constant (section 8). Carries no fields; act_done()/act_cancel() ignore it.
+/// ACT_ATTEMPT's shared "nothing hooks this action" constant (section 8). Carries no fields; act_done()/act_cancel() ignore it.
 #define ACT_PASS (-1)
 /// Synchronous nesting depth of actions and notices before a notice is queued and an action is refused.
 #define ACT_MAX_DEPTH 8
@@ -64,6 +64,10 @@
 #define AUTH_REMOTE_ACCESS (1<<1)
 #define AUTH_ADMIN (1<<2)
 #define AUTH_AI (1<<3)
+
+/// /datum/authority_grant skips (admission.md D2j): which checks a granted move or equip leaves out. A skip is never a force.
+#define SKIP_COVERING (1<<0)
+#define SKIP_REQUIREMENTS (1<<1)
 
 // ---- Intents and the one gesture master lacks (section 8). GESTURE_CLICK/_SHIFT/_CTRL/_ALT/_DRAG/_SELF exist. ----
 #define INTENT_USE 1

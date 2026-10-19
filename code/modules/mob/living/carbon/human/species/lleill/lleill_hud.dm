@@ -18,7 +18,7 @@
 /atom/movable/screen/movable/ability_master/lleill/update_abilities(forced = 0, mob/user)		//Different proc to prevent indexing
 	if(user && user.client)
 		if(!(src in user.client.screen))
-			user.client.screen += src
+			client_screen_add(user.client, src)
 
 /atom/movable/screen/ability/verb_based/lleill
 	icon_state = "grey_spell_base"

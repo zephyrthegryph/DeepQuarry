@@ -722,12 +722,12 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag)
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(taur_fit)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req(PROC_REF(taur_fit))))
 
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
 	on_notice(/datum/notice/item_equipped, then(PROC_REF(apply_equipped_taur)))
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(taur_fit)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req(PROC_REF(taur_fit))))
 
 
 /obj/item/storage/backpack/saddlebag_common/proc/apply_equipped_taur(datum/act/notice/A)

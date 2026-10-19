@@ -408,6 +408,9 @@ CAPABILITIES(/obj/gap_handover_holder)
 	name = "gap handover successor"
 	var/list/salvage
 
+CAPABILITIES(/obj/gap_handover_successor)
+	ref_many(nameof(salvage)) // what a holder hands over (successor_var) lands here, as a mech wreck's crowbar_salvage
+
 #endif
 
 /// A type-level every() held by a relation (ref_one): it parks while nothing is linked and wakes on rel_set().

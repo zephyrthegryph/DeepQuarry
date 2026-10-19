@@ -71,7 +71,7 @@
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_body_parts_covered(UPPER_TORSO)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 30, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, quiet = TRUE), "the vest should equip")
 
 	TEST_ASSERT_EQUAL(H.body.worn_armor(UPPER_TORSO, "melee"), 40, "the cache should hold the vest's melee armour on the torso")
 	TEST_ASSERT_EQUAL(H.body.worn_armor(HEAD, "melee"), 0, "the cache should hold nothing on the head")
@@ -87,7 +87,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, quiet = TRUE), "the vest should equip")
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, BP_TORSO), 40, "the vest armours the torso")
 	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_ARMOR), "reading rebuilt the cache")
 
@@ -97,7 +97,7 @@
 	TEST_ASSERT_NULL(H.body.armor_by_part, "nothing worn leaves an empty cache")
 
 	// An in-place change on worn clothing goes through worn_protection_changed().
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip again")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, quiet = TRUE), "the vest should equip again")
 	TEST_ASSERT_EQUAL(H.injury_armor(INJURY_BLUNT, BP_TORSO), 40, "the vest armours the torso again")
 	vest.set_armor(dq_armor(list("melee" = 10, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	vest.worn_protection_changed()
@@ -114,7 +114,7 @@
 	uniform.set_max_heat_protection_temperature(0)
 	uniform.set_cold_protection(UPPER_TORSO | LOWER_TORSO | LEGS | ARMS)
 	uniform.set_min_cold_protection_temperature(250)
-	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, quiet = TRUE), "the uniform should equip")
 
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_body_parts_covered(UPPER_TORSO | LOWER_TORSO)
@@ -124,7 +124,7 @@
 	vest.set_max_heat_protection_temperature(500)
 	vest.set_cold_protection(UPPER_TORSO | LOWER_TORSO)
 	vest.set_min_cold_protection_temperature(200)
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, quiet = TRUE), "the vest should equip")
 
 	var/obj/item/clothing/head/helmet/helmet = allocate(/obj/item/clothing/head/helmet)
 	helmet.set_body_parts_covered(HEAD)
@@ -132,7 +132,7 @@
 	helmet.set_siemens_coefficient(0.7)
 	helmet.set_heat_protection(HEAD)
 	helmet.set_max_heat_protection_temperature(1000)
-	TEST_ASSERT(H.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD, disable_warning = TRUE), "the helmet should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD, quiet = TRUE), "the helmet should equip")
 
 	var/obj/item/clothing/gloves/black/gloves = allocate(/obj/item/clothing/gloves/black)
 	gloves.set_body_parts_covered(HANDS)
@@ -140,7 +140,7 @@
 	gloves.set_siemens_coefficient(0)
 	gloves.set_cold_protection(HANDS)
 	gloves.set_min_cold_protection_temperature(100)
-	TEST_ASSERT(H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES, disable_warning = TRUE), "the gloves should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES, quiet = TRUE), "the gloves should equip")
 
 	var/obj/item/clothing/shoes/black/shoes = allocate(/obj/item/clothing/shoes/black)
 	shoes.set_body_parts_covered(FEET)
@@ -148,12 +148,12 @@
 	shoes.set_siemens_coefficient(0.5)
 	shoes.set_heat_protection(FEET)
 	shoes.set_max_heat_protection_temperature(800)
-	TEST_ASSERT(H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, disable_warning = TRUE), "the shoes should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, quiet = TRUE), "the shoes should equip")
 
 	var/obj/item/clothing/glasses/meson/glasses = allocate(/obj/item/clothing/glasses/meson)
 	glasses.set_body_parts_covered(HEAD)
 	glasses.set_armor(dq_armor(list("melee" = 3, "bullet" = 0, "laser" = 7, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	TEST_ASSERT(H.equip_to_slot_if_possible(glasses, SLOT_ID_EYES, disable_warning = TRUE), "the glasses should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(glasses, SLOT_ID_EYES, quiet = TRUE), "the glasses should equip")
 
 	// An accessory attached to worn clothing adds its own armour and heat protection.
 	var/obj/item/clothing/accessory/armband/band = allocate(/obj/item/clothing/accessory/armband)

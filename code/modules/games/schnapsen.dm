@@ -26,8 +26,8 @@ CAPABILITIES(/obj/item/deck/schnapsen)
 			P = new()
 			P.name = "[number] of [suit]"
 			if(number == "ten")
-				P.card_icon = "[colour]num"
+				P.set_card_icon("[colour]num")
 			else
-				P.card_icon = "[colour]col"
-			P.back_icon = "card_back"
+				P.set_card_icon("[colour]col")
+			P.set_back_icon("card_back")
 			. += P

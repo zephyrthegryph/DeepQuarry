@@ -38,6 +38,8 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
 	op("transfer", item(/obj/item), label("Transfer"), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_transfer)))
 	op("deadman_it_effect", menu(), label("Threaten to push the button!"), needs(carried()), then(PROC_REF(deadman_it_effect)))
+	ref_one(nameof(connected))
+	ref_one(nameof(radio_connection))
 
 /obj/item/assembly/signaler/ui_data(datum/act/eval/A)
 	var/list/data = list()

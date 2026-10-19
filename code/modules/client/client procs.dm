@@ -227,7 +227,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	///////////
 /client/New(TopicData)
 	TopicData = null //Prevent calls to client.Topic from connect
-	session = new /datum/client_session(src) // ALLOW(ownership): /client is not a datum; it holds this directly
+	rel_set(src, nameof(session), new /datum/client_session(src))
 
 	if(connection != "seeker" && connection != "web")//Invalid connection type.
 		return null
@@ -263,14 +263,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	winset(src, null, list("browser-options" = "find,refresh"))
 	// Instantiate stat panel
-	stat_panel = new /datum/tgui_window(src, SKIN_STAT_BROWSER) // ALLOW(ownership): /client is not a datum; it holds these directly
+	rel_set(src, nameof(stat_panel), new /datum/tgui_window(src, SKIN_STAT_BROWSER))
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	tgui_say = new /datum/tgui_say(src, SKIN_TGUI_SAY) // ALLOW(ownership): /client is not a datum; it holds these directly
-	tgui_shocker = new /datum/tgui_shock(src, SKIN_TGUI_SHOCK) // ALLOW(ownership): /client is not a datum; it holds these directly
+	rel_set(src, nameof(tgui_say), new /datum/tgui_say(src, SKIN_TGUI_SAY))
+	rel_set(src, nameof(tgui_shocker), new /datum/tgui_shock(src, SKIN_TGUI_SHOCK))
 	initialize_commandbar_spy()
-	tgui_panel = new /datum/tgui_panel(src, SKIN_CHAT_BROWSER) // ALLOW(ownership): /client is not a datum; it holds these directly
+	rel_set(src, nameof(tgui_panel), new /datum/tgui_panel(src, SKIN_CHAT_BROWSER))
 
 	GLOB.tickets.ClientLogin(src)
 
@@ -292,7 +292,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
 	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
 
-	prefs_vr = new/datum/vore_preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
+	rel_set(src, nameof(prefs_vr), new/datum/vore_preferences(src))
 
 	. = ..()	//calls mob.Login()
 
@@ -352,7 +352,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	tgui_say.initialize()
 	tgui_shocker.initialize()
 
-	loot_panel = new /datum/lootpanel(src) // ALLOW(ownership): /client is not a datum; it holds these directly
+	rel_set(src, nameof(loot_panel), new /datum/lootpanel(src))
 
 	EXPIRY_STAMP(src, connection_time, CLOCK_WORLD)
 	connection_realtime = world.realtime
@@ -401,6 +401,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
+	client_images_client_gone(src)
 	GLOB.clients -= src
 	SSproximity.eye_remove(src)
 	persistent_client?.set_client(null)
@@ -412,14 +413,14 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		GLOB.admins -= src
 	if(skybox)
 		ended_with(skybox, src)
-		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
+		rel_set(src, nameof(skybox), null)
 	if(fakeConversations)
 		ended_with(fakeConversations, src)
-		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
+		rel_set(src, nameof(fakeConversations), null)
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
 	ended_with(session, src)
-	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
+	rel_set(src, nameof(session), null)
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 

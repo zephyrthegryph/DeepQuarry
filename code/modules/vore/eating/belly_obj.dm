@@ -281,6 +281,7 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
 	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
 	// a belly is an organ of its owner, never a thing on the floor to hit
@@ -291,6 +292,9 @@ CAPABILITIES(/obj/belly)
 	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
 	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
 	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
+	ref_many(nameof(items_preserved))
+	ref_one(nameof(ownegg))
+	ref_one(nameof(owner))
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)
@@ -305,7 +309,7 @@ CAPABILITIES(/obj/belly)
 // The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.
 
 // ghosts inside are let out.
-/obj/belly/on_destroy(force)
+/obj/belly/ending_consequences(cause, datum/by)
 	for(var/mob/observer/G in contents_of(src))
 		G.forceMove(get_turf(src))
 	..()
@@ -651,7 +655,7 @@ CAPABILITIES(/obj/belly)
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
-		M.set_tf_mob_holder(null)
+		rel_set(M, nameof(M.tf_mob_holder), null)
 
 	// If digested prey is also a pred... anyone inside their bellies gets moved up.
 	if(is_vore_predator(M))

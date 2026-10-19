@@ -162,7 +162,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
 		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
-		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
+		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
 		lock_wire = WIRE_IDSCAN,
 		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 		emag_say = MSG(apc/emagged),
@@ -183,7 +183,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
 	contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights))
 	// the same rule as the wires' reach above: an open cover over the open panel keeps the signaller off the wires
-	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(cond_not(COVER_OPEN)), wait(0),
+	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(not(COVER_OPEN)), wait(0),
 		then(PROC_REF(signaler_at_the_wires)))
 	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
 	// the wires: the hatch's lock brings the ID scan wire (a pulse opens it for thirty seconds); these bring the rest

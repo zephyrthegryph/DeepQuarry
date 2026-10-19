@@ -103,3 +103,6 @@
 /// If this is null, and the app is running code, something's gone wrong (a relation view: null once that is deleted).
 /datum/data/pda/proc/pda() as /obj/item/pda
 	return pda
+
+CAPABILITIES(/datum/data/pda)
+	ref_one(nameof(pda))

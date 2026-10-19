@@ -56,8 +56,8 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))
+	fits_as(FIT_HUMANOID_HYBRID_SKRELL)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
@@ -376,7 +376,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA_VOX)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 1))
 
@@ -444,7 +444,7 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 	sprite_sheets_obj = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA_VOX)
 	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 

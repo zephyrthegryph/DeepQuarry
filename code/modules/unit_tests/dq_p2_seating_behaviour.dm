@@ -48,7 +48,7 @@
 /// Somebody is buckled to the seat as a person sitting down would be (no wait, no grab).
 /proc/p2_seat_buckle(obj/structure/S, mob/living/M)
 	M.forceMove(S.loc)
-	return S.buckle_mob(M, TRUE)
+	return S.buckle_mob(M, GLOB.authority_forced)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The base

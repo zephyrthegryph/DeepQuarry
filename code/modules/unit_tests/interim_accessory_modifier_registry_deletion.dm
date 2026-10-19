@@ -1,7 +1,7 @@
 /// Registry deletion must revert real applied stat deltas before deleting its owned modifiers.
 /datum/unit_test/interim_accessory_modifier_registry_deletion/Run()
 	var/turf/T = test_floor()
-	var/datum/accessory_slot_registry/registry = allocate(/datum/accessory_slot_registry)
+	var/datum/accessory_slot_registry/registry = new
 	var/obj/item/clothing/clothing = allocate(/obj/item/clothing, T)
 	var/obj/item/clothing/accessory/accessory = allocate(/obj/item/clothing/accessory, T)
 	var/datum/accessory_stat_modifier/modifier = allocate(/datum/accessory_stat_modifier)
@@ -24,7 +24,7 @@
 	TEST_ASSERT(second in registry.active_modifiers, "Second registration must own the second actual modifier")
 	TEST_ASSERT_EQUAL(combat_of(clothing).force, original_force + 7, "Both actual registrations must apply their force adjustments")
 	TEST_ASSERT_EQUAL(clothing.slowdown, original_slowdown + 3, "Both actual registrations must apply their slowdown adjustments")
-	qdel(registry)
+	qdel(registry, TRUE) // the registry type is kept unless forced (its one instance is a global)
 	TEST_ASSERT(QDELETED(registry), "The actual isolated registry must be deleted")
 	TEST_ASSERT(QDELETED(modifier), "The registry must delete its actual owned modifier")
 	TEST_ASSERT(QDELETED(second), "The registry must also delete the second owned modifier")

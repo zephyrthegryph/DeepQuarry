@@ -45,6 +45,7 @@ CAPABILITIES(/datum/nifsoft/commlink)
 
 CAPABILITIES(/obj/item/communicator/commlink)
 	param(nameof(nifsoft), pos = 1, apply = PROC_REF(join_nif))
+	ref_one(nameof(nif))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The commlink belongs to the NIF it is made in.
 /obj/item/communicator/commlink/proc/join_nif(soft)

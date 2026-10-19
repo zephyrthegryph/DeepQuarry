@@ -137,6 +137,7 @@ CAPABILITIES(/datum/preferences)
 	op("refresh_character_preview", ui_act("refresh_character_preview"), then(PROC_REF(ui_act_refresh_character_preview)))
 	op("set_preference", ui_act("set_preference", arg("preference", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_set_preference)))
 	op("set_color_preference", ui_act("set_color_preference", arg("preference", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("question" = "Select new color", "default" = computed(PROC_REF(color_pref_default)), "preferences" = computed(PROC_REF(prefs_self)), "pref_key" = computed(PROC_REF(color_pref_key))), step = "color", when = PROC_REF(color_pref_valid)), then(PROC_REF(ui_act_set_color_preference)))
+	ref_one(nameof(client))
 
 /datum/preferences/New(client/C)
 	rel_set(src, nameof(client), C)

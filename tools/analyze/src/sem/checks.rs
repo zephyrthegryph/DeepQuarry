@@ -6,12 +6,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use dreammaker::ast::{AssignOp, BinaryOp, Block, Expression, Follow, Statement, Term, UnaryOp};
+use dreammaker::ast::{AssignOp, BinaryOp, Block, Expression, Follow, Spanned, Statement, Term, UnaryOp};
 
 use super::ast::{as_call, as_ident, calls_in, stmt_blocks, stmt_exprs, strip_parens, walk_block, walk_expr};
 
 /// Calls that start a world action (the macro `ACT_TRY` must survive expansion as one of these).
-pub const DEFAULT_TRY_CALLS: &[&str] = &["ACT_TRY", "act_try", "e0_act_try"];
+pub const DEFAULT_TRY_CALLS: &[&str] = &["ACT_ATTEMPT", "ACT_TRY", "act_try", "e0_act_try"];
 /// Calls that end one.
 pub const CLOSE_CALLS: &[&str] = &["act_done", "act_cancel"];
 
@@ -43,7 +43,7 @@ pub fn act_try_pairing(code: &Block, try_calls: &[&str], out: &mut Vec<Found>) {
     let end = ctx.block(code, BTreeMap::new());
     if let Some(pending) = end {
         for (var, line) in pending {
-            ctx.found.push(Found { rule: "act_try_unpaired", line, msg: format!("ACT_TRY into `{}` reaches the end of the proc without act_done or act_cancel", var) });
+            ctx.found.push(Found { rule: "act_try_unpaired", line, msg: format!("ACT_ATTEMPT into `{}` reaches the end of the proc without act_done or act_cancel", var) });
         }
     }
     ctx.found.sort_by_key(|f| (f.line, f.msg.clone()));
@@ -97,7 +97,7 @@ impl<'a> Pair<'a> {
                         self.closes(e, &mut p);
                     }
                     for (var, at) in p {
-                        self.found.push(Found { rule: "act_try_unpaired", line: at, msg: format!("ACT_TRY into `{}` is returned past at line {} without act_done or act_cancel", var, line) });
+                        self.found.push(Found { rule: "act_try_unpaired", line: at, msg: format!("ACT_ATTEMPT into `{}` is returned past at line {} without act_done or act_cancel", var, line) });
                     }
                     return None;
                 }
@@ -179,11 +179,11 @@ impl<'a> Pair<'a> {
                 if let Some(id) = as_ident(strip_parens(lhs)) {
                     pending.insert(id.to_string(), line);
                 } else {
-                    self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_TRY result is stored where act_done cannot name it; assign it to a local".to_string() });
+                    self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is stored where act_done cannot name it; assign it to a local".to_string() });
                 }
             }
             _ if self.is_try(e) => {
-                self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_TRY result is dropped: nothing can act_done or act_cancel it".to_string() });
+                self.found.push(Found { rule: "act_try_unpaired", line, msg: "ACT_ATTEMPT result is dropped: nothing can act_done or act_cancel it".to_string() });
             }
             _ => self.closes(e, pending),
         }
@@ -216,6 +216,10 @@ fn null_tested(c: &Expression) -> Vec<String> {
                         }
                     }
                 }
+                // ACT_REFUSED_BY(X) after expansion: an ACT_ATTEMPT refusal carries no act to close.
+                if let Some(id) = refusal_tested(term) {
+                    out.push(id);
+                }
             }
         }
         Expression::BinaryOp { op: BinaryOp::Eq, lhs, rhs } => {
@@ -236,10 +240,37 @@ fn null_tested(c: &Expression) -> Vec<String> {
     out
 }
 
-/// Idents the condition proves non-null when TRUE (`if(X)`, `X != null`), so the else path has them null.
+/// `istype(X, /datum/act_refusal)` (the expansion of ACT_REFUSED_BY(X)): X.
+fn refusal_tested(term: &Spanned<Term>) -> Option<String> {
+    if let Term::Call(n, args) = &term.elem {
+        if n.as_str() == "istype" && args.len() == 2 {
+            let path = format!("{:?}", args[1]);
+            if path.contains("act_refusal") {
+                return as_ident(strip_parens(&args[0])).map(|s| s.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Idents the condition proves non-null when TRUE (`if(X)`, `X != null`, `!ACT_REFUSED_BY(X)`), so the else path has them null.
 fn non_null_tested(c: &Expression) -> Vec<String> {
     let mut out = Vec::new();
     let c = strip_parens(c);
+    if let Expression::Base { term, follow } = c {
+        if follow.len() == 1 && matches!(follow[0].elem, Follow::Unary(UnaryOp::Not)) {
+            let inner = match &term.elem {
+                Term::Expr(e) => match strip_parens(e) {
+                    Expression::Base { term: t, follow: f } if f.is_empty() => refusal_tested(t),
+                    _ => None,
+                },
+                _ => refusal_tested(term),
+            };
+            if let Some(id) = inner {
+                out.push(id);
+            }
+        }
+    }
     match c {
         Expression::Base { term, follow } if follow.is_empty() => {
             if let Term::Ident(n) = &term.elem {

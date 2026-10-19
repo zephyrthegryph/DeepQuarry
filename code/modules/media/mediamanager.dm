@@ -19,7 +19,7 @@
 // Set up player on login.
 /client/New()
 	. = ..()
-	media = new /datum/media_manager(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
+	rel_set(src, nameof(media), new /datum/media_manager(src))
 	media.open()
 	media.update_music()
 
@@ -149,6 +149,7 @@ CAPABILITIES(/datum/media_manager)
 	owns_one(nameof(media_window), /datum/tgui_window)
 	interface("MediaPlayer", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
 	ui_shape(url = schema_text(), start_time = num(), volume = num())
+	ref_one(nameof(owner))
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))

@@ -9,6 +9,7 @@
 
 CAPABILITIES(/datum/event/metroid_infestation)
 	owns_many(nameof(alive_metroids))
+	ref_many(nameof(vents))
 
 /datum/event/metroid_infestation/setup()
 	active_metroid_event = TRUE

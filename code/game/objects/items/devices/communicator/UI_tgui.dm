@@ -53,6 +53,10 @@ CAPABILITIES(/obj/item/communicator)
 	op("action_Reply", topic("action=Reply", arg("target", schema_ref(/obj/item/communicator), optional = TRUE)), asks(/datum/prompt/text/communicator_reply, fields = list("subject" = computed(PROC_REF(reply_subject)), "comm" = arg_of("target")), step = "message"), then(PROC_REF(topic_reply)))
 	ref_one(nameof(video_source), /obj/machinery/camera/communicator)
 	ref_one(nameof(node), /obj/machinery/exonet_node)
+	ref_many(nameof(im_contacts))
+	ref_many(nameof(known_devices))
+	ref_one(nameof(last_camera_turf))
+	ref_many(nameof(voice_invites))
 
 
 // Proc: setup_tgui_camera()

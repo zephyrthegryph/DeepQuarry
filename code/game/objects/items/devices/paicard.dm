@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/paicard)
 		return
 	// Setup pai
 	var/mob/living/silicon/pai/new_pai = new(src)
-	new_pai.key = user.key
+	bind_player(new_pai, user.key)
 	GLOB.paikeys |= new_pai.ckey
 	setPersonality(new_pai)
 	new_pai.apply_preferences(new_pai.client)

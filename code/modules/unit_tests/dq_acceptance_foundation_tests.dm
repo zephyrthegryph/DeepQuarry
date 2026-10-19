@@ -168,18 +168,25 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 	var/datum/object_pool/AP = GLOB.object_pools[/datum/act/op/acceptance]
 	var/act_out = AP ? AP.out : 0
 	GLOB.op_pure_expected = TRUE
+	// Outside a menu frame a refusal check records no reads, so it never asks the read metadata (admission.md D9).
+	var/probe_unread = D.probe
+	TEST_ASSERT_NULL(acceptance_reason(D, "dq-acceptance-metadata-fault", D, I), "A refusal check outside a menu frame does not ask the read metadata")
+	TEST_ASSERT_EQUAL(D.probe, probe_unread, "and the metadata callback did not run")
 	// No caller pure bracket: each public query must guard its own metadata callback.
+	var/list/previous_frame = GLOB.op_menu_read_frame
 	for(var/query in 1 to 2)
 		var/count_before = length(GLOB.op_pure_violations)
 		var/probe_before = D.probe
 		var/caught = FALSE
 		try
 			if(query == 1)
+				GLOB.op_menu_read_frame = list(null, FALSE, null) // a menu frame is open: the check records its reads
 				acceptance_reason(D, "dq-acceptance-metadata-fault", D, I)
 			else
 				acceptance_read_keys(D, "dq-acceptance-metadata-fault", D, I)
 		catch(var/exception/fault)
 			caught = !isnull(fault)
+		GLOB.op_menu_read_frame = previous_frame
 		TEST_ASSERT(caught, "Direct metadata callback fault propagates")
 		TEST_ASSERT_EQUAL(D.probe, probe_before + 1, "Real tracked setter executed in read metadata callback")
 		TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Query's native purity guard detected the actual tracked write")
@@ -458,10 +465,10 @@ CAPABILITIES(/obj/item/dq_acceptance_query_hop_reader)
 	TEST_ASSERT(second_key && !first_key, "Replacement resolves new dependency before notice draining")
 	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/mover = allocate(/mob/living/carbon/human)
-	var/datum/act/op/acceptance/A = acceptance_act(D, I, first, wearer, mover, SLOT_HEAD, wearer_is_actor = TRUE)
+	var/datum/act/op/acceptance/A = acceptance_act(D, I, first, wearer, mover, SLOT_HEAD)
 	TEST_ASSERT_EQUAL(A.wearer, wearer, "Equipment wearer remains explicit")
 	TEST_ASSERT_EQUAL(A.mover, mover, "Distinct transfer actor remains explicit")
-	TEST_ASSERT_EQUAL(A.actor, wearer, "Compatibility equipment evaluation uses wearer role")
+	TEST_ASSERT_EQUAL(A.actor, mover, "The actor is who moves it, never the wearer standing in (admission.md D2m)")
 	TEST_ASSERT_EQUAL(A.destination, I, "Physical destination differs from declarer")
 	TEST_ASSERT_EQUAL(A.target, first, "Candidate is actual action target")
 	acceptance_act_release(A)

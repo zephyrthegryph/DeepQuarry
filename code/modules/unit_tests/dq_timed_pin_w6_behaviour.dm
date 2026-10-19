@@ -9,7 +9,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w6/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		bind_player(H, null, as_ckey = TRUE)
 
 /// Clicks `target` with `held` and checks that a timed action of `dur` starts (and says `start_text` when given). Returns the running action.
 /datum/unit_test/dq_timed_pin_w6/proc/begin(mob/user, atom/target, obj/item/held, dur, start_text = null)
@@ -145,7 +145,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_rummage/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrummager"
+	bind_player(user, "pinrummager", as_ckey = TRUE)
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	test_chat_clear()
 	begin(user, B, null, 5 SECONDS)
@@ -163,8 +163,8 @@
 /datum/unit_test/dq_timed_pin_w6/boxpile_one_rummager/run_pin()
 	var/mob/living/carbon/human/one = person()
 	var/mob/living/carbon/human/two = person()
-	one.ckey = "pinrummager"
-	two.ckey = "pinrummagertwo"
+	bind_player(one, "pinrummager", as_ckey = TRUE)
+	bind_player(two, "pinrummagertwo", as_ckey = TRUE)
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	test_click(one, B, null)
 	TEST_ASSERT(!isnull(running(one)), "the first rummager is running")
@@ -181,7 +181,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrummager"
+	bind_player(user, "pinrummager", as_ckey = TRUE)
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	var/datum/T = begin(user, B, null, 5 SECONDS)
 	user.forceMove(get_step(user, EAST))
@@ -636,7 +636,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/candybowl_repeat_asks/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrepeater"
+	bind_player(user, "pinrepeater", as_ckey = TRUE)
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	test_click(user, B, null)
 	test_time(6 SECONDS)
@@ -695,7 +695,7 @@
 	dq_give_zone_sel(user)
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/clothing/mask/gas/M = allocate(/obj/item/clothing/mask/gas, run_loc_floor_bottom_left)
-	TEST_ASSERT(patient.equip_to_slot_if_possible(M, SLOT_ID_MASK, disable_warning = TRUE), "the mask goes on")
+	TEST_ASSERT(patient.equip_to_slot_if_possible(M, SLOT_ID_MASK, quiet = TRUE), "the mask goes on")
 	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, run_loc_floor_bottom_left)
 	hold(user, B)
 	test_chat_clear()

@@ -482,8 +482,9 @@ fn sized_local_array_receivers_use_issued_list_type_and_validate_methods() {
     );
     assert!(batch.units.is_empty());
     assert_eq!(batch.diagnostics.len(), 1);
-    // The source roster cannot certify an absent native list method. Preserve
-    // the open namespace instead of manufacturing a source-error diagnosis.
-    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::UnsupportedModel);
+    // Undefined procs now follow DreamMaker (44fe56af11): an absent method on a typed /list receiver is DM's
+    // "undefined proc" source error, not an open native namespace.
+    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::SourceError);
+    assert_eq!(batch.diagnostics[0].message, "trx.no_such_array_method: undefined proc");
     assert_eq!(batch.diagnostics[0].origin.line, 3);
 }

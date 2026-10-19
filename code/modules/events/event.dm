@@ -177,6 +177,8 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
 CAPABILITIES(/datum/event)
 	every(2 SECONDS, then(PROC_REF(event_step)), when = nameof(event_active))
+	ref_one(nameof(event_meta))
+	ref_one(nameof(victim))
 
 /datum/event/New(datum/event_meta/EM, external_use = FALSE)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons

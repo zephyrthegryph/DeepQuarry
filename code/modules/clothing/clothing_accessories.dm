@@ -1,11 +1,16 @@
-/obj/item/clothing/proc/can_attach_accessory(obj/item/clothing/accessory/A)
+MSG_DEF_SELF(accessory/not_an_accessory, "That isn't an accessory.")
+MSG_DEF_SELF(accessory/wrong_slot, "It doesn't go on that.")
+MSG_DEF_SELF(accessory/slot_taken, "Something is already attached there.")
+
+/// Why accessory A can't go on this clothing, or null (a pure check, admission.md D6: the accessory slot's accepts over the bitmasks).
+/obj/item/clothing/proc/accessory_refusal(obj/item/clothing/accessory/A)
 	//Just no, okay
 	if(!istype(A) || !A.slot)
-		return FALSE
+		return /datum/msg/accessory/not_an_accessory
 
 	//Not valid at all, not in the valid list period.
 	if((valid_accessory_slots & A.slot) != A.slot)
-		return FALSE
+		return /datum/msg/accessory/wrong_slot
 
 	//Find all consumed slots
 	var/consumed_slots = 0
@@ -17,9 +22,9 @@
 
 	//They share at least one bit with the restricted slots
 	if(consumed_restricted & A.slot)
-		return FALSE
+		return /datum/msg/accessory/slot_taken
 
-	return TRUE
+	return null
 
 /// Old attackby: attach an accessory, or forward the item to the attached accessories.
 /obj/item/clothing/proc/clothing_accessory_item(datum/act/op/A)
@@ -92,7 +97,7 @@
 		return FALSE
 
 	var/obj/item/clothing/accessory/acc = A
-	if(can_attach_accessory(acc))
+	if(isnull(accessory_refusal(acc)))
 		if(user)
 			user.remove_from_mob(acc)
 		attach_accessory(user, acc)

@@ -45,9 +45,12 @@ General message handling stuff
 	for(var/datum/comm_message_listener/l in REGISTRY_MEMBERS(REGISTRY_COMM_MESSAGE_LISTENERS))
 		l.Add(message)
 
-LIFECYCLE_KEEP_UNLESS_FORCED(/datum/comm_message_listener)
 /datum/comm_message_listener
 	var/list/messages
+
+/// The station-wide listener (GLOB.global_message_listener): nothing may delete it. A program's own listener is an owned part and goes with it.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/comm_message_listener/global_listener)
+/datum/comm_message_listener/global_listener
 
 /datum/comm_message_listener/New()
 	..()

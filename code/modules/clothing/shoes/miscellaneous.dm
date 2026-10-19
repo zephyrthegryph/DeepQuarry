@@ -6,7 +6,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0.8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/clothing/shoes/galoshes)
 	wizard_garb = 1
 
 CAPABILITIES(/obj/item/clothing/shoes/sandal)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(covers = 0))
 
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal)
 	icon_state = "cookflops"
 
 CAPABILITIES(/obj/item/clothing/shoes/cookflop)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(covers = 0))
 
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/clothing/shoes/cookflop)
 	icon_state = "tourist_1"
 
 CAPABILITIES(/obj/item/clothing/shoes/tourist_1)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(covers = 0))
 
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/clothing/shoes/tourist_1)
 	icon_state = "tourist_2"
 
 CAPABILITIES(/obj/item/clothing/shoes/tourist_2)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(covers = 0))
 
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
 	//removed built in squeak sounds
 
 CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_combat(force = 0))
 
@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
 	item_state_slots = list(slot_r_hand_str = "cult", slot_l_hand_str = "cult")
 
 CAPABILITIES(/obj/item/clothing/shoes/cult)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -171,7 +171,7 @@ CAPABILITIES(/obj/item/clothing/shoes/cult)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/slippers)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
@@ -203,7 +203,7 @@ CAPABILITIES(/obj/item/clothing/shoes/slippers)
 	slowdown = SHOES_SLOWDOWN+0.5
 
 CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 
 
@@ -236,7 +236,7 @@ CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
@@ -415,7 +415,7 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	can_hold_knife = 1
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
 
@@ -474,7 +474,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))

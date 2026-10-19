@@ -23,6 +23,7 @@ CAPABILITIES(/obj/aiming_overlay)
 	links(/obj/aiming_overlay::aiming_at, /mob/living::aimed, b_many = TRUE)
 	ref_one(nameof(aiming_with))
 	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
+	ref_one(nameof(owner))
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()

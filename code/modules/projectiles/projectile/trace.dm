@@ -57,3 +57,6 @@
 //Don't generate tracers - they are generated on Destroy()
 /obj/item/projectile/test/finalize_hitscan_and_generate_tracers()
 	return
+
+CAPABILITIES(/obj/item/projectile/test)
+	ref_many(nameof(hit))

@@ -1,6 +1,8 @@
 GLOBAL_LIST_EMPTY_TYPED(loadout_categories, /datum/loadout_category)
 GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 
+/// Made once at world setup for the loadout and shared: never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/loadout_category)
 /datum/loadout_category
 	var/category = ""
 	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)
@@ -51,6 +53,8 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 // /datum/category_item/player_setup_item/loadout/loadout (the Bay loadout tab)
 // deleted. /datum/preference_editor/loadout owns the new UI.
 
+/// Made once at world setup for the loadout and shared: never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gear)
 /datum/gear
 	var/display_name       //Name/index. Must be unique.
 	var/description        //Description of this gear. If left blank will default to the description of the pathed item.

@@ -65,6 +65,8 @@ CAPABILITIES(/datum/expedition_site)
 	ref_many(nameof(participants), /mob/living)
 	ref_one(nameof(assigned_shuttle), /datum/shuttle/autodock/overmap)
 	ref_one(nameof(assigned_flight_vessel), /datum/flight_vessel)
+	ref_one(nameof(landing))
+	ref_one(nameof(payout_turf))
 
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level

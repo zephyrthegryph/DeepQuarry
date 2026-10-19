@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("purge", ui_act("purge"), then(PROC_REF(ui_act_purge)))
+	ref_many(nameof(dos_sources))
 
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable(additional_flags = 0)

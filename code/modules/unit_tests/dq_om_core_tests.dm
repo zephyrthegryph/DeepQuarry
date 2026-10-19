@@ -96,3 +96,6 @@
 	TEST_ASSERT_EQUAL(move_toward(0, 1, 2, 1), 1, "move_toward() clamps at the target")
 
 // ---------------------------------------------------------------- tables
+
+CAPABILITIES(/datum/unit_test/om)
+	ref_one(nameof(sched))

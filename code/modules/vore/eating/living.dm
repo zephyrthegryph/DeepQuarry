@@ -729,7 +729,7 @@
 					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 					return
 				to_chat(src,span_notice("You have no body."))
-				src.set_tf_mob_holder(null)
+				rel_set(src, nameof(tf_mob_holder), null)
 				return
 			if(ourmob.ckey)
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
@@ -1514,7 +1514,7 @@
 		screen_icon.screen_loc = ui_ai_pda_send
 	if(owner_of(screen_icon) != HUD)
 		own_move(screen_icon, HUD, nameof(HUD.other_important))
-	user.client?.screen += screen_icon
+	client_screen_add(user.client, screen_icon)
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -2143,3 +2143,7 @@ CAPABILITIES(/datum/prompt/choice/vore_feed_review)
 		var/obj/belly/selected = value
 		if(!istype(selected) || QDELETED(selected))
 			return "gone"
+
+CAPABILITIES(/datum/vore_panel_button)
+	ref_one(nameof(owner))
+	ref_one(nameof(screen_icon))

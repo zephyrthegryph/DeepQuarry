@@ -245,7 +245,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	travel_next("exit", entity_handle(current_tube), 0, null, 1 TICKS)
+	travel_next("exit", ref_token(current_tube), 0, null, 1 TICKS)
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its enter delay, hop in; out of the tubes,
 /// coast in a line until slowed to a halt. Each stage is a timer on the pod carrying the journey's state (the tube the pod is in as a
@@ -260,7 +260,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 /obj/structure/transit_tube_pod/proc/travel_step(phase, tube_h, last_delay, next_dir)
 	switch(phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
+			var/obj/structure/transit_tube/tube = resolve_token(tube_h)
 			if(!tube)
 				return travel_coast(last_delay)
 			var/next_exit = tube.get_exit(dir)
@@ -280,9 +280,9 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
 				return travel_coast(last_delay)
 			var/enter_delay = next_tube.enter_delay(src, next_dir)
-			return travel_next("enter", entity_handle(next_tube), enter_delay, next_dir, enter_delay)
+			return travel_next("enter", ref_token(next_tube), enter_delay, next_dir, enter_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
+			var/obj/structure/transit_tube/tube = resolve_token(tube_h)
 			if(!tube)
 				return travel_coast(last_delay)
 			set_dir(next_dir)

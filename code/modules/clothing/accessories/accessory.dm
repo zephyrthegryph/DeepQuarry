@@ -1609,7 +1609,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
 
 
 CAPABILITIES(/obj/item/clothing/accessory/scarf/teshari/neckscarf)
-	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_TESHARI)
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete)
-	acceptance("hold", req_acceptance_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = MSG(slot/doesnt_take)))

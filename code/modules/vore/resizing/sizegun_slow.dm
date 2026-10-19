@@ -219,6 +219,10 @@ CAPABILITIES(/obj/item/slow_sizegun)
 	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
 	// The beam steps every 0.3 s while busy; sizegun_finish() clears busy, which ends the work.
 	every(0.3 SECONDS, then(PROC_REF(sizegun_step)), when = nameof(busy))
+	ref_one(nameof(current_target))
+	ref_one(nameof(scan_beam_effect))
+	ref_one(nameof(scan_hand))
+	ref_one(nameof(scan_user))
 
 /// Old attack_self: stop a scan in progress, or swap between growing and shrinking.
 /obj/item/slow_sizegun/proc/slow_sizegun_mode_self(datum/act/op/A)

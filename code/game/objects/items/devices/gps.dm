@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/gps)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(holder))
 	// The compass refreshes while a carried GPS is tracking.
-	every(2 SECONDS, then(PROC_REF(gps_step)), when = cond_all(nameof(tracking), nameof(holder)))
+	every(2 SECONDS, then(PROC_REF(gps_step)), when = all_of(nameof(tracking), nameof(holder)))
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))
 	op("localMode", ui_act(), then(PROC_REF(ui_act_localmode)))
 	owns_one(nameof(compass), starts = /obj/compass_holder)

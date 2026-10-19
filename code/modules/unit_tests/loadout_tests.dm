@@ -75,7 +75,7 @@
 	var/list/active = gear_list["_default"]
 	TEST_ASSERT(islist(active) && (chosen.display_name in active), "added gear not persisted under the _default loadout: [json_encode(gear_list)]")
 
-	qdel(p)
+	qdel(p, TRUE) // preferences are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 
 
 /datum/unit_test/dq_loadout_build_ui_reflects_add
@@ -100,7 +100,7 @@
 	var/list/slot_items = islist(by_body_slot) ? by_body_slot[slot_key] : null
 	TEST_ASSERT(islist(slot_items) && (chosen.display_name in slot_items), "build_ui_data by_body_slot for slot [slot_key] missing the added gear: [json_encode(by_body_slot)]")
 
-	qdel(p)
+	qdel(p, TRUE) // preferences are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 
 
 // Every instantiated gear datum must have a UNIQUE display_name. GLOB.gear_datums is keyed
@@ -225,7 +225,7 @@
 	var/list/gl = p.read_preference(/datum/preference/gear_list)
 	var/list/active = gl["_default"]
 	TEST_ASSERT(islist(active) && ("blazer, blue" in active), "'blazer, blue' not persisted: [json_encode(gl)]")
-	qdel(p)
+	qdel(p, TRUE) // preferences are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 
 
 // Swapping items in a single-occupancy slot must EVICT the previous item (no stacking) and
@@ -264,4 +264,4 @@
 
 	var/list/ui = editor.build_ui_data(p)
 	TEST_ASSERT_EQUAL(ui["total_cost"], b.cost, "total_cost should equal only the replacement's cost after a swap")
-	qdel(p)
+	qdel(p, TRUE) // preferences are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)

@@ -16,12 +16,12 @@
 
 /// Inventory removal consults the actor's slot model. Silicon grippers have no
 /// equipment slot identifier; their carried items still honor canremove.
-/mob/proc/can_unequip_item(obj/item/I, slot, disable_warning = FALSE)
+/mob/proc/can_unequip_item(obj/item/I, slot)
 	if(!I.canremove || !slot)
 		return 0
-	return slot_is_accessible(slot, I, disable_warning ? null : src) ? 1 : 0
+	return slot_is_accessible(slot, I, null) ? 1 : 0
 
-/mob/living/silicon/can_unequip_item(obj/item/I, slot, disable_warning = FALSE)
+/mob/living/silicon/can_unequip_item(obj/item/I, slot)
 	if(!I.canremove)
 		return 0
 	if(!slot)
@@ -39,12 +39,12 @@
 
 /// Buckling is performed by the actor's physical body. A pAI has no such
 /// transaction; adjacency and restraint checks are not replaced by remote reach.
-/mob/proc/secure_buckle_mob(atom/movable/seat, mob/living/passenger, forced = FALSE, silent = FALSE)
+/mob/proc/secure_buckle_mob(atom/movable/seat, mob/living/passenger, authority = null, silent = FALSE)
 	if(!Adjacent(passenger) || restrained() || stat)
 		return FALSE
-	return seat.finish_user_buckle(passenger, src, forced, silent)
+	return seat.finish_user_buckle(passenger, src, authority, silent)
 
-/mob/living/silicon/pai/secure_buckle_mob(atom/movable/seat, mob/living/passenger, forced = FALSE, silent = FALSE)
+/mob/living/silicon/pai/secure_buckle_mob(atom/movable/seat, mob/living/passenger, authority = null, silent = FALSE)
 	return FALSE
 
 /// Concrete evidence authorizing a restraint action: the actor itself for self

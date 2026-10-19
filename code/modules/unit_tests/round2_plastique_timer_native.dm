@@ -7,7 +7,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey, T)
-	TEST_ASSERT(user.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "actual uniform supplies a real pocket")
+	TEST_ASSERT(user.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, quiet = TRUE), "actual uniform supplies a real pocket")
 	var/completed = 0
 	for(var/charge_type in list(/obj/item/plastique, /obj/item/plastique/seismic, /obj/item/plastique/seismic/locked))
 		var/obj/item/plastique/charge = allocate(charge_type, T)

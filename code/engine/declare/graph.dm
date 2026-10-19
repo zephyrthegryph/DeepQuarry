@@ -50,7 +50,7 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 	return entry_make("graph_dismantle", null, null, entry_flatten(args.Copy()))
 
 /// ruined(condition, parts...): inside dismantle(). When the condition holds at the moment of dismantling (a condition of section 9: nameof(var),
-/// a stat or capability key id, cond_not/cond_all/cond_any, or a PROC_REF / TYPE_PROC_REF of x(datum/act/A) answering TRUE or FALSE, evaluated
+/// a stat or capability key id, not/all_of/any_of, or a PROC_REF / TYPE_PROC_REF of x(datum/act/A) answering TRUE or FALSE, evaluated
 /// like any op condition with the dismantle op's context), the effects of these parts run INSTEAD of the dismantle's own effects
 /// (becomes(frame) becomes becomes(scrap)). The ledger refund is not touched by it. Only effect parts belong here.
 /proc/ruined(cond, ENTRY_SLOTS)
@@ -85,6 +85,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/state_graph)
 	/// The entries the graph was compiled from (a deployment re-compiles them under its own op prefix).
 	var/list/entries_raw
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/graph_edge)
 /// One edge: a way into a stage.
 /datum/graph_edge
 	var/into

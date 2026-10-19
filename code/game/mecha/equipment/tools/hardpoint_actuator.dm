@@ -16,7 +16,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/hardpoint_actuator)
 	var/obj/item/mecha_parts/mecha_equipment/ME = A.arg("equipment")
 	if(QDELETED(ME))
 		return OP_REFUSED
-	if(ME.can_attach(chassis))
+	if(isnull(ME.attach_refusal(chassis)))
 		ME.attach(chassis)
 		occupant_message("[ME] successfully integrated.")
 	return OP_OK
@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/hardpoint_actuator)
 
 	if(istype(target,/obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/ME = target
-		if(ME.can_attach(chassis))
+		if(isnull(ME.attach_refusal(chassis)))
 			occupant_message("[ME] can be integrated. Stand by.")
 			perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "integrate", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("equipment" = ME))
 		else

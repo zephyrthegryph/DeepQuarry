@@ -54,11 +54,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
 	rel_set(chassis, nameof(chassis.energy_relay), src)
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/can_attach(obj/mecha/M)
-	if(..())
-		if(!M.energy_relay)
-			return 1
-	return 0
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/attach_refusal(obj/mecha/M)
+	. = ..()
+	if(isnull(.) && M.energy_relay)
+		return /datum/msg/mecha/duplicate_equipment
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/dyngetcharge()
 	if(equip_ready) //disabled

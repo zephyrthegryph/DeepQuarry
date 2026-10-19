@@ -1,9 +1,8 @@
-GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 /proc/iscultist(mob/player)
-	if(!GLOB.cult || !player.mind)
+	if(!antag_cult() || !player.mind)
 		return 0
-	if(player.mind in GLOB.cult.current_antagonists)
+	if(player.mind in antag_cult().current_antagonists)
 		return 1
 
 /datum/antagonist/cultist
@@ -44,7 +43,6 @@ CAPABILITIES(/datum/antagonist/cultist)
 
 /datum/antagonist/cultist/New()
 	..()
-	GLOB.cult = src
 
 /datum/antagonist/cultist/create_global_objectives()
 
@@ -134,3 +132,7 @@ CAPABILITIES(/datum/antagonist/cultist)
 /// Sacrifice target (a relation view).
 /datum/antagonist/cultist/proc/sacrifice_target() as /datum/mind
 	return sacrifice_target
+
+/// The /datum/antagonist/cultist template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_cult() as /datum/antagonist/cultist
+	return SSantag?.all_antag_types[MODE_CULTIST]

@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/n2o/mine = allocate(/obj/effect/mine/n2o, T)
-	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	var/list/floors = list()
 	for(var/turf/simulated/floor/floor in range(1, mine))
 		if(!floor.blocks_air)
@@ -44,7 +44,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/incendiary/mine = allocate(/obj/effect/mine/incendiary, T)
-	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	TEST_ASSERT_EQUAL(fire_stacks_of(user), 0, "actual human starts without combustible stacks")
 	TEST_ASSERT(!stat_value(user, STAT_ON_FIRE), "actual human starts without an active fire")
 	TEST_ASSERT_EQUAL(user.fire_reaction, FIRE_REACTION_BURN, "actual human uses the normal burn reaction")

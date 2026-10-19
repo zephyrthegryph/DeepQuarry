@@ -146,6 +146,38 @@ pub fn parts() -> Vec<Part> {
             line(r"\buse_tool\("),
         ),
         Part::new(
+            "requirements_raw_string_reason_banned",
+            "requirements: raw-string reason banned",
+            "A requirement's reason is a /datum/msg (doc/rewrite/proposals/admission.md D1): because = MSG(x) with MSG_DEF_SELF(x, \"...\") beside the type, never because = \"text\". Tests that pin the literal form are exempt.",
+            Files::Code,
+            line(r#"\bbecause = ""#),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
+            "clothing_species_fit_list_banned",
+            "clothing: species fit list banned",
+            "An item names its fit category, fits_category(FIT_X); the species of each category are listed once in code/library/items/fit_categories.dm (doc/rewrite/proposals/admission.md wave 3). Never fits(list(SPECIES_...)) on an item.",
+            Files::Code,
+            line(r"\bfits\(list\("),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
+            "accessories_species_list_banned",
+            "accessories: species list banned",
+            "A sprite accessory names its species set, species_allowed = ACCESSORY_X (code/__defines/clothing.dm); only the base default in sprite_accessories.dm lists species (doc/rewrite/proposals/admission.md wave 3).",
+            Files::Code,
+            line(r"^\s+species_allowed = list\("),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
+            "movement_flag_only_canpass_banned",
+            "movement: flag-only CanPass banned",
+            "A CanPass override that only lets a pass flag through is the type's passable(pass_flags = PASSX) trait, read by /atom/CanPass (doc/rewrite/proposals/admission.md D7, wave 7). A CanPass that reads direction or state stays a proc.",
+            Files::Code,
+            multi_z(r"(?m)^/[\w/]+/CanPass\([^)\n]*\)[^\n]*\n\tif\(istype\(mover\) && mover\.checkpass\(PASS\w+\)\)[^\n]*\n\t\treturn (?:TRUE|1)\n\treturn (?:FALSE|0|\.\.\(\))\n", None),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",
@@ -217,6 +249,20 @@ pub fn parts() -> Vec<Part> {
             "a hand changed() mark. Track the state the draw reads (a setter / a relation / a stat) so the holder's draw follows it; a worn or held look is watched by its holder. A write that nothing publishes is a bug in the write, not a reason to mark.",
             Files::Code,
             line(r"(?<![\w.])changed\(\s*\w+\s*\)"),
+        ),
+        Part::new(
+            "transform_ratchet_on_bespoke_then_tails",
+            "transform: ratchet on bespoke then tails",
+            "a chemical transformation with a bespoke then = TYPE_PROC_REF(...) tail over the ratchet. Use the stock parts (says, plays, makes, takes_ambient, energy) and a /datum/notice/transformed listener; the tail count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            Files::Code,
+            line(r"\bthen = TYPE_PROC_REF\(/transformation/chem/"),
+        ),
+        Part::new(
+            "transform_ratchet_on_bespoke_data_procs",
+            "transform: ratchet on bespoke data procs",
+            "a chemical transformation with a bespoke data = TYPE_PROC_REF(...) over the ratchet. Product data is a pure function of the settle; the count only falls (doc/rewrite/proposals/transformations.md section 6).",
+            Files::Code,
+            line(r"\bdata = TYPE_PROC_REF\(/transformation/chem/"),
         ),
         Part::new(
             "bump_ratchet_on_bumped_overrides",

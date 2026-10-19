@@ -32,6 +32,7 @@
 
 /datum/entry/part/req/access
 	part_name = "req_access"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_no_access
 
 /datum/entry/part/req/access/holds(datum/act/op/A)
@@ -83,3 +84,25 @@ MSG_DEF_SELF(harm_click_only, "That would destroy it. Use harm intent if you mea
 
 /client/operation_rights(required)
 	return check_rights_for(src, required)
+
+MSG_DEF_SELF(slot/fastened_down, "it is fastened down")
+
+/// req_loose(): the candidate can be put away loose (slot_loose(): not anchored; a living thing answers by its own rules). A slot's `accepts` for
+/// things that are carried, stacked or shelved. Instance-level: it reads the candidate's anchored state.
+/proc/req_loose(because = null)
+	return part_make(/datum/entry/part/req/loose, list("because" = because))
+
+/datum/entry/part/req/loose
+	part_name = "req_loose"
+	// Type-level (admission.md D8): an item's or structure's anchored state is its type's at creation, and a mob, the one candidate that answers by
+	// its own rules, is never latent. So a closet's interior takes latent entries without materializing them.
+	reads_level = REQ_READS_TYPE
+	default_reason = /datum/msg/slot/fastened_down
+
+/datum/entry/part/req/loose/holds(datum/act/op/A)
+	var/atom/movable/candidate = A.target
+	return !istype(candidate) || candidate.slot_loose(A.actor, candidate, A.held)
+
+/datum/entry/part/req/loose/read_keys(datum/act/op/A)
+	var/atom/movable/candidate = A.target
+	return istype(candidate) ? list(list(candidate, nameof(candidate.anchored))) : list()

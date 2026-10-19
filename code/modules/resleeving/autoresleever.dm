@@ -114,7 +114,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve_continue(mob/observer/dead/ghost)
 	var/client/ghost_client = ghost.client
 
-	if(!is_alien_whitelisted(ghost.client, GLOB.all_species[ghost_client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !check_rights(R_ADMIN, 0)) // Prevents a ghost ghosting in on a slot and spawning via a resleever with race they're not whitelisted for, getting around normal join restrictions.
+	if(alien_whitelist_refusal(ghost.client, GLOB.all_species[ghost_client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !check_rights(R_ADMIN, 0)) // Prevents a ghost ghosting in on a slot and spawning via a resleever with race they're not whitelisted for, getting around normal join restrictions.
 		to_chat(ghost, span_warning("You are not whitelisted to spawn as this species!"))
 		return
 
@@ -220,8 +220,8 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	var/spawnthing = new spawntype(spawnloc)
 	if(isliving(spawnthing))
 		var/mob/living/L = spawnthing
-		L.key = player_key
-		L.ckey = picked_ckey
+		bind_player(L, player_key)
+		bind_player(L, picked_ckey, as_ckey = TRUE)
 		log_admin("[L.ckey]'s has been spawned as [L] via \the [src].")
 		message_admins("[L.ckey]'s has been spawned as [L] via \the [src].")
 	else
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	if(ghost.mind)
 		ghost.mind.transfer_to(new_character)
 
-	new_character.key = player_key
+	bind_player(new_character, player_key)
 
 	//Were they any particular special role? If so, copy.
 

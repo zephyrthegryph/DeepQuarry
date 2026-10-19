@@ -12,8 +12,8 @@
  * A holder or waiter is dead when its pid is gone or its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600). A dead slot is
  * removed by the next waiter, so a crashed run never blocks the queue.
  *
- * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=2,
- * test_world DQ_SLOTS_TEST_WORLD=cpus/3 (2 to 6), cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=2 (DQ_LOOK_PIN_SLOTS is the old
+ * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=1,
+ * test_world DQ_SLOTS_TEST_WORLD=2, cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=1 (DQ_LOOK_PIN_SLOTS is the old
  * name). Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
  * for another class.
  */
@@ -26,11 +26,12 @@ import path from 'node:path';
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | 'look_state_pin' | (string & {});
 
 /** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
-export function defaultTestWorlds(cpus: number = os.cpus().length): number {
-  return Math.min(Math.max(Math.floor(cpus / 3), 2), 6);
+/** Two test worlds at once by default: the machine is also the user's desktop (2026-10-19). DQ_SLOTS_TEST_WORLD raises it. */
+export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
+  return 2;
 }
 
-const DEFAULTS: Record<string, number> = { dm_compile: 2, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 2 };
+const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 1 };
 const HEARTBEAT_MS = Number(process.env.DQ_SLOTS_HEARTBEAT_SEC ?? 15) * 1000;
 const POLL_MS = Number(process.env.DQ_SLOTS_POLL_SEC ?? 3) * 1000;
 
@@ -228,19 +229,43 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
   const name = `${prio}-${String(queued).padStart(13, '0')}-${process.pid}`;
   const queueFile = path.join(dir, 'queue', name);
   const identity = `kind=node\npid=${process.pid}\nwinpid=${process.pid}\nworktree=${top}\nlabel=${label}\n`;
-  fs.writeFileSync(queueFile, `${identity}queued=${queued}\n`);
+  fs.writeFileSync(queueFile, `${identity}queued=${queued}\n${want > 1 ? `group=${want}\n` : ''}`);
   let waited = 0;
   let last = 0;
   const taken: HeldSlot[] = [];
   for (;;) {
     reap(dir, log);
-    let first = '';
+    let order: string[] = [];
     try {
-      first = fs.readdirSync(path.join(dir, 'queue')).sort()[0] ?? '';
+      order = fs.readdirSync(path.join(dir, 'queue')).sort();
     } catch {
       // queue vanished: recreated below
     }
-    if (first === name) {
+    // Small requests are not starved (dq_machine_slots.sh _slots_single_may_go): a single slot may pass groups still within their
+    // patience; a group takes slots only when it can take them all at once, or, past its patience, whatever is free.
+    const patience = Number(process.env.DQ_SLOTS_GROUP_PATIENCE_SEC ?? 120);
+    const nowS = Math.floor(Date.now() / 1000);
+    let mayGo = order[0] === name;
+    if (!mayGo && want === 1) {
+      mayGo = true;
+      for (const q of order) {
+        if (q === name) break;
+        const f = readFields(path.join(dir, 'queue', q));
+        if (!f.group || nowS - Number(f.queued || nowS) >= patience) {
+          mayGo = false;
+          break;
+        }
+      }
+    }
+    if (mayGo && want > 1 && taken.length === 0) {
+      let free = 0;
+      for (let i = 1; i <= usable; i++) if (!fs.existsSync(path.join(dir, `slot.${i}`))) free++;
+      if (free < want) {
+        if (waited >= patience && free >= 1) want = free;
+        else mayGo = false;
+      }
+    }
+    if (mayGo) {
       for (let i = 1; i <= usable && taken.length < want; i++) {
         const sd = path.join(dir, `slot.${i}`);
         try {

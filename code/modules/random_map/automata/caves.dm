@@ -89,3 +89,6 @@
 	. = ..()
 
 	rel_clear(src, nameof(turfs_changed))
+
+CAPABILITIES(/datum/random_map/automata/cave_system)
+	ref_many(nameof(turfs_changed))

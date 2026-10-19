@@ -27,6 +27,8 @@
 
 GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tickets)
 /datum/tickets
 	var/list/active_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
@@ -98,9 +100,9 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!astatclick)
-		astatclick = new(null, null, AHELP_ACTIVE) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
-		cstatclick = new(null, null, AHELP_CLOSED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
-		rstatclick = new(null, null, AHELP_RESOLVED) // ALLOW(ownership): the ticket singleton makes its stat buttons once and keeps them for the round
+		rel_set(src, nameof(astatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_ACTIVE))
+		rel_set(src, nameof(cstatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_CLOSED))
+		rel_set(src, nameof(rstatclick), new /obj/effect/statclick/ticket_list(null, null, AHELP_RESOLVED))
 	var/list/L = list()
 	var/num_adm_tickets_disconnected = 0
 	var/num_men_tickets_disconnected = 0
@@ -257,6 +259,7 @@ CAPABILITIES(/datum/ticket)
 	op("reopen", ui_act("reopen"), then(PROC_REF(ui_act_reopen)))
 	op("legacy", ui_act("legacy"), then(PROC_REF(ui_act_legacy)))
 	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096)), arg("ticket_ref", schema_ref(/datum/ticket))), then(PROC_REF(ui_act_send_msg)))
+	ref_one(nameof(initiator))
 
 /**
  * public
@@ -674,6 +677,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 CAPABILITIES(/obj/effect/statclick/ticket)
 	param(nameof(ticket_datum), pos = 1, overrides = TRUE)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(ticket_datum), on_other_deleted = OTHER_DELETE_ME) // meaningless without it (D2)
 
 /obj/effect/statclick/ticket/update()
 	return ..(ticket_datum().name)

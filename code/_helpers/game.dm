@@ -385,7 +385,7 @@
 	visual.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	// I hate /area
 	var/atom/movable/lies_to_children = src
-	lies_to_children.vis_contents += visual
+	vis_add(lies_to_children, visual)
 	after(duration, GLOBAL_PROC_REF(qdel), visual, clock = CLOCK_WORLD)
 	return visual
 

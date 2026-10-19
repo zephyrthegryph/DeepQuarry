@@ -353,7 +353,7 @@
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(!I.worn_factors)
 			continue
-		var/key = "[FACTOR_SOURCE_WORN][entity_handle(I)]"
+		var/key = "[FACTOR_SOURCE_WORN][ref_token(I)]"
 		kept += key
 		set_factor_source(key, I.worn_factors)
 	drop_factor_sources(FACTOR_SOURCE_WORN, kept)

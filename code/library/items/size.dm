@@ -4,6 +4,11 @@
 
 MSG_DEF_SELF(slot/too_large, "That is too large to fit.")
 MSG_DEF_SELF(slot/too_small, "That is too small to fit.")
+MSG_DEF_SELF(slot/doesnt_take, "it doesn't take that")
+MSG_DEF_SELF(slot/only_legcuffs, "only legcuffs go there")
+MSG_DEF_SELF(slot/only_handcuffs, "only handcuffs go there")
+MSG_DEF_SELF(slot/too_big_for_pocket, "too big for a pocket")
+MSG_DEF_SELF(slot/too_big_for_ear, "too big for an ear")
 
 /// size_is(min, max): the held item's w_class is between min and max (max defaults to min). Refused with "too large" or "too small".
 /proc/size_is(min_size, max_size = null)

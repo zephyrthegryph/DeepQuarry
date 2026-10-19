@@ -1,7 +1,7 @@
 // Conditions and requirements (doc/rewrite/final_api.html, section 9 "Conditions and requirements"; section 21 "Conditions, requirements and the
 // one signature"; section 19 "E2, parts": "the requirement protocol (conditions, req_* constructors, reasons from MSG_DEF)").
 //
-// A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, cond_not()/cond_all()/cond_any(), a
+// A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, not()/all_of()/any_of(), a
 // PROC_REF(x) whose proc takes (datum/act/A) and returns TRUE or FALSE, or a library requirement read as a boolean. It is what when() takes.
 // A REQUIREMENT is a condition plus a reason: it is what needs() takes. req(PROC_REF(x)) calls a pure callback returning null to allow,
 // or text/a message to refuse. Library constructors carry defaults; because = overrides the returned/default reason.
@@ -52,7 +52,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 // ---- evaluating conditions ----
 
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
-/// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
+/// not/all_of/any_of, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
 	lookup_reads_prepare(A.holder, A)
 	var/previous_pure_depth = GLOB.op_pure_depth
@@ -87,6 +87,8 @@ PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot 
 					if(op_cond(A, L[i]))
 						return TRUE
 				return FALSE
+			if("config") // cond_config(): the server's config flag (constant in a round)
+				return !!global.config?.Get(L[2])
 		return FALSE
 	if(istype(cond, /datum/simulation_condition))
 		return FALSE // Simulation trees are evaluated by their rule consumer, not opaque op conditions.
@@ -139,6 +141,20 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	stages = PART_STAGE_REQUIRE
 	/// The reason when the entry names none.
 	var/default_reason = /datum/msg/req_failed
+	/// REQ_READS_TYPE or REQ_READS_INSTANCE: what the answer depends on (admission.md D8). A slot whose requirements are all type-level can be
+	/// asked about a latent entry (a type, a delta, a count) without making the thing.
+	var/reads_level = REQ_READS_INSTANCE
+	/// Whether the answer depends on who acts. The actorless contract (admission.md D2i): a part that does holds when there is no actor (a system
+	/// mover: a conveyor, Bumped, Cross), while the parts that read the holder or the candidate still answer.
+	var/reads_actor = FALSE
+
+/// The level of this requirement and everything it combines: the largest reads_level.
+/datum/entry/part/req/proc/req_level()
+	. = reads_level
+	for(var/child in children)
+		if(istype(child, /datum/entry/part/req))
+			var/datum/entry/part/req/R = child
+			. = max(., R.req_level())
 
 /// The boolean view: the requirement as a condition.
 /datum/entry/part/req/proc/holds(datum/act/op/A)
@@ -342,17 +358,6 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return FALSE
 	return FALSE
 
-/// req_tag(TAG): the target carries the tag.
-/proc/req_tag(tag_id)
-	return part_make(/datum/entry/part/req/tagged, list("tag" = tag_id))
-
-/datum/entry/part/req/tagged
-	part_name = "req_tag"
-	default_reason = /datum/msg/req_wrong_state
-
-/datum/entry/part/req/tagged/holds(datum/act/op/A)
-	return op_has_tag(A.target, src.args["tag"])
-
 /// req_capable(ignoring = ...): the actor can act now (no stun, restraint, absorption).
 /proc/req_capable(ignoring = 0)
 	return part_make(/datum/entry/part/req/capable, list("ignoring" = ignoring))
@@ -367,6 +372,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/capable
 	part_name = "req_capable"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/capable/read_keys(datum/act/op/A)
@@ -383,6 +389,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/conscious
 	part_name = "req_conscious"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/conscious/read_keys(datum/act/op/A)
@@ -397,6 +404,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/alive
 	part_name = "req_alive"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_not_capable
 
 /datum/entry/part/req/alive/read_keys(datum/act/op/A)
@@ -412,6 +420,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/self
 	part_name = "req_self"
+	reads_actor = TRUE
 	default_reason = /datum/msg/req_silent
 
 /datum/entry/part/req/self/read_keys(datum/act/op/A)
@@ -465,6 +474,7 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 
 /datum/entry/part/req/adjacent
 	part_name = "req_adjacent"
+	reads_actor = TRUE
 	default_reason = /datum/msg/op/unreachable
 
 /datum/entry/part/req/adjacent/read_keys(datum/act/op/A)
@@ -583,6 +593,74 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/full = islist(value) ? length(value) > 0 : !isnull(value)
 	return full == src.args["want_full"]
 
+/// not(x, because =): the negation. Of a requirement, a requirement (req_not); of a condition of the stat and activation layers (a var name,
+/// a stat or key id, a condition tree), a condition tree, which has no reason to give (admission.md D1: one set of combinators).
+/proc/not(cond, because = null)
+	if(istype(cond, /datum/entry/part/req))
+		return req_not(cond, because)
+	if(!isnull(because))
+		CRASH("not(): because = is a requirement's reason; [cond] is a condition")
+	return list("not", cond)
+
+/// True when `x` is a condition of the stat and activation layers rather than a requirement part: a var name, a PROC_REF, a stat or key id, or a
+/// condition tree (a list whose head is its text operator), or a simulation property condition (cond_measure(), an entry that is not a requirement).
+/// all_of() and any_of() build a condition tree when any argument is one.
+/proc/op_is_condition_form(x)
+	if(isnull(x) || istype(x, /datum/entry/part/req))
+		return FALSE
+	if(islist(x))
+		var/list/L = x
+		if(!length(L))
+			return FALSE
+		if(istext(L[1]))
+			return TRUE
+		for(var/item in L)
+			if(op_is_condition_form(item))
+				return TRUE
+		return FALSE
+	return TRUE
+
+/// A pooled op context for one evaluation outside an op: `holder`, `target` and `actor` set; the caller releases it (A.release()).
+/proc/pooled_op_context(datum/holder, target = null, mob/actor = null)
+	RETURN_TYPE(/datum/act/op)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one evaluation and is reset on release
+	A.target = target
+	A.actor = actor
+	return A
+
+/// requirement_reason(R, holder, candidate, actor): why requirement R refuses `candidate` for `holder` now, or null (admission.md D2g). The candidate may
+/// be anything a slot or an install takes: an atom, a datum (NIF software, a matter synth) or a type path (a shop asking "would this install" before it
+/// charges). Pure: evaluated under the purity guard on a pooled op context (holder, target = candidate, actor).
+/proc/requirement_reason(datum/entry/part/req/R, datum/holder, candidate, mob/actor = null)
+	if(!istype(R))
+		CRASH("requirement_reason(): [R] is not a requirement")
+	var/datum/act/op/A = pooled_op_context(holder, candidate, actor)
+	try
+		. = op_req_check(A, R)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
+
+/// with_reason(r, because): the requirement r, refused with `because` instead of its own reason. A variadic proc cannot take a named argument it
+/// does not declare (BYOND: "bad arg name"), so any_of()/all_of() have no because =; wrap them: with_reason(any_of(a, b), MSG(x)).
+/proc/with_reason(datum/entry/part/req/inner, because)
+	if(!istype(inner))
+		CRASH("with_reason(): [inner] is not a requirement")
+	return part_make(/datum/entry/part/req/with_reason, list("because" = because), list(inner))
+
+/datum/entry/part/req/with_reason
+	part_name = "with_reason"
+
+/datum/entry/part/req/with_reason/read_keys(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.read_keys(A)
+
+/datum/entry/part/req/with_reason/holds(datum/act/op/A)
+	var/datum/entry/part/req/R = children[1]
+	return R.holds(A)
+
 /// req_not(r, because =): the negation of a requirement.
 /proc/req_not(datum/entry/part/req/inner, because = null)
 	return part_make(/datum/entry/part/req/negation, list("because" = because), list(inner))
@@ -598,8 +676,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	var/datum/entry/part/req/R = children[1]
 	return !R.holds(A)
 
-/// all_of(r...): every requirement holds; the first failing one's reason is reported.
+/// all_of(r...): every requirement holds; the first failing one's reason is reported. With a condition among them, a condition tree.
 /proc/all_of(...)
+	for(var/arg in args)
+		if(op_is_condition_form(arg))
+			return list("all") + args
 	return part_make(/datum/entry/part/req/all, null, entry_flatten(args))
 
 /datum/entry/part/req/all
@@ -622,8 +703,11 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 			return R.refusal(A)
 	return default_reason
 
-/// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder").
+/// any_of(r...): at least one holds; the reasons are joined ("needs a wrench or a welder"). With a condition among them, a condition tree.
 /proc/any_of(...)
+	for(var/arg in args)
+		if(op_is_condition_form(arg))
+			return list("any") + args
 	return part_make(/datum/entry/part/req/any, null, entry_flatten(args))
 
 /datum/entry/part/req/any

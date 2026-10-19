@@ -51,13 +51,14 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	shock_wire(stat = STAT_ELECTRIFIED)
 	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
 	item_throw(stat = STAT_SHOOT_INVENTORY)
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = all_of(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds))), then(PROC_REF(smartfridge_interaction_item)))
 	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
+	ref_one(nameof(currently_vending))
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
@@ -478,3 +479,6 @@ CAPABILITIES(/obj/machinery/smartfridge/secure)
 /// the attached this refers to (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return attached
+
+CAPABILITIES(/obj/machinery/smartfridge/chemistry/chemvator)
+	ref_one(nameof(attached))

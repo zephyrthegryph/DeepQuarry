@@ -1,4 +1,3 @@
-GLOBAL_DATUM(stowaways, /datum/antagonist/stowaway)
 
 /datum/antagonist/stowaway
 	id = MODE_STOWAWAY
@@ -19,4 +18,7 @@ GLOBAL_DATUM(stowaways, /datum/antagonist/stowaway)
 
 /datum/antagonist/stowaway/New()
 	..()
-	GLOB.stowaways = src
+
+/// The /datum/antagonist/stowaway template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_stowaways() as /datum/antagonist/stowaway
+	return SSantag?.all_antag_types[MODE_STOWAWAY]

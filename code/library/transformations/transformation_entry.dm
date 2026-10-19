@@ -298,7 +298,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.yield = arguments["yield"]
 	if(!isnull(arguments["floor"]))
 		X.floor = arguments["floor"]
-	X.data_proc = xform_proc_name(arguments["data"])
+	X.data_proc = "[xform_proc_name(arguments["data"])]" // a proc name (text): "" when there is none
 	if(!isnull(arguments["energy"]))
 		X.energy = arguments["energy"]
 	if(arguments["heat_to"])
@@ -314,7 +314,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.plays = arguments["plays"]
 	if(arguments["notice"])
 		X.notice_type = arguments["notice"]
-	X.then_proc = xform_proc_name(arguments["then"])
+	X.then_proc = "[xform_proc_name(arguments["then"])]" // a proc name (text): "" when there is none
 	X.important = !!arguments["important"]
 	X.wiki = arguments["wiki"] || 0
 	if(X.medium == MEDIUM_REAGENTS)
@@ -331,7 +331,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	for(var/list/row as anything in xform_rows(arguments["takes_ambient"]))
 		LAZYSET(X.takes_ambient, row[2], row[3])
 	X.bands = xform_cond_bands(X.holds)
-	X.subject_type = xform_cond_subject_type(X.holds)
+	X.subject_type = text2path("[xform_cond_subject_type(X.holds)]") // a type path, or null
 	X.plain = !X.then_proc && !X.data_proc && !xform_cond_calls_proc(X.holds)
 	return X
 

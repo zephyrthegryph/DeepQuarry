@@ -37,9 +37,9 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	owns_one(nameof(W), starts = /obj/item/tool/wrench)
 	part_replacement()
 	examine_line(PROC_REF(status_text))
-	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
+	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(not(req(/obj/item))), needs(req(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
 		says(MSG(pipelayer/switched)), then(PROC_REF(toggled)))
-	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(has_metal))),
+	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(not(req(/obj/item))), needs(req(PROC_REF(has_metal))),
 		asks(/datum/prompt/yes_no, fields = list("question" = "Do you want to eject all the metal?", "title" = "Eject?", "timeout" = 0)), then(PROC_REF(eject_answered)))
 	op("recycle", item(/obj/item/pipe), label("Recycle pipe"), wait(0),
 		needs(req(PROC_REF(pipe_has_steel), because = MSG(pipelayer/thin_pipe)), req(PROC_REF(room_for_pipe), because = MSG(pipelayer/full))),
@@ -51,6 +51,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	op("auto_dismantle", tool(TOOL_CROWBAR), label("Toggle auto-dismantling"), wait(0), when(PROC_REF(panel_shut)), toggles(nameof(a_dis)), says(MSG(pipelayer/dismantling)))
 	op("dismantle", tool(TOOL_CROWBAR), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(PROC_REF(panel_is_open)), then(PROC_REF(dismantled)))
 	default_parts()
+	ref_one(nameof(old_turf))
 
 
 /obj/machinery/pipelayer/RefreshParts()

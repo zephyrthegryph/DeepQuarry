@@ -155,10 +155,10 @@
 	M.set_flag(FALSE)
 	test_time(2)
 	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_when in M.verbs), "and false took it off")
-	M.key = "gap_verb_test_key"
+	bind_player(M, "gap_verb_test_key")
 	verb_store_login(M)
 	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_login in M.verbs, "a player has the mob: the login verb is on")
-	M.key = null
+	bind_player(M, null)
 
 /// grant(M, granted_verb(path), source): the verb is on while the source holds it and ends with revoke() or the source.
 /datum/unit_test/dq_gap/granted_verb_follows_its_source
@@ -857,7 +857,7 @@
 	suit.forceMove(T)
 	tank.forceMove(suit)
 	rel_set(suit, nameof(suit.tank), tank)
-	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, disable_warning = TRUE), "the suit is worn by the one with the screwdriver")
+	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, quiet = TRUE), "the suit is worn by the one with the screwdriver")
 	hci_click(H, suit, driver)
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(test_answer(H, tank)?.key, "worn: nothing was asked")

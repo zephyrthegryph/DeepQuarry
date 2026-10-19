@@ -39,6 +39,7 @@ CAPABILITIES(/obj/item/newspaper)
 	interface("Newspaper", title = "The Griffon")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
 	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
+	ref_one(nameof(important_message))
 
 /obj/item/newspaper/ui_data(datum/act/eval/A)
 	var/list/data = list()

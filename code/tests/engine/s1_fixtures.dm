@@ -11,8 +11,8 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 
 /// The amount an e4_strike on `E` ends with (what its hooks made of `amount`): the argument itself when nothing hooks the action.
 /proc/s1_strike(datum/E, amount = 10)
-	var/datum/act/e4_strike/F = ACT_TRY(E, e4_strike, amount)
-	if(isnull(F))
+	var/datum/act/e4_strike/F = ACT_ATTEMPT(E, e4_strike, amount)
+	if(ACT_REFUSED_BY(F))
 		return null
 	. = ACT_FINAL(F, amount, amount)
 	act_done(F)

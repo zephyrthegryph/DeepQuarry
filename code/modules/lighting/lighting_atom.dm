@@ -42,9 +42,11 @@ CAPABILITIES(/atom/movable)
 	links(LINK_END(/atom/movable, LK_ORBITING), LINK_END(/atom, LK_ORBITERS), sparse = TRUE, b_many = TRUE, a_on_unlink = PROC_REF(orbit_released))
 	links(LINK_END(/obj/item/grab, LK_GRABBING), LINK_END(/mob/living, LK_GRABBED_BY), sparse = TRUE, b_many = TRUE, a_on_other_deleted = OTHER_DELETE_ME, b_on_unlink = TYPE_PROC_REF(/mob/living, grab_released))
 	// the default drag of every movable: buckle the dragged mob (code/game/objects/buckling.dm)
-	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(cond_all(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
+	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(all_of(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
 	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
 	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
+	ref_one(nameof(throw_source))
+	ref_one(nameof(throwing))
 
 
 // Will update the light (duh).

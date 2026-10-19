@@ -76,10 +76,8 @@ DECLARE_SHARED_CACHE(underwater_visuals, GLOBAL_PROC_REF(build_underwater_visual
 
 /// Builder for underwater_visuals: the weather layer an underwater tile shows through its vis_contents, one shared atom per icon and state.
 /proc/build_underwater_visuals(visuals_icon, visuals_state)
-	var/atom/movable/weather_visuals/visuals = new(null)
-	visuals.set_icon(visuals_icon)
-	visuals.set_icon_state(visuals_state)
-	return visuals
+	// Set at construction: nothing reads a fresh atom yet, and this builds inside a draw, which must not publish.
+	return new /atom/movable/weather_visuals(null, visuals_icon, visuals_state)
 
 /turf/simulated/floor/water/underwater/open/draw(datum/look/look)
 	..()

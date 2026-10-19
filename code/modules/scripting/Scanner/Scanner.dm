@@ -281,4 +281,7 @@ Reads a comment and outputs the type of comment
 /datum/n_Scanner/nS_Scanner/proc/options() as /datum/n_scriptOptions/nS_Options
 	return options_ref
 
+CAPABILITIES(/datum/n_Scanner/nS_Scanner)
+	ref_one(nameof(options_ref))
+
 

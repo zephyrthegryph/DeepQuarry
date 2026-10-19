@@ -60,6 +60,7 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 
 // ---- the wire definitions ----
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/wire_def) // made once at world setup and kept for the round: a reference to one pins nothing deleted
 /// One wire, defined once (WIRE_DEF): its name and what cutting, pulsing and mending it does on the capability that brings it.
 /datum/wire_def
 	var/id
@@ -72,6 +73,7 @@ ACTION(touch_wires, mob/user, notice = /datum/notice/wires_touched)
 	var/datum/wire_hold_source/cut_source
 	var/datum/wire_hold_source/pulse_source
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/wire_hold_source) // made once at world setup and kept for the round: a reference to one pins nothing deleted
 /// The source of a wire's holds on a holder's stat ("the Primary Power wire, cut").
 /datum/wire_hold_source
 	var/wire
@@ -440,7 +442,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
 		req(PROC_REF(holds_multitool))), then(PROC_REF(pulse_pressed)))
 	op("attach", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req(PROC_REF(can_attach))), then(PROC_REF(attach_pressed)))
+		req(PROC_REF(attach_refusal))), then(PROC_REF(attach_pressed)))
 
 /datum/cap_data/wires/proc/all_wires()
 	. = list()
@@ -609,7 +611,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	return (istype(I) && I.has_tool_quality(TOOL_MULTITOOL)) ? null : /datum/msg/wires/need_multitool
 
 /// A signaler in hand for a free wire, or a wire with one to take off.
-/datum/cap_data/wires/proc/can_attach(datum/act/op/A)
+/datum/cap_data/wires/proc/attach_refusal(datum/act/op/A)
 	var/color = lowertext(A.args?["wire"])
 	return (!!LAZYACCESS(assemblies, color) || istype(tool_of(A.actor), /obj/item/assembly/signaler)) ? null : /datum/msg/wires/need_signaler
 

@@ -15,6 +15,7 @@
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	finds(nameof(computer), /obj/machinery/computer/operating) // the paired rel_one writes the console's table
 	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
@@ -40,11 +41,6 @@ CAPABILITIES(/obj/machinery/optable)
 		set_density(FALSE)
 		spent(src)
 	return TRUE
-
-/obj/machinery/optable/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return TRUE
-	return FALSE
 
 /obj/machinery/optable/proc/check_victim()
 	if(locate(/mob/living/carbon/human, src.loc))

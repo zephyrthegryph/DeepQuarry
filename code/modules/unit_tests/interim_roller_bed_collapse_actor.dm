@@ -16,7 +16,7 @@
 	TEST_ASSERT(!in_range(bed, bystander), "the actual second actor fails the source range guard")
 	bed.collapse_with_actor(bystander, bystander)
 	TEST_ASSERT_NULL(locate(/obj/item/roller) in start, "distant actor refusal creates no product")
-	TEST_ASSERT(bed.buckle_mob(actor, forced = TRUE), "the real roller bed restrains its actual occupant")
+	TEST_ASSERT(bed.buckle_mob(actor, authority = GLOB.authority_forced), "the real roller bed restrains its actual occupant")
 	TEST_ASSERT(bed.has_buckled_mobs(), "the real buckle state activates the original collapse guard")
 	TEST_ASSERT_EQUAL(bed.collapse_with_actor(actor, actor), 0, "actual occupied-bed refusal retains its original return")
 	TEST_ASSERT_NULL(locate(/obj/item/roller) in start, "occupied bed produces no folded duplicate")

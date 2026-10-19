@@ -1,3 +1,7 @@
+MSG_DEF_SELF(custom_items/the_necklace_never_quite_gets, "the necklace never quite gets past your head")
+MSG_DEF_SELF(custom_items/the_collar_doesnt_fit_you, "the collar doesn't fit you")
+MSG_DEF_SELF(custom_items/these_dont_look_like_they, "these don't look like they were made to fit you")
+
 /* TUTORIAL
 	"icon" is the file with the HUD/ground icon for the item
 	"icon_state" is the iconstate in this file for the item
@@ -481,7 +485,7 @@ CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
 	item_state = "serdy_armor"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
 
@@ -584,6 +588,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
 	configure(item_worn(slots = SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
 	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
+	ref_one(nameof(owner))
 
 /// TRUE once the crystal is paired and until it breaks or loses its owner.
 /obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE
@@ -1146,7 +1151,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(/obj/item/shield/fluff/wolfgirlshield))
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
@@ -1273,8 +1278,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 
 
 CAPABILITIES(/obj/item/rig/nikki)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = "the necklace never quite gets past your head"), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets))))
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))
 	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
@@ -1656,7 +1661,7 @@ CAPABILITIES(/obj/item/dice/loaded/ceph)
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("bricker98", because = "the collar doesn't fit you"), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("bricker98", because = MSG(custom_items/the_collar_doesnt_fit_you))))
 	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
 
@@ -1676,4 +1681,4 @@ CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
 
 
 CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("radiantaurora", because = "these don't look like they were made to fit you"), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("radiantaurora", because = MSG(custom_items/these_dont_look_like_they))))

@@ -41,16 +41,21 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_index)
 	/// member -> list(key, z, area) it is filed under.
 	var/list/filed = list() // ALLOW(instance_list, base_vars): one index per registry id, always filled
 
-GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
-
+/// The key/z/area index of registry `id`, created on first use. It is the membership store's sub-index of the registry's key
+/// ("registry:<id>", relations proposal D12), so the store holds the members and their places in one place.
 /proc/lifeform_index(id)
 	RETURN_TYPE(/datum/lifeform_index)
-	var/datum/lifeform_index/I = GLOB.lifeform_indexes[id]
+	var/datum/lifeform_index/I = lifeform_index_peek(id)
 	if(!I)
 		I = new
 		I.id = id
-		GLOB.lifeform_indexes[id] = I
+		member_subindex_set("registry:[id]", I)
 	return I
+
+/// The index of registry `id`, or null when nothing was filed in it yet.
+/proc/lifeform_index_peek(id)
+	RETURN_TYPE(/datum/lifeform_index)
+	return member_subindex("registry:[id]")
 
 /// The first member of registry `id` filed under `key` (null: the unkeyed), on z-level `z` or in area `area` when given.
 /proc/registry_get(id, key = null, z = null, area/area = null)
@@ -60,7 +65,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 /// The members of registry `id` filed under `key`, on `z` or in `area` when given. With no key and no place, every member. Read-only.
 /proc/registry_all(id, key = null, z = null, area/area = null)
 	RETURN_TYPE(/list)
-	var/datum/lifeform_index/I = GLOB.lifeform_indexes[id]
+	var/datum/lifeform_index/I = lifeform_index_peek(id)
 	if(!I)
 		return list()
 	var/k = isnull(key) ? "" : "[key]"
@@ -91,11 +96,6 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 			var/atom/movable/AM = holder
 			AM.lifeform_moves |= LIFEFORM_MOVES_REGISTRY
 
-/proc/registry_teardown(datum/holder, datum/lifeform_plan/P)
-	for(var/datum/centry/C as anything in P.registries)
-		var/datum/entry/E = C.item
-		registry_unfile(holder, E.args["id"])
-
 /// Files `holder` in the entry's registry under its current key and place.
 /proc/registry_file(datum/holder, datum/entry/E)
 	var/id = E.args["id"]
@@ -125,7 +125,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 	holder.registry_mirror_join(id)
 
 /proc/registry_unfile(datum/holder, id)
-	var/datum/lifeform_index/I = GLOB.lifeform_indexes[id]
+	var/datum/lifeform_index/I = lifeform_index_peek(id)
 	var/list/at = I?.filed[holder]
 	if(!at)
 		return
@@ -141,7 +141,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 /// The key var of a registry() entry was written: the holder is re-filed under the new key.
 /proc/registry_rekey(datum/holder, datum/centry/C)
 	var/datum/entry/E = C.item
-	var/datum/lifeform_index/I = GLOB.lifeform_indexes[E.args["id"]]
+	var/datum/lifeform_index/I = lifeform_index_peek(E.args["id"])
 	if(!I?.filed[holder])
 		return
 	registry_file(holder, E)
@@ -155,7 +155,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 		var/by = E.args["by"]
 		if(!by)
 			continue
-		var/datum/lifeform_index/I = GLOB.lifeform_indexes[E.args["id"]]
+		var/datum/lifeform_index/I = lifeform_index_peek(E.args["id"])
 		var/list/at = I?.filed[holder]
 		if(!at)
 			continue

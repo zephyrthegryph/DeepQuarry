@@ -190,7 +190,7 @@ pub fn route(
                     compiler,
                     retiring,
                 } if version == protocol::VERSION && compiler == identity && !retiring => {
-                    transport::set_timeout(&mut stream, Duration::from_secs(600))?;
+                    transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
                     protocol::send(&mut stream, &protocol::Request::Build(request))?;
                     loop {
                         match protocol::receive::<protocol::Reply>(&mut stream)? {

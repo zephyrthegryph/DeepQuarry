@@ -33,20 +33,19 @@ CAPABILITIES(/obj/item/hoist_kit)
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-/// Requirement: TRUE, or why the dragged thing can't be clamped on.
-/obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
+/// Why the dragged thing can't be clamped on, or null (admission.md D6: a pure reason).
+/obj/effect/hoist_hook/proc/attach_refusal(atom/movable/held)
 	if(!istype(held) || !held.simulated || held.anchored)
-		return "you can't do that"
+		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
-		return "[source_hoist().hoistee()] is already attached"
-	return TRUE
+		return msg_reason("[source_hoist().hoistee()] is already attached")
+	return null
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
-	var/refusal = can_attach(A.actor, src, A.held)
-	if(refusal != TRUE)
-		if(istext(refusal))
-			to_chat(A.actor, span_warning(refusal))
+	var/refusal = attach_refusal(A.held)
+	if(refusal)
+		to_chat(A.actor, span_warning(reason_text(refusal)))
 		return OP_DECLINE
 	var/mob/user = A.actor
 	var/atom/movable/AM = A.held
@@ -73,6 +72,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
+	ref_one(nameof(source_hoist))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -136,6 +136,7 @@ CAPABILITIES(/obj/structure/hoist)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
 	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), begins(PROC_REF(hoist_begins)), wait(PROC_REF(hoist_time)), then(PROC_REF(interaction_hand)))
 	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
+	ref_one(nameof(hoistee))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)

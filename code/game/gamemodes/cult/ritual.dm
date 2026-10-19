@@ -67,9 +67,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	. = ..()
 	blood_image = image(loc = src)
 	blood_image.override = 1
-	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(our_ai.client)
-			our_ai.client.images += blood_image
 
 
 // the rune's blood image comes off every AI client that was shown it.
@@ -77,7 +74,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	..()
 	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
-			our_ai.client.images -= blood_image
+			client_images_remove(our_ai.client, blood_image)
 
 /obj/effect/rune/examine(mob/user)
 	. = ..()
@@ -85,12 +82,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
 CAPABILITIES(/obj/effect/rune)
+	after_init(0, then(PROC_REF(show_to_ais))) // the AIs see the blood image once Initialize() returns (relations proposal D11)
 	ref_one(nameof(manifest_user))
 	ref_one(nameof(manifest_dummy))
 	op("erase_rune", item(/obj/item/book/tome), label("Erase rune"), then(PROC_REF(interaction_erase_rune)))
 	op("nullrod_rune", item(/obj/item/nullrod), label("Disrupt rune"), then(PROC_REF(interaction_nullrod_rune)))
 	op("invoke_rune", hand(), label("Invoke"), then(PROC_REF(interaction_invoke_rune)))
 	every(3 SECONDS, then(PROC_REF(manifest_tick)), when = nameof(manifesting))
+	ref_many(nameof(converting))
 
 /// Old attackby: a cultist's tome undoes the rune.
 /obj/effect/rune/proc/interaction_erase_rune(datum/act/op/A)
@@ -351,7 +350,7 @@ CAPABILITIES(/obj/item/book/tome)
 			to_chat(user, span_warning("You do not have enough space to write a proper rune."))
 			return
 
-		if (C>=26 + GLOB.runedec + length(GLOB.cult.current_antagonists)) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
+		if (C>=26 + GLOB.runedec + length(antag_cult().current_antagonists)) //including the useless rune at the secret room, shouldn't count against the limit of 25 runes - Urist
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
@@ -683,3 +682,9 @@ CAPABILITIES(/obj/item/book/tome/imbued)
 	if (. || (clean_types & CLEAN_TYPE_RUNES))
 		consume(src)
 		return TRUE
+
+/// Every AI with a client sees this rune's blood image.
+/obj/effect/rune/proc/show_to_ais(datum/act/timer/A)
+	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(our_ai.client)
+			client_images_add(our_ai.client, blood_image)

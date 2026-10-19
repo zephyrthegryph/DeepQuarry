@@ -88,7 +88,7 @@ fn distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline() {
     let bytes = input.materialize(&tail);
     assert_eq!(
         crate::lowering_memo::ProcedureMemo::record_key(&bytes).version,
-        23
+        crate::lowering_memo::PROCEDURE_VERSION
     );
     for previous_prefix in [
         b"dmbc-procedure-memo-v7-diagnostic-anchors\0".as_slice(),

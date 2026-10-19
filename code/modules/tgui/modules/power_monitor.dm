@@ -12,6 +12,7 @@ CAPABILITIES(/datum/tgui_module/power_monitor)
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("setsensor", ui_act("setsensor", arg("id", schema_text(4096))), then(PROC_REF(ui_act_setsensor)))
+	ref_many(nameof(grid_sensors))
 
 /datum/tgui_module/power_monitor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

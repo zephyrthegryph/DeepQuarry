@@ -268,7 +268,7 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
             assert_eq!(ac.field_origins, bc.field_origins);
         }
     }
-    // The unchanged procedure text still depends on the current nested type.
+    // Remove the nested type the unchanged procedure text names.
     let removed = SOURCE.replace("/obj/inner\n    var/amount\n", "");
     let current = build(&mut state, &removed, &engine, &executor);
     let (host, _) =
@@ -305,7 +305,20 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
         &current,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    assert!(request
+    // Stored units are proven by the answer table alone since the domain-version roster went (344b556a1c); its
+    // coarse tree version used to decline this candidate. Lowering this text reads only the outer runtime type
+    // (the nested modified type is not a lowering read), so the fresh unit records the same answers and the
+    // proven candidate must equal it rather than decline.
+    let (fresh_record, fresh) = prepare(&current, row, &host, &policy, &startup, &licensed);
+    assert!(fresh_record
+        .reads
+        .iter()
+        .all(|read| read.query != dm_ir::ResolveQuery::RuntimeType(SymbolId::of("/obj/inner"))));
+    let hit = request
         .lookup_unchanged_local(&licensed, &candidates, 7, &host, &current, row, &arena)
-        .is_none());
+        .expect("a candidate whose recorded answers are unchanged is proven");
+    let Input::Reused(reused) = hit.inner else {
+        panic!("expected reused contribution")
+    };
+    assert!(reused.verification_equal(&fresh));
 }

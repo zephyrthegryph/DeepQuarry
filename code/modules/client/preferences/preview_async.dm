@@ -350,6 +350,7 @@
 
 CAPABILITIES(/datum/dq_preview_poll)
 	every(1 TICK, then(PROC_REF(poll_step)), when = nameof(polling))
+	ref_one(nameof(prefs))
 
 /datum/dq_preview_poll/New()
 	..()

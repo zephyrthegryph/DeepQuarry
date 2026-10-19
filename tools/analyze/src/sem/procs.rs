@@ -33,7 +33,7 @@ pub fn proc_defs(sem: &Sem, names: &[&str]) -> Vec<ProcDef> {
         for name in names {
             let Some(tp) = ty.get().procs.get(*name) else { continue };
             for v in tp.value.iter() {
-                if v.code.is_none() {
+                if !v.code.has_body() {
                     continue;
                 }
                 let Some(rel) = sem.file_of(v.location) else { continue };

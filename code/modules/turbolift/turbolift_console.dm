@@ -116,9 +116,12 @@ CAPABILITIES(/obj/structure/lift/button)
 
 /obj/structure/lift/button/draw(datum/look/look)
 	..()
-	if(lift().fire_mode)
+	var/datum/turbolift/L = lift()
+	if(!L) // a button not wired to a lift (made on its own) draws its mapped state
+		return
+	if(L.fire_mode)
 		look.state("button_fire")
-	else if(lift().priority_mode)
+	else if(L.priority_mode)
 		look.state("button_pri")
 	else if(light_up)
 		look.state("button_lit")
@@ -222,7 +225,10 @@ CAPABILITIES(/obj/structure/lift/panel)
 
 /obj/structure/lift/panel/draw(datum/look/look)
 	..()
-	if(lift().fire_mode)
+	var/datum/turbolift/L = lift()
+	if(!L) // a panel not wired to a lift draws its mapped state
+		return
+	if(L.fire_mode)
 		look.state("panel_fire")
 	else
 		look.state(initial(icon_state))

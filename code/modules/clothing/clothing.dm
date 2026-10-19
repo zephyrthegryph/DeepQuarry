@@ -176,20 +176,20 @@ DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_im
 
 	switch(target_species)
 		if(SPECIES_HUMAN, SPECIES_SKRELL)	//humanoid bodytypes
-			restrict_fit(SPECIES_HUMANOID_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_HUMANOID)
 		if(SPECIES_UNATHI)
-			restrict_fit(SPECIES_UNATHI_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_UNATHI)
 		if(SPECIES_TAJARAN)
-			restrict_fit(SPECIES_TAJARAN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_TAJARAN)
 		if(SPECIES_VULPKANIN)
-			restrict_fit(SPECIES_VULPKANIN_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_VULPKANIN)
 		if(SPECIES_SERGAL)
-			restrict_fit(SPECIES_SERGAL_CAN_WEAR)
+			restrict_fit_category(FIT_REFIT_SERGAL)
 		if("Metamorphic")
 			if(sprite_sheets[SPECIES_TESHARI]) //We have a custom teshari species sprite. Sorry teshari, but otherwise the fallback looks awful on you.
-				restrict_fit(SPECIES_ALL_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL)
 			else
-				restrict_fit(SPECIES_ALL_BUT_TESHARI_CAN_WEAR)
+				restrict_fit_category(FIT_REFIT_ALL_BUT_TESHARI)
 		else
 			restrict_fit(list(target_species))
 
@@ -291,17 +291,26 @@ CAPABILITIES(/obj/item/clothing/ears)
 
 CAPABILITIES(/obj/item/clothing/ears/offear)
 	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
+	derives(nameof(name), PROC_REF(containing_item_field))
+	derives(nameof(desc), PROC_REF(containing_item_field))
+	derives(nameof(icon), PROC_REF(containing_item_field))
+	derives(nameof(icon_state), PROC_REF(containing_item_field))
+	derives(nameof(dir), PROC_REF(containing_item_field))
 
-// ALLOW(init/INSTANCE_STATE): copies the look of the item it is made inside
-/obj/item/clothing/ears/offear/Initialize(mapload)
-	. = ..()
-	if(isobj(loc))
-		var/obj/O = loc
-		name = O.name
-		desc = O.desc
-		icon = O.icon
-		icon_state = O.icon_state
-		set_dir(O.dir)
+/// A one-time constructor snapshot, not a live link to the original item's later appearance.
+/obj/item/clothing/ears/offear/proc/containing_item_field(target)
+	var/obj/O = isobj(loc) ? loc : src
+	switch(target)
+		if(nameof(name))
+			return O.name
+		if(nameof(desc))
+			return O.desc
+		if(nameof(icon))
+			return O.icon
+		if(nameof(icon_state))
+			return O.icon_state
+		if(nameof(dir))
+			return O.dir
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //Gloves
@@ -419,7 +428,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	punch_force = 2
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
-	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA)
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -593,7 +602,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_TESHARI_VOX)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
@@ -887,8 +896,8 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 CAPABILITIES(/obj/item/clothing/suit)
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(limb_clearance)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req(PROC_REF(limb_clearance))))
+	suit_storage(list(POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

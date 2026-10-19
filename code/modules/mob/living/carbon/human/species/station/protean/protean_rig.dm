@@ -224,7 +224,7 @@ CAPABILITIES(/obj/item/rig/protean)
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
 
@@ -275,7 +275,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/hands.dmi'))
 	configure(item_protection(siemens = 0))
 
@@ -293,7 +293,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/feet.dmi'))
 
 
@@ -312,8 +312,8 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))
+	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/spacesuit.dmi'))
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions

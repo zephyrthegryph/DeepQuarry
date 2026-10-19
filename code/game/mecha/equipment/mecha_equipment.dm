@@ -150,30 +150,44 @@
 /obj/item/mecha_parts/mecha_equipment/proc/action(atom/target, params, mob/user = null)
 	return
 
-/obj/item/mecha_parts/mecha_equipment/proc/can_attach(obj/mecha/M as obj)
+MSG_DEF_SELF(mecha/duplicate_equipment, "The exosuit already has one of those.")
+MSG_DEF_SELF(mecha/no_hardpoint, "The exosuit has no free hardpoint for it.")
+MSG_DEF_SELF(mecha/weapon_needs_combat, "Only a combat exosuit can mount a weapon there.")
+
+/// The hardpoint list and its limit for each equip type (admission.md D6: the mech's slots, per-instance capacity, one table instead of a ladder).
+/proc/mecha_hardpoint_vars(equip_type)
+	var/static/list/rows = list(
+		"[EQUIP_HULL]" = list("hull_equipment", "max_hull_equip"),
+		"[EQUIP_WEAPON]" = list("weapon_equipment", "max_weapon_equip"),
+		"[EQUIP_UTILITY]" = list("utility_equipment", "max_utility_equip"),
+		"[EQUIP_SPECIAL]" = list("special_equipment", "max_special_equip"),
+		"[EQUIP_MICRO_UTILITY]" = list("micro_utility_equipment", "max_micro_utility_equip"),
+		"[EQUIP_MICRO_WEAPON]" = list("micro_weapon_equipment", "max_micro_weapon_equip"),
+	)
+	return rows["[equip_type]"]
+
+/// Is there room for `equip_type` on M in its own hardpoints?
+/proc/mecha_hardpoint_room(obj/mecha/M, equip_type)
+	var/list/row = mecha_hardpoint_vars(equip_type)
+	if(!row)
+		return FALSE
+	var/list/held = M.vars[row[1]]
+	return length(held) < M.vars[row[2]]
+
+/// Why this equipment can't go on M now, or null (a pure requirement: it reads the exosuit, never changes it). A duplicate is refused unless
+/// allow_duplicate; its own hardpoint type first, then the universal hardpoints, which take a weapon only on a combat exosuit.
+/obj/item/mecha_parts/mecha_equipment/proc/attach_refusal(obj/mecha/M)
 	if(!allow_duplicate)
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in M.equipment) //Exact duplicate components aren't allowed.
 			if(ME.type == src.type)
-				return 0
-	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip)
-		return 1
-	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip)
-		return 1
-	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip)
-		return 1
-	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip)
-		return 1
-	// ition begin: MICROMECHS
-	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip)
-		return 1
-	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip)
-		return 1
-	// ition end: MICROMECHS
+				return /datum/msg/mecha/duplicate_equipment
+	if(mecha_hardpoint_room(M, equip_type))
+		return null
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip) //The exosuit needs to be military grade to actually have a universal slot capable of accepting a true weapon.
 		if(equip_type == EQUIP_WEAPON && !istype(M, /obj/mecha/combat))
-			return 0
-		return 1
-	return 0
+			return /datum/msg/mecha/weapon_needs_combat
+		return null
+	return /datum/msg/mecha/no_hardpoint
 
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
 	var/has_equipped = 0

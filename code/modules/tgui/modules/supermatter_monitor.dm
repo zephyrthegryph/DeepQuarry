@@ -34,6 +34,8 @@ CAPABILITIES(/datum/tgui_module/supermatter_monitor)
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("set", ui_act("set", arg("set", num())), then(PROC_REF(ui_act_set)))
+	ref_one(nameof(active))
+	ref_many(nameof(supermatters))
 
 /datum/tgui_module/supermatter_monitor/ui_data(datum/act/eval/A)
 	var/list/data = list()

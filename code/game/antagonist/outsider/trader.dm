@@ -1,4 +1,3 @@
-GLOBAL_DATUM(traders, /datum/antagonist/trader)
 
 /datum/antagonist/trader
 	id = MODE_TRADE
@@ -33,7 +32,6 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 
 /datum/antagonist/trader/New()
 	..()
-	GLOB.traders = src
 
 /datum/antagonist/trader/greet(datum/mind/player)
 	if(!..())
@@ -66,3 +64,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 			id.name = "[player.real_name]'s Passport"
 			id.set_registered_name(player.real_name)
 			W.name = "[initial(W.name)] ([id.name])"
+
+/// The /datum/antagonist/trader template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_traders() as /datum/antagonist/trader
+	return SSantag?.all_antag_types[MODE_TRADE]

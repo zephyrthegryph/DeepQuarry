@@ -122,7 +122,7 @@
 				play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 				spent(S)
 				hunger = 0
-				food = null
+				rel_set(src, nameof(food), null)
 			else
 				WanderTowards(S.loc)
 			break
@@ -133,7 +133,7 @@
 	var/food_dist = get_dist(src,food)
 
 	if(food_dist > world.view) //Lose interest on this person.
-		food = null
+		rel_set(src, nameof(food), null)
 		hunger = Clamp(hunger+5, 0, 25)
 
 	if(food_dist > 1)
@@ -178,7 +178,7 @@
 			target_mob = food
 			EatTarget()
 			hunger = 0
-			food = null
+			rel_set(src, nameof(food), null)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	ref_one(nameof(food), /mob/living/carbon/human)
@@ -190,7 +190,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	consumed(O)
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	hunger = 0
-	food = null
+	rel_set(src, nameof(food), null)
 	return TRUE
 
 /mob/living/simple_mob/vore/aggressive/rat/tame/Found(atom/found_atom)
@@ -203,7 +203,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 				visible_emote("sniffs around the air intently, seeming to have caught a whiff of food!")
 			if(resting)
 				lay_down()
-			food = H
+			rel_set(src, nameof(food), H)
 			return found_atom
 			break
 	return null

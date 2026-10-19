@@ -392,16 +392,16 @@ CAPABILITIES(/obj/machinery/photocopier)
 
 // Rykka
 
-/obj/machinery/photocopier/can_buckle_check(mob/living/M, forced = FALSE)
-	if(!..())
-		return FALSE
+/obj/machinery/photocopier/buckle_refusal(mob/living/M, authority = null, can_do_spont_vore = FALSE)
+	. = ..()
+	if(.)
+		return .
 	for(var/obj/item/clothing/C in contents_of(M))
 		if(M.item_is_in_hands(C))
 			continue
 		if((worn_of(C).covers & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))
-			to_chat(M, span_warning("One needs to not be wearing pants to photocopy one's ass..."))
-			return FALSE
-	return TRUE
+			return msg_reason(span_warning("One needs to not be wearing pants to photocopy one's ass..."))
+	return null
 
 // Stop - Rykka
 

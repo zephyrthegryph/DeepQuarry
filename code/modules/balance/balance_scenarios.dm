@@ -144,7 +144,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_results, list("hits_
 		var/obj/item/worn = spawn_thing(spec[i])
 		var/mob/living/carbon/human/H = L
 		var/slot = istype(worn, /obj/item/clothing/head) ? SLOT_ID_HEAD : SLOT_ID_SUIT
-		if(!istype(H) || !H.equip_to_slot_if_possible(worn, slot, disable_warning = TRUE))
+		if(!istype(H) || !H.equip_to_slot_if_possible(worn, slot, quiet = TRUE))
 			note("[target_id]: [worn.type] would not equip")
 			return null
 	return L

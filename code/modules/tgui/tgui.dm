@@ -646,6 +646,8 @@ CAPABILITIES(/datum/tgui)
 	links(/datum/tgui::user, /mob::tgui_open_uis, b_many = TRUE, a_on_unlink = PROC_REF(participant_gone))
 	ref_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
 	ref_one(nameof(window), on_unlink = PROC_REF(participant_gone))
+	ref_many(nameof(children))
+	ref_one(nameof(parent_ui))
 
 /// The parent_ui this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/parent_ui() as /datum/tgui

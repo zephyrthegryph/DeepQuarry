@@ -87,6 +87,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	op("cargotypes", ui_act("cargotypes"), then(PROC_REF(ui_act_cargotypes)))
 	op("safety", ui_act("safety"), then(PROC_REF(ui_act_safety)))
 	owns_one(nameof(load), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(home))
 
 /mob/living/bot/mulebot/ui_title(mob/user)
 	return "Mulebot [suffix ? "([suffix])" : ""]"

@@ -144,10 +144,18 @@ impl SourceFile {
         &self.data().raw
     }
 
+    /// The text, raw (no probe).
+    pub fn raw_quiet(&self) -> &View {
+        &self.data().raw
+    }
+
     /// Comments and string contents removed (`state_schema_lint.code_only`).
     pub fn code(&self) -> &View {
         let d = self.data();
-        d.code.get_or_init(|| View::new(strip::code_only(&d.raw.text)))
+        d.code.get_or_init(|| {
+            text_probe();
+            View::new(strip::code_only(&d.raw.text))
+        })
     }
 
     /// Same-length sanitized text (`_dx_dm.sanitize_text`).
@@ -453,7 +461,7 @@ impl Tree {
                 let t0 = std::time::Instant::now();
                 let v = std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>;
                 if memo_trace() && t0.elapsed().as_millis() >= 5 {
-                    eprintln!("analyze: memo {:?} built in {:.0?}", if key.len() > 40 { &key[..40] } else { key }, t0.elapsed());
+                    eprintln!("analyze: memo {:?} built in {:.0?} (cpu {} ms)", if key.len() > 40 { &key[..40] } else { key }, t0.elapsed(), crate::util::cpu_ms());
                 }
                 v
             })
@@ -607,3 +615,17 @@ mod tests {
         assert!(CODE_MAPS_DM.matches(&c));
     }
 }
+
+/// `DQ_TEXT_PROBE=1`: who strips files (counts by the first analyzer frame outside the tree), printed at exit.
+pub fn text_probe() {
+    static ON: OnceLock<bool> = OnceLock::new();
+    if !*ON.get_or_init(|| std::env::var_os("DQ_TEXT_PROBE").is_some()) {
+        return;
+    }
+    let bt = std::backtrace::Backtrace::force_capture().to_string();
+    let frame = bt.lines().map(|l| l.trim()).filter(|l| l.contains("dq_analyze::") && !l.contains("dq_analyze::tree::")).take(4).collect::<Vec<_>>().join(" <- ");
+    let mut g = TEXT_PROBE.lock().unwrap();
+    *g.entry(frame).or_default() += 1;
+}
+
+pub static TEXT_PROBE: std::sync::Mutex<std::collections::BTreeMap<String, usize>> = std::sync::Mutex::new(std::collections::BTreeMap::new());

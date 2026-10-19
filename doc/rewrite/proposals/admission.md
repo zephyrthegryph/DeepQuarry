@@ -43,13 +43,16 @@ Evidence base: `origin/master` at `1c1d649c08` (17 Oct 2026). Every `file:line` 
 
 - **Requirement.** A check on a typed act context (`datum/act/A`). It returns **null** to allow, or a **`/datum/msg`** reason: a type for a fixed
   reason (`MSG(slot/too_large)`), an instance when the reason carries detail (**new**; today detail is smuggled through the `%DETAIL%` template of
-  `/datum/msg/req_refused`, `code/engine/parts/reasons.dm:5`, or through raw text). It never writes, publishes or messages (purity, enforced by
+  `/datum/msg/req_refused`, `code/engine/parts/reasons.dm:5`, or through raw text). A detailed reason is a message instance, `msg_reason("too big: 3 > 2")` (**resolved**: `/datum/msg/instance`,
+  `code/engine/present/messages.dm`). It never writes, publishes or messages (purity, enforced by
   `op_pure_begin()` around every evaluation, `engine/parts/acceptance.dm:156-164`). No booleans, no text, no `TRUE`-or-reason.
 - **Condition.** The same check read without its reason: `holds = isnull(check)`. A library part implements `holds()` and `refusal()` apart, so a
   condition never builds a reason (`cond.dm:151-152`: `check()` is `holds(A) ? null : refusal(A)`). A requirement is accepted wherever a condition
   is. This is the state master already has: `requirement_bool` bans the boolean constructor and `boolean_callback`, and requirement callbacks
   return null or the exact refusal (`doc/requirements_hard_ban_1010_handoff.md`, merged; `cond.dm:228`).
-- **Combinators.** `all_of`, `any_of`, `not(r, because =)`, and nothing else. `any_of` joins its reasons ("needs a wrench or a welder"),
+- **Combinators.** `all_of`, `any_of`, `not(r, because =)`, and `with_reason(r, because)` (**resolved**, 18 Oct: a variadic proc rejects a named
+  argument it does not declare, BYOND's "bad arg name", tested by `dq_slot_admission_with_reason`; so `any_of(..., because =)` cannot exist and a
+  combinator gets its reason from the wrapper), and nothing else. `any_of` joins its reasons ("needs a wrench or a welder"),
   `all_of` reports the first failure (`cond.dm:614-647`).
 - **Reason type.** `/datum/msg` only (`code/engine/present/messages.dm:15`). Retired: raw strings (85 `because = "` sites, about 15 literal reason returns in
   `library/requirements/acceptance.dm`, `pred_holding_knife_holds` returning "there is no knife in it" at `clothing.dm:615`), `TRUE`-or-reason procs
@@ -231,7 +234,7 @@ slot(CONTAINER_SLOT_INTERNALS, accepts = req_part_of_circuit(), replace = REPLAC
 // the RPED op is item(/obj/item/storage/part_replacer) + put_in(CONTAINER_SLOT_INTERNALS) per candidate part
 ```
 
-`OP_REPLACED` already exists (`vocabulary.dm:32`, `act.dm:254-262`) but means "a hook took the action over". A displaced occupant needs its own outcome name (**open**).
+`OP_REPLACED` already exists (`vocabulary.dm:32`, `act.dm:254-262`) but means "a hook took the action over". A displaced occupant needs its own outcome name (**resolved**: DISPLACED, the move flag `LEDGER_MOVE_DISPLACED` its `on_unslotted()` sees; `OP_REPLACED` keeps its meaning).
 
 **D2f. Partial and quantity insertion** (rounds, sheets, reagent units). Today `move_into` is all or nothing; a speedloader is a hand-written loop that checks
 `length(loaded) >= max_shells` per round (`projectile.dm:612-630`), reaching into `rel_move`.
@@ -534,6 +537,10 @@ Storage and folder contents change behaviour: a destroyed backpack spills its it
 **Open (risk, not decided):** "litter on a forced delete". The destroy transaction has a `force` argument (`on_destroy(force)`); a cleanup or admin delete that spills a whole mob's loadout is the case the body-slot comment
 fears. Proposed: spill is the default for gameplay destruction; a forced cleanup follows the type's declared `on_forced_destroy` (default SPILL, mobs in cleanup contexts DELETE through the destroy transaction's existing `force` branch). Needs the lifecycle owner's call.
 
+**Built (D10 wave):** storage and folders SPILL; a forced delete DELETEs a SPILL slot's contents, and every destroy nested inside a forced one is
+forced too (`GLOB.destroy_transaction_forced_depth`), so a forced-deleted body takes its backpack and the box in it along, at any depth. A
+thing that survives its container is checked after that conversion: a forced delete still spills it.
+
 **"Survives container."** A lifecycle property of the **contained** type: a mind or a client is never spilled or deleted by a holder's destruction; it is resolved by its declared `TRANSFER` resolver
 (mind to ghost or MMI, `lifecycle.md` phase 0.5; `is_mind_slot` exists with no content user, `slot_def.dm:64`, `lifecycle.dm:21-79`). The declaration syntax belongs to `proposals/relations.md` D1
 (lifecycle on destroy for a swept var); this proposal only needs the slot half: a slot honours `survives_container` of what it holds before applying its own drop policy.
@@ -657,3 +664,91 @@ Section 17 rows that are **wrong or incomplete** against this design:
 10. Section 19 migration: add this document's waves 0 to 8 as the E2 content sequence; note the retirement of `/datum/req` as a prerequisite of any native `req_access`.
 11. Section 21 decisions: record the null-or-reason requirement decision and the one-reason-type (`/datum/msg`) decision.
 12. Section 22 layout: library requirements move to `code/library/requirements/` without the `acceptance` file name; fit categories live in `code/library/clothing/`.
+
+## 7. Census at the end of wave 2 (18 Oct 2026, `rewrite/admission` at `267576fccd`, content only: tests and generated files excluded)
+
+The exact counts wave 0 promised, by `git grep -c -E` on the pattern named. `codex/req-burndown` (merged into master 17 Oct) retired the `REQ_*`
+predicate tables, `/datum/predicate` and the `HOLD_*` macros before this lane reached wave 8, so their rows are zero here.
+
+| Form (pattern) | Lines | Files | Wave |
+|---|---:|---:|---|
+| `REQ_*(` predicate macros | 0 | 0 | 8: done by req-burndown |
+| `/datum/predicate` | 0 | 0 | 8: done |
+| `HOLD_ONLY/NOT/MAX_SIZE` | 0 | 0 | 5: done |
+| `fit_spec`, `equip_spec`, `hold_spec`, `suit_storage_spec` tables | 0 | 0 | 3-5: done (one comment left in `__defines/clothing.dm`) |
+| `cond_not/cond_all/cond_any` | 0 | 0 | 1: done, hard-banned |
+| `because = "..."` outside tests | 0 | 0 | 2: done, hard-banned |
+| `GLOB.act_last_reason`, `ACT_TRY`, last-outcome/reply globals | 0 | 0 | 2: done, hard-banned |
+| `acceptance("channel", ...)` declarations | 150 | 43 | 8 |
+| `acceptance(CONSTRAINT_*, ...)` declarations | 176 | 40 | 3-5 |
+| `CONSTRAINT_FIT/EQUIP/HOLD/SUIT_STORAGE` (all uses) | 199 | 49 | 3-5 |
+| `req_acceptance_*` leaves | 224 | 62 | 1 (rename) |
+| `fits(` | 102 | 52 | 3 |
+| `species_allowed =` | 122 | 7 | 3 |
+| `sprite_sheets(_obj) = list(` | 81 | 39 | 3 |
+| `SPECIES_*_CAN_WEAR` | 17 | 2 | 3 |
+| `canremove` | 116 | 45 | 4 |
+| `NOSTRIP` | 21 | 17 | 4 |
+| `disable_warning` | 25 | 7 | 4 |
+| `ignore_obstruction` | 10 | 3 | 4 |
+| `wearer_is_actor` | 11 | 3 | 4 |
+| `dq_equip_refusal` | 2 | 1 | 4 |
+| `LEDGER_MOVE_FORCED` | 20 | 10 | 6 (authority grant) |
+| `insert_refusal(` | 17 | 9 | 6 |
+| `op("...insert...")` | 83 | 68 | 6 |
+| `CanPass(` (all, incl. callers) | 106 | - | 7 |
+| `trans_to(` | 42 | 23 | 7 |
+| `is_job_whitelisted` / `is_alien_whitelisted` | 23 | 13 | 7 |
+
+**Purity report (D5).** req-burndown converted the two confirmed impure previews (saddlebag `taur_fit`, Avida `match_ears`) to pure requirements with the
+appearance set through equipment notices (its handoff, `intended_changes.md`); no `REQ_ON` proc is left to audit.
+
+**Wave 4 decisions (18 Oct, recorded by the admission lane; canremove/NOSTRIP **resolved**, confirmed by the coordinator).** `canremove` and `NOSTRIP` stay: `canremove` is a rig's or a locked item's own tracked
+*state* (sealed, locked on: 53 reads, most of them the rig deciding what it is), and `NOSTRIP` is item flag data. What wave 4 removes is their use
+as *gates*: removal is asked through `req_removable()` (strip menu) and the pure `mob_can_unequip()`; banning the names would only rename state.
+`ignore_obstruction` stays as the equip check's explicit "skip the covering check" mode (tape over clothes) until the authority datum carries
+skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k); both are scheduled as **wave 6b** (below) and banned there. `disable_warning` and the `*_spec` table
+names are hard-banned.
+
+**Wave 6b (scheduled 18 Oct): equip through the equip action, skips through the authority.**
+1. `/datum/authority_grant` gains `skips` (a bit set: `SKIP_COVERING`, `SKIP_REQUIREMENTS`) and `quiet`; `equip_to_slot_if_possible(ignore_obstructions =)` becomes
+   an authority with `SKIP_COVERING` (the tape blindfold and muzzle are its two callers).
+2. `/datum/act/equip` on the item runs the whole pipeline: the slot exists, holder state and catalog (the body slot), occupancy, reach (unless
+   skipped), the item's fit and equip constraints, then its own `extend(/datum/act/equip, needs(...))`. `equip_refusal()` becomes
+   `ACT_ATTEMPT(I, equip, wearer, slot)` read through the answer; `dq_equip_refusal` and `dq_equip_item_refusal` are deleted.
+3. `ignore_obstruction`, `ignore_obstructions` and `dq_equip_refusal` are hard-banned in the same commit.
+
+*Landed (18 Oct, admission lane).* Steps 1 and 3 as written: `skips`/`quiet` on the grant, `skip_authority()`, `GLOB.authority_dressing` (SKIP_COVERING) as
+`equip_to_slot_if_possible`'s default and `authority = null` for the tape (the only callers that checked covering). Step 2 is taken half way: the
+pipeline is the item's own `equip_refusal(M, slot, go_over_slot, actor, authority)` (the global `dq_equip_refusal`/`dq_equip_item_refusal` are deleted and
+banned; the item part is `wearer_constraint_refusal()`), still ending in `/datum/act/equip`'s needs(). Moving the earlier steps into the act needs the act
+to carry `go_over_slot` and the authority, which the generated act arguments do not yet; that is left with wave 8's evaluator merge.
+
+**Waves 6 to 8 progress (18 Oct, admission lane).**
+- *Wave 6 landed:* cell charger, replicator, mech equipment, gun magazines, buckling, accessories, hoist/fulton/wires, cooking appliances,
+  xenobio processors, recyclers: each gate is a pure `*_refusal()` (null or a reason), its feedback the caller's. The old names
+  (`can_buckle_check`, `can_install_synth`, `can_attach_accessory`, `can_attach`, `can_insert`, `can_accept_item`) are hard-banned. `forced`
+  on the buckle procs is an authority (`GLOB.authority_forced`, SKIP_REQUIREMENTS). `forced`/`silent` are **not** word-banned: both are
+  ordinary words in 70+ unrelated signatures (`tool_start_check(silent =)`, `staleness_check_draw(forced =)`); the ban is the per-family
+  name ban above. RPED stays deferred (it needs `component_parts` as a ledger slot).
+- *Wave 7 landed in part:* whitelists and job availability answer reasons (`alien_whitelist_refusal`, `job_whitelist_refusal`,
+  `job_join_refusal`; the old names banned); six pass-flag `CanPass` overrides became the `passable(pass_flags =)` type trait read by
+  `/atom/CanPass`. Still open: the other 60 `CanPass` overrides (direction- or state-dependent, slow path by design), `Bumped`, the
+  `trans_to` reagent inserts (needs D2f quantity slots for beakers), and a lint for a flag-only `CanPass` body.
+- *Wave 8 landed in part:* the `req_acceptance_*` leaves lost their prefix (`req_type`, `req_tag`, `req_max_size`, ...; the old names
+  banned; the unused `cond.dm` `req_tag` merged into the leaf); the `CHECK()` and `FACT()` macros are deleted (no content used them; the
+  OM pipeline's spec lists stay as the engine form). **D10 landed (coordinator's call, 18 Oct):** forced deletes don't
+  spill, unforced ones do. Storage and folder slots are SPILL; the destroy transaction passes `force` to the contents phase, which deletes
+  the contents of a SPILL slot on a forced delete.
+- *Wave 8, the interim channels:* the **equip** channel is gone: its 30 declarations are `extend(/datum/act/equip, needs(...))` (the equip act's
+  query now carries the wearer, so the leaves read `A.wearer` as before and the item as `A.holder`), asked through `equip_act_refusal()`;
+  `CONSTRAINT_EQUIP` is banned. **Decision (lane):** the other three channels move *content* first: `fits_as(FIT_X)`/`fits_anyone()`,
+  `suit_storage(list(...))`/`no_suit_storage()` and `holder_takes(reqs...)` replace every content `acceptance(` (282 declarations), and
+  `acceptance(` is banned outside the engine, the body-slot catalog (`equip_slots.dm`), the vore consents and tests. The constructors
+  still compile to the CONSTRAINT_* channels, so the evaluator swap (holsters and grippers as slot accepts, suit storage as a trait, D4c)
+  changes their bodies, not content. Picked over converting holsters/grippers to slots now because their holders are `owns_one` vars,
+  which the declared-slot path skips (`declared_slot_defs()`): that is engine work for the relations owner.
+- *Wave 8, one evaluator:* `condition_holds(holder, cond)` is `op_cond()` on a pooled context (`pooled_op_context()`, shared with
+  `requirement_reason()`); `op_cond_eval()` gained the `cond_config()` branch. A requirement inside a stat or activation condition is now
+  evaluated (the old walker answered TRUE for any part that was not not/all_of/any_of); a PROC_REF condition is called with the context
+  as its argument, as an op condition is.

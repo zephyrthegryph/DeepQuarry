@@ -165,7 +165,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	var/names = index[OWN_KEY(source)]
 	return islist(names) ? (var_name in names) : names == var_name
 
-/// The REF entry for source.var_name (learned as an implicit REF when undeclared; reported when
+/// The REF entry for source.var_name (reported and null when undeclared, reported when
 /// the var is another kind).
 /proc/_rel_entry(datum/source, var_name, is_list = FALSE)
 	return own_entry_of_kind(source, var_name, OWNK_REL, is_list)
@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Points source.var_name (a single REF view) at `target`, or clears it with null. A pair view
 /// sets the partner's side too; the old partner stops naming source. Returns the target.
-/proc/rel_view_set(datum/source, var_name, datum/target)
+/proc/rel_view_set(datum/source, var_name, datum/target, refusable = FALSE)
 	// Nothing changes (e.g. New() linking null into an empty view): no table needed, which also
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
@@ -183,7 +183,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return null
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
-		source.vars[var_name] = target // ALLOW(api): undeclared view, reported above
+		source.vars[var_name] = target // ALLOW(api): an undeclared view is reported by _rel_entry() above and still written, so a live round keeps the value
 		own_field_changed(source, var_name)
 		return target
 	if(entry[OWNE_LIST])
@@ -192,6 +192,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!own_type_ok(source, var_name, entry, target))
 		return null
 	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
+	if(target && rel_pair_refuses(source, entry, old, target))
+		if(!refusable)
+			OWN_REPORT("rel_set([source.type].[var_name]): refused by links(conflict = REFUSE): an end already has a partner (use rel_try_set() where a refusal is an expected answer)")
+		return null
 	// A plain replacement publishes its completed value, not a temporary empty view.
 	// Paired links and unlink callbacks keep their existing notification contract.
 	var/defer_source = entry[OWNE_ARG] == RELS_PLAIN && !entry[OWNE_ON_UNLINK]
@@ -204,7 +208,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return target
 
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
-/proc/rel_view_add(datum/source, var_name, datum/target, key = null)
+/proc/rel_view_add(datum/source, var_name, datum/target, key = null, refusable = FALSE)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
 	if(!entry)
 		return null
@@ -227,8 +231,42 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return _rel_map_put(source, var_name, target, key, entry)
 	if(REL_LISTLIKE(L) && rel_list_holds(L, source, var_name, target))
 		return target
+	if(rel_pair_refuses(source, entry, null, target))
+		if(!refusable)
+			OWN_REPORT("rel_add([source.type].[var_name]): refused by links(conflict = REFUSE): the target already has a partner (use rel_try_add() where a refusal is an expected answer)")
+		return null
 	_rel_attach(source, var_name, target, entry)
 	return target
+
+/// rel_set() for a write whose refusal by links(conflict = REFUSE) is an expected answer: null, silently. The plain rel_set() reports a refusal
+/// (a test failure), so a refusal nobody expected is never a silent null. doc/rewrite/proposals/relations.md D3.
+/proc/rel_try_set(datum/E, var_name, datum/value)
+	if(E.vars[var_name] == value)
+		return value
+	if(rel_kind(E, var_name) != OWNK_REL)
+		return rel_set(E, var_name, value)
+	. = rel_view_set(E, var_name, value, refusable = TRUE)
+	activations_relation_changed(E, var_name)
+
+/// rel_add() whose refusal by links(conflict = REFUSE) is an expected answer (see rel_try_set()).
+/proc/rel_try_add(datum/E, var_name, datum/value, key = null)
+	if(rel_kind(E, var_name) != OWNK_REL)
+		return rel_add(E, var_name, value, key)
+	return rel_view_add(E, var_name, value, key, refusable = TRUE)
+
+/// TRUE when `entry` is a links(conflict = REFUSE) end and linking source to target would replace a partner: source's own single end already
+/// names `old` (another datum), or target's single end names another holder. The write is refused (the caller returns null) and nothing changes,
+/// as a sparse REFUSE pair does (link_make(), link_state.dm). doc/rewrite/proposals/relations.md D3.
+/proc/rel_pair_refuses(datum/source, list/entry, datum/old, datum/target)
+	if(length(entry) < OWNE_CONFLICT || !entry[OWNE_CONFLICT])
+		return FALSE
+	if(old && old != target)
+		return TRUE
+	var/partner_var = entry[OWNE_PARTNER]
+	if(!isdatum(target) || !(partner_var in target.vars))
+		return FALSE
+	var/theirs = target.vars[partner_var]
+	return isdatum(theirs) && theirs != source
 
 /// Removes `target` from source.var_name (list view), or clears a single view naming it.
 /proc/rel_view_remove(datum/source, var_name, datum/target)

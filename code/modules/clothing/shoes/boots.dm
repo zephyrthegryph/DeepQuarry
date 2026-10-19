@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/knee)
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/knee)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/thigh)
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/marine)
 	icon_state = "hoofboots"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/workboots/toeless)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()

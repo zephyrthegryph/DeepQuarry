@@ -109,3 +109,6 @@
 	test_time(0.1 SECONDS)
 	TEST_ASSERT_EQUAL(software.active, FALSE, "pulse cleanup still runs after the deleted-owner request is retired")
 	TEST_ASSERT_EQUAL(implant.power_usage, 0, "the surviving actual implant has no leaked active power cost")
+
+CAPABILITIES(/obj/interim_nif_size_click)
+	ref_one(nameof(software))

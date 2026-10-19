@@ -22,6 +22,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	op("cut", tool(TOOL_WELDER), label("Cut salvage from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with)), req(PROC_REF(has_welder_salvage), because = MSG(mecha_wreckage/nothing_to_cut))), wait(0), then(PROC_REF(cut_salvage)))
 	op("snip", tool(TOOL_WIRECUTTER), label("Cut wiring from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with))), wait(0), then(PROC_REF(snip_salvage)))
 	op("pry", tool(TOOL_CROWBAR), label("Pry something out of the wreck"), needs(req(PROC_REF(has_pry_salvage), because = MSG(mecha_wreckage/nothing_to_pry))), wait(0), then(PROC_REF(pry_salvage)))
+	ref_many(nameof(crowbar_salvage))
 
 
 /// The stock a welder cuts from any wreck, plus up to two of the type's own parts (40% each).

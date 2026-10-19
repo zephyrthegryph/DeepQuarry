@@ -682,7 +682,7 @@ CAPABILITIES(/obj/machinery/power/rtg/fake_gen)
 CAPABILITIES(/obj/machinery/power/rtg/abductor)
 	owns_one(nameof(cell), /obj/item/cell/void, starts = nameof(starting_cell))
 	op("take_cell", hand(), label("Take out"), wait(0), when(req_empty_hand()), when(nameof(cell)), needs(req_operable()), then(PROC_REF(cell_taken)))
-	op("insert_cell", item(/obj/item/cell/void), label("Insert void cell"), wait(0), when(cond_not(nameof(cell))), put_in(nameof(cell)), then(PROC_REF(cell_inserted)))
+	op("insert_cell", item(/obj/item/cell/void), label("Insert void cell"), wait(0), when(not(nameof(cell))), put_in(nameof(cell)), then(PROC_REF(cell_inserted)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(void_core_hit_asplod))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(void_core_blast))))
 
@@ -808,7 +808,7 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	interact_offline = TRUE
 	density = FALSE
 
-/obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
+/obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, authority = null, silent = TRUE)
 	. = ..()
 	M.set_pixel_y(8)
 	act_message(M, src, others = span_notice("%U%, hops up onto %T% and begins running!"))

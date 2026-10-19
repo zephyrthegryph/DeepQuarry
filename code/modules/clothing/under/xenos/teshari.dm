@@ -238,4 +238,4 @@ CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/sec)
 
 
 CAPABILITIES(/obj/item/clothing/under/teshari)
-	acceptance(CONSTRAINT_FIT, fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_TESHARI)

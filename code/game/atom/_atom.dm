@@ -193,8 +193,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 		return
 	// Listeners add what they shield (adjusts_with writes the act's protection): the flags of every one combine with the atom's own.
 	var/protection = emp_protection_flags & EMP_PROTECT_ALL
-	var/datum/act/emp/pulse = ACT_TRY(src, emp, severity, protection)
-	if(!pulse)
+	var/datum/act/emp/pulse = ACT_ATTEMPT(src, emp, severity, protection)
+	if(ACT_REFUSED_BY(pulse))
 		return protection
 	protection = ACT_FINAL(pulse, protection, protection)
 	act_done(pulse)
@@ -209,8 +209,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
-	var/datum/act/shoot/round = ACT_TRY(src, shoot, P, def_zone)
-	if(!round)
+	var/datum/act/shoot/round = ACT_ATTEMPT(src, shoot, P, def_zone)
+	if(ACT_REFUSED_BY(round))
 		return
 	act_done(round)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
@@ -360,8 +360,8 @@ SETTER(/atom, density)
 SETTER(/atom, invisibility)
 
 /atom/proc/ex_act(strength = 3)
-	var/datum/act/explode/blast = ACT_TRY(src, explode, strength)
-	if(!blast)
+	var/datum/act/explode/blast = ACT_ATTEMPT(src, explode, strength)
+	if(ACT_REFUSED_BY(blast))
 		return COMPONENT_IGNORE_EXPLOSION
 	act_done(blast)
 	return NONE
@@ -598,8 +598,45 @@ SETTER(/atom, invisibility)
 // Inputs: The moving atom, target turf.
 // Outputs: Boolean if can pass.
 // Airflow and ZAS zones now uses CanZASPass() instead of this proc.
+// ---- the movement fast path: the passable() type trait (admission.md D7; doc/rewrite/proposals/base_vars.md) ----
+//
+//	CAPABILITIES(/obj/structure/barricade)
+//		passable(pass_flags = PASSTABLE)   // a mover with PASSTABLE goes through, dense or not
+//
+// A CanPass override that only tested a pass flag is this declaration instead; read with passable_of(A).pass_flags.
+
+STATIC_ENTRY(passable)
+
+/proc/passable(pass_flags = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_PASSABLE, null, list("pass_flags" = pass_flags))
+
+/datum/type_trait/passable
+	/// PASS* bits a mover needs one of to go through (barricades, tables, beds: PASSTABLE; glass: PASSGLASS). NONE: density decides.
+	var/pass_flags = NONE
+
+/datum/type_trait/passable/copy_values(datum/type_trait/passable/into)
+	into.pass_flags = pass_flags
+
+/datum/entry_engine/type_trait/passable
+	kind = ENTRY_PASSABLE
+	trait_type = /datum/type_trait/passable
+	publish_key = PASSABLE_KEY
+	base_type = /atom
+	var_names = list()
+
+/// Which movers go through `A` whatever its density (its own values once one was set at run time). Read only.
+READS_AS(/proc/passable_of, PASSABLE_KEY)
+/proc/passable_of(atom/A) as /datum/type_trait/passable
+	READS_FROM(A)
+	return type_trait_of(A, ENTRY_PASSABLE)
+
+/// A mover whose pass_flags share a bit with the atom's passable() pass flags goes through it, dense or not.
 /atom/proc/CanPass(atom/movable/mover, turf/target)
-	return !density
+	if(!density)
+		return TRUE
+	var/needs = passable_of(src)?.pass_flags
+	return needs && istype(mover) && (mover.pass_flags & needs)
 
 
 //! ## Atom Colour Priority System

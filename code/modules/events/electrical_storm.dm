@@ -73,3 +73,6 @@
 // Overmap version
 /datum/event/electrical_storm/overmap/announce()
 	return
+
+CAPABILITIES(/datum/event/electrical_storm)
+	ref_many(nameof(valid_apcs))

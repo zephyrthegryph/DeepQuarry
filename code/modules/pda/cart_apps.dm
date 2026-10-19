@@ -175,6 +175,7 @@ CAPABILITIES(/datum/data/pda/app/power)
 CAPABILITIES(/datum/data/pda/app/crew_records)
 	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
 	op("Records", ui_act("Records", arg("target", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_records)))
+	ref_one(nameof(general_records))
 
 /datum/data/pda/app/crew_records/proc/ui_act_records(datum/act/op/A, target)
 	if(isnull(target))
@@ -348,3 +349,9 @@ CAPABILITIES(/datum/data/pda/app/crew_records)
 /// The security_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
 	return security_records
+
+CAPABILITIES(/datum/data/pda/app/crew_records/medical)
+	ref_one(nameof(medical_records))
+
+CAPABILITIES(/datum/data/pda/app/crew_records/security)
+	ref_one(nameof(security_records))

@@ -245,6 +245,8 @@
 
 /// `value` as `FLAG_A|FLAG_B` from `flags` (name -> mask, composites first); bits no flag names stay a number; 0 is `0`.
 /proc/dq_pin_flag_names(value, list/flags)
+	if(flags?["DEP_ALL"])
+		value &= ~DEP_CREATED // the creation mark's bit is bookkeeping of the default-look stamp, not an output
 	if(!value)
 		return "0"
 	var/list/out = list()

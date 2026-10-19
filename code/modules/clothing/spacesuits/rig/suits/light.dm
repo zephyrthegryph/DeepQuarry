@@ -18,7 +18,7 @@
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 CAPABILITIES(/obj/item/rig/light)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE))
 
 	configure(item_worn(flags = THICKMATERIAL))
 
@@ -146,4 +146,4 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
 		)
 
 CAPABILITIES(/obj/item/rig/light/ninja)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))

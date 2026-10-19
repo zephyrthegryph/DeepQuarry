@@ -261,7 +261,7 @@ mod tests {
         assert!(report.owners.iter().any(|owner| owner
             .unknown
             .iter()
-            .any(|reason| reason.contains("PreparedLine"))));
+            .any(|reason| reason.contains("line and directive array"))));
         drop(first_capture);
         let second_capture =
             RecordingInputs::new(&files, 20_000_000_000).with_prepared_sources(Some(owner.clone()));

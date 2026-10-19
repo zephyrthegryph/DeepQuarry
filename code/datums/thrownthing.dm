@@ -64,6 +64,8 @@ CAPABILITIES(/datum/thrownthing)
 	ref_one(nameof(thrower))
 	ref_one(nameof(subject), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
 	ref_one(nameof(then_owner))
+	ref_one(nameof(starting_turf))
+	ref_one(nameof(target_turf))
 
 /// The movable this throw carries, or null.
 /datum/thrownthing/proc/throw_subject() as /atom/movable

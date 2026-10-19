@@ -20,4 +20,10 @@
 		TEST_ASSERT(isnull(GLOB.staleness_good[ref]), "a destroyed entity left its clean-check snapshots in GLOB.staleness_good")
 		TEST_ASSERT(isnull(GLOB.staleness_served[ref]), "a destroyed entity left GLOB.staleness_served rows")
 		TEST_ASSERT(isnull(GLOB.derived_ignored[ref]), "a destroyed entity left GLOB.derived_ignored names")
-	TEST_ASSERT_EQUAL(length(GLOB.staleness_good), before, "GLOB.staleness_good grew over create/delete cycles")
+	// Live entities elsewhere in the world (mapped machines the strict checker checked meanwhile) keep their rows; none may name a deleted one.
+	var/list/dead = list()
+	for(var/ref in GLOB.staleness_good)
+		var/datum/D = locate(ref)
+		if(!D || QDELETED(D) || REF(D) != ref)
+			dead += ref
+	TEST_ASSERT(!length(dead), "GLOB.staleness_good kept [length(dead)] row(s) of deleted entities over create/delete cycles (had [before], now [length(GLOB.staleness_good)])")

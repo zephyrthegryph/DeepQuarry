@@ -74,7 +74,7 @@
 	refresh_flush()
 	TEST_ASSERT_EQUAL(mech.icon_state, base, "a piloted mech is closed, with no update_icon() call")
 	var/obj/item/mecha_parts/mecha_equipment/repair_droid/droid = allocate(/obj/item/mecha_parts/mecha_equipment/repair_droid, T)
-	TEST_ASSERT(droid.can_attach(mech), "a repair droid fits")
+	TEST_ASSERT(isnull(droid.attach_refusal(mech)), "a repair droid fits")
 	droid.attach(mech)
 	refresh_flush()
 	TEST_ASSERT(("repair_droid" in dq_overlay_states(mech)), "the droid is drawn on the hull: [json_encode(dq_overlay_states(mech))]")

@@ -146,8 +146,8 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 		break
 	TEST_ASSERT_NOTNULL(S, "no space turf")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, S)
-	H.equip_to_slot_if_possible(new /obj/item/clothing/suit/space(H), SLOT_ID_SUIT, disable_warning = TRUE)
-	H.equip_to_slot_if_possible(new /obj/item/clothing/head/helmet/space(H), SLOT_ID_HEAD, disable_warning = TRUE)
+	H.equip_to_slot_if_possible(new /obj/item/clothing/suit/space(H), SLOT_ID_SUIT, quiet = TRUE)
+	H.equip_to_slot_if_possible(new /obj/item/clothing/head/helmet/space(H), SLOT_ID_HEAD, quiet = TRUE)
 	var/injury0 = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/list/temps = body_heat_frames(list(H), 100)
 	var/injury = H.injury_load(INJURY_CATEGORY_THERMAL) - injury0

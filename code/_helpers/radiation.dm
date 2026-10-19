@@ -121,3 +121,6 @@ SETTER(/atom, rad_insulation)
 
 #undef MEDIUM_RADIATION_THRESHOLD_RANGE
 #undef EXTREME_RADIATION_CHANCE
+
+CAPABILITIES(/datum/radiation_pulse_information)
+	ref_one(nameof(source_ref))

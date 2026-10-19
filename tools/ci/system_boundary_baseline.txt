@@ -92,7 +92,7 @@ B1:code/modules/lighting/lighting_source.dm:SSlighting 2
 B1:code/modules/lighting/lighting_turf.dm:SSlighting 1
 B1:code/modules/lighting/lighting_turf.dm:SSplanets 3
 B1:code/modules/lighting/planet_sunlight.dm:SSlighting 1
-B1:code/modules/lighting/sunlight_handler.dm:SSlighting 5
+B1:code/modules/lighting/sunlight_handler.dm:SSlighting 1
 B1:code/modules/lighting/sunlight_handler.dm:SSplanets 5
 B1:code/modules/logging/time_track_service.dm:SSair 16
 B1:code/modules/logging/time_track_service.dm:SSbehaviours 3

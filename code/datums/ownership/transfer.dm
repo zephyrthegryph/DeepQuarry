@@ -8,7 +8,7 @@
 		if(id)
 			if(has_trait(I, TRAIT_NODROP))
 				return user == src || !user ? "\the [I] is stuck to you" : "\the [I] is stuck to [src]"
-			if(!I.mob_can_unequip(src, id, TRUE))
+			if(!I.mob_can_unequip(src, id))
 				return user == src || !user ? "you can't take off \the [I]" : "you can't take \the [I] from [src]"
 	return ..()
 

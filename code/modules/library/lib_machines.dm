@@ -189,6 +189,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("librarycomp_ghost_admin_view", observer(), label("Admin view"), then(PROC_REF(librarycomp_ghost_admin_view)))
 	op("librarycomp_link_scanner", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 1), label("Link scanner"), then(PROC_REF(interaction_link_scanner)))
 	op("librarycomp_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	ref_many(nameof(inventory))
 
 /// The genre books every custom library book descends from: they are not archived themselves.
 TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(

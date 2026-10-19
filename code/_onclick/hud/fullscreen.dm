@@ -19,7 +19,7 @@
 	screen.severity = severity
 	if (client && screen.should_show_to(src))
 		screen.update_for_view(client.view)
-		client.screen += screen
+		client_screen_add(client, screen)
 
 	return screen
 
@@ -35,7 +35,7 @@
 		after(src, animated, PROC_REF(remove_faded_fullscreen), with = list(screen))
 	else
 		if(client)
-			client.screen -= screen
+			client_screen_remove(client, screen)
 		spent(screen)
 
 /mob/proc/clear_fullscreens()
@@ -45,7 +45,7 @@
 /mob/proc/hide_fullscreens()
 	if(client)
 		for(var/category in screens)
-			client.screen -= screens[category]
+			client_screen_remove(client, screens[category])
 
 /mob/proc/reload_fullscreen()
 	if(client && stat != DEAD) //dead mob do not see any of the fullscreen overlays that he has.
@@ -165,5 +165,5 @@
 /// A cleared fullscreen overlay leaves the screen once it has faded out.
 /mob/proc/remove_faded_fullscreen(atom/movable/screen/fullscreen/screen)
 	if(client)
-		client.screen -= screen
+		client_screen_remove(client, screen)
 	lapsed(screen)

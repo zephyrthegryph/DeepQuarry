@@ -194,7 +194,12 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
             .filter(|instruction| instruction.name == "SetVar")
             .collect::<Vec<_>>();
         lengths.push(setters.len());
-        for setter in setters {
+        for (position, setter) in setters.iter().enumerate() {
+            // The first write names src explicitly; the encoder's src cache (32cdc3994d) lets the following
+            // straight-line writes reuse that receiver as a bare field word, as DreamMaker does.
+            if position > 0 && setter.operands.len() == 1 {
+                continue;
+            }
             assert_eq!(
                 &setter.operands[..2],
                 &[65500, 65486],

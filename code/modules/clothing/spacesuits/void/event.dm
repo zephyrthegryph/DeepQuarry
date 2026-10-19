@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
 	breach_threshold = 14 //These are kinda thicc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_MINING, POCKET_HEAVYTOOLS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_MINING, POCKET_HEAVYTOOLS))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 //Medical Crewsuit (GREEN, CROSS)
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/marine)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.8))
 
 //Officer Crewsuit (GOLD, X)
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
 	resilience = 0.1 //Heavily Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/officer)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.7))
 
 //Pilot Crewsuit (ROYAL BLUE, I)
@@ -157,7 +157,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING))
 	configure(item_protection(siemens = 0.9))
 
 //Scientist Crewsuit (PURPLE, O)
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/research)
 	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, /obj/item/storage/firstaid), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, /obj/item/storage/firstaid))
 	configure(item_protection(siemens = 0.8))
 
 //Miner's Crewsuit (BROWN)
@@ -234,7 +234,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.6))
 
 
@@ -429,7 +429,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	slowdown = 2.5
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_ALTEVIAN)
 
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_altevian.dmi'))
 
@@ -446,7 +446,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
 	no_cycle = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_ALTEVIAN)
 
 	configure(item_worn(worn_icon = 'icons/inventory/head/mob_altevian.dmi'))
 
@@ -471,13 +471,13 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/medical)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mining)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING))

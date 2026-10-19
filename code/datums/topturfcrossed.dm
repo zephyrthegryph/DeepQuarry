@@ -8,6 +8,7 @@
 
 CAPABILITIES(/datum/topturfcrossed)
 	ref_one(nameof(owner))
+	ref_one(nameof(our_old_turf))
 
 /datum/topturfcrossed/New(atom/movable/new_owner)
 	..()

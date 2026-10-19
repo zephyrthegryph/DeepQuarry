@@ -643,7 +643,7 @@ CAPABILITIES(/datum/system/air)
 	var/mob/user = A.actor
 	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 	if(user.hud_used.atmos_debug_overlays)
-		user.client.images += GLOB.colored_images
+		client_images_add(user.client, GLOB.colored_images)
 	else
-		user.client.images -= GLOB.colored_images
+		client_images_remove(user.client, GLOB.colored_images)
 	return OP_OK

@@ -20,6 +20,7 @@
 
 CAPABILITIES(/obj/item/vehicle_assembly)
 	after_init(0, then(PROC_REF(frame_picture)))
+	ref_one(nameof(cell))
 
 /// Every assembly starts as its bare frame (stage 0 of its pictures).
 /obj/item/vehicle_assembly/proc/frame_picture(datum/act/timer/A)

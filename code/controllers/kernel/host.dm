@@ -287,6 +287,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// Every system's members that joined during init get their first evaluation now, in one pass each
 	// (kernel/system.dm on_members_ready(); the machine service arms first wakes here).
 	kernel_members_ready()
+	// The map load queued every fresh atom's first refresh before any type's verdict was in: sample each type once, drop the fresh
+	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
+	refresh_settle_created()
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time

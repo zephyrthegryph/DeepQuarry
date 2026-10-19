@@ -478,8 +478,9 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 /obj/item/proc/equipped_robot(mob/user)
 	return
 
-/obj/item/proc/mob_can_unequip(mob/M, slot, disable_warning = 0)
-	return M ? M.can_unequip_item(src, slot, disable_warning) : 0
+/// Can M take this item off `slot`? A pure check: it tells nobody and changes nothing (admission.md wave 4).
+/obj/item/proc/mob_can_unequip(mob/M, slot)
+	return M ? M.can_unequip_item(src, slot) : 0
 
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
@@ -1028,9 +1029,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
-	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
+	bind_player(new_voice, candidate.ckey, as_ckey = TRUE)					//Finally, bring the client over.
 	rel_clear(candidate, nameof(/mob::mind)) // Remove the mind from the mob to avoid issues with multi TF interactions
-	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
+	rel_set(new_voice, nameof(new_voice.tf_mob_holder), candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
 	else

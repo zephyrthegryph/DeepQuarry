@@ -133,10 +133,8 @@ fn classify_pending<'a>(
                     pending.write.write = original.clone();
                     pending.write.source_ordinal = ordinal;
                     pending.write.phase = Some(Phase::LiteralAllocation);
-                    pending.write.runtime_value = Some(RuntimeValue::SizedArrayExplicit {
-                        dimensions: dimensions.into(),
-                        expression,
-                    });
+                    pending.write.runtime_value =
+                        Some(RuntimeValue::sized_array_explicit(dimensions.into(), expression));
                     classified.push(pending);
                     continue;
                 }

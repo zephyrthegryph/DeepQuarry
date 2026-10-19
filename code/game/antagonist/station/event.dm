@@ -1,4 +1,3 @@
-GLOBAL_DATUM(event, /datum/antagonist/event)
 
 // Inherits most of its vars from the base datum.
 /datum/antagonist/event
@@ -16,4 +15,7 @@ GLOBAL_DATUM(event, /datum/antagonist/event)
 
 /datum/antagonist/event/New()
 	..()
-	GLOB.event = src
+
+/// The /datum/antagonist/event template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_event() as /datum/antagonist/event
+	return SSantag?.all_antag_types[MODE_EVENT]

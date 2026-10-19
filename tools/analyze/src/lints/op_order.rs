@@ -11,7 +11,7 @@
 //!
 //!   What it models as the resolver does (code/engine/parts/resolve.dm): the intents each binding answers (answers(), hostile(), a pinned
 //!   gesture(): a drag answers INTENT_DROP_ONTO, never a click), the tier by value (hostile() yields ATTACK; OP_PRIORITY_PART - 1 is its own
-//!   tier), disjoint stance() sets, when() conjuncts that negate (c / cond_not(c), req_is(K) / req_is(K, FALSE), req_bool(X) is X, graph stages
+//!   tier), disjoint stance() sets, when() conjuncts that negate (c / not(c), req_is(K) / req_is(K, FALSE), req_bool(X) is X, graph stages
 //!   that do not meet), and a constructor's entries its params switch off (`lid ? op(...) : null`, `if(by_hand)`), and binding specificity
 //!   (op_binding_specificity): of two held-item bindings, an item type narrower than /obj/item answers before a tool quality, which answers
 //!   before a broad item (item(/obj/item), whatever acceptance proc gates it), and a deeper item type before a shallower one, so only two
@@ -675,7 +675,7 @@ fn stance_set(inner: &str) -> Option<BTreeSet<String>> {
 
 /// Adds one when() condition: a conjunction is split into its conjuncts, a stance condition narrows the op's stances.
 fn add_cond(op: &mut Op, c: &str) {
-    if let Some(inner) = whole_call(c, "cond_all") {
+    if let Some(inner) = whole_call(c, "all_of") {
         for part in split_args(inner) {
             add_cond(op, &compact(&part));
         }
@@ -692,21 +692,21 @@ fn add_cond(op: &mut Op, c: &str) {
 }
 
 /// One condition in a canonical spelling, so two spellings of one test compare equal: req_bool(X) is X, req_is(K) is K, req_is(K, FALSE) is
-/// cond_not(K), and a double negation cancels.
+/// not(K), and a double negation cancels.
 fn norm_cond(c: &str) -> String {
     let c = c.trim();
-    if let Some(inner) = whole_call(c, "cond_not") {
+    if let Some(inner) = whole_call(c, "not") {
         let n = norm_cond(inner);
-        return match whole_call(&n, "cond_not") {
+        return match whole_call(&n, "not") {
             Some(back) => back.to_string(),
-            None => format!("cond_not({})", n),
+            None => format!("not({})", n),
         };
     }
     if let Some(inner) = whole_call(c, "req_is") {
         let args: Vec<String> = split_args(inner).into_iter().filter(|a| !a.contains('=') || a.contains("==")).collect();
         if let Some(key) = args.first() {
             match args.get(1).map(|v| v.as_str()) {
-                Some("FALSE") | Some("0") => return format!("cond_not({})", norm_cond(key)),
+                Some("FALSE") | Some("0") => return format!("not({})", norm_cond(key)),
                 None | Some("TRUE") | Some("1") => return norm_cond(key),
                 _ => {}
             }
@@ -736,7 +736,7 @@ fn norm_cond(c: &str) -> String {
         }
         if let Some(t) = types {
             let base = format!("actor_kind({})", t);
-            return if negated { format!("cond_not({})", base) } else { base };
+            return if negated { format!("not({})", base) } else { base };
         }
     }
     if let Some(inner) = whole_call(c, "req_bool") {
@@ -1188,9 +1188,9 @@ fn overlap(a: &Bind, b: &Bind) -> Option<String> {
     }
 }
 
-/// Two normalized conditions (`norm_cond`) that cannot both hold: c against cond_not(c), and graph stages that do not meet.
+/// Two normalized conditions (`norm_cond`) that cannot both hold: c against not(c), and graph stages that do not meet.
 fn cond_negates(a: &str, b: &str) -> bool {
-    if b == format!("cond_not({})", a) || a == format!("cond_not({})", b) {
+    if b == format!("not({})", a) || a == format!("not({})", b) {
         return true;
     }
     // req_stage(K, a) against req_stage(K, b), a != b
@@ -1343,11 +1343,11 @@ mod tests {
 
     #[test]
     fn negation() {
-        assert!(cond_negates("PANEL_OPEN", "cond_not(PANEL_OPEN)"));
+        assert!(cond_negates("PANEL_OPEN", "not(PANEL_OPEN)"));
         assert!(cond_negates(&norm_cond("req_is(K)"), &norm_cond("req_is(K,FALSE)")));
-        assert!(cond_negates(&norm_cond("req_bool(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")));
-        assert!(!cond_negates(&norm_cond("req(PROC_REF(x))"), &norm_cond("cond_not(PROC_REF(x))")), "a null-or-reason requirement is not its callback's boolean truth");
-        assert!(cond_negates(&norm_cond("cond_not(cond_not(A))"), &norm_cond("cond_not(A)")));
+        assert!(cond_negates(&norm_cond("req_bool(PROC_REF(x))"), &norm_cond("not(PROC_REF(x))")));
+        assert!(!cond_negates(&norm_cond("req(PROC_REF(x))"), &norm_cond("not(PROC_REF(x))")), "a null-or-reason requirement is not its callback's boolean truth");
+        assert!(cond_negates(&norm_cond("not(not(A))"), &norm_cond("not(A)")));
         assert!(cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S3))"));
         assert!(!cond_negates("req_graph_at(list(S1,S2))", "req_graph_at(list(S2))"));
         assert!(!cond_negates("A", "B"));
@@ -1356,7 +1356,7 @@ mod tests {
     #[test]
     fn conjunctions_and_stances() {
         let mut op = Op::default();
-        add_cond(&mut op, "cond_all(nameof(x),req_stance(list(I_HELP,I_GRAB)))");
+        add_cond(&mut op, "all_of(nameof(x),req_stance(list(I_HELP,I_GRAB)))");
         assert_eq!(op.conds, vec!["nameof(x)".to_string()]);
         assert_eq!(op.stances.unwrap().into_iter().collect::<Vec<_>>(), vec!["I_GRAB".to_string(), "I_HELP".to_string()]);
         assert!(stance_set("I_HURT, CAP_PROC(x)").is_none());

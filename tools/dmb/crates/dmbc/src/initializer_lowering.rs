@@ -95,13 +95,10 @@ fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Exp
     use dm_syntax::{Expr, ExprKind, Span};
     match value {
         RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value.as_ref()),
-        RuntimeValue::SizedArrayExplicit {
-            expression: Some(expression),
-            ..
-        } => std::borrow::Cow::Borrowed(expression),
-        RuntimeValue::SizedArrayExplicit {
-            expression: None, ..
-        } => std::borrow::Cow::Owned(Expr {
+        RuntimeValue::SizedArrayExplicit(explicit) if explicit.expression.is_some() => {
+            std::borrow::Cow::Borrowed(explicit.expression.as_deref().unwrap())
+        }
+        RuntimeValue::SizedArrayExplicit(_) => std::borrow::Cow::Owned(Expr {
             span: Span::new(0, 0),
             kind: ExprKind::Literal("null".into()),
         }),
@@ -912,13 +909,10 @@ fn value_continuation(
     global: bool,
 ) -> Option<dm_codegen_byond::initializer::ValueContinuation<'_>> {
     match write.runtime_value.as_ref() {
-        Some(RuntimeValue::SizedArrayExplicit {
-            dimensions,
-            expression,
-        }) => Some(dm_codegen_byond::initializer::ValueContinuation {
-            dimensions,
+        Some(RuntimeValue::SizedArrayExplicit(explicit)) => Some(dm_codegen_byond::initializer::ValueContinuation {
+            dimensions: &explicit.dimensions,
             before_assignment: global,
-            emit_assignment: expression.is_some(),
+            emit_assignment: explicit.expression.is_some(),
             assignment_is_allocation: false,
         }),
         Some(RuntimeValue::SizedArray(dimensions)) => {

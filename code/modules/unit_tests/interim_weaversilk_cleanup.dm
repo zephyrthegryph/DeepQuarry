@@ -36,7 +36,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/bed/double/weaversilk_nest/nest = allocate(/obj/structure/bed/double/weaversilk_nest, T)
-	TEST_ASSERT(nest.buckle_mob(user, forced = TRUE), "actual silk nest restrains its occupant")
+	TEST_ASSERT(nest.buckle_mob(user, authority = GLOB.authority_forced), "actual silk nest restrains its occupant")
 	TEST_ASSERT_EQUAL(test_op_handler(nest, "interaction_tear_down", user, null), OP_DECLINE, "actual occupied silk nest refuses teardown")
 	TEST_ASSERT(!QDELETED(nest), "actual occupied teardown refusal preserves the original nest")
 	TEST_ASSERT_EQUAL(user.buckled_to(), nest, "occupied refusal preserves the actual restraint")

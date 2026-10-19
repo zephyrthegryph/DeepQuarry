@@ -3,3 +3,4 @@
 
 CAPABILITIES(/datum/balance_scenario)
 	owns_many(nameof(spawned))
+	ref_one(nameof(site))

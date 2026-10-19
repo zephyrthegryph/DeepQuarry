@@ -24,6 +24,7 @@ D [1]/  ||
 
 CAPABILITIES(/datum/integrated_io)
 	ref_one(nameof(holder), /obj/item/integrated_circuit)
+	ref_many(nameof(linked))
 
 /datum/integrated_io/New(newloc, name, new_data)
 	..()

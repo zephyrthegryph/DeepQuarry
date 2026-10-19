@@ -16,6 +16,7 @@
 
 CAPABILITIES(/datum/technomancer_marker)
 	ref_one(nameof(caster))
+	ref_one(nameof(T))
 
 /datum/technomancer_marker/New(mob/user)
 	rel_set(src, nameof(caster), user)
@@ -29,7 +30,7 @@ CAPABILITIES(/datum/technomancer_marker)
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()
 	..()
-	caster?.client?.images -= I
+	client_images_remove(caster.client, I)
 	image_anchor(I, null)
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.

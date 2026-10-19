@@ -29,6 +29,8 @@
 //	destroy:  on_ending() runs, the "ended" notice goes out with its cause, then registries, radio and adjacency are left
 
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 /// The forms one type declares, resolved from its compiled table once and shared by every instance of the type. Read-only after build.
 /datum/lifeform_plan
 	var/owner_type
@@ -50,6 +52,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	var/list/inputs
 	var/list/keeps_if
 	var/list/setups
+	/// Immutable plan fact: this type opts into the before-parameter-drop completion phase.
+	var/setup_with_params = FALSE
 	var/datum/centry/tooltip
 	/// var name -> list of /datum/centry of the forms that follow that var (registry keys, radio frequencies, derives inputs, lives_while).
 	var/list/watch
@@ -123,6 +127,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 /proc/lifeform_plan_finish(datum/lifeform_plan/P, datum/D)
 	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from || P.variants)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
+	for(var/datum/centry/C as anything in P.setups)
+		var/datum/entry/E = C.item
+		if(E.args["with_params"])
+			P.setup_with_params = TRUE
+			break
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
 		if(!datum_has_var(D, E.args["var"]))
@@ -202,7 +211,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	if(P.keeps_if)
 		keeps_if_init(holder, P)
 	if(P.setups && isatom(holder))
-		setup_note(holder)
+		setup_note(holder, P)
 	if(P.contains)
 		roll_creator_push(holder) // what it creates rolls from its stream
 		contains_init(holder, P)
@@ -236,8 +245,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 		return
 	if(P.lives_while)
 		lives_while_teardown(holder)
-	if(P.registries)
-		registry_teardown(holder, P)
 	if(P.radios)
 		radio_listen_teardown(holder, P)
 	if(P.adjacencies)

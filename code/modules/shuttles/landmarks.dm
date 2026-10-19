@@ -50,6 +50,7 @@
 
 CAPABILITIES(/obj/effect/shuttle_landmark)
 	after_init(0, then(PROC_REF(find_docking_controller)))
+	ref_one(nameof(docking_controller))
 
 /// Finds the docking controller its tag names, once the map has made it.
 /obj/effect/shuttle_landmark/proc/find_docking_controller(datum/act/timer/A)

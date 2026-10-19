@@ -21,7 +21,7 @@
 	if(remove_images)
 		var/client/client = ghost.client
 		if(client)
-			client.images -= obscured
+			client_images_remove(client, obscured)
 	rel_remove(ghost, nameof(ghost.visibleChunks), src)
 	rel_remove(src, nameof(seenby), ghost)
 	if(visible > 0)
@@ -91,7 +91,7 @@
 					continue
 				var/client/client = m.client
 				if(client)
-					client.images -= t.obfuscations[obfuscation.type]
+					client_images_remove(client, t.obfuscations[obfuscation.type])
 
 	for(var/turf/t as anything in visRemoved)
 		if(obscuredTurfs[t])
@@ -110,4 +110,4 @@
 					continue
 				var/client/client = m.client
 				if(client)
-					client.images += t.obfuscations[obfuscation.type]
+					client_images_add(client, t.obfuscations[obfuscation.type])

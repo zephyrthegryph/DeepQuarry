@@ -12,6 +12,7 @@ CAPABILITIES(/datum/generated_station_defender_agent)
 	ref_one(nameof(defender), /mob/living/simple_mob)
 	ref_one(nameof(runtime), /datum/generated_station_defense_runtime)
 	ref_one(nameof(last_contact), /atom)
+	ref_one(nameof(home))
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()

@@ -110,6 +110,10 @@
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
+		// A type that declares nothing still has generated plans: a var neither its draw nor its verb outputs read redraws nothing (plan.dm).
+		if(mask == DEP_ALL && plan_spares_draw(E, var_name))
+			mask &= ~DEP_DRAW
+			GLOB.plan_spared_writes++
 	// The staleness checker: the graph says no draw reads this var, so the applied look is served as it is (checked at the next presentation drain).
 	if(var_name && GLOB.staleness_on && !(mask & DEP_DRAW))
 		staleness_note_served(E, var_name)
@@ -163,13 +167,15 @@
 /// Queues E for the outputs in `mask`, and its owner up the chain for its look when one of the owner's
 /// capabilities draws E. `channel` reaches on_state_changed() (refresh_bits) with a plain mark.
 /proc/refresh_mark(datum/E, mask, channel = 0)
+	if(GLOB.refresh_mark_probe_type && istype(E, GLOB.refresh_mark_probe_type))
+		refresh_mark_probe_note()
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		if(mask & DEP_LEGACY)
 			D.refresh_bits |= channel
 		if(!D.refresh_queued)
 			GLOB.refresh_queue += D
-		D.refresh_queued |= mask
+		D.refresh_queued = (D.refresh_queued & ~DEP_CREATED) | mask // a real mark: no longer the type's default state
 		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
 			break
@@ -183,6 +189,18 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// A type whose marks are counted by where they came from (the draw-queue test's re-queue census, or an admin's question); null: off.
+GLOBAL_VAR_INIT(refresh_mark_probe_type, null)
+/// "caller <- caller's caller" -> marks.
+GLOBAL_LIST_EMPTY(refresh_mark_probe_sources)
+
+/proc/refresh_mark_probe_note()
+	var/chain = ""
+	var/n = 0
+	for(var/callee/frame = caller?.caller; frame && n < 4; frame = frame.caller)
+		chain += "[n ? " <- " : ""][frame.proc]"
+		n++
+	GLOB.refresh_mark_probe_sources[chain] += 1
 /// Refreshes run so far (the dx_refresh benchmark reads it).
 GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
@@ -329,6 +347,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			continue
 		if(!pending)
 			continue // a stale duplicate: an earlier entry already ran its outputs
+		var/fresh = pending & DEP_CREATED
+		pending &= ~DEP_CREATED
+		if(fresh && type_look_stamped(D))
+			// Queued at creation before its type's verdict was in, and the type's default look is empty: nothing to draw (look_stamp.dm).
+			D.refresh_bits = 0
+			GLOB.type_look_stamp_skipped++
+			continue
 		if(!refresh_wanted_queued(D))
 			// Every atom's first refresh is queued at init (caps_init()) before its type's verdict is in: the first
 			// instance probes the type, and the rest, queued behind it, skip here once it is known to derive nothing.
@@ -341,6 +366,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		GLOB.refresh_bench_drained++
 		try
 			refresh_one(D, bits, pending)
+			if(fresh)
+				type_look_stamp_record(D)
 		catch(var/exception/e)
 			if(sched)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")

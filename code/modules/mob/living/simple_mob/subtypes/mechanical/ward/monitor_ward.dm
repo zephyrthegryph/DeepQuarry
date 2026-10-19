@@ -132,3 +132,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
 
 // Can't attack but calls for help. Used by the monitor and spotter wards.
 // Special attacks are not blocked since they might be used for things besides attacking, and can be conditional.
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor)
+	ref_many(nameof(seen_mobs))

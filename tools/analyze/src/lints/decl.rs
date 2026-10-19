@@ -240,6 +240,19 @@ fn proc_kind(name: &str) -> &'static str {
     }
 }
 
+/// Initialize is an atom lifecycle only. Plain datum callbacks with that name are
+/// called by their owners (including repeated business initialization), not InitAtom.
+/// Preserve all definitions so the text fallback cannot reintroduce an excluded body.
+fn typed_lifecycle_defs(sem: &crate::sem::Sem) -> Vec<(String, u32, String, bool)> {
+    crate::sem::procs::proc_defs(sem, &["Initialize", "on_materialize", "on_destroy"])
+        .into_iter()
+        .map(|d| {
+            let lifecycle = d.name != "Initialize" || sem.is_subtype(&d.owner, "/atom");
+            (d.rel, d.header, d.name, lifecycle)
+        })
+        .collect()
+}
+
 impl Lint for Decl {
     fn meta(&self) -> &Meta {
         &META
@@ -253,15 +266,20 @@ impl Lint for Decl {
         // The bodies come from the typed tree (`sem::procs::proc_defs`: every definition, whatever its syntax), bounded by
         // indentation; the text rule's headers when the model is unavailable.
         let tree_key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
-        let typed: Option<Vec<(String, u32, String)>> = incr::cached("decl-typed-defs", tree_key, || {
+        let typed: Option<Vec<(String, u32, String, bool)>> = incr::cached("decl-typed-defs-lifecycle-v2", tree_key, || {
             cx.sem().map(|sem| {
-                crate::sem::procs::proc_defs(&sem, &["Initialize", "on_materialize", "on_destroy"]).into_iter().map(|d| (d.rel, d.header, d.name)).collect()
+                typed_lifecycle_defs(&sem)
             })
         });
         let mut by_rel: std::collections::HashMap<&str, Vec<(u32, &'static str)>> = std::collections::HashMap::new();
+        let mut manual_initialize: std::collections::HashMap<&str, BTreeSet<usize>> = std::collections::HashMap::new();
         if let Some(defs) = &typed {
-            for (rel, header, name) in defs {
-                by_rel.entry(rel.as_str()).or_default().push((*header, proc_kind(name)));
+            for (rel, header, name, lifecycle) in defs {
+                if *lifecycle {
+                    by_rel.entry(rel.as_str()).or_default().push((*header, proc_kind(name)));
+                } else {
+                    manual_initialize.entry(rel.as_str()).or_default().insert(*header as usize + 1);
+                }
             }
         }
         // A typed body depends on the model (macros from other files), so any change re-judges every file (cheap: lines only).
@@ -277,7 +295,9 @@ impl Lint for Decl {
                 let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n)).collect();
                 // The model's bodies, and the text rule's too: a file the model does not compile still counts as it did.
                 let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = defs.iter().map(|(h, p)| (*p, crate::sem::procs::body_lines(&lines, *h))).collect();
-                spans.extend(text_spans(f));
+                spans.extend(text_spans(f).into_iter().filter(|(proc, range)| {
+                    *proc != "Initialize" || !manual_initialize.get(f.rel.as_str()).is_some_and(|headers| headers.contains(&range.start))
+                }));
                 self.judge_spans(f, &refs, &spans)
             })
         });
@@ -300,4 +320,28 @@ impl Lint for Decl {
 
 pub fn register(reg: &mut Registry) {
     reg.add(Decl::new());
+}
+
+#[cfg(test)]
+mod lifecycle_classification_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+
+    #[test]
+    fn manual_datum_initialize_is_not_atom_lifecycle_including_explicit_parent_types() {
+        let source = "/datum/transport/proc/Initialize(list/assets)\n\tafter(src, 10, null)\n/obj/device/Initialize(mapload)\n\tafter(src, 10, null)\n/datum/atom_alias\n\tparent_type = /obj\n/datum/atom_alias/Initialize(mapload)\n\tafter(src, 10, null)\n";
+        let root = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(root.path().join("code")).unwrap();
+        std::fs::write(root.path().join("code/probe.dm"), source).unwrap();
+        let file = SourceFile::from_text("code/probe.dm", source);
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", source)]);
+        let sem = crate::sem::Sem::build(root.path(), &tree).unwrap();
+        let defs = typed_lifecycle_defs(&sem);
+        let excluded: BTreeSet<usize> = defs.iter().filter(|d| !d.3).map(|d| d.1 as usize + 1).collect();
+        let spans: Vec<_> = text_spans(&file).into_iter().filter(|(name, span)| *name != "Initialize" || !excluded.contains(&span.start)).collect();
+        let findings = Decl::new().judge_spans(&file, &BTreeSet::new(), &spans);
+        assert_eq!(findings.iter().map(|site| site.1).collect::<Vec<_>>(), vec![4, 8]);
+        assert!(defs.iter().any(|d| d.1 == 1 && !d.3), "the actual manual callback is classified");
+        assert!(defs.iter().any(|d| d.1 == 7 && d.3), "semantic atom ancestry wins over the textual datum prefix");
+    }
 }

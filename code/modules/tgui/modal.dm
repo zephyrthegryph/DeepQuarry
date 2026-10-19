@@ -344,3 +344,6 @@
 /// The owning_source this refers to (a relation view: null once that is deleted).
 /datum/tgui_modal/proc/owning_source() as /datum
 	return owning_source
+
+CAPABILITIES(/datum/tgui_modal)
+	ref_one(nameof(owning_source))

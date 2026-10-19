@@ -27,12 +27,12 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 	lock(starts_locked = nameof(locked))
 	extend(CAP_LOCK, needs(req_is(nameof(opened), FALSE, because = MSG(secure_closet/close_first)), req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), plays(SFX_MACHINES_CLICK))
 	extend("lock.toggle_worn", binds(menu()), label("Toggle Lock"))
-	extend("door", when(cond_not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
+	extend("door", when(not(LOCK_LOCKED)), priority(above("lock.toggle_worn")))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	extend("emag.use", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
 	extend("emag.subvert", needs(req_is(nameof(broken), FALSE, because = MSG(emag/already))))
-	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(blade_sliced)))
-	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(cond_not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
+	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(blade_sliced)))
+	op("lock_with_item", item(/obj/item), label("Toggle Lock"), when(not(nameof(opened))), when(req_credential_worn(null)), priority(OP_PRIORITY_DEFAULT + 1),
 		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(actor_outside), because = MSG(secure_closet/inside))), toggles(LOCK_LOCKED), says(PROC_REF(lock_toggled_message)), plays(SFX_MACHINES_CLICK))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_closet_emp)))
 
@@ -129,6 +129,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	extend("lock_with_item", needs(req(PROC_REF(owner_present))))
 	param(nameof(owner), pos = 1)
 	param(nameof(self_del), pos = 2)
+	ref_one(nameof(owner))
 
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
 	return (allowed(A.actor)) ? null : MSG(lock/denied)

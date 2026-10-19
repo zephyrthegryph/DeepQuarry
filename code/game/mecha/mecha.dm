@@ -300,6 +300,9 @@ CAPABILITIES(/obj/mecha)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(mecha_blast))))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast_afflictions)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
+	ref_many(nameof(afflictions))
+	ref_many(nameof(micro_utility_equipment))
+	ref_many(nameof(micro_weapon_equipment))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
@@ -1393,7 +1396,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 	if(istype(W, /obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/E = W
-		if(E.can_attach(src))
+		if(isnull(E.attach_refusal(src)))
 			user.drop_item()
 			E.attach(src)
 			act_message(user, src, MSG_SELF("You attach [W] to %T%"), MSG_OTHERS("%U% attaches [W] to %T%"))
@@ -1848,7 +1851,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		set_dir(dir_in)
 		play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR, 0.5)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
-			occupant.client.images += dq_get_cloaked_selfimage(src)
+			client_images_add(occupant.client, dq_get_cloaked_selfimage(src))
 		play_entered_noise(occupant)
 		return 1
 	else
@@ -1920,7 +1923,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)
 		if(occupant.client && dq_get_cloaked_selfimage(src))
-			occupant.client.images -= dq_get_cloaked_selfimage(src)
+			client_images_remove(occupant.client, dq_get_cloaked_selfimage(src))
 		if(istype(mob_container, /obj/item/mmi))
 			var/obj/item/mmi/mmi = mob_container
 			mmi.forceMove(src.loc)
@@ -2835,12 +2838,12 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	. = ..()
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
-		occupant.client.images += dq_get_cloaked_selfimage(src)
+		client_images_add(occupant.client, dq_get_cloaked_selfimage(src))
 
 /obj/mecha/uncloak()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(occupant && occupant.client && dq_get_cloaked_selfimage(src))
-		occupant.client.images -= dq_get_cloaked_selfimage(src)
+		client_images_remove(occupant.client, dq_get_cloaked_selfimage(src))
 	return ..()
 
 /obj/mecha/proc/update_cell_alerts()

@@ -15,8 +15,8 @@
 //   - metabolism and hunger                                    the chemicals stage
 //   - breathing (so oxygen debt stops accumulating)            the breathing stage
 //   - blood loss and regeneration                              the blood stage
-//   - the human live/dead stages (organs, defib timer, ...)    run_if NOT_OF(FACT("in_stasis"))
-// P2-S6: every one of those declares run_if NOT_OF(FACT("in_stasis")), so the pipeline skips
+//   - the human live/dead stages (organs, defib timer, ...)    run_if "not in stasis" (a negated in_stasis frame fact)
+// P2-S6: every one of those declares run_if "not in stasis" (a negated in_stasis frame fact), so the pipeline skips
 // paused frames and no system asks. inStasisNow() remains for code outside the life pipeline.
 // So at stasis 0.9 everything runs at 10% speed; at 1 it stops. STAT_STASIS stays a factor
 // for diagnosis readouts; nothing in the life pipeline reads it.
@@ -122,6 +122,7 @@
 CAPABILITIES(/datum/stasis_hold)
 	ref_one(nameof(holder), /mob/living)
 	factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")
+	ref_one(nameof(source))
 
 /datum/stasis_hold/proc/stasis_table(datum/act/eval/A)
 	return stasis_type ? body_effect_def(stasis_type)?.factors : null
@@ -195,6 +196,8 @@ CAPABILITIES(/datum/stasis_hold)
 
 // --- The stat ------------------------------------------------------------------------------------------------------------------
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stasis_rate_source)
 /// The source the stat clock_rate_bio holds its stasis under (one per mob, shared): a stasis bed's or a sleeper's hold on STAT_CLOCK_RATE_BIO
 /// (doc/rewrite/final_api.html section 16.4) reaches the body through it.
 /datum/stasis_rate_source

@@ -45,6 +45,7 @@
 
 CAPABILITIES(/obj/machinery/gibber/autogibber)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	ref_one(nameof(input_plate))
 
 /// Something walked into it (the bump action's notice).
 /obj/machinery/gibber/autogibber/proc/bumped_into(datum/act/act)

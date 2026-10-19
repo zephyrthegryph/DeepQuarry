@@ -204,49 +204,38 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	set_selected_option(new_output)
 	to_chat(user, span_notice("You prepare \the [src] to make \a [selected_option] with the next thing you put in. Try putting several ingredients in a container!"))
 
-//Handles all validity checking and error messages for inserting things
-/obj/machinery/appliance/proc/can_insert(obj/item/I, mob/user)
-	if(istype(I.loc, /mob/living/silicon))
-		return 0
-	else if (istype(I.loc, /obj/item/rig_module))
-		return 0
-
+/// Why I can't go in to cook now, or null (admission.md D6: a pure reason; the 0/1/2 codes are gone). A grab that passes means
+/// cooking the grabbed mob. Silent refusals let the item's own use (part replacement) run.
+/obj/machinery/appliance/proc/insert_refusal(obj/item/I)
+	if(istype(I.loc, /mob/living/silicon) || istype(I.loc, /obj/item/rig_module))
+		return /datum/msg/req_silent
 	// We are trying to cook a grabbed mob.
 	var/obj/item/grab/G = I
 	if(istype(G))
-
 		if(!can_cook_mobs)
-			to_chat(user, span_warning("That's not going to fit."))
-			return 0
-
+			return msg_reason("That's not going to fit.")
 		if(!isliving(G?.grab_target()))
-			to_chat(user, span_warning("You can't cook that."))
-			return 0
-
-		return 2
-
+			return msg_reason("You can't cook that.")
+		return null
 	if (!has_space(I))
-		to_chat(user, span_warning("There's no room in [src] for that!"))
-		return 0
-
+		return msg_reason("There's no room in [src] for that!")
 	if (container_type && istype(I, container_type))
-		return 1
-
+		return null
 	// We're trying to cook something else. Check if it's valid.
-	var/obj/item/reagent_containers/food/snacks/check = I
-	if(istype(check, /obj/item/reagent_containers/glass))
-		to_chat(user, span_warning("That would probably break [src]."))
-		return 0
-	else if(istype(check, /obj/item/disk/nuclear))
-		to_chat(user, span_warning("You can't cook that."))
-		return 0
-	else if(I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/storage/part_replacer)) // You can't cook tools, dummy.
-		return 0
-	else if(!istype(check) &&  !istype(check, /obj/item/holder))
-		to_chat(user, span_warning("That's not edible."))
-		return 0
+	if(istype(I, /obj/item/reagent_containers/glass))
+		return msg_reason("That would probably break [src].")
+	if(istype(I, /obj/item/disk/nuclear))
+		return msg_reason("You can't cook that.")
+	if(I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/storage/part_replacer)) // You can't cook tools, dummy.
+		return /datum/msg/req_silent
+	if(!istype(I, /obj/item/reagent_containers/food/snacks) && !istype(I, /obj/item/holder))
+		return msg_reason("That's not edible.")
+	return null
 
-	return 1
+/// Tells user why I can't go in (an insert_refusal() answer), unless it is silent.
+/obj/machinery/appliance/proc/insert_feedback(mob/user, reason)
+	if(user && reason && reason != /datum/msg/req_silent)
+		to_chat(user, span_warning(reason_text(reason)))
 
 //This function is overridden by cookers that do stuff with containers
 /obj/machinery/appliance/proc/has_space(obj/item/I)
@@ -289,8 +278,9 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		var/obj/item/gripper/GR = I
 		var/obj/item/wrap = GR.get_wrapped_item()
 		if(wrap)
-			var/result = can_insert(wrap, user)
-			if(!result)
+			var/refused = insert_refusal(wrap)
+			if(refused)
+				insert_feedback(user, refused)
 				default_part_replacement(user, I)
 				return OP_OK
 			add_content(wrap, user)
@@ -299,12 +289,13 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		attack_hand(user)
 		return OP_OK
 
-	var/result = can_insert(I, user)
-	if(!result)
+	var/refused = insert_refusal(I)
+	if(refused)
+		insert_feedback(user, refused)
 		default_part_replacement(user, I)
 		return OP_PASS
 
-	if(result == 2)
+	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		if (G && istype(G) && G?.grab_target())
 			cook_mob(G?.grab_target(), user)
@@ -737,7 +728,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	if(slot <= LAZYLEN(cooking_objs)) // Inserting
 		var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
 
-		if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
+		if(istype(I) && isnull(insert_refusal(I))) // Why do hard work when we can just make them smack us?
 			attackby(I, user)
 		else if(istype(CI) && can_remove_items(user))
 			eject(CI, user)

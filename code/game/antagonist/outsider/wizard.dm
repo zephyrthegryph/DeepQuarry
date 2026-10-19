@@ -1,4 +1,3 @@
-GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 
 /datum/antagonist/wizard
 	id = MODE_WIZARD
@@ -19,7 +18,6 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 
 /datum/antagonist/wizard/New()
 	..()
-	GLOB.wizards = src
 
 /datum/antagonist/wizard/create_objectives(datum/mind/wizard)
 
@@ -140,3 +138,7 @@ Made a proc so this is not repeated 14 (or more) times.*/
 		to_chat(src, span_warning("I don't feel strong enough without my hat."))
 		return 0
 	return 1
+
+/// The /datum/antagonist/wizard template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_wizards() as /datum/antagonist/wizard
+	return SSantag?.all_antag_types[MODE_WIZARD]

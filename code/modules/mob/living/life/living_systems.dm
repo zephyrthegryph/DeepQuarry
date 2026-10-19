@@ -148,8 +148,8 @@
 
 /mob/living/proc/life_radiation(datum/seq_frame/life/F)
 	SHOULD_CALL_PARENT(TRUE)
-	var/datum/act/live_radiation/tick = ACT_TRY(src, live_radiation)
-	if(!tick)
+	var/datum/act/live_radiation/tick = ACT_ATTEMPT(src, live_radiation)
+	if(ACT_REFUSED_BY(tick))
 		return COMPONENT_BLOCK_LIVING_RADIATION
 	act_cancel(tick)
 
@@ -462,7 +462,7 @@
 			if(!shown)
 				client.screen |= overlay
 		else if(shown)
-			client.screen -= overlay
+			client_screen_remove(client, overlay)
 	for(var/overlay in claims)
 		if(!(overlay in owned))
 			client.screen |= overlay
@@ -478,8 +478,8 @@
 /// Health doll / health icon. Returns FALSE when a component draws it instead.
 /mob/living/proc/life_hud_health_icons()
 	SHOULD_CALL_PARENT(TRUE)
-	var/datum/act/draw_health_icon/draw = ACT_TRY(src, draw_health_icon)
-	if(!draw)
+	var/datum/act/draw_health_icon/draw = ACT_ATTEMPT(src, draw_health_icon)
+	if(ACT_REFUSED_BY(draw))
 		return FALSE
 	act_cancel(draw)
 	return TRUE

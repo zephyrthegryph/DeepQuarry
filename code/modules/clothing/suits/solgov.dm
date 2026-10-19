@@ -17,7 +17,7 @@
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(siemens = 0.9))
 
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/solgov)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
@@ -363,7 +363,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/eio_jacket)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/saare)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 

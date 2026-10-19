@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/dq_budget_refs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clothing/under/hyperfiber/bluespace/U = allocate(/obj/item/clothing/under/hyperfiber/bluespace, T)
 	var/obj/item/storage/backpack/B = allocate(/obj/item/storage/backpack, T)
-	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "Real garment is equipped on actual wearer")
+	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, quiet = TRUE), "Real garment is equipped on actual wearer")
 	var/size_before = H.size_multiplier
 	U.set_original_size(size_before + 0.25)
 	var/restore = U.original_size
@@ -311,7 +311,6 @@ CAPABILITIES(/obj/s1_fixture/picky/query_guard)
 
 /datum/unit_test/dq_native_transfer_query/guard_reads/Run()
 	var/turf/T = test_floor()
-	var/old_reason = GLOB.act_last_reason
 	var/mob/living/carbon/human/mover = allocate(/mob/living/carbon/human, T)
 	var/obj/s1_fixture/picky/query_guard/box = allocate(/obj/s1_fixture/picky/query_guard, T)
 	var/obj/item/s1_fixture/gizmo/candidate = allocate(/obj/item/s1_fixture/gizmo, T)
@@ -338,4 +337,3 @@ CAPABILITIES(/obj/s1_fixture/picky/query_guard)
 	TEST_ASSERT(has_read(reads, box, nameof(box.gate)), "Missing far end retains relation dependency")
 	TEST_ASSERT(move_into(box, "s1_picky", candidate, mover), "Cleared guard allows real final custody")
 	TEST_ASSERT_EQUAL(candidate.loc, box, "Actual candidate is transferred")
-	GLOB.act_last_reason = old_reason

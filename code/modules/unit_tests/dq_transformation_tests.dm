@@ -266,8 +266,9 @@ CAPABILITIES(/transformation/dq_fixture/with_tail)
 	TEST_ASSERT(T, "clean containment floor exists")
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 	// The main slot takes sharp things only: a paper is refused, and nothing is left behind.
-	TEST_ASSERT_NULL(xform_prepare_item(box, "main", /obj/item/paper), "a paper is refused by a slot that wants sharp things")
-	TEST_ASSERT(length(GLOB.act_last_reason), "the refusal leaves its reason")
+	var/list/why = list()
+	TEST_ASSERT_NULL(xform_prepare_item(box, "main", /obj/item/paper, why = why), "a paper is refused by a slot that wants sharp things")
+	TEST_ASSERT(length(why), "the refusal gives its reason")
 	// The default slot takes anything.
 	var/obj/item/paper/made = xform_prepare_item(box, null, /obj/item/paper)
 	TEST_ASSERT(made, "the default slot takes it")

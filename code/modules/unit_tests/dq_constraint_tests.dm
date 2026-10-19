@@ -33,7 +33,7 @@
 	var/obj/item/hand/cards = A
 	if(istype(cards) && !length(cards.cards))
 		// A hand with no cards is gone at its first draw; the legacy fixture held one that stayed, so give it a card to keep.
-		cards.add_cards(new /datum/playingcard())
+		rel_add(cards, nameof(cards.cards), new /datum/playingcard())
 	if(QDELETED(A) || A.loc != T)
 		return null
 	return A
@@ -229,7 +229,7 @@
 				var/expected = text2num(masks[n], 36)
 				var/actual = 0
 				for(var/slot in 1 to length(golden_order))
-					if(!I.equip_refusal(H, golden_order[slot], TRUE))
+					if(!I.equip_refusal(H, golden_order[slot]))
 						actual |= (1 << (slot - 1))
 				cells += length(golden_order)
 				if(actual != expected)
@@ -325,7 +325,9 @@
 
 	// The same answer through the storage slot: its refusal is the storage capability's.
 	var/datum/relation_definition/slot/storage/def = dq_slot_def(/datum/relation_definition/slot/storage)
-	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
+	var/slot_reason = def.refusal(wallet, wrench, null)
+	TEST_ASSERT(ispath(slot_reason, /datum/msg) || istype(slot_reason, /datum/msg), "the slot answers a message reason (D1), not text: [slot_reason]")
+	TEST_ASSERT_EQUAL(reason_text(slot_reason), wallet.insert_refusal(wrench, null), "the storage's text is the slot's reason, read at the ledger boundary")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
 
@@ -349,17 +351,17 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 
 	// Pockets need a jumpsuit, then take small things.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "pocket without a jumpsuit")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L), "you need a jumpsuit first", "pocket without a jumpsuit")
 	H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
-	TEST_ASSERT_NULL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "pen into a pocket")
+	TEST_ASSERT_NULL(pen.equip_refusal(H, SLOT_ID_POCKET_L), "pen into a pocket")
 	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
-	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "too big for a pocket", "toolbox into a pocket")
+	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L), "too big for a pocket", "toolbox into a pocket")
 
 	// The slot tag (the old slot_flags check) gives a reason too.
-	TEST_ASSERT(findtext(wrench.equip_refusal(H, SLOT_ID_HEAD, TRUE), "worn on the head"), "wrench on the head")
+	TEST_ASSERT(findtext(wrench.equip_refusal(H, SLOT_ID_HEAD), "worn on the head"), "wrench on the head")
 
 	// Suit storage asks the worn suit.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_SUIT_STORAGE, TRUE), "you need a suit first", "suit storage without a suit")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_SUIT_STORAGE), "you need a suit first", "suit storage without a suit")
 
 	// Fit: Teshari-only goggles refuse a human with a reason, and fit a Teshari.
 	var/obj/item/clothing/glasses/aerogelgoggles/goggles = allocate(/obj/item/clothing/glasses/aerogelgoggles, T)
@@ -405,7 +407,7 @@
 
 /datum/unit_test/dq_constraint_declarations_compile/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT, CONSTRAINT_EQUIP)
+	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT) // equip rules are the equip act's needs() now
 	var/checked = 0
 	// The types the parity fixture could create: every storage, suit and
 	// equip type that initializes cleanly on a bare floor.

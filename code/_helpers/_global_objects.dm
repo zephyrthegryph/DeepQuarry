@@ -1,7 +1,5 @@
 //Global Datums
 GLOBAL_DATUM_INIT(gear_tweak_free_color_choice, /datum/gear_tweak/color, new)
-GLOBAL_DATUM_INIT(gear_tweak_implant_location, /datum/gear_tweak/implant_location, new)
-GLOBAL_DATUM_INIT(gear_tweak_collar_tag, /datum/gear_tweak/collar_tag, new)
 
 //Underwear
 GLOBAL_DATUM_INIT(global_underwear, /datum/category_collection/underwear, new)
@@ -13,7 +11,7 @@ GLOBAL_LIST_INIT(pipe_colors, list("grey" = PIPE_COLOR_GREY, "red" = PIPE_COLOR_
 // resolve GLOB.icon_manager.get_atmos_icon at compile time.
 GLOBAL_DATUM_INIT(icon_manager, /datum/pipe_icon_manager, new)
 
-GLOBAL_DATUM_INIT(global_message_listener, /datum/comm_message_listener, new) //May be used by admins
+GLOBAL_DATUM_INIT(global_message_listener, /datum/comm_message_listener/global_listener, new) //May be used by admins
 GLOBAL_VAR_INIT(last_message_id, 0)
 
 // We manually initialize the alarm handlers instead of looping over all existing types

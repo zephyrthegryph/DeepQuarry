@@ -82,6 +82,7 @@ CAPABILITIES(/datum/tgui_input_colormatrix)
 	op("set_hue", ui_act("set_hue", arg("buildhue", num(0, 360))), then(PROC_REF(ui_act_set_hue)))
 	op("set_sat", ui_act("set_sat", arg("buildsat", num(-10, 10))), then(PROC_REF(ui_act_set_sat)))
 	op("set_val", ui_act("set_val", arg("buildval", num(-10, 10))), then(PROC_REF(ui_act_set_val)))
+	ref_one(nameof(target))
 
 /datum/tgui_input_colormatrix/tgui_close(mob/user)
 	. = ..()

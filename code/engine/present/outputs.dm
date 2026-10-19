@@ -4,7 +4,7 @@
 // What a CAPABILITIES list can say about how its holder looks, reads and talks to a window:
 //
 //   look_layer(name, when = cond)         a layer of the holder's look while `cond` holds (a capability state key, a stat, a tracked var,
-//                                         cond_not/cond_all/cond_any, a PROC_REF of the holder): look.part(name)
+//                                         not/all_of/any_of, a PROC_REF of the holder): look.part(name)
 //   examine_line(text | MSG | PROC_REF, when = cond)
 //                                         a line of the holder's examine text while `cond` holds. A text or a /datum/msg type is the
 //                                         line itself; a PROC_REF is a proc of the holder, x(datum/act/A), returning a text or a list

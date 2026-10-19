@@ -201,3 +201,6 @@ CAPABILITIES(/obj/structure/fuel_port)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+CAPABILITIES(/datum/shuttle/autodock/overmap)
+	ref_one(nameof(myship))

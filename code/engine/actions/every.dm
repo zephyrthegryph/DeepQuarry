@@ -238,7 +238,7 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
 
 /// TRUE when the type-level every() `C` is held by its own `when =` alone (no enclosing when() block) and that condition is built only of tracked vars of the
-/// holder (nameof(var), cond_not/cond_all/cond_any of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer
+/// holder (nameof(var), not/all_of/any_of of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer
 /// runs at all) and wakes when it publishes true (doc section 3, section 7). Any other gate (a block, a proc, a stat, a relation hop: something a write might not
 /// announce) keeps the polling form: the timer runs and a gated run is skipped.
 /proc/type_every_parkable(datum/holder, datum/centry/C)
@@ -252,7 +252,7 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		known[id] = type_every_cond_tracked(holder, cond) ? TRUE : FALSE
 	return known[id]
 
-/// Is `cond` a tracked var, a proc whose generated reads are all of the holder's own tracked vars, or a declared relation var (ref_one/ref_many/owns/link: rel_set() and the framework's clears publish its key) of `holder`, or a stat id (STAT_RELEVANCE), or a cond_not/cond_all/cond_any tree of them?
+/// Is `cond` a tracked var, a proc whose generated reads are all of the holder's own tracked vars, or a declared relation var (ref_one/ref_many/owns/link: rel_set() and the framework's clears publish its key) of `holder`, or a stat id (STAT_RELEVANCE), or a not/all_of/any_of tree of them?
 /proc/type_every_cond_tracked(datum/holder, cond)
 	if(islist(cond))
 		var/list/tree = cond
@@ -388,7 +388,7 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 		CRASH("every(members =): [holder.type] is not a system")
 	var/list/snapshot = list()
 	for(var/datum/member as anything in members_of(E.args["members"]))
-		var/handle = entity_handle(member)
+		var/handle = ref_token(member)
 		if(handle)
 			snapshot += handle
 	every_members_queue(holder, A, E, C, index, snapshot, 1)
@@ -425,7 +425,7 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 			type_every_schedule(holder, C, index)
 		return
 	if(cursor <= length(snapshot))
-		var/datum/member = resolve_handle(snapshot[cursor])
+		var/datum/member = resolve_token(snapshot[cursor])
 		if(member && !QDELETED(member) && member_is(E.args["members"], member))
 			var/datum/act/timer/T = every_context(holder, A, A ? A.source : holder, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 			T.set_member_target(member)
@@ -555,3 +555,6 @@ GLOBAL_LIST_EMPTY(every_hop_watches)
 	GLOB.every_hop_watches -= "[REF(holder)]"
 	W.unsubscribe()
 	spent(W)
+
+CAPABILITIES(/datum/every_hop_watch)
+	ref_one(nameof(holder))

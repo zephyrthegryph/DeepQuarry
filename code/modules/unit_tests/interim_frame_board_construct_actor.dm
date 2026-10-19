@@ -55,3 +55,7 @@
 	TEST_ASSERT_EQUAL(board.construct_product_ref, REF(product), "the actual board constructor receives the exact resulting computer")
 	TEST_ASSERT_EQUAL(product.dir, WEST, "actual final construction preserves frame direction")
 	TEST_ASSERT(!QDELETED(board), "actual frame expiry preserves the installed board")
+
+CAPABILITIES(/obj/interim_frame_construct_actor_probe)
+	ref_one(nameof(actor))
+	ref_one(nameof(frame))

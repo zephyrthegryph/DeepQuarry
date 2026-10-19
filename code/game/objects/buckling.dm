@@ -61,11 +61,13 @@
 
 
 
-/atom/movable/proc/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
+/atom/movable/proc/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
 	if(check_loc && M.loc != loc)
 		return FALSE
 
-	if(!can_buckle_check(M, forced))
+	var/refused = buckle_refusal(M, authority)
+	if(refused)
+		buckle_feedback(M, refused)
 		return FALSE
 
 	if(M == src)
@@ -140,18 +142,20 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 	return
 
 //Wrapper procs that handle sanity and user feedback
-/atom/movable/proc/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = FALSE)
+/atom/movable/proc/user_buckle_mob(mob/living/M, mob/user, authority = null, silent = FALSE)
 	if(!SSticker)
 		to_chat(user, span_warning("You can't buckle anyone in before the game starts."))
 		return FALSE // Is this really needed?
-	return user.secure_buckle_mob(src, M, forced, silent)
+	return user.secure_buckle_mob(src, M, authority, silent)
 
 /// The actor's physical buckle transaction has admitted this attempt.
-/atom/movable/proc/finish_user_buckle(mob/living/M, mob/user, forced = FALSE, silent = FALSE)
+/atom/movable/proc/finish_user_buckle(mob/living/M, mob/user, authority = null, silent = FALSE)
 	if(M in src?.buckled_mob_list())
 		to_chat(user, span_warning("\The [M] is already buckled to \the [src]."))
 		return FALSE
-	if(!can_buckle_check(M, forced, TRUE))
+	var/refused = buckle_refusal(M, authority, TRUE)
+	if(refused)
+		buckle_feedback(M, refused)
 		return FALSE
 
 	var/list/buckled_here = src?.buckled_mob_list()
@@ -172,7 +176,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 		if(M.Adjacent(src) && user.Adjacent(src))
 			M.forceMove(get_turf(src))
 
-	. = buckle_mob(M, forced)
+	. = buckle_mob(M, authority)
 	play_sfx(src.loc, SFX_EFFECTS_SEATBELT)
 	if(.)
 		var/reveal_message = list("buckled_mob" = null, "buckled_to" = null)
@@ -222,23 +226,25 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 		else
 			L.set_dir(buckle_dir)
 
-/atom/movable/proc/can_buckle_check(mob/living/M, forced = FALSE, can_do_spont_vore = FALSE)
+/// Why M can't be buckled here now, or null: a pure check (admission.md D6: buckling's gate is a reason, its message the caller's). A refusal
+/// that says nothing is /datum/msg/req_silent. An authority with SKIP_REQUIREMENTS (GLOB.authority_forced) skips the holder's own consent and the grab rule.
+/atom/movable/proc/buckle_refusal(mob/living/M, authority = null, can_do_spont_vore = FALSE)
 	if(!istype(M))
-		return FALSE
-
-	if((!can_buckle && !forced) || M?.buckled_to() || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
-		return FALSE
-	if(LAZYLEN(M?.grabbed_by_list()) && !forced)
-		to_chat(M, span_boldwarning("You can not buckle while grabbed!"))
-		return FALSE
-
+		return /datum/msg/req_silent
+	if((!can_buckle && !authority_skips(authority, SKIP_REQUIREMENTS)) || M?.buckled_to() || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
+		return /datum/msg/req_silent
+	if(LAZYLEN(M?.grabbed_by_list()) && !authority_skips(authority, SKIP_REQUIREMENTS))
+		return msg_reason(span_boldwarning("You can not buckle while grabbed!"))
 	var/list/buckled_here2 = src?.buckled_mob_list()
 	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
 		if(can_do_spont_vore && is_vore_predator(M) && vore_selected_of(M))
 			for(var/mob/living/buckled in buckled_here2)
 				if(can_stumble_vore(prey = buckled, pred = M))
-					return TRUE
-		to_chat(M, span_notice("\The [src] can't buckle any more people."))
-		return FALSE
+					return null
+		return msg_reason(span_notice("\The [src] can't buckle any more people."))
+	return null
 
-	return TRUE
+/// Tells M why it can't be buckled (a refusal buckle_refusal() answered), unless the refusal is silent.
+/atom/movable/proc/buckle_feedback(mob/living/M, reason)
+	if(M && reason && reason != /datum/msg/req_silent)
+		to_chat(M, reason_text(reason))

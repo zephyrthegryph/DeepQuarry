@@ -31,6 +31,8 @@ PROC_SUMMARY(/proc/dq_latency_sweep_register) // bookkeeping for the sweep's wor
 /proc/dq_latency_sweep_unregister(atom/holder)
 	GLOB.latency_sweep_holders -= holder
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/latency_sweep)
 /datum/latency_sweep
 	var/cursor = 0
 	/// A holder has registered: the every() below runs (it parks until the first one, never at global init).

@@ -34,7 +34,7 @@
 		else
 			return TRUE
 	if(init)
-		our_turf.vis_contents += below_turf
+		vis_add(our_turf, below_turf)
 
 	if(is_blocked_turf(our_turf)) //Show girders below closed turfs
 		var/mutable_appearance/girder_underlay = mutable_appearance('icons/obj/structures.dmi', "girder", layer = TURF_LAYER-0.01)

@@ -85,19 +85,19 @@
 		)
 
 CAPABILITIES(/obj/item/rig/combat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))
 
 CAPABILITIES(/obj/item/rig/military)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/military)
-	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_HUMAN_PROMETHEAN)
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/military)
-	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_HUMAN_PROMETHEAN)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/military)
-	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_HUMAN_PROMETHEAN)
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/military)
-	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_HUMAN_PROMETHEAN)

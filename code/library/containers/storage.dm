@@ -168,34 +168,82 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /datum/capability/lib/storage/proc/count_in(atom/holder)
 	return storage_total(holder)
 
-// ---- the rules ----
+// ---- the rules: the storage slot's accepts (admission.md D4c: containers are slots, their checks are requirements) ----
 
-/// Why `thing` can't go into the holder's storage, capacity aside (the slot checks space), or null. `actor` is whoever moves it (may be null).
-/// Reads only: a requirement and a menu ask it too.
-/datum/capability/lib/storage/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(!isitem(thing))
-		return "that can't go in a container"
-	var/obj/item/W = thing
-	if(actor && actor.isEquipped(W) && !W.mob_can_unequip(actor, actor.inventory_slot_id(W), TRUE))
-		return "you can't let go of \the [W]"
-	var/limit = slots_of(holder)
-	if(!isnull(limit) && count_in(holder) >= limit)
-		return "\the [holder] is full"
-	var/datum/cap_data/storage/narrow = narrowed(holder)
-	var/list/only = narrow?.has_accepts ? narrow.accepts : accepts
+MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
+
+/// The storage requirements, in their stated order (D2h): an item, one the mover can let go of, room in the count, the kind (narrowed per instance),
+/// the size, no container as big as the bag, nothing stuck to a hand. Each reads the holder's storage() capability.
+/proc/storage_requirements()
+	return list(part_make(/datum/entry/part/req/storage/item), part_make(/datum/entry/part/req/storage/released), part_make(/datum/entry/part/req/storage/count),
+		part_make(/datum/entry/part/req/storage/kind), part_make(/datum/entry/part/req/storage/size), part_make(/datum/entry/part/req/storage/not_as_big),
+		part_make(/datum/entry/part/req/storage/not_stuck))
+
+/datum/entry/part/req/storage
+	part_name = "req_storage"
+	// The candidate's type data (kind, size class) answers these; a latent entry has no holder hand and no traits (D8).
+	reads_level = REQ_READS_TYPE
+
+/datum/entry/part/req/storage/holds(datum/act/op/A)
+	return isnull(refusal(A))
+
+/datum/entry/part/req/storage/proc/cap(datum/act/op/A)
+	return cap_of(A.holder, CAP_STORAGE)
+
+/datum/entry/part/req/storage/item/refusal(datum/act/op/A)
+	return isitem(A.target) ? null : /datum/msg/storage/not_an_item
+
+/datum/entry/part/req/storage/released
+	reads_actor = TRUE
+/datum/entry/part/req/storage/released/refusal(datum/act/op/A)
+	var/obj/item/W = A.target
+	var/mob/actor = A.mover
+	if(istype(W) && actor && actor.isEquipped(W) && !W.mob_can_unequip(actor, actor.inventory_slot_id(W)))
+		return msg_reason("you can't let go of \the [W]")
+	return null
+
+/datum/entry/part/req/storage/count/refusal(datum/act/op/A)
+	var/datum/capability/lib/storage/C = cap(A)
+	var/limit = C?.slots_of(A.holder)
+	if(!isnull(limit) && C.count_in(A.holder) >= limit)
+		return msg_reason("\the [A.holder] is full")
+	return null
+
+/datum/entry/part/req/storage/kind/refusal(datum/act/op/A)
+	var/datum/capability/lib/storage/C = cap(A)
+	var/obj/item/W = A.target
+	if(!C || !istype(W))
+		return null
+	var/datum/cap_data/storage/narrow = C.narrowed(A.holder)
+	var/list/only = narrow?.has_accepts ? narrow.accepts : C.accepts
 	if(!isnull(only) && !is_type_in_list(W, only))
-		return "it doesn't take that"
-	if(length(refuses) && is_type_in_list(W, refuses))
-		return "it doesn't take that"
-	var/biggest = narrow?.has_max_size ? narrow.max_size : max_size
+		return /datum/msg/slot/doesnt_take
+	if(length(C.refuses) && is_type_in_list(W, C.refuses))
+		return /datum/msg/slot/doesnt_take
+	return null
+
+/datum/entry/part/req/storage/size/refusal(datum/act/op/A)
+	var/datum/capability/lib/storage/C = cap(A)
+	var/obj/item/W = A.target
+	if(!C || !istype(W))
+		return null
+	var/datum/cap_data/storage/narrow = C.narrowed(A.holder)
+	var/biggest = narrow?.has_max_size ? narrow.max_size : C.max_size
 	if(!isnull(biggest) && W.w_class > biggest)
-		return "\the [W] is too big for \the [holder]"
-	if(isitem(holder))
-		var/obj/item/bag = holder
-		if(W.w_class >= bag.w_class && istype(W, /obj/item/storage))
-			return "it's a container as big as \the [holder]"
-	if(has_trait(W, TRAIT_NODROP))
-		return "\the [W] is stuck to your hand"
+		return msg_reason("\the [W] is too big for \the [A.holder]")
+	return null
+
+/datum/entry/part/req/storage/not_as_big/refusal(datum/act/op/A)
+	var/obj/item/W = A.target
+	var/obj/item/bag = A.holder
+	if(istype(W) && istype(bag) && W.w_class >= bag.w_class && istype(W, /obj/item/storage))
+		return msg_reason("it's a container as big as \the [bag]")
+	return null
+
+/datum/entry/part/req/storage/not_stuck/refusal(datum/act/op/A)
+	var/obj/item/W = A.target
+	if(istype(W) && has_trait(W, TRAIT_NODROP))
+		return msg_reason("\the [W] is stuck to your hand")
 	return null
 
 /// The whole answer the ledger would give: this capability's rules, then room, then the hooks on the slot. A reason, or null.
@@ -204,7 +252,8 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 
 // ---- the slot ----
 
-/// The slot of a storage item: internal, measured in storage-cost units, and deleted with the storage (contents go with it, as before). Its refusal and
+/// The slot of a storage item: internal, measured in storage-cost units. Destroyed, it spills its contents (a forced delete deletes them:
+/// admission.md D10). Its refusal and
 /// capacity are the holder's storage() capability's.
 /datum/relation_definition/slot/storage
 	holder = /obj/item/storage
@@ -212,7 +261,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	name = "storage"
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_UNITS
-	drop_policy = SLOT_DROP_DELETE
+	drop_policy = SLOT_DROP_SPILL
 
 /datum/relation_definition/slot/storage/capacity_for(atom/holder)
 	var/datum/capability/lib/storage/C = cap_of(holder, CAP_STORAGE)
@@ -224,11 +273,13 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 		return I.get_storage_cost()
 	return ITEMSIZE_COST_NO_CONTAINER
 
+/datum/relation_definition/slot/storage/accepts_requirements()
+	return storage_requirements()
+
 /datum/relation_definition/slot/storage/refusal(atom/holder, atom/movable/thing, mob/actor)
-	var/datum/capability/lib/storage/C = cap_of(holder, CAP_STORAGE)
-	if(!C)
+	if(!cap_of(holder, CAP_STORAGE))
 		return "\the [holder] can't hold anything"
-	return C.refusal(holder, thing, actor)
+	return ..()
 
 // ---- put in ----
 

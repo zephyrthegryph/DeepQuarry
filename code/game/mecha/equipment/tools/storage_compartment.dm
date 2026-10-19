@@ -12,7 +12,8 @@
 	M.set_cargo_capacity(M.cargo_capacity + storage_added)
 
 /obj/item/mecha_parts/mecha_equipment/storage/detach()
-	chassis.cargo_capacity -= storage_added
+	if(chassis) // a bay detached from no exosuit (a fresh one deleted) has no capacity to give back
+		chassis.set_cargo_capacity(chassis.cargo_capacity - storage_added)
 	..()
 
 /obj/item/mecha_parts/mecha_equipment/storage/bluespace

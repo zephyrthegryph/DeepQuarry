@@ -1,4 +1,3 @@
-GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 
 /datum/antagonist/rogue_ai
 	id = MODE_MALFUNCTION
@@ -20,7 +19,6 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 
 /datum/antagonist/rogue_ai/New()
 	..()
-	GLOB.malf = src
 
 
 /datum/antagonist/rogue_ai/get_candidates()
@@ -98,3 +96,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 	if (newname)
 		player.SetName(newname)
 	if(player.mind) player.mind.name = player.name
+
+/// The /datum/antagonist/rogue_ai template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_malf() as /datum/antagonist/rogue_ai
+	return SSantag?.all_antag_types[MODE_MALFUNCTION]

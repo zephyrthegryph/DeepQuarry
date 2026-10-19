@@ -19,8 +19,8 @@
 		return
 
 	//Stumblevore occurs here. Look at the 'stumblevore' element for more information.
-	var/datum/act/stumbled_into/stumble = ACT_TRY(src, stumbled_into, M)
-	if(!stumble)
+	var/datum/act/stumbled_into/stumble = ACT_ATTEMPT(src, stumbled_into, M)
+	if(ACT_REFUSED_BY(stumble))
 		return
 	act_done(stumble)
 

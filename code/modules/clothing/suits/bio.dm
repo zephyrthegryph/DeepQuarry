@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood)
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/suit/bio_suit)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 

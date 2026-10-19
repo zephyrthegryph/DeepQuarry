@@ -14,6 +14,8 @@
 // no `of`, included by decls, other bundles, and relations. Every row is
 // parsed once when the registry builds; a malformed row is a boot error.
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_bundle)
 /datum/definition_bundle
 	parent_type = /datum/core_definition
 	abstract_type = /datum/definition_bundle
@@ -49,6 +51,8 @@
 	/// Entity type (and subtypes) these rows apply to, or a list of types.
 	var/of
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduler_type_table)
 /// The compiled table for one concrete entity type: what entity_start() attaches.
 /datum/scheduler_type_table
 	/// Behaviour defs, sorted by id (run order).

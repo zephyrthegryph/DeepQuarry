@@ -44,8 +44,8 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	drop_policy = SLOT_DROP_TRANSFER
 	is_default = TRUE
 
-CAPABILITIES(/obj/item/dq_containment_box)
-	acceptance("main", req_acceptance_tag(TAG_SHARP))
+/datum/relation_definition/slot/dq_test_main/accepts_requirements()
+	return req_tag(TAG_SHARP, because = "must be sharp")
 
 /// Blocks moves through the pre signals and records what the ledger reported.
 /datum/dq_containment_listener
@@ -147,6 +147,9 @@ CAPABILITIES(/obj/item/dq_containment_box)
 
 CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	owns_many(nameof(made))
+	ref_one(nameof(floor))
+	ref_many(nameof(holders))
+	ref_many(nameof(things))
 
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
 	rel_set(src, nameof(floor), dq_containment_floor())
@@ -370,12 +373,17 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	TEST_ASSERT(!QDELETED(a) && a.loc == T, "spill: the first item is on the floor")
 	TEST_ASSERT(!QDELETED(b) && b.loc == T, "spill: the second item is on the floor")
 
-	// Delete: a folder takes its pages with it.
+	// A destroyed folder drops its pages; a forced delete takes them with it (admission.md D10).
 	var/obj/item/folder/folder = allocate(/obj/item/folder, T)
 	var/obj/item/paper/page = allocate(/obj/item/paper, T)
 	TEST_ASSERT(move_into(folder, null, page), "paper goes in a folder")
 	qdel(folder)
-	TEST_ASSERT(QDELETED(page), "delete: the page went with the folder")
+	TEST_ASSERT(!QDELETED(page) && page.loc == T, "spill: the destroyed folder dropped its page")
+	var/obj/item/folder/forced_folder = allocate(/obj/item/folder, T)
+	var/obj/item/paper/forced_page = allocate(/obj/item/paper, T)
+	TEST_ASSERT(move_into(forced_folder, null, forced_page), "paper goes in the second folder")
+	qdel(forced_folder, TRUE)
+	TEST_ASSERT(QDELETED(forced_page), "forced delete: the page went with the folder")
 
 	// Spill into a holder: a box inside a closet spills its main slot into the
 	// closet (the closet allows drops), and transfers its pocket there too.
@@ -413,7 +421,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	var/obj/item/dq_containment_test/item = allocate(/obj/item/dq_containment_test, T)
 
 	// The predicate decides, with its reason.
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(item, folder), "only paper, photos and bundles fit", "folder refuses a non-paper item")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(item, folder)), "only paper, photos and bundles fit", "folder refuses a non-paper item")
 	TEST_ASSERT(!move_into(folder, null, item), "the refused move fails")
 	TEST_ASSERT_EQUAL(item.loc, T, "a refused move changes nothing")
 	TEST_ASSERT_NULL(dq_ledger_refusal(page, folder), "paper fits")
@@ -422,7 +430,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 
 	// Closets refuse what is fastened down.
 	var/obj/item/dq_containment_test/anchored/bolted = allocate(/obj/item/dq_containment_test/anchored, T)
-	TEST_ASSERT_EQUAL(dq_ledger_refusal(bolted, closet), "it is fastened down", "anchored things stay out")
+	TEST_ASSERT_EQUAL(reason_text(dq_ledger_refusal(bolted, closet)), "it is fastened down", "anchored things stay out")
 
 	// Capacity: a crate holds storage_capacity objects.
 	crate.set_storage_capacity(2)

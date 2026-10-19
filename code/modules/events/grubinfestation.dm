@@ -52,3 +52,6 @@
 	if(area_names.len)
 		var/english_list = english_list(area_names)
 		GLOB.command_announcement.Announce("Sensors have narrowed down remaining active solargrubs to the following areas: [english_list]", "Lifesign Alert")
+
+CAPABILITIES(/datum/event/grub_infestation)
+	ref_many(nameof(vents))

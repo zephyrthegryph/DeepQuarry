@@ -46,8 +46,8 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
-	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(cond_all(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE))), then(PROC_REF(oven_interaction_toggle_door)))
-	op("toggle_door_alt_no_touch", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(cond_not(cond_all(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE)))), then(PROC_REF(oven_interaction_no_touch)))
+	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(all_of(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE))), then(PROC_REF(oven_interaction_toggle_door)))
+	op("toggle_door_alt_no_touch", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), when(not(all_of(req(/mob/living, of = ON_ACTOR), req_actor_kind(/mob/living/silicon/ai, not = TRUE)))), then(PROC_REF(oven_interaction_no_touch)))
 	op("toggle_door", ui_act("toggle_door"), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(req_silent))), then(PROC_REF(ui_act_toggle_door)))
 
 
@@ -130,13 +130,10 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	else
 		return FALSE
 
-/obj/machinery/appliance/cooker/oven/can_insert(obj/item/I, mob/user)
+/obj/machinery/appliance/cooker/oven/insert_refusal(obj/item/I)
 	if(!open && !manip(I))
-		to_chat(user, span_warning("You can't put anything in while the door is closed!"))
-		return 0
-
-	else
-		return ..()
+		return msg_reason("You can't put anything in while the door is closed!")
+	return ..()
 
 /// An open door loses heat to the room eight times faster (the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_conductance()

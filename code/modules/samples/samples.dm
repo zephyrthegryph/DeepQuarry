@@ -59,7 +59,7 @@ TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/o
 	make_sellable(/datum/sellable/research_sample)
 
 CAPABILITIES(/obj/item/research_sample)
-	rolls(nameof(icon_state), PROC_REF(roll_sample), when = cond_not(nameof(fixed_name)))
+	rolls(nameof(icon_state), PROC_REF(roll_sample), when = not(nameof(fixed_name)))
 	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
 	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))

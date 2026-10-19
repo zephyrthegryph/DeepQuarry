@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 		asks(/datum/prompt/text/rcon_tag),
 		then(PROC_REF(rcon_tag_answered)))
 	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut)))), then(PROC_REF(open_wires_beside_the_window)))
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = cond_not(nameof(grounding)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = not(nameof(grounding)))
 
 /// What a unit is made with: thirty lengths of cable, and, placed by a map, its standard coils (a unit built from a frame gets the frame's parts).
 /obj/machinery/power/smes/buildable/proc/starting_parts(datum/act/A)

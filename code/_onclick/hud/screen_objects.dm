@@ -174,7 +174,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 
 	if(hovering_choice == choice)
 		return
-	vis_contents -= hover_overlays_cache[hovering_choice]
+	vis_remove(src, hover_overlays_cache[hovering_choice])
 	hovering_choice = choice
 
 	if(!choice)
@@ -185,7 +185,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 		overlay_object = new
 		overlay_object.set_icon_state("[choice]")
 		rel_add(src, nameof(hover_overlays_cache), overlay_object, choice)
-	vis_contents += overlay_object
+	vis_add(src, overlay_object)
 
 /obj/effect/overlay/zone_sel
 	icon = 'icons/mob/zone_sel.dmi'
@@ -197,7 +197,7 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 
 /atom/movable/screen/zone_sel/MouseExited(location, control, params)
 	if(!isobserver(usr) && hovering_choice)
-		vis_contents -= hover_overlays_cache[hovering_choice]
+		vis_remove(src, hover_overlays_cache[hovering_choice])
 		hovering_choice = null
 
 /atom/movable/screen/zone_sel/proc/get_zone_at(icon_x, icon_y)
@@ -277,10 +277,10 @@ CAPABILITIES(/atom/movable/screen)
 		if("toggle")
 			if(user.hud_used.inventory_shown)
 				user.hud_used.inventory_shown = 0
-				user.client.screen -= user.hud_used.other
+				client_screen_remove(user.client, user.hud_used.other)
 			else
 				user.hud_used.inventory_shown = 1
-				user.client.screen += user.hud_used.other
+				client_screen_add(user.client, user.hud_used.other)
 
 			user.hud_used.hidden_inventory_update()
 
@@ -693,6 +693,7 @@ CAPABILITIES(/atom/movable/screen/component_button)
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
 CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
+	after_init(0, then(PROC_REF(lay_out_layers))) // its layers are stacked once Initialize() returns (relations proposal D11)
 	ref_one(nameof(owner))
 	ref_one(nameof(extras_holder))
 	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
@@ -709,16 +710,13 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
-	/**
-	 * The vis_contents layout is: this(frame,extras_holder(),mask(bg(map)))
-	 * bg is set to BLEND_MULTIPLY against the mask to crop it.
-	 */
 
-	mask_full.vis_contents.Add(bg)
-	mask_ping.vis_contents.Add(bg)
-	frame.vis_contents.Add(powbutton,mapbutton)
-	vis_contents.Add(frame)
-
+/// The vis_contents layout is: this(frame, extras_holder(), mask(bg(map))); bg is set to BLEND_MULTIPLY against the mask to crop it.
+/atom/movable/screen/movable/mapper_holder/proc/lay_out_layers(datum/act/timer/A)
+	vis_add(mask_full, bg)
+	vis_add(mask_ping, bg)
+	vis_add(frame, list(powbutton, mapbutton))
+	vis_add(src, frame)
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
@@ -733,9 +731,9 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 	if(extras && !extras_holder())
 		rel_set(src, nameof(extras_holder), extras)
-		vis_contents += extras_holder()
+		vis_add(src, extras_holder())
 	if(!extras && extras_holder())
-		vis_contents -= extras_holder()
+		vis_remove(src, extras_holder())
 		rel_clear(src, nameof(extras_holder))
 
 /atom/movable/screen/movable/mapper_holder/proc/powerClick()
@@ -933,10 +931,10 @@ CAPABILITIES(/atom/movable/screen/ammo)
 	if(!G.has_ammo_counter())
 		return
 
-	user.client.screen += src
+	client_screen_add(user.client, src)
 
 /atom/movable/screen/ammo/proc/remove_hud(mob/living/user)
-	user?.client?.screen -= src
+	client_screen_remove(user.client, src)
 
 /atom/movable/screen/ammo/proc/update_hud(mob/living/user, obj/item/gun/G)
 	if(!user?.client?.screen.Find(src))
@@ -961,7 +959,7 @@ CAPABILITIES(/atom/movable/screen/ammo)
 			warned = TRUE
 			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
 			F.set_icon_state("frame")
-			user.client.screen += F
+			client_screen_add(user.client, F)
 			flick("[hud_state_empty]_flash", F)
 			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, hud_state_empty), keeps_dead = TRUE)
 	else
@@ -1017,7 +1015,7 @@ CAPABILITIES(/atom/movable/screen/ammo)
 		var/image/item_overlay = image(holding)
 		item_overlay.alpha = 92
 
-		if(holding.equip_refusal(user, slot_id, disable_warning = TRUE))
+		if(holding.equip_refusal(user, slot_id))
 			item_overlay.color = "#ff0000"
 		else
 			item_overlay.color = "#00ff00"
@@ -1026,7 +1024,7 @@ CAPABILITIES(/atom/movable/screen/ammo)
 
 /atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, empty_light_state)
 	if(user?.client)
-		user.client.screen -= F
+		client_screen_remove(user.client, F)
 	spent(F, user)
 	set_empty_state(empty_light_state)
 

@@ -252,3 +252,10 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 	return landmark_transition
 
 // Owned by its docking console elsewhere; set_shuttle_docking_controller() tracks its deletion.
+
+CAPABILITIES(/datum/shuttle/autodock)
+	ref_one(nameof(active_docking_controller))
+	ref_one(nameof(in_use))
+	ref_one(nameof(landmark_transition))
+	ref_one(nameof(next_location))
+	ref_one(nameof(shuttle_docking_controller))

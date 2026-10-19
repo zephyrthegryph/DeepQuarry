@@ -19,6 +19,8 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	ref_one(nameof(own_identity))
+	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
 	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
 	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
@@ -36,6 +38,8 @@ CAPABILITIES(/mob/living)
 	// A pred (or whoever feeds the prey to it) waits out the swallow time; the prey moving or the actor leaving ends it (vore_procs.dm). The wait is silent: a devour is not announced by a cog.
 	op("devour", ai(), takes("pred", "belly", "duration", "message_range"), silent_wait(), wait(PROC_REF(devour_duration)), then(PROC_REF(devour_done)))
 	living_action_status_contributions()
+	// Prone posture composes density rather than overwriting the stat's served value.
+	when(nameof(lying), contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
 	living_abilities()
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
@@ -76,6 +80,8 @@ CAPABILITIES(/mob/living)
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(mousedrop_input))
 	drag_onto(PROC_REF(drop_input))
+	ref_one(nameof(autofire_gun))
+	ref_one(nameof(autofire_target))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

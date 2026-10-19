@@ -65,3 +65,6 @@
 	if(cloaked || isnull(arrival_message))
 		return
 	GLOB.command_announcement.Announce(arrival_message, (announcer ? announcer : "[using_map.boss_name]"))
+
+CAPABILITIES(/datum/shuttle/autodock/multi)
+	ref_many(nameof(destinations_cache))

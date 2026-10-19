@@ -57,6 +57,16 @@ CAPABILITIES(/turf/simulated)
 CAPABILITIES(/datum/sunlight_handler)
 	ref_one(nameof(sun), /datum/simple_sun)
 	ref_one(nameof(pshandler), /datum/planet_sunlight_handler)
+	ref_one(nameof(affected_NE))
+	ref_one(nameof(affected_NW))
+	ref_one(nameof(affected_SE))
+	ref_one(nameof(affected_SW))
+	ref_one(nameof(holder))
+	ref_one(nameof(only_sun_NE))
+	ref_one(nameof(only_sun_NW))
+	ref_one(nameof(only_sun_SE))
+	ref_one(nameof(only_sun_SW))
+	ref_one(nameof(only_sun_object))
 
 /datum/sunlight_handler/New(parent)
 	. = ..()
@@ -220,9 +230,9 @@ CAPABILITIES(/datum/sunlight_handler)
 	if(cur_sunlight != sunlight)
 		sunlight_update()
 		if(!sunlight)
-			SSlighting.sunlight_queue -= src
+			member_leave(SUNLIGHT_AWAKE_KEY, src, all = TRUE)
 		else
-			SSlighting.sunlight_queue += src
+			member_join(SUNLIGHT_AWAKE_KEY, src)
 
 /datum/sunlight_handler/proc/sunlight_update()
 	var/list/corners = list(holder.lighting_corner_NE,holder.lighting_corner_NW,holder.lighting_corner_SE,holder.lighting_corner_SW)
@@ -385,11 +395,11 @@ CAPABILITIES(/datum/sunlight_handler)
 	if(val)
 		if(pshandler)
 			rel_remove(pshandler, nameof(pshandler.shandlers), src)
-		SSlighting.sunlight_queue -= src
+		member_leave(SUNLIGHT_AWAKE_KEY, src, all = TRUE)
 	else
 		if(pshandler)
 			rel_add(pshandler, nameof(pshandler.shandlers), src)
-		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
+		member_join(SUNLIGHT_AWAKE_KEY, src) // idempotent
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
 	var/list/corners = list(holder.lighting_corner_NE,holder.lighting_corner_NW,holder.lighting_corner_SE,holder.lighting_corner_SW)

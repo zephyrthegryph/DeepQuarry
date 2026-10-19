@@ -50,7 +50,7 @@ CAPABILITIES(/datum/robot_component)
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
 		set_max_damage(comp.max_damage)
-		idle_usage = comp.idle_usage
+		set_idle_usage(comp.idle_usage)
 		active_usage = comp.active_usage
 	else if(istype(wrapped, /obj/item/cell))
 		var/obj/item/cell/cell = wrapped
@@ -65,7 +65,7 @@ CAPABILITIES(/datum/robot_component)
 	. = wrapped
 	carry_afflictions_out()
 	set_max_damage(initial(max_damage))
-	idle_usage = initial(idle_usage)
+	set_idle_usage(initial(idle_usage))
 	active_usage = initial(active_usage)
 	set_installed(ROBOT_PART_MISSING)
 	rel_take(src, nameof(wrapped))
@@ -87,7 +87,7 @@ CAPABILITIES(/datum/robot_component)
 		wrapped.icon_state = brokenstate
 	set_installed(ROBOT_PART_DESTROYED)
 	set_max_damage(initial(max_damage))
-	idle_usage = initial(idle_usage)
+	set_idle_usage(initial(idle_usage))
 	active_usage = initial(active_usage)
 	log_runtime("ROBOT_PART: [owner ? key_name(owner) : "ownerless"] lost [name] (slot [slot]).")
 	owner?.on_part_changed(src)
@@ -388,7 +388,7 @@ CAPABILITIES(/obj/item)
 	without("melee_hit")
 	owns_one(nameof(carried_afflictions), /datum/carried_afflictions)
 	owns_one(nameof(economic_adoption), /datum/economic_adoption)
-	owns_one(nameof(identity), /datum/identification)
+	owns_one(nameof(identity), /datum/identification, starts = when(nameof(init_hide_identity), nameof(identity_type)), early = TRUE)
 	owns_one(nameof(mind_host), /datum/mind_host)
 	owns_many(nameof(possessed_voice))
 	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
@@ -400,6 +400,8 @@ CAPABILITIES(/obj/item)
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
 	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
+	ref_many(nameof(actions))
+	ref_one(nameof(my_augment))
 /// Other silicons preserve the module action's successful no-op.
 /mob/living/silicon/proc/equip_item_from_module(obj/item/I)
 	return OP_OK

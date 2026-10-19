@@ -188,8 +188,8 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 		)
 	w_class = ITEMSIZE_SMALL
-	var/datum/nifsoft/stored_organic = null
-	var/datum/nifsoft/stored_synthetic = null
+	var/stored_organic = null
+	var/stored_synthetic = null
 
 MSG_DEF(nifsoft/uploading_other, span_notice("You begin uploading %I% into %T%."), span_warning("%U% begins uploading %I% into %T%!"))
 MSG_DEF_SELF(nifsoft/uploading_self, span_notice("You upload %I% into your NIF."))
@@ -431,3 +431,6 @@ CAPABILITIES(/obj/item/disk/nifsoft/compliance)
 /// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif
 	return nif
+
+CAPABILITIES(/datum/nifsoft)
+	ref_one(nameof(nif))

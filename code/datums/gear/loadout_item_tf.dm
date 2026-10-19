@@ -4,7 +4,6 @@
 // Per-line archaeology lives in those commits; this header marker
 // is here so an upstream merge knows to investigate.
 
-GLOBAL_DATUM_INIT(gear_tweak_item_tf_spawn, /datum/gear_tweak/item_tf_spawn, new())
 
 /datum/gear_tweak/item_tf_spawn
 

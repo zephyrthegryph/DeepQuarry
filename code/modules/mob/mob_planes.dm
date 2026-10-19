@@ -272,6 +272,6 @@ CAPABILITIES(/atom/movable/screen/plane_master/augmented)
 	else
 		registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
 		if(my_mob.client)
-			my_mob.client.images -= GLOB.entopic_images
+			client_images_remove(my_mob.client, GLOB.entopic_images)
 // /mob/Destroy() cleanup of REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS) folded into the canonical /mob/Destroy() in mob.dm
 

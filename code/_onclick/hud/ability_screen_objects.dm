@@ -76,7 +76,7 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
 	if(user && user.client)
 		if(!(src in user.client.screen))
-			user.client.screen += src
+			client_screen_add(user.client, src)
 	var/i = 1
 	for(var/atom/movable/screen/ability/ability in ability_objects)
 		ability.index = i

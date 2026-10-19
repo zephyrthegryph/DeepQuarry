@@ -227,7 +227,7 @@
 	var/appearance_flags = 0								// Appearance/display related features.
 	var/spawn_flags = 0										// Flags that specify who can spawn as this species
 
-	var/obj/effect/decal/cleanable/blood/tracks/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
+	var/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
 	var/list/skin_overlays
 	var/has_floating_eyes = 0								// Whether the eyes can be shown above other icons
 	var/has_glowing_eyes = 0								// Whether the eyes are shown above all lighting

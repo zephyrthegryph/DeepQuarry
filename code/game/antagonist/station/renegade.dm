@@ -1,4 +1,3 @@
-GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 
 /datum/antagonist/renegade
 	id = MODE_RENEGADE
@@ -64,7 +63,6 @@ GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 
 /datum/antagonist/renegade/New()
 	..()
-	GLOB.renegades = src
 
 /datum/antagonist/renegade/create_objectives(datum/mind/player)
 
@@ -103,4 +101,8 @@ GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(H.stat == 2 || !(H.client)) continue
 		if(is_special_character(H)) continue
-		GLOB.renegades.add_antagonist(H.mind)
+		antag_renegades().add_antagonist(H.mind)
+
+/// The /datum/antagonist/renegade template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_renegades() as /datum/antagonist/renegade
+	return SSantag?.all_antag_types[MODE_RENEGADE]

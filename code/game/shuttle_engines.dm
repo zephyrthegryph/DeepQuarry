@@ -15,10 +15,8 @@
 	var/window_flags = 0 // Bitflags to indicate connected windows
 	var/wall_flags = 0 // Bitflags to indicate connected walls
 
-/obj/structure/shuttle/window/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover) && mover.checkpass(PASSGLASS))
-		return TRUE
-	return ..()
+CAPABILITIES(/obj/structure/shuttle/window)
+	passable(pass_flags = PASSGLASS) // movers with PASSGLASS go through (admission.md D7: the old CanPass override)
 
 /obj/structure/shuttle/window/Initialize(mapload)
 	. = ..()

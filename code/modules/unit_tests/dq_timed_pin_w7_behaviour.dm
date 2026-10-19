@@ -8,7 +8,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w7/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		bind_player(H, null, as_ckey = TRUE)
 
 /// Clicks `target` with `held` and checks that a timed action of `dur` starts (and says `start_text` when given). Returns the running action.
 /datum/unit_test/dq_timed_pin_w7/proc/begin(mob/user, atom/target, obj/item/held, dur, start_text = null)
@@ -52,7 +52,7 @@
 
 /// Equips `I` on `H` in `slot` and returns it.
 /datum/unit_test/dq_timed_pin_w7/proc/h_equip(mob/living/carbon/human/H, obj/item/I, slot)
-	TEST_ASSERT(H.equip_to_slot_if_possible(I, slot, disable_warning = TRUE), "[I] equips to [slot]")
+	TEST_ASSERT(H.equip_to_slot_if_possible(I, slot, quiet = TRUE), "[I] equips to [slot]")
 	return I
 
 /// Steps a mob one tile north (a move that cancels what it is doing).
@@ -569,7 +569,7 @@
 /datum/unit_test/dq_timed_pin_w7/h_straight_jacket_resist/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/clothing/suit/straight_jacket/J = allocate(/obj/item/clothing/suit/straight_jacket, run_loc_floor_bottom_left)
-	TEST_ASSERT(user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, disable_warning = TRUE), "setup: the user wears the jacket")
+	TEST_ASSERT(user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, quiet = TRUE), "setup: the user wears the jacket")
 	test_chat_clear()
 	user.resist()
 	h_started(user, null, "struggle to remove")
@@ -584,7 +584,7 @@
 /datum/unit_test/dq_timed_pin_w7/h_straight_jacket_resist_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/clothing/suit/straight_jacket/J = allocate(/obj/item/clothing/suit/straight_jacket, run_loc_floor_bottom_left)
-	user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, disable_warning = TRUE)
+	user.equip_to_slot_if_possible(J, SLOT_ID_SUIT, quiet = TRUE)
 	user.resist()
 	var/datum/T = h_started(user)
 	test_time(10 SECONDS)
@@ -599,7 +599,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/bed/roller/bed = allocate(/obj/structure/bed/roller, run_loc_floor_bottom_left)
 	var/obj/item/handcuffs/C = allocate(/obj/item/handcuffs, run_loc_floor_bottom_left)
-	TEST_ASSERT(bed.buckle_mob(user, forced = TRUE), "setup: the user is buckled")
+	TEST_ASSERT(bed.buckle_mob(user, authority = GLOB.authority_forced), "setup: the user is buckled")
 	TEST_ASSERT(user.equip_to_slot(C, SLOT_ID_HANDCUFFED), "setup: the user is cuffed")
 	test_chat_clear()
 	user.resist()

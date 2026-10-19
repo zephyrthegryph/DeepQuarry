@@ -280,17 +280,17 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
             }
             out.line("	return N");
             out.blank();
-            out.line(format!("/proc/act_{}({})", proc_name(&a.name), params.join(", ")));
+            out.line(format!("/proc/act_{}({}, act_answer = FALSE)", proc_name(&a.name), params.join(", ")));
             out.line(format!("	RETURN_TYPE({})", path_of(&a.name)));
             out.line(format!("	if(!act_wanted(holder, {}))", path_of(&a.name)));
             out.line("		return ACT_PASS");
             out.line(format!("	var/{}/A = act_begin({}, holder)", path_of(&a.name).trim_start_matches('/'), path_of(&a.name)));
             out.line("	if(!A)");
-            out.line("		return null");
+            out.line("		return act_answer ? act_refusal_of(ACT_REFUSED, /datum/msg/act/too_deeply_nested) : null");
             for (ty, nm) in &a.fields {
                 out.line(format!("	A.{} = {}{}", nm, nm, owned(ty)));
             }
-            out.line("	return act_resolve(A)");
+            out.line("	return act_resolve(A, act_answer)");
         } else if a.fixed {
             out.blank();
             out.line(format!("/proc/publish_{}({})", proc_name(&a.name), params.join(", ")));
@@ -368,7 +368,7 @@ fn declared_elsewhere(cx: &GenCx, notice: &str) -> BTreeSet<String> {
         Some(rest) if name_chars(rest) => mentions.iter().filter(|(rel, m)| rel != "code/engine/_generated/actions.dm" && m.iter().any(|run| run.starts_with(rest))).filter_map(|(rel, _)| cx.tree.get(rel)).collect(),
         _ => cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| f.rel != "code/engine/_generated/actions.dm" && f.code().text.contains(notice)).collect(),
     };
-    let table = crate::dm::dx::type_vars(&files);
+    let table = crate::dm::dx::type_vars_in(cx.tree, &files);
     table.get(notice).map(|v| v.iter().cloned().collect()).unwrap_or_default()
 }
 
@@ -409,8 +409,8 @@ ACTION(body_status, notice = /datum/notice/body_status_changed)
 	var/mob/living/landed_on"), "{}", text);
         assert!(text.contains("/datum/notice/fell
 	var/turf/landing"), "the notice is the past tense: {}", text);
-        assert!(text.contains("/proc/act_fall(datum/holder, turf/landing, mob/living/landed_on)"), "{}", text);
-        assert!(text.contains("	return act_resolve(A)"), "{}", text);
+        assert!(text.contains("/proc/act_fall(datum/holder, turf/landing, mob/living/landed_on, act_answer = FALSE)"), "{}", text);
+        assert!(text.contains("	return act_resolve(A, act_answer)"), "{}", text);
         assert!(text.contains("/datum/act/move
 	parent_type = /datum/act/action
 	var/turf/origin_turf"), "origin is the act's ORIGIN_*: {}", text);
@@ -419,7 +419,7 @@ ACTION(body_status, notice = /datum/notice/body_status_changed)
     #[test]
     fn a_slash_name_inherits_and_a_fixed_action_has_no_act() {
         let (text, _) = gen(SRC);
-        assert!(text.contains("/proc/act_hit_projectile(datum/holder, datum/damage_packet/packet)"), "{}", text);
+        assert!(text.contains("/proc/act_hit_projectile(datum/holder, datum/damage_packet/packet, act_answer = FALSE)"), "{}", text);
         assert!(text.contains("/datum/notice/hit/projectile"), "{}", text);
         assert!(!text.contains("/datum/act/slash"), "a FIXED action has no act type: {}", text);
         assert!(text.contains("/proc/publish_slash(datum/holder, mob/living/slasher)"), "{}", text);

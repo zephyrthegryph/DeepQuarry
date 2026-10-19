@@ -349,7 +349,7 @@ pub fn actor_tests(sem: &Sem, lines: &dyn Fn(&str, u32) -> Option<String>) -> Ve
         let owner = if ty.get().path.is_empty() { "/".to_string() } else { ty.get().path.clone() };
         for (name, tp) in ty.get().procs.iter() {
             for (i, v) in tp.value.iter().enumerate() {
-                if v.code.is_some() && is_handler(&owner, name, &v.parameters) {
+                if v.code.has_body() && is_handler(&owner, name, &v.parameters) {
                     handlers.push((owner.clone(), name.clone(), i));
                 }
             }

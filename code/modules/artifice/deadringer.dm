@@ -18,7 +18,7 @@ CAPABILITIES(/obj/item/deadringer)
 	ref_one(nameof(corpse), /mob/living/carbon/human)
 	ref_one(nameof(watchowner), /mob/living/carbon/human)
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))
-	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
+	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = any_of(nameof(activated), nameof(timer)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/deadringer/proc/ringer_busy()

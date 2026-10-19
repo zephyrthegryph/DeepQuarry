@@ -872,7 +872,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 			integrated_tools += list(list("name" = synth.name, "ref" = "\ref[synth]"))
 		for(var/tool in GLOB.material_synth_list)
 			var/material_path = GLOB.material_synth_list[tool]
-			if(!target().can_install_synth(material_path)) //Don't add it to the list if we already have it!
+			if(target().synth_install_refusal(material_path)) //Don't add it to the list if we already have it!
 				continue
 			tools += list(list("name" = tool, "path" = material_path))
 	else

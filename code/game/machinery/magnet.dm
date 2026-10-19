@@ -113,6 +113,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	configure(uses_power(idle = 50))
 	every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
+	ref_one(nameof(center))
 
 /obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
 	if(power_lost())

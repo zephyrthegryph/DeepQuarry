@@ -1,4 +1,3 @@
-GLOBAL_DATUM(survivors, /datum/antagonist/shipwreck_survivor)
 
 //Shipwreck survivors can only spawn from ghost_pods at time of this commit.
 //These are NOT meant to be real antagonists
@@ -31,7 +30,6 @@ GLOBAL_DATUM(survivors, /datum/antagonist/shipwreck_survivor)
 
 /datum/antagonist/shipwreck_survivor/New()
 	..()
-	GLOB.survivors = src
 
 /datum/antagonist/survivor/greet(datum/mind/player)
 	to_chat(player.current, span_warning("You are a <b>NOT</b> an antagonist! All rules apply to you as well. Your job is to help make the world seem more alive. \n \
@@ -47,3 +45,7 @@ GLOBAL_DATUM(survivors, /datum/antagonist/shipwreck_survivor)
 	You should use your ambitions to flesh out why your ship got wrecked \
 	and how you wish to proceed now that you were rescued. \n \
 	You <b>DON'T</b> need to set your ambitions. Feel free to ignore them."))
+
+/// The /datum/antagonist/shipwreck_survivor template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_survivors() as /datum/antagonist/shipwreck_survivor
+	return SSantag?.all_antag_types[MODE_SURVIVOR]

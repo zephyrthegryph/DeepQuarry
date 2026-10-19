@@ -166,4 +166,27 @@
 	test_time(4 SECONDS)
 	TEST_ASSERT(prey.loc != belly, "a prey that left the pred's reach is not eaten")
 
+/// The `by =` pin (relations proposal D4): a keyed relation links whichever end materializes second, re-links when either end's id is
+/// written through keyed_set_id(), and clears when the target is deleted.
+/datum/unit_test/dq_relation_keyed_by_pin
+
+/datum/unit_test/dq_relation_keyed_by_pin/Run()
+	var/turf/floor = test_floor()
+	// The target first, then the holder: the holder's materialize finds it.
+	var/obj/machinery/mass_driver/dq_keyed/driver = allocate(/obj/machinery/mass_driver/dq_keyed, floor)
+	var/obj/machinery/computer/pod/dq_keyed/computer = allocate(/obj/machinery/computer/pod/dq_keyed, floor)
+	TEST_ASSERT_EQUAL(computer.connected, driver, "a holder made after its target links on materialize")
+	// The target's id changes: it leaves the holder.
+	keyed_set_id(driver, nameof(driver.id), "dq_keyed_pod_other")
+	TEST_ASSERT_NULL(computer.connected, "a target whose id changed leaves the holder")
+	TEST_ASSERT(!(driver in computer.pod_drivers), "and the holder's list")
+	// The holder's id follows: it links again.
+	keyed_set_id(computer, nameof(computer.id), "dq_keyed_pod_other")
+	TEST_ASSERT_EQUAL(computer.connected, driver, "a holder whose id changed to the target's links to it")
+	TEST_ASSERT(driver in computer.pod_drivers, "and lists it")
+	// The target dies: the holder clears.
+	qdel(driver)
+	TEST_ASSERT_NULL(computer.connected, "a deleted target leaves the holder")
+	TEST_ASSERT_EQUAL(length(computer.pod_drivers), 0, "and its list")
+
 #endif

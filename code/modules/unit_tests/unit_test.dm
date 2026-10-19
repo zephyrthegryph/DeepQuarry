@@ -615,7 +615,7 @@ GLOBAL_VAR(dq_test_select_names)
 	run_deferred_cleanups()
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
-			qdel(thing)
+			qdel(thing, TRUE) // a cleanup: forced, so a container's contents go with it instead of spilling onto the block (admission.md D10)
 	// A test that took the kernel clock (test_driver_begin) hands it back whatever way it ended: an early return from a failed
 	// assertion or a runtime would otherwise leave every later test running on an injected clock.
 	test_driver_end()
@@ -1055,7 +1055,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/static/list/ignored = list(
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
-		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
 	)
 	return ignored
 
@@ -1491,7 +1491,17 @@ GLOBAL_VAR(boot_unclean)
 
 	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 	//We have to call this manually because del_text can preceed us, and SSticker doesn't fire in the post game
-	SSticker.declare_completion()
+	log_test("Unit-test suite: declaring the round complete.")
+	try
+		SSticker.declare_completion()
+	catch(var/exception/fault)
+		log_test("Unit-test suite: declare_completion() failed ([fault] at [fault.file]:[fault.line]); rebooting anyway.")
+	// A focused run has no players to read the round-end report: reboot now instead of on the ticker's after() timer. A sharded sweep
+	// world (dq_fresh_look_default) logged its suite finished and then never rebooted: no "Reboot:" line in 3 minutes, so the watchdog
+	// had to kill it and the run counted as unclean with every test passed. Reboot() writes the result markers (FinishTestRun()).
+	if(unit_test_is_focused_run())
+		log_test("Unit-test suite: rebooting the world (focused run).")
+		world.Reboot()
 
 /datum/map_template/unit_tests
 	name = "Unit Tests Zone"
@@ -1508,3 +1518,10 @@ GLOBAL_VAR(boot_unclean)
 
 CAPABILITIES(/datum/unit_test)
 	ref_many(nameof(allocated))
+	ref_one(nameof(run_loc_floor_bottom_left))
+	ref_one(nameof(run_loc_floor_top_right))
+	ref_one(nameof(test_block))
+
+CAPABILITIES(/datum/unit_test_block)
+	ref_one(nameof(bottom_left))
+	ref_one(nameof(top_right))

@@ -14,8 +14,10 @@
 
 
 CAPABILITIES(/obj/structure/mirror)
+	derives(nameof(glass), PROC_REF(initial_mirror_glass))
+	derives(nameof(icon_state), PROC_REF(initial_mirror_state))
 	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
-	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(cond_not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_wrench", tool(TOOL_WRENCH), when(nameof(glass)), wait(0), then(PROC_REF(wrench_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
@@ -28,13 +30,11 @@ CAPABILITIES(/obj/structure/mirror)
 /// A mirror built on a wall (its constructor param).
 /obj/structure/mirror/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
-/obj/structure/mirror/Initialize(mapload)
-	. = ..()
-	if(building)
-		set_glass(0)
-		icon_state = "mirror_frame"
-
+/// Constructor-built mirrors are empty frames; mapped glass and broken variants keep their defaults.
+/obj/structure/mirror/proc/initial_mirror_glass(target)
+	return building ? FALSE : glass
+/obj/structure/mirror/proc/initial_mirror_state(target)
+	return building ? "mirror_frame" : icon_state
 
 /// A hand, or a silicon beside it: the appearance changer, while the glass is whole.
 /obj/structure/mirror/proc/mirror_open_ui(datum/act/op/A)
@@ -139,7 +139,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 /// Overrides mirror's mirror_open_ui(): raiders may become Vox here, then the mirror opens as usual.
 /obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held)
 	if(istype(get_area(src),/area/syndicate_mothership))
-		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
+		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && isnull(alien_whitelist_refusal(user.client, GLOB.all_species[SPECIES_VOX])))
 			open_request(src, /datum/prompt/yes_no, PROC_REF(become_vox_answered), answerer = user, title = "Become Vox?", question = "Do you wish to become a true Vox of the Shoal? This is not reversible.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return ..()
 
@@ -149,7 +149,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	var/mob/living/carbon/human/user = A.request.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
 	vox.set_gender(user.gender)
-	GLOB.raiders.equip(vox)
+	antag_raiders().equip(vox)
 	if(user.mind)
 		user.mind.transfer_to(vox)
 	open_request(vox, /datum/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), answerer = vox, title = "Name change", question = "Enter a name, or leave blank for the default name.", default = "", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
@@ -164,4 +164,4 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 		newname = L.get_random_name()
 	vox.set_real_name(newname)
 	vox.name = vox.real_name
-	GLOB.raiders.update_access(vox)
+	antag_raiders().update_access(vox)

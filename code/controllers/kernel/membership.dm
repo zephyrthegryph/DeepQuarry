@@ -27,13 +27,20 @@
 	/// key -> assoc role text -> list of members holding it (role-indexed keys only).
 	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/roles_by_key = list()
+	/// key -> TRUE for an ordered key (a registry's): its member list keeps join order and may be reordered in place by its owner (a sorted
+	/// registry), so index_by_key[key] is a presence set there, not a position, and a leave is a list removal (relations proposal D12).
+	var/list/ordered_keys
+	/// key -> the key's place index (a registry's /datum/lifeform_index: members by registry key, z and area), when it has one.
+	var/list/subindex_by_key
 	/// member -> list of keys it belongs to, for teardown and systems_of().
 	// ALLOW(instance_list): singleton or per-registration table, one instance per system; not a per-entity list
 	var/list/keys_of = list()
 
 /// The one membership store.
 /proc/kernel_membership()
-	var/static/datum/kernel_membership/store = new
+	var/static/datum/kernel_membership/store
+	if(!store)
+		store = new // made on first use, so it exists from global init on (a static initializer ran after the globals that join registries)
 	return store
 
 /// The store's member list for `key`, created (empty) if no member joined yet. The store keeps this one list for
@@ -44,8 +51,6 @@
 	if(!key)
 		return null
 	var/datum/kernel_membership/M = kernel_membership()
-	if(!istype(M)) // global init: the store's static is not built yet (the engine resolves the list on first run)
-		return null
 	if(!M.index_by_key[key])
 		M.index_by_key[key] = list()
 		M.members_by_key[key] = list()
@@ -80,7 +85,7 @@
 		return FALSE
 	var/list/members = M.members_by_key[key]
 	members += member
-	index[member] = length(members)
+	index[member] = M.ordered_keys?[key] ? TRUE : length(members)
 	var/list/keys = M.keys_of[member]
 	if(!keys)
 		keys = M.keys_of[member] = list()
@@ -122,11 +127,14 @@
 		if(length(held))
 			return FALSE
 	var/list/members = M.members_by_key[key]
-	var/last = length(members)
-	var/datum/moved = members[last]
-	members[at] = moved
-	index[moved] = at
-	members.len = last - 1
+	if(M.ordered_keys?[key])
+		members -= member // join order kept (a registry's list)
+	else
+		var/last = length(members)
+		var/datum/moved = members[last]
+		members[at] = moved
+		index[moved] = at
+		members.len = last - 1
 	index -= member
 	sources -= member
 	var/list/role_of = M.role_by_key[key]
@@ -147,10 +155,10 @@
 /// itself a key (a datum used as a system), every member leaves it. Costs one lookup for a datum with neither.
 /proc/member_teardown(datum/D)
 	var/datum/kernel_membership/M = kernel_membership()
-	if(!istype(M)) // global init: the store's static is not built yet, and nothing has joined
-		return
 	if(M.keys_of[D])
 		for(var/key in member_keys(D))
+			if(M.ordered_keys?[key])
+				continue // a registry key: the registry's own leave (leave_registries(), on dematerialize) unfiles its sub-indexes too
 			leave(key, D, all = TRUE)
 	if(M.members_by_key[D])
 		for(var/datum/member as anything in members_of(D).Copy())
@@ -197,3 +205,58 @@
 	for(var/key in .)
 		member_leave(key, member, all = TRUE)
 	return .
+
+/// Makes `key` an ordered key whose member list is `members` (a registry's own list, which REGISTRY_MEMBERS() hands out): the store adopts the
+/// list object so every holder of it keeps seeing the live members. Any members already in it are indexed. Idempotent.
+/proc/member_adopt_ordered(key, list/members)
+	var/datum/kernel_membership/M = kernel_membership()
+	if(M.ordered_keys?[key])
+		return M.members_by_key[key]
+	LAZYSET(M.ordered_keys, key, TRUE)
+	M.members_by_key[key] = members
+	var/list/index = M.index_by_key[key] = list()
+	var/list/sources = M.sources_by_key[key] = list()
+	M.role_by_key[key] = list()
+	for(var/datum/member as anything in members)
+		index[member] = TRUE
+		var/list/held = sources[member] = list()
+		held[member] = TRUE
+		var/list/keys = M.keys_of[member]
+		if(!keys)
+			keys = M.keys_of[member] = list()
+		keys |= key
+	return members
+
+/// Every member of `leaving` leaves ordered key `key` in one pass (a batched destroy): one list subtraction, not one per member.
+/proc/member_leave_many(key, list/leaving)
+	var/datum/kernel_membership/M = kernel_membership()
+	var/list/index = M.index_by_key[key]
+	if(!index || !length(leaving))
+		return
+	var/list/gone = list()
+	for(var/datum/member as anything in leaving)
+		if(index[member])
+			gone += member
+	if(!length(gone))
+		return
+	var/list/members = M.members_by_key[key]
+	members -= gone
+	index -= gone
+	var/list/sources = M.sources_by_key[key]
+	sources -= gone
+	for(var/datum/member as anything in gone)
+		var/list/keys = M.keys_of[member]
+		if(keys)
+			keys -= key
+			if(!length(keys))
+				M.keys_of -= member
+
+/// The place index the store keeps for `key` (a registry's key/z/area index), or null.
+/proc/member_subindex(key)
+	var/datum/kernel_membership/M = kernel_membership()
+	return M.subindex_by_key?[key]
+
+/// Gives `key` its place index.
+/proc/member_subindex_set(key, datum/index)
+	var/datum/kernel_membership/M = kernel_membership()
+	LAZYSET(M.subindex_by_key, key, index)

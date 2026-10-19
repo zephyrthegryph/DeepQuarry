@@ -66,15 +66,15 @@
 /// TRUE when something reads the pseudo segment `segment` of anything: a stat input, a derived() hop, an on_change() path, a generated read.
 /// Asked on every move, so it is a few list lookups; the registries are filled while the world boots.
 /proc/hop_segment_read(segment)
-	if(!GLOB.hop_segments_built && (length(GLOB.generated_read_names) || length(GLOB.generated_draw_reads)))
+	if(!GLOB.hop_segments_built && (length(GLOB.generated_read_names) || length(GLOB.generated_plans)))
 		GLOB.hop_segments_built = TRUE
 		for(var/name in list(HOP_TURF, HOP_AREA))
 			if(name in GLOB.generated_read_names)
 				GLOB.hop_segments_read[name] = TRUE
-		for(var/type in GLOB.generated_draw_reads)
-			var/list/reads = GLOB.generated_draw_reads[type]
+		for(var/type in GLOB.generated_plans)
+			var/list/plan = GLOB.generated_plans[type]
 			for(var/name in list(HOP_TURF, HOP_AREA))
-				if(name in reads)
+				if(plan[name] & PLAN_DRAW)
 					GLOB.hop_segments_read[name] = TRUE
 	return GLOB.stat_input_keys?[segment] || GLOB.derived_read_vars?[segment] || GLOB.hop_segments_read[segment]
 
@@ -117,7 +117,7 @@ GLOBAL_VAR_INIT(hop_segments_built, FALSE)
 
 // ---- draws that read a hop chain away ----
 
-/// var name -> the hop chains some type's draw reads it through, built from generated_draw_hop_reads on first use. A read path is "<hop>.<link>...<var>"
+/// var name -> the hop chains some type's draw reads it through, built from the plans (PLAN_DRAW_HOP) on first use. A read path is "<hop>.<link>...<var>"
 /// (`loc.cell.charge`): the chain is every segment before the var, in order from the reader. Each link is also a var some draw reads one hop shorter
 /// (`loc.cell`), so a change of a link republishes through its own publisher and lands here as a var of its own.
 /// Each entry is list(chain, read) where chain is the list of segments from the reader to the entity that holds the var.
@@ -127,11 +127,14 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 /// The chains some draw reads `var_name` through, or null: asked by every publish of a var, so after the first call it is one list lookup.
 /proc/draw_hop_reads_var(var_name)
 	if(!GLOB.draw_hop_vars_built)
-		if(!length(GLOB.generated_draw_hop_reads))
+		if(!length(GLOB.generated_plans))
 			return null
 		GLOB.draw_hop_vars_built = TRUE
-		for(var/type in GLOB.generated_draw_hop_reads)
-			for(var/read in GLOB.generated_draw_hop_reads[type])
+		for(var/type_text in GLOB.generated_plans)
+			var/type = text2path(type_text)
+			if(!type)
+				continue // a test-only type in a production build
+			for(var/read in plan_keys(type, PLAN_DRAW_HOP))
 				var/list/segments = splittext(read, ".")
 				if(length(segments) < 2)
 					continue
@@ -146,15 +149,7 @@ GLOBAL_VAR_INIT(draw_hop_vars_built, FALSE)
 
 /// What the draw of D's type (the nearest type with a draw) reads through a hop chain, as "<hop>.<link>...<var>", or null.
 /proc/draw_hop_reads_of(datum/D)
-	var/list/table = GLOB.generated_draw_hop_reads
-	var/path = D.type
-	while(path)
-		var/list/reads = table["[path]"]
-		if(reads)
-			return reads
-		var/datum/typed = path
-		path = initial(typed.parent_type)
-	return null
+	return plan_keys(D.type, PLAN_DRAW_HOP) // the change graph's plan (code/engine/change/plan.dm)
 
 /// `var_name` of E changed: every draw that reads it through a hop chain (an item drawing its holder's state, a light drawing its area's switch, a
 /// flash drawing the charge of the cell in the robot that carries it) is marked for a redraw. The chain is walked back from E one segment at a

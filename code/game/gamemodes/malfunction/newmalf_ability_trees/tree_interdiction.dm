@@ -306,7 +306,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 		return OP_REFUSED
 	// Connect the cyborg to AI
 	target.set_master_ai(src)
-	target.lawupdate = TRUE
+	target.set_lawupdate(TRUE)
 	target.sync()
 	target.show_laws()
 	return OP_OK

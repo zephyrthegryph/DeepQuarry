@@ -168,7 +168,7 @@
 MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
 
 /// What the bot's settings window shows: the settings while it is unlocked, or to a viewer whose inputs come over a link (a silicon's:
-/// A.authority & AUTH_REMOTE_ACCESS). The settings ops say the same with when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))).
+/// A.authority & AUTH_REMOTE_ACCESS). The settings ops say the same with when(any_of(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))).
 /mob/living/bot/proc/settings_unlocked(datum/act/eval/A)
 	return !locked || (A && (A.authority & AUTH_REMOTE_ACCESS))
 
@@ -717,6 +717,7 @@ CAPABILITIES(/mob/living/bot)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	owns_one(nameof(paicard), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(obstacle))
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

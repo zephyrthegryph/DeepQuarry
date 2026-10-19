@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/nif)
 	op("stuff_in", at_target(/mob/living/carbon/human), when(PROC_REF(stuffable)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Stuff it in"),
 		needs(req_adjacent(), req(PROC_REF(stuff_in_unclothed)), req(PROC_REF(stuff_in_torso))),
 		begins(PROC_REF(stuffing_text)), wait(20 SECONDS), then(PROC_REF(stuff_in_done)))
+	ref_many(nameof(nifsofts_life))
 
 /**
  * Small helper datum to manage the HUD icon.
@@ -68,7 +69,7 @@ CAPABILITIES(/obj/item/nif)
 // Deletes its button from the hud that owns it. Hooks and the owner ref are core work.
 /datum/nif_menu/on_destroy(force)
 	if(screen_icon)
-		owner?.client?.screen -= screen_icon
+		client_screen_remove(owner.client, screen_icon)
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
 			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
@@ -95,7 +96,7 @@ CAPABILITIES(/obj/item/nif)
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
-	user.client?.screen += screen_icon
+	client_screen_add(user.client, screen_icon)
 
 	grant(user, granted_verb(/mob/living/carbon/human/proc/nif_menu), src)
 
@@ -239,3 +240,7 @@ CAPABILITIES(/obj/item/nif)
 /// A requirement that never holds: the blocked click is refused without a word, as the legacy tool act ended it.
 /obj/item/nif/proc/never(datum/act/op/A)
 	return /datum/msg/req_silent
+
+CAPABILITIES(/datum/nif_menu)
+	ref_one(nameof(owner))
+	ref_one(nameof(screen_icon))

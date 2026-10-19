@@ -125,8 +125,8 @@ CAPABILITIES(/mob/living/silicon/ai)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
 	// a dummy (the announcer) carries no PDA or communicator
-	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(cond_not(nameof(is_dummy)), /obj/item/communicator/integrated))
-	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(cond_not(nameof(is_dummy)), /obj/item/pda/ai))
+	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(not(nameof(is_dummy)), /obj/item/communicator/integrated))
+	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(not(nameof(is_dummy)), /obj/item/pda/ai))
 	// its radio and laws exist before its parents' init: the welcome message lists the radio's channels, and a malf round shows the laws
 	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated, starts = /obj/item/radio/headset/heads/ai_integrated, early = TRUE)
 	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(start_laws), early = TRUE)
@@ -182,6 +182,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
 	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
 	op("use_wrench", tool(TOOL_WRENCH), label("Bolt or unbolt"), needs(req(PROC_REF(shell_refusal))), starts(PROC_REF(bolting_started)), begins(PROC_REF(bolting_begins)), wait(4 SECONDS), then(PROC_REF(wrench_act_tool_done)), on_interrupt(PROC_REF(wrench_act_tool_failed)))
+	ref_many(nameof(connected_robots))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
@@ -275,7 +276,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 
-	if (GLOB.malf && !(mind in GLOB.malf.current_antagonists))
+	if (antag_malf() && !(mind in antag_malf().current_antagonists))
 		show_laws()
 		to_chat(src, span_filter_notice(span_bold("These laws may be changed by other players, or by you being the traitor.")))
 

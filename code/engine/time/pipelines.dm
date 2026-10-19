@@ -9,7 +9,7 @@
 //     it runs, is skipped until one of its wake_on channels changes or its rewake deadline fires
 //   - parking: an entity whose stages are all idle for `park_after` frames in a row leaves the
 //     ring (entity_park); any stage wake brings it back (entity_unpark)
-//   - frame facts: lazily computed, cached per frame, read by run_if specs (FACT("alive"))
+//   - frame facts: lazily computed, cached per frame, read by run_if specs (list(/datum/requirement_definition/fact = "alive"))
 //   - variants: a family of stage types, one per entity type; the one whose `of` is deepest in
 //     the entity's inheritance wins, resolved when the plan for that type is built
 //   - F.abort(), rewake deadlines on the core wheel keyed by (entity, pipeline, stage), frame
@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	/// Channels on the entity whose change wakes this stage once it is idle. The pipeline's
 	/// `wake_all` channels wake every stage.
 	var/wake_on = 0
-	/// Check spec over frame facts (FACT("x"), NOT_OF(...), ALL_OF(...)) and ordinary checks
+	/// Check spec over frame facts (list(/datum/requirement_definition/fact = "x"), combinators) and ordinary checks
 	/// (actor = the entity, target = the frame). The stage is skipped while it fails.
 	var/run_if
 	/// Families this stage runs after, or before.
@@ -211,7 +211,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		if((req & bit) ? !V[i] : V[i])
 			. |= bit
 
-/// A frame fact inside a check spec: FACT("alive"). The target is the frame.
+/// A frame fact inside a check spec: list(/datum/requirement_definition/fact = "alive"). The target is the frame.
 /datum/requirement_definition/fact
 
 /datum/requirement_definition/fact/why_not(datum/actor, datum/target)
@@ -235,6 +235,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 // ===================================================================== the pipeline
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definitions, never deleted in a round (relations proposal D8)
 /datum/work_pipeline
 	parent_type = /datum/scheduled_behaviour
 	abstract_type = /datum/work_pipeline

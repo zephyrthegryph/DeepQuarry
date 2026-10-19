@@ -37,6 +37,7 @@
 CAPABILITIES(/datum/privacy_poll_dialog)
 	interface("PrivacyPoll", title = "Player Poll — Privacy", state = nameof(GLOB.tgui_always_state))
 	op("vote", ui_act("vote", arg("choice")), then(PROC_REF(ui_act_vote)))
+	ref_one(nameof(owner))
 
 /datum/privacy_poll_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -118,6 +119,7 @@ CAPABILITIES(/datum/poll_browser_dialog)
 	op("vote_text_abstain", ui_act("vote_text_abstain", arg("pollid", num())), then(PROC_REF(ui_act_vote_text_abstain)))
 	op("vote_numval", ui_act("vote_numval", arg("pollid", num()), arg("ratings")), then(PROC_REF(ui_act_vote_numval)))
 	op("vote_multi", ui_act("vote_multi", arg("optionids"), arg("pollid", num())), then(PROC_REF(ui_act_vote_multi)))
+	ref_one(nameof(owner))
 
 /datum/poll_browser_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)

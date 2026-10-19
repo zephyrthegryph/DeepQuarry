@@ -8,7 +8,7 @@ TRACKED(/obj/item/gizmo, on)
 TRACKED(/obj/item/gizmo, jammed)
 CAPABILITIES(/obj/item/gizmo)
 	/// Hums while on and not jammed.
-	every(1 SECOND, then(PROC_REF(gizmo_step)), when = cond_all(nameof(on), cond_not(nameof(jammed))))
+	every(1 SECOND, then(PROC_REF(gizmo_step)), when = all_of(nameof(on), not(nameof(jammed))))
 
 /obj/item/gizmo/proc/gizmo_step(datum/act/timer/A)
 	var/delta = 1 SECOND

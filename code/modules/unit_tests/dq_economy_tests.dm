@@ -1290,4 +1290,4 @@
 	for(var/turf/T in get_area(run_loc_floor_bottom_left))
 		own_turf_contents(T) // the delivered crate lands on a clear turf of the area: the test owns it
 	SSsupply.shuttle = real_shuttle
-	qdel(fake_shuttle)
+	qdel(fake_shuttle, TRUE) // shuttles are kept for the round unless forced

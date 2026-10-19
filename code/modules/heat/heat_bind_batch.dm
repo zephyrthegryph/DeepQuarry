@@ -27,7 +27,7 @@
 
 /// Open bind scopes; create_heat_body() reserves while > 0.
 GLOBAL_VAR_INIT(dq_heat_bind_depth, 0)
-/// Atom handle (entity_handle) -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
+/// Atom handle (ref_token) -> its queued configure args (`handle, capacity, temperature, kind, target, conductance, keep`).
 GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
 /// Reserved handles not yet handed out.
 GLOBAL_LIST_EMPTY(dq_heat_body_pool)
@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	var/handle = dq_heat_body_take()
 	if(isnull(handle))
 		return null
-	GLOB.dq_heat_bind_pending[entity_handle(A)] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
+	GLOB.dq_heat_bind_pending[ref_token(A)] = list(handle, capacity, temperature, kind, target, conductance, keep ? TRUE : FALSE)
 	return handle
 
 /// Configures the pending bodies of `atoms` (default: all) in one Rust call, then runs
@@ -97,7 +97,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 			continue
 		pending -= h
 		// An entry whose atom no longer resolves is dropped.
-		var/atom/A = resolve_handle(h)
+		var/atom/A = resolve_token(h)
 		if(!A)
 			continue
 		// Released or replaced while pending: nothing to configure.

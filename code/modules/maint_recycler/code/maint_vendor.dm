@@ -27,6 +27,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(move_after_init)))
@@ -51,7 +52,6 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	monitor_screen.icon = src.icon
 	monitor_screen.icon_state = "screen_off"
 
-	src.vis_contents |= monitor_screen
 	shuffle_inplace(product_datums) //looks weird to have a billion carpet entries right next to eachother
 
 /// A mapped one moves to a marker, once the markers exist.
@@ -220,3 +220,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	. = ..()
 	if(power_lost())
 		set_on_state(FALSE)
+
+/// Shows the parts Initialize() built through this holder (the engine's vis_contents verb).
+/obj/machinery/maint_vendor/proc/show_vis_parts(datum/act/timer/A)
+	vis_add(src, monitor_screen)

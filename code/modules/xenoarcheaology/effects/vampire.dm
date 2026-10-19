@@ -106,3 +106,6 @@
 
 /datum/artifact_effect/vampire/DoEffectPulse()
 	DoEffectAura()
+
+CAPABILITIES(/datum/artifact_effect/vampire)
+	ref_many(nameof(nearby_mobs))

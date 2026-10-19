@@ -5,17 +5,17 @@
 // types. All clicks here forward back to /datum/admins.Topic via _src_=holder
 // so the existing action handlers stay in place.
 
-/// Open panels: "holder-target" key -> the panel's entity_handle (a panel deleted elsewhere stops resolving).
+/// Open panels: "holder-target" key -> the panel's ref_token (a panel deleted elsewhere stops resolving).
 GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 /datum/admins/proc/dq_open_edit_player_panel(mob/player)
 	if(!owner()?.mob || !player)
 		return
 	var/key = "[REF(src)]-[REF(player)]"
-	var/datum/edit_player_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_edit_player_panels, key))
+	var/datum/edit_player_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_edit_player_panels, key))
 	if(!panel)
 		panel = new(src, player)
-		GLOB.dq_edit_player_panels[key] = entity_handle(panel)
+		GLOB.dq_edit_player_panels[key] = ref_token(panel)
 	panel.tgui_interact(owner().mob)
 
 /datum/edit_player_panel

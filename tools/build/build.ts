@@ -93,6 +93,17 @@ import {
 import { cachedDmbcDir, compilerSourcesDirty, currentIsCommit, devCompilerDir, dmbcBinOverride, dmbcCacheDir, dmbcCacheKey, mayAdvanceCurrent, pruneDmbcVersions, publishDmbc, publishDmbcVersion, stageDmbcVersion, sharedDmbcBinDir, sharedDmbcBuildTarget, sharedDmbcExe, staleCargoArtifactSignature, storeDmbc } from './lib/dmbc_cache';
 import { planPrewarm, runPrewarmBuild, warmAndPromote, type PrewarmDecision } from './lib/dmbc_prewarm';
 
+// Every build runs below normal priority, and so does everything it starts (DreamMaker, DreamChecker, dmbc and its daemon, cargo and
+// rustc inherit it): the machine is also the user's desktop, and lanes running beside a game lagged it badly (2026-10-19).
+// DQ_PRIORITY=normal keeps the old behaviour.
+if (process.env.DQ_PRIORITY !== 'normal') {
+  try {
+    os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {
+    // best effort
+  }
+}
+
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
@@ -670,12 +681,17 @@ const ANALYZE_PROFILE = process.env.DQ_ANALYZE_PROFILE || (process.env.CI ? 'rel
 const analyzeCargoArgs = (): string[] => ['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml'];
 const ANALYZE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
 
-// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_CACHE, default
+// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_BIN_CACHE, default
 // E:/dq-cache/analyze-bin on Windows, else ~/.cache/dq/analyze-bin; `off` disables it), keyed by a
 // hash of the engine's sources, so a fresh worktree copies the binary instead of a 2 minute cargo
 // build. `<bin>.key` records which sources the binary in the target dir was built from.
 const analyzeCacheDir = (): string | null => {
-  const env = process.env.DQ_ANALYZE_CACHE;
+  // DQ_ANALYZE_CACHE once named this cache too, but the analyzer reads it as its lint-cache directory: set to the binary cache it filled
+  // that directory with lint files. It is the analyzer's alone now.
+  const env = process.env.DQ_ANALYZE_BIN_CACHE;
+  if (process.env.DQ_ANALYZE_CACHE && /analyze-bin/.test(process.env.DQ_ANALYZE_CACHE)) {
+    Juke.logger.warn("DQ_ANALYZE_CACHE points at the binary cache; it moves the analyzer's lint cache. Use DQ_ANALYZE_BIN_CACHE for binaries.");
+  }
   if (env === 'off' || env === '0') return null;
   if (env) return path.resolve(env);
   if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';
@@ -717,6 +733,8 @@ const analyzeSourceKey = (): string => {
     // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
     ...analyzeWalk('tools/analyze/src'),
     ...analyzeWalk('tools/analyze/fixtures'),
+    // The vendored parser (tools/analyze/vendor) is compiled into the binary too.
+    ...analyzeWalk('tools/analyze/vendor'),
   ]
     .map((f) => f.replace(/\\/g, '/'))
     .sort();
@@ -1057,15 +1075,26 @@ export const DmTarget = new Juke.Target({
     } else if (!checker) {
       Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
     }
-    const results = await Promise.allSettled([
-      checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve(),
+    const compile = () =>
       DreamMaker(`${DME_NAME}.dme`, {
         defines: ['CBT', ...get(DefineParameter)],
         warningsAsErrors: get(WarningParameter).includes('error'),
         ignoreWarningCodes: get(NoWarningParameter),
         namedDmVersion: get(DmVersionParameter),
-      }),
-    ]);
+      });
+    const check = () => (checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve());
+    // DQ_DREAMCHECKER_AFTER=1 (the merge gates set it): DreamChecker starts when the compile has finished, not beside it. On a loaded
+    // machine the two peaks together (the compiler daemon's 9-25 GB and DreamChecker's whole-tree parse) ended in "memory allocation
+    // failed" inside DreamChecker; the gate's production compile is not its critical path, so the extra minutes cost nothing there.
+    const sequential = process.env.DQ_DREAMCHECKER_AFTER === '1';
+    let results: PromiseSettledResult<unknown>[];
+    if (sequential) {
+      const made = await Promise.allSettled([compile()]);
+      const checked = await Promise.allSettled([check()]);
+      results = [checked[0], made[0]];
+    } else {
+      results = await Promise.allSettled([check(), compile()]);
+    }
     if (results[0].status === 'rejected') {
       fs.rmSync(`${DME_NAME}.dmb`, { force: true });
       Juke.logger.error('dream-checker failed (see above); the .dmb was removed');

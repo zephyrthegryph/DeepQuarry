@@ -34,6 +34,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 	interface("NtosNetDownloader")
 	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_removequeued", ui_act("PRG_removequeued", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_removequeued)))
+	ref_one(nameof(my_computer))
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()

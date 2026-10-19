@@ -55,7 +55,7 @@
 	if(loc != L.loc)
 		return
 
-	if(L.buckle_mob(src, forced = TRUE))
+	if(L.buckle_mob(src, authority = GLOB.authority_forced))
 		rel_set(src, nameof(victim), L)
 		set_consuming(TRUE)
 		ai_busy_begin() // Don't want the AI to interfere with eatting.

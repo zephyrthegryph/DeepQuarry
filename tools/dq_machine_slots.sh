@@ -11,10 +11,10 @@
 #   source tools/dq_machine_slots.sh; slots_acquire <class> [label]; ...; slots_release   # in a script (set a trap)
 #
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
-#   dm_compile      DQ_SLOTS_DM_COMPILE=2       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
-#   test_world      DQ_SLOTS_TEST_WORLD=cpus/3  (2 to 6; 5 on 16 CPUs) one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
+#   dm_compile      DQ_SLOTS_DM_COMPILE=1       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
+#   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
-#   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=2   a focused run holding dq_look_state_pin / dq_look_tree_pin
+#   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=1   a focused run holding dq_look_state_pin / dq_look_tree_pin
 #                                               (DQ_LOOK_PIN_SLOTS is accepted as the old name)
 # Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
 # for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
@@ -54,12 +54,8 @@ slots_cpus() { # logical CPUs of this machine (1 when unknown)
 	echo "$n"
 }
 
-slots_default_test_world() { # one DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6
-	local n
-	n=$(( $(slots_cpus) / 3 ))
-	[ "$n" -lt 2 ] && n=2
-	[ "$n" -gt 6 ] && n=6
-	echo "$n"
+slots_default_test_world() { # 2 by default: the machine is also the user's desktop (gaming while lanes run lagged it badly, 2026-10-19)
+	echo "${DQ_SLOTS_TEST_WORLD_DEFAULT:-2}"
 }
 
 slots_capacity() { # class -> count (0 = off)
@@ -72,10 +68,10 @@ slots_capacity() { # class -> count (0 = off)
 	if [ -z "$val" ] && [ "$cls" = "look_state_pin" ]; then val="${DQ_LOOK_PIN_SLOTS:-}"; fi
 	if [ -z "$val" ]; then
 		case "$cls" in
-			dm_compile) val=2 ;;
+			dm_compile) val=1 ;;
 			test_world) val="$(slots_default_test_world)" ;;
 			cargo) val=1 ;;
-			look_state_pin) val=2 ;;
+			look_state_pin) val=1 ;;
 			*) val=1 ;;
 		esac
 	fi
@@ -192,6 +188,22 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	echo "${out:- nobody}"
 }
 
+# A single-slot waiter goes when it heads the queue, or when everything ahead of it is a group (a multi-world run) that has not yet
+# waited out its patience: one focused world must not wait 25 minutes behind a five-world request collecting slots. A group past its
+# patience (DQ_SLOTS_GROUP_PATIENCE_SEC, default 120) blocks like any head again and then takes what is free, so groups are delayed,
+# never starved.
+_slots_single_may_go() { # dir name
+	local d="$1" name="$2" q now queued
+	now="$(date +%s)"
+	for q in $(ls "$d/queue" 2>/dev/null | sort); do
+		[ "$q" = "$name" ] && return 0
+		grep -q '^group=' "$d/queue/$q" 2>/dev/null || return 1
+		queued="$(_slots_field "$d/queue/$q" queued)"
+		[ $(( now - ${queued:-$now} )) -lt "${DQ_SLOTS_GROUP_PATIENCE_SEC:-120}" ] || return 1
+	done
+	return 1
+}
+
 _slots_acquire() {
 	local cls="${1:?class}" label="${2:-}" max root d top prio usable now name waited=0 last=0 i pos
 	max="$(slots_capacity "$cls")"
@@ -209,7 +221,7 @@ _slots_acquire() {
 	SLOTS_T_QUEUED="$now"
 	while true; do
 		_slots_reap "$d"
-		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+		if _slots_single_may_go "$d" "$name"; then
 			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
@@ -339,11 +351,20 @@ _slots_group_acquire() {
 	now="$(date +%s)"
 	name="$prio-$(printf '%013d' "$now")-$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
 	SLOTS_GROUP_T_QUEUED="$now"
+	local free take
 	while true; do
 		_slots_reap "$d"
-		if [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+		# The head takes slots only when it can take all it wants at once, or (past its patience) whatever is free, at least one: it does
+		# not sit on a partial group while single worlds wait behind it. A smaller group starts its other worlds as its slots come back.
+		free=0
+		take=0
+		for ((i = 1; i <= usable; i++)); do [ -d "$d/slot.$i" ] || free=$((free + 1)); done
+		if [ "$have" -gt 0 ] || [ "$free" -ge "$want" ]; then take="$want"
+		elif [ "$waited" -ge "${DQ_SLOTS_GROUP_PATIENCE_SEC:-120}" ] && [ "$free" -ge 1 ]; then take="$free"; fi
+		if [ "$take" -gt 0 ] && [ "$(ls "$d/queue" 2>/dev/null | sort | head -n 1)" = "$name" ]; then
+			[ "$take" -lt "$want" ] && want="$take"
 			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"

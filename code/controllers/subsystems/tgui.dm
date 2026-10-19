@@ -694,12 +694,8 @@ CAPABILITIES(/datum/system/tgui)
 	var/mob/source = ui.user
 	if(source == target)
 		return FALSE
-	if(source && islist(source.tgui_open_uis))
-		source.tgui_open_uis -= ui
-	ui.user = target
-	if(!islist(target.tgui_open_uis))
-		target.tgui_open_uis = list()
-	target.tgui_open_uis |= ui
+	// One write: the declared link (/datum/tgui::user <-> /mob::tgui_open_uis) leaves the old user's list and joins the new one's.
+	rel_set(ui, nameof(ui.user), target)
 	ui.status_watch()
 	return TRUE
 

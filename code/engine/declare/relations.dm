@@ -44,9 +44,14 @@
 			continue
 		switch(E.kind)
 			if(ENTRY_REF_ONE, ENTRY_REF_MANY)
+				if(E.args["weak"])
+					. += _own_entry(E.args["var"], list(OWNK_WEAK, null, null, null, E.kind == ENTRY_REF_MANY, null, null, null, E.args["type"]), FALSE, FALSE, FALSE)
+					continue
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
+				if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+					. += _own_entry(E.args["var"], null, FALSE, FALSE, FALSE, relation_starts(E))
 				if(by)
 					keyed_target_register(E.args["type"], keyed_var_name(E.args["target_key"]) || by)
 			if(ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
@@ -68,6 +73,16 @@
 			found += E
 	T.owns_scan = found
 	return found
+
+/// Starting-reference metadata stays separate from ownership: no owner stamp or policy
+/// is introduced, only the existing creation/resolution phase and dependency ordering.
+/proc/table_start_entries(datum/type_table/T)
+	var/list/owned_entries = table_owns_entries(T)
+	. = owned_entries.Copy()
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
+			. += E
 
 /// table_hook_flags(T), kept on the table once the stat definitions exist: before that stat_table_needs_init() answers from an unbuilt
 /// GLOB.stat_defs, so an early answer is recomputed each time and never kept.
@@ -187,34 +202,25 @@
 		return null
 	return length(when_entry.children) ? when_entry.children[1] : null
 
-/// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF.
+/// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF, a requirement.
+/// One evaluator (admission.md wave 8): this is op_cond() in a pooled context whose holder is `holder`. A null condition does not hold.
 PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/condition_holds(datum/holder, cond)
-	if(islist(cond))
-		var/list/L = cond
-		switch(L[1])
-			if("not")
-				return !condition_holds(holder, L[2])
-			if("all")
-				for(var/i in 2 to length(L))
-					if(!condition_holds(holder, L[i]))
-						return FALSE
-				return TRUE
-			if("any")
-				for(var/i in 2 to length(L))
-					if(condition_holds(holder, L[i]))
-						return TRUE
-				return FALSE
-			if("config")
-				return !!global.config?.Get(L[2])
+	if(isnull(cond))
 		return FALSE
+	// The two leaf forms that need no context answer directly: they are the hot ones (stat and activation gates), and they run before the
+	// object pools exist (a datum built while the globals initialize asks its every() gate's var).
+	if(istext(cond) && (cond in holder.vars))
+		return !!holder.vars[cond]
 	if(isnum(cond))
 		return condition_id_holds(holder, cond)
-	if(istext(cond))
-		if(cond in holder.vars)
-			return !!holder.vars[cond]
-		return !!op_pure_call(holder, cond)
-	return !!cond
+	var/datum/act/op/A = pooled_op_context(holder)
+	try
+		. = op_cond(A, cond)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
 /proc/condition_id_holds(datum/holder, id)
@@ -224,16 +230,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		return cap_key_get(holder, id)
 	return FALSE
 
-/// not(), all_of() and any_of() are the requirement language's names (E2 owns them); a condition tree of the stat and activation layers is
-/// written with these until the two meet.
-/proc/cond_not(cond)
-	return list("not", cond)
-
-/proc/cond_all(...)
-	return list("all") + args
-
-/proc/cond_any(...)
-	return list("any") + args
+// A condition tree of the stat and activation layers is written with not(), all_of() and any_of() (code/engine/parts/cond.dm), the requirement
+// language's own combinators: given a condition they build the ("not" | "all" | "any", ...) tree condition_holds() reads.
 
 /// cond_config(/datum/config_entry/flag/x): the server's config flag (read when the condition is asked; config does not change in a round).
 /proc/cond_config(entry_type)
@@ -285,7 +283,18 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		var/other = end == "a" ? "b" : "a"
 		var/var_name = E.args["[end]_var"]
 		var/back = E.args["[other]_var"]
-		if(T.entries[var_name])
+		var/list/existing = T.entries[var_name]
+		if(existing)
+			// The same link patched again (a table built before a late link) is fine; another entry on the var is a declaration error: a var is one kind of
+			// relation, and the pair would silently not be maintained at this end (doc/rewrite/proposals/relations.md D3).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_PARTNER] == back && (existing[OWNE_ARG] == RELS_PAIR || existing[OWNE_ARG] == RELS_SYMMETRIC))
+				continue
+			// A plain reference (an ancestor's ref_one/ref_many) that a subtype's links() makes one end of a pair is refined, not contradicted:
+			// the pair entry replaces it, so the partner end is maintained (a skip left it stale; a report broke every such subtype).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_ARG] == RELS_PLAIN && !existing[OWNE_EXTRA] && !!existing[OWNE_LIST] == !!E.args["[end]_many"])
+				existing = null
+		if(existing)
+			OWN_REPORT("[T.owner_type].[var_name] is an end of links([E.args["a_type"]]::[E.args["a_var"]], [E.args["b_type"]]::[E.args["b_var"]]) and is also declared [own_kind_name(existing[OWNE_KIND])]: one declaration per var")
 			continue
 		var/is_list = !!E.args["[end]_many"]
 		var/shape = RELS_PAIR
@@ -293,8 +302,11 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			shape = RELS_SYMMETRIC
 		var/on_deleted = E.args["[end]_on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 		var/list/entry = list(OWNK_REL, shape, back, null, is_list, null, on_deleted, E.args["[end]_on_unlink"], E.args["[other]_type"])
+		if(E.args["conflict"] == REFUSE && shape == RELS_PAIR)
+			entry.len = OWNE_CONFLICT
+			entry[OWNE_CONFLICT] = TRUE
 		T.entries[var_name] = entry
-		LAZYADD(T.ref_vars, var_name)
+		LAZYOR(T.ref_vars, var_name)
 		T.empty = FALSE
 
 /// The var name a target_key names: the plain name, or the var of nameof(/type::var) (the holder type has no such var of its own).
@@ -346,6 +358,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			return _own_set(E, var_name, value)
 		if(OWNK_PROTO)
 			return proto_set(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_set(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_set(E, var_name, value, list_state)
@@ -360,6 +374,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return isnull(key) ? _own_add(E, var_name, value) : _own_put(E, var_name, key, value)
+		if(OWNK_WEAK)
+			return weak_add(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_add(E, var_name, value, key, list_state)
@@ -370,6 +386,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_remove(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_remove(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_remove(E, var_name, value, list_state)
@@ -381,6 +399,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_clear(E, var_name, policy)
+		if(OWNK_WEAK)
+			return weak_clear(E, var_name)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_clear(E, var_name, list_state)

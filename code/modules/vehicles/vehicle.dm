@@ -63,6 +63,7 @@ CAPABILITIES(/obj/vehicle)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	owns_one(nameof(cell), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(load))
 
 //-------------------------------------------
 // Standard procs
@@ -74,7 +75,7 @@ CAPABILITIES(/obj/vehicle)
 
 //BUCKLE HOOKS
 
-/obj/vehicle/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
+/obj/vehicle/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
 	. = ..()
 	M.refresh_submersion()
 	if(riding_datum)

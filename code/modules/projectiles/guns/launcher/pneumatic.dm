@@ -33,6 +33,7 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	op("pneumatic_verb_set_pressure", menu(), label("Set Valve Pressure"), needs(carried()),
 		asks(/datum/prompt/choice, fields = list("question" = "Percentage of tank used per shot:", "title" = computed(PROC_REF(pressure_title)), "choices" = nameof(possible_pressure_amounts), "timeout" = 0), step = "pressure"),
 		then(PROC_REF(pneumatic_verb_set_pressure)))
+	ref_one(nameof(tank))
 
 /obj/item/gun/launcher/pneumatic/Initialize(mapload)
 	. = ..()

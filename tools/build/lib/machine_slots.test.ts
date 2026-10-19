@@ -34,10 +34,10 @@ describe('capacity', () => {
   test('defaults and the environment', () => {
     for (const k of ENV_KEYS) if (k.startsWith('DQ_SLOTS_') && k !== 'DQ_SLOTS_DIR' && k !== 'DQ_SLOTS_POLL_SEC') delete process.env[k];
     delete process.env.DQ_LOOK_PIN_SLOTS;
-    expect(slotCapacity('dm_compile')).toBe(2);
+    expect(slotCapacity('dm_compile')).toBe(1);
     expect(slotCapacity('test_world')).toBe(defaultTestWorlds());
     expect(slotCapacity('cargo')).toBe(1);
-    expect(slotCapacity('look_state_pin')).toBe(2);
+    expect(slotCapacity('look_state_pin')).toBe(1);
     process.env.DQ_SLOTS_DM_COMPILE = '5';
     expect(slotCapacity('dm_compile')).toBe(5);
     process.env.DQ_LOOK_PIN_SLOTS = '4';
@@ -55,11 +55,8 @@ describe('capacity', () => {
 });
 
 describe('test_world default', () => {
-  test('is a third of the CPUs, 2 to 6', () => {
-    expect(defaultTestWorlds(1)).toBe(2);
-    expect(defaultTestWorlds(8)).toBe(2);
-    expect(defaultTestWorlds(16)).toBe(5);
-    expect(defaultTestWorlds(64)).toBe(6);
+  test('is two whatever the CPU count (the machine is also the user desktop)', () => {
+    for (const cpus of [1, 8, 16, 64]) expect(defaultTestWorlds(cpus)).toBe(2);
   });
 });
 
@@ -210,4 +207,23 @@ describe('agrees with tools/dq_machine_slots.sh', () => {
     expect(await waiterDone).toBe(0);
     await childDone;
   }, 60000);
+});
+
+describe('small requests are not starved by groups', () => {
+  test('a single slot passes a group collecting slots, and the group waits for all of its slots', async () => {
+    process.env.DQ_SLOTS_TEST_WORLD = '3';
+    process.env.DQ_SLOTS_MERGE_RESERVE = '0';
+    const dir = path.join(slotsDir(), 'test_world');
+    fs.mkdirSync(path.join(dir, 'queue'), { recursive: true });
+    // Two of three slots are held elsewhere; a group of three from another run heads the queue.
+    for (const i of [1, 2]) {
+      fs.mkdirSync(path.join(dir, `slot.${i}`));
+      fs.writeFileSync(path.join(dir, `slot.${i}`, 'owner'), `kind=node\npid=${process.pid}\nworktree=/x/other\nlabel=held\nstarted=${Math.floor(Date.now() / 1000)}\n`);
+    }
+    const now = Math.floor(Date.now() / 1000);
+    fs.writeFileSync(path.join(dir, 'queue', `1-${String(now - 5).padStart(13, '0')}-${process.pid}`), `kind=node\npid=${process.pid}\nworktree=/x/other\nlabel=group\nqueued=${now - 5}\ngroup=3\n`);
+    const single = await acquireSlot('test_world', 'single', quiet);
+    expect(single?.index).toBe(3);
+    single?.release();
+  });
 });

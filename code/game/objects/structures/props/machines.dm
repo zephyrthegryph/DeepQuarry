@@ -609,7 +609,7 @@
 /obj/structure/prop/machine/nt_pod
 	icon = 'icons/obj/props/decor.dmi'
 	icon = 'icons/obj/props/decor32x64.dmi'
-	icon_state = "nt_pod_mappreview"
+	icon_state = "nt_pod"
 	bound_height = 64
 
 	var/obj/effect/overlay/vis/outside
@@ -631,17 +631,6 @@
 
 /obj/structure/prop/machine/nt_pod/Initialize(mapload)
 	. = ..()
-	// Our non-map-preview state
-	icon_state = "nt_pod"
-
-	// Alpha mask to make sure things don't sneak out
-	var/obj/effect/overlay/vis/mask = new
-	mask.set_icon(icon)
-	mask.set_icon_state("nt_pod_mask")
-	mask.render_target = "*nt_podmask[REF(src)]"
-	mask.vis_flags = VIS_INHERIT_ID
-	vis_contents += mask
-
 	rel_set(src, nameof(outside), add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(door), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(fluid), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
@@ -663,17 +652,17 @@
 	AM.add_filter("podmask", 1, alpha_mask_filter(render_source = "nt_podmask[REF(src)]", flags = MASK_INVERSE))
 	AM.set_pixel_y(12)
 	AM.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_DIR
-	vis_contents += AM
+	vis_add(src, AM)
 	if(ismob(AM))
 		var/mob/M = AM
-		buckle_mob(M, TRUE, FALSE)
+		buckle_mob(M, GLOB.authority_forced, FALSE)
 
 	// TRAP THEM
 	change_state("closed")
 
 /obj/structure/prop/machine/nt_pod/proc/unduct(atom/movable/AM)
 	// Geddout
-	vis_contents -= AM
+	vis_remove(src, AM)
 	if(ismob(AM))
 		var/mob/M = AM
 		unbuckle_mob(M, TRUE)
@@ -684,6 +673,7 @@
 	AM.set_pixel_y(contents_original_pixel_y)
 
 CAPABILITIES(/obj/structure/prop/machine/nt_pod)
+	after_init(0, then(PROC_REF(add_alpha_mask))) // its alpha mask is shown once Initialize() returns (relations proposal D11)
 	ref_one(nameof(outside))
 	ref_one(nameof(door))
 	ref_one(nameof(fluid))
@@ -848,3 +838,11 @@ CAPABILITIES(/obj/structure/prop/machine/isolator)
 
 	return TRUE
 
+/// The alpha mask that keeps things from sneaking out of the pod.
+/obj/structure/prop/machine/nt_pod/proc/add_alpha_mask(datum/act/timer/A)
+	var/obj/effect/overlay/vis/mask = new
+	mask.set_icon(icon)
+	mask.set_icon_state("nt_pod_mask")
+	mask.render_target = "*nt_podmask[REF(src)]"
+	mask.vis_flags = VIS_INHERIT_ID
+	vis_add(src, mask)

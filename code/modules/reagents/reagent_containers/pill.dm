@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill)
 		shows_contents = FALSE,
 		transfer_default = nameof(amount_per_transfer_from_this))
 	dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder)
-	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = not(nameof(icon_state)))
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pills. END

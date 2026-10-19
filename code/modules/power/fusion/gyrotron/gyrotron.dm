@@ -26,7 +26,7 @@ CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
 	configure(uses_power(active = 50000))
 	registry(REGISTRY_GYROTRONS, key = nameof(id_tag))
 	part_replacement()
-	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(cond_not(nameof(anomalous))),
+	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(not(nameof(anomalous))),
 		asks(/datum/prompt/text, fields = list("title" = "Gyrotron", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
 

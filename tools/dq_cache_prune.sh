@@ -20,7 +20,7 @@ CACHE="${DQ_CACHE_ROOT:-E:/dq-cache}"
 WT_ROOT="${DQ_WT_ROOT:-E:/projects/dq-wt}"
 rm_path() { if [ "$dry" -eq 1 ]; then echo "would remove $1"; else rm -rf "$1"; fi; }
 
-ab="${DQ_ANALYZE_CACHE:-$CACHE/analyze-bin}"
+ab="${DQ_ANALYZE_BIN_CACHE:-$CACHE/analyze-bin}"
 if [ -d "$ab" ]; then
 	keep="${DQ_ANALYZE_KEEP:-12}"
 	live="$(ls "$WT_ROOT"/*/tools/analyze/target/*/analyze*.key "$WT_ROOT"/../CHOMPStation2/tools/analyze/target/*/analyze*.key 2>/dev/null | xargs -r cat 2>/dev/null | tr -d '\r' | sort -u)"
@@ -68,8 +68,7 @@ prune_newest "${DQ_LOOK_MANIFEST_DIR:-$CACHE/look-manifest}" '*.tsv' "${DQ_LOOK_
 # Compiler versions: one latest compiler for everyone, so only `current` and the version just superseded are worth keeping.
 bin="${DQ_DMBC_BIN_DIR:-$CACHE/dmb-bin}"
 if [ -d "$bin/v" ]; then
-	cur="$(cat "$bin/current" 2>/dev/null | tr -d '
- ')"
+	cur="$(cat "$bin/current" 2>/dev/null | tr -d '\r\n')"
 	keep="${DQ_DMB_VERSION_KEEP:-1}"
 	before="$(du -sk "$bin" 2>/dev/null | cut -f1)"
 	n=0
@@ -86,10 +85,8 @@ if [ -d "$bin/v" ]; then
 fi
 # Per-file dmbc caches: size and age caps by recency of use (the compiler does the work; nothing here reads a cache file).
 if [ "$dry" -eq 0 ] && [ -f "$bin/current" ]; then
-	exe="$bin/v/$(cat "$bin/current" | tr -d '
- ')/dmbc.exe"
-	[ -f "$exe" ] || exe="$bin/v/$(cat "$bin/current" | tr -d '
- ')/dmbc"
+	exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc.exe"
+	[ -f "$exe" ] || exe="$bin/v/$(cat "$bin/current" | tr -d '\r\n')/dmbc"
 	[ -f "$exe" ] && "$exe" --cache-gc 2>&1 | tail -1
 fi
 dd="${DQ_DMB_DEV_ROOT:-$CACHE/dmb-dev}"

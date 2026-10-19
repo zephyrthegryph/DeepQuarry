@@ -80,3 +80,6 @@
 /// Chosen target turf in target_area
 /datum/event/atmos_leak/proc/target_turf() as /area
 	return target_turf
+
+CAPABILITIES(/datum/event/atmos_leak)
+	ref_one(nameof(target_turf))

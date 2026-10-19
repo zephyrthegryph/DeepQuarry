@@ -348,8 +348,8 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		booting_R.set_icon_state("boot_load")
 		animate(booting_L, alpha=230, time=3 SECONDS, easing=SINE_EASING)
 		animate(booting_R, alpha=200, time=2 SECONDS, easing=SINE_EASING)
-		M.client?.screen += booting_L
-		M.client?.screen += booting_R
+		client_screen_add(M.client, booting_L)
+		client_screen_add(M.client, booting_R)
 
 	set_canremove(FALSE) // No removing the suit while unsealing.
 	set_sealing(1)
@@ -492,8 +492,8 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	set_sealing(null)
 
 	if(failed_to_seal)
-		M?.client?.screen -= booting_L
-		M?.client?.screen -= booting_R
+		client_screen_remove(M.client, booting_L)
+		client_screen_remove(M.client, booting_R)
 		consume(booting_L, M)
 		consume(booting_R, M)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -513,7 +513,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 			rel_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
-	M.client?.screen -= booting_L
+	client_screen_remove(M.client, booting_L)
 	consume(booting_L, M)
 	booting_R.set_icon_state("boot_done")
 	after(M, 4 SECONDS, GLOBAL_PROC_REF(rig_boot_hud_clear), with = list(M, booting_R))
@@ -1099,7 +1099,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 
 /// The boot-up HUD's last piece leaves the screen once the seals finish.
 /proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
-	M.client?.screen -= booting_R
+	client_screen_remove(M.client, booting_R)
 	consume(booting_R, M)
 
 

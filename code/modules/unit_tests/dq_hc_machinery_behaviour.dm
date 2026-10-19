@@ -851,7 +851,6 @@
 
 /datum/unit_test/dq_hc_struct/power_hit_declarations
 /datum/unit_test/dq_hc_struct/power_hit_declarations/run_gate()
-	set_global("act_last_reply", GLOB.act_last_reply) // scoped restoration of hit dispatch scratch state
 	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
 	C.material_emp_resistance = 0
 	C.set_charge(1000)

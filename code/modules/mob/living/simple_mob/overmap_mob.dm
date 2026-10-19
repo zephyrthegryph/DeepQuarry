@@ -27,7 +27,7 @@
 	unknown_name = "unknown ship"
 	unknown_state = "ship"
 
-	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
+	var/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
 CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
@@ -163,7 +163,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap)
 	unknown_name = "unknown ship"
 	unknown_state = "ship"
 
-	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
+	var/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
 CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)

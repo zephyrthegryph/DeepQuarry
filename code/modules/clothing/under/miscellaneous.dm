@@ -1896,9 +1896,10 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 
-/obj/item/clothing/under/hyperfiber/bluespace/mob_can_unequip(mob/M, slot, disable_warning = 0)
+/// Taking it off restores the wearer's size: an effect of the removal, not of the check that asks whether it may come off.
+/obj/item/clothing/under/hyperfiber/bluespace/dropped(mob/M, equipping, slot)
 	. = ..()
-	if(. && ishuman(M) && original_size && !disable_warning)
+	if(ishuman(M) && original_size)
 		var/mob/living/carbon/human/H = M
 		H.resize(original_size, ignore_prefs = TRUE)
 		set_original_size(null)
@@ -1937,9 +1938,10 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
 			log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
 
-/obj/item/clothing/gloves/bluespace/mob_can_unequip(mob/M, gloves, disable_warning = 0)
+/// Taking it off restores the wearer's size: an effect of the removal, not of the check that asks whether it may come off.
+/obj/item/clothing/gloves/bluespace/dropped(mob/M, equipping, slot)
 	. = ..()
-	if(. && ishuman(M) && original_size && !disable_warning)
+	if(ishuman(M) && original_size)
 		var/mob/living/carbon/human/H = M
 		if(!read_once(H.vore_prefs.resizable))
 			return

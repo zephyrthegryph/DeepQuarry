@@ -46,6 +46,14 @@
 /// and the new link is not made (code/engine/declare/link_state.dm).
 #define REPLACE 1
 #define REFUSE 2
+/// A slot's replace policy besides REFUSE and REPLACE: the newcomer displaces the worst occupant only when it is better by the slot's replace_by stat.
+#define REPLACE_IF_BETTER 3
+
+/// What a requirement's answer depends on (a /datum/entry/part/req's reads_level). The larger wins when requirements combine.
+/// REQ_READS_TYPE: the type of the candidate alone (what a pristine instance of it would answer): a latent entry can be asked without making it.
+#define REQ_READS_TYPE 1
+/// REQ_READS_INSTANCE: the candidate's own state, the wearer, the holder or the actor.
+#define REQ_READS_INSTANCE 2
 /// The text of one end of a sparse link: links(LINK_END(/mob/living, LK_BUCKLED_TO), LINK_END(/atom/movable, LK_BUCKLED_MOBS), sparse = TRUE, ...). A sparse end names a
 /// key, not a var (a base type cannot carry a var for every pair it takes part in), so there is no `::` to write.
 #define LINK_END(TYPE, KEY) ("[TYPE]::[KEY]")

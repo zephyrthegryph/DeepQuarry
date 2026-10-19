@@ -23,7 +23,7 @@ CAPABILITIES(/obj/structure/bonfire)
 	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
-	op("build", item(/obj/item/stack/rods), label("Use"), when(cond_not(nameof(can_buckle))), when(cond_not(nameof(grill))),
+	op("build", item(/obj/item/stack/rods), label("Use"), when(not(nameof(can_buckle))), when(not(nameof(grill))),
 		asks(/datum/prompt/choice, fields = list("title" = "Bonfire", "question" = "What would you like to construct?", "choices" = list("Stake", "Grill"), "timeout" = 0)),
 		then(PROC_REF(construction_chosen)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

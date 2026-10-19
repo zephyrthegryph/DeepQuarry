@@ -1,7 +1,7 @@
 /**
  * Accessors for /mob/var/list/mutations.
  *
- * `mutations` is a lazy list (null when empty) of mutation defines
+ * `mutations` is a lazy list (null until the first add, then kept, empty or not: a TRACKED list) of mutation defines
  * (HULK, HUSK, XRAY, ...). Everything that reads or writes it goes through
  * these procs so a future storage change (e.g. folding mutations into
  * capabilities) only has to touch this file.

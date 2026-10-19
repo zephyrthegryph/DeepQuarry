@@ -321,6 +321,7 @@ fn gen_memo_store(tree: &crate::tree::Tree, root: &Path, results: &[super::gen::
 /// converge on its own. A run that converged records a digest of its inputs and outputs (`gen-state.bin`); the next run with the
 /// same inputs and intact outputs returns at once.
 pub fn gen(args: &[String], root: &Path) -> ExitCode {
+    super::incremental::disable_capture();
     let check = args.iter().any(|a| a == "--check");
     let names: Vec<String> = args.iter().filter(|a| !a.starts_with("--")).cloned().collect();
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
@@ -443,6 +444,9 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             gen_store_put(gen_store_key(&e.tree, root), root, &results);
         }
     }
+    // The process ends right after this: freeing the model and every memo of the tree one allocation at a time takes seconds. The OS
+    // reclaims it at once.
+    std::mem::forget(last_tree);
     if clean {
         ExitCode::SUCCESS
     } else {

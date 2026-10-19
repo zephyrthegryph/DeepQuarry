@@ -58,7 +58,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 
 /datum/prompt/choice/map_template_place/proc/end_preview()
 	var/mob/user = answerer
-	user?.client?.images -= preview
+	client_images_remove(user.client, preview)
 
 /datum/prompt/choice/map_template_place/on_destroy(force)
 	if(!preview_transferred)

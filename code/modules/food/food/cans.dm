@@ -13,7 +13,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	every(2 SECONDS, then(PROC_REF(cans_step)), when = nameof(shaken))
 	extend("open", stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(maybe_unlucky)))
-	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up)))
+	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up)))
 
 /// The unlucky sometimes shake a can without meaning to.
 /obj/item/reagent_containers/food/drinks/cans/proc/maybe_unlucky(datum/act/op/A)

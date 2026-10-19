@@ -299,6 +299,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// may be CONTAINED), then wires the child's back relation when its type names one (default_child_backref()). `key` adopts it under
 /// that key in an associative owns_many.
 /proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list, key = null)
+	if(QDELETED(child))
+		return // a keeps_if()/setup constructor that ended cannot become a starting target
 	if(as_list)
 		rel_add(D, var_name, child, key)
 	else

@@ -11,6 +11,8 @@ fn clear_regions_releases_callable_tree_without_replacing_static_artifact_owner(
     let mut host = BuildHost::default();
     let memo = host.procedure_memo(3, None, true).unwrap();
     let store = Arc::clone(memo.startup.as_ref().unwrap());
+    // A request gets its own view of the host's startup owner (`StartupArtifacts::for_request`); the owner is what must survive.
+    let owner = Arc::clone(&host.startup.as_ref().unwrap().1);
     let revision = dm_tree::frontend::FrontendRevision::new(
         dm_tree::frontend::build(Path::new("callable.dme"), &Source, &Default::default(), 1)
             .unwrap(),
@@ -40,7 +42,7 @@ fn clear_regions_releases_callable_tree_without_replacing_static_artifact_owner(
         "output-only clearing must release the detached tree"
     );
     assert!(
-        Arc::ptr_eq(&store, &host.startup.as_ref().unwrap().1),
+        Arc::ptr_eq(&owner, &host.startup.as_ref().unwrap().1),
         "clear only the callable index, preserving static artifacts"
     );
 }

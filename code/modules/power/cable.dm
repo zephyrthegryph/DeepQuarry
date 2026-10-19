@@ -293,6 +293,7 @@ CAPABILITIES(/obj/structure/cable)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(breaker_box))
 
 /// Old attackby.
 /obj/structure/cable/proc/interaction_item(datum/act/op/A)
@@ -585,7 +586,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 	param(nameof(color), pos = 2)
 	param(nameof(material_id), pos = 3)
-	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = cond_not(nameof(color)))
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = not(nameof(color)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).

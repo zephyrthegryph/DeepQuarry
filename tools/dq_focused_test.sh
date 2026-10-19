@@ -61,6 +61,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+. tools/dq_below_normal.sh
 
 RUN_DIR="data/focused-runs"
 
@@ -457,11 +458,11 @@ focus="$FOCUS_ARG"
 # key differs from code/modules/unit_tests/snapshots/look_keys.txt are probed. A passing run that covered both pins rewrites that file.
 # --full probes every type (the merge worktree and the nightly use it).
 look_pins=" dq_look_state_pin dq_look_tree_pin "
-# Whole-type sweep pins too long for one world (dq_loot_roll_pin: 306 declarations x 1000 spawns and qdels, about 45 minutes in one world, past
+# Whole-type sweep pins too long for one world (dq_fresh_look_default: two fresh instances of every creatable obj and mob type; dq_loot_roll_pin: 306 declarations x 1000 spawns and qdels, about 45 minutes in one world, past
 # the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
 # (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
 # whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
-sweep_pins=" dq_loot_roll_pin "
+sweep_pins=" dq_loot_roll_pin dq_fresh_look_default dq_stat_index_oracle "
 sweep_on=0
 if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
 main_group=()
@@ -480,7 +481,25 @@ case "$split_mode" in
 	auto) if [ ${#main_group[@]} -gt 0 ] && [ $(( ${#slow_group[@]} + ${#look_group[@]} )) -gt 0 ]; then do_split=1; fi ;;
 esac
 if [ ${#sweep_group[@]} -gt 0 ]; then do_split=1; fi
-if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
+# A long main list runs as several worlds from the one .dmb: each world costs a boot (about 30 s), and one world ran the 251-test
+# batch gate in 640 s (2026-10-18). DQ_MAIN_WORLD_TESTS selectors per world (default 60), at most DQ_MAIN_WORLDS worlds (default 4).
+main_worlds=1
+main_per="${DQ_MAIN_WORLD_TESTS:-60}"
+main_max="${DQ_MAIN_WORLDS:-4}"
+# No run asks for more worlds than the machine's test_world slots (tools/dq_machine_slots.sh, 2 by default): look shards, sweep shards
+# and main worlds beyond it would only queue, each one a booted DreamDaemon held in memory while it waits.
+world_cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null || true)"
+if [[ "$world_cap" =~ ^[1-9][0-9]*$ ]]; then
+	[ "$look_shards" -gt "$world_cap" ] && look_shards="$world_cap"
+	[ "$sweep_shards" -gt "$world_cap" ] && sweep_shards="$world_cap"
+	[ "$main_max" -gt "$world_cap" ] && main_max="$world_cap"
+fi
+if [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [[ "$main_per" =~ ^[1-9][0-9]*$ ]] && [[ "$main_max" =~ ^[1-9][0-9]*$ ]] 	&& [ ${#main_group[@]} -gt "$main_per" ]; then
+	main_worlds=$(( (${#main_group[@]} + main_per - 1) / main_per ))
+	[ "$main_worlds" -gt "$main_max" ] && main_worlds="$main_max"
+	[ "$main_worlds" -gt 1 ] && do_split=1
+fi
+if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; main_worlds=1; fi
 # A look bless is sharded like a look run: each world writes its own partial rows (look-bless-dir) and tools/dq_look_bless_merge.py joins
 # them into the snapshot files after the worlds end. --look-shards=1 keeps the unsharded bless.
 look_bless=0
@@ -522,7 +541,12 @@ look_prepare() {
 		LOOK_PLAN_FILE="$plan"
 		LOOK_PARAMS="look-plan=$plan"
 		universe="$(wc -l <"$plan" | tr -d ' ')"
-		if [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
+		if [[ "${DQ_WORLD_PARAMS:-}" == *look-types=* ]]; then
+			# A hand-narrowed run names its own types (DQ_WORLD_PARAMS look-types=<file>): keep them, never widen to the stale set.
+			echo "== look pins: hand-narrowed to the types in DQ_WORLD_PARAMS"
+			local narrowed="${DQ_WORLD_PARAMS##*look-types=}"
+			LOOK_PARAMS="$LOOK_PARAMS&look-types=${narrowed%%&*}" # the look worlds get their own params (W_PARAMS), not DQ_WORLD_PARAMS
+		elif [ "$look_full" -eq 0 ] && [ -f "$keys" ]; then
 			stale="data/look-types.$$.txt"
 			focus_files+=("$stale")
 			# The unverified set: types whose current key is not a recorded (probed and matched) row; the script that owns the file defines it.
@@ -691,24 +715,52 @@ run_worlds() {
 	local began n i waited=0 running jsons=() rc=0 j shard W_DONE
 	began="$(date +%s)"
 	W_LABEL=(); W_FOCUS=(); W_SHARD=(); W_PARAMS=()
-	if [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
+	if [ ${#main_group[@]} -gt 0 ] && [ "${main_worlds:-1}" -gt 1 ]; then
+		# Round-robin, so the slow tests of one lane (listed together) spread over the worlds.
+		local m k chunk
+		for ((m = 0; m < main_worlds; m++)); do
+			chunk=()
+			for ((k = m; k < ${#main_group[@]}; k += main_worlds)); do chunk+=("${main_group[$k]}"); done
+			add_world "main$m" "" "" "${chunk[@]}"
+		done
+	elif [ ${#main_group[@]} -gt 0 ]; then add_world main "" "" "${main_group[@]}"; fi
 	if [ ${#slow_group[@]} -gt 0 ]; then add_world slow "" "" "${slow_group[@]}"; fi
 	if [ ${#sweep_group[@]} -gt 0 ]; then
 		for ((i = 0; i < sweep_shards; i++)); do add_world "sweep$i" "$i/$sweep_shards" "" "${sweep_group[@]}"; done
 	fi
 	if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -ne 0 ]; then
 		n="$look_shards"
+		if [ "$look_shards_set" -eq 0 ] && [ "$look_bless" -eq 0 ]; then
+			# Every test-world slot the machine has: a world is one DreamDaemon thread, and the slot table never oversubscribes.
+			local cap
+			cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null)"
+			if [[ "$cap" =~ ^[1-9][0-9]*$ ]] && [ "$cap" -gt "$n" ]; then n="$cap"; fi
+		fi
 		if [ "$LOOK_STALE_COUNT" -ge 0 ] && [ "$n" -gt 1 ]; then
 			# Little to probe: fewer worlds (a world costs a boot, about 30 seconds, for about 50 types).
-			n=$(( (LOOK_STALE_COUNT + 49) / 50 ))
-			[ "$n" -lt 1 ] && n=1
-			[ "$n" -gt "$look_shards" ] && n="$look_shards"
+			local fewer=$(( (LOOK_STALE_COUNT + 49) / 50 ))
+			[ "$fewer" -lt 1 ] && fewer=1
+			[ "$fewer" -lt "$n" ] && n="$fewer"
+		fi
+		# Cost-balanced shards (tools/dq_look_shard.py): an incremental run hands each world its own type list, partitioned by the seconds
+		# each type took before (E:/dq-cache/look-costs.tsv, DQ_LOOK_COSTS), instead of the round-robin slice of the sweep.
+		local costs="${DQ_LOOK_COSTS:-}" parts=""
+		if [ -z "$costs" ]; then if [ -d E:/dq-cache ] || [ -d /e/dq-cache ]; then costs="E:/dq-cache/look-costs.tsv"; else costs="$HOME/.cache/dq/look-costs.tsv"; fi; fi
+		if [ "$n" -gt 1 ] && [ -n "$LOOK_STALE_FILE" ] && [ -s "$LOOK_STALE_FILE" ] && [ "$look_bless" -eq 0 ] && [ "${DQ_LOOK_BALANCE:-1}" = 1 ]; then
+			parts="${LOOK_STALE_FILE%.txt}.part"
+			n="$("${PYTHON:-python3}" tools/dq_look_shard.py partition "$LOOK_STALE_FILE" "$n" "$costs" "$parts")" || { parts=""; n="$look_shards"; }
+			for ((i = 0; i < n; i++)); do focus_files+=("$parts.$i.txt"); done
 		fi
 		for ((i = 0; i < n; i++)); do
+			if [ -n "$parts" ]; then
+				add_world "look$i" "" "${LOOK_PARAMS//look-types=$LOOK_STALE_FILE/look-types=$parts.$i.txt}" "${look_group[@]}"
+				continue
+			fi
 			shard=""
 			if [ "$n" -gt 1 ]; then shard="$i/$n"; fi
 			add_world "look$i" "$shard" "$LOOK_PARAMS" "${look_group[@]}"
 		done
+		LOOK_COSTS_FILE="$costs"
 	elif [ "$look_world" -ne 1 ] && [ ${#look_group[@]} -gt 0 ]; then
 		# Unprepared look runs stay full; an incremental plan with zero stale types needs no look world.
 		add_world look "" "" "${look_group[@]}"
@@ -793,6 +845,16 @@ run_worlds() {
 		jsons+=("$j")
 	done
 	SPLIT_JSON="$(node tools/dq_merge_test_runs.js "${jsons[@]}")" || echo "== worlds: could not merge the records (${jsons[*]})" >&2
+	# What each look world's types cost this time, for the next run's balanced shards (tools/dq_look_shard.py).
+	if [ -n "${LOOK_COSTS_FILE:-}" ]; then
+		local look_logs=() run_dir
+		for ((i = 0; i < ${#W_LABEL[@]}; i++)); do
+			[[ "${W_LABEL[$i]}" == look* ]] || continue
+			run_dir="$(sed -n 's/.*logs in \(data\/logs\/run[0-9]*\)\..*/\1/p' "${W_LOG[$i]}" | tail -n 1)"
+			[ -n "$run_dir" ] && [ -f "$run_dir/tests.log" ] && look_logs+=("$run_dir/tests.log")
+		done
+		[ ${#look_logs[@]} -gt 0 ] && "${PYTHON:-python3}" tools/dq_look_shard.py record "$LOOK_COSTS_FILE" "${look_logs[@]}" || true
+	fi
 	echo "== worlds: all done in $(( $(date +%s) - began ))s"
 	return "$rc"
 }

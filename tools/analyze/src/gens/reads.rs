@@ -71,7 +71,7 @@ impl Generator for Reads {
         if !handlers.is_empty() || cx.markers("READ_LOOKUP").next().is_some() {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
-                let ann = Annotations::get(&sem, &decls);
+                let ann = Annotations::shared(cx.tree, &sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).closed_shared(cx.tree);
                 for marker in decls.markers_named("READ_LOOKUP") {
@@ -105,8 +105,8 @@ impl Generator for Reads {
                         jobs.push(i);
                     }
                 }
-                let walked = crate::sem::par_map_deep(&jobs, |&i| eng.analyze_handler(&handlers[i].owner, &handlers[i].proc, handlers[i].ctx.type_path()));
-                let mut walked_by_handler: std::collections::HashMap<usize, crate::sem::reads::ReadSet> = jobs.into_iter().zip(walked).collect();
+                let walked = crate::sem::par_map_deep(&jobs, |&i| eng.analyze_handler_shared(&handlers[i].owner, &handlers[i].proc, handlers[i].ctx.type_path()));
+                let mut walked_by_handler: std::collections::HashMap<usize, std::sync::Arc<crate::sem::reads::ReadSet>> = jobs.into_iter().zip(walked).collect();
                 for (i, h) in handlers.iter().enumerate() {
                     let id = format!("{}::{}", h.owner, h.proc);
                     if rows.contains_key(&id) {
@@ -118,7 +118,7 @@ impl Generator for Reads {
                     }
                     let set = match walked_by_handler.remove(&i) {
                         Some(set) => set,
-                        None => eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path()),
+                        None => eng.analyze_handler_shared(&h.owner, &h.proc, h.ctx.type_path()),
                     };
                     for d in &set.diags {
                         // The closed walk enters the engine's own bodies. What it cannot resolve there (a `vars[]` dispatcher, an unannotated engine

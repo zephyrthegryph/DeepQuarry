@@ -1,11 +1,13 @@
 // Vore modes use the same pure, ordered native requirements as operations.
+MSG_DEF_SELF(vore_consent/they_arent_in_a_state, "They aren't in a state to be devoured.")
+
 GLOBAL_DATUM_INIT(vore_consent_requirements, /datum/vore_consent_requirements, new)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/vore_consent_requirements)
 /datum/vore_consent_requirements
 
 CAPABILITIES(/datum/vore_consent_requirements)
 	acceptance(VORE_CONSENT_DEVOURABLE, req(PROC_REF(devourable_reason)), mode = ACCEPTANCE_REPLACE)
-	acceptance(VORE_CONSENT_DEVOUR, req(PROC_REF(devourable_reason)), req_vore_unabsorbed(because = "They aren't in a state to be devoured."), req(PROC_REF(predator_unabsorbed_reason)), mode = ACCEPTANCE_REPLACE)
+	acceptance(VORE_CONSENT_DEVOUR, req(PROC_REF(devourable_reason)), req_vore_unabsorbed(because = MSG(vore_consent/they_arent_in_a_state)), req(PROC_REF(predator_unabsorbed_reason)), mode = ACCEPTANCE_REPLACE)
 	acceptance(VORE_CONSENT_DIGEST, req(PROC_REF(digestable_reason)), req_vore_unabsorbed(), mode = ACCEPTANCE_REPLACE)
 	acceptance(VORE_CONSENT_ABSORB, req(PROC_REF(absorbable_reason)), req_vore_unabsorbed(), mode = ACCEPTANCE_REPLACE)
 	acceptance(VORE_CONSENT_HEAL, req(PROC_REF(healable_reason)), req(PROC_REF(alive_reason)), mode = ACCEPTANCE_REPLACE)
@@ -59,7 +61,7 @@ CAPABILITIES(/datum/vore_consent_requirements)
 /proc/vore_consent_refusal(channel, mob/living/predator, mob/living/prey)
 	if(!acceptance_declared(GLOB.vore_consent_requirements, channel))
 		CRASH("Unknown vore consent requirement [channel]")
-	return acceptance_reason(GLOB.vore_consent_requirements, channel, prey, prey, predator, predator, wearer_is_actor = TRUE)
+	return reason_text(acceptance_reason(GLOB.vore_consent_requirements, channel, prey, prey, predator, predator))
 
 /datum/digest_mode
 	/// The native consent channel needed by this mode, or null.
