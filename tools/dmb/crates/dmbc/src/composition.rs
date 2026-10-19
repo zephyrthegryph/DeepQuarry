@@ -634,135 +634,158 @@ fn compose_records_access(
     drop(phase);
     let phase = dm_profile::detail_timer("compose.emit_procedures");
     let mut feature_images = final_instructions::Certificates::new();
-    for (slot, metadata) in procedures.iter().zip(metadata) {
-        let index = slot.table_index;
-        reserve_procedure_sentinel(&mut dmb);
-        if index as usize != dmb.procs.len() {
-            return Err(CompositionError::NonContiguous(
-                "procedure table indexes".into(),
-            ));
-        }
-        let unit_index = slot
-            .artifact
-            .ok_or_else(|| unsupported("missing global procedure artifact"))?;
-        let linked_words = batch
-            .unit_words(unit_index, &mob_bindings)
-            .map_err(CompositionError::Link)?;
-        let metadata = metadata?;
-        let unit = &batch.units[unit_index];
-        feature_images.insert(
-            index,
-            (
-                std::sync::Arc::clone(&linked_words),
-                unit.bytecode_features(),
-            ),
-        );
-        frame_contribution::emit(
-            &mut dmb,
-            &mut string_index,
-            unit,
-            linked_words,
-            metadata,
-            generation.is_some(),
-        )?;
-    }
-    drop(phase);
-    let phase = dm_profile::detail_timer("compose.emit_helpers_initializers");
-    for slot in plan.helpers?.iter() {
-        let index = slot.table_index;
-        reserve_procedure_sentinel(&mut dmb);
-        if index as usize != dmb.procs.len() {
-            return Err(CompositionError::NonContiguous(
-                "helper procedure indexes".into(),
-            ));
-        }
-        let helper_index = slot
-            .artifact
-            .ok_or_else(|| unsupported("missing helper artifact"))?;
-        let words = batch
-            .helper_words(helper_index, &mob_bindings)
-            .map_err(CompositionError::Link)?;
-        feature_images.insert(
-            index,
-            (
-                std::sync::Arc::clone(&words),
-                batch.helpers[helper_index].bytecode_features(),
-            ),
-        );
-        let helper = &batch.helpers[helper_index];
-        let prefix = helper_metadata::prefix(
-            &batch,
-            &procedures,
-            helper.owner,
-            helper.argument,
-            helper.frozen.referenced_argument_prefix(),
-        )?;
-        helper_metadata::emit(
-            &mut dmb,
-            &mut string_index,
-            words,
-            &helper.local_names,
-            prefix,
-        )?;
-    }
+    // Units, helpers and initializers share the procedure table. Emit every row in
+    // table-index order: a fresh assignment already follows this plan order, while
+    // stable link numbering appends added rows after the previous helpers.
     if initializer_count != batch.initializers.len() {
         return Err(unsupported("initializer inventory coverage mismatch"));
     }
-    for slot in plan.initializers?.iter() {
-        let index = slot.table_index;
-        let identity = slot.identity;
-        reserve_procedure_sentinel(&mut dmb);
-        if index as usize != dmb.procs.len() {
-            return Err(CompositionError::NonContiguous(
-                "initializer indexes".into(),
-            ));
-        }
-        let unit_index = slot
-            .artifact
-            .ok_or_else(|| unsupported("initializer artifact absent"))?;
-        let words = batch
-            .initializer_words(unit_index, &mob_bindings)
-            .map_err(CompositionError::Link)?;
-        feature_images.insert(
-            index,
-            (
-                std::sync::Arc::clone(&words),
-                batch.initializers[unit_index].bytecode_features(),
-            ),
-        );
-        emit_anonymous(
-            &mut dmb,
-            &mut string_index,
-            words,
-            &batch.initializers[unit_index].local_names,
-        )?;
-        match identity {
-            dm_link::InitializerIdentity::Global => {
-                if dmb.world.ids[4] != NONE {
-                    return Err(unsupported(
-                        "retained global initializer requires explicit composition",
+    enum Row<'p, S, H, I, M> {
+        Unit(&'p S, M),
+        Helper(&'p H),
+        Initializer(&'p I),
+    }
+    let helper_slots = plan.helpers?;
+    let initializer_slots = plan.initializers?;
+    let mut rows: Vec<(u32, Row<_, _, _, _>)> = procedures
+        .iter()
+        .zip(metadata)
+        .map(|(slot, metadata)| (slot.table_index, Row::Unit(slot, metadata)))
+        .chain(helper_slots.iter().map(|slot| (slot.table_index, Row::Helper(slot))))
+        .chain(initializer_slots.iter().map(|slot| (slot.table_index, Row::Initializer(slot))))
+        .collect();
+    if rows.windows(2).any(|pair| pair[0].0 > pair[1].0) {
+        rows.sort_by_key(|(index, _)| *index);
+    }
+    for (_, row) in rows {
+        match row {
+            Row::Unit(slot, metadata) => {
+                let index = slot.table_index;
+                reserve_procedure_sentinel(&mut dmb);
+                if index as usize != dmb.procs.len() {
+                    return Err(CompositionError::NonContiguous(format!(
+                        "procedure table indexes (slot {index}, next row {})",
+                        dmb.procs.len()
+                    )));
+                }
+                let unit_index = slot
+                    .artifact
+                    .ok_or_else(|| unsupported("missing global procedure artifact"))?;
+                let linked_words = batch
+                    .unit_words(unit_index, &mob_bindings)
+                    .map_err(CompositionError::Link)?;
+                let metadata = metadata?;
+                let unit = &batch.units[unit_index];
+                feature_images.insert(
+                    index,
+                    (
+                        std::sync::Arc::clone(&linked_words),
+                        unit.bytecode_features(),
+                    ),
+                );
+                frame_contribution::emit(
+                    &mut dmb,
+                    &mut string_index,
+                    unit,
+                    linked_words,
+                    metadata,
+                    generation.is_some(),
+                )?;
+            }
+            Row::Helper(slot) => {
+                let index = slot.table_index;
+                reserve_procedure_sentinel(&mut dmb);
+                if index as usize != dmb.procs.len() {
+                    return Err(CompositionError::NonContiguous(
+                        "helper procedure indexes".into(),
                     ));
                 }
-                dmb.world.ids[4] = index;
+                let helper_index = slot
+                    .artifact
+                    .ok_or_else(|| unsupported("missing helper artifact"))?;
+                let words = batch
+                    .helper_words(helper_index, &mob_bindings)
+                    .map_err(CompositionError::Link)?;
+                feature_images.insert(
+                    index,
+                    (
+                        std::sync::Arc::clone(&words),
+                        batch.helpers[helper_index].bytecode_features(),
+                    ),
+                );
+                let helper = &batch.helpers[helper_index];
+                let prefix = helper_metadata::prefix(
+                    &batch,
+                    &procedures,
+                    helper.owner,
+                    helper.argument,
+                    helper.frozen.referenced_argument_prefix(),
+                )?;
+                helper_metadata::emit(
+                    &mut dmb,
+                    &mut string_index,
+                    words,
+                    &helper.local_names,
+                    prefix,
+                )?;
             }
-            dm_link::InitializerIdentity::Class(owner) => {
-                let class = batch
-                    .tables
-                    .index(Key::Type(owner))
-                    .ok_or(CompositionError::MissingSymbol(owner))?;
-                let record = dmb
-                    .classes
-                    .get_mut(class as usize)
-                    .ok_or_else(|| unsupported("initializer class absent"))?;
-                if record.lists_and_procs[2] != NONE {
-                    return Err(unsupported(
-                        "retained class initializer requires explicit composition",
+            Row::Initializer(slot) => {
+                let index = slot.table_index;
+                let identity = slot.identity;
+                reserve_procedure_sentinel(&mut dmb);
+                if index as usize != dmb.procs.len() {
+                    return Err(CompositionError::NonContiguous(
+                        "initializer indexes".into(),
                     ));
                 }
-                record.lists_and_procs[2] = index;
+                let unit_index = slot
+                    .artifact
+                    .ok_or_else(|| unsupported("initializer artifact absent"))?;
+                let words = batch
+                    .initializer_words(unit_index, &mob_bindings)
+                    .map_err(CompositionError::Link)?;
+                feature_images.insert(
+                    index,
+                    (
+                        std::sync::Arc::clone(&words),
+                        batch.initializers[unit_index].bytecode_features(),
+                    ),
+                );
+                emit_anonymous(
+                    &mut dmb,
+                    &mut string_index,
+                    words,
+                    &batch.initializers[unit_index].local_names,
+                )?;
+                match identity {
+                    dm_link::InitializerIdentity::Global => {
+                        if dmb.world.ids[4] != NONE {
+                            return Err(unsupported(
+                                "retained global initializer requires explicit composition",
+                            ));
+                        }
+                        dmb.world.ids[4] = index;
+                    }
+                    dm_link::InitializerIdentity::Class(owner) => {
+                        let class = batch
+                            .tables
+                            .index(Key::Type(owner))
+                            .ok_or(CompositionError::MissingSymbol(owner))?;
+                        let record = dmb
+                            .classes
+                            .get_mut(class as usize)
+                            .ok_or_else(|| unsupported("initializer class absent"))?;
+                        if record.lists_and_procs[2] != NONE {
+                            return Err(unsupported(
+                                "retained class initializer requires explicit composition",
+                            ));
+                        }
+                        record.lists_and_procs[2] = index;
+                    }
+                    dm_link::InitializerIdentity::Map { .. }
+                    | dm_link::InitializerIdentity::Modified(_) => (),
+                }
             }
-            dm_link::InitializerIdentity::Map { .. }
-            | dm_link::InitializerIdentity::Modified(_) => (),
         }
     }
     drop(linked_records_profile);

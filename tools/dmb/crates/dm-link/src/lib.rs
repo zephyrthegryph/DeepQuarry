@@ -221,6 +221,29 @@ pub(crate) fn stabilize(
         {
             continue;
         }
+        // Keep a table only when its previous rows and pins fill the authored range
+        // without holes; composition requires contiguous procedure/type tables.
+        let start = inventory.reserved_prefixes.get(&table).copied().unwrap_or(0);
+        let mut filled = used.clone();
+        filled.extend(
+            inventory
+                .fixed
+                .iter()
+                .filter(|(key, index)| key.table() == table && *index >= start)
+                .map(|(_, index)| *index),
+        );
+        let holes = (start..=highest)
+            .filter(|index| !is_reserved_table_index(table, *index) && !filled.contains(index))
+            .count();
+        if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
+            eprintln!(
+                "detail stable link {table:?}: rows={} start={start} highest={highest} holes={holes}",
+                rows.len()
+            );
+        }
+        if holes != 0 {
+            continue;
+        }
         let kept: BTreeSet<Key> = rows.iter().map(|(key, _)| *key).collect();
         if let Some(order) = inventory
             .orders
