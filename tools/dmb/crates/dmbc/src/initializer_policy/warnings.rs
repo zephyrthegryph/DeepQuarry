@@ -78,7 +78,7 @@ pub fn capture(
         if value.write.source_site != InitializerSite::Declaration
             || !matches!(
                 value.runtime_value.as_ref(),
-                Some(RuntimeValue::SizedArrayExplicit { .. })
+                Some(RuntimeValue::SizedArrayExplicit(_))
             )
         {
             continue;
