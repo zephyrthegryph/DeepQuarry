@@ -22,7 +22,7 @@
 	var/allowed = canonical.refusal(holder, paper, null)
 	var/denied = canonical.refusal(holder, pen, null)
 	var/passes_gas = canonical.passes_gas()
-	qdel(canonical)
+	qdel(canonical, TRUE) // slot definitions are cached for the round and kept unless forced
 	TEST_ASSERT_NULL(allowed, "canonical slot uses the same real acceptance implementation")
 	TEST_ASSERT_NOTNULL(denied, "canonical slot rejects a mismatched concrete item")
 	TEST_ASSERT(!passes_gas, "canonical sealed slot is sealed without a legacy provider")

@@ -8,7 +8,7 @@
 
 /// Shows `thing` (an atom, or a list of them) through `holder`'s vis_contents.
 /proc/vis_add(atom/holder, thing)
-	if(!holder || isnull(thing) || (isdatum(thing) && QDELETED(thing)))
+	if(!holder || isnull(thing) || datum_deleted(thing))
 		return
 	if(ismovable(holder))
 		var/atom/movable/M = holder // typed per kind: the native compiler resolves vis_contents storage on /atom/movable and /turf, not /atom
@@ -30,7 +30,7 @@
 
 /// Puts `thing` (a screen object, or a list) on client `C`'s screen.
 /proc/client_screen_add(client/C, thing)
-	if(!C || isnull(thing) || (isdatum(thing) && QDELETED(thing)))
+	if(!C || isnull(thing) || datum_deleted(thing))
 		return
 	C.screen += thing
 
@@ -107,3 +107,10 @@ GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was s
 /proc/client_images_client_gone(client/C)
 	for(var/image/I as anything in C.images)
 		client_image_unview(I, C)
+
+/// TRUE when `thing` is a datum being deleted (typed for QDELETED(): `thing` may also be a list or an image).
+/proc/datum_deleted(thing)
+	if(!isdatum(thing))
+		return FALSE
+	var/datum/D = thing
+	return QDELETED(D)
