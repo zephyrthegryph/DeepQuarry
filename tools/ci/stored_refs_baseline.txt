@@ -74,7 +74,6 @@ list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::subject_
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_rules
 list	code/controllers/subsystems/contracts.dm	@/datum/system/contracts::opportunity_windows
 list	code/controllers/subsystems/internal_wiki.dm	@/datum/system/internal_wiki::spoiler_entries
-list	code/controllers/subsystems/lighting.dm	@/datum/system/lighting::sunlight_queue
 list	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::cells
 list	code/controllers/subsystems/proximity.dm	@/datum/system/proximity::eyes
 list	code/controllers/subsystems/shuttles.dm	@/datum/system/shuttles::sectors_to_initialize

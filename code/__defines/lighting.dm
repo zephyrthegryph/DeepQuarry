@@ -148,3 +148,6 @@ do { \
 		gen_for.lighting_corner_NW = new /datum/lighting_corner(gen_for.x - 1, gen_for.y, gen_for.z, gen_for.has_dynamic_lighting()); \
 	} \
 	gen_for.lighting_corners_initialised = TRUE;
+
+/// The awake sunlight handlers live in the membership store under this key (relations proposal D12): a deleted handler leaves it by itself.
+#define SUNLIGHT_AWAKE_KEY "lighting:sunlight_awake"

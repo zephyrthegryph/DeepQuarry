@@ -286,3 +286,13 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	TEST_ASSERT(!length(SSradiation.dirty_turfs), "a flush drains the dirty-turf queue")
 	for(var/thing in SSradiation.dirty_turfs)
 		TEST_ASSERT(isturf(thing), "the queue holds only turfs")
+
+/// D12: the awake sunlight handlers are a membership-store set, so a deleted handler leaves it by itself (it used to stay in a static list).
+/datum/unit_test/relations_sunlight_handlers_leave_on_delete
+
+/datum/unit_test/relations_sunlight_handlers_leave_on_delete/Run()
+	var/datum/probe = new
+	member_join(SUNLIGHT_AWAKE_KEY, probe)
+	TEST_ASSERT(probe in members_of(SUNLIGHT_AWAKE_KEY), "a handler joins the awake set")
+	qdel(probe)
+	TEST_ASSERT(!(probe in members_of(SUNLIGHT_AWAKE_KEY)), "a deleted member leaves the awake set")
