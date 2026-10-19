@@ -1,5 +1,7 @@
 //shuttle moving state defines are in setup.dm
 
+/// A shuttle lives for the round (SSshuttles holds it by tag): never deleted unless forced (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/shuttle)
 /datum/shuttle
 	var/name = ""
 	var/warmup_time = 0

@@ -1,4 +1,6 @@
 
+/// One per planet, made by SSlighting and kept for the round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/planet_sunlight_handler)
 /datum/planet_sunlight_handler
 	var/redint = 0
 	var/greenint = 0
