@@ -296,3 +296,41 @@ fn many_independent_queries_revalidate_only_the_changed_ones() {
     assert_eq!(counts[0].load(Ordering::SeqCst), 203);
     assert_eq!(counts[1].load(Ordering::SeqCst), 400);
 }
+
+/// `cargo test -p dm-query --release -- --ignored --nocapture million`: one million derived
+/// queries, each over one input; after one input changes, eight threads revalidate them all.
+#[test]
+#[ignore]
+fn million_queries_revalidate_in_parallel() {
+    const N: u128 = 1_000_000;
+    let db = Arc::new(Db::new());
+    db.define_input(INPUT, "input");
+    db.define(PARITY, "parity", |ctx, params| {
+        let n = *ctx.input::<u64>(input(id(params)))?;
+        outcome(n % 2)
+    });
+    for n in 0..N {
+        set(&db, n, n as u64);
+    }
+    let fetch_all = |db: &Arc<Db>| {
+        let started = std::time::Instant::now();
+        std::thread::scope(|scope| {
+            for worker in 0..8u128 {
+                let db = Arc::clone(db);
+                scope.spawn(move || {
+                    let mut n = worker;
+                    while n < N {
+                        db.get::<u64>(key(PARITY, n), param(n)).unwrap();
+                        n += 8;
+                    }
+                });
+            }
+        });
+        started.elapsed()
+    };
+    let cold = fetch_all(&db);
+    set(&db, 7, 9);
+    let warm = fetch_all(&db);
+    eprintln!("million: cold {cold:?}, revalidate after one change {warm:?}");
+    assert_eq!(db.stats(PARITY).computed, N as u64 + 1);
+}
