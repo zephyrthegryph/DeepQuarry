@@ -1589,7 +1589,7 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 # A system's hot work queues ("type::var"), reviewed per var (relations proposal wave 2): each entry is drained within a tick or two and
 # the drain skips a deleted member (QDELETED), so a queue never pins a deleted object past its next drain. A declared relation here would
 # add a reverse-index write to every enqueue (thousands per tick for lighting).
-work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/lighting::sunlight_queue", "/datum/system/radiation::dirty_turfs"]
+work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/radiation::dirty_turfs"] # each pinned by relations_work_queue_* (enqueue, delete, drain)
 transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
 
 # rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.

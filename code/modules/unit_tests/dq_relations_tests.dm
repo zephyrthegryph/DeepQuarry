@@ -257,3 +257,32 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	var/datum/listener = GLOB.global_message_listener
 	TEST_ASSERT(listener in REGISTRY_MEMBERS(REGISTRY_COMM_MESSAGE_LISTENERS), "the global listener joined at global init")
 	TEST_ASSERT(member_is("registry:[REGISTRY_COMM_MESSAGE_LISTENERS]", listener), "and the store knows it")
+
+/// The work_queues exemption (lint_scopes.toml) holds only while a deleted member never outlives the next drain. Lighting: a source queued
+/// for an update leaves the queue when it is deleted, and the drain runs clean.
+/datum/unit_test/relations_work_queue_lighting_sources
+
+/datum/unit_test/relations_work_queue_lighting_sources/Run()
+	var/obj/item/flashlight/F = allocate(/obj/item/flashlight, test_floor())
+	F.set_light_range(4)
+	F.set_light_power(1)
+	F.set_light_on(TRUE)
+	F.update_light()
+	var/datum/light_source/L = F.light
+	TEST_ASSERT(L, "a lit flashlight has a light source")
+	if(!(L in SSlighting.sources_queue))
+		SSlighting.sources_queue += L // queued for an update, as any change does
+	qdel(F)
+	TEST_ASSERT(!(L in SSlighting.sources_queue), "a deleted source left the work queue")
+	SSlighting.light_step(0, TRUE) // drains with no runtime (a runtime fails the test)
+
+/// Radiation: the dirty-turf queue holds turfs (never deleted) and empties on a flush.
+/datum/unit_test/relations_work_queue_radiation_turfs
+
+/datum/unit_test/relations_work_queue_radiation_turfs/Run()
+	var/turf/T = test_floor()
+	SSradiation.dirty_turfs[T] = TRUE
+	SSradiation.flush_shielding()
+	TEST_ASSERT(!length(SSradiation.dirty_turfs), "a flush drains the dirty-turf queue")
+	for(var/thing in SSradiation.dirty_turfs)
+		TEST_ASSERT(isturf(thing), "the queue holds only turfs")
