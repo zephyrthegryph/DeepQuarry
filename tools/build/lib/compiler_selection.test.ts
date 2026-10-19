@@ -768,3 +768,9 @@ test('native workers default to 4; DMB_WORKERS wins over DQ_NATIVE_WORKERS', () 
   process.env.DMB_WORKERS = '0';
   expect(() => nativeWorkers()).toThrow('positive integer');
 });
+
+test('a dropped daemon pipe is recognised as transport loss, a compile error is not', async () => {
+  const { droppedDaemonPipe } = await import('./compiler_selection');
+  expect(droppedDaemonPipe('daemon request: The pipe has been ended. (os error 109)')).toBe(true);
+  expect(droppedDaemonPipe('code/x.dm:3:error: undefined var')).toBe(false);
+});
