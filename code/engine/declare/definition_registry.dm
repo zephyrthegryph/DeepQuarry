@@ -637,7 +637,7 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	// A skipped stage idles when everything that can unblock it raises a channel it wakes on.
 	T.skip_idles = every_fact_raises && T.run_if_deps && !(T.run_if_deps & ~T.wake_mask)
 
-/// Fills masks (req, forbid) from FACT, NOT_OF(FACT) and ALL_OF of those. FALSE otherwise.
+/// Fills masks (req, forbid) from frame facts, a negated fact and an all-of of those. FALSE otherwise.
 /proc/definition_run_if_masks(spec, datum/work_pipeline/P, list/masks, negated)
 	if(!islist(spec))
 		return FALSE

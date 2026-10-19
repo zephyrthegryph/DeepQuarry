@@ -343,7 +343,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	refresh_flush()
 	var/before = C.rx?.look_key
-	C.buckle_mob(H, TRUE, FALSE)
+	C.buckle_mob(H, GLOB.authority_forced, FALSE)
 	refresh_flush()
 	TEST_ASSERT(C.has_buckled_mobs(), "the mob is buckled")
 	TEST_ASSERT(C.rx?.look_key != before, "buckling a mob redraws the chair (its armrests) without an update_icon() call")

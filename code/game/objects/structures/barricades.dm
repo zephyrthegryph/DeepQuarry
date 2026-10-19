@@ -11,10 +11,10 @@
 	var/material_colour // the material's icon colour, kept beside it for the look
 
 CAPABILITIES(/obj/structure/barricade)
+	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
 	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-
 
 /// The barricade's material (its constructor param; a subtype's default).
 /obj/structure/barricade/var/barricade_material = MAT_WOOD
@@ -100,11 +100,6 @@ MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 	visible_message(span_danger("\The [src] falls apart!"))
 	consume(src)
 	return
-
-/obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return TRUE
-	return FALSE
 
 /obj/structure/barricade/planks
 	name = "crude barricade"

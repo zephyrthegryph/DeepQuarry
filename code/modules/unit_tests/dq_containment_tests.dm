@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	is_default = TRUE
 
 /datum/relation_definition/slot/dq_test_main/accepts_requirements()
-	return req_acceptance_tag(TAG_SHARP, because = "must be sharp")
+	return req_tag(TAG_SHARP, because = "must be sharp")
 
 /// Blocks moves through the pre signals and records what the ledger reported.
 /datum/dq_containment_listener

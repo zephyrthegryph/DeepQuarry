@@ -599,7 +599,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/bed/roller/bed = allocate(/obj/structure/bed/roller, run_loc_floor_bottom_left)
 	var/obj/item/handcuffs/C = allocate(/obj/item/handcuffs, run_loc_floor_bottom_left)
-	TEST_ASSERT(bed.buckle_mob(user, forced = TRUE), "setup: the user is buckled")
+	TEST_ASSERT(bed.buckle_mob(user, authority = GLOB.authority_forced), "setup: the user is buckled")
 	TEST_ASSERT(user.equip_to_slot(C, SLOT_ID_HANDCUFFED), "setup: the user is cuffed")
 	test_chat_clear()
 	user.resist()

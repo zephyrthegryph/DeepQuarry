@@ -325,7 +325,9 @@
 
 	// The same answer through the storage slot: its refusal is the storage capability's.
 	var/datum/relation_definition/slot/storage/def = dq_slot_def(/datum/relation_definition/slot/storage)
-	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
+	var/slot_reason = def.refusal(wallet, wrench, null)
+	TEST_ASSERT(ispath(slot_reason, /datum/msg) || istype(slot_reason, /datum/msg), "the slot answers a message reason (D1), not text: [slot_reason]")
+	TEST_ASSERT_EQUAL(reason_text(slot_reason), wallet.insert_refusal(wrench, null), "the storage's text is the slot's reason, read at the ledger boundary")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
 
@@ -405,7 +407,7 @@
 
 /datum/unit_test/dq_constraint_declarations_compile/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT, CONSTRAINT_EQUIP)
+	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT) // equip rules are the equip act's needs() now
 	var/checked = 0
 	// The types the parity fixture could create: every storage, suit and
 	// equip type that initializes cleanly on a bare floor.

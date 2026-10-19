@@ -199,50 +199,25 @@
 		return null
 	return length(when_entry.children) ? when_entry.children[1] : null
 
-/// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF.
+/// A condition of section 5 evaluated now on `holder`: nameof(v) (a truthy var), a stat or key id, not()/all_of()/any_of(), PROC_REF, a requirement.
+/// One evaluator (admission.md wave 8): this is op_cond() in a pooled context whose holder is `holder`. A null condition does not hold.
 PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/condition_holds(datum/holder, cond)
-	if(islist(cond))
-		var/list/L = cond
-		switch(L[1])
-			if("not")
-				return !condition_holds(holder, L[2])
-			if("all")
-				for(var/i in 2 to length(L))
-					if(!condition_holds(holder, L[i]))
-						return FALSE
-				return TRUE
-			if("any")
-				for(var/i in 2 to length(L))
-					if(condition_holds(holder, L[i]))
-						return TRUE
-				return FALSE
-			if("config")
-				return !!global.config?.Get(L[2])
+	if(isnull(cond))
 		return FALSE
+	// The two leaf forms that need no context answer directly: they are the hot ones (stat and activation gates), and they run before the
+	// object pools exist (a datum built while the globals initialize asks its every() gate's var).
+	if(istext(cond) && (cond in holder.vars))
+		return !!holder.vars[cond]
 	if(isnum(cond))
 		return condition_id_holds(holder, cond)
-	if(istext(cond))
-		if(cond in holder.vars)
-			return !!holder.vars[cond]
-		return !!op_pure_call(holder, cond)
-	// not(), all_of() and any_of() with no condition among their arguments (all_of() with none) are requirement parts: read them as the same tree.
-	if(istype(cond, /datum/entry/part/req/negation))
-		var/datum/entry/part/req/negation/N = cond
-		return !condition_holds(holder, N.children[1])
-	if(istype(cond, /datum/entry/part/req/all))
-		var/datum/entry/part/req/all/every = cond
-		for(var/member in every.children)
-			if(!condition_holds(holder, member))
-				return FALSE
-		return TRUE
-	if(istype(cond, /datum/entry/part/req/any))
-		var/datum/entry/part/req/any/some = cond
-		for(var/member in some.children)
-			if(condition_holds(holder, member))
-				return TRUE
-		return FALSE
-	return !!cond
+	var/datum/act/op/A = pooled_op_context(holder)
+	try
+		. = op_cond(A, cond)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
+	A.release()
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
 /proc/condition_id_holds(datum/holder, id)

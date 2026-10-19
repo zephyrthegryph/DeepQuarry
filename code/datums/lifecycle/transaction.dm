@@ -181,7 +181,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				if(!ismovable(D))
 					continue
 				var/atom/movable/resolving = D
-				resolving.dq_lifecycle_resolve_contents()
+				resolving.dq_lifecycle_resolve_contents(force)
 			if(DESTROY_STEP_CONTENTS_SPILL)
 				if(!ismovable(D))
 					continue

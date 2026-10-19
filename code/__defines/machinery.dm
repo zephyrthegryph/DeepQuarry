@@ -251,6 +251,9 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of light_glow() (code/modules/lighting/glow.dm) and the key its run-time writes publish.
 #define ENTRY_LIGHT_GLOW "light_glow"
 #define LIGHT_GLOW_KEY "light_glow"
+/// The entry kind of passable() (code/game/atom/_atom.dm, by CanPass) and the key its run-time writes publish.
+#define ENTRY_PASSABLE "passable"
+#define PASSABLE_KEY "passable"
 /// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_COMBAT "item_combat"
 #define ITEM_COMBAT_KEY "item_combat"

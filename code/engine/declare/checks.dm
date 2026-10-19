@@ -2,8 +2,7 @@
 //
 // A check spec is any of:
 //   /datum/requirement_definition/powered                   a check type, no parameter
-//   CHECK(/datum/requirement_definition/in_range, 1)         a parameterised check
-//   list(/datum/requirement_definition/in_range = 1)         the same, as a plain list
+//   list(/datum/requirement_definition/in_range = 1)         a parameterised check (the CHECK() macro is gone: admission.md wave 8)
 //   "machine_usable"                           a named check from a bundle's `checks`
 //   ALL_OF(a, b), ANY_OF(a, b), NOT_OF(a)      combinators over specs
 // Every spec compiles once to a cached instance, keyed by value, so equal

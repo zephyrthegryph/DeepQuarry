@@ -335,4 +335,4 @@
 
 
 CAPABILITIES(/obj/item/clothing/shoes/none)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()

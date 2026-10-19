@@ -1525,8 +1525,8 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	set_rest_style(A.answer ? A.answer.value : "Default")
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.
-/mob/living/silicon/robot/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
-	if(forced)
+/mob/living/silicon/robot/buckle_mob(mob/living/M, authority = null, check_loc = TRUE)
+	if(authority_skips(authority, SKIP_REQUIREMENTS))
 		return ..() // Skip our checks
 	if(!riding_datum)
 		return FALSE

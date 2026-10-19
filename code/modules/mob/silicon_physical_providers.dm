@@ -39,12 +39,12 @@
 
 /// Buckling is performed by the actor's physical body. A pAI has no such
 /// transaction; adjacency and restraint checks are not replaced by remote reach.
-/mob/proc/secure_buckle_mob(atom/movable/seat, mob/living/passenger, forced = FALSE, silent = FALSE)
+/mob/proc/secure_buckle_mob(atom/movable/seat, mob/living/passenger, authority = null, silent = FALSE)
 	if(!Adjacent(passenger) || restrained() || stat)
 		return FALSE
-	return seat.finish_user_buckle(passenger, src, forced, silent)
+	return seat.finish_user_buckle(passenger, src, authority, silent)
 
-/mob/living/silicon/pai/secure_buckle_mob(atom/movable/seat, mob/living/passenger, forced = FALSE, silent = FALSE)
+/mob/living/silicon/pai/secure_buckle_mob(atom/movable/seat, mob/living/passenger, authority = null, silent = FALSE)
 	return FALSE
 
 /// Concrete evidence authorizing a restraint action: the actor itself for self

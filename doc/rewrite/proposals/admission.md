@@ -699,9 +699,52 @@ predicate tables, `/datum/predicate` and the `HOLD_*` macros before this lane re
 **Purity report (D5).** req-burndown converted the two confirmed impure previews (saddlebag `taur_fit`, Avida `match_ears`) to pure requirements with the
 appearance set through equipment notices (its handoff, `intended_changes.md`); no `REQ_ON` proc is left to audit.
 
-**Wave 4 decisions (18 Oct, recorded by the admission lane).** `canremove` and `NOSTRIP` stay: `canremove` is a rig's or a locked item's own tracked
+**Wave 4 decisions (18 Oct, recorded by the admission lane; canremove/NOSTRIP **resolved**, confirmed by the coordinator).** `canremove` and `NOSTRIP` stay: `canremove` is a rig's or a locked item's own tracked
 *state* (sealed, locked on: 53 reads, most of them the rig deciding what it is), and `NOSTRIP` is item flag data. What wave 4 removes is their use
 as *gates*: removal is asked through `req_removable()` (strip menu) and the pure `mob_can_unequip()`; banning the names would only rename state.
 `ignore_obstruction` stays as the equip check's explicit "skip the covering check" mode (tape over clothes) until the authority datum carries
-skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k). `disable_warning` and the `*_spec` table
+skips (D2j); `dq_equip_refusal` stays until `/datum/act/equip` carries the whole pipeline (D2k); both are scheduled as **wave 6b** (below) and banned there. `disable_warning` and the `*_spec` table
 names are hard-banned.
+
+**Wave 6b (scheduled 18 Oct): equip through the equip action, skips through the authority.**
+1. `/datum/authority_grant` gains `skips` (a bit set: `SKIP_COVERING`, `SKIP_REQUIREMENTS`) and `quiet`; `equip_to_slot_if_possible(ignore_obstructions =)` becomes
+   an authority with `SKIP_COVERING` (the tape blindfold and muzzle are its two callers).
+2. `/datum/act/equip` on the item runs the whole pipeline: the slot exists, holder state and catalog (the body slot), occupancy, reach (unless
+   skipped), the item's fit and equip constraints, then its own `extend(/datum/act/equip, needs(...))`. `equip_refusal()` becomes
+   `ACT_ATTEMPT(I, equip, wearer, slot)` read through the answer; `dq_equip_refusal` and `dq_equip_item_refusal` are deleted.
+3. `ignore_obstruction`, `ignore_obstructions` and `dq_equip_refusal` are hard-banned in the same commit.
+
+*Landed (18 Oct, admission lane).* Steps 1 and 3 as written: `skips`/`quiet` on the grant, `skip_authority()`, `GLOB.authority_dressing` (SKIP_COVERING) as
+`equip_to_slot_if_possible`'s default and `authority = null` for the tape (the only callers that checked covering). Step 2 is taken half way: the
+pipeline is the item's own `equip_refusal(M, slot, go_over_slot, actor, authority)` (the global `dq_equip_refusal`/`dq_equip_item_refusal` are deleted and
+banned; the item part is `wearer_constraint_refusal()`), still ending in `/datum/act/equip`'s needs(). Moving the earlier steps into the act needs the act
+to carry `go_over_slot` and the authority, which the generated act arguments do not yet; that is left with wave 8's evaluator merge.
+
+**Waves 6 to 8 progress (18 Oct, admission lane).**
+- *Wave 6 landed:* cell charger, replicator, mech equipment, gun magazines, buckling, accessories, hoist/fulton/wires, cooking appliances,
+  xenobio processors, recyclers: each gate is a pure `*_refusal()` (null or a reason), its feedback the caller's. The old names
+  (`can_buckle_check`, `can_install_synth`, `can_attach_accessory`, `can_attach`, `can_insert`, `can_accept_item`) are hard-banned. `forced`
+  on the buckle procs is an authority (`GLOB.authority_forced`, SKIP_REQUIREMENTS). `forced`/`silent` are **not** word-banned: both are
+  ordinary words in 70+ unrelated signatures (`tool_start_check(silent =)`, `staleness_check_draw(forced =)`); the ban is the per-family
+  name ban above. RPED stays deferred (it needs `component_parts` as a ledger slot).
+- *Wave 7 landed in part:* whitelists and job availability answer reasons (`alien_whitelist_refusal`, `job_whitelist_refusal`,
+  `job_join_refusal`; the old names banned); six pass-flag `CanPass` overrides became the `passable(pass_flags =)` type trait read by
+  `/atom/CanPass`. Still open: the other 60 `CanPass` overrides (direction- or state-dependent, slow path by design), `Bumped`, the
+  `trans_to` reagent inserts (needs D2f quantity slots for beakers), and a lint for a flag-only `CanPass` body.
+- *Wave 8 landed in part:* the `req_acceptance_*` leaves lost their prefix (`req_type`, `req_tag`, `req_max_size`, ...; the old names
+  banned; the unused `cond.dm` `req_tag` merged into the leaf); the `CHECK()` and `FACT()` macros are deleted (no content used them; the
+  OM pipeline's spec lists stay as the engine form). **D10 landed (coordinator's call, 18 Oct):** forced deletes don't
+  spill, unforced ones do. Storage and folder slots are SPILL; the destroy transaction passes `force` to the contents phase, which deletes
+  the contents of a SPILL slot on a forced delete.
+- *Wave 8, the interim channels:* the **equip** channel is gone: its 30 declarations are `extend(/datum/act/equip, needs(...))` (the equip act's
+  query now carries the wearer, so the leaves read `A.wearer` as before and the item as `A.holder`), asked through `equip_act_refusal()`;
+  `CONSTRAINT_EQUIP` is banned. **Decision (lane):** the other three channels move *content* first: `fits_as(FIT_X)`/`fits_anyone()`,
+  `suit_storage(list(...))`/`no_suit_storage()` and `holder_takes(reqs...)` replace every content `acceptance(` (282 declarations), and
+  `acceptance(` is banned outside the engine, the body-slot catalog (`equip_slots.dm`), the vore consents and tests. The constructors
+  still compile to the CONSTRAINT_* channels, so the evaluator swap (holsters and grippers as slot accepts, suit storage as a trait, D4c)
+  changes their bodies, not content. Picked over converting holsters/grippers to slots now because their holders are `owns_one` vars,
+  which the declared-slot path skips (`declared_slot_defs()`): that is engine work for the relations owner.
+- *Wave 8, one evaluator:* `condition_holds(holder, cond)` is `op_cond()` on a pooled context (`pooled_op_context()`, shared with
+  `requirement_reason()`); `op_cond_eval()` gained the `cond_config()` branch. A requirement inside a stat or activation condition is now
+  evaluated (the old walker answered TRUE for any part that was not not/all_of/any_of); a PROC_REF condition is called with the context
+  as its argument, as an op condition is.

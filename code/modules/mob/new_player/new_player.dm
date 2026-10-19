@@ -100,22 +100,33 @@
 	// Timer still going
 	return respawn_at - world.time
 
-/mob/new_player/proc/IsJobAvailable(rank)
+MSG_DEF_SELF(join/no_such_job, "There is no such job.")
+MSG_DEF_SELF(join/job_full, "That job has no open positions.")
+MSG_DEF_SELF(join/jobbanned, "You are banned from that job.")
+MSG_DEF_SELF(join/too_new, "Your account is too new for that job.")
+MSG_DEF_SELF(join/not_enough_playtime, "You haven't played enough for that job.")
+MSG_DEF_SELF(join/not_enough_pto, "You don't have enough PTO for that job.")
+MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
+
+/// Why this player can't join as `rank` now, or null (admission.md D7: the join's gates in order, each with its own reason, where the
+/// old isnull(job_join_refusal()) answered 0 and the caller showed "not available").
+/mob/new_player/proc/job_join_refusal(rank)
 	var/datum/job/job = SSjob.get_job(rank)
 	if(!job)
-		return 0
+		return /datum/msg/join/no_such_job
 	if(!job.is_position_available())
-		return 0
+		return /datum/msg/join/job_full
 	if(jobban_isbanned(src,rank))
-		return 0
+		return /datum/msg/join/jobbanned
 	if(!job.player_old_enough(src.client))
-		return 0
+		return /datum/msg/join/too_new
 	if(!job.player_has_enough_playtime(src.client))
-		return 0
-	if(!is_job_whitelisted(src,rank))
-		return 0
+		return /datum/msg/join/not_enough_playtime
+	. = job_whitelist_refusal(src, rank)
+	if(.)
+		return .
 	if(!job.player_has_enough_pto(src.client))
-		return 0
+		return /datum/msg/join/not_enough_pto
 	// play_mode gating: cyborgs are the only option when chargen has
 	// play_mode == "robot", and not an option for any other mode. Without this
 	// a player who picked "Robot" in the species picker could still late-join
@@ -124,12 +135,12 @@
 		var/play_mode = client.prefs.read_preference(/datum/preference/text/human/play_mode) || "human"
 		var/is_cyborg_job = (rank == JOB_CYBORG || rank == JOB_ALT_ROBOT || rank == JOB_ALT_DRONE)
 		if(play_mode == "robot" && !is_cyborg_job)
-			return 0
+			return /datum/msg/join/wrong_play_mode
 		if(play_mode == "human" && is_cyborg_job)
-			return 0
+			return /datum/msg/join/wrong_play_mode
 		if(play_mode == "pai")
-			return 0
-	return 1
+			return /datum/msg/join/wrong_play_mode
+	return null
 
 /mob/new_player/proc/AttemptLateSpawn(rank, mob/user, list/answers = null)
 	if (src != user)
@@ -149,8 +160,9 @@
 	if(!CONFIG_GET(flag/enter_allowed))
 		to_chat(src, span_notice("There is an administrative lock on entering the game!"))
 		return 0
-	if(!IsJobAvailable(rank))
-		tgui_alert_async(src,"[rank] is not available. Please try another.")
+	var/refused = job_join_refusal(rank)
+	if(refused)
+		tgui_alert_async(src,"[rank] is not available: [reason_text(refused)]")
 		return 0
 	if(!spawn_checks_vr(rank)) return 0
 	if(!client)
@@ -205,7 +217,7 @@
 	// AIs don't need a spawnpoint, they must spawn at an empty core
 	if(J.mob_type & JOB_SILICON_AI)
 
-		// IsJobAvailable for AI checks that there is an empty core available in this list
+		// job_join_refusal for AI checks that there is an empty core available in this list
 		var/obj/structure/AIcore/deactivated/C = REGISTRY_MEMBERS(REGISTRY_EMPTY_AI_CORES)[1]
 		registry_leave(REGISTRY_EMPTY_AI_CORES, C)
 
@@ -326,7 +338,7 @@
 
 	if(chosen_species && use_species_name)
 		// Have to recheck admin due to no usr at roundstart. Latejoins are fine though.
-		if(is_alien_whitelisted(src.client, chosen_species))
+		if(isnull(alien_whitelist_refusal(src.client, chosen_species)))
 			new_character = new(T, use_species_name)
 
 	if(!new_character)
@@ -410,7 +422,7 @@
 	if(!chosen_species)
 		return SPECIES_HUMAN
 
-	if(is_alien_whitelisted(src.client, chosen_species))
+	if(isnull(alien_whitelist_refusal(src.client, chosen_species)))
 		return chosen_species.name
 
 	return SPECIES_HUMAN
@@ -473,7 +485,7 @@
 			to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
 
 	//Can they play?
-	if(!is_alien_whitelisted(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_require(client, R_ADMIN, "spawn_checks_vr", 0))
+	if(alien_whitelist_refusal(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_require(client, R_ADMIN, "spawn_checks_vr", 0))
 		pass = FALSE
 		if(!quiet)
 			to_chat(src,span_warning("You are not allowed to spawn in as this species."))

@@ -66,7 +66,7 @@
 			MSG_OTHERS(span_notice("[user.name] secretes a thick vile goo, securing [M.name] into %T%!")), \
 			MSG_BLIND(span_notice("You hear squelching...")))
 	M.forceMove(src.loc)
-	buckle_mob(M, forced = TRUE)
+	buckle_mob(M, authority = GLOB.authority_forced)
 	M.set_pixel_y(6)
 	M.old_y = 6
 	src.add_fingerprint(user)

@@ -38,6 +38,8 @@ CAPABILITIES(/obj/machinery/recycling)
  * Generic procs common to all
  */
 MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
+MSG_DEF_SELF(recycling/not_ready, "it isn't ready to take anything")
+MSG_DEF_SELF(recycling/wrong_input, "it doesn't take that")
 
 /**
  * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
@@ -56,7 +58,7 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 	if(!hand_fed)
 		return OP_OK
 	var/mob/living/M = user
-	if(can_accept_item(O))
+	if(isnull(recycle_refusal(O)))
 		M.drop_from_inventory(O)
 		take_item(O)
 		act_message(M, src, MSG_SELF(span_info("You insert [O] into %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " inserts [O] into %T%.")))
@@ -66,15 +68,25 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 // Conveyors etc
 /obj/machinery/recycling/Bumped(atom/A)
-	if(isitem(A) && can_accept_item(A))
+	if(!isitem(A))
+		return
+	var/refused = recycle_refusal(A)
+	if(isnull(refused))
 		take_item(A)
+	else if(refused == /datum/msg/recycling/wrong_input)
+		divert_item(A)
 
-/obj/machinery/recycling/proc/can_accept_item(obj/item/O)
-	if(!operable())
-		return FALSE
-	if(panel_open)
-		return FALSE
-	return !working
+/// Why O can't go in now, or null (admission.md D6: a pure reason; the machine's state, then what kind of thing it takes).
+/obj/machinery/recycling/proc/recycle_refusal(obj/item/O)
+	if(!operable() || panel_open)
+		return /datum/msg/recycling/not_ready
+	if(working)
+		return /datum/msg/recycling/working
+	return null
+
+/// A conveyed item this machine does not take: left where it is unless the machine passes it on.
+/obj/machinery/recycling/proc/divert_item(obj/item/O)
+	return
 
 /obj/machinery/recycling/proc/take_item(obj/item/O)
 	O.forceMove(src)
@@ -100,14 +112,15 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
 
-/obj/machinery/recycling/crusher/can_accept_item(obj/item/O)
-	if(length(O.material_totals()))
-		return ..()
-	// ition Start - Let's the machine decide to put things it can't accept somewhere else.
-	else if(negative_dir && isitem(O) && !ishuman(O.loc))
+/obj/machinery/recycling/crusher/recycle_refusal(obj/item/O)
+	if(!length(O.material_totals()))
+		return /datum/msg/recycling/wrong_input
+	return ..()
+
+/// ition: the crusher puts a conveyed thing it can't take out its negative side.
+/obj/machinery/recycling/crusher/divert_item(obj/item/O)
+	if(negative_dir && !ishuman(O.loc))
 		O.forceMove(get_step(src, negative_dir))
-	else
-		return FALSE
 	// ition End
 
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
@@ -161,10 +174,10 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 CAPABILITIES(/obj/machinery/recycling/sorter)
 	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
 
-/obj/machinery/recycling/sorter/can_accept_item(obj/item/O)
-	if(istype(O, /obj/item/debris_pack))
-		return ..()
-	return FALSE
+/obj/machinery/recycling/sorter/recycle_refusal(obj/item/O)
+	if(!istype(O, /obj/item/debris_pack))
+		return /datum/msg/recycling/wrong_input
+	return ..()
 
 /obj/machinery/recycling/sorter/take_item(obj/item/O)
 	. = ..()
@@ -209,10 +222,10 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 	icon_state = "stamper"
 	circuit = /obj/item/circuitboard/recycler_stamper
 
-/obj/machinery/recycling/stamper/can_accept_item(obj/item/O)
-	if(istype(O, /obj/item/material_dust))
-		return ..()
-	return FALSE
+/obj/machinery/recycling/stamper/recycle_refusal(obj/item/O)
+	if(!istype(O, /obj/item/material_dust))
+		return /datum/msg/recycling/wrong_input
+	return ..()
 
 /obj/machinery/recycling/stamper/take_item(obj/item/O)
 	. = ..()

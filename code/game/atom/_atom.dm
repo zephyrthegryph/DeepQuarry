@@ -598,8 +598,45 @@ SETTER(/atom, invisibility)
 // Inputs: The moving atom, target turf.
 // Outputs: Boolean if can pass.
 // Airflow and ZAS zones now uses CanZASPass() instead of this proc.
+// ---- the movement fast path: the passable() type trait (admission.md D7; doc/rewrite/proposals/base_vars.md) ----
+//
+//	CAPABILITIES(/obj/structure/barricade)
+//		passable(pass_flags = PASSTABLE)   // a mover with PASSTABLE goes through, dense or not
+//
+// A CanPass override that only tested a pass flag is this declaration instead; read with passable_of(A).pass_flags.
+
+STATIC_ENTRY(passable)
+
+/proc/passable(pass_flags = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_PASSABLE, null, list("pass_flags" = pass_flags))
+
+/datum/type_trait/passable
+	/// PASS* bits a mover needs one of to go through (barricades, tables, beds: PASSTABLE; glass: PASSGLASS). NONE: density decides.
+	var/pass_flags = NONE
+
+/datum/type_trait/passable/copy_values(datum/type_trait/passable/into)
+	into.pass_flags = pass_flags
+
+/datum/entry_engine/type_trait/passable
+	kind = ENTRY_PASSABLE
+	trait_type = /datum/type_trait/passable
+	publish_key = PASSABLE_KEY
+	base_type = /atom
+	var_names = list()
+
+/// Which movers go through `A` whatever its density (its own values once one was set at run time). Read only.
+READS_AS(/proc/passable_of, PASSABLE_KEY)
+/proc/passable_of(atom/A) as /datum/type_trait/passable
+	READS_FROM(A)
+	return type_trait_of(A, ENTRY_PASSABLE)
+
+/// A mover whose pass_flags share a bit with the atom's passable() pass flags goes through it, dense or not.
 /atom/proc/CanPass(atom/movable/mover, turf/target)
-	return !density
+	if(!density)
+		return TRUE
+	var/needs = passable_of(src)?.pass_flags
+	return needs && istype(mover) && (mover.pass_flags & needs)
 
 
 //! ## Atom Colour Priority System

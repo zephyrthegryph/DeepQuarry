@@ -440,7 +440,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
 		req(PROC_REF(holds_multitool))), then(PROC_REF(pulse_pressed)))
 	op("attach", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req(PROC_REF(can_attach))), then(PROC_REF(attach_pressed)))
+		req(PROC_REF(attach_refusal))), then(PROC_REF(attach_pressed)))
 
 /datum/cap_data/wires/proc/all_wires()
 	. = list()
@@ -609,7 +609,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	return (istype(I) && I.has_tool_quality(TOOL_MULTITOOL)) ? null : /datum/msg/wires/need_multitool
 
 /// A signaler in hand for a free wire, or a wire with one to take off.
-/datum/cap_data/wires/proc/can_attach(datum/act/op/A)
+/datum/cap_data/wires/proc/attach_refusal(datum/act/op/A)
 	var/color = lowertext(A.args?["wire"])
 	return (!!LAZYACCESS(assemblies, color) || istype(tool_of(A.actor), /obj/item/assembly/signaler)) ? null : /datum/msg/wires/need_signaler
 

@@ -224,28 +224,22 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 			if("robot")
 				LAZYADD(GLOB.robot_whitelist[ckey], entry)
 
-/proc/is_alien_whitelisted(client/C, datum/species/species)
-	//They are admin or the whitelist isn't in use
+MSG_DEF_SELF(join/not_whitelisted_species, "You are not whitelisted to play that species.")
+MSG_DEF_SELF(join/not_whitelisted_job, "You are not whitelisted for that job.")
+
+/// Why client C may not play `species`, or null (admission.md D7: a whitelist is a requirement with a reason, not a boolean).
+/// Admins and an unused whitelist pass; so does a species that isn't whitelisted.
+/proc/alien_whitelist_refusal(client/C, datum/species/species)
 	if(whitelist_overrides(C))
-		return TRUE
-
-	//You did something wrong
+		return null
 	if(!C || !species)
-		return FALSE
-
-	//The species isn't even whitelisted
+		return /datum/msg/join/not_whitelisted_species
 	if(!(species.spawn_flags & SPECIES_IS_WHITELISTED))
-		return TRUE
-
-	//Search the whitelist
+		return null
 	var/list/our_whitelists = GLOB.alien_whitelist[C.ckey]
-	if("All" in our_whitelists)
-		return TRUE
-	if(species.name in our_whitelists)
-		return TRUE
-
-	// Go apply!
-	return FALSE
+	if(("All" in our_whitelists) || (species.name in our_whitelists))
+		return null
+	return /datum/msg/join/not_whitelisted_species
 
 /// Loads the job whitelist: from the database (io_job; replaced when the rows arrive) or the file.
 /proc/load_jobwhitelist(dbfail = FALSE)
@@ -297,35 +291,22 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 			GLOB.job_whitelist[ckey] = our_whitelists
 		our_whitelists += row[2]
 
-/proc/is_job_whitelisted(mob/M, rank)
-	// Check if the job actually requires a whitelist
+/// Why M may not take job `rank`, or null (admission.md D7). A job that needs no whitelist, the visitor title and admins pass.
+/proc/job_whitelist_refusal(mob/M, rank)
 	var/datum/job/job = SSjob.get_job(rank)
-	if(!job)
-		return TRUE
-	if(!job.whitelist_only)
-		return TRUE
-
+	if(!job || !job.whitelist_only)
+		return null
 	// Visitor not Assistant
 	if(rank == JOB_ALT_VISITOR)
-		return TRUE
-
+		return null
 	// Let R_ADMIN permission bypass the whitelist
 	if(check_rights(R_ADMIN, 0))
-		return TRUE
-
-	// Whitelist empty
-	if(!GLOB.job_whitelist)
-		return FALSE
-
-	//Search the whitelist
-	if(M && M.client && rank)
+		return null
+	if(GLOB.job_whitelist && M && M.client && rank)
 		var/list/our_whitelists = GLOB.job_whitelist[M.client.ckey]
-		if("All" in our_whitelists)
-			return TRUE
-		if(rank in our_whitelists)
-			return TRUE
-
-	return FALSE
+		if(("All" in our_whitelists) || (rank in our_whitelists))
+			return null
+	return /datum/msg/join/not_whitelisted_job
 
 /proc/is_lang_whitelisted(mob/M, datum/language/language)
 	//They are admin or the whitelist isn't in use

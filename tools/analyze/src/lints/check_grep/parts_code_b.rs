@@ -170,6 +170,14 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
         Part::new(
+            "movement_flag_only_canpass_banned",
+            "movement: flag-only CanPass banned",
+            "A CanPass override that only lets a pass flag through is the type's passable(pass_flags = PASSX) trait, read by /atom/CanPass (doc/rewrite/proposals/admission.md D7, wave 7). A CanPass that reads direction or state stays a proc.",
+            Files::Code,
+            multi_z(r"(?m)^/[\w/]+/CanPass\([^)\n]*\)[^\n]*\n\tif\(istype\(mover\) && mover\.checkpass\(PASS\w+\)\)[^\n]*\n\t\treturn (?:TRUE|1)\n\treturn (?:FALSE|0|\.\.\(\))\n", None),
+        )
+        .flt(vec![Flt::Drop(r"^code/(modules/unit_tests|tests)/".into())]),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTIONs",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",

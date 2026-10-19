@@ -236,7 +236,7 @@ CAPABILITIES(/obj/item/slime_grinder)
 
 /// Requirement: the target is a dead slime or a dead monkey.
 /obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
-	return (can_insert(A.target)) ? null : span_warning("\The [src] cannot process \the [A.target] at this time.")
+	return insert_refusal(A.target)
 
 /// The juicer starts and the grinder is busy until the grind ends.
 /obj/item/slime_grinder/proc/grind_started(datum/act/op/A)
@@ -280,17 +280,12 @@ CAPABILITIES(/obj/item/slime_grinder)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4
 
-/obj/item/slime_grinder/proc/can_insert(atom/movable/AM)
+/// Why AM can't go in to be processed, or null: a dead slime or a dead monkey is taken (admission.md D6: a pure reason).
+/obj/item/slime_grinder/proc/insert_refusal(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
-		if(read_once(S.stat) != DEAD)
-			return FALSE
-		return TRUE
+		return read_once(S.stat) == DEAD ? null : msg_reason("\The [src] cannot process \the [AM] at this time.")
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		if(!istype(read_once(H.species), /datum/species/monkey))
-			return FALSE
-		if(read_once(H.stat) != DEAD)
-			return FALSE
-		return TRUE
-	return FALSE
+		return (istype(read_once(H.species), /datum/species/monkey) && read_once(H.stat) == DEAD) ? null : msg_reason("\The [src] cannot process \the [AM] at this time.")
+	return msg_reason("\The [src] cannot process \the [AM] at this time.")

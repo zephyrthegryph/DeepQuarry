@@ -115,7 +115,7 @@ CAPABILITIES(/datum/accessory_slot_registry)
  * proc/has_free_slot(obj/item/clothing/clothing, flags)
  *
  * Returns TRUE if all bits in flags are both valid and not yet consumed by an
- * attached accessory.  Equivalent to clothing.can_attach_accessory() without
+ * attached accessory.  Equivalent to isnull(clothing.accessory_refusal()) without
  * needing a concrete accessory object.
  */
 /datum/accessory_slot_registry/proc/has_free_slot(obj/item/clothing/clothing, flags)

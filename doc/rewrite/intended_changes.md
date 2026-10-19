@@ -5229,3 +5229,30 @@ locking. No snapshots are re-recorded.
 * **Asking whether a bluespace uniform or bracelet may come off no longer resizes the wearer** (wave 4): the size reset moved from
   `mob_can_unequip()` (a check, run by menus and storage too) to `dropped()`, when it actually comes off. `mob_can_unequip()` and
   `can_unequip_item()` are pure; `canUnEquip()` still tells the mob what is in the way.
+* **Hand-feeding a cooking appliance shows each refusal once, from one place** (wave 6): `can_insert()`'s 0/1/2 codes and inline
+  `to_chat` became `insert_refusal(I)` (null or a reason) and `insert_feedback()`. The texts are unchanged; the mixer's stray leading comma
+  (",You can't add items...") is gone.
+* **A recycler's conveyor intake no longer moves things from inside its check** (wave 6): the crusher's `can_accept_item()` pushed a
+  conveyed item without materials out of its negative side while answering. `recycle_refusal(O)` is pure and `Bumped()` calls
+  `divert_item()`; the item ends up in the same place.
+* **Late join says why a job is unavailable** (wave 7, D7): `IsJobAvailable()` answered 0 and the alert read "[rank] is not available.
+  Please try another."; `job_join_refusal(rank)` returns the first gate that failed (full, jobbanned, account too new, playtime,
+  whitelist, PTO, play mode) and the alert reads "[rank] is not available: <reason>". Menus that only list jobs behave as before.
+* **The raider mirror's Vox whitelist check reads the species** (wave 7): it passed the species *name* to the whitelist check, which
+  read `spawn_flags` off a text; it now passes `GLOB.all_species[SPECIES_VOX]`.
+* **Buckling and equipping skip checks through an authority, not flags** (wave 6/6b): `forced = TRUE` on the buckle procs is
+  `authority = GLOB.authority_forced` (SKIP_REQUIREMENTS) and `ignore_obstructions` on `equip_to_slot_if_possible()` is
+  `authority = GLOB.authority_dressing` (SKIP_COVERING, the default); the tape blindfold and muzzle pass `authority = null` as they
+  passed `ignore_obstructions = FALSE`. Behaviour is unchanged.
+* **Six pass-flag `CanPass` overrides are data** (wave 7, D7): operating tables, barricades, hydroponics trays, IV drips, beds
+  (PASSTABLE) and shuttle windows (PASSGLASS) declare `passable(pass_flags = ...)`, a type trait; `/atom/CanPass` lets a
+  mover with a shared pass flag through.
+  A non-dense one of these now also lets everything through (`!density`), where the table-style overrides refused all but PASSTABLE
+  movers even when not dense. The one case in play: an operating table a light blast knocks flat (`set_density(FALSE)`) used to keep
+  blocking everyone; it is now passable, as a flattened table should be.
+* **An item's own wearer rules run as its equip action's needs** (wave 8): the 30 `acceptance(CONSTRAINT_EQUIP, ...)` declarations (taur
+  shapes, owner ckeys, limb clearance, unwield-first) are `extend(/datum/act/equip, needs(...))`; the texts and their order (after fit,
+  last before the slot is taken) are unchanged.
+* **A destroyed box, backpack or folder spills its contents** (D10, decided by the coordinator): storage and folder slots were DELETE and
+  are SPILL, the default. A forced delete (`qdel(force = TRUE)`: cleanups, admin deletes) deletes the contents of every SPILL slot
+  instead, so it leaves no litter. An ordinary delete of a mob therefore drops its backpack's contents where it stood.

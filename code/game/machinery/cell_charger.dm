@@ -38,7 +38,8 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	extend("part_replacement.replace", needs(req_operable()))
 	owns_one(nameof(charging), /obj/item/cell)
 	op("insert", item(/obj/item/cell), when(nameof(anchored)),
-		needs(req(PROC_REF(insert_refusal))),
+		needs(req(PROC_REF(casing_refusal)), not(req(/obj/item/cell/device), because = MSG(charger/wrong_cell)), req_empty(nameof(charging), because = MSG(bay/full)),
+			req(PROC_REF(area_power_refusal))),
 		put_in(nameof(charging)), says(MSG(charger/inserted)))
 	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_cell)))
 	examine_line(PROC_REF(examine_contents))
@@ -58,20 +59,17 @@ CAPABILITIES(/obj/machinery/cell_charger)
 
 // ---- the slot's conditions ----
 
-/// Why this cell cannot go in now, or null: a casing that is broken, a device cell, a cell already in, an area with no power (it will not let the
-/// charger cheat power where no APC serves).
-/obj/machinery/cell_charger/proc/insert_refusal(datum/act/op/A)
-	var/obj/item/held = A.held
-	if(broken_now())
-		return /datum/msg/machine/inoperable
-	if(istype(held, /obj/item/cell/device))
-		return /datum/msg/charger/wrong_cell
-	if(charging)
-		return /datum/msg/bay/full
+// The insert's requirements, in order (admission.md D6: what may be in is the slot's, the machine's state is a requirement): a whole casing, not a
+// device cell, an empty slot, an area with power (it will not let the charger cheat power where no APC serves).
+
+/// A broken casing takes no cell.
+/obj/machinery/cell_charger/proc/casing_refusal(datum/act/op/A)
+	return broken_now() ? /datum/msg/machine/inoperable : null
+
+/// No equipment power in the area, no cell.
+/obj/machinery/cell_charger/proc/area_power_refusal(datum/act/op/A)
 	var/area/a = loc?.loc
-	if(isarea(a) && a.power_equip == 0)
-		return /datum/msg/charger/no_area_power
-	return null
+	return (isarea(a) && a.power_equip == 0) ? /datum/msg/charger/no_area_power : null
 
 
 /// The empty hand takes the cell out. A cyborg takes it with its gripper.

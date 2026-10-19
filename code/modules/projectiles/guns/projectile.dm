@@ -578,29 +578,46 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.
 // Handles magazine/speedloader/single-casing/storage bulk loads, including the manual-chamber
 // and bolt mechanics keyed off auto_loading_type.
+/// Why magazine AM can't load into this gun now, or null: the magazine well's rules in order (admission.md D6: the well's accepts, then its
+/// state), a pure read the load and anything that asks first share. The loading method it would use is magazine_method().
+/obj/item/gun/projectile/proc/magazine_refusal(obj/item/ammo_magazine/AM)
+	if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(AM, allowed_magazines))
+		return msg_reason("[AM] won't load into [src]!")
+	switch(magazine_method(AM))
+		if(MAGAZINE)
+			if(ammo_magazine)
+				return msg_reason("[src] already has a magazine loaded.")
+			if(manual_chamber && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
+				return msg_reason("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine.")
+		if(SPEEDLOADER)
+			if(only_open_load && !bolt_open)
+				return msg_reason("[src] must have its bolt open to be loaded!")
+			if(length(loaded) >= max_shells)
+				return msg_reason("[src] is full!")
+	return null
+
+/// How magazine AM loads: MAGAZINE (the well) or SPEEDLOADER (round by round); magazine when both apply.
+/obj/item/gun/projectile/proc/magazine_method(obj/item/ammo_magazine/AM)
+	. = AM.mag_type & load_method
+	if(. == (MAGAZINE & SPEEDLOADER))
+		. = MAGAZINE //Default to magazine if both are valid
+
 /obj/item/gun/projectile/proc/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine/handful)) //loose-round stack: deliberate per-round feed
 		feed_from_handful(A, user)
 		return
 	if(istype(A, /obj/item/ammo_magazine))
 		var/obj/item/ammo_magazine/AM = A
-		if(!(load_method & AM.mag_type) || caliber != AM.caliber || allowed_magazines && !is_type_in_list(A, allowed_magazines))
-			to_chat(user, span_warning("[AM] won't load into [src]!"))
+		var/refused = magazine_refusal(AM)
+		if(refused)
+			to_chat(user, span_warning(reason_text(refused)))
 			return
 		// Legacy gun code reads stored_ammo directly below (C5); a magazine
 		// picked straight off a turf or out of a latent holder still holds
 		// its rounds as a count until now.
 		AM.make_rounds_real()
-		var/loading_method = AM.mag_type & load_method
-		if(loading_method == (MAGAZINE & SPEEDLOADER)) loading_method = MAGAZINE //Default to magazine if both are valid
-		switch(loading_method)
+		switch(magazine_method(AM))
 			if(MAGAZINE)
-				if(ammo_magazine)
-					to_chat(user, span_warning("[src] already has a magazine loaded.")) //already a magazine here
-					return
-				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
-					to_chat(user, span_warning("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine."))
-					return
 				if(!move_into(src, nameof(src.ammo_magazine), AM, user))
 					return
 				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
@@ -610,12 +627,6 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 				play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 				user.hud_used?.update_ammo_hud(user, src)
 			if(SPEEDLOADER)
-				if(only_open_load && !bolt_open)
-					to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
-					return
-				if(length(loaded) >= max_shells)
-					to_chat(user, span_warning("[src] is full!"))
-					return
 				var/count = 0
 				for(var/obj/item/ammo_casing/C in AM.stored_ammo)
 					if(length(loaded) >= max_shells)

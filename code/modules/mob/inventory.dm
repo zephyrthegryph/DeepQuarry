@@ -218,13 +218,17 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 
 //This is a SAFE proc. Use this instead of equip_to_slot()!
 //set del_on_fail to have it delete W if it fails to equip
-//set quiet to keep the wearer from hearing why it failed ('you are unable to equip that').
+//set quiet to keep the wearer from hearing why it failed ('you are unable to equip that'); a quiet authority does the same.
 //unset redraw_mob to prevent the mob from being redrawn at the end.
 /// `actor`: who dresses this mob (a stripper); null means the mob itself. The equip checks judge the actor, not the wearer.
-/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, quiet = 0, redraw_mob = 1, ignore_obstructions = 1, mob/actor = null)
+/// `authority`: what the equip may skip; dressing from code skips the covering check (GLOB.authority_dressing), null checks everything.
+/mob/proc/equip_to_slot_if_possible(obj/item/W, slot, del_on_fail = 0, quiet = 0, redraw_mob = 1, authority = GLOB.authority_dressing, mob/actor = null)
 	if(!W)
 		return 0
-	var/refused = W.equip_refusal(src, slot, ignore_obstructions, actor = actor)
+	if(istype(authority, /datum/authority_grant))
+		var/datum/authority_grant/granted = authority
+		quiet = quiet || granted.quiet
+	var/refused = W.equip_refusal(src, slot, actor = actor, authority = authority)
 	if(refused || !equip_to_slot(W, slot, redraw_mob))
 		if(refused && !quiet)
 			W.equip_feedback(actor || src, refused)
@@ -297,8 +301,8 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	return FALSE
 
 //This is just a commonly used configuration for the equip_to_slot_if_possible() proc, used to equip people when the rounds tarts and when events happen and such.
-/mob/proc/equip_to_slot_or_del(obj/item/W, slot, ignore_obstructions = 1)
-	return equip_to_slot_if_possible(W, slot, 1, 1, 0, ignore_obstructions)
+/mob/proc/equip_to_slot_or_del(obj/item/W, slot, authority = GLOB.authority_dressing)
+	return equip_to_slot_if_possible(W, slot, 1, 1, 0, authority)
 
 //hurgh. these feel hacky, but they're the only way I could get the damn thing to work. I guess they could be handy for antag spawners too?
 /mob/proc/equip_voidsuit_to_slot_or_del_with_refit(obj/item/clothing/suit/space/void/W, slot, species = SPECIES_HUMAN)

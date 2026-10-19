@@ -58,7 +58,7 @@ MSG_DEF_SELF(madokaspear/unwield_it_first, "unwield it first")
 	unwield()
 
 CAPABILITIES(/obj/item/oldtwohanded)
-	acceptance(CONSTRAINT_EQUIP, req_is(nameof(wielded), FALSE, because = MSG(madokaspear/unwield_it_first)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_is(nameof(wielded), FALSE, because = MSG(madokaspear/unwield_it_first))))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

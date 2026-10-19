@@ -33,20 +33,19 @@ CAPABILITIES(/obj/item/hoist_kit)
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-/// Requirement: TRUE, or why the dragged thing can't be clamped on.
-/obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
+/// Why the dragged thing can't be clamped on, or null (admission.md D6: a pure reason).
+/obj/effect/hoist_hook/proc/attach_refusal(atom/movable/held)
 	if(!istype(held) || !held.simulated || held.anchored)
-		return "you can't do that"
+		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
-		return "[source_hoist().hoistee()] is already attached"
-	return TRUE
+		return msg_reason("[source_hoist().hoistee()] is already attached")
+	return null
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
-	var/refusal = can_attach(A.actor, src, A.held)
-	if(refusal != TRUE)
-		if(istext(refusal))
-			to_chat(A.actor, span_warning(refusal))
+	var/refusal = attach_refusal(A.held)
+	if(refusal)
+		to_chat(A.actor, span_warning(reason_text(refusal)))
 		return OP_DECLINE
 	var/mob/user = A.actor
 	var/atom/movable/AM = A.held

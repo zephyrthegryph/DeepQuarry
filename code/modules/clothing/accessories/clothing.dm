@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS|LEGS))
 	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
 
@@ -387,7 +387,7 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/wcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 

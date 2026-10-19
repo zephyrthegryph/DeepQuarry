@@ -130,13 +130,10 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	else
 		return FALSE
 
-/obj/machinery/appliance/cooker/oven/can_insert(obj/item/I, mob/user)
+/obj/machinery/appliance/cooker/oven/insert_refusal(obj/item/I)
 	if(!open && !manip(I))
-		to_chat(user, span_warning("You can't put anything in while the door is closed!"))
-		return 0
-
-	else
-		return ..()
+		return msg_reason("You can't put anything in while the door is closed!")
+	return ..()
 
 /// An open door loses heat to the room eight times faster (the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_conductance()

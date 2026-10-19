@@ -59,13 +59,13 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	var/obj/item/dq_pred_test/knife/knife = allocate(/obj/item/dq_pred_test/knife)
 	var/obj/item/dq_pred_test/welder/welder = allocate(/obj/item/dq_pred_test/welder)
 	var/obj/item/dq_pred_test/welder/advanced/advanced = allocate(/obj/item/dq_pred_test/welder/advanced)
-	var/datum/entry/part/req/sharp = req_acceptance_tag(TAG_SHARP)
+	var/datum/entry/part/req/sharp = req_tag(TAG_SHARP)
 	TEST_ASSERT_NULL(dq_native_requirement_reason(sharp, light, null, knife), "Actual sharp item allows")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(sharp, light, null, light), "must be sharp", "Tag refusal remains exact")
-	var/datum/entry/part/req/blunt = req_acceptance_tag(TAG_SHARP, exclude = TRUE)
+	var/datum/entry/part/req/blunt = req_tag(TAG_SHARP, exclude = TRUE)
 	TEST_ASSERT_NULL(dq_native_requirement_reason(blunt, light, null, light), "Blunt item permits excluded sharp tag")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(blunt, light, null, knife), "must not be sharp", "Excluded tag refuses actual knife")
-	var/datum/entry/part/req/size = req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS)
+	var/datum/entry/part/req/size = req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS)
 	TEST_ASSERT_NULL(dq_native_requirement_reason(size, light, null, light), "Numeric size admits equality")
 	TEST_ASSERT_NOTNULL(dq_native_requirement_reason(size, light, null, heavy), "Numeric size rejects a real larger item")
 	var/datum/entry/part/req/tier = req(GLOBAL_PROC_REF(dq_native_test_weld_tier))
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	TEST_ASSERT_NULL(dq_native_requirement_reason(any, light, null, light, advanced), "First alternative allows")
 	TEST_ASSERT_NULL(dq_native_requirement_reason(any, light, null, light, knife), "Second alternative allows")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(any, light, null, light), "needs a welder (tier 2) or needs something sharp in hand", "Native alternatives retain both actual reasons")
-	var/datum/entry/part/req/overridden = req_acceptance_tag(TAG_SHARP, because = "too dull")
+	var/datum/entry/part/req/overridden = req_tag(TAG_SHARP, because = "too dull")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(overridden, light, null, light), "too dull", "Explicit native reason overrides leaf reason")
 
 /datum/unit_test/dq_predicate_subject_override
@@ -159,27 +159,27 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 /datum/unit_test/dq_native_requirement_validation/Run()
 	var/rejected_null = FALSE
 	try
-		req_acceptance_type(list(null))
+		req_type(list(null))
 	catch(var/exception/null_fault)
 		rejected_null = TRUE
 		TEST_ASSERT(findtext(null_fault.name, "acceptance type list contains a non-type path"), "Actual native type factory identifies malformed null path")
 	TEST_ASSERT(rejected_null, "Native type lists never silently ignore the old middle-null defect")
 	var/rejected_text = FALSE
 	try
-		req_acceptance_type(list("/obj/item/pen"))
+		req_type(list("/obj/item/pen"))
 	catch(var/exception/text_fault)
 		rejected_text = TRUE
 		TEST_ASSERT(findtext(text_fault.name, "non-type path"), "The real factory identifies a textual pseudo-path")
 	TEST_ASSERT(rejected_text, "A path-looking string is not a declared type path")
 	var/rejected_unit = FALSE
 	try
-		req_acceptance_max_size(ITEMSIZE_SMALL, PROP_UNIT_KELVIN)
+		req_max_size(ITEMSIZE_SMALL, PROP_UNIT_KELVIN)
 	catch(var/exception/unit_fault)
 		rejected_unit = TRUE
 		TEST_ASSERT(findtext(unit_fault.name, "numeric unit"), "The real factory identifies the incompatible unit")
 	TEST_ASSERT(rejected_unit, "Numeric native size requirements reject an incompatible real unit")
 	var/obj/item/pen/P = allocate(/obj/item/pen)
-	var/datum/entry/part/req/empty = req_acceptance_type(list(), because = "it can't be worn")
+	var/datum/entry/part/req/empty = req_type(list(), because = "it can't be worn")
 	TEST_ASSERT_EQUAL(dq_native_requirement_reason(empty, P, null, P), "it can't be worn", "Intentional empty type lists remain valid always-refusing requirements")
 
 // A real mutable contributor must not be hidden by its static base provider.
