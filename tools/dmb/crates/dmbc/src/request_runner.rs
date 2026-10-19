@@ -656,12 +656,12 @@ fn run_build_attempt(
             return Err(dmbc::request_failure::RequestFailure::source("").into());
         }
         dm_profile::request_mark("frontend.source_checks");
-        // Body-edit patch shape: declaration skeleton and per-body digests of
-        // this frontend, compared with the retained base (`dmbc::body_patch`).
+        // Source inputs the retained output is compared with (`dmbc::retained_output`): the
+        // program text outside bodies, positions and per-body digests of this frontend.
         let patch_shape = generation
             .as_ref()
             .filter(|_| !verification_capture)
-            .map(|_| Arc::new(dmbc::body_patch::SourceShape::capture(&frontend, executor)));
+            .map(|_| Arc::new(dmbc::retained_output::SourceShape::capture(&frontend, executor)));
         dm_profile::request_mark("patch.source_shape");
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
         frontend_report.capture_metadata(Some(&*semantic_state));
@@ -876,12 +876,12 @@ fn run_build_attempt(
             }
         };
         dm_profile::request_mark("patch.early_admission_started");
-        // Body-edit fast path: relower only changed bodies and splice their code
-        // into the retained output. Any unproven condition declines (logged) and
-        // the full compilation below runs. DMB_BODY_PATCH=0 disables it.
+        // Declaration patches (appended callables, numeric defaults) for edits the general path
+        // has not absorbed yet. Any unproven condition declines (logged) and the general path runs.
+        let tree = &frontend.snapshot.tree;
         let patched = match (&generation, &patch_shape) {
             (Some(generation), Some(shape))
-                if std::env::var_os("DMB_BODY_PATCH").is_none_or(|value| value != "0") =>
+                if tree.appended_callables().is_some() || tree.default_edits().is_some() =>
             {
                 let patch_started = Instant::now();
                 let attempt = (|| {
@@ -889,7 +889,7 @@ fn run_build_attempt(
                         .get(&inputs_capture, nontext.retained_resource_inputs())
                         .map_err(|error| format!("input admission: {error}"))?;
                     dm_profile::request_mark("patch.inputs_snapshot");
-                    dmbc::body_patch::try_patch(dmbc::body_patch::PatchRequest {
+                    dmbc::declaration_patch::try_patch(dmbc::declaration_patch::PatchRequest {
                         generation,
                         shape,
                         frontend: &frontend,
@@ -909,9 +909,9 @@ fn run_build_attempt(
                 match attempt {
                     Ok(patched) => {
                         dmbc::compile_stats::note_patch(patched.changed_bodies);
-                        dmbc::body_patch::note_applied(&project);
+                        dmbc::declaration_patch::note_applied(&project);
                         dmbc::daemon_eprintln!(
-                            "native body patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
+                            "native declaration patch: applied changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
                             patched.changed_bodies,
                             patched.shifted_initializers,
                             patched.patched_rows,
@@ -920,30 +920,24 @@ fn run_build_attempt(
                         Some(patched)
                     }
                     Err(reason) => {
-                        dmbc::compile_stats::note_full(format!("patch declined: {reason}"));
                         dmbc::daemon_eprintln!(
-                            "native body patch: declined after {:.3}s, full compilation: {reason}",
+                            "native declaration patch: declined after {:.3}s: {reason}",
                             patch_started.elapsed().as_secs_f64()
                         );
                         None
                     }
                 }
             }
-            _ => {
-                dmbc::compile_stats::note_full(if std::env::var_os("DMB_BODY_PATCH").is_some_and(|value| value == "0") {
-                    "body patch disabled"
-                } else if generation.is_none() {
-                    "no retained generation (cold session)"
-                } else {
-                    "no patch shape"
-                });
-                None
-            }
+            _ => None,
         };
+        if generation.is_none() {
+            dmbc::compile_stats::note_full("no retained generation (cold session)");
+        }
         dm_profile::request_mark("patch.attempted");
-        // A patch claims nothing in the procedure memo; publishing its empty
-        // request lease would replace (evict) every resident record.
-        let body_patched = patched.is_some();
+        // A patch or an incremental output claims nothing it reused in the procedure memo;
+        // publishing its request lease would replace (evict) every resident record.
+        let declaration_patched = patched.is_some();
+        let incremental = std::cell::Cell::new(false);
         let compile_result = if let Some(patched) = patched {
             let (resolver, _stage, publication) = nontext.into_composition_parts();
             let (abi, startup) = patched.query;
@@ -985,7 +979,20 @@ fn run_build_attempt(
                     // session); 2M entries retain every distinct answer (about 80 MB for the request).
                     .unwrap_or(2_097_152),
             );
-            let mut prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
+            // The retained output this request may build on incrementally.
+            let retained = match (&generation, &patch_shape) {
+                (Some(generation), Some(shape)) => snapshot_memo
+                    .get(&inputs_capture, nontext.retained_resource_inputs())
+                    .ok()
+                    .map(|inputs| dmbc::retained_output::RetainedOutput {
+                        generation,
+                        shape,
+                        inputs,
+                        archive: nontext.archive_identity(),
+                    }),
+                _ => None,
+            };
+            let prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
                 &frontend,
                 &compilation_resolver,
                 engine,
@@ -998,7 +1005,35 @@ fn run_build_attempt(
                 executor,
                 progress_enabled.then_some(&cold_observer),
                 procedure_memo.as_ref(),
+                retained,
             )?;
+            let mut prepared = match prepared {
+                dmbc::cold::Prepared::Full(prepared) => prepared,
+                dmbc::cold::Prepared::Incremental(patched) => {
+                    incremental.set(true);
+                    dmbc::retained_output::note_applied(&project);
+                    drop(compilation_resolver);
+                    let (resolver, _stage, publication) = nontext.into_composition_parts();
+                    let patched = *patched;
+                    let (abi, startup) = patched.query;
+                    query_attempt
+                        .capture_resolved_host(&frontend, resolver, abi, startup)
+                        .map_err(|error| dmbc::cold::ColdError::InitializerInvariant(format!("query host capture: {error}")))?;
+                    let explanations = runner_report::explanations(&frontend, None);
+                    drop(frontend);
+                    return Ok::<_, dmbc::cold::ColdError>((
+                        dmbc::cold::ColdOutput {
+                            dmb: patched.dmb,
+                            timings: Default::default(),
+                            warnings: patched.warnings,
+                            startup: None,
+                        },
+                        publication,
+                        explanations,
+                        None,
+                    ));
+                }
+            };
             dm_profile::request_mark("compilation.prepared");
             if progress_enabled {
                 dmbc::daemon_eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
@@ -1045,6 +1080,7 @@ fn run_build_attempt(
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
+        let built_on_retained = declaration_patched || incremental.get();
         let (output, publication, explanations, patch_records) = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
@@ -1193,22 +1229,23 @@ fn run_build_attempt(
                 )?,
         };
         dm_profile::request_mark("publication.pair_stored");
-        // A full build leaves the patch base for the next body edit.
+        // A whole-program build leaves its output for the next request to build on.
         if let (Some(generation), Some(shape), Some((records, warnings))) = (&generation, &patch_shape, patch_records) {
-            match dmbc::body_patch::BodyPatchBase::of_full_build(
+            match dmbc::retained_output::OutputBase::of_full_build(
                 Arc::clone(shape),
                 records,
                 publication_inputs.clone(),
                 publication.archive.identity(),
                 warnings,
+                procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_version()),
                 output.dmb.content_hash(),
             ) {
                 Some(base) => {
                     if !generation.install_patch_base(base) {
-                        dmbc::daemon_eprintln!("native body patch: base not installed (no link answers)");
+                        dmbc::daemon_eprintln!("native retained output: not installed (no link answers)");
                     }
                 }
-                None => dmbc::daemon_eprintln!("native body patch: base not installed (duplicate units)"),
+                None => dmbc::daemon_eprintln!("native retained output: not installed (duplicate units)"),
             }
             dm_profile::request_mark("publication.patch_base");
         }
@@ -1300,7 +1337,7 @@ fn run_build_attempt(
             generation.publish_successful();
         }
         dm_profile::request_mark("finalization.generation_published");
-        if let Some(memo) = procedure_memo.as_ref().filter(|_| !body_patched) {
+        if let Some(memo) = procedure_memo.as_ref().filter(|_| !built_on_retained) {
             memo.publish_successful();
         }
         dm_profile::request_mark("finalization.procedure_memo_published");

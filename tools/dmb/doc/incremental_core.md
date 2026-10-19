@@ -268,6 +268,24 @@ are unchanged stays green without a certificate check. Revalidation must be para
    `body_patch_append.rs`, `body_patch_lines.rs`, patch slots and alternates in
    `composition/generation.rs`, the default patch, `DMB_BODY_PATCH`, `DMB_PATCH_ALTERNATES` and the
    patch tests, replaced by equivalence tests over every edit kind.
+   (2026-10-19, pool-10: landed as whole-stage early cutoff plus incremental link/composition.
+   `stage_reuse`: the initializer stage keys on its configuration and the declaration inputs
+   (expanded text outside bodies, every source position) and is valid while the answer table has
+   the version it had when the products were published (`QueryDb::answers_version`: tree, answer
+   world = the static resolver's Tree domain version, every resource search proven again when a
+   request opens); answers proven under one tree and world are carried without resolving
+   (442k resolves -> 3.9k per body edit, `DMB_QUERY_VERIFY=1` re-resolves every shared answer
+   through each stage's resolver: 0 mismatches on the production tree). `retained_output`: after
+   startup and ABI, when the answers, the program text outside bodies (blank lines aside), the
+   body roster, the non-text inputs and the archive equal the retained output's, only bodies whose
+   text or position changed are lowered and relinked against the retained tables, their rows
+   spliced into the retained image; source lines are paired row by row between the two builds
+   (`LineMap`) and retained initializer code and declaration warnings move with them. Deleted:
+   `body_patch.rs` (skeleton/line-map admission), `body_patch_lines.rs`, `DMB_BODY_PATCH`,
+   `DMB_STRING_PATCH`; the append and default patches live on in `declaration_patch.rs` until the
+   general path absorbs them. Hot body edit 4.3-6.4 s (body patch was 5.6-7.4 s), body edit adding
+   lines 4.0-4.7 s, added type 11.4-12.8 s (was 14.5-15.3 s); dmb-equiv equivalent against a
+   fresh compile for all three.)
 7. **Resources as queries.** Deletes the resource order and demand memos.
 
 Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)

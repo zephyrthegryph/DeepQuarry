@@ -1,4 +1,4 @@
-//! Body-edit patch support (see `crate::body_patch`): the link footprint of one
+//! Body-edit patch support (see `crate::retained_output`): the link footprint of one
 //! procedure contribution, and linking its code alone against retained tables.
 //!
 //! A procedure feeds the linker and composer more than its own code words: its

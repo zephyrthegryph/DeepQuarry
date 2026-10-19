@@ -15,9 +15,9 @@ pub struct PreparedCold {
     pub(super) symbols: Arc<dm_ir::SymbolTable>,
     pub(super) startup: Option<Arc<crate::startup::StartupFacts>>,
     pub(super) query_abi: Option<Arc<crate::driver_facts::PreparedAbiUnits>>,
-    /// Per-unit patch footprint inputs for `crate::body_patch`.
+    /// Per-unit patch footprint inputs for `crate::retained_output`.
     pub(super) patch_records: Vec<crate::symbolic::PreparedPatchRecord>,
-    pub(super) patch_warnings: Option<crate::body_patch::PatchWarnings>,
+    pub(super) patch_warnings: Option<crate::retained_output::OutputWarnings>,
     pub(super) timings: ColdTimings,
     pub(super) started: Instant,
 }
@@ -46,7 +46,7 @@ impl PreparedCold {
 
     pub(crate) fn take_patch_records(
         &mut self,
-    ) -> Option<(Vec<crate::symbolic::PreparedPatchRecord>, crate::body_patch::PatchWarnings)> {
+    ) -> Option<(Vec<crate::symbolic::PreparedPatchRecord>, crate::retained_output::OutputWarnings)> {
         Some((std::mem::take(&mut self.patch_records), self.patch_warnings.take()?))
     }
 

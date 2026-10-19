@@ -22,6 +22,7 @@
 //! falls where the insertion point is ambiguous; the retained model no longer
 //! describes the published image; or the owner's list cannot be reproduced.
 use super::*;
+use std::collections::BTreeMap;
 use crate::lowering::Namespace;
 use dm_ir::SymbolId;
 
@@ -86,7 +87,7 @@ fn body_at(bodies: &[dm_tree::frontend::BodyOccurrence], at: usize) -> Option<us
 
 pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     request: PatchRequest<'_, R>,
-    base: &BodyPatchBase,
+    base: &OutputBase,
     link: &crate::composition::PatchLink,
     image: &crate::composition::PatchImage,
 ) -> Result<Patched, String> {
@@ -274,10 +275,10 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         .chain(&inserted)
         .map(|&index| &frontend.bodies[index])
         .collect();
-    let lowered = crate::cold::body_patch::lower_selected(
+    let lowered = crate::cold::selected_lowering::lower_selected(
         frontend,
         request.resolver,
-        crate::cold::body_patch::LinkFacts {
+        crate::cold::selected_lowering::LinkFacts {
             engine_bytes: request.engine_bytes,
             engine: request.engine,
             references: request.references,
@@ -297,6 +298,7 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
     let mut existing = Vec::new();
     let mut fresh = Vec::new();
     let mut entries = Vec::new();
+    let lowered_answers = lowered.answers;
     for contribution in lowered.contributions {
         let record = contribution.patch_record();
         let identity = record.record.identity();
@@ -576,12 +578,13 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         units.insert(record.record.identity(), record);
         new_procedures.push(procedure);
     }
-    let next = BodyPatchBase {
+    let next = OutputBase {
         shape: Arc::clone(shape),
         units: Arc::new(units),
         inputs: Arc::new(request.inputs),
         archive: request.archive,
         warnings: Arc::new(warnings),
+        answers: lowered_answers,
         dmb_hash: 0,
     };
     dm_profile::request_mark("append.linked");
