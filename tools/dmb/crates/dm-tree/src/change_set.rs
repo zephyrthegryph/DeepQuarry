@@ -8,7 +8,7 @@
 use crate::declaration_contributions::{DeclarationFamily, KeyedDeclarations};
 use crate::SemanticTree;
 use dm_ir::SymbolId;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 #[derive(Debug, Default)]
@@ -160,8 +160,26 @@ impl SemanticTree {
         let old = previous.owner_callable_demands.snapshot();
         let mut kept = Vec::with_capacity(old.len());
         let mut dropped = 0;
+        // About 1.3M tokens over about 44k owners: decide each owner's ancestor tests once.
+        // (exists, under the hierarchy roots, under the member owners)
+        let mut owners: HashMap<SymbolId, (bool, bool, bool)> = HashMap::new();
         for (selection, token) in old {
-            if self.lookup_type(selection.0).is_some() && !change.demand_dirty(self, selection) {
+            let (owner, name, namespace) = selection;
+            let &mut (exists, under_hierarchy, under_members) =
+                owners.entry(owner).or_insert_with(|| {
+                    (
+                        self.lookup_type(owner).is_some(),
+                        StructuralChangeSet::under(self, owner, &change.hierarchy),
+                        StructuralChangeSet::under(self, owner, &change.member_owners),
+                    )
+                });
+            let dirty = if matches!(namespace, 4 | 5) {
+                change.names.contains(&name) || !change.hierarchy.is_empty()
+            } else {
+                under_hierarchy || (change.names.contains(&name) && under_members)
+            };
+            debug_assert_eq!(dirty, change.demand_dirty(self, selection));
+            if exists && !dirty {
                 kept.push((selection, token));
             } else {
                 dropped += 1;

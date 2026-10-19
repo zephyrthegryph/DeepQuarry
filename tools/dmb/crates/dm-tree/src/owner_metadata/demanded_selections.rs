@@ -73,6 +73,15 @@ impl CallableDemands {
             .tokens
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        if current.is_empty() {
+            // A fresh owner: bulk-build from the (sorted) carried tokens instead of
+            // 1.3M individual tree inserts. Duplicates keep the first, as below.
+            let mut tokens = tokens;
+            tokens.sort_by_key(|(selection, _)| *selection);
+            tokens.dedup_by_key(|(selection, _)| *selection);
+            *current = tokens.into_iter().collect();
+            return;
+        }
         for (selection, token) in tokens {
             current.entry(selection).or_insert(token);
         }
