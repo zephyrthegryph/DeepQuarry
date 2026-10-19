@@ -9,9 +9,7 @@
 //!                                  contribution a declaration names, every STAT formula and every draw() whose reads are not all tracked
 //! GLOB.generated_untracked_leaves  "<type>" = list(<var>, ...)   vars a declaration of the type names as a condition or a contribution's value
 //!                                  (nameof(v) inside contributes(), contributes_to() or a when() around one) that nothing publishes
-//! GLOB.generated_draw_reads        "<type>" = list(<var>, ...)   the holder vars the type's own draw() (and the parents it calls) reads
-//! GLOB.generated_draw_hop_reads    "<type>" = list("loc.<var>", "turf.<rel>.<var>", ...)   what that draw reads up to three hops away (a container,
-//!                                  turf or area hop, then relations): a publish of the var there, or of a link, redraws the thing (draw_hop_published(), refs/hops.dm)
+//! (What each draw() reads on the holder and up to three hops away is the change graph's plan: `gen plans`, GLOB.generated_plans.)
 //! ```
 //!
 //! An untracked read is a var that is not tracked, a relation, a stat, a derived value or constant (`ReadsEngine::classify`, the same test as
@@ -68,11 +66,11 @@ pub struct Untracked {
 
 /// The hops an output's subscriptions follow only one step from the holder: a draw (or another derived output) redraws from its own vars, from
 /// the entities it declares it watches (`look.watch()`, a derived() hop over a relation), and from a var one container, turf or area hop away
-/// (`generated_draw_hop_reads`, heard by `draw_hop_published()`). A read deeper through one of them (`hat.loc.species`, `loc.loc.x`) is an input
+/// (the plan's PLAN_DRAW_HOP keys, heard by `draw_hop_published()`). A read deeper through one of them (`hat.loc.species`, `loc.loc.x`) is an input
 /// an output cannot hear change. Stat inputs, conditions and requirements hear every depth.
 const DRAW_PSEUDO_HOPS: &[&str] = &["loc", "turf", "area"];
 
-/// A draw hears this read through `generated_draw_hop_reads`: one container, turf or area hop off the holder.
+/// A draw hears this read through its plan's PLAN_DRAW_HOP keys: one container, turf or area hop off the holder.
 pub fn draw_hop_heard(r: &crate::sem::reads::Read) -> bool {
     r.root == "holder" && r.hop_ok && !r.hops.is_empty() && r.hops.len() <= DRAW_HOP_DEPTH && DRAW_PSEUDO_HOPS.contains(&r.hops[0].as_str())
 }
@@ -255,6 +253,15 @@ pub struct DepsAnalysis {
     pub draw_keys: BTreeMap<String, BTreeSet<String>>,
     /// "<type>" -> what its own draw() reads one container, turf or area hop away, as "<hop>.<var>".
     pub draw_hops: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the first segment of every hop chain its own draw() reads (a link var on the holder, `cell` of `cell.charge`): a write of the
+    /// link changes what the draw sees. The change graph's plans (`gen plans`) mark these PLAN_DRAW too.
+    pub draw_links: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>::hidden_verbs" / "<type>::granted_verbs" -> the holder vars (and hop chains' first segments) that proc reads, and whether its
+    /// walk left a read unresolved: the verb outputs share the draw's refresh bit, so the plans need them before a write may skip a redraw.
+    pub verb_reads: BTreeMap<String, (BTreeSet<String>, bool)>,
+    /// The var names contribution and condition handlers and STAT formulas read (a holder var, each link of a hop chain, a system var): the
+    /// over-inclusive stat input set `gen plans` writes takes them beside the declared names.
+    pub stat_reads: BTreeSet<String>,
     /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
     /// set `gens::auto_tracked` turns into tracked vars.
     pub reads: BTreeSet<(String, String)>,
@@ -300,6 +307,23 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
+    let mut stat_reads: BTreeSet<String> = BTreeSet::new();
+    fn note_stat_reads(set: &ReadSet, into: &mut BTreeSet<String>) {
+        for r in &set.reads {
+            match r.kind {
+                ReadKind::System => {
+                    into.insert(r.var.clone());
+                }
+                ReadKind::Var | ReadKind::Accessor if r.root == "holder" => {
+                    into.insert(r.var.clone());
+                    for h in &r.hops {
+                        into.insert(h.trim_end_matches("[]").to_string());
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
     if let Some(an) = handlers::analyzed(tree) {
         // The first handler of each consumer decides (as `entry().or_insert_with` did); judging each is independent and runs on all cores,
         // the bookkeeping in order.
@@ -330,9 +354,13 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
         });
         for (a, (set, untracked)) in firsts.into_iter().zip(judged) {
-            match &set {
-                Some(set) => note_reads(set, &mut reads),
-                None => note_reads(a.closed.as_ref().expect("filtered above"), &mut reads),
+            let walked = match &set {
+                Some(set) => set,
+                None => a.closed.as_ref().expect("filtered above"),
+            };
+            note_reads(walked, &mut reads);
+            if matches!(a.h.role, crate::sem::hooks::Role::Contribution | crate::sem::hooks::Role::Condition) {
+                note_stat_reads(walked, &mut stat_reads);
             }
             consumers.insert(format!("{}::{}", a.on, a.h.proc), untracked);
         }
@@ -361,8 +389,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             let untracked = untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output);
             (set, untracked)
         });
-        for ((id, _), (set, untracked)) in work.into_iter().zip(walked) {
+        for ((id, h), (set, untracked)) in work.into_iter().zip(walked) {
             note_reads(&set, &mut reads);
+            if matches!(h.role, crate::sem::hooks::Role::Contribution | crate::sem::hooks::Role::Condition) {
+                note_stat_reads(&set, &mut stat_reads);
+            }
             consumers.insert(id, untracked);
         }
     }
@@ -387,6 +418,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         });
         for ((owner, name), (set, untracked)) in work.into_iter().zip(walked) {
             note_reads(&set, &mut reads);
+            note_stat_reads(&set, &mut stat_reads);
             if !set.sampled.is_empty() {
                 sampled.entry(format!("{}::{}", owner, name)).or_default().extend(set.sampled.iter().cloned());
             }
@@ -407,6 +439,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut draw_hops: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_links: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
     let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     let mut draw_work: Vec<(String, String)> = Vec::new();
@@ -436,7 +469,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         let keys = draw_reads.entry(owner.clone()).or_default();
         let published = draw_keys.entry(owner.clone()).or_default();
         let hopped = draw_hops.entry(owner.clone()).or_default();
+        let linked = draw_links.entry(owner.clone()).or_default();
         for r in &set.reads {
+            if r.root == "holder" && r.kind == ReadKind::Var && !r.hops.is_empty() {
+                linked.insert(r.hops[0].trim_end_matches("[]").to_string());
+            }
             if r.kind == ReadKind::Var && draw_hop_heard(r) {
                 hopped.insert(format!("{}.{}", r.hops.join("."), r.var));
             }
@@ -451,6 +488,34 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         consumers.insert(id.clone(), untracked);
         draws.insert(id);
+    }
+    // The verb outputs (hidden_verbs(), granted_verbs()) refresh on the draw's bit: what each override reads, for the plans.
+    let mut verb_work: Vec<(String, String)> = Vec::new();
+    {
+        let mut seen = BTreeSet::new();
+        for d in crate::sem::procs::proc_defs(&sem, &["hidden_verbs", "granted_verbs"]) {
+            if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) || !seen.insert(format!("{}::{}", d.owner, d.name)) {
+                continue;
+            }
+            verb_work.push((d.owner.clone(), d.name.clone()));
+        }
+    }
+    let verb_walked: Vec<(std::sync::Arc<ReadSet>, Vec<Untracked>)> = crate::sem::par_map_deep(&verb_work, |(owner, name)| {
+        let set = eng.analyze_shared(owner, name);
+        let untracked = untracked_of(&set, &eng, &written, true);
+        (set, untracked)
+    });
+    let mut verb_reads: BTreeMap<String, (BTreeSet<String>, bool)> = BTreeMap::new();
+    for ((owner, name), (set, untracked)) in verb_work.into_iter().zip(verb_walked) {
+        note_reads(&set, &mut reads);
+        let mut vars = BTreeSet::new();
+        for r in &set.reads {
+            if r.root == "holder" && r.kind == ReadKind::Var {
+                vars.insert(if r.hops.is_empty() { r.var.clone() } else { r.hops[0].trim_end_matches("[]").to_string() });
+            }
+        }
+        let unresolved = untracked.iter().any(|u| u.what.starts_with('?'));
+        verb_reads.insert(format!("{}::{}", owner, name), (vars, unresolved));
     }
     let t_draws = started.elapsed();
     let c_draws = crate::util::cpu_ms();
@@ -515,7 +580,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
     candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, reads, candidates, sampled })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, draw_links, verb_reads, stat_reads, reads, candidates, sampled })
 }
 
 struct Deps;
@@ -607,16 +672,7 @@ impl Generator for Deps {
         let rows: Vec<String> = by_type.iter().map(|(t, vs)| format!("\t{} = list({})", quote(t), vs.iter().map(|v| quote(v)).collect::<Vec<_>>().join(", "))).collect();
         emit_table(out, "generated_untracked_leaves", &rows);
         out.blank();
-        out.doc("\"<type>\" -> the holder vars its own draw() (and the parent draws it calls) reads: a change of any of them redraws an exact type too");
-        out.doc("(derived_compile(), code/engine/change/derived.dm), so a draw needs no hand-written drawn_from().");
-        let rows: Vec<String> = an
-            .draw_reads
-            .iter()
-            .filter(|(_, ks)| !ks.is_empty())
-            .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
-            .collect();
-        emit_table(out, "generated_draw_reads", &rows);
-        out.blank();
+        // The holder vars and hop reads of each draw() are the change graph's plans now (`gen plans`, GLOB.generated_plans).
         out.doc("\"<type>\" -> the published keys its own draw() (and the parent draws it calls) reads through a READS_AS accessor: a PUBLISH_CHANGE of one");
         out.doc("redraws the thing (publish_key_changed(), code/engine/stats/recompute.dm), so a draw needs no hand-written on_change() for a key it reads.");
         let rows: Vec<String> = an
@@ -626,16 +682,6 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_keys", &rows);
-        out.blank();
-        out.doc("\"<type>\" -> what its own draw() (and the parent draws it calls) reads one container, turf or area hop away, as \"<hop>.<var>\": a");
-        out.doc("change of the var on what the thing is in, stands on or is in redraws it (draw_hop_published(), code/engine/refs/hops.dm).");
-        let rows: Vec<String> = an
-            .draw_hops
-            .iter()
-            .filter(|(_, ks)| !ks.is_empty())
-            .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
-            .collect();
-        emit_table(out, "generated_draw_hop_reads", &rows);
     }
 }
 

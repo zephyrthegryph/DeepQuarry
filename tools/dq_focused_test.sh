@@ -462,7 +462,7 @@ look_pins=" dq_look_state_pin dq_look_tree_pin "
 # the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
 # (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
 # whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
-sweep_pins=" dq_loot_roll_pin dq_fresh_look_default "
+sweep_pins=" dq_loot_roll_pin dq_fresh_look_default dq_stat_index_oracle "
 sweep_on=0
 if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
 main_group=()

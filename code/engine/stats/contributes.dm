@@ -218,8 +218,6 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 	stat_check_contribs(E, I, T)
 	stat_untracked_propagate(I)
 	stat_build_ranks(I)
-	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
-		GLOB.stat_input_keys[ct.rel] = TRUE
 	GLOB.stat_type_index[E.type] = I
 	return I
 
@@ -287,7 +285,9 @@ PROC_SUMMARY(/proc/stat_factors_from) // vars[] / call() dispatcher: the walk ca
 			contrib.reads = stat_reads_union(contrib.reads, stat_generated_reads(E, kind_spec[2]))
 	return contrib
 
-GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (state_changed() asks before it calls the stat layer)
+/// var name -> TRUE: some stat may read it (state_changed() asks before it calls the stat layer). Generated, over-inclusive (code/engine/change/plan.dm,
+/// stat_input_names_build()); the stat builder no longer registers into it.
+GLOBAL_LIST_INIT(stat_input_keys, stat_input_names_build())
 
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
 /// "sys:system.var". A read through an actor, held item or target is not an input of the holder and is left out.
@@ -520,9 +520,6 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 			sys_list = list()
 			I.hops["sys"] = sys_list
 		sys_list += sys
-		var/dot_at = findtext(sys.system, ".")
-		if(dot_at)
-			GLOB.stat_input_keys[copytext(sys.system, dot_at + 1)] = TRUE
 		return
 	if(istext(key) && findtext(key, "stat:") == 1)
 		var/read_id = text2num(copytext(key, 6))
@@ -568,7 +565,6 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 			index = list()
 			GLOB.stat_hop_index[hop.remote_var] = index
 		index += list(list(E.type, hop))
-		GLOB.stat_input_keys[hop.remote_var] = TRUE
 		// The relation itself changing (the reader now names another entity) recomputes the reader too.
 		stat_register_input(E, I, hop.rel_var, stat_id, contrib)
 		return
@@ -581,7 +577,6 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 		deps = list()
 		I.inputs[key] = deps
 	deps += dep
-	GLOB.stat_input_keys[key] = TRUE
 
 /// Ranks: a stat reads the stats before it, so its rank is one above the highest rank among them (relaxation over the readers graph, which the
 /// cycle check proves finite).
