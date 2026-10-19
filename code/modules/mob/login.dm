@@ -66,7 +66,7 @@
 	var/datum/plane_holder/plane_holder = new /datum/plane_holder(src) //Not a location, it takes it and saves it.
 	rel_set(hud, nameof(hud.plane_holder), plane_holder)
 	hud.vis_enabled = list()
-	client.screen += plane_holder.plane_masters
+	client_screen_add(client, plane_holder.plane_masters)
 	if(GLOB.global_vantag_hud)
 		vantag_hud = TRUE
 	recalculate_vis()
@@ -84,7 +84,7 @@
 	client.apply_keybindings()
 
 	if(!client.tooltips)
-		client.tooltips = new(client)
+		rel_set(client, nameof(client.tooltips), new /datum/tooltip(client))
 
 	var/turf/T = get_turf(src)
 	if(isturf(T))
@@ -92,7 +92,7 @@
 	SSproximity.eye_update(client)
 
 	if(dq_get_cloaked(src) && dq_get_cloaked_selfimage(src))
-		client.images += dq_get_cloaked_selfimage(src)
+		client_images_add(client, dq_get_cloaked_selfimage(src))
 
 	if(client)
 		for(var/datum/action/A as anything in persistent_client.player_actions)

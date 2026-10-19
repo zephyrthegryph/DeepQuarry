@@ -184,6 +184,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	ref_one(nameof(lasteditor), /mob)
 	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
 	ref_one(nameof(editingcode), /mob)
+	ref_many(nameof(servers))
 
 /obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

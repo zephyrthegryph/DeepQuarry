@@ -12,6 +12,7 @@
 
 CAPABILITIES(/datum/talking_atom)
 	every(2 SECONDS, then(PROC_REF(talk_step)), when = nameof(talking))
+	ref_one(nameof(holder_atom))
 
 /datum/talking_atom/New(atom/holder)
 	rel_set(src, nameof(holder_atom), holder)

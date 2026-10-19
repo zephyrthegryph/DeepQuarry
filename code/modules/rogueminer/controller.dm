@@ -105,6 +105,8 @@ CAPABILITIES(/datum/controller/rogue)
 	owns_many(nameof(all_zones), /datum/rogue/zonemaster)
 	owns_many(nameof(clean_zones), /datum/rogue/zonemaster)
 	owns_many(nameof(ready_zones), /datum/rogue/zonemaster)
+	ref_one(nameof(current_zone))
+	ref_one(nameof(previous_zone))
 
 /// Difficulty decays every RM_DIFF_DECAY_TIME while set (its every() in CAPABILITIES(/datum/controller/rogue)).
 /datum/controller/rogue/var/decaying = FALSE

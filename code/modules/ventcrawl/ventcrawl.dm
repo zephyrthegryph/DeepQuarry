@@ -33,7 +33,7 @@
 	if(is_ventcrawling && istype(loc, /obj/machinery/atmospherics)) //attach us back into the pipes
 		remove_ventcrawl()
 		add_ventcrawl(loc)
-		client.screen += GLOB.global_hud.centermarker
+		client_screen_add(client, GLOB.global_hud.centermarker)
 
 /mob/living/simple_mob/slime/xenobio/can_ventcrawl()
 	if(victim)
@@ -216,16 +216,16 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 				A.pipe_image.plane = PLANE_LIGHTING_ABOVE
 			pipes_shown += A.pipe_image
 			if(client)
-				client.images += A.pipe_image
+				client_images_add(client, A.pipe_image)
 	if(client)
-		client.screen += GLOB.global_hud.centermarker
+		client_screen_add(client, GLOB.global_hud.centermarker)
 
 /mob/living/proc/remove_ventcrawl()
 	is_ventcrawling = FALSE
 	if(client)
 		for(var/image/current_image in pipes_shown)
-			client.images -= current_image
-		client.screen -= GLOB.global_hud.centermarker
+			client_images_remove(client, current_image)
+		client_screen_remove(client, GLOB.global_hud.centermarker)
 		reset_perspective(src)
 
 	pipes_shown.len = 0

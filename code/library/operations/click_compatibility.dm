@@ -8,14 +8,14 @@
 	return dq_interaction_set_click_params(src, params)
 
 /// Click parameters of the click each actor is inside (an item's swing, a drag), so an effect can place precisely: dq_interaction_click_params().
-/// entity_handle(actor) -> params: a handle, so an actor deleted inside its click leaves nothing holding it.
+/// ref_token(actor) -> params: a handle, so an actor deleted inside its click leaves nothing holding it.
 GLOBAL_LIST_EMPTY(interaction_entry_click_params)
 
 /// Sets `actor`'s click parameters (null clears them); returns the previous value to restore.
 /proc/dq_interaction_set_click_params(mob/actor, params)
 	if(!actor)
 		return null
-	var/actor_h = entity_handle(actor) || entity_handle_of(actor)
+	var/actor_h = ref_token(actor) || entity_handle_of(actor)
 	if(!actor_h)
 		return null
 	. = GLOB.interaction_entry_click_params[actor_h]

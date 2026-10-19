@@ -20,7 +20,7 @@
 SYSTEM_DEF(ui_push)
 	name = "UI Push"
 	wait = 1
-	/// Windows waiting for their push this tick (entity_handle(window) -> UI_PUSH_* bits), or null when none is. Handles, so a queued window that is deleted is dropped, never kept alive.
+	/// Windows waiting for their push this tick (ref_token(window) -> UI_PUSH_* bits), or null when none is. Handles, so a queued window that is deleted is dropped, never kept alive.
 	var/list/pending
 
 /datum/system/ui_push/reactions()
@@ -36,7 +36,7 @@ SYSTEM_DEF(ui_push)
 	var/datum/system/ui_push/S = SSui_push
 	if(!S)
 		return FALSE
-	var/ui_h = entity_handle(ui)
+	var/ui_h = ref_token(ui)
 	if(!ui_h)
 		return FALSE // a deleted window is owed nothing
 	. = !(ui_h in S.pending)
@@ -73,7 +73,7 @@ SYSTEM_DEF(ui_push)
 	S.pending = null // a push that marks another window queues it for the next pass
 	. = 0
 	for(var/ui_h in batch)
-		var/datum/tgui/ui = resolve_handle(ui_h)
+		var/datum/tgui/ui = resolve_token(ui_h)
 		if(!ui)
 			continue // deleted while queued
 		if(ui.push_coalesced(batch[ui_h]))

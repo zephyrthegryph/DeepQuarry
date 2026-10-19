@@ -51,6 +51,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	op("auto_dismantle", tool(TOOL_CROWBAR), label("Toggle auto-dismantling"), wait(0), when(PROC_REF(panel_shut)), toggles(nameof(a_dis)), says(MSG(pipelayer/dismantling)))
 	op("dismantle", tool(TOOL_CROWBAR), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(PROC_REF(panel_is_open)), then(PROC_REF(dismantled)))
 	default_parts()
+	ref_one(nameof(old_turf))
 
 
 /obj/machinery/pipelayer/RefreshParts()

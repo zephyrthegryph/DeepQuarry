@@ -12,7 +12,7 @@ a
 	var/datum/grid_set/grid = allocate(/datum/grid_set)
 	rel_add(parser, nameof(parser.gridSets), grid)
 	TEST_ASSERT_EQUAL(owner_of(grid), parser, "parser owns its grid set")
-	qdel(parser)
+	qdel(parser, TRUE) // a parsed map is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 	TEST_ASSERT(QDELETED(grid), "declared grid-set policy deletes parser data")
 
 /datum/unit_test/ownership_teardown_stock_keeps_handed_out_product
@@ -65,5 +65,5 @@ a
 	TEST_ASSERT_NULL(parser.parsed_bounds, "blank parser deliberately has no parsed bounds")
 	TEST_ASSERT_NULL(parser.bounds, "blank parser deliberately has no offset bounds")
 	TEST_ASSERT_EQUAL(length(parser.gridSets), 0, "blank parser has an empty eager grid list")
-	qdel(parser)
+	qdel(parser, TRUE) // a parsed map is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 	TEST_ASSERT(QDELETED(parser), "blank parser teardown completes without map bounds")

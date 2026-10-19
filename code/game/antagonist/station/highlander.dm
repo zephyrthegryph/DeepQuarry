@@ -1,4 +1,3 @@
-GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 
 /datum/antagonist/highlander
 	role_text = "Highlander"
@@ -16,7 +15,6 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 
 /datum/antagonist/highlander/New()
 	..()
-	GLOB.highlanders = src
 
 /datum/antagonist/highlander/create_objectives(datum/mind/player)
 
@@ -80,9 +78,13 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(H.stat == 2 || !(H.client)) continue
 		if(is_special_character(H)) continue
-		GLOB.highlanders.add_antagonist(H.mind)
+		antag_highlanders().add_antagonist(H.mind)
 
 /client/proc/only_one_delayed(mob/user)
 	message_admins(span_adminnotice("[key_name_admin(user)] used (delayed) THERE CAN BE ONLY ONE!"))
 	log_admin("[key_name(user)] used delayed THERE CAN BE ONLY ONE.")
 	after(src, 42 SECONDS, PROC_REF(only_one), with = list(TRUE, user), keeps_dead = TRUE)
+
+/// The /datum/antagonist/highlander template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_highlanders() as /datum/antagonist/highlander
+	return SSantag?.all_antag_types[MODE_HIGHLANDER]

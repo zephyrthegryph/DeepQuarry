@@ -53,7 +53,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	OverlayAndAmbientSet()
 
 	// Disable Nar-Sie.
-	GLOB.cult.allow_narsie = 0
+	antag_cult().allow_narsie = 0
 
 	PlayerSet()
 

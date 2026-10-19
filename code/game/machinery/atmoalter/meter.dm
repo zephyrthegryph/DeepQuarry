@@ -37,6 +37,7 @@ CAPABILITIES(/obj/machinery/meter)
 		then(PROC_REF(id_entered)))
 	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
 	ref_one(nameof(target))
+	ref_many(nameof(pipes_on_turf))
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()

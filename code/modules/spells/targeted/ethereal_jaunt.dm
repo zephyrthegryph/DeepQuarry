@@ -104,6 +104,7 @@
 CAPABILITIES(/obj/effect/dummy/spell_jaunt)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 	extend(/datum/act/hit/projectile, instead())
+	ref_one(nameof(last_valid_turf))
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return

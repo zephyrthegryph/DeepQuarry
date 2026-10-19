@@ -32,6 +32,7 @@ CAPABILITIES(/datum/tgui_ban_panel)
 	op("confirmBan", ui_act("confirmBan", arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("duration", num()), arg("ip", schema_text(4096)), arg("job", schema_text(4096)), arg("reason", schema_text(4096)), arg("type", num())), then(PROC_REF(ui_act_confirmban)))
 	op("searchBans", ui_act("searchBans", arg("aCkey", schema_text(4096)), arg("banType", num()), arg("cid", schema_text(4096)), arg("ckey", schema_text(4096)), arg("ip", schema_text(4096)), arg("minMatch", num())), then(PROC_REF(ui_act_searchbans)))
 	op("banEdit", ui_act("banEdit", arg("action", schema_text(4096)), arg("banid", num())), then(PROC_REF(ui_act_banedit)))
+	ref_one(nameof(holder))
 
 /datum/tgui_ban_panel/tgui_static_data(mob/user)
 	var/list/bantypes = list("traitor","changeling","operative","revolutionary","cultist","wizard") //For legacy bans.

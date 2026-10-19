@@ -38,6 +38,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 /// The timer runs while a client is near (STAT_RELEVANCE); with nobody around it parks.
 CAPABILITIES(/obj/effect/map_effect/beam_point)
 	every(PROC_REF(beam_delay), then(PROC_REF(handle_beam_timer)), when = all_of(nameof(use_timer), STAT_RELEVANCE))
+	ref_many(nameof(my_beams))
 
 /// The deciseconds to the next beam change.
 /obj/effect/map_effect/beam_point/proc/beam_delay(datum/act/A)

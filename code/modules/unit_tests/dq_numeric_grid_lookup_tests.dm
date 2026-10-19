@@ -122,7 +122,7 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture)
 		if(!istype(binding))
 			log_test("LOOKUP BINDING: invalid real scope entry [entry]")
 			continue
-		log_test("LOOKUP BINDING: key=[entry] reader=[binding.reader_ref] root=[binding.root_ref] rebinding=[binding.rebinding] spec=[json_encode(binding.spec)] watches=[json_encode(binding.watching)] resolved_reader=[REF(resolve_handle(binding.reader_ref))] resolved_root=[REF(resolve_handle(binding.root_ref))]")
+		log_test("LOOKUP BINDING: key=[entry] reader=[binding.reader_ref] root=[binding.root_ref] rebinding=[binding.rebinding] spec=[json_encode(binding.spec)] watches=[json_encode(binding.watching)] resolved_reader=[REF(resolve_token(binding.reader_ref))] resolved_root=[REF(resolve_token(binding.root_ref))]")
 	TEST_ASSERT(grid.rx?.observed?[nameof(grid.avail)] > 0, "holder lifecycle did not bind its actual selected grid field")
 	lifeform_end(holder, END_SCOPE)
 	TEST_ASSERT(!(grid.rx?.observed?[nameof(grid.avail)]), "ending the holder leaked its selected grid-field watcher")

@@ -111,7 +111,7 @@ MSG_DEF_SELF(trash_pile/may_not_respawn, "You may not respawn now.")
 		if(CONFIG_GET(flag/uneducated_mice))
 			host.universal_understand = 0
 		announce_ghost_joinleave(src, 0, "They are now a mouse.")
-		host.ckey = user.ckey
+		bind_player(host, user.ckey, as_ckey = TRUE)
 		to_chat(host, span_info("You are now a mouse. Try to avoid interaction with players, and do not give hints away that you are more than a simple rodent."))
 
 	var/atom/holder = get_holder_at_turf_level(src)

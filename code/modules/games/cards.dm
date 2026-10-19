@@ -66,15 +66,15 @@ CAPABILITIES(/obj/item/deck/cards)
 			for(var/number in list("ace","two","three","four","five","six","seven","eight","nine","ten"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
-				pcard.card_icon = "[card_icon_prefix][colour]num"
-				pcard.back_icon = "[card_icon_prefix]card_back"
+				pcard.set_card_icon("[card_icon_prefix][colour]num")
+				pcard.set_back_icon("[card_icon_prefix]card_back")
 				. += pcard
 
 			for(var/number in list("jack","queen","king"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
-				pcard.card_icon = "[card_icon_prefix][colour]col"
-				pcard.back_icon = "[card_icon_prefix]card_back"
+				pcard.set_card_icon("[card_icon_prefix][colour]col")
+				pcard.set_back_icon("[card_icon_prefix]card_back")
 				. += pcard // Make it so.
 
 		. += init_jokers()
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/deck/cards)
 	for(var/i = 0, i<2, i++)
 		pcard = new()
 		pcard.name = "joker"
-		pcard.card_icon = "joker"
+		pcard.set_card_icon("joker")
 		. += pcard
 
 /// Old attackby.
@@ -390,7 +390,7 @@ CAPABILITIES(/obj/item/deck/cards)
 			return OP_PASS
 		P.name = cardtext
 		// SNOWFLAKE FOR CAG, REMOVE IF OTHER CARDS ARE ADDED THAT USE THIS.
-		P.card_icon = "cag_white_card"
+		P.set_card_icon("cag_white_card")
 	else if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src.parentdeck) // Prevent cardmixing
@@ -562,6 +562,7 @@ CAPABILITIES(/obj/item/hand)
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
 	op("hand_verb_discard", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Discard"), needs(carried()), then(PROC_REF(hand_verb_discard_op)))
 	op("hand_verb_remove_card", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove card"), then(PROC_REF(hand_verb_remove_card_op)))
+	ref_many(nameof(cards))
 
 /// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
 /obj/item/hand/proc/can_remove_card_holds(datum/act/op/A)

@@ -129,7 +129,6 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 	else
 		I.set_color(metadata)
 
-GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recolor, new)
 
 /datum/gear_tweak/matrix_recolor
 
@@ -285,7 +284,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 Custom Name
 */
 
-GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 
 /datum/gear_tweak/custom_name
 	var/list/valid_custom_names
@@ -322,7 +320,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 /*
 Custom Description
 */
-GLOBAL_DATUM_INIT(gear_tweak_free_desc, /datum/gear_tweak/custom_desc, new)
 
 /datum/gear_tweak/custom_desc
 	var/list/valid_custom_desc
@@ -360,7 +357,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_desc, /datum/gear_tweak/custom_desc, new)
 Toggle Digestable
 */
 
-GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestable, new)
 
 /datum/gear_tweak/toggle_digestable
 

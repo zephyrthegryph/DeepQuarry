@@ -62,3 +62,6 @@
 	if(!mode)
 		return null
 	return "The fire selector is set to [mode.name]."
+
+CAPABILITIES(/datum/gun_firemode_selector)
+	ref_one(nameof(gun_ref))

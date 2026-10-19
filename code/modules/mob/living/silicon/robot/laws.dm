@@ -28,7 +28,7 @@
 					to_chat(src, span_infoplain(span_bold("Remember, your AI does NOT share or know about your law 0.")))
 		else
 			to_chat(src, span_infoplain(span_bold("No AI selected to sync laws with, disabling lawsync protocol.")))
-			lawupdate = FALSE
+			set_lawupdate(FALSE)
 
 	to_chat(who, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
 	if(shell) //AI shell

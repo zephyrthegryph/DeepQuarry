@@ -336,3 +336,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		return FALSE
 	GLOB.dq_destroy_effect_turfs[T] = TRUE
 	return TRUE
+
+CAPABILITIES(/datum/destroy_batch)
+	ref_many(nameof(unbind_movers))

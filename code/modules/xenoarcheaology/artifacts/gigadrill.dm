@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/machinery/giga_drill)
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	ref_one(nameof(drilling_turf))
 
 /obj/machinery/giga_drill/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor

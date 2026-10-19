@@ -93,3 +93,6 @@ SYSTEM_DEF(solars)
 	// On planets, use the daynight cycle
 	var/datum/planet/our_planet = SSplanets.z_to_planet[our_t.z]
 	return our_planet.get_sun_solar_position()
+
+CAPABILITIES(/datum/system/solars)
+	ref_many(nameof(controller_run))

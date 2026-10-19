@@ -164,3 +164,6 @@ CAPABILITIES(/datum/alarm)
 /// The alarm's origin (an atom or an area): a relation view, null once the atom is deleted.
 /datum/alarm/proc/origin() as /atom
 	return origin
+
+CAPABILITIES(/datum/alarm_source)
+	ref_one(nameof(source))

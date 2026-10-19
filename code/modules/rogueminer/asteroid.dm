@@ -152,3 +152,6 @@
 /// The landmark I'm spawned at, if any.
 /datum/rogue/asteroid/proc/mylandmark()
 	return mylandmark
+
+CAPABILITIES(/datum/rogue/asteroid)
+	ref_one(nameof(mylandmark))

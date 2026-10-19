@@ -120,6 +120,7 @@ CAPABILITIES(/obj/item/depth_scanner)
 	without("ui_open")
 	op("select", ui_act("select", arg("select", num())), then(PROC_REF(ui_act_select)))
 	op("clear", ui_act("clear", arg("clear", num())), then(PROC_REF(ui_act_clear)))
+	ref_one(nameof(current))
 
 /datum/depth_scan
 	var/time = ""

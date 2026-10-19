@@ -140,7 +140,8 @@
 
 	vis_contents.Cut()
 	for(var/atom/movable/A as anything in vis_locs)
-		A.vis_contents -= src
+		vis_remove(A, src)
+	client_images_drop_for(src) // the images riding on it leave every client (relations proposal D11)
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
@@ -612,6 +613,7 @@ SETTER(/atom/movable, anchored)
 CAPABILITIES(/atom/movable/overlay)
 	op("pass_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(overlay_pass_touch)))
 	op("pass_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(overlay_pass_item)))
+	ref_one(nameof(master))
 
 /atom/movable/overlay/proc/overlay_pass_touch(datum/act/op/A)
 	var/mob/user = A.actor

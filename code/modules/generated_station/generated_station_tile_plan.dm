@@ -74,6 +74,8 @@
 
 CAPABILITIES(/datum/generated_station_tile_plan)
 	owns_many(nameof(tiles))
+	ref_one(nameof(generation_owner))
+	ref_many(nameof(hull_corners))
 
 /// `deferred`: the grid is filled a column at a time by fill_column() (the materializer's phases).
 /datum/generated_station_tile_plan/New(new_width, new_height, datum/generated_station_materializer/new_generation_owner, deferred = FALSE)

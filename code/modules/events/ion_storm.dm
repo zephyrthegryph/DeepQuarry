@@ -58,9 +58,9 @@
 				to_chat(shell, span_danger("You have detected a change in your laws information:"))
 				to_chat(shell, law)
 				var/org_lu = shell.lawupdate // force a law update due to controlling AI being changed
-				shell.lawupdate = TRUE
+				shell.set_lawupdate(TRUE)
 				shell.lawsync()
-				shell.lawupdate = org_lu
+				shell.set_lawupdate(org_lu)
 				shell.show_laws()
 		else
 			to_chat(target, span_danger("You have detected a change in your laws information:"))

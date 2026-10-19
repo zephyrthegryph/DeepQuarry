@@ -57,7 +57,7 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 		var/mob/spell_holder = spell_holder()
 		for(var/atom/movable/screen/spell/O as anything in spell_buttons())
 			if(spell_holder && spell_holder.client)
-				spell_holder.client.screen -= O
+				client_screen_remove(spell_holder.client, O)
 			O.handle_icon_updates = 0
 		showing = 0
 		set_panel_state(closed_state)
@@ -88,7 +88,7 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		if(spell_holder && spell_holder.client)
 			S.screen_loc = "[encode_screen_X(xpos)]:[x_pix],[encode_screen_Y(ypos)]:[y_pix]"
-			spell_holder.client.screen += S
+			client_screen_add(spell_holder.client, S)
 			S.handle_icon_updates = 1
 
 /atom/movable/screen/movable/spell_master/proc/add_spell(datum/spell/spell)
@@ -144,7 +144,7 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 /atom/movable/screen/movable/spell_master/proc/update_spells(forced = 0, mob/user)
 	if(user && user.client)
 		if(!(src in user.client.screen))
-			user.client.screen += src
+			client_screen_add(user.client, src)
 	for(var/atom/movable/screen/spell/spell as anything in spell_buttons())
 		spell.update_charge(forced)
 

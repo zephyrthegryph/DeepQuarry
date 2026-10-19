@@ -196,3 +196,6 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/emergency)
 /// Accessor for the radio_connection var.
 /datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+CAPABILITIES(/datum/shuttle/autodock/ferry/emergency)
+	ref_one(nameof(radio_connection))

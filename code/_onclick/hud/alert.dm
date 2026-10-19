@@ -69,7 +69,7 @@
 	own_take_member(src, nameof(alerts), category)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
-		client.screen -= alert
+		client_screen_remove(client, alert)
 	spent(alert)
 
 /atom/movable/screen/alert

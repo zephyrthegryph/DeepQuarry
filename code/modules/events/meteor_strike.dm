@@ -120,3 +120,6 @@ CAPABILITIES(/obj/structure/meteorite)
 /// Accessor for the strike_target var.
 /datum/event/meteor_strike/proc/strike_target() as /turf
 	return strike_target
+
+CAPABILITIES(/datum/event/meteor_strike)
+	ref_one(nameof(strike_target))

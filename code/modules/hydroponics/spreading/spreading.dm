@@ -76,6 +76,7 @@ CAPABILITIES(/obj/effect/plant)
 	param(nameof(seed_at_make), pos = 1)
 	param(nameof(parent), pos = 2)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(plant_blast_die_off))))
+	ref_many(nameof(neighbors))
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)

@@ -82,7 +82,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	M = matrix()
 	M.Translate((max(4, width) - 0.75) * world.icon_size, (height + 0.25) * world.icon_size)
 	button_x.transform = M
-	vis_contents += button_x
+	vis_add(src, button_x)
 
 	if(!button_expand)
 		rel_set(src, nameof(button_expand), make(/atom/movable/screen/component_button, at = null, parent = src))
@@ -95,7 +95,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	M = matrix()
 	M.Translate(world.icon_size, (height + 0.25) * world.icon_size)
 	button_expand.transform = M
-	vis_contents += button_expand
+	vis_add(src, button_expand)
 
 	if(!button_shrink)
 		rel_set(src, nameof(button_shrink), make(/atom/movable/screen/component_button, at = null, parent = src))
@@ -108,7 +108,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	M = matrix()
 	M.Translate(2 * world.icon_size, (height + 0.25) * world.icon_size)
 	button_shrink.transform = M
-	vis_contents += button_shrink
+	vis_add(src, button_shrink)
 
 	if(!button_pop)
 		rel_set(src, nameof(button_pop), make(/atom/movable/screen/component_button, at = null, parent = src))
@@ -121,7 +121,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	M = matrix()
 	M.Translate((max(4, width) - 0.75) * ICON_SIZE_X, (height + 0.25) * ICON_SIZE_Y + 16)
 	button_pop.transform = M
-	vis_contents += button_pop
+	vis_add(src, button_pop)
 
 /atom/movable/screen/movable/pic_in_pic/proc/add_background()
 	if((width > 0) && (height > 0))
@@ -153,7 +153,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 		refresh_view()
 
 /atom/movable/screen/movable/pic_in_pic/proc/refresh_view()
-	vis_contents -= viewing_turfs
+	vis_remove(src, viewing_turfs)
 	if(!width || !height)
 		return
 	viewing_turfs = get_visible_turfs()

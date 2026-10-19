@@ -53,6 +53,7 @@ CAPABILITIES(/obj/machinery/shield)
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
 	extend(/datum/act/hit, instead(then(PROC_REF(shield_thrown_hit))))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
+	ref_one(nameof(our_owner))
 
 /obj/machinery/shield/proc/interaction_hit(datum/act/op/A)
 	var/mob/user = A.actor

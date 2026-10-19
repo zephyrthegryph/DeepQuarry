@@ -36,7 +36,7 @@
 			if (sdepth > MAX_STORAGE_REACH)
 				return TRUE	//too deeply nested to access
 
-			user.client.screen -= I
+			client_screen_remove(user.client, I)
 			I.moveToNullspace()
 		else if(user.item_is_in_hands(I))
 			user.drop_from_inventory(I)

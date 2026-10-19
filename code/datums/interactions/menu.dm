@@ -83,6 +83,7 @@ CAPABILITIES(/datum/interaction_menu)
 	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
 	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	ref_one(nameof(owner))
 
 /// /datum/interaction_menu's window data.
 /datum/interaction_menu/ui_data(datum/act/eval/A)

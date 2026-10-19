@@ -27,6 +27,7 @@
 CAPABILITIES(/obj/item/computer_hardware)
 	derives(nameof(w_class), PROC_REF(initial_hardware_size))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	ref_one(nameof(holder2))
 
 /// Old attackby.
 /obj/item/computer_hardware/proc/interaction_item(datum/act/op/A)

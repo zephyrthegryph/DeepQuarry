@@ -147,6 +147,9 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 
 CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	owns_many(nameof(made))
+	ref_one(nameof(floor))
+	ref_many(nameof(holders))
+	ref_many(nameof(things))
 
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
 	rel_set(src, nameof(floor), dq_containment_floor())

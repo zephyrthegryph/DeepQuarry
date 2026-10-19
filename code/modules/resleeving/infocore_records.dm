@@ -100,6 +100,7 @@
 
 CAPABILITIES(/datum/transhuman/body_record)
 	owns_one(nameof(mydna), /datum/dna2/record)
+	ref_one(nameof(mind_ref))
 
 /datum/transhuman/body_record/New(copyfrom, add_to_db = 0, ckeylock = 0)
 	..()
@@ -393,3 +394,6 @@ CAPABILITIES(/datum/transhuman/body_record)
 /datum/transhuman/body_record/proc/revive_promethean(mob/living/carbon/human/H)
 	// TODO - See note in code\modules\organs\internal\brain.dm for slime brains
 	return
+
+CAPABILITIES(/datum/transhuman/mind_record)
+	ref_one(nameof(mind_ref))

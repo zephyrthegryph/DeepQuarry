@@ -18,7 +18,7 @@ CAPABILITIES(/obj/ownership_retirement_state_probe)
 
 /datum/unit_test/ownership_retirement_codec_policy_pin/Run()
 	var/obj/ownership_retirement_state_probe/H = allocate(/obj/ownership_retirement_state_probe)
-	var/datum/state_codec/owned/C = allocate(/datum/state_codec/owned)
+	var/datum/state_codec/owned/C = state_codec(/datum/state_codec/owned) // a kept singleton (LIFECYCLE_KEEP_UNLESS_FORCED), not a test allocation
 	var/datum/state_context/ctx = allocate(/datum/state_context)
 	var/obj/item/deleted = allocate(/obj/item, H)
 	var/obj/item/spilled = allocate(/obj/item, H)

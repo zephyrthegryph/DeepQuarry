@@ -19,7 +19,7 @@
 	// ALLOW(instance_list): d: current transaction, index-parallel with item_list
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
-	/// Scanned item handle (entity_handle) -> the price it scanned at.
+	/// Scanned item handle (ref_token) -> the price it scanned at.
 	var/list/verified_sale_items
 	/// Monotonic identity for the complete itemized ticket.
 	var/ticket_revision = 1
@@ -511,7 +511,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 		. = 1
 	rebuild_ticket()
 	if(!O.economic_sale_invoice_id)
-		LAZYSET(verified_sale_items, entity_handle(O), price)
+		LAZYSET(verified_sale_items, ref_token(O), price)
 	ticket_changed()
 	// Animation and sound
 	play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)

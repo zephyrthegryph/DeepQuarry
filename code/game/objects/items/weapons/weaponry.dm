@@ -53,10 +53,10 @@ CAPABILITIES(/obj/item/nullrod)
 		//Chaplain null rod removes ALL unholy traits.
 		remove_traits_in(M, UNHOLY_TRAIT)
 
-		if(GLOB.cult && (M.mind in GLOB.cult.current_antagonists) && prob(33))
+		if(antag_cult() && (M.mind in antag_cult().current_antagonists) && prob(33))
 			to_chat(M, span_danger("The power of [src] clears your mind of the cult's influence!"))
 			to_chat(user, span_danger("You wave [src] over [M]'s head and see their eyes become clear, their mind returning to normal."))
-			GLOB.cult.remove_antagonist(M.mind)
+			antag_cult().remove_antagonist(M.mind)
 			act_message(user, M, others = span_danger("%U% waves \the [src] over %T%'s head."))
 		else
 			to_chat(user, span_danger("The rod appears to do nothing."))

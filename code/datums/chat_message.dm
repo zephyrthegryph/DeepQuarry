@@ -58,6 +58,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 
 CAPABILITIES(/datum/chatmessage)
 	ref_one(nameof(message_loc))
+	ref_one(nameof(owned_by))
 
 /**
  * Constructs a chat message overlay

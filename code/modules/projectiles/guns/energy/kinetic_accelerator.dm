@@ -103,6 +103,7 @@
 CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
 	configure(item_worn(flags = NONE))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	ref_many(nameof(modkits))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -718,3 +719,6 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit/tracer/adjustable)
 /// the kinetic_gun this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/kinetic/proc/kinetic_gun() as /obj/item/gun/energy/kinetic_accelerator
 	return kinetic_gun
+
+CAPABILITIES(/obj/item/projectile/kinetic)
+	ref_one(nameof(kinetic_gun))

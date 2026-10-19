@@ -51,6 +51,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 		asks(/datum/prompt/number/ship_sensor_range, fields = list("default" = computed(PROC_REF(sensor_range_default)), "displayed_max" = computed(PROC_REF(sensor_range_max))), step = "range"),
 		then(PROC_REF(ui_act_range)))
 	op("toggle_sensor", ui_act("toggle_sensor"), then(PROC_REF(ui_act_toggle_sensor)))
+	ref_one(nameof(sensors))
 
 /obj/machinery/computer/ship/sensors/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())

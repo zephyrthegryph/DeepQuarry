@@ -723,6 +723,8 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
+  "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
   "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
   "calc_reaction_progress = /datum/xform/proc/progress() (code/library/transformations/transformation_entry.dm)",
@@ -1619,7 +1621,43 @@ retired_macros = [
 # exempt_types: types an instance never qdel()s, so a reference to one cannot pin a deleted object: the kernel's systems and
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/"]
-exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm"] # the last four ARE the registry/membership/relation storage: they hold members by design
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
+exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
-exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def"]
+# /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak"]
+# Holder types whose instances live for one call or one resolution and are dropped with it (relations proposal D8, reviewed per type):
+# one emitted event (code/engine/declare/definition_types.dm), a draw's look builder (one draw), one SQL request and its answer rows (code/engine/io/db.dm),
+# a relation edge (engine relation storage, ended with its relation; covered by dq_gc_sweep), a materialize frame (open only while one load initializes, code/controllers/subsystems/atoms_batch.dm), a reservation (lives until its op ends; the subtypes outside code/engine/parts/resource.dm too), one dispatch's context (code/datums/capabilities/dispatch.dm), op candidates, the resolution record, op sources and provider rows (code/engine/parts/resolve.dm, provider.dm), examine rows
+# (code/engine/present/examine.dm), constructor arguments (code/engine/lifeforms/params.dm), one serializer run's context (code/engine/state/serializer.dm).
+# A system's hot work queues ("type::var"), reviewed per var (relations proposal wave 2): each entry is drained within a tick or two and
+# the drain skips a deleted member (QDELETED), so a queue never pins a deleted object past its next drain. A declared relation here would
+# add a reverse-index write to every enqueue (thousands per tick for lighting).
+work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/radiation::dirty_turfs"] # each pinned by relations_work_queue_* (enqueue, delete, drain)
+transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
+
+# rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.
+[lint.rel_write_undeclared]
+exempt_prefixes = ["code/engine/_generated/"]
+
+# ref_text (doc/rewrite/proposals/relations.md D9): a stored REF() / \ref[] text. The engine's own staleness keys and relation machinery key by REF text by design; tests are exempt.
+[lint.ref_text]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
+
+[lint.saved_handle]
+exempt_prefixes = ["code/engine/_generated/"]
+
+# untyped (doc/rewrite/proposals/relations.md D8): the same scope as stored_refs.
+[lint.untyped]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
+[lint.untyped.lists]
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
+
+# player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
+[lint.player_link]
+exempt_prefixes = ["code/engine/_generated/"]
+exempt_files = ["code/modules/mob/bind_player.dm"]
+
+# native_ref_write (doc/rewrite/proposals/relations.md D11): the engine's own presentation code and tests are exempt; the rest is a ratchet.
+[lint.native_ref_write]
+exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]

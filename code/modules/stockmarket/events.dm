@@ -241,3 +241,9 @@
 /// the company this refers to (a relation view: null once it is deleted).
 /datum/stockEvent/proc/company() as /datum/stock
 	return company
+
+CAPABILITIES(/datum/stockEvent)
+	ref_one(nameof(company))
+
+CAPABILITIES(/datum/stockEvent/product)
+	ref_one(nameof(product_article))

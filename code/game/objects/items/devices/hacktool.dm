@@ -26,6 +26,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 	op("hack_locker", ai(), takes("locker", "time"), claims(CLAIM_TARGET), wait(PROC_REF(hack_wait)), then(PROC_REF(attempt_hack_timed_done)))
 	op("hack_airlock", ai(), takes("door", "time"), claims(CLAIM_TARGET), wait(PROC_REF(hack_wait)), on_interrupt(PROC_REF(hack_airlock_failed)), then(PROC_REF(hack_airlock_done)))
 	rolls(nameof(max_known_targets), PROC_REF(roll_max_known_targets))
+	ref_many(nameof(known_targets))
 
 // known_targets is a relation list (newest last): the framework drops a target when it dies.
 

@@ -144,3 +144,6 @@
 			to_chat(user, span_notice("You command your [length(controlled_mobs) > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to move \
 			towards \the [T]."))
 
+CAPABILITIES(/obj/item/spell/control)
+	ref_many(nameof(controlled_mobs))
+

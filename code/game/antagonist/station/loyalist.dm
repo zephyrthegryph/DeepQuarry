@@ -1,4 +1,3 @@
-GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 
 /datum/antagonist/loyalists
 	id = MODE_LOYALIST
@@ -33,7 +32,6 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 
 /datum/antagonist/loyalists/New()
 	..()
-	GLOB.loyalists = src
 
 /datum/antagonist/loyalists/create_global_objectives()
 	if(!..())
@@ -46,3 +44,7 @@ GLOBAL_DATUM(loyalists, /datum/antagonist/loyalists)
 		rel_set(loyal_obj, nameof(loyal_obj.target), player.mind)
 		loyal_obj.set_explanation_text("Protect [player.real_name], the [player.mind.assigned_role].")
 		rel_add(src, nameof(global_objectives), loyal_obj)
+
+/// The /datum/antagonist/loyalists template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_loyalists() as /datum/antagonist/loyalists
+	return SSantag?.all_antag_types[MODE_LOYALIST]

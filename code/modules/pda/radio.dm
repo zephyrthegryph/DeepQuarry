@@ -101,3 +101,7 @@
 /// The active bot; if null, show bot list (a relation view: null once that is deleted).
 /obj/item/radio/integrated/proc/active() as /mob/living/bot
 	return active
+
+CAPABILITIES(/obj/item/radio/integrated)
+	ref_many(nameof(botlist))
+	ref_one(nameof(hostpda))

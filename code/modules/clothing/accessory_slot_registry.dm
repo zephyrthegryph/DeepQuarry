@@ -73,6 +73,8 @@ CAPABILITIES(/datum/accessory_stat_modifier)
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/accessory_slot_registry)
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
 	var/list/slot_names = list() // ALLOW(instance_list): d: singleton registry, filled at init

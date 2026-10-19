@@ -89,7 +89,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 		D.mind.active = TRUE
 		D.mind.transfer_to(src)
 	else
-		src.ckey = D.ckey
+		bind_player(src, D.ckey, as_ckey = TRUE)
 	spent(D)
 
 	// Clean up the simplemob

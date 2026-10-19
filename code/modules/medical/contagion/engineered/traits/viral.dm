@@ -176,3 +176,6 @@ BONUS
 			S.stopped = TRUE
 			rel_add(src, nameof(captives), S)
 		used = TRUE
+
+CAPABILITIES(/datum/viral_trait/viralincubate)
+	ref_many(nameof(captives))

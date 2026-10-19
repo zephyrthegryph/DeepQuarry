@@ -15,6 +15,7 @@ SYSTEM_DEF(character_setup)
 
 CAPABILITIES(/datum/system/character_setup)
 	owns_many(nameof(preview_polls))
+	ref_many(nameof(save_queue))
 /*
 // ALLOW(init/FRAMEWORK): the character setup system drains its queued setups at boot
 /datum/system/character_setup/Initialize()

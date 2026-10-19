@@ -12,7 +12,6 @@ SYSTEM_DEF(lighting)
 	var/static/list/sources_queue = list() // List of lighting sources queued for update.
 	var/static/list/corners_queue = list() // List of lighting corners queued for update.
 	var/static/list/objects_queue = list() // List of lighting objects queued for update.
-	var/static/list/sunlight_queue = list() // List of turfs that are affected by sunlight
 	var/static/list/sunlight_queue_active = list() // List of turfs that need to have their sunlight updated
 	var/list/planet_shandlers = list() // Precomputed lighting values for tiles only affected by the sun
 	var/list/z_to_pshandler = list()
@@ -41,7 +40,7 @@ SYSTEM_DEF(lighting)
 			planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 
 	light_step(0, TRUE)
-	sunlight_queue_active += sunlight_queue + sunlight_queue // Run through shandler's twice during lobby wait to get some initial computation out of the way. After these two, the sunlight system will run MUCH faster.
+	sunlight_queue_active += members_of(SUNLIGHT_AWAKE_KEY) + members_of(SUNLIGHT_AWAKE_KEY) // Run through shandler's twice during lobby wait to get some initial computation out of the way. After these two, the sunlight system will run MUCH faster.
 
 
 /// The light queues drain every tick (it was SSlighting's SS_TICKER fire()).
@@ -148,7 +147,7 @@ SYSTEM_DEF(lighting)
 		for(var/datum/planet/planet in planet_shandlers)
 			var/datum/planet_sunlight_handler/planet_shandler = planet_shandlers[planet]
 			planet_shandler.update_sun()
-		sunlight_queue_active = sunlight_queue.Copy()
+		sunlight_queue_active = members_of(SUNLIGHT_AWAKE_KEY).Copy()
 
 /datum/system/lighting/proc/get_pshandler_planet(datum/planet/planet)
 	if(!planet_shandlers[planet])

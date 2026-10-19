@@ -44,3 +44,6 @@
 	B.update_belly_surrounding()
 	TEST_ASSERT(B.belly_surrounding == before, "an empty belly should keep the same surrounding list")
 	TEST_ASSERT_EQUAL(length(B.belly_surrounding), 0, "an empty belly surrounds nobody")
+
+CAPABILITIES(/obj/dq_test_ctrl_shift_probe)
+	ref_one(nameof(clicked_by))

@@ -454,3 +454,6 @@
 CAPABILITIES(/datum/rogue/zonemaster)
 	ref_many(nameof(rockspawns))
 	ref_many(nameof(mobspawns))
+	ref_many(nameof(mineral_rocks))
+	ref_one(nameof(myshuttle_landmark))
+	ref_many(nameof(spawned_mobs))

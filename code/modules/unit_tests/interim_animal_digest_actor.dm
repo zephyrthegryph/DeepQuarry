@@ -53,3 +53,6 @@
 	animal.toggle_digestion_for(null)
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 3, "unconscious and absent explicit actors open no choice")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "actor refusals preserve actual belly state")
+
+CAPABILITIES(/obj/interim_digest_actor_click)
+	ref_one(nameof(animal))

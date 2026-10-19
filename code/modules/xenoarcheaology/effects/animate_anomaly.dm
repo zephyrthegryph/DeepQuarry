@@ -100,3 +100,6 @@
 /// Accessor for the target var.
 /datum/artifact_effect/animate_anomaly/proc/target() as /mob/living
 	return target
+
+CAPABILITIES(/datum/artifact_effect/animate_anomaly)
+	ref_one(nameof(target))

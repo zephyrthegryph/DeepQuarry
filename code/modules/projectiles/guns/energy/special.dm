@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/gun/energy/staff)
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/staff/special_check(mob/user)
-	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
+	if((user.mind && !antag_wizards().is_antagonist(user.mind)))
 		to_chat(user, span_warning("You focus your mind on \the [src], but nothing happens!"))
 		return 0
 

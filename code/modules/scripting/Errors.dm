@@ -133,3 +133,9 @@ CAPABILITIES(/datum/runtimeError)
 /datum/scriptError/BadReturn/proc/token() as /datum/token
 	return token_ref
 
+CAPABILITIES(/datum/scriptError/BadReturn)
+	ref_one(nameof(token_ref))
+
+CAPABILITIES(/datum/scriptError/BadToken)
+	ref_one(nameof(token_ref))
+

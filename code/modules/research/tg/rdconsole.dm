@@ -191,7 +191,7 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 		var/datum/techweb_node/n = SSresearch.techweb_node_by_id(v)
 		var/enqueued_by_user = FALSE
 
-		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == entity_handle(user))
+		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == ref_token(user))
 			enqueued_by_user = TRUE
 
 		// Ensure node is supposed to be visible

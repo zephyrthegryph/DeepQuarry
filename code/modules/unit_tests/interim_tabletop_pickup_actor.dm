@@ -64,3 +64,7 @@
 	else
 		var/obj/item/toy/desk/desk = item
 		TEST_ASSERT(desk.on, "actual pickup preserves the real activated Newton cradle state")
+
+CAPABILITIES(/obj/interim_tabletop_pickup_actor_click)
+	ref_one(nameof(destination))
+	ref_one(nameof(item))

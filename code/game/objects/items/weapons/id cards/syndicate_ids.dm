@@ -105,6 +105,8 @@ CAPABILITIES(/obj/item/card/id/syndicate)
 
 	return GLOB.id_card_states
 
+/// A prototype made once at world setup and shared, never deleted in a round: a reference to one cannot pin a deleted object (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/card_state)
 /datum/card_state
 	var/name
 	var/icon_state

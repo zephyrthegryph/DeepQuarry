@@ -69,6 +69,8 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 		. += host.get_header_data()
 
 CAPABILITIES(/datum/tgui_module)
+	// The object the module is hooked into (a console, a computer, an implant).
+	ref_one(nameof(host))
 	// The NTOS header buttons, when the module runs on a modular computer.
 	op("pc_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
 	op("pc_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))

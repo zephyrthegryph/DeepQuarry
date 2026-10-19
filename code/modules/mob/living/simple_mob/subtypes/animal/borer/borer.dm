@@ -73,7 +73,7 @@
 /mob/living/simple_mob/animal/borer/Login()
 	. = ..()
 	if(antag && mind)
-		GLOB.borers.add_antagonist(mind)
+		antag_borers().add_antagonist(mind)
 
 /// Its true name: a rank and a number (rolls()).
 /mob/living/simple_mob/animal/borer/proc/roll_true_name(datum/roller/R)
@@ -286,7 +286,7 @@
 		return
 
 	if(host.mind)
-		GLOB.borers.remove_antagonist(host.mind)
+		antag_borers().remove_antagonist(host.mind)
 
 	if(!QDELETED(src))
 		forceMove(get_turf(host.loc))
@@ -300,7 +300,7 @@
 /mob/living/simple_mob/animal/borer/proc/transfer_personality(mob/candidate)
 	if(!candidate)
 		return
-	ckey = candidate.ckey
+	bind_player(src, candidate.ckey, as_ckey = TRUE)
 
 	if(candidate.mind)
 		rel_set(src, nameof(mind), candidate.mind)

@@ -349,3 +349,12 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 		own(S) // the shock throws sparks
 	TEST_ASSERT(mob_probe.last?.only(DAMAGE_SHOCK, 15), "a shock should deliver its insulated amount: [mob_probe.last?.describe()]")
 	TEST_ASSERT(mob_probe.last.flags & DAMAGE_PACKET_UNARMORED, "armour doesn't apply to a shock twice")
+
+CAPABILITIES(/datum/dq_packet_record)
+	ref_one(nameof(attacker))
+	ref_one(nameof(source))
+	ref_one(nameof(weapon))
+
+CAPABILITIES(/datum/unit_test/dq_damage_packet)
+	ref_one(nameof(mob_probe))
+	ref_one(nameof(probe))

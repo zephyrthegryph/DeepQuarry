@@ -22,6 +22,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	configure(light_glow(color = "#FFEEDB"))
 	ref_one(nameof(showing), /atom)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
@@ -36,7 +37,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 
 	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	vis_contents += bpinboard
 
 	. = ..()
 
@@ -129,3 +129,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 /obj/machinery/computer/security/telescreen/bodycamera/draw(datum/look/look)
 	..()
 	look.overlay("glass")
+
+/// Shows the parts Initialize() built through this holder (the engine's vis_contents verb).
+/obj/machinery/computer/security/telescreen/bodycamera/proc/show_vis_parts(datum/act/timer/A)
+	vis_add(src, bpinboard)

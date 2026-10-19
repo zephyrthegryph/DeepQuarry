@@ -343,3 +343,6 @@ CAPABILITIES(/obj/item/spellbook/oneuse)
 /// Used in used book recoils to store an identity for mindswaps (a relation view: null once it is deleted).
 /obj/item/spellbook/oneuse/mindswap/proc/stored_swap() as /mob
 	return stored_swap
+
+CAPABILITIES(/obj/item/spellbook/oneuse/mindswap)
+	ref_one(nameof(stored_swap))

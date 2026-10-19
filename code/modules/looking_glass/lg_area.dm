@@ -11,6 +11,8 @@
 
 CAPABILITIES(/area/looking_glass)
 	ref_one(nameof(our_landmark), /obj/effect/landmark/looking_glass)
+	ref_many(nameof(our_optional_turfs))
+	ref_many(nameof(our_turfs))
 
 /area/looking_glass/Initialize(mapload)
 	. = ..()

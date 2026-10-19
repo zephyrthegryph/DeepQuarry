@@ -1,4 +1,6 @@
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stockMarket)
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances

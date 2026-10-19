@@ -235,6 +235,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 
 // ===================================================================== the pipeline
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definitions, never deleted in a round (relations proposal D8)
 /datum/work_pipeline
 	parent_type = /datum/scheduled_behaviour
 	abstract_type = /datum/work_pipeline

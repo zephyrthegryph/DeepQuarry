@@ -91,6 +91,8 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 		asks(/datum/prompt/choice, fields = list("question" = "Which belly?", "title" = "Select A Belly", "choices" = computed(PROC_REF(ingestion_bellies)), "timeout" = 0), step = "k287", answerer = PROC_REF(ingestion_eater), when = PROC_REF(ingestion_accepted)),
 		then(PROC_REF(offer_ingestion)))
 	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))
+	ref_many(nameof(engines))
+	ref_one(nameof(vector))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
 	return under_way

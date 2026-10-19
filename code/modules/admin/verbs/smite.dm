@@ -275,7 +275,7 @@ GLOBAL_VAR(redspace_abduction_z)
 			var/turf/T_src = locate(x,y,target.z)
 			var/turf/T_dest = locate(x,y,GLOB.redspace_abduction_z)
 			T_dest.vis_contents.Cut()
-			T_dest.vis_contents += T_src
+			vis_add(T_dest, T_src)
 			T_dest.set_density(T_src.density)
 			T_dest.set_opacity(T_src.opacity)
 			CHECK_TICK
@@ -360,7 +360,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.set_icon('icons/obj/discs_vr.dmi')
 	loader.set_icon_state("quicksave")
 	loader.screen_loc = "NORTH-1, EAST-1"
-	target.client.screen += loader
+	client_screen_add(target.client, loader)
 
 	after(target, 10 SECONDS, GLOBAL_PROC_REF(smite_autosave_complete), with = list(target, loader))
 
@@ -370,7 +370,7 @@ GLOBAL_VAR(redspace_abduction_z)
 		return
 	to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
 	if(target.client)
-		target.client.screen -= loader
+		client_screen_remove(target.client, loader)
 
 #define SHADEKIN_SMITE_STEP_PAUSE (1 SECOND)
 #define SHADEKIN_SMITE_BELCH_PAUSE (2 SECONDS)
@@ -402,7 +402,7 @@ GLOBAL_VAR(redspace_abduction_z)
 			if(target)
 				target.set_transforming(FALSE) //Undo cheap hack
 			if(controller_ckey) //Put admin in mob
-				shadekin.ckey = controller_ckey
+				bind_player(shadekin, controller_ckey, as_ckey = TRUE)
 			else //Permakin'd
 				if(target)
 					to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))

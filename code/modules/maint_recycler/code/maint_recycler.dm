@@ -110,6 +110,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 300, active = 300))
 	after_init(0, then(PROC_REF(move_after_init)))
@@ -135,14 +136,12 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
-	src.vis_contents |= hatch
 
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
 	monitor_screen.icon_state = "screen_off"
 
-	src.vis_contents |= monitor_screen
 
 	//the monitor and door are objects of their own because they animate. The item inside and the underlay are drawn by draw().
 
@@ -537,3 +536,8 @@ UTILITY PROCS
 #undef RECYCLER_ALLOWED
 #undef RECYCLER_FORBIDDEN
 #undef RECYCLER_EVIL
+
+/// Shows the parts Initialize() built through this holder (the engine's vis_contents verb).
+/obj/machinery/maint_recycler/proc/show_vis_parts(datum/act/timer/A)
+	vis_add(src, hatch)
+	vis_add(src, monitor_screen)

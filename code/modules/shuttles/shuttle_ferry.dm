@@ -60,3 +60,7 @@
 /// the landmark resolved from the _tag var
 /datum/shuttle/autodock/ferry/proc/landmark_offsite() as /obj/effect/shuttle_landmark
 	return landmark_offsite
+
+CAPABILITIES(/datum/shuttle/autodock/ferry)
+	ref_one(nameof(landmark_offsite))
+	ref_one(nameof(landmark_station))

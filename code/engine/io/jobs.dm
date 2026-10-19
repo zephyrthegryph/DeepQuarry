@@ -212,7 +212,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	if(!isnull(E))
 		if(QDELETED(E))
 			return 0
-		owner_h = entity_handle(E) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		owner_h = ref_token(E) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!owner_h)
 			return 0
 	var/datum/io_job/J = new
@@ -347,7 +347,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 		return
 	var/datum/E = null
 	if(J.owner_h)
-		E = resolve_handle(J.owner_h) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
+		E = resolve_token(J.owner_h) // the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!E)
 			lane.count_stat(K, IO_STAT_DROPPED)
 			log_qdel("IO: dropped [K.name] callback [J.on_done]: its owner was deleted")

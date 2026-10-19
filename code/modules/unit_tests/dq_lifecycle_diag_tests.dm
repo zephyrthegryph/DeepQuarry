@@ -212,3 +212,6 @@ GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 	TEST_ASSERT_NULL(D.om_rec, "its OM record was torn down")
 	TEST_ASSERT(rec.torn_down, "the record is marked torn down")
 	TEST_ASSERT(!length(rec.timers), "no timer survives on the dead datum")
+
+CAPABILITIES(/datum/dq_diag_clean)
+	ref_one(nameof(other))

@@ -171,7 +171,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	if(!waiting_for_input[target]) //so we don't spam them with dialogs if they hesitate
 		waiting_for_input[target] = 1
 
-		if(!GLOB.cult.can_become_antag(target.mind) || jobban_isbanned(target, JOB_CULTIST))//putting jobban check here because is_convertable uses mind as argument
+		if(!antag_cult().can_become_antag(target.mind) || jobban_isbanned(target, JOB_CULTIST))//putting jobban check here because is_convertable uses mind as argument
 			//waiting_for_input ensures this is only shown once, so they basically auto-resist from here on out. They still need to find a way to get off the freaking rune if they don't want to burn to death, though.
 			to_chat(target, span_cult("Your blood pulses. Your head throbs. The world goes red. All at once you are aware of a horrible, horrible truth. The veil of reality has been ripped away and in the festering wound left behind something sinister takes root."))
 			to_chat(target, span_danger("And you were able to force it out of your mind. You now know the truth, there's something horrible out there, stop it and its minions at all costs."))
@@ -204,14 +204,14 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/list/waiting_for_input = ask.waiting_list
 	waiting_for_input[target] = 0
 	if(A.answer && A.answer.value == "Submit") //choosing 'Resist' does nothing of course.
-		GLOB.cult.add_antagonist(target.mind)
+		antag_cult().add_antagonist(target.mind)
 		rel_remove(src, nameof(converting), target)
 		target.status_set(STAT_HALLUCINATING, 0) //sudden clarity
 
 /////////////////////////////////////////FOURTH RUNE
 
 /obj/effect/rune/proc/tearreality(mob/living/user)
-	if(!GLOB.cult.allow_narsie)
+	if(!antag_cult().allow_narsie)
 		return fizzle(user)
 
 	var/list/cultists = new()
@@ -352,7 +352,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/is_sacrifice_target = 0
 	for(var/mob/living/carbon/human/M in src.loc)
 		if(M.stat == DEAD)
-			if(GLOB.cult && M.mind == GLOB.cult.sacrifice_target())
+			if(antag_cult() && M.mind == antag_cult().sacrifice_target())
 				is_sacrifice_target = 1
 			else
 				corpse_to_raise = M
@@ -369,7 +369,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/obj/effect/rune/R in REGISTRY_MEMBERS(REGISTRY_RUNES))
 			if(R.word1==GLOB.cultwords["blood"] && R.word2==GLOB.cultwords["join"] && R.word3==GLOB.cultwords["hell"])
 				for(var/mob/living/carbon/human/N in R.loc)
-					if(GLOB.cult && N.mind && N.mind == GLOB.cult.sacrifice_target())
+					if(antag_cult() && N.mind && N.mind == antag_cult().sacrifice_target())
 						is_sacrifice_target = 1
 					else
 						if(N.stat!= DEAD)
@@ -383,7 +383,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			to_chat(user, span_warning("The sacrifical corpse is not dead. You must free it from this world of illusions before it may be used."))
 		return fizzle(user)
 
-	if(!GLOB.cult.can_become_antag(corpse_to_raise.mind) || jobban_isbanned(corpse_to_raise, JOB_CULTIST))
+	if(!antag_cult().can_become_antag(corpse_to_raise.mind) || jobban_isbanned(corpse_to_raise, JOB_CULTIST))
 		to_chat(user, span_warning("The Geometer of Blood refuses to touch this one."))
 		return fizzle(user)
 	else if(!corpse_to_raise.client && corpse_to_raise.mind) //Don't force the dead person to come back if they don't want to.
@@ -401,7 +401,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		return
 	if(corpse_to_raise.client)
 
-		GLOB.cult.add_antagonist(corpse_to_raise.mind)
+		antag_cult().add_antagonist(corpse_to_raise.mind)
 		corpse_to_raise.revive()
 
 		user.say("Pasnar val'keriam usinar. Savrae ines amutan. Yam'toth remium il'tarat!")
@@ -513,8 +513,8 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	D.looks.set_eyes_color(rgb(200, 200, 200))
 	D.clear_all_underwear()
 	D.underwear_edited()
-	D.key = ghost.key
-	GLOB.cult.add_antagonist(D.mind)
+	bind_player(D, ghost.key)
+	antag_cult().add_antagonist(D.mind)
 
 	if(!chose_name)
 		D.set_real_name(pick("Anguished", "Blasphemous", "Corrupt", "Cruel", "Depraved", "Despicable", "Disturbed", "Exacerbated", "Foul", "Hateful", "Inexorable", "Implacable", "Impure", "Malevolent", "Malignant", "Malicious", "Pained", "Profane", "Profligate", "Relentless", "Resentful", "Restless", "Spiteful", "Tormented", "Unclean", "Unforgiving", "Vengeful", "Vindictive", "Wicked", "Wronged"))
@@ -693,7 +693,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		user.whisper("O bidai nabora se[pick("'","`")]sma!")
 
 	log_and_message_admins("used a communicate rune to say '[input]'")
-	for(var/datum/mind/H in GLOB.cult.current_antagonists)
+	for(var/datum/mind/H in antag_cult().current_antagonists)
 		if (H.current)
 			to_chat(H.current, span_cult("[input]"))
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -736,7 +736,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				worth = 1
 
 		if (ticker_mode().name == "cult")
-			if(H.mind == GLOB.cult.sacrifice_target())
+			if(H.mind == antag_cult().sacrifice_target())
 				if(cultsinrange.len >= 3)
 					registry_join(REGISTRY_SACRIFICED, H.mind)
 					if(isrobot(H))
@@ -751,7 +751,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 					if(H.stat !=2)
 						if(prob(80) || worth)
 							to_chat(user,span_cult("The Geometer of Blood accepts this [worth ? "exotic " : ""]sacrifice."))
-							GLOB.cult.grant_runeword(user)
+							antag_cult().grant_runeword(user)
 						else
 							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 							to_chat(user,span_warning("However, this soul was not enough to gain His favor."))
@@ -762,7 +762,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 					else
 						if(prob(40) || worth)
 							to_chat(user,span_cult("The Geometer of Blood accepts this [worth ? "exotic " : ""]sacrifice."))
-							GLOB.cult.grant_runeword(user)
+							antag_cult().grant_runeword(user)
 						else
 							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 							to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
@@ -777,7 +777,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 						if(prob(40))
 
 							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
-							GLOB.cult.grant_runeword(user)
+							antag_cult().grant_runeword(user)
 						else
 							to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 							to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
@@ -790,7 +790,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				if(H.stat !=2)
 					if(prob(80))
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
-						GLOB.cult.grant_runeword(user)
+						antag_cult().grant_runeword(user)
 					else
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 						to_chat(user,span_warning("However, this soul was not enough to gain His favor."))
@@ -801,7 +801,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				else
 					if(prob(40))
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
-						GLOB.cult.grant_runeword(user)
+						antag_cult().grant_runeword(user)
 					else
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 						to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
@@ -815,7 +815,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				else
 					if(prob(40))
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
-						GLOB.cult.grant_runeword(user)
+						antag_cult().grant_runeword(user)
 					else
 						to_chat(user,span_cult("The Geometer of Blood accepts this sacrifice."))
 						to_chat(user,span_warning("However, a mere dead body is not enough to satisfy Him."))
@@ -884,7 +884,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /obj/effect/rune/proc/freedom(mob/living/user)
 	var/list/mob/living/carbon/cultists = new
-	for(var/datum/mind/H in GLOB.cult.current_antagonists)
+	for(var/datum/mind/H in antag_cult().current_antagonists)
 		if (istype(H.current,/mob/living/carbon))
 			cultists+=H.current
 	var/list/mob/living/carbon/users = new
@@ -967,7 +967,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /obj/effect/rune/proc/cultsummon(mob/living/user)
 	var/list/mob/living/carbon/cultists = new
-	for(var/datum/mind/H in GLOB.cult.current_antagonists)
+	for(var/datum/mind/H in antag_cult().current_antagonists)
 		if (istype(H.current,/mob/living/carbon))
 			cultists+=H.current
 	var/list/mob/living/carbon/users = new

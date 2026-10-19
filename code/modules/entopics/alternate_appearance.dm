@@ -30,7 +30,7 @@
 
 	for(var/mob/M as anything in hiding)
 		if(M.client)
-			M.client.images -= img
+			client_images_remove(M.client, img)
 		rel_remove(src, nameof(viewers), M) // and from M.alt_appearances_viewing
 
 /datum/alternate_appearance/proc/remove()

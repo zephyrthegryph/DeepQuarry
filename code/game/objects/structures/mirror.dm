@@ -149,7 +149,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	var/mob/living/carbon/human/user = A.request.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
 	vox.set_gender(user.gender)
-	GLOB.raiders.equip(vox)
+	antag_raiders().equip(vox)
 	if(user.mind)
 		user.mind.transfer_to(vox)
 	open_request(vox, /datum/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), answerer = vox, title = "Name change", question = "Enter a name, or leave blank for the default name.", default = "", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
@@ -164,4 +164,4 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 		newname = L.get_random_name()
 	vox.set_real_name(newname)
 	vox.name = vox.real_name
-	GLOB.raiders.update_access(vox)
+	antag_raiders().update_access(vox)

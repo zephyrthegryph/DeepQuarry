@@ -24,6 +24,7 @@
 CAPABILITIES(/datum/cogbar)
 	ref_one(nameof(user))
 	ref_one(nameof(cog))
+	ref_one(nameof(user_client))
 
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
 	rel_set(src, nameof(user), user)

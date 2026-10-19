@@ -1,4 +1,3 @@
-GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 
 /datum/antagonist/mercenary
 	id = MODE_MERCENARY
@@ -21,7 +20,6 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 
 /datum/antagonist/mercenary/New()
 	..()
-	GLOB.mercs = src
 
 /datum/antagonist/mercenary/create_global_objectives()
 	if(!..())
@@ -54,3 +52,7 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 	create_id("Mercenary", player)
 	create_radio(SYND_FREQ, player)
 	return 1
+
+/// The /datum/antagonist/mercenary template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_mercs() as /datum/antagonist/mercenary
+	return SSantag?.all_antag_types[MODE_MERCENARY]

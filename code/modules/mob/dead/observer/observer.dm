@@ -205,7 +205,7 @@ Works together with spawning an observer, noted above.
 		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.
 		ghost.set_can_reenter_corpse(can_reenter_corpse)
 		ghost.set_timeofdeath(src.timeofdeath)
-		ghost.key = key
+		bind_player(ghost, key)
 		if(istype(loc, /obj/structure/morgue))
 			var/obj/structure/morgue/M = loc
 			M.update()
@@ -291,7 +291,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			to_chat(src, span_warning("The astral cord that ties your body and your spirit has been severed. You are likely to wander the realm beyond until your body is finally dead and thus reunited with you."))
 			return
 	mind.current.ajourn=0
-	mind.current.key = key
+	bind_player(mind.current, key)
 	rel_clear(mind.current, nameof(/mob::teleop))
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
@@ -562,7 +562,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(client) //qdelling a ghost with a client = make a new ghost i guess
 		ghostize()
 	if(key)
-		key = null
+		bind_player(src, null)
 	..()
 
 /mob/Moved(atom/old_loc, direction, forced = FALSE)
@@ -583,7 +583,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(check_rights_for(src.client, R_ADMIN|R_FUN|R_EVENT))
 		return FALSE
 
-	return (T && T.holy) && (is_manifest || (mind in GLOB.cult.current_antagonists))
+	return (T && T.holy) && (is_manifest || (mind in antag_cult().current_antagonists))
 
 /mob/observer/dead/verb/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
 	set category = VERB_CAT_GHOST_GAME
@@ -705,7 +705,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 	var/ghosts_can_write
 	if(ticker_mode().name == "cult")
-		if(length(GLOB.cult.current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
+		if(length(antag_cult().current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
 	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.
@@ -901,7 +901,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 	if(!iconRemoved)
 		var/image/J = image('icons/mob/mob.dmi', loc = src, icon_state = icon)
-		client.images += J
+		client_images_add(client, J)
 
 /mob/observer/dead/verb/toggle_interactions()
 

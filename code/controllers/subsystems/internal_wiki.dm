@@ -797,21 +797,21 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/ore/assemble(datum/ore/O)
 	title = O.display_name
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/ore/ore_path = O.ore
 	SSinternal_wiki.add_icon(data, initial(ore_path.icon), initial(ore_path.icon_state), "#ffffff")
 	// Get internal data
-	data["smelting"] = null
+	set_data_at("smelting", null)
 	if(O.smelts_to)
 		var/datum/material/S = get_material_by_name(O.smelts_to)
-		data["smelting"] = S.display_name
+		set_data_at("smelting", S.display_name)
 
-	data["compressing"] = null
+	set_data_at("compressing", null)
 	if(O.compresses_to)
 		var/datum/material/C = get_material_by_name(O.compresses_to)
-		data["compressing"] = C.display_name
+		set_data_at("compressing", C.display_name)
 
-	data["alloys"] = null
+	set_data_at("alloys", null)
 	if(O.alloy)
 		var/list/alloy_list = list()
 		for(var/datum/alloy/A in GLOB.alloy_data)
@@ -820,14 +820,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 					var/datum/material/M = get_material_by_name(A.metaltag)
 					alloy_list.Add(M.display_name)
 					break
-		data["alloys"] = alloy_list
+		set_data_at("alloys", alloy_list)
 
-	data["pump_reagent"] = null
+	set_data_at("pump_reagent", null)
 	if(O.reagent)
 		var/datum/reagent/REG = SSchemistry.ready().chemical_reagents[O.reagent]
-		data["pump_reagent"] = REG.name
+		set_data_at("pump_reagent", REG.name)
 
-	data["grind_reagents"] = null
+	set_data_at("grind_reagents", null)
 	if(GLOB.ore_reagents[O.ore])
 		var/list/output = GLOB.ore_reagents[O.ore]
 		var/list/collect = list()
@@ -843,7 +843,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		var/list/grind_list = list()
 		for(var/N in collect)
 			grind_list[N] = "[collect[N] * per_part]"
-		data["grind_reagents"] = grind_list
+		set_data_at("grind_reagents", grind_list)
 
 /datum/internal_wiki/page/ore/get_print()
 	var/body = ""
@@ -876,31 +876,31 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/material/assemble(datum/material/M)
 	title = M.display_name + " "  + M.sheet_singular_name
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/stack/stack_path = M.stack_type
 	SSinternal_wiki.add_icon(data, initial(stack_path.icon), initial(stack_path.icon_state), initial(M.icon_colour))
 	// Get internal data
 	// weight renamed to density; radioactivity is a component lookup.
-	data["integrity"] = M.integrity
-	data["hardness"] = M.hardness
-	data["weight"] = M.density
-	data["stack_size"] = initial(stack_path.max_amount) ? initial(stack_path.max_amount) : 0
+	set_data_at("integrity", M.integrity)
+	set_data_at("hardness", M.hardness)
+	set_data_at("weight", M.density)
+	set_data_at("stack_size", initial(stack_path.max_amount) ? initial(stack_path.max_amount) : 0)
 	var/supply_value = M.supply_conversion_value ? M.supply_conversion_value : 0
-	data["supply_points"] = supply_value
+	set_data_at("supply_points", supply_value)
 	var/value = supply_value * supply_points_per_money()
 	value = FLOOR(value * 100, 1) / 100 // Truncate decimals
-	data["market_price"] = value
+	set_data_at("market_price", value)
 
-	data["opacity"] = M.opacity
-	data["conductive"] = M.conductive
-	data["protectiveness"] = M.protectiveness
-	data["explosion_resistance"] = M.explosion_resistance
-	data["radioactivity"] = dq_material_radioactivity(M)
-	data["reflectivity"] = M.reflectivity
-	data["melting_point"] = M.melting_point
-	data["ignition_point"] = M.ignition_point
+	set_data_at("opacity", M.opacity)
+	set_data_at("conductive", M.conductive)
+	set_data_at("protectiveness", M.protectiveness)
+	set_data_at("explosion_resistance", M.explosion_resistance)
+	set_data_at("radioactivity", dq_material_radioactivity(M))
+	set_data_at("reflectivity", M.reflectivity)
+	set_data_at("melting_point", M.melting_point)
+	set_data_at("ignition_point", M.ignition_point)
 
-	data["grind_reagents"] = null
+	set_data_at("grind_reagents", null)
 	if(GLOB.sheet_reagents[M.stack_type])
 		var/list/output = GLOB.sheet_reagents[M.stack_type]
 		if(output && length(output) > 0)
@@ -920,15 +920,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 				var/list/grind_list = list()
 				for(var/N in collect)
 					grind_list[N] = "[collect[N] * per_part]"
-				data["grind_reagents"] = grind_list
+				set_data_at("grind_reagents", grind_list)
 
-	data["recipies"] = null
+	set_data_at("recipies", null)
 	var/list/mat_recipes = M.get_recipes()
 	if(length(mat_recipes))
 		var/list/recipie_list = list()
 		for(var/datum/stack_recipe/R in mat_recipes)
 			recipie_list.Add(R.title)
-		data["recipies"] = recipie_list
+		set_data_at("recipies", recipie_list)
 
 /datum/internal_wiki/page/material/get_print()
 	var/body = ""
@@ -976,13 +976,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/seed/assemble(datum/seed/S)
 	title = S.display_name
-	data["title"] = title
+	set_data_at("title", title)
 	SSinternal_wiki.add_icon(data, 'icons/obj/hydroponics_growing.dmi', "[S.get_trait(TRAIT_PLANT_ICON)]-[S.growth_stages]", S.get_trait(TRAIT_PLANT_COLOUR))
 	// Get internal data
-	data["feeding"] = S.get_trait(TRAIT_REQUIRES_NUTRIENTS)
-	data["watering"] = S.get_trait(TRAIT_REQUIRES_WATER)
-	data["lighting"] = S.get_trait(TRAIT_IDEAL_LIGHT)
-	data["crop_yield"] = S.get_trait(TRAIT_YIELD)
+	set_data_at("feeding", S.get_trait(TRAIT_REQUIRES_NUTRIENTS))
+	set_data_at("watering", S.get_trait(TRAIT_REQUIRES_WATER))
+	set_data_at("lighting", S.get_trait(TRAIT_IDEAL_LIGHT))
+	set_data_at("crop_yield", S.get_trait(TRAIT_YIELD))
 
 	var/list/traits = list()
 	if(S.has_item_product)
@@ -1017,10 +1017,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		traits.Add("Explosive")
 	if(!length(traits))
 		traits.Add("None")
-	data["traits"] = traits
-	data["mob_product"] = S.has_mob_product
+	set_data_at("traits", traits)
+	set_data_at("mob_product", S.has_mob_product)
 
-	data["chem_breakdown"] = null
+	set_data_at("chem_breakdown", null)
 	if(S.chems && length(S.chems) > 0)
 		var/list/chems = list()
 		for(var/CB in S.chems)
@@ -1029,30 +1029,30 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 				chems.Add(CBR.name)
 			else
 				log_runtime(EXCEPTION("Invalid reagent id: [CB] in chemical breakdown for seed [title]"))
-		data["chem_breakdown"] = chems
+		set_data_at("chem_breakdown", chems)
 
-	data["gas_consumed"] = null
+	set_data_at("gas_consumed", null)
 	if(S.consume_gasses && length(S.consume_gasses) > 0)
 		var/list/consumed = list()
 		for(var/CG in S.consume_gasses)
 			consumed["[GLOB.gas_data.name[CG]]"] = S.consume_gasses[CG]
-		data["gas_consumed"] = consumed
+		set_data_at("gas_consumed", consumed)
 
-	data["gas_exuded"] = null
+	set_data_at("gas_exuded", null)
 	if(S.exude_gasses && length(S.exude_gasses) > 0)
 		var/list/exude = list()
 		for(var/EG in S.exude_gasses)
 			exude["[GLOB.gas_data.name[EG]]"] = S.exude_gasses[EG]
-		data["gas_exuded"] = exude
+		set_data_at("gas_exuded", exude)
 
-	data["mutations"] = null
+	set_data_at("mutations", null)
 	if(S.mutants && length(S.mutants) > 0)
 		var/list/mutations = list()
 		for(var/MS in S.mutants)
 			var/datum/seed/mut = plants_seeds()[MS]
 			if(mut)
 				mutations.Add(mut.display_name)
-		data["mutations"] = mutations
+		set_data_at("mutations", mutations)
 
 /datum/internal_wiki/page/seed/get_print()
 	var/body = ""
@@ -1105,29 +1105,29 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/smasher/assemble(datum/particle_smasher_recipe/M)
 	title = M.display_name
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/stack/material/result_path = M.result
 	var/datum/material/result_mat = get_material_by_name(initial(result_path.default_type))
 	SSinternal_wiki.add_icon(data, initial(result_path.icon), initial(result_path.icon_state), initial(result_mat.icon_colour))
 	// Get internal data
 	var/obj/item/stack/req_mat = M.required_material
-	data["req_mat"] = null
+	set_data_at("req_mat", null)
 	if(req_mat != null)
-		data["req_mat"] = initial(req_mat.name)
+		set_data_at("req_mat", initial(req_mat.name))
 
-	data["target_items"] = null
+	set_data_at("target_items", null)
 	if(M.items && length(M.items) > 0)
 		var/list/targs = list()
 		for(var/obj/Ir as anything in M.items)
 			targs.Add(initial(Ir.name))
-		data["target_items"] = targs
+		set_data_at("target_items", targs)
 
-	data["required_energy_min"] = M.required_energy_min
-	data["required_energy_max"] = M.required_energy_max
-	data["required_atmos_temp_min"] = M.required_atmos_temp_min
-	data["required_atmos_temp_max"] = M.required_atmos_temp_max
+	set_data_at("required_energy_min", M.required_energy_min)
+	set_data_at("required_energy_max", M.required_energy_max)
+	set_data_at("required_atmos_temp_min", M.required_atmos_temp_min)
+	set_data_at("required_atmos_temp_max", M.required_atmos_temp_max)
 
-	data["inducers"] = null
+	set_data_at("inducers", null)
 	if(M.reagents != null && length(M.reagents) > 0)
 		var/list/inducers = list()
 		for(var/R in M.reagents)
@@ -1137,9 +1137,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 				inducers["[Rd.name]"] = amnt
 			else
 				log_runtime(EXCEPTION("Invalid reagent id: [Rd] in inducer for atom smasher [title]"))
-		data["inducers"] = inducers
-	data["result"] = initial(result_path.name)
-	data["probability"] = M.probability
+		set_data_at("inducers", inducers)
+	set_data_at("result", initial(result_path.name))
+	set_data_at("probability", M.probability)
 
 /datum/internal_wiki/page/smasher/get_print()
 	var/body = ""
@@ -1167,24 +1167,24 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/chemical/assemble(datum/reagent/R)
 	title = R.name
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/reagent_containers/glass/beaker/large/beaker_path = /obj/item/reagent_containers/glass/beaker/large
 	SSinternal_wiki.add_icon(data, initial(beaker_path.icon), initial(beaker_path.icon_state), R.color)
 	// Get internal data
-	data["description"] = R.description
-	data["addictive"] = 0
+	set_data_at("description", R.description)
+	set_data_at("addictive", 0)
 	if(R.id in get_addictive_reagents(ADDICT_ALL))
-		data["addictive"] = TRUE
-	data["industrial_use"] = R.industrial_use
-	data["supply_points"] = R.supply_conversion_value ? R.supply_conversion_value : 0
-	data["cooling_mod"] = R.coolant_modifier
+		set_data_at("addictive", TRUE)
+	set_data_at("industrial_use", R.industrial_use)
+	set_data_at("supply_points", R.supply_conversion_value ? R.supply_conversion_value : 0)
+	set_data_at("cooling_mod", R.coolant_modifier)
 	var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * supply_points_per_money()
 	value = FLOOR(value * 100,1) / 100 // Truncate decimals
-	data["market_price"] = value
-	data["sintering"] = SSinternal_wiki.assemble_sintering(GLOB.reagent_sheets[R.id])
-	data["overdose"] = R.overdose
-	data["flavor"] = R.taste_description
-	data["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
+	set_data_at("market_price", value)
+	set_data_at("sintering", SSinternal_wiki.assemble_sintering(GLOB.reagent_sheets[R.id]))
+	set_data_at("overdose", R.overdose)
+	set_data_at("flavor", R.taste_description)
+	set_data_at("allergen", assembly_allergy_list(R.allergen_type, R.medallergen_type))
 	SSinternal_wiki.assemble_reaction_data(data, R)
 
 /datum/internal_wiki/page/chemical/get_print()
@@ -1226,13 +1226,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/food/assemble(datum/reagent/R)
 	title = R.name
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/reagent_containers/glass/beaker/large/beaker_path = /obj/item/reagent_containers/glass/beaker/large
 	SSinternal_wiki.add_icon(data, initial(beaker_path.icon), initial(beaker_path.icon_state), R.color)
 	// Get internal data
-	data["description"] = R.description
-	data["flavor"] = R.taste_description
-	data["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
+	set_data_at("description", R.description)
+	set_data_at("flavor", R.taste_description)
+	set_data_at("allergen", assembly_allergy_list(R.allergen_type, R.medallergen_type))
 	SSinternal_wiki.assemble_reaction_data(data, R)
 
 /datum/internal_wiki/page/food/get_print()
@@ -1248,7 +1248,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/drink/assemble(datum/reagent/R)
 	title = R.name
-	data["title"] = title
+	set_data_at("title", title)
 	// Use beaker by default, otherwise try metamorphic glass for icon
 	var/ico = 'icons/obj/drinks.dmi'
 	if(R.glass_icon_file)
@@ -1258,9 +1258,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		sta = R.glass_icon_state
 	SSinternal_wiki.add_icon(data, ico, sta, R.color)
 	// Get internal data
-	data["description"] = R.description
-	data["flavor"] = R.taste_description
-	data["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
+	set_data_at("description", R.description)
+	set_data_at("flavor", R.taste_description)
+	set_data_at("allergen", assembly_allergy_list(R.allergen_type, R.medallergen_type))
 	SSinternal_wiki.assemble_reaction_data(data, R)
 
 /datum/internal_wiki/page/drink/get_print()
@@ -1277,7 +1277,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 ////////////////////////////////////////////
 /datum/internal_wiki/page/recipe/assemble(list/recipe)
 	title = recipe["Result"]
-	data["title"] = title
+	set_data_at("title", title)
 	var/obj/item/path = recipe["ResultPath"]
 	if(path)
 		SSinternal_wiki.add_icon(data, initial(path.icon), initial(path.icon_state), "#ffffff")
@@ -1285,8 +1285,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		var/obj/item/reagent_containers/glass/beaker/large/beaker_path = /obj/item/reagent_containers/glass/beaker/large
 		SSinternal_wiki.add_icon(data, initial(beaker_path.icon), initial(beaker_path.icon_state), "#ffffff")
 	// Get internal data
-	data["description"] = recipe["Desc"]
-	data["allergen"] = assembly_allergy_list(recipe["Allergens"], recipe["Medallergens"])
+	set_data_at("description", recipe["Desc"])
+	set_data_at("allergen", assembly_allergy_list(recipe["Allergens"], recipe["Medallergens"]))
 	var/list/recipe_data = list()
 	var/value = recipe["Price"] ? recipe["Price"] : 0
 	recipe_data["supply_points"] = value
@@ -1315,7 +1315,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	for(var/cat in recipe["Catalysts"])
 		catalysts["[cat]"] = recipe["Catalysts"][cat]
 	recipe_data["catalysts"] = length(catalysts) ? catalysts : null
-	data["recipe"] = recipe_data
+	set_data_at("recipe", recipe_data)
 
 /datum/internal_wiki/page/recipe/get_print()
 	var/body = ""
@@ -1388,19 +1388,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	var/datum/category_item/catalogue/catalog_record_static
 
 /datum/internal_wiki/page/catalog/assemble()
-	data["name"] = catalog_record().name
-	data["desc"] = catalog_record().desc
+	set_data_at("name", catalog_record().name)
+	set_data_at("desc", catalog_record().desc)
 
 // VIRUSES
 /////////////////////////////////////////////
 /datum/internal_wiki/page/virus/assemble(datum/affliction/contagion/D)
 	title = initial(D.name)
-	data["title"] = title
-	data["description"] = initial(D.desc)
-	data["form"] = initial(D.form)
-	data["agent"] = initial(D.agent)
-	data["danger"] = initial(D.danger)
-	data["max_stages"] = initial(D.max_stages)
+	set_data_at("title", title)
+	set_data_at("description", initial(D.desc))
+	set_data_at("form", initial(D.form))
+	set_data_at("agent", initial(D.agent))
+	set_data_at("danger", initial(D.danger))
+	set_data_at("max_stages", initial(D.max_stages))
 
 	var/infectivity = ""
 	switch(initial(D.infectivity))
@@ -1412,7 +1412,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 			infectivity = "Medium"
 		if(8 to INFINITY)
 			infectivity = "High"
-	data["infectivity"] = infectivity
+	set_data_at("infectivity", infectivity)
 
 	var/resiliance = ""
 	switch(initial(D.cure_chance))
@@ -1424,7 +1424,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 			resiliance = "Medium"
 		if(17 to INFINITY)
 			resiliance = "Low"
-	data["resiliance"] = resiliance
+	set_data_at("resiliance", resiliance)
 
 	var/discovery = ""
 	switch(initial(D.discovery_threshold))
@@ -1438,7 +1438,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 			discovery = "Easy"
 		if(0.9 to INFINITY)
 			discovery = "Trivial"
-	data["discovery"] = discovery
+	set_data_at("discovery", discovery)
 
 	var/spread_flags = initial(D.spread_flags)
 	var/spread_type = "NA"
@@ -1452,17 +1452,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		spread_type = "Airborne"
 	else if(spread_flags & DISEASE_SPREAD_FALTERED)
 		spread_type = "Faltered"
-	data["spread"] = spread_type
+	set_data_at("spread", spread_type)
 
 	var/mod_flags = initial(D.virus_modifiers)
-	data["all_cures"] = mod_flags & NEEDS_ALL_CURES
-	data["aggressive"] = mod_flags & BYPASSES_IMMUNITY
+	set_data_at("all_cures", mod_flags & NEEDS_ALL_CURES)
+	set_data_at("aggressive", mod_flags & BYPASSES_IMMUNITY)
 	var/flags = initial(D.disease_flags)
-	data["curable"] = flags & CURABLE
-	data["resistable"] = flags & CAN_RESIST
-	data["carriable"] = flags & CAN_CARRY
-	data["spread_dead"] = flags & SPREAD_DEAD
-	data["infect_synth"] = flags & INFECT_SYNTHETICS
+	set_data_at("curable", flags & CURABLE)
+	set_data_at("resistable", flags & CAN_RESIST)
+	set_data_at("carriable", flags & CAN_CARRY)
+	set_data_at("spread_dead", flags & SPREAD_DEAD)
+	set_data_at("infect_synth", flags & INFECT_SYNTHETICS)
 
 /datum/internal_wiki/page/virus/get_print()
 	var/body = ""
@@ -1497,44 +1497,44 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		// Trait genetics
 		var/datum/gene/trait/T = G
 		title = T.get_name()
-		data["title"] = title
-		data["description"] = T.get_desc()
+		set_data_at("title", title)
+		set_data_at("description", T.get_desc())
 		if(istype(T.linked_trait,/datum/trait/positive))
 			if(!T.linked_trait.hidden)
-				data["trait_type"] = "Positive"
+				set_data_at("trait_type", "Positive")
 			else
-				data["trait_type"] = "Super Power" // Likely eye lasers
+				set_data_at("trait_type", "Super Power") // Likely eye lasers
 		else if(istype(T.linked_trait,/datum/trait/negative))
 			if(!T.linked_trait.hidden)
-				data["trait_type"] = "Negative"
+				set_data_at("trait_type", "Negative")
 			else
-				data["trait_type"] = "Disability" // Likely gibbings or such
+				set_data_at("trait_type", "Disability") // Likely gibbings or such
 		else
 			if(!T.linked_trait.hidden)
-				data["trait_type"] = "Neutral"
+				set_data_at("trait_type", "Neutral")
 			else
-				data["trait_type"] = "Strange" // Not sure what neutrals are hidden, but just incase
+				set_data_at("trait_type", "Strange") // Not sure what neutrals are hidden, but just incase
 		// Conflicts
-		data["blockers"] = null
+		set_data_at("blockers", null)
 		var/list/output_blockers = list()
 		var/list/blockers = T.conflict_traits
 		for(var/path in blockers)
 			var/datum/trait/TG = GLOB.all_traits[path]
 			output_blockers.Add(TG.name)
 		if(length(output_blockers))
-			data["blockers"] = output_blockers
+			set_data_at("blockers", output_blockers)
 	else
 		// Old style gene
 		title = G.name
-		data["title"] = title
-		data["description"] = G.desc
-		data["trait_type"] = "Neutral"
-		data["blockers"] = null
+		set_data_at("title", title)
+		set_data_at("description", G.desc)
+		set_data_at("trait_type", "Neutral")
+		set_data_at("blockers", null)
 	var/list/bounds = GetDNABounds(G.block)
-	data["bounds_off_min"] = EncodeDNABlock(bounds[1]) // Minimum hex where gene is off
-	data["bounds_off_max"] = EncodeDNABlock(bounds[2]) // Maximum hex where gene is off
-	data["bounds_on_min"] = EncodeDNABlock(bounds[3]) // Minimum hex where gene is on
-	data["bounds_on_max"] = EncodeDNABlock(bounds[4]) // Maximum hex where gene is on
+	set_data_at("bounds_off_min", EncodeDNABlock(bounds[1])) // Minimum hex where gene is off
+	set_data_at("bounds_off_max", EncodeDNABlock(bounds[2])) // Maximum hex where gene is off
+	set_data_at("bounds_on_min", EncodeDNABlock(bounds[3])) // Minimum hex where gene is on
+	set_data_at("bounds_on_max", EncodeDNABlock(bounds[4])) // Maximum hex where gene is on
 
 /datum/internal_wiki/page/gene/get_print()
 	var/body = ""

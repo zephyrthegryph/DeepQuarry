@@ -15,6 +15,8 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		GLOB.om_reg.build()
 	return GLOB.om_reg
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 /datum/definition_registry
 	parent_type = /datum/core_definition
 	var/list/errors

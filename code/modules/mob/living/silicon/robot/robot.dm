@@ -192,7 +192,7 @@
 	if(new_ai)
 		connect_to_ai(new_ai)
 	else
-		lawupdate = FALSE
+		set_lawupdate(FALSE)
 
 /// Chassis with a fixed module create it here.
 /mob/living/silicon/robot/proc/setup_module()
@@ -1244,7 +1244,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /mob/living/silicon/robot/proc/UnlinkSelf()
 	disconnect_from_ai()
-	lawupdate = FALSE
+	set_lawupdate(FALSE)
 	set_lockcharge(0)
 	set_lockdown(0)
 	set_canmove(1)
@@ -1381,7 +1381,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 /mob/living/silicon/robot/proc/subvert_laws(mob/user)
 	set_emagged(TRUE)
 	robotact?.update_static_data_for_all_viewers()
-	lawupdate = FALSE
+	set_lawupdate(FALSE)
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
@@ -1606,25 +1606,25 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	// TODO: Update to new antagonist system.
 	if(mind && !mind.special_role)
 		mind.special_role = "traitor"
-		rel_add(GLOB.traitors, nameof(/datum/antagonist::current_antagonists), mind)
+		rel_add(antag_traitors(), nameof(/datum/antagonist::current_antagonists), mind)
 	build_traitor_hud()
 
 /mob/living/silicon/robot/proc/build_traitor_hud()
 	clear_traitor_hud()
 	if(!client)
 		return
-	for(var/datum/mind/tra in GLOB.traitors.current_antagonists)
+	for(var/datum/mind/tra in antag_traitors().current_antagonists)
 		if(!tra.current)
 			continue
 		LAZYADD(traitor_hud_images, image('icons/mob/mob.dmi', loc = tra.current, icon_state = "traitor"))
 	if(!LAZYLEN(traitor_hud_images))
 		return
 	traitor_hud_client = client
-	client.images += traitor_hud_images
+	client_images_add(client, traitor_hud_images)
 
 /mob/living/silicon/robot/proc/clear_traitor_hud()
 	if(traitor_hud_client && LAZYLEN(traitor_hud_images))
-		traitor_hud_client.images -= traitor_hud_images
+		client_images_remove(traitor_hud_client, traitor_hud_images)
 	traitor_hud_client = null
 	traitor_hud_images = null
 
@@ -1689,7 +1689,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 			lawsync()
 			show_laws()
 	else if(!lawupdate && !emagged)
-		lawupdate = TRUE
+		set_lawupdate(TRUE)
 
 /// The AI wire cut drops the cyborg's AI link.
 /mob/living/silicon/robot/proc/ai_wire_cut(datum/act/A)

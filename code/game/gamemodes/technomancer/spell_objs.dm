@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/spell)
 	if(core.loc != owner_ref() || owner_ref().get_equipped_item(SLOT_ID_BACK) != core) //Make sure the core's being worn.
 		to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 		return 0
-	if(!GLOB.technomancers.is_antagonist(owner_ref().mind) && !core.universal) // Now make sure the person using this is the actual antag. // Universal cores
+	if(!antag_technomancers().is_antagonist(owner_ref().mind) && !core.universal) // Now make sure the person using this is the actual antag. // Universal cores
 		to_chat(owner_ref(), span_danger("You can't seem to figure out how to make the machine work properly."))
 		return 0
 	return 1

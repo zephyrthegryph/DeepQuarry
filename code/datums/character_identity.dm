@@ -182,4 +182,3 @@ CAPABILITIES(/datum/character_identity)
 /// The dna of the body the character last lived in (a relation view).
 /datum/character_identity/proc/dna() as /datum/dna
 	return dna
-

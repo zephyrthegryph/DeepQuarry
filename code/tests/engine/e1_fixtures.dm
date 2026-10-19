@@ -106,6 +106,8 @@ CAPABILITIES(/obj/e1_fixture)
 	while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER)
 	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4))
 	entry_of("op", "toggle")
+	ref_many(nameof(e1_notes))
+	ref_many(nameof(e1_tags))
 
 LIST_STATE(/obj/e1_fixture, e1_notes)
 LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)

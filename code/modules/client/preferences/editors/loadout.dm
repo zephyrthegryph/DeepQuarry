@@ -1099,3 +1099,6 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 			before_action(preferences, user, action)
 			return ui_act_reset_tweaks(user, typed, preferences, null, action)
 	return ..()
+
+CAPABILITIES(/datum/ask_sequence/gear_tweak/loadout)
+	ref_one(nameof(preferences))

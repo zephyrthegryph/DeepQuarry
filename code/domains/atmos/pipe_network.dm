@@ -8,7 +8,7 @@
 	var/list/datum/pipeline/line_members
 
 	var/list/leaks = list() // ALLOW(instance_list): the network's leaking nodes: filled and cleared in place while the network runs
-	/// Runtime reservoirs connected through portable connectors: entity_handle(owner) -> volume. A handle, not the reservoir: a deleted reservoir stops resolving.
+	/// Runtime reservoirs connected through portable connectors: ref_token(owner) -> volume. A handle, not the reservoir: a deleted reservoir stops resolving.
 	var/list/external_air_volumes
 
 	/// TRUE while this network needs one reconciliation pass.
@@ -23,6 +23,7 @@ CAPABILITIES(/datum/pipe_network)
 	links(/datum/pipe_network::normal_members, /obj/machinery/atmospherics::network_memberships, a_many = TRUE, b_many = TRUE)
 	links(/datum/pipe_network::line_members, /datum/pipeline::network_memberships, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(air), /datum/gas_mixture)
+	ref_many(nameof(leaks))
 
 
 // Rust-owned networks refuse deletion.
@@ -36,7 +37,7 @@ CAPABILITIES(/datum/pipe_network)
 	// External reservoirs are real containers and must take their volume share
 	// with them before the fixed topology is split into independent port mixes.
 	for(var/owner_h in external_air_volumes?.Copy())
-		var/atom/movable/owner = resolve_handle(owner_h)
+		var/atom/movable/owner = resolve_token(owner_h)
 		if(owner)
 			detach_external_air(owner, FALSE)
 	// Sever ownership before calling into members.  Atmos topology destruction can
@@ -159,7 +160,7 @@ CAPABILITIES(/datum/pipe_network)
 		if(!external_air_volumes)
 			external_air_volumes = list()
 		for(var/owner_h in giver_external)
-			var/atom/movable/owner = resolve_handle(owner_h)
+			var/atom/movable/owner = resolve_token(owner_h)
 			if(!owner)
 				continue
 			external_air_volumes[owner_h] = giver_external[owner_h]
@@ -227,7 +228,7 @@ CAPABILITIES(/datum/pipe_network)
 	air.set_volume(max(base_volume + external_volume, 1))
 	if(!external_air_volumes)
 		external_air_volumes = list()
-	external_air_volumes[entity_handle(owner)] = external_volume
+	external_air_volumes[ref_token(owner)] = external_volume
 	owner.set_port_network_air(air)
 	if(!QDELETED(external_air) && !owner_of(external_air))
 		consumed(external_air, src)

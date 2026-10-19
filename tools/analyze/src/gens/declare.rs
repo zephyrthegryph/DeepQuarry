@@ -477,6 +477,7 @@ impl Generator for Declare {
             out.line("#endif");
         }
         keyed_targets(cx, out);
+        weak_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
         make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
@@ -575,6 +576,51 @@ fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
             out.line(crate::sem::gen::TEST_GUARD);
         }
         out.line(format!("	.[{}] = {}", ty, quote(var)));
+        if *test_only {
+            out.line("#endif");
+        }
+    }
+    out.blank();
+}
+
+/// The accessors of the weak references (`ref_one/ref_many(nameof(v), /type, weak = TRUE)`, relations proposal D5): the var holds a handle, so
+/// `v()` on the holder type resolves it (weak_get(): the datum or null, or the live members of a many). Generated, so no site writes its own.
+fn weak_accessors(cx: &GenCx, out: &mut GenOut) {
+    use std::cell::RefCell;
+    let rows: RefCell<BTreeMap<(String, String), (Option<String>, bool, bool)>> = RefCell::new(BTreeMap::new());
+    for m in cx.markers("CAPABILITIES") {
+        let Some(holder) = m.args.first().map(|t| t.trim().to_string()) else { continue };
+        let test_only = crate::sem::gen::test_only(&m.rel);
+        for a in m.args.iter().skip(1) {
+            for name in ["ref_one", "ref_many"] {
+                rewrite_calls(a, name, &|args| {
+                    let weak = args.iter().filter_map(|x| split_opt(x)).any(|(k, v)| k == "weak" && v.trim() == "TRUE");
+                    if !weak {
+                        return String::new();
+                    }
+                    let Some(var) = args.first().and_then(|v| nameof_inner(v.trim())) else { return String::new() };
+                    let ty = args.get(1).filter(|t| split_opt(t).is_none()).map(|t| t.trim().to_string()).filter(|t| t.starts_with('/'));
+                    rows.borrow_mut().insert((holder.clone(), var), (ty, name == "ref_many", test_only));
+                    String::new()
+                });
+            }
+        }
+    }
+    let rows = rows.into_inner();
+    if rows.is_empty() {
+        return;
+    }
+    out.doc("The weak references' accessors (ref_one/ref_many(weak = TRUE)): the var holds a handle; v() reads the live target, or null.");
+    for ((holder, var), (ty, many, test_only)) in &rows {
+        if *test_only {
+            out.line(crate::sem::gen::TEST_GUARD);
+        }
+        match (many, ty) {
+            (false, Some(t)) => out.line(format!("{}/proc/{}() as {}", holder, var, t)),
+            (true, _) => out.line(format!("{}/proc/{}() as /list", holder, var)),
+            _ => out.line(format!("{}/proc/{}()", holder, var)),
+        }
+        out.line(format!("\treturn weak_get(src, {})", quote(var)));
         if *test_only {
             out.line("#endif");
         }

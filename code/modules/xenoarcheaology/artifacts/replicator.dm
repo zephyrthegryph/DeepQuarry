@@ -156,6 +156,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 	op("insert", item(/obj/item), label("Insert"), needs(req(PROC_REF(insert_refusal))), then(PROC_REF(insert_op)))
+	ref_many(nameof(stored_materials))
 
 /// /obj/machinery/replicator's window data.
 /obj/machinery/replicator/ui_data(datum/act/eval/A)

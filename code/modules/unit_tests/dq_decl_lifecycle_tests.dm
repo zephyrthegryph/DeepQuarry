@@ -262,3 +262,6 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 	TEST_ASSERT(istype(light.cell, /obj/item/cell), "the floodlight's declared default cell")
 
 #undef REGISTRY_DQ_DECL_TEST
+
+CAPABILITIES(/datum/dq_decl_owned_child)
+	ref_one(nameof(owner_ref))

@@ -39,7 +39,7 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 
 /// One customer's payment, set aside for one op: where it goes and what it is for.
 /datum/reservation/credits
-	/// The account the sale is paid into, as a handle (entity_handle): the reservation is dropped, not deleted, so it must not pin it. Null handle: no payee.
+	/// The account the sale is paid into, as a handle (ref_token): the reservation is dropped, not deleted, so it must not pin it. Null handle: no payee.
 	var/payee_h
 	var/purpose
 	/// The machine sold through: named on the statement, the one the customer is seen paying.
@@ -89,8 +89,8 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 	R.actor = A.actor // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
 	var/obj/machinery/till = A.holder
 	if(istype(till))
-		R.till_h = entity_handle(till)
-		R.payee_h = entity_handle(till.credits_payee(A))
+		R.till_h = ref_token(till)
+		R.payee_h = ref_token(till.credits_payee(A))
 		R.purpose = till.credits_purpose(A)
 	LAZYADD(rx_of(source).reservations, R)
 	return R
@@ -107,8 +107,8 @@ MSG_DEF(credits/card_swiped, "You swipe a card through %T%.", "%U% swipes a card
 	if(R.amount <= 0)
 		return OP_OK
 	var/mob/user = R.actor
-	var/atom/till = resolve_handle(R.till_h)
-	var/datum/money_account/payee = resolve_handle(R.payee_h)
+	var/atom/till = resolve_token(R.till_h)
+	var/datum/money_account/payee = resolve_token(R.payee_h)
 	var/terminal = till ? "[till.name]" : "Terminal"
 	if(istype(R.holder, /obj/item/spacecash))
 		var/obj/item/spacecash/cash = R.holder

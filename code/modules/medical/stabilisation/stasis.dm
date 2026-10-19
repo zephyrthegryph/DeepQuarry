@@ -122,6 +122,7 @@
 CAPABILITIES(/datum/stasis_hold)
 	ref_one(nameof(holder), /mob/living)
 	factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")
+	ref_one(nameof(source))
 
 /datum/stasis_hold/proc/stasis_table(datum/act/eval/A)
 	return stasis_type ? body_effect_def(stasis_type)?.factors : null
@@ -195,6 +196,8 @@ CAPABILITIES(/datum/stasis_hold)
 
 // --- The stat ------------------------------------------------------------------------------------------------------------------
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stasis_rate_source)
 /// The source the stat clock_rate_bio holds its stasis under (one per mob, shared): a stasis bed's or a sleeper's hold on STAT_CLOCK_RATE_BIO
 /// (doc/rewrite/final_api.html section 16.4) reaches the body through it.
 /datum/stasis_rate_source

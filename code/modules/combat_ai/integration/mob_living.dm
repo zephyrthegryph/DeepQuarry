@@ -19,6 +19,8 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	ref_one(nameof(own_identity))
+	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
 	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
 	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
@@ -78,6 +80,8 @@ CAPABILITIES(/mob/living)
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(mousedrop_input))
 	drag_onto(PROC_REF(drop_input))
+	ref_one(nameof(autofire_gun))
+	ref_one(nameof(autofire_target))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

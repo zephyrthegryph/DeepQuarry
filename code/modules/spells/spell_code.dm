@@ -59,6 +59,7 @@ CAPABILITIES(/datum/spell)
 	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
 	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
 	op("cast_delay_statallowed", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY), silent_wait(), then(PROC_REF(cast_delayed)))
+	ref_one(nameof(holder))
 
 ///////////////////////
 ///SETUP AND PROCESS///

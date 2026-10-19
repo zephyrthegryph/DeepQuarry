@@ -237,7 +237,7 @@ CAPABILITIES(/datum/volume_panel)
 	set desc = "Allows you to adjust volume levels on the fly."
 
 	if(!volume_panel)
-		volume_panel = new /datum/volume_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
+		rel_set(src, nameof(volume_panel), new /datum/volume_panel(src))
 
 	volume_panel.tgui_interact(mob)
 

@@ -12,7 +12,7 @@
 	var/obj/machinery/computer/shuttle_control/arrivals/console = new(null)
 	TEST_ASSERT(test_machine_idle(console), "arrivals console still polls an idle shuttle")
 	qdel(console)
-	qdel(shuttle)
+	qdel(shuttle, TRUE) // shuttles are kept for the round unless forced
 
 /datum/unit_test/dq_shuttle_active_set_is_event_driven
 
@@ -36,7 +36,7 @@
 	TEST_ASSERT(shuttle.working, "launching shuttle did not open its step")
 	shuttle.set_process_state(IDLE_STATE)
 	TEST_ASSERT(!shuttle.working, "settled shuttle did not close its step")
-	qdel(shuttle)
+	qdel(shuttle, TRUE) // shuttles are kept for the round unless forced
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
 // a z-level this map no longer loads) used to survive init with a null

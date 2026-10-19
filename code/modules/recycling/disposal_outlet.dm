@@ -36,6 +36,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 	op("use_multitool", tool(TOOL_MULTITOOL), label("Set ejection strength"), wait(0), needs(req(PROC_REF(config_refusal))), asks(/datum/prompt/number/disposal_outlet_range, fields = list("default" = computed(PROC_REF(range_default))), step = "range"), then(PROC_REF(range_set)))
+	ref_one(nameof(target))
 
 /// Old attackby.
 /obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)

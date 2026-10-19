@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(hivemind_bank)
 
 	var/list/names = list()
 	for(var/datum/absorbed_dna/DNA in changeling.absorbed_dna)
-		if(!(entity_handle(DNA) in GLOB.hivemind_bank))
+		if(!(ref_token(DNA) in GLOB.hivemind_bank))
 			names += DNA.name
 
 	if(names.len <= 0)
@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(hivemind_bank)
 		return
 
 	changeling.chem_charges -= 10
-	GLOB.hivemind_bank += entity_handle(chosen_dna)
+	GLOB.hivemind_bank += ref_token(chosen_dna)
 	to_chat(src, span_notice("We channel the DNA of [S] to the air."))
 	feedback_add_details("changeling_powers","HU")
 	return TRUE
@@ -75,7 +75,7 @@ GLOBAL_LIST_EMPTY(hivemind_bank)
 
 	var/list/names = list()
 	for(var/bank_handle in GLOB.hivemind_bank.Copy())
-		var/datum/absorbed_dna/DNA = resolve_handle(bank_handle)
+		var/datum/absorbed_dna/DNA = resolve_token(bank_handle)
 		if(!DNA)
 			GLOB.hivemind_bank -= bank_handle // the DNA was deleted with its changeling
 			continue

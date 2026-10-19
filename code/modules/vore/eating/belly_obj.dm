@@ -292,6 +292,9 @@ CAPABILITIES(/obj/belly)
 	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
 	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
 	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
+	ref_many(nameof(items_preserved))
+	ref_one(nameof(ownegg))
+	ref_one(nameof(owner))
 
 // ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)
@@ -652,7 +655,7 @@ CAPABILITIES(/obj/belly)
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
-		M.set_tf_mob_holder(null)
+		rel_set(M, nameof(M.tf_mob_holder), null)
 
 	// If digested prey is also a pred... anyone inside their bellies gets moved up.
 	if(is_vore_predator(M))

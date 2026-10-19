@@ -70,6 +70,9 @@ MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 CAPABILITIES(/obj/item/sniper_rifle_part)
 	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
 	op("add_part", item(/obj/item/sniper_rifle_part), begins(PROC_REF(adding_text)), wait(3 SECONDS), then(PROC_REF(part_added)))
+	ref_one(nameof(barrel))
+	ref_one(nameof(stock))
+	ref_one(nameof(trigger_group))
 
 MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%."))
 

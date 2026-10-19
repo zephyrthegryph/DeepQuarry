@@ -278,6 +278,7 @@ CAPABILITIES(/obj/machinery/computer/stockexchange)
 	op("stocks_cycle_view", ui_act("stocks_cycle_view"), then(PROC_REF(ui_act_stocks_cycle_view)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(current_stock))
 
 ///// PROCS /////
 

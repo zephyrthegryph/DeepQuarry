@@ -44,3 +44,6 @@
 	TEST_ASSERT(!QDELETED(original_room), "deleting the private area preserves the actual test room")
 	TEST_ASSERT_EQUAL(get_area(T), original_room, "deleting the private area preserves the test floor's room")
 	TEST_ASSERT_EQUAL(GLOB.areas_by_type[original_room.type], original_lookup, "the real room's type lookup retains its original identity")
+
+CAPABILITIES(/obj/item/areaeditor/blueprints/interim_actor_probe)
+	ref_one(nameof(last_actor))

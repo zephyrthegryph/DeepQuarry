@@ -26,7 +26,7 @@
 	. = ..()
 	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
-		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
+		rel_set(machine(), nameof(/obj/machinery/mineral/processing_unit::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		return INITIALIZE_HINT_QDEL
@@ -272,8 +272,11 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /// arrives (on_input_entered()).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	links(/obj/machinery/mineral/processing_unit::console, /obj/machinery/mineral/processing_unit_console::machine) // the machine and its console name each other (D3)
 	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = all_of(nameof(active), not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
+	ref_one(nameof(input))
+	ref_one(nameof(output))
 
 /obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)
 

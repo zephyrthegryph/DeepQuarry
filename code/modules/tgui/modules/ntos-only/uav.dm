@@ -14,6 +14,8 @@ CAPABILITIES(/datum/tgui_module/uav)
 	op("del_uav", ui_act("del_uav", arg("del_uav", schema_text(4096))), then(PROC_REF(ui_act_del_uav)))
 	op("view_uav", ui_act("view_uav"), then(PROC_REF(ui_act_view_uav)))
 	op("power_uav", ui_act("power_uav"), then(PROC_REF(ui_act_power_uav)))
+	ref_one(nameof(current_uav))
+	ref_many(nameof(watchers))
 
 /// Re-tests the link to the watched UAV; a UAV that is gone or out of range is dropped (what ui_data() used to do on every few refreshes).
 /datum/tgui_module/uav/proc/signal_check(datum/act/timer/A)

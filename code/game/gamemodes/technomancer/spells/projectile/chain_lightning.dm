@@ -75,3 +75,6 @@
 
 			return 0
 	return 1
+
+CAPABILITIES(/obj/item/projectile/beam/chain_lightning)
+	ref_many(nameof(hit_mobs))

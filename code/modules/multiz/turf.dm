@@ -35,6 +35,8 @@
 
 GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdrop, new)
 
+/// A global singleton made once and never deleted in a round: a reference to one pins nothing (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/openspace_backdrop)
 /atom/movable/openspace_backdrop
 	name = "openspace_backdrop"
 

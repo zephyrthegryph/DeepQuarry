@@ -79,3 +79,7 @@
 		TEST_ASSERT_EQUAL(pad.papers, 50, "actual pickup tears off no sticky sheets")
 		TEST_ASSERT_NULL(pad.written_text, "actual pickup preserves the pad's blank text")
 		TEST_ASSERT_NULL(pad.written_by, "actual pickup invents no writer attribution")
+
+CAPABILITIES(/obj/interim_paper_supply_pickup_actor_click)
+	ref_one(nameof(destination))
+	ref_one(nameof(item))

@@ -110,8 +110,8 @@
 		return PROCESS_KILL
 
 	if(assailant.client)
-		assailant.client.screen -= hud
-		assailant.client.screen += hud
+		client_screen_remove(assailant.client, hud)
+		client_screen_add(assailant.client, hud)
 
 	if(state <= GRAB_AGGRESSIVE)
 		allow_upgrade = 1

@@ -39,3 +39,6 @@
 /// Accessor for the center var.
 /datum/event/wallrot/proc/center() as /turf/simulated/wall
 	return center
+
+CAPABILITIES(/datum/event/wallrot)
+	ref_one(nameof(center))

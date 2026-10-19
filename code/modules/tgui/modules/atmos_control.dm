@@ -15,6 +15,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 	interface("AtmosControl")
 	op("alarm", ui_act("alarm", arg("alarm", schema_ref(/obj/machinery/alarm))), then(PROC_REF(ui_act_alarm)))
 	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
+	ref_many(nameof(monitored_alarms))
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()

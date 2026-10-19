@@ -8,6 +8,7 @@
 CAPABILITIES(/datum/ticket_chat)
 	interface("TicketChat", state = nameof(GLOB.tgui_ticket_state))
 	op("send_msg", ui_act("send_msg", arg("msg", schema_text(4096))), then(PROC_REF(ui_act_send_msg)))
+	ref_one(nameof(T))
 
 /datum/ticket_chat/ui_opening(mob/user, datum/tgui/ui)
 	user.clear_alert("open ticket")

@@ -52,6 +52,7 @@ CAPABILITIES(/obj/singularity)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
 	param(nameof(energy), pos = 1, default = 50)
+	ref_one(nameof(target))
 
 /// Whether it is a singularity of its own (an energy ball's orbiting miniballs are not).
 /obj/singularity/proc/counts_as_singularity(datum/act/A)

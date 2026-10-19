@@ -90,7 +90,7 @@ GLOBAL_REAL_VAR(list/input_falling)
 			var/reply = call(holder, handler)(A)
 			A.release()
 			if(reply == INPUT_FALLTHROUGH) // the native override goes on to ..(): a parent's generated override must not run it again
-				input_falling = list(entity_handle(holder), input)
+				input_falling = list(ref_token(holder), input)
 				return FALSE
 			return TRUE
 		if(istext(handler))

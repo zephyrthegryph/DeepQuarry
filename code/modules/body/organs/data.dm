@@ -104,3 +104,6 @@
 	SETUP_SPECIES_CHECK("icodigi",SP.icodigi)
 
 #undef SETUP_SPECIES_CHECK
+
+CAPABILITIES(/datum/organ_data)
+	ref_one(nameof(species))

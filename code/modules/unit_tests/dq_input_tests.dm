@@ -317,6 +317,7 @@ CAPABILITIES(/obj/dq_input_probe)
 	op("probe_tk", tk(), then(PROC_REF(probe_tk)))
 	op("probe_alt", inputs(hand(), remote(), observer()), gesture(GESTURE_ALT), then(PROC_REF(probe_alt)))
 	op("probe_drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(probe_drag)))
+	ref_one(nameof(last_user))
 
 /obj/dq_input_probe/proc/probe_hand(datum/act/op/A)
 	note("attack_hand", A.actor)
@@ -347,6 +348,7 @@ CAPABILITIES(/obj/dq_input_probe)
 
 CAPABILITIES(/obj/item/dq_input_probe_item)
 	op("probe_self", in_hand(), then(PROC_REF(probe_self)))
+	ref_one(nameof(self_used_by))
 
 /obj/item/dq_input_probe_item/proc/probe_self(datum/act/op/A)
 	rel_set(src, nameof(self_used_by), A.actor)

@@ -2,6 +2,8 @@
 // They basically just handle loading, processing and saving specific forms
 // of persistent data like graffiti and round to round filth.
 
+/// A definition made once by its system at world setup and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/persistent)
 /datum/persistent
 	var/name = null
 	var/filename

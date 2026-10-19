@@ -22,6 +22,7 @@
 
 CAPABILITIES(/datum/TCS_Compiler)
 	owns_one(nameof(interpreter), /datum/n_Interpreter/TCS_Interpreter)
+	ref_one(nameof(Holder))
 
 /datum/TCS_Compiler/proc/Compile(code as message)
 	var/datum/n_scriptOptions/nS_Options/options = new()
@@ -323,3 +324,6 @@ CAPABILITIES(/datum/TCS_Compiler)
 /// The server that is running the code (a relation view).
 /datum/TCS_Compiler/proc/Holder() as /obj/machinery/telecomms/server
 	return Holder
+
+CAPABILITIES(/datum/n_Interpreter/TCS_Interpreter)
+	ref_one(nameof(Compiler))

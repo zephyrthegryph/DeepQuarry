@@ -132,3 +132,6 @@ CAPABILITIES(/datum/node/expression/value/variable)
 /// The value (a relation view).
 /datum/node/expression/value/reference/proc/value() as /datum
 	return value
+
+CAPABILITIES(/datum/node/expression/value/reference)
+	ref_one(nameof(value))

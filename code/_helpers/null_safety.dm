@@ -28,6 +28,8 @@
 		return value
 	return null_object_of(fallback_type)
 
+/// A stateless shared null object (null_object_of()), never deleted in a round.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/null_object)
 /// A do-nothing stand-in for "none". Subtype it per family (`/datum/species_blood/none`,
 /// `/datum/thermal_profile/default`), make the family's base type answer every question with its
 /// neutral value, and hand out the shared instance from null_object_of(). Never deleted.

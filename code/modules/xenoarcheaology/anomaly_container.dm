@@ -27,6 +27,7 @@
 CAPABILITIES(/obj/structure/anomaly_container)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("anomaly_container_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(anomaly_container_robot_release)))
+	ref_one(nameof(contained))
 
 /// Old attack_hand.
 /obj/structure/anomaly_container/proc/interaction_hand(datum/act/op/A)

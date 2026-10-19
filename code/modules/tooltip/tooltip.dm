@@ -43,6 +43,7 @@ CAPABILITIES(/datum/tooltip)
 	owns_one(nameof(tooltip_window), /datum/tgui_window)
 	interface("Tooltip", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
 	ui_shape(visible = num(), control = schema_text(), title = schema_text(), theme = schema_text(), cursor_params = schema_text(), screen_loc = schema_text(), view_w = num(), view_h = num(), revision = num(), tile_size = any)
+	ref_one(nameof(last_target))
 
 /datum/tooltip/New(client/C)
 	if(!C)

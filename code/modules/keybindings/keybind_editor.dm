@@ -20,7 +20,7 @@
 	if(!prefs)
 		return
 	if(!keybind_editor)
-		keybind_editor = new /datum/keybind_editor(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
+		rel_set(src, nameof(keybind_editor), new /datum/keybind_editor(src))
 	keybind_editor.tgui_interact(mob)
 
 CAPABILITIES(/datum/keybind_editor)

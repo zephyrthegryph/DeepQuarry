@@ -35,10 +35,10 @@
 			p.refresh_software_status()
 			if(p.hud_used.inventory_shown)
 				p.hud_used.inventory_shown = 0
-				p.client.screen -= p.hud_used.other
+				client_screen_remove(p.client, p.hud_used.other)
 			else
 				p.hud_used.inventory_shown = 1
-				p.client.screen += p.hud_used.other
+				client_screen_add(p.client, p.hud_used.other)
 
 		if("directives")
 			p.directives()
@@ -346,10 +346,10 @@
 
 	if(client)
 		client.screen = list()
-		client.screen += HUD.hud_elements
-		client.screen += HUD.adding
-		client.screen += HUD.hotkeybuttons
-		client.screen += client.void
+		client_screen_add(client, HUD.hud_elements)
+		client_screen_add(client, HUD.adding)
+		client_screen_add(client, HUD.hotkeybuttons)
+		client_screen_add(client, client.void)
 
 	HUD.inventory_shown = 0
 
@@ -384,26 +384,26 @@
 	if(hud_used.hud_shown)
 		hud_used.hud_shown = 0
 		if(hud_used.adding)
-			client.screen -= hud_used.adding
+			client_screen_remove(client, hud_used.adding)
 		if(hud_used.other)
-			client.screen -= hud_used.other
+			client_screen_remove(client, hud_used.other)
 		if(hud_used.hotkeybuttons)
-			client.screen -= hud_used.hotkeybuttons
+			client_screen_remove(client, hud_used.hotkeybuttons)
 		if(hud_used.other_important)
-			client.screen -= hud_used.other_important
+			client_screen_remove(client, hud_used.other_important)
 		if(hud_used.hud_elements)
-			client.screen -= hud_used.hud_elements
+			client_screen_remove(client, hud_used.hud_elements)
 
 	else
 		hud_used.hud_shown = 1
 		if(hud_used.adding)
-			client.screen += hud_used.adding
+			client_screen_add(client, hud_used.adding)
 		if(hud_used.other && hud_used.inventory_shown)
-			client.screen += hud_used.other
+			client_screen_add(client, hud_used.other)
 		if(hud_used.other_important)
-			client.screen += hud_used.other_important
+			client_screen_add(client, hud_used.other_important)
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
-			client.screen += hud_used.hotkeybuttons
+			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.healths)
 			client.screen |= hud_used?.healths
 		if(hud_used?.internals)
@@ -413,7 +413,7 @@
 		if(hud_used.hud_elements)
 			if(length(hud_used.hud_elements)) client.screen |= hud_used.hud_elements
 
-		client.screen += hud_used?.zone_sel				//This one is a special snowflake
+		client_screen_add(client, hud_used?.zone_sel)				//This one is a special snowflake
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()

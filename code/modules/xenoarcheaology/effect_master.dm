@@ -49,6 +49,8 @@ CAPABILITIES(/atom)
 	op("vv_auto_rename", topic_in(VV_TOPIC, VV_HK_AUTO_RENAME), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/text, fields = list("title" = "Automatic Rename", "question" = "What do you want to rename this to?", "rights" = R_VAREDIT, "timeout" = 0), step = "name"), then(PROC_REF(vv_topic_auto_rename)))
 	op("vv_edit_filters", topic_in(VV_TOPIC, VV_HK_EDIT_FILTERS), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_filters)))
 	op("vv_test_matrixes", topic_in(VV_TOPIC, VV_HK_TEST_MATRIXES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_test_matrixes)))
+	ref_one(nameof(armor_override))
+	ref_many(nameof(managed_vis_overlays))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master

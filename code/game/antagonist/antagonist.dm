@@ -90,6 +90,10 @@
 CAPABILITIES(/datum/antagonist)
 	owns_many(nameof(global_objectives), /datum/objective)
 	ref_one(nameof(leader))
+	ref_many(nameof(current_antagonists))
+	ref_many(nameof(faction_members))
+	ref_many(nameof(pending_antagonists))
+	ref_many(nameof(starting_locations))
 
 /datum/antagonist/New()
 	..()

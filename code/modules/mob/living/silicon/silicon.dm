@@ -426,10 +426,10 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 	to_chat(src, span_filter_warning("[A.alarm_name()]! ([(cameratext)? cameratext : "No Camera"])"))
 
 /mob/living/silicon/proc/is_traitor()
-	return mind && (mind in GLOB.traitors.current_antagonists)
+	return mind && (mind in antag_traitors().current_antagonists)
 
 /mob/living/silicon/proc/is_malf()
-	return mind && (mind in GLOB.malf.current_antagonists)
+	return mind && (mind in antag_malf().current_antagonists)
 
 /mob/living/silicon/proc/is_malf_or_traitor()
 	return is_traitor() || is_malf()

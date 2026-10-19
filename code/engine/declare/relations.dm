@@ -44,6 +44,9 @@
 			continue
 		switch(E.kind)
 			if(ENTRY_REF_ONE, ENTRY_REF_MANY)
+				if(E.args["weak"])
+					. += _own_entry(E.args["var"], list(OWNK_WEAK, null, null, null, E.kind == ENTRY_REF_MANY, null, null, null, E.args["type"]), FALSE, FALSE, FALSE)
+					continue
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
@@ -280,7 +283,18 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 		var/other = end == "a" ? "b" : "a"
 		var/var_name = E.args["[end]_var"]
 		var/back = E.args["[other]_var"]
-		if(T.entries[var_name])
+		var/list/existing = T.entries[var_name]
+		if(existing)
+			// The same link patched again (a table built before a late link) is fine; another entry on the var is a declaration error: a var is one kind of
+			// relation, and the pair would silently not be maintained at this end (doc/rewrite/proposals/relations.md D3).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_PARTNER] == back && (existing[OWNE_ARG] == RELS_PAIR || existing[OWNE_ARG] == RELS_SYMMETRIC))
+				continue
+			// A plain reference (an ancestor's ref_one/ref_many) that a subtype's links() makes one end of a pair is refined, not contradicted:
+			// the pair entry replaces it, so the partner end is maintained (a skip left it stale; a report broke every such subtype).
+			if(existing[OWNE_KIND] == OWNK_REL && existing[OWNE_ARG] == RELS_PLAIN && !existing[OWNE_EXTRA] && !!existing[OWNE_LIST] == !!E.args["[end]_many"])
+				existing = null
+		if(existing)
+			OWN_REPORT("[T.owner_type].[var_name] is an end of links([E.args["a_type"]]::[E.args["a_var"]], [E.args["b_type"]]::[E.args["b_var"]]) and is also declared [own_kind_name(existing[OWNE_KIND])]: one declaration per var")
 			continue
 		var/is_list = !!E.args["[end]_many"]
 		var/shape = RELS_PAIR
@@ -288,8 +302,11 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			shape = RELS_SYMMETRIC
 		var/on_deleted = E.args["[end]_on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 		var/list/entry = list(OWNK_REL, shape, back, null, is_list, null, on_deleted, E.args["[end]_on_unlink"], E.args["[other]_type"])
+		if(E.args["conflict"] == REFUSE && shape == RELS_PAIR)
+			entry.len = OWNE_CONFLICT
+			entry[OWNE_CONFLICT] = TRUE
 		T.entries[var_name] = entry
-		LAZYADD(T.ref_vars, var_name)
+		LAZYOR(T.ref_vars, var_name)
 		T.empty = FALSE
 
 /// The var name a target_key names: the plain name, or the var of nameof(/type::var) (the holder type has no such var of its own).
@@ -341,6 +358,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 			return _own_set(E, var_name, value)
 		if(OWNK_PROTO)
 			return proto_set(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_set(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_set(E, var_name, value, list_state)
@@ -355,6 +374,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return isnull(key) ? _own_add(E, var_name, value) : _own_put(E, var_name, key, value)
+		if(OWNK_WEAK)
+			return weak_add(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_add(E, var_name, value, key, list_state)
@@ -365,6 +386,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_remove(E, var_name, value)
+		if(OWNK_WEAK)
+			return weak_remove(E, var_name, value)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_remove(E, var_name, value, list_state)
@@ -376,6 +399,8 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_clear(E, var_name, policy)
+		if(OWNK_WEAK)
+			return weak_clear(E, var_name)
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_clear(E, var_name, list_state)

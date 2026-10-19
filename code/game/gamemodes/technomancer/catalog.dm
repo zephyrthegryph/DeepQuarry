@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 // Parameters: 1 (new_owner - mob that the book is trying to bind to)
 // Description: Links the catalog to hopefully the technomancer, so that only they can access it.
 /obj/item/technomancer_catalog/proc/bind_to_owner(mob/living/carbon/human/new_owner)
-	if(!owner && (GLOB.technomancers.is_antagonist(new_owner.mind) || universal)) // Universal catalogs
+	if(!owner && (antag_technomancers().is_antagonist(new_owner.mind) || universal)) // Universal catalogs
 		rel_set(src, nameof(owner), new_owner)
 
 // Proc: New()

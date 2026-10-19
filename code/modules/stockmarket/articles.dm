@@ -128,3 +128,6 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 /// the about this refers to (a relation view: null once it is deleted).
 /datum/article/proc/about() as /datum/stock
 	return about
+
+CAPABILITIES(/datum/article)
+	ref_one(nameof(about))

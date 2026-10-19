@@ -97,6 +97,7 @@
 CAPABILITIES(/obj/effect/overlay/aiholo)
 	op("aiholo_dissipate_hand", hand(), ungated(), stance(I_HURT), label("Dissipate"), then(PROC_REF(aiholo_dissipate_hand)))
 	op("aiholo_dissipate_item", item(/obj/item), stance(I_HURT), label("Dissipate"), then(PROC_REF(aiholo_dissipate_item)))
+	ref_one(nameof(master))
 
 /// Old attack_hand: a harmful touch dissipates the hologram, then the touch goes on.
 /obj/effect/overlay/aiholo/proc/aiholo_dissipate_hand(datum/act/op/A)
