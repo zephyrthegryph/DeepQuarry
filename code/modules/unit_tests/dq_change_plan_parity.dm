@@ -75,7 +75,7 @@
 	var/obj/machinery/floodlight/M = allocate(/obj/machinery/floodlight, test_floor())
 	refresh_flush()
 	var/list/presented = plan_presentation_reads(M)
-	log_test("narrows layers: [M.type] presentation reads [json_encode(presented)], derived exact [derived_is_exact(M)], activations [length(M.rx?.activations)]; [GLOB.plan_spared_writes] write(s) spared a redraw so far this round")
+	log_test("narrows layers: [M.type] presentation reads [json_encode(presented)], derived exact [derived_is_exact(M)], activations [length(M.rx?.activations)]; [GLOB.plan_spared_writes] write(s) spared a redraw so far this round; stat layer asked [GLOB.stat_input_queries] time(s), [GLOB.stat_input_noops] for nothing")
 	if(derived_is_exact(M))
 		return // a type with declared dependencies is narrowed by its derived table, not here
 	TEST_ASSERT(!isnull(presented), "the floodlight's layers and capabilities have known reads")

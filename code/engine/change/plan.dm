@@ -218,3 +218,29 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 
 #undef PLAN_SPARE
 #undef PLAN_KEEP
+
+// ---- the stat layer's input names (the stats fold, change_graph.md section 11 step 3) ----
+
+/// The stat input names from the generated, over-inclusive declared reads (generated_stat_input_reads_build(), `gen plans`): a var, the link
+/// and the var of "rel.var", the var of "sys:system.var". Called by GLOB.stat_input_keys' initializer, so it calls the generated builder itself
+/// rather than reading another global that may not be built yet.
+/proc/stat_input_names_build()
+	. = list()
+	for(var/raw in generated_stat_input_reads_build())
+		if(!istext(raw) || !length(raw))
+			continue
+		var/text = raw
+		if(findtext(text, "sys:") == 1)
+			text = copytext(text, 5)
+			var/dot_at = findtext(text, ".")
+			if(dot_at)
+				.[copytext(text, dot_at + 1)] = TRUE
+			continue
+		for(var/segment in splittext(text, "."))
+			if(length(segment))
+				.[segment] = TRUE
+
+/// Tracked writes state_changed() handed to the stat layer, and those the stat layer then found nothing for (no input, hop or system read of
+/// the var): the cost of the generated set being over-inclusive.
+GLOBAL_VAR_INIT(stat_input_queries, 0)
+GLOBAL_VAR_INIT(stat_input_noops, 0)

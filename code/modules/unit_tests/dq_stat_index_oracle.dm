@@ -3,7 +3,7 @@
 // stat_type_build() registers what a type's contributions and formulas read into the global indexes state_changed() asks: GLOB.stat_input_keys
 // (a var some stat reads), GLOB.stat_hop_index (a var read a relation away, by the reader type) and the system reads. The fold moves those rules
 // into `analyze gen plans`; this sweep records, for every creatable type, what the runtime builder registers, so the generated index can be proved
-// equal to it once before the runtime registration is deleted. Each shard writes data/stat-index/shard-<i>.tsv (type, kind, key).
+// equal to it once before the runtime registration is deleted. Each shard writes data/stat-index/shard-N.tsv (type, kind, key).
 //
 // Exhaustive and sharded (dq_focused_test.sh sweep_pins): it makes one fresh instance of every creatable type, like dq_fresh_look_default.
 
@@ -52,6 +52,32 @@
 		for(var/row in dq_stat_index_rows(I))
 			out += "[type]\t[row]"
 	dq_fresh_look_reset(T)
+	// Coverage: every name the builder registers is in the generated, over-inclusive GLOB.stat_input_keys (the registration is deleted).
+	var/list/missing = list()
+	for(var/row in out)
+		var/list/cols = splittext(row, "	")
+		if(length(cols) < 3 || cols[2] == "runtime")
+			continue
+		var/key = cols[3]
+		if(findtext(key, "capkey:") == 1 || findtext(key, "graph:") == 1)
+			continue // ids, not vars: their changes reach the stat layer by their own paths
+		var/list/names = list()
+		switch(cols[2])
+			if("sys")
+				names += copytext(key, findtext(key, ".") + 1)
+			if("hop")
+				var/list/segments = splittext(key, ".")
+				names += segments[1]
+				names += segments[length(segments)]
+			else
+				names += key
+		for(var/name in names)
+			if(!GLOB.stat_input_keys[name])
+				missing["[name] ([cols[1]] [cols[2]] [key])"] = TRUE
+	log_test("stat index oracle: generated input set [length(GLOB.stat_input_keys)] names, [length(missing)] missing")
+	TEST_ASSERT(!length(missing), "the generated stat input set misses what the builder registers:
+[jointext(missing, "
+")]")
 	var/path = "data/stat-index/shard-[GLOB.dq_test_shard_index].tsv"
 	fdel(path)
 	text2file(jointext(out, "\n"), path)

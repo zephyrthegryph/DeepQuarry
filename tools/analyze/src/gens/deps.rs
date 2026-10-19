@@ -259,6 +259,9 @@ pub struct DepsAnalysis {
     /// "<type>::hidden_verbs" / "<type>::granted_verbs" -> the holder vars (and hop chains' first segments) that proc reads, and whether its
     /// walk left a read unresolved: the verb outputs share the draw's refresh bit, so the plans need them before a write may skip a redraw.
     pub verb_reads: BTreeMap<String, (BTreeSet<String>, bool)>,
+    /// The var names contribution and condition handlers and STAT formulas read (a holder var, each link of a hop chain, a system var): the
+    /// over-inclusive stat input set `gen plans` writes takes them beside the declared names.
+    pub stat_reads: BTreeSet<String>,
     /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
     /// set `gens::auto_tracked` turns into tracked vars.
     pub reads: BTreeSet<(String, String)>,
@@ -304,6 +307,23 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     let mut reads: BTreeSet<(String, String)> = BTreeSet::new();
     let mut consumers: BTreeMap<String, Vec<Untracked>> = BTreeMap::new();
     let mut sampled: BTreeMap<String, BTreeSet<(String, u32)>> = BTreeMap::new();
+    let mut stat_reads: BTreeSet<String> = BTreeSet::new();
+    fn note_stat_reads(set: &ReadSet, into: &mut BTreeSet<String>) {
+        for r in &set.reads {
+            match r.kind {
+                ReadKind::System => {
+                    into.insert(r.var.clone());
+                }
+                ReadKind::Var | ReadKind::Accessor if r.root == "holder" => {
+                    into.insert(r.var.clone());
+                    for h in &r.hops {
+                        into.insert(h.trim_end_matches("[]").to_string());
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
     if let Some(an) = handlers::analyzed(tree) {
         // The first handler of each consumer decides (as `entry().or_insert_with` did); judging each is independent and runs on all cores,
         // the bookkeeping in order.
@@ -334,9 +354,13 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
         });
         for (a, (set, untracked)) in firsts.into_iter().zip(judged) {
-            match &set {
-                Some(set) => note_reads(set, &mut reads),
-                None => note_reads(a.closed.as_ref().expect("filtered above"), &mut reads),
+            let walked = match &set {
+                Some(set) => set,
+                None => a.closed.as_ref().expect("filtered above"),
+            };
+            note_reads(walked, &mut reads);
+            if matches!(a.h.role, crate::sem::hooks::Role::Contribution | crate::sem::hooks::Role::Condition) {
+                note_stat_reads(walked, &mut stat_reads);
             }
             consumers.insert(format!("{}::{}", a.on, a.h.proc), untracked);
         }
@@ -365,8 +389,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             let untracked = untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output);
             (set, untracked)
         });
-        for ((id, _), (set, untracked)) in work.into_iter().zip(walked) {
+        for ((id, h), (set, untracked)) in work.into_iter().zip(walked) {
             note_reads(&set, &mut reads);
+            if matches!(h.role, crate::sem::hooks::Role::Contribution | crate::sem::hooks::Role::Condition) {
+                note_stat_reads(&set, &mut stat_reads);
+            }
             consumers.insert(id, untracked);
         }
     }
@@ -391,6 +418,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         });
         for ((owner, name), (set, untracked)) in work.into_iter().zip(walked) {
             note_reads(&set, &mut reads);
+            note_stat_reads(&set, &mut stat_reads);
             if !set.sampled.is_empty() {
                 sampled.entry(format!("{}::{}", owner, name)).or_default().extend(set.sampled.iter().cloned());
             }
@@ -552,7 +580,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
     // `toggles()` gate flips it): it needs the setter whether or not a text write exists.
     candidates.extend(named.iter().filter(|(o, v)| super::auto_tracked::named_candidate(&eng, o, v)).cloned());
     candidates.extend(super::auto_tracked::called_candidates(tree, &sem, &eng, &outside_setters, &set_calls));
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, draw_links, verb_reads, reads, candidates, sampled })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, draw_hops, draw_links, verb_reads, stat_reads, reads, candidates, sampled })
 }
 
 struct Deps;

@@ -176,6 +176,44 @@ impl Generator for Plans {
         }
         let rows: Vec<(String, String)> = legacy.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_capability_legacy_outputs", &rows);
+        // The stat layer's input names (step 3 of the change graph, the stats fold): over-inclusive by design. Every nameof() and every
+        // `reads = list(...)` item of a declaration block can feed a contribution (entry-building procs such as heat_pump() take them as
+        // arguments, which no static rule can follow), so all of them are inputs; the runtime adds the holder reads of the generated handler
+        // rows (stat_input_names_build(), code/engine/change/plan.dm). dq_stat_index_oracle proves this covers every key the stat builder
+        // registers.
+        let decls = crate::sem::decls::Decls::get(cx.tree);
+        let mut inputs: BTreeSet<String> = BTreeSet::new();
+        for name in ["CAPABILITIES", crate::sem::decls::CAP_ENTRIES, "STAT"] {
+            for m in decls.markers_named(name) {
+                for v in deps::marker_named_vars(m) {
+                    inputs.insert(quote(&v));
+                }
+                for c in crate::pat!(r"\breads\s*=\s*list\(([^)]*)\)").captures_iter(&m.body) {
+                    for item in c.s(1).split(',') {
+                        let item = item.trim();
+                        if item.len() > 2 && item.starts_with('"') && item.ends_with('"') && !item[1..item.len() - 1].contains('[') {
+                            inputs.insert(item.to_string());
+                        } else if decls.defines.contains(item) {
+                            inputs.insert(item.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        for v in &an.stat_reads {
+            if key_ident(v) {
+                inputs.insert(quote(v));
+            }
+        }
+        out.blank();
+        out.doc("The stat layer's declared input names (raw: a var, \"rel.var\", \"sys:system.var\" or a define naming one), over-inclusive: every nameof()");
+        out.doc("and reads = list() item of a declaration block. stat_input_names_build() splits them into GLOB.stat_input_keys.");
+        out.line("/proc/generated_stat_input_reads_build()");
+        out.line("	. = list()");
+        for i in &inputs {
+            out.line(format!("	. += {}", i));
+        }
+        out.line("GLOBAL_LIST_INIT(generated_stat_input_reads, generated_stat_input_reads_build())");
     }
 }
 
