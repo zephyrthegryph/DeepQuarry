@@ -180,3 +180,72 @@ claim, local re-match, rebind, admitted-read recording) and initializer visits a
 write. Steps 2-3 therefore have to remove the per-unit claim/observe work itself (one lease-level
 transfer of the previous request's claims and recorded reads), not the version computation.
 
+
+## Migration plan: one query path, no patches (decided 2026-10-18)
+
+Goal (user, 2026-10-18): every build (cold, body edit, declaration edit, added or removed type, reparent,
+define change, worktree switch, test and bench variants) runs one path, the `dm-query` database driving
+each stage as queries with recorded dependencies, red/green revalidation and early cutoff. A cold build
+is "every input changed". The patch system (body patch, append patch, alternate patch bases, default
+patch, code-motion line map) is deleted, with its flags and tests, once the general path matches it.
+Gate per step: six-session structural equivalence plus `dmb-equiv` against a cold compile on the
+production tree for every edit kind; a byte-identical cold compile stays available for releases.
+Performance may not regress on any edit kind against today (body edit about 6 s through the body patch,
+added type 13-14 s, worktree switch); interleaved A/B.
+
+### What becomes which query
+
+| Query | Key | Reads | Replaces |
+|---|---|---|---|
+| `source(path)` (input) | canonical path | file bytes (watcher proofs) | prepared inputs, snapshot memo |
+| `project` (input) | manifest | `.dme` order, defines, variant flags, engine template, compiler policy | request config hashing |
+| `expansion(region)` | region | `source`, the macros it read | regions memo, frontend revision mode |
+| `file_decls(file)` | file | its expansions | declaration chunk contributions |
+| `tree_group(owner, name, kind)`, `type_node(path)` | the group / path | `file_decls` of contributing files, parent `type_node` | splice groups, `MetadataDependencies`, demand tokens |
+| `answer(read)` | one `ResolveQuery` | the `tree_group`/`type_node` queries it consults, pinned catalogs | `ReadDomain` versions, certificates, rosters |
+| `lowered(unit)` | unit identity | its body expansion, the `answer`s it read | lowering memo, candidate roster, local path |
+| `abi(unit)`, `initializer(owner, var)`, `class_record(owner)` | declaration | `answer`s read | ABI receipts, initializer receipts, class projection store |
+| `resources(region)` | region | resolved references, `source` of the files hit | resource demand/order memos |
+| `link` | program | `lowered` keys, previous `link` value (stable numbering) | `RetainedBindings`, assignment recipe |
+| `section(kind, slice)` | output section | `lowered`/`class_record` rows, `link` | composition rebuild, body/append patch splices |
+
+The value of `answer(read)` is the meaning itself, so early cutoff stops at the first unchanged answer:
+an added type re-runs the groups it touches and the answers that read them, and every unit whose answers
+are unchanged stays green without a certificate check. Revalidation must be parallel and cheap (the
+`Db` lock is one mutex today): step 2 shards it and verifies a whole level of dependants at once.
+
+### Order (each step lands with equivalence green and deletes what it supersedes)
+
+1. **Session database and inputs.** One `Db` per retained session; a request is a revision; inputs are
+   `source`, `project`, resources and the engine template, set from the existing input proofs. The full
+   path runs as one derived `build` query; a no-op request is green end to end. Deletes the
+   output-cache shortcut that duplicates it.
+2. **`Db` scale.** Sharded node table, lock-free green check, batch revalidation of dependants, value
+   eviction under the session budget. Benchmarked with 1M nodes.
+3. **Frontend queries.** `expansion`, `file_decls`, `type_node`, `tree_group` as queries computed by the
+   existing splice code (a group's value is its resolved rows). Deletes the frontend revision flag and
+   its non-revision path, the demand-token carry and selection pruning.
+4. **Answers and per-unit queries.** `answer`, `lowered`, `abi`, `initializer`, `class_record`; recorded
+   `ResolveQuery` reads become edges. Deletes domain versions and issued certificates in
+   `engine_host`, the unchanged-candidate rosters, lowering/initializer/ABI receipt admission and the
+   lease claim bookkeeping (the bulk lease transfer is not needed).
+5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
+   renumber by rewriting references in the affected units' words, never by relowering. Deletes
+   `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).
+6. **Section-wise composition.** `section` queries over the retained model; only changed sections are
+   rewritten, then encoded. Body edit must reach about 6 s here. Deletes `body_patch.rs`,
+   `body_patch_append.rs`, `body_patch_lines.rs`, patch slots and alternates in
+   `composition/generation.rs`, the default patch, `DMB_BODY_PATCH`, `DMB_PATCH_ALTERNATES` and the
+   patch tests, replaced by equivalence tests over every edit kind.
+7. **Resources as queries.** Deletes the resource order and demand memos.
+
+Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
+is recorded below with the patch for comparison.
+
+| Hot body edit (one body, pool-10, quiet machine) | wall | compilation stage |
+|---|---|---|
+| body patch | 6.8 s, 5.2 s | 1.4 s |
+| general path (`DMB_BODY_PATCH=0`) | 15.5 s, 15.0 s | 9.7 s (ABI 1.6, lowering 2.0-2.5, initializers 1.8-2.0, link 1.7-1.9, composition 1.6-2.0) |
+
+So the general path has to lose about 9 s of per-unit checking and whole-program link and composition
+on a body edit before step 6 can delete the patch; steps 4-6 are where that comes from.
