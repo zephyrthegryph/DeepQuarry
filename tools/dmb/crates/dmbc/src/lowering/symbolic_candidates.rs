@@ -52,7 +52,6 @@ fn proven_roster<'request, 'host, R: Resolver>(
         dm_ir::ReadDomain,
     >,
     admission: &'request RequestAdmission<'host, R>,
-    tree: Option<&dm_tree::SemanticTree>,
 ) -> Option<
     dm_session::UnchangedCandidates<
         'request,
@@ -69,28 +68,16 @@ fn proven_roster<'request, 'host, R: Resolver>(
         return None;
     }
     let host = admission.host();
+    let answer = |query: &dm_ir::ResolveQuery| host.answer_for_admission(query);
+    let answers = db.request_answers(&answer);
     let workers = std::thread::available_parallelism().map_or(8, |n| n.get()).min(8);
-    let proven = db.proven_unchanged(
-        store.variant_snapshot(),
-        &|query| host.answer_for_admission(query),
-        tree,
-        workers,
-    );
+    let proven = db.proven_unchanged(store.variant_snapshot(), &answers, workers);
     Some(dm_session::UnchangedCandidates::from_proven(admission, proven))
 }
 impl SessionSymbolicMemo {
     pub(in crate::lowering) fn candidate_roster<'request, 'host, R: Resolver>(
         &self,
         admission: &'request RequestAdmission<'host, R>,
-    ) -> Option<RequestCandidates<'request, 'host, R>> {
-        self.candidate_roster_in(admission, None)
-    }
-    /// As [`Self::candidate_roster`]; `tree` lets the query database skip answers the current
-    /// tree's classified declaration change cannot reach.
-    pub(in crate::lowering) fn candidate_roster_in<'request, 'host, R: Resolver>(
-        &self,
-        admission: &'request RequestAdmission<'host, R>,
-        tree: Option<&dm_tree::SemanticTree>,
     ) -> Option<RequestCandidates<'request, 'host, R>> {
         self.attempt.as_ref()?;
         let owner = self.publication.as_ref()?;
@@ -104,7 +91,7 @@ impl SessionSymbolicMemo {
             values: self
                 .query_db
                 .as_deref()
-                .and_then(|db| proven_roster(db, &owner.values, admission, tree))
+                .and_then(|db| proven_roster(db, &owner.values, admission))
                 .unwrap_or_else(|| owner.values.unchanged_candidate_roster(admission))
                 .split_by(CANDIDATE_SHARDS, candidate_shard)
                 .into_iter()

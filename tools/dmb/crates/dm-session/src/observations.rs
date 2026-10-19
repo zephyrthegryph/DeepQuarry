@@ -9,6 +9,13 @@ pub use certificate_delta::{CertificateDelta, CertificateState};
 pub use input_delta::{DependencyCoverage, InputDelta};
 pub use receipt::{Receipt, ReceiptIter, ReceiptStorageView};
 pub use receipt_admission::ReceiptAdmission;
+/// Current answers held outside the admission (a session query database's answer table).
+/// `Some(true)`: the current answer to `query` equals `recorded`; `Some(false)`: it differs;
+/// `None`: unknown, the admission compares the host's answer itself. An admission with an
+/// oracle never issues domain versions to certify a receipt.
+pub trait AnswerOracle<Q, A>: Sync {
+    fn unchanged(&self, query: &Q, recorded: &A) -> Option<bool>;
+}
 pub use receipt_pool::ReceiptGroupPool;
 use std::{
     collections::{BTreeMap, BTreeSet},

@@ -16,5 +16,5 @@ pub mod observations;
 pub use observations::{
     CertificateDelta, CertificateState, DependencyCoverage, InputDelta, Observation,
     ObservationHost, ObservationLedger, Receipt, ReceiptAdmission, ReceiptGroupPool,
-    ReceiptStorageView,
+    ReceiptStorageView, AnswerOracle,
 };

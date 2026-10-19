@@ -57,6 +57,8 @@ pub struct AbiArtifacts {
     pub(super) qualified_reused: AtomicUsize,
     pub(super) batch_rows_selected: AtomicUsize,
     pub(super) candidate_rows_collected: AtomicUsize,
+    /// The retained session's query database: semantic receipts are certified by its answers.
+    pub(crate) query_db: Option<Arc<crate::query_db::QueryDb>>,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
@@ -78,6 +80,7 @@ impl Default for AbiArtifacts {
             qualified_reused: AtomicUsize::new(0),
             batch_rows_selected: AtomicUsize::new(0),
             candidate_rows_collected: AtomicUsize::new(0),
+            query_db: None,
         }
     }
 }
@@ -90,6 +93,11 @@ impl AbiArtifacts {
             .prune_for_pressure(bytes, Self::compact_payload_charge);
         self.groups.prune();
         report
+    }
+    /// Semantic receipts of this store are certified by the session's query database.
+    pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
+        self.query_db = Some(Arc::clone(db));
+        self
     }
     pub(crate) fn with_engine_owner(engine_owner: Arc<crate::runner_host::EnginePayload>) -> Self {
         Self {

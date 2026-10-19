@@ -332,6 +332,10 @@ impl SessionSymbolicMemo {
             ..Self::default()
         }
     }
+    /// The session's query database, when this memo belongs to a retained session.
+    pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
+        self.query_db.as_ref()
+    }
     /// This memo's stored units are proven unchanged by the session's query database.
     pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
         self.query_db = Some(Arc::clone(db));

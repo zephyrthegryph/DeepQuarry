@@ -263,6 +263,10 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     executor: &dm_exec::BuildExecutor,
 ) -> Result<PreparedCold, ColdError> {
     let total = Instant::now();
+    // One answer table per request, shared by the ABI, initializer and lowering checks.
+    if let Some(db) = memo.and_then(|memo| memo.query_db()) {
+        db.begin_answers(&frontend.snapshot.tree);
+    }
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let roster =
         crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;

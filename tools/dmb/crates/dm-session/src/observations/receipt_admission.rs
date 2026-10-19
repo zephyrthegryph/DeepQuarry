@@ -31,6 +31,7 @@ impl<Q, A: Eq, D, H: ObservationHost<Q, A, D>> AdmittedLeaf<'_, Q, A, D, H> {
 /// identify strongly retained immutable leaf storage, not semantic pointer keys.
 pub struct ReceiptAdmission<'host, Q, A, D, H> {
     host: &'host H,
+    oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
     leaves: Mutex<BTreeMap<(usize, usize), Verdict<Q, A, D>>>,
     /// Read-mostly: every receipt check reads here from all workers at once.
     versions: RwLock<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
@@ -55,8 +56,16 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         !self.host.observes_answers() || self.host.supports_admitted_observation()
     }
     pub fn new(host: &'host H) -> Self {
+        Self::with_oracle(host, None)
+    }
+    /// Receipts are certified by `oracle`'s current answers instead of domain versions.
+    pub fn with_oracle(
+        host: &'host H,
+        oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
+    ) -> Self {
         Self {
             host,
+            oracle,
             leaves: Mutex::new(BTreeMap::new()),
             versions: RwLock::new(BTreeMap::new()),
             local: (0..LOCAL_SHARDS).map(|_| Mutex::new(BTreeMap::new())).collect(),
@@ -200,8 +209,13 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         static CERTIFY: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.certify");
         static ITERATE: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.iterate");
         static DELIVER: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.deliver");
+        // An observing host must see every answer it is asked for unless it accepts admitted leaves.
+        let oracle = self.oracle.filter(|_| self.allows_certificate_reuse());
         let certify_timer = CERTIFY.time();
-        let certified = self.certified_domains(versions);
+        let certified = match oracle {
+            Some(_) => Default::default(),
+            None => self.certified_domains(versions),
+        };
         drop(certify_timer);
         let mut changed = None;
         receipt.visit_storage(|view| {
@@ -210,13 +224,34 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             }
             if let ReceiptStorageView::Flat(leaf) = view {
                 let iterate_timer = ITERATE.time();
-                changed = super::first_changed_iter(
-                    leaf.iter(),
-                    &certified,
-                    |query| self.host.answer_for_admission(query),
-                    |current, previous| self.host.equivalent(current, previous),
-                )
-                .cloned();
+                changed = match oracle {
+                    Some(oracle) => leaf
+                        .iter()
+                        .find(|read| match oracle.unchanged(&read.query, &read.answer) {
+                            Some(unchanged) => !unchanged,
+                            // Not an answer the oracle holds (a producer input): its recorded
+                            // version certifies it, else its answer is compared.
+                            None => {
+                                let certified = versions.iter().any(|(domain, version)| {
+                                    *domain == read.domain
+                                        && self.current_version(domain) == Some(*version)
+                                });
+                                !certified
+                                    && !self.host.equivalent(
+                                        &self.host.answer_for_admission(&read.query),
+                                        &read.answer,
+                                    )
+                            }
+                        })
+                        .map(|read| read.query.clone()),
+                    None => super::first_changed_iter(
+                        leaf.iter(),
+                        &certified,
+                        |query| self.host.answer_for_admission(query),
+                        |current, previous| self.host.equivalent(current, previous),
+                    )
+                    .cloned(),
+                };
                 drop(iterate_timer);
                 if changed.is_none() {
                     let _deliver = DELIVER.time();

@@ -34,13 +34,10 @@ pub struct Revision {
 
 pub struct QueryDb {
     db: Db,
-    units_defined: std::sync::Once,
+    /// Current answers of every query a stored unit read (see `answer` below).
+    answers: Answers,
     /// Read lists of the stored lowering units, rebuilt only for new stored values.
     unit_proofs: UnitProofs,
-    /// Tree whose answers the `answer` inputs hold, and which of them were positive.
-    answered: Mutex<(Option<u128>, std::collections::HashMap<u128, bool>)>,
-    /// Revision at which the `project` input last changed.
-    project_changed_at: std::sync::atomic::AtomicU64,
     /// Sources of the previous revision by path: key, the prepared owner (held, so an unchanged
     /// capture is recognised by identity without rehashing) and its content hash.
     sources: Mutex<BTreeMap<PathBuf, (Key, Arc<PreparedSource>, u128)>>,
@@ -65,10 +62,8 @@ impl Default for QueryDb {
         });
         Self {
             db,
-            units_defined: std::sync::Once::new(),
+            answers: Answers::default(),
             unit_proofs: UnitProofs::default(),
-            answered: Mutex::new((None, Default::default())),
-            project_changed_at: std::sync::atomic::AtomicU64::new(u64::MAX),
             sources: Mutex::new(BTreeMap::new()),
         }
     }
@@ -84,6 +79,8 @@ impl QueryDb {
         project: u128,
     ) -> Result<Revision, QueryError> {
         let computed_before = self.db.stats(PROGRAM).computed;
+        // A new request: every answer is proven again (or carried) before it is used.
+        self.answers.next_request();
         let mut previous = self.sources.lock().unwrap_or_else(|error| error.into_inner());
         let mut current = BTreeMap::new();
         let mut changed = 0;
@@ -107,9 +104,8 @@ impl QueryDb {
             }
         }
         if self.db.set_input(PROJECT_KEY, (), project) {
-            self.project_changed_at
-                .store(self.db.revision(), std::sync::atomic::Ordering::SeqCst);
-            self.answered.lock().unwrap_or_else(|error| error.into_inner()).0 = None;
+            // Defines and engine policy reach answers outside the declaration change set.
+            self.answers.clear();
         }
         let keys: Vec<Key> = current.values().map(|(key, _, _)| *key).collect();
         let count = keys.len();
@@ -127,15 +123,70 @@ impl QueryDb {
     }
 }
 
-// --- Answers and stored-unit validity (migration step 4) -----------------------------------
+// --- Answers (migration step 4) ------------------------------------------------------------
 //
-// Every distinct `ResolveQuery` read by a stored unit is an input `answer(query)` whose hash is
-// the canonical encoding of the current answer. A stored unit is a derived `unit` query over the
-// answers it read, true when each still equals the recorded one. It reruns only when one of its
-// answers changed, so an unchanged unit is proven by revalidation, without certificates.
+// `answer(query)` is the current meaning of one `ResolveQuery` in this revision, kept as its
+// canonical hash. A stored unit (lowering record, initializer receipt, ABI receipt) is unchanged
+// exactly when every answer it recorded equals the current one; there are no domain versions or
+// certificates. Each answer is resolved at most once per request and shared by every stage. A
+// positive structural answer the tree's classified declaration change cannot reach is carried
+// from the tree it was last proven under without resolving it.
 
-const ANSWER: Kind = Kind(4);
-const UNIT: Kind = Kind(5);
+const ANSWER_SHARDS: usize = 64;
+
+#[derive(Clone, Copy)]
+struct AnswerSlot {
+    /// Request that last proved the slot.
+    request: u64,
+    /// Declaration identity of the tree it was proven under (0: unknown, never carried).
+    tree: u128,
+    hash: u128,
+    positive: bool,
+}
+#[derive(Default)]
+struct AnswerRequest {
+    request: u64,
+    tree: Option<Arc<dm_tree::SemanticTree>>,
+}
+struct Answers {
+    shards: Box<[Mutex<std::collections::HashMap<u128, AnswerSlot>>]>,
+    current: std::sync::RwLock<AnswerRequest>,
+    requests: std::sync::atomic::AtomicU64,
+    resolved: std::sync::atomic::AtomicUsize,
+    carried: std::sync::atomic::AtomicUsize,
+}
+impl Default for Answers {
+    fn default() -> Self {
+        Self {
+            shards: (0..ANSWER_SHARDS).map(|_| Mutex::new(Default::default())).collect(),
+            current: Default::default(),
+            requests: std::sync::atomic::AtomicU64::new(0),
+            resolved: Default::default(),
+            carried: Default::default(),
+        }
+    }
+}
+impl Answers {
+    fn next_request(&self) {
+        use std::sync::atomic::Ordering;
+        let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
+        *self.current.write().unwrap_or_else(|error| error.into_inner()) =
+            AnswerRequest { request, tree: None };
+        self.resolved.store(0, Ordering::Relaxed);
+        self.carried.store(0, Ordering::Relaxed);
+    }
+    fn clear(&self) {
+        for shard in self.shards.iter() {
+            shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
+        }
+    }
+    fn len(&self) -> usize {
+        self.shards
+            .iter()
+            .map(|shard| shard.lock().unwrap_or_else(|error| error.into_inner()).len())
+            .sum()
+    }
+}
 
 fn query_id(query: &dm_ir::ResolveQuery) -> u128 {
     use std::hash::{Hash, Hasher};
@@ -178,16 +229,87 @@ fn answer_reachable(
         _ => true,
     }
 }
-fn answer_hash(answer: &dm_ir::ResolvedMeaning) -> u128 {
+pub(crate) fn answer_hash(answer: &dm_ir::ResolvedMeaning) -> u128 {
     dm_query::hash_bytes(&answer.canonical_bytes())
 }
 
-/// A stored unit's recorded reads as (answer key, recorded answer hash), and its identity.
+/// One request's view of the answer table: the resolver that answers a query not yet proven in
+/// this request. Every stage of a request uses the same semantic resolver.
+pub(crate) struct RequestAnswers<'a> {
+    db: &'a QueryDb,
+    answer: &'a (dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync),
+}
+impl RequestAnswers<'_> {
+    /// The current answer hash of `query` (`id` is its [`query_id`]).
+    fn current(&self, id: u128, query: &dm_ir::ResolveQuery) -> u128 {
+        let answers = &self.db.answers;
+        let current = answers.current.read().unwrap_or_else(|error| error.into_inner());
+        let identity = current.tree.as_ref().map_or(0, |tree| tree.declaration_identity());
+        let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
+        {
+            let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+            if let Some(slot) = slots.get_mut(&id) {
+                if slot.request == current.request && slot.tree == identity {
+                    return slot.hash;
+                }
+                let carried = slot.positive
+                    && identity != 0
+                    && slot.tree != 0
+                    && current.tree.as_ref().is_some_and(|tree| {
+                        // The same declarations are an empty structural change.
+                        static UNCHANGED: std::sync::LazyLock<dm_tree::change_set::ChangeSince> =
+                            std::sync::LazyLock::new(|| dm_tree::change_set::ChangeSince {
+                                from_identity: 0,
+                                set: Default::default(),
+                            });
+                        if slot.tree == identity {
+                            return !answer_reachable(&UNCHANGED, tree, query);
+                        }
+                        tree.change_since().is_some_and(|change| {
+                            change.from_identity == slot.tree && !answer_reachable(change, tree, query)
+                        })
+                    });
+                if carried {
+                    slot.request = current.request;
+                    slot.tree = identity;
+                    answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    return slot.hash;
+                }
+            }
+        }
+        static RESOLVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.resolve");
+        let timer = RESOLVE.time();
+        let meaning = (self.answer)(query);
+        drop(timer);
+        let slot = AnswerSlot {
+            request: current.request,
+            tree: identity,
+            hash: answer_hash(&meaning),
+            positive: positive_answer(&meaning),
+        };
+        answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        shard.lock().unwrap_or_else(|error| error.into_inner()).insert(id, slot);
+        slot.hash
+    }
+    /// Whether the current answer to `query` has the recorded hash.
+    pub(crate) fn unchanged_hash(&self, query: &dm_ir::ResolveQuery, recorded: u128) -> bool {
+        self.current(query_id(query), query) == recorded
+    }
+}
+impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for RequestAnswers<'_> {
+    fn unchanged(
+        &self,
+        query: &dm_ir::ResolveQuery,
+        recorded: &dm_ir::ResolvedMeaning,
+    ) -> Option<bool> {
+        Some(self.unchanged_hash(query, answer_hash(recorded)))
+    }
+}
+
+/// A stored unit's recorded reads as (query id, query, recorded answer hash).
 struct UnitReads {
     _owner: Arc<dyn std::any::Any + Send + Sync>,
-    id: u128,
-    reads: Arc<Vec<(Key, u128)>>,
-    queries: Vec<dm_ir::ResolveQuery>,
+    reads: Vec<(u128, dm_ir::ResolveQuery, u128)>,
 }
 
 /// Read lists of stored units, by stored value address; the held owner keeps the address from
@@ -203,64 +325,60 @@ pub(crate) type Stored<T> = (
 );
 
 impl QueryDb {
-    fn define_units(&self) {
-        self.units_defined.call_once(|| {
-            self.db.define_input(ANSWER, "answer");
-            self.db.define(UNIT, "unit", |ctx, params| {
-                let reads = params
-                    .downcast_ref::<Vec<(Key, u128)>>()
-                    .ok_or(QueryError::Missing(Key::new(UNIT, 0)))?;
-                let mut unchanged = true;
-                for (key, recorded) in reads.iter() {
-                    if ctx.observe_input(*key)? != *recorded {
-                        unchanged = false;
-                        break;
-                    }
-                }
-                Ok(Outcome::new(unchanged, u128::from(unchanged), 1))
-            });
-        });
+    /// Bind this request's answers to `tree`: answers proven under an older tree are carried only
+    /// through its classified change. Called once per request (after [`Self::revise`] opened it)
+    /// before any stage reads; without it nothing is carried.
+    pub(crate) fn begin_answers(&self, tree: &Arc<dm_tree::SemanticTree>) {
+        let mut current = self.answers.current.write().unwrap_or_else(|error| error.into_inner());
+        current.tree = Some(Arc::clone(tree));
+    }
+    /// Open a request without source inputs (fixtures): every answer is proven again.
+    #[cfg(test)]
+    pub(crate) fn next_request(&self) {
+        self.answers.next_request();
+    }
+    /// This request's answers, resolving through `answer`.
+    pub(crate) fn request_answers<'a>(
+        &'a self,
+        answer: &'a (dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync),
+    ) -> RequestAnswers<'a> {
+        RequestAnswers { db: self, answer }
+    }
+    /// `(resolved, carried, held)` answers of the current request.
+    pub(crate) fn answer_counts(&self) -> (usize, usize, usize) {
+        use std::sync::atomic::Ordering::Relaxed;
+        (
+            self.answers.resolved.load(Relaxed),
+            self.answers.carried.load(Relaxed),
+            self.answers.len(),
+        )
     }
 
-    /// The stored units whose every recorded answer equals the current answer of `answer`.
+    /// The stored units whose every recorded answer equals the current one.
     pub(crate) fn proven_unchanged<T: Send + Sync + 'static>(
         &self,
         stored: Vec<Stored<T>>,
-        answer: &(dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning + Sync),
-        tree: Option<&dm_tree::SemanticTree>,
+        answers: &RequestAnswers<'_>,
         workers: usize,
     ) -> Vec<Stored<T>> {
-        self.define_units();
         let detail = std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1");
         let started = std::time::Instant::now();
-        // 1. Each unit's read list, built once per stored value.
+        // Each unit's read list, built once per stored value.
         let units: Vec<Arc<UnitReads>> = {
             let mut cache = self.unit_proofs.units.lock().unwrap_or_else(|error| error.into_inner());
             let mut live = std::collections::HashMap::with_capacity(stored.len());
             let units = stored
                 .iter()
-                .map(|(key, artifact)| {
+                .map(|(_, artifact)| {
                     let address = Arc::as_ptr(&artifact.value) as *const () as usize;
                     let unit = cache.remove(&address).unwrap_or_else(|| {
-                        let mut reads = Vec::new();
-                        let mut queries = Vec::new();
-                        let mut id = xxhash_rust::xxh3::Xxh3::new();
-                        id.update(key);
-                        for read in artifact.reads.iter() {
-                            let query = query_id(&read.query);
-                            let recorded = answer_hash(&read.answer);
-                            id.update(&query.to_le_bytes());
-                            id.update(&recorded.to_le_bytes());
-                            reads.push((Key::new(ANSWER, query), recorded));
-                            queries.push(read.query);
-                        }
+                        let reads = artifact
+                            .reads
+                            .iter()
+                            .map(|read| (query_id(&read.query), read.query, answer_hash(&read.answer)))
+                            .collect();
                         let owner: Arc<dyn std::any::Any + Send + Sync> = artifact.value.clone();
-                        Arc::new(UnitReads {
-                            _owner: owner,
-                            id: id.digest128(),
-                            reads: Arc::new(reads),
-                            queries,
-                        })
+                        Arc::new(UnitReads { _owner: owner, reads })
                     });
                     live.insert(address, Arc::clone(&unit));
                     unit
@@ -270,75 +388,7 @@ impl QueryDb {
             units
         };
         let after_units = started.elapsed();
-        // 2. Current answers of every distinct query.
-        let mut distinct: std::collections::HashMap<u128, dm_ir::ResolveQuery> =
-            std::collections::HashMap::new();
-        for unit in &units {
-            for ((key, _), query) in unit.reads.iter().zip(&unit.queries) {
-                distinct.entry(key.id).or_insert(*query);
-            }
-        }
-        let distinct: Vec<(u128, dm_ir::ResolveQuery)> = distinct.into_iter().collect();
         let threads = workers.clamp(1, 16);
-        let chunk = distinct.len().div_ceil(threads).max(1);
-        // A positive answer about an owner/name the declaration change cannot reach is still
-        // current: skip resolving it. Only when the inputs hold exactly the previous tree.
-        let mut answered = self.answered.lock().unwrap_or_else(|error| error.into_inner());
-        // The same declaration identity (a body-only edit reusing the tree) is an empty change.
-        let unchanged = dm_tree::change_set::ChangeSince {
-            from_identity: 0,
-            set: Default::default(),
-        };
-        let change = tree.and_then(|tree| {
-            if answered.0 == Some(tree.declaration_identity()) {
-                return Some((&unchanged, tree));
-            }
-            tree.change_since()
-                .filter(|change| answered.0 == Some(change.from_identity))
-                .map(|change| (change.as_ref(), tree))
-        });
-        let previous = &answered.1;
-        let skipped = std::sync::atomic::AtomicUsize::new(0);
-        let positives: Vec<Vec<(u128, bool)>> = std::thread::scope(|scope| {
-            let handles: Vec<_> = distinct
-                .chunks(chunk)
-                .map(|part| {
-                    let skipped = &skipped;
-                    scope.spawn(move || {
-                    let mut positives = Vec::with_capacity(part.len());
-                    static RESOLVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.resolve");
-                    static HASH: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.hash");
-                    static SET: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.set");
-                    for (id, query) in part {
-                        if let Some((change, tree)) = change {
-                            if previous.get(id) == Some(&true) && !answer_reachable(change, tree, query) {
-                                skipped.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                                positives.push((*id, true));
-                                continue;
-                            }
-                        }
-                        let timer = RESOLVE.time();
-                        let current = answer(query);
-                        drop(timer);
-                        let timer = HASH.time();
-                        let hash = answer_hash(&current);
-                        drop(timer);
-                        let _timer = SET.time();
-                        self.db.set_input(Key::new(ANSWER, *id), (), hash);
-                        positives.push((*id, positive_answer(&current)));
-                    }
-                    positives
-                    })
-                })
-                .collect();
-            handles.into_iter().map(|handle| handle.join().expect("answer worker")).collect()
-        });
-        let skipped = skipped.into_inner();
-        answered.0 = tree.map(|tree| tree.declaration_identity());
-        answered.1 = positives.into_iter().flatten().collect();
-        drop(answered);
-        let after_answers = started.elapsed();
-        // 3. Revalidate every unit.
         let chunk = units.len().div_ceil(threads).max(1);
         let verdicts: Vec<bool> = std::thread::scope(|scope| {
             let handles: Vec<_> = units
@@ -347,10 +397,9 @@ impl QueryDb {
                     scope.spawn(move || {
                         part.iter()
                             .map(|unit| {
-                                let params: Value = unit.reads.clone();
-                                self.db
-                                    .get::<bool>(Key::new(UNIT, unit.id), params)
-                                    .is_ok_and(|unchanged| *unchanged)
+                                unit.reads
+                                    .iter()
+                                    .all(|(id, query, recorded)| answers.current(*id, query) == *recorded)
                             })
                             .collect::<Vec<_>>()
                     })
@@ -367,16 +416,16 @@ impl QueryDb {
             .filter_map(|(item, unchanged)| unchanged.then_some(item))
             .collect();
         if detail {
+            let (resolved, carried, held) = self.answer_counts();
             eprintln!(
-                "detail query units: stored={} answers={} skipped={} proven={} reads={:.3}s answers={:.3}s units={:.3}s computed={}",
+                "detail query units: stored={} proven={} answers resolved={} carried={} held={} reads={:.3}s check={:.3}s",
                 units.len(),
-                distinct.len(),
-                skipped,
                 proven.len(),
+                resolved,
+                carried,
+                held,
                 after_units.as_secs_f64(),
-                (after_answers - after_units).as_secs_f64(),
-                (started.elapsed() - after_answers).as_secs_f64(),
-                self.db.stats(UNIT).computed,
+                (started.elapsed() - after_units).as_secs_f64(),
             );
         }
         proven

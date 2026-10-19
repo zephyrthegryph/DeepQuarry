@@ -239,6 +239,14 @@ are unchanged stays green without a certificate check. Revalidation must be para
    1.13-1.25 s -> 0.70-0.85 s steady state (first edit 2.7 s while read lists are built), wall
    unchanged within noise (13-15.6 s), peak +1 GB (705k answer inputs and read lists); dmb-equiv
    equivalent against a fresh compile for body and added-type edits.)
+   (Answer table landed, 2026-10-19: `QueryDb` holds one answer per `ResolveQuery`, proven at most once
+   per request (opened by `revise`, bound to the tree in `cold.rs`) and shared by every stage through
+   `dm_session::AnswerOracle`: a `ReceiptAdmission` with an oracle certifies receipts by answers and
+   issues no domain versions except for producer inputs. Lowering roster, initializer receipts and ABI
+   semantic receipts use it. Hot body edit, pool-10: init.value.visit 3.5 -> 0.8 CPU-s, admission.certify
+   3.2 CPU-s -> 0, domain versions issued 828k -> 575k, initializer stage 1.9 -> 1.3 s, lowering 2.3 ->
+   1.9 s, peak about 9.9 GB (the dm-query unit nodes are gone); dmb-equiv equivalent for body and
+   added-type edits. Remaining version issuers: the local lowering claim/rebind and admitted-leaf delivery.)
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).

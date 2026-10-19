@@ -151,6 +151,7 @@ fn query_database_proves_stored_units_by_their_recorded_answers() {
     assert!(first.publish_successful());
     drop(first);
     for (present, proven) in [(true, 1), (false, 0), (true, 1)] {
+        db.next_request();
         let next = owner.for_request(false);
         let host = AnswerHost { present, versions: AtomicUsize::new(0) };
         let admission = RequestAdmission::new(&host);

@@ -186,6 +186,10 @@ pub struct MemoExplanation {
     pub changed_query: Option<ResolveQuery>,
 }
 impl ProcedureMemo {
+    /// The retained session's query database (absent for one-shot builds and fixtures).
+    pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
+        self.symbolic.as_ref()?.query_db()
+    }
     pub(crate) fn completion_writer(&self) -> Option<DiskWriter> {
         (!self.read_only_disk && self.disk.is_some()).then(|| DiskWriter::from_memo(self))
     }
