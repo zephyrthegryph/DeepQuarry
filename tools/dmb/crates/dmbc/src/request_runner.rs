@@ -525,6 +525,7 @@ fn run_build_attempt(
         prior_outputs = Some(std::sync::Arc::clone(&hint.outputs));
     }
     let host_facts = if executable { host.host_facts() } else { None };
+    let query_db = host.retains_artifacts().then(|| std::sync::Arc::clone(host.query_db()));
     let (frontend_memo, execution, mut semantic_state) = host.execution(
         workers,
         expansion_memo
@@ -577,6 +578,16 @@ fn run_build_attempt(
                 inputs.as_ref().map(|inputs| inputs.stats()),
                 dmbc::input_snapshot::prepared::counters::take()
             );
+        }
+        if let (Some(inputs), Some(query_db)) = (&inputs, &query_db) {
+            let _timer = dm_profile::detail_timer("query_db.revise");
+            let mut configuration = format!("{project:?} {defines:?} ").into_bytes();
+            configuration.extend_from_slice(&memo_policy.to_le_bytes());
+            configuration.push(u8::from(bootstrap_catalog));
+            match query_db.revise(inputs.sources(), dm_query::hash_bytes(&configuration)) {
+                Ok(revision) => dmbc::daemon_eprintln!("native query db: {revision:?}"),
+                Err(error) => dmbc::daemon_eprintln!("native query db: {error:?}"),
+            }
         }
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
         let provider = match &inputs {

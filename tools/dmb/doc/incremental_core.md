@@ -218,8 +218,10 @@ are unchanged stays green without a certificate check. Revalidation must be para
 
 1. **Session database and inputs.** One `Db` per retained session; a request is a revision; inputs are
    `source`, `project`, resources and the engine template, set from the existing input proofs. The full
-   path runs as one derived `build` query; a no-op request is green end to end. Deletes the
-   output-cache shortcut that duplicates it.
+   path runs under a derived `program` query; a no-op request is green end to end. The on-disk
+   session record and pair store stay: they are the database's persistence across daemon restarts
+   until the database itself is persisted. (Landed: `query_db.rs`, about 0.1 s for 5.9k sources,
+   unchanged captures recognised by identity.)
 2. **`Db` scale.** Sharded node table, lock-free green check, batch revalidation of dependants, value
    eviction under the session budget. Benchmarked with 1M nodes.
 3. **Frontend queries.** `expansion`, `file_decls`, `type_node`, `tree_group` as queries computed by the

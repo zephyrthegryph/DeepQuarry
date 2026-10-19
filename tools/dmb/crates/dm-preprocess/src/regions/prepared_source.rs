@@ -232,6 +232,10 @@ impl PreparedSources {
     pub fn len(&self) -> usize {
         self.sources.len()
     }
+    /// Captured sources in canonical path order.
+    pub fn iter(&self) -> impl Iterator<Item = (&PathBuf, &Arc<PreparedSource>)> {
+        self.sources.iter()
+    }
     pub fn is_empty(&self) -> bool {
         self.sources.is_empty()
     }
