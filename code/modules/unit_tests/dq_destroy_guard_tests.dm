@@ -135,3 +135,27 @@ CAPABILITIES(/datum/guard_test_holder)
 	TEST_ASSERT(forced_box.insert_item(gone, null, TRUE), "setup: the second wrench goes in the second box")
 	qdel(forced_box, TRUE)
 	TEST_ASSERT(QDELETED(gone), "a forced delete deletes the contents: no litter")
+
+/// D10 at depth: a forced delete is forced all the way down. The box a forced-deleted backpack holds is deleted with its contents, not
+/// spilled; an ordinary destroy spills the box whole, its contents still in it.
+/datum/unit_test/dq_storage_forced_delete_reaches_nested_storage
+
+/datum/unit_test/dq_storage_forced_delete_reaches_nested_storage/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/storage/backpack/pack = new(T)
+	var/obj/item/storage/box/empty_guard_test/box = new(T)
+	var/obj/item/tool/wrench/kept = new(T)
+	TEST_ASSERT(box.insert_item(kept, null, TRUE), "setup: the wrench goes in the box")
+	TEST_ASSERT(pack.insert_item(box, null, TRUE), "setup: the box goes in the backpack")
+	qdel(pack)
+	TEST_ASSERT(!QDELETED(box) && box.loc == T, "an ordinary destroy spills the box onto the turf")
+	TEST_ASSERT(!QDELETED(kept) && kept.loc == box, "and the wrench stays in the box")
+	qdel(box, TRUE)
+	var/obj/item/storage/backpack/forced_pack = new(T)
+	var/obj/item/storage/box/empty_guard_test/inner = new(T)
+	var/obj/item/tool/wrench/gone = new(T)
+	TEST_ASSERT(inner.insert_item(gone, null, TRUE), "setup: the second wrench goes in the second box")
+	TEST_ASSERT(forced_pack.insert_item(inner, null, TRUE), "setup: the second box goes in the second backpack")
+	qdel(forced_pack, TRUE)
+	TEST_ASSERT(QDELETED(inner), "a forced delete deletes the nested box")
+	TEST_ASSERT(QDELETED(gone), "and what the nested box held: no litter at any depth")
