@@ -90,7 +90,7 @@
 	machine.default_part_replacement(null, R)
 	TEST_ASSERT_EQUAL(machine.get_part_rating(/obj/item/stock_parts/manipulator), 5, "RefreshParts must reflect the RPED-installed manipulator's real rating (5), not the board's default (1).")
 	qdel(machine)
-	qdel(R)
+	qdel(R, TRUE) // a cleanup: forced, so the swapped-out part in the RPED goes with it (admission.md D10)
 
 /// Deconstructing a mapped (never-materialized) machine yields the same real
 /// board and parts as before machine internals became data.

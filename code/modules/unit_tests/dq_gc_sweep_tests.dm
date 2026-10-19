@@ -38,6 +38,9 @@
 	var/turf/T = test_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the GC sweep")
 	TEST_ASSERT(dq_gc_sweep_controls(), "the reference count is exact")
+	// What lay on the floor before the sweep: the subjects are deleted the gameplay way (unforced), so their containers spill (admission.md
+	// D10), and that litter is cleaned up (forced) at the end.
+	var/list/floor_before = T.contents.Copy()
 	// ref text -> label, for every subject deleted. No var of this proc holds a subject past this line.
 	var/list/deleted = dq_gc_sweep_delete(dq_gc_sweep_build(T))
 	TEST_ASSERT(length(deleted) > 10, "the sweep built its subjects")
@@ -68,6 +71,14 @@
 
 	// A subject that reached the check queue with a reference besides the collector's own would hard-delete on the live server: none may.
 	TEST_ASSERT_EQUAL(dq_gc_sweep_judge(deleted), 0, "subjects of the sweep are still referenced after qdel()")
+	dq_gc_sweep_clean_litter(T, floor_before)
+
+/// Force-deletes the items the deleted subjects spilled onto `T` (anything not there before the sweep). Forced, so a spilled box takes its own
+/// contents, latent ones included, with it.
+/datum/unit_test/dq_gc_sweep/proc/dq_gc_sweep_clean_litter(turf/T, list/floor_before)
+	for(var/obj/item/litter in T)
+		if(!QDELETED(litter) && !(litter in floor_before))
+			qdel(litter, TRUE)
 
 /// The references the collector's `entry` has to its datum besides the entry itself and this proc's own var, or null if `entry` is not
 /// a subject of `deleted` (or its datum was freed and the ref reused). The count is taken before anything reads a var of the datum: once a

@@ -537,6 +537,10 @@ Storage and folder contents change behaviour: a destroyed backpack spills its it
 **Open (risk, not decided):** "litter on a forced delete". The destroy transaction has a `force` argument (`on_destroy(force)`); a cleanup or admin delete that spills a whole mob's loadout is the case the body-slot comment
 fears. Proposed: spill is the default for gameplay destruction; a forced cleanup follows the type's declared `on_forced_destroy` (default SPILL, mobs in cleanup contexts DELETE through the destroy transaction's existing `force` branch). Needs the lifecycle owner's call.
 
+**Built (D10 wave):** storage and folders SPILL; a forced delete DELETEs a SPILL slot's contents, and every destroy nested inside a forced one is
+forced too (`GLOB.destroy_transaction_forced_depth`), so a forced-deleted body takes its backpack and the box in it along, at any depth. A
+thing that survives its container is checked after that conversion: a forced delete still spills it.
+
 **"Survives container."** A lifecycle property of the **contained** type: a mind or a client is never spilled or deleted by a holder's destruction; it is resolved by its declared `TRANSFER` resolver
 (mind to ghost or MMI, `lifecycle.md` phase 0.5; `is_mind_slot` exists with no content user, `slot_def.dm:64`, `lifecycle.dm:21-79`). The declaration syntax belongs to `proposals/relations.md` D1
 (lifecycle on destroy for a swept var); this proposal only needs the slot half: a slot honours `survives_container` of what it holds before applying its own drop policy.

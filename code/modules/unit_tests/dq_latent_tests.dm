@@ -358,7 +358,7 @@
 	copy.make_contents_real()
 	TEST_ASSERT_EQUAL(dq_latent_census(box), "/obj/item/dq_containment_test=1;/obj/item/paper=1;/obj/item/pen=2", "used box contents")
 	TEST_ASSERT_EQUAL(dq_latent_census(copy), dq_latent_census(box), "the copy holds the same")
-	qdel(copy)
+	qdel(copy, TRUE) // a cleanup: forced, so the copy's contents go with it (admission.md D10)
 
 /// Picking a box up makes its contents real, so mob inventory code sees them.
 /datum/unit_test/dq_latent_storage_pickup
@@ -387,7 +387,7 @@
 	for(var/obj/item/storage/box/dq_latent_test/box in spilled)
 		box.make_contents_real()
 		TEST_ASSERT_EQUAL(dq_latent_census(box), "/obj/item/dq_containment_test=1;/obj/item/paper=1;/obj/item/pen=2", "each box holds its contents")
-		qdel(box)
+		qdel(box, TRUE) // a cleanup: forced, so the box's contents go with it (admission.md D10)
 
 // ---- Step 3: lights ----
 
@@ -494,7 +494,7 @@
 	copy.make_contents_real()
 	TEST_ASSERT_EQUAL(dq_latent_census(bottle), "/obj/item/reagent_containers/pill/antitox=14", "all fourteen pills")
 	TEST_ASSERT_EQUAL(dq_latent_census(copy), dq_latent_census(bottle), "the copy holds the same")
-	qdel(copy)
+	qdel(copy, TRUE) // a cleanup: forced, so the pills go with it (admission.md D10)
 
 /// Picking a bottle up makes its pills real, same as any other latent storage.
 /datum/unit_test/dq_latent_pill_bottle_pickup
@@ -520,4 +520,4 @@
 	TEST_ASSERT_EQUAL(master.loaded_pill_bottle, bottle, "the bottle loaded")
 	TEST_ASSERT(!bottle.has_latent(), "nothing latent once loaded")
 	TEST_ASSERT_EQUAL(length(bottle.contents), 14, "its pills are real")
-	qdel(master)
+	qdel(master, TRUE) // a cleanup: forced, so the loaded bottle and its pills go with it (admission.md D10)

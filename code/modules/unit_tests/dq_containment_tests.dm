@@ -370,12 +370,17 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	TEST_ASSERT(!QDELETED(a) && a.loc == T, "spill: the first item is on the floor")
 	TEST_ASSERT(!QDELETED(b) && b.loc == T, "spill: the second item is on the floor")
 
-	// Delete: a folder takes its pages with it.
+	// A destroyed folder drops its pages; a forced delete takes them with it (admission.md D10).
 	var/obj/item/folder/folder = allocate(/obj/item/folder, T)
 	var/obj/item/paper/page = allocate(/obj/item/paper, T)
 	TEST_ASSERT(move_into(folder, null, page), "paper goes in a folder")
 	qdel(folder)
-	TEST_ASSERT(QDELETED(page), "delete: the page went with the folder")
+	TEST_ASSERT(!QDELETED(page) && page.loc == T, "spill: the destroyed folder dropped its page")
+	var/obj/item/folder/forced_folder = allocate(/obj/item/folder, T)
+	var/obj/item/paper/forced_page = allocate(/obj/item/paper, T)
+	TEST_ASSERT(move_into(forced_folder, null, forced_page), "paper goes in the second folder")
+	qdel(forced_folder, TRUE)
+	TEST_ASSERT(QDELETED(forced_page), "forced delete: the page went with the folder")
 
 	// Spill into a holder: a box inside a closet spills its main slot into the
 	// closet (the closet allows drops), and transfers its pocket there too.
