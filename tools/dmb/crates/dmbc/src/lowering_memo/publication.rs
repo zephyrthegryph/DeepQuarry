@@ -74,7 +74,10 @@ impl ProcedureMemo {
             let _timer = dm_profile::detail_timer("memo.publish.symbolic");
             owner.publish_successful();
         }
-        if let Some(owner) = &self.initializers {
+        let carried = self
+            .initializer_stage_carried
+            .load(std::sync::atomic::Ordering::Relaxed);
+        if let Some(owner) = self.initializers.as_ref().filter(|_| !carried) {
             let _timer = dm_profile::detail_timer("memo.publish.initializers");
             owner.publish_successful();
         }
@@ -82,15 +85,15 @@ impl ProcedureMemo {
             let _timer = dm_profile::detail_timer("memo.publish.startup");
             owner.publish_successful();
         }
-        if let Some(owner) = &self.initializer_fragments {
+        if let Some(owner) = self.initializer_fragments.as_ref().filter(|_| !carried) {
             let _timer = dm_profile::detail_timer("memo.publish.initializer_fragments");
             owner.publish_successful();
         }
-        if let Some(owner) = &self.initializer_assemblies {
+        if let Some(owner) = self.initializer_assemblies.as_ref().filter(|_| !carried) {
             let _timer = dm_profile::detail_timer("memo.publish.initializer_assemblies");
             owner.publish_successful();
         }
-        if let Some(owner) = &self.class_projections {
+        if let Some(owner) = self.class_projections.as_ref().filter(|_| !carried) {
             let _timer = dm_profile::detail_timer("memo.publish.class_projections");
             owner.publish_successful();
         }
@@ -101,6 +104,9 @@ impl ProcedureMemo {
         if let Some(owner) = &self.link_bindings {
             let _timer = dm_profile::detail_timer("memo.publish.link_bindings");
             owner.publish_successful();
+        }
+        if let Some(stages) = &self.stages {
+            stages.publish_successful(self.query_db().and_then(|db| db.answers_version()));
         }
         let _timer = dm_profile::detail_timer("memo.publish.procedures");
         self.publish_procedures();
