@@ -38,7 +38,6 @@ pub(super) fn admitted(
     let Ok(roster) = frontend.callable_roster() else {
         return Admitted::default();
     };
-    store.store.enable_incidence();
     let collect_stage = dm_profile::stage("abi.sched.collect");
     let mut candidates = BTreeMap::new();
     let Ok(Some(current_roster)) = frontend.callable_abi_roster() else {
@@ -130,21 +129,9 @@ pub(super) fn admitted(
         boundaries,
         unit_members: index,
     };
-    // The incidence-qualified roster walks every retained receipt (~3 s on
-    // DeepQuarry); full per-row validation below costs a fraction of that.
-    // DMB_ABI_QUALIFIED_ROSTER=1 restores it.
-    let mut qualified = admission.filter(|_| store.qualified_roster).map(|request| {
-        store
-            .store
-            .unchanged_local_candidate_roster(request, Domain::Inputs)
-    });
-    dm_profile::request_mark("abi.sched.qualified_roster");
-    let mut qualified_ordinals = BTreeSet::new();
     let mut accepted = BTreeMap::new();
     let mut dirty = BTreeSet::new();
-    // The shared incidence subscription capability selects qualified candidates.
-    // Do not rebuild a second coarse domain-delta hint by walking every unit's
-    // version array. Uncovered rows still replay their exact current receipts.
+    // Every row takes full, independent validation against the session's current answers.
     // Decline reasons: no candidate, predecessor lookup, predecessor moved,
     // inherited admission, changed receipt read.
     let mut reasons = [0usize; 5];
@@ -207,98 +194,13 @@ pub(super) fn admitted(
             }
             Ok(candidate.clone())
     };
-    // Without the qualified roster every row takes full, independent
-    // validation: run it on the worker pool, then merge in roster order.
-    let parallel: Option<Vec<Result<Candidate, usize>>> = qualified.is_none().then(|| {
-        entries
-            .par_iter()
-            .enumerate()
-            .map(|(ordinal, entry)| validate_full(ordinal, entry))
-            .collect()
-    });
-    for (ordinal, entry) in entries.iter().enumerate() {
-        let identity = identity(entry.identity);
-        let key = abi_artifacts::observations::locator(identity);
-        let candidate = candidates.get(&key);
-        let valid = if let Some(results) = &parallel {
-            results[ordinal].clone()
-        } else { (|| {
-            let Some(candidate) = candidate else {
-                return Err(0);
-            };
-            let Ok(predecessor) = inherited.source_predecessor(entry.member) else {
-                return Err(1);
-            };
-            if predecessor != entry.predecessor {
-                return Err(2);
-            }
-            let context = AbiContext {
-                identity,
-                symbols: evaluator.symbols,
-                origin: &frontend.bodies[ordinal].source,
-                resolver: evaluator.resolver,
-            };
-            let structural_stage = dm_profile::stage("abi.sched.structural");
-            let structural = abi_artifacts::observations::structural_inputs(frontend, entry.member);
-            drop(structural_stage);
-            let current = Current {
-                inputs: Arc::new(Inputs {
-                    definition: structural.as_ref().map(|(definition, _)| *definition),
-                    ancestry: structural.map(|(_, ancestry)| ancestry),
-                    metadata: entry.metadata.clone(),
-                    predecessor: predecessor.and_then(|id| layouts.get(&id).cloned()),
-                    engine: batch.engine.clone(),
-                    boundary: abi_artifacts::observations::Boundary::capture(
-                        boundaries.get(&identity),
-                    ),
-                    resource,
-                    evaluation_resource: evaluator.resource_search_context,
-                    lexical,
-                    pure_policy: batch.pure_policy,
-                }),
-                resolver: evaluator.resolver,
-            };
-            // Only the independently issued local Inputs gap can be licensed.
-            // Every semantic/negative edge must have an unchanged qualified version.
-            if current.inputs.ancestry.is_some() && current.inputs.definition.is_some() {
-                for token in qualified
-                    .as_mut()
-                    .into_iter()
-                    .flat_map(|roster| roster.take(&key))
-                {
-                    if let Some((_, artifact)) = token.admit_local_current(
-                        |read| matches!((&read.query, &read.answer),
-                            (Query::Inputs, Answer::Inputs(old)) if old.as_ref() == current.inputs.as_ref()),
-                        |actual, value| actual == key.as_ref() && matches!(value.as_ref(), Artifact::Unit(unit)
-                            if Arc::ptr_eq(unit, &candidate.unit)),
-                        |_| {},
-                    ) {
-                        if let Artifact::Unit(unit) = artifact.value.as_ref() {
-                            qualified_ordinals.insert(ordinal);
-                            return Ok(Candidate { unit: unit.clone(), reads: artifact.reads, versions: artifact.versions });
-                        }
-                    }
-                }
-            }
-            // Unissued, observing or uncovered candidates retain full validation.
-            let inherited_stage = dm_profile::stage("abi.sched.inherited");
-            if inherited.inherited(&context).is_err() {
-                return Err(3);
-            }
-            drop(inherited_stage);
-            let _changed_stage = dm_profile::stage("abi.sched.changed");
-            if abi_artifacts::admission::changed(
-                &candidate.reads,
-                &candidate.versions,
-                &current,
-                admission,
-            )
-            .is_some()
-            {
-                return Err(4);
-            }
-            Ok(candidate.clone())
-        })() };
+    // Run validation on the worker pool, then merge in roster order.
+    let parallel: Vec<Result<Candidate, usize>> = entries
+        .par_iter()
+        .enumerate()
+        .map(|(ordinal, entry)| validate_full(ordinal, entry))
+        .collect();
+    for (ordinal, valid) in parallel.into_iter().enumerate() {
         match valid {
             Ok(candidate) => {
                 accepted.insert(ordinal, candidate);
@@ -346,7 +248,6 @@ pub(super) fn admitted(
                 ordinal,
                 Provisional {
                     candidate,
-                    qualified: qualified_ordinals.contains(&ordinal),
                     identity: identity(entries[ordinal].identity),
                     parents: [
                         tree.member(member).and_then(|node| node.previous),
@@ -371,9 +272,8 @@ pub(super) fn admitted(
     let accepted = accepted_now
         .into_iter()
         .map(|(ordinal, candidate)| {
-            let qualified = qualified_ordinals.contains(&ordinal);
             let identity = identity(entries[ordinal].identity);
-            (ordinal, finish(store, keys, capture, identity, &candidate, qualified))
+            (ordinal, finish(store, keys, capture, identity, &candidate))
         })
         .collect();
     Admitted {
@@ -394,7 +294,6 @@ pub(super) struct Admitted {
 
 pub(super) struct Provisional {
     candidate: Candidate,
-    qualified: bool,
     identity: UnitIdentity,
     /// Immediate (`previous`) and formal predecessor members.
     pub(super) parents: [Option<MemberId>; 2],
@@ -410,7 +309,7 @@ impl Provisional {
         store
             .provisional_reused
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        finish(store, keys, capture, self.identity, &self.candidate, self.qualified)
+        finish(store, keys, capture, self.identity, &self.candidate)
     }
 }
 
@@ -420,13 +319,7 @@ fn finish(
     capture: Option<&abi_artifacts::batch::Capture>,
     identity: UnitIdentity,
     candidate: &Candidate,
-    qualified: bool,
 ) -> crate::procedure_policy::PreparedUnit {
-    if qualified {
-        store
-            .qualified_reused
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    }
     let unit = &candidate.unit;
     keys.lock()
         .unwrap_or_else(|e| e.into_inner())

@@ -24,7 +24,6 @@ fn reads(answer: u32) -> crate::Receipt<u8, u32, u8> {
 #[test]
 fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
     let store = Store::shared_current_rosters();
-    store.enable_incidence();
     let shared_key: Arc<[u8]> = Arc::from(b"shared".as_slice());
     let private_key: Arc<[u8]> = Arc::from(b"private".as_slice());
     let owners: Vec<Arc<ArtifactPublication<Lease>>> = (0..6)
@@ -133,7 +132,6 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
 #[test]
 fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation() {
     let store = Store::shared_current_rosters();
-    store.enable_incidence();
     let owner: Arc<ArtifactPublication<Lease>> = Arc::new(ArtifactPublication::default());
     let key: Arc<[u8]> = Arc::from(b"same-key".as_slice());
     let ledger = reads(0);

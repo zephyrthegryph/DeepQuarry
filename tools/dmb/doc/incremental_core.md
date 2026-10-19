@@ -252,6 +252,10 @@ are unchanged stays green without a certificate check. Revalidation must be para
    Deleted: the lowering domain-version roster (`unchanged_candidate_roster`, its rejection diagnostic,
    `DMB_TIMINGS_DETAIL=2` roster dump) and the lowering store's incidence index; a memo without a
    query database offers no unchanged candidates. Hot body edit 11.3-12.4 s, peak 9.4 GB (was 9.8).
+   Then deleted: the ABI incidence-qualified roster (`DMB_ABI_QUALIFIED_ROSTER`) and with it the whole
+   generic incidence index of `dm_session::ObservedArtifactStore` (domain-version candidate rosters,
+   local-input certificates, `visit_affected`, incidence accounting); ABI rows are validated per unit
+   against the answer table on the worker pool. Session baseline 7.8 GB (was 8.0).
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).

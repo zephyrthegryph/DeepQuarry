@@ -1,23 +1,5 @@
 use super::*;
 use std::sync::atomic::AtomicUsize;
-struct Host {
-    versions: AtomicUsize,
-    answers: AtomicUsize,
-    current: u128,
-}
-impl Resolver for Host {
-    fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
-        self.answers.fetch_add(1, Ordering::Relaxed);
-        dm_ir::ResolvedMeaning::Presence(false)
-    }
-    fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
-        self.versions.fetch_add(1, Ordering::Relaxed);
-        Some(self.current)
-    }
-    fn observes_reads(&self) -> bool {
-        false
-    }
-}
 struct AnswerHost {
     present: bool,
     versions: AtomicUsize,

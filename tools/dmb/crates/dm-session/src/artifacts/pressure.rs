@@ -26,7 +26,6 @@ mod tests {
     #[test]
     fn pressure_prune_recharges_same_core_and_detaches_claims_outside_callback_lock() {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
-        store.enable_incidence();
         let lease = store.lease();
         let known = lease
             .insert_with_owned(Arc::from(b"known".as_slice()), vec![], vec![], 1, || {
@@ -98,7 +97,6 @@ mod tests {
     #[test]
     fn pressure_cap_rechecks_claims_added_during_unlocked_payload_charge() {
         let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
-        store.enable_incidence();
         let first = store.lease();
         let escaped = first
             .insert_with_owned(Arc::from(b"key".as_slice()), vec![], vec![], 1, || {
@@ -665,9 +663,6 @@ fn entry_index_charge<T, Q, A, D: Copy + Ord>(
             )
             .saturating_add(scalar_slot::<usize, (u128, usize)>());
     }
-    if let Some(incidence) = &state.incidence {
-        bytes = bytes.saturating_add(incidence.pressure_charge(pointer as u64));
-    }
     bytes
 }
 
@@ -688,9 +683,6 @@ fn detach<T, Q, A, D>(
         }
     }
     state.claims.remove(&pointer);
-    if let Some(index) = &mut state.incidence {
-        index.remove(pointer as u64);
-    }
     state.bytes = state.bytes.saturating_sub(entry.weight);
     Some(entry)
 }

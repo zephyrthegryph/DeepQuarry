@@ -149,24 +149,4 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
             .unwrap_or_else(|error| error.into_inner())
             .take_slots(&slots)
     }
-    #[cfg(test)]
-    pub(super) fn take(
-        &self,
-        key: &[u8],
-    ) -> Vec<
-        dm_session::UnchangedCandidate<
-            'request,
-            'host,
-            Record,
-            dm_ir::ResolveQuery,
-            dm_ir::ResolvedMeaning,
-            dm_ir::ReadDomain,
-            R,
-        >,
-    > {
-        self.shard_for(key)
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .take(key)
-    }
 }

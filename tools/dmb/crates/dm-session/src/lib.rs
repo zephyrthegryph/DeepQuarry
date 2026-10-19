@@ -4,7 +4,7 @@ mod artifacts;
 mod publication;
 mod reads;
 pub use artifacts::{
-    AcceptedArtifact, ArtifactIncidenceCounts, ArtifactStorageAccounting, ArtifactStorageCoverage,
+    AcceptedArtifact, ArtifactStorageAccounting, ArtifactStorageCoverage,
     ArtifactStorageExclusion, ArtifactStorageView, ArtifactStore, ObservedArtifact,
     ObservedArtifactLease, ObservedArtifactStorageView, ObservedArtifactStore, PressureAllocation,
     PressurePrune, UnchangedCandidate, UnchangedCandidates, DEFAULT_RESIDENT_BYTES,
