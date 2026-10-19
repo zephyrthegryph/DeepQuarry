@@ -64,6 +64,13 @@ pub(crate) fn materialize_members_with_roster(
     roster: Option<&MaterializedClassRoster>,
 ) -> Result<FieldRecords, ProjectionError> {
     let (tables, mobs) = domains;
+    let mut mm_lap = std::time::Instant::now();
+    let mut mm_mark = |label: &str| {
+        if dm_profile::detail_enabled() {
+            eprintln!("detail {label}: {:.3}s", mm_lap.elapsed().as_secs_f64());
+        }
+        mm_lap = std::time::Instant::now();
+    };
     use byond_dmb::{dmb::Variable, ids::NONE};
     struct Values<'a> {
         underlying: &'a dyn TypeValuePolicy,
@@ -236,6 +243,7 @@ pub(crate) fn materialize_members_with_roster(
         )
         .map_err(ProjectionError::Unsupported)?;
     }
+    mm_mark("mm.headers_done");
     let mut legacy_classes = HashMap::new();
     let mut declarations = HashMap::new();
     for (index, class) in dmb.classes.iter().enumerate() {
@@ -381,6 +389,7 @@ pub(crate) fn materialize_members_with_roster(
     }
     let mut shared_records = BTreeMap::new();
     let record_roster = projection.variable_record_roster();
+    mm_mark("mm.declarations_index");
     for record in record_roster.iter() {
         match record {
             VariableRecord::Field(index) => {
@@ -500,6 +509,7 @@ pub(crate) fn materialize_members_with_roster(
         dmb.variable_footer = list(dmb, footer)?;
     }
     let mut mob_settings = BTreeMap::<u32, Vec<(u8, u32)>>::new();
+    mm_mark("mm.records");
     for (field_index, field) in projection
         .fields
         .iter()
@@ -735,6 +745,7 @@ pub(crate) fn materialize_members_with_roster(
     }
     crate::mob_writer::apply_settings(dmb, &mob_settings).map_err(ProjectionError::Unsupported)?;
     let proc_lists = methods::procedure_membership(projection, tables)?;
+    mm_mark("mm.fields");
     for ((owner, verb), mut entries) in proc_lists {
         if owner == SymbolId::of("/world") {
             if verb {
@@ -769,6 +780,7 @@ pub(crate) fn materialize_members_with_roster(
             dmb.classes[class as usize].lists_and_procs[slot] = list(dmb, entries)?;
         }
     }
+    mm_mark("mm.proc_lists");
     Ok(FieldRecords(Arc::new(declarations)))
 }
 
