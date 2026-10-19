@@ -399,15 +399,17 @@ mod tests {
             resolver: &Host,
             ..evaluator
         };
-        assert!(construction_key(
+        // icon/file are reserved constructors regardless of the callable catalog (d65d5e8c59), so an opaque host
+        // no longer declines the key; its uncaptured resource operand is a failure, never a markerless runtime value.
+        let error = construction_key(
             &ast,
             "icon('probe.dmi',\"\")",
             &writes[1],
             &symbols,
-            &opaque
+            &opaque,
         )
-        .unwrap()
-        .is_none());
+        .unwrap_err();
+        assert!(error.contains("resource scalar is not captured"), "{error}");
     }
     impl dm_ir::Resolver for Host {
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {

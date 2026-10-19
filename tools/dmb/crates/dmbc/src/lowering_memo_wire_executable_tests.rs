@@ -137,7 +137,9 @@ fn domain_receipts_apply_to_anonymous_success_and_failure_wire() {
     };
     let original = host(Some(9), false);
     let recorder = crate::lowering_memo::RecordingResolver::new(&original);
-    recorder.resolve(ResolveQuery::GlobalVar(SymbolId::of("absent")));
+    // A persistent domain: global vars now live in the process-local owner scalar domain (9eb5b8f1d5), whose
+    // receipts never reach disk.
+    recorder.resolve(ResolveQuery::Resource(SymbolId::of("absent.asset")));
     let ast = dm_syntax::parse("/proc/p()\n    return 7\n");
     let code = dm_codegen_byond::compile_simple_proc_with_resolver(
         &ast.items[0].children,
