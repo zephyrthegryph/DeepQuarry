@@ -71,11 +71,11 @@
 	var/datum/property_def/size_def = dq_property_registry().defs[PROP_SIZE_CLASS]
 	TEST_ASSERT(size_def, "Actual registry defines size property")
 	TEST_ASSERT_EQUAL(size_def.unit, PROP_UNIT_SIZE_CLASS, "Limit uses actual declared numeric unit")
-	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_type(list(/obj/item/pen), because = "it doesn't take that"), req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), mode = ACCEPTANCE_REPLACE))
+	B.set_native_constraint(CONSTRAINT_HOLD, holder_takes(req_type(list(/obj/item/pen), because = "it doesn't take that"), req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS)))
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, wrong_type, null), "it doesn't take that", "First type refusal wins even when size also fails")
 	TEST_ASSERT_NULL(dq_constraint_refusal(B, CONSTRAINT_HOLD, exact, null), "Inclusive <= allows exact numeric threshold")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, above, null), "too big: size 3 > size 2", "Matching type exposes exact subsequent size reason")
-	B.set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_type(list(/obj/item/pen), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE))
+	B.set_native_constraint(CONSTRAINT_HOLD, holder_takes(req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS), req_type(list(/obj/item/pen), because = "it doesn't take that")))
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(B, CONSTRAINT_HOLD, wrong_type, null), "too big: size 3 > size 2", "Reversing declaration order changes first real refusal")
 
 /datum/unit_test/dq_acceptance_old_grouped/suit_storage/Run()
@@ -95,10 +95,10 @@
 	TEST_ASSERT(H.equip_to_slot(P, SLOT_ID_SUIT_STORAGE), "Exempt PDA really inserts")
 	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_SUIT_STORAGE), P, "Actual storage contains PDA")
 	TEST_ASSERT(H.unEquip(P), "Real PDA removal succeeds")
-	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, mode = ACCEPTANCE_EMPTY))
+	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, no_suit_storage())
 	TEST_ASSERT(!dq_constraint_present(S, CONSTRAINT_SUIT_STORAGE), "Explicit absent channel is genuinely absent")
 	TEST_ASSERT_EQUAL(P.equip_refusal(H, SLOT_ID_SUIT_STORAGE), "\the [S] has no suit storage", "Absent channel refuses before PDA exemption")
-	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, mode = ACCEPTANCE_EMPTY))
+	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, no_suit_storage())
 	TEST_ASSERT_EQUAL(P.equip_refusal(H, SLOT_ID_SUIT_STORAGE), "\the [S] has no suit storage", "Explicit empty also refuses before PDA exemption")
 
 /datum/unit_test/dq_acceptance_old_grouped/tags_and_real_slot/Run()
@@ -214,5 +214,5 @@
 	TEST_ASSERT_EQUAL(dq_native_equip_slot_reason(H, SLOT_ID_SUIT_STORAGE, wrong, H), "it doesn't take that", "Legacy callback preserves native exact rejection")
 	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(/obj/item/pen), because = "native override rejects this candidate"), mode = ACCEPTANCE_REPLACE))
 	TEST_ASSERT_EQUAL(dq_native_equip_slot_reason(H, SLOT_ID_SUIT_STORAGE, wrong, H), "native override rejects this candidate", "Actual evaluator reaches native override, not the coexisting legacy table")
-	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, acceptance(CONSTRAINT_SUIT_STORAGE, mode = ACCEPTANCE_EMPTY))
+	S.set_native_constraint(CONSTRAINT_SUIT_STORAGE, no_suit_storage())
 	TEST_ASSERT_EQUAL(dq_native_equip_slot_reason(H, SLOT_ID_SUIT_STORAGE, P, H), "\the [S] has no suit storage", "Explicit native absence still refuses before pen exemption")

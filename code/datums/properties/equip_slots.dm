@@ -72,15 +72,17 @@
 	if(who && reason)
 		to_chat(who, span_warning("You can't wear \the [src] there: [reason]."))
 
-/// The item's own constraints on its wearer: fit (except in pockets and suit storage) and equip, then the equip action's needs().
+/// The item's own constraints on its wearer: fit (except in pockets and suit storage), then the equip action's needs() (what an item type
+/// declares with extend(/datum/act/equip, needs(...)); the old equip channel, admission.md wave 8).
 /obj/item/proc/wearer_constraint_refusal(mob/M, slot, mob/actor = null)
 	if(slot != SLOT_ID_POCKET_L && slot != SLOT_ID_POCKET_R && slot != SLOT_ID_SUIT_STORAGE)
 		. = dq_constraint_refusal(src, CONSTRAINT_FIT, src, M, actor)
 		if(.)
 			return .
-	. = dq_constraint_refusal(src, CONSTRAINT_EQUIP, src, M, actor)
-	if(.)
-		return .
+	return equip_act_refusal(M, slot, actor)
+
+/// Why the item's own equip rules (its /datum/act/equip needs()) refuse `M` wearing it, as text, or null. `slot` may be null (any slot).
+/obj/item/proc/equip_act_refusal(mob/M, slot = null, mob/actor = null)
 	return reason_text(op_transfer_precheck(src, /datum/act/equip, M, slot, actor || M))
 
 /// The equip slots a human's species has.

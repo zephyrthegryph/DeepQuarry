@@ -11,7 +11,7 @@
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/apron)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,   	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds,   	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))
 	configure(item_worn(covers = 0))
 
 
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/clothing/suit/captunic/capjacket)
 	hoodtype = /obj/item/clothing/head/chaplain_hood
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/storage/bible), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/storage/bible))
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEHOLSTER))
 
 //Chaplain but spookier
@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/clothing/suit/nun)
 	icon_state = "chef"
 
 CAPABILITIES(/obj/item/clothing/suit/chef)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/material/knife), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/material/knife))
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/clothing/suit/security/navyhos)
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/det_trench)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/det_trench/grey)
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
 	armor_spec = "rad=20"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,   	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency,   	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */, because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,   	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency,   	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */)
 	configure(item_worn(covers = UPPER_TORSO))
 
 
@@ -262,7 +262,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/internalaffairs)
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/fr_jacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 
@@ -279,7 +279,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/fr_jacket)
 	blood_overlay_type = "armor"
 
 CAPABILITIES(/obj/item/clothing/suit/surgicalapron)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL, POCKET_SURGERY))
 	configure(item_worn(covers = CHEST))
 
 //Mime

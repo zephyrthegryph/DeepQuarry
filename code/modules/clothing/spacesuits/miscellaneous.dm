@@ -19,7 +19,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(flags = 0, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, min_pressure = 0, max_pressure = 2 * ONE_ATMOSPHERE, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/santahat)
 	slowdown = 0
 
 CAPABILITIES(/obj/item/clothing/suit/space/santa)
-	acceptance("suit_storage", req_type(list(/obj/item), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(/obj/item))
 	configure(item_worn(flags = 0))
 
 //Space pirate outfit
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))
 	configure(item_worn(hides = HIDETAIL|HIDEHOLSTER, covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 

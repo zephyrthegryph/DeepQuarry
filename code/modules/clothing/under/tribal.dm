@@ -77,5 +77,5 @@ CAPABILITIES(/obj/item/clothing/shoes/primitive)
 	icon_state = "tribal_sandals"
 
 CAPABILITIES(/obj/item/clothing/shoes/tribalwear)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(covers = 0))

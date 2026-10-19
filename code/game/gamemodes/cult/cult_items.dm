@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/clothing/head/culthood/magus)
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 
 CAPABILITIES(/obj/item/clothing/suit/cultrobes)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, hides = HIDEJUMPSUIT))
 	configure(item_protection(siemens = 0))
 
@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/cult)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))
 	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 0))
 

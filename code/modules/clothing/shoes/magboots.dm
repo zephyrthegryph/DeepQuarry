@@ -31,8 +31,8 @@
 		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
-	acceptance("equip", req_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
+	fits_anyone()
+	extend(/datum/act/equip, needs(req_overshoe_clearance()))
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
@@ -150,14 +150,14 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		. += "It would be hard to take these off without relaxing your grip first." // Theoretically this message should only be seen by the wearer when the claws are equipped.
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
-	acceptance("fit", fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_VOX)
 
 /proc/req_overshoe_clearance()
 	return part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list())
 
 
 /datum/entry/part/req/acceptance_leaf/overshoe_clearance/acceptance_reason(datum/act/op/A)
-	var/obj/item/clothing/shoes/magboots/I = A.target
+	var/obj/item/clothing/shoes/magboots/I = A.holder // the equip act runs on the item (admission.md wave 8)
 	return I.overshoe_clearance(A)
 
 

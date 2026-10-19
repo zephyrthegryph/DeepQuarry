@@ -40,7 +40,7 @@
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/gun/energy/lasertag), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/gun/energy/lasertag))
 	configure(item_worn(covers = UPPER_TORSO))
 	configure(item_protection(siemens = 3.0))
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
@@ -247,12 +247,12 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag/bluetag)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/gun/energy/lasertag/blue), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/gun/energy/lasertag/blue))
 
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag/redtag)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/gun/energy/lasertag/red), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/gun/energy/lasertag/red))
 
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag/omni)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list (/obj/item/gun/energy/lasertag/omni), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/gun/energy/lasertag/omni))

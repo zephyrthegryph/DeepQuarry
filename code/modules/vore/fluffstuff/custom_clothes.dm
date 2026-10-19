@@ -360,7 +360,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', hides = HIDETIE|HIDEHOLSTER))
 
@@ -381,7 +381,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
 
@@ -435,7 +435,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	//Variants
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
@@ -693,7 +693,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
 	//Bonnie Suit
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
 
@@ -729,8 +729,8 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
 	light_overlay = "helmet_light_dual"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("scree", because = MSG(custom_clothes/your_face_and_whoever_is)), mode = ACCEPTANCE_APPEND)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_wearer_ckey("scree", because = MSG(custom_clothes/your_face_and_whoever_is))))
+	fits_anyone()
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -752,8 +752,8 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("scree", because = MSG(custom_clothes/it_only_has_three_fingers)), mode = ACCEPTANCE_APPEND)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_wearer_ckey("scree", because = MSG(custom_clothes/it_only_has_three_fingers))))
+	fits_anyone()
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -803,7 +803,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screesp
 	item_state_slots = list(slot_r_hand_str = "alurane-vines_r", slot_l_hand_str = "alurane-vines_l")
 
 CAPABILITIES(/obj/item/clothing/under/fluff/aluranevines)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("natje", because = MSG(custom_clothes/wrapping_vines_around_yourself_is)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("natje", because = MSG(custom_clothes/wrapping_vines_around_yourself_is))))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -819,7 +819,7 @@ CAPABILITIES(/obj/item/clothing/under/fluff/aluranevines)
 	icon_state = "rig-hos"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -835,7 +835,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
 	icon_state = "rig0-hos"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -954,7 +954,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit))))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -977,8 +977,8 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit)), mode = ACCEPTANCE_APPEND)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit))))
+	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -1092,7 +1092,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/hairflowerpin)
 	blood_overlay_type = "coat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -1243,7 +1243,7 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 	icon_state = "chococoat"
 
 CAPABILITIES(/obj/item/clothing/suit/chococoat)
-	acceptance("suit_storage", req_type(list (/obj/item/material/knife), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list (/obj/item/material/knife))
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
@@ -1373,7 +1373,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
-	acceptance("suit_storage", req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL))
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = CHEST|ARMS))
 	configure(item_protection(permeability = 0.50))
 
@@ -1452,8 +1452,8 @@ CAPABILITIES(/obj/item/clothing/under/batter)
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("samanthafyre", because = MSG(custom_clothes/it_doesnt_fit)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_wearer_ckey("samanthafyre", because = MSG(custom_clothes/it_doesnt_fit))))
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -1680,7 +1680,7 @@ CAPABILITIES(/obj/item/storage/belt/security/fluff/kilano)
 	icon_state = "kilanogloves" //TODO: White sprite.
 
 CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
@@ -1694,7 +1694,7 @@ CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(cold_parts = FEET|LEGS, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET|LEGS, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -1719,7 +1719,7 @@ CAPABILITIES(/obj/item/clothing/accessory/storage/black_vest/fluff/kilano)
 	icon_state = "kilanodress"
 
 CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 
@@ -1734,7 +1734,7 @@ CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
 	icon_state = "kilanogloves"
 
 CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -1828,8 +1828,8 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/siren)
 	icon_state = "hasd_helm"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("silencedmp5a5", because = MSG(custom_clothes/the_faceplate_is_not_made)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_wearer_ckey("silencedmp5a5", because = MSG(custom_clothes/the_faceplate_is_not_made))))
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -1963,8 +1963,8 @@ CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff)
 	icon_state = "melanie_skeleton"
 
 CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(slime_fit)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, fits_category(FIT_NO_TESHARI), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req(PROC_REF(slime_fit))))
+	fits_as(FIT_NO_TESHARI)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
 
 
@@ -2067,7 +2067,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/azura)
 	icon_state = "zenahelmet"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/zena)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -2082,7 +2082,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/zena)
 	icon_state = "zenasuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/zena)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -2115,7 +2115,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flintlock)
 	sensor_mode = 3 // I'm a dumbass and forget these all the time please understand :(
 
 CAPABILITIES(/obj/item/clothing/under/skirt/outfit/fluff/nikki)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = MSG(custom_clothes/it_doesnt_fit)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("ryumi", because = MSG(custom_clothes/it_doesnt_fit))))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -2129,7 +2129,7 @@ CAPABILITIES(/obj/item/clothing/under/skirt/outfit/fluff/nikki)
 	icon_state = "nikki_boots"
 
 CAPABILITIES(/obj/item/clothing/shoes/fluff/nikki)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("ryumi", because = MSG(custom_clothes/they_dont_fit)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_wearer_ckey("ryumi", because = MSG(custom_clothes/they_dont_fit))))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -2429,7 +2429,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/memory_crown)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi', covers = CHEST|ARMS|LEGS))
 	op("purple_robes_toggle_verb", menu(), label("Toggle Eyes"), needs(carried()), then(PROC_REF(purple_robes_toggle_verb)))
 
@@ -2476,21 +2476,20 @@ CAPABILITIES(/obj/item/clothing/head/hood/purple_robes)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/kate)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/hasd)
-	acceptance(CONSTRAINT_EQUIP, req_wearer_ckey("silencedmp5a5", because = MSG(custom_clothes/this_suit_is_not_designed)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_wearer_ckey("silencedmp5a5", because = MSG(custom_clothes/this_suit_is_not_designed))))
+	fits_anyone()
 
 
 CAPABILITIES(/obj/item/clothing/head/fluff/avida)
 	on_notice(/datum/notice/item_equipped, then(PROC_REF(apply_equipped_ears)))
-	acceptance(CONSTRAINT_EQUIP, mode = ACCEPTANCE_APPEND)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie)
-	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = MSG(custom_clothes/you_need_a_wolf_taur)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = MSG(custom_clothes/you_need_a_wolf_taur))))
 
 
 /obj/item/clothing/head/fluff/avida/proc/apply_equipped_ears(datum/act/notice/A)

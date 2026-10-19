@@ -47,7 +47,7 @@
 
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc/odst)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/merc/odst)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	fits_anyone()

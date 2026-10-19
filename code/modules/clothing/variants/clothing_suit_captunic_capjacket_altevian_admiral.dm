@@ -9,7 +9,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_captunic_capjacket_altevian_admiral, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/suit/captunic/capjacket/altevian_admiral)
-	acceptance(CONSTRAINT_FIT, fits_category(FIT_ALTEVIAN), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_ALTEVIAN)
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

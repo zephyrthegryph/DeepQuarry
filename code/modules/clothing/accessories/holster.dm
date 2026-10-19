@@ -77,7 +77,7 @@ MSG_DEF_SELF(holster/not_holsterable, "it isn't made for a holster")
 
 //YW change start
 CAPABILITIES(/obj/item/clothing/accessory/holster)
-	acceptance("hold", req_tag(TAG_HOLSTERABLE, because = MSG(holster/not_holsterable)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_tag(TAG_HOLSTERABLE, because = MSG(holster/not_holsterable)))
 	op("holster_draw_hand", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), then(PROC_REF(holster_draw_hand)))
 	op("holster_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Holster item"), then(PROC_REF(holster_item)))
 	op("holster_quick_holster_verb", menu(), label("Holster"), needs(carried()), then(PROC_REF(holster_quick_holster_verb)))
@@ -192,7 +192,7 @@ CAPABILITIES(/obj/item/clothing/accessory/holster)
 	overlay_state = "sheath"
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
-	acceptance("hold", req_type(list(/obj/item/melee/rapier), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(/obj/item/melee/rapier), because = MSG(slot/doesnt_take)))
 
 	configure(item_worn(slots = SLOT_BELT|ACCESSORY_SLOT_WEAPON))
 
@@ -253,13 +253,13 @@ CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
 
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator)
-	acceptance("hold", req_type(list(/obj/item/gun/energy/kinetic_accelerator), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(/obj/item/gun/energy/kinetic_accelerator), because = MSG(slot/doesnt_take)))
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/waist/lanyard)
-	acceptance("hold", req_type(list(  /obj/item/melee/baton,  /obj/item/melee/classic_baton,  /obj/item/melee/telebaton  ), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(  /obj/item/melee/baton,  /obj/item/melee/classic_baton,  /obj/item/melee/telebaton  ), because = MSG(slot/doesnt_take)))
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier/swords)
-	acceptance("hold", req_type(list(  /obj/item/melee/rapier,  /obj/item/material/sword/katana,  /obj/item/toy/cultsword,  /obj/item/material/sword,  /obj/item/melee/cursedblade,  /obj/item/melee/cultblade  ), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(  /obj/item/melee/rapier,  /obj/item/material/sword/katana,  /obj/item/toy/cultsword,  /obj/item/material/sword,  /obj/item/melee/cursedblade,  /obj/item/melee/cultblade  ), because = MSG(slot/doesnt_take)))
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/case)
-	acceptance("hold", req_type(list(/obj/item/instrument), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	holder_takes(req_type(list(/obj/item/instrument), because = MSG(slot/doesnt_take)))

@@ -126,7 +126,7 @@ CAPABILITIES(/obj/item/clothing/suit/justice)
 	icon_state = "judge"
 
 CAPABILITIES(/obj/item/clothing/suit/judgerobe)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/apron/overalls)
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/clothing/suit/syndicatefake)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, covers = CHEST|ARMS|HANDS|LEGS|FEET))
 
 
@@ -402,7 +402,7 @@ CAPABILITIES(/obj/item/clothing/suit/ianshirt)
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
 
 CAPABILITIES(/obj/item/clothing/suit/leathercoat)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDEHOLSTER))
 
 
@@ -423,7 +423,7 @@ CAPABILITIES(/obj/item/clothing/suit/leathercoat/sec)
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
 
 CAPABILITIES(/obj/item/clothing/suit/neocoat)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDEHOLSTER))
 
 
@@ -453,7 +453,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/greyjacket)
 	blood_overlay_type = "coat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trench)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE))
 	configure(item_worn(hides = HIDEHOLSTER))
 
 
@@ -483,7 +483,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/peacoat)
 	blood_overlay_type = "coat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/duster)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))
 	configure(item_worn(hides = HIDEHOLSTER))
 
 
@@ -678,7 +678,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/white)
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/bomber)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
@@ -705,7 +705,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/bomber)
 	icon_state = "leather_jacket"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
@@ -750,7 +750,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket/nanotrasen/sl
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
@@ -785,7 +785,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen/slee
 	item_state_slots = list(slot_r_hand_str = "denim_jacket", slot_l_hand_str = "denim_jacket")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/denim_jacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
@@ -905,7 +905,7 @@ CAPABILITIES(/obj/item/clothing/suit/whitedress)
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 
 CAPABILITIES(/obj/item/clothing/suit/varsity)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDETIE|HIDEHOLSTER))
 
 
@@ -937,7 +937,7 @@ CAPABILITIES(/obj/item/clothing/suit/varsity)
 	item_state_slots = list(slot_r_hand_str = "suit_red", slot_l_hand_str = "suit_red")
 
 CAPABILITIES(/obj/item/clothing/suit/runner)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDEHOLSTER))
 
 /*
@@ -1051,7 +1051,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/light_jacket)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(hides = HIDEHOLSTER))
 	op("flannel_roll_sleeves_verb", menu(), label("Roll Sleeves"), needs(carried()), then(PROC_REF(flannel_roll_sleeves_verb)))
 	op("flannel_tuck_verb", menu(), label("Toggle Shirt Tucking"), needs(carried()), then(PROC_REF(flannel_tuck_verb)))
@@ -1247,7 +1247,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/drive)
 	icon_state = "motojacket"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/moto_jacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 
@@ -1269,7 +1269,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/punkvest)
 	item_state = "talon_pilotjacket"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
@@ -1319,7 +1319,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket/captain)
 	pixel_x = -16
 
 CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
-	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/drake, because = MSG(miscellaneous/you_need_a_drake_taur)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_taur_shape(/datum/sprite_accessory/tail/taur/drake, because = MSG(miscellaneous/you_need_a_drake_taur))))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 
@@ -1337,7 +1337,7 @@ CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
 	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
 
 CAPABILITIES(/obj/item/clothing/suit/barding)
-	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/horse, because = MSG(miscellaneous/you_need_a_horse_taur)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_taur_shape(/datum/sprite_accessory/tail/taur/horse, because = MSG(miscellaneous/you_need_a_horse_taur))))
 	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS))
 
 
@@ -1438,4 +1438,4 @@ CAPABILITIES(/obj/item/clothing/suit/taur/skirt)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/track)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))

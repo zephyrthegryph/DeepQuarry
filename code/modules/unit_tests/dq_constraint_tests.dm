@@ -405,7 +405,7 @@
 
 /datum/unit_test/dq_constraint_declarations_compile/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT, CONSTRAINT_EQUIP)
+	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT) // equip rules are the equip act's needs() now
 	var/checked = 0
 	// The types the parity fixture could create: every storage, suit and
 	// equip type that initializes cleanly on a bare floor.

@@ -6,7 +6,7 @@ MSG_DEF_SELF(armor/you_need_a_wolf_taur, "you need a wolf-taur half to wear this
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/armor)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 
@@ -142,7 +142,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/swat)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.6))
 
@@ -436,7 +436,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	w_class = ITEMSIZE_LARGE//bulky item
 
 CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
@@ -766,7 +766,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
@@ -895,13 +895,13 @@ CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/press)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet))
 
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur)
-	acceptance(CONSTRAINT_EQUIP, req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = MSG(armor/you_need_a_wolf_taur)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY)
+	extend(/datum/act/equip, needs(req_taur_shape(/datum/sprite_accessory/tail/taur/wolf, because = MSG(armor/you_need_a_wolf_taur))))
+	fits_anyone()
 
 
 CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier)
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(plate_clearance)), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req(PROC_REF(plate_clearance))))

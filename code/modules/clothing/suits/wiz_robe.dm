@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/clothing/head/wizard/cap)
 	wizard_garb = 1
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))
 	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.8))
 

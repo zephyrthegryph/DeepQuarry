@@ -109,9 +109,9 @@
 		list(/obj/item/clothing/suit/cultrobes, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/space/cult, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/technomancer, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/storage/backpack/saddlebag, CONSTRAINT_EQUIP),
-		list(/obj/item/storage/backpack/saddlebag_common, CONSTRAINT_EQUIP),
-		list(/obj/item/storage/internal, CONSTRAINT_EQUIP),
+		list(/obj/item/storage/backpack/saddlebag, "equip"),
+		list(/obj/item/storage/backpack/saddlebag_common, "equip"),
+		list(/obj/item/storage/internal, "equip"),
 		list(/obj/item/clothing/shoes, CONSTRAINT_FIT),
 		list(/obj/item/clothing/suit, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/shoes/magboots, CONSTRAINT_FIT),
@@ -142,14 +142,14 @@
 		list(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/armor, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/clothing/suit, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/suit, "equip"),
 		list(/obj/item/clothing/suit/armor/swat, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/vest, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/vest/press, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/armor/centcomm, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/clothing/suit/armor/pcarrier, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/suit/armor/pcarrier, "equip"),
 		list(/obj/item/clothing/suit/armor/vest/wolftaur, CONSTRAINT_FIT),
-		list(/obj/item/clothing/suit/armor/vest/wolftaur, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/suit/armor/vest/wolftaur, "equip"),
 		list(/obj/item/clothing/suit/armor/combat/crusader_explo, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/bio_suit, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/explorer, CONSTRAINT_SUIT_STORAGE),
@@ -204,8 +204,8 @@
 		list(/obj/item/clothing/suit/storage/snowsuit, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/toggle/moto_jacket, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/talonbomberjacket, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/clothing/suit/drake_cloak, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/suit/barding, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/suit/drake_cloak, "equip"),
+		list(/obj/item/clothing/suit/barding, "equip"),
 		list(/obj/item/clothing/suit/captunic/capjacket/altevian_admiral, CONSTRAINT_FIT),
 		list(/obj/item/clothing/suit/storage/solgov/service, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/storage/solgov/dress, CONSTRAINT_SUIT_STORAGE),
@@ -245,38 +245,38 @@
 		list(/obj/item/gripper/no_use/mech, CONSTRAINT_HOLD),
 		list(/obj/item/gripper/no_use/loader, CONSTRAINT_HOLD),
 		list(/obj/item/gripper/syndicate, CONSTRAINT_HOLD),
-		list(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/head/fluff/avida, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/under/fluff/aluranevines, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/head/helmet/space/fluff/joan, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/suit/space/fluff/joan, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm, "equip"),
+		list(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess, "equip"),
+		list(/obj/item/clothing/head/fluff/avida, "equip"),
+		list(/obj/item/clothing/under/fluff/aluranevines, "equip"),
+		list(/obj/item/clothing/head/helmet/space/fluff/joan, "equip"),
+		list(/obj/item/clothing/suit/space/fluff/joan, "equip"),
+		list(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, "equip"),
 		list(/obj/item/clothing/suit/space/void/engineering/kate, CONSTRAINT_FIT),
 		list(/obj/item/clothing/head/helmet/space/fluff/kate, CONSTRAINT_FIT),
-		list(/obj/item/clothing/head/helmet/space/fluff/kate, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/head/helmet/space/fluff/kate, "equip"),
 		list(/obj/item/clothing/under/dress/fluff/kilano, CONSTRAINT_FIT),
 		list(/obj/item/clothing/gloves/fluff/kilano/netra, CONSTRAINT_FIT),
 		list(/obj/item/clothing/shoes/boots/fluff/kilano, CONSTRAINT_FIT),
 		list(/obj/item/clothing/gloves/fluff/kilano, CONSTRAINT_FIT),
 		list(/obj/item/clothing/head/helmet/space/void/security/hasd, CONSTRAINT_FIT),
-		list(/obj/item/clothing/head/helmet/space/void/security/hasd, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/head/helmet/space/void/security/hasd, "equip"),
 		list(/obj/item/clothing/suit/space/void/security/hasd, CONSTRAINT_FIT),
-		list(/obj/item/clothing/suit/space/void/security/hasd, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/suit/space/void/security/hasd, "equip"),
 		list(/obj/item/clothing/under/fluff/slime_skeleton, CONSTRAINT_FIT),
-		list(/obj/item/clothing/under/fluff/slime_skeleton, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/under/fluff/slime_skeleton, "equip"),
 		list(/obj/item/clothing/head/helmet/space/void/engineering/zena, CONSTRAINT_FIT),
 		list(/obj/item/clothing/suit/space/void/engineering/zena, CONSTRAINT_FIT),
-		list(/obj/item/clothing/under/skirt/outfit/fluff/nikki, CONSTRAINT_EQUIP),
-		list(/obj/item/clothing/shoes/fluff/nikki, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/under/skirt/outfit/fluff/nikki, "equip"),
+		list(/obj/item/clothing/shoes/fluff/nikki, "equip"),
 		list(/obj/item/clothing/suit/storage/hooded/purple_robes, CONSTRAINT_SUIT_STORAGE),
 		list(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, CONSTRAINT_FIT),
 		list(/obj/item/melee/fluffstuff/wolfgirlsword, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/clothing/glasses/welding/tiemgogs, CONSTRAINT_EQUIP),
+		list(/obj/item/clothing/glasses/welding/tiemgogs, "equip"),
 		list(/obj/item/rig/nikki, CONSTRAINT_SUIT_STORAGE),
-		list(/obj/item/rig/nikki, CONSTRAINT_EQUIP),
-		list(/obj/item/remote_scene_tool/tally_necklace, CONSTRAINT_EQUIP),
-		list(/obj/item/oldtwohanded, CONSTRAINT_EQUIP),
+		list(/obj/item/rig/nikki, "equip"),
+		list(/obj/item/remote_scene_tool/tally_necklace, "equip"),
+		list(/obj/item/oldtwohanded, "equip"),
 	)
 	var/static/list/candidate_types = list(/obj/item/pen, /obj/item/tool/wrench, /obj/item/tank/emergency/oxygen, /obj/item/paper, /obj/item/photo, /obj/item/paper_bundle, /obj/item/stack/material/steel)
 	var/list/candidates = list()
@@ -310,8 +310,13 @@
 			own_constructed_contents(holder)
 			actual[path] = list()
 		var/list/rows = actual[path]
+		if(channel == "equip") // the old equip channel is the item's /datum/act/equip needs() (admission.md wave 8): same rows, asked through the act
+			var/equip_reason = holder.equip_act_refusal(wearer)
+			rows += "[channel] wearer=Human: [isnull(equip_reason) ? "ALLOW" : equip_reason]"
+			queries++
+			continue
 		TEST_ASSERT_NOTNULL(acceptance_plan_for(holder, channel), "[path] [channel] has its real compiled native declaration")
-		if(channel == CONSTRAINT_FIT || channel == CONSTRAINT_EQUIP)
+		if(channel == CONSTRAINT_FIT)
 			var/reason = dq_constraint_refusal(holder, channel, holder, wearer)
 			rows += "[channel] wearer=Human: [isnull(reason) ? "ALLOW" : reason]"
 			queries++
@@ -337,7 +342,7 @@
 /obj/item/dq_native_override_pin
 
 CAPABILITIES(/obj/item/dq_native_override_pin)
-	acceptance(CONSTRAINT_HOLD, req_type(list(/obj/item/pen), because = "it doesn't take that"), req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
+	holder_takes(req_type(list(/obj/item/pen), because = MSG(slot/doesnt_take)), req_max_size(ITEMSIZE_SMALL, PROP_UNIT_SIZE_CLASS))
 
 // Give the actual size provider a distinct declared type baseline, independent
 // of whether a live field is part of this type's saved-state schema.

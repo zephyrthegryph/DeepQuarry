@@ -719,3 +719,28 @@ names are hard-banned.
 pipeline is the item's own `equip_refusal(M, slot, go_over_slot, actor, authority)` (the global `dq_equip_refusal`/`dq_equip_item_refusal` are deleted and
 banned; the item part is `wearer_constraint_refusal()`), still ending in `/datum/act/equip`'s needs(). Moving the earlier steps into the act needs the act
 to carry `go_over_slot` and the authority, which the generated act arguments do not yet; that is left with wave 8's evaluator merge.
+
+**Waves 6 to 8 progress (18 Oct, admission lane).**
+- *Wave 6 landed:* cell charger, replicator, mech equipment, gun magazines, buckling, accessories, hoist/fulton/wires, cooking appliances,
+  xenobio processors, recyclers: each gate is a pure `*_refusal()` (null or a reason), its feedback the caller's. The old names
+  (`can_buckle_check`, `can_install_synth`, `can_attach_accessory`, `can_attach`, `can_insert`, `can_accept_item`) are hard-banned. `forced`
+  on the buckle procs is an authority (`GLOB.authority_forced`, SKIP_REQUIREMENTS). `forced`/`silent` are **not** word-banned: both are
+  ordinary words in 70+ unrelated signatures (`tool_start_check(silent =)`, `staleness_check_draw(forced =)`); the ban is the per-family
+  name ban above. RPED stays deferred (it needs `component_parts` as a ledger slot).
+- *Wave 7 landed in part:* whitelists and job availability answer reasons (`alien_whitelist_refusal`, `job_whitelist_refusal`,
+  `job_join_refusal`; the old names banned); six pass-flag `CanPass` overrides became the `passable(pass_flags =)` type trait read by
+  `/atom/CanPass`. Still open: the other 60 `CanPass` overrides (direction- or state-dependent, slow path by design), `Bumped`, the
+  `trans_to` reagent inserts (needs D2f quantity slots for beakers), and a lint for a flag-only `CanPass` body.
+- *Wave 8 landed in part:* the `req_acceptance_*` leaves lost their prefix (`req_type`, `req_tag`, `req_max_size`, ...; the old names
+  banned; the unused `cond.dm` `req_tag` merged into the leaf); the `CHECK()` and `FACT()` macros are deleted (no content used them; the
+  OM pipeline's spec lists stay as the engine form). **D10 deferred:** storage and folder contents still delete with their holder. Making
+  them spill is decided, but a worn backpack of a deleted mob would then litter the floor, which is D10's open "forced delete" question
+  for the lifecycle owner; it lands with that call.
+- *Wave 8, the interim channels:* the **equip** channel is gone: its 30 declarations are `extend(/datum/act/equip, needs(...))` (the equip act's
+  query now carries the wearer, so the leaves read `A.wearer` as before and the item as `A.holder`), asked through `equip_act_refusal()`;
+  `CONSTRAINT_EQUIP` is banned. **Decision (lane):** the other three channels move *content* first: `fits_as(FIT_X)`/`fits_anyone()`,
+  `suit_storage(list(...))`/`no_suit_storage()` and `holder_takes(reqs...)` replace every content `acceptance(` (282 declarations), and
+  `acceptance(` is banned outside the engine, the body-slot catalog (`equip_slots.dm`), the vore consents and tests. The constructors
+  still compile to the CONSTRAINT_* channels, so the evaluator swap (holsters and grippers as slot accepts, suit storage as a trait, D4c)
+  changes their bodies, not content. Picked over converting holsters/grippers to slots now because their holders are `owns_one` vars,
+  which the declared-slot path skips (`declared_slot_defs()`): that is engine work for the relations owner.

@@ -15,7 +15,7 @@
 /obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster
 
 CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
-	acceptance("equip", req_robotic_head(), mode = ACCEPTANCE_APPEND)
+	extend(/datum/act/equip, needs(req_robotic_head()))
 	configure(item_worn(flags = AIRTIGHT | FLEXIBLEMATERIAL | BLOCK_GAS_SMOKE_EFFECT))
 	ref_one(nameof(maskmaster))
 	every(1 SECOND, then(PROC_REF(synthfacemask_step)), when = nameof(maskmaster))
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
 
 
 /datum/entry/part/req/acceptance_leaf/robotic_head/acceptance_reason(datum/act/op/A)
-	var/obj/item/clothing/mask/synthfacemask/I = A.target
+	var/obj/item/clothing/mask/synthfacemask/I = A.holder // the equip act runs on the item (admission.md wave 8)
 	return I.robotic_head(A)
 
 
