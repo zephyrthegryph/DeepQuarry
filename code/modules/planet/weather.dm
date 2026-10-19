@@ -330,12 +330,10 @@ CAPABILITIES(/datum/weather)
 	mouse_opacity = 0
 	plane = PLANE_PLANETLIGHTING
 
-/atom/movable/weather_visuals/New(loc, start_icon, start_state)
-	if(start_icon)
-		icon = start_icon
-	if(start_state)
-		icon_state = start_state
-	..()
+// new(loc, icon, state): written before anything can read the atom, so building one inside a draw does not publish.
+CAPABILITIES(/atom/movable/weather_visuals)
+	param(nameof(icon), pos = 1)
+	param(nameof(icon_state), pos = 2)
 
 // This is for special effects for specific types of weather, such as lightning flashes in a storm.
 // It's a seperate object to allow the use of flick().
