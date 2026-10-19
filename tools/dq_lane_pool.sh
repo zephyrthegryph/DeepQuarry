@@ -71,7 +71,9 @@ wt_clean() { # <path>: no tracked change, no untracked non-ignored file, no merg
 	git -C "$wt" update-index -q --refresh >/dev/null 2>&1
 	gd="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
 	for m in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do [ -e "$gd/$m" ] && return 1; done
-	[ -z "$(git -C "$wt" status --porcelain --untracked-files=normal 2>/dev/null | head -n 1)" ]
+	# a CR-only difference (autocrlf / eol phantom: the index stat is stale but the content matches modulo CR) is not dirty
+	git -C "$wt" diff --quiet --ignore-cr-at-eol HEAD -- >/dev/null 2>&1 || return 1 # --quiet honors the flag; --name-only does not
+	[ -z "$(git -C "$wt" ls-files --others --exclude-standard 2>/dev/null | head -n 1)" ]
 }
 
 merged_into_master() { # <repo-or-wt> <ref>: every commit of ref is in origin/master
