@@ -3,8 +3,15 @@ use super::*;
 #[cfg(test)]
 #[path = "symbolic_candidates_tests.rs"]
 mod tests;
+/// Candidate shards. Every lookup routes by its unit's main-key prefix, so workers
+/// lowering different units no longer serialize on one roster lock.
+const CANDIDATE_SHARDS: usize = 64;
+fn candidate_shard(key: &[u8]) -> usize {
+    let prefix = &key[..key.len().min(crate::symbolic::shared_procedure_code::MAIN_KEY_BYTES)];
+    xxhash_rust::xxh3::xxh3_64(prefix) as usize % CANDIDATE_SHARDS
+}
 pub(in crate::lowering) struct RequestCandidates<'request, 'host, R> {
-    values: Mutex<
+    values: Vec<Mutex<
         dm_session::UnchangedCandidates<
             'request,
             'host,
@@ -14,7 +21,25 @@ pub(in crate::lowering) struct RequestCandidates<'request, 'host, R> {
             dm_ir::ReadDomain,
             R,
         >,
-    >,
+    >>,
+}
+impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
+    fn shard_for(
+        &self,
+        key: &[u8],
+    ) -> &Mutex<
+        dm_session::UnchangedCandidates<
+            'request,
+            'host,
+            Record,
+            dm_ir::ResolveQuery,
+            dm_ir::ResolvedMeaning,
+            dm_ir::ReadDomain,
+            R,
+        >,
+    > {
+        &self.values[candidate_shard(key)]
+    }
 }
 impl SessionSymbolicMemo {
     pub(in crate::lowering) fn candidate_roster<'request, 'host, R: Resolver>(
@@ -30,7 +55,13 @@ impl SessionSymbolicMemo {
             }
         }
         Some(RequestCandidates {
-            values: Mutex::new(owner.values.unchanged_candidate_roster(admission)),
+            values: owner
+                .values
+                .unchanged_candidate_roster(admission)
+                .split_by(CANDIDATE_SHARDS, candidate_shard)
+                .into_iter()
+                .map(Mutex::new)
+                .collect(),
         })
     }
 }
@@ -72,7 +103,7 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
         // Only this identity's body asks for these slots, so none is consumed
         // between the snapshot and the take; a vanished slot is simply skipped.
         let present = self
-            .values
+            .shard_for(&prefix)
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .prefix_values(&prefix);
@@ -86,7 +117,7 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
         if slots.is_empty() {
             return Vec::new();
         }
-        self.values
+        self.shard_for(&prefix)
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .take_slots(&slots)
@@ -106,7 +137,7 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
             R,
         >,
     > {
-        self.values
+        self.shard_for(key)
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .take(key)

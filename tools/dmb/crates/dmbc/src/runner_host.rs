@@ -78,6 +78,9 @@ pub struct BuildHost {
     /// a variant resumes its patch base instead of a full compile. Define-independent owners (engine payload, executors, the
     /// directive/expansion/fragment memo, prepared sources) are shared by all variants and never stashed.
     variants: std::collections::BTreeMap<EngineConfiguration, VariantState>,
+    /// The session's query database (doc/incremental_core.md). Shared by every variant: a variant
+    /// is another value of the `project` input.
+    query_db: Arc<crate::query_db::QueryDb>,
 }
 
 /// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
@@ -131,6 +134,7 @@ impl Default for BuildHost {
     fn default() -> Self {
         Self {
             session_id: next_session_id(),
+            query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,
@@ -256,6 +260,7 @@ impl BuildHost {
     pub fn one_shot() -> Self {
         Self {
             session_id: next_session_id(),
+            query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,
@@ -350,6 +355,9 @@ impl BuildHost {
     /// exact project/defines/bootstrap/engine bytes and clears this state on change.
     /// Moving the disk cache does not invalidate resident semantic values.
 
+    pub(crate) fn query_db(&self) -> &Arc<crate::query_db::QueryDb> {
+        &self.query_db
+    }
     pub(crate) fn retains_artifacts(&self) -> bool {
         self.memo.is_some()
     }

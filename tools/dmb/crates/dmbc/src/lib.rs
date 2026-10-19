@@ -8,6 +8,7 @@ pub(crate) mod artifact_publication_store;
 pub mod cache_maintenance;
 pub mod cli;
 pub mod compile_stats;
+pub mod query_db;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;

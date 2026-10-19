@@ -200,6 +200,9 @@ impl NativeInputs {
         })
     }
 
+    pub fn sources(&self) -> &PreparedSources {
+        &self.sources
+    }
     pub fn stats(&self) -> PreparationStats {
         self.stats
     }
