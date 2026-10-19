@@ -481,6 +481,11 @@ impl RetainedSemanticTree {
                     index.as_ref().expect("updated tree has its index"),
                     "update",
                 );
+            } else {
+                tree.change_since = Some(Arc::new(crate::change_set::ChangeSince {
+                    from_identity: prior_index.tree.identity,
+                    set: Default::default(),
+                }));
             }
             let publish_timer = dm_profile::detail_timer("tree.update.publish_selection_owner");
             tree.publish_selection_owner();
@@ -635,6 +640,12 @@ fn carry_demands(
         change.summary(),
         timer.elapsed().as_secs_f64()
     ));
+    current_tree.change_since = change.unclassified.is_none().then(|| {
+        Arc::new(crate::change_set::ChangeSince {
+            from_identity: previous_tree.identity,
+            set: change,
+        })
+    });
 }
 fn same_engine(previous: Option<&EngineSeed>, current: Option<&EngineSeed>) -> bool {
     match (previous, current) {

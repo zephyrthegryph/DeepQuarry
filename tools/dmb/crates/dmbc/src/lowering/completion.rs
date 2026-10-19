@@ -137,7 +137,7 @@ pub fn lower_frontend_completed_input_on_execution<
         .filter(|_| (symbolic || execution.selections_only) && !execution.capture_references)
         .and_then(|admission| {
             memo.and_then(|memo| memo.symbolic.as_ref())?
-                .candidate_roster(admission)
+                .candidate_roster_in(admission, Some(&frontend.snapshot.tree))
         });
     drop(candidate_timer);
     // A complete current body issuer is required alongside the already admitted

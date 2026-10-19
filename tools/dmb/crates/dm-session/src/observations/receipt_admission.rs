@@ -48,6 +48,9 @@ fn local_shard() -> usize {
 impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
 {
+    pub fn host(&self) -> &'host H {
+        self.host
+    }
     pub fn allows_certificate_reuse(&self) -> bool {
         !self.host.observes_answers() || self.host.supports_admitted_observation()
     }

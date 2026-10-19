@@ -445,7 +445,7 @@ impl BuildHost {
                     crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(owner)
                 },
             );
-            self.symbolic = Some((policy, Arc::new(symbolic)));
+            self.symbolic = Some((policy, Arc::new(symbolic.with_query_db(&self.query_db))));
         }
         if self
             .initializers

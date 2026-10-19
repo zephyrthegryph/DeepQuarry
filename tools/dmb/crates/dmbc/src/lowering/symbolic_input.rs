@@ -31,6 +31,8 @@ pub(crate) struct SessionSymbolicMemo {
     pruned: Arc<AtomicU64>,
     declines: Arc<DeclineCounters>,
     receipt_groups: Arc<receipt_groups::ProcedureGroups>,
+    /// The session's query database: proves stored units unchanged by their recorded answers.
+    query_db: Option<Arc<crate::query_db::QueryDb>>,
 }
 #[derive(Default)]
 struct DeclineCounters {
@@ -329,6 +331,11 @@ impl SessionSymbolicMemo {
             shared_code_pool: Some(Arc::clone(owner)),
             ..Self::default()
         }
+    }
+    /// This memo's stored units are proven unchanged by the session's query database.
+    pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
+        self.query_db = Some(Arc::clone(db));
+        self
     }
     /// Idle pressure release preserves code, observation ledgers and rebind
     /// recipes. Numeric link/wire answers are recreated on the next request.

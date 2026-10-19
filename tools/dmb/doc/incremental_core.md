@@ -231,6 +231,14 @@ are unchanged stays green without a certificate check. Revalidation must be para
    `ResolveQuery` reads become edges. Deletes domain versions and issued certificates in
    `engine_host`, the unchanged-candidate rosters, lowering/initializer/ABI receipt admission and the
    lease claim bookkeeping (the bulk lease transfer is not needed).
+   (Lowering roster landed: `answer(query)` inputs hashed from the current answer and one `unit`
+   query per stored lowering record over the answers it read, owned by the session's `QueryDb` and
+   held by `SessionSymbolicMemo`; it replaces the domain-version roster whenever a session database
+   exists. Positive structural answers the tree's classified `ChangeSince` cannot reach are carried
+   without resolving. Measured 2026-10-19, pool-10, hot body edit with `DMB_BODY_PATCH=0`: roster
+   1.13-1.25 s -> 0.70-0.85 s steady state (first edit 2.7 s while read lists are built), wall
+   unchanged within noise (13-15.6 s), peak +1 GB (705k answer inputs and read lists); dmb-equiv
+   equivalent against a fresh compile for body and added-type edits.)
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).

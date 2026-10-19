@@ -178,6 +178,30 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     }
 }
 
+impl<T, Q: Clone, A: Clone, D> ObservedArtifactStore<T, Q, A, D> {
+    /// Every stored variant with its recorded reads, for an external validity proof
+    /// (the query database's answer comparison). Strong owners are cloned under the
+    /// read lock; no host callback runs under it.
+    pub fn variant_snapshot(&self) -> Vec<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)> {
+        let state = self.state.read().unwrap_or_else(|e| e.into_inner());
+        state
+            .buckets
+            .values()
+            .flatten()
+            .map(|entry| {
+                (
+                    Arc::clone(&entry.key),
+                    ObservedArtifact {
+                        value: Arc::clone(&entry.value),
+                        reads: entry.reads.clone(),
+                        versions: Arc::clone(&entry.versions),
+                        weight: entry.weight,
+                    },
+                )
+            })
+            .collect()
+    }
+}
 /// A request-local snapshot, not retained history or another artifact cache.
 /// Taken candidates keep their exact locator slot; unrelated workers can consume
 /// different keys without reconstructing the store's canonical read ledgers.
@@ -185,6 +209,25 @@ pub struct UnchangedCandidates<'request, 'host, T, Q, A: Eq, D, H> {
     candidates: Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>>,
 }
 impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+    /// Candidates proven unchanged by the caller (every recorded answer equals the
+    /// current answer of `request`'s host), in key order. The same exact-key and
+    /// local-input admission still applies to each before its value is exposed.
+    pub fn from_proven(
+        request: &'request ReceiptAdmission<'host, Q, A, D, H>,
+        proven: Vec<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>,
+    ) -> Self {
+        let mut candidates: Vec<_> = proven
+            .into_iter()
+            .map(|(key, artifact)| UnchangedCandidate {
+                local_domain: None,
+                key,
+                artifact: Some(artifact),
+                _request: request,
+            })
+            .collect();
+        candidates.sort_by(|a, b| a.key.cmp(&b.key));
+        Self { candidates }
+    }
     /// Prefix selection is routing only. Every selected token still requires
     /// complete current key/local-input licensing before exposing its value.
     pub fn take_prefix(

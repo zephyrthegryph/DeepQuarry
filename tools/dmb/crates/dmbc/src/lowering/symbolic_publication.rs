@@ -94,6 +94,7 @@ impl SessionSymbolicMemo {
             reused: Arc::clone(&self.reused),
             pruned: Arc::clone(&self.pruned),
             declines: Arc::clone(&self.declines),
+            query_db: self.query_db.clone(),
             ..Self::default()
         })
     }
