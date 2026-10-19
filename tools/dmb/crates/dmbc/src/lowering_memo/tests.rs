@@ -76,12 +76,12 @@ struct VersionHost {
 impl Resolver for VersionHost {
     fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
         match domain {
-            ReadDomain::Tree => self.tree,
+            // Global vars are read through the owner scalar domain (9eb5b8f1d5); it shares the tree version here.
+            ReadDomain::Tree | ReadDomain::OwnerScalar(_) => self.tree,
             ReadDomain::ResourceSearch => self.resource,
             ReadDomain::OwnerHierarchy(_)
             | ReadDomain::OwnerCallable(_)
             | ReadDomain::OwnerVariable(_)
-            | ReadDomain::OwnerScalar(_)
             | ReadDomain::OwnerProcedureStatic(_)
             | ReadDomain::PredefinedCatalog(_)
             | ReadDomain::RuntimeCatalog(_) => None,

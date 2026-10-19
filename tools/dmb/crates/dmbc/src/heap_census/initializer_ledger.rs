@@ -37,10 +37,8 @@ impl HeapCensus {
                             self.typed_expression(owner, expression);
                         }
                     }
-                    Some(RuntimeValue::SizedArrayExplicit {
-                        dimensions,
-                        expression,
-                    }) => {
+                    Some(RuntimeValue::SizedArrayExplicit(explicit)) => {
+                        let crate::initializer_policy::ExplicitSizedArray { dimensions, expression } = &**explicit;
                         self.slice(owner, dimensions, true);
                         if let Some(expression) = expression {
                             if self.arc_object(owner, expression) {

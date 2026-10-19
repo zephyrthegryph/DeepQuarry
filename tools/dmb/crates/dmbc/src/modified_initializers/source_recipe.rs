@@ -200,11 +200,17 @@ impl RecipeWire<'_> {
             self.resource_context,
             self.origin,
         )?;
-        SourceRecipe {
+        let seed = SourceRecipe {
             descriptor,
             relative_span: Span::new(self.start, self.end),
             location: self.location,
         }
-        .reissue(parsed, frontend, resolver, symbols, debug)
+        .reissue(parsed, frontend, resolver, symbols, debug)?;
+        // Only a resource-free descriptor may omit the context the current ABI carries; resources captured
+        // without a search context were proven by another query than the current one.
+        if self.resource_context != context && !seed.captured.descriptor.resources().is_empty() {
+            return None;
+        }
+        Some(seed)
     }
 }

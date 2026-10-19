@@ -15,10 +15,9 @@ impl From<&RuntimeValue> for Shape {
         match value {
             RuntimeValue::Expression(_) => Self::Expression,
             RuntimeValue::SizedArray(value) => Self::SizedArray(Arc::clone(value)),
-            RuntimeValue::SizedArrayExplicit {
-                dimensions,
-                expression,
-            } => Self::SizedArrayExplicit(Arc::clone(dimensions), expression.is_some()),
+            RuntimeValue::SizedArrayExplicit(explicit) => {
+                Self::SizedArrayExplicit(Arc::clone(&explicit.dimensions), explicit.expression.is_some())
+            }
         }
     }
 }

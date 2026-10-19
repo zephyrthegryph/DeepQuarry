@@ -485,7 +485,12 @@ fn feature_facts_inspect_instruction_boundaries_not_immediate_operands() {
         BytecodeFeatures {
             external: true,
             debug: true,
-            compat: Default::default(),
+            // LOAD_EXT is a 516 feature (header_compat::opcode_feature, measured against DreamMaker 516.1687).
+            compat: {
+                let mut compat = dm_ir::header_compat::HeaderCompat::default();
+                compat.note(516, dm_ir::header_compat::BASE_BUILD);
+                compat
+            },
             source_features: Default::default(),
         }
     );

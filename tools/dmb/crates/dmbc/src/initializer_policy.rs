@@ -352,10 +352,18 @@ pub struct ClassifiedWrite {
 pub enum RuntimeValue {
     Expression(Arc<dm_syntax::Expr>),
     SizedArray(Arc<[u16]>),
-    SizedArrayExplicit {
-        dimensions: Arc<[u16]>,
-        expression: Option<Arc<dm_syntax::Expr>>,
-    },
+    /// Boxed so a runtime slot stays at three words (the sparse ledger budget).
+    SizedArrayExplicit(Arc<ExplicitSizedArray>),
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExplicitSizedArray {
+    pub dimensions: Arc<[u16]>,
+    pub expression: Option<Arc<dm_syntax::Expr>>,
+}
+impl RuntimeValue {
+    pub fn sized_array_explicit(dimensions: Arc<[u16]>, expression: Option<Arc<dm_syntax::Expr>>) -> Self {
+        Self::SizedArrayExplicit(Arc::new(ExplicitSizedArray { dimensions, expression }))
+    }
 }
 #[derive(Clone, Debug)]
 pub struct RuntimeGroup {

@@ -419,10 +419,8 @@ impl SemanticClassification {
             Some(RuntimeValue::SizedArray(dimensions)) => {
                 Some(RuntimeRecipe::SizedArray(Arc::clone(dimensions)))
             }
-            Some(RuntimeValue::SizedArrayExplicit {
-                dimensions,
-                expression,
-            }) => {
+            Some(RuntimeValue::SizedArrayExplicit(explicit)) => {
+                let crate::initializer_policy::ExplicitSizedArray { dimensions, expression } = &**explicit;
                 let syntax = if let Some(expression) = expression {
                     let InitializerValue::Expression(value) = &pending.write.write.value else {
                         return None;
@@ -495,13 +493,13 @@ impl SemanticClassification {
             Some(RuntimeRecipe::SizedArrayExplicit {
                 dimensions,
                 expression,
-            }) => Some(RuntimeValue::SizedArrayExplicit {
-                dimensions: Arc::clone(dimensions),
-                expression: match expression {
+            }) => Some(RuntimeValue::sized_array_explicit(
+                Arc::clone(dimensions),
+                match expression {
                     Some(syntax) => Some(syntax.bind(current_expression.as_deref()?)?),
                     None => None,
                 },
-            }),
+            )),
             Some(RuntimeRecipe::Expression(syntax)) => Some(RuntimeValue::Expression(
                 syntax.bind(current_expression.as_deref()?)?,
             )),

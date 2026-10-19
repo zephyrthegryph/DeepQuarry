@@ -12,7 +12,8 @@ impl Resolver for Host {
     fn resolve(&self, query: Q) -> M {
         match query {
             Q::RuntimeType(path) => M::Symbol(path),
-            Q::Resource(path) => M::Resource {
+            // Seeds captured under a project search context ask for resources in that context.
+            Q::Resource(path) | Q::ResourceIn { path, .. } => M::Resource {
                 path,
                 content: self.0,
             },

@@ -517,6 +517,8 @@ mod tests {
             }
         }
         writer.flush_pending();
+        // Appends only spool; the request publishes its batch on completion (2ec3cac345).
+        writer.disk.finish_batch().unwrap();
         let reader = DiskExpansionMemo::new(1, cache.snapshot().unwrap()).with_read_only_disk();
         let candidates = reader.candidates(leaf_key.unwrap());
         assert_eq!(candidates[0].fragment_count(), 1);

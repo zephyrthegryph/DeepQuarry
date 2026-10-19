@@ -25,13 +25,10 @@ fn explicit_sized_list_and_null_keep_both_current_input_receipts() {
         };
         let result = classify(&[input.clone()], &symbols, &evaluator).unwrap();
         let current = &result.writes[0];
-        let Some(RuntimeValue::SizedArrayExplicit {
-            dimensions,
-            expression,
-        }) = &current.runtime_value
-        else {
+        let Some(RuntimeValue::SizedArrayExplicit(explicit)) = &current.runtime_value else {
             panic!("combined array receipt missing")
         };
+        let crate::initializer_policy::ExplicitSizedArray { dimensions, expression } = &**explicit;
         assert_eq!(dimensions.as_ref(), &[2]);
         assert_eq!(expression.is_some(), assigned);
         assert_eq!(current.write, input);
