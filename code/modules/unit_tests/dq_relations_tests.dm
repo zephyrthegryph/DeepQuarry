@@ -263,13 +263,13 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 /datum/unit_test/relations_work_queue_lighting_sources
 
 /datum/unit_test/relations_work_queue_lighting_sources/Run()
-	var/obj/item/flashlight/F = allocate(/obj/item/flashlight, test_floor())
+	var/obj/F = allocate(/obj, test_floor()) // a static light source (a flashlight uses overlay lighting, no source)
 	F.set_light_range(4)
 	F.set_light_power(1)
 	F.set_light_on(TRUE)
 	F.update_light()
 	var/datum/light_source/L = F.light
-	TEST_ASSERT(L, "a lit flashlight has a light source")
+	TEST_ASSERT(L, "a lit object has a light source")
 	if(!(L in SSlighting.sources_queue))
 		SSlighting.sources_queue += L // queued for an update, as any change does
 	qdel(F)
