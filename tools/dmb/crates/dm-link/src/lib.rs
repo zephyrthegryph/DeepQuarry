@@ -182,6 +182,13 @@ pub struct LinkTables {
     bindings: BindingTables,
     content: Arc<BTreeMap<Key, EntryContent>>,
 }
+fn link_lap(lap: &mut std::time::Instant, label: &str) {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1")) {
+        eprintln!("detail {label}: {:.3}s", lap.elapsed().as_secs_f64());
+    }
+    *lap = std::time::Instant::now();
+}
 /// `DMB_STABLE_LINK=1`: keep every surviving previous index and append new keys.
 pub fn stable_assignment_enabled() -> bool {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -359,14 +366,17 @@ impl LinkTables {
         if inventory.string_registration.is_some() {
             return Err(LinkError::IncompleteStringRegistration);
         }
+        let mut lap = std::time::Instant::now();
         inventory.validate_shared()?;
         // Bulk-build both maps from sorted rows (one sort, linear tree build)
         // instead of one tree insert per row. Any invalid or colliding input
         // falls back to the ordered per-row loop, so errors keep their order.
+        link_lap(&mut lap, "link.assign.validate_shared");
         let (_spellings, content) = match bulk_maps(&inventory) {
             Some(maps) => maps,
             None => ordered_maps(&inventory)?,
         };
+        link_lap(&mut lap, "link.assign.maps");
         let mut slots = BTreeMap::new();
         for slot in inventory.slot_iter() {
             let tuple = (slot.owner, slot.name);
@@ -400,12 +410,14 @@ impl LinkTables {
                 None,
             ));
         }
+        link_lap(&mut lap, "link.assign.slots_and_reuse");
         let captured =
             retain_recipe.then(|| assignment_recipe::AssignmentRecipe::capture(&inventory));
         let mut inventory = inventory;
         if let Some(previous) = previous.filter(|_| stable_assignment_enabled()) {
             stabilize(&mut inventory, |key| content.contains_key(key), previous);
         }
+        link_lap(&mut lap, "link.assign.capture_and_stabilize");
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {
@@ -534,6 +546,7 @@ impl LinkTables {
                 }
             }
         }
+        link_lap(&mut lap, "link.assign.indexes");
         Ok((
             Self {
                 bindings: BindingTables::validated(indexes, slots, previous),
