@@ -246,7 +246,9 @@ are unchanged stays green without a certificate check. Revalidation must be para
    semantic receipts use it. Hot body edit, pool-10: init.value.visit 3.5 -> 0.8 CPU-s, admission.certify
    3.2 CPU-s -> 0, domain versions issued 828k -> 575k, initializer stage 1.9 -> 1.3 s, lowering 2.3 ->
    1.9 s, peak about 9.9 GB (the dm-query unit nodes are gone); dmb-equiv equivalent for body and
-   added-type edits. Remaining version issuers: the local lowering claim/rebind and admitted-leaf delivery.)
+   added-type edits.) The lowering request admission takes the same oracle, and the local claim no
+   longer replays admitted leaves into a recorder it drops (one version per read): hot body edit
+   12.2-12.7 s wall (was 13-15 s), local claim/rebind 3.7 -> 0.5 CPU-s, domain versions 828k -> 102k.
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).

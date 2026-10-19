@@ -127,10 +127,26 @@ pub fn lower_frontend_completed_input_on_execution<
         }
     }
     drop(retain_timer);
+    // Receipts are certified by the session's current answers when it has a query database.
+    let answer = |query: &dm_ir::ResolveQuery| -> dm_ir::ResolvedMeaning {
+        use dm_session::ObservationHost;
+        host.answer_for_admission(query)
+    };
+    let answers = memo
+        .and_then(|memo| memo.query_db())
+        .map(|db| db.request_answers(&answer));
     let request_admission = memo
         .and_then(|memo| memo.symbolic.as_ref())
         .filter(|_| !host.observes_reads())
-        .map(|_| symbolic_input::RequestAdmission::new(host));
+        .map(|_| {
+            symbolic_input::RequestAdmission::with_oracle(
+                host,
+                answers.as_ref().map(|answers| {
+                    answers
+                        as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
+                }),
+            )
+        });
     let request_admission = request_admission.as_ref();
     let candidate_timer = dm_profile::detail_timer("lowering.candidate_roster");
     let candidate_roster = request_admission
