@@ -66,7 +66,7 @@
 		original.set_containment_successor(built)
 		rel_forward_identity(original, built)
 		ending_qdel(original, END_REPLACED, built)
-		if(slot_id && !QDELETED(holder) && !QDELETED(built))
+		if(slot_id && !QDELETED(holder) && !QDELETED(built) && replace_slot_takes(original, built))
 			move_into(holder, slot_id, built)
 		return built
 	// arglist() can't be combined with a positional arg in the same call, so
@@ -82,9 +82,14 @@
 	// hand) would refuse the successor while the original still filled it.
 	// Best effort: the slot may refuse the successor (different accepts
 	// predicate) -- it still exists on the turf either way.
-	if(slot_id && !QDELETED(holder) && !QDELETED(successor))
+	if(slot_id && !QDELETED(holder) && !QDELETED(successor) && replace_slot_takes(original, successor))
 		move_into(holder, slot_id, successor)
 	return successor
+
+/// Whether a successor goes back into the slot its original left: only one of the same kind. An item turned into a structure (a fulton
+/// core deploying its extraction point) stays on the turf; in a hand it was drawn as a held item (make_worn_icon(), which a structure lacks).
+/proc/replace_slot_takes(atom/movable/original, atom/movable/successor)
+	return isitem(original) == isitem(successor)
 
 // ---- lifetime / expire() ----
 
