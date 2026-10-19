@@ -12,16 +12,16 @@ pub(super) fn finish(
     query_attempt: &mut crate::runner_host::query_snapshot::QueryAttempt,
     total: Instant,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
-    dmbc::daemon::control::checkpoint()?;
+    let mut output = io::BufWriter::new(::dmbc::daemon::stdout_writer());
+    ::dmbc::daemon::control::checkpoint()?;
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
     if command == BuildCommand::AnalyzeResolved {
         let retained_engine = engine_capture.ok_or("resolved analysis requires pinned engine")?;
         let (resolver, _scalar) =
             runner_facts::prepare_retained(&frontend, retained_engine, host_facts)?;
-        dmbc::daemon::control::checkpoint()?;
+        ::dmbc::daemon::control::checkpoint()?;
         let links = retained_engine.link_overlay()?;
-        let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
+        let fallback_memo = ::dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
         let memo = procedure_memo.unwrap_or(&fallback_memo);
         let mut owners = None;
         let procedures = crate::analysis_export::write_resolved_selected_with_owners(
@@ -42,17 +42,17 @@ pub(super) fn finish(
         if let Some((abi, startup)) = owners {
             query_attempt.capture_analysis_host(frontend, resolver, abi, startup)?;
         }
-        dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
+        ::dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
     }
     if command == BuildCommand::AnalyzeBodies {
         let bodies = crate::analysis_export::write_bodies(&frontend, &mut output)?;
-        dmbc::daemon_eprintln!(
+        ::dmbc::daemon_eprintln!(
             "source executable analysis: {bodies} issued bodies; semantic gaps remain explicit"
         );
     }
     output.flush()?;
     let timings = &frontend.timings;
-    dmbc::daemon_eprintln!(
+    ::dmbc::daemon_eprintln!(
         "source analysis: {} semantic, {} occurrence, {} body rows; planning={:.3}s expansion={:.3}s declarations={:.3}s tree={:.3}s provenance={:.3}s total={:.3}s",
         counts.semantic_rows,
         counts.occurrence_rows,
@@ -87,7 +87,7 @@ pub(crate) fn prepare_query(
     query_attempt: &mut crate::runner_host::query_snapshot::QueryAttempt,
     retained: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    dmbc::daemon::control::checkpoint()?;
+    ::dmbc::daemon::control::checkpoint()?;
     let engine = engine_capture.ok_or("query preparation requires pinned engine")?;
     let (resolver, _) = runner_facts::prepare_retained(frontend, engine, host_facts)?;
     let links = engine.link_overlay()?;
@@ -109,7 +109,7 @@ pub(crate) fn prepare_query(
     if !prepared.prepared.diagnostics.is_empty() {
         let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
         crate::diagnostics::write_lowering_diagnostics(
-            &mut dmbc::daemon::stderr_writer(),
+            &mut ::dmbc::daemon::stderr_writer(),
             &diagnostics,
         )?;
         return Err(crate::request_failure::RequestFailure {
