@@ -42,7 +42,7 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
     }
 }
 /// Units of the last request proven unchanged by the session's query database: every recorded
-/// answer equals the current one. Replaces the domain-version roster.
+/// answer equals the current one.
 fn proven_roster<'request, 'host, R: Resolver>(
     db: &crate::query_db::QueryDb,
     store: &dm_session::ObservedArtifactStore<
@@ -81,18 +81,10 @@ impl SessionSymbolicMemo {
     ) -> Option<RequestCandidates<'request, 'host, R>> {
         self.attempt.as_ref()?;
         let owner = self.publication.as_ref()?;
-        if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "2") {
-            let limit = std::env::var("DMB_ROSTER_REJECTIONS").ok().and_then(|value| value.parse().ok()).unwrap_or(8);
-            for (reason, members) in owner.values.rejection_summary(admission, limit) {
-                eprintln!("detail unchanged-roster rejection: {members} variants: {reason}");
-            }
-        }
+        // Stored units are proven by the session's answers; a memo without a query database
+        // (one-shot builds, fixtures) offers no unchanged candidates.
         Some(RequestCandidates {
-            values: self
-                .query_db
-                .as_deref()
-                .and_then(|db| proven_roster(db, &owner.values, admission))
-                .unwrap_or_else(|| owner.values.unchanged_candidate_roster(admission))
+            values: proven_roster(self.query_db.as_deref()?, &owner.values, admission)?
                 .split_by(CANDIDATE_SHARDS, candidate_shard)
                 .into_iter()
                 .map(Mutex::new)

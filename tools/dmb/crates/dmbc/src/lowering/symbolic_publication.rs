@@ -18,7 +18,6 @@ pub(super) struct Owner {
 impl Default for Owner {
     fn default() -> Self {
         let values = Store::shared_current_rosters();
-        values.enable_incidence();
         Self {
             values,
             publication: Arc::new(Default::default()),

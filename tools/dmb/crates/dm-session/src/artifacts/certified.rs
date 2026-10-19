@@ -339,50 +339,6 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ObservedArtifactStore<T, Q, A, D>
 {
-    pub fn unchanged_candidate_roster<'request, 'host, H: ObservationHost<Q, A, D>>(
-        &self,
-        request: &'request ReceiptAdmission<'host, Q, A, D, H>,
-    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> where
-        D: Send + Sync,
-        ReceiptAdmission<'host, Q, A, D, H>: Sync,
-    {
-        let mut candidates = self.unchanged_candidates(request);
-        candidates.sort_by(|a, b| a.key.cmp(&b.key));
-        UnchangedCandidates { candidates }
-    }
-    /// Diagnostic: largest groups of variants excluded from the unchanged roster.
-    pub fn rejection_summary<H: ObservationHost<Q, A, D>>(
-        &self,
-        request: &ReceiptAdmission<'_, Q, A, D, H>,
-        limit: usize,
-    ) -> Vec<(String, usize)>
-    where
-        D: std::fmt::Debug,
-    {
-        let domains = {
-            let state = self.state.write().unwrap_or_else(|e| e.into_inner());
-            let Some(index) = &state.incidence else {
-                return Vec::new();
-            };
-            index.certificate_domains()
-        };
-        let current: Vec<_> = domains
-            .into_iter()
-            .map(|domain| {
-                let version = request.current_version(&domain);
-                (domain, version)
-            })
-            .collect();
-        let state = self.state.write().unwrap_or_else(|e| e.into_inner());
-        let Some(index) = &state.incidence else {
-            return Vec::new();
-        };
-        index
-            .rejection_summary(&current)
-            .into_iter()
-            .take(limit)
-            .collect()
-    }
     pub fn unchanged_local_candidate_roster<'request, 'host, H: ObservationHost<Q, A, D>>(
         &self,
         request: &'request ReceiptAdmission<'host, Q, A, D, H>,

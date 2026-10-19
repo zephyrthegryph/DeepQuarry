@@ -122,7 +122,8 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     let mut state = dm_tree::frontend::RetainedSemanticTree::default();
     let artifacts = crate::driver_facts::AbiArtifacts::with_engine_owner(engine.abi_engine_owner());
-    let owner = SessionSymbolicMemo::current_revision();
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let owner = SessionSymbolicMemo::current_revision().with_query_db(&db);
     let front = build(&mut state, SOURCE, &engine, &executor);
     let (host, _) =
         crate::request_runner::runner_facts::prepare_retained(&front, &engine, Some(&host_facts))
@@ -199,6 +200,7 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
             }
         });
         let request = owner.for_request(false);
+        db.next_request();
         let admission = RequestAdmission::new(&host);
         let candidates = request.candidate_roster(&admission).unwrap();
         let arena = dm_tree::frontend::BodyArena::new_typed(
@@ -296,6 +298,7 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
         .current_local_inputs(&current, current.snapshot.tree.symbols())
         .unwrap();
     let request = owner.for_request(false);
+    db.next_request();
     let admission = RequestAdmission::new(&host);
     let candidates = request.candidate_roster(&admission).unwrap();
     let arena = dm_tree::frontend::BodyArena::new_typed(

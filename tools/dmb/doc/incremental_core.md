@@ -249,6 +249,9 @@ are unchanged stays green without a certificate check. Revalidation must be para
    added-type edits.) The lowering request admission takes the same oracle, and the local claim no
    longer replays admitted leaves into a recorder it drops (one version per read): hot body edit
    12.2-12.7 s wall (was 13-15 s), local claim/rebind 3.7 -> 0.5 CPU-s, domain versions 828k -> 102k.
+   Deleted: the lowering domain-version roster (`unchanged_candidate_roster`, its rejection diagnostic,
+   `DMB_TIMINGS_DETAIL=2` roster dump) and the lowering store's incidence index; a memo without a
+   query database offers no unchanged candidates. Hot body edit 11.3-12.4 s, peak 9.4 GB (was 9.8).
 5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
    renumber by rewriting references in the affected units' words, never by relowering. Deletes
    `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).

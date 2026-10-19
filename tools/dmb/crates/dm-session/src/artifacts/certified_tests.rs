@@ -119,7 +119,7 @@ fn request_roster_consumes_exact_keys_once_and_keeps_variant_precedence() {
         calls: AtomicUsize::new(0),
     };
     let request = crate::ReceiptAdmission::new(&host);
-    let mut roster = store.unchanged_candidate_roster(&request);
+    let mut roster = UnchangedCandidates::from_proven(&request, store.variant_snapshot());
     assert!(roster.take(&[2]).is_empty());
     let first = roster.take(&[1]);
     let values: Vec<_> = first
@@ -153,7 +153,7 @@ fn prefix_dispatch_never_substitutes_for_complete_local_inputs() {
         calls: AtomicUsize::new(0),
     };
     let request = crate::ReceiptAdmission::new(&host);
-    let mut roster = store.unchanged_candidate_roster(&request);
+    let mut roster = UnchangedCandidates::from_proven(&request, store.variant_snapshot());
     let mut delivered = 0;
     let accepted: Vec<_> = roster
         .take_prefix(&[1])
