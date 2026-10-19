@@ -16,7 +16,7 @@
 	holder = /obj/item/folder
 	slot_id = CONTAINER_SLOT_PAGES
 	name = "pages"
-	drop_policy = SLOT_DROP_DELETE
+	drop_policy = SLOT_DROP_SPILL // admission.md D10: a destroyed folder drops its pages; a forced delete deletes them
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
 

@@ -252,7 +252,8 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 
 // ---- the slot ----
 
-/// The slot of a storage item: internal, measured in storage-cost units, and deleted with the storage (contents go with it, as before). Its refusal and
+/// The slot of a storage item: internal, measured in storage-cost units. Destroyed, it spills its contents (a forced delete deletes them:
+/// admission.md D10). Its refusal and
 /// capacity are the holder's storage() capability's.
 /datum/relation_definition/slot/storage
 	holder = /obj/item/storage
@@ -260,7 +261,7 @@ MSG_DEF_SELF(storage/not_an_item, "that can't go in a container")
 	name = "storage"
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_UNITS
-	drop_policy = SLOT_DROP_DELETE
+	drop_policy = SLOT_DROP_SPILL
 
 /datum/relation_definition/slot/storage/capacity_for(atom/holder)
 	var/datum/capability/lib/storage/C = cap_of(holder, CAP_STORAGE)

@@ -5253,3 +5253,6 @@ locking. No snapshots are re-recorded.
 * **An item's own wearer rules run as its equip action's needs** (wave 8): the 30 `acceptance(CONSTRAINT_EQUIP, ...)` declarations (taur
   shapes, owner ckeys, limb clearance, unwield-first) are `extend(/datum/act/equip, needs(...))`; the texts and their order (after fit,
   last before the slot is taken) are unchanged.
+* **A destroyed box, backpack or folder spills its contents** (D10, decided by the coordinator): storage and folder slots were DELETE and
+  are SPILL, the default. A forced delete (`qdel(force = TRUE)`: cleanups, admin deletes) deletes the contents of every SPILL slot
+  instead, so it leaves no litter. An ordinary delete of a mob therefore drops its backpack's contents where it stood.

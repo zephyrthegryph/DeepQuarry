@@ -117,3 +117,21 @@ CAPABILITIES(/datum/guard_test_holder)
 	for(var/item in L)
 		if(item == value)
 			.++
+
+/// D10 (admission.md): a destroyed box spills what it holds onto its turf; a forced delete (cleanup, admin) deletes it instead.
+/datum/unit_test/dq_storage_destroy_spills_unless_forced
+
+/datum/unit_test/dq_storage_destroy_spills_unless_forced/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/storage/box/empty_guard_test/box = new(T)
+	var/obj/item/tool/wrench/kept = new(T)
+	TEST_ASSERT(box.insert_item(kept, null, TRUE), "setup: the wrench goes in the box")
+	qdel(box)
+	TEST_ASSERT(!QDELETED(kept), "an ordinary destroy keeps the contents")
+	TEST_ASSERT_EQUAL(kept.loc, T, "an ordinary destroy spills the contents onto the box's turf")
+	qdel(kept)
+	var/obj/item/storage/box/empty_guard_test/forced_box = new(T)
+	var/obj/item/tool/wrench/gone = new(T)
+	TEST_ASSERT(forced_box.insert_item(gone, null, TRUE), "setup: the second wrench goes in the second box")
+	qdel(forced_box, TRUE)
+	TEST_ASSERT(QDELETED(gone), "a forced delete deletes the contents: no litter")
