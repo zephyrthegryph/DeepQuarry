@@ -647,3 +647,39 @@ wait for the notification; never block 10 minutes at a time.
 The merge worktree compiles in its own compile root (`E:/dq-cache/dmb-roots/deepquarry-merge`, `compile_root.ts rootKeyFor`): every
 gate there is master plus a batch, so its daemon session patches from the previous gate's tree instead of waiting behind lanes in the
 shared root and recompiling their trees (measured: a gate's test compile waited 315 s for the shared root, then ran a full compile).
+
+## 27. Lane classes, the light path and what runs when (17 October 2026, `tools/worktree-lifecycle`)
+
+**Pick the class when you lease** (`bash tools/dq_lane_pool.sh lease <branch> [--class general|compiler|light] --wait`):
+
+| Class | Slots | Use it for | Gets |
+|---|---|---|---|
+| general (default) | `pool-1..8` (`DQ_LANE_POOL_SIZE`) | game work: any `.dm`, maps, icons, tgui | the normal queue; DM compile 2, test worlds 3 |
+| compiler (`tools/dmb*` branches are detected; or `--class compiler`) | `pool-c1`, `pool-c2` (reserved, general lanes never take them; a third compiler lane may use a free general slot) | compiler/daemon work and its fixes | served ahead of the general queue; first claim on the machine slots (priority 0 like the merge worktree) and ONE cargo slot beyond the cap |
+| light (`--class light`) | `pool-light` (one shared, own queue) | docs, lane/tooling scripts, Rust/compiler-only changes | edit, commit, `bash tools/dq_land.sh --light`, release: minutes. Never runs a DM compile or a test world (`dq_machine_slots.sh` refuses with exit 64) |
+
+**Landing a light lane.** Under section 26 only the batch lander pushes master, so `dq_land_batch.sh run` is the lander's step, not a lane's. `bash tools/dq_land.sh --light` pushes the branch (never forced) and queues it; whoever runs the batch next merges
+every queued light branch in one merge (`tools/dq_land_batch.sh run`), runs the cheap checks for what changed (`tools/dq_light_checks.sh`) and
+pushes master once with `dq_push_master.sh --light` and a `refs/notes/light-batch` stamp, which `dq_push_stamp.sh` and the pre-push hook accept
+only while nothing under `.dm .dme .dmm .dmi maps/ icons/ code/ interface/ sound/ tgui/` changed since origin/master
+(`tools/dq_light_paths.sh`). A light branch that touches one is refused and dequeued: lease a general lane. Status: `dq_land_batch.sh status`.
+
+**What runs in each case**
+
+| Case | DM compile + DreamChecker | Test world (smoke, lane tests) | Ratchets + analyze | Cheap checks |
+|---|---|---|---|---|
+| Doc-only change (light) | no | no | no | doc links |
+| Script change (light) | no | no | no | `bash -n` (+ shellcheck if installed), doc links |
+| Rust/compiler change (light) | no | no | no | `cargo test` for each touched crate (cargo slot) |
+| `.dm`/lints touched in a light batch | refused | refused | n/a | refused (general lane) |
+| General lane, first `dq_lane_ready.sh` | yes | yes (smoke + its tests) | yes | n/a |
+| Lane already contains current origin/master and is stamped (`dq_land.sh`) | no | no | no | fast-forward push, zero re-runs |
+| Master moved, stamped lane re-merges cleanly, master changed no DM code since the lane's base | no | no | no | stamp carries (`dq_push_stamp.sh`) |
+| Master moved and changed DM code since the lane's base | yes (merged tree) | only if the stamp does not carry (then the lane's stamped list) | yes | n/a |
+| Merge batch of several general lanes (`dq_merge_gates.sh`) | yes | smoke set (the combination), never a lane's own proved tests | yes | n/a |
+
+**One run per worktree.** `dq_land.sh` and `dq_lane_ready.sh` take a lock (`tools/dq_run_lock.sh`, `E:/dq-cache/lanes/<slot>/run.lock`, holder pid
+checked) and refuse to start when another live run holds the worktree, naming the holder; `dq_land.sh` running `dq_lane_ready.sh` itself is not
+a second run. Overlapping runs used to change the tree under each other ("the tree changed during the gates; not stamping").
+
+Tests: `bash tools/ci/test_lane_pool.sh`, `bash tools/ci/test_light_checks.sh`, `bun test tools/build/lib/machine_slots.test.ts`.
