@@ -245,51 +245,107 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 GLOBAL_VAR_INIT(stat_input_queries, 0)
 GLOBAL_VAR_INIT(stat_input_noops, 0)
 
-// ---- the reader keys (step 3d: reactions, hooks, lifecycle forms and sequences consult the plan first) ----
+// ---- the reader keys (step 3d: reactions, hooks, lifecycle forms and sequences consult the plan first; step 3e: per type) ----
 
-/// name -> PLAN_READ_* bits: the generated, over-inclusive reader keys (generated_reader_keys_build(), `gen plans`) plus the names of the generated
-/// handler reads (GLOB.generated_read_names: what a reaction_reads() or published hook handler reads). null until built (plan_reader_keys()).
+/// name -> PLAN_READ_* bits read on every type: the generated rows with no owner (capability entries and reactions, entry procs, sequences, stats,
+/// the far ends of hop paths), stat ids resolved to their names. null until built (plan_reader_bits()).
 GLOBAL_LIST_INIT(plan_reader_keys, null)
-
-/// Builds GLOB.plan_reader_keys. FALSE when the stat ids cannot be resolved yet (the stat defs are not built): nothing is cached then.
-/proc/plan_reader_keys_build()
-	if(!islist(GLOB?.stat_defs) || !islist(GLOB.generated_read_names) || !islist(GLOB.generated_key_names))
-		return FALSE
-	var/list/keys = list()
-	for(var/list/row as anything in generated_reader_keys_build())
-		var/name = row[1]
-		var/bits = row[2]
-		if(!istext(name) && !isnum(name))
-			continue // a key define that names no key (a path, null)
-		if(isnum(name))
-			// A stat id: its change publishes the stat's name and its key (change_read_keys()).
-			var/datum/stat_def/def = stat_def_of(name)
-			if(!def)
-				continue
-			keys[def.name] |= bits
-			if(istext(def.stat_key))
-				keys[def.stat_key] |= bits
-			continue
-		keys[name] |= bits
-	// What the generated reads name (a handler's, a gate proc's, a condition's) and every key a generated plan names (the draws' and the verb
-	// outputs' reads, which derived() and generated_reads() feed into the reaction tables too).
-	for(var/list/names as anything in list(GLOB.generated_read_names, GLOB.generated_key_names))
-		for(var/raw in names)
-			if(!istext(raw))
-				continue
-			for(var/segment in splittext(raw, "."))
-				if(length(segment))
-					keys[segment] |= PLAN_READ_REACT | PLAN_READ_HOOK
-	GLOB.plan_tracked_names = generated_tracked_names_build()
-	GLOB.plan_reader_keys = keys
-	return TRUE
-
+/// owner type text -> list(name -> bits): the generated rows of a type's own declarations (its CAPABILITIES block, reactions(), derived(),
+/// generated_reads()); a subtype inherits them.
+GLOBAL_LIST_INIT(plan_reader_type_rows, null)
+/// type text -> list("<type>::<proc>" rows of GLOB.generated_reads_table declared on exactly that type).
+GLOBAL_LIST_INIT(plan_reader_handler_rows, null)
 /// The tracked var names (generated_tracked_names_build()): the keys plan_reader_bits() narrows.
 GLOBAL_LIST_INIT(plan_tracked_names, null)
 
-/// The PLAN_READ_* classes whose static tables may read the tracked var `key` on some type; 0 for a tracked var no reaction, hook, form or
-/// sequence reads. PLAN_READ_ALL for any other key (an engine key a producer publishes, "capkey:<n>", a runtime-only key) and before the plan is built.
-/proc/plan_reader_bits(key)
+/// Adds name `name` (a text key, or a stat id resolved to its name and key) with `bits` to `into`.
+/proc/plan_reader_add(list/into, name, bits)
+	if(isnum(name))
+		var/datum/stat_def/def = stat_def_of(name)
+		if(!def)
+			return
+		into[def.name] |= bits
+		if(istext(def.stat_key))
+			into[def.stat_key] |= bits
+		return
+	if(istext(name))
+		into[name] |= bits
+
+/// Builds the reader plan's global part. FALSE when the stat ids cannot be resolved yet (the stat defs are not built): nothing is cached then.
+/proc/plan_reader_keys_build()
+	if(!islist(GLOB?.stat_defs) || !islist(GLOB.generated_read_names) || !islist(GLOB.generated_reads_table) || !islist(GLOB.generated_plans))
+		return FALSE
+	var/list/keys = list()
+	var/list/typed = list()
+	for(var/list/row as anything in generated_reader_keys_build())
+		var/owner = row[3]
+		if(isnull(owner))
+			plan_reader_add(keys, row[1], row[2])
+			continue
+		var/list/into = typed[owner]
+		if(!into)
+			into = list()
+			typed[owner] = into
+		plan_reader_add(into, row[1], row[2])
+	var/list/handlers = list()
+	for(var/id in GLOB.generated_reads_table)
+		var/sep = findtext(id, "::")
+		if(!sep)
+			continue
+		var/owner = copytext(id, 1, sep)
+		var/list/rows = handlers[owner]
+		if(!rows)
+			rows = list()
+			handlers[owner] = rows
+		rows += id
+	GLOB.plan_tracked_names = generated_tracked_names_build()
+	GLOB.plan_reader_type_rows = typed
+	GLOB.plan_reader_handler_rows = handlers
+	GLOB.plan_reader_keys = keys
+	return TRUE
+
+/// Builds plan_reader_type_keys()'s entry: name -> bits that `type`'s own chain may read. Its declarations' rows (and its ancestors'), what its
+/// generated handler rows read (any name a read names, a hop's links included) and what its draw and verb outputs read (derived() and the generated
+/// reads feed those into the reaction table too).
+/proc/plan_reader_type_build(type)
+	. = list()
+	var/path = type
+	while(path)
+		var/text = "[path]"
+		var/list/own = GLOB.plan_reader_type_rows[text]
+		for(var/name in own)
+			.[name] |= own[name]
+		for(var/id in GLOB.plan_reader_handler_rows[text])
+			var/list/row = GLOB.generated_reads_table[id]
+			for(var/i in 2 to length(row))
+				var/list/read = row[i]
+				if(!islist(read))
+					continue
+				for(var/j in 3 to length(read))
+					var/name = GLOB.generated_read_names[read[j]]
+					if(!istext(name))
+						continue
+					for(var/segment in splittext(name, "."))
+						if(length(segment))
+							.[segment] |= PLAN_READ_REACT | PLAN_READ_HOOK
+		for(var/list/verb_rows as anything in list(GLOB.generated_plans[text], GLOB.generated_plan_hidden_verbs[text], GLOB.generated_plan_granted_verbs[text]))
+			for(var/raw in verb_rows)
+				for(var/segment in splittext("[raw]", "."))
+					if(length(segment))
+						.[segment] |= PLAN_READ_REACT | PLAN_READ_HOOK
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+
+DECLARE_SHARED_CACHE(change_reader_types, GLOBAL_PROC_REF(plan_reader_type_build), SC_NEVER)
+
+/// name -> bits read on `type` by its own chain's declarations (plan_reader_type_build()), built once per type.
+/proc/plan_reader_type_keys(type)
+	return CACHED(change_reader_types, type)
+
+/// The PLAN_READ_* classes whose static tables may read the tracked var `key` on an entity of `type` (null: on some type). 0 for a tracked var no
+/// reaction, hook, form or sequence of that type reads. PLAN_READ_ALL for any other key (an engine key a producer publishes, "capkey:<n>", a
+/// runtime-only key) and before the plan is built.
+/proc/plan_reader_bits(key, type)
 	var/list/keys = GLOB.plan_reader_keys
 	if(!keys)
 		if(!plan_reader_keys_build())
@@ -297,7 +353,17 @@ GLOBAL_LIST_INIT(plan_tracked_names, null)
 		keys = GLOB.plan_reader_keys
 	if(!istext(key) || !GLOB.plan_tracked_names[key])
 		return PLAN_READ_ALL
-	return keys[key] || 0
+	. = keys[key] || 0
+	if(type)
+		var/list/typed = plan_reader_type_keys(type)
+		. |= typed[key] || 0
+	else
+		for(var/owner in GLOB.plan_reader_type_rows)
+			. |= GLOB.plan_reader_type_rows[owner][key] || 0
+		if(!.)
+			. = PLAN_READ_REACT | PLAN_READ_HOOK // without a type the handler and output reads of every type would have to be searched
 
 /// Tracked writes whose static reader probes the reader plan spared (state_changed(): no reaction, hook or form of any type reads the var).
 GLOBAL_VAR_INIT(plan_spared_reader_probes, 0)
+/// Tracked writes state_changed() asked the reader plan about (the denominator of plan_spared_reader_probes).
+GLOBAL_VAR_INIT(plan_reader_probes, 0)
