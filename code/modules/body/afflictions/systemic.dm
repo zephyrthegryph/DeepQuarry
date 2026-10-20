@@ -52,7 +52,7 @@
 	return alist(STAT_CARDIAC_IRRITABILITY = 1 + depth * (PHYSIOLOGY_HYPOXIA_IRRITABILITY_MAX - 1))
 
 CAPABILITIES(/datum/affliction/tissue_hypoxia)
-	factors(PROC_REF(irritability_table), to = nameof(owner), part = "irritability")
+	factors(PROC_REF(irritability_table), rel = nameof(owner), part = "irritability")
 
 // --- Toxic poisoning (INJURY_TOXIN) ----------------------------------------------------
 /datum/affliction/toxic_poisoning

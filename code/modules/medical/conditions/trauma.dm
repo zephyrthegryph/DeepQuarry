@@ -129,7 +129,7 @@
 
 /// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table, held at full value under its own part.
 CAPABILITIES(/datum/affliction/hypovolemic_shock)
-	factors(nameof(band_factors), to = nameof(owner), part = "band")
+	factors(nameof(band_factors), rel = nameof(owner), part = "band")
 
 /// C7: the first band applies from the moment the shock takes hold, not from its first tick.
 /datum/affliction/hypovolemic_shock/on_added()

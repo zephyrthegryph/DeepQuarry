@@ -242,7 +242,7 @@ GLOBAL_LIST_INIT(factor_vitals_stats, list(STAT_AIRWAY, STAT_RESP_DRIVE, STAT_LU
 
 CAPABILITIES(/datum/factor_source)
 	ref_one(nameof(holder), /mob/living)
-	factors(nameof(table), to = nameof(holder))
+	factors(nameof(table), rel = nameof(holder))
 
 /// Sets the table of the plan source `key`: its record is made if it has none, and ends when the table is empty.
 /datum/body/proc/set_factor_source(key, alist/table)
@@ -425,12 +425,12 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 CAPABILITIES(/datum/reagent_dose)
 	ref_one(nameof(holder), /mob/living)
 	ref_one(nameof(body), /datum/body)
-	factors(PROC_REF(dose_table), scale = PROC_REF(dose_scale), to = nameof(holder), reads = list("body.reagent_volumes"))
-	factors(PROC_REF(strength_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_STRENGTH, reads = list("body.reagent_volumes"))
-	factors(PROC_REF(allergy_table), scale = PROC_REF(allergy_scale), to = nameof(holder), part = REAGENT_PART_ALLERGY, reads = list("body.reagent_volumes"))
-	factors(PROC_REF(blood_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_BLOOD, reads = list("body.reagent_volumes"))
-	factors(PROC_REF(intoxication_table), scale = PROC_REF(dose_scale), to = nameof(holder), part = REAGENT_PART_INTOXICATION, reads = list("body.reagent_volumes"))
-	factors(PROC_REF(hepatotoxicity_table), scale = PROC_REF(hepatotoxicity_scale), to = nameof(holder), part = REAGENT_PART_HEPATOTOXICITY, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(dose_table), scale = PROC_REF(dose_scale), rel = nameof(holder), reads = list("body.reagent_volumes"))
+	factors(PROC_REF(strength_table), scale = PROC_REF(dose_scale), rel = nameof(holder), part = REAGENT_PART_STRENGTH, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(allergy_table), scale = PROC_REF(allergy_scale), rel = nameof(holder), part = REAGENT_PART_ALLERGY, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(blood_table), scale = PROC_REF(dose_scale), rel = nameof(holder), part = REAGENT_PART_BLOOD, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(intoxication_table), scale = PROC_REF(dose_scale), rel = nameof(holder), part = REAGENT_PART_INTOXICATION, reads = list("body.reagent_volumes"))
+	factors(PROC_REF(hepatotoxicity_table), scale = PROC_REF(hepatotoxicity_scale), rel = nameof(holder), part = REAGENT_PART_HEPATOTOXICITY, reads = list("body.reagent_volumes"))
 
 /datum/reagent_dose/proc/reagent_def()
 	RETURN_TYPE(/datum/reagent)

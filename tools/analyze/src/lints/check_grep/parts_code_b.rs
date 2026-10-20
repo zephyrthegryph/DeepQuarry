@@ -226,7 +226,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "raw_factors_table_vars_banned_in_converted_files",
             "raw factors table vars banned in converted files",
-            "a `factors =` table var in a file listed under factors_converted. The source's table is a factors(table, scale = nameof(v), to = nameof(rel)) entry in its type's CAPABILITIES block, held on the entity the relation names and re-held at the exact new scale.",
+            "a `factors =` table var in a file listed under factors_converted. The source's table is a factors(table, scale = nameof(v), rel = nameof(rel)) entry in its type's CAPABILITIES block, held on the entity the relation names and re-held at the exact new scale.",
             Files::Code,
             line(r"^\s*(var/(alist/|list/)?)?factors\s*="),
         )

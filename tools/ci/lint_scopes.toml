@@ -833,7 +833,7 @@ banned = [
   "refresh_factors = a source holds its own table: there is no body-wide re-read (doc/rewrite/proposals/stat_layer.md section 8)",
   "invalidate_factors = a source holds its own table: a plan source is read by sync_species_factors(), sync_form_factors() or sync_worn_factors() where it changes",
   "BODY_DIRTY_FACTORS = a source holds its own table: there is no factor domain to dirty (doc/rewrite/proposals/stat_layer.md section 8)",
-  "hold_factors = an affliction's own factors() entry in /datum/affliction's CAPABILITIES block (code/modules/body/affliction.dm, factors.dm): a subtype adds a factors(table, to = nameof(owner), part =) entry for another table",
+  "hold_factors = an affliction's own factors() entry in /datum/affliction's CAPABILITIES block (code/modules/body/affliction.dm, factors.dm): a subtype adds a factors(table, rel = nameof(owner), part =) entry for another table",
   "ownership() = owns_one() / owns_many() (on_destroy = DELETE | SPILL | PRIVATE_COPY | CONTAINED, starts =, only_if =), ref_one() / ref_many() and links() in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
   "relations() = ref_one() / ref_many() (by =, target_key =), links() for a pair and owns_one() / owns_many() for an owned value, in the type's CAPABILITIES block (doc/rewrite/final_api.html section 6); the table proc is gone",
   "update_icon( = draw(datum/look/look) over tracked state: a tracked write redraws by itself (doc/rewrite/final_api.html section 13)",
