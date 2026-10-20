@@ -233,7 +233,19 @@ if [ -n "$lanes" ]; then
 			INVALID)
 				echo "      -> tests rerun in the combined world: ${names//,/ }"
 				IFS=, read -r -a lt <<<"$names"
-				add_test ${lt[@]+"${lt[@]}"}
+				# A lane stamped before master deleted or renamed a test still lists it: leave out the exact names no longer declared.
+				if [ -z "${declared_tests-}" ]; then
+					declared_tests=" $(grep -rhoE '^/datum/unit_test/[A-Za-z0-9_/]+' code | sed 's#^/datum/unit_test/##' | tr '
+' ' ') "
+				fi
+				kept_lt=()
+				for t in ${lt[@]+"${lt[@]}"}; do
+					case "$t" in
+						*'*'*|*'?'*) kept_lt+=("$t") ;;
+						*) case "$declared_tests" in *" $t "*|*" ${t%%/*} "*) kept_lt+=("$t") ;; *) echo "      -> dropped (no longer declared): $t" ;; esac ;;
+					esac
+				done
+				add_test ${kept_lt[@]+"${kept_lt[@]}"}
 				;;
 			UNSTAMPED) unstamped+=("$(awk '{print $2}' <<<"$row")") ;;
 		esac
