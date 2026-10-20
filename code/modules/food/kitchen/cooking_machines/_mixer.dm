@@ -133,12 +133,10 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 
-/obj/machinery/appliance/mixer/can_insert(obj/item/I, mob/user)
+/obj/machinery/appliance/mixer/insert_refusal(obj/item/I)
 	if(!has_condition())
-		to_chat(user, span_warning(",You can't add items while \the [src] is running. Wait for it to finish or turn the power off to abort."))
-		return 0
-	else
-		return ..()
+		return msg_reason("You can't add items while \the [src] is running. Wait for it to finish or turn the power off to abort.")
+	return ..()
 
 /obj/machinery/appliance/mixer/finish_cooking(datum/cooking_item/CI)
 	..()

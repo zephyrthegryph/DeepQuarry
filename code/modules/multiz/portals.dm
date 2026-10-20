@@ -278,3 +278,6 @@ CAPABILITIES(/obj/structure/portal_event)
 	..()
 	if(other && !QDELETED(other))
 		ended_with(other, src)
+
+CAPABILITIES(/obj/structure/portal_target)
+	ref_one(nameof(target))

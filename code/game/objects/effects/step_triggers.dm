@@ -385,3 +385,6 @@ CAPABILITIES(/obj/effect/step_trigger/teleporter/randomspawn)
 /// The keyed relation view `Mtarget` (null once it is gone).
 /obj/effect/step_trigger/autostrip/proc/Mtarget() as /obj/effect/autostriptarget/mob
 	return Mtarget
+
+CAPABILITIES(/obj/effect/step_trigger/thrower)
+	ref_many(nameof(affecting))

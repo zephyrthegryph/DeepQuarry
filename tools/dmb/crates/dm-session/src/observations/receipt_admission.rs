@@ -31,6 +31,7 @@ impl<Q, A: Eq, D, H: ObservationHost<Q, A, D>> AdmittedLeaf<'_, Q, A, D, H> {
 /// identify strongly retained immutable leaf storage, not semantic pointer keys.
 pub struct ReceiptAdmission<'host, Q, A, D, H> {
     host: &'host H,
+    oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
     leaves: Mutex<BTreeMap<(usize, usize), Verdict<Q, A, D>>>,
     /// Read-mostly: every receipt check reads here from all workers at once.
     versions: RwLock<BTreeMap<D, Arc<OnceLock<Option<u128>>>>>,
@@ -48,12 +49,23 @@ fn local_shard() -> usize {
 impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
 {
+    pub fn host(&self) -> &'host H {
+        self.host
+    }
     pub fn allows_certificate_reuse(&self) -> bool {
         !self.host.observes_answers() || self.host.supports_admitted_observation()
     }
     pub fn new(host: &'host H) -> Self {
+        Self::with_oracle(host, None)
+    }
+    /// Receipts are certified by `oracle`'s current answers instead of domain versions.
+    pub fn with_oracle(
+        host: &'host H,
+        oracle: Option<&'host dyn super::AnswerOracle<Q, A>>,
+    ) -> Self {
         Self {
             host,
+            oracle,
             leaves: Mutex::new(BTreeMap::new()),
             versions: RwLock::new(BTreeMap::new()),
             local: (0..LOCAL_SHARDS).map(|_| Mutex::new(BTreeMap::new())).collect(),
@@ -106,6 +118,40 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         *cell.get_or_init(|| self.host.version_for_admission(domain))
     }
 
+    /// One roster chunk: known cells are read under one shared lock, the missing
+    /// ones are asked of the immutable host outside any lock, and the answers are
+    /// published under one write lock. A cell another worker initialized first keeps
+    /// its answer (the host is immutable, so both agree).
+    fn chunk_versions(&self, part: &[D]) -> Vec<Option<u128>>
+    where
+        D: Clone,
+    {
+        let mut out: Vec<Option<Option<u128>>> = {
+            let versions = self.versions.read().unwrap_or_else(|e| e.into_inner());
+            part.iter()
+                .map(|domain| versions.get(domain).and_then(|cell| cell.get().copied()))
+                .collect()
+        };
+        let mut fresh = Vec::new();
+        for (index, slot) in out.iter_mut().enumerate() {
+            if slot.is_none() {
+                let version = self.host.version_for_admission(&part[index]);
+                *slot = Some(version);
+                fresh.push(index);
+            }
+        }
+        if !fresh.is_empty() {
+            let mut versions = self.versions.write().unwrap_or_else(|e| e.into_inner());
+            for index in fresh {
+                let cell = versions
+                    .entry(part[index].clone())
+                    .or_insert_with(|| Arc::new(OnceLock::new()));
+                let version = *cell.get_or_init(|| out[index].flatten());
+                out[index] = Some(version);
+            }
+        }
+        out.into_iter().map(|version| version.flatten()).collect()
+    }
     /// [`Self::current_version`] for a whole roster, split across scoped threads.
     /// Every answer still goes through the same per-domain once-cell; only the
     /// order of host callbacks changes, and results keep the input order.
@@ -133,11 +179,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             let handles: Vec<_> = domains
                 .chunks(chunk)
                 .map(|part| {
-                    scope.spawn(move || {
-                        part.iter()
-                            .map(|domain| self.current_version(domain))
-                            .collect::<Vec<_>>()
-                    })
+                    scope.spawn(move || self.chunk_versions(part))
                 })
                 .collect();
             handles
@@ -167,8 +209,13 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         static CERTIFY: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.certify");
         static ITERATE: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.iterate");
         static DELIVER: dm_profile::Accumulator = dm_profile::Accumulator::new("admission.deliver");
+        // An observing host must see every answer it is asked for unless it accepts admitted leaves.
+        let oracle = self.oracle.filter(|_| self.allows_certificate_reuse());
         let certify_timer = CERTIFY.time();
-        let certified = self.certified_domains(versions);
+        let certified = match oracle {
+            Some(_) => Default::default(),
+            None => self.certified_domains(versions),
+        };
         drop(certify_timer);
         let mut changed = None;
         receipt.visit_storage(|view| {
@@ -177,13 +224,34 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             }
             if let ReceiptStorageView::Flat(leaf) = view {
                 let iterate_timer = ITERATE.time();
-                changed = super::first_changed_iter(
-                    leaf.iter(),
-                    &certified,
-                    |query| self.host.answer_for_admission(query),
-                    |current, previous| self.host.equivalent(current, previous),
-                )
-                .cloned();
+                changed = match oracle {
+                    Some(oracle) => leaf
+                        .iter()
+                        .find(|read| match oracle.unchanged(&read.query, &read.answer) {
+                            Some(unchanged) => !unchanged,
+                            // Not an answer the oracle holds (a producer input): its recorded
+                            // version certifies it, else its answer is compared.
+                            None => {
+                                let certified = versions.iter().any(|(domain, version)| {
+                                    *domain == read.domain
+                                        && self.current_version(domain) == Some(*version)
+                                });
+                                !certified
+                                    && !self.host.equivalent(
+                                        &self.host.answer_for_admission(&read.query),
+                                        &read.answer,
+                                    )
+                            }
+                        })
+                        .map(|read| read.query.clone()),
+                    None => super::first_changed_iter(
+                        leaf.iter(),
+                        &certified,
+                        |query| self.host.answer_for_admission(query),
+                        |current, previous| self.host.equivalent(current, previous),
+                    )
+                    .cloned(),
+                };
                 drop(iterate_timer);
                 if changed.is_none() {
                     let _deliver = DELIVER.time();

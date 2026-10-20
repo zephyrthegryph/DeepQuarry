@@ -9,8 +9,9 @@
 	name = "powered exosuit running board"
 	desc = "A running board with a power-lifter attachment, to quickly catapult exosuit pilots into the cockpit. Only fits to working exosuits."
 
-/obj/item/mecha_parts/mecha_equipment/runningboard/limited/can_attach(obj/mecha/M)
-	if(istype(M, /obj/mecha/working)) // is this a ripley?
-		. = ..()
-	else
-		return FALSE
+MSG_DEF_SELF(mecha/working_only, "It only fits working exosuits.")
+
+/obj/item/mecha_parts/mecha_equipment/runningboard/limited/attach_refusal(obj/mecha/M)
+	if(!istype(M, /obj/mecha/working)) // is this a ripley?
+		return /datum/msg/mecha/working_only
+	return ..()

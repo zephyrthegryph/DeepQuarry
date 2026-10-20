@@ -21,6 +21,7 @@
 CAPABILITIES(/datum/weather_holder)
 	owns_one(nameof(special_visuals), /atom/movable/weather_visuals/special)
 	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+	ref_one(nameof(current_weather))
 
 /datum/weather_holder/New(source)
 	..()
@@ -36,15 +37,15 @@ CAPABILITIES(/datum/weather_holder)
 	if(visuals in T.vis_contents)
 		WARNING("Was asked to add weather to [T.x], [T.y], [T.z] despite already having us in it's vis contents")
 		return
-	T.vis_contents += visuals
-	T.vis_contents += special_visuals
+	vis_add(T, visuals)
+	vis_add(T, special_visuals)
 
 /datum/weather_holder/proc/remove_from_turf(turf/T)
 	if(!(visuals in T.vis_contents))
 		WARNING("Was asked to remove weather from [T.x], [T.y], [T.z] despite it not having us in it's vis contents")
 		return
-	T.vis_contents -= visuals
-	T.vis_contents -= special_visuals
+	vis_remove(T, visuals)
+	vis_remove(T, special_visuals)
 
 /datum/weather_holder/proc/change_weather(new_weather)
 	var/old_light_modifier = null
@@ -216,6 +217,7 @@ CAPABILITIES(/datum/weather_holder)
 CAPABILITIES(/datum/weather)
 	owns_one(nameof(indoor_sounds), /datum/looping_sound)
 	owns_one(nameof(outdoor_sounds), /datum/looping_sound)
+	ref_one(nameof(holder))
 
 /datum/weather/New()
 	if(outdoor_sounds_type)
@@ -327,6 +329,11 @@ CAPABILITIES(/datum/weather)
 	icon = 'icons/effects/weather.dmi'
 	mouse_opacity = 0
 	plane = PLANE_PLANETLIGHTING
+
+// new(loc, icon, state): written before anything can read the atom, so building one inside a draw does not publish.
+CAPABILITIES(/atom/movable/weather_visuals)
+	param(nameof(icon), pos = 1)
+	param(nameof(icon_state), pos = 2)
 
 // This is for special effects for specific types of weather, such as lightning flashes in a storm.
 // It's a seperate object to allow the use of flick().

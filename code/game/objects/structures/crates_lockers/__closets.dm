@@ -556,7 +556,7 @@ CAPABILITIES(/obj/structure/closet)
 	set_is_animating_door(FALSE)
 	if(closing)
 		// There's not really harm in leaving it on, but, one less atom to send to clients to render when lockers are closed
-		vis_contents -= door_obj
+		vis_remove(src, door_obj)
 
 /obj/structure/closet/proc/get_door_transform(angle)
 	var/matrix/M = matrix()

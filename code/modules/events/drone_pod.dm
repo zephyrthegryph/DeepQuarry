@@ -34,3 +34,6 @@
 /// Accessor for the land_target var.
 /datum/event/drone_pod_drop/proc/land_target() as /turf
 	return land_target
+
+CAPABILITIES(/datum/event/drone_pod_drop)
+	ref_one(nameof(land_target))

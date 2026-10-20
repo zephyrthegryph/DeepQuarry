@@ -33,7 +33,7 @@
 
 /datum/native_watch/New(datum/owner, callback)
 	..()
-	owner_ref = entity_handle(owner)
+	owner_ref = ref_token(owner)
 	src.callback = callback
 	handle = bind_native()
 
@@ -61,7 +61,7 @@
 
 /// Calls the owner's proc with this watch and `args`.
 /datum/native_watch/proc/fire(list/arguments)
-	var/datum/owner = resolve_handle(owner_ref)
+	var/datum/owner = resolve_token(owner_ref)
 	if(!owner)
 		spent(src)
 		return

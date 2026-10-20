@@ -1,4 +1,3 @@
-GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 
 /datum/antagonist/ninja
 	id = MODE_NINJA
@@ -20,7 +19,6 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 
 /datum/antagonist/ninja/New()
 	..()
-	GLOB.ninjas = src
 
 /datum/antagonist/ninja/attempt_random_spawn()
 	if(CONFIG_GET(flag/ninjas_allowed)) ..()
@@ -167,3 +165,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		hud_used?.internals?.icon_state = "internal1"
 	else
 		to_chat(src, span_danger("You forgot to turn on your internals! Quickly, toggle the valve!"))
+
+/// The /datum/antagonist/ninja template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_ninjas() as /datum/antagonist/ninja
+	return SSantag?.all_antag_types[MODE_NINJA]

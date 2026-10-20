@@ -47,7 +47,6 @@
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
 
-
 	// Reagent information for process(), consider moving this to a controller along
 	// with cycle information under 'mechanical concerns' at some point.
 	var/static/list/toxic_reagents = list(
@@ -139,6 +138,7 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 // A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
 // soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
@@ -173,7 +173,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/actor_can_act(datum/act/op/A)
 	return (dq_actor_can_act(A.actor, src, A.held)) ? null : /datum/msg/hydroponics/not_by_this
 
-
 /// A ghost may become the living plant product of a ripe tray (the old attack_ghost). Silent unless the ghost itself may not.
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_ghost_harvest(datum/act/op/A)
 	READS_FROM() // the ripeness and the candidate's bans are read when the ghost clicks, never cached
@@ -181,7 +180,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		return /datum/msg/req_silent
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	return G?.candidate_refusal(A.actor)
-
 
 /// The question the ghost is asked, naming the planted line.
 /obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_question(datum/act/A)
@@ -219,7 +217,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
 		return
 
-
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 /obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
 
@@ -236,7 +233,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
-
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
 	work_start(src)
@@ -316,11 +312,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 			return
 
 	..()
-
-/obj/machinery/portable_atmospherics/hydroponics/CanPass(atom/movable/mover, turf/target)
-	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return TRUE
-	return FALSE
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_health()
 	if(seed && !dead && health <= 0)
@@ -680,10 +671,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/is_anchored(datum/act/op/A)
 	return (anchored) ? null : /datum/msg/hydroponics/anchor_first
 
-
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_freeze(datum/act/op/A)
 	return (frozen != -1) ? null : /datum/msg/hydroponics/no_freezer
-
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/freezer_toggled(datum/act/op/A)
 	to_chat(A.actor, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))

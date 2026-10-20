@@ -226,3 +226,6 @@ CAPABILITIES(/datum/nifsoft/sizechange)
 /// LC-refs: the apc this refers to -- a relation view: null once it is deleted.
 /datum/nifsoft/apc_recharge/proc/apc() as /obj/machinery/power/apc
 	return apc
+
+CAPABILITIES(/datum/nifsoft/apc_recharge)
+	ref_one(nameof(apc))

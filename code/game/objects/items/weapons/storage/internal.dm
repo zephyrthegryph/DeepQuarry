@@ -7,7 +7,7 @@ MSG_DEF_SELF(internal/it_cant_be_worn, "it can't be worn")
 	var/obj/item/master_item
 
 CAPABILITIES(/obj/item/storage/internal)
-	acceptance(CONSTRAINT_EQUIP, req_acceptance_type(list(), because = MSG(internal/it_cant_be_worn)), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req_type(list(), because = MSG(internal/it_cant_be_worn))))
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)
 	keeps_if(PROC_REF(has_item_owner))

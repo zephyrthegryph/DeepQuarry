@@ -22,6 +22,7 @@ CAPABILITIES(/datum/pipeline)
 	ref_one(nameof(network))
 	links(/datum/pipeline::members, /obj/machinery/atmospherics/pipe::parent, a_many = TRUE)
 	links(/datum/pipeline::edges, /obj/machinery/atmospherics/pipe::edge_pipelines, a_many = TRUE, b_many = TRUE)
+	ref_many(nameof(leaks))
 
 /datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
 	if(!edge || QDELETED(edge))

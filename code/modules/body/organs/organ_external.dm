@@ -208,6 +208,11 @@ CAPABILITIES(/obj/item/organ/external)
 	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(req(PROC_REF(at_stage_3))), then(PROC_REF(bench_rejuvenate)))
 	// A patch on a robotic limb takes a second with the tool in hand; the welder or the cable says what it patches (robo_repair()).
 	op("robo_repair", ai(), wait(1 SECOND, keeps = HELD | ALIVE | STAY), on_interrupt(PROC_REF(robo_repair_failed)), then(PROC_REF(robo_repair_done)))
+	ref_one(nameof(applied_pressure))
+	ref_many(nameof(children))
+	ref_many(nameof(implants))
+	ref_one(nameof(parent))
+	ref_one(nameof(splinted))
 
 /// What can be pulled out of this limb and the limbs attached to it: anything but organs.
 /obj/item/organ/external/proc/embedded_objects()

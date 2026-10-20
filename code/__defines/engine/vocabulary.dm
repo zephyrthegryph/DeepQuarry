@@ -65,6 +65,10 @@
 #define AUTH_ADMIN (1<<2)
 #define AUTH_AI (1<<3)
 
+/// /datum/authority_grant skips (admission.md D2j): which checks a granted move or equip leaves out. A skip is never a force.
+#define SKIP_COVERING (1<<0)
+#define SKIP_REQUIREMENTS (1<<1)
+
 // ---- Intents and the one gesture master lacks (section 8). GESTURE_CLICK/_SHIFT/_CTRL/_ALT/_DRAG/_SELF exist. ----
 #define INTENT_USE 1
 #define INTENT_ATTACK 2

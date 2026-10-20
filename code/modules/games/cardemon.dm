@@ -31,9 +31,9 @@ CAPABILITIES(/obj/item/pack/cardemon)
 
 		P = new()
 		P.name = "[nam] [nam2]"
-		P.card_icon = "card_cardemon"
+		P.set_card_icon("card_cardemon")
 		if(rarity)
 			P.name = "[rarity] [P.name]"
-			P.card_icon += "_[rarity]"
-		P.back_icon = "card_back_cardemon"
+			P.set_card_icon(P.card_icon + ("_[rarity]"))
+		P.set_back_icon("card_back_cardemon")
 		. += P

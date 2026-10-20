@@ -65,3 +65,10 @@
 		TEST_ASSERT_EQUAL(dispenser.dispenses[name], gear, "the missing actor preserves exact catalog identity")
 		// The legacy constructor owns no catalog declaration; dispose only these locally constructed fixture entries.
 		qdel(gear)
+
+CAPABILITIES(/obj/interim_gear_pack_actor_click)
+	ref_one(nameof(actor))
+	ref_one(nameof(dispenser))
+
+CAPABILITIES(/obj/machinery/gear_dispenser/interim_actor_probe)
+	ref_one(nameof(admin_actor))

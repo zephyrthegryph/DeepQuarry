@@ -117,10 +117,10 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 	if(!GLOB.send_beruang)
 		to_chat(src, "The Beruang is not currently heading to the station.")
 		return
-	if(length(GLOB.traders.current_antagonists) >= GLOB.traders.hard_cap)
+	if(length(antag_traders().current_antagonists) >= antag_traders().hard_cap)
 		to_chat(src, "The number of trader slots is already full!")
 		return
-	GLOB.traders.create_default(mob)
+	antag_traders().create_default(mob)
 
 /proc/trigger_trader_visit()
 	if(!GLOB.can_call_traders)

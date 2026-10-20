@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Every var written through rel_set/rel_add is now declared (ref_one/ref_many) in its type's CAPABILITIES block; an undeclared relation write is reported instead of silently learned"
+  - code_imp: "New lints rel_write_undeclared (hard ban), ref_text, saved_handle and untyped; stored_refs baseline falls from 691 to 450"
+  - bugfix: "Destroying a container now spills things that must survive it (a mob with a mind or client, a brain or MMI holding one, the nuclear disk) instead of deleting them with a DELETE slot"
+  - bugfix: "Moving a tgui window to another user is one declared link write, so both users' open-window lists stay consistent"
+  - bugfix: "Editing a relation var through VV or another by-name write now goes through the relation verbs (reverse index, owner stamp, publish)"

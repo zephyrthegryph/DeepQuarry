@@ -79,3 +79,6 @@ CAPABILITIES(/obj/machinery/ion_engine)
 /// Accessor for the thruster var.
 /datum/ship_engine/ion/proc/thruster() as /obj/machinery/ion_engine
 	return thruster
+
+CAPABILITIES(/datum/ship_engine/ion)
+	ref_one(nameof(thruster))

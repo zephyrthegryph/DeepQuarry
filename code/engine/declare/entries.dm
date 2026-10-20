@@ -113,15 +113,24 @@
 /// differently named vars (a pad's map_pad_link_id names the map_pad_id of its partner), `by` is the holder's var and `target_key` the target's (nameof(map_pad_id), or nameof(/obj/machinery/doorbell_chime::id_tag) when the holder type has no var of that name).
 /// Optional starts creates the initial target but does not turn this view into ownership.
 /// Its spatial container (if any) owns it; an independent target outlives this reference.
+/// `weak = TRUE` (relations proposal D5): the var stores a generation-checked handle, the build generates the accessor (`v()` reads the datum or
+/// null; a many reads the live members), and nothing is indexed or published. Nothing runs when the target dies, so on_unlink, on_other_deleted and
+/// by = are refused with it: a reader that must react to the death uses a normal ref_one.
 /// The constructor arguments and early/starts_after phases are the same as owns_one().
-/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null)
+/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null, weak = FALSE)
+	ref_weak_check("ref_one", var_name, weak, on_other_deleted, on_unlink, by)
 	if(!isnull(starts) && by)
 		declare_report("ref_one(): starts and keyed lookup by cannot both initialize the same reference")
 		return null
-	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after))
+	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after, "weak" = !!weak))
 
-/proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null)
-	return entry_make(ENTRY_REF_MANY, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key))
+/proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, weak = FALSE)
+	ref_weak_check("ref_many", var_name, weak, on_other_deleted, on_unlink, by)
+	return entry_make(ENTRY_REF_MANY, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "weak" = !!weak))
+
+/proc/ref_weak_check(form, var_name, weak, on_other_deleted, on_unlink, by)
+	if(weak && (on_other_deleted != OTHER_CLEAR || on_unlink || by))
+		declare_report("[form](\"[var_name]\", weak = TRUE): a weak reference runs nothing when its target dies and finds nothing by id; on_other_deleted, on_unlink and by are for a normal reference")
 
 /// An owned value: the holder owns it and disposes of it by `on_destroy`. starts = is the starting occupant (a type, nameof(type_var),
 /// list(types), PROC_REF, pick_one(), when(cond, T)); starts_args are the constructor arguments of what it creates.
@@ -164,8 +173,10 @@
 /proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null, sparse = FALSE, holds_while = null, a_contributes = null, b_contributes = null, conflict = REPLACE)
 	var/list/a = link_end(a_text)
 	var/list/b = link_end(b_text)
-	if(!sparse && (holds_while || a_contributes || b_contributes || conflict != REPLACE))
-		declare_report("links([a_text], [b_text]): holds_while, contributes and conflict are for a sparse pair (sparse = TRUE); a pair of vars always replaces")
+	if(!sparse && (holds_while || a_contributes || b_contributes))
+		declare_report("links([a_text], [b_text]): holds_while and contributes are for a sparse pair (sparse = TRUE)")
+	if(conflict != REPLACE && conflict != REFUSE)
+		declare_report("links([a_text], [b_text]): conflict is REPLACE or REFUSE")
 	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many, "a_on_other_deleted" = a_on_other_deleted, "b_on_other_deleted" = b_on_other_deleted, "a_on_unlink" = a_on_unlink, "b_on_unlink" = b_on_unlink, "sparse" = sparse, "holds_while" = holds_while, "a_contributes" = a_contributes, "b_contributes" = b_contributes, "conflict" = conflict))
 
 /// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block

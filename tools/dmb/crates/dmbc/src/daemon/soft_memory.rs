@@ -26,7 +26,8 @@ fn budget_soft(value: &OsStr) -> io::Result<u64> {
 /// The whole daemon's retained-memory budget (20 GB for now: production and test sessions are each about 9 GB) across every project session, independent of the machine-pressure policy below:
 /// above it the least recently used idle session is released whole (`Shared::enforce_retained_budget`), never the most recently
 /// used one and never one that is building. `DMB_DAEMON_MEMORY_BUDGET_GB` overrides (integer GB, 1 through 48).
-pub(super) const DEFAULT_RETAINED_BUDGET: u64 = 20_000_000_000;
+/// 8 GB: the machine is also the user's desktop (2026-10-19). DMB_DAEMON_MEMORY_BUDGET_GB raises it.
+pub(super) const DEFAULT_RETAINED_BUDGET: u64 = 8_000_000_000;
 pub(super) fn retained_budget() -> u64 {
     std::env::var("DMB_DAEMON_MEMORY_BUDGET_GB")
         .ok()
@@ -83,7 +84,7 @@ fn parse(value: Option<&OsStr>) -> io::Result<u64> {
 // Adaptive budget. A fixed 8 GB budget evicted retained sessions while gigabytes of RAM were free (one DeepQuarry session is
 // about 10 GB private), and a fixed number says nothing about the player's machine. Unless the budget is set explicitly, the
 // limits follow what the machine has: pressure means "available physical memory is running out", not "this process is big".
-//   hard      available physical memory < reserve (default 4 GB, DMB_DAEMON_FREE_RESERVE_GB), or private >= ceiling
+//   hard      available physical memory < reserve (default 12 GB, DMB_DAEMON_FREE_RESERVE_GB), or private >= ceiling
 //   soft      available physical memory < reserve + SOFT_MARGIN, or private >= ceiling
 //   emergency available physical memory < reserve / 2: even the newest session loses its shield
 // A compile is admitted only while available memory covers its expected growth on top of the reserve (see `Shared::await_memory`).
@@ -91,7 +92,8 @@ fn parse(value: Option<&OsStr>) -> io::Result<u64> {
 // keeps the fixed limits above.
 use std::sync::atomic::{AtomicU64, Ordering};
 
-pub(super) const DEFAULT_RESERVE: u64 = 4_000_000_000;
+/// 12 GB left free for the user's own apps before idle sessions are released (DMB_DAEMON_FREE_RESERVE_GB).
+pub(super) const DEFAULT_RESERVE: u64 = 12_000_000_000;
 pub(super) const SOFT_MARGIN: u64 = 4_000_000_000;
 /// Private-bytes ceiling in adaptive mode: a runaway guard, never the working limit.
 pub(super) const ADAPTIVE_CEILING: u64 = 40_000_000_000;
@@ -176,9 +178,9 @@ mod adaptive_tests {
         assert_eq!(budget_victim::<&str>(&[]), None);
     }
     #[test]
-    fn retained_budget_defaults_to_twenty_gb() {
+    fn retained_budget_defaults_to_eight_gb() {
         if std::env::var_os("DMB_DAEMON_MEMORY_BUDGET_GB").is_none() {
-            assert_eq!(retained_budget(), 20_000_000_000);
+            assert_eq!(retained_budget(), 8_000_000_000);
         }
     }
     const GB: u64 = 1_000_000_000;

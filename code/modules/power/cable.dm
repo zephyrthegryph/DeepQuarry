@@ -293,6 +293,7 @@ CAPABILITIES(/obj/structure/cable)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(breaker_box))
 
 /// Old attackby.
 /obj/structure/cable/proc/interaction_item(datum/act/op/A)

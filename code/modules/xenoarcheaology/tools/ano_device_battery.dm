@@ -80,6 +80,9 @@ CAPABILITIES(/obj/item/anodevice)
 	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
+	ref_one(nameof(archived_loc))
+	ref_one(nameof(inserted_battery))
+	ref_one(nameof(last_user_touched))
 
 /// Old attackby.
 /obj/item/anodevice/proc/interaction_item(datum/act/op/A)

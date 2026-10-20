@@ -428,7 +428,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	punch_force = 2
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
-	acceptance("fit", fits_category(FIT_NO_DIONA), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_DIONA)
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -602,7 +602,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
-	acceptance(CONSTRAINT_FIT, fits_category(FIT_NO_TESHARI_VOX), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_NO_TESHARI_VOX)
 	configure(item_worn(covers = FEET, slots = SLOT_FEET))
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
@@ -896,8 +896,8 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 CAPABILITIES(/obj/item/clothing/suit)
-	acceptance(CONSTRAINT_EQUIP, req(PROC_REF(limb_clearance)), mode = ACCEPTANCE_APPEND)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_EMERGENCY), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	extend(/datum/act/equip, needs(req(PROC_REF(limb_clearance))))
+	suit_storage(list(POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

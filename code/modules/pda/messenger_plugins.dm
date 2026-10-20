@@ -89,3 +89,6 @@
 /// The messenger this refers to (a relation view: null once that is deleted).
 /datum/data/pda/messenger_plugin/proc/messenger() as /datum/data/pda/app/messenger
 	return messenger
+
+CAPABILITIES(/datum/data/pda/messenger_plugin)
+	ref_one(nameof(messenger))

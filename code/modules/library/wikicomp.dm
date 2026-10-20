@@ -44,6 +44,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 	op("search", ui_act("search", arg("data", schema_text(4096))), then(PROC_REF(ui_act_search)))
 	op("donate", ui_act("donate", arg("donate", num())), asks(/datum/prompt/number, fields = list("question" = "Enter pin code", "title" = "Donation", "timeout" = 0), step = "pin", when = PROC_REF(donation_needs_pin)), then(PROC_REF(ui_act_donate)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	ref_one(nameof(P))
 
 /obj/machinery/librarywikicomp/ui_opening(mob/user, datum/tgui/ui)
 	set_just_donated(FALSE)

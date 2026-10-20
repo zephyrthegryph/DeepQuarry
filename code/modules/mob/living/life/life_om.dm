@@ -154,3 +154,6 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /mob/living/on_equipment_changed()
 	body?.invalidate(BODY_DIRTY_ARMOR)
 	PUBLISH_CHANGE(src, MOB_KEY_EQUIPMENT)
+
+CAPABILITIES(/datum/life_z_presence)
+	ref_many(nameof(members))

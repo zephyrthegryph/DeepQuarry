@@ -77,6 +77,7 @@ CAPABILITIES(/obj/machinery/door)
 	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(door_bumped)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(door_blobbed))))
+	ref_many(nameof(autoclose_blockers))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/machinery/door/proc/smashed_by(datum/act/hit/generic/A)

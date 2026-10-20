@@ -64,6 +64,7 @@ CAPABILITIES(/datum/secrets_menu)
 	op("monkey", ui_act("monkey"), then(PROC_REF(ui_act_monkey)))
 	op("supermatter_cascade", ui_act("supermatter_cascade"), asks(/datum/prompt/choice, fields = list("question" = "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.", "title" = "WARNING!", "choices" = list("NO TIME TO EXPLAIN", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "a16"), then(PROC_REF(ui_act_supermatter_cascade)))
 	op("summon_narsie", ui_act("summon_narsie"), asks(/datum/prompt/choice, fields = list("question" = "You sure you want to end the round and summon Nar-Sie at your location? Misuse of this could result in removal of flags or hilarity.", "title" = "WARNING!", "choices" = list("PRAISE SATAN", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "a17"), then(PROC_REF(ui_act_summon_narsie)))
+	ref_one(nameof(holder))
 
 /datum/secrets_menu/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -258,7 +259,7 @@ CAPABILITIES(/datum/secrets_menu)
 	var/action = A.window_action()
 	if(!ui_gate(A))
 		return FALSE
-	GLOB.xenomorphs.attempt_random_spawn()
+	antag_xenomorphs().attempt_random_spawn()
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 
@@ -266,7 +267,7 @@ CAPABILITIES(/datum/secrets_menu)
 	var/action = A.window_action()
 	if(!ui_gate(A))
 		return FALSE
-	GLOB.borers.attempt_random_spawn()
+	antag_borers().attempt_random_spawn()
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

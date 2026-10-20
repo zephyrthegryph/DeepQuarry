@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	is_default = TRUE
 
 /datum/relation_definition/slot/dq_test_main/accepts_requirements()
-	return req_acceptance_tag(TAG_SHARP, because = "must be sharp")
+	return req_tag(TAG_SHARP, because = "must be sharp")
 
 /// Blocks moves through the pre signals and records what the ledger reported.
 /datum/dq_containment_listener
@@ -147,6 +147,9 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 
 CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	owns_many(nameof(made))
+	ref_one(nameof(floor))
+	ref_many(nameof(holders))
+	ref_many(nameof(things))
 
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
 	rel_set(src, nameof(floor), dq_containment_floor())
@@ -370,12 +373,17 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	TEST_ASSERT(!QDELETED(a) && a.loc == T, "spill: the first item is on the floor")
 	TEST_ASSERT(!QDELETED(b) && b.loc == T, "spill: the second item is on the floor")
 
-	// Delete: a folder takes its pages with it.
+	// A destroyed folder drops its pages; a forced delete takes them with it (admission.md D10).
 	var/obj/item/folder/folder = allocate(/obj/item/folder, T)
 	var/obj/item/paper/page = allocate(/obj/item/paper, T)
 	TEST_ASSERT(move_into(folder, null, page), "paper goes in a folder")
 	qdel(folder)
-	TEST_ASSERT(QDELETED(page), "delete: the page went with the folder")
+	TEST_ASSERT(!QDELETED(page) && page.loc == T, "spill: the destroyed folder dropped its page")
+	var/obj/item/folder/forced_folder = allocate(/obj/item/folder, T)
+	var/obj/item/paper/forced_page = allocate(/obj/item/paper, T)
+	TEST_ASSERT(move_into(forced_folder, null, forced_page), "paper goes in the second folder")
+	qdel(forced_folder, TRUE)
+	TEST_ASSERT(QDELETED(forced_page), "forced delete: the page went with the folder")
 
 	// Spill into a holder: a box inside a closet spills its main slot into the
 	// closet (the closet allows drops), and transfers its pocket there too.

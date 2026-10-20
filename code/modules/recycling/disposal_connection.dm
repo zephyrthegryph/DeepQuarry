@@ -118,3 +118,7 @@
 /// The trunk we are linked to (a relation view).
 /datum/disposal_system_connection/proc/connected_trunk() as /obj/structure/disposalpipe/trunk
 	return connected_trunk
+
+CAPABILITIES(/datum/disposal_system_connection)
+	ref_one(nameof(connected_trunk))
+	ref_one(nameof(owner))

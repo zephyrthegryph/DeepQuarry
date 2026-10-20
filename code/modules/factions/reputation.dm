@@ -204,6 +204,8 @@ GLOBAL_LIST_INIT(reputation_affiliation_choices, list(AFFILIATION_HOSTILE, AFFIL
 	var/value = get_reputation(faction_id)
 	return isnull(value) ? null : reputation_rank(value)
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/station_faction_relations)
 /datum/station_faction_relations
 	parent_type = /datum/faction_reputation_ledger
 	var/list/department_ledgers

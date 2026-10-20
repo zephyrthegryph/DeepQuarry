@@ -62,3 +62,9 @@
 	TEST_ASSERT_EQUAL(length(GLOB.lastsignalers), before_logs + 2, "the later real transmission is logged")
 
 #undef INTERIM_PDA_SIGNAL_FREQUENCY
+
+CAPABILITIES(/datum/data/pda/app/signaller/interim_actor_probe)
+	ref_one(nameof(test_radio))
+
+CAPABILITIES(/obj/interim_pda_signal_receiver)
+	ref_one(nameof(last_signal))

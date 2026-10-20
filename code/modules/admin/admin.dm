@@ -869,7 +869,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	message_admins(span_adminnotice("[key_name_admin(admin)] has put [frommob.ckey] in control of [tomob.name]."))
 	log_admin("[key_name(admin)] stuffed [frommob.ckey] into [tomob.name].")
 	feedback_add_details("admin_verb","CGD")
-	tomob.ckey = frommob.ckey
+	bind_player(tomob, frommob.ckey, as_ckey = TRUE)
 	spent(frommob)
 	return 1
 
@@ -1162,7 +1162,7 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 /datum/admin_verb/set_uplink/proc/give_selected_uplink(datum/act/request/A)
 	var/mob/living/carbon/human/traitor_human = A.request.value
 	var/client/user = A.request.answerer.client
-	GLOB.traitors.spawn_uplink(traitor_human)
+	antag_traitors().spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")

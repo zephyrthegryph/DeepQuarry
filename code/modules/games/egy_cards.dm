@@ -19,14 +19,14 @@ CAPABILITIES(/obj/item/deck/egy)
 	for(var/i=0; i<=3; i++)
 		P = new()
 		P.name = "\improper Wild +4"
-		P.card_icon = "+4"
-		P.back_icon = "deck1"
+		P.set_card_icon("+4")
+		P.set_back_icon("deck1")
 		. += P
 	for(var/i=0; i<=3; i++)
 		P = new()
 		P.name = "\improper Wildcard"
-		P.card_icon = "colorswap"
-		P.back_icon = "deck1"
+		P.set_card_icon("colorswap")
+		P.set_back_icon("deck1")
 		. += P
 	//Colour cards
 	for(var/colour in list("red", "yellow", "blue", "green"))
@@ -36,8 +36,8 @@ CAPABILITIES(/obj/item/deck/egy)
 			for(var/i=0; i<=1; i++)
 				P = new()
 				P.name = "\improper [colour] [special]"
-				P.card_icon = "[colour]_[special]"
-				P.back_icon = "deck1"
+				P.set_card_icon("[colour]_[special]")
+				P.set_back_icon("deck1")
 				. += P
 		//Number cards
 		for(var/number in list("0","1","2","3","4","5","6","7","8","9"))
@@ -45,6 +45,6 @@ CAPABILITIES(/obj/item/deck/egy)
 			for(var/i=0; i<=1; i++)
 				P = new()
 				P.name = "\improper [colour] [number]"
-				P.card_icon = "[colour]_[number]"
-				P.back_icon = "deck1"
+				P.set_card_icon("[colour]_[number]")
+				P.set_back_icon("deck1")
 				. += P

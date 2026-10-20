@@ -45,6 +45,7 @@ CAPABILITIES(/obj/machinery/computer/roguezones)
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
 	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(shuttle_control))
 
 /obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
 	var/list/data = list()

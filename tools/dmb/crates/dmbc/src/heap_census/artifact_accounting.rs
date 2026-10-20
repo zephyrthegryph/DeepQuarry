@@ -31,7 +31,6 @@ impl HeapCensus {
                 ArtifactStorageExclusion::LeaseRegistryNodes => "private generic-store lease registry BTree node capacity unavailable",
                 ArtifactStorageExclusion::LeaseRosterNodes => "private generic-store lease roster BTree node capacity unavailable",
                 ArtifactStorageExclusion::VariantClaimIndexNodes => "private generic-store physical variant claim BTree node capacity unavailable",
-                ArtifactStorageExclusion::IncidenceIndexNodes => "private generic-store incidence/certificate/subscriber BTree node capacity unavailable",
                 ArtifactStorageExclusion::PayloadObjectsAndChildren => "generic visitor exposes payload references; nested payload coverage requires the separate consumer traversal",
                 ArtifactStorageExclusion::ArcControlBlocks => "shared generic-store Arc control block bytes unavailable",
                 ArtifactStorageExclusion::AllocatorMetadata => "generic-store allocator metadata and allocation rounding unavailable",
@@ -47,16 +46,6 @@ impl HeapCensus {
             ("claims", accounting.claims),
         ] {
             self.observe_items(&format!("{control}.{name}"), count);
-        }
-        if let Some(incidence) = accounting.incidence {
-            for (name, count) in [
-                ("leaves", incidence.leaves),
-                ("variants", incidence.variants),
-                ("domains", incidence.domains),
-                ("subscriptions", incidence.subscriptions),
-            ] {
-                self.observe_items(&format!("{control}.incidence.{name}"), count);
-            }
         }
     }
 }

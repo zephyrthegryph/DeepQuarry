@@ -480,7 +480,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 		to_chat(user, span_notice("Cannot establish a bluespace connection."))
 		return
 
-	if(GLOB.deathsquad.deployed)
+	if(antag_deathsquad().deployed)
 		to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 		return
 
@@ -530,7 +530,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 			to_chat(user, "[using_map.boss_short] does not currently have a shuttle available in your sector. Please try again later.")
 			return
 
-		if(GLOB.deathsquad.deployed == 1)
+		if(antag_deathsquad().deployed == 1)
 			to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 			return
 

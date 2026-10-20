@@ -55,6 +55,8 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	return "<a href='byond://?_src_=holder;[HrefToken()];viewruntime=[REF(src)][back_to_param]'>[linktext]</a>"
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/error_viewer/error_cache)
 /datum/error_viewer/error_cache
 	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
 	var/list/error_sources
@@ -142,6 +144,7 @@ CAPABILITIES(/datum/error_viewer/error_cache)
 CAPABILITIES(/datum/error_viewer/error_entry)
 	ref_one(nameof(error_source), /datum/error_viewer/error_source)
 	owns_one(nameof(exc), /exception)
+	ref_one(nameof(usr_loc))
 
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)
 	if (!istype(e))
@@ -191,4 +194,7 @@ CAPABILITIES(/datum/error_viewer/error_entry)
 /// The error_source this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
 	return error_source
+
+CAPABILITIES(/datum/error_viewer/error_source)
+	ref_many(nameof(errors))
 

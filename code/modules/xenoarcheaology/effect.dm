@@ -236,3 +236,6 @@
 /// This code is handled in effect_master.dm
 /datum/artifact_effect/proc/master() as /datum/artifact_master
 	return master
+
+CAPABILITIES(/datum/artifact_effect)
+	ref_one(nameof(master))

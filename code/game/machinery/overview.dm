@@ -278,7 +278,7 @@
 
 #endif
 
-	user.client.screen += user.mapobjs
+	client_screen_add(user.client, user.mapobjs)
 
 	src.close(user)
 
@@ -297,7 +297,7 @@
 	return hex2num(copytext(col, 6))
 
 /mob/proc/clearmap()
-	src.client.screen -= src.mapobjs
+	client_screen_remove(src.client, src.mapobjs)
 	rel_clear(src, nameof(mapobjs)) // the screens are owned: clearing disposes of them
 
 /obj/machinery/computer/security/proc/close_check(mob/user)

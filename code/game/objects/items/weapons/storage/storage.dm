@@ -192,6 +192,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// Why `W` can't go in right now, or null if it can. One ledger check: the
 /// slot's acceptance and hold constraint, the count and space limits, and
 /// whether `W` can leave where it is. `user` is the mover (may be null).
+/// Text: dq_ledger_refusal() is the boundary that turns the slot's reason (a /datum/msg, admission.md D1) into what a player reads.
 /obj/item/storage/proc/insert_refusal(obj/item/W, mob/user)
 	make_contents_real()
 	return dq_ledger_refusal(W, src, CONTAINER_SLOT_STORAGE, user)
@@ -759,7 +760,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		var/atom/movable/storage_slot/SS = add_catcher(I)
 		// The three bar images are shared and mutated per item, so each slot keeps a snapshot of how they look for it now.
 		SS.set_bars(list(new /mutable_appearance(stored_start), new /mutable_appearance(stored_continue), new /mutable_appearance(stored_end)))
-		bar_start.vis_contents += SS
+		vis_add(bar_start, SS)
 
 	closer.screen_loc = "4:[storage_width+19],2:16"
 

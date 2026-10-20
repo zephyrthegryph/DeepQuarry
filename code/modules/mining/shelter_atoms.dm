@@ -329,7 +329,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 				preview_render += image('icons/misc/debug_group.dmi',S ,"blue")
 		else
 			preview_render += image('icons/misc/debug_group.dmi',S ,"blue")
-	user.client.images += preview_render
+	client_images_add(user.client, preview_render)
 	return preview_render
 
 /obj/item/survivalcapsule/proc/remove_preview(mob/user, list/preview_render, fade_time = 1 SECOND)
@@ -342,7 +342,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 /obj/item/survivalcapsule/proc/delete_preview_render(mob/user, list/preview_render)
 	if(user?.client)
-		user.client.images -= preview_render
+		client_images_remove(user.client, preview_render)
 
 /obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
 	var/status = template().check_deploy(deploy_location, is_ship)
@@ -681,6 +681,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 	without("press_hand")
 	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_refusal))), then(PROC_REF(pod_used)))
+	ref_one(nameof(door))
 
 /obj/machinery/button/remote/airlock/survival_pod/proc/pod_used(datum/act/op/A)
 	pod_glass()
@@ -721,6 +722,7 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
 CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 	op("toggle_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_toggle_impl)))
+	ref_one(nameof(target_light))
 
 /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(datum/act/op/A)
 	set_on(!on)

@@ -1,6 +1,6 @@
 #define NEXT_PAGE_ID "__next__"
 
-/// Open prompt ring id -> its entity_handle (a ring that was deleted without dismiss() resolves to null).
+/// Open prompt ring id -> its ref_token (a ring that was deleted without dismiss() resolves to null).
 GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial
@@ -133,6 +133,7 @@ CAPABILITIES(/datum/radial_menu)
 	ref_one(nameof(anchor))
 	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
 	owns_many(nameof(elements), /atom/movable/screen)
+	ref_one(nameof(current_user))
 
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)
@@ -278,7 +279,7 @@ CAPABILITIES(/datum/radial_menu)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
 			info_button.set_plane(PLANE_PLAYER_HUD_ABOVE)
 			info_button.set_layer(RADIAL_CONTENT_LAYER)
-			E.vis_contents += info_button
+			vis_add(E, info_button)
 
 /datum/radial_menu/New()
 	rel_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
@@ -341,7 +342,7 @@ CAPABILITIES(/datum/radial_menu)
 	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
 	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
 	menu_holder.appearance_flags |= KEEP_APART|RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
-	menu_holder.vis_contents += elements + close_button
+	vis_add(menu_holder, elements + close_button)
 	current_user().images += menu_holder
 
 /datum/radial_menu/proc/hide()

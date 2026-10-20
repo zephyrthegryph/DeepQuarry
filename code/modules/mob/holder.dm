@@ -81,7 +81,7 @@
 	rel_set(src, nameof(held_mob), held)
 	original_vis_flags = held.vis_flags
 	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
-	vis_contents += held
+	vis_add(src, held)
 	name = held.name
 	original_transform = held.transform
 	held.transform = null
@@ -430,4 +430,4 @@ CAPABILITIES(/obj/item/holder/fish)
 
 CAPABILITIES(/obj/item/holder/protoblob)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))

@@ -1,7 +1,7 @@
 
 /mob/living/simple_mob
 	// What do you hit the mob with (on help) to get something from it?
-	var/obj/harvest_tool // a type path, never an instance
+	var/harvest_tool // a type path, never an instance
 	// How long do we have to wait until it's harvestable again?
 	var/harvest_cooldown = 10 MINUTES
 	// How long does it take to harvest?
@@ -18,7 +18,7 @@
 /mob/living/simple_mob/examine(mob/user)
 	. = ..()
 	if(stat != DEAD && user && harvest_tool && (get_dist(user, src) <= 3))
-		. += span_notice("\The [src] can be [harvest_verb] with a [initial(harvest_tool.name)] every [harvest_cooldown / 600] minutes.")
+		. += span_notice("\The [src] can be [harvest_verb] with a [harvest_tool_name()] every [harvest_cooldown / 600] minutes.")
 		var/time_to_harvest = COOLDOWN_TIMELEFT(src, harvest_ready_cooldown)
 		if(time_to_harvest > 0)
 			. += span_notice("It can be [harvest_verb] in [(time_to_harvest)] second(s).")
@@ -45,3 +45,8 @@
 			new new_path(get_turf(user))
 
 	return
+
+/// The harvest tool's name (harvest_tool holds a type path).
+/mob/living/simple_mob/proc/harvest_tool_name()
+	var/obj/item/tool_type = harvest_tool
+	return initial(tool_type.name)

@@ -269,12 +269,37 @@
 	return null
 
 /// An authority a caller is granted for one transfer: who granted it (a log name, never a reference), why, and which AUTH_* bits it carries.
-/// slot_transfer(authority =) takes this or a bare mask; the grant is logged. (admission.md D2j: the datum replaces forced/silent flags; a `quiet`
-/// field arrives with the first feedback path that reads it.)
+/// slot_transfer(authority =) takes this or a bare mask; the grant is logged. (admission.md D2j: the datum replaces forced/silent flags.)
+/// `skips` are SKIP_* checks the grant leaves out (equip: SKIP_COVERING); `quiet` keeps the refusal from being told.
 /datum/authority_grant
 	var/mask = AUTH_ADMIN
 	var/granted_by = "the game"
 	var/reason
+	var/skips = NONE
+	var/quiet = FALSE
+
+/// A grant that skips checks without forcing anything: `skips` SKIP_* bits, for `reason`.
+/proc/skip_authority(skips, reason, quiet = FALSE)
+	RETURN_TYPE(/datum/authority_grant)
+	var/datum/authority_grant/granted = new
+	granted.mask = NONE
+	granted.skips = skips
+	granted.quiet = quiet
+	granted.reason = reason
+	return granted
+
+/// Does `authority` (a grant, a bare AUTH_* mask or null) skip `skip`?
+/proc/authority_skips(authority, skip)
+	if(!istype(authority, /datum/authority_grant))
+		return FALSE
+	var/datum/authority_grant/granted = authority
+	return !!(granted.skips & skip)
+
+/// Dressing a mob from code (spawns, outfits, swaps): the covering check is left out; the authority equip_to_slot_if_possible() uses by default.
+GLOBAL_DATUM_INIT(authority_dressing, /datum/authority_grant, skip_authority(SKIP_COVERING, "dressing from code"))
+/// Code that seats or holds someone regardless of the seat's own consent (a cryo tube closing, a nest, a slime latching): SKIP_REQUIREMENTS.
+/// It replaces the old `forced = TRUE` buckle flag; it skips the requirements, never the sanity (a rider already buckled is still refused).
+GLOBAL_DATUM_INIT(authority_forced, /datum/authority_grant, skip_authority(SKIP_REQUIREMENTS, "forced by code"))
 
 /// A grant of admin authority: `actor` forces a transfer for `reason`.
 /proc/admin_authority(mob/actor, reason, mask = AUTH_ADMIN)

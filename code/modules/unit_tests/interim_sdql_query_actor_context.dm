@@ -27,3 +27,6 @@
 	TEST_ASSERT_NULL(probe.resolved_actor, "an actorless query cannot adopt the unrelated ambient caller")
 	TEST_ASSERT_NULL(world.SDQL_var(null, list("marked"), 1, probe, FALSE, system_query), "an actorless query safely has no marked datum")
 	TEST_ASSERT_NULL(world.SDQL_var(null, list("usr"), 1, probe, FALSE, null), "an evaluation without query context cannot inherit an ambient actor")
+
+CAPABILITIES(/obj/interim_sdql_actor_probe)
+	ref_one(nameof(query))

@@ -23,7 +23,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		var/candidate = pick(candidates)
 
 		var/mob/living/carbon/alien/larva/new_xeno = new(vent.loc)
-		new_xeno.key = candidate
+		bind_player(new_xeno, candidate)
 
 		candidates -= candidate
 		vents -= vent

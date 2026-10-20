@@ -36,4 +36,4 @@ CAPABILITIES(/obj/item/clothing/under/vox/vox_casual)
 
 
 CAPABILITIES(/obj/item/clothing/under/vox)
-	acceptance(CONSTRAINT_FIT, fits_category(FIT_VOX), mode = ACCEPTANCE_REPLACE)
+	fits_as(FIT_VOX)

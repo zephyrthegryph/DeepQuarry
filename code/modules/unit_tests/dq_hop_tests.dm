@@ -55,8 +55,8 @@
 	var/mob/hop_keyed/M = allocate(/mob/hop_keyed)
 	test_drain()
 	var/base = M.hop_key_heard
-	M.ckey = "hoptestkey" // a key arriving without a client, as a disconnected player's mob keeps its key
+	bind_player(M, "hoptestkey", as_ckey = TRUE) // a key arriving without a client, as a disconnected player's mob keeps its key
 	M.ckey_changed()
 	test_drain()
 	TEST_ASSERT_EQUAL(M.hop_key_heard, base + 1, "a key arriving or leaving publishes ckey to the hook that reads it")
-	M.ckey = null
+	bind_player(M, null, as_ckey = TRUE)

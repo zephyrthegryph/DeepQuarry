@@ -29,6 +29,7 @@ CAPABILITIES(/obj/structure/morgue)
 	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("label", item(/obj/item/pen), label("Use"), asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(label_question)), "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(label_entered)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_many(nameof(occupants))
 
 
 /obj/structure/morgue/proc/get_occupants()

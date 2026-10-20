@@ -1,4 +1,3 @@
-GLOBAL_DATUM(ert, /datum/antagonist/ert)
 
 /datum/antagonist/ert
 	id = MODE_ERT
@@ -35,7 +34,6 @@ GLOBAL_DATUM(ert, /datum/antagonist/ert)
 
 /datum/antagonist/ert/New()
 	..()
-	GLOB.ert = src
 
 /datum/antagonist/ert/greet(datum/mind/player)
 	if(!..())
@@ -54,3 +52,7 @@ GLOBAL_DATUM(ert, /datum/antagonist/ert)
 
 	create_id(role_text, player)
 	return 1
+
+/// The /datum/antagonist/ert template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_ert() as /datum/antagonist/ert
+	return SSantag?.all_antag_types[MODE_ERT]

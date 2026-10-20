@@ -17,22 +17,23 @@
 CAPABILITIES(/obj/item/extraction_pack)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = computed(PROC_REF(possible_beacon_choices)), "timeout" = 0), step = "beacon", when = PROC_REF(has_possible_beacons)), then(PROC_REF(interaction_self)))
 
-	op("attach", at_target(/atom/movable), label("Attach"), needs(req(PROC_REF(can_attach))), begins(PROC_REF(attach_begins)), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(attach_done)))
+	op("attach", at_target(/atom/movable), label("Attach"), needs(req(PROC_REF(attach_refusal))), begins(PROC_REF(attach_begins)), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(attach_done)))
+	ref_one(nameof(beacon))
 
 /// Requirement: the pack is linked to a beacon and the target can be sent (anything else is refused, some of it silently).
 /// Why the pack cannot be attached to the target: a text, the silent message for a target that is simply not eligible, or null.
-/obj/item/extraction_pack/proc/can_attach(datum/act/op/A)
+/obj/item/extraction_pack/proc/attach_refusal(datum/act/op/A)
 	var/atom/movable/target = A.target
 	if(!read_once(beacon()))
-		return "[src] is not linked to a beacon, and cannot be used."
+		return msg_reason("[src] is not linked to a beacon, and cannot be used.")
 	if(!can_use_indoors)
 		var/turf/T = get_turf(target)
 		if(T && !T.is_outdoors())
-			return "[src] can only be used on things that are outdoors!"
+			return msg_reason("[src] can only be used on things that are outdoors!")
 	if(!istype(target) || !read_once(A.actor.Adjacent(target)))
 		return /datum/msg/req_silent
 	if(!safe_for_living_creatures && read_once(check_for_living_mobs(target)))
-		return "[src] is not safe for use with living creatures, they wouldn't survive the trip back!"
+		return msg_reason("[src] is not safe for use with living creatures, they wouldn't survive the trip back!")
 	if(!isturf(read_once(target.loc)) || target.anchored) // no extracting stuff inside other stuff
 		return /datum/msg/req_silent
 	return null
@@ -220,3 +221,6 @@ CAPABILITIES(/obj/structure/extraction_point)
 /// Accessor for the stored_obj var.
 /obj/effect/extraction_holder/proc/stored_obj() as /atom/movable
 	return stored_obj
+
+CAPABILITIES(/obj/effect/extraction_holder)
+	ref_one(nameof(stored_obj))

@@ -199,14 +199,14 @@
 
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += list( hud_used?.throw_icon, hud_used?.zone_sel, hud_used?.hands, hud_used?.healths, hud_used?.pullin, robot_inventory, hud_used?.gun_setting_icon)
+		client_screen_add(client, list( hud_used?.throw_icon, hud_used?.zone_sel, hud_used?.hands, hud_used?.healths, hud_used?.pullin, robot_inventory, hud_used?.gun_setting_icon))
 		if(HUD.combat_mode_button)
-			client.screen += HUD.combat_mode_button
+			client_screen_add(client, HUD.combat_mode_button)
 		if(length(HUD.adding))
-			client.screen += HUD.adding
+			client_screen_add(client, HUD.adding)
 		if(length(HUD.other))
-			client.screen += HUD.other
-		client.screen += client.void
+			client_screen_add(client, HUD.other)
+		client_screen_add(client, client.void)
 		if(vtec_active)
 			using = new /atom/movable/screen()
 			using.name = "control_vtec"
@@ -223,7 +223,7 @@
 			rel_set(HUD, nameof(HUD.control_vtec), using)
 			set_m_intent(I_RUN)
 			HUD.move_intent.icon_state = "running"
-			client.screen += HUD.control_vtec
+			client_screen_add(client, HUD.control_vtec)
 
 /datum/hud/proc/toggle_vtec_control()
 	if(!isrobot(mymob()))
@@ -247,9 +247,9 @@
 			control_vtec.icon_state = "speed_2"
 		R.set_m_intent(I_RUN)
 		R.hud_used.move_intent.icon_state = "running"
-		R.client?.screen += control_vtec
+		client_screen_add(R.client, control_vtec)
 	else
-		R.client?.screen -= control_vtec
+		client_screen_remove(R.client, control_vtec)
 		R.speed = 0
 
 /datum/hud/proc/toggle_show_robot_modules()
@@ -286,7 +286,7 @@
 		var/display_rows = -round(-(r.module.modules.len) / 8)
 		r.robot_modules_background.screen_loc = "CENTER-4:16,SOUTH+1:7 to CENTER+3:16,SOUTH+[display_rows]:7"
 		if(r.client)
-			r.client.screen += r.robot_modules_background
+			client_screen_add(r.client, r.robot_modules_background)
 
 		var/x = -4	//Start at CENTER-4,SOUTH+1
 		var/y = 1
@@ -306,7 +306,7 @@
 		for(var/atom/movable/A in r.module.modules)
 			if(r.client && !r.module_slot_of(A) )
 				//Module is not currently active
-				r.client.screen += A
+				client_screen_add(r.client, A)
 				if(x < 0)
 					A.screen_loc = "CENTER[x]:16,SOUTH+[y]:7"
 				else
@@ -324,10 +324,10 @@
 		for(var/atom/A in r.module?.modules)
 			if(r.client && !r.module_slot_of(A) )
 				//Module is not currently active
-				r.client.screen -= A
+				client_screen_remove(r.client, A)
 		r.shown_robot_modules = 0
 		if(r.client)
-			r.client.screen -= r.robot_modules_background
+			client_screen_remove(r.client, r.robot_modules_background)
 
 /mob/living/silicon/robot/update_hud()
 	if(modtype)

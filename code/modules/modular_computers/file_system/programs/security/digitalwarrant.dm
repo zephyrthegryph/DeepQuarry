@@ -37,6 +37,7 @@ CAPABILITIES(/datum/computer_file/program/digitalwarrant)
 	op("editwarrantnamecustom", ui_act("editwarrantnamecustom"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Please input name")), then(PROC_REF(ui_act_editwarrantnamecustom)))
 	op("editwarrantcharges", ui_act("editwarrantcharges"), needs(req(PROC_REF(warrant_id_ok))), asks(/datum/prompt/text, fields = list("title" = "Charges", "question" = "Please input charges", "default" = computed(PROC_REF(charges_default)))), then(PROC_REF(ui_act_editwarrantcharges)))
 	op("editwarrantauth", ui_act("editwarrantauth"), then(PROC_REF(ui_act_editwarrantauth)))
+	ref_one(nameof(activewarrant_ref))
 
 /datum/computer_file/program/digitalwarrant/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()

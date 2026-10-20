@@ -1,5 +1,7 @@
 //shuttle moving state defines are in setup.dm
 
+/// A shuttle lives for the round (SSshuttles holds it by tag): never deleted unless forced (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/shuttle)
 /datum/shuttle
 	var/name = ""
 	var/warmup_time = 0
@@ -57,6 +59,10 @@ CAPABILITIES(/datum/shuttle)
 	/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
 	every(2 SECONDS, then(PROC_REF(shuttle_tick)), when = nameof(working))
 	on_change(nameof(shuttle_flags), ANY, then(PROC_REF(refresh_working)))
+	ref_many(nameof(crash_locations))
+	ref_one(nameof(current_location))
+	ref_one(nameof(transit_dest))
+	ref_one(nameof(transit_start))
 
 /// Follows the process flag and the process state: only a shuttle New() registered runs its step (one that skipped registration is dropped by its creator).
 /datum/shuttle/proc/refresh_working(datum/act/A)

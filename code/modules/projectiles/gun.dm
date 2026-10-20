@@ -129,6 +129,8 @@ CAPABILITIES(/obj/item/gun)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Remove the DNA lock"), needs(req(PROC_REF(lock_refusal))),
 		begins(PROC_REF(lock_removal_begins)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE), wait(2.5 SECONDS), then(PROC_REF(lock_removed)))
 	owns_one(nameof(attached_lock), starts = when(nameof(dna_lock), /obj/item/dnalockingchip), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(auto_target))
+	ref_one(nameof(last_moved_mob))
 
 MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
@@ -281,7 +283,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 			auto_target.delay_del = 1//And reset the del so its like they got a new one and doesnt instantly vanish
 			to_chat(user, span_notice("You ready \the [src]!  Click and drag the target around to shoot."))
 		else//Otherwise just make a new one
-			auto_target = new/atom/movable/screen/auto_target(get_turf(A), src)
+			rel_set(src, nameof(auto_target), new/atom/movable/screen/auto_target(get_turf(A), src))
 			act_message(user, src, others = span_danger("%U% readies %T%!"))
 			play_sfx(src, SFX_WEAPONS_TARGETON)
 			to_chat(user, span_notice("You ready \the [src]!  Click and drag the target around to shoot."))

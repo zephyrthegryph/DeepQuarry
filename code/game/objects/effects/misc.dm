@@ -131,11 +131,11 @@ CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight/fire)
 	var/icon_dist
 
 CAPABILITIES(/obj/effect/abstract/directional_lighting)
+	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	owns_one(nameof(light_spot), /obj/effect/abstract/light_spot, starts = /obj/effect/abstract/light_spot, starts_args = NO_LOC)
 
 /obj/effect/abstract/directional_lighting/Initialize(mapload)
 	. = ..()
-	vis_contents += light_spot
 
 /obj/effect/abstract/directional_lighting/proc/face_light(atom/movable/source, angle, distance)
 	if(!loc) // We're in nullspace
@@ -170,3 +170,6 @@ CAPABILITIES(/obj/effect/abstract/directional_lighting)
 	moveToNullspace()
 	return TRUE
 
+/// Shows the parts Initialize() built through this holder (the engine's vis_contents verb).
+/obj/effect/abstract/directional_lighting/proc/show_vis_parts(datum/act/timer/A)
+	vis_add(src, light_spot)

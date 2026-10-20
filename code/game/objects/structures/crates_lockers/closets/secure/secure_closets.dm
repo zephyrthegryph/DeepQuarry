@@ -129,6 +129,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 	extend("lock_with_item", needs(req(PROC_REF(owner_present))))
 	param(nameof(owner), pos = 1)
 	param(nameof(self_del), pos = 2)
+	ref_one(nameof(owner))
 
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
 	return (allowed(A.actor)) ? null : MSG(lock/denied)

@@ -34,7 +34,9 @@
 /// (not recursing into children beyond what qdel() already does for
 /// SLOT_DROP_DELETE -- see file header). Skips is_mind_slot entries: phase
 /// 0.5 already resolved those, tree-wide, before this ever runs.
-/atom/movable/proc/dq_lifecycle_resolve_contents()
+/// `forced`: the destroy is a forced one (qdel(force = TRUE): cleanup, admin delete). Its SPILL slots delete their contents instead of
+/// spilling them (admission.md D10: spill is the default for gameplay destruction; a forced delete leaves no litter).
+/atom/movable/proc/dq_lifecycle_resolve_contents(forced = FALSE)
 	var/datum/ledger/L = dq_ledger(src, destroying = TRUE) // builds it (and resolves a latent generator) if this is its first use
 	if(!L)
 		return
@@ -51,8 +53,8 @@
 		var/list/things = L.slots[def.slot_id]
 		for(var/atom/movable/thing as anything in things.Copy())
 			if(!QDELETED(thing))
-				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor)
-	dq_lifecycle_resolve_latent(L, drop, successor)
+				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor, forced)
+	dq_lifecycle_resolve_latent(L, drop, successor, forced)
 
 /// End of phase 3: the contents phase must have carried out every slot's policy. Checked here,
 /// while the ledger still exists: phase 4 disposes of its runtime-owned ledger through
@@ -104,10 +106,24 @@
 			parts += "slot [def.slot_id] (policy [def.drop_policy]): [jointext(names, ", ")] latent entries=[latent_n]"
 	return jointext(parts, "; ")
 
+/// Lifecycle property (doc/rewrite/proposals/relations.md D17): a thing that must outlive its container's deletion whatever the slot's drop policy
+/// says (a mob with a mind or a client, a brain or MMI holding one, the nuclear disk). A container's destroy transaction spills it instead of
+/// deleting it. Default FALSE; a type that qualifies overrides it.
+/atom/movable/proc/survives_container()
+	return FALSE
+
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
-/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/relation_definition/slot/def, atom/movable/thing, atom/drop, atom/movable/successor)
+/proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/relation_definition/slot/def, atom/movable/thing, atom/drop, atom/movable/successor, forced = FALSE)
 	var/flags = LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING
-	switch(def.drop_policy)
+	var/policy = def.drop_policy
+	if(forced && policy == SLOT_DROP_SPILL) // a forced delete leaves no litter (admission.md D10)
+		policy = SLOT_DROP_DELETE
+	// survives_container() is checked after the forced conversion and before the DELETE branch: a deleting slot spills such a thing instead
+	// (a latent entry cannot hold one), on a forced delete too (admission.md D10).
+	if((policy == SLOT_DROP_DELETE || policy == SLOT_DROP_TO_LATENT) && thing.survives_container())
+		log_world("LIFECYCLE: [thing] ([thing.type]) survives the deletion of [holder] ([holder.type]); slot [def.slot_id] policy [policy] became SPILL")
+		policy = SLOT_DROP_SPILL
+	switch(policy)
 		if(SLOT_DROP_DELETE)
 			spent(thing)
 			return
@@ -145,7 +161,7 @@
 /// holder-kept) entries are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
 /// they land in another latent holder, and are created only where they land
 /// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
-/proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor)
+/proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor, forced = FALSE)
 	var/atom/movable/holder = L.holder
 	for(var/datum/latent_entry/entry as anything in L.latent_list())
 		var/datum/relation_definition/slot/def = L.def_by_id(entry.slot)
@@ -156,7 +172,7 @@
 		// SLOT_DROP_HOLDER: the base Destroy() deletes a holder-kept slot's real contents
 		// (a machine's board and parts, a body's worn items), so its latent entries go with
 		// the holder too. Spilling them made every deleted machine drop its unbuilt parts.
-		if(def.drop_policy == SLOT_DROP_DELETE || def.drop_policy == SLOT_DROP_HOLDER)
+		if(def.drop_policy == SLOT_DROP_DELETE || def.drop_policy == SLOT_DROP_HOLDER || (forced && def.drop_policy == SLOT_DROP_SPILL))
 			continue
 		var/atom/target
 		switch(def.drop_policy)

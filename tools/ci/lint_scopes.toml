@@ -711,6 +711,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
+  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/datums/properties/equip_slots.dm;code/modules/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
   "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
@@ -722,6 +723,8 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
+  "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",
   "required_reagents = takes = list(reagent(id, amount), ...) in the transformation() entry; a compiled rule reads reagent_takes",
   "calc_reaction_progress = /datum/xform/proc/progress() (code/library/transformations/transformation_entry.dm)",
@@ -778,6 +781,34 @@ banned = [
   "ACT_TRY = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
   "act_last_outcome = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
   "act_last_reply = world actions answer through ACT_ATTEMPT(): a /datum/act_refusal carries the outcome, reason and reply (ACT_REFUSED_BY/ACT_TAKEN_OVER(R)/ACT_REPLY(R)); there is no last-action side channel (doc/rewrite/proposals/admission.md wave 2)",
+  "can_buckle_check = buckling asks buckle_refusal(M, forced): null or a reason; buckle_feedback() tells the mob (doc/rewrite/proposals/admission.md wave 6)",
+  "can_install_synth = synth parts ask synth_install_refusal(): null or a reason (doc/rewrite/proposals/admission.md wave 6)",
+  "can_attach_accessory = accessories ask accessory_refusal(A): null or a reason (doc/rewrite/proposals/admission.md wave 6)",
+  "can_attach = attach gates are attach_refusal(): null or a reason (doc/rewrite/proposals/admission.md wave 6)",
+  "can_insert = insert gates are insert_refusal(I): null or a reason, never 0/1/2 codes or a boolean (doc/rewrite/proposals/admission.md wave 6)",
+  "can_accept_item = recyclers ask recycle_refusal(O): null or a reason; a conveyed item it does not take goes to divert_item() (doc/rewrite/proposals/admission.md wave 6)",
+  "ignore_obstruction = an equip that leaves the covering check out passes authority = a /datum/authority_grant with SKIP_COVERING (skip_authority(), GLOB.authority_dressing) (doc/rewrite/proposals/admission.md wave 6b)",
+  "ignore_obstructions = equip_to_slot_if_possible(authority =): GLOB.authority_dressing skips the covering check, null checks everything (doc/rewrite/proposals/admission.md wave 6b)",
+  "dq_equip_refusal = the equip pipeline is the item's equip_refusal(M, slot, go_over_slot, actor, authority) (doc/rewrite/proposals/admission.md wave 6b)",
+  "dq_equip_item_refusal = the item's own wearer constraints are wearer_constraint_refusal(M, slot, actor) (doc/rewrite/proposals/admission.md wave 6b)",
+  "is_alien_whitelisted = alien_whitelist_refusal(C, species): null or the reason (doc/rewrite/proposals/admission.md wave 7, D7)",
+  "is_job_whitelisted = job_whitelist_refusal(M, rank): null or the reason (doc/rewrite/proposals/admission.md wave 7, D7)",
+  "IsJobAvailable = job_join_refusal(rank): the join gates in order, null or the reason that failed (doc/rewrite/proposals/admission.md wave 7, D7)",
+  "req_acceptance_type = the acceptance leaves lost their prefix: req_type() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_tag = the acceptance leaves lost their prefix: req_tag() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_max_size = the acceptance leaves lost their prefix: req_max_size() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_has_uniform = the acceptance leaves lost their prefix: req_has_uniform() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_suit_storage_takes = the acceptance leaves lost their prefix: req_suit_storage_takes() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_robotic_head = the acceptance leaves lost their prefix: req_robotic_head() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_right_ear_free = the acceptance leaves lost their prefix: req_right_ear_free() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_overshoe_clearance = the acceptance leaves lost their prefix: req_overshoe_clearance() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_leg_clearance = the acceptance leaves lost their prefix: req_leg_clearance() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_left_ear_free = the acceptance leaves lost their prefix: req_left_ear_free() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_glove_layering = the acceptance leaves lost their prefix: req_glove_layering() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_backpack_takes = the acceptance leaves lost their prefix: req_backpack_takes() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_arm_clearance = the acceptance leaves lost their prefix: req_arm_clearance() (doc/rewrite/proposals/admission.md wave 8)",
+  "req_acceptance_accessory_attachable = the acceptance leaves lost their prefix: req_accessory_attachable() (doc/rewrite/proposals/admission.md wave 8)",
+  "CONSTRAINT_EQUIP = the equip channel is gone: an item type's own wearer rules are extend(/datum/act/equip, needs(...)), asked through equip_act_refusal() (doc/rewrite/proposals/admission.md wave 8)",
   "disable_warning = a refusal check tells nobody: equip_refusal()/mob_can_unequip() are pure and the caller shows the reason (equip_feedback()); an effect proc that may stay silent takes quiet = (doc/rewrite/proposals/admission.md wave 4)",
   "equip_spec = the constraint spec tables are gone: an item declares acceptance(CONSTRAINT_*, req...) or fits_category(); a holder's slot declares accepts (doc/rewrite/proposals/admission.md waves 3-5)",
   "fit_spec = the constraint spec tables are gone: an item declares acceptance(CONSTRAINT_*, req...) or fits_category(); a holder's slot declares accepts (doc/rewrite/proposals/admission.md waves 3-5)",
@@ -1590,7 +1621,43 @@ retired_macros = [
 # exempt_types: types an instance never qdel()s, so a reference to one cannot pin a deleted object: the kernel's systems and
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/"]
-exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm"] # the last four ARE the registry/membership/relation storage: they hold members by design
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
+exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
-exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def"]
+# /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak"]
+# Holder types whose instances live for one call or one resolution and are dropped with it (relations proposal D8, reviewed per type):
+# one emitted event (code/engine/declare/definition_types.dm), a draw's look builder (one draw), one SQL request and its answer rows (code/engine/io/db.dm),
+# a relation edge (engine relation storage, ended with its relation; covered by dq_gc_sweep), a materialize frame (open only while one load initializes, code/controllers/subsystems/atoms_batch.dm), a reservation (lives until its op ends; the subtypes outside code/engine/parts/resource.dm too), one dispatch's context (code/datums/capabilities/dispatch.dm), op candidates, the resolution record, op sources and provider rows (code/engine/parts/resolve.dm, provider.dm), examine rows
+# (code/engine/present/examine.dm), constructor arguments (code/engine/lifeforms/params.dm), one serializer run's context (code/engine/state/serializer.dm).
+# A system's hot work queues ("type::var"), reviewed per var (relations proposal wave 2): each entry is drained within a tick or two and
+# the drain skips a deleted member (QDELETED), so a queue never pins a deleted object past its next drain. A declared relation here would
+# add a reverse-index write to every enqueue (thousands per tick for lighting).
+work_queues = ["/datum/system/lighting::sources_queue", "/datum/system/radiation::dirty_turfs"] # each pinned by relations_work_queue_* (enqueue, delete, drain)
+transient_types = ["/datum/definition_event", "/datum/look", "/datum/io/sql", "/datum/relation_edge", "/datum/materialize_batch", "/datum/reservation", "/datum/dispatch_context", "/datum/op_cand", "/datum/op_resolution", "/datum/op_src", "/datum/prov", "/datum/present_row", "/datum/make_args", "/datum/state_context"]
+
+# rel_write_undeclared (tools/analyze/src/lints/rel_write_undeclared.rs; doc/rewrite/proposals/relations.md D1): a hard ban. Generated scaffolding is derived output.
+[lint.rel_write_undeclared]
+exempt_prefixes = ["code/engine/_generated/"]
+
+# ref_text (doc/rewrite/proposals/relations.md D9): a stored REF() / \ref[] text. The engine's own staleness keys and relation machinery key by REF text by design; tests are exempt.
+[lint.ref_text]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
+
+[lint.saved_handle]
+exempt_prefixes = ["code/engine/_generated/"]
+
+# untyped (doc/rewrite/proposals/relations.md D8): the same scope as stored_refs.
+[lint.untyped]
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
+[lint.untyped.lists]
+exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
+
+# player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
+[lint.player_link]
+exempt_prefixes = ["code/engine/_generated/"]
+exempt_files = ["code/modules/mob/bind_player.dm"]
+
+# native_ref_write (doc/rewrite/proposals/relations.md D11): the engine's own presentation code and tests are exempt; the rest is a ratchet.
+[lint.native_ref_write]
+exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]

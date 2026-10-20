@@ -138,11 +138,6 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
         1,
         "only independent owner skips worker preparation"
     );
-    assert_eq!(
-        store.qualified_reused(),
-        1,
-        "independent issued owner must avoid inherited factory validation"
-    );
     let (_, old) = before.prepared.units().last().unwrap();
     let (_, current) = retained.prepared.units().last().unwrap();
     assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
@@ -170,7 +165,6 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
     for (_, unit) in retained.prepared.units().iter().take(3) {
         assert_eq!(unit.abi.as_ref().unwrap().layout.invisibility, Some(9));
     }
-    assert!(store.visit_incidence_storage(|_| {}).unwrap().0 > 0);
 }
 #[test]
 fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature() {

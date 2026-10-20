@@ -4,6 +4,8 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 	CreateFeedChannel("Station Announcements", "NanoTrasen", 1, 1, "New Station Announcement Available")
 	// CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") // Removal
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lore/news)
 /datum/lore/news
 	var/tmp/datum/feed_channel/station_newspaper
 	var/datum/lore/codex/category/main_news/news_codex = new()
@@ -43,3 +45,6 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 /// The station_newspaper this refers to (a relation view: null once that is deleted).
 /datum/lore/news/proc/station_newspaper() as /datum/feed_channel
 	return station_newspaper
+
+CAPABILITIES(/datum/lore/news)
+	ref_one(nameof(station_newspaper))

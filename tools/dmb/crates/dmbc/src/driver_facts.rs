@@ -505,9 +505,30 @@ fn prepare_source_abi_mode_on_executor(
         .as_ref()
         .map(|_| abi_artifacts::batch::Capture::default());
     let semantic_host = abi_artifacts::admission::SemanticHost(evaluator.resolver);
+    // Semantic receipts are certified by the session's current answers when it has a database.
+    let answer = |query: &dm_ir::ResolveQuery| -> dm_ir::ResolvedMeaning {
+        match evaluator.resolver.transparent_receipt_observer() {
+            Some(observer) => observer.provider().resolve(*query),
+            None => evaluator.resolver.resolve(*query),
+        }
+    };
+    let answers = artifacts
+        .and_then(|store| store.query_db.as_deref())
+        .map(|db| db.request_answers(&answer));
+    let semantic_answers = answers.as_ref().map(abi_artifacts::admission::SemanticAnswers);
     let shared_admission = (!evaluator.resolver.observes_reads()
         || evaluator.resolver.transparent_receipt_observer().is_some())
-    .then(|| dm_session::ReceiptAdmission::new(&semantic_host));
+    .then(|| {
+        dm_session::ReceiptAdmission::with_oracle(
+            &semantic_host,
+            semantic_answers.as_ref().map(|answers| {
+                answers as &dyn dm_session::AnswerOracle<
+                    abi_artifacts::observations::Query,
+                    abi_artifacts::observations::Answer,
+                >
+            }),
+        )
+    });
     let artifact_keys = std::sync::Mutex::new(Vec::new());
     let owned_index;
     let index = match issued_units {

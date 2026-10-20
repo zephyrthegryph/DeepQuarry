@@ -15,13 +15,16 @@
 //! revalidation still works and a later read recomputes only the value.
 //! Reverse edges are kept: [`Db::dependants`] answers "what depends on X" without a scan.
 //!
+//! Storage is sharded by key (`SHARDS` mutexes, each with its own wake-up), so workers revalidating
+//! different queries do not contend on one lock; the revision is an atomic counter.
+//!
 //! Threads: queries may be fetched from several threads. A query being computed by one thread makes
 //! other readers of it wait. Two threads computing queries that read each other deadlock; the graph
 //! of a well-formed compile has no cycles (a same-thread cycle returns [`QueryError::Cycle`]).
 use std::any::Any;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock};
 use std::thread::ThreadId;
 
 pub type Hash = u128;
@@ -90,12 +93,22 @@ struct Node {
     busy: Option<ThreadId>,
 }
 
+/// One shard: the nodes whose key maps here, the reverse edges *into* those keys, and the counters
+/// of computations run on them.
 #[derive(Default)]
 struct State {
-    revision: u64,
     nodes: HashMap<Key, Node>,
     rdeps: HashMap<Key, HashSet<Key>>,
     stats: BTreeMap<Kind, KindStats>,
+}
+const SHARDS: usize = 64;
+struct Shard {
+    state: Mutex<State>,
+    wake: Condvar,
+}
+fn shard_of(key: Key) -> usize {
+    let mixed = (key.id as u64) ^ ((key.id >> 64) as u64) ^ (u64::from(key.kind.0) << 48);
+    (mixed.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> 58) as usize % SHARDS
 }
 
 /// Per-kind counters since creation.
@@ -112,9 +125,9 @@ pub struct KindStats {
 }
 
 pub struct Db {
-    state: Mutex<State>,
-    wake: Condvar,
-    kinds: Mutex<HashMap<Kind, Arc<KindDef>>>,
+    shards: Box<[Shard]>,
+    revision: AtomicU64,
+    kinds: RwLock<HashMap<Kind, Arc<KindDef>>>,
     verify: AtomicBool,
     verify_failures: Mutex<Vec<String>>,
 }
@@ -140,12 +153,12 @@ struct Busy<'a> {
 impl Drop for Busy<'_> {
     fn drop(&mut self) {
         if self.armed {
-            let mut state = self.db.lock();
+            let mut state = self.db.lock(self.key);
             if let Some(node) = state.nodes.get_mut(&self.key) {
                 node.busy = None;
             }
             drop(state);
-            self.db.wake.notify_all();
+            self.db.wake(self.key);
         }
     }
 }
@@ -153,22 +166,33 @@ impl Drop for Busy<'_> {
 impl Db {
     pub fn new() -> Self {
         Self {
-            state: Mutex::new(State { revision: 1, ..Default::default() }),
-            wake: Condvar::new(),
-            kinds: Mutex::new(HashMap::new()),
+            shards: (0..SHARDS)
+                .map(|_| Shard { state: Mutex::new(State::default()), wake: Condvar::new() })
+                .collect(),
+            revision: AtomicU64::new(1),
+            kinds: RwLock::new(HashMap::new()),
             verify: AtomicBool::new(false),
             verify_failures: Mutex::new(Vec::new()),
         }
     }
 
-    fn lock(&self) -> MutexGuard<'_, State> {
-        self.state.lock().unwrap_or_else(|error| error.into_inner())
+    fn lock(&self, key: Key) -> MutexGuard<'_, State> {
+        self.shards[shard_of(key)].state.lock().unwrap_or_else(|error| error.into_inner())
+    }
+    fn wake(&self, key: Key) {
+        self.shards[shard_of(key)].wake.notify_all();
+    }
+    fn wait<'a>(&self, key: Key, guard: MutexGuard<'a, State>) -> MutexGuard<'a, State> {
+        self.shards[shard_of(key)].wake.wait(guard).unwrap_or_else(|error| error.into_inner())
+    }
+    fn all_shards(&self) -> impl Iterator<Item = MutexGuard<'_, State>> {
+        self.shards.iter().map(|shard| shard.state.lock().unwrap_or_else(|error| error.into_inner()))
     }
 
     /// Register an input kind (values set with [`Db::set_input`]).
     pub fn define_input(&self, kind: Kind, name: &'static str) {
         self.kinds
-            .lock()
+            .write()
             .unwrap_or_else(|error| error.into_inner())
             .insert(kind, Arc::new(KindDef { name, compute: None }));
     }
@@ -181,14 +205,14 @@ impl Db {
         compute: impl Fn(&mut Ctx<'_>, &Value) -> Result<Outcome, QueryError> + Send + Sync + 'static,
     ) {
         self.kinds
-            .lock()
+            .write()
             .unwrap_or_else(|error| error.into_inner())
             .insert(kind, Arc::new(KindDef { name, compute: Some(Box::new(compute)) }));
     }
 
     fn kind_def(&self, kind: Kind) -> Result<Arc<KindDef>, QueryError> {
         self.kinds
-            .lock()
+            .read()
             .unwrap_or_else(|error| error.into_inner())
             .get(&kind)
             .cloned()
@@ -196,7 +220,7 @@ impl Db {
     }
 
     pub fn revision(&self) -> u64 {
-        self.lock().revision
+        self.revision.load(Ordering::SeqCst)
     }
 
     /// Recompute every green query once and record mismatches ([`Db::verify_failures`]).
@@ -209,14 +233,13 @@ impl Db {
 
     /// Set an input. Returns whether it changed (the revision advances only then).
     pub fn set_input<T: Any + Send + Sync>(&self, key: Key, value: T, hash: Hash) -> bool {
-        let mut state = self.lock();
+        let mut state = self.lock(key);
         if let Some(node) = state.nodes.get(&key) {
             if node.input && node.hash == hash && node.value.is_some() {
                 return false;
             }
         }
-        state.revision += 1;
-        let revision = state.revision;
+        let revision = self.revision.fetch_add(1, Ordering::SeqCst) + 1;
         let params: Value = Arc::new(());
         let node = state.nodes.entry(key).or_insert_with(|| Node {
             params,
@@ -240,13 +263,14 @@ impl Db {
     /// Remove a query (an input, or a derived node that no longer exists, such as a deleted file's
     /// declarations). Dependants see it as missing and rerun.
     pub fn remove(&self, key: Key) -> bool {
-        let mut state = self.lock();
+        let mut state = self.lock(key);
         let Some(node) = state.nodes.remove(&key) else {
             return false;
         };
-        state.revision += 1;
+        self.revision.fetch_add(1, Ordering::SeqCst);
+        drop(state);
         for dep in node.deps {
-            if let Some(set) = state.rdeps.get_mut(&dep) {
+            if let Some(set) = self.lock(dep).rdeps.get_mut(&dep) {
                 set.remove(&key);
             }
         }
@@ -274,8 +298,8 @@ impl Db {
     fn ensure(&self, key: Key, params: Option<Value>, need_value: bool) -> Result<Done, QueryError> {
         let me = std::thread::current().id();
         loop {
-            let mut state = self.lock();
-            let revision = state.revision;
+            let mut state = self.lock(key);
+            let revision = self.revision();
             let Some(node) = state.nodes.get_mut(&key) else {
                 let Some(params) = params else {
                     return Err(QueryError::Missing(key));
@@ -310,7 +334,7 @@ impl Db {
             match node.busy {
                 Some(owner) if owner == me => return Err(QueryError::Cycle(key)),
                 Some(_) => {
-                    let _state = self.wake.wait(state).unwrap_or_else(|error| error.into_inner());
+                    let _state = self.wait(key, state);
                     continue;
                 }
                 None => {}
@@ -353,7 +377,7 @@ impl Db {
                 guard.armed = false;
                 return self.run(key, &params, revision, false);
             }
-            let mut state = self.lock();
+            let mut state = self.lock(key);
             let done;
             {
                 let node = state.nodes.get_mut(&key).expect("busy node stays");
@@ -366,12 +390,12 @@ impl Db {
             let hash = done.hash;
             drop(state);
             guard.armed = false;
-            self.wake.notify_all();
+            self.wake(key);
             if self.verify.load(Ordering::Relaxed) {
                 self.verify_green(key, &params, hash);
             }
             if need_value && !have_value {
-                let mut state = self.lock();
+                let mut state = self.lock(key);
                 let node = state.nodes.get_mut(&key).expect("node stays");
                 if node.busy.is_some() {
                     continue;
@@ -420,7 +444,7 @@ impl Db {
             Ok(outcome) => outcome,
             Err(error) => return fail(self, &mut guard, error),
         };
-        let mut state = self.lock();
+        let mut state = self.lock(key);
         let old_deps;
         let done;
         let cutoff;
@@ -441,16 +465,6 @@ impl Db {
             node.busy = None;
             done = Done { value: Some(outcome.value), hash: outcome.hash, changed_at: node.changed_at };
         }
-        for dep in &old_deps {
-            if !deps.contains(dep) {
-                if let Some(set) = state.rdeps.get_mut(dep) {
-                    set.remove(&key);
-                }
-            }
-        }
-        for dep in &deps {
-            state.rdeps.entry(*dep).or_default().insert(key);
-        }
         let stats = state.stats.entry(key.kind).or_default();
         stats.computed += 1;
         if cutoff {
@@ -458,26 +472,48 @@ impl Db {
         }
         drop(state);
         guard.armed = false;
-        self.wake.notify_all();
+        self.wake(key);
+        // Reverse edges live in the shard of the dependency.
+        if old_deps != deps {
+            let current: HashSet<Key> = deps.iter().copied().collect();
+            for dep in &old_deps {
+                if !current.contains(dep) {
+                    if let Some(set) = self.lock(*dep).rdeps.get_mut(dep) {
+                        set.remove(&key);
+                    }
+                }
+            }
+            let previous: HashSet<Key> = old_deps.iter().copied().collect();
+            for dep in &deps {
+                if !previous.contains(dep) {
+                    self.lock(*dep).rdeps.entry(*dep).or_default().insert(key);
+                }
+            }
+        }
         Ok(done)
     }
 
     fn drop_fresh(&self, key: Key) {
-        let mut state = self.lock();
+        let mut state = self.lock(key);
         state.nodes.remove(&key);
         drop(state);
-        self.wake.notify_all();
+        self.wake(key);
     }
 
     /// Queries that read `roots` directly or transitively (the red candidates of a change).
     pub fn dependants(&self, roots: &[Key]) -> Vec<Key> {
-        let state = self.lock();
         let mut seen: HashSet<Key> = HashSet::new();
         let mut stack: Vec<Key> = roots.to_vec();
         let mut out = Vec::new();
         while let Some(key) = stack.pop() {
-            if let Some(set) = state.rdeps.get(&key) {
-                for &next in set {
+            let following: Vec<Key> = self
+                .lock(key)
+                .rdeps
+                .get(&key)
+                .map(|set| set.iter().copied().collect())
+                .unwrap_or_default();
+            {
+                for next in following {
                     if seen.insert(next) {
                         out.push(next);
                         stack.push(next);
@@ -492,40 +528,50 @@ impl Db {
     /// Drop the stored values of derived queries of the given kinds (all kinds when empty).
     /// Returns the estimated bytes freed. Hashes, dependencies and stamps are kept.
     pub fn evict_values(&self, kinds: &[Kind]) -> usize {
-        let mut state = self.lock();
         let mut freed = 0usize;
-        let mut counts: BTreeMap<Kind, u64> = BTreeMap::new();
-        for (key, node) in state.nodes.iter_mut() {
-            if node.input || node.busy.is_some() || node.value.is_none() {
-                continue;
+        for mut state in self.all_shards() {
+            let mut counts: BTreeMap<Kind, u64> = BTreeMap::new();
+            for (key, node) in state.nodes.iter_mut() {
+                if node.input || node.busy.is_some() || node.value.is_none() {
+                    continue;
+                }
+                if !kinds.is_empty() && !kinds.contains(&key.kind) {
+                    continue;
+                }
+                node.value = None;
+                freed += std::mem::take(&mut node.bytes);
+                *counts.entry(key.kind).or_default() += 1;
             }
-            if !kinds.is_empty() && !kinds.contains(&key.kind) {
-                continue;
+            for (kind, count) in counts {
+                state.stats.entry(kind).or_default().evicted += count;
             }
-            node.value = None;
-            freed += std::mem::take(&mut node.bytes);
-            *counts.entry(key.kind).or_default() += 1;
-        }
-        for (kind, count) in counts {
-            state.stats.entry(kind).or_default().evicted += count;
         }
         freed
     }
 
     /// Estimated bytes held by derived values.
     pub fn value_bytes(&self) -> usize {
-        self.lock().nodes.values().map(|node| node.bytes).sum()
+        self.all_shards().map(|state| state.nodes.values().map(|node| node.bytes).sum::<usize>()).sum()
     }
 
     pub fn len(&self) -> usize {
-        self.lock().nodes.len()
+        self.all_shards().map(|state| state.nodes.len()).sum()
     }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     pub fn stats(&self, kind: Kind) -> KindStats {
-        self.lock().stats.get(&kind).copied().unwrap_or_default()
+        let mut total = KindStats::default();
+        for state in self.all_shards() {
+            if let Some(stats) = state.stats.get(&kind) {
+                total.green += stats.green;
+                total.computed += stats.computed;
+                total.cutoff += stats.cutoff;
+                total.evicted += stats.evicted;
+            }
+        }
+        total
     }
 
     pub fn kind_name(&self, kind: Kind) -> &'static str {

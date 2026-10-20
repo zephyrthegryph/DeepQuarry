@@ -18,7 +18,6 @@ pub(super) struct Owner {
 impl Default for Owner {
     fn default() -> Self {
         let values = Store::shared_current_rosters();
-        values.enable_incidence();
         Self {
             values,
             publication: Arc::new(Default::default()),
@@ -94,6 +93,7 @@ impl SessionSymbolicMemo {
             reused: Arc::clone(&self.reused),
             pruned: Arc::clone(&self.pruned),
             declines: Arc::clone(&self.declines),
+            query_db: self.query_db.clone(),
             ..Self::default()
         })
     }

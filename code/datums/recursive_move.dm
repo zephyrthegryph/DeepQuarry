@@ -15,6 +15,7 @@
 
 CAPABILITIES(/datum/recursive_move)
 	ref_one(nameof(holder))
+	ref_many(nameof(parents))
 
 /atom/movable
 	/// The recursive move relay (dq_add_recursive_move()), or null.

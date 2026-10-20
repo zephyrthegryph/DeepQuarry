@@ -30,7 +30,7 @@
 
 /datum/decl/hierarchy/outfit/job/emergency_responder/post_equip(mob/living/carbon/human/H)
 	..()
-	GLOB.ert.add_antagonist(H.mind)
+	antag_ert().add_antagonist(H.mind)
 
 /datum/decl/hierarchy/outfit/job/clown
 	name = OUTFIT_JOB_NAME(JOB_CLOWN)

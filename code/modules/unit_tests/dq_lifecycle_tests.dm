@@ -68,7 +68,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
-		// The OM handle table (entity_handle()) is an id allocator, not a registration.
+		// The OM handle table (ref_token()) is an id allocator, not a registration.
 		if(findtext(name, "om_handle_") == 1)
 			continue
 		// type -> registries, a per-type cache filled on a type's first

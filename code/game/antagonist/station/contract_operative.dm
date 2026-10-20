@@ -1,4 +1,3 @@
-GLOBAL_DATUM(contract_operatives, /datum/antagonist/contract_operative)
 
 /**
  * A bounded antagonist role granted only while a trusted faction agent is
@@ -20,7 +19,6 @@ GLOBAL_DATUM(contract_operatives, /datum/antagonist/contract_operative)
 
 /datum/antagonist/contract_operative/New()
 	..()
-	GLOB.contract_operatives = src
 
 /datum/antagonist/contract_operative/get_candidates(ghosts_only)
 	return list()
@@ -30,3 +28,7 @@ GLOBAL_DATUM(contract_operatives, /datum/antagonist/contract_operative)
 
 /datum/antagonist/contract_operative/can_late_spawn()
 	return FALSE
+
+/// The /datum/antagonist/contract_operative template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_contract_operatives() as /datum/antagonist/contract_operative
+	return SSantag?.all_antag_types[CONTRACT_OPERATIVE_ANTAG_ID]

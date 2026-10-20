@@ -1187,3 +1187,6 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 		return
 	GLOB.living_players_by_zlevel[z] -= H
 	life_z_occupancy_changed(z)
+
+CAPABILITIES(/datum/unit_test/life_om)
+	ref_one(nameof(sched))

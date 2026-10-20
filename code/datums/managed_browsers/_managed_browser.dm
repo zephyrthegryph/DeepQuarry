@@ -53,3 +53,6 @@ GLOBAL_VAR(managed_browser_id_ticker)
 /// The client this browser is shown to (a relation view).
 /datum/managed_browser/proc/my_client() as /client
 	return my_client
+
+CAPABILITIES(/datum/managed_browser)
+	ref_one(nameof(my_client))

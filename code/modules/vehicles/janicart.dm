@@ -45,6 +45,7 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	op("janicart_toggle_brush", menu(), label("Toggle brushes"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(janicart_toggle_brush)))
 	owns_one(nameof(cell), starts = /obj/item/cell/high, on_destroy = ON_DESTROY_CONTAINED)
 	owns_one(nameof(key), starts = nameof(key_type), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(mybag))
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()

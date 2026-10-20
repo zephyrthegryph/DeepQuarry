@@ -74,7 +74,7 @@
 	GLOB.entopic_images += my_image
 	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
 		if(M.client)
-			M.client.images += my_image
+			client_images_add(M.client, my_image)
 
 /datum/entopic/proc/unregister_entopic()
 	if(!registered || !my_image)
@@ -84,7 +84,7 @@
 	GLOB.entopic_images -= my_image
 	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_ENTOPIC_USERS))
 		if(M.client)
-			M.client.images -= my_image
+			client_images_remove(M.client, my_image)
 
 /datum/entopic/proc/show()
 	if(!my_image)

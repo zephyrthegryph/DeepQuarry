@@ -134,10 +134,10 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 		// available for every species, so this entry is just confusing.
 		if(species_name == SPECIES_CUSTOM)
 			continue
-		// Drop species the player isn't whitelisted for. is_alien_whitelisted
+		// Drop species the player isn't whitelisted for. alien_whitelist_refusal
 		// is a guard for admin-only / role-specific species; surfacing those
 		// in the picker just teases the player with an unreachable option.
-		if(C && !is_alien_whitelisted(C, S))
+		if(C && alien_whitelist_refusal(C, S))
 			continue
 		all_species[species_name] = list(
 			"name" = S.name,

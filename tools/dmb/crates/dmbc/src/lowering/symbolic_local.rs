@@ -245,7 +245,6 @@ impl SessionSymbolicMemo {
         static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("local.rebind");
         static SHARE: dm_profile::Accumulator = dm_profile::Accumulator::new("local.share_code");
         let attempt = self.attempt.as_ref()?;
-        let observer = crate::lowering_memo::RecordingResolver::new(host);
         let match_timer = MATCH.time();
         // A failed weak issuer witness cannot consume the semantic certificate
         // needed by ordinary exact-key/ABI admission later in this same request.
@@ -313,7 +312,10 @@ impl SessionSymbolicMemo {
                             );
                             completed.is_some()
                         },
-                        |leaf| observer.record_admitted(leaf),
+                        // The host does not observe reads (checked above): an admitted leaf has
+                        // no recorder to reach, so it is not replayed (which issued a domain
+                        // version per read only to drop them).
+                        |_| {},
                     )
                 })
                 .flatten();

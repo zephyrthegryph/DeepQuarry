@@ -197,7 +197,7 @@ CAPABILITIES(/obj/effect/map_effect/portal/master)
 			return
 
 		var/turf/T = P.counterpart.get_focused_turf()
-		P.vis_contents += T
+		vis_add(P, T)
 
 		var/list/things = dview(world.view, T)
 		for(var/turf/turf in things)
@@ -205,7 +205,7 @@ CAPABILITIES(/obj/effect/map_effect/portal/master)
 				if(turf in observed_turfs) // Avoid showing the same turf twice or more for improved performance.
 					continue
 
-				P.vis_contents += turf
+				vis_add(P, turf)
 				observed_turfs += turf
 
 		P.calculate_dimensions()

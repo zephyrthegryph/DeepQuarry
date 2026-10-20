@@ -1,3 +1,5 @@
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sun)
 /datum/sun
 	var/angle
 	var/dx

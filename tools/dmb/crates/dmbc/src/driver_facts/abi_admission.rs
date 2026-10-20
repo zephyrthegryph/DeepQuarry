@@ -68,6 +68,19 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             }
     }
 }
+/// Semantic reads answered by the session's answer table; producer inputs fall back to versions.
+pub(in crate::driver_facts) struct SemanticAnswers<'a>(pub &'a crate::query_db::RequestAnswers<'a>);
+impl dm_session::AnswerOracle<Query, Answer> for SemanticAnswers<'_> {
+    fn unchanged(&self, query: &Query, recorded: &Answer) -> Option<bool> {
+        match (query, recorded) {
+            (Query::Semantic(query), Answer::Semantic(recorded)) => Some(
+                self.0
+                    .unchanged_hash(query, crate::query_db::answer_hash(recorded)),
+            ),
+            _ => None,
+        }
+    }
+}
 pub(in crate::driver_facts) type Admission<'a> =
     ReceiptAdmission<'a, Query, Answer, Domain, SemanticHost<'a>>;
 pub(in crate::driver_facts) fn changed(
@@ -76,16 +89,20 @@ pub(in crate::driver_facts) fn changed(
     current: &Current<'_>,
     admission: Option<&Admission<'_>>,
 ) -> Option<Query> {
-    let matching = match admission {
-        Some(request) => request.certified_domains(versions),
-        None => {
-            dm_session::observations::certified_domains(versions, |domain| current.version(domain))
-        }
+    // Certified domains are issued only for leaves the admission cannot certify by answers.
+    let matching = std::cell::OnceCell::new();
+    let matching = || {
+        matching.get_or_init(|| match admission {
+            Some(request) => request.certified_domains(versions),
+            None => dm_session::observations::certified_domains(versions, |domain| {
+                current.version(domain)
+            }),
+        })
     };
     let Some(admission) = admission else {
         return dm_session::observations::first_changed_iter(
             reads.iter(),
-            &matching,
+            matching(),
             |query| current.answer(query),
             |a, b| current.equivalent(a, b),
         )
@@ -104,14 +121,14 @@ pub(in crate::driver_facts) fn changed(
             if semantic && admission.allows_certificate_reuse() {
                 changed =
                     admission.first_changed_receipted(&Reads::from(leaf.clone()), versions, |_| {});
-            } else if semantic && !leaf.iter().all(|read| matching.contains(&read.domain)) {
+            } else if semantic && !leaf.iter().all(|read| matching().contains(&read.domain)) {
                 // No partial certificate becomes a shared leaf verdict.
                 changed = admission.first_changed(&Reads::from(leaf.clone()), |_| {});
             } else {
                 // Inputs and candidate-specific complete certificates remain local.
                 changed = dm_session::observations::first_changed_iter(
                     leaf.iter(),
-                    &matching,
+                    matching(),
                     |query| current.answer(query),
                     |a, b| current.equivalent(a, b),
                 )

@@ -5,7 +5,7 @@
 //! collector's check fails and the object hard-deletes (a full reference walk on the live server). The
 //! declared forms clear themselves: `owns_one`/`owns_many`/`ref_one`/`ref_many`/`links()`/`slot()` (and
 //! the legacy `owns()`/`rel_one()`/`rel_many()` tables and `OWN`/`REL` lines that still declare them on
-//! master). A weak ref is a handle (`entity_handle()` / `resolve_handle()`): text, never a reference.
+//! master). A weak ref is a handle (`ref_token()` / `resolve_token()`): text, never a reference.
 //!
 //! On the typed model (the full dreammaker parse, `Cx::sem()`), two rules:
 //!
@@ -43,8 +43,8 @@ use crate::tree::CODE_DM;
 const BASELINE: &str = "tools/ci/stored_refs_baseline.txt";
 
 const H_VAR: &str = "declare the var: owns_one/ref_one/links()/slot() in the type's CAPABILITIES block (or its relations() table), which clears it when \
-the other end is deleted; or keep a weak ref (entity_handle(x), read back with resolve_handle()). doc/rewrite/proposals/reference_storage.md";
-const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_many/a many links() end) or holds handles (entity_handle(x)); a cache or \
+the other end is deleted; or keep a weak ref (ref_token(x), read back with resolve_token()). doc/rewrite/proposals/reference_storage.md";
+const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_many/a many links() end) or holds handles (ref_token(x)); a cache or \
 pool keys by a handle or a type, never by the object. doc/rewrite/proposals/reference_storage.md";
 
 static META: Meta = Meta {
@@ -65,7 +65,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: &["stored_refs"],
-    lists: &["exempt_types"],
+    lists: &["exempt_types", "transient_types", "work_queues"],
 };
 
 struct StoredRefs;
@@ -78,16 +78,16 @@ fn under_any(path: &str, roots: &[&str]) -> bool {
 }
 
 /// The holder-side knowledge every rule asks: which declared types are references.
-struct Kinds<'a> {
-    sem: &'a Sem,
-    exempt_types: Vec<String>,
-    registry: Vec<String>,
-    cache: std::cell::RefCell<HashMap<String, bool>>,
+pub(crate) struct Kinds<'a> {
+    pub(crate) sem: &'a Sem,
+    pub(crate) exempt_types: Vec<String>,
+    pub(crate) registry: Vec<String>,
+    pub(crate) cache: std::cell::RefCell<HashMap<String, bool>>,
 }
 
 impl<'a> Kinds<'a> {
     /// `declared` names an atom or datum a reference to which can pin it.
-    fn is_ref(&self, declared: &str) -> bool {
+    pub(crate) fn is_ref(&self, declared: &str) -> bool {
         if declared.is_empty() || declared == "/" {
             return false;
         }
@@ -116,7 +116,7 @@ impl<'a> Kinds<'a> {
 }
 
 /// Relation declarations by var name: name -> the types declaring it.
-fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
+pub(crate) fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
     let d = Decls::get(cx.tree);
     for (t, vars) in &d.relations {
@@ -139,27 +139,40 @@ fn relation_index(cx: &Cx) -> HashMap<String, Vec<String>> {
     out
 }
 
-fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
+/// A field of a pooled record (a /datum/pooled subtype) is transient: release() resets every field of the type to its fresh value
+/// (pool_reset_plan(), built from the instance's vars, so a new field is covered with no declaration), and
+/// `relations_pooled_release_resets_every_field` proves it per type. doc/rewrite/proposals/relations.md D7.
+pub(crate) fn pooled_holder(sem: &Sem, owner: &str) -> bool {
+    owner != "/datum/pooled" && sem.is_subtype(owner, "/datum/pooled")
+}
+
+/// A holder type in `[lint.stored_refs.lists] transient_types`: a record that lives for one call or one resolution and is dropped with it (an op
+/// candidate, a provider row), reviewed per type (relations proposal D8: "one run's scratch under a reviewed type"). Its fields are not stored refs.
+pub(crate) fn transient_holder(sem: &Sem, transient: &[String], owner: &str) -> bool {
+    transient.iter().any(|t| t == owner || sem.is_subtype(owner, t))
+}
+
+pub(crate) fn declared_by_relation(sem: &Sem, rels: &HashMap<String, Vec<String>>, owner: &str, var: &str) -> bool {
     let Some(types) = rels.get(var) else { return false };
     types.iter().any(|t| t == owner || sem.is_subtype(t, owner) || sem.is_subtype(owner, t))
 }
 
 /// A list a proc body writes into.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-enum Place {
+pub(crate) enum Place {
     /// (declaring type, var name)
     Member(String, String),
     /// A proc's `var/static/list` (file, model line).
     ProcStatic(String, u32),
 }
 
-struct ProcScope<'a> {
-    owner: &'a str,
+pub(crate) struct ProcScope<'a> {
+    pub(crate) owner: &'a str,
     /// local and parameter names -> declared type ("" untyped); `Some(place)` for a proc-static list.
-    locals: HashMap<String, (String, Option<Place>)>,
+    pub(crate) locals: HashMap<String, (String, Option<Place>)>,
 }
 
-fn path_of(tp: &[String]) -> String {
+pub(crate) fn path_of(tp: &[String]) -> String {
     if tp.is_empty() {
         String::new()
     } else {
@@ -167,7 +180,7 @@ fn path_of(tp: &[String]) -> String {
     }
 }
 
-fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
+pub(crate) fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Option<Place>)>) {
     for st in b.iter() {
         match &st.elem {
             Statement::Var(v) => {
@@ -205,9 +218,9 @@ fn collect_locals(b: &Block, rel: &str, out: &mut HashMap<String, (String, Optio
     }
 }
 
-struct Walker<'a, 'k> {
-    sem: &'a Sem,
-    kinds: &'k Kinds<'a>,
+pub(crate) struct Walker<'a, 'k> {
+    pub(crate) sem: &'a Sem,
+    pub(crate) kinds: &'k Kinds<'a>,
 }
 
 impl<'a, 'k> Walker<'a, 'k> {
@@ -220,7 +233,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The static type of `e`: a type path, or None when the model can't say.
-    fn type_of(&self, sc: &ProcScope, e: &Expression) -> Option<String> {
+    pub(crate) fn type_of(&self, sc: &ProcScope, e: &Expression) -> Option<String> {
         let e = strip_parens(e);
         match e {
             Expression::Base { term, follow } => {
@@ -277,7 +290,7 @@ impl<'a, 'k> Walker<'a, 'k> {
     }
 
     /// The list `e` names, when it is a type's var, a global or a proc-static list.
-    fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
+    pub(crate) fn place_of(&self, sc: &ProcScope, e: &Expression) -> Option<Place> {
         let e = strip_parens(e);
         let Expression::Base { term, follow } = e else { return None };
         if follow.is_empty() {
@@ -426,6 +439,40 @@ impl Lint for StoredRefs {
         }
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: never_deleted, cache: Default::default() };
         let rels = relation_index(cx);
+        let transient: Vec<String> = cx.list("transient_types").to_vec();
+        let queues: Vec<String> = cx.list("work_queues").to_vec();
+        let work_queue = |owner: &str, name: &str| queues.iter().any(|q| q == &format!("{}::{}", owner, name));
+        // param(nameof(v), ..., keep = FALSE) in a CAPABILITIES block: init builds from the value and params_drop() puts the var back to its default when
+        // Initialize() returns (code/engine/lifeforms/params.dm), so it is never stored past construction.
+        let mut init_only: Vec<(String, String)> = Vec::new();
+        {
+            let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
+            let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
+            let successor = crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");
+            for f in &files {
+                let mut cur: Option<String> = None;
+                for line in f.code().lines() {
+                    if let Some(c) = head.captures(line) {
+                        cur = Some(c.s(1).to_string());
+                        continue;
+                    }
+                    if !(line.starts_with('\t') || line.starts_with(' ')) && !line.trim().is_empty() {
+                        cur = None;
+                    }
+                    if let (Some(t), Some(c)) = (cur.as_ref(), param.captures(line)) {
+                        init_only.push((t.clone(), c.s(1).to_string()));
+                    }
+                    // owns_*(successor = nameof(v)): the hand-over target, set in on_destroy() as the holder goes (a relation view there
+                    // would be cleared before the hand-over reads it), so it is never stored past the holder's own teardown.
+                    if let Some(t) = cur.as_ref() {
+                        for c in successor.captures_iter(line).iter() {
+                            init_only.push((t.clone(), c.s(1).to_string()));
+                        }
+                    }
+                }
+            }
+        }
+        let init_only_var = |owner: &str, name: &str| init_only.iter().any(|(t, v)| v == name && (t == owner || sem.is_subtype(owner, t) || sem.is_subtype(t, owner)));
         let root = &cx.tree.root;
         let line_of = |rel: &str, l: u32| engine_line(root, rel, l) as usize;
         let mut emitted: HashSet<(String, String, u32)> = HashSet::new();
@@ -469,7 +516,7 @@ impl Lint for StoredRefs {
         }
         decls.sort_by(|a, b| (a.3.as_str(), a.4).cmp(&(b.3.as_str(), b.4)));
         for (owner, name, declared, rel, line) in decls {
-            if declared_by_relation(sem, &rels, &owner, &name) {
+            if pooled_holder(sem, &owner) || transient_holder(sem, &transient, &owner) || init_only_var(&owner, &name) || declared_by_relation(sem, &rels, &owner, &name) {
                 continue;
             }
             put(out, "var", &rel, line_of(&rel, line), format!("{}/var/{} holds a {} outside a declared relation", if owner == "/" { "" } else { owner.as_str() }, name, declared), format!("{}::{}", owner, name));
@@ -508,7 +555,7 @@ impl Lint for StoredRefs {
         for (place, (wrel, wline)) in found {
             match place {
                 Place::Member(o, v) => {
-                    if declared_by_relation(sem, &rels, &o, &v) {
+                    if pooled_holder(sem, &o) || transient_holder(sem, &transient, &o) || work_queue(&o, &v) || declared_by_relation(sem, &rels, &o, &v) {
                         continue;
                     }
                     let Some(sig) = sem.var_decl(&o, &v) else { continue };

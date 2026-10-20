@@ -72,6 +72,7 @@
 CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod)
 	op("manual_arm", ui_act("manual_arm"), then(PROC_REF(ui_act_manual_arm)))
 	op("force_launch", ui_act("force_launch"), then(PROC_REF(ui_act_force_launch)))
+	ref_one(nameof(pod))
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/ui_act_manual_arm(datum/act/op/A)
 	pod().arming_controller().arm()
@@ -163,3 +164,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 /// Accessor for the pod var.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/pod() as /datum/shuttle/autodock/ferry/escape_pod
 	return pod
+
+CAPABILITIES(/datum/shuttle/autodock/ferry/escape_pod)
+	ref_one(nameof(arming_controller))

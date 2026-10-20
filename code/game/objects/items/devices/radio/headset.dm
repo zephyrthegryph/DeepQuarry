@@ -695,6 +695,9 @@ CAPABILITIES(/obj/item/radio/headset)
 /obj/item/radio/headset/heads/ai_integrated/default_child_backref()
 	return nameof(myAi)
 
+CAPABILITIES(/obj/item/radio/headset/heads/ai_integrated)
+	ref_one(nameof(myAi), /mob/living/silicon/ai)
+
 /obj/item/radio/headset/heads/ai_integrated/receive_range(freq, level)
 	if (disabledAi)
 		return -1 //Transciever Disabled.

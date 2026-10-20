@@ -21,9 +21,9 @@
 /proc/strike_team_datum(choice)
 	switch(choice)
 		if("Heavy Asset Protection")
-			return GLOB.deathsquad
+			return antag_deathsquad()
 		if("Mercenaries")
-			return GLOB.commandos
+			return antag_commandos()
 
 /// Strike-team questions retain the original admin mob, rights and team identity through every answer.
 /datum/prompt/choice/admin_strike_team
@@ -148,10 +148,10 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 		if(jobban_isbanned(usr, JOB_SYNDICATE) || jobban_isbanned(usr, JOB_EMERGENCY_RESPONSE_TEAM) || jobban_isbanned(usr, JOB_SECURITY_OFFICER))
 			to_chat(usr, span_danger("You are jobbanned from the emergency reponse team!"))
 			return
-		if(length(GLOB.ert.current_antagonists) >= GLOB.ert.hard_cap)
+		if(length(antag_ert().current_antagonists) >= antag_ert().hard_cap)
 			to_chat(usr, "The emergency response team is already full!")
 			return
-		GLOB.ert.create_default(usr)
+		antag_ert().create_default(usr)
 	else
 		to_chat(usr, "You need to be an observer or new player to use this.")
 

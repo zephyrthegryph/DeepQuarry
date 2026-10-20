@@ -207,10 +207,10 @@
 
 /mob/living/silicon/robot/proc/update_items()
 	if(client)
-		client.screen -= contents
+		client_screen_remove(client, contents)
 		for(var/obj/I in contents)
 			if(I && !(istype(I,/obj/item/cell) || istype(I,/obj/item/radio)  || istype(I,/obj/machinery/camera) || istype(I,/obj/item/mmi)))
-				client.screen += I
+				client_screen_add(client, I)
 	for(var/slot in 1 to 3)
 		var/obj/item/held = get_module_slot(slot)
 		if(held)

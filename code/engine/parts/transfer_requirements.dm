@@ -21,7 +21,8 @@
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = acceptance_act(destination, destination, candidate, null, mover, slot_id)
+		// An equip act's target is the wearer: its needs() read A.wearer as the old equip channel did (admission.md wave 8).
+		A = acceptance_act(destination, destination, candidate, ispath(action_type, /datum/act/equip) ? candidate : null, mover, slot_id)
 		op_pure_begin()
 		// Metadata precedes ordered refusal so later branches remain subscribed.
 		for(var/datum/hook/H as anything in P.needs)

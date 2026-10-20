@@ -132,7 +132,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(STAT_SLEEPING)))
 		act_message_t(M, src, /datum/msg/cryo_cell/cold_liquid)
 	M.cozyloop?.start() // Cozy Music
-	buckle_mob(M, forced = TRUE, check_loc = FALSE)
+	buckle_mob(M, authority = GLOB.authority_forced, check_loc = FALSE)
 	set_use_power(USE_POWER_ACTIVE)
 
 /// They left (by any path): unbuckled, thawed to CRYO_THAW_TEMPERATURE when chilled but not frozen solid, the music stops, the cell idles.

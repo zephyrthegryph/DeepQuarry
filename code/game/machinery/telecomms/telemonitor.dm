@@ -122,6 +122,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/monitor)
 	interface("TelecommsMachineBrowser")
 	tcomms_probe_console()
 	ref_one(nameof(SelectedMachine), /obj/machinery/telecomms)
+	ref_many(nameof(machinelist))
 
 /obj/machinery/computer/telecomms/monitor/probed()
 	return machinelist

@@ -604,3 +604,9 @@ CAPABILITIES(/datum/body)
 		var/left = max(COOLDOWN_TIMELEFT(S, expires_at), 1)
 		if(!. || left < .)
 			. = left
+
+CAPABILITIES(/datum/body_support)
+	ref_one(nameof(source))
+
+CAPABILITIES(/datum/physiology)
+	ref_one(nameof(body))

@@ -298,7 +298,9 @@ impl Lint for Api {
         for l in pattern_sites(f, &self.vars_helpers) {
             emit(out, f, "vars_helpers", l);
         }
-        if !rel.starts_with("code/engine/state/field_tables.dm") {
+        // The by-name field owners: the declared-field table, and the weak-reference store (code/engine/refs/weak.dm: a weak var holds a handle,
+        // written only by weak_set/weak_add/weak_clear, which rel_set/rel_add/rel_clear dispatch to; relations proposal D5).
+        if !rel.starts_with("code/engine/state/field_tables.dm") && rel != "code/engine/refs/weak.dm" {
             for l in pattern_sites(f, &self.vars_write) {
                 emit(out, f, "vars_write", l);
             }

@@ -92,6 +92,7 @@ CAPABILITIES(/obj/item/tray)
 	configure(item_thrown(force = 10.0))
 	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_many(nameof(carrying))
 
 /// Old attackby.
 /obj/item/tray/proc/interaction_item(datum/act/op/A)

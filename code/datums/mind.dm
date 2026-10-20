@@ -78,6 +78,7 @@ CAPABILITIES(/datum/mind)
 	owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel)
 	owns_many(nameof(objectives), /datum/objective)
 	op("common_crystals", topic("common=crystals"), needs(req_rights(R_FUN)), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(crystals_question)), "default" = computed(PROC_REF(crystals_default)), "rights" = R_FUN, "timeout" = 0), step = "amount"), then(PROC_REF(topic_set_crystals)))
+	ref_many(nameof(learned_spells))
 
 /datum/mind/New(key)
 	src.key = key
@@ -129,7 +130,7 @@ CAPABILITIES(/datum/mind)
 			new_character.add_spell(spell_to_add)
 
 	if(active || force)
-		new_character.key = key		//now transfer the key to link the client to our new body
+		bind_player(new_character, key)		//now transfer the key to link the client to our new body
 
 	if(new_character.client)
 		new_character.client.init_verbs() // re-initialize character specific verbs

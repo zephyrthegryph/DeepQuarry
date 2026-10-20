@@ -48,6 +48,7 @@ CAPABILITIES(/obj/item/paper_bin)
 		then(PROC_REF(interaction_hand)))
 	op("put_paper", item(/obj/item/paper), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(mousedrop_input))
+	ref_many(nameof(papers))
 
 /// The actor's using hand, when it is a limb that cannot be used (the old attack_hand refused it).
 /obj/item/paper_bin/proc/unusable_hand(mob/user)

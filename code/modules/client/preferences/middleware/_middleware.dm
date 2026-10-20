@@ -50,3 +50,6 @@
 /// The preferences this refers to (a relation view: null once that is deleted).
 /datum/preference_middleware/proc/preferences() as /datum/preferences
 	return preferences
+
+CAPABILITIES(/datum/preference_middleware)
+	ref_one(nameof(preferences))

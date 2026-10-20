@@ -5,7 +5,7 @@
 	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 
 CAPABILITIES(/obj/item/clothing/suit/technomancer)
-	acceptance(CONSTRAINT_SUIT_STORAGE, req_acceptance_type(list(POCKET_ALL_TANKS), because = MSG(slot/doesnt_take)), mode = ACCEPTANCE_REPLACE)
+	suit_storage(list(POCKET_ALL_TANKS))
 	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
 	configure(item_protection(siemens = 0.75))
 

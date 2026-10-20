@@ -41,6 +41,7 @@ CAPABILITIES(/obj/item/walkpod)
 	op("change_track", ui_act("change_track", arg("change_track", schema_ref(/datum/track))), then(PROC_REF(ui_act_change_track)))
 	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
 	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
+	ref_one(nameof(current_track))
 
 /// Person whomst is listening to us. walkpod_step() checks on them and plays music while set (its every(), gated on it).
 /obj/item/walkpod/var/mob/living/listener

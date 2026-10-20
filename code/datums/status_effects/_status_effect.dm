@@ -39,6 +39,7 @@
 
 CAPABILITIES(/datum/status_effect)
 	ref_one(nameof(linked_alert))
+	ref_one(nameof(owner))
 
 /datum/status_effect/New(list/arguments)
 	on_creation(arglist(arguments))
@@ -243,3 +244,6 @@ CAPABILITIES(/datum/status_effect)
 /// The status effect this alert shows (a relation view).
 /atom/movable/screen/alert/status_effect/proc/attached_effect() as /datum/status_effect
 	return attached_effect
+
+CAPABILITIES(/atom/movable/screen/alert/status_effect)
+	ref_one(nameof(attached_effect))

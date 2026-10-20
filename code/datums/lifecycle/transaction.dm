@@ -26,6 +26,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	var/hint = QDEL_HINT_QUEUE
 	var/aborted = FALSE
 	GLOB.destroy_transaction_depth++
+	if(force)
+		GLOB.destroy_transaction_forced_depth++
 	try
 		hint = destroy_transaction_phases(D, force, trash)
 	catch(var/exception/e)
@@ -39,6 +41,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		if(D)
 			dq_lifecycle_finish_aborted(D)
 	GLOB.destroy_transaction_depth--
+	if(force)
+		GLOB.destroy_transaction_forced_depth--
 	if(D && hint != QDEL_HINT_LETMELIVE)
 		capability_runtime_forget(D)
 		staleness_forget(D)
@@ -129,6 +133,11 @@ GLOBAL_LIST_INIT(destroy_step_sequence, list(
 /// (code/datums/ownership/guard.dm).
 GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 
+/// How many of the running destroy transactions are forced (qdel(force = TRUE)). While it is positive, every nested destroy resolves its
+/// contents as forced too: a forced delete of a body deletes the backpack it wears and the box in that backpack, instead of the backpack
+/// spilling the box onto the floor (admission.md D10: a forced delete leaves no litter, at any depth).
+GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
+
 /// Runs GLOB.destroy_step_sequence on D. Each step sets D.destroy_phase to its phase (never
 /// lowering it) before it runs and is timed onto that phase.
 /proc/destroy_transaction_phases(datum/D, force, datum/qdel_item/trash)
@@ -181,7 +190,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				if(!ismovable(D))
 					continue
 				var/atom/movable/resolving = D
-				resolving.dq_lifecycle_resolve_contents()
+				resolving.dq_lifecycle_resolve_contents(force || GLOB.destroy_transaction_forced_depth > 0)
 			if(DESTROY_STEP_CONTENTS_SPILL)
 				if(!ismovable(D))
 					continue

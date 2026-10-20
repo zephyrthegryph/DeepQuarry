@@ -24,6 +24,7 @@ CAPABILITIES(/obj/machinery/processor)
 	op("start", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), needs(req_is(nameof(processing), FALSE, because = MSG(processor/processing))), then(PROC_REF(interaction_start)))
 	op("eject", menu(), label("Eject Processor"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	ref_many(nameof(to_be_processed))
 
 MSG_DEF_SELF(processor/processing, "the processor is in the process of processing")
 
@@ -56,8 +57,9 @@ MSG_DEF_SELF(processor/processing, "the processor is in the process of processin
 /obj/machinery/processor/proc/insert(atom/movable/AM, mob/living/user)
 	if(!Adjacent(AM))
 		return
-	if(!can_insert(AM))
-		to_chat(user, span_warning("\The [src] cannot process \the [AM] at this time."))
+	var/refused = insert_refusal(AM)
+	if(refused)
+		to_chat(user, span_warning(reason_text(refused)))
 		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return
 	rel_add(src, nameof(to_be_processed), AM)
@@ -108,20 +110,15 @@ MSG_DEF_SELF(processor/processing, "the processor is in the process of processin
 	set_processing(FALSE)
 	play_sfx(src, SFX_MACHINES_DING)
 
-/obj/machinery/processor/proc/can_insert(atom/movable/AM)
+/// Why AM can't go in to be processed, or null: a dead slime or a dead monkey is taken (admission.md D6: a pure reason).
+/obj/machinery/processor/proc/insert_refusal(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
-		if(S.stat != DEAD)
-			return FALSE
-		return TRUE
+		return S.stat == DEAD ? null : msg_reason("\The [src] cannot process \the [AM] at this time.")
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		if(!istype(H.species, /datum/species/monkey))
-			return FALSE
-		if(H.stat != DEAD)
-			return FALSE
-		return TRUE
-	return FALSE
+		return (istype(H.species, /datum/species/monkey) && H.stat == DEAD) ? null : msg_reason("\The [src] cannot process \the [AM] at this time.")
+	return msg_reason("\The [src] cannot process \the [AM] at this time.")
 
 /obj/machinery/processor/proc/interaction_insert(datum/act/op/A)
 	var/mob/living/user = A.actor

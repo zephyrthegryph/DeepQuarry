@@ -33,7 +33,7 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 
 /// Preserve the actual key and all its channel bits once per receiver/cohort.
 /proc/state_batch_queue(datum/receiver, channel, key)
-	var/handle = entity_handle(receiver)
+	var/handle = ref_token(receiver)
 	var/list/record = GLOB.state_batch_pending[handle]
 	if(!record)
 		record = list()
@@ -60,7 +60,7 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 		for(var/handle in cohort)
 			var/list/record = cohort[handle]
 			for(var/token in record)
-				var/datum/receiver = resolve_handle(handle)
+				var/datum/receiver = resolve_token(handle)
 				if(!receiver || QDELING(receiver))
 					break
 				var/list/change = record[token]

@@ -42,6 +42,8 @@ CAPABILITIES(/obj/effect/effect/smoke/chem)
 
 CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
 	owns_one(nameof(chemholder), /obj)
+	ref_many(nameof(targetTurfs))
+	ref_many(nameof(wallList))
 
 /datum/effect/effect/system/smoke_spread/chem/spores
 	show_log = 0

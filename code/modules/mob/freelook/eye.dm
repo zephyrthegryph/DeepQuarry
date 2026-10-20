@@ -49,6 +49,7 @@ CAPABILITIES(/mob/observer/eye)
 	ref_one(nameof(eye_looker), /mob, on_unlink = PROC_REF(looker_lost))
 	ref_one(nameof(active_looker), /mob)
 	ref_one(nameof(visualnet), /datum/visualnet)
+	ref_many(nameof(visibleChunks))
 
 /// The mob looking through this eye.
 /mob/observer/eye/proc/eye_owner() as /mob

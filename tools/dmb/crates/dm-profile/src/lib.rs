@@ -985,7 +985,7 @@ pub fn detail_mark(label: &'static str, start: Instant) {
 }
 
 static REQUEST_ORIGIN: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
-fn detail_enabled() -> bool {
+pub fn detail_enabled() -> bool {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|v| v == "1"))
 }

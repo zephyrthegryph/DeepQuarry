@@ -79,7 +79,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 	var/list/jobs = list()
 
 	for(var/datum/job/job in job_occupations())
-		if(job && user.IsJobAvailable(job.title))
+		if(job && isnull(user.job_join_refusal(job.title)))
 			// Check for jobs with minimum age requirements
 			if(!character_old_enough_for_job(user.client.prefs, job))
 				continue
@@ -131,7 +131,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 
 	var/pref_species = new_user.client.prefs.read_preference(/datum/preference/choiced/species)
 	var/datum/species/S = GLOB.all_species[pref_species]
-	if(!is_alien_whitelisted(new_user.client, S))
+	if(alien_whitelist_refusal(new_user.client, S))
 		tgui_alert_async(new_user, "You are currently not whitelisted to play [pref_species].")
 		return 0
 
@@ -157,10 +157,10 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 		return FALSE
 	var/pref_species = user.client.prefs.read_preference(/datum/preference/choiced/species)
 	var/datum/species/S = GLOB.all_species[pref_species]
-	if(!read_once(is_alien_whitelisted(user.client, S)) || !(S.spawn_flags & SPECIES_CAN_JOIN))
+	if(read_once(alien_whitelist_refusal(user.client, S)) || !(S.spawn_flags & SPECIES_CAN_JOIN))
 		return FALSE
 	var/rank = A.arg("job")
-	if(!read_once(user.IsJobAvailable(rank)))
+	if(read_once(user.job_join_refusal(rank)))
 		return FALSE
 	return read_once(user.spawn_checks_vr(rank, TRUE))
 

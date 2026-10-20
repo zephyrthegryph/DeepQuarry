@@ -22,7 +22,7 @@
 		var/obj/item/clothing/uniform = H.get_equipped_item(SLOT_ID_UNIFORM)
 		if(uniform)
 			var/obj/item/clothing/accessory/medal/gold/captain/medal = new()
-			if(uniform.can_attach_accessory(medal))
+			if(isnull(uniform.accessory_refusal(medal)))
 				uniform.attach_accessory(null, medal)
 			else
 				spent(medal, H)

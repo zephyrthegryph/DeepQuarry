@@ -155,7 +155,8 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     record.relative_debug = capture.borrow().debug.clone();
     let mut expired = record.local.clone().unwrap();
     expired.inputs = std::sync::Weak::new();
-    let fallback_owner = SessionSymbolicMemo::current_revision();
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let fallback_owner = SessionSymbolicMemo::current_revision().with_query_db(&db);
     let initial = fallback_owner.for_request(true);
     assert!(initial.insert_record(
         row.source().identity,
@@ -178,6 +179,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     drop(initial);
     for changed_key in [true, false] {
         let fallback = fallback_owner.for_request(false);
+        db.next_request();
         let request = RequestAdmission::new(front.snapshot.tree.as_ref());
         let candidates = fallback.candidate_roster(&request).unwrap();
         assert!(fallback
@@ -210,6 +212,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
         assert_eq!(accepted.is_some(), !changed_key);
     }
     let refreshed = fallback_owner.for_request(true);
+    db.next_request();
     let request = RequestAdmission::new(front.snapshot.tree.as_ref());
     let candidates = refreshed.candidate_roster(&request).unwrap();
     let observer = crate::lowering_memo::RecordingResolver::new(front.snapshot.tree.as_ref());
@@ -242,6 +245,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     assert!(refreshed.publish_successful());
     drop(refreshed);
     let next_local = fallback_owner.for_request(false);
+    db.next_request();
     let local_request = RequestAdmission::new(front.snapshot.tree.as_ref());
     let local_candidates = next_local.candidate_roster(&local_request).unwrap();
     assert!(
@@ -258,12 +262,14 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             .is_some(),
         "successful current completion must publish the new weak certificate"
     );
-    let owner = SessionSymbolicMemo::current_revision();
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let owner = SessionSymbolicMemo::current_revision().with_query_db(&db);
     let first = owner.for_request(true);
     assert!(first.insert_record(row.source().identity, record));
     assert!(first.publish_successful());
     drop(first);
     let next = owner.for_request(false);
+    db.next_request();
     let admission = RequestAdmission::new(front.snapshot.tree.as_ref());
     let candidates = next.candidate_roster(&admission).unwrap();
     let fresh_arena = dm_tree::frontend::BodyArena::new(&front);

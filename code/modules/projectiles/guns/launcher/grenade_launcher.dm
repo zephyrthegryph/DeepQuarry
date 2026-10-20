@@ -89,6 +89,7 @@ CAPABILITIES(/obj/item/gun/launcher/grenade)
 	configure(item_combat(force = 10))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	owns_many(nameof(grenades), on_destroy = ON_DESTROY_CONTAINED)
+	ref_one(nameof(chambered))
 
 /// Old attack_hand.
 /obj/item/gun/launcher/grenade/proc/interaction_hand(datum/act/op/A)

@@ -66,6 +66,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
 CAPABILITIES(/datum/pathfinding)
 	ref_one(nameof(actor), /atom/movable)
 	ref_one(nameof(context), /datum)
+	ref_one(nameof(goal))
+	ref_one(nameof(start))
 
 /datum/pathfinding/New(atom/movable/actor, turf/start, turf/goal, target_distance, max_path_length)
 	rel_set(src, nameof(actor), actor)

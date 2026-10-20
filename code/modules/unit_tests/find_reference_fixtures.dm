@@ -10,6 +10,7 @@
 
 CAPABILITIES(/atom/movable/ref_holder)
 	ref_one(nameof(test))
+	ref_one(nameof(static_test))
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.

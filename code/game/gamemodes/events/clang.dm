@@ -137,3 +137,6 @@
 /// Despawn loc (a relation view).
 /obj/effect/immovablerod/proc/despawn_loc() as /turf
 	return despawn_loc
+
+CAPABILITIES(/obj/effect/immovablerod)
+	ref_one(nameof(despawn_loc))

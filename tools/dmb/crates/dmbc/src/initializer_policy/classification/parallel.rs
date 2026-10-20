@@ -94,9 +94,25 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     // borrowed only by this wave; mutex/cell synchronization comes from the
     // existing ReceiptAdmission, and observing providers still replay exactly.
     let admission_host = reuse.map(|reuse| super::super::current_admission::Host(reuse.resolver));
-    let admission = admission_host
-        .as_ref()
-        .map(dm_session::observations::ReceiptAdmission::new);
+    // Receipts are certified by the session's current answers when it has a query database.
+    let answer = |query: &dm_ir::ResolveQuery| -> dm_ir::ResolvedMeaning {
+        use dm_session::ObservationHost;
+        admission_host
+            .as_ref()
+            .expect("answers exist only with an admission host")
+            .answer_for_admission(query)
+    };
+    let answers = reuse
+        .and_then(|reuse| reuse.store.query_db.as_deref())
+        .map(|db| db.request_answers(&answer));
+    let admission = admission_host.as_ref().map(|host| {
+        dm_session::observations::ReceiptAdmission::with_oracle(
+            host,
+            answers.as_ref().map(|answers| {
+                answers as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
+            }),
+        )
+    });
 
     let phase = dm_profile::detail_timer("init.classify.preparation");
     let preparation = match reuse.filter(|reuse| reuse.store.roster_enabled) {

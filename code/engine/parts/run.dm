@@ -490,7 +490,7 @@ CAPABILITIES(/datum/pending_op)
 
 /// actor ref text -> the list of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
-/// REF(pending op) -> the handle of every pending op that is waiting, the system-origin ones too ("List Pending Ops"); read with resolve_handle().
+/// REF(pending op) -> the handle of every pending op that is waiting, the system-origin ones too ("List Pending Ops"); read with resolve_token().
 GLOBAL_LIST_EMPTY(op_pending_all)
 
 /// What this pending op holds against the actor's other input right now: hands and body while a timed wait runs or one of its questions is open.
@@ -586,7 +586,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		P.registered = TRUE
 		P.registered_ref = "[REF(A.actor)]"
 		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], P)
-	GLOB.op_pending_all["[REF(P)]"] = entity_handle(P)
+	GLOB.op_pending_all["[REF(P)]"] = ref_token(P)
 	if((P.claim_mask & CLAIM_TARGET) && A.target)
 		P.claim_target(A.target)
 	P.watch_begin(A)
@@ -1020,7 +1020,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_collect(next, pair)
 	for(var/index in watch_extra?.Copy())
 		var/list/extra = watch_extra[index]
-		var/datum/extra_owner = length(extra) == 2 ? resolve_handle(extra[1]) : null
+		var/datum/extra_owner = length(extra) == 2 ? resolve_token(extra[1]) : null
 		if(!extra_owner)
 			watch_extra -= index
 			continue
@@ -1031,7 +1031,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(index in next)
 			continue
 		var/list/pair = watch_index[index]
-		var/datum/D = resolve_handle(pair[1])
+		var/datum/D = resolve_token(pair[1])
 		if(D)
 			rx_watch_adjust(D, pair[2], -1)
 		var/list/on = GLOB.op_watchers[index]
@@ -1043,7 +1043,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(watch_index && (index in watch_index))
 			continue
 		var/list/pair = next[index]
-		var/datum/D = resolve_handle(pair[1])
+		var/datum/D = resolve_token(pair[1])
 		if(!D)
 			continue // the read's owner was deleted since it was collected: nothing to subscribe to
 		rx_watch_adjust(D, pair[2], 1)
@@ -1061,7 +1061,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/read_owner = length(pair) == 2 && isdatum(pair[1]) ? pair[1] : null
 	if(length(pair) != 2 || !read_owner || QDELETED(read_owner))
 		return
-	rows["[REF(read_owner)]|[pair[2]]"] = list(entity_handle(read_owner), pair[2]) // the row holds its owner by handle: a long wait must not keep a deleted entity alive
+	rows["[REF(read_owner)]|[pair[2]]"] = list(ref_token(read_owner), pair[2]) // the row holds its owner by handle: a long wait must not keep a deleted entity alive
 
 /datum/pending_op/proc/watch_begin(datum/act/op/A)
 	if(watch_ready)
@@ -1074,7 +1074,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!D || QDELETED(D))
 		return
 	var/index = "[REF(D)]|[key_name]"
-	var/list/row = list(entity_handle(D), key_name)
+	var/list/row = list(ref_token(D), key_name)
 	LAZYSET(watch_extra, index, row)
 	if(watch_index && (index in watch_index))
 		return
@@ -1099,7 +1099,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		rel_clear(src, nameof(lookup_scope))
 	for(var/index in watch_index)
 		var/list/pair = watch_index[index]
-		var/datum/D = resolve_handle(pair[1])
+		var/datum/D = resolve_token(pair[1])
 		if(D)
 			rx_watch_adjust(D, pair[2], -1)
 		var/list/on = GLOB.op_watchers[index]

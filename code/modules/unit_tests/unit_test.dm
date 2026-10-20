@@ -615,7 +615,7 @@ GLOBAL_VAR(dq_test_select_names)
 	run_deferred_cleanups()
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
-			qdel(thing)
+			qdel(thing, TRUE) // a cleanup: forced, so a container's contents go with it instead of spilling onto the block (admission.md D10)
 	// A test that took the kernel clock (test_driver_begin) hands it back whatever way it ended: an early return from a failed
 	// assertion or a runtime would otherwise leave every later test running on an injected clock.
 	test_driver_end()
@@ -1518,3 +1518,10 @@ GLOBAL_VAR(boot_unclean)
 
 CAPABILITIES(/datum/unit_test)
 	ref_many(nameof(allocated))
+	ref_one(nameof(run_loc_floor_bottom_left))
+	ref_one(nameof(run_loc_floor_top_right))
+	ref_one(nameof(test_block))
+
+CAPABILITIES(/datum/unit_test_block)
+	ref_one(nameof(bottom_left))
+	ref_one(nameof(top_right))

@@ -92,3 +92,13 @@
 	TEST_ASSERT(witness.owned_at_callback, "actor deletion does not release the actual announcer prematurely")
 	TEST_ASSERT(QDELETED(announcer), "the actual blocked arrival still disposes its retained announcer without a user")
 	TEST_ASSERT_EQUAL(LAZYLEN(SSshuttles.specops_announcers), prior_count, "deleted-actor completion leaves no extra owned pending radio")
+
+CAPABILITIES(/datum/interim_specops_actor_witness)
+	ref_one(nameof(user))
+
+CAPABILITIES(/obj/interim_specops_countdown_click)
+	ref_one(nameof(announcer))
+	ref_one(nameof(user))
+
+CAPABILITIES(/obj/item/radio/intercom/interim_actor_probe)
+	ref_one(nameof(witness))

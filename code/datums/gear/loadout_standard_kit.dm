@@ -107,7 +107,6 @@
 // PDA's ttone. The standalone ringtone pref is still read by the job's default PDA at
 // spawn (when the player didn't pick this loadout PDA); this tweak is only for the
 // loadout-picked one.
-GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 
 /datum/gear_tweak/pda_ringtone
 

@@ -34,10 +34,10 @@ describe('capacity', () => {
   test('defaults and the environment', () => {
     for (const k of ENV_KEYS) if (k.startsWith('DQ_SLOTS_') && k !== 'DQ_SLOTS_DIR' && k !== 'DQ_SLOTS_POLL_SEC') delete process.env[k];
     delete process.env.DQ_LOOK_PIN_SLOTS;
-    expect(slotCapacity('dm_compile')).toBe(2);
+    expect(slotCapacity('dm_compile')).toBe(1);
     expect(slotCapacity('test_world')).toBe(defaultTestWorlds());
     expect(slotCapacity('cargo')).toBe(1);
-    expect(slotCapacity('look_state_pin')).toBe(2);
+    expect(slotCapacity('look_state_pin')).toBe(1);
     process.env.DQ_SLOTS_DM_COMPILE = '5';
     expect(slotCapacity('dm_compile')).toBe(5);
     process.env.DQ_LOOK_PIN_SLOTS = '4';
@@ -55,11 +55,8 @@ describe('capacity', () => {
 });
 
 describe('test_world default', () => {
-  test('is a third of the CPUs, 2 to 6', () => {
-    expect(defaultTestWorlds(1)).toBe(2);
-    expect(defaultTestWorlds(8)).toBe(2);
-    expect(defaultTestWorlds(16)).toBe(5);
-    expect(defaultTestWorlds(64)).toBe(6);
+  test('is two whatever the CPU count (the machine is also the user desktop)', () => {
+    for (const cpus of [1, 8, 16, 64]) expect(defaultTestWorlds(cpus)).toBe(2);
   });
 });
 

@@ -13,7 +13,7 @@
 	. = ..()
 	rel_set(src, nameof(machine), locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 	if (machine())
-		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
+		rel_set(machine(), nameof(/obj/machinery/mineral/stacking_machine::console), src)
 	else
 		//Silently failing and causing mappers to scratch their heads while runtiming isn't ideal.
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
@@ -111,7 +111,10 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/stacking_machine)
+	links(/obj/machinery/mineral/stacking_machine::console, /obj/machinery/mineral/stacking_unit_console::machine) // the machine and its console name each other (D3)
 	started_work(step = PROC_REF(work_step))
+	ref_one(nameof(input))
+	ref_one(nameof(output))
 
 /obj/machinery/mineral/stacking_machine/proc/work_step(datum/act/timer/A)
 	var/did_work = FALSE

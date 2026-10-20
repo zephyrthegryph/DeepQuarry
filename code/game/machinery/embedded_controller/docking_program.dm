@@ -77,7 +77,7 @@
 	if(id_tag)
 		if(SSshuttles.docking_program(id_tag))
 			stack_trace("Docking controller tag [id_tag] had multiple associated programs.")
-		SSshuttles.docking_registry[id_tag] = entity_handle(src)
+		SSshuttles.docking_registry[id_tag] = ref_token(src)
 
 /// Phase 2: leaves the shuttle docking registry.
 /datum/embedded_program/docking/lifecycle_dematerialize()

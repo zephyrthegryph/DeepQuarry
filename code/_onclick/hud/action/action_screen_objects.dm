@@ -37,7 +37,7 @@
 	if(hud)
 		var/mob/viewer = hud.mymob()
 		hud.hide_action(src)
-		viewer?.client?.screen -= src
+		client_screen_remove(viewer.client, src)
 		viewer?.update_action_buttons()
 	..()
 
@@ -227,7 +227,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 		var/atom/movable/screen/movable/action_button/button = action.button_for(hud_used)
 		action.build_all_button_icons()
 		if(reload_screen)
-			client.screen += button
+			client_screen_add(client, button)
 
 	if(reload_screen)
 		hud_used.update_our_owner()

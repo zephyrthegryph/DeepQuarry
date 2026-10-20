@@ -68,7 +68,7 @@
 	WXH_TO_HEIGHT(measured, balloon_alert.maptext_height)
 	balloon_alert.maptext_width = BALLOON_TEXT_WIDTH
 
-	viewer_client?.images += balloon_alert
+	client_images_add(viewer_client, balloon_alert)
 
 	var/length_mult = 1 + max(0, length(strip_html_simple(text)) - BALLOON_TEXT_CHAR_LIFETIME_INCREASE_MIN) * BALLOON_TEXT_CHAR_LIFETIME_INCREASE_MULT
 

@@ -49,6 +49,8 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds))), then(PROC_REF(interaction_insert_crystal)))
 	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
 	owns_one(nameof(crystals), on_destroy = ON_DESTROY_SPILL)
+	ref_one(nameof(last_target))
+	ref_one(nameof(telepad))
 
 
 // its crystals are ejected.

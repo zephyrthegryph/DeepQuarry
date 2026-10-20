@@ -62,12 +62,8 @@
 	packet.severity = severity
 	return packet
 
-/// Back to zero for the next taker (the amounts list is New()'s, kept and emptied by the pool, so it
-/// is refilled here).
-/datum/damage_packet/reset()
-	..()
-	for(var/i in 1 to DAMAGE_KIND_COUNT)
-		amounts += 0
+// No reset(): the pool refills the kept amounts list from a fresh packet's (DAMAGE_KIND_COUNT zeros). A reset() that also appended
+// zeros grew the list by DAMAGE_KIND_COUNT on every release (relations_pooled_release_resets_every_field found it).
 
 /datum/damage_packet/proc/add(kind, amount)
 	POOL_ASSERT_LIVE(src)

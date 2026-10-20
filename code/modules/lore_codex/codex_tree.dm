@@ -35,6 +35,7 @@ CAPABILITIES(/datum/codex_tree)
 
 CAPABILITIES(/datum/codex_reader)
 	ref_one(nameof(page), /datum/lore/codex)
+	ref_many(nameof(history))
 
 /datum/codex_reader/proc/visit(datum/lore/codex/new_page, record_history)
 	rel_set(src, nameof(page), new_page)

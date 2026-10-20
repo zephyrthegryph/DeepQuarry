@@ -41,6 +41,8 @@
 CAPABILITIES(/datum/n_Parser)
 	owns_many(nameof(errors))
 	owns_many(nameof(warnings))
+	ref_one(nameof(curBlock_ref))
+	ref_one(nameof(curToken_ref))
 
 /*
 	Proc: Parse
@@ -153,7 +155,7 @@ CAPABILITIES(/datum/n_Parser)
 	NextToken()
 	if(t)
 		rel_set(stmt, nameof(stmt.value), new t())
-		stmt.value:exp=new/datum/node/expression/value/variable(stmt.var_name)
+		stmt.value:exp=new/datum/node/expression/value/variable(name) // its own identifier: the statement owns var_name
 		stmt.value:exp2=ParseExpression()
 	else
 		rel_set(stmt, nameof(stmt.value), ParseExpression())
@@ -200,3 +202,6 @@ CAPABILITIES(/datum/n_Parser)
 
 
 // Cursors into the token stream and the tree being built; options are the caller's.
+
+CAPABILITIES(/datum/n_Parser/nS_Parser)
+	ref_one(nameof(options_ref))

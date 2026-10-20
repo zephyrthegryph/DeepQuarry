@@ -21,6 +21,7 @@
 CAPABILITIES(/obj/effect/anomaly/dimensional)
 	owns_one(nameof(theme), /datum/dimension_theme)
 	rolls(nameof(teleports_left), PROC_REF(roll_teleports))
+	ref_many(nameof(target_turfs))
 
 /obj/effect/anomaly/dimensional/Initialize(mapload)
 	. = ..()

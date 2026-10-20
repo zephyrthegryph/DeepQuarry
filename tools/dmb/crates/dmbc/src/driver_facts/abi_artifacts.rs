@@ -42,21 +42,19 @@ pub struct AbiArtifacts {
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
     pub(super) provisional_reused: AtomicUsize,
-    /// Whole-batch replay and the incidence-qualified roster: both validate
-    /// every retained receipt sequentially (~3 s each on DeepQuarry); the
-    /// parallel per-unit admission is the default. DMB_ABI_BATCH_REPLAY=1 /
-    /// DMB_ABI_QUALIFIED_ROSTER=1 restore them.
+    /// Whole-batch replay validates every retained receipt sequentially (~3 s on DeepQuarry);
+    /// the parallel per-unit admission is the default. DMB_ABI_BATCH_REPLAY=1 restores it.
     pub(super) batch_replay: bool,
     /// Build the batch recipe after each successful batch. Only whole-batch replay (and tests of
     /// the recipe itself) read it; the per-unit scheduler finds the same rows through the
     /// exact-key index, and building the recipe costs 0.5-0.8 s per edit on DeepQuarry.
     pub(super) batch_recipes: bool,
-    pub(super) qualified_roster: bool,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
-    pub(super) qualified_reused: AtomicUsize,
     pub(super) batch_rows_selected: AtomicUsize,
     pub(super) candidate_rows_collected: AtomicUsize,
+    /// The retained session's query database: semantic receipts are certified by its answers.
+    pub(crate) query_db: Option<Arc<crate::query_db::QueryDb>>,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
@@ -72,12 +70,11 @@ impl Default for AbiArtifacts {
             batch_replay: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1"),
             batch_recipes: std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1")
                 || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1"),
-            qualified_roster: std::env::var_os("DMB_ABI_QUALIFIED_ROSTER").is_some_and(|value| value == "1"),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
-            qualified_reused: AtomicUsize::new(0),
             batch_rows_selected: AtomicUsize::new(0),
             candidate_rows_collected: AtomicUsize::new(0),
+            query_db: None,
         }
     }
 }
@@ -91,6 +88,11 @@ impl AbiArtifacts {
         self.groups.prune();
         report
     }
+    /// Semantic receipts of this store are certified by the session's query database.
+    pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
+        self.query_db = Some(Arc::clone(db));
+        self
+    }
     pub(crate) fn with_engine_owner(engine_owner: Arc<crate::runner_host::EnginePayload>) -> Self {
         Self {
             engine_owner: Some(engine_owner),
@@ -103,7 +105,6 @@ impl AbiArtifacts {
     pub(crate) fn with_retained_shortcuts(mut self) -> Self {
         self.batch_replay = true;
         self.batch_recipes = true;
-        self.qualified_roster = true;
         self
     }
 
@@ -160,17 +161,8 @@ impl AbiArtifacts {
             self.candidate_rows_collected.load(Ordering::Relaxed),
         )
     }
-    pub fn qualified_reused(&self) -> usize {
-        self.qualified_reused.load(Ordering::Relaxed)
-    }
     pub fn scheduled_reused(&self) -> usize {
         self.scheduled_reused.load(Ordering::Relaxed)
-    }
-    pub(crate) fn visit_incidence_storage(
-        &self,
-        visit: impl FnMut(&Arc<[dm_session::Observation<Query, Answer, Domain>]>),
-    ) -> Option<(usize, usize, usize, usize)> {
-        self.store.visit_incidence_storage(visit)
     }
     pub fn batch_reused(&self) -> usize {
         self.batch_reused.load(Ordering::Relaxed)

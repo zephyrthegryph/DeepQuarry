@@ -85,14 +85,14 @@
 		var/client/C = value
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
-		return list("rerun_h" = entity_handle(value))
+		return list("rerun_h" = ref_token(value))
 	return value
 
 /proc/rerun_unwrap(value)
 	if(istext(value) && copytext(value, 1, 6) == "ckey:")
 		return GLOB.directory[copytext(value, 6)]
 	if(islist(value) && length(value) == 1 && value["rerun_h"])
-		return resolve_handle(value["rerun_h"])
+		return resolve_token(value["rerun_h"])
 	return value
 
 /// TRUE when `wrapped` held a datum or client (so a null unwrap means it is gone).

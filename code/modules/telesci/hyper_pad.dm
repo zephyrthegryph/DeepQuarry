@@ -21,6 +21,7 @@
 CAPABILITIES(/obj/machinery/hyperpad)
 	op("hyperpad_ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 2), label("View"), then(PROC_REF(hyperpad_ghost_use)))
 	op("hyperpad_delegate", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Activate"), then(PROC_REF(interaction_delegate)))
+	ref_one(nameof(primary))
 
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds

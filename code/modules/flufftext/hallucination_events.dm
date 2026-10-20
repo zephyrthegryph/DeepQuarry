@@ -98,7 +98,7 @@
 			CI.name = "Flashbang"
 	rel_set(src, nameof(halitem), CI)
 	rel_set(src, nameof(halitem_client), our_human.client)
-	our_human.client.screen += CI
+	client_screen_add(our_human.client, CI)
 	after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
 
 /datum/hallucinations/proc/remove_hallucination_item()
@@ -106,7 +106,7 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(halitem_client && halitem)
-		halitem_client.screen -= halitem
+		client_screen_remove(halitem_client, halitem)
 	rel_clear(src, nameof(halitem_client))
 	rel_clear(src, nameof(halitem))
 

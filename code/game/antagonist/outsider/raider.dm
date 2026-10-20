@@ -1,4 +1,3 @@
-GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 /datum/antagonist/raider
 	id = MODE_RAIDER
@@ -108,7 +107,6 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 /datum/antagonist/raider/New()
 	..()
-	GLOB.raiders = src
 
 /datum/antagonist/raider/update_access(mob/living/player)
 	for(var/obj/item/storage/wallet/W in contents_of(player))
@@ -270,7 +268,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	if(holster)
 		var/obj/item/clothing/under/uniform = player.get_equipped_item(SLOT_ID_UNIFORM)
-		if(istype(uniform) && uniform.can_attach_accessory(holster))
+		if(istype(uniform) && isnull(uniform.accessory_refusal(holster)))
 			uniform.attackby(holster, player)
 		else
 			player.put_in_any_hand_if_possible(holster)
@@ -316,3 +314,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		hud_of(player)?.internals?.icon_state = "internal1"
 
 	return 1
+
+/// The /datum/antagonist/raider template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_raiders() as /datum/antagonist/raider
+	return SSantag?.all_antag_types[MODE_RAIDER]

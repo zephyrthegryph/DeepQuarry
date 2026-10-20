@@ -9,10 +9,11 @@ fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
             ResolvedMeaning::Unsupported(query)
         }
     }
-    let frontend = frontend("/datum/receiver\n    var/known = 1\n");
+    let frontend = retained_frontend("/datum/receiver\n    var/known = 1\n");
+    // The bare tree never manufactures a negative type answer; production proves type absence through the pinned
+    // engine host (engine_host/namespace_absence.rs), so the admission reads go through that host.
+    let host = pinned_host(&frontend);
     for source in [
-        // A bare source tree can prove a type absent only below a type the source declares; an absent child of a built-in
-        // type needs the engine host (EngineResolverHost) that production always wraps around it.
         "nameof(/datum/receiver/actually_absent)",
         "nameof(/datum/receiver/proc/actually_absent)",
         "nameof(/datum/receiver::missing)",
@@ -33,7 +34,7 @@ fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
             declared_array: None,
             declaration_flags: Some(0),
         };
-        let recorder = dm_session::RecordingResolver::new(frontend.snapshot.tree.as_ref());
+        let recorder = dm_session::RecordingResolver::new(&host);
         let evaluator = DriverEvaluator {
             pure_calls: None,
             resource_search_context: None,
@@ -67,6 +68,59 @@ impl dm_preprocess::SourceProvider for Source<'_> {
     fn read(&self, _: &Path) -> Result<String, String> {
         Ok(self.0.into())
     }
+}
+
+fn pinned_host(frontend: &ColdFrontend) -> crate::engine_host::EngineResolverHost<dm_tree::SemanticTree> {
+    use crate::engine_host::{Completeness, ConstantCatalog, EngineResolverHost, RuntimeAliasCatalog};
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let mut symbols = frontend.snapshot.tree.symbols().clone();
+    let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+    let runtime = RuntimeAliasCatalog::new(
+        engine.identity(),
+        &symbols,
+        Vec::new(),
+        frontend.snapshot.tree.types().iter().map(|node| node.path).collect(),
+        Completeness::Partial,
+    )
+    .unwrap();
+    EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime)
+        .with_pinned_variables(&engine, frontend)
+        .unwrap()
+}
+
+/// Production builds through retained semantic state, which issues the demanded-name receipts that let the
+/// pinned host certify an absent member.
+fn retained_frontend(source: &str) -> ColdFrontend {
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut semantic = dm_tree::frontend::RetainedSemanticTree::default();
+    dm_tree::frontend::build_with_executor_and_semantic_state(
+        Path::new("probe.dme"),
+        &Source(source),
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+        None,
+        &executor,
+        Some(&mut semantic),
+    )
+    .unwrap()
 }
 
 fn frontend(source: &str) -> ColdFrontend {

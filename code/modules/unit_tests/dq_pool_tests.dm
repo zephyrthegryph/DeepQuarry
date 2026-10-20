@@ -132,3 +132,6 @@
 	qdel(other)
 	qdel(probe, TRUE)
 	pool_set_poison(was_poison)
+
+CAPABILITIES(/datum/pool_test_item)
+	ref_one(nameof(held))

@@ -1,3 +1,5 @@
+/// The loot tables are made once at world setup (GLOB.supply_drop) and never deleted in a round.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/supply_drop_loot)
 /datum/supply_drop_loot
 	var/name = ""
 	var/container = null

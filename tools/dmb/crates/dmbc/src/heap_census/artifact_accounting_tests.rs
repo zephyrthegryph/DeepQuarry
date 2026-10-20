@@ -71,7 +71,12 @@ fn shared_local_shape_census_reports_engine_leases_without_inventing_bytes() {
         )
         .unwrap();
     }
+    // Hits on an already stored variant defer the roster entry to the lease (092f08b6b3) until that lease's next
+    // roster read, so the sibling's claims become part of the shared core once it has flushed. Read through b
+    // first so a then observes the quiescent core both leases share.
+    let quiescent = b.local_shape_storage_accounting();
     let accounting = a.local_shape_storage_accounting();
+    assert_eq!(accounting, quiescent);
     assert_eq!(accounting, b.local_shape_storage_accounting());
     assert_eq!(accounting.leases, 2);
     assert!(accounting.claimed_variants > 0);

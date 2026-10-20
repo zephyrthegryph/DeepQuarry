@@ -49,3 +49,6 @@ GLOBAL_LIST_INIT(ship_engine_nominal_status, list("All systems nominal"))
 /// actual engine object
 /datum/ship_engine/proc/holder() as /obj/machinery
 	return holder
+
+CAPABILITIES(/datum/ship_engine)
+	ref_one(nameof(holder))

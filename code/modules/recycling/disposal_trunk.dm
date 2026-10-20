@@ -7,6 +7,7 @@ CAPABILITIES(/obj/structure/disposalpipe/trunk)
 	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
 	after_init(0, then(PROC_REF(link_after_init)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(linked))
 
 /// Links the machine on its tile, once it exists.
 /obj/structure/disposalpipe/trunk/proc/link_after_init(datum/act/timer/A)

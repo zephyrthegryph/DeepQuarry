@@ -17,6 +17,7 @@ CAPABILITIES(/datum/hose_connector)
 	ref_one(nameof(my_hose))
 	owns_one(nameof(reagents), /datum/reagents)
 	every(2 SECONDS, then(PROC_REF(connector_step)), when = nameof(my_hose))
+	ref_one(nameof(carrier))
 
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
 /atom/movable/var/list/hose_connectors

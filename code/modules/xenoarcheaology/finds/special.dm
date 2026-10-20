@@ -67,6 +67,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
 CAPABILITIES(/obj/item/vampiric)
 	owns_many(nameof(shadow_wights))
 	every(2 SECONDS, then(PROC_REF(vampiric_step)))
+	ref_many(nameof(nearby_mobs))
 
 /// Acts only while a player is near; with none near, the run does nothing.
 /obj/item/vampiric/proc/vampiric_step(datum/act/timer/A)
@@ -157,6 +158,7 @@ CAPABILITIES(/obj/item/vampiric)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
 	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
+	ref_one(nameof(target_turf))
 
 // ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload)

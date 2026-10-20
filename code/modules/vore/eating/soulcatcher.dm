@@ -20,6 +20,10 @@ CAPABILITIES(/obj/soulgem)
 	// a soulgem is an abstract container of minds
 	without("melee_hit")
 	owns_many(nameof(brainmobs))
+	ref_one(nameof(linked_belly))
+	ref_one(nameof(own_mind))
+	ref_one(nameof(owner))
+	ref_one(nameof(selected_soul))
 
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
 // the linked belly (a relation view) is saved as the belly's name.

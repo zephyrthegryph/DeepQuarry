@@ -77,6 +77,8 @@ pub struct InitializerArtifacts {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    /// The retained session's query database: receipts are certified by its current answers.
+    pub(crate) query_db: Option<Arc<crate::query_db::QueryDb>>,
 }
 impl Default for InitializerArtifacts {
     fn default() -> Self {
@@ -95,10 +97,16 @@ impl Default for InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: None,
         }
     }
 }
 impl InitializerArtifacts {
+    /// Receipts of this store are certified by the session's query database.
+    pub(crate) fn with_query_db(mut self, db: &Arc<crate::query_db::QueryDb>) -> Self {
+        self.query_db = Some(Arc::clone(db));
+        self
+    }
     pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
         self.release_runtime_syntax();
         self.roster.clear();
@@ -142,6 +150,7 @@ impl InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: self.query_db.clone(),
         })
     }
     pub(crate) fn publish_successful(&self) -> bool {
@@ -277,6 +286,7 @@ impl InitializerArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            query_db: None,
         }
     }
 }
@@ -409,10 +419,8 @@ impl SemanticClassification {
             Some(RuntimeValue::SizedArray(dimensions)) => {
                 Some(RuntimeRecipe::SizedArray(Arc::clone(dimensions)))
             }
-            Some(RuntimeValue::SizedArrayExplicit {
-                dimensions,
-                expression,
-            }) => {
+            Some(RuntimeValue::SizedArrayExplicit(explicit)) => {
+                let crate::initializer_policy::ExplicitSizedArray { dimensions, expression } = &**explicit;
                 let syntax = if let Some(expression) = expression {
                     let InitializerValue::Expression(value) = &pending.write.write.value else {
                         return None;
@@ -485,13 +493,13 @@ impl SemanticClassification {
             Some(RuntimeRecipe::SizedArrayExplicit {
                 dimensions,
                 expression,
-            }) => Some(RuntimeValue::SizedArrayExplicit {
-                dimensions: Arc::clone(dimensions),
-                expression: match expression {
+            }) => Some(RuntimeValue::sized_array_explicit(
+                Arc::clone(dimensions),
+                match expression {
                     Some(syntax) => Some(syntax.bind(current_expression.as_deref()?)?),
                     None => None,
                 },
-            }),
+            )),
             Some(RuntimeRecipe::Expression(syntax)) => Some(RuntimeValue::Expression(
                 syntax.bind(current_expression.as_deref()?)?,
             )),

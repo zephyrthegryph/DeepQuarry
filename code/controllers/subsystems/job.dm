@@ -176,7 +176,7 @@ CAPABILITIES(/datum/system/job)
 			return FALSE
 		if(!job.player_has_enough_playtime(player.client))
 			return FALSE
-		if(!is_job_whitelisted(player, rank))
+		if(job_whitelist_refusal(player, rank))
 			return FALSE
 
 		var/position_limit = job.total_positions
@@ -225,8 +225,8 @@ CAPABILITIES(/datum/system/job)
 		if(!job.player_has_enough_playtime(player.client))
 			job_debug_message("FOC character not enough playtime, Player: [player]")
 			continue
-		if(!is_job_whitelisted(player, job.title))
-			job_debug_message("FOC is_job_whitelisted failed, Player: [player]")
+		if(job_whitelist_refusal(player, job.title))
+			job_debug_message("FOC job_whitelist_refusal refused, Player: [player]")
 			continue
 		// Code End
 		if(flag && !(player.client.prefs.read_preference(/datum/preference/numeric/human/be_special) & flag))
@@ -264,7 +264,7 @@ CAPABILITIES(/datum/system/job)
 		if(!job.player_has_enough_playtime(player.client))
 			job_debug_message("GRJ player not enough playtime, Player: [player]")
 			continue
-		if(!is_job_whitelisted(player, job.title))
+		if(job_whitelist_refusal(player, job.title))
 			job_debug_message("GRJ player not whitelisted for this job, Player: [player], Job: [job.title]")
 			continue
 
@@ -508,7 +508,7 @@ CAPABILITIES(/datum/system/job)
 					permitted = TRUE
 
 				// Check if they're whitelisted for this gear (in alien whitelist? seriously?)
-				if(gaar_thing.whitelisted && !is_alien_whitelisted(human_mob.client, GLOB.all_species[gaar_thing.whitelisted]))
+				if(gaar_thing.whitelisted && alien_whitelist_refusal(human_mob.client, GLOB.all_species[gaar_thing.whitelisted]))
 					permitted = FALSE
 
 				// If they aren't, tell them

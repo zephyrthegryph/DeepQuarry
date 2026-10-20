@@ -78,6 +78,8 @@ CAPABILITIES(/datum/contract_negotiation_clause)
 		default_option_id = option.id
 	return TRUE
 
+/// A definition made once by its system at world setup and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/contract_definition)
 /// Immutable authoring datum. Gameplay content will subtype this later; the
 /// infrastructure intentionally registers no concrete definitions yet.
 /datum/contract_definition

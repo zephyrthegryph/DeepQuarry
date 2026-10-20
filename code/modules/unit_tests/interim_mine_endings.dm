@@ -10,7 +10,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/effect/mine/training/mine = allocate(/obj/effect/mine/training, T)
-	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	var/datum/wires_test_adapter/wires = wires_test(mine)
 	TEST_ASSERT(wires, "the actual deployed training mine initializes its wire controller")
 	TEST_ASSERT(mine_h && (mine_h in T.dangerous_objects), "actual initialization registers the training mine as a floor danger")
@@ -42,7 +42,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/effect/mine/stun/mine = allocate(/obj/effect/mine/stun, T)
-	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	TEST_ASSERT(mouse.mob_size <= MOB_TINY, "the actual mouse meets the existing tiny-victim exemption")
 	TEST_ASSERT(!user.has_status(STAT_STUNNED), "the actual person starts without stun")
 	mine.Bumped(mouse)
@@ -66,7 +66,7 @@
 	TEST_ASSERT(user.put_in_active_hand(book), "the actual victim holds the original book")
 	TEST_ASSERT(user.put_in_inactive_hand(pen), "the actual victim holds the original pen in the other hand")
 	var/obj/effect/mine/stripping/mine = allocate(/obj/effect/mine/stripping, T)
-	var/mine_h = entity_handle(mine) // the floor danger index holds handles
+	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	mine.Bumped(user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "the actual crossing consumes the stripping mine")

@@ -144,3 +144,139 @@ production-tree A/B.
   permanent.
 - Risk: the dependency wrapper must see every read. The existing `RecordingResolver` already gates lowering; the same gate must
   cover initializers and class layout. `DMB_QUERY_VERIFY=1` recomputes green queries and compares, as `DMB_DOMAIN_CACHE_VERIFY` does.
+
+## Cross-request reuse of reuse checks (decided 2026-10-18)
+
+A hot added-type compile (about 13.5 s, timing detail off) no longer recomputes much; it re-checks
+everything. Per request: about 630k domain versions are issued (0.5 s wall), about 212k initializer
+writes and 87k procedures each look up, certify and claim their stored result (lookup 1.4, certify
+3.9, claim 2.9 CPU-s). The plan is to carry what did not change from the previous request instead of
+re-proving it.
+
+1. **Carried domain versions.** A tree certificate token is carried across a revision only while the
+   domain's inputs are unchanged (demand-token carry, `inherit_demand_tokens`), and demanded tokens
+   come from one process-wide issuer. So a (domain, token) pair seen with a positive tree answer
+   still has that answer; the host issues its version from the token without resolving the query
+   (`engine_host/carried_positive.rs`, `DMB_CARRY_VERSIONS`). Negative and Unsupported answers still
+   take the full path: they depend on source-wide absence and runtime catalogs.
+2. **Version diff instead of a full roster.** Keep the previous request's issued versions per domain.
+   The certified roster becomes the previous roster minus artifacts whose read domains changed
+   version (the incidence index already maps domain to artifact), so the 630k-domain certify pass is
+   proportional to the changed domains.
+3. **Bulk carry with one claim.** Artifacts of an unchanged roster are claimed into the new request's
+   lease as one set (the previous lease's claims, minus the affected ones), instead of 920k claims.
+   Initializer classification and the lowering roster share this path.
+
+Each step is gated by the six-session equivalence scenarios and an interleaved A/B, behind a flag
+until it is faster and equivalent.
+
+Measured 2026-10-18 (hot added type, quiet machine): step 1 was implemented and reverted. A carried
+(domain, token) memory hit 288k of 344k variable domains, yet roster versions stayed at 0.41-0.43 s.
+Per issued variable domain the token lookup and carry check alone cost about 1.5 us of the ~5 us
+elapsed, and the 55k misses only 0.1 CPU-s: version issuing is many small lock-and-map steps, not
+query resolution. A reader lock on the demand-token map was also neutral. What remains per unit is
+bookkeeping: lowering's claim-and-rebind is about 23 us per procedure (2.1 CPU-s for 87.6k:
+claim, local re-match, rebind, admitted-read recording) and initializer visits about 25 us per
+write. Steps 2-3 therefore have to remove the per-unit claim/observe work itself (one lease-level
+transfer of the previous request's claims and recorded reads), not the version computation.
+
+
+## Migration plan: one query path, no patches (decided 2026-10-18)
+
+Goal (user, 2026-10-18): every build (cold, body edit, declaration edit, added or removed type, reparent,
+define change, worktree switch, test and bench variants) runs one path, the `dm-query` database driving
+each stage as queries with recorded dependencies, red/green revalidation and early cutoff. A cold build
+is "every input changed". The patch system (body patch, append patch, alternate patch bases, default
+patch, code-motion line map) is deleted, with its flags and tests, once the general path matches it.
+Gate per step: six-session structural equivalence plus `dmb-equiv` against a cold compile on the
+production tree for every edit kind; a byte-identical cold compile stays available for releases.
+Performance may not regress on any edit kind against today (body edit about 6 s through the body patch,
+added type 13-14 s, worktree switch); interleaved A/B.
+
+### What becomes which query
+
+| Query | Key | Reads | Replaces |
+|---|---|---|---|
+| `source(path)` (input) | canonical path | file bytes (watcher proofs) | prepared inputs, snapshot memo |
+| `project` (input) | manifest | `.dme` order, defines, variant flags, engine template, compiler policy | request config hashing |
+| `expansion(region)` | region | `source`, the macros it read | regions memo, frontend revision mode |
+| `file_decls(file)` | file | its expansions | declaration chunk contributions |
+| `tree_group(owner, name, kind)`, `type_node(path)` | the group / path | `file_decls` of contributing files, parent `type_node` | splice groups, `MetadataDependencies`, demand tokens |
+| `answer(read)` | one `ResolveQuery` | the `tree_group`/`type_node` queries it consults, pinned catalogs | `ReadDomain` versions, certificates, rosters |
+| `lowered(unit)` | unit identity | its body expansion, the `answer`s it read | lowering memo, candidate roster, local path |
+| `abi(unit)`, `initializer(owner, var)`, `class_record(owner)` | declaration | `answer`s read | ABI receipts, initializer receipts, class projection store |
+| `resources(region)` | region | resolved references, `source` of the files hit | resource demand/order memos |
+| `link` | program | `lowered` keys, previous `link` value (stable numbering) | `RetainedBindings`, assignment recipe |
+| `section(kind, slice)` | output section | `lowered`/`class_record` rows, `link` | composition rebuild, body/append patch splices |
+
+The value of `answer(read)` is the meaning itself, so early cutoff stops at the first unchanged answer:
+an added type re-runs the groups it touches and the answers that read them, and every unit whose answers
+are unchanged stays green without a certificate check. Revalidation must be parallel and cheap (the
+`Db` lock is one mutex today): step 2 shards it and verifies a whole level of dependants at once.
+
+### Order (each step lands with equivalence green and deletes what it supersedes)
+
+1. **Session database and inputs.** One `Db` per retained session; a request is a revision; inputs are
+   `source`, `project`, resources and the engine template, set from the existing input proofs. The full
+   path runs under a derived `program` query; a no-op request is green end to end. The on-disk
+   session record and pair store stay: they are the database's persistence across daemon restarts
+   until the database itself is persisted. (Landed: `query_db.rs`, about 0.1 s for 5.9k sources,
+   unchanged captures recognised by identity.)
+2. **`Db` scale.** Sharded node table, lock-free green check, batch revalidation of dependants, value
+   eviction under the session budget. Benchmarked with 1M nodes.
+3. **Frontend queries.** `expansion`, `file_decls`, `type_node`, `tree_group` as queries computed by the
+   existing splice code (a group's value is its resolved rows). Deletes the frontend revision flag and
+   its non-revision path, the demand-token carry and selection pruning.
+4. **Answers and per-unit queries.** `answer`, `lowered`, `abi`, `initializer`, `class_record`; recorded
+   `ResolveQuery` reads become edges. Deletes domain versions and issued certificates in
+   `engine_host`, the unchanged-candidate rosters, lowering/initializer/ABI receipt admission and the
+   lease claim bookkeeping (the bulk lease transfer is not needed).
+   (Lowering roster landed: `answer(query)` inputs hashed from the current answer and one `unit`
+   query per stored lowering record over the answers it read, owned by the session's `QueryDb` and
+   held by `SessionSymbolicMemo`; it replaces the domain-version roster whenever a session database
+   exists. Positive structural answers the tree's classified `ChangeSince` cannot reach are carried
+   without resolving. Measured 2026-10-19, pool-10, hot body edit with `DMB_BODY_PATCH=0`: roster
+   1.13-1.25 s -> 0.70-0.85 s steady state (first edit 2.7 s while read lists are built), wall
+   unchanged within noise (13-15.6 s), peak +1 GB (705k answer inputs and read lists); dmb-equiv
+   equivalent against a fresh compile for body and added-type edits.)
+   (Answer table landed, 2026-10-19: `QueryDb` holds one answer per `ResolveQuery`, proven at most once
+   per request (opened by `revise`, bound to the tree in `cold.rs`) and shared by every stage through
+   `dm_session::AnswerOracle`: a `ReceiptAdmission` with an oracle certifies receipts by answers and
+   issues no domain versions except for producer inputs. Lowering roster, initializer receipts and ABI
+   semantic receipts use it. Hot body edit, pool-10: init.value.visit 3.5 -> 0.8 CPU-s, admission.certify
+   3.2 CPU-s -> 0, domain versions issued 828k -> 575k, initializer stage 1.9 -> 1.3 s, lowering 2.3 ->
+   1.9 s, peak about 9.9 GB (the dm-query unit nodes are gone); dmb-equiv equivalent for body and
+   added-type edits.) The lowering request admission takes the same oracle, and the local claim no
+   longer replays admitted leaves into a recorder it drops (one version per read): hot body edit
+   12.2-12.7 s wall (was 13-15 s), local claim/rebind 3.7 -> 0.5 CPU-s, domain versions 828k -> 102k.
+   Deleted: the lowering domain-version roster (`unchanged_candidate_roster`, its rejection diagnostic,
+   `DMB_TIMINGS_DETAIL=2` roster dump) and the lowering store's incidence index; a memo without a
+   query database offers no unchanged candidates. Hot body edit 11.3-12.4 s, peak 9.4 GB (was 9.8).
+   Then deleted: the ABI incidence-qualified roster (`DMB_ABI_QUALIFIED_ROSTER`) and with it the whole
+   generic incidence index of `dm_session::ObservedArtifactStore` (domain-version candidate rosters,
+   local-input certificates, `visit_affected`, incidence accounting); ABI rows are validated per unit
+   against the answer table on the worker pool. Session baseline 7.8 GB (was 8.0).
+5. **Stable link by default.** `link` keeps every surviving index and appends; removals and reparents
+   renumber by rewriting references in the affected units' words, never by relowering. Deletes
+   `DMB_STABLE_LINK` and the fresh-order full path (a release build asks for fresh numbering).
+   (2026-10-19: `DMB_STABLE_LINK` deleted; a retained link always stabilizes against its previous
+   bindings and a build without them (one-shot, cold) numbers in source order. A revert is now
+   equivalent to, not byte-identical with, the initial build; six-session asserts equivalence.
+   Removal/reparent relocation without relinking is still open.)
+6. **Section-wise composition.** `section` queries over the retained model; only changed sections are
+   rewritten, then encoded. Body edit must reach about 6 s here. Deletes `body_patch.rs`,
+   `body_patch_append.rs`, `body_patch_lines.rs`, patch slots and alternates in
+   `composition/generation.rs`, the default patch, `DMB_BODY_PATCH`, `DMB_PATCH_ALTERNATES` and the
+   patch tests, replaced by equivalence tests over every edit kind.
+7. **Resources as queries.** Deletes the resource order and demand memos.
+
+Measured 2026-10-18 before step 1: the general path today on a hot body edit (`DMB_BODY_PATCH=0`)
+is recorded below with the patch for comparison.
+
+| Hot body edit (one body, pool-10, quiet machine) | wall | compilation stage |
+|---|---|---|
+| body patch | 6.8 s, 5.2 s | 1.4 s |
+| general path (`DMB_BODY_PATCH=0`) | 15.5 s, 15.0 s | 9.7 s (ABI 1.6, lowering 2.0-2.5, initializers 1.8-2.0, link 1.7-1.9, composition 1.6-2.0) |
+
+So the general path has to lose about 9 s of per-unit checking and whole-program link and composition
+on a body edit before step 6 can delete the patch; steps 4-6 are where that comes from.

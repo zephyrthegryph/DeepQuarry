@@ -163,6 +163,14 @@ CAPABILITIES(/obj/item/projectile)
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
 	ref_many(nameof(permutated)) // the atoms passed through: a deleted one leaves the list
+	ref_one(nameof(beam_index))
+	ref_one(nameof(firer))
+	ref_one(nameof(hitscan_last))
+	ref_one(nameof(homing_target))
+	ref_many(nameof(impacted_mobs))
+	ref_one(nameof(my_case))
+	ref_one(nameof(original))
+	ref_one(nameof(starting))
 
 // ALLOW(init/INSTANCE_STATE): binds to the casing it is made inside
 /obj/item/projectile/Initialize(mapload)

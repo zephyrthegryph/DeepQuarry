@@ -116,12 +116,12 @@ MSG_DEF_SELF(ship/access_denied, "access denied")
 
 /obj/machinery/computer/ship/look(mob/user)
 	if(linked() && linked().real_appearance)
-		user.client?.images += linked().real_appearance
+		client_images_add(user.client, linked().real_appearance)
 	user.set_viewsize(world.view + extra_view)
 
 /obj/machinery/computer/ship/unlook(mob/user)
 	if(linked() && linked().real_appearance && user.client)
-		user.client.images -= linked().real_appearance
+		client_images_remove(user.client, linked().real_appearance)
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)

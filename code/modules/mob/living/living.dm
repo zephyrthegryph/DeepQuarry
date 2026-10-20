@@ -47,7 +47,7 @@
 		own_clear(tf_mob_holder, nameof(tf_mob_holder.vore_organs), OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
-		set_tf_mob_holder(null)
+		rel_set(src, nameof(tf_mob_holder), null)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -1100,7 +1100,7 @@ CAPABILITIES(/datum/character_setup_button)
 // owned state datum (was a component): its button leaves the owner's screen and HUD.
 /datum/character_setup_button/on_destroy(force)
 	if(screen_icon)
-		owner?.client?.screen -= screen_icon
+		client_screen_remove(owner.client, screen_icon)
 		var/datum/hud/button_hud = owner_of(screen_icon)
 		if(istype(button_hud))
 			own_remove(button_hud, nameof(button_hud.other_important), screen_icon)
@@ -1135,7 +1135,7 @@ CAPABILITIES(/datum/character_setup_button)
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	user.client?.screen += screen_icon
+	client_screen_add(user.client, screen_icon)
 
 /datum/character_setup_button/proc/character_setup_click(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

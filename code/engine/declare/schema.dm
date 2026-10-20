@@ -12,6 +12,8 @@
 
 
 
+/// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/schema)
 /// One declared kind of value. Immutable once built.
 /datum/schema
 	var/kind

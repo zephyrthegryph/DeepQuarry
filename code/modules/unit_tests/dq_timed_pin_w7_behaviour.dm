@@ -8,7 +8,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w7/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		bind_player(H, null, as_ckey = TRUE)
 
 /// Clicks `target` with `held` and checks that a timed action of `dur` starts (and says `start_text` when given). Returns the running action.
 /datum/unit_test/dq_timed_pin_w7/proc/begin(mob/user, atom/target, obj/item/held, dur, start_text = null)
@@ -599,7 +599,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/structure/bed/roller/bed = allocate(/obj/structure/bed/roller, run_loc_floor_bottom_left)
 	var/obj/item/handcuffs/C = allocate(/obj/item/handcuffs, run_loc_floor_bottom_left)
-	TEST_ASSERT(bed.buckle_mob(user, forced = TRUE), "setup: the user is buckled")
+	TEST_ASSERT(bed.buckle_mob(user, authority = GLOB.authority_forced), "setup: the user is buckled")
 	TEST_ASSERT(user.equip_to_slot(C, SLOT_ID_HANDCUFFED), "setup: the user is cuffed")
 	test_chat_clear()
 	user.resist()

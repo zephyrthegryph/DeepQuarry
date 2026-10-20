@@ -3,6 +3,10 @@
 //
 
 CAPABILITIES(/datum/tickets)
+	// The stat buttons the ticket singleton makes once and keeps for the round.
+	owns_one(nameof(astatclick), /obj/effect/statclick/ticket_list)
+	owns_one(nameof(cstatclick), /obj/effect/statclick/ticket_list)
+	owns_one(nameof(rstatclick), /obj/effect/statclick/ticket_list)
 	interface("TicketsPanel", title = "Tickets", state = nameof(GLOB.tgui_mentor_state))
 	op("legacy", ui_act("legacy"), asks(/datum/prompt/choice/ticket_list_ui, step = "list"), then(PROC_REF(ui_act_legacy)))
 	op("new_ticket", ui_act("new_ticket"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Please select the ckey of the user.", "title" = "Select CKEY", "choices" = computed(PROC_REF(ticket_ckey_choices))), step = "ckey"), asks(/datum/prompt/text/ticket_create, fields = list("question" = "What should the initial text be?", "title" = "New Ticket"), step = "text"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "Is this ticket Admin-Level or Mentor-Level?", "title" = "Ticket Level", "choices" = list("Admin", "Mentor"), "buttons" = TRUE), step = "level"), asks(/datum/prompt/choice/ticket_create, fields = list("question" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes", "No"), "buttons" = TRUE), step = "duplicate", when = PROC_REF(ticket_player_has_ticket)), then(PROC_REF(ui_act_new_ticket)))

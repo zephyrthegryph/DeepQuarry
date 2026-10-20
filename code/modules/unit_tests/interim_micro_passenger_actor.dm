@@ -26,7 +26,7 @@
 	TEST_ASSERT(bystander.get_effective_size(TRUE) >= 0.5, "actual unrelated human fails the unchanged micro size gate")
 	var/obj/mecha/micro/utility/gopher/mech = allocate(/obj/mecha/micro/utility/gopher, T)
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/bay = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe, T)
-	TEST_ASSERT(bay.can_attach(mech), "actual passenger component fits the real hull equipment capacity")
+	TEST_ASSERT(isnull(bay.attach_refusal(mech)), "actual passenger component fits the real hull equipment capacity")
 	bay.attach(mech)
 	TEST_ASSERT_EQUAL(bay.chassis, mech, "actual attachment associates the exact chassis")
 	TEST_ASSERT_EQUAL(bay.loc, mech, "actual equipment containment physically mounts the passenger compartment")

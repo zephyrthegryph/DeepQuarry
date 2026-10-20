@@ -129,3 +129,6 @@
 			carrier.apply_body_effect(/datum/body_effect/berserk_exhaustion, total_heal SECONDS)
 		if(!QDELETED(drain_beam))
 			spent(drain_beam, L)
+
+CAPABILITIES(/datum/blob_type/ectoplasmic_horror)
+	ref_many(nameof(active_beams))

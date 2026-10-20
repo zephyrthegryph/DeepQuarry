@@ -1,4 +1,3 @@
-GLOBAL_DATUM(borers, /datum/antagonist/borer)
 
 /datum/antagonist/borer
 	id = MODE_BORER
@@ -27,7 +26,6 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 
 /datum/antagonist/borer/New()
 	..(1)
-	GLOB.borers = src
 
 /datum/antagonist/xenos/borer/get_extra_panel_options(datum/mind/player)
 	return "<a href='byond://?src=\ref[src];[HrefToken()];move_to_spawn=\ref[player.current]'>\[put in host\]</a>"
@@ -71,3 +69,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 			if(temp_vent.network.normal_members.len > 50)
 				vents += temp_vent
 	return vents
+
+/// The /datum/antagonist/borer template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
+/proc/antag_borers() as /datum/antagonist/borer
+	return SSantag?.all_antag_types[MODE_BORER]

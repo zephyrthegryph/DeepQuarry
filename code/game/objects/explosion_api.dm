@@ -65,7 +65,7 @@
 		var/obj/O = AM
 		if(O.resistance_flags & BOMB_PROOF)
 			return
-	var/atom_h = entity_handle(AM)
+	var/atom_h = ref_token(AM)
 	var/prior_severity = resolved_atoms[atom_h]
 	if(prior_severity)
 		epoch_atoms_deduplicated++

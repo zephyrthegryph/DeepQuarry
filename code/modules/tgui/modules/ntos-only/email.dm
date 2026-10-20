@@ -51,6 +51,8 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	op("save", ui_act("save", arg("save", num())), asks(/datum/prompt/text, fields = list("title" = "Message export", "question" = "Please specify file name:", "max_len" = 100), when = PROC_REF(drive_ok)), then(PROC_REF(ui_act_save)))
 	op("addattachment", ui_act("addattachment"), asks(/datum/prompt/choice, fields = list("title" = "Select Attachment", "question" = "Please pick a file to send as attachment (max 32GQ)", "choices" = computed(PROC_REF(attachable_files))), when = PROC_REF(drive_ok)), then(PROC_REF(ui_act_addattachment)))
 	op("downloadattachment", ui_act("downloadattachment"), then(PROC_REF(ui_act_downloadattachment)))
+	ref_one(nameof(current_account))
+	ref_one(nameof(current_message))
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)

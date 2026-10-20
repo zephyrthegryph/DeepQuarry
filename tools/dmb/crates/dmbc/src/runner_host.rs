@@ -78,6 +78,9 @@ pub struct BuildHost {
     /// a variant resumes its patch base instead of a full compile. Define-independent owners (engine payload, executors, the
     /// directive/expansion/fragment memo, prepared sources) are shared by all variants and never stashed.
     variants: std::collections::BTreeMap<EngineConfiguration, VariantState>,
+    /// The session's query database (doc/incremental_core.md). Shared by every variant: a variant
+    /// is another value of the `project` input.
+    query_db: Arc<crate::query_db::QueryDb>,
 }
 
 /// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
@@ -131,6 +134,7 @@ impl Default for BuildHost {
     fn default() -> Self {
         Self {
             session_id: next_session_id(),
+            query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,
@@ -256,6 +260,7 @@ impl BuildHost {
     pub fn one_shot() -> Self {
         Self {
             session_id: next_session_id(),
+            query_db: Default::default(),
             engine_generation: 0,
             rich_generation: 0,
             procedure_generation: 0,
@@ -350,6 +355,9 @@ impl BuildHost {
     /// exact project/defines/bootstrap/engine bytes and clears this state on change.
     /// Moving the disk cache does not invalidate resident semantic values.
 
+    pub(crate) fn query_db(&self) -> &Arc<crate::query_db::QueryDb> {
+        &self.query_db
+    }
     pub(crate) fn retains_artifacts(&self) -> bool {
         self.memo.is_some()
     }
@@ -437,14 +445,20 @@ impl BuildHost {
                     crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(owner)
                 },
             );
-            self.symbolic = Some((policy, Arc::new(symbolic)));
+            self.symbolic = Some((policy, Arc::new(symbolic.with_query_db(&self.query_db))));
         }
         if self
             .initializers
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
-            self.initializers = Some((policy, Arc::new(Default::default())));
+            self.initializers = Some((
+                policy,
+                Arc::new(
+                    crate::initializer_policy::InitializerArtifacts::default()
+                        .with_query_db(&self.query_db),
+                ),
+            ));
         }
         let abi_disk = disk.clone();
         // One transport per request for both initializer stores, as the one-shot facade builds it.
@@ -489,7 +503,7 @@ impl BuildHost {
                     crate::driver_facts::AbiArtifacts::with_engine_owner(engine.abi_engine_owner())
                 },
             );
-            self.abi = Some((policy, Arc::new(artifacts)));
+            self.abi = Some((policy, Arc::new(artifacts.with_query_db(&self.query_db))));
         }
         memo.abi = Some(Arc::clone(&self.abi.as_ref().unwrap().1));
         // The retained ABI store reads and stages per-unit rows through this request's disk snapshot, so a

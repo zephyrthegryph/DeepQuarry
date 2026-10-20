@@ -3,6 +3,7 @@ import { CompilerProvenanceError } from './compiler_provenance';
 import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import Bun from 'bun';
@@ -491,6 +492,15 @@ function runDreamDaemonWithWatchdog(
     });
     if (child.pid && options.onSpawn) {
       options.onSpawn(child.pid);
+    }
+    // A test world runs at idle priority: the machine is also the user's desktop, and a world only needs the CPU nothing else wants.
+    // DQ_PRIORITY=normal keeps the old behaviour.
+    if (child.pid && process.env.DQ_PRIORITY !== 'normal') {
+      try {
+        os.setPriority(child.pid, os.constants.priority.PRIORITY_LOW);
+      } catch {
+        // best effort: the world runs at the build's priority
+      }
     }
     let settled = false;
     let hardTimeout = false;

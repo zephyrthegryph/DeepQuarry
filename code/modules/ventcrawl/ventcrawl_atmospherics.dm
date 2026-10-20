@@ -12,7 +12,7 @@
 	if(pipe_image)
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
-				M.client.images -= pipe_image
+				client_images_remove(M.client, pipe_image)
 				M.pipes_shown -= pipe_image
 	return ..()
 

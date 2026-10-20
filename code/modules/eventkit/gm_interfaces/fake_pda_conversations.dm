@@ -24,7 +24,7 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		return
 
 	if(!user.fakeConversations || !istype(user.fakeConversations, /datum/eventkit/fake_pdaconvos))
-		user.fakeConversations = new /datum/eventkit/fake_pdaconvos // ALLOW(ownership): /client is not a datum; its session disposes this directly held conversation model on disconnect
+		rel_set(user, nameof(user.fakeConversations), new /datum/eventkit/fake_pdaconvos)
 
 	var/datum/eventkit/fake_pdaconvos/FPC = user.fakeConversations
 

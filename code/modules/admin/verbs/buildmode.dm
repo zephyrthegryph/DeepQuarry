@@ -43,10 +43,10 @@
 			rel_set(H, nameof(H.buildhelp), B)
 			rel_set(H, nameof(H.buildmode), C)
 			rel_set(H, nameof(H.buildquit), D)
-			M.client.screen += A
-			M.client.screen += B
-			M.client.screen += C
-			M.client.screen += D
+			client_screen_add(M.client, A)
+			client_screen_add(M.client, B)
+			client_screen_add(M.client, C)
+			client_screen_add(M.client, D)
 			H.cl_ckey = M.client.ckey // clients are not datums: held by ckey
 
 /obj/effect/bmode//Cleaning up the tree a bit
@@ -299,6 +299,8 @@ sparse(/mob/living, buildmode_selected_image, type = /image)
 
 CAPABILITIES(/obj/effect/bmode/buildmode)
 	click_on(PROC_REF(click_input))
+	ref_one(nameof(coordA))
+	ref_one(nameof(coordB))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /obj/effect/bmode/buildmode/proc/click_input(datum/act/input/A)
@@ -510,7 +512,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				rel_set(A, nameof(A.target_up), B) // pair: sets B.target_down
+				rel_set(A, nameof(/obj/structure/ladder::target_up), B) // pair: sets B.target_down
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				log_admin("BUILDMODE: [key_name(user)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")

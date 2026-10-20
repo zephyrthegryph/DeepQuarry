@@ -11,7 +11,6 @@
 // distinct colors the user can recolor. dq_get_gear_palette() caches per gear-type so
 // the icon scan only runs once per type per session.
 
-GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 
 /datum/gear_tweak/recolor
 

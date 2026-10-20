@@ -168,3 +168,6 @@
 /// The notes this refers to (a relation view: null once that is deleted).
 /datum/data/pda/utility/scanmode/notes/proc/notes() as /datum/data/pda/app/notekeeper
 	return notes
+
+CAPABILITIES(/datum/data/pda/utility/scanmode/notes)
+	ref_one(nameof(notes))

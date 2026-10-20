@@ -2,7 +2,7 @@
 
 /mob/living
 	var/meat_amount = 0					// How much meat to drop from this mob when butchered
-	var/obj/meat_type					// The meat object to drop
+	var/meat_type					// The meat object to drop
 	var/name_the_meat = TRUE
 
 	var/gib_on_butchery = FALSE

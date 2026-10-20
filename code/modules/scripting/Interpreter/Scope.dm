@@ -11,6 +11,8 @@
 CAPABILITIES(/datum/scope)
 	owns_many(nameof(functions))
 	owns_many(nameof(variables))
+	ref_one(nameof(block_ref))
+	ref_one(nameof(parent_ref))
 
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
 	rel_set(src, nameof(block_ref), B)

@@ -12,6 +12,8 @@
 
 GLOBAL_LIST_EMPTY(trait_source_singletons)
 
+/// A prototype made once at world setup and shared, never deleted in a round: a reference to one cannot pin a deleted object (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait_source)
 /// The singleton that holds grants for a text source key (JOB_TRAIT, "adminabuse", ...).
 /datum/trait_source
 	var/name

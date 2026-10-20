@@ -6,7 +6,7 @@
 	/// Every event_meta this container made (owned); available_events and next_event name members of it.
 	var/list/event_pool
 	var/list/available_events
-	/// event_meta handle (entity_handle) -> world.time the event last fired.
+	/// event_meta handle (ref_token) -> world.time the event last fired.
 	var/list/last_event_time
 	var/tmp/datum/event_meta/next_event
 
@@ -18,6 +18,7 @@ CAPABILITIES(/datum/event_container)
 	every(2 SECONDS, then(PROC_REF(event_clock_step)), when = nameof(clock_running))
 	owns_many(nameof(event_pool))
 	ref_one(nameof(next_event), /datum/event_meta)
+	ref_many(nameof(available_events))
 
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
 /datum/event_container/proc/event_clock_step(datum/act/timer/A)
@@ -41,7 +42,7 @@ CAPABILITIES(/datum/event_container)
 	// Has an event been acquired?
 	if(next_event())
 		// Set when the event of this type was last fired, and prepare the next event start
-		LAZYSET(last_event_time, entity_handle(next_event()), world.time)
+		LAZYSET(last_event_time, ref_token(next_event()), world.time)
 		set_event_delay()
 		next_event().enabled = !next_event().one_shot	// This event will no longer be available in the random rotation if one shot
 
@@ -82,7 +83,7 @@ CAPABILITIES(/datum/event_container)
 		return 0
 
 	var/weight = EM.get_weight(active_with_role)
-	var/last_time = LAZYACCESS(last_event_time, entity_handle(EM))
+	var/last_time = LAZYACCESS(last_event_time, ref_token(EM))
 	if(last_time)
 		var/time_passed = world.time - last_time
 		var/weight_modifier = max(0, round((CONFIG_GET(number/expected_round_length) - time_passed) / 300))

@@ -76,3 +76,6 @@ CAPABILITIES(/atom/movable/screen/popup/default)
 /// The client this popup is shown to (a relation view: null once that is deleted).
 /atom/movable/screen/popup/proc/holder() as /client
 	return holder
+
+CAPABILITIES(/atom/movable/screen/popup)
+	ref_one(nameof(holder))

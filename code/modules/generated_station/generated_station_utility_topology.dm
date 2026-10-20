@@ -92,6 +92,12 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_statio
 CAPABILITIES(/datum/generated_station_utility_topology)
 	owns_many(nameof(atmos_objects))
 	owns_many(nameof(power_objects))
+	ref_many(nameof(alarms))
+	ref_many(nameof(apcs))
+	ref_many(nameof(scrub_tanks))
+	ref_many(nameof(scrubbers))
+	ref_many(nameof(supply_tanks))
+	ref_many(nameof(supply_vents))
 
 /datum/generated_station_utility_topology/New()
 	..()

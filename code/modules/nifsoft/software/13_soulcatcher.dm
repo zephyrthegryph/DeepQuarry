@@ -310,6 +310,8 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	configure(mob_kind(use_me = 1))
+	ref_one(nameof(nif))
+	ref_one(nameof(soulcatcher))
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()
@@ -450,6 +452,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 CAPABILITIES(/mob/observer/eye/ar_soul)
 	param(nameof(parent_human), pos = 1)
 	after_init(0, then(PROC_REF(dress_as_owner)))
+	ref_one(nameof(parent_human))
 
 // ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob and follows its owner's body
 /mob/observer/eye/ar_soul/Initialize(mapload)

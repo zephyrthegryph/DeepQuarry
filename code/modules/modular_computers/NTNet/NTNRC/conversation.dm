@@ -10,6 +10,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 CAPABILITIES(/datum/ntnet_conversation)
 	ref_many(nameof(clients), /datum/computer_file/program/chatclient) // a deleted client program leaves the channel
+	ref_one(nameof(operator))
 
 /datum/ntnet_conversation/New()
 	id = GLOB.ntnrc_uid

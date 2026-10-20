@@ -431,3 +431,6 @@ TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 /datum/reagent/proc/on_mob_end_metabolize(mob/living/affected_mob, datum/reagents/location)
 	SHOULD_CALL_PARENT(TRUE)
 	remove_traits_in(affected_mob, "metabolize_location:[location]reagent:[type]")
+
+CAPABILITIES(/datum/reagent)
+	ref_one(nameof(holder))

@@ -206,6 +206,8 @@ CAPABILITIES(/datum/admins)
 	op("vv_topic_list_nulls", topic_in(VV_ADMIN_TOPIC, VV_HK_LIST_ERASE_NULLS, arg(VV_HK_TARGET, schema_ref(/list), optional = TRUE, among = TOPIC_ANY)), then(PROC_REF(vv_topic_list_nulls)))
 	op("vv_topic_list_length", topic_in(VV_ADMIN_TOPIC, VV_HK_LIST_SET_LENGTH, arg(VV_HK_TARGET, schema_ref(/list), optional = TRUE, among = TOPIC_ANY)), then(PROC_REF(vv_topic_list_length)))
 	op("vv_topic_list_shuffle", topic_in(VV_ADMIN_TOPIC, VV_HK_LIST_SHUFFLE, arg(VV_HK_TARGET, schema_ref(/list), optional = TRUE, among = TOPIC_ANY)), then(PROC_REF(vv_topic_list_shuffle)))
+	ref_one(nameof(owner))
+	ref_many(nameof(ranks))
 
 /datum/admins/New(list/datum/admin_rank/ranks, ckey, force_active = FALSE, protected)
 	if(IsAdminAdvancedProcCall())

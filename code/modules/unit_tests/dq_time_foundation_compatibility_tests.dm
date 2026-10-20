@@ -17,20 +17,21 @@
 	var/datum/scheduler_record/record = scheduler_record_of(probe)
 	TEST_ASSERT(istype(record), "The real engine allocates a scheduler record")
 	TEST_ASSERT_EQUAL(scheduler_record_of(probe), record, "The legacy record entry point returns the actual engine record")
-	var/handle = entity_handle(probe)
-	TEST_ASSERT_EQUAL(entity_handle(probe), handle, "Legacy handle capture shares the same generation-qualified identity")
-	TEST_ASSERT_EQUAL(resolve_handle(handle), probe, "The canonical resolver returns the original live datum")
-	TEST_ASSERT_EQUAL(resolve_handle(handle), probe, "The legacy resolver returns the original live datum")
+	var/handle = ref_token(probe)
+	TEST_ASSERT_EQUAL(ref_token(probe), handle, "Legacy handle capture shares the same generation-qualified identity")
+	TEST_ASSERT_EQUAL(resolve_token(handle), probe, "The canonical resolver returns the original live datum")
+	TEST_ASSERT_EQUAL(resolve_token(handle), probe, "The legacy resolver returns the original live datum")
 	qdel(probe)
-	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the canonical handle")
-	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the legacy handle too")
-	var/datum/relation_definition/relation = allocate(/datum/relation_definition)
+	TEST_ASSERT_NULL(resolve_token(handle), "Deleting the original datum invalidates the canonical handle")
+	TEST_ASSERT_NULL(resolve_token(handle), "Deleting the original datum invalidates the legacy handle too")
+	var/datum/relation_definition/relation = new /datum/relation_definition // kept unless forced: deleted with force below
 	var/datum/relation_edge/edge = relation.make_edge()
 	TEST_ASSERT(istype(edge, /datum/relation_edge), "A real link carrier still passes existing legacy edge identity checks")
 	qdel(edge)
+	qdel(relation, TRUE)
 	var/datum/scheduled_behaviour/inline/inline_callback = definition_registry().make_inline_behaviour()
 	TEST_ASSERT(istype(inline_callback, /datum/scheduled_behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
-	qdel(inline_callback)
+	qdel(inline_callback, TRUE) // a compiled behaviour is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 
 /datum/unit_test/om/dq_time_foundation_clock_callback
 
@@ -59,8 +60,13 @@
 	TEST_ASSERT_EQUAL(length(first_registry.errors), 1, "Registry construction supplies an immediately writable error list")
 	TEST_ASSERT_EQUAL(length(second_registry.errors), 0, "Registry error mutations remain private to the instance")
 	TEST_ASSERT_NULL(second_registry.behaviour_by_type[/datum/scheduled_behaviour], "Registry definition indexes are distinct mutable lists")
-	var/datum/scheduler_type_table/first_table = allocate(/datum/scheduler_type_table)
-	var/datum/scheduler_type_table/second_table = allocate(/datum/scheduler_type_table)
+	qdel(first_registry, TRUE) // a registry is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
+	qdel(second_registry, TRUE)
+	var/datum/scheduler_type_table/first_table = new
+	var/datum/scheduler_type_table/second_table = new
+	TEST_ASSERT(first_table != second_table, "two type tables are distinct")
+	qdel(first_table, TRUE) // kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
+	qdel(second_table, TRUE)
 
 /datum/unit_test/dq_time_foundation_null_providers/Run()
 	var/datum/time_scheduler_factory/saved_factory = GLOB.time_scheduler_factory
@@ -92,7 +98,7 @@
 	var/created = factory && native && feedback && made_scheduler
 	for(var/datum/probe in list(made_scheduler, factory, native, feedback))
 		if(probe)
-			qdel(probe)
+			qdel(probe, TRUE) // providers are kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 	TEST_ASSERT_NULL(problem, "An early provider lookup from null globals completes without a runtime")
 	TEST_ASSERT(created, "Every uninitialized provider accessor creates its actual provider")
 	TEST_ASSERT(reused, "Repeated lookups retain the same provider identities")

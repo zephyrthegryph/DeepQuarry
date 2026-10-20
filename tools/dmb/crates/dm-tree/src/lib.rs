@@ -144,6 +144,8 @@ pub struct SemanticTree {
     /// Set by a clean change-set carry (no type removed): publication may skip
     /// the demand-store sweep. Never set on a full construction.
     selection_prune_skippable: bool,
+    /// The classified declaration change from the tree this one was derived from.
+    change_since: Option<Arc<change_set::ChangeSince>>,
     /// Types ensured by the root and engine rows, before any authored row;
     /// the change-set splice replays authored first-encounter order after it.
     /// `None` when unknown (the splice then keeps the type roster fixed).
@@ -200,6 +202,14 @@ pub struct AppendedField {
     pub default_bits: Option<u32>,
 }
 impl SemanticTree {
+    /// The classified declaration change from the tree this one was derived from, when known.
+    pub fn change_since(&self) -> Option<&Arc<change_set::ChangeSince>> {
+        self.change_since.as_ref()
+    }
+    /// This tree's declaration identity.
+    pub fn declaration_identity(&self) -> u128 {
+        self.identity
+    }
     /// Callables added by the last splice relative to the previous tree.
     pub fn appended_callables(&self) -> Option<&AppendedCallables> {
         self.appended_callables.as_deref()
@@ -663,6 +673,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         owner_certificate_issuer: None,
         selection_publication_deferred,
         selection_prune_skippable: false,
+        change_since: None,
         authored_type_start: None,
         default_edits: None,
         appended_callables: None,

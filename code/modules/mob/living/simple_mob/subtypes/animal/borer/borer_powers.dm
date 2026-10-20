@@ -150,7 +150,7 @@
 
 	//Update their traitor status.
 	if(host.mind)
-		GLOB.borers.add_antagonist_mind(host.mind, 1, GLOB.borers.faction_role_text, GLOB.borers.faction_welcome)
+		antag_borers().add_antagonist_mind(host.mind, 1, antag_borers().faction_role_text, antag_borers().faction_welcome)
 
 	/* This is likely not desired, and has some major issues with ghost behavior. Disabling for now
 	// No brain organ, so the borer moves in and replaces it permanently.
