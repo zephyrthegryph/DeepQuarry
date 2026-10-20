@@ -39,7 +39,7 @@
 /// runtime while it is made or drawn is a row of its own, so one broken type does not end the pin.
 /datum/unit_test/proc/dq_look_capture(type, turf/T)
 	log_test("look pin: making [type]") // a type that hangs names itself in the log
-	rand_seed(dq_test_seed_for("[type]"))
+	dq_look_reseed("[type]")
 	try
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))

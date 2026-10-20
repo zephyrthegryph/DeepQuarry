@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Every air alarm now shows its own room's danger; only the area's main alarm used to follow the air"

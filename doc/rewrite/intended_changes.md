@@ -5263,3 +5263,10 @@ locking. No snapshots are re-recorded.
 * **A hoist hook is unhooked by any advanced tool user** (cheap-migrations): `detach_with_actor()` asked `ishuman || issilicon`; it now
   asks only what it already asked next, `IsAdvancedToolUser()`. A handed simple mob next to the hook can now drag it off, as it can
   use other tools.
+
+## Alloys as transformations: supply-demand alloy quantities (2026-10-18)
+
+The eight `/datum/alloy` types are smelting transformations (`code/modules/mining/alloys.dm`); the processor makes the same sheets from the same ores in
+the same order (`dq_xform_smelting_pin`). `product_mod` is gone: each rule names the sheets it makes. The supply-demand event asked for
+`rand(5, 100) * product_mod` sheets of an alloy; it now asks for `rand(5, 100) * sheets / ores`, the alloy's real yield. Alloys with `product_mod = 1`
+are unchanged; durasteel asks for 1/6 instead of 0.3, plasteel 1/5, plastitanium 1/4.

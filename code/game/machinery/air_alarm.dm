@@ -327,10 +327,10 @@ CAPABILITIES(/obj/machinery/alarm)
 	for(var/gas in list(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4) + trace_gas)
 		.[gas] = S.partial_pressure(gas)
 
-/// The room's air changed (its gas watch): a main alarm wakes its scan when the change crossed one of its bands. Read from the change's own
+/// The room's air changed (its gas watch): an alarm wakes its scan when the change crossed one of its bands. Read from the change's own
 /// record, so a harmless drift costs no read of the air.
 /obj/machinery/alarm/proc/room_changed(list/observation, index)
-	if(!is_main || scanning)
+	if(scanning)
 		return
 	if(observed_signature(observation, index) != last_signature)
 		set_scanning(TRUE)
@@ -359,11 +359,26 @@ CAPABILITIES(/obj/machinery/alarm)
 /obj/machinery/alarm/proc/controls_room()
 	return is_main && operable() && !shorted && !main_down && isturf(loc)
 
+/// A working alarm that is not the area's main one: it only shows its own room's danger (no thermostat, no area alarm, no devices).
+/obj/machinery/alarm/proc/observes_room()
+	return !is_main && operable() && !shorted && isturf(loc)
+
+/// The scan of an alarm that is not the main one: its tracked danger level follows its own turf's air, and its look follows that.
+/obj/machinery/alarm/proc/observe_room()
+	var/datum/gas_sample/S = gas_sample(loc.return_air())
+	var/list/partials = sample_partials(S)
+	set_danger_level(room_danger(S.pressure, S.temperature, partials))
+	last_signature = room_signature(S.pressure, S.temperature, partials)
+	set_scanning(FALSE)
+
 /// One scan of the room (every MACHINE_SERVICE_INTERVAL while `scanning`): the thermostat, the danger level and the area's alarm, breach detection,
 /// the cycle's fill and the looping alarm. It stops once there is nothing left to do.
 /obj/machinery/alarm/proc/scan_room(datum/act/A)
 	if(!controls_room())
-		set_scanning(FALSE)
+		if(observes_room())
+			observe_room()
+		else
+			set_scanning(FALSE)
 		return
 	var/datum/gas_mixture/environment = loc.return_air()
 	var/datum/gas_sample/S = gas_sample(environment)
