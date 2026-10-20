@@ -315,15 +315,33 @@ the far end of a hop path is owned by no type (read on every type). At runtime `
 `plan_reader_type_keys(type)`: the type chain's own rows, its generated handler rows (`GLOB.generated_reads_table`) and its draw and verb plan
 rows, cached per type. `dq_change_reader_plan_oracle` checks every runtime table against its own type's plan.
 
-Measured (`dq_change_reader_plan_oracle/representative`, boot plus the curated spread): 112 394 tracked writes asked the plan, 66 074 (59%)
-read by no static reader of the written entity's type, so no reaction table, hook index or lifeform plan was probed for them
-(`GLOB.plan_reader_probes`, `GLOB.plan_spared_reader_probes`).
+Measured (from the oracle test's `reader plan metric` log line, `data/focused-runs/20261019T222247-31335.log`, the previous agent's run of
+`dq_change_reader_plan_oracle/representative`: boot plus the curated spread): 112 394 tracked writes asked the plan and 66 074 (58.8%) were spared.
+"Spared" means the plan gave no class for the key on the written entity's type chain **and** no per-entity subscription (observer, worn watch) was
+set, so no reaction table, hook index or lifeform plan was probed (`GLOB.plan_reader_probes`, `GLOB.plan_spared_reader_probes`). The 59% was not
+reproduced in the later lane-ready runs, whose passing test output is not kept; treat it as a single measurement of that run's workload.
 
 Why the runtime builders stay (`rx_table_build`, `change_index_of`, `lifeform_plan_build`): the plan answers *whether* a class reads a key on
 a type; the builders also hold *which* dependents run (the reaction datums with their gates and at_most windows, the hook records with their
 conditions and activations, the form entries). Generating those means generating the compiled declaration tables themselves (capability
 composition, configure/without, entry procs, stacking), which today happens at runtime in `table_of()`. That is the declaration compiler's move
 into `analyze gen` (the `.dmt` typed-declaration work, `doc/rewrite/proposals/dmt.md`), not a plan change; until it lands, deleting the builders would delete the dependents.
+
+### Step 3 remainder: waits for the `.dmt` declaration compiler (decision of 20 October 2026)
+
+The step-3 deletions (`rx_table_build`, `change_index_of`, `lifeform_plan_build`, `derived_mask`, `E.rel_watchers` and the backward hop walk of
+`hooks_change_hop_published`) are not done. They need generated dependents (reaction gates and `at_most` windows, hook conditions and activations,
+form entries, relation watchers), i.e. the composed declaration tables that `table_of()` builds at runtime (capability composition,
+configure/without, entry procs, stacking). Generating those is the declaration compiler's move into `analyze gen` (`doc/rewrite/proposals/dmt.md`),
+so step 3 closes when that lands. Steps 4 to 7 do not read the dependents (queues are keyed by entity and by the runtime dependent record), so they
+go first.
+
+### Step 4 status (20 October 2026): the pass stamp
+
+Landed: the OUTPUT queue (`GLOB.refresh_queue`) dedupes by a per-entity pass stamp (`datum/refresh_pass`, `GLOB.refresh_pass`) in place of the per-drain
+`done` list. The DRAIN queues (`GLOB.rx_pending`, `GLOB.hook_change_pending`) are already deduped per (entity, dependent) and carry the keys each
+delivery owes (an `at_most` window and the reaction's key list need them), so a bare frame stamp cannot represent them; they stay until the plan
+generates the dependents (step 3 remainder). Proof: `dq_change_refresh_pass`, `dx_review_self_mark`, the draw-queue tests, `dq_staleness_*`.
 
 ## 12. Edits needed in final_api.html section 7 (not made here)
 

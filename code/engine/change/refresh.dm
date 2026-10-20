@@ -22,6 +22,9 @@
 	var/tmp/refresh_queued = 0
 	/// The channels raised since the last refresh (on_state_changed() reads them).
 	var/tmp/refresh_bits = 0
+	/// The refresh_drain() pass that last ran this entity's outputs (GLOB.refresh_pass): an entity runs at most once per pass, and a mark that lands
+	/// during its own run waits for the next pass.
+	var/tmp/refresh_pass = 0
 
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
@@ -193,6 +196,8 @@
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// The number of the last refresh_drain() pass (the stamp of datum/refresh_pass).
+GLOBAL_VAR_INIT(refresh_pass, 0)
 /// A type whose marks are counted by where they came from (the draw-queue test's re-queue census, or an admin's question); null: off.
 GLOBAL_VAR_INIT(refresh_mark_probe_type, null)
 /// "caller <- caller's caller" -> marks.
@@ -332,8 +337,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	rx_drain() // change reactions (on_change / on_cross / observe) run before the outputs
 	var/list/Q = GLOB.refresh_queue
 	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
-	// by a chain that comes back to it) waits for the next frame instead of spinning here.
-	var/list/done = list()
+	// by a chain that comes back to it) waits for the next frame instead of spinning here. The pass stamp (refresh_pass) replaces a per-drain
+	// list of the entities already run: a nested drain takes its own pass number, as it had its own list.
+	var/pass = ++GLOB.refresh_pass
 	var/list/deferred
 	var/i = 0
 	while(i < length(Q))
@@ -341,7 +347,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/datum/D = Q[i]
 		if(isnull(D))
 			continue // a hard-deleted queued entity leaves a null entry
-		if(done[D])
+		if(D.refresh_pass == pass)
 			LAZYADD(deferred, D)
 			continue
 		var/pending = D.refresh_queued
@@ -363,7 +369,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// instance probes the type, and the rest, queued behind it, skip here once it is known to derive nothing.
 			D.refresh_bits = 0
 			continue
-		done[D] = TRUE
+		D.refresh_pass = pass
 		CHURN_COUNT(draws, D.type)
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
