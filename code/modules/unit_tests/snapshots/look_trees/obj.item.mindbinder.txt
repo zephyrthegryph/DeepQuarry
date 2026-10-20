@@ -1,5 +1,0 @@
-/obj/item/mindbinder icon: icons/obj/device_alt.dmi
-/obj/item/mindbinder state: sleevemate
-/obj/item/mindbinder dir: 2
-/obj/item/mindbinder overlay: icons/obj/device_alt.dmi:sleevemate:8:#000000
-

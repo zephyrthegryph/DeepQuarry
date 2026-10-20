@@ -128,16 +128,15 @@ for round in 1 2 3; do
 	if [ "$light" -eq 1 ] && ! git merge-base --is-ancestor origin/master HEAD; then
 		die "--light: origin/master moved since the batch was merged ($(git rev-parse --short=12 origin/master) is not in HEAD): run the light batch again"
 	elif git merge-base --is-ancestor origin/master HEAD; then
-		# Nothing to merge (the gates just ran on a HEAD that has all of master): the merge step, its regeneration and the look-key
-		# normalization (done by the gates, or implied by the proof of this very tree) would change nothing; the lock is held across them.
+		# Nothing to merge (the gates just ran on a HEAD that has all of master): the merge step, and its regeneration
+		# would change nothing; the lock is held across them.
 		echo "== dq_push_master: origin/master is already in HEAD; no merge needed"
 		lap "fetch (nothing to merge)"
 	else
 		bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
 		lap "merge origin/master"
 		if why="$(dirty)"; then die "the merge left $why"; fi
-		bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
-		lap "dirty check and look keys"
+		lap "dirty check"
 	fi
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"

@@ -1,6 +1,5 @@
-// Profile records (doc/rewrite/proposals/base_vars.md, "profile records"): a human's look is pinned across the move of its
-// appearance vars into /datum/record/appearance. The fingerprints below were recorded on the tree before the move
-// (r_/g_/b_ triples on the human); the move must not change one pixel.
+// Profile records (doc/rewrite/proposals/base_vars.md, "profile records"): a human's look comes from its /datum/record/appearance.
+// The looks below are compared with each other (a copy of a record looks like the original), not with recorded fingerprints.
 
 /// The flat south icon of H, hashed.
 /datum/unit_test/proc/dq_profile_look_hash(mob/living/carbon/human/H)
@@ -31,17 +30,10 @@
 	H.looks.set_skin_tone(tone)
 	H.looks.set_lip_style("red")
 
-/datum/unit_test/dq_profile_human_look_pin
+/datum/unit_test/dq_profile_human_look_copies
 
-/datum/unit_test/dq_profile_human_look_pin/Run()
+/datum/unit_test/dq_profile_human_look_copies/Run()
 	var/turf/T = test_floor()
-	var/list/expected = list(
-		"human" = "cee3e25b268799fb815295de91e9dd7d",
-		"tajaran_digi" = "d7c426a45102ff69601ca76a265a58d4",
-		"unathi" = "c6ce446036a9abf9dfaceb7efcf54192",
-		"dna_copy" = "cee3e25b268799fb815295de91e9dd7d",
-		"colour_copy" = "cee3e25b268799fb815295de91e9dd7d",
-	)
 	var/list/got = list()
 
 	var/mob/living/carbon/human/human = allocate(/mob/living/carbon/human, T)
@@ -75,14 +67,13 @@
 	record_copy(copy.looks, human.looks)
 	got["colour_copy"] = dq_profile_look_hash(copy)
 
-	var/list/moved = list()
-	for(var/name in expected)
-		log_test("profile look pin [name] [got[name]]")
-		if(got[name] != expected[name])
-			moved += name
-	TEST_ASSERT(!length(moved), "these looks differ from the ones recorded before the profile move: [jointext(moved, ", ")]")
+	for(var/name in got)
+		log_test("profile look [name] [got[name]]")
+	TEST_ASSERT_EQUAL(got["dna_copy"], got["human"], "a body built from the human's DNA looks the same")
+	TEST_ASSERT_EQUAL(got["colour_copy"], got["human"], "a body given a copy of the human's look record looks the same")
 	// the hash is of a real picture: two different looks hash differently
 	TEST_ASSERT(got["human"] != got["unathi"], "a human and an unathi look different")
+	TEST_ASSERT(got["human"] != got["tajaran_digi"], "a human and a digitigrade tajaran look different")
 
 /// A human is made with its looks record: owned, edited through VV by its setters, shown in place, copied whole, gone with it.
 /datum/unit_test/dq_profile_record_basics

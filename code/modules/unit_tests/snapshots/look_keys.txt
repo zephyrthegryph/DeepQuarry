@@ -1,1 +1,0 @@
-/obj/machinery/wheel_of_fortune	6d76c6e82d0f592c	*

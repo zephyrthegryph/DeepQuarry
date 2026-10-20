@@ -3,7 +3,7 @@
 #
 #   export DQ_MERGE_SESSION=<the lane branch>
 #   bash tools/dq_land.sh --light                     # a LIGHT lane (docs/tooling/Rust only): queue it, land the batch (tools/dq_land_batch.sh)
-#   bash tools/dq_land.sh [--tests "a b"] [--covers GLOB] [--no-pins] [--rounds N] [--dry-run]     # from the lane's pool worktree
+#   bash tools/dq_land.sh [--tests "a b"] [--covers GLOB] [--rounds N] [--dry-run]     # from the lane's pool worktree
 #
 # Why: a gate run inside the merge lock takes 3-10 minutes (longer under load), and everyone queues behind it (overnight lanes
 # waited up to 4.5 h). A lane that was proved on its merge with the master it lands on needs no gate run at all: the proof is stored
@@ -42,7 +42,7 @@ dry=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests|--covers|--tests-file) ready_args+=("$1" "${2:?$1 needs a value}"); shift ;;
-		--no-pins) ready_args+=("$1"); export DQ_NO_PINS=1 ;;
+		--no-pins) echo "dq_land: --no-pins is deprecated and does nothing: there are no look pins" >&2 ;;
 		--rounds) shift; rounds="${1:?--rounds needs a number}" ;;
 		--dry-run) dry=1 ;;
 		-h|--help) sed -n '2,32p' "$0"; exit 0 ;;

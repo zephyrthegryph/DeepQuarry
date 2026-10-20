@@ -78,7 +78,7 @@ bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print 
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
 bash tools/dq_focused_test.sh --boot                                   # boot only (the boot gate below)
-bash tools/dq_focused_test.sh --split-slow dq_look_tree_pin dq_boot_gate   # slow pins in a second world at the same time (default when mixed)
+bash tools/dq_focused_test.sh --split-slow <slow-test> dq_boot_gate   # DQ_SLOW_TESTS in a second world at the same time (default when mixed)
 bash tools/dq_focused_test.sh --detach <names>; bash tools/dq_focused_test.sh --status <runid>   # background run + poll (agent_workflow.md section 9)
 ```
 
@@ -356,12 +356,14 @@ time) and the failures.
 params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 `sweep_types()` returns its input unchanged.
 
-### The look sweep
+### Look pins (deleted)
 
-`dq_look_tree_pin` and `dq_look_state_pin` are sweep tests over one shared pass (`code/modules/unit_tests/dq_look_sweep.dm`); a focused run shards them across
-`DQ_LOOK_SHARDS` worlds and probes only the types whose `analyze look-keys` key changed (`--full` for all). Details: `doc/rewrite/agent_workflow.md` section 9.
-
-`code/modules/unit_tests/snapshots/look_keys.txt` is the committed record of **verified** keys: a type has a row only if the look pins were actually probed for it and matched at that key. It is not a function of the tree. The analyzer's current keys are a separate, generated, gitignored file (`data/look-plan.tsv`, from `analyze look-keys`); a type whose current key matches no recorded row is *unverified* and is what a pin run probes (`bash tools/ci/check_look_keys_format.sh --unverified [--list]` shows it). Only a passing pin run (`dq_focused_test.sh`: it records the types it probed, all of them with `--full`/`--bless`) writes a key. The merge scripts (`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) only run `check_look_keys_format.sh --normalize`, which drops rows (a type gone from the tree, or one a union merge left with two different keys) and never writes one; `merge=union` (`.gitattributes`) keeps both sides' verified rows so the file never conflicts, and a row stays true exactly when it equals the merged tree's key. `dq_merge_gates.sh` runs the look pins over the unverified set before it stamps a merge and records those keys into the merge commit. `check_ratchets.sh` checks the file's format (3 columns, 16-hex key, one row per type), not its currency. Regression: `bash tools/ci/test_look_keys_truth.sh`. Do not hand-merge or regenerate it.
+The look pins (`dq_look_pin`, `dq_look_tree_pin`, `dq_look_state_pin`, the human and profile look hashes), their snapshot directories
+(`looks/`, `look_trees/`, `look_states/`), `look_keys.txt`, `analyze look-keys` and the `look_state_pin` machine slot were deleted on 2026-10-17: the
+rendering migration is mostly done, the pins cost too much time per merge, and playtesting finds the visual problems. Snapshot look pins are
+not re-added. The behavioural look tests stay: `dq_fresh_look_default` (a fresh draw equals the default look), `dq_human_draw_deterministic`
+(identical bodies draw identically), `dq_look_*` form tests and the staleness checker. `--no-pins`, `--full`, `--look-shards`, `--look-order`
+and `--look-dump` are accepted by the scripts and ignored with a deprecation note.
 
 ### Profiling a slow test
 

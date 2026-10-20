@@ -700,7 +700,7 @@ const analyzeCacheDir = (): string | null => {
 // A cargo target dir shared by several worktrees (DQ_ANALYZE_TARGET=<dir>) is OFF by default, and must stay off. Cargo names a path
 // package's artifacts and fingerprints by its path relative to the workspace, not by where the checkout is, so every worktree
 // builds into the same files, and it judges "fresh" by file mtime: a worktree whose sources are older than the artifact another
-// worktree just built (a different branch, a merge) links THAT worktree's library, fails to compile ("cannot find look_keys in
+// worktree just built (a different branch, a merge) links THAT worktree's library, fails to compile ("cannot find a module in
 // dq_analyze") or, worse, builds and caches a binary from someone else's sources under this worktree's source key. Each worktree
 // builds in its own tools/analyze/target; the compiled dependencies are shared through sccache, and finished binaries through
 // the content-addressed cache below.
@@ -1251,7 +1251,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
         ignoreWarningCodes: get(NoWarningParameter),
         namedDmVersion: dmVersion,
       });
-    // Concurrent worlds (look-pin shards) compile one manifest. The daemon lets a newer request for a project
+    // Concurrent worlds compile one manifest. The daemon lets a newer request for a project
     // supersede an older one ("build superseded before publication", exit 75), so overlapping native compiles of the
     // same manifest cancel each other. Serialize them per manifest; the later one is an unchanged-session hit.
     output = native
@@ -2139,8 +2139,7 @@ function testWorldParams(get: any): Record<string, string> {
     Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
   }
   // tools/dq_focused_test.sh: one slice of a sweep per focused world (DQ_FOCUS_SHARD=index/count, 0-based; the sweep tests ask
-  // sweep_owns()), and extra world params (DQ_WORLD_PARAMS=key=value&key=value; the look sweep's look-plan, look-types, look-order,
-  // look-dump). A sharded dm-test run sets its own shard params after this, so they win there.
+  // sweep_owns()), and extra world params (DQ_WORLD_PARAMS=key=value&key=value). A sharded dm-test run sets its own shard params after this, so they win there.
   const slice = /^(\d+)\/(\d+)$/.exec(process.env.DQ_FOCUS_SHARD ?? '');
   if (slice) {
     params['shard-index'] = slice[1];

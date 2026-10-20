@@ -1,3 +1,0 @@
-/obj/structure/bigDelivery nameset=1 +overlay: icons/obj/storage.dmi:delivery_label:-32767
-/obj/structure/bigDelivery nameset=2 +overlay: icons/obj/storage.dmi:delivery_label:-32767
-

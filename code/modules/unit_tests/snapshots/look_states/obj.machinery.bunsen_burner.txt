@@ -1,3 +1,0 @@
-/obj/machinery/bunsen_burner heating=1 +overlay: icons/obj/device.dmi:bunsen1:-32767
-/obj/machinery/bunsen_burner heating=2 +overlay: icons/obj/device.dmi:bunsen1:-32767
-

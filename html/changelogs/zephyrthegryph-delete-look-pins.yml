@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Deleted the look pins (dq_look_pin, dq_look_tree_pin, dq_look_state_pin, the human and profile look hashes), their snapshots, look_keys.txt, analyze look-keys and the look_state_pin machine slot; --no-pins is a no-op"

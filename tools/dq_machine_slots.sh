@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Machine-wide counting semaphores for the heavy steps every worktree runs: a cap on how many DM compiles, test
-# worlds, cargo builds and look-state pins run at once on this machine, so a dozen agents do not turn a 2 minute
+# worlds, cargo builds run at once on this machine, so a dozen agents do not turn a 2 minute
 # step into a 10 minute one by fighting over 16 cores.
 #
 #   bash tools/dq_machine_slots.sh run <class> [--label TEXT] -- <command...>   # hold a slot while the command runs
@@ -14,10 +14,7 @@
 #   dm_compile      DQ_SLOTS_DM_COMPILE=1       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
 #   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
-#   look_state_pin  DQ_SLOTS_LOOK_STATE_PIN=1   a focused run holding dq_look_state_pin / dq_look_tree_pin
-#                                               (DQ_LOOK_PIN_SLOTS is accepted as the old name)
-# Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
-# for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
+# dm_compile and cargo are never held while waiting for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
 #
 # State lives under DQ_SLOTS_DIR (default E:/dq-cache/slots, else ~/.cache/dq/slots), one directory per class:
 #   slot.N/owner        a held slot (an atomic mkdir). key=value lines: pid, winpid, kind (bash|node), worktree, label,
@@ -71,13 +68,11 @@ slots_capacity() { # class -> count (0 = off)
 	up="$(printf '%s' "$cls" | tr 'a-z' 'A-Z')"
 	var="DQ_SLOTS_$up"
 	val="${!var:-}"
-	if [ -z "$val" ] && [ "$cls" = "look_state_pin" ]; then val="${DQ_LOOK_PIN_SLOTS:-}"; fi
 	if [ -z "$val" ]; then
 		case "$cls" in
 			dm_compile) val=1 ;;
 			test_world) val="$(slots_default_test_world)" ;;
 			cargo) val=1 ;;
-			look_state_pin) val=1 ;;
 			*) val=1 ;;
 		esac
 	fi
@@ -740,7 +735,7 @@ slots_status() { # [class]
 	local root cls d f any=0 now max
 	root="$(slots_dir)"
 	now="$(date +%s)"
-	for cls in ${1:-dm_compile test_world cargo look_state_pin merge_base}; do
+	for cls in ${1:-dm_compile test_world cargo merge_base}; do
 		d="$root/$cls"
 		max="$(slots_capacity "$cls")"
 		echo "$cls: at most $max at once$( [ "$max" -eq 0 ] && echo ' (limit off)')"
@@ -801,8 +796,8 @@ slots_selftest() {
 	echo "$out" | grep -q "reclaimed" && echo "$out" | grep -q "reclaiming a dead slot" || { echo "FAIL: the crashed holder's slot was not reclaimed: $out"; ok=0; }
 	# 3. a class with 0 slots is off.
 	DQ_SLOTS_CARGO=0 bash "$0" run cargo -- echo unlimited | grep -q unlimited || { echo "FAIL: DQ_SLOTS_CARGO=0 should run without a limit"; ok=0; }
-	# 4. env counts and the old pin-speed name.
-	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(DQ_LOOK_PIN_SLOTS=4 slots_capacity look_state_pin)" = 4 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
+	# 4. env counts.
+	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
 	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, the merge worktree all 3, and a class below 3 reserves nothing.
 	[ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=0 slots_group_size test_world 9)" = 3 ] 		&& [ "$(slots_usable test_world 2 1)" = 2 ] && [ "$(DQ_SLOTS_MERGE_RESERVE=9 slots_usable test_world 3 1)" = 1 ] && [ "$(slots_usable dm_compile 2 1)" = 2 ] 		|| { echo "FAIL: merge reserve"; ok=0; }
 	# 5. a group is clamped to the capacity and starts only when it has all its slots; two groups never run each on part of the budget.
@@ -835,7 +830,7 @@ if ! (return 0 2>/dev/null); then
 		run) slots_run "$@"; exit $? ;;
 		status) slots_status "$@" ;;
 		stats) slots_stats "$@" ;;
-		reap) for c in dm_compile test_world cargo look_state_pin merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
+		reap) for c in dm_compile test_world cargo merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
 		selftest) slots_selftest; exit $? ;;
 		_hold) _ml_hold "$@"; exit 0 ;;
 		merge-lock)

@@ -10,7 +10,7 @@
 #   - it is already in origin/master; or
 #   - it is a merge of master into one stamped parent L and the stamp carries across it (a re-merge after master moved):
 #       (a) the merge is clean: `git merge-tree` of L and the master parent has no conflict, and the merge commit's tree differs
-#           from that clean result only in regenerated files (look_keys.txt, snapshots/op_bases/);
+#           from that clean result only in regenerated files (snapshots/op_bases/);
 #       (b) what master changed since the stamp's master base is disjoint from what the stamp depends on: for a lane-ready
 #           stamp, tools/dq_lane_check.js --master <master parent> L says VALID (the lane's files and directories, the files
 #           defining its tests, the snapshot directories they read, its --covers globs, the global paths; regenerated files do
@@ -19,7 +19,7 @@
 #       (c) the compile, DreamChecker and the ratchets pass on the merged tree: tools/dq_push_master.sh runs them on exactly
 #           this commit before it pushes, and the pre-push hook only lets through what that script verified.
 #     Otherwise the lane needs a fresh stamp (tools/dq_lane_ready.sh);
-#   - it has one parent that passes and changes only docs, changelogs, *.md, tools/ci/known_failures.txt or the look keys.
+#   - it has one parent that passes and changes only docs, changelogs, *.md, tools/ci/known_failures.txt.
 #   - it carries a light-batch note (refs/notes/light-batch, written by tools/dq_land_batch.sh after tools/dq_light_checks.sh passed) and
 #     nothing it changes since origin/master is a heavy path (tools/dq_light_paths.sh: .dm/.dme/maps/icons/code/...): a batch of docs,
 #     tooling scripts and Rust/compiler-only branches needs no game test.
@@ -36,7 +36,7 @@ master="$(git rev-parse --verify -q refs/remotes/origin/master 2>/dev/null || tr
 # Paths a commit on top of a stamped one may touch without a new stamp.
 exempt_path() {
 	case "$1" in
-		doc/*|html/changelogs/*|*.md|tools/ci/known_failures.txt|code/modules/unit_tests/snapshots/look_keys.txt) return 0 ;;
+		doc/*|html/changelogs/*|*.md|tools/ci/known_failures.txt) return 0 ;;
 	esac
 	return 1
 }
@@ -44,7 +44,7 @@ exempt_path() {
 # Files regenerated from the tree after a merge: a difference there is not a difference.
 regenerated() {
 	case "$1" in
-		code/modules/unit_tests/snapshots/look_keys.txt|code/modules/unit_tests/snapshots/op_bases/*) return 0 ;;
+		code/modules/unit_tests/snapshots/op_bases/*) return 0 ;;
 	esac
 	return 1
 }
@@ -61,7 +61,7 @@ in_master() { [ -n "$master" ] && git merge-base --is-ancestor "$1" "$master" 2>
 clean_merge() {
 	local tree f out rc=0
 	# --name-only: the tree, then one line per conflicted file, then a blank line and the messages. A conflict confined to regenerated
-	# files is not a conflict: dq_merge_master.sh regenerates them after the merge (look_keys.txt) and the pin factoring rewrites
+	# files is not a conflict: dq_merge_master.sh regenerates them after the merge and the pin factoring rewrites
 	# op_bases/, so whatever the trial merge left in them is compared away below.
 	# merge-tree --write-tree writes the merged trees as loose objects; do it into a throwaway object dir (main store as an alternate)
 	# so a probe leaves nothing behind in .git (it used to add hundreds of loose trees per probe).

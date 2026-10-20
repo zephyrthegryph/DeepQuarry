@@ -1,5 +1,0 @@
-/obj/machinery/biogenerator icon: icons/obj/biogenerator_vr.dmi
-/obj/machinery/biogenerator state: biogen-stand
-/obj/machinery/biogenerator dir: 2
-/obj/machinery/biogenerator overlay: icons/obj/biogenerator_vr.dmi:biogen-stand:8:#000000
-

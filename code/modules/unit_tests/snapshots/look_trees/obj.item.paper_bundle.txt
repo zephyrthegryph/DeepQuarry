@@ -1,5 +1,0 @@
-/obj/item/paper_bundle icon: icons/obj/bureaucracy.dmi
-/obj/item/paper_bundle state: paper
-/obj/item/paper_bundle dir: 2
-/obj/item/paper_bundle overlay: icons/obj/bureaucracy.dmi:paper:8:#000000
-

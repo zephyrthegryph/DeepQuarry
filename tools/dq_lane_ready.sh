@@ -2,16 +2,14 @@
 # A lane runs this when it is finished. It proves the lane on its merge with the current master, once, and stamps the proof, so the
 # merge agent does not prove it again (doc/rewrite/agent_workflow.md section 10).
 #
-#   bash tools/dq_lane_ready.sh --tests "dq_foo dq_bar/*" [--covers 'code/game/machinery/**'] [--no-pins] [--no-merge]
+#   bash tools/dq_lane_ready.sh --tests "dq_foo dq_bar/*" [--covers 'code/game/machinery/**'] [--no-merge]
 #
 #   1. refuses a dirty tree, master and a detached HEAD
 #   2. merges current origin/master (tools/dq_merge_master.sh: settles the generated files, regenerates)
 #   3. runs tools/dq_merge_gates.sh on that merge: gen, the test world with the cross-branch smoke set, your --tests, the gameplay
-#      scenarios (tools/ci/gameplay_tests.txt, always) and the
-#      incremental look pins (dq_look_state_pin, dq_look_tree_pin: only the types whose analyzer key moved are probed, so a lane
-#      that did not touch a look costs nothing; --no-pins leaves them out), the production compile + DreamChecker, the ratchets
-#      and the analyzer, in parallel (tgui lint when the lane touches tgui/)
-#   4. if the pins re-recorded the look keys or snapshots, commits them ("Record look keys"); any other tracked change the gates
+#      scenarios (tools/ci/gameplay_tests.txt, always), the production compile + DreamChecker, the ratchets
+#      and the analyzer, in parallel (tgui lint when the lane touches tgui/). There are no look pins (deleted 2026-10-17)
+#   4. if the gates re-recorded snapshot files (tools/dq_pin.sh families), commits them; any other tracked change the gates
 #      made is an error
 #   5. writes the stamp: a git note on HEAD in refs/notes/lane-ready (JSON: branch, the commit, the master commit merged and
 #      tested against, the tests, --covers, the results), a copy in data/lane-ready/, and pushes the notes ref (best effort;
@@ -42,7 +40,6 @@ trap run_lock_release EXIT
 
 tests=()
 covers=()
-pins=1
 merge=1
 reuse_gates=0
 lite=0
@@ -51,7 +48,7 @@ while [ $# -gt 0 ]; do
 		--tests) shift; read -r -a more <<<"${1:-}"; tests+=("${more[@]}") ;;
 		--tests-file) shift; while IFS= read -r l; do l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"; [ -n "$l" ] && tests+=("$l"); done <"${1:?--tests-file needs a file}" ;;
 		--covers) shift; covers+=("${1:?--covers needs a glob}") ;;
-		--no-pins) pins=0; export DQ_NO_PINS=1 ;;
+		--no-pins) echo "dq_lane_ready: --no-pins is deprecated and does nothing: there are no look pins" >&2 ;;
 		--no-merge) merge=0 ;;
 		--reuse-gates) reuse_gates=1 ;;
 		--lite) lite=1 ;;
@@ -60,14 +57,6 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
-
-if [ "${DQ_NO_PINS:-0}" = 1 ]; then
-	filtered_tests=()
-	for t in "${tests[@]}"; do
-		if proof_test_enabled "$t"; then filtered_tests+=("$t"); else echo "== no-pins: excluded $t"; fi
-	done
-	tests=("${filtered_tests[@]}")
-fi
 
 die() { echo "dq_lane_ready: $1" >&2; exit "${2:-1}"; }
 
@@ -147,12 +136,9 @@ if [ -f "$gameplay_file" ]; then
 	while IFS= read -r l; do
 		l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"
 		[ -n "$l" ] || continue
-		proof_test_enabled "$l" || continue
 		case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac
 	done <"$gameplay_file"
 fi
-if [ "$pins" -eq 1 ] && ! dq_diff_touches_dm; then pins=0; echo "== lane-ready: look pins skipped (the lane touches no DM, map, icon, sound, skin or analyzer file)"; fi
-if [ "$pins" -eq 1 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then list+=(dq_look_state_pin dq_look_tree_pin); fi
 if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving the smoke set only" >&2; fi
 
 tested="$(git rev-parse HEAD)"
@@ -163,8 +149,8 @@ if [ "$reuse_gates" -eq 0 ]; then
 	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
 fi
 
-# The gates may move HEAD before they record it: they normalize look_keys.txt, shrink ratchet baselines into an unpushed merge commit
-# (amend) and record probed look keys, and the evidence is named by the HEAD they ended on. Follow HEAD when it moved, provided the
+# The gates may move HEAD before they record it: they shrink ratchet baselines into an unpushed merge commit
+# (amend) and record snapshots, and the evidence is named by the HEAD they ended on. Follow HEAD when it moved, provided the
 # old commit is an ancestor or was amended in place (same tree plus the gates' own files), so the proof always matches what is stamped.
 if [ "$reuse_gates" -eq 0 ]; then
 	after="$(git rev-parse HEAD)"
@@ -196,22 +182,22 @@ for marker in dm ratchets analyze; do
 	[ "$(cat "data/merge-gates/${tested:0:12}.${marker}.ok" 2>/dev/null)" = "$tested" ] || die "missing $marker evidence; nothing was stamped"
 done
 
-# The pins re-record look_keys.txt and the look snapshots after a pass; anything else the gates changed is a mistake.
+# A pass may re-record snapshot files; anything else the gates changed is a mistake.
 git update-index -q --refresh >/dev/null 2>&1
 changed="$(git status --porcelain --untracked-files=no)"
 if [ -n "$changed" ]; then
 	other="$(printf '%s\n' "$changed" | grep -v ' code/modules/unit_tests/snapshots/' || true)"
-	[ -z "$other" ] || die "the gates changed tracked files that are not look snapshots (not stamping):
+	[ -z "$other" ] || die "the gates changed tracked files that are not snapshots (not stamping):
 $other"
 	git add -u code/modules/unit_tests/snapshots
 	git add -- code/modules/unit_tests/snapshots/op_bases 2>/dev/null || true
-	git commit -q -m "Record look keys after the lane-ready run
+	git commit -q -m "Record snapshots after the lane-ready run
 
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commit the recorded look keys"
-	echo "== lane-ready: committed the recorded look keys/snapshots"
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commit the recorded snapshots"
+	echo "== lane-ready: committed the recorded snapshots"
 fi
 head_sha="$(git rev-parse HEAD)"
-# The commit above (look keys the pins re-recorded) changes the tree the gates proved, by exactly what the proving run wrote: the proof
+# The commit above (snapshots re-recorded) changes the tree the gates proved, by exactly what the proving run wrote: the proof
 # covers that tree too, so merging this lane into an unmoved master needs no second proof (tools/dq_proof_cache.sh).
 proof_alias "$(proof_tree "$tested")" "$(proof_tree HEAD)"
 
