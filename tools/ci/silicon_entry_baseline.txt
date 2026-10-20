@@ -1,4 +1,2 @@
 # silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.
 # Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.
-helper_actor_check	code/modules/casino/casino.dm	if(ishuman(user) || isrobot(user))
-helper_actor_check	code/modules/multiz/hoist.dm	if (!(ishuman(user) || issilicon(user)))

@@ -153,3 +153,11 @@ on October 6 2026, game code only (no framework, tests or generated files):
 The framework's own internals follow their last caller: the timer store and scheduler (`after()` is built on them), the
 OM record's own clock (CLOCK_OWN), the contribution store (now only `EFFECT_BUCKLED`, `EFFECT_BODY_EFFECTS` and the
 `GRANT_*` kinds), relevance and suspension glue (`relevance_changed()`, `suspended_changed()`, `bio_clock_rate_changed()`).
+
+## 8. Status, 19 October 2026 (cheap-migrations lane)
+
+`code/datums/om` and `code/datums/entity_state` are gone. A sweep of `code/` finds no `OM_FIELD`, `om_task` or `om_task_timed`
+site outside comments (the weaver's `om_task_timed` in section 6 is gone too). What is left of the OM event layer is
+`code/datums/om_events` (2 files, 1173 lines): 122 `/datum/definition_event` types dispatched to `/datum/scheduled_behaviour`
+handlers (125 more `scheduled_behaviour` uses outside the folder), referenced 168 times from 31 files, with 78 `PUBLISH()` senders. Retiring it means moving each event's senders and
+handlers onto actions/reactions (`reactions.md`); that is a track of its own, not a cleanup, and was left for one.

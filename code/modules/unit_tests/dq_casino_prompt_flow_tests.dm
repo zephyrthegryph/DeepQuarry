@@ -91,3 +91,37 @@
 	number = GLOB.test_prompts[3]
 	TEST_ASSERT_NULL(test_prompt_answer(number, 1), "the inclusive lower boundary is accepted")
 	TEST_ASSERT_EQUAL(P.casinosentientprize_price, 1, "the real callback commits the accepted price")
+
+/// The wheel's management menu is the op's own questions (asks k445/k469): a human with casino access toggles and resets through them.
+/datum/unit_test/dq_silicon/casino_wheel_management_flow
+
+/datum/unit_test/dq_silicon/casino_wheel_management_flow/run_gate()
+	set_global("test_prompts", list())
+	var/turf/T = test_floor()
+	var/obj/machinery/wheel_of_fortune/W = allocate(/obj/machinery/wheel_of_fortune, T)
+	var/mob/living/carbon/human/H = make_human(get_step(T, EAST))
+	var/obj/item/card/id/C = allocate(/obj/item/card/id, get_turf(H))
+	C.set_access(list(300))
+	H.put_in_active_hand(C)
+	var/sale = W.lottery_sale
+	var/datum/op_result/first = test_menu(H, W, "wheel_id")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "a manager's card opens the management choice ([first ? reason_text(first.reason) : "no result"])")
+	var/datum/prompt/choice/choice = GLOB.test_prompts[1]
+	TEST_ASSERT_EQUAL(choice.answerer, H, "the manager owns the question")
+	TEST_ASSERT_EQUAL(choice.title, "Wheel Of Fortune (Management)", "the question is the management choice (choices: [jointext(choice.choices || list(), ", ")]; [choice.type])")
+	TEST_ASSERT_NULL(test_prompt_answer(choice, "Toggle Lottery Sales"), "the toggle answer is accepted")
+	TEST_ASSERT(W.lottery_sale != sale, "the answer toggles lottery sales")
+	W.lottery_entries = 3
+	test_menu(H, W, "wheel_id")
+	choice = GLOB.test_prompts[2]
+	TEST_ASSERT_NULL(test_prompt_answer(choice, "Reset Lottery"), "the reset answer is accepted")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 3, "reset asks for confirmation")
+	TEST_ASSERT_NULL(test_prompt_answer(GLOB.test_prompts[3], "No"), "declining is accepted")
+	TEST_ASSERT_EQUAL(W.lottery_entries, 3, "a declined reset keeps the tickets")
+	test_menu(H, W, "wheel_id")
+	TEST_ASSERT_NULL(test_prompt_answer(GLOB.test_prompts[4], "Reset Lottery"), "the reset answer is accepted again")
+	TEST_ASSERT_NULL(test_prompt_answer(GLOB.test_prompts[5], "Yes"), "confirming is accepted")
+	TEST_ASSERT_EQUAL(W.lottery_entries, 0, "a confirmed reset clears the tickets")
+	C.set_access(list())
+	test_menu(H, W, "wheel_id")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 5, "a card without access opens no management question")
