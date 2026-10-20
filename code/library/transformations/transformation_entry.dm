@@ -191,6 +191,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 
 /// Every rule of a medium and regime, sorted. The list is shared: read it, never write it.
 /proc/xform_rules_in(medium, regime)
+	RETURN_TYPE(/list)
 	static_entries_ensure("xform_rules_in([medium])")
 	var/list/by_regime = GLOB.xform_by_regime[medium]
 	return by_regime?[regime] || GLOB.xform_empty_table
