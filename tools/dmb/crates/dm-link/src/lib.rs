@@ -192,7 +192,10 @@ fn link_lap(lap: &mut std::time::Instant, label: &str) {
 /// Stable numbering for additions. A table whose previous keys all survive pins
 /// them at their previous indexes and appends its fresh keys in the current
 /// order; a table that lost a key keeps the fresh full order (it renumbers).
-/// Output is then equivalent to, not byte-identical with, a fresh build.
+/// Output is then equivalent to, not byte-identical with, a fresh build. A table
+/// whose complete order is supplied (`orders`: the class table, whose order
+/// `typesof()` observes) always takes that order: pinning would change what the
+/// game sees.
 pub(crate) fn stabilize(
     inventory: &mut LinkInventory,
     present: impl Fn(&Key) -> bool,
@@ -206,7 +209,8 @@ pub(crate) fn stabilize(
         }
     }
     for (table, rows) in by_table {
-        if rows.iter().any(|(key, _)| !present(key))
+        if inventory.orders.contains_key(&table)
+            || rows.iter().any(|(key, _)| !present(key))
             || inventory
                 .reserved_prefixes
                 .get(&table)

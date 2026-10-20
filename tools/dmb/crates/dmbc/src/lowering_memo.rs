@@ -112,6 +112,10 @@ pub struct ProcedureMemo {
     pub(crate) class_projections: Option<Arc<crate::class_projection::ClassProjections>>,
     pub(crate) required_types: Option<Arc<crate::required_types::RequiredTypeArtifacts>>,
     pub(crate) link_bindings: Option<Arc<dm_link::RetainedBindings>>,
+    /// Retained whole-stage outputs of the session (`crate::stage_reuse`).
+    pub(crate) stages: Option<Arc<crate::stage_reuse::StageAttempt>>,
+    /// The initializer stage reused its retained output: its stores keep their published claims.
+    pub(crate) initializer_stage_carried: std::sync::atomic::AtomicBool,
     disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     pending: Arc<Mutex<Pending>>,
     pub counts: Arc<MemoCounts>,
@@ -189,6 +193,13 @@ impl ProcedureMemo {
     /// The retained session's query database (absent for one-shot builds and fixtures).
     pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
         self.symbolic.as_ref()?.query_db()
+    }
+    /// This request reuses the retained initializer stage output; the stores that output claims
+    /// from keep their published claims instead of publishing this request's (see
+    /// `crate::stage_reuse`).
+    pub(crate) fn carry_initializer_stage(&self) {
+        self.initializer_stage_carried
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
     pub(crate) fn completion_writer(&self) -> Option<DiskWriter> {
         (!self.read_only_disk && self.disk.is_some()).then(|| DiskWriter::from_memo(self))
@@ -269,6 +280,8 @@ impl ProcedureMemo {
             class_projections: None,
             required_types: None,
             link_bindings: None,
+            stages: None,
+            initializer_stage_carried: Default::default(),
             disk: None,
             pending: Arc::new(Mutex::new(Pending::default())),
             counts: Arc::new(MemoCounts::default()),
@@ -324,6 +337,8 @@ impl ProcedureMemo {
             class_projections: None,
             required_types: None,
             link_bindings: None,
+            stages: None,
+            initializer_stage_carried: Default::default(),
             disk: Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
                 snapshot.into(),
             ))),

@@ -416,7 +416,19 @@ pub(crate) fn materialize_types_with_roster(
         })
     };
     let mut retained = HashMap::new();
+    // A slot whose path is NONE is a placeholder the composer left for a source class
+    // (engine classes are renumbered into the class table order before materialization).
+    let placeholders: HashSet<u32> = dmb
+        .classes
+        .iter()
+        .enumerate()
+        .filter(|(_, class)| class.path_string_id() == NONE)
+        .map(|(index, _)| index as u32)
+        .collect();
     for (index, class) in dmb.classes.iter().enumerate() {
+        if placeholders.contains(&(index as u32)) {
+            continue;
+        }
         let bytes = dmb
             .string(class.path_string_id())
             .ok_or_else(|| ProjectionError::Unsupported("retained class path missing".into()))?;
@@ -461,7 +473,7 @@ pub(crate) fn materialize_types_with_roster(
             dmb.classes[retained_index as usize].initial_ids[1] = expected_parent;
             continue;
         }
-        if (index as usize) < dmb.classes.len()
+        if ((index as usize) < dmb.classes.len() && !placeholders.contains(&index))
             || index == NONE
             || planned.insert(index, ty).is_some()
         {
@@ -471,7 +483,11 @@ pub(crate) fn materialize_types_with_roster(
         }
         type_ids.insert(ty.path, index);
     }
-    for (ordinal, &index) in planned.keys().enumerate() {
+    for (ordinal, &index) in planned
+        .keys()
+        .filter(|index| !placeholders.contains(index))
+        .enumerate()
+    {
         if index as usize != dmb.classes.len() + ordinal {
             return Err(ProjectionError::Unsupported(
                 "noncontiguous canonical class indexes".into(),
@@ -508,15 +524,14 @@ pub(crate) fn materialize_types_with_roster(
     }).collect::<Result<BTreeMap<_, _>, ProjectionError>>()?;
     for wave in projection
         .type_construction
-        .waves(&planned, &parents, dmb.classes.len())?
+        .waves(&planned, &parents, &|index: u32| !planned.contains_key(&index))?
     {
         for index in wave {
             let ty = planned[&index];
             let parent = parents[&index];
-            let mut record = dmb
-                .classes
-                .get(parent as usize)
-                .or_else(|| constructed.get(&parent))
+            let mut record = constructed
+                .get(&parent)
+                .or_else(|| dmb.classes.get(parent as usize))
                 .ok_or_else(|| {
                     ProjectionError::Unsupported("unavailable parent class record".into())
                 })?
@@ -548,8 +563,17 @@ pub(crate) fn materialize_types_with_roster(
             constructed.insert(index, record);
         }
     }
-    for (_, record) in constructed {
-        dmb.classes.push(record);
+    if let Some(unfilled) = placeholders.iter().find(|index| !constructed.contains_key(index)) {
+        return Err(ProjectionError::Unsupported(format!(
+            "class table row {unfilled} has no source class"
+        )));
+    }
+    for (index, record) in constructed {
+        if placeholders.contains(&index) {
+            dmb.classes[index as usize] = record;
+        } else {
+            dmb.classes.push(record);
+        }
     }
     Ok(MaterializedClassRoster::issued(type_ids))
 }
@@ -644,14 +668,15 @@ fn client_header_directives(
 
 /// Preserve the old sorted readiness waves, including string-intern order,
 /// without rescanning every pending class at each inheritance depth.
+/// `retained`: whether a class index is a record the model already holds.
 fn class_construction_waves(
     parents: &BTreeMap<u32, u32>,
-    retained: usize,
+    retained: impl Fn(u32) -> bool,
 ) -> Result<Vec<Vec<u32>>, ProjectionError> {
     let mut children: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
     let mut ready = Vec::new();
     for (&index, &parent) in parents {
-        if (parent as usize) < retained {
+        if retained(parent) {
             ready.push(index);
         } else if parents.contains_key(&parent) {
             children.entry(parent).or_default().push(index);
@@ -694,7 +719,7 @@ mod construction_order_tests {
         // separate parents interleave in the second wave.
         let parents = BTreeMap::from([(2, 6), (3, 5), (4, 6), (5, 0), (6, 1), (7, 2)]);
         assert_eq!(
-            class_construction_waves(&parents, 2).unwrap(),
+            class_construction_waves(&parents, |index| (index as usize) < 2).unwrap(),
             vec![vec![5, 6], vec![2, 3, 4], vec![7]]
         );
     }
@@ -702,14 +727,14 @@ mod construction_order_tests {
     #[test]
     fn deep_chains_construct_once_and_unavailable_or_cycles_fail() {
         let parents = (1..=4096).map(|index| (index, index - 1)).collect();
-        let waves = class_construction_waves(&parents, 1).unwrap();
+        let waves = class_construction_waves(&parents, |index| (index as usize) < 1).unwrap();
         assert_eq!(waves.len(), 4096);
         assert!(waves
             .iter()
             .enumerate()
             .all(|(i, wave)| wave == &vec![i as u32 + 1]));
-        assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), 1).is_err());
-        assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), 1).is_err());
+        assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), |index| (index as usize) < 1).is_err());
+        assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), |index| (index as usize) < 1).is_err());
     }
 }
 

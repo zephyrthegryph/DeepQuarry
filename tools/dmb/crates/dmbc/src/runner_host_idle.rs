@@ -25,6 +25,7 @@ impl BuildHost {
         self.class_projections = None;
         self.required_types = None;
         self.link_bindings = None;
+        self.stages = None;
         self.generation = None;
         if let Some(facts) = &self.host_facts {
             facts.release_prepared_for_pressure();
@@ -176,6 +177,7 @@ impl BuildHost {
             );
         }
         self.link_bindings = None;
+        self.stages = None;
         self.maps = None;
         if let Some((_, generation)) = &self.generation {
             generation.release_wire_images();

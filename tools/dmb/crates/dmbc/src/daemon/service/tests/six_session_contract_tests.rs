@@ -117,7 +117,7 @@ fn assert_equivalent_outputs(
         // An append patch gives a new proc or var the next free table index and
         // string, so only its own position in the two order-gated tables
         // (`typesof(/T/proc)`, `vars` name-string order) may differ from a fresh
-        // build (documented in body_patch_append.rs). Anything else is a failure.
+        // build (documented in declaration_patch_append.rs). Anything else is a failure.
         let report = dmb_equiv::compare_bytes(&retained.1, Some(&retained.2), &fresh.1, Some(&fresh.2), &dmb_equiv::Options::default())
             .unwrap_or_else(|error| panic!("{context}: decode failed: {error}"));
         if report.equivalent() {
@@ -494,7 +494,7 @@ fn source_rejection_preserves_prior_pair_and_recovery_matches_fresh_current_incl
 }
 
 #[test]
-fn body_patch_edits_match_fresh_bytes_through_line_shifts_chains_and_revert() {
+fn body_edits_build_incrementally_and_match_fresh_bytes_through_line_shifts_chains_and_revert() {
     // Body-only edits take the retained patch path (no whole-program
     // compilation). Adding or removing lines shifts the later procedure and
     // the list initializer below them; both are patched. Every step must equal
@@ -512,7 +512,7 @@ fn body_patch_edits_match_fresh_bytes_through_line_shifts_chains_and_revert() {
     let initial = compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
             .collect()
     };
     let same_line = tree.replace("return a + 1", "return a + 2");
@@ -563,7 +563,7 @@ fn code_motion_edits_patch_and_match_fresh_bytes() {
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
             .collect()
     };
     let comment = tree.replace("/proc/second(b)", "// a note\n/proc/second(b)");
@@ -614,7 +614,7 @@ fn string_literal_edits_patch_and_match_fresh_bytes() {
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
             .collect()
     };
     let changed = tree.replace("\"alpha\"", "\"alpha two\"");
@@ -647,7 +647,7 @@ fn string_literal_edits_patch_and_match_fresh_bytes() {
 }
 
 #[test]
-fn comment_inside_a_body_patches_without_relowering_and_matches_fresh_bytes() {
+fn comment_inside_a_body_builds_incrementally_without_relowering_and_matches_fresh_bytes() {
     // A trailing comment or spacing inside a body changes no expanded text the compiler keeps: no
     // body is relowered and the image is the base image, but the edit must stay on the patch path.
     let tree = "/proc/anchor()\n    return 0\n/proc/first(a)\n    return a + 1\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n";
@@ -660,7 +660,7 @@ fn comment_inside_a_body_patches_without_relowering_and_matches_fresh_bytes() {
     compare_revision(&shared, &roots);
     let patched = |roots: &Roots| -> Vec<u64> {
         (0..6)
-            .map(|index| crate::body_patch::applied(&roots.manifest(index)))
+            .map(|index| crate::retained_output::applied_with_declaration_patches(&roots.manifest(index)))
             .collect()
     };
     let commented = tree.replace("return a + 1", "return a + 1 // note");

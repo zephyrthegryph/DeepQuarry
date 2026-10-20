@@ -25,6 +25,8 @@ pub use writing::EncodedDmb;
 mod word_lists;
 #[path = "dmb_remap.rs"]
 mod remap;
+#[path = "dmb_renumber.rs"]
+mod renumber;
 #[path = "dmb_list_rows.rs"]
 mod list_rows;
 pub use list_rows::ListRowImage;

@@ -104,6 +104,8 @@ fn output_binding(stream: Arc<Mutex<transport::Stream>>) -> OutputBinding {
     OutputBinding
 }
 pub fn serve() -> io::Result<()> {
+    // A resident session replaces large published claim groups on every request.
+    dm_session::release_replaced_in_background(true);
     service::serve()
 }
 pub fn compiler_identity() -> io::Result<u128> {

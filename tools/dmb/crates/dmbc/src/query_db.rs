@@ -140,6 +140,8 @@ struct AnswerSlot {
     request: u64,
     /// Declaration identity of the tree it was proven under (0: unknown, never carried).
     tree: u128,
+    /// Answer-world version it was proven under (0: unknown, never carried by world).
+    world: u128,
     hash: u128,
     positive: bool,
 }
@@ -147,6 +149,10 @@ struct AnswerSlot {
 struct AnswerRequest {
     request: u64,
     tree: Option<Arc<dm_tree::SemanticTree>>,
+    /// Version of every answer this request's resolvers give (the static resolver's
+    /// `ReadDomain::Tree` version: declarations, procedure statics, engine configuration and
+    /// catalogs); 0 when the resolver cannot version its answers.
+    world: u128,
 }
 struct Answers {
     shards: Box<[Mutex<std::collections::HashMap<u128, AnswerSlot>>]>,
@@ -154,6 +160,11 @@ struct Answers {
     requests: std::sync::atomic::AtomicU64,
     resolved: std::sync::atomic::AtomicUsize,
     carried: std::sync::atomic::AtomicUsize,
+    /// Answers a stage's own resolver disagreed with (verification only).
+    mismatches: std::sync::atomic::AtomicUsize,
+    /// Every resource search the table holds: the world version does not cover the filesystem,
+    /// so these are proven again when a request opens (see [`QueryDb::begin_answers`]).
+    resource_queries: Mutex<std::collections::HashMap<u128, dm_ir::ResolveQuery>>,
 }
 impl Default for Answers {
     fn default() -> Self {
@@ -163,6 +174,8 @@ impl Default for Answers {
             requests: std::sync::atomic::AtomicU64::new(0),
             resolved: Default::default(),
             carried: Default::default(),
+            mismatches: Default::default(),
+            resource_queries: Default::default(),
         }
     }
 }
@@ -171,7 +184,7 @@ impl Answers {
         use std::sync::atomic::Ordering;
         let request = self.requests.fetch_add(1, Ordering::SeqCst) + 1;
         *self.current.write().unwrap_or_else(|error| error.into_inner()) =
-            AnswerRequest { request, tree: None };
+            AnswerRequest { request, tree: None, world: 0 };
         self.resolved.store(0, Ordering::Relaxed);
         self.carried.store(0, Ordering::Relaxed);
     }
@@ -179,6 +192,7 @@ impl Answers {
         for shard in self.shards.iter() {
             shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
         }
+        self.resource_queries.lock().unwrap_or_else(|error| error.into_inner()).clear();
     }
     fn len(&self) -> usize {
         self.shards
@@ -188,6 +202,14 @@ impl Answers {
     }
 }
 
+/// `DMB_QUERY_VERIFY=1` (and every debug build) re-resolves each shared or carried answer through
+/// the asking stage's resolver.
+fn verify_answers() -> bool {
+    static VERIFY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *VERIFY.get_or_init(|| {
+        cfg!(debug_assertions) || std::env::var_os("DMB_QUERY_VERIFY").is_some_and(|value| value == "1")
+    })
+}
 fn query_id(query: &dm_ir::ResolveQuery) -> u128 {
     use std::hash::{Hash, Hasher};
     let mut low = std::collections::hash_map::DefaultHasher::new();
@@ -250,7 +272,28 @@ impl RequestAnswers<'_> {
             let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
             if let Some(slot) = slots.get_mut(&id) {
                 if slot.request == current.request && slot.tree == identity {
-                    return slot.hash;
+                    let hash = slot.hash;
+                    drop(slots);
+                    if verify_answers() {
+                        self.verify(query, hash, "proven earlier in this request");
+                    }
+                    return hash;
+                }
+                // The same resolver inputs give the same answer: carry it without resolving.
+                // Resource searches read the filesystem, which the world version does not cover.
+                let same_world = current.world != 0
+                    && slot.world == current.world
+                    && slot.tree == identity
+                    && !matches!(query.domain(), dm_ir::ReadDomain::ResourceSearch);
+                if same_world {
+                    slot.request = current.request;
+                    let hash = slot.hash;
+                    drop(slots);
+                    answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if verify_answers() {
+                        self.verify(query, hash, "carried from the same answer world");
+                    }
+                    return hash;
                 }
                 let carried = slot.positive
                     && identity != 0
@@ -272,6 +315,7 @@ impl RequestAnswers<'_> {
                 if carried {
                     slot.request = current.request;
                     slot.tree = identity;
+                    slot.world = current.world;
                     answers.carried.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     return slot.hash;
                 }
@@ -284,12 +328,33 @@ impl RequestAnswers<'_> {
         let slot = AnswerSlot {
             request: current.request,
             tree: identity,
+            world: current.world,
             hash: answer_hash(&meaning),
             positive: positive_answer(&meaning),
         };
         answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if matches!(query.domain(), dm_ir::ReadDomain::ResourceSearch) {
+            answers
+                .resource_queries
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .insert(id, *query);
+        }
         shard.lock().unwrap_or_else(|error| error.into_inner()).insert(id, slot);
         slot.hash
+    }
+    /// Every stage shares one answer per query, so every stage's resolver must give it: a
+    /// stage reading an answer another stage proved (or one carried from an earlier request)
+    /// resolves it again through its own resolver and must find the same meaning.
+    fn verify(&self, query: &dm_ir::ResolveQuery, hash: u128, how: &str) {
+        let own = answer_hash(&(self.answer)(query));
+        if own != hash {
+            let mismatches = self.db.answers.mismatches.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            if mismatches < 8 {
+                eprintln!("native answer mismatch ({how}): {query:?}");
+            }
+            debug_assert_eq!(own, hash, "answer resolvers disagree ({how}) on {query:?}");
+        }
     }
     /// Whether the current answer to `query` has the recorded hash.
     pub(crate) fn unchanged_hash(&self, query: &dm_ir::ResolveQuery, recorded: u128) -> bool {
@@ -328,9 +393,87 @@ impl QueryDb {
     /// Bind this request's answers to `tree`: answers proven under an older tree are carried only
     /// through its classified change. Called once per request (after [`Self::revise`] opened it)
     /// before any stage reads; without it nothing is carried.
-    pub(crate) fn begin_answers(&self, tree: &Arc<dm_tree::SemanticTree>) {
-        let mut current = self.answers.current.write().unwrap_or_else(|error| error.into_inner());
-        current.tree = Some(Arc::clone(tree));
+    /// `world` versions every answer the request's resolvers give (see `AnswerRequest::world`);
+    /// an answer proven under the same tree and world is carried without resolving.
+    ///
+    /// Resource searches read the filesystem, which the world does not version: every one the
+    /// table holds is proven again here through `resolve`.
+    pub(crate) fn begin_answers(
+        &self,
+        tree: &Arc<dm_tree::SemanticTree>,
+        world: Option<u128>,
+        resolve: &dyn Fn(&dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning,
+    ) {
+        let world = world.unwrap_or(0);
+        let identity = tree.declaration_identity();
+        let request = {
+            let mut current =
+                self.answers.current.write().unwrap_or_else(|error| error.into_inner());
+            current.tree = Some(Arc::clone(tree));
+            current.world = world;
+            current.request
+        };
+        let queries: Vec<(u128, dm_ir::ResolveQuery)> = self
+            .answers
+            .resource_queries
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .iter()
+            .map(|(id, query)| (*id, *query))
+            .collect();
+        for (id, query) in queries {
+            let meaning = resolve(&query);
+            let shard = &self.answers.shards[(id as usize) % ANSWER_SHARDS];
+            shard.lock().unwrap_or_else(|error| error.into_inner()).insert(
+                id,
+                AnswerSlot {
+                    request,
+                    tree: identity,
+                    world,
+                    hash: answer_hash(&meaning),
+                    positive: positive_answer(&meaning),
+                },
+            );
+        }
+    }
+    /// The version of every answer the table holds now: the tree, the answer world and each
+    /// resource search's current answer (None when the resolver does not version its answers).
+    /// Equal versions at two points mean every answer read in between and still held is equal,
+    /// so a stage whose other inputs are equal too may reuse its whole earlier output.
+    pub(crate) fn answers_version(&self) -> Option<u128> {
+        let (identity, world) = {
+            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+            (current.tree.as_ref()?.declaration_identity(), current.world)
+        };
+        if world == 0 {
+            return None;
+        }
+        let mut resources: Vec<(u128, u128)> = {
+            let queries =
+                self.answers.resource_queries.lock().unwrap_or_else(|error| error.into_inner());
+            queries
+                .keys()
+                .map(|id| {
+                    let shard = &self.answers.shards[(*id as usize) % ANSWER_SHARDS];
+                    let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+                    (*id, slots.get(id).map_or(0, |slot| slot.hash))
+                })
+                .collect()
+        };
+        resources.sort_unstable();
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-version-v1\0");
+        hash.update(&identity.to_le_bytes());
+        hash.update(&world.to_le_bytes());
+        for (id, answer) in resources {
+            hash.update(&id.to_le_bytes());
+            hash.update(&answer.to_le_bytes());
+        }
+        Some(hash.digest128())
+    }
+    /// Answers a stage's resolver disagreed with in verification (see [`RequestAnswers`]).
+    pub(crate) fn answer_mismatches(&self) -> usize {
+        self.answers.mismatches.load(std::sync::atomic::Ordering::Relaxed)
     }
     /// Open a request without source inputs (fixtures): every answer is proven again.
     #[cfg(test)]
@@ -418,12 +561,13 @@ impl QueryDb {
         if detail {
             let (resolved, carried, held) = self.answer_counts();
             eprintln!(
-                "detail query units: stored={} proven={} answers resolved={} carried={} held={} reads={:.3}s check={:.3}s",
+                "detail query units: stored={} proven={} answers resolved={} carried={} held={} mismatches={} reads={:.3}s check={:.3}s",
                 units.len(),
                 proven.len(),
                 resolved,
                 carried,
                 held,
+                self.answer_mismatches(),
                 after_units.as_secs_f64(),
                 (started.elapsed() - after_units).as_secs_f64(),
             );
