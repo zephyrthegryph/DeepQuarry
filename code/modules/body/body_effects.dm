@@ -458,7 +458,7 @@
 CAPABILITIES(/datum/body_effect_origin)
 	ref_one(nameof(origin), /atom)
 	ref_one(nameof(holder), /mob/living)
-	factors(PROC_REF(effect_table), stacks = PROC_REF(effect_stacks), to = nameof(holder), reads = list("holder.body_effect_counts"))
+	factors(PROC_REF(effect_table), stacks = PROC_REF(effect_stacks), rel = nameof(holder), reads = list("holder.body_effect_counts"))
 
 /datum/body_effect_origin/proc/effect_stacks(datum/act/eval/A)
 	return holder ? holder.body_effect_stacks(path) : 0

@@ -127,7 +127,7 @@ fn borrowed_key_occurrence_matches_independent_inherited_reopen_chain() {
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {
-            Ok("/datum/base/proc/run()\n    return 1\n/datum/child\n    parent_type = /datum/base\n/datum/child/proc/run()\n    return 2\n/datum/child/run()\n    return 3\n".into())
+            Ok("/datum/base/proc/run()\n    return 1\n/datum/child\n    parent_type = /datum/base\n/datum/child/run()\n    return 2\n/datum/child/run()\n    return 3\n".into())
         }
     }
     let frontend = dm_tree::frontend::build_with_config(

@@ -97,7 +97,7 @@ CAPABILITIES(/transformation/chem/instant/mix_virus/picky)
 		if(D)
 			D.Evolve(level_min, level_max)
 
-/transformation/chem/instant/mix_virus/picky/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/mix_virus/picky/on_reaction(datum/reagents/holder)
 	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
 		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)
@@ -198,7 +198,7 @@ CAPABILITIES(/transformation/chem/instant/mix_virus/rem_virus)
 		catalysts = list(reagent(REAGENT_ID_BLOOD, 1)),
 		then = TYPE_PROC_REF(/transformation/chem/instant/mix_virus/rem_virus, on_reaction)))
 
-/transformation/chem/instant/mix_virus/rem_virus/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/mix_virus/rem_virus/on_reaction(datum/reagents/holder)
 	var/datum/reagent/blood/B = locate_in_list(holder.reagent_list, /datum/reagent/blood)
 	if(B && B.data)
 		var/datum/affliction/contagion/engineered/D = locate_in_list(B.data["viruses"], /datum/affliction/contagion/engineered)

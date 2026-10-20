@@ -105,23 +105,11 @@ still read as before.
   (`bash tools/dq_focused_test.sh --bless <test>`), or, for a conflict that is only the encoding, keep either side's rows
   expanded and run `python3 tools/dq_pin_factor.py`. Never hand-merge `@`/`-`/`+` lines.
 
-## Look pins
+## Look pins (deleted)
 
-A pin of how a type looks once it exists, for appearance conversions (`code/modules/unit_tests/dq_look_pins.dm`). `bash tools/dq_pin.sh --look /T`
-records one type (`snapshots/looks/`, test `dq_look_pin`); `bash tools/dq_pin.sh --look-tree /T` records every creatable subtype of `/T` in one
-file (`snapshots/look_trees/`, test `dq_look_tree_pin`, exhaustive tier). Rows: icon, icon_state, dir, colour, alpha, and one row per distinct
-overlay and underlay (`icon:state:plane[:colour]`, `xN` when repeated), taken after the presentation lane settled; each type is made with the RNG
-reseeded from its path, and a runtime while it is made is a row of its own (without its file and line). The rows do not see a look a later state
-change draws: the refresh-drift sweep and hand-written tests cover those.
-
-A look state pin (`bash tools/dq_pin.sh --look-state /T`, `snapshots/look_states/`, test `dq_look_state_pin`, exhaustive tier) moves state and
-records the look again: for each numeric var a subtype declares below `/obj` or `/mob` (24 at most, narrowed to the vars a draw can read), the var is
-written to 0, 1 and 2, a redraw is requested (`update_icon()` then `changed()`), and the rows are what the look gained (`+`) or lost (`-`) against the made
-look. A var the look ignores writes no row. Record it before an appearance conversion and expect the same file after.
-
-The two pins are one sweep (`dq_look_sweep.dm`): each type is made once, from the same empty, settled block (the block emptied and its air and floors
-restored, the RNG reseeded from the path, the kernel's zero-delay work run on a frozen clock), and its probes run on that instance. See
-`agent_workflow.md` section 9 for the shards, the incremental keys and the order-shuffle proof.
+There are no look pins. `dq_look_pin`, `dq_look_tree_pin`, `dq_look_state_pin`, the human and profile look hashes and their snapshot files were deleted
+on 2026-10-17: they cost too much time per merge, the rendering migration is mostly done and playtesting finds visual issues. Snapshot look pins are
+never re-added. Test a draw's behaviour (`dq_fresh_look_default`, `dq_human_draw_deterministic`, a hand-written test of the one thing a conversion must keep).
 
 ## Hit pins
 

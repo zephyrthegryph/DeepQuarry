@@ -1,6 +1,5 @@
 /**
- * Machine-wide counting semaphores for the heavy steps every worktree runs (DM compiles, test worlds, cargo builds, look-state
- * pins): the TypeScript side of tools/dq_machine_slots.sh. It uses the SAME directories and file formats, so a slot taken here
+ * Machine-wide counting semaphores for the heavy steps every worktree runs (DM compiles, test worlds, cargo builds): the TypeScript side of tools/dq_machine_slots.sh. It uses the SAME directories and file formats, so a slot taken here
  * and a slot taken by a shell command throttle against one budget. Keep the two in sync; machine_slots.test.ts runs both.
  *
  * Layout under `DQ_SLOTS_DIR` (default E:/dq-cache/slots, else ~/.cache/dq/slots), one directory per class:
@@ -13,9 +12,7 @@
  * removed by the next waiter, so a crashed run never blocks the queue.
  *
  * Counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off): dm_compile DQ_SLOTS_DM_COMPILE=1,
- * test_world DQ_SLOTS_TEST_WORLD=2, cargo DQ_SLOTS_CARGO=1, look_state_pin DQ_SLOTS_LOOK_STATE_PIN=1 (DQ_LOOK_PIN_SLOTS is the old
- * name). Lock order when a run needs several: look_state_pin, then test_world; dm_compile and cargo are never held while waiting
- * for another class.
+ * test_world DQ_SLOTS_TEST_WORLD=2, cargo DQ_SLOTS_CARGO=1. dm_compile and cargo are never held while waiting for another class.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -23,7 +20,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | 'look_state_pin' | (string & {});
+export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | (string & {});
 
 /** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
 /** Two test worlds at once by default: the machine is also the user's desktop (2026-10-19). DQ_SLOTS_TEST_WORLD raises it. */
@@ -31,7 +28,7 @@ export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
   return 2;
 }
 
-const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1, look_state_pin: 1 };
+const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1 };
 const HEARTBEAT_MS = Number(process.env.DQ_SLOTS_HEARTBEAT_SEC ?? 15) * 1000;
 const POLL_MS = Number(process.env.DQ_SLOTS_POLL_SEC ?? 3) * 1000;
 
@@ -45,7 +42,6 @@ export function slotsDir(): string {
 export function slotCapacity(cls: SlotClass): number {
   if (process.env.DQ_SLOTS === '0') return 0;
   let val = process.env[`DQ_SLOTS_${cls.toUpperCase()}`];
-  if (val === undefined && cls === 'look_state_pin') val = process.env.DQ_LOOK_PIN_SLOTS;
   if (val === undefined || val === '') return DEFAULTS[cls] ?? 1;
   const n = Number(val);
   return Number.isInteger(n) && n >= 0 ? n : 1;
@@ -75,9 +71,32 @@ function worktree(): string {
   return process.env.DQ_SLOT_WORKTREE ?? process.env.DQ_BUILD_ROOT ?? process.cwd();
 }
 
+/** Is this worktree a compiler or light lane slot (pool-c1/pool-c2, pool-light), or declared one with DQ_LANE_CLASS? (_slots_is_lane in dq_machine_slots.sh) */
+function isLane(top: string, kind: 'compiler' | 'light'): boolean {
+  if (process.env.DQ_LANE_CLASS === kind) return true;
+  const base = norm(top).split('/').pop() ?? '';
+  return kind === 'compiler' ? /^pool-c[0-9]/.test(base) : base === 'pool-light';
+}
+
+/** The merge worktree and a compiler lane go to the front of every queue (priority 0). */
 function priorityOf(top: string): number {
   if (process.env.DQ_SLOT_PRIORITY !== undefined && process.env.DQ_SLOT_PRIORITY !== '') return Number(process.env.DQ_SLOT_PRIORITY);
-  return norm(top) === norm(process.env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base') ? 0 : 1;
+  if (norm(top) === norm(process.env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base')) return 0;
+  return isLane(top, 'compiler') ? 0 : 1;
+}
+
+/** Slots beyond the cap a caller may hold: a compiler lane gets one extra cargo slot (_slots_extra). */
+function extraSlots(cls: SlotClass, top: string): number {
+  if (cls !== 'cargo' || !isLane(top, 'compiler')) return 0;
+  const n = Number(process.env.DQ_SLOTS_COMPILER_EXTRA_CARGO ?? '1');
+  return Number.isInteger(n) && n >= 0 ? n : 1;
+}
+
+/** A light lane never compiles DM or runs a test world (_slots_refuse_light). */
+function refuseLight(cls: SlotClass, top: string): void {
+  if ((cls === 'dm_compile' || cls === 'test_world') && isLane(top, 'light')) {
+    throw new Error(`REFUSED: ${top} is a light lane: it never runs a DM compile or a test world (${cls}). Lease a general lane (tools/dq_lane_pool.sh lease <branch>) for work that needs the game build.`);
+  }
 }
 
 function readFields(file: string): Record<string, string> {
@@ -212,10 +231,11 @@ export function slotGroupSize(cls: SlotClass, want: number): number {
  * run hands one back as its world finishes. Returns [] when the class is off.
  */
 export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
+  refuseLight(cls, worktree());
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return [];
   const prio = priorityOf(worktree());
-  const usable = usableSlots(cls, max, prio);
+  const usable = usableSlots(cls, max, prio) + extraSlots(cls, worktree());
   want = Math.min(Math.max(want, 1), usable);
   const dir = path.join(slotsDir(), cls);
   try {
@@ -357,7 +377,7 @@ export async function withSlot<T>(cls: SlotClass, label: string, fn: () => Promi
 }
 
 /** For the tests and `bun tools/build/lib/machine_slots.ts`: the same table `dq_machine_slots.sh status` prints. */
-export function slotsStatus(classes: string[] = ['dm_compile', 'test_world', 'cargo', 'look_state_pin']): string {
+export function slotsStatus(classes: string[] = ['dm_compile', 'test_world', 'cargo']): string {
   const now = Math.floor(Date.now() / 1000);
   const lines: string[] = [];
   for (const cls of classes) {

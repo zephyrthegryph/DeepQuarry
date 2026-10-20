@@ -1,0 +1,3 @@
+nameof_call_expression.dm:8:error: nameof: requires a var, proc reference, or type path
+nameof_call_expression.dm:8:error: return: missing expression
+nameof_call_expression.dmb - 2 errors, 0 warnings

@@ -83,7 +83,7 @@
 	return alist(STAT_AIRWAY = patency())
 
 CAPABILITIES(/datum/affliction/airway)
-	factors(PROC_REF(patency_table), to = nameof(owner), part = "patency")
+	factors(PROC_REF(patency_table), rel = nameof(owner), part = "patency")
 
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
@@ -167,7 +167,7 @@ CAPABILITIES(/datum/affliction/airway)
 	return alist(STAT_RESP_DRIVE = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL)
 
 CAPABILITIES(/datum/affliction/respiratory_arrest)
-	factors(PROC_REF(drive_table), to = nameof(owner), part = "drive")
+	factors(PROC_REF(drive_table), rel = nameof(owner), part = "drive")
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()

@@ -266,36 +266,6 @@ cache is stamped for another analyzer build or scope list first copies the files
 (`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`
 goes from about 64 s to 2 s. Four stamps and 4 GB are kept (`tools/dq_cache_prune.sh` applies the same rule).
 
-### `analyze look-keys` (the look plan)
-
-`analyze look-keys [--out FILE] [--explain TYPE] [--no-cache]` writes one line per concrete /obj, /mob and /turf type: its key (a
-digest of everything that can change its look rows) and the vars a state probe should write. Cold it parses the model (8-15 s) and
-walks the draw closure of 6,200 distinct closures (about 15 s: edges are interned, the visited sets are bitsets, the integer tables
-use a multiplicative hasher). `data/analyze-cache/look-keys.bin` makes the next run incremental:
-
-| The edit | Cost |
-|---|---|
-| nothing | 0.5 s (the stored rows) |
-| comments, blank lines, a file the model does not include | 2 s (no row can move) |
-| a proc no closure contains, or var values no chain type is assigned (most gameplay code) | 2 s (a partial parse of the changed files) |
-| a proc in some closure, or a var value of a chain type | one full model parse (8-15 s), then only the rows whose closure holds a changed proc, or whose chain holds a type assigned different values, are recomputed |
-| a new or removed var, proc or type, a `#define`, a changed declaration marker, `deepquarry.dme`, a salt file, a `DECLARE_APPEARANCE`/`abstract_type` line, a different analyzer build | everything (cold cost) |
-
-The cache records per row the closure as a bitset over the table of procs some closure contains (each with a digest of its text), per
-included file the structure facts of `sem::incremental` (shape, comment-free tokens, bare headers, directives, located types) and a digest
-of the var values it assigns to each type. A partial parse of just the changed files (`Sem::build_partial`) must give the same shape and
-types and says which closure procs changed their text and which types were assigned different values. The tests
-(`tests/look_keys.rs`) compare the incremental rows with a full computation after each kind of edit; `DQ_LOOK_TRACE=1` says why an edit was
-refused and prints the phase timings.
-
-A key covers the type's chain (var values, declarations), the procs of its draw closure, its icon sources and the look builder
-(`SALT_FILES`: `appearance.dm`, `appearance_builder.dm`). The closure never enters a *sink* (`SINK_DIRS`, `SINK_NAMES`,
-`SINK_PREFIXES` in `look_keys.rs`): movement, lifecycle, messaging, logging, `code/engine/`, controllers, admin and test code cannot
-change a drawn look, and the pin rows are made by writing vars and calling the draw, so an edit there moves no key. Hashing the
-whole file of `/atom/update_icon` (`_atom.dm`) and the absolute checkout path inside `__FILE__`-style macro expansions were what
-once moved all 21,000 keys on nearly every merge; neither is hashed now. A proc that really is plumbing every draw goes through
-belongs in `SALT_FILES`, not in a closure.
-
 ### Declarations the analysis reads
 
 Markers expand to nothing in DM (`code/__defines/engine/markers.dm`), so they are read from comment-stripped text with

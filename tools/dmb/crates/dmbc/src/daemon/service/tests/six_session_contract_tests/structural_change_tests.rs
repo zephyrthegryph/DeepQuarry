@@ -132,7 +132,7 @@ fn numeric_default_edits_match_fresh_with_and_without_initial_reads() {
             }
             previous = current;
         }
-        let applied = crate::body_patch::applied(&roots.manifest(0));
+        let applied = crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
         if patches {
             assert_eq!(applied, 4, "every numeric default edit takes the default patch");
         } else {
@@ -200,11 +200,11 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         Arc::get_mut(&mut shared).unwrap().max_workers = 2;
         edit_all(&roots, TREE);
         let initial = compare_revision(&shared, &roots);
-        let before = crate::body_patch::applied(&roots.manifest(0));
+        let before = crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
         edit_all(&roots, &edited);
         let current = compare_revision(&shared, &roots);
         assert_ne!(current, initial, "{label} must publish new content");
-        let applied = crate::body_patch::applied(&roots.manifest(0)) - before;
+        let applied = crate::retained_output::applied_with_declaration_patches(&roots.manifest(0)) - before;
         assert_eq!(applied, u64::from(patches), "{label}: append patch applied");
         edit_all(&roots, TREE);
         compare_revision(&shared, &roots);
@@ -222,7 +222,7 @@ fn appends_after_body_patches_edit_the_model_with_those_patches_applied() {
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
     edit_all(&roots, TREE);
     compare_revision(&shared, &roots);
-    let applied = |roots: &Roots| crate::body_patch::applied(&roots.manifest(0));
+    let applied = |roots: &Roots| crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
     let body_one = TREE.replace("        return value\n", "        return value + 1\n");
     let body_two = TREE.replace("        return value\n", "        return value + 2\n");
     let appended_var = body_two.replace("    var/own = 2\n", "    var/own = 2\n    var/added_probe = 5\n");
@@ -338,11 +338,11 @@ fn appended_callables_referenced_by_edited_bodies_match_fresh_bytes() {
     for (label, before, after) in steps {
         assert!(source.contains(before), "{label} anchor");
         source = source.replacen(before, after, 1);
-        let applied = crate::body_patch::applied(&roots.manifest(0));
+        let applied = crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
         edit_all(&roots, &source);
         compare_revision(&shared, &roots);
         assert_eq!(
-            crate::body_patch::applied(&roots.manifest(0)),
+            crate::retained_output::applied_with_declaration_patches(&roots.manifest(0)),
             applied + 1,
             "{label}: did not patch"
         );
@@ -358,7 +358,7 @@ fn appends_after_a_memory_pressure_release_recover_the_model_and_match_fresh_byt
     Arc::get_mut(&mut shared).unwrap().max_workers = 2;
     edit_all(&roots, TREE);
     compare_revision(&shared, &roots);
-    let applied = |roots: &Roots| crate::body_patch::applied(&roots.manifest(0));
+    let applied = |roots: &Roots| crate::retained_output::applied_with_declaration_patches(&roots.manifest(0));
     let appended_var = TREE.replace("    var/own = 2\n", "    var/own = 2\n    var/added_probe = 5\n");
     let appended_proc = format!("{appended_var}/datum/base/proc/added_probe_proc()\n    return 41\n");
     let mut count = applied(&roots);

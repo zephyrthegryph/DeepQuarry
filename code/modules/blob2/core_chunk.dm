@@ -146,7 +146,7 @@ CAPABILITIES(/transformation/chem/instant/blob_reconstitution/domination)
 		takes = list(reagent(REAGENT_ID_HYDROPHORON, 40), reagent(REAGENT_ID_PERIDAXON, 20), reagent(REAGENT_ID_MUTAGEN, 20)),
 		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/blob_reconstitution/domination, on_reaction)))
 
-/transformation/chem/instant/blob_reconstitution/domination/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/blob_reconstitution/domination/on_reaction(datum/reagents/holder)
 	var/obj/item/blobcore_chunk/chunk = holder.my_atom
 	if(chunk.can_genesis && chunk.regen("neutral"))
 		chunk.visible_message(span_notice("[chunk] bubbles, surrounding itself with a rapidly expanding mass of [chunk.blob_type.name]!"))

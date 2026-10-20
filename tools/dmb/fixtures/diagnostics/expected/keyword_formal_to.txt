@@ -1,0 +1,3 @@
+keyword_formal_to.dm:1:error: missing left-hand argument to to.
+keyword_formal_to.dm:1:error: missing left-hand argument to =.
+keyword_formal_to.dmb - 2 errors, 0 warnings

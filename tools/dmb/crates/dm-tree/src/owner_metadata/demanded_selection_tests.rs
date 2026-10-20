@@ -73,7 +73,7 @@ fn inherited_demands_reuse_only_exact_selected_ancestor_inputs() {
         owner: child,
         name,
         kind: MemberKind::Proc,
-        mode: DefinitionMode::Declare,
+        mode: DefinitionMode::Override,
         metadata: Arc::new(MemberMetadata::default()),
         content: 1,
     });

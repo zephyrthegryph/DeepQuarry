@@ -791,7 +791,7 @@ pub(crate) use prepared_contribution::PreparedPatchRecord;
 #[path = "symbolic_tests.rs"]
 mod tests;
 
-/// Position-bearing code kept for body-edit patches (see `crate::body_patch`):
+/// Position-bearing code kept with a retained output (see `crate::retained_output`):
 /// an initializer procedure whose debug lines must follow a line shift.
 #[derive(Clone)]
 pub(crate) struct PositionedCode {
@@ -801,6 +801,14 @@ pub(crate) struct PositionedCode {
     image_owner: Arc<latest_image::LatestImage>,
 }
 impl PositionedCode {
+    /// The debug lines this code carries, as (semantic path, line).
+    pub(crate) fn origin_lines(&self) -> impl Iterator<Item = (Arc<str>, u32)> {
+        self.origins
+            .to_owned_origins()
+            .entries
+            .into_iter()
+            .map(|origin| (origin.semantic_path, origin.line))
+    }
     /// Relink with every debug line mapped through `shift(path, line)`.
     /// `None` when no line moves (the retained code list is still exact);
     /// otherwise the new words and this code with its shifted origins, which

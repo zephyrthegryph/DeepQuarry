@@ -72,12 +72,43 @@ rm -f "$p1/untracked.txt"
 pool lease lane/e >/dev/null 2>&1
 DQ_LANE_POOL_WAIT_POLL=1 pool lease lane/f --wait --timeout 2 >"$tmp/wait.out" 2>"$tmp/wait.err" &
 waiter=$!
-sleep 3
-check "a waiter queues instead of failing on a full pool" 'kill -0 "$waiter" 2>/dev/null && pool status | grep -q "queue 1: lane/f"'
+sleep 8
+check "a waiter queues instead of failing on a full pool" 'kill -0 "$waiter" 2>/dev/null && st="$(pool status)" && grep -q "queue 1: lane/f" <<<"$st"'
 pool release lane/e >/dev/null 2>&1
 wait "$waiter"; wrc=$?
 check "the waiter gets the freed slot and exits 0" '[ "$wrc" -eq 0 ] && [ -n "$(cat "$tmp/wait.out")" ] && [ "$(git -C "$(cat "$tmp/wait.out")" symbolic-ref --short HEAD)" = lane/f ]'
 check "the queue is empty afterwards" '! pool status | grep -q "queue "'
+
+# ---- lane classes: compiler (reserved pool-c1/c2, ahead of general), light (one shared slot, own queue) ----------------------------
+export DQ_LANE_POOL_DIR="$tmp/pool2" DQ_LANE_POOL_STATE="$tmp/state2" DQ_LANE_POOL_SIZE=1 DQ_LANE_POOL_COMPILER=2
+g1="$(pool lease lane/g1 2>/dev/null)"
+check "a general lane takes pool-1" '[ "$g1" = "$tmp/pool2/pool-1" ]'
+out="$(pool lease lane/g2 2>&1)"; rc=$?
+check "general lanes never take the reserved compiler slots" '[ "$rc" -eq 3 ] && [ ! -e "$tmp/pool2/pool-c1" ]'
+c1="$(pool lease tools/dmb-fix 2>/dev/null)"
+check "a tools/dmb* branch is a compiler lane on pool-c1" '[ "$c1" = "$tmp/pool2/pool-c1" ]'
+c2="$(pool lease lane/zz --class compiler 2>/dev/null)"
+check "--class compiler takes pool-c2" '[ "$c2" = "$tmp/pool2/pool-c2" ]'
+c3="$(pool lease tools/dmb-third 2>&1)"; rc=$?
+check "a third compiler lane finds the general slot held too: pool full" '[ "$rc" -eq 3 ]'
+pool release lane/g1 >/dev/null 2>&1
+c3="$(pool lease tools/dmb-third 2>/dev/null)"
+check "a compiler lane overflows into a free general slot" '[ "$c3" = "$tmp/pool2/pool-1" ]'
+l1="$(pool lease docs/one --class light 2>/dev/null)"
+check "a light lane takes the one shared pool-light" '[ "$l1" = "$tmp/pool2/pool-light" ]'
+out="$(pool lease docs/two --class light 2>&1)"; rc=$?
+check "a second light lane waits (pool full) instead of taking a game slot" '[ "$rc" -eq 3 ] && grep -q "light" <<<"$out"'
+pool release docs/one >/dev/null 2>&1
+check "the light slot is free after release" '[ -n "$(pool lease docs/two --class light 2>/dev/null)" ]'
+pool release docs/two >/dev/null 2>&1
+DQ_LANE_POOL_WAIT_POLL=1 pool lease lane/gw --wait --timeout 2 >"$tmp/gw.out" 2>/dev/null &
+gw=$!
+sleep 2
+DQ_LANE_POOL_WAIT_POLL=1 pool lease tools/dmb-late --class compiler --wait --timeout 2 >"$tmp/late.out" 2>/dev/null &
+late=$!
+sleep 2
+check "a compiler waiter sorts ahead of a general waiter" '[ "$(pool status | grep "queue [0-9]" | head -n 1 | grep -c dmb-late)" -eq 1 ]'
+kill "$gw" "$late" 2>/dev/null; wait 2>/dev/null
 
 [ "$fail" -eq 0 ] && echo "test_lane_pool: all passed" || echo "test_lane_pool: FAILED"
 exit "$fail"

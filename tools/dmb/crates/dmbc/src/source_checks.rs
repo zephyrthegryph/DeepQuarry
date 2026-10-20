@@ -254,6 +254,52 @@ pub(crate) fn known_type(tree: &dm_tree::SemanticTree, path: &str) -> bool {
         || (BUILTIN_TYPE_ROOTS.contains(&root) && !path.trim_start_matches('/').contains('/'))
 }
 
+/// Words DreamMaker will not take as a formal's name (`if = null`, `set = null`).
+const RESERVED_FORMAL_NAMES: &[&str] = &[
+    "if", "else", "while", "var", "set", "for", "do", "switch", "spawn",
+];
+
+/// Operator words that cannot be the left side of `=`: `f(to = 1)` and `proc/f(to = null)` are
+/// `missing left-hand argument to to.` and `... to =.` in DreamMaker, which reads them as the
+/// operator. Reserved statement words are rejected as formal names only (pinned 516.1687,
+/// fixtures/diagnostics/cases/keyword_*).
+fn keyword_argument_errors(lines: &[Line<'_>], errors: &mut Vec<(usize, String, Option<SourceLocation>)>) {
+    for (line_index, line) in lines.iter().enumerate() {
+        let tokens = &line.tokens;
+        let mut depth = 0usize;
+        for (index, token) in tokens.iter().enumerate() {
+            if token.0 == TokenKind::Punctuation {
+                match token.1 {
+                    "(" => depth += 1,
+                    ")" => depth = depth.saturating_sub(1),
+                    _ => {}
+                }
+            }
+            if token.0 != TokenKind::Ident || depth == 0 {
+                continue;
+            }
+            let opens = index
+                .checked_sub(1)
+                .map(|at| tokens[at].1)
+                .is_some_and(|previous| matches!(previous, "(" | ","));
+            if !opens {
+                continue;
+            }
+            let next = tokens.get(index + 1).map(|next| next.1);
+            let assigned = next == Some("=") && tokens.get(index + 2).map(|n| n.1) != Some("=");
+            if assigned && matches!(token.1, "to" | "in") {
+                errors.push((token.2, format!("missing left-hand argument to {}.", token.1), None));
+                errors.push((token.2, "missing left-hand argument to =.".to_owned(), None));
+            } else if line_index == 0
+                && RESERVED_FORMAL_NAMES.contains(&token.1)
+                && matches!(next, Some("=" | "," | ")"))
+            {
+                errors.push((token.2, format!("{}: invalid variable name: reserved word", token.1), None));
+            }
+        }
+    }
+}
+
 fn body_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
@@ -269,6 +315,7 @@ fn body_errors(
     let locals = locals(&lines);
     let parameters = parameters(header);
     let mut errors = Vec::new();
+    keyword_argument_errors(&lines, &mut errors);
     let mut braces = 0isize;
     let mut reported_types = HashSet::new();
     for line in lines.iter().skip(1) {
@@ -637,7 +684,69 @@ fn is_zero(number: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{collapsed, valid_escape};
+    use super::{collapsed, keyword_argument_errors, valid_escape, RESERVED_FORMAL_NAMES};
+    use crate::local_warnings::significant_lines;
+    fn keyword_errors(source: &str) -> Vec<String> {
+        let lines = significant_lines(source);
+        let mut errors = Vec::new();
+        keyword_argument_errors(&lines, &mut errors);
+        errors.into_iter().map(|error| error.1).collect()
+    }
+
+    #[test]
+    fn operator_words_are_not_argument_names() {
+        // Pinned 516.1687: fixtures/diagnostics/cases/keyword_named_arg_to, keyword_formal_to.
+        for word in ["to", "in"] {
+            let expected = vec![
+                format!("missing left-hand argument to {word}."),
+                "missing left-hand argument to =.".to_owned(),
+            ];
+            assert_eq!(keyword_errors(&format!("/proc/f(a = 1, {word} = null)
+    return a
+")), expected);
+            assert_eq!(keyword_errors(&format!("/proc/g()
+    return f(1, {word} = 2)
+")), expected);
+        }
+        for fine in [
+            "/proc/f(a = 1, step = 2)
+    return f(a, step = 3)
+",
+            "/proc/f(a)
+    for(var/x in a)
+        return x
+",
+            "/proc/f(list/a)
+    return f(a, a == 2)
+",
+            "/proc/f(mob/M in view())
+    return M
+",
+            "/proc/f(a = 1)
+    var/to = 3
+    return to
+",
+        ] {
+            assert!(keyword_errors(fine).is_empty(), "{fine}");
+        }
+    }
+
+    #[test]
+    fn reserved_words_are_rejected_as_formal_names_only() {
+        // Pinned 516.1687: fixtures/diagnostics/cases/keyword_formal_if, keyword_formal_set, keyword_arg_if_ok.
+        for word in RESERVED_FORMAL_NAMES {
+            assert_eq!(
+                keyword_errors(&format!("/proc/f(a = 1, {word} = null)
+    return a
+")),
+                vec![format!("{word}: invalid variable name: reserved word")]
+            );
+            assert!(keyword_errors(&format!("/proc/g()
+    return f(1, {word} = 2)
+")).is_empty());
+        }
+    }
+
     #[test]
     fn escapes_follow_dreammaker() {
         for valid in ["n", "nabc", "the", "theabc", "x41", "u0041", "\"", " ", "proper[x]", "s"] {

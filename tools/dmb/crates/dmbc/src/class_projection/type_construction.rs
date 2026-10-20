@@ -22,7 +22,7 @@ impl TypeConstruction {
         &self,
         planned: &BTreeMap<u32, &TypeProjection>,
         parents: &BTreeMap<u32, u32>,
-        retained: usize,
+        retained: &dyn Fn(u32) -> bool,
     ) -> Result<Vec<Vec<u32>>, ProjectionError> {
         let inputs = planned
             .iter()
@@ -30,7 +30,7 @@ impl TypeConstruction {
                 path: ty.path,
                 // The ordinary parent binder already rejected absent parents.
                 parent: ty.parent.expect("validated current parent"),
-                retained_parent: (parents[&index] as usize) < retained,
+                retained_parent: retained(parents[&index]),
             })
             .collect::<Vec<_>>();
         let unique: HashSet<_> = inputs.iter().map(|input| input.path).collect();
@@ -101,10 +101,10 @@ mod tests {
         let parents = [(ids[0], root), (ids[1], ids[0]), (ids[2], root)]
             .into_iter()
             .collect();
-        let actual = owner.waves(&planned, &parents, root as usize + 1).unwrap();
+        let actual = owner.waves(&planned, &parents, &|index: u32| (index as usize) < root as usize + 1).unwrap();
         assert_eq!(
             actual,
-            class_construction_waves(&parents, root as usize + 1).unwrap()
+            class_construction_waves(&parents, |index| (index as usize) < root as usize + 1).unwrap()
         );
         actual
     }
@@ -123,8 +123,8 @@ mod tests {
         let planned = [(3, &a), (4, &b)].into_iter().collect();
         let parents = [(3, 4), (4, 3)].into_iter().collect();
         assert_eq!(
-            owner.waves(&planned, &parents, 3).unwrap_err(),
-            class_construction_waves(&parents, 3).unwrap_err()
+            owner.waves(&planned, &parents, &|index: u32| (index as usize) < 3).unwrap_err(),
+            class_construction_waves(&parents, |index| (index as usize) < 3).unwrap_err()
         );
         assert!(owner.current.lock().unwrap().is_none());
         run(&owner, &[3, 4, 5], 2);
@@ -145,6 +145,6 @@ mod tests {
             owner.current.lock().unwrap().as_ref().unwrap()
         ));
         let empty = BTreeMap::new();
-        assert!(owner.waves(&empty, &BTreeMap::new(), 0).unwrap().is_empty());
+        assert!(owner.waves(&empty, &BTreeMap::new(), &|index: u32| (index as usize) < 0).unwrap().is_empty());
     }
 }

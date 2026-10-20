@@ -585,5 +585,5 @@ CAPABILITIES(/datum/affliction)
 	ref_one(nameof(body))
 	ref_one(nameof(owner), /mob/living)
 	// The affliction's own table, held on its owner at the exact current severity (or stage) and released with it (code/modules/body/factors.dm).
-	factors(PROC_REF(factor_table), scale = PROC_REF(factor_scale), to = nameof(owner))
+	factors(PROC_REF(factor_table), scale = PROC_REF(factor_scale), rel = nameof(owner))
 	ref_one(nameof(location))

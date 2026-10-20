@@ -652,7 +652,7 @@ CAPABILITIES(/transformation/chem/instant/soapification/gibs)
 		takes = list(reagent(REAGENT_ID_PROTEIN, 10), reagent(REAGENT_ID_LYE, 10)),
 		then = TYPE_PROC_REF(/transformation/chem/instant/soapification/gibs, on_reaction)))
 
-/transformation/chem/instant/soapification/gibs/proc/on_reaction(datum/reagents/holder, created_volume)
+/transformation/chem/instant/soapification/gibs/on_reaction(datum/reagents/holder, created_volume)
 	for(var/i = 1, i <= created_volume, i++)
 		new /obj/item/soap/homemade(get_turf(holder.my_atom))
 

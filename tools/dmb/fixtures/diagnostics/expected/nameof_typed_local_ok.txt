@@ -1,0 +1,1 @@
+nameof_typed_local_ok.dmb - 0 errors, 0 warnings

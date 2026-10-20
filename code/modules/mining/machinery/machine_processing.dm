@@ -331,36 +331,37 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit)
 
 			if(LAZYACCESS(ores_processing, metal) == PROCESS_ALLOY && O.alloy) //Alloying.
 
-				for(var/datum/alloy/A in GLOB.alloy_data)
+				for(var/datum/xform/A as anything in xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING))
 
-					if(A.metaltag in tick_alloys)
+					if(A.id in tick_alloys)
 						continue
 
-					tick_alloys += A.metaltag
+					tick_alloys += A.id
 					var/enough_metal
+					var/list/requires = xform_assoc(A.takes, XCUR_ORE)
 
-					if(!isnull(A.requires[metal]) && ores_stored[metal] >= A.requires[metal]) //We have enough of our first metal, we're off to a good start.
+					if(!isnull(requires[metal]) && ores_stored[metal] >= requires[metal]) //We have enough of our first metal, we're off to a good start.
 
 						enough_metal = 1
 
-						for(var/needs_metal in A.requires)
+						for(var/needs_metal in requires)
 							//Check if we're alloying the needed metal and have it stored.
-							if(LAZYACCESS(ores_processing, needs_metal) != PROCESS_ALLOY || ores_stored[needs_metal] < A.requires[needs_metal])
+							if(LAZYACCESS(ores_processing, needs_metal) != PROCESS_ALLOY || ores_stored[needs_metal] < requires[needs_metal])
 								enough_metal = 0
 								break
 
 					if(!enough_metal)
 						continue
 					else
-						var/total = 0
-						for(var/needs_metal in A.requires)
-							ores_stored[needs_metal] -= A.requires[needs_metal]
-							total += A.requires[needs_metal]
-						total = max(1,round(total*A.product_mod)) //Always get at least one sheet.
+						for(var/needs_metal in requires)
+							ores_stored[needs_metal] -= requires[needs_metal]
+						var/list/product = A.makes[1]
+						var/total = product[3]
 						sheets += total-1
 
 						for(var/i=0,i<total,i++)
-							new A.product(output_marker().loc)
+							var/product_type = product[2]
+							new product_type(output_marker().loc)
 
 			else if(LAZYACCESS(ores_processing, metal) == PROCESS_COMPRESS && O.compresses_to) //Compressing.
 

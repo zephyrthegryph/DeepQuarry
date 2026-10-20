@@ -5,7 +5,7 @@ use dm_codegen_byond::lower_resolver::ResolverProc;
 
 pub use super::procedure_artifact::ReusableProcedureArtifact;
 pub use crate::modified_initializers::PreparedSeed as PreparedModifiedSeed;
-/// Patch-eligibility facts of one contribution (see `crate::body_patch`).
+/// Patch-eligibility facts of one contribution (see `crate::retained_output`).
 #[derive(Clone)]
 pub(crate) struct PreparedPatchRecord {
     pub record: super::procedure_artifact::patch::PatchRecord,

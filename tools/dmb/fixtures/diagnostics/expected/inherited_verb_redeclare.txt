@@ -1,0 +1,3 @@
+inherited_verb_redeclare.dm:4:error: shout: duplicate definition
+inherited_verb_redeclare.dm:1:error: shout: previous definition
+inherited_verb_redeclare.dmb - 2 errors, 0 warnings

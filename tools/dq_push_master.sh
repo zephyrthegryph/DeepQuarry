@@ -2,7 +2,12 @@
 # The only way to push to master (doc/rewrite/agent_workflow.md). Fails closed: it pushes HEAD to
 # origin/master only when the build and the checks have just passed on that exact merged HEAD.
 #
-#   bash tools/dq_push_master.sh
+#   bash tools/dq_push_master.sh [--light]
+#
+# --light (only tools/dq_land_batch.sh uses it): a batch of light branches (docs, tooling scripts, Rust/compiler-only; no .dm/.dme/maps/
+# icons) already merged into the current origin/master and passed tools/dq_light_checks.sh. It skips the merge, the DM build, DreamChecker,
+# the ratchets and the analyze build, requires the light-batch stamp (tools/dq_push_stamp.sh refuses it when any heavy path changed since
+# origin/master), and refuses when master moved (the batch is run again).
 #
 # 1. Refuses a dirty tree (staged or unstaged changes to tracked files, untracked .dm under code/): what is
 #    checked must be exactly what is pushed.
@@ -69,8 +74,10 @@ add_expect() { # <ref-or-sha>...
 		case " ${expected_tips[*]-} " in *" $t "*) ;; *) expected_tips+=("$t") ;; esac
 	done
 }
+light=0
 while [ $# -gt 0 ]; do
 	case "$1" in
+		--light) light=1 ;;
 		--expect) shift; read -r -a more <<<"${1:-}"; add_expect "${more[@]}" ;;
 		-h|--help) sed -n '2,24p' "$0"; exit 0 ;;
 		*) die "unknown argument: $1" ;;
@@ -118,21 +125,48 @@ for round in 1 2 3; do
 	echo "== dq_push_master: round $round: merging origin/master"
 	lap "start"
 	git fetch -q origin || die "git fetch failed"
-	if git merge-base --is-ancestor origin/master HEAD; then
-		# Nothing to merge (the gates just ran on a HEAD that has all of master): the merge step, its regeneration and the look-key
-		# normalization (done by the gates, or implied by the proof of this very tree) would change nothing; the lock is held across them.
+	if [ "$light" -eq 1 ] && ! git merge-base --is-ancestor origin/master HEAD; then
+		die "--light: origin/master moved since the batch was merged ($(git rev-parse --short=12 origin/master) is not in HEAD): run the light batch again"
+	elif git merge-base --is-ancestor origin/master HEAD; then
+		# Nothing to merge (the gates just ran on a HEAD that has all of master): the merge step, and its regeneration
+		# would change nothing; the lock is held across them.
 		echo "== dq_push_master: origin/master is already in HEAD; no merge needed"
 		lap "fetch (nothing to merge)"
 	else
 		bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
 		lap "merge origin/master"
 		if why="$(dirty)"; then die "the merge left $why"; fi
-		bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
-		lap "dirty check and look keys"
+		lap "dirty check"
 	fi
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
 
+	# No double running: a lane-ready stamp on exactly HEAD means the compile, DreamChecker, ratchets, analyze and the lane's tests already ran on this
+	# very tree. If HEAD contains origin/master (a fast-forward) nothing changed since; if master moved and HEAD is the clean re-merge of a stamped
+	# lane, the compile and checks rerun only when master's changes since the lane's base touch DM code (tools/dq_light_paths.sh heavy paths).
+	fast_skip=""
+	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
+		if git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
+			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"
+		elif bash tools/dq_push_stamp.sh "$sha" >/dev/null 2>&1; then
+			read -r -a _par <<<"$(git rev-list --parents -n 1 "$sha" | cut -d' ' -f2-)"
+			if [ "${#_par[@]}" -eq 2 ]; then
+				_lane=""; _mp=""
+				for _p in "${_par[@]}"; do if git merge-base --is-ancestor "$_p" origin/master; then _mp="$_p"; else _lane="$_p"; fi; done
+				if [ -n "$_lane" ] && [ -n "$_mp" ] && git notes --ref=lane-ready show "$_lane" 2>/dev/null | grep -q '"ok":true'; then
+					. tools/dq_light_paths.sh
+					_dm="$(git diff --name-only "$(git merge-base "$_lane" "$_mp")" "$_mp" | while IFS= read -r _f; do light_heavy_path "$_f" && echo "$_f"; done | head -n 3)"
+					if [ -z "$_dm" ]; then fast_skip="the stamped lane re-merged cleanly and master changed no DM code since the lane's base: no recompile"; else echo "== master changed DM code since the lane's base ($(echo "$_dm" | tr '
+' ' ')): compile and checks rerun on the merge"; fi
+				fi
+			fi
+		fi
+	fi
+	if [ "$light" -eq 1 ]; then
+		echo "== light batch: the DM build, DreamChecker, ratchets and analyze are skipped (docs/tooling/Rust only; tools/dq_light_checks.sh ran the cheap checks)"
+	elif [ -n "$fast_skip" ]; then
+		echo "== no re-run: $fast_skip"
+	else
 	# Re-proof: the lane's (or batch's) stamp went stale only because master moved while it was being gated, and its own commits are
 	# unchanged (a stamp on exactly its tip). Instead of refusing and sending it round another 30 minute lap that master can outrun
 	# again, the gates run its full stamped test list on this merged tree; that run is the fresh stamp, and it records reproof_of.
@@ -160,6 +194,12 @@ for round in 1 2 3; do
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
 		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
+		if [ "${DQ_DREAMMAKER_GATE:-1}" != "0" ]; then
+			echo "== build.sh dm with DreamMaker on ${sha:0:12} (log $log.dreammaker.log): the tree must be valid DM, not only valid for dmbc"
+			rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler
+			DQ_COMPILER=dreammaker tools/build/build.sh dm >"$log.dreammaker.log" 2>&1 || { tail -40 "$log.dreammaker.log"; die "DreamMaker rejects the tree; see $log.dreammaker.log"; }
+			grep -qE "deepquarry\.dmb - 0 errors" "$log.dreammaker.log" || die "DreamMaker did not report 0 errors; see $log.dreammaker.log"
+		fi
 	fi
 
 	# The same check on the same commit is not run twice; a new merge commit, a different HEAD or DQ_PUSH_FULL=1 runs it here.
@@ -175,7 +215,7 @@ for round in 1 2 3; do
 		echo "== build.sh analyze (log $log.analyze.log)"
 		tools/build/build.sh analyze >"$log.analyze.log" 2>&1 || { tail -30 "$log.analyze.log"; die "build.sh analyze failed"; }
 	fi
-
+	fi
 	lap "dm / ratchets / analyze checks (stamped: skipped)"
 	[ "$(git rev-parse HEAD)" = "$sha" ] || die "HEAD moved during the checks"
 	if why="$(dirty)"; then die "the tree changed during the checks: $why"; fi
@@ -194,7 +234,7 @@ for round in 1 2 3; do
 	fi
 
 	if [ "${DQ_PUSH_DRY_RUN:-0}" = "1" ]; then
-		echo "dq_push_master: DRY RUN: ${sha:0:12} passed every check (dm, DreamChecker, ratchets, analyze); not pushing"
+		echo "dq_push_master: DRY RUN: ${sha:0:12} passed every check ($([ "$light" -eq 1 ] && echo 'light batch' || echo 'dm, DreamChecker, ratchets, analyze')); not pushing"
 		exit 0
 	fi
 	lap "stamp and expected tips"

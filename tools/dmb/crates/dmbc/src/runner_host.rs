@@ -67,6 +67,7 @@ pub struct BuildHost {
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     required_types: Option<(u128, Arc<crate::required_types::RequiredTypeArtifacts>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
+    stages: Option<(u128, Arc<crate::stage_reuse::StageProducts>)>,
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
     resources: Option<Arc<resources::Resources>>,
@@ -100,6 +101,7 @@ struct VariantState {
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     required_types: Option<(u128, Arc<crate::required_types::RequiredTypeArtifacts>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
+    stages: Option<(u128, Arc<crate::stage_reuse::StageProducts>)>,
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
     resources: Option<Arc<resources::Resources>>,
@@ -162,6 +164,7 @@ impl Default for BuildHost {
             class_projections: None,
             required_types: None,
             link_bindings: None,
+            stages: None,
             generation: None,
             host_facts: None,
             resources: None,
@@ -286,6 +289,7 @@ impl BuildHost {
             class_projections: None,
             required_types: None,
             link_bindings: None,
+            stages: None,
             generation: None,
             host_facts: None,
             resources: None,
@@ -575,6 +579,14 @@ impl BuildHost {
             self.link_bindings = Some((policy, Arc::new(Default::default())));
         }
         memo.link_bindings = Some(self.link_bindings.as_ref().unwrap().1.for_request(publishable));
+        if self
+            .stages
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.stages = Some((policy, Arc::new(Default::default())));
+        }
+        memo.stages = Some(self.stages.as_ref().unwrap().1.for_request(publishable));
         Some(memo)
     }
 
@@ -662,6 +674,7 @@ impl BuildHost {
             class_projections: self.class_projections.take(),
             required_types: self.required_types.take(),
             link_bindings: self.link_bindings.take(),
+            stages: self.stages.take(),
             generation: self.generation.take(),
             host_facts: self.host_facts.take(),
             resources: self.resources.take(),
@@ -690,6 +703,7 @@ impl BuildHost {
             self.class_projections = state.class_projections;
             self.required_types = state.required_types;
             self.link_bindings = state.link_bindings;
+            self.stages = state.stages;
             self.generation = state.generation;
             self.host_facts = state.host_facts;
             self.resources = state.resources;
@@ -801,6 +815,7 @@ impl BuildHost {
         self.class_projections = None;
         self.required_types = None;
         self.link_bindings = None;
+        self.stages = None;
         self.generation = None;
         self.host_facts = None;
         self.resources = None;

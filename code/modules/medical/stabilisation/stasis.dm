@@ -121,7 +121,7 @@
 /// The level's table (STAT_STASIS), held on the mob as rows of this hold for as long as the hold stands; the stat (MAX rule) composes the deepest level.
 CAPABILITIES(/datum/stasis_hold)
 	ref_one(nameof(holder), /mob/living)
-	factors(PROC_REF(stasis_table), to = nameof(holder), part = "stasis")
+	factors(PROC_REF(stasis_table), rel = nameof(holder), part = "stasis")
 	ref_one(nameof(source))
 
 /datum/stasis_hold/proc/stasis_table(datum/act/eval/A)

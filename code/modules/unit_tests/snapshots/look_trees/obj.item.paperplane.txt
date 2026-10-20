@@ -1,5 +1,0 @@
-/obj/item/paperplane icon: icons/obj/bureaucracy.dmi
-/obj/item/paperplane state: paperplane
-/obj/item/paperplane dir: 2
-/obj/item/paperplane overlay: icons/obj/bureaucracy.dmi:paperplane:8:#000000
-

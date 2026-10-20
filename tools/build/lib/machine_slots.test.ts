@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { acquireSlot, acquireSlotGroup, defaultTestWorlds, slotCapacity, slotGroupSize, slotsDir, slotsStatus, usableSlots } from './machine_slots';
 
-const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOTS_LOOK_STATE_PIN', 'DQ_LOOK_PIN_SLOTS', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE'] as const;
+const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE'] as const;
 const saved: Record<string, string | undefined> = {};
 for (const k of ENV_KEYS) saved[k] = process.env[k];
 let tmp = '';
@@ -33,15 +33,11 @@ afterEach(() => {
 describe('capacity', () => {
   test('defaults and the environment', () => {
     for (const k of ENV_KEYS) if (k.startsWith('DQ_SLOTS_') && k !== 'DQ_SLOTS_DIR' && k !== 'DQ_SLOTS_POLL_SEC') delete process.env[k];
-    delete process.env.DQ_LOOK_PIN_SLOTS;
     expect(slotCapacity('dm_compile')).toBe(1);
     expect(slotCapacity('test_world')).toBe(defaultTestWorlds());
     expect(slotCapacity('cargo')).toBe(1);
-    expect(slotCapacity('look_state_pin')).toBe(1);
     process.env.DQ_SLOTS_DM_COMPILE = '5';
     expect(slotCapacity('dm_compile')).toBe(5);
-    process.env.DQ_LOOK_PIN_SLOTS = '4';
-    expect(slotCapacity('look_state_pin')).toBe(4);
     process.env.DQ_SLOTS_CARGO = '0';
     expect(slotCapacity('cargo')).toBe(0);
     process.env.DQ_SLOTS = '0';
@@ -225,5 +221,31 @@ describe('small requests are not starved by groups', () => {
     const single = await acquireSlot('test_world', 'single', quiet);
     expect(single?.index).toBe(3);
     single?.release();
+  });
+});
+
+describe('lane classes', () => {
+  test('a compiler lane holds one cargo slot beyond the cap and a game lane waits behind it', async () => {
+    process.env.DQ_SLOTS_CARGO = '1';
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-3';
+    const game = await acquireSlot('cargo', 'game', quiet);
+    expect(game).not.toBeNull();
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-c1';
+    const t0 = Date.now();
+    const compiler = await acquireSlot('cargo', 'compiler', quiet);
+    expect(Date.now() - t0).toBeLessThan(1500);
+    expect(compiler).not.toBeNull();
+    expect(fs.existsSync(path.join(tmp, 'cargo', 'slot.2', 'owner'))).toBe(true);
+    compiler?.release();
+    game?.release();
+  });
+
+  test('a light lane never takes a DM compile or a test world slot', async () => {
+    process.env.DQ_SLOT_WORKTREE = '/x/pool-light';
+    await expect(acquireSlot('dm_compile', 'light', quiet)).rejects.toThrow(/light lane/);
+    await expect(acquireSlot('test_world', 'light', quiet)).rejects.toThrow(/light lane/);
+    const cargo = await acquireSlot('cargo', 'light', quiet);
+    expect(cargo).not.toBeNull();
+    cargo?.release();
   });
 });

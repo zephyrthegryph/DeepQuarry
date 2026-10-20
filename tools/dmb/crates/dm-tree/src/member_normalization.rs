@@ -63,7 +63,7 @@ pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
                 }
                 parent = tree.parent(owner);
             }
-            if modes[i] == DefinitionMode::Declare && node.kind == MemberKind::Var {
+            if modes[i] == DefinitionMode::Declare {
                 if let Some(previous) = previous {
                     let mut previous_owner = members.member(previous.index()).owner;
                     // Assignments in an intermediate parent do not redeclare the

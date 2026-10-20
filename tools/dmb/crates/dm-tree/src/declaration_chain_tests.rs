@@ -65,10 +65,6 @@ fn structural_chain_keeps_body_edits_but_rejects_metadata_and_chain_changes() {
     for changed in [
         original.replace("read(x=1)", "read(x=2)"),
         format!("{original}/datum/base/child/read(x=1)\n    return 8\n"),
-        original.replace(
-            "/datum/base/child/read(x=1)",
-            "/datum/base/child/proc/read(x=1)",
-        ),
         format!(
             "{original}/datum/alternate\n/datum/base/child\n    parent_type = /datum/alternate\n"
         ),

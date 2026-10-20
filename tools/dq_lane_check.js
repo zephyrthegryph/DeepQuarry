@@ -65,8 +65,8 @@ function testFiles(tests) {
   return files;
 }
 
-/** Files derived from the tree, regenerated after every merge (look keys, the factored pin bases): an overlap there is no overlap. */
-const REGENERATED = [/^code\/modules\/unit_tests\/snapshots\/look_keys\.txt$/, /^code\/modules\/unit_tests\/snapshots\/op_bases\//];
+/** Files derived from the tree, regenerated after every merge (the factored pin bases): an overlap there is no overlap. */
+const REGENERATED = [/^code\/modules\/unit_tests\/snapshots\/op_bases\//];
 
 /** The snapshot directories the files defining the tests read (`code/modules/unit_tests/snapshots/<dir>/`). */
 function snapshotDirs(tfiles) {

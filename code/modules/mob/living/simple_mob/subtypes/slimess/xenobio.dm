@@ -35,7 +35,7 @@ CAPABILITIES(/transformation/chem/instant/slime/secertslime)
 		made = 1, holds = subject_is(/obj/item/slime_extract/sepia),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/secertslime, on_reaction)))
 
-/transformation/chem/instant/slime/secertslime/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/secertslime/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/redspace(get_turf(holder.my_atom))
 	..()
@@ -47,7 +47,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sepia_new_slime)
 		holds = subject_is(/obj/item/slime_extract/sepia),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sepia_new_slime, on_reaction)))
 
-/transformation/chem/instant/slime/sepia_new_slime/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/sepia_new_slime/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sepia(get_turf(holder.my_atom))
 	..()
@@ -89,7 +89,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soulstone)
 		holds = subject_is(/obj/item/slime_extract/redspace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soulstone, on_reaction)))
 
-/transformation/chem/instant/slime/soulstone/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soulstone/on_reaction(datum/reagents/holder)
 	new /obj/item/soulstone(get_turf(holder.my_atom))
 	..()
 
@@ -100,7 +100,7 @@ CAPABILITIES(/transformation/chem/instant/slime/redspace_smoke)
 		holds = subject_is(/obj/item/slime_extract/redspace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_smoke, on_reaction)))
 
-/transformation/chem/instant/slime/redspace_smoke/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/redspace_smoke/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
@@ -152,7 +152,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_liquidfire)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidfire, on_reaction)))
 
 
-/transformation/chem/instant/slime/dark_liquidfire/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_liquidfire/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/feysight, 10 MINUTES, src)
 	..()
@@ -164,7 +164,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_deathblood)
 		holds = subject_is(/obj/item/slime_extract/dark),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_deathblood, on_reaction)))
 
-/transformation/chem/instant/slime/dark_deathblood/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_deathblood/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/painite(get_turf(holder.my_atom))
 	..()
 
@@ -175,7 +175,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_liquidlife)
 		holds = subject_is(/obj/item/slime_extract/dark),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_liquidlife, on_reaction)))
 
-/transformation/chem/instant/slime/dark_liquidlife/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_liquidlife/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(49, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/sprinting, 5 MINUTES, src)
 	..()
@@ -188,7 +188,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_carpotoxin)
 		holds = subject_is(/obj/item/slime_extract/dark),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_carpotoxin, on_reaction)))
 
-/transformation/chem/instant/slime/dark_carpotoxin/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_carpotoxin/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/oceanic(get_turf(holder.my_atom))
 	..()
@@ -200,7 +200,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_spidertoxin)
 		holds = subject_is(/obj/item/slime_extract/dark),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_spidertoxin, on_reaction)))
 
-/transformation/chem/instant/slime/dark_spidertoxin/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_spidertoxin/on_reaction(datum/reagents/holder)
 	new /obj/effect/spider/eggcluster/royal/space(get_turf(holder.my_atom))
 	..()
 
@@ -211,7 +211,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blood)
 		holds = subject_is(/obj/item/slime_extract/dark),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blood, on_reaction)))
 
-/transformation/chem/instant/slime/dark_blood/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_blood/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/void_opal(get_turf(holder.my_atom))
 	..()
 
@@ -249,7 +249,7 @@ CAPABILITIES(/transformation/chem/instant/slime/virusdish)
 		holds = subject_is(/obj/item/slime_extract/plague),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/virusdish, on_reaction)))
 
-/transformation/chem/instant/slime/virusdish/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/virusdish/on_reaction(datum/reagents/holder)
 	// new /obj/item/virusdish(get_turf(holder.my_atom))
 	..()
 
@@ -314,7 +314,7 @@ CAPABILITIES(/transformation/chem/instant/slime/carpfren)
 		holds = subject_is(/obj/item/slime_extract/oceanic),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/carpfren, on_reaction)))
 
-/transformation/chem/instant/slime/carpfren/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/carpfren/on_reaction(datum/reagents/holder)
 	new /mob/living/simple_mob/animal/space/carp/station(get_turf(holder.my_atom))
 	..()
 
@@ -337,7 +337,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oceanboon)
 		holds = subject_is(/obj/item/slime_extract/oceanic),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oceanboon, on_reaction)))
 
-/transformation/chem/instant/slime/oceanboon/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/oceanboon/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(21, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/healingtide, 10 MINUTES, src)
 	..()
@@ -349,7 +349,7 @@ CAPABILITIES(/transformation/chem/instant/slime/warplague)
 		holds = subject_is(/obj/item/slime_extract/plague),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/warplague, on_reaction)))
 
-/transformation/chem/instant/slime/warplague/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/warplague/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/nuclear(get_turf(holder.my_atom))
 	..()
@@ -403,7 +403,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nuclear_radpulse)
 		holds = subject_is(/obj/item/slime_extract/nuclear),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_radpulse, on_reaction)))
 
-/transformation/chem/instant/slime/nuclear_radpulse/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nuclear_radpulse/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
@@ -418,7 +418,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nuclear_emitter)
 		holds = subject_is(/obj/item/slime_extract/green),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_emitter, on_reaction)))
 
-/transformation/chem/instant/slime/nuclear_emitter/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nuclear_emitter/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()
@@ -438,7 +438,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nuclear_uranium)
 		holds = subject_is(/obj/item/slime_extract/green),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nuclear_uranium, on_reaction)))
 
-/transformation/chem/instant/slime/nuclear_uranium/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nuclear_uranium/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/uranium(get_turf(holder.my_atom), 10)
 	..()
 
@@ -468,7 +468,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dreamscale)
 		holds = subject_is(/obj/item/slime_extract/dream),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dreamscale, on_reaction)))
 
-/transformation/chem/instant/slime/dreamscale/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dreamscale/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/dreamscale(get_turf(holder.my_atom), 10)
 	..()
 
@@ -480,7 +480,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareslime)
 		holds = subject_is(/obj/item/slime_extract/dream),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmareslime, on_reaction)))
 
-/transformation/chem/instant/slime/nightmareslime/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nightmareslime/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with slime jelly, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/nightmare(get_turf(holder.my_atom))
 	..()
@@ -547,7 +547,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
 		holds = subject_is(/obj/item/slime_extract/nightmare),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarewater, on_reaction)))
 
-/transformation/chem/instant/slime/nightmarewater/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nightmarewater/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(3, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/faraday, 1 MINUTES, src)
 		L.apply_body_effect(/datum/body_effect/blastshield, 1 MINUTES, src)
@@ -560,7 +560,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmarejelly)
 		holds = subject_is(/obj/item/slime_extract/nightmare),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarejelly, on_reaction)))
 
-/transformation/chem/instant/slime/nightmarejelly/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nightmarejelly/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
 		L.lingering_poison(2, 3 MINUTES)
 	..()
@@ -572,7 +572,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmareblood)
 		holds = subject_is(/obj/item/slime_extract/nightmare),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmareblood, on_reaction)))
 
-/transformation/chem/instant/slime/nightmareblood/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nightmareblood/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/valhollide(get_turf(holder.my_atom), 5)
 	..()
 
@@ -583,7 +583,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmarephoron)
 		holds = subject_is(/obj/item/slime_extract/nightmare),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarephoron, on_reaction)))
 
-/transformation/chem/instant/slime/nightmarephoron/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/nightmarephoron/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 1 MINUTES, src)
 	..()
@@ -598,7 +598,7 @@ CAPABILITIES(/transformation/chem/instant/slime/redspace_sound)
 		holds = subject_is(/obj/item/slime_extract/redspace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/redspace_sound, on_reaction)))
 
-/transformation/chem/instant/slime/redspace_sound/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/redspace_sound/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sound(get_turf(holder.my_atom))
 	..()
@@ -652,7 +652,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundblood)
 		holds = subject_is(/obj/item/slime_extract/sound),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundblood, on_reaction)))
 
-/transformation/chem/instant/slime/soundblood/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soundblood/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/quartz(get_turf(holder.my_atom), 5)
 	..()
 
@@ -663,7 +663,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundphoron)
 		holds = subject_is(/obj/item/slime_extract/sound),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundphoron, on_reaction)))
 
-/transformation/chem/instant/slime/soundphoron/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soundphoron/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/aura/soothingsong, 10 MINUTES, src)
 	..()
@@ -675,7 +675,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundwater)
 		holds = subject_is(/obj/item/slime_extract/sound),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundwater, on_reaction)))
 
-/transformation/chem/instant/slime/soundwater/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soundwater/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with the mixture, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio/sound(get_turf(holder.my_atom))
 	..()
@@ -687,7 +687,7 @@ CAPABILITIES(/transformation/chem/instant/slime/soundjelly)
 		holds = subject_is(/obj/item/slime_extract/sound),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/soundjelly, on_reaction)))
 
-/transformation/chem/instant/slime/soundjelly/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/soundjelly/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/glass/plastitanium(get_turf(holder.my_atom), 5)
 	..()
 

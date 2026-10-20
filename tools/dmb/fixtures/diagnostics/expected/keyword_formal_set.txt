@@ -1,0 +1,2 @@
+keyword_formal_set.dm:1:error: set: invalid variable name: reserved word
+keyword_formal_set.dmb - 1 error, 0 warnings

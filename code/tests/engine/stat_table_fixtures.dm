@@ -37,9 +37,9 @@ CAPABILITIES(/obj/stat_table_fixture/contributing)
 
 CAPABILITIES(/datum/factor_source_fixture)
 	ref_one(nameof(target), /obj/stat_table_fixture)
-	factors(PROC_REF(first_table), scale = nameof(level), stacks = nameof(stacks), to = nameof(target))
-	factors(alist(STAT_TB_FREE = 4), to = nameof(target), part = "free")
-	when(nameof(wide), factors(PROC_REF(wide_table), to = nameof(target), part = "wide"))
+	factors(PROC_REF(first_table), scale = nameof(level), stacks = nameof(stacks), rel = nameof(target))
+	factors(alist(STAT_TB_FREE = 4), rel = nameof(target), part = "free")
+	when(nameof(wide), factors(PROC_REF(wide_table), rel = nameof(target), part = "wide"))
 
 /datum/factor_source_fixture/proc/first_table(datum/act/eval/A)
 	return alist(STAT_TB_SUM = 4, STAT_TB_PRODUCT = 0.5)

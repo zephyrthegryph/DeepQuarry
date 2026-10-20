@@ -1,0 +1,3 @@
+inherited_proc_redeclare.dm:4:error: act: duplicate definition
+inherited_proc_redeclare.dm:1:error: act: previous definition
+inherited_proc_redeclare.dmb - 2 errors, 0 warnings

@@ -4,10 +4,10 @@
 //	contributes(STAT_X, cond | value | STAT_Y, priority =, reason =, key =, reads =)
 //	contributes_to(nameof(rel), STAT_X, cond | value, priority =, key =, reads =)
 //
-//	factors(table, scale =, stacks =, to =, part =, priority =, reads =, key =)
+//	factors(table, scale =, stacks =, rel =, part =, priority =, reads =, key =)
 //
 // factors() is the table form: the type's source (an affliction, a stasis hold, a body effect application) contributes a whole table (stat id -> value) to the
-// stats of the entity its relation var `to` names, at `scale` and `stacks`, exactly as hold_table() places one. `table` is a static alist or a PROC_REF
+// stats of the entity its relation var `rel` names, at `scale` and `stacks`, exactly as hold_table() places one. `table` is a static alist or a PROC_REF
 // x(datum/act/eval/A) returning one (a stage table, a species-merged table); `scale` and `stacks` are a constant, nameof(v) of a tracked var, or a PROC_REF. The
 // entry re-holds at the exact new value whenever any of them (or the relation, or an enclosing when()) changes, with no banding, and releases its rows when the
 // source or the relation goes. It is a contributes_to entry whose value is a table.
@@ -112,11 +112,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_type_info)
 /proc/contributes_to(rel_var, stat_id, value = null, priority = PRIORITY_DEFAULT, key = null, list/reads = null)
 	return entry_make("contributes_to", key, list("rel" = rel_var, "stat" = stat_id, "value" = value, "priority" = priority, "reads" = reads))
 
-/// factors(table, scale =, stacks =, to =, part =): see the header. `to` is nameof(rel), the var naming the entity that receives the table.
-/proc/factors(table, scale = 1, stacks = 1, to = null, part = null, priority = PRIORITY_DEFAULT, list/reads = null, key = null)
-	if(isnull(to))
-		declare_report("factors(): `to` names the relation var of the entity that receives the table (to = nameof(owner))")
-	return entry_make("factors", key, list("table" = table, "scale" = scale, "stacks" = stacks, "rel" = to, "part" = part, "priority" = priority, "reads" = reads))
+/// factors(table, scale =, stacks =, rel =, part =): see the header. `rel` is nameof(rel), the var naming the entity that receives the table.
+/proc/factors(table, scale = 1, stacks = 1, rel = null, part = null, priority = PRIORITY_DEFAULT, list/reads = null, key = null)
+	if(isnull(rel))
+		declare_report("factors(): `rel` names the relation var of the entity that receives the table (rel = nameof(owner))")
+	return entry_make("factors", key, list("table" = table, "scale" = scale, "stacks" = stacks, "rel" = rel, "part" = part, "priority" = priority, "reads" = reads))
 
 /// immune_to(STATUS_X, when = cond): a contribution that zeroes the status (TRUE on its companion immunity stat).
 /proc/immune_to(status_id, when = null)
