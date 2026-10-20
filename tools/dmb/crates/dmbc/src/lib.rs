@@ -9,6 +9,7 @@ pub mod cache_maintenance;
 pub mod cli;
 pub mod compile_stats;
 pub mod query_db;
+pub(crate) mod stage_reuse;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;
@@ -99,7 +100,8 @@ pub mod non_text_output;
 pub mod resource_order;
 
 pub mod captured_non_text_driver;
-pub mod body_patch;
+pub mod declaration_patch;
+pub mod retained_output;
 pub mod compile_driver;
 mod request_lease;
 pub mod required_types;

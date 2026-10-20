@@ -65,6 +65,45 @@ fn proc_path(
         format!("{owner}/{name}")
     })
 }
+/// The class table follows the linker's order (DreamMaker's, `class_inventory`): move each
+/// engine class from its template row to its assigned index, leaving placeholder rows (path
+/// NONE) for the source classes materialization writes.
+pub(crate) fn renumber_engine_classes(
+    dmb: &mut Dmb,
+    tables: &dm_link::LinkTables,
+    _symbols: &SymbolTable,
+) -> Result<(), CompositionError> {
+    let mut map = Vec::with_capacity(dmb.classes.len());
+    for class in &dmb.classes {
+        let path = dmb
+            .string(class.path_string_id())
+            .ok_or_else(|| unsupported("engine class path missing"))?;
+        map.push(tables.index(Key::Type(SymbolId::of_bytes(path))));
+    }
+    // A program that binds no engine class (bounded fixtures) keeps the template rows.
+    if map.iter().all(Option::is_none) {
+        return Ok(());
+    }
+    let map: Vec<u32> = map
+        .into_iter()
+        .collect::<Option<_>>()
+        .ok_or_else(|| unsupported("engine class has no class index"))?;
+    if map.iter().enumerate().all(|(old, &new)| old as u32 == new) {
+        return Ok(());
+    }
+    let len = tables
+        .assignments()
+        .iter()
+        .filter(|(key, _)| matches!(key, Key::Type(_)))
+        .map(|(_, &index)| index as usize + 1)
+        .max()
+        .unwrap_or(0)
+        .max(dmb.classes.len());
+    let mut placeholder = dmb.classes.first().cloned().ok_or_else(|| unsupported("engine has no classes"))?;
+    placeholder.initial_ids[0] = byond_dmb::ids::NONE;
+    dmb.renumber_classes(&map, len, &placeholder)
+        .map_err(|error| unsupported(format!("engine class renumbering: {error}")))
+}
 /// Every retained linker binding is checked against the pinned wire artifact.
 /// VM Global operands index `Dmb.variables`; the footer only orders declarations.
 fn validate_binding(
@@ -370,6 +409,7 @@ fn compose_records_access(
         let _profile = dm_profile::stage("composition.decode_engine");
         Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?
     };
+    renumber_engine_classes(&mut dmb, &batch.tables, symbols)?;
     if let Some((plan, _)) = projection {
         let required: BTreeMap<_, _> = plan.runtime_writes.iter().copied().collect();
         let mut actual = BTreeMap::new();
@@ -457,7 +497,12 @@ fn compose_records_access(
                     ));
                 }
             }
-            Key::Type(_) if (index as usize) >= dmb.classes.len() && projection.is_some() => {}
+            Key::Type(_)
+                if projection.is_some()
+                    && dmb
+                        .classes
+                        .get(index as usize)
+                        .is_none_or(|class| class.path_string_id() == byond_dmb::ids::NONE) => {}
             Key::Variable { .. } | Key::ProcedureStatic(_) if projection.is_some() => {}
             Key::ArgumentSource { .. } if (index as usize) >= engine_procs => {
                 if admitted_plan.is_none() {

@@ -9,11 +9,15 @@ use std::{
 };
 mod string_registration;
 pub(crate) use string_registration::contribute_source_strings;
+pub(crate) mod dreammaker_type_order;
 
+/// `touches`: every path a declaration block names, first encounter first
+/// (`AllocationRoster::touches`); it orders the class table as DreamMaker does.
 pub fn contribute(
     plan: &ClassProjection,
     symbols: &SymbolTable,
     source_type_order: &[SymbolId],
+    touches: &[SymbolId],
     inventory: &mut LinkInventory,
 ) -> Result<(), String> {
     let retained: BTreeSet<_> = inventory.fixed.iter().map(|(key, _)| *key).collect();
@@ -148,15 +152,36 @@ pub fn contribute(
         .copied()
         .filter(|key| !retained.contains(key))
         .collect::<Vec<_>>();
+    // The class table follows DreamMaker's order over engine and source types alike; engine
+    // classes are no longer pinned to their template rows (composition moves them).
+    let mut engine: Vec<(u32, SymbolId)> = inventory
+        .fixed
+        .iter()
+        .filter_map(|(key, index)| match key {
+            Key::Type(path) => Some((*index, *path)),
+            _ => None,
+        })
+        .collect();
+    engine.sort_unstable();
+    let engine: Vec<SymbolId> = engine.into_iter().map(|(_, path)| path).collect();
+    let source: Vec<(SymbolId, Option<SymbolId>)> = plan
+        .types
+        .iter()
+        .filter(|ty| source_types.contains(&ty.path))
+        .map(|ty| (ty.path, ty.parent))
+        .collect();
+    let type_order = dreammaker_type_order::order(&engine, touches, &source, symbols)?;
+    if inventory.orders.contains_key(&Table::Type) || inventory.append_orders.contains_key(&Table::Type) {
+        return Err("class order supplied twice".into());
+    }
+    inventory
+        .fixed
+        .retain(|(key, _)| !matches!(key, Key::Type(_)));
+    inventory.reserved_prefixes.remove(&Table::Type);
+    inventory
+        .orders
+        .insert(Table::Type, type_order.into_iter().map(Key::Type).collect());
     for (table, fresh) in [
-        (
-            Table::Type,
-            source_type_order
-                .iter()
-                .copied()
-                .map(Key::Type)
-                .collect::<Vec<_>>(),
-        ),
         (Table::Variable, variable_order),
         (Table::Procedure, procedure_order),
     ] {

@@ -38,14 +38,14 @@ pub(crate) struct PatchImage {
     pub rows: byond_dmb::dmb::ListRowImage,
     pub proc_code: Arc<Vec<u32>>,
 }
-/// Body-edit patch state of the current generation (see `crate::body_patch`).
+/// Body-edit patch state of the current generation (see `crate::retained_output`).
 /// It is compact (no model) and survives wire-image pressure release.
 #[derive(Clone, Default)]
 pub(super) struct PatchSlot {
     link: Option<Arc<PatchLink>>,
     /// Variables-table record of each declared field of the patch base.
     fields: Option<crate::class_projection::FieldRecords>,
-    base: Option<Arc<crate::body_patch::BodyPatchBase>>,
+    base: Option<Arc<crate::retained_output::OutputBase>>,
     image: Option<Arc<PatchImage>>,
     /// Code rows spliced into `image` by body patches since the retained model's own encoding
     /// (`model_anchor`, the hash of `current.encoded`). Applied to a copy of the model when a
@@ -282,7 +282,7 @@ impl RetainedGeneration {
     ) {
         self.attempt.with_pending(|_| {
             let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
-            // The previous base becomes an alternate, unless it has the same skeleton as one kept.
+            // The previous base becomes an alternate, unless it has the same program text as one kept.
             let mut alternates = std::mem::take(&mut slot.alternates);
             if alternate_limit() > 0 && slot.base.is_some() && slot.image.is_some() && slot.link.is_some() {
                 // Composition has not encoded this request's model yet: `current` is still the previous build's.
@@ -292,8 +292,8 @@ impl RetainedGeneration {
                     generation,
                     ..std::mem::take(&mut *slot)
                 });
-                let key = previous.base.as_ref().map(|base| base.skeleton_key());
-                alternates.retain(|kept| kept.base.as_ref().map(|base| base.skeleton_key()) != key);
+                let key = previous.base.as_ref().map(|base| base.text_key());
+                alternates.retain(|kept| kept.base.as_ref().map(|base| base.text_key()) != key);
                 alternates.insert(0, previous);
             }
             alternates.truncate(alternate_limit());
@@ -339,13 +339,13 @@ impl RetainedGeneration {
         }
     }
     /// Default-edit patch: replace Variables-table values in the retained
-    /// image (see `crate::body_patch::try_default_patch`). The base advances
+    /// image (see `crate::declaration_patch`). The base advances
     /// exactly as `patch_rows` advances it.
     pub(crate) fn patch_variable_values(
         &self,
         image: &PatchImage,
         values: &[(u32, u8, u32)],
-        base: crate::body_patch::BodyPatchBase,
+        base: crate::retained_output::OutputBase,
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt
             .with_pending(|_| {
@@ -503,7 +503,7 @@ impl RetainedGeneration {
         strings: impl FnOnce(&mut Dmb) -> Result<(), CompositionError>,
         edit: impl FnOnce(&mut Dmb, &mut StringIndex) -> Result<(), CompositionError>,
         link: PatchLink,
-        base: crate::body_patch::BodyPatchBase,
+        base: crate::retained_output::OutputBase,
         executor: &dm_exec::BuildExecutor,
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt
@@ -548,7 +548,7 @@ impl RetainedGeneration {
     }
     /// Attach the source half of the patch base to this request's generation
     /// and detach the row image of the model it just encoded.
-    pub(crate) fn install_patch_base(&self, base: crate::body_patch::BodyPatchBase) -> bool {
+    pub(crate) fn install_patch_base(&self, base: crate::retained_output::OutputBase) -> bool {
         self.attempt
             .with_pending(|_| {
                 let image = {
@@ -596,7 +596,7 @@ impl RetainedGeneration {
     /// alternate that does, which swaps with the current base. Returns whether an alternate was swapped in.
     pub(crate) fn select_patch_base(
         &self,
-        wanted: impl Fn(&crate::body_patch::BodyPatchBase) -> bool,
+        wanted: impl Fn(&crate::retained_output::OutputBase) -> bool,
     ) -> bool {
         let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
         if slot.base.as_deref().is_some_and(&wanted) {
@@ -648,7 +648,7 @@ impl RetainedGeneration {
     pub(crate) fn patch_base(
         &self,
     ) -> Option<(
-        Arc<crate::body_patch::BodyPatchBase>,
+        Arc<crate::retained_output::OutputBase>,
         Arc<PatchLink>,
         Arc<PatchImage>,
     )> {
@@ -664,7 +664,7 @@ impl RetainedGeneration {
         &self,
         image: &PatchImage,
         rows: &[(usize, Arc<Vec<u32>>)],
-        base: crate::body_patch::BodyPatchBase,
+        base: crate::retained_output::OutputBase,
         initializers: Option<Vec<crate::symbolic::PositionedCode>>,
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt

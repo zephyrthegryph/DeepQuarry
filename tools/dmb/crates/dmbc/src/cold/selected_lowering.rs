@@ -1,4 +1,4 @@
-//! Body-edit fast path (see `crate::body_patch`): lower only the selected
+//! Declaration patches (see `crate::declaration_patch`): lower only the selected
 //! bodies, with the same startup, ABI policy, static resolver and completion
 //! as the full path, and stop before initializers, required-type admission,
 //! linking and composition.
@@ -8,6 +8,8 @@ use super::*;
 /// would have captured for the analysis API.
 pub(crate) struct PatchLowering {
     pub contributions: Vec<crate::symbolic::PreparedContribution>,
+    /// The answer table's version of this request (see `QueryDb::answers_version`).
+    pub answers: Option<u128>,
     pub query: (
         std::sync::Arc<crate::driver_facts::PreparedAbiUnits>,
         std::sync::Arc<crate::startup::StartupFacts>,
@@ -56,6 +58,7 @@ pub(crate) fn lower_selected<R: Resolver>(
     )
     .map_err(|error| format!("startup capture: {error:?}"))?;
     dm_profile::request_mark("patch.startup_captured");
+    begin_answers(memo, frontend, resolver, &startup);
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
             frontend,
@@ -130,6 +133,7 @@ pub(crate) fn lower_selected<R: Resolver>(
     }
     Ok(PatchLowering {
         contributions: batch.units.into_iter().map(|unit| unit.value).collect(),
+        answers: memo.and_then(|memo| memo.query_db()?.answers_version()),
         query: (
             std::sync::Arc::clone(prepared.prepared.units_owner()),
             startup.facts(),

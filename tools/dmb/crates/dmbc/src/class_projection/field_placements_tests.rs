@@ -166,8 +166,9 @@ fn failure(projection: &IssuedProjection) -> ProjectionError {
         },
     )
     .unwrap();
-    crate::class_inventory::contribute(&admitted, symbols, &order, &mut inventory).unwrap();
+    crate::class_inventory::contribute(&admitted, symbols, &order, &[], &mut inventory).unwrap();
     let tables = dm_link::LinkTables::build(inventory).unwrap();
+    crate::composition::renumber_engine_classes(&mut image, &tables, symbols).unwrap();
     materialize_types(&mut image, &admitted, &tables, symbols).unwrap();
     materialize_members(&mut image, &admitted, &tables, symbols, &NoTypes).unwrap_err()
 }

@@ -63,6 +63,7 @@ impl DeclarationPresence {
         self.classified_ordinal
     }
 }
+#[derive(Clone)]
 pub struct LoweredInitializerUnit {
     pub(crate) declaration_presence: Option<DeclarationPresence>,
     pub scope: InitializerScope,
