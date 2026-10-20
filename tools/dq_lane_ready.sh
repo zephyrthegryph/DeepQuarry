@@ -35,6 +35,9 @@ set -uo pipefail
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_run_lock.sh"
+run_lock_take "dq_lane_ready.sh $(git symbolic-ref -q --short HEAD)" || exit 1
+trap run_lock_release EXIT
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
 
 tests=()

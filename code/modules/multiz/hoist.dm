@@ -82,13 +82,11 @@ CAPABILITIES(/obj/effect/hoist_hook)
 /obj/effect/hoist_hook/proc/detach_with_actor(mob/user, atom/dest)
 	if(!Adjacent(user) || !dest.Adjacent(user)) return // carried over from the default proc
 
-	if (!(ishuman(user) || issilicon(user)))
-		return
-
 	if (user.incapacitated())
 		to_chat(user, span_notice("You can't do that while incapacitated."))
 		return
 
+	// Who may unhook is what the actor can do (a tool user's hands, a borg's manipulators), not what kind of mob it is.
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
 		return

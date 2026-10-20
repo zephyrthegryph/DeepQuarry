@@ -355,12 +355,16 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 	return
 
 /datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
-	var/list/types = subtypesof(/datum/alloy)
+	var/list/types = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING).Copy()
 	for(var/i in 1 to differentTypes)
-		var/datum/alloy/A = pick(types)
+		var/datum/xform/A = pick(types)
 		types -= A // Don't pick the same thing twice
-		var/chosen_path = initial(A.product)
-		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
+		var/list/product = A.makes[1]
+		var/ores = 0
+		for(var/list/take as anything in A.takes)
+			ores += take[3]
+		var/chosen_path = product[2]
+		var/chosen_qty = FLOOR(rand(5, 100) * product[3] / ores, 1)
 		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 

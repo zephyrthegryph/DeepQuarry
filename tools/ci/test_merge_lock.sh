@@ -217,6 +217,19 @@ run_as K --lanes laneK >/dev/null 2>&1
 DQ_MERGE_SESSION=K git -C "$T/mb" commit -q --allow-empty -m "holder commit" && ok "the lock holder may commit in the merge worktree" || fail "holder blocked by the hook"
 git -C "$T/mb" push -q origin HEAD:master
 run_as K --release >/dev/null
+
+# ---- 15. the holder's session survives a separate shell call (the recorded session), and only for the live holder ----
+run_as S --lanes laneS >/dev/null 2>&1
+check "the batch recorded its session in the merge worktree's git dir" grep -q "^session=env:S$" "$(git -C "$T/mb" rev-parse --absolute-git-dir)/dq-merge-session"
+(unset DQ_MERGE_SESSION; git -C "$T/mb" commit -q --allow-empty -m "holder commit from a later shell") 2>"$T/s.err" && ok "a later shell call of the holder (no DQ_MERGE_SESSION) may commit" || fail "the recorded session was not accepted: $(cat "$T/s.err")"
+DQ_MERGE_SESSION=other git -C "$T/mb" commit -q --allow-empty -m "another lane" 2>/dev/null && fail "an explicit other session committed in the merge worktree" || ok "an explicit other session is still refused"
+check "scripts still need the explicit session (gates refuse without it)" bash -c "cd '$T/mb' && unset DQ_MERGE_SESSION && . '$SL' && ! merge_lock_require 2>/dev/null"
+git -C "$T/mb" push -q origin HEAD:master
+run_as S --release >/dev/null
+(unset DQ_MERGE_SESSION; git -C "$T/mb" commit -q --allow-empty -m "after release") 2>/dev/null && fail "a stale session record let a commit through after the release" || ok "the record is void once the lock is released"
+run_as S2 --lanes laneS2 >/dev/null 2>&1
+check "the next batch's record names its own session" grep -q "^session=env:S2$" "$(git -C "$T/mb" rev-parse --absolute-git-dir)/dq-merge-session"
+run_as S2 --release >/dev/null
 rm -f "$T/main/.git/hooks/reference-transaction"
 unset DQ_MERGE_LOCK_LIB
 

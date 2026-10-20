@@ -71,13 +71,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 /// The lifeform plan of D's type (built on first use).
 /proc/lifeform_plan_of(datum/D)
 	RETURN_TYPE(/datum/lifeform_plan)
-	var/static/list/plans = list()
-	var/datum/lifeform_plan/P = plans[D.type]
+	if(!lifeform_plans)
+		lifeform_plans = list()
+	var/datum/lifeform_plan/P = lifeform_plans[D.type]
 	if(P)
 		return P
 	P = lifeform_plan_build(table_of(D), D)
-	plans[D.type] = P
+	lifeform_plans[D.type] = P
 	return P
+
+/// type -> its /datum/lifeform_plan, built on first use. A real global (not GLOB): plans are built while the globals are still being made.
+GLOBAL_REAL_VAR(list/lifeform_plans)
 
 /// The kinds each plan list collects (kind -> the plan's list var). A target-keyed kind keeps the last entry per target (a subtype re-declares
 /// to change it). A static, not a GLOB list: tables are built while the globals are still being made.
@@ -155,9 +159,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 					continue
 				LAZYINITLIST(P.watch)
 				LAZYADD(P.watch[var_name], C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
-				if(!lifeform_watch_keys)
-					lifeform_watch_keys = list()
-				lifeform_watch_keys[var_name] = TRUE
 
 /// The vars an entry follows: its changes re-key, retune, recompute or re-check the scope.
 /proc/lifeform_watched_vars(datum/entry/E)
@@ -254,14 +255,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 
 // ---- the change watch ----
 
-/// Var names some lifeform watches on some type: a write of one is published (rx_readers()) so lifeform_published() hears it. A real global
-/// (not GLOB): plans are built while the globals are still being made, and rx_readers() reads it on every tracked write.
-GLOBAL_REAL_VAR(list/lifeform_watch_keys)
-
-/// TRUE when a form of E's type follows `key` (rx_readers() asks, so state_changed() publishes the write).
+/// TRUE when a form of E's type follows `key` (rx_readers() asks, so state_changed() publishes the write). Asked only for a key the reader plan
+/// says some form may follow (PLAN_READ_LIFEFORM, code/engine/change/plan.dm).
 /proc/lifeform_watching(datum/E, key)
-	if(!lifeform_watch_keys?[key])
-		return FALSE
 	var/datum/type_table/T = type_table_cache()[E.type]
 	if(!T || !(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
 		return FALSE
@@ -271,7 +267,7 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 /// `key` of E was written: each form that follows it reacts now (a re-key, a retune, a recompute, a scope check). Synchronous: the reaction is
 /// part of the write, so a registry lookup on the next line sees the new key.
 /proc/lifeform_published(datum/E, key)
-	if(!lifeform_watch_keys?[key] || QDELING(E) || param_writing)
+	if(QDELING(E) || param_writing)
 		return
 	var/datum/type_table/T = type_table_cache()[E.type]
 	if(!T || !(T.hook_flags & ENGINE_HOOK_LIFEFORMS))

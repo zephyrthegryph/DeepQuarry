@@ -67,9 +67,8 @@
 	for(var/root in list(/obj/item, /obj/machinery, /obj/structure, /mob))
 		for(var/type in typesof(root))
 			// dq_ types are unit-test fixtures (some crash on purpose); the sweep is about the game's own types.
-			// The sleeving-cure pills hold a reagent that is commented out (latent_safe_types.dm): creating one runtimes, a medical fix. The
-			// filled circuit kits hit the recursion limit in their delete (a heat read during dq_lifecycle_resolve_contents), a lifecycle fix.
-			if(!is_abstract(type) && !(type in uncreatables) && !findtext("[type]", "/dq_") && !ispath(type, /obj/item/reagent_containers/pill/sleevingcure) && !ispath(type, /obj/item/storage/pill_bottle/sleevingcure) && !ispath(type, /obj/item/storage/bag/circuits))
+			// The sleeving-cure pills hold a reagent that is commented out (latent_safe_types.dm): creating one runtimes, a medical fix.
+			if(!is_abstract(type) && !(type in uncreatables) && !findtext("[type]", "/dq_") && !ispath(type, /obj/item/reagent_containers/pill/sleevingcure) && !ispath(type, /obj/item/storage/pill_bottle/sleevingcure))
 				seen["[type]"] = type
 	var/list/names = list()
 	for(var/name in seen)

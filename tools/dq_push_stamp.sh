@@ -20,9 +20,13 @@
 #           this commit before it pushes, and the pre-push hook only lets through what that script verified.
 #     Otherwise the lane needs a fresh stamp (tools/dq_lane_ready.sh);
 #   - it has one parent that passes and changes only docs, changelogs, *.md, tools/ci/known_failures.txt or the look keys.
+#   - it carries a light-batch note (refs/notes/light-batch, written by tools/dq_land_batch.sh after tools/dq_light_checks.sh passed) and
+#     nothing it changes since origin/master is a heavy path (tools/dq_light_paths.sh: .dm/.dme/maps/icons/code/...): a batch of docs,
+#     tooling scripts and Rust/compiler-only branches needs no game test.
 # A merge-gates run with --no-tests stamps nothing here: a stamp means tests ran and passed.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_light_paths.sh" 2>/dev/null || light_heavy_in() { echo "dq_light_paths.sh missing"; }
 
 target="${1:-}"
 [ -n "$target" ] || { echo "usage: dq_push_stamp.sh <commit>" >&2; exit 2; }
@@ -123,6 +127,10 @@ passes() { # <sha> <depth>
 	seen[$sha]=0
 	if note_ok lane-ready "$sha" branch_commit; then why="${why}${sha:0:10} lane-ready; "; seen[$sha]=1; return 0; fi
 	if note_ok merge-gates "$sha" commit; then why="${why}${sha:0:10} merge-gates; "; seen[$sha]=1; return 0; fi
+	if note_ok light-batch "$sha" commit; then
+		if [ -z "$(light_heavy_in "${master:-$sha^}" "$sha")" ]; then why="${why}${sha:0:10} light-batch (docs/tooling/Rust only); "; seen[$sha]=1; return 0; fi
+		why="${why}${sha:0:10} carries a light-batch stamp but changes heavy paths; "
+	fi
 	if in_master "$sha"; then seen[$sha]=1; return 0; fi
 	[ "$depth" -gt 0 ] || { why="${why}${sha:0:10} too deep; "; return 1; }
 	read -r -a parents <<<"$(git rev-list --parents -n 1 "$sha" | cut -d' ' -f2-)"

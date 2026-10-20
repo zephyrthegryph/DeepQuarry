@@ -53,3 +53,12 @@
 #define PLAN_DRAW (1<<0)
 /// The type's draw() reads the key one container, turf or area hop away ("<hop>.<var>").
 #define PLAN_DRAW_HOP (1<<1)
+
+// ---- the change graph's reader classes (step 3d: who reads a key besides the outputs; plan_reader_bits(), code/engine/change/plan.dm) ----
+/// A static reaction (on_change / on_cross / every gate), a derived() or generated read, or a sequence step of some type may read the key.
+#define PLAN_READ_REACT (1<<0)
+/// An on_change() hook of some type's declarations may read the key (on the holder or as the far end of a hop).
+#define PLAN_READ_HOOK (1<<1)
+/// A lifecycle form (registry key, radio frequency, derives, lives_while, adjacency) of some type may follow the key.
+#define PLAN_READ_LIFEFORM (1<<2)
+#define PLAN_READ_ALL (PLAN_READ_REACT | PLAN_READ_HOOK | PLAN_READ_LIFEFORM)

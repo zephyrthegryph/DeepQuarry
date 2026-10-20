@@ -76,6 +76,6 @@ Behaviour changes are recorded in `intended_changes.md` under "Body migration".
 | 5 Surgery | landed | `surgery_ops.dm`; `do_surgery()`, the surgery om tasks and `surgery_ask()` deleted |
 | 6 Delete / consolidate | landed | loose organs on a held stat; `code/modules/organs` moved to `code/modules/body/organs` |
 
-Still legacy inside the organ types (owned by the framework waves, not this track): `OM_FIELD` organ state, `om_task` timed tasks
-(robotic repair, butchery), `DECLARE_INTERACTIONS` on organs. The lifecycle-forms (`contains()`, declared lifetimes) apply to organ
-setup and amputation once they land on master.
+The legacy forms once left inside the organ types (`OM_FIELD` organ state, `om_task` timed tasks for robotic repair and butchery,
+`DECLARE_INTERACTIONS` on organs) are gone: a sweep of `code/` in October 2026 (cheap-migrations lane) finds no `OM_FIELD`, `om_task`,
+`om_task_timed` or `DECLARE_INTERACTIONS` site outside comments. Organs use the current engine's state, timers and ops.

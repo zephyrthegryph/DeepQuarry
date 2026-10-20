@@ -72,19 +72,28 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 // ---------------------------------------------------------------- READERS
 
 /// TRUE when a static reaction of E's type, a generated / derived() read, a dynamic observer or a draw that shows E worn or held reads `key`.
-/proc/rx_readers(datum/E, key)
-	var/datum/rx_table/T = GLOB.rx_tables?[E.type]
-	if(isnull(T))
-		T = rx_table_build(E)
-	if(T && T.read_keys[key])
-		return TRUE
+/// The static tables are consulted only for the classes the reader plan says may read `key` (`bits`, plan_reader_bits(), plan.dm); the dynamic
+/// readers (observe(), a pending operation, a worn watch) are per entity and always asked.
+/proc/rx_readers(datum/E, key, bits)
+	if(isnull(bits))
+		bits = plan_reader_bits(key)
+	if(bits & PLAN_READ_REACT)
+		var/datum/rx_table/T = GLOB.rx_tables?[E.type]
+		if(isnull(T))
+			T = rx_table_build(E)
+		if(T && T.read_keys[key])
+			return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
 	if(E.rx?.worn_watched)
 		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
-	if(lifeform_watch_keys?[key] && lifeform_watching(E, key))
+	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
-	return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
+	if(bits & PLAN_READ_HOOK)
+		return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
+	if(!bits)
+		GLOB.plan_spared_reader_probes++
+	return FALSE
 
 /// The tracked var `var_name` of E state_changed (TRACKED setters, a hand-written SETTER): its key is published when
 /// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No OM channel is raised.
@@ -114,13 +123,17 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
  * `key` of `E` changed. Delivers to the type's on_change / on_cross reactions and to observe()rs of the key
  * (coalesced: a handler runs once per drain however many of its reads changed; see rx_drain()).
  */
-/proc/publish_change(datum/E, key)
+/proc/publish_change(datum/E, key, bits)
 	if(!E || QDELING(E) || !islist(GLOB?.rx_tables))
 		return
+	if(isnull(bits))
+		bits = plan_reader_bits(key)
 	lookup_reads_published(E, key)
-	var/datum/rx_table/T = GLOB.rx_tables[E.type]
-	if(isnull(T))
-		T = rx_table_build(E)
+	var/datum/rx_table/T
+	if(bits & PLAN_READ_REACT)
+		T = GLOB.rx_tables[E.type]
+		if(isnull(T))
+			T = rx_table_build(E)
 	if(T)
 		var/list/hits = T.by_key[key]
 		for(var/datum/reaction/R as anything in hits)
@@ -139,10 +152,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			else if(R.kind == RXN_CROSS && R.key == key)
 				rx_cross_check(E, R, L)
 	// The on_change() hooks of the engine that read the key are marked for the next drain point.
-	if(islist(GLOB?.change_index_by_type) && (GLOB.change_index_by_type[E.type] || E.rx?.hooks || GLOB.change_hop_keys[key]))
+	if(islist(GLOB?.change_index_by_type) && (((bits & PLAN_READ_HOOK) && (GLOB.change_index_by_type[E.type] || GLOB.change_hop_keys[key])) || E.rx?.hooks))
 		hooks_change_published(E, key)
 	// A lifecycle form that follows the var reacts now: a re-key, a retune, a recompute, a scope check (code/engine/lifeforms/forms.dm).
-	if(lifeform_watch_keys?[key])
+	if(bits & PLAN_READ_LIFEFORM)
 		lifeform_published(E, key)
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))

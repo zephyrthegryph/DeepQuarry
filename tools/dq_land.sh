@@ -2,6 +2,7 @@
 # Land a lane on master with the merge lock held only for the cheap part: prove OUTSIDE the lock, lock only to merge and push.
 #
 #   export DQ_MERGE_SESSION=<the lane branch>
+#   bash tools/dq_land.sh --light                     # a LIGHT lane (docs/tooling/Rust only): queue it, land the batch (tools/dq_land_batch.sh)
 #   bash tools/dq_land.sh [--tests "a b"] [--covers GLOB] [--no-pins] [--rounds N] [--dry-run]     # from the lane's pool worktree
 #
 # Why: a gate run inside the merge lock takes 3-10 minutes (longer under load), and everyone queues behind it (overnight lanes
@@ -30,6 +31,10 @@ here="$(pwd)"
 . "$here/tools/dq_git_safe.sh"
 . "$here/tools/dq_proof_cache.sh"
 . "$here/tools/dq_machine_slots.sh"
+. "$here/tools/dq_run_lock.sh"
+
+# A light lane (docs, tooling scripts, Rust/compiler-only; pool-light) lands in a batch: no DM proof, no per-lane lock hold.
+if [ "${1:-}" = "--light" ]; then shift; exec bash "$here/tools/dq_land_batch.sh" submit --run "$@"; fi
 
 ready_args=()
 rounds="${DQ_LAND_ROUNDS:-3}"
@@ -63,7 +68,8 @@ release_lock() {
 	if [ -n "$WT" ] && [ -d "$WT" ]; then git -C "$WT" merge --abort >/dev/null 2>&1; git -C "$WT" switch -q -C rewrite/integ-current origin/master 2>/dev/null; fi
 	merge_lock_release >/dev/null 2>&1 || true
 }
-trap release_lock EXIT
+run_lock_take "dq_land.sh $(git symbolic-ref -q --short HEAD)" || exit 1
+trap 'release_lock; run_lock_release' EXIT
 
 merge_ref="$branch"
 for ((round = 1; round <= rounds; round++)); do
@@ -101,6 +107,13 @@ for ((round = 1; round <= rounds; round++)); do
 	(
 		cd "$WT" || exit 1
 		_t=$(date +%s); lap() { echo "== dq_land: $1 $(( $(date +%s) - _t ))s"; _t=$(date +%s); }
+		# A lane that already contains origin/master merges as a fast-forward: same commit, so its stamp (and its gates) stand with zero re-runs.
+		if git merge-base --is-ancestor origin/master "$merge_ref" && git notes --ref=lane-ready show "$(git rev-parse "$merge_ref")" 2>/dev/null | grep -q '"ok":true'; then
+			git merge --ff-only -q "$merge_ref" || { echo "dq_land: fast-forward failed" >&2; exit 1; }
+			lap "fast-forward (stamped, nothing re-run)"
+			if [ "$dry" -eq 1 ]; then DQ_PUSH_DRY_RUN=1 bash tools/dq_push_master.sh --expect "$branch"; else bash tools/dq_push_master.sh --expect "$branch"; fi
+			rc=$?; lap "push"; exit "$rc"
+		fi
 		git merge --no-ff --no-edit -q -m "Merge $branch" "$merge_ref" || { git merge --abort >/dev/null 2>&1; echo "dq_land: the merge of $branch conflicts with master (rebase: bash tools/dq_merge_master.sh, then run dq_land.sh again)" >&2; exit 1; }
 		lap "merge"
 		bash tools/dq_merge_gates.sh --lanes "$branch" --no-auto-merge || exit 1
