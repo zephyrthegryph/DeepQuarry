@@ -5256,3 +5256,10 @@ locking. No snapshots are re-recorded.
 * **A destroyed box, backpack or folder spills its contents** (D10, decided by the coordinator): storage and folder slots were DELETE and
   are SPILL, the default. A forced delete (`qdel(force = TRUE)`: cleanups, admin deletes) deletes the contents of every SPILL slot
   instead, so it leaves no litter. An ordinary delete of a mob therefore drops its backpack's contents where it stood.
+* **Casino wheel management is the op's own questions** (cheap-migrations, October 2026): the wheel's card op `wheel_id` asks its
+  management choice and the lottery-reset confirmation as `asks(... step = "k445"/"k469")`, the same shape as SPASM's `spasm_id`; the
+  ad-hoc `wheel_review` prompt chain and its `ishuman || isrobot` helper test are gone. A busy wheel or a revoked card now refuses the
+  answer (the op re-checks its needs) where the old chain applied it. Texts are unchanged.
+* **A hoist hook is unhooked by any advanced tool user** (cheap-migrations): `detach_with_actor()` asked `ishuman || issilicon`; it now
+  asks only what it already asked next, `IsAdvancedToolUser()`. A handed simple mob next to the hook can now drag it off, as it can
+  use other tools.

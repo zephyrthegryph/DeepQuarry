@@ -422,7 +422,9 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning)), req(PROC_REF(wheel_operator_ready), silent = TRUE), req(PROC_REF(wheel_interval_valid)), req(PROC_REF(wheel_spin_allowed))),
 		asks(/datum/prompt/choice, fields = list("question" = "Choose what to do", "title" = "Wheel Of Fortune", "choices" = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"), "timeout" = 0), step = "wheel_choice", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))),
 		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Put the desired interval (1-1000)", "title" = "Set Interval"), step = "wheel_interval", keeps = 0, when = PROC_REF(wheel_interval_requested)), then(PROC_REF(wheel_use_done)))
-	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
+	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose what to do (Management)", "title" = "Wheel Of Fortune (Management)", "choices" = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"), "timeout" = 0), step = "k445", when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))),
+		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to reset Lottery?", "title" = "Confirm Lottery Reset", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k469", when = PROC_REF(wheel_reset_requested)), then(PROC_REF(interaction_id)))
 	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
 	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req(PROC_REF(wheel_interval_admission)), req(PROC_REF(wheel_operator_ready), silent = TRUE), req(PROC_REF(wheel_interval_valid))),
 		asks(/datum/prompt/number/casino_setting, fields = list("question" = "Put the desired interval (1-1000)", "title" = "Set Interval"), step = "wheel_interval", keeps = 0, when = req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), then(PROC_REF(wheel_interval_done)))
@@ -491,56 +493,43 @@ MSG_DEF_SELF(casino/public_spin_disabled, "The Wheel makes a sad beep, public sp
 		return "the wheel of fortune is already spinning!"
 	return "you can't do that right now"
 
-/// Why not_busy_and_actor_able refuses.
+/// Question gate: the manager chose to reset the lottery.
+/obj/machinery/wheel_of_fortune/proc/wheel_reset_requested(datum/act/op/A)
+	return A.step_value("k445") == "Reset Lottery"
+
+/// The management menu; the questions are the op's (asks k445, k469), so a busy wheel or a lost card refuses before any answer applies.
 /obj/machinery/wheel_of_fortune/proc/interaction_id(datum/act/op/A)
-	wheel_management_stage(A.actor, A.held, list())
-	return OP_OK
-
-/obj/machinery/wheel_of_fortune/proc/wheel_management_stage(mob/user, obj/item/W, list/wheel_answers)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
-	if(ishuman(user) || isrobot(user))
-		if(!("k445" in wheel_answers))
-			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k445", wheel_held = W, question = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
-			return
-		var/_answer_k445 = wheel_answers["k445"]
-		if(isnull(_answer_k445))
-			return
-		switch(_answer_k445)
-			if("Cancel")
-				return TRUE
-			if("Spin the Lottery Wheel!")
-				to_chat(user,span_notice("You spin the wheel for the lottery!"))
-				spin_the_wheel("lottery")
+	switch(A.step_value("k445"))
+		if("Spin the Lottery Wheel!")
+			to_chat(user,span_notice("You spin the wheel for the lottery!"))
+			spin_the_wheel("lottery")
 
-			if("Toggle Lottery Sales")
-				if(lottery_sale == "disabled")
-					set_lottery_sale("enabled")
-					to_chat(user,span_notice("Public Lottery sale has been enabled."))
-					return TRUE
+		if("Toggle Lottery Sales")
+			if(lottery_sale == "disabled")
+				set_lottery_sale("enabled")
+				to_chat(user,span_notice("Public Lottery sale has been enabled."))
+			else
 				set_lottery_sale("disabled")
 				to_chat(user,span_notice("Public Lottery sale has been disabled."))
 
-			if("Toggle Public Spins")
-				if(public_spin == 0)
-					set_public_spin(1)
-					to_chat(user,span_notice("Public spins has been enabled."))
-					return TRUE
+		if("Toggle Public Spins")
+			if(public_spin == 0)
+				set_public_spin(1)
+				to_chat(user,span_notice("Public spins has been enabled."))
+			else
 				set_public_spin(0)
 				to_chat(user,span_notice("Public spins has been disabled."))
 
-			if("Reset Lottery")
-				if(!("k469" in wheel_answers))
-					open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k469", wheel_held = W, question = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"), buttons = TRUE)
-					return
-				var/confirm = wheel_answers["k469"]
-				if(isnull(confirm))
-					return
-				if(confirm == "Yes")
-					to_chat(user, span_warning("Lottery has been Reset!"))
-					lottery_entries = 0
-					lottery_tickets = null
-					lottery_tickets_ckeys = null
-	return TRUE
+		if("Reset Lottery")
+			if(A.step_value("k469") == "Yes")
+				to_chat(user, span_warning("Lottery has been Reset!"))
+				lottery_entries = 0
+				lottery_tickets = null
+				lottery_tickets_ckeys = null
+	SStgui.update_uis(src)
+	return OP_OK
 
 MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
 
@@ -1097,47 +1086,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	flick("[icon_state]-winning",src)
 	set_icon_state("wheel_of_fortune")
 
-
-/obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = wheel_management_apply(A)
-	SStgui.update_uis(src)
-
-/obj/machinery/wheel_of_fortune/proc/wheel_management_apply(datum/act/request/A)
-	var/datum/prompt/choice/wheel_review/ask = A.answer
-	ask.wheel_answers[ask.wheel_key] = ask.value
-	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_answers)
-
-/datum/prompt/choice/wheel_review
-	timeout = 0
-	var/mob/wheel_operator
-	var/wheel_operator_expected = FALSE
-	var/obj/item/wheel_held
-	var/wheel_held_expected = FALSE
-	var/list/wheel_answers
-	var/wheel_key
-
-CAPABILITIES(/datum/prompt/choice/wheel_review)
-	ref_one(nameof(wheel_operator), /mob)
-	ref_one(nameof(wheel_held), /obj/item)
-
-/datum/prompt/choice/wheel_review/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_wheel_operator = wheel_operator
-	wheel_operator_expected = !isnull(captured_wheel_operator)
-	rel_clear(src, nameof(wheel_operator))
-	if(captured_wheel_operator && !QDELETED(captured_wheel_operator))
-		rel_set(src, nameof(wheel_operator), captured_wheel_operator)
-	var/obj/item/captured_wheel_held = wheel_held
-	wheel_held_expected = !isnull(captured_wheel_held)
-	rel_clear(src, nameof(wheel_held))
-	if(captured_wheel_held && !QDELETED(captured_wheel_held))
-		rel_set(src, nameof(wheel_held), captured_wheel_held)
-
-/datum/prompt/choice/wheel_review/recheck_extra()
-	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)))
-		return "gone"
 
 /datum/prompt/choice/casino_purchase
 	timeout = 0
