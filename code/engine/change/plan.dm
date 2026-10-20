@@ -244,3 +244,60 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 /// the var): the cost of the generated set being over-inclusive.
 GLOBAL_VAR_INIT(stat_input_queries, 0)
 GLOBAL_VAR_INIT(stat_input_noops, 0)
+
+// ---- the reader keys (step 3d: reactions, hooks, lifecycle forms and sequences consult the plan first) ----
+
+/// name -> PLAN_READ_* bits: the generated, over-inclusive reader keys (generated_reader_keys_build(), `gen plans`) plus the names of the generated
+/// handler reads (GLOB.generated_read_names: what a reaction_reads() or published hook handler reads). null until built (plan_reader_keys()).
+GLOBAL_LIST_INIT(plan_reader_keys, null)
+
+/// Builds GLOB.plan_reader_keys. FALSE when the stat ids cannot be resolved yet (the stat defs are not built): nothing is cached then.
+/proc/plan_reader_keys_build()
+	if(!islist(GLOB?.stat_defs) || !islist(GLOB.generated_read_names) || !islist(GLOB.generated_key_names))
+		return FALSE
+	var/list/keys = list()
+	for(var/list/row as anything in generated_reader_keys_build())
+		var/name = row[1]
+		var/bits = row[2]
+		if(!istext(name) && !isnum(name))
+			continue // a key define that names no key (a path, null)
+		if(isnum(name))
+			// A stat id: its change publishes the stat's name and its key (change_read_keys()).
+			var/datum/stat_def/def = stat_def_of(name)
+			if(!def)
+				continue
+			keys[def.name] |= bits
+			if(istext(def.stat_key))
+				keys[def.stat_key] |= bits
+			continue
+		keys[name] |= bits
+	// What the generated reads name (a handler's, a gate proc's, a condition's) and every key a generated plan names (the draws' and the verb
+	// outputs' reads, which derived() and generated_reads() feed into the reaction tables too).
+	for(var/list/names as anything in list(GLOB.generated_read_names, GLOB.generated_key_names))
+		for(var/raw in names)
+			if(!istext(raw))
+				continue
+			for(var/segment in splittext(raw, "."))
+				if(length(segment))
+					keys[segment] |= PLAN_READ_REACT | PLAN_READ_HOOK
+	GLOB.plan_tracked_names = generated_tracked_names_build()
+	GLOB.plan_reader_keys = keys
+	return TRUE
+
+/// The tracked var names (generated_tracked_names_build()): the keys plan_reader_bits() narrows.
+GLOBAL_LIST_INIT(plan_tracked_names, null)
+
+/// The PLAN_READ_* classes whose static tables may read the tracked var `key` on some type; 0 for a tracked var no reaction, hook, form or
+/// sequence reads. PLAN_READ_ALL for any other key (an engine key a producer publishes, "capkey:<n>", a runtime-only key) and before the plan is built.
+/proc/plan_reader_bits(key)
+	var/list/keys = GLOB.plan_reader_keys
+	if(!keys)
+		if(!plan_reader_keys_build())
+			return PLAN_READ_ALL
+		keys = GLOB.plan_reader_keys
+	if(!istext(key) || !GLOB.plan_tracked_names[key])
+		return PLAN_READ_ALL
+	return keys[key] || 0
+
+/// Tracked writes whose static reader probes the reader plan spared (state_changed(): no reaction, hook or form of any type reads the var).
+GLOBAL_VAR_INIT(plan_spared_reader_probes, 0)

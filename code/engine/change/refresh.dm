@@ -97,8 +97,11 @@
 			stack_trace(write_msg)
 #endif
 	// Demand-gated: a var nobody reads (no reaction, generated read, derived() entry or observer) publishes nothing.
-	if(var_name && READERS(E, var_name))
-		publish_change(E, var_name)
+	// The reader plan (plan.dm) names the classes of static readers that may read the var; the tables of the others are not probed.
+	if(var_name)
+		var/reader_bits = plan_reader_bits(var_name)
+		if(rx_readers(E, var_name, reader_bits))
+			publish_change(E, var_name, reader_bits)
 	// A draw one container, turf or area hop away reads it (an item drawing its holder's state): it redraws (refs/hops.dm).
 	if(var_name && draw_hop_reads_var(var_name))
 		draw_hop_published(E, var_name)

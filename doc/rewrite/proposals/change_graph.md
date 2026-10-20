@@ -287,6 +287,25 @@ observers join the plan as step 3 folds each one, with a parity check per consum
 (that is the first change of step 3, so the dispatch and its proof land together). No `plan_fallback` ratchet was added: the fallbacks are
 exactly the `draw_untracked` sites the `untracked_inputs` lint already holds to its baseline.
 
+### Step 3d status (19 October 2026): the reader plan
+
+Landed: `analyze gen plans` also writes `generated_reader_keys_build()`: every name a static reader of some type may read, with its classes
+(`PLAN_READ_REACT` for reactions, derived and generated reads and sequence steps; `PLAN_READ_HOOK` for on_change() hooks, on the holder or as the far end
+of a hop; `PLAN_READ_LIFEFORM` for the lifecycle forms). Over-inclusive like the stat inputs: every nameof(), quoted identifier (a dotted path by each
+segment) and stat id of a declaration block (CAPABILITIES, CAPABILITY_DEF, STATE_GRAPH, entry procs, capability entries, runtime observe, STAT names) is
+all three classes; every such name (and PROC_REF) of a `reactions()`, `derived()` or `generated_reads()` body is `PLAN_READ_REACT`; the runtime adds the generated handler reads
+(`GLOB.generated_read_names`, `PLAN_READ_REACT|PLAN_READ_HOOK`) and resolves stat ids to their names (`plan_reader_keys_build()`, plan.dm).
+`state_changed()` asks `plan_reader_bits(var)` once per tracked write and hands the bits to `rx_readers()` and `publish_change()`, which probe the
+reaction table, the hook index and the lifeform plan only for the classes the plan names; observers, pending operations and worn watches are
+per-entity subscriptions (the design's `E.subs`) and are always asked. The plan narrows only the tracked var names (`generated_tracked_names_build()`); any
+other key (an engine key a producer publishes such as `MOB_KEY_AIR`, `capkey:<n>`, a runtime-only key, a hand-written setter's var) is `PLAN_READ_ALL`. `lifeform_watch_keys` (the lazily filled global gate) is deleted; the lifeform plans are `lifeform_plans`. Writes the plan spared
+are counted in `GLOB.plan_spared_reader_probes`. Proof: `dq_change_reader_plan_oracle` (exhaustive sweep; `/representative` in the normal tier):
+every key a built rx table, hook index, hop registration or lifeform watch registers carries its class.
+
+Not yet (step 3 remainder): the runtime tables themselves (`rx_table_build`, `change_index_of`, `lifeform_plan_build`) still answer the per-type
+question; the plan answers only the global one. Per-type reader rows need the generator to resolve inherited and capability-composed reactions;
+`derived_mask`, `E.rel_watchers` and the backward hop walk of `hooks_change_hop_published` are unchanged.
+
 ## 12. Edits needed in final_api.html section 7 (not made here)
 
 1. **"Execution model" paragraph**: replace "the entity at the end of a single-valued relation edge ... recompute inline" wording with
