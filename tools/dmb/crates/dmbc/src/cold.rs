@@ -1003,6 +1003,9 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         &projection,
         plan.symbols.as_ref(),
         &source_type_order,
+        declarations
+            .source_allocation_roster
+            .map_or(&[][..], |roster| roster.touches()),
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;

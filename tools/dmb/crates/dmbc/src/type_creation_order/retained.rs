@@ -6,10 +6,15 @@ use dm_session::ObservationHost;
 #[derive(PartialEq, Eq)]
 pub struct AllocationRoster {
     order: Arc<[SymbolId]>,
+    /// Every path a declaration block names, first encounter first.
+    touches: Arc<[SymbolId]>,
 }
 impl AllocationRoster {
     pub fn order(&self) -> &[SymbolId] {
         &self.order
+    }
+    pub fn touches(&self) -> &[SymbolId] {
+        &self.touches
     }
     pub(crate) fn shared_order(&self) -> &Arc<[SymbolId]> {
         &self.order
@@ -107,18 +112,24 @@ pub fn collect_retained(
     artifacts: Option<&AllocationArtifacts>,
 ) -> Result<Arc<AllocationRoster>, String> {
     let Some(artifacts) = artifacts else {
-        return super::collect(ledger, expanded_source, symbols, inventory).map(|order| {
-            Arc::new(AllocationRoster {
-                order: order.into(),
-            })
-        });
+        return super::collect_recorded(ledger, expanded_source, symbols, inventory, None).map(
+            |(order, touches)| {
+                Arc::new(AllocationRoster {
+                    order: order.into(),
+                    touches: touches.into(),
+                })
+            },
+        );
     };
     let Some(key) = key(ledger, expanded_source, inventory) else {
-        return super::collect(ledger, expanded_source, symbols, inventory).map(|order| {
-            Arc::new(AllocationRoster {
-                order: order.into(),
-            })
-        });
+        return super::collect_recorded(ledger, expanded_source, symbols, inventory, None).map(
+            |(order, touches)| {
+                Arc::new(AllocationRoster {
+                    order: order.into(),
+                    touches: touches.into(),
+                })
+            },
+        );
     };
     artifacts
         .values
@@ -129,7 +140,7 @@ pub fn collect_retained(
     let mut reads = Vec::new();
     // Only this ordinary producer issues a receipt. Preliminary key extraction
     // never emits errors, so invalid input preserves original diagnostic order.
-    let order = super::collect_recorded(
+    let (order, touches) = super::collect_recorded(
         ledger,
         expanded_source,
         symbols,
@@ -140,6 +151,7 @@ pub fn collect_retained(
         .values
         .insert_with_owned(key.into(), reads, Vec::new(), 0, || AllocationRoster {
             order: order.into(),
+            touches: touches.into(),
         })
         .expect("current-revision allocation store admits issued roster"))
 }
