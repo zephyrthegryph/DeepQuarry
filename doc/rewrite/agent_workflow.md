@@ -647,3 +647,18 @@ wait for the notification; never block 10 minutes at a time.
 The merge worktree compiles in its own compile root (`E:/dq-cache/dmb-roots/deepquarry-merge`, `compile_root.ts rootKeyFor`): every
 gate there is master plus a batch, so its daemon session patches from the previous gate's tree instead of waiting behind lanes in the
 shared root and recompiling their trees (measured: a gate's test compile waited 315 s for the shared root, then ran a full compile).
+
+## 19. DreamMaker still has to accept the tree (October 2026, `tools/dmb-behaviour`)
+
+The native compiler is the default, so for a while nothing noticed that master no longer compiled with DreamMaker (105 errors:
+`to` used as a named argument and formal, 99 subtype overrides written `/T/proc/name()` where the parent already declares the
+proc, and `nameof(call().var)`). Two guards now stop that:
+
+- `dmbc` reports the same errors as DreamMaker for those classes (`fixtures/diagnostics/cases/keyword_*`, `inherited_proc_*`,
+  `inherited_verb_*`, `nameof_call_expression`). In DM an override is written without `proc/` or `verb/`; with the keyword it is a
+  `duplicate definition` of the nearest ancestor's declaration. `to` and `in` cannot be argument names; `if`, `set`, `while` and the
+  like cannot be formal names; a `nameof` operand is a reference path, not a call or index.
+- `tools/dq_merge_gates.sh` and `tools/dq_push_master.sh` compile the production dme with `DQ_COMPILER=dreammaker` after the native
+  compile (about 3 minutes, overlapped with the test world). `DQ_DREAMMAKER_GATE=0` skips it for a local experiment; the push
+  refuses a tree DreamMaker rejects. Check a new class locally with
+  `python tools/dmb/scripts/diagnostics_corpus.py record --dm <dm.exe> <case>` then `check --dmbc tools/dmb/target/release/dmbc.exe`.

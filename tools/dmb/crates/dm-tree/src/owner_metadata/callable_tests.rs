@@ -125,7 +125,7 @@ fn callable_certificates_reuse_local_inputs_and_propagate_parent_changes() {
         owner: child,
         name,
         kind: MemberKind::Proc,
-        mode: DefinitionMode::Declare,
+        mode: DefinitionMode::Override,
         metadata: Arc::new(MemberMetadata::default()),
         content: 1,
     });

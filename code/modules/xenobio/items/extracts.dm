@@ -88,7 +88,7 @@ CAPABILITIES(/transformation/chem/instant/slime/grey_new_slime)
 		holds = subject_is(/obj/item/slime_extract/grey),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/grey_new_slime, on_reaction)))
 
-/transformation/chem/instant/slime/grey_new_slime/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/grey_new_slime/on_reaction(datum/reagents/holder)
 	holder.my_atom.visible_message(span_warning("Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!"))
 	new /mob/living/simple_mob/slime/xenobio(get_turf(holder.my_atom))
 	..()
@@ -100,7 +100,7 @@ CAPABILITIES(/transformation/chem/instant/slime/grey_monkey)
 		holds = subject_is(/obj/item/slime_extract/grey),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/grey_monkey, on_reaction)))
 
-/transformation/chem/instant/slime/grey_monkey/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/grey_monkey/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 5) // Increased number of monkey cubes from 4 to 5
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(holder.my_atom))
 	..()
@@ -131,7 +131,7 @@ CAPABILITIES(/transformation/chem/instant/slime/metal_materials_basic)
 		holds = subject_is(/obj/item/slime_extract/metal),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_basic, on_reaction)))
 
-/transformation/chem/instant/slime/metal_materials_basic/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/metal_materials_basic/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 3)
 		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_normal)
 		new type_to_spawn(get_turf(holder.my_atom), 10)
@@ -144,7 +144,7 @@ CAPABILITIES(/transformation/chem/instant/slime/metal_materials_adv)
 		holds = subject_is(/obj/item/slime_extract/metal),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_adv, on_reaction)))
 
-/transformation/chem/instant/slime/metal_materials_adv/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/metal_materials_adv/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 2)
 		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_adv)
 		new type_to_spawn(get_turf(holder.my_atom), 10)
@@ -157,7 +157,7 @@ CAPABILITIES(/transformation/chem/instant/slime/metal_materials_weird)
 		holds = subject_is(/obj/item/slime_extract/metal),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_weird, on_reaction)))
 
-/transformation/chem/instant/slime/metal_materials_weird/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/metal_materials_weird/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 3)
 		var/type_to_spawn = pickweight(GLOB.xenobio_metal_materials_weird)
 		new type_to_spawn(get_turf(holder.my_atom), 5)
@@ -170,7 +170,7 @@ CAPABILITIES(/transformation/chem/instant/slime/metal_materials_steel)
 		made = 1, holds = subject_is(/obj/item/slime_extract/metal),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/metal_materials_steel, on_reaction)))
 
-/transformation/chem/instant/slime/metal_materials_steel/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/metal_materials_steel/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/steel(get_turf(holder.my_atom), 25)
 	..()
 
@@ -200,7 +200,7 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_stability)
 		holds = subject_is(/obj/item/slime_extract/blue),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/blue_stability, on_reaction)))
 
-/transformation/chem/instant/slime/blue_stability/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/blue_stability/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/stabilizer(get_turf(holder.my_atom))
 	..()
 
@@ -211,7 +211,7 @@ CAPABILITIES(/transformation/chem/instant/slime/blue_calm)
 		holds = subject_is(/obj/item/slime_extract/blue),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/blue_calm, on_reaction)))
 
-/transformation/chem/instant/slime/blue_calm/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/blue_calm/on_reaction(datum/reagents/holder)
 	for(var/mob/living/simple_mob/slime/S in view(get_turf(holder.my_atom)))
 		if(S.stat)
 			continue
@@ -263,7 +263,7 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_steroid)
 		holds = subject_is(/obj/item/slime_extract/purple),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_steroid, on_reaction)))
 
-/transformation/chem/instant/slime/purple_steroid/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/purple_steroid/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/steroid(get_turf(holder.my_atom))
 	..()
 
@@ -274,7 +274,7 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_infertility)
 		holds = subject_is(/obj/item/slime_extract/purple),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_infertility, on_reaction)))
 
-/transformation/chem/instant/slime/purple_infertility/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/purple_infertility/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/infertility(get_turf(holder.my_atom))
 	..()
 
@@ -285,7 +285,7 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_shrink)
 		holds = subject_is(/obj/item/slime_extract/purple),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_shrink, on_reaction)))
 
-/transformation/chem/instant/slime/purple_shrink/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/purple_shrink/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/shrink(get_turf(holder.my_atom))
 	..()
 
@@ -296,7 +296,7 @@ CAPABILITIES(/transformation/chem/instant/slime/purple_fertility)
 		holds = subject_is(/obj/item/slime_extract/purple),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/purple_fertility, on_reaction)))
 
-/transformation/chem/instant/slime/purple_fertility/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/purple_fertility/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/fertility(get_turf(holder.my_atom))
 	..()
 
@@ -320,7 +320,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_fire)
 		holds = subject_is(/obj/item/slime_extract/orange),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_fire, on_reaction)))
 
-/transformation/chem/instant/slime/orange_fire/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/orange_fire/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
@@ -334,7 +334,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 		holds = subject_is(/obj/item/slime_extract/orange),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_heatwave, on_reaction)))
 
-/transformation/chem/instant/slime/orange_heatwave/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/orange_heatwave/on_reaction(datum/reagents/holder)
 	var/turf/simulated/T = get_turf(holder.my_atom)
 	if(!T)
 		return
@@ -385,7 +385,7 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_smoke)
 		holds = subject_is(/obj/item/slime_extract/orange),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_smoke, on_reaction)))
 
-/transformation/chem/instant/slime/orange_smoke/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/orange_smoke/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
 	var/datum/effect/effect/system/smoke_spread/chem/S = new /datum/effect/effect/system/smoke_spread/chem
 	S.attach(location)
@@ -420,7 +420,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_lightning)
 		holds = subject_is(/obj/item/slime_extract/yellow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_lightning, on_reaction)))
 
-/transformation/chem/instant/slime/yellow_lightning/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/yellow_lightning/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
@@ -434,7 +434,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_flashlight)
 		holds = subject_is(/obj/item/slime_extract/yellow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_flashlight, on_reaction)))
 
-/transformation/chem/instant/slime/yellow_flashlight/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/yellow_flashlight/on_reaction(datum/reagents/holder)
 	new /obj/item/flashlight/slime(get_turf(holder.my_atom))
 	..()
 
@@ -445,7 +445,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_emp)
 		holds = subject_is(/obj/item/slime_extract/yellow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_emp, on_reaction)))
 
-/transformation/chem/instant/slime/yellow_emp/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/yellow_emp/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
@@ -459,7 +459,7 @@ CAPABILITIES(/transformation/chem/instant/slime/yellow_battery)
 		holds = subject_is(/obj/item/slime_extract/yellow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/yellow_battery, on_reaction)))
 
-/transformation/chem/instant/slime/yellow_battery/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/yellow_battery/on_reaction(datum/reagents/holder)
 	new /obj/item/cell/slime(get_turf(holder.my_atom))
 	..()
 
@@ -483,7 +483,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_random_mobs)
 		holds = subject_is(/obj/item/slime_extract/gold),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_random_mobs, on_reaction)))
 
-/transformation/chem/instant/slime/gold_random_mobs/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/gold_random_mobs/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Gold extract reaction (random mobs) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	var/type_to_spawn
 	var/list/all_spawnable_types = list()
@@ -508,7 +508,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_hostile_mob)
 		holds = subject_is(/obj/item/slime_extract/gold),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_hostile_mob, on_reaction)))
 
-/transformation/chem/instant/slime/gold_hostile_mob/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/gold_hostile_mob/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Gold extract reaction (dangerous mob) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	var/type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_hostile)
 	var/mob/living/C = new type_to_spawn(get_turf(holder.my_atom))
@@ -523,7 +523,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_safe_mob)
 		holds = subject_is(/obj/item/slime_extract/gold),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_safe_mob, on_reaction)))
 
-/transformation/chem/instant/slime/gold_safe_mob/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/gold_safe_mob/on_reaction(datum/reagents/holder)
 	var/type_to_spawn
 	if(prob(100/(GLOB.xenobio_gold_mobs_safe.len + 1)))
 		type_to_spawn = pickweight(GLOB.xenobio_gold_mobs_birds)
@@ -541,7 +541,7 @@ CAPABILITIES(/transformation/chem/instant/slime/gold_materials_gold)
 		holds = subject_is(/obj/item/slime_extract/gold),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/gold_materials_gold, on_reaction)))
 
-/transformation/chem/instant/slime/gold_materials_gold/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/gold_materials_gold/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/gold(get_turf(holder.my_atom), 10)
 	..()
 
@@ -565,7 +565,7 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_basic)
 		holds = subject_is(/obj/item/slime_extract/silver),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_basic, on_reaction)))
 
-/transformation/chem/instant/slime/silver_materials_basic/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/silver_materials_basic/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 2)
 		var/type_to_spawn = pickweight(GLOB.xenobio_silver_materials_basic)
 		new type_to_spawn(get_turf(holder.my_atom), 5)
@@ -578,7 +578,7 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_adv)
 		holds = subject_is(/obj/item/slime_extract/silver),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_adv, on_reaction)))
 
-/transformation/chem/instant/slime/silver_materials_adv/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/silver_materials_adv/on_reaction(datum/reagents/holder)
 	var/type_to_spawn = pickweight(GLOB.xenobio_silver_materials_adv)
 	new type_to_spawn(get_turf(holder.my_atom), 3)
 	..()
@@ -590,7 +590,7 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_random)
 		holds = subject_is(/obj/item/slime_extract/silver),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_random, on_reaction)))
 
-/transformation/chem/instant/slime/silver_materials_random/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/silver_materials_random/on_reaction(datum/reagents/holder)
 	var/type_to_spawn
 	var/amount = 5
 	var/all_spawnable_types = list()
@@ -614,7 +614,7 @@ CAPABILITIES(/transformation/chem/instant/slime/silver_materials_silver)
 		holds = subject_is(/obj/item/slime_extract/silver),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/silver_materials_silver, on_reaction)))
 
-/transformation/chem/instant/slime/silver_materials_silver/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/silver_materials_silver/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/silver(get_turf(holder.my_atom), 10)
 	..()
 
@@ -663,7 +663,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_cold_snap, on_reaction)))
 
 // This iterates over a ZAS zone's contents, so that things seperated in other zones aren't subjected to the temperature drop.
-/transformation/chem/instant/slime/dark_blue_cold_snap/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_blue_cold_snap/on_reaction(datum/reagents/holder)
 	var/turf/simulated/T = get_turf(holder.my_atom)
 	if(!T) // Nullspace lacks zones.
 		return
@@ -725,7 +725,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_temp_resist)
 		made = 1, holds = subject_is(/obj/item/slime_extract/dark_blue),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_temp_resist, on_reaction)))
 
-/transformation/chem/instant/slime/dark_blue_temp_resist/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_blue_temp_resist/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/slime_temp_resist, 5 MINUTES, src)
 	..()
@@ -754,7 +754,7 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_blue_death)
 		holds = subject_is(/obj/item/slime_extract/dark_blue),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_death, on_reaction)))
 
-/transformation/chem/instant/slime/dark_blue_death/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/dark_blue_death/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/death(get_turf(holder.my_atom))
 	..()
 
@@ -779,7 +779,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_mutation)
 		holds = subject_is(/obj/item/slime_extract/red),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_mutation, on_reaction)))
 
-/transformation/chem/instant/slime/red_mutation/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/red_mutation/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/mutator(get_turf(holder.my_atom))
 	..()
 
@@ -790,7 +790,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_enrage)
 		holds = subject_is(/obj/item/slime_extract/red),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_enrage, on_reaction)))
 
-/transformation/chem/instant/slime/red_enrage/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/red_enrage/on_reaction(datum/reagents/holder)
 	for(var/mob/living/simple_mob/slime/S in view(get_turf(holder.my_atom)))
 		if(S.stat)
 			continue
@@ -830,7 +830,7 @@ CAPABILITIES(/transformation/chem/instant/slime/red_ferality)
 		holds = subject_is(/obj/item/slime_extract/red),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/red_ferality, on_reaction)))
 
-/transformation/chem/instant/slime/red_ferality/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/red_ferality/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/ferality(get_turf(holder.my_atom))
 	..()
 
@@ -877,7 +877,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_radpulse)
 		holds = subject_is(/obj/item/slime_extract/green),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_radpulse, on_reaction)))
 
-/transformation/chem/instant/slime/green_radpulse/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/green_radpulse/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
@@ -891,7 +891,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_emitter)
 		holds = subject_is(/obj/item/slime_extract/green),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_emitter, on_reaction)))
 
-/transformation/chem/instant/slime/green_emitter/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/green_emitter/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Green extract reaction (radiation emitter) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	new /obj/item/slime_irradiator(get_turf(holder.my_atom))
 	..()
@@ -909,7 +909,7 @@ CAPABILITIES(/transformation/chem/instant/slime/green_uranium)
 		holds = subject_is(/obj/item/slime_extract/green),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/green_uranium, on_reaction)))
 
-/transformation/chem/instant/slime/green_uranium/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/green_uranium/on_reaction(datum/reagents/holder)
 	new /obj/item/stack/material/uranium(get_turf(holder.my_atom), 10)
 	..()
 
@@ -951,7 +951,7 @@ CAPABILITIES(/transformation/chem/instant/slime/pink_heal_pulse)
 		holds = subject_is(/obj/item/slime_extract/pink),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/pink_heal_pulse, on_reaction)))
 
-/transformation/chem/instant/slime/pink_heal_pulse/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/pink_heal_pulse/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/C in viewers(get_turf(holder.my_atom), null))
 		to_chat(C, span_notice("A wave of energy suddenly invigorates you."))
 		C.mend(TREAT_TISSUE_REPAIR, 25)
@@ -994,7 +994,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_fakesplosion)
 		holds = subject_is(/obj/item/slime_extract/oil),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oil_fakesplosion, on_reaction)))
 
-/transformation/chem/instant/slime/oil_fakesplosion/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/oil_fakesplosion/on_reaction(datum/reagents/holder)
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	explosion(get_turf(holder.my_atom), 0, 0, 0)
 	..()
@@ -1006,7 +1006,7 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_explosion)
 		holds = subject_is(/obj/item/slime_extract/oil),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oil_explosion, on_reaction)))
 
-/transformation/chem/instant/slime/oil_explosion/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/oil_explosion/on_reaction(datum/reagents/holder)
 	..()
 	var/obj/item/slime_extract/E = holder.my_atom
 	var/power = 1
@@ -1040,7 +1040,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_crystals)
 		holds = subject_is(/obj/item/slime_extract/bluespace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_crystals, on_reaction)))
 
-/transformation/chem/instant/slime/bluespace_crystals/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/bluespace_crystals/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to 5)
 		new /obj/item/slime_crystal(get_turf(holder.my_atom))
 	..()
@@ -1052,7 +1052,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_pouch)
 		holds = subject_is(/obj/item/slime_extract/bluespace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_pouch, on_reaction)))
 
-/transformation/chem/instant/slime/bluespace_pouch/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/bluespace_pouch/on_reaction(datum/reagents/holder)
 	new /obj/item/storage/backpack/holding/slime(get_turf(holder.my_atom))
 	..()
 
@@ -1063,7 +1063,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_chaotic_tele)
 		holds = subject_is(/obj/item/slime_extract/bluespace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_chaotic_tele, on_reaction)))
 
-/transformation/chem/instant/slime/bluespace_chaotic_tele/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/bluespace_chaotic_tele/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Bluespace extract reaction (chaos teleport) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	for(var/mob/living/M in range(2,get_turf(holder.my_atom)))
 		if(M?.buckled_to())
@@ -1084,7 +1084,7 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_teleporter)
 		holds = subject_is(/obj/item/slime_extract/bluespace),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_teleporter, on_reaction)))
 
-/transformation/chem/instant/slime/bluespace_teleporter/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/bluespace_teleporter/on_reaction(datum/reagents/holder)
 	new /obj/item/disposable_teleporter/slime(get_turf(holder.my_atom))
 	..()
 
@@ -1109,7 +1109,7 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_enhancer)
 		holds = subject_is(/obj/item/slime_extract/cerulean),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_enhancer, on_reaction)))
 
-/transformation/chem/instant/slime/cerulean_enhancer/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/cerulean_enhancer/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/enhancer(get_turf(holder.my_atom))
 	..()
 
@@ -1120,7 +1120,7 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_reinvigoration)
 		holds = subject_is(/obj/item/slime_extract/cerulean),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_reinvigoration, on_reaction)))
 
-/transformation/chem/instant/slime/cerulean_reinvigoration/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/cerulean_reinvigoration/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/reinvigoration(get_turf(holder.my_atom))
 	..()
 
@@ -1131,7 +1131,7 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_potion_mimic)
 		holds = subject_is(/obj/item/slime_extract/cerulean),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_potion_mimic, on_reaction)))
 
-/transformation/chem/instant/slime/cerulean_potion_mimic/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/cerulean_potion_mimic/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/mimic(get_turf(holder.my_atom))
 	..()
 
@@ -1142,7 +1142,7 @@ CAPABILITIES(/transformation/chem/instant/slime/cerulean_random_potion)
 		holds = subject_is(/obj/item/slime_extract/cerulean),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/cerulean_random_potion, on_reaction)))
 
-/transformation/chem/instant/slime/cerulean_random_potion/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/cerulean_random_potion/on_reaction(datum/reagents/holder)
 	var/spawn_type = pickweight(GLOB.xenobio_cerulean_potions)
 	new spawn_type(get_turf(holder.my_atom))
 	..()
@@ -1167,7 +1167,7 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_slimefood)
 		holds = subject_is(/obj/item/slime_extract/amber),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_slimefood, on_reaction)))
 
-/transformation/chem/instant/slime/amber_slimefood/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/amber_slimefood/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/feeding(get_turf(holder.my_atom))
 	..()
 
@@ -1178,7 +1178,7 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_random_food)
 		holds = subject_is(/obj/item/slime_extract/amber),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_random_food, on_reaction)))
 
-/transformation/chem/instant/slime/amber_random_food/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/amber_random_food/on_reaction(datum/reagents/holder)
 	var/list/edibles = subtypesof(/obj/item/reagent_containers/food/snacks)
 
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN)
@@ -1200,7 +1200,7 @@ CAPABILITIES(/transformation/chem/instant/slime/amber_snack)
 		holds = subject_is(/obj/item/slime_extract/amber),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/amber_snack, on_reaction)))
 
-/transformation/chem/instant/slime/amber_snack/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/amber_snack/on_reaction(datum/reagents/holder)
 	for(var/i = 1 to rand(3, 5))
 		new /obj/item/reagent_containers/food/snacks/slime(get_turf(holder.my_atom))
 	..()
@@ -1232,7 +1232,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_promethean)
 		holds = subject_is(/obj/item/slime_extract/sapphire),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_promethean, on_reaction)))
 
-/transformation/chem/instant/slime/sapphire_promethean/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/sapphire_promethean/on_reaction(datum/reagents/holder)
 	new /obj/item/slime_cube(get_turf(holder.my_atom))
 	..()
 
@@ -1249,7 +1249,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_plushies)
 		holds = subject_is(/obj/item/slime_extract/sapphire),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_plushies, on_reaction)))
 
-/transformation/chem/instant/slime/sapphire_plushies/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/sapphire_plushies/on_reaction(datum/reagents/holder)
 	var/spawn_type
 	var/list/possible_types = subtypesof(/obj/item/toy/plushie)
 	possible_types -= subtypesof(/obj/item/toy/plushie/therapy)
@@ -1265,7 +1265,7 @@ CAPABILITIES(/transformation/chem/instant/slime/sapphire_sapience)
 		holds = subject_is(/obj/item/slime_extract/sapphire),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/sapphire_sapience, on_reaction)))
 
-/transformation/chem/instant/slime/sapphire_sapience/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/sapphire_sapience/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/sapience(get_turf(holder.my_atom))
 	..()
 
@@ -1289,7 +1289,7 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_swole)
 		holds = subject_is(/obj/item/slime_extract/ruby),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_swole, on_reaction)))
 
-/transformation/chem/instant/slime/ruby_swole/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/ruby_swole/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/slime_strength, 10 MINUTES, src)
 	..()
@@ -1312,7 +1312,7 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_pull)
 		holds = subject_is(/obj/item/slime_extract/ruby),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_pull, on_reaction)))
 
-/transformation/chem/instant/slime/ruby_pull/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/ruby_pull/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
 	play_sfx(location, SFX_WEAPONS_GAUSS_SHOOT)
 #ifndef UNIT_TESTS
@@ -1336,7 +1336,7 @@ CAPABILITIES(/transformation/chem/instant/slime/ruby_push)
 		holds = subject_is(/obj/item/slime_extract/ruby),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/ruby_push, on_reaction)))
 
-/transformation/chem/instant/slime/ruby_push/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/ruby_push/on_reaction(datum/reagents/holder)
 	var/location = get_turf(holder.my_atom)
 	for(var/X in orange(3, location))
 		var/atom/movable/AM = X
@@ -1374,7 +1374,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_agility)
 		holds = subject_is(/obj/item/slime_extract/emerald),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_agility, on_reaction)))
 
-/transformation/chem/instant/slime/emerald_agility/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/emerald_agility/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/slime_agility, 10 MINUTES, src)
 	..()
@@ -1397,7 +1397,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_speed)
 		holds = subject_is(/obj/item/slime_extract/emerald),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_speed, on_reaction)))
 
-/transformation/chem/instant/slime/emerald_speed/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/emerald_speed/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
 		L.apply_body_effect(/datum/body_effect/slime_speed, 1 MINUTE, src)
 	..()
@@ -1426,7 +1426,7 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_hell)
 		holds = subject_is(/obj/item/slime_extract/emerald),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_hell, on_reaction)))
 
-/transformation/chem/instant/slime/emerald_hell/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/emerald_hell/on_reaction(datum/reagents/holder)
 	log_and_message_admins("Emerald extract reaction (slip hell) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	for(var/turf/simulated/T in trange(5, get_turf(holder.my_atom)))
 		if(!istype(T))
@@ -1456,7 +1456,7 @@ CAPABILITIES(/transformation/chem/instant/slime/light_pink_friendship)
 		holds = subject_is(/obj/item/slime_extract/light_pink),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_friendship, on_reaction)))
 
-/transformation/chem/instant/slime/light_pink_friendship/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/light_pink_friendship/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/friendship(get_turf(holder.my_atom))
 	..()
 
@@ -1467,7 +1467,7 @@ CAPABILITIES(/transformation/chem/instant/slime/light_pink_loyalty)
 		holds = subject_is(/obj/item/slime_extract/light_pink),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_loyalty, on_reaction)))
 
-/transformation/chem/instant/slime/light_pink_loyalty/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/light_pink_loyalty/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/loyalty(get_turf(holder.my_atom))
 	..()
 
@@ -1478,7 +1478,7 @@ CAPABILITIES(/transformation/chem/instant/slime/light_pink_docility)
 		holds = subject_is(/obj/item/slime_extract/light_pink),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_docility, on_reaction)))
 
-/transformation/chem/instant/slime/light_pink_docility/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/light_pink_docility/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/docility(get_turf(holder.my_atom))
 	..()
 
@@ -1489,7 +1489,7 @@ CAPABILITIES(/transformation/chem/instant/slime/light_pink_obedience)
 		holds = subject_is(/obj/item/slime_extract/light_pink),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/light_pink_obedience, on_reaction)))
 
-/transformation/chem/instant/slime/light_pink_obedience/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/light_pink_obedience/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/obedience(get_turf(holder.my_atom))
 	..()
 
@@ -1513,7 +1513,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_slime)
 		holds = subject_is(/obj/item/slime_extract/rainbow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_random_slime, on_reaction)))
 
-/transformation/chem/instant/slime/rainbow_random_slime/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/rainbow_random_slime/on_reaction(datum/reagents/holder)
 	var/mob/living/simple_mob/slime/xenobio/S
 	var/list/slime_types = typesof(/mob/living/simple_mob/slime/xenobio)
 
@@ -1536,7 +1536,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_extract)
 		holds = subject_is(/obj/item/slime_extract/rainbow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_random_extract, on_reaction)))
 
-/transformation/chem/instant/slime/rainbow_random_extract/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/rainbow_random_extract/on_reaction(datum/reagents/holder)
 	var/spawn_type = pickweight(GLOB.xenobio_rainbow_extracts)
 	new spawn_type(get_turf(holder.my_atom))
 	..()
@@ -1548,7 +1548,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_colors)
 		holds = subject_is(/obj/item/slime_extract/rainbow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_colors, on_reaction)))
 
-/transformation/chem/instant/slime/rainbow_colors/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/rainbow_colors/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
 		H.status_at_least(STAT_DRUGGED, 30)
 	..()
@@ -1560,7 +1560,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 		holds = subject_is(/obj/item/slime_extract/rainbow),
 		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_unity, on_reaction)))
 
-/transformation/chem/instant/slime/rainbow_unity/proc/on_reaction(datum/reagents/holder)
+/transformation/chem/instant/slime/rainbow_unity/on_reaction(datum/reagents/holder)
 	new /obj/item/slimepotion/unity(get_turf(holder.my_atom))
 	..()
 

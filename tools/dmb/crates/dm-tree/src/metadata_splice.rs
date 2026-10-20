@@ -417,8 +417,8 @@ impl MetadataDependencies {
                 }
                 parent = tree.parent(current);
             }
-            if mode == DefinitionMode::Declare && kind == MemberKind::Var && previous.is_some() {
-                return Err("inherited variable redeclaration");
+            if mode == DefinitionMode::Declare && previous.is_some() {
+                return Err("inherited redeclaration");
             }
             if mode == DefinitionMode::Override && previous.is_none() {
                 return Err("override without inherited declaration");

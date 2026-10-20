@@ -1,0 +1,2 @@
+keyword_formal_if.dm:1:error: if: invalid variable name: reserved word
+keyword_formal_if.dmb - 1 error, 0 warnings

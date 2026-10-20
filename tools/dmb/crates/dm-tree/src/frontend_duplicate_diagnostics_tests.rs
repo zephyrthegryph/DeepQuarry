@@ -86,7 +86,27 @@ fn duplicate_type_static_uses_pinned_definition_order_and_source_names() {
 }
 #[test]
 fn formal_callable_overrides_and_different_variable_names_remain_legal() {
-    check("/datum/base\n    var/value = 1\n    proc/p()\n        return 1\n/datum/child\n    parent_type = /datum/base\n    var/other = 2\n    proc/p()\n        return 2\n", None).unwrap();
+    check("/datum/base\n    var/value = 1\n    proc/p()\n        return 1\n/datum/child\n    parent_type = /datum/base\n    var/other = 2\n    p()\n        return 2\n", None).unwrap();
+}
+
+#[test]
+fn explicit_proc_or_verb_keyword_in_a_subtype_redeclares_the_inherited_callable() {
+    // Pinned 516.1687 (fixtures/diagnostics/cases/inherited_proc_redeclare*): an override is written
+    // without `proc/` or `verb/`; with it the definition is a duplicate of the nearest declaration.
+    for keyword in ["proc", "verb"] {
+        let source = format!("/datum/base\n    {keyword}/p()\n        return 1\n/datum/mid\n    parent_type = /datum/base\n    p()\n        return 2\n/datum/child\n    parent_type = /datum/mid\n    {keyword}/p()\n        return 3\n");
+        let errors = check(&source, None).unwrap_err();
+        assert_eq!(
+            messages(&errors),
+            vec![(10, "p: duplicate definition"), (2, "p: previous definition")],
+            "{keyword}"
+        );
+        let mut state = RetainedSemanticTree::new();
+        let legal = source.replace(&format!("    {keyword}/p()\n        return 3"), "    p()\n        return 3");
+        check(&legal, Some(&mut state)).unwrap();
+        let retained = check(&source, Some(&mut state)).unwrap_err();
+        assert_eq!(messages(&retained), messages(&errors), "{keyword} retained");
+    }
 }
 
 #[test]

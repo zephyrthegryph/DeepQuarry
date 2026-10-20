@@ -160,6 +160,12 @@ for round in 1 2 3; do
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
 		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
+		if [ "${DQ_DREAMMAKER_GATE:-1}" != "0" ]; then
+			echo "== build.sh dm with DreamMaker on ${sha:0:12} (log $log.dreammaker.log): the tree must be valid DM, not only valid for dmbc"
+			rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler
+			DQ_COMPILER=dreammaker tools/build/build.sh dm >"$log.dreammaker.log" 2>&1 || { tail -40 "$log.dreammaker.log"; die "DreamMaker rejects the tree; see $log.dreammaker.log"; }
+			grep -qE "deepquarry\.dmb - 0 errors" "$log.dreammaker.log" || die "DreamMaker did not report 0 errors; see $log.dreammaker.log"
+		fi
 	fi
 
 	# The same check on the same commit is not run twice; a new merge commit, a different HEAD or DQ_PUSH_FULL=1 runs it here.

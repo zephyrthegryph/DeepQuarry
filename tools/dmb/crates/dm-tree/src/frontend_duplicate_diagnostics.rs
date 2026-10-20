@@ -17,8 +17,8 @@ pub(super) fn resolve(
             owner,
             previous_owner,
             name,
-            kind: MemberKind::Var,
-        }) => Some((*owner, *previous_owner, *name, true, MemberKind::Var)),
+            kind,
+        }) => Some((*owner, *previous_owner, *name, true, *kind)),
         _ => None,
     };
     let Some((owner, previous_owner, name, inherited, member_kind)) = duplicate else {

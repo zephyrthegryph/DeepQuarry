@@ -1,0 +1,3 @@
+keyword_named_arg_to.dm:5:error: missing left-hand argument to to.
+keyword_named_arg_to.dm:5:error: missing left-hand argument to =.
+keyword_named_arg_to.dmb - 2 errors, 0 warnings

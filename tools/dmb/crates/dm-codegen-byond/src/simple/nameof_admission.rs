@@ -12,11 +12,28 @@ pub enum NameofDiagnosticRecovery {
     /// ordinary nameof admission. Its missing expression has no assignment label.
     ModifiedReferenceRequired,
 }
+/// A nameof operand is a reference path: names, type paths and member selections of them. A call, index
+/// or operator result anywhere in the chain is not (pinned 516.1687, fixtures/diagnostics/cases/nameof_call_expression).
+fn is_reference_chain(expression: &Expr) -> bool {
+    match &expression.kind {
+        ExprKind::Group(inner) => is_reference_chain(inner),
+        ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
+        ExprKind::Member { object, .. } | ExprKind::StaticMember { object, .. } => {
+            is_reference_chain(object)
+        }
+        _ => false,
+    }
+}
 pub fn nameof_diagnostic_recovery(expression: &Expr) -> NameofDiagnosticRecovery {
     match &expression.kind {
         ExprKind::Group(inner) => nameof_diagnostic_recovery(inner),
         ExprKind::TypePath(path)
             if reflective_type_role(path) == ReflectiveTypeRole::BuiltinListValue =>
+        {
+            NameofDiagnosticRecovery::ReferenceRequired
+        }
+        ExprKind::Member { object, .. } | ExprKind::StaticMember { object, .. }
+            if !is_reference_chain(object) =>
         {
             NameofDiagnosticRecovery::ReferenceRequired
         }
@@ -178,6 +195,17 @@ impl Compiler<'_> {
                         ))
                     }
                 }
+            }
+            ExprKind::Member { object, .. } | ExprKind::StaticMember { object, .. }
+                if !is_reference_chain(object) =>
+            {
+                return Err(LowerError {
+                    kind: LowerErrorKind::SourceError,
+                    ..error(
+                        statement,
+                        "nameof: requires a var, proc reference, or type path",
+                    )
+                });
             }
             ExprKind::Member {
                 object,
@@ -357,6 +385,12 @@ mod tests {
             ("/list", NameofDiagnosticRecovery::ReferenceRequired),
             ("(/list)", NameofDiagnosticRecovery::ReferenceRequired),
             ("1", NameofDiagnosticRecovery::ReferenceRequired),
+            // A call (or any non-reference) in the receiver chain is not a reference path.
+            ("get_holder().slot", NameofDiagnosticRecovery::ReferenceRequired),
+            ("list[1].slot", NameofDiagnosticRecovery::ReferenceRequired),
+            ("(get_holder()).slot", NameofDiagnosticRecovery::ReferenceRequired),
+            ("/datum/a::b", NameofDiagnosticRecovery::ReferenceRejected),
+            ("a.b.c", NameofDiagnosticRecovery::ReferenceRejected),
         ] {
             let expression = dm_syntax::parse_expression(source).expr.unwrap();
             assert_eq!(
