@@ -76,7 +76,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// readers (observe(), a pending operation, a worn watch) are per entity and always asked.
 /proc/rx_readers(datum/E, key, bits)
 	if(isnull(bits))
-		bits = plan_reader_bits(key)
+		bits = plan_reader_bits(key, E.type)
 	if(bits & PLAN_READ_REACT)
 		var/datum/rx_table/T = GLOB.rx_tables?[E.type]
 		if(isnull(T))
@@ -127,7 +127,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	if(!E || QDELING(E) || !islist(GLOB?.rx_tables))
 		return
 	if(isnull(bits))
-		bits = plan_reader_bits(key)
+		bits = plan_reader_bits(key, E.type)
 	lookup_reads_published(E, key)
 	var/datum/rx_table/T
 	if(bits & PLAN_READ_REACT)

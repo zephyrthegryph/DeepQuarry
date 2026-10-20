@@ -218,30 +218,45 @@ impl Generator for Plans {
     }
 }
 
-/// The names a declaration text can make a reader of: every nameof(), every quoted identifier (a dotted path counts by each segment) and every
-/// define it names (a stat id: the runtime resolves it to the stat's name). Over-inclusive by design (see `emit_reader_keys`).
-fn reader_names(body: &str, defines: &std::collections::HashSet<String>, into: &mut BTreeMap<String, u8>, bits: u8) {
-    let add = |s: String, into: &mut BTreeMap<String, u8>| *into.entry(s).or_default() |= bits;
+/// Reader keys by owner: ("" for every type, or a type path whose subtypes inherit the row, name) -> PLAN_READ_* bits.
+type ReaderKeys = BTreeMap<(String, String), u8>;
+
+/// The names a declaration text can make a reader of: every nameof(), every quoted identifier and every key define it names (a stat id: the
+/// runtime resolves it to the stat's name). Over-inclusive by design (see `emit_reader_keys`). The names go on `owner` ("" = every type), except
+/// the segments after the first of a dotted path ("terminal.charge"): those are read on the far end of a hop, whatever its type, so they go on "".
+fn reader_names(body: &str, defines: &std::collections::HashSet<String>, owner: &str, into: &mut ReaderKeys, bits: u8) {
+    let add = |o: &str, s: String, into: &mut ReaderKeys| *into.entry((o.to_string(), s)).or_default() |= bits;
     for c in crate::pat!(r"\bnameof\(\s*(?:[\w/]+::)?(\w+)\s*\)").captures_iter(body) {
-        add(quote(c.s(1)), into);
+        add(owner, quote(c.s(1)), into);
     }
     for c in crate::pat!(r#""([A-Za-z_][A-Za-z0-9_.]*)""#).captures_iter(body) {
-        for seg in c.s(1).split('.') {
+        for (i, seg) in c.s(1).split('.').enumerate() {
             if key_ident(seg) {
-                add(quote(seg), into);
+                add(if i == 0 { owner } else { "" }, quote(seg), into);
             }
         }
     }
     // A handler gate or a key handed as a proc name (every(when = PROC_REF(work_ready))): the table registers the proc's name.
     for c in crate::pat!(r"\b(?:TYPE_|GLOBAL_)?PROC_REF\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)").captures_iter(body) {
-        add(quote(c.s(1)), into);
+        add(owner, quote(c.s(1)), into);
     }
     // A key define: a stat id (STAT_*), a hop (HOP_*) or a named key (*_KEY_*, *_KEY): the runtime evaluates it (a text key, or a stat id it
     // resolves to the stat's name). Function-like macros are not keys.
     for c in crate::pat!(r"\b((?:STAT|HOP)_[A-Z0-9_]+|[A-Z][A-Z0-9]*_KEY(?:_[A-Z0-9_]+)?)\b(\s*\()?").captures_iter(body) {
         if c.get(2).is_none() && defines.contains(c.s(1)) {
-            add(c.s(1).to_string(), into);
+            add(owner, c.s(1).to_string(), into);
         }
+    }
+}
+
+/// The owner a declaration's names belong to: its type, or "" (every type) for a capability (its entries and reactions fold into whichever
+/// holder carries it) and for the root.
+fn reader_owner(t: &str) -> &str {
+    let t = t.trim();
+    if t.is_empty() || t == "/" || t.starts_with("/datum/capability") || !t.starts_with('/') {
+        ""
+    } else {
+        t
     }
 }
 
@@ -264,23 +279,25 @@ fn proc_body(text: &str, header: u32) -> String {
 /// reactions() or derived() body names is PLAN_READ_REACT, and the runtime adds the names of the generated handler reads (plan_reader_keys_build(),
 /// code/engine/change/plan.dm). dq_change_reader_plan_oracle proves it covers every key the runtime tables register.
 fn emit_reader_keys(cx: &GenCx, decls: &crate::sem::decls::Decls, out: &mut GenOut) {
-    let mut keys: BTreeMap<String, u8> = BTreeMap::new();
+    let mut keys: ReaderKeys = BTreeMap::new();
     const ALL: u8 = 7;
     const REACT: u8 = 1;
+    const HOOK: u8 = 2;
     for m in &decls.markers {
         if m.name == "STAT" {
             if let Some(n) = m.args.get(1) {
                 let n = n.trim();
                 if key_ident(n) {
-                    *keys.entry(quote(n)).or_default() |= ALL;
+                    *keys.entry((String::new(), quote(n))).or_default() |= ALL;
                 }
             }
             continue;
         }
-        if matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "STATE_GRAPH" | "ENTRY_PROC" | "RUNTIME_OBSERVE") || m.name == crate::sem::decls::CAP_ENTRIES {
-            reader_names(&m.body, &decls.defines, &mut keys, ALL);
-            for a in &m.args {
-                reader_names(a, &decls.defines, &mut keys, ALL);
+        let owner = if m.name == "CAPABILITIES" { reader_owner(m.args.first().map(|a| a.as_str()).unwrap_or("")) } else { "" };
+        if matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STATE_GRAPH" | "ENTRY_PROC" | "RUNTIME_OBSERVE") || m.name == crate::sem::decls::CAP_ENTRIES {
+            reader_names(&m.body, &decls.defines, owner, &mut keys, ALL);
+            for a in m.args.iter().skip(if m.name == "CAPABILITIES" { 1 } else { 0 }) {
+                reader_names(a, &decls.defines, owner, &mut keys, ALL);
             }
         }
     }
@@ -289,29 +306,43 @@ fn emit_reader_keys(cx: &GenCx, decls: &crate::sem::decls::Decls, out: &mut GenO
         for d in crate::sem::procs::proc_defs(&sem, &["reactions", "derived", "generated_reads"]) {
             let text = texts.entry(d.rel.clone()).or_insert_with(|| crate::sem::incremental::text_of(cx.tree, &d.rel));
             let body = proc_body(text, d.header);
-            reader_names(&body, &decls.defines, &mut keys, REACT);
+            // A generated_reads() body's reaction_reads() also feed the hooks whose then() is that handler (change_generated_reads()).
+            let bits = if d.name == "generated_reads" { REACT | HOOK } else { REACT };
+            reader_names(&body, &decls.defines, reader_owner(&d.owner), &mut keys, bits);
         }
     }
     // Sequence steps (seq_step(..., reads = ...)) are declared in plain procs, and their read lists are often defines (LIFE_CONDITION_READS): every
-    // seq_step() line and every define that names a var are mined too.
+    // seq_step() line and every define that names a var are mined too, for every type.
+    // A plain global proc that returns declaration entries without being an entry proc (`return adjacency(...)`, a helper building on_change()
+    // or registry() entries) hands them to whichever type names it: its entry lines are mined for every type.
     for f in cx.tree.select(&crate::tree::CODE_DM) {
+        let mut in_global_proc = false;
         for line in f.text().lines() {
+            if !line.starts_with('\t') && !line.starts_with(' ') && !line.trim().is_empty() {
+                in_global_proc = line.starts_with("/proc/");
+            }
             let t = line.trim_start();
             if t.contains("seq_step(") || (t.starts_with("#define") && t.contains("nameof(")) {
-                reader_names(t, &decls.defines, &mut keys, REACT);
+                reader_names(t, &decls.defines, "", &mut keys, REACT);
+            } else if in_global_proc
+                && ["on_change(", "on_cross(", "adjacency(", "registry(", "radio_listen(", "derives(", "lives_while("].iter().any(|c| t.contains(c))
+            {
+                reader_names(t, &decls.defines, "", &mut keys, ALL);
             }
         }
     }
     out.blank();
-    out.doc("The change graph's reader keys (step 3d): a name -> the PLAN_READ_* classes whose static tables may read it (a define is a stat id the");
-    out.doc("runtime resolves to its name). Over-inclusive: a name absent here is read by no reaction, on_change() hook or lifecycle form of any type.");
+    out.doc("The change graph's reader keys (step 3d/3e): list(name, PLAN_READ_* bits, owner) rows; owner null = every type, else a type path whose");
+    out.doc("subtypes inherit the row (a define is a stat id the runtime resolves to its name). Over-inclusive: a name absent from E's type chain and");
+    out.doc("the null rows is read by no reaction, on_change() hook or lifecycle form of E's type.");
     // Chunked: one proc body holds at most 300 rows (the native compiler caps a proc's constant list sizes).
-    let rows: Vec<(&String, &u8)> = keys.iter().collect();
+    let rows: Vec<(&(String, String), &u8)> = keys.iter().collect();
     for (n, chunk) in rows.chunks(300).enumerate() {
         out.line(format!("/proc/generated_reader_keys_chunk_{}()", n));
         out.line("\t. = list()");
-        for (k, b) in chunk {
-            out.line(format!("\t. += list(list({}, {}))", k, b));
+        for ((o, k), b) in chunk {
+            let owner = if o.is_empty() { "null".to_string() } else { quote(o) };
+            out.line(format!("\t. += list(list({}, {}, {}))", k, b, owner));
         }
     }
     out.line("/proc/generated_reader_keys_build()");
@@ -361,17 +392,21 @@ mod tests {
         defines.insert("STAT_OPERABLE".to_string());
         defines.insert("STAT_MACRO".to_string());
         defines.insert("MOB_KEY_CLIENT".to_string());
-        let mut keys = BTreeMap::new();
+        let mut keys: ReaderKeys = BTreeMap::new();
         reader_names(
             "on_change(nameof(charge), then(PROC_REF(x))) seq_step(reads = list(nameof(/mob/living::phobias))) on_change(\"terminal.power\") on_change(STAT_OPERABLE) STAT_MACRO(1) every(when = PROC_REF(work_ready)) MOB_KEY_CLIENT \"has space\"",
             &defines,
+            "/obj/x",
             &mut keys,
             1,
         );
-        for k in ["\"phobias\"", "\"charge\"", "\"terminal\"", "\"power\"", "STAT_OPERABLE", "\"work_ready\"", "MOB_KEY_CLIENT"] {
-            assert_eq!(keys.get(k), Some(&1), "{k}");
+        for k in ["\"phobias\"", "\"charge\"", "\"terminal\"", "STAT_OPERABLE", "\"work_ready\"", "MOB_KEY_CLIENT"] {
+            assert_eq!(keys.get(&("/obj/x".to_string(), k.to_string())), Some(&1), "{k}");
         }
-        assert!(!keys.contains_key("STAT_MACRO"), "a function-like macro is not a stat id");
-        assert!(!keys.keys().any(|k| k.contains("space")), "a literal that is not an identifier path is no key");
+        assert_eq!(keys.get(&(String::new(), "\"power\"".to_string())), Some(&1), "the far end of a hop is read on every type");
+        assert!(!keys.keys().any(|(_, k)| k == "STAT_MACRO"), "a function-like macro is not a stat id");
+        assert!(!keys.keys().any(|(_, k)| k.contains("space")), "a literal that is not an identifier path is no key");
+        assert_eq!(reader_owner("/datum/capability/powered"), "", "a capability's names fold into every holder");
+        assert_eq!(reader_owner(" /obj/machinery "), "/obj/machinery");
     }
 }
