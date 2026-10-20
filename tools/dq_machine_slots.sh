@@ -512,7 +512,50 @@ merge_lock_mark_base() { # the merge worktree's HEAD when the batch began (after
 	local o
 	o="$(_ml_slot)/owner"
 	[ -f "$o" ] && _ml_set_field "$o" base "$1"
+	merge_lock_record_session
 	return 0
+}
+
+# The batch's session, recorded inside the merge worktree's git dir (dq-merge-session): a plain `git merge` / `git commit` run in a later
+# shell call, where the holder's `export DQ_MERGE_SESSION` did not survive, is accepted by the reference-transaction hook when the record
+# names the live holder (same session, same holder pid). An explicit DQ_MERGE_SESSION always wins, so another lane's merge is still refused.
+_ml_session_file() {
+	local gd
+	gd="$(git -C "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
+	echo "$gd/dq-merge-session"
+}
+
+merge_lock_record_session() { # the holder writes its session and holder pid for the ref hook
+	local o f
+	o="$(_ml_slot)/owner"
+	[ -f "$o" ] && _ml_is_holder "$o" || return 0
+	f="$(_ml_session_file)" || return 0
+	printf 'session=%s
+pid=%s
+' "$(_slots_field "$o" session)" "$(_slots_field "$o" pid)" >"$f.$$.tmp" && mv -f "$f.$$.tmp" "$f"
+	return 0
+}
+
+merge_lock_recorded_session() { # -> the recorded session name (without env:) when it names the live holder of the lock; 1 otherwise
+	local o f rec
+	o="$(_ml_slot)/owner"
+	[ -f "$o" ] || return 1
+	_slots_dead "$o" && return 1
+	f="$(_ml_session_file)" || return 1
+	[ -f "$f" ] || return 1
+	rec="$(_slots_field "$f" session)"
+	[ -n "$rec" ] && [ "$rec" = "$(_slots_field "$o" session)" ] || return 1
+	[ "$(_slots_field "$f" pid)" = "$(_slots_field "$o" pid)" ] || return 1
+	echo "${rec#env:}"
+}
+
+merge_lock_require_ref() { # the ref hook: merge_lock_require, falling back to the recorded holder session when DQ_MERGE_SESSION is unset
+	local rec
+	if [ -z "${DQ_MERGE_SESSION:-}" ] && rec="$(merge_lock_recorded_session)"; then
+		DQ_MERGE_SESSION="$rec" merge_lock_require
+		return $?
+	fi
+	merge_lock_require
 }
 
 _ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over from the acquiring shell and keeps it alive

@@ -632,6 +632,15 @@ The lander, per batch:
    (`dq_known_failures.sh --check` first separates known and flaky failures). Land the rest, and report the breaking lane to the
    main session with the failing test and its log path.
 
+**The session across shell calls.** Each agent shell call starts a fresh environment, so an `export DQ_MERGE_SESSION=...` from the
+call that took the lock is gone in the next one. When the batch starts, `dq_merge_worktree.sh` writes the holder's session and holder pid to
+`dq-merge-session` in the merge worktree's git dir. The reference-transaction hook accepts a plain `git merge` / `git commit` there with no
+`DQ_MERGE_SESSION` when that record names the live holder (`merge_lock_require_ref`). A record left by a released or dead lock is void, and
+an explicit `DQ_MERGE_SESSION` of another lane is still refused. The merge scripts (`dq_merge_gates.sh`, `dq_push_master.sh`) still need
+the explicit session, so set it in every call that runs them (the simplest way is one shell call per step: commit, gates, push).
+`bash tools/ci/test_merge_lock.sh` section 15 covers this. Before this fix, a merge whose commit the hook refused was left half-done
+(MERGE_HEAD set; seen on three lanes, 2026-10-19).
+
 Polling: wait on a result line with an `until` loop whose timeout is at most 120 s, or run the step with `run_in_background` and
 wait for the notification; never block 10 minutes at a time.
 

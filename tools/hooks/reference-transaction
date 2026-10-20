@@ -18,5 +18,11 @@ lib="${DQ_MERGE_LOCK_LIB:-$top/tools/dq_machine_slots.sh}"
 # shellcheck source=/dev/null
 . "$lib" >/dev/null 2>&1 || exit 0
 type merge_lock_require >/dev/null 2>&1 || exit 0
-merge_lock_require || exit 1
+# A later shell call of the holder (its exported DQ_MERGE_SESSION gone) is accepted through the session the lock recorded in the merge
+# worktree's git dir; an explicit DQ_MERGE_SESSION of another lane is still refused (merge_lock_require_ref).
+if type merge_lock_require_ref >/dev/null 2>&1; then
+	merge_lock_require_ref || exit 1
+else
+	merge_lock_require || exit 1
+fi
 exit 0
