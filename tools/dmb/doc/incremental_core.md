@@ -263,6 +263,14 @@ are unchanged stays green without a certificate check. Revalidation must be para
    bindings and a build without them (one-shot, cold) numbers in source order. A revert is now
    equivalent to, not byte-identical with, the initial build; six-session asserts equivalence.
    Removal/reparent relocation without relinking is still open.)
+   (2026-10-19, later: the class table follows DreamMaker's order (path-tree postorder, see
+   `class_inventory/dreammaker_type_order.rs`) over engine and source types; composition renumbers
+   the engine template's classes into it. Because `typesof()` observes that order, a table with a
+   complete supplied order is never stabilized: an added, removed or reparented type renumbers
+   the class table, which relinks (no relowering: lowered units are symbolic). Production reparent
+   probe (a type alternating between two parents, then reverted): every revision dmb-equiv
+   equivalent to a fresh compile and the revert to the initial build. Strings and procedures keep
+   stable numbering.)
 6. **Section-wise composition.** `section` queries over the retained model; only changed sections are
    rewritten, then encoded. Body edit must reach about 6 s here. Deletes `body_patch.rs`,
    `body_patch_append.rs`, `body_patch_lines.rs`, patch slots and alternates in
