@@ -7,7 +7,7 @@ fn disk_only_memo_publishes_and_replays_without_retaining_rich_ir() {
     let host = startup
         .resolver(&frontend, frontend.snapshot.tree.as_ref())
         .unwrap();
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-disk-only-tests").join(format!(
+    let root = crate::test_scratch::root().join(format!(
         "{}-{}",
         std::process::id(),
         std::time::SystemTime::now()

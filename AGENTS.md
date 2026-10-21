@@ -261,6 +261,16 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
   `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
   first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
+- **Everything important lives in the repo; `E:/dq-cache` holds only disposable caches.** Never install a script, wrapper or config under
+  `E:/dq-cache` (the old `E:/dq-cache/bin/dq_lane_pool` is gone for this reason): call `bash tools/dq_lane_pool.sh` from your worktree. It
+  runs origin/master's copy when its own differs (extracted with `git archive` under `E:/dq-cache/lane-pool/self`), so any worktree's copy is safe.
+- **Tests clean their scratch; caches are capped.** A Rust test that needs a store or scratch directory takes it from
+  `tools/dmb/shared/test_scratch.rs` (`crate::test_scratch::root()` / `dir(label)`: a per-process `run-<pid>-<ms>` directory removed at process
+  exit, pass or fail); never `create_dir_all` a path of your own under `E:/dq-cache` (`tools/ci/check_test_scratch.sh`, part of
+  `check_ratchets.sh`, rejects it). Every file cache a daemon or tool writes needs a size cap and an age cap with eviction that actually runs
+  (the dmbc file cache: `DMB_CACHE_BUDGET_GB` / `DMB_CACHE_MAX_AGE_DAYS`; published pair stores: `DMB_PAIR_BUDGET_GB` (8) /
+  `DMB_PAIR_MAX_AGE_DAYS` (7), `PairStore::evict_to_budget`). `tools/dq_cache_prune.sh` (run by the pool's release at most every 6 hours)
+  also removes abandoned test-run directories idle for a day whose pid is dead, and caps `dqp-cache`. Don't measure with `du`; count entries.
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.

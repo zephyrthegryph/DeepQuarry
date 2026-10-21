@@ -91,3 +91,51 @@ dd="${DQ_DMB_DEV_ROOT:-$CACHE/dmb-dev}"
 if [ -d "$dd" ]; then
 	find "$dd" -mindepth 1 -maxdepth 1 -type d -mtime +"${DQ_DMB_DEV_DAYS:-14}" 2>/dev/null | while read -r d; do rm_path "$d"; done
 fi
+
+# Abandoned test scratch. Tests put their stores under E:/dq-cache/test-scratch/run-<pid>-<ms>/ and delete that on exit (tools/dmb/shared/test_scratch.rs);
+# a run that died hard, and the older per-run directories the tests used to leave in the roots below, are collected here: a child directory goes when
+# nothing in it changed for DQ_TEST_SCRATCH_DAYS (default 1) days and the pid in its name (if it has one) is no longer a running process.
+# Never touched: dmbc/, dmb-roots/, dmb-bin/, lane-pool/, slots/, analyze-*, gen-store/ (the daemon's real stores are capped by `dmbc --cache-gc`).
+pid_table=""
+live_pids() { [ -n "$pid_table" ] || pid_table="$(tasklist //NH //FO CSV 2>/dev/null | cut -d, -f2 | tr -d '"\r' | sort -u; echo end)"; echo "$pid_table"; }
+scratch_idle_days="${DQ_TEST_SCRATCH_DAYS:-1}"
+removed_dirs=0; removed_files=0
+sweep_children() { # <root> [child-glob]
+	local root="$1" glob="${2:-*}" d name pid
+	[ -d "$root" ] || return 0
+	while IFS= read -r d; do
+		d="${d%/}"; name="$(basename "$d")"
+		[ -n "$(find "$d" -mmin -$(( scratch_idle_days * 1440 )) -print -quit 2>/dev/null)" ] && continue
+		pid="$(sed -n -E 's/^(run-)?(.*-)?([0-9]{2,})-[0-9]+(-.*)?$/\3/p; t; s/^(.*-)?([0-9]{2,})$/\2/p' <<<"$name" | head -1)"
+		if [ -n "$pid" ] && live_pids | grep -qx "$pid"; then continue; fi
+		removed_dirs=$((removed_dirs + 1))
+		removed_files=$((removed_files + $(find "$d" -type f 2>/dev/null | wc -l)))
+		rm_path "$d"
+	done < <(ls -d "$root"/$glob/ 2>/dev/null)
+}
+sweep_children "$CACHE/test-scratch" 'run-*'
+for r in dmb-protocol-checks dmb-abi-disk-tests dmb-disk-only-tests dmb-publication-proof-tests dmb-shadow dmb-build-integration dmbb dmbc-pool1; do
+	sweep_children "$CACHE/$r"
+done
+for r in callable-fallback-tests variable-negative-tests contract-tests; do sweep_children "$CACHE/dmb-native-v2/$r"; done
+for t in "$CACHE"/dmt-*/; do [ -d "$t" ] && sweep_children "$t"; done
+# Top-level dmt-* scratch directories that are themselves idle (a codex tool's per-experiment roots) go whole once nothing under them changed.
+for t in "$CACHE"/dmt-*/; do
+	t="${t%/}"; [ -d "$t" ] || continue
+	[ -n "$(find "$t" -mmin -$(( scratch_idle_days * 1440 )) -print -quit 2>/dev/null)" ] && continue
+	removed_dirs=$((removed_dirs + 1)); removed_files=$((removed_files + $(find "$t" -type f 2>/dev/null | wc -l))); rm_path "$t"
+done
+echo "test scratch: $removed_dirs abandoned directories ($removed_files files)$([ "$dry" -eq 1 ] && echo ' would be removed (dry run)' || echo ' removed')"
+
+# dqp-cache: size and age capped like the other file caches (least recently modified file first). Nothing in this repository creates it; whatever
+# tool does, this keeps it bounded: DQ_DQP_CACHE_MAX_MB (default 2048) and DQ_DQP_CACHE_DAYS (default 7).
+dq="${DQ_DQP_CACHE:-$CACHE/dqp-cache}"
+if [ -d "$dq" ]; then
+	find "$dq" -type f -mtime +"${DQ_DQP_CACHE_DAYS:-7}" 2>/dev/null | while read -r f; do rm_path "$f"; done
+	max_kb=$(( ${DQ_DQP_CACHE_MAX_MB:-2048} * 1024 )); total_kb=0
+	while IFS=$'\t' read -r kb f; do
+		total_kb=$((total_kb + kb))
+		[ "$total_kb" -gt "$max_kb" ] && rm_path "$f"
+	done < <(find "$dq" -type f -printf '%T@\t%k\t%p\n' 2>/dev/null | sort -rn | awk -F'\t' '{print $2 "\t" $3}')
+	echo "dqp-cache: capped at ${DQ_DQP_CACHE_MAX_MB:-2048} MB / ${DQ_DQP_CACHE_DAYS:-7} days"
+fi

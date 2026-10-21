@@ -5,7 +5,7 @@ fn persistent_workers_rebind_and_cleanup_panics_and_stale_tokens() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let directory = std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+    let directory = crate::test_scratch::root()
         .join(format!("executor-requests-{}-{stamp}", std::process::id()));
     std::fs::create_dir_all(&directory).unwrap();
     let mut executor = BuildExecutor::new_unbound(2).unwrap();

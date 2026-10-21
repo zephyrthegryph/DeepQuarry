@@ -8,7 +8,7 @@ impl Directory {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path = PathBuf::from("E:/dq-cache/dmb-protocol-checks").join(format!(
+        let path = crate::test_scratch::root().join(format!(
             "orphan-spool-{}-{stamp}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)

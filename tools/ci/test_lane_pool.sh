@@ -28,6 +28,7 @@ g add -A && g commit -q -m init && g branch -M master && g push -q origin master
 g fetch -q origin
 
 export DQ_LANE_POOL_DIR="$tmp/pool" DQ_LANE_POOL_STATE="$tmp/state" DQ_LANE_POOL_SIZE=2 DQ_LANE_POOL_REPO="$tmp/repo" DQ_DMBC_DAEMON_DIR="$tmp/none"
+export DQ_LANE_POOL_NO_UPDATE=1
 pool() { bash "$tmp/repo/tools/dq_lane_pool.sh" "$@"; }
 
 p1="$(pool lease lane/a 2>/dev/null)"
