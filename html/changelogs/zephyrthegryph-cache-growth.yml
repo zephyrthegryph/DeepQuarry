@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dmb tests now put their scratch under one per-process directory that is deleted on exit; pair stores get a byte cap; the cache sweep removes abandoned test runs; dq_lane_pool.sh updates itself from origin/master"

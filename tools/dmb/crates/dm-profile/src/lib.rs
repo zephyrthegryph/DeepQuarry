@@ -1,4 +1,7 @@
 //! Span profiler with platform CPU clocks. No sampling agent or elevation.
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 mod cpu_bounds;
 use cpu_bounds::{interval_bounds, sum_bounds, union_interval_bounds};
 mod domain_bounds;

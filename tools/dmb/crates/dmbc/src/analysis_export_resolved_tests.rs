@@ -30,7 +30,7 @@ fn check_resolved(disk: bool) {
     let executor = dm_exec::BuildExecutor::new(2).unwrap();
     let cache = disk.then(|| {
         let base = if cfg!(windows) {
-            std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };

@@ -104,7 +104,7 @@ mod tests {
                 .unwrap()
                 .as_nanos();
             Self(
-                PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+                crate::test_scratch::root()
                     .join(format!("lazy-disk-{}-{unique}", std::process::id())),
             )
         }

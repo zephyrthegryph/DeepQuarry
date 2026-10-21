@@ -2,7 +2,7 @@ use super::*;
 struct OwnedRoot(PathBuf);
 impl OwnedRoot {
     fn new() -> Self {
-        let base = if cfg!(windows) { PathBuf::from("E:/dq-cache/dmb-protocol-checks") }
+        let base = if cfg!(windows) { crate::test_scratch::root() }
             else { std::env::temp_dir() };
         let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
             .unwrap().as_nanos();

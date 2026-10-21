@@ -46,6 +46,8 @@ pub(super) fn run_once(budget: u64, min_age: Duration, max_age: Option<Duration>
     let outcome = dm_cache::Cache::default_root()
         .and_then(|root| dm_cache::Cache::open(root, dm_cache::Limits::default()))
         .and_then(|cache| cache.evict_to_limits(SystemTime::now(), budget, min_age, max_age));
+    let stores = crate::cache_maintenance::evict_known_pair_stores();
+    let stores = if stores.is_empty() { String::new() } else { format!("\n{}", stores.join("\n")) };
     match outcome {
         Ok(report) => format!(
             "dmbd cache budget: {:.1} GB -> {:.1} GB of {:.1} GB, deleted {} of {} leaves ({:.1} GB, {} for age), deferred {}, protected {}, {:.2}s",
@@ -59,8 +61,8 @@ pub(super) fn run_once(budget: u64, min_age: Duration, max_age: Option<Duration>
             report.deferred,
             report.protected,
             started.elapsed().as_secs_f64()
-        ),
-        Err(error) => format!("dmbd cache budget: pass skipped: {error}"),
+        ) + &stores,
+        Err(error) => format!("dmbd cache budget: pass skipped: {error}{stores}"),
     }
 }
 

@@ -972,7 +972,7 @@ impl MappedTemp {
     fn new() -> Self {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let parent = if cfg!(windows) {
-            std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };

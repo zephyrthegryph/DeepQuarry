@@ -345,7 +345,7 @@ mod tests {
     impl Temporary {
         fn new(name: &str) -> Self {
             let base = if cfg!(windows) {
-                std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+                crate::test_scratch::root()
             } else {
                 std::env::temp_dir()
             };

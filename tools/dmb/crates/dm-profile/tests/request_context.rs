@@ -1,11 +1,13 @@
 //! Sequential requests share process tracing registration, never process certificates.
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 #[test]
 fn requests_route_exact_state_dispatch_and_close_every_lifecycle() {
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let directory = std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+    let directory = test_scratch::root()
         .join(format!("request-context-{}-{stamp}", std::process::id()));
     std::fs::create_dir_all(&directory).unwrap();
     let obstruction = directory.join("file");

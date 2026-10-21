@@ -6,7 +6,7 @@ use dm_preprocess::regions::{DirectivePlan, ExpandedRegions};
 struct Root(PathBuf);
 impl Root {
     fn new() -> Self {
-        let base = if cfg!(windows) { PathBuf::from("E:/dq-cache/dmb-protocol-checks") } else { std::env::temp_dir() };
+        let base = if cfg!(windows) { crate::test_scratch::root() } else { std::env::temp_dir() };
         let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
         let root = base.join(format!("resource-journal-{}-{stamp}", std::process::id()));
         std::fs::create_dir_all(root.join("late")).unwrap(); Self(root)

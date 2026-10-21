@@ -133,7 +133,7 @@ fn finite_variable_negative_resident_and_disk_replay_tracks_inheritance_and_dele
     resident.remember(key.to_vec(), reads.clone(), unit, vec![], versions.clone());
     assert!(resident.values.lookup(key, &host).is_some());
     let token = host.domain_version(queries[1].domain()).unwrap();
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-native-v2/variable-negative-tests")
+    let root = crate::test_scratch::root()
         .join(format!("{}-{token}", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
     let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();

@@ -58,6 +58,10 @@ if ! "$bin" check --ci "$@"; then
 	failed+=("analyze check")
 fi
 
+if ! bash tools/ci/check_test_scratch.sh; then
+	failed+=("check_test_scratch")
+fi
+
 wait
 for name in gen_capability_varmap_check gen_capability_varmap_selftest; do
 	echo "::group::$name"

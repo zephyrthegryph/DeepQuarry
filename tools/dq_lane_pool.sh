@@ -402,6 +402,11 @@ cmd_release() {
 	release_slot "$found" "$force" "$keep"
 	local rc=$?
 	lock_drop
+	# Cache hygiene, at most every 6 hours, detached: caps the shared caches and removes abandoned test scratch (tools/dq_cache_prune.sh).
+	if [ -z "$(find "$STATE_DIR/prune.stamp" -mmin -360 2>/dev/null)" ] && [ -f "$REPO/tools/dq_cache_prune.sh" ]; then
+		: >"$STATE_DIR/prune.stamp"
+		( nohup bash "$REPO/tools/dq_cache_prune.sh" >"$STATE_DIR/prune.log" 2>&1 & ) >/dev/null 2>&1
+	fi
 	return "$rc"
 }
 
