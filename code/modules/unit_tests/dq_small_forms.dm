@@ -38,7 +38,7 @@
 	refresh_flush()
 	C.set_waypoint("north", "N", T.x, T.y + 10, T.z, "#ffffff")
 	refresh_flush()
-	var/before = C.rx?.look_key
+	var/before = C.look_rec?.look_key
 	TEST_ASSERT_NOTNULL(before, "the holder draws its markers")
 	TEST_ASSERT_EQUAL(length(C.compass_waypoint_markers), 1, "the shown waypoint has a marker")
 	var/turf/east = get_step(T, EAST)
@@ -46,12 +46,12 @@
 	C.forceMove(east)
 	C.rebuild_overlay_lists()
 	refresh_flush()
-	TEST_ASSERT(C.rx?.look_key != before, "the waypoint turned with the holder, and the look followed with no update_icon call")
-	var/after_move = C.rx?.look_key
+	TEST_ASSERT(C.look_rec?.look_key != before, "the waypoint turned with the holder, and the look followed with no update_icon call")
+	var/after_move = C.look_rec?.look_key
 	C.hide_waypoint("north")
 	C.rebuild_overlay_lists()
 	refresh_flush()
-	TEST_ASSERT(C.rx?.look_key != after_move, "a hidden waypoint leaves the look")
+	TEST_ASSERT(C.look_rec?.look_key != after_move, "a hidden waypoint leaves the look")
 	TEST_ASSERT_EQUAL(length(C.compass_waypoint_markers), 0, "and the marker list")
 
 /obj/compass_holder/dq_small_heading
@@ -66,7 +66,7 @@
 	refresh_flush()
 	var/image/first = C.compass_heading_marker
 	TEST_ASSERT_NOTNULL(first, "a holder that shows its heading has a marker")
-	TEST_ASSERT_NOTNULL(C.rx?.look_key, "the first look is applied")
+	TEST_ASSERT_NOTNULL(C.look_rec?.look_key, "the first look is applied")
 	C.recalculate_heading()
 	TEST_ASSERT(C.compass_heading_marker != first, "the marker is a new image after a recalculation")
 
@@ -111,7 +111,7 @@
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(S)
 	TEST_ASSERT(theirs?.look_watchers?[OWN_KEY(C)], "the subject knows who composes its look")
 	TEST_ASSERT(!length(S.rel_watchers), "and the composer is not a watcher of its every change")
-	var/key = C.rx?.look_key
+	var/key = C.look_rec?.look_key
 	var/drawn = C.draws
 	S.set_noise(5)
 	refresh_flush()
@@ -119,7 +119,7 @@
 	S.set_shade(2)
 	refresh_flush()
 	TEST_ASSERT(C.draws > drawn, "the subject's new look redraws the composer")
-	TEST_ASSERT(C.rx?.look_key != key, "and the composer's key moved with the version of the look it composes")
+	TEST_ASSERT(C.look_rec?.look_key != key, "and the composer's key moved with the version of the look it composes")
 	TEST_ASSERT(cap_engine_state_of(S)?.look_serial >= 1, "the subject counted its published look")
 	C.set_subject(null)
 	state_changed(C)

@@ -319,7 +319,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	dir = new_dir
 	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
 	// on_change() hook or a pending operation that reads it; an atom nothing draws, watches or reads pays one var read and the demand test.
-	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir))) || draw_hop_reads_var(nameof(dir))))
+	if(old_dir != new_dir && (look_rec?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir))) || draw_hop_reads_var(nameof(dir))))
 		tracked_changed(src, nameof(dir))
 SETTER(/atom, dir)
 

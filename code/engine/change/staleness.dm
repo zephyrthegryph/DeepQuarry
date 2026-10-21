@@ -377,7 +377,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(GLOB.staleness_depth)
 		return
 	var/flags = type_derive_flags(A)
-	if(!(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING)) && isnull(A.rx?.look_key))
+	if(!(flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING)) && isnull(A.look_rec?.look_key))
 		return // a type known to draw nothing
 	var/key
 	var/failed = null
@@ -396,13 +396,13 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	var/list/inputs
 	if(GLOB.staleness_strict)
 		inputs = staleness_draw_inputs(A)
-	if(key == A.rx?.look_key)
+	if(key == A.look_rec?.look_key)
 		staleness_snapshot(A, snap_key, inputs)
 		return
 	var/extra
 	if(length(served))
 		extra = "written while the dependency graph said the draw reads none of: [jointext(served, ", ")]"
-	var/detail = refresh_key_difference(A.rx?.look_key, key)
+	var/detail = refresh_key_difference(A.look_rec?.look_key, key)
 	staleness_report("draw", A, "draw", trigger, detail, GLOB.staleness_strict ? staleness_culprit(A, snap_key, inputs, extra) : extra)
 
 /// The derive() values of A against a fresh computation.
@@ -436,7 +436,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	if(!isatom(E))
 		return
 	var/atom/A = E
-	if(isnull(A.rx?.look_key))
+	if(isnull(A.look_rec?.look_key))
 		return
 	if(!GLOB.staleness_strict && !(GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1))
 		return
@@ -454,7 +454,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		return
 	if(D.rx?.stats)
 		staleness_check_stats(D, trigger)
-	if(isatom(D) && D.rx?.refresh_swept)
+	if(isatom(D) && D.look_rec?.refresh_swept)
 		staleness_check_draw(D, trigger, forced = TRUE)
 		staleness_check_derive(D, trigger)
 		if(GLOB.staleness_strict)

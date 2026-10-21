@@ -454,9 +454,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
 		// draw and hide, and a type not seen yet is tried once and recorded.
 		var/flags = type_derive_flags(A)
-		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.rx?.look_key)
+		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_rec?.look_key)
 		// A mob may be granted verbs by its species and traits, which no type flag can know.
-		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.rx?.refresh_hidden_verbs || A.rx?.refresh_granted_verbs || ismob(A)
+		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.look_rec?.refresh_hidden_verbs || A.look_rec?.refresh_granted_verbs || ismob(A)
 		probing = flags & TYPE_DERIVES_PENDING
 		if(probing)
 			GLOB.derive_probing = TRUE
@@ -558,14 +558,14 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		for(var/state in engine.look_flashes)
 			L.overlay(state)
 	if(!L.touched)
-		if(apply && !isnull(A.rx?.look_key))
+		if(apply && !isnull(A.look_rec?.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
 			// last look set (overlays, filters, vis_contents, base properties, its light). Taking them back is presentation too.
 			var/atom/outer_empty = GLOB.refresh_applying
 			GLOB.refresh_applying = A
 			L.apply_to(A)
 			GLOB.refresh_applying = outer_empty
-			rx_of(A).look_key = null
+			look_rec_of(A).look_key = null
 			if(engine?.look_watchers)
 				look_published(A, engine)
 		// A draw that shows nothing yet may still have read other entities (look.watch()): their changes are what bring its layers in.
@@ -577,12 +577,12 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
 		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
 			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
-		if(key != A.rx?.look_key)
+		if(key != A.look_rec?.look_key)
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
 			L.apply_to(A)
 			GLOB.refresh_applying = outer
-			rx_of(A).look_key = key
+			look_rec_of(A).look_key = key
 			// The effects the draw named run once the refresh is over (look_effects_run()): they may write state.
 			if(L.effects)
 				GLOB.look_effects_due += list(list(A, L.effects))
@@ -604,13 +604,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		output_failed(A, "hidden_verbs", fault_hidden_verbs, eval_depth_hidden_verbs)
 		throw fault_hidden_verbs
 	DERIVED_EVAL_END
-	if(!length(hidden) && !length(A.rx?.refresh_hidden_verbs))
+	if(!length(hidden) && !length(A.look_rec?.refresh_hidden_verbs))
 		return hidden
 	if(!apply)
 		return hidden
-	var/list/was = A.rx?.refresh_hidden_verbs || list()
+	var/list/was = A.look_rec?.refresh_hidden_verbs || list()
 	var/list/flipped = (was - hidden) + (hidden - was)
-	rx_of(A).refresh_hidden_verbs = length(hidden) ? hidden : null
+	look_rec_of(A).refresh_hidden_verbs = length(hidden) ? hidden : null
 	if(length(flipped))
 		verb_store_refresh(A, flipped)
 	return hidden
@@ -619,13 +619,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /// through the verb store (which keeps hidden_verbs() winning).
 /proc/refresh_granted_verbs(atom/A, apply = TRUE)
 	var/list/granted = A.granted_verbs() || list()
-	if(!length(granted) && !length(A.rx?.refresh_granted_verbs))
+	if(!length(granted) && !length(A.look_rec?.refresh_granted_verbs))
 		return granted
 	if(!apply)
 		return granted
-	var/list/was = A.rx?.refresh_granted_verbs || list()
+	var/list/was = A.look_rec?.refresh_granted_verbs || list()
 	var/list/flipped = (was - granted) + (granted - was)
-	rx_of(A).refresh_granted_verbs = length(granted) ? granted : null
+	look_rec_of(A).refresh_granted_verbs = length(granted) ? granted : null
 	if(length(flipped))
 		verb_store_refresh(A, flipped)
 	return granted
@@ -644,11 +644,11 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 
 
 /proc/refresh_sweep_track(atom/A)
-	if(A.rx?.refresh_swept)
+	if(A.look_rec?.refresh_swept)
 		return
-	if(isnull(A.rx?.look_key) && !A.rx?.refresh_hidden_verbs && !A.rx?.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
+	if(isnull(A.look_rec?.look_key) && !A.look_rec?.refresh_hidden_verbs && !A.look_rec?.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
 		return
-	rx_of(A).refresh_swept = TRUE
+	look_rec_of(A).refresh_swept = TRUE
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// Test builds sweep every swept atom strictly, so they keep the index. Production audits only what a client can see and finds those atoms by
 	// walking the range of the clients' tiles (refresh_sweep_collect()): registering each of a hundred thousand atoms here cost one REF() apiece
@@ -673,7 +673,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		if(GLOB.refresh_sweep_index > length(L))
 			GLOB.refresh_sweep_index = 1
 		var/atom/A = locate(L[GLOB.refresh_sweep_index])
-		if(!isatom(A) || QDELETED(A) || !A.rx?.refresh_swept)
+		if(!isatom(A) || QDELETED(A) || !A.look_rec?.refresh_swept)
 			L.Cut(GLOB.refresh_sweep_index, GLOB.refresh_sweep_index + 1)
 			continue
 		GLOB.refresh_sweep_index++
@@ -700,7 +700,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		var/atom/A = near[GLOB.refresh_sweep_index++]
 		scanned++
 		// Queued here: its refresh is pending, not missed.
-		if(QDELETED(A) || !A.rx?.refresh_swept || A.refresh_queued)
+		if(QDELETED(A) || !A.look_rec?.refresh_swept || A.refresh_queued)
 			continue
 		checked++
 		refresh_check_drift(A)
@@ -713,7 +713,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/seen = list()
 	for(var/turf/where as anything in client_turfs)
 		for(var/atom/A as anything in range(world.view + 2, where))
-			if(A.rx?.refresh_swept)
+			if(A.look_rec?.refresh_swept)
 				seen[A] = TRUE
 	return seen // indexed by number it answers its keys, in discovery order
 
@@ -731,8 +731,8 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/drift = list()
 	if(check_draw)
 		var/key = refresh_look(A, apply = FALSE)
-		if(key != A.rx?.look_key)
-			drift += "draw() [refresh_key_difference(A.rx?.look_key, key)]"
+		if(key != A.look_rec?.look_key)
+			drift += "draw() [refresh_key_difference(A.look_rec?.look_key, key)]"
 	var/eval_depth_hidden_verbs = GLOB.derived_evaluating
 	DERIVED_EVAL_BEGIN
 	var/list/hidden
@@ -742,11 +742,11 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		output_failed(A, "hidden_verbs", fault_hidden_verbs, eval_depth_hidden_verbs)
 		throw fault_hidden_verbs
 	DERIVED_EVAL_END
-	var/list/was = A.rx?.refresh_hidden_verbs || list()
+	var/list/was = A.look_rec?.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
 	var/list/granted = A.granted_verbs() || list()
-	var/list/was_granted = A.rx?.refresh_granted_verbs || list()
+	var/list/was_granted = A.look_rec?.refresh_granted_verbs || list()
 	if(length(granted ^ was_granted))
 		drift += "granted_verbs()"
 	if(A.periodic_cadence)
@@ -844,13 +844,13 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	for(var/key in worn_was)
 		if(!(key in worn_keys))
 			var/datum/worn_gone = own_locate(key)
-			if(worn_gone?.rx?.worn_watched)
-				worn_gone.rx.worn_watched--
+			if(worn_gone?.look_rec?.worn_watched)
+				worn_gone.look_rec.worn_watched--
 	for(var/key in worn_keys)
 		if(!(key in worn_was))
 			var/datum/worn_seen = own_locate(key)
 			if(worn_seen)
-				rx_of(worn_seen).worn_watched++
+				look_rec_of(worn_seen).worn_watched++
 	engine.look_watching_worn = worn_keys
 	// look.watch_look(): the atoms whose look this draw composes. Only their look_published() reaches A, never their other changes.
 	var/list/was_looks = engine.look_watching_looks
@@ -873,8 +873,8 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 		return
 	for(var/key in shown)
 		var/datum/worn_gone = own_locate(key)
-		if(worn_gone?.rx?.worn_watched)
-			worn_gone.rx.worn_watched--
+		if(worn_gone?.look_rec?.worn_watched)
+			worn_gone.look_rec.worn_watched--
 	cap_engine_state_of(A).look_watching_worn = null
 
 /// `watcher`'s draw composes `target`'s look: look_published(target) marks it. One call, one count; look_unsubscribe() takes it back.

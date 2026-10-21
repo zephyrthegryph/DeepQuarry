@@ -124,11 +124,11 @@
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "color applied")
 	TEST_ASSERT_EQUAL(F.alpha, 200, "alpha applied")
 	TEST_ASSERT(F.get_filter("outline"), "filter applied")
-	var/key = F.rx?.look_key
+	var/key = F.look_rec?.look_key
 	F.set_tint("#00ff00")
 	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(F.rx?.look_key != key, "a color change changes the key")
+	TEST_ASSERT(F.look_rec?.look_key != key, "a color change changes the key")
 	TEST_ASSERT_EQUAL(F.color, "#00ff00", "the new color applied")
 
 /obj/cap_fixture/dx_review_selfmark
@@ -196,7 +196,7 @@
 	refresh_flush()
 	TEST_ASSERT(!(/obj/item/healthanalyzer/proc/toggle_adv in basic.verbs), "a basic analyzer has no toggle")
 	TEST_ASSERT(/obj/item/healthanalyzer/proc/toggle_adv in adv.verbs, "an advanced analyzer has the toggle from init")
-	TEST_ASSERT(!basic.rx?.refresh_hidden_verbs, "no per-instance hide list on the basic one")
+	TEST_ASSERT(!basic.look_rec?.refresh_hidden_verbs, "no per-instance hide list on the basic one")
 
 /obj/cap_fixture/dx_review_light
 	var/lit = TRUE

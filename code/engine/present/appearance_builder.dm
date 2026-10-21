@@ -668,7 +668,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /// taken back: overlays, filters and vis_contents are removed, and a base property (icon, color,
 /// alpha, ...) goes back to its type default.
 /datum/look/proc/apply_to(atom/A)
-	var/datum/rx_state/cache = rx_of(A)
+	var/datum/rx_look/cache = look_rec_of(A)
 	var/was = cache.look_set_bits
 	var/now = 0
 	var/old_icon = A.icon

@@ -22,7 +22,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		return FALSE
 	if(A.periodic_cadence || A.periodic_interval || LAZYLEN(A.open_tguis))
 		return FALSE
-	if(A.rx && (!isnull(A.rx.look_key) || A.rx.refresh_hidden_verbs || A.rx.refresh_granted_verbs))
+	if(A.look_rec && (!isnull(A.look_rec.look_key) || A.look_rec.refresh_hidden_verbs || A.look_rec.refresh_granted_verbs))
 		return FALSE
 	if(capability_data(A)?[/datum/cap_engine_state])
 		return FALSE // it watches something or flashes: not a look the mapped appearance stands for
