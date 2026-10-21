@@ -702,3 +702,14 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   initialize. `dq_xform_select_pin` (recorded on the legacy recipes, unchanged through the conversion) pins selection and the recipe facts; `dq_xform_cooking_make` pins what
   is made. `/datum/recipe`, `select_recipe`, `available_recipes` and the `build_kitchen_*` procs are hard-banned. Recipe type paths are now
   `/transformation/kitchen/*`, which the microwave UI's class names and the wiki keys follow.
+* **Wave 2, gas data.** The 23 gas reactions are `/transformation/gas/*` (`code/ATMOSPHERICS/gasmixtures/reactions.dm`), `medium = MEDIUM_GAS`, `regime = REGIME_GAS`,
+  `takes = list(gas(type, minimum moles))`, `holds = temperature_in(lo, hi)`, `hotspot = TRUE` for the four fires. The compile fills `gas_takes`, `min_temp` and
+  `max_temp` on the `/datum/xform`; `/datum/gas_mixture/proc/react()` walks `SSair.gas_rules` (`xform_rules_in(MEDIUM_GAS, REGIME_GAS)`; `SSair.gas_reactions` stays an empty list because the Rust `hook_init` looks that var up by name) with the legacy loop
+  unchanged and calls the rule's `react()` on its owner instance. The `react()` bodies are kept as they were (they still call `gas_react()`): D6's pure callbacks and
+  the framework booking the heat are the stage 2 change, not this one. **`priority_group` was never read by the dispatcher**: the DM loop ran `subtypesof()` order, and
+  the unique priorities `init_gas_reactions()` built were for an auxmos registry that is empty on master. So every gas rule shares one priority and the compile order
+  (declaration order) decides, which is today's behaviour; a rule that must run first gets a `priority =` later. The Rust energy-kind table was not touched: its
+  `GAS_REACTION_*` numbers are generated from `reaction_energy.rs` into the bindings, not hand-numbered in DM, so there is nothing for the declaration to replace
+  until named laws (wave 4) move the numbers. `desc` and `hotspot` are new entry arguments; `init_factors()` became `factors()`. `/datum/gas_reaction`, `init_reqs`,
+  `build_min_requirements`, `init_gas_reactions`, `init_factors` and `priority_group` are hard-banned. Pinned by `dq_gas_reaction_declaration_pin` (order, gases,
+  windows, hotspot flags read off the old types) and `dq_gas_reaction_energy_pins` (outcomes), unchanged.

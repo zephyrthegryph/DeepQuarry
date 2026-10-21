@@ -27,6 +27,7 @@
 #define REGIME_DISTILLING "distilling"
 #define REGIME_COOKING "cooking"
 #define REGIME_SMELTING "smelting"
+#define REGIME_GAS "gas"
 
 /// What happens to a product that does not fit its container. CAPACITY_TRUNCATE keeps today's chemistry: the product is clamped to the free volume and the
 /// excess is lost (D10). Items and stacks never truncate: a refused insert is how slots already behave.

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Gas reactions are declared as transformations (type, gases, temperature window) instead of gas reaction datums; their behaviour is unchanged."

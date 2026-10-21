@@ -272,7 +272,7 @@ CAPABILITIES(/turf/open)
 // driven by SSair.fire() via the detached process_turfs_auxtools transaction.
 // The Rust side dispatches back into DM through
 // three callbacks that live in this file: consider_pressure_difference (below),
-// air.react(turf) (gas_mixture.dm react bind -> DM /datum/gas_reaction), and
+// air.react(turf) (gas_mixture.dm react bind -> the DM /transformation/gas rules), and
 // turf.set_visuals(overlay_list) (above).
 
 //////////////////////////SPACEWIND/////////////////////////////

@@ -353,15 +353,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	return vg_compare_hook(src, sample)
 
 ///Performs various reactions such as combustion and fabrication
-/// Runs DM gas reactions against this mixture. Reactions stay in DM (user
-/// decision); this dispatcher checks each /datum/gas_reaction's requirements via
-/// arena getters and calls its react() (whose body was ported onto arena
-/// accessors). auxmos' own reaction engine is NOT used (SSair.gas_reactions is
-/// emptied during auxtools_atmos_init so hook_init doesn't parse it).
+/// Runs the DM gas reactions against this mixture: each /transformation/gas of SSair.gas_rules, in declaration order, whose temperature window and minimum
+/// moles hold (checked against arena readings) runs its react(). The Rust reaction engine is not used (the registry it would read is empty); the heat of a
+/// reaction is booked by gas_react().
 /datum/gas_mixture/proc/react(datum/holder)
 	. = NO_REACTION
-	var/list/reactions = SSair.gas_reactions
-	if(!length(reactions))
+	var/list/rules = SSair.gas_rules
+	if(!length(rules))
 		return
 	// One batched read for the temperature and every gas the requirements name.
 	var/list/readings = vg_read_mixtures(list(src))
@@ -370,17 +368,15 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	if(readings[GAS_READ_MOLES(GAS_ID_HYPERNOBLIUM)] >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
 		return STOP_REACTIONS
 	var/results_reset = FALSE
-	for(var/datum/gas_reaction/reaction as anything in reactions)
-		var/list/reqs = reaction.requirements
-		if(!reqs)
+	for(var/datum/xform/rule as anything in rules)
+		var/list/needs = rule.gas_takes
+		if(!needs)
 			continue
-		if((reqs["MIN_TEMP"] && temp < reqs["MIN_TEMP"]) || (reqs["MAX_TEMP"] && temp > reqs["MAX_TEMP"]))
+		if((rule.min_temp && temp < rule.min_temp) || (rule.max_temp && temp > rule.max_temp))
 			continue
 		var/satisfied = TRUE
-		for(var/id in reqs)
-			if(id == "MIN_TEMP" || id == "MAX_TEMP")
-				continue
-			if(readings[GAS_READ_MOLES(GAS_IDX(id))] < reqs[id])
+		for(var/gas_type in needs)
+			if(readings[GAS_READ_MOLES(GAS_IDX(gas_type))] < needs[gas_type])
 				satisfied = FALSE
 				break
 		if(!satisfied)
@@ -392,6 +388,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 		if(!results_reset)
 			reaction_results = list()
 			results_reset = TRUE
+		var/transformation/gas/reaction = rule.owner_of()
 		. |= reaction.react(src, holder)
 		if(. & STOP_REACTIONS)
 			return

@@ -6,10 +6,10 @@
 
 /// A mixture that meets `reaction`'s requirements: each gas it needs at four times its minimum (at least 100 mol), at a temperature inside its
 /// window (the middle of a closed one).
-/proc/gas_reaction_test_mixture(datum/gas_reaction/reaction)
+/proc/gas_reaction_test_mixture(datum/xform/reaction)
 	var/datum/gas_mixture/air = new(CELL_VOLUME)
-	var/low = reaction.requirements["MIN_TEMP"]
-	var/high = reaction.requirements["MAX_TEMP"]
+	var/low = reaction.min_temp
+	var/high = reaction.max_temp
 	var/kelvin = T20C
 	if(low && high)
 		kelvin = (low + high) / 2
@@ -17,27 +17,29 @@
 		kelvin = max(low * 1.5, low + 200)
 	else if(high)
 		kelvin = high * 0.8
-	for(var/req in reaction.requirements)
-		if(ispath(req, /datum/gas))
-			air.adjust_moles(req, max(reaction.requirements[req] * 4, 100))
+	for(var/req in reaction.gas_takes)
+		air.adjust_moles(req, max(reaction.gas_takes[req] * 4, 100))
 	heat_set(air, kelvin, HEAT_SOURCE_OTHER)
 	return air
 
 /// Every reaction's outcome on its test mixture: list(id = list(result, temperature K, total moles)).
 /proc/gas_reaction_test_outcomes()
 	. = list()
-	for(var/datum/gas_reaction/reaction as anything in SSair.gas_reactions)
-		if(!length(reaction.requirements) || reaction.id == "vapor")
+	for(var/datum/xform/reaction as anything in SSair.gas_rules)
+		if(!length(reaction.gas_takes) || reaction.id == "vapor")
 			continue
 		var/datum/gas_mixture/air = gas_reaction_test_mixture(reaction)
 		air.reaction_results = list()
-		var/result = reaction.react(air, null)
+		var/transformation/gas/owner = reaction.owner_of()
+		var/result = owner.react(air, null)
 		.[reaction.id] = list(result, air.return_temperature(), air.total_moles())
 		qdel(air)
 
 /datum/unit_test/dq_gas_reaction_energy_pins
 
 /datum/unit_test/dq_gas_reaction_energy_pins/Run()
+	var/declaration_failure = dq_gas_reaction_declaration_failure()
+	TEST_ASSERT(isnull(declaration_failure), "the gas reaction declarations changed: [declaration_failure]")
 	// id = list(temperature K, total moles) after one reaction on the DM model.
 	var/static/list/golden = list(
 		"sterilization" = list(664.787, 100),

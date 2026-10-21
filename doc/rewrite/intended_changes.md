@@ -5301,3 +5301,9 @@ carry the new path; the spritesheet and the UI read them from the same place. `G
 
 - `/obj/machinery/nuclearbomb`: native `rolls()` supplies the same five-digit code range and distinct three-of-seven wire choices. The realization comes from the existing deterministic instance stream rather than world RNG; explicit map values follow the framework's existing override rule. Wire-state lists remain separate mutable lists for each bomb.
 - `/obj/machinery/alarm`: the default alarm name still uses its area's name and an ID in 1..9999. Native rolls choose that ID from the existing deterministic instance stream; custom map names remain unchanged. Area registration and frequency/TLV setup retain their order after normal initialization.
+
+## Gas reactions as transformations: no change (2026-10-18)
+
+The 23 `/datum/gas_reaction` types are `/transformation/gas` rules and run in the same order against the same requirements (`dq_gas_reaction_declaration_pin`,
+`dq_gas_reaction_energy_pins`). `priority_group` is gone: it was only ever used to number an auxmos registry that is empty, and the DM loop ran declaration order,
+which the rules keep. A reaction that should be ordered by band needs a `priority =` and an entry here.

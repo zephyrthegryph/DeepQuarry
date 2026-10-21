@@ -246,7 +246,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 
 
 /// Verifies SSair initialized and built its gas-reaction roster at boot — that
-/// init_gas_reactions() populated SSair.gas_reactions. If it didn't, gas_mixture
+/// the compiled /transformation/gas rules reached SSair.gas_rules. If it didn't, gas_mixture
 /// react() would do nothing and burn() / equalize() would silently no-op.
 /// (Gas math runs in pure DM; the Rust auxmos backend is not wired — see SSair.)
 /datum/unit_test/dq_ssair_initialized
@@ -254,9 +254,9 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 /datum/unit_test/dq_ssair_initialized/Run()
 	TEST_ASSERT_NOTNULL(SSair, "SSair is null — subsystem failed to initialize")
 	TEST_ASSERT(SSair.initialized, "SSair did not finish Initialize()")
-	TEST_ASSERT_NOTNULL(SSair.gas_reactions, "SSair.gas_reactions list is null")
-	TEST_ASSERT(length(SSair.gas_reactions) > 0, \
-		"SSair.gas_reactions is empty — gas_mixture reactions wouldn't fire")
+	TEST_ASSERT_NOTNULL(SSair.gas_rules, "SSair.gas_rules list is null")
+	TEST_ASSERT(length(SSair.gas_rules) > 0, \
+		"SSair.gas_rules is empty — gas_mixture reactions wouldn't fire")
 
 
 /// Verifies GLOB.gas_data was populated at construction from /datum/gas
@@ -2747,19 +2747,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"miaster didn't decompose miasma: [initial_miasma] → [final_miasma]")
 
 
-/// All gas_reactions have an init_reqs that populates a non-empty requirements
-/// list — catches "wrong gas type path" / "typo'd #define" / "forgot to set
-/// requirements" regressions in newly-added reactions.
+/// Every gas reaction compiled with gas terms and a name and id — catches "wrong gas type path" / "typo'd #define" /
+/// "forgot the takes" regressions in newly-added reactions.
 /datum/unit_test/dq_all_reactions_have_valid_requirements
 
 /datum/unit_test/dq_all_reactions_have_valid_requirements/Run()
-	for(var/datum/gas_reaction/R_type as anything in subtypesof(/datum/gas_reaction))
-		var/datum/gas_reaction/R = new R_type
-		TEST_ASSERT_NOTNULL(R.requirements, "[R_type] has null requirements after New()")
-		TEST_ASSERT(length(R.requirements) > 0, \
-			"[R_type] has empty requirements")
-		TEST_ASSERT_NOTNULL(R.id, "[R_type] has null id")
-		TEST_ASSERT_NOTNULL(R.name, "[R_type] has null name")
+	var/list/seen_ids = list()
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_GAS, REGIME_GAS))
+		TEST_ASSERT_NOTNULL(R.gas_takes, "[R.rule_type] has no gas terms after the compile")
+		TEST_ASSERT(length(R.gas_takes) > 0, "[R.rule_type] has empty requirements")
+		TEST_ASSERT_NOTNULL(R.id, "[R.rule_type] has null id")
+		TEST_ASSERT_NOTNULL(R.name, "[R.rule_type] has null name")
+		TEST_ASSERT(!seen_ids[R.id], "[R.rule_type] repeats the id [R.id]")
+		seen_ids[R.id] = TRUE
+		for(var/gas_type in R.gas_takes)
+			TEST_ASSERT(ispath(gas_type, /datum/gas), "[R.rule_type] takes [gas_type], which is not a gas")
+			TEST_ASSERT(R.gas_takes[gas_type] > 0, "[R.rule_type] takes no moles of [gas_type]")
+		var/transformation/gas/owner = R.owner_of()
+		TEST_ASSERT(istype(owner), "[R.rule_type] has no owner instance")
+	TEST_ASSERT_EQUAL(length(seen_ids), 23, "the gas reactions compiled")
 
 
 // =====================================================================
