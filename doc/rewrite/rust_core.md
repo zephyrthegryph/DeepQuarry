@@ -261,7 +261,9 @@ The generated binding is vg_read_mixtures rather than the removed scalar vg_gas_
 
 ```dm fragment
 /proc/vg_read_mixtures(mixtures)
-	var/static/__f = load_ext(VERDIGRIS, "byond:read_mixtures_ffi")
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:read_mixtures_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(mixtures)
 ```

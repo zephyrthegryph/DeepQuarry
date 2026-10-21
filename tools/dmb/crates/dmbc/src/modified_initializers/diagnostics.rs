@@ -96,6 +96,7 @@ mod tests {
         };
         let mut source = Origins {
             entries: vec![origin.clone(), origin],
+            ops: true,
         };
         let fields = vec![("child".into(), value)];
         let error = || {

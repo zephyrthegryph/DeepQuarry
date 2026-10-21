@@ -4,7 +4,8 @@
 // `#[auxmacros::bind_raw_args(...)]`. This scans for those attributes and
 // writes:
 //   code/__defines/verdigris/_bindings.dm  one `/proc/vg_<fn>(args)` per bind,
-//                                          with a cached load_ext handle, the
+//                                          with a load_ext handle resolved on first call (a static
+//                                          initializer would grow <global-init>, which has a u16 code limit), the
 //                                          `@dm-define` numeric registry and
 //                                          VERDIGRIS_ABI;
 //   verdigris/ffi/src/abi.rs               the same ABI string for the DLL.
@@ -1064,14 +1065,18 @@ export function render(root: string): {
     if (returnType) dm += `// dm-health: returns ${returnType}\n`;
     if (b.args === null) {
       dm += `/proc/vg_${b.name}(...)
-	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(arglist(args))
 `;
     } else {
       const a = b.args.join(', ');
       dm += `/proc/vg_${b.name}(${a})
-	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(${a})
 `;

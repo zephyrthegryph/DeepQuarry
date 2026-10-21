@@ -28,6 +28,8 @@ pub struct Collected {
 }
 struct Origins {
     entries: Vec<DebugOrigin>,
+    /// Emit `DbgFile`/`DbgLine`: only when `DEBUG` is defined, as DreamMaker does.
+    ops: bool,
 }
 /// Exact operand seed whose source ordinals were resolved before rich IR was released.
 #[derive(Clone)]
@@ -100,6 +102,9 @@ impl<R: Resolver> Resolver for ResourceProofHost<'_, R> {
     }
 }
 impl dm_codegen_byond::DebugSourceProvider for Origins {
+    fn emits_debug_ops(&self) -> bool {
+        self.ops
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         Ok(0)
     }
@@ -125,7 +130,7 @@ fn origins(captured: &CapturedModifiedInstance, parent: &DebugOrigins) -> Result
     for ordinal in &captured.field_origins {
         entries.push(get(*ordinal)?);
     }
-    Ok(Origins { entries })
+    Ok(Origins { entries, ops: true })
 }
 fn enqueue(
     code: &ResolverProc,
@@ -301,6 +306,7 @@ pub(crate) fn collect_owned_prepared_diagnosed<'a, R: Resolver>(
             seed.captured,
             Origins {
                 entries: seed.origins.entries,
+                ops: true,
             },
         ));
     }
@@ -333,7 +339,8 @@ fn finish_collection<R: Resolver>(
         descriptors: Vec::new(),
         artifacts: Vec::new(),
     };
-    while let Some((symbol, captured, source)) = pending.pop_front() {
+    while let Some((symbol, captured, mut source)) = pending.pop_front() {
+        source.ops = frontend.is_none_or(|frontend| frontend.plan.final_macros.contains_key("DEBUG"));
         let descriptor = &captured.descriptor;
         let lowered = retained::lower(
             symbol,

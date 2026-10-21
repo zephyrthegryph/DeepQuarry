@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler emits DbgFile/DbgLine only when DEBUG is defined, as DreamMaker does; Verdigris bindings resolve load_ext on first call, shrinking <global-init> from 49,712 to 38,920 words"
