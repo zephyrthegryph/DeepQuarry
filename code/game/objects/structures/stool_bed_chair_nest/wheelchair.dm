@@ -128,8 +128,9 @@
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
 CAPABILITIES(/obj/structure/bed/chair/wheelchair)
+	click_order(BIND_HAND, "touch", "buckle.unbuckle")
 	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
-	op("touch", hand(), label("Use"), priority(above("buckle.unbuckle")), then(PROC_REF(touched)))
+	op("touch", hand(), label("Use"), then(PROC_REF(touched)))
 
 /// A hand on the chair: drops the one pulling it, or frees whoever is sitting in it.
 /obj/structure/bed/chair/wheelchair/proc/touched(datum/act/op/A)
