@@ -85,6 +85,9 @@
 	var/check_actor_ref
 	var/check_count = 0
 
+/datum/spell/rune_write/interim_actor_probe/target_questions(mob/user)
+	return null
+
 /datum/spell/rune_write/interim_actor_probe/choose_targets(mob/user)
 	picked_rune = "Stun"
 	return list(user)

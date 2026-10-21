@@ -14,6 +14,8 @@
 /datum/ask_sequence
 	var/list/steps
 	var/step_index = 0
+	/// The spec of the question open now (a step proc's answer is stored under the key and flags of the spec it returned).
+	var/list/open_step
 	/// key -> answer, for keys the type declares no var for.
 	var/list/answers
 	/// What step procs, on_done and on_stop run on (a plain reference: the sequence lives only while a question is open).
@@ -33,6 +35,7 @@ CAPABILITIES(/datum/ask_sequence)
 
 /// The default answerer, or null when they are gone.
 /datum/ask_sequence/proc/actor()
+	RETURN_TYPE(/mob)
 	return rerun_unwrap(answerer_w)
 
 /// What the questions are about, or null.
@@ -90,6 +93,7 @@ CAPABILITIES(/datum/ask_sequence)
 			if(isnull(result))
 				continue
 			step = result
+		open_step = step
 		var/list/fields = (common_fields ? common_fields.Copy() : list()) + step["fields"]
 		if(isnull(fields["timeout"]))
 			fields["timeout"] = 0
@@ -107,9 +111,7 @@ CAPABILITIES(/datum/ask_sequence)
 /datum/ask_sequence/proc/step_answered(datum/act/request/A)
 	if(done)
 		return
-	var/list/step = steps[step_index]
-	if(!islist(step))
-		step = null
+	var/list/step = open_step
 	var/key = step?["key"] || "[step_index]"
 	if(!A.answer)
 		if(step?["optional"])
@@ -152,3 +154,16 @@ CAPABILITIES(/datum/ask_sequence)
 	S.subject_w = subject ? rerun_wrap(subject) : null
 	S.next_step()
 	return S
+
+/// The answers of an admin verb's questions (ask_steps()), read with get(key).
+/datum/ask_sequence/admin_verb
+
+/// Starts the questions of an ADMIN_VERB body (`src` is the verb): the verb's rights are re-checked as each question opens and is answered. `on_done` is a PROC_REF
+/// on the verb called as (sequence); the verb's code after the questions lives there, and reads the answers with sequence.get(key).
+/datum/admin_verb/proc/ask_steps(client/user, sequence, list/steps, on_done, list/params)
+	if(!user?.mob)
+		return "gone"
+	var/started = ask_sequence_begin(src, sequence, user.mob, null, steps, on_done, null, list("rights" = permissions, "recheck_on_open" = TRUE), params)
+	if(istext(started))
+		log_admin("[key_name(user)]: [type] did not ask its questions ([started])")
+	return started

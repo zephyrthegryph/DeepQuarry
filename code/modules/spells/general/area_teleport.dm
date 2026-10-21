@@ -22,11 +22,19 @@
 /datum/spell/area_teleport/before_cast(list/targets, mob/user)
 	return
 
+/datum/spell/area_teleport/target_questions(mob/user)
+	if(randomise_selection)
+		return null
+	return list(question_step("area", /datum/prompt/choice, question = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs))
+
 /datum/spell/area_teleport/choose_targets(mob/user)
+	return targets_from_answers(user, null)
+
+/datum/spell/area_teleport/targets_from_answers(mob/user, datum/ask_sequence/spell_cast/asked)
 	var/A = null
 
 	if(!randomise_selection)
-		A = cast_ask(user, "area", /datum/prompt/choice, question = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs)
+		A = asked?.get("area")
 		if(!A)
 			return list()
 	else

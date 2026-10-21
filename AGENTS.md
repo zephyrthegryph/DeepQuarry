@@ -83,7 +83,7 @@ definition before using it.
 | Links and ownership | Relations declared in `CAPABILITIES`; lifecycle declared | §6 | yes (`OWN`/`REL`, `own_set` and the `relations()`/`ownership()` procs are banned) | `ref_one()`/`ref_many()`/`links()`/`owns_one()`/`owns_many()` in the block |
 | World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 | yes (`world_service` is gone) | `SYSTEM_DEF(x)` |
 | Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 | yes (`code/engine/declare/graph.dm`) | `construction(...)` |
-| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `verb_ask`/`client_ask` prompts are the open conversion | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()`; `verb_ask`/`client_ask` only where one already is |
+| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 | look parts, `interface()`/`ui_data`, `ui_act`, `asks()`, granted verbs yes (`APPEARANCE_*` look forms, `update_icon(`, `DECLARE_UI`, `DECLARE_VERB` are banned); `flow_ask` prompts are the open conversion | `draw(datum/look/look)`, `interface("Window")` + `ui_data(datum/act/eval/A)`, `asks()`; `flow_ask` only where it already is |
 
 Rules that hold under both old and new forms:
 
@@ -120,7 +120,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 
 What is still open, and still correct to write where a file already uses it:
 
-- `verb_ask` / `client_ask` prompts (replacement `asks()` steps), about 25 sites, being converted (`rerun_ask` is at 0).
+- `flow_ask` / `prompt_flow()` prompts (replacement `asks()` steps). `rerun_ask`, `verb_ask`, `client_ask` and `cast_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`.
 - Raw `factors =` vars (replacement `factors(...)` in the type's CAPABILITIES block), about 268 vars. The `BF_*` body factors themselves are done: they are stats on `/mob/living`.
 - The init, `base_vars` and raw-overlay ratchets (baselines shrink as files convert).
 - File moves into the new tree (§3c).

@@ -345,6 +345,39 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 			return
 	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(cmd_mhelp_reply)), whom, A.answer)
 
+/// The message of a Mentor-PM typed after the verb was used without one. The recipient and the ticket ride along weakly.
+/datum/prompt/text/mentor_pm_message
+	timeout = 0
+	multiline = TRUE
+	encode = FALSE
+	max_len = MAX_TGUI_INPUT
+	recheck_on_open = TRUE
+
+/datum/prompt/text/mentor_pm_message/normalize(given)
+	return given
+
+/datum/prompt/text/mentor_pm_message/refusal(given)
+	return null
+
+/datum/prompt/text/mentor_pm_message/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	if(captured["whom_is_client"] && !GLOB.directory[captured["original_whom"]])
+		return "gone"
+	return null
+
+/// The Mentor-PM message was typed: send it as the verb would have with the message given.
+/client/proc/mentor_pm_entered(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/whom = A.answer.captured["original_whom"]
+	if(A.answer.captured["whom_is_client"])
+		whom = GLOB.directory[whom]
+		if(!whom)
+			return
+	var/datum/ticket/T = A.answer.captured["ticket"] ? resolve_token(A.answer.captured["ticket"]) : null
+	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(cmd_mentor_pm)), whom, A.answer.value, T)
+
 /datum/prompt/text/mentor_reply
 	timeout = 0
 	multiline = TRUE
@@ -393,17 +426,13 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
 		// encode = FALSE: the raw answer is sanitized below, before any branch shows it to another client.
-		var/_answer_k241 = client_ask("k241", PROC_REF(cmd_mentor_pm), args, 0, /datum/prompt/text, question = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN))
-		if(isnull(_answer_k241))
-			return
-		msg = _answer_k241
-
-		if(!msg)
-			return
-
-		if(prefs.muted & MUTE_ADMINHELP)
-			to_chat(src, span_mentor_warning("Error: Mentor-PM: You are unable to use mentor PM-s (muted)."))
-			return
+		var/whom_is_client = isclient(whom)
+		var/original_whom = whom
+		if(whom_is_client)
+			var/client/whom_client = whom
+			original_whom = whom_client.ckey
+		open_request(src, /datum/prompt/text/mentor_pm_message, PROC_REF(mentor_pm_entered), answerer = mob, question = "Message:", title = "Mentor-PM to [whom]", multiline = TRUE, encode = FALSE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN), captured = list("whom_is_client" = whom_is_client, "original_whom" = original_whom, "ticket" = T ? ref_token(T) : null))
+		return
 
 	// Sanitize before any branch below shows the text to a staff client or writes it to a ticket log
 	// (MessageNoRecipient, AddInteraction). The prompts above are encode = FALSE and several callers pass raw text.
