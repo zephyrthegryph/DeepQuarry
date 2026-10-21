@@ -70,13 +70,13 @@
 	var/turf/simulated/floor/B = make_second(/turf/simulated/floor/grass)
 	TEST_ASSERT(!(A.edge_mask & EAST), "grass beside grass has no border on that side: [A.edge_mask]")
 	var/overlays_before = length(A.overlays)
-	var/key_before = A.look_rec?.look_key
+	var/key_before = A.rx?.look_key
 
 	B.install_flooring(get_flooring_data(/datum/decl/flooring/tiling))
 	settle()
 	TEST_ASSERT(A.edge_mask & EAST, "grass beside another flooring has a border on that side: [A.edge_mask]")
 	TEST_ASSERT(length(A.overlays) > overlays_before, "the edge overlay is drawn on the grass ([length(A.overlays)] vs [overlays_before])")
-	TEST_ASSERT(A.look_rec?.look_key != key_before, "the grass redrew with no update_icon() call")
+	TEST_ASSERT(A.rx?.look_key != key_before, "the grass redrew with no update_icon() call")
 
 	B.install_flooring(get_flooring_data(/datum/decl/flooring/grass))
 	settle()
@@ -91,11 +91,11 @@
 	// A wall beside a wall joins it.
 	var/turf/simulated/wall/W = make_first(/turf/simulated/wall)
 	var/connections_alone = W.get_wall_connections()
-	var/key_alone = W.look_rec?.look_key
+	var/key_alone = W.rx?.look_key
 	make_second(/turf/simulated/wall)
 	TEST_ASSERT(W.smooth_mask & EAST, "a wall built beside a wall is in its mask: [W.smooth_mask]")
 	TEST_ASSERT(W.get_wall_connections() != connections_alone, "the wall's connections follow")
-	TEST_ASSERT(W.look_rec?.look_key != key_alone, "the wall redrew with no update_icon() call")
+	TEST_ASSERT(W.rx?.look_key != key_alone, "the wall redrew with no update_icon() call")
 	make_second(/turf/simulated/floor/plating)
 	TEST_ASSERT(!(W.smooth_mask & EAST), "removing the wall takes it out of the mask again: [W.smooth_mask]")
 	TEST_ASSERT_EQUAL(W.get_wall_connections(), connections_alone, "and the connections go back")
@@ -113,10 +113,10 @@
 	var/turf/simulated/wall/solidrock/R = make_first(/turf/simulated/wall/solidrock)
 	make_second(/turf/simulated/floor/plating)
 	TEST_ASSERT(R.open_mask & EAST, "a rock wall beside an open tile has that side open: [R.open_mask]")
-	var/rock_key = R.look_rec?.look_key
+	var/rock_key = R.rx?.look_key
 	make_second(/turf/simulated/wall/solidrock)
 	TEST_ASSERT(!(R.open_mask & EAST), "and closed beside rock: [R.open_mask]")
-	TEST_ASSERT(R.look_rec?.look_key != rock_key, "the rock redrew with no hand redraw")
+	TEST_ASSERT(R.rx?.look_key != rock_key, "the rock redrew with no hand redraw")
 	put_tiles_back()
 
 // ---- water: the edges that spill onto it follow its neighbours ----
@@ -127,11 +127,11 @@
 	var/turf/simulated/floor/water/deep/D = make_first(/turf/simulated/floor/water/deep)
 	make_second(/turf/simulated/floor/plating)
 	TEST_ASSERT(!length(D.edge_spill), "deep water beside plating has no edge spilling onto it")
-	var/key_before = D.look_rec?.look_key
+	var/key_before = D.rx?.look_key
 
 	make_second(/turf/simulated/floor/water)
 	TEST_ASSERT(length(D.edge_spill), "deep water beside shallow water takes its edge")
-	TEST_ASSERT(D.look_rec?.look_key != key_before, "the deep water redrew with no update_icon() call")
+	TEST_ASSERT(D.rx?.look_key != key_before, "the deep water redrew with no update_icon() call")
 
 	make_second(/turf/simulated/floor/plating)
 	TEST_ASSERT(!length(D.edge_spill), "and loses it when the shallow water is gone")
@@ -197,9 +197,9 @@
 	make_second(/turf/simulated/floor/outdoors/snow)
 	O = first_tile()
 	TEST_ASSERT(length(O.edge_spill), "open space beside a stronger turf takes its edge")
-	var/key_before = O.look_rec?.look_key
+	var/key_before = O.rx?.look_key
 	make_second(/turf/simulated/floor/plating)
 	O = first_tile()
 	TEST_ASSERT(!length(O.edge_spill), "and loses it when that turf is gone")
-	TEST_ASSERT(O.look_rec?.look_key != key_before, "with a redraw")
+	TEST_ASSERT(O.rx?.look_key != key_before, "with a redraw")
 	put_tiles_back()

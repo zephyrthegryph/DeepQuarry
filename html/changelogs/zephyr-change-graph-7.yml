@@ -1,4 +1,0 @@
-author: "zephyrthegryph"
-delete-after: true
-changes:
-  - refactor: "The draw cache of an atom is split from the reaction layer's state into its own record"

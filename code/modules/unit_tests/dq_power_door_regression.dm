@@ -91,12 +91,12 @@ CAPABILITIES(/obj/machinery/dq_idle_redraw_probe)
 	test_time(2 SECONDS)
 	TEST_ASSERT(probe.power_lost(), "the probe is unpowered once its area's channels are off")
 	var/draws_before = probe.draws
-	var/turf_key = T.look_rec?.look_key
+	var/turf_key = T.rx?.look_key
 	var/drained_before = GLOB.refresh_bench_drained
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(probe.steps, 0, "the gated every() never ran its step while unpowered")
 	TEST_ASSERT_EQUAL(probe.draws, draws_before, "an unpowered idle machine is not redrawn on its polling interval ([probe.draws - draws_before] redraws in 10 s)")
-	TEST_ASSERT_EQUAL(T.look_rec?.look_key, turf_key, "the floor under it keeps its look")
+	TEST_ASSERT_EQUAL(T.rx?.look_key, turf_key, "the floor under it keeps its look")
 	TEST_NOTICE(src, "refreshes drained over 10 idle seconds: [GLOB.refresh_bench_drained - drained_before]")
 	A.set_channels(TRUE, TRUE, TRUE)
 	test_drain()

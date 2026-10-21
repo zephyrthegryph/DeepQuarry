@@ -11,19 +11,19 @@
 	var/datum/src_a = new
 	made += src_a
 	refresh_flush()
-	TEST_ASSERT(!findtext(F.look_rec?.look_key, "dx_jam_layer"), "no condition layer yet")
+	TEST_ASSERT(!findtext(F.rx?.look_key, "dx_jam_layer"), "no condition layer yet")
 
 	TEST_ASSERT(grant(F, held_condition(/datum/capability/condition/dx_jam), src_a, 2 SECONDS), "granted")
 	refresh_flush()
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "the capability is attached")
-	TEST_ASSERT(findtext(F.look_rec?.look_key, "dx_jam_layer"), "draw layer present: [F.look_rec?.look_key]")
+	TEST_ASSERT(findtext(F.rx?.look_key, "dx_jam_layer"), "draw layer present: [F.rx?.look_key]")
 
 	scheduler_advance(1)
 	TEST_ASSERT(cap_of_all(F, /datum/capability/condition/dx_jam), "still held before the end")
 	scheduler_advance(1.5)
 	refresh_flush()
 	TEST_ASSERT(!cap_of_all(F, /datum/capability/condition/dx_jam), "detached on expiry")
-	TEST_ASSERT(!findtext(F.look_rec?.look_key, "dx_jam_layer"), "redrawn without the layer: [F.look_rec?.look_key]")
+	TEST_ASSERT(!findtext(F.rx?.look_key, "dx_jam_layer"), "redrawn without the layer: [F.rx?.look_key]")
 
 /datum/unit_test/om/dx_condition_sources
 

@@ -159,16 +159,16 @@
 /datum/unit_test/dq_draw_vehicle_cage_follows_paint_and_vehicle/Run()
 	var/obj/structure/vehiclecage/cage = allocate(/obj/structure/vehiclecage, test_floor())
 	refresh_flush()
-	var/before = cage.look_rec?.look_key
+	var/before = cage.rx?.look_key
 	TEST_ASSERT(before, "the cage drew")
 	cage.set_paint_color("#ff0000")
 	refresh_flush()
-	TEST_ASSERT(cage.look_rec?.look_key != before, "a new paint colour redraws the frame")
-	before = cage.look_rec?.look_key
+	TEST_ASSERT(cage.rx?.look_key != before, "a new paint colour redraws the frame")
+	before = cage.rx?.look_key
 	var/obj/vehicle/bike/bike = allocate(/obj/vehicle/bike, get_step(test_floor(), NORTH))
 	bike.forceMove(cage)
 	refresh_flush()
-	TEST_ASSERT(cage.look_rec?.look_key != before, "a vehicle going into the cage redraws it with the vehicle shown")
+	TEST_ASSERT(cage.rx?.look_key != before, "a vehicle going into the cage redraws it with the vehicle shown")
 
 // ---- the cliff, the railing, the cart ----
 
@@ -200,10 +200,10 @@
 	neighbour.set_dir(NORTH)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(rail.icon_state, "railing1", "a railing facing the same way beside it joins: it draws the joined state")
-	var/before = rail.look_rec?.look_key
+	var/before = rail.rx?.look_key
 	neighbour.set_anchored(FALSE)
 	refresh_flush()
-	TEST_ASSERT(rail.look_rec?.look_key != before, "the neighbour coming loose redraws it")
+	TEST_ASSERT(rail.rx?.look_key != before, "the neighbour coming loose redraws it")
 	TEST_ASSERT_EQUAL(rail.icon_state, "railing0", "and it is plain again")
 
 /// The janitorial cart shows what hangs on it: gear arriving through a relation and the signs counter both redraw.
@@ -272,15 +272,15 @@
 	refresh_flush()
 	var/list/overlays_now = dq_structure_overlays(gibs)
 	TEST_ASSERT(("[gibs.icon_state]_flesh" in overlays_now), "the flesh is an overlay: [json_encode(overlays_now)]")
-	var/before = gibs.look_rec?.look_key
+	var/before = gibs.rx?.look_key
 	gibs.set_fleshcolor("#123456")
 	refresh_flush()
-	TEST_ASSERT(gibs.look_rec?.look_key != before, "a new flesh colour redraws the gibs")
-	before = gibs.look_rec?.look_key
+	TEST_ASSERT(gibs.rx?.look_key != before, "a new flesh colour redraws the gibs")
+	before = gibs.rx?.look_key
 	gibs.set_basecolor("#654321")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(gibs.color, "#654321", "and a new blood colour tints them")
-	TEST_ASSERT(gibs.look_rec?.look_key != before, "and redraws them")
+	TEST_ASSERT(gibs.rx?.look_key != before, "and redraws them")
 
 // ---- the ability buttons ----
 
@@ -324,26 +324,26 @@
 	var/obj/structure/janitorialcart/cart = allocate(/obj/structure/janitorialcart, T)
 	var/obj/item/mop/mop = allocate(/obj/item/mop, T)
 	refresh_flush()
-	var/before = box.look_rec?.look_key
+	var/before = box.rx?.look_key
 	rel_add(box, nameof(box.boxes), other)
 	TEST_ASSERT_EQUAL(dq_queued_times(box), 1, "a member added to the list queues its reader once")
 	refresh_flush()
-	TEST_ASSERT(box.look_rec?.look_key != before, "and redraws it")
-	before = box.look_rec?.look_key
+	TEST_ASSERT(box.rx?.look_key != before, "and redraws it")
+	before = box.rx?.look_key
 	rel_remove(box, nameof(box.boxes), other)
 	TEST_ASSERT_EQUAL(dq_queued_times(box), 1, "a member removed queues it once")
 	refresh_flush()
-	TEST_ASSERT(box.look_rec?.look_key != before, "and redraws it")
-	before = cart.look_rec?.look_key
+	TEST_ASSERT(box.rx?.look_key != before, "and redraws it")
+	before = cart.rx?.look_key
 	rel_set(cart, nameof(cart.mymop), mop)
 	TEST_ASSERT_EQUAL(dq_queued_times(cart), 1, "a single ref set queues its reader once")
 	refresh_flush()
-	TEST_ASSERT(cart.look_rec?.look_key != before, "and redraws it")
-	before = cart.look_rec?.look_key
+	TEST_ASSERT(cart.rx?.look_key != before, "and redraws it")
+	before = cart.rx?.look_key
 	rel_take(cart, nameof(cart.mymop))
 	TEST_ASSERT_EQUAL(dq_queued_times(cart), 1, "the ref taken away queues it once")
 	refresh_flush()
-	TEST_ASSERT(cart.look_rec?.look_key != before, "and redraws it")
+	TEST_ASSERT(cart.rx?.look_key != before, "and redraws it")
 
 // ---- shuttle underlays ----
 

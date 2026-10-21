@@ -18,6 +18,21 @@
 	var/atom/movable/containment_successor
 	var/containment_declared = FALSE
 	var/containment_policy_disabled = FALSE
+	/// Cache of the last applied appearance and derived verb decisions.
+	var/look_key
+	/// How many looks show this atom worn or held (look.watch_worn()): while any does, every write of it is read (rx_readers()).
+	var/worn_watched = 0
+	/// The dir last published to a drawn mover's look (Moved() compares it, because Move() turns a mover natively).
+	var/look_seen_dir
+	var/list/look_overlays
+	/// The last look drew underlays: the next apply takes them back before it draws its own.
+	var/look_underlays = FALSE
+	var/list/refresh_hidden_verbs
+	var/list/refresh_granted_verbs
+	var/refresh_swept = FALSE
+	var/look_set_bits = 0
+	var/list/look_filters
+	var/list/look_vis
 	/// kind -> what -> source -> count (rx_ledger_*).
 	var/list/ledger
 	/// /datum/rx_listener records observing THIS datum.
@@ -38,36 +53,6 @@
 	var/list/at_most_last
 	/// on_change(at_most =): reaction sig -> the keys held until its window ends.
 	var/list/at_most_held
-
-/// The presentation record of an atom (change_graph.md section 10): what the last draw applied, the verb decisions it made and the worn watch count.
-/// Split from /datum/rx_state so an atom that only draws does not carry the reaction layer's tables, and one that only reacts carries no look cache.
-/datum/rx_look
-	/// Cache of the last applied appearance and derived verb decisions.
-	var/look_key
-	/// How many looks show this atom worn or held (look.watch_worn()): while any does, every write of it is read (rx_readers()).
-	var/worn_watched = 0
-	/// The dir last published to a drawn mover's look (Moved() compares it, because Move() turns a mover natively).
-	var/look_seen_dir
-	var/list/look_overlays
-	/// The last look drew underlays: the next apply takes them back before it draws its own.
-	var/look_underlays = FALSE
-	var/list/refresh_hidden_verbs
-	var/list/refresh_granted_verbs
-	var/refresh_swept = FALSE
-	var/look_set_bits = 0
-	var/list/look_filters
-	var/list/look_vis
-
-/atom
-	/// The presentation record, or null (see /datum/rx_look).
-	var/tmp/datum/rx_look/look_rec
-
-/// A's presentation record, made when first needed.
-/proc/look_rec_of(atom/A)
-	RETURN_TYPE(/datum/rx_look)
-	if(!A.look_rec)
-		A.look_rec = new // ALLOW(ownership): flyweight framework bookkeeping: the framework is the accessor, not a holder of a relation
-	return A.look_rec
 
 /datum
 	/// The reaction layer's per-datum state, or null (see /datum/rx_state).
@@ -100,7 +85,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			return TRUE
 	if(E.rx?.observed?[key])
 		return TRUE
-	if(E.look_rec?.worn_watched)
+	if(E.rx?.worn_watched)
 		return TRUE // a human's draw shows E worn or held (look.watch_worn()): it composes whatever E shows, so every write of E reaches it
 	if((bits & PLAN_READ_LIFEFORM) && lifeform_watching(E, key))
 		return TRUE // a lifecycle form follows the var: a registry key, a radio frequency, a derives() input (code/engine/lifeforms/forms.dm)
@@ -399,15 +384,11 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	if(D.seq_states)
 		seq_teardown(D) // its sequence states go first: they leave their sweeps themselves
 	member_teardown(D) // a member with no reaction state still leaves what it joined
-	if(isatom(D))
-		var/atom/A = D
-		if(A.look_rec)
-			if(A.look_rec.look_key)
-				look_worn_release(A) // a look that dies shows nothing worn or held any more
-			A.look_rec = null // ALLOW(ownership): flyweight framework bookkeeping: the framework is the accessor, not a holder of a relation
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
+	if(S.look_key && isatom(D))
+		look_worn_release(D) // a look that dies shows nothing worn or held any more
 	if(S.every_hop_on)
 		every_hop_forget(D)
 	for(var/datum/rx_listener/L as anything in S.listeners?.Copy())

@@ -5,7 +5,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(dx_why_redrawn, R_DEBUG, "Why Redrawn", "Traces the 
 	var/ref_text = REF(target)
 	if(ref_text in GLOB.refresh_traced)
 		var/list/lines = GLOB.refresh_traced[ref_text]
-		to_chat(user, "<b>Marks of [target] ([target.type]):</b><br>[islist(lines) && length(lines) ? jointext(lines, "<br>") : "none yet"]<br>look key: [target.look_rec?.look_key]")
+		to_chat(user, "<b>Marks of [target] ([target.type]):</b><br>[islist(lines) && length(lines) ? jointext(lines, "<br>") : "none yet"]<br>look key: [target.rx?.look_key]")
 		GLOB.refresh_traced -= ref_text
 		to_chat(user, "Tracing stopped.")
 		return

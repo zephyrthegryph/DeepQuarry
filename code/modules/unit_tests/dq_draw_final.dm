@@ -15,16 +15,16 @@
 		var/mutable_appearance/MA = new(entry)
 		under_states += "[MA.icon_state]"
 	TEST_ASSERT(("color" in under_states) && ("top" in under_states), "the layers are the colour and the top: [json_encode(under_states)]")
-	var/closed_key = N.look_rec?.look_key
+	var/closed_key = N.rx?.look_key
 	N.set_open(TRUE)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(N.icon_state, "nailpolish-open", "opening it is a state, no redraw call")
 	TEST_ASSERT_EQUAL(length(N.underlays), 2, "still two layers beneath")
-	var/open_key = N.look_rec?.look_key
+	var/open_key = N.rx?.look_key
 	TEST_ASSERT(open_key != closed_key, "the look changed with the cap")
 	N.set_colour("#ff0000")
 	refresh_flush()
-	TEST_ASSERT(N.look_rec?.look_key != open_key, "a new colour redraws the layers")
+	TEST_ASSERT(N.rx?.look_key != open_key, "a new colour redraws the layers")
 	TEST_ASSERT(findtext(N.desc, "#ff0000"), "and is named in its description: [N.desc]")
 	var/obj/item/nailpolish_remover/R = allocate(/obj/item/nailpolish_remover, T)
 	refresh_flush()
@@ -208,10 +208,10 @@
 	var/datum/stored_item/I = new /datum/stored_item(F, /obj/item/reagent_containers/food/snacks/candy, "candy", 0)
 	rel_add(F, nameof(F.item_records), I)
 	refresh_flush()
-	var/empty_key = F.look_rec?.look_key
+	var/empty_key = F.rx?.look_key
 	I.set_amount(5)
 	refresh_flush()
-	TEST_ASSERT(F.look_rec?.look_key != empty_key, "a record's amount redraws the fridge with no call")
+	TEST_ASSERT(F.rx?.look_key != empty_key, "a record's amount redraws the fridge with no call")
 	I.set_amount(0) // nothing is left to be made when the fridge goes
 
 /// The plain vars these draws read are tracked: a write redraws, and none of them asks.

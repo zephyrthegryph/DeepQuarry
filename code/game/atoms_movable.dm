@@ -303,8 +303,8 @@
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
-	if((look_rec?.look_key || rel_watchers) && dir != look_rec?.look_seen_dir)
-		look_rec_of(src).look_seen_dir = dir
+	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
+		rx_of(src).look_seen_dir = dir
 		tracked_changed(src, nameof(dir))
 	if(blocks_light)
 		light_blocking_moved(old_loc)
@@ -347,8 +347,8 @@
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
-	if(look_rec?.look_key || rel_watchers)
-		look_rec_of(src).look_seen_dir = dir
+	if(rx?.look_key || rel_watchers)
+		rx_of(src).look_seen_dir = dir
 	if(riding_datum)
 		riding_datum.handle_vehicle_offsets()
 

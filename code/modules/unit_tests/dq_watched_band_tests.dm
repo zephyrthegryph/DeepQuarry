@@ -19,7 +19,7 @@
 	P.set_watch_level(P.get_temperature() + 50)
 	state_changed(P)
 	refresh_flush()
-	TEST_ASSERT(("band-0" in P.look_rec?.look_overlays), "below the level it reads band 0: [json_encode(P.look_rec?.look_overlays)]")
+	TEST_ASSERT(("band-0" in P.rx?.look_overlays), "below the level it reads band 0: [json_encode(P.rx?.look_overlays)]")
 	SSwatched.arm_pending(0)
 	TEST_ASSERT(watched_armed(P, WATCH_HEAT, list(P.watch_level)), "the read armed a band watch after the draw")
 	vg_world_run_steps(2)
@@ -30,7 +30,7 @@
 	native_system().drain()
 	refresh_flush()
 	TEST_ASSERT(P.get_temperature() >= P.watch_level, "the heat did not raise the body past the level: [P.get_temperature()]")
-	TEST_ASSERT(("band-1" in P.look_rec?.look_overlays), "a crossing Rust reported redrew it: [json_encode(P.look_rec?.look_overlays)]")
+	TEST_ASSERT(("band-1" in P.rx?.look_overlays), "a crossing Rust reported redrew it: [json_encode(P.rx?.look_overlays)]")
 
 /datum/unit_test/dq_watched_lum_band_publishes_on_a_corner_change
 
@@ -145,11 +145,11 @@
 	state_changed(E)
 	refresh_flush()
 	TEST_ASSERT(!E.beam_shown(), "no availability, no beam")
-	var/before = length(E.look_rec?.look_overlays)
+	var/before = length(E.rx?.look_overlays)
 	grid.set_avail(5000)
 	refresh_flush()
 	TEST_ASSERT(E.beam_shown(), "a live network shows the beam")
-	TEST_ASSERT(length(E.look_rec?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.look_rec?.look_overlays)])")
+	TEST_ASSERT(length(E.rx?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.rx?.look_overlays)])")
 	power_test_drop_grid(grid_id)
 
 /// The old rule refused above 1%, not at it: a strict band read keeps exactly 1% modifiable.

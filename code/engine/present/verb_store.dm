@@ -130,7 +130,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	// hidden_verbs() (dx_conventions.md §4): derived from state, applied by the refresh engine.
 	if(isatom(owner))
 		var/atom/hider = owner
-		if(hider.look_rec?.refresh_hidden_verbs && (key in hider.look_rec?.refresh_hidden_verbs))
+		if(hider.rx?.refresh_hidden_verbs && (key in hider.rx?.refresh_hidden_verbs))
 			return FALSE
 	if(isatom(owner) && verb_entries_want(owner, key) == FALSE)
 		return FALSE // verb_entry(path, hidden = TRUE)
@@ -139,7 +139,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	// granted_verbs() (capabilities' verbs(), a mob's species and traits): derived, applied by the refresh engine.
 	if(isatom(owner))
 		var/atom/granter = owner
-		if(granter.look_rec?.refresh_granted_verbs && (key in granter.look_rec?.refresh_granted_verbs))
+		if(granter.rx?.refresh_granted_verbs && (key in granter.rx?.refresh_granted_verbs))
 			return TRUE
 	if(istext(key))
 		return FALSE // a named verb exists only while granted

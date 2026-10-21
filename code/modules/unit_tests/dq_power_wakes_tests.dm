@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 	TEST_ASSERT(probe.steps > 0, "the probe's gated work runs while powered")
 	var/list/looks = list()
 	for(var/obj/machinery/M as anything in machines)
-		looks[M] = M.look_rec?.look_key
+		looks[M] = M.rx?.look_key
 
 	// The cut: one write of the area's channels; nothing walks the area.
 	A.set_channels(FALSE, FALSE, FALSE)
@@ -57,8 +57,8 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 		TEST_ASSERT(!M.operable(), "[M.type] is not operable unpowered")
 		TEST_ASSERT(M.power_lost(), "[M.type] acted on the flip (power_change() through its on_change hook)")
 	refresh_flush()
-	TEST_ASSERT(probe.look_rec?.look_key != looks[probe], "the probe redrew dark")
-	TEST_ASSERT(alarm.look_rec?.look_key != looks[alarm], "the air alarm redrew dark")
+	TEST_ASSERT(probe.rx?.look_key != looks[probe], "the probe redrew dark")
+	TEST_ASSERT(alarm.rx?.look_key != looks[alarm], "the air alarm redrew dark")
 	var/parks_before = GLOB.every_activation_parks
 	test_time(2 SECONDS) // the probe's next interval comes due once, finds its gate false and parks
 	var/datum/activation/work = dq_power_wake_activation(probe)
@@ -80,8 +80,8 @@ CAPABILITIES(/obj/machinery/dq_power_wake_probe)
 		TEST_ASSERT(!M.power_lost(), "[M.type] acted on the restore")
 	TEST_ASSERT(!length(work?.every_parked), "the probe's work woke on the restore")
 	refresh_flush()
-	TEST_ASSERT_EQUAL(probe.look_rec?.look_key, looks[probe], "the probe redrew lit")
-	TEST_ASSERT_EQUAL(alarm.look_rec?.look_key, looks[alarm], "the air alarm redrew lit")
+	TEST_ASSERT_EQUAL(probe.rx?.look_key, looks[probe], "the probe redrew lit")
+	TEST_ASSERT_EQUAL(alarm.rx?.look_key, looks[alarm], "the air alarm redrew lit")
 	test_time(3 SECONDS)
 	TEST_ASSERT(probe.steps > steps_unpowered, "the probe's work runs again")
 	apc.apply_area_power()

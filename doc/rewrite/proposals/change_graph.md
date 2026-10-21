@@ -343,22 +343,6 @@ Landed: the OUTPUT queue (`GLOB.refresh_queue`) dedupes by a per-entity pass sta
 delivery owes (an `at_most` window and the reaction's key list need them), so a bare frame stamp cannot represent them; they stay until the plan
 generates the dependents (step 3 remainder). Proof: `dq_change_refresh_pass`, `dx_review_self_mark`, the draw-queue tests, `dq_staleness_*`.
 
-### Step 7 status (21 October 2026): the presentation record
-
-Landed: `/datum/rx_state` no longer holds the draw cache. The eleven presentation vars (`look_key`, `look_overlays`, `look_underlays`, `look_filters`,
-`look_vis`, `look_set_bits`, `look_seen_dir`, `refresh_hidden_verbs`, `refresh_granted_verbs`, `refresh_swept`, `worn_watched`) are in `/datum/rx_look`,
-held by `atom/look_rec` and made by `look_rec_of(A)`; an atom that only draws carries no reaction tables, and one that only reacts carries no look cache.
-The record is released in `state_teardown` with the atom. Proof: `dq_change_rx_look_split`, `dq_staleness_*`, the draw tests. Not measured: no memory
-benchmark was run (benchmarks are off during the rewrite); the saving is the reaction state's ~40 vars for every drawn atom that has no reactions.
-
-### Steps 5 and 6 remainder: wait for the `.dmt` declaration compiler (decision of 21 October 2026)
-
-Step 5's remaining parts (delete `type_derive_flags`, `derive_probing`, `derive_side_probing` and the first-instance-always-queued rule; stamp a non-empty cached
-look) need the plan to know every output a type derives (`should_run`, hidden and granted verbs, periodic work, derived values) and every var a draw reads,
-not only the draw reads it holds today; that is the same compiled-declaration work as the step-3 remainder. Step 6 (drop the `refresh_dispatched()`
-`DEP_ALL` after every handler, timer and periodic step) is proved only by the staleness checker running clean without it across everything that dispatches,
-which needs a full-suite run; the user has not authorized one. Both wait.
-
 ## 12. Edits needed in final_api.html section 7 (not made here)
 
 1. **"Execution model" paragraph**: replace "the entity at the end of a single-valued relation edge ... recompute inline" wording with
