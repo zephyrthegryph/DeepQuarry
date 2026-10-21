@@ -1363,6 +1363,7 @@
 #include "dq_decl_landmark_registration_tests.dm"
 #include "dq_decl_visual_state_tests.dm"
 #include "dq_cleanup_icon_defaults.dm"
+#include "dq_cleanup_destroy_consequences.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
