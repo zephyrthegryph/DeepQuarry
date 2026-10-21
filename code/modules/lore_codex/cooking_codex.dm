@@ -41,13 +41,7 @@
 	..()
 	var/list/new_children_list = list()
 	var/list/name_repeats = list()
-	for(var/Rp in subtypesof(/datum/recipe))
-		var/datum/recipe/R = new Rp() // Datums must be initialized to read list vars
-		if(!istype(R))
-			log_runtime("Recipe generation failed, recipe datum is [R].")
-			spent(R)
-			continue
-
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
 		var/datum/lore/codex/page/cooking_recipe/D = new(holder(), src)
 		var/atom/movable/these = R.result // Result is a typepath, requiring use of initial()
 		D.name = capitalize("[initial(these.name)]") // Capitalization on recipe names is inconsistent
@@ -62,35 +56,35 @@
 		// Most ingredient names will be capitalized to draw the reader's eye.
 		// Appliance is a bitfield -- use AND checks so combined flags are handled correctly
 		var/list/appliance_names = list()
-		if(R.appliance & MICROWAVE)
+		if(R.cooks_in & MICROWAVE)
 			appliance_names += "Microwave"
-		if(R.appliance & FRYER)
+		if(R.cooks_in & FRYER)
 			appliance_names += "Deep fryer"
-		if(R.appliance & OVEN)
+		if(R.cooks_in & OVEN)
 			appliance_names += "Oven"
-		if(R.appliance & GRILL)
+		if(R.cooks_in & GRILL)
 			appliance_names += "Grill"
-		if(R.appliance & CANDYMAKER)
+		if(R.cooks_in & CANDYMAKER)
 			appliance_names += "Candy maker"
-		if(R.appliance & CEREALMAKER)
+		if(R.cooks_in & CEREALMAKER)
 			appliance_names += "Cereal maker"
 		var/text = appliance_names.len ? jointext(appliance_names, ", ") : ""
 		D.data = span_bold("Heat Applicator") + ": [text ? text : "none"]<br>"
 		text = ""
 
-		if(LAZYLEN(R.reagents))
+		if(LAZYLEN(R.reagent_takes))
 			var/i = 0 // Comma counter
-			for(var/thing in R.reagents) // String
+			for(var/thing in R.reagent_takes) // String
 				if(i)
 					text += ", "
-				text += "[capitalize(thing)]: [R.reagents[thing]] units"
+				text += "[capitalize(thing)]: [R.reagent_takes[thing]] units"
 				i++
 		D.data += span_bold("Pure Fluids") + ": [text ? text : "none"]<br>"
 		text = ""
 
-		if(LAZYLEN(R.items))
+		if(LAZYLEN(R.cook_items))
 			var/i = 0
-			for(var/source in R.items) // Typepath -- must be untyped var or BYOND filters out non-instances
+			for(var/source in R.cook_items) // Typepath -- must be untyped var or BYOND filters out non-instances
 				if(i)
 					text += ", "
 				var/atom/movable/typed_source = source // Typed local needed for initial() to resolve .name
@@ -99,33 +93,32 @@
 		D.data += span_bold("Material Objects") + ": [text ? text : "none"]<br>"
 		text = ""
 
-		if(LAZYLEN(R.fruit)) // Inelegant copypasta time
+		if(LAZYLEN(R.fruit_takes)) // Inelegant copypasta time
 			var/i = 0
-			for(var/thing in R.fruit) // String
+			for(var/thing in R.fruit_takes) // String
 				if(i)
 					text += ", "
-				text += "[capitalize(thing)]: [R.fruit[thing]] quantity"
+				text += "[capitalize(thing)]: [R.fruit_takes[thing]] quantity"
 				i++
 		D.data += span_bold("Grown Produce") + ": [text ? text : "none"]<br>"
 		text = ""
 
 		if(R.coating)
-			var/datum/reagent/ooze = initial(R.coating) // Datum typepath
+			var/datum/reagent/ooze = R.coating // Datum typepath
 			text = capitalize(initial(ooze.name))
 		D.data += span_bold("Cooked Shell") + ": [text ? text : "none"]<br>"
 		text = 0
 
-		if(R.time) // Deciseconds
-			text = R.time
+		if(R.cook_time) // Deciseconds
+			text = R.cook_time
 		D.data += span_bold("Temporal Shift") + ": [text ? text/10 : 0] second\s<br>"
 		text = 0
 
-		if(R.result_quantity) // Should never be null.
-			text = R.result_quantity
+		if(R.result_amount) // Should never be null.
+			text = R.result_amount
 		D.data += span_bold("Meal Quantity") + ": [text ? text : 0] plate\s<br>"
 
 		new_children_list[D.name] = D // We make this an associative list so we can alphabetize later
-		spent(R) // Delete recipe datum after we're done with it
 
 	// This nonsense alphabetizes the list and converts back to array format before handing off to the parent.
 	// Array format is necessary for the codex code to work properly.

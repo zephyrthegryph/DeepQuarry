@@ -725,6 +725,13 @@ banned_outside = [
 banned = [
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
+  "datum/recipe = a recipe is a transformation: a type under /transformation/kitchen with a transformation(takes = list(reagent(...), item_term(...), fruit_term(...)), makes = list(item_term(type, n)), cooks_in = ...) entry (code/library/transformations/kitchen.dm)",
+  "select_recipe = cooking_select(appliancetype, container, exact) (code/library/transformations/kitchen.dm)",
+  "available_recipes = cooking_rules_for(appliancetype): the kitchen rules of one appliance, in the order they are tried",
+  "build_kitchen_recipes = the kitchen rules compile at world setup (static_entries); cooking_rules_for() groups them by appliance",
+  "build_kitchen_items = kitchen_acceptable_items()",
+  "build_kitchen_reagents = kitchen_acceptable_reagents()",
+
   "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/modules/mining/alloys.dm)",
   "alloy_data = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING): the compiled smelting transformations",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",

@@ -232,7 +232,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 	return OP_OK
 
 /obj/machinery/microwave/proc/try_insert_item(obj/item/O, mob/user)
-	if(is_type_in_list(O, GLOB.acceptable_items))
+	if(is_type_in_list(O, kitchen_acceptable_items()))
 		if(length(cookingContents()) >= (item_capacity))
 			to_chat(user, span_warning("\The [src] is full of ingredients, you cannot put more."))
 			return TRUE
@@ -274,7 +274,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 			to_chat(user, span_warning("\The [O] is empty!"))
 			return TRUE
 		for (var/datum/reagent/R in O.reagents.reagent_list)
-			if (!(R.id in GLOB.acceptable_reagents))
+			if (!(R.id in kitchen_acceptable_reagents()))
 				to_chat(user, span_warning("\The [O] contains components unsuitable for cooking."))
 				return TRUE
 		// gotta let afterattack resolve
@@ -331,8 +331,8 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 /obj/machinery/microwave/tgui_static_data(mob/user)
 	var/list/data = ..()
 
-	var/datum/recipe/recipe = select_recipe(GLOB.available_recipes[appliancetype], src)
-	data["recipe"] = recipe ? sanitize_css_class_name("[recipe.type]") : null
+	var/datum/xform/recipe = cooking_select(appliancetype, src)
+	data["recipe"] = recipe ? sanitize_css_class_name("[recipe.rule_type]") : null
 	data["recipe_name"] = recipe ? initial(recipe.result:name) : null
 
 	return data
@@ -497,7 +497,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 		dispose(FALSE)
 
 /obj/machinery/microwave/proc/loop_finish()
-	var/datum/recipe/recipe = select_recipe(GLOB.available_recipes[appliancetype], src)
+	var/datum/xform/recipe = cooking_select(appliancetype, src)
 	if(!recipe)
 		if(length(cookingContents()) >= 1)
 			set_dirty(dirty + 1)
@@ -516,15 +516,16 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 	var/obj/temp = new /obj(src) //To prevent infinite loops, all results will be moved into a temporary location so they're not considered as inputs for other recipes
 	while(valid)
 		var/list/things = list()
-		things.Add(recipe.make_food(src))
+		var/transformation/kitchen/cooking = recipe.owner_of()
+		things.Add(cooking.make_food(src))
 		cooked_items += things
 		//Move cooked things to the buffer so they're not considered as ingredients
 		for(var/atom/movable/AM in things)
 			AM.forceMove(temp)
 
 		valid = FALSE
-		recipe.after_cook(src)
-		recipe = select_recipe(GLOB.available_recipes[appliancetype], src)
+		cooking.after_cook(src)
+		recipe = cooking_select(appliancetype, src)
 		if(recipe && recipe.result == result)
 			valid = TRUE
 
@@ -631,21 +632,21 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 		return TRUE
 	return ..()
 
-/datum/recipe/splat // We use this to handle cooking micros (or mice, etc) in a microwave. Janky but it works better than snowflake code to handle the same thing.
-	items = list(
-		/obj/item/holder
-	)
-	result = /obj/effect/decal/cleanable/blood/gibs
-	wiki_flag = WIKI_SPOILER
+// We use this to handle cooking micros (or mice, etc) in a microwave. Janky but it works better than snowflake code to handle the same thing.
+/transformation/kitchen/splat
+CAPABILITIES(/transformation/kitchen/splat)
+	configure(transformation(takes = list(item_term(/obj/item/holder, 1)),
+		makes = list(item_term(/obj/effect/decal/cleanable/blood/gibs, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/splat/before_cook(obj/container)
+/transformation/kitchen/splat/before_cook(obj/container)
 	if(istype(container, /obj/machinery/microwave))
 		var/obj/machinery/microwave/M = container
 		M.muck()
 		play_sfx(container.loc, SFX_ITEMS_DROP_FLESH)
 	. = ..()
 
-/datum/recipe/splat/make_food(obj/container)
+/transformation/kitchen/splat/make_food(obj/container)
 	for(var/obj/item/holder/H in contents_of(container))
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))

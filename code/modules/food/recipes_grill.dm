@@ -1,343 +1,332 @@
-/datum/recipe/humanburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/meat/human,
-		/obj/item/reagent_containers/food/snacks/bun
-	)
-	result = /obj/item/reagent_containers/food/snacks/human/burger
-	wiki_flag = WIKI_SPOILER // Alt recipie doesn't need to be shown(breaks tgui)
+// Alt recipie doesn't need to be shown(breaks tgui)
+/transformation/kitchen/humanburger
+CAPABILITIES(/transformation/kitchen/humanburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/meat/human, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/human/burger, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/plainburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/meat //do not place this recipe before /datum/recipe/humanburger
-	)
-	result = /obj/item/reagent_containers/food/snacks/monkeyburger
+// do not place this recipe before /transformation/kitchen/humanburger
+// do not place this recipe before /transformation/kitchen/humanburger
+/transformation/kitchen/plainburger
+CAPABILITIES(/transformation/kitchen/plainburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeyburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/syntiburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/meat/syntiflesh
-	)
-	result = /obj/item/reagent_containers/food/snacks/monkeyburger
-	wiki_flag = WIKI_SPOILER // Alt recipie doesn't need to be shown(breaks tgui)
+// Alt recipie doesn't need to be shown(breaks tgui)
+/transformation/kitchen/syntiburger
+CAPABILITIES(/transformation/kitchen/syntiburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/syntiflesh, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeyburger, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/brainburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/organ/internal/brain
-	)
-	result = /obj/item/reagent_containers/food/snacks/brainburger
+/transformation/kitchen/brainburger
+CAPABILITIES(/transformation/kitchen/brainburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/organ/internal/brain, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/brainburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/roburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/robot_parts/head
-	)
-	result = /obj/item/reagent_containers/food/snacks/roburger
+/transformation/kitchen/roburger
+CAPABILITIES(/transformation/kitchen/roburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/robot_parts/head, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/roburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/xenoburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/xenomeat
-	)
-	result = /obj/item/reagent_containers/food/snacks/xenoburger
+/transformation/kitchen/xenoburger
+CAPABILITIES(/transformation/kitchen/xenoburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/xenoburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/fishburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/carpmeat
-	)
-	result = /obj/item/reagent_containers/food/snacks/fishburger
+/transformation/kitchen/fishburger
+CAPABILITIES(/transformation/kitchen/fishburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/fishburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/tofuburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/tofu
-	)
-	result = /obj/item/reagent_containers/food/snacks/tofuburger
+/transformation/kitchen/tofuburger
+CAPABILITIES(/transformation/kitchen/tofuburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/tofu, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/tofuburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/ghostburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/ectoplasm //where do you even find this stuff
-	)
-	result = /obj/item/reagent_containers/food/snacks/ghostburger
+// where do you even find this stuff
+// where do you even find this stuff
+/transformation/kitchen/ghostburger
+CAPABILITIES(/transformation/kitchen/ghostburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/ectoplasm, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/ghostburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/clownburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/clothing/mask/gas/clown_hat
-	)
-	result = /obj/item/reagent_containers/food/snacks/clownburger
+/transformation/kitchen/clownburger
+CAPABILITIES(/transformation/kitchen/clownburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/clothing/mask/gas/clown_hat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/clownburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/mimeburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/clothing/head/beret
-	)
-	result = /obj/item/reagent_containers/food/snacks/mimeburger
+/transformation/kitchen/mimeburger
+CAPABILITIES(/transformation/kitchen/mimeburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/clothing/head/beret, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/mimeburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/mouseburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/holder/mouse
-	)
-	result = /obj/item/reagent_containers/food/snacks/mouseburger
+/transformation/kitchen/mouseburger
+CAPABILITIES(/transformation/kitchen/mouseburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/holder/mouse, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/mouseburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/bunbun
-	appliance = GRILL
-	reagents = list(REAGENT_ID_SODIUMCHLORIDE = 1)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/bun
-	)
-	result = /obj/item/reagent_containers/food/snacks/bunbun
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/bunbun
+CAPABILITIES(/transformation/kitchen/bunbun)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUMCHLORIDE, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/bunbun, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/hotdog
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/sausage
-	)
-	result = /obj/item/reagent_containers/food/snacks/hotdog
+/transformation/kitchen/hotdog
+CAPABILITIES(/transformation/kitchen/hotdog)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/sausage, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/hotdog, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/humankabob
-	appliance = GRILL
-	items = list(
-		/obj/item/stack/rods,
-		/obj/item/reagent_containers/food/snacks/meat/human,
-		/obj/item/reagent_containers/food/snacks/meat/human,
-	)
-	result = /obj/item/reagent_containers/food/snacks/human/kabob
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/humankabob
+CAPABILITIES(/transformation/kitchen/humankabob)
+	configure(transformation(takes = list(item_term(/obj/item/stack/rods, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/human, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/human, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/human/kabob, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/kabob	//Do not put before humankabob
-	appliance = GRILL
-	items = list(
-		/obj/item/stack/rods,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/meat,
-	)
-	result = /obj/item/reagent_containers/food/snacks/monkeykabob
+// Do not put before humankabob
+/transformation/kitchen/kabob
+CAPABILITIES(/transformation/kitchen/kabob)
+	configure(transformation(takes = list(item_term(/obj/item/stack/rods, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeykabob, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/monkeykabob
-	appliance = GRILL
-	items = list(
-		/obj/item/stack/rods,
-		/obj/item/reagent_containers/food/snacks/meat/monkey,
-		/obj/item/reagent_containers/food/snacks/meat/monkey
-	)
-	result = /obj/item/reagent_containers/food/snacks/monkeykabob
-	wiki_flag = WIKI_SPOILER // Alt recipie doesn't need to be shown(breaks tgui)
+// Alt recipie doesn't need to be shown(breaks tgui)
+/transformation/kitchen/monkeykabob
+CAPABILITIES(/transformation/kitchen/monkeykabob)
+	configure(transformation(takes = list(item_term(/obj/item/stack/rods, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/monkey, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/monkey, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeykabob, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/syntikabob
-	appliance = GRILL
-	items = list(
-		/obj/item/stack/rods,
-		/obj/item/reagent_containers/food/snacks/meat/syntiflesh,
-		/obj/item/reagent_containers/food/snacks/meat/syntiflesh
-	)
-	result = /obj/item/reagent_containers/food/snacks/monkeykabob
-	wiki_flag = WIKI_SPOILER // Alt recipie doesn't need to be shown(breaks tgui)
+// Alt recipie doesn't need to be shown(breaks tgui)
+/transformation/kitchen/syntikabob
+CAPABILITIES(/transformation/kitchen/syntikabob)
+	configure(transformation(takes = list(item_term(/obj/item/stack/rods, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/syntiflesh, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/syntiflesh, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeykabob, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/tofukabob
-	appliance = GRILL
-	items = list(
-		/obj/item/stack/rods,
-		/obj/item/reagent_containers/food/snacks/tofu,
-		/obj/item/reagent_containers/food/snacks/tofu,
-	)
-	result = /obj/item/reagent_containers/food/snacks/tofukabob
+/transformation/kitchen/tofukabob
+CAPABILITIES(/transformation/kitchen/tofukabob)
+	configure(transformation(takes = list(item_term(/obj/item/stack/rods, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/tofu, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/tofu, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/tofukabob, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/fakespellburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/monkeyburger,
-		/obj/item/clothing/head/wizard/fake,
-	)
-	result = /obj/item/reagent_containers/food/snacks/spellburger
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/fakespellburger
+CAPABILITIES(/transformation/kitchen/fakespellburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeyburger, 1),
+			item_term(/obj/item/clothing/head/wizard/fake, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/spellburger, 1)),
+		cooks_in = GRILL,
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/spellburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/monkeyburger,
-		/obj/item/clothing/head/wizard,
-	)
-	result = /obj/item/reagent_containers/food/snacks/spellburger
+/transformation/kitchen/spellburger
+CAPABILITIES(/transformation/kitchen/spellburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/monkeyburger, 1),
+			item_term(/obj/item/clothing/head/wizard, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/spellburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/bigbiteburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/monkeyburger,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/meat,
-	)
-	reagents = list(REAGENT_ID_EGG = 3)
-	reagent_mix = RECIPE_REAGENT_REPLACE
-	result = /obj/item/reagent_containers/food/snacks/bigbiteburger
+/transformation/kitchen/bigbiteburger
+CAPABILITIES(/transformation/kitchen/bigbiteburger)
+	configure(transformation(takes = list(reagent(REAGENT_ID_EGG, 3),
+			item_term(/obj/item/reagent_containers/food/snacks/monkeyburger, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/bigbiteburger, 1)),
+		cooks_in = GRILL,
+		mix = RECIPE_REAGENT_REPLACE))
 
-/datum/recipe/superbiteburger
-	appliance = GRILL
-	fruit = list(PLANT_TOMATO = 1)
-	reagents = list(REAGENT_ID_SODIUMCHLORIDE = 5, REAGENT_ID_BLACKPEPPER = 5)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bigbiteburger,
-		/obj/item/reagent_containers/food/snacks/dough,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/boiledegg,
-	)
-	result = /obj/item/reagent_containers/food/snacks/superbiteburger
+/transformation/kitchen/superbiteburger
+CAPABILITIES(/transformation/kitchen/superbiteburger)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUMCHLORIDE, 5),
+			reagent(REAGENT_ID_BLACKPEPPER, 5),
+			item_term(/obj/item/reagent_containers/food/snacks/bigbiteburger, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/boiledegg, 1),
+			fruit_term(PLANT_TOMATO, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/superbiteburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/slimeburger
-	appliance = GRILL
-	reagents = list(REAGENT_ID_SLIMEJELLY = 5)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun
-	)
-	result = /obj/item/reagent_containers/food/snacks/jellyburger/slime
+/transformation/kitchen/slimeburger
+CAPABILITIES(/transformation/kitchen/slimeburger)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/jellyburger/slime, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/jellyburger
-	appliance = GRILL
-	reagents = list(REAGENT_ID_CHERRYJELLY = 5)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun
-	)
-	result = /obj/item/reagent_containers/food/snacks/jellyburger/cherry
+/transformation/kitchen/jellyburger
+CAPABILITIES(/transformation/kitchen/jellyburger)
+	configure(transformation(takes = list(reagent(REAGENT_ID_CHERRYJELLY, 5),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/jellyburger/cherry, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/bearburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/bearmeat
-	)
-	result = /obj/item/reagent_containers/food/snacks/bearburger
+/transformation/kitchen/bearburger
+CAPABILITIES(/transformation/kitchen/bearburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bearmeat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/bearburger, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/baconburger
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/bun,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/bacon,
-		/obj/item/reagent_containers/food/snacks/bacon
-	)
-	result = /obj/item/reagent_containers/food/snacks/burger/bacon
+/transformation/kitchen/baconburger
+CAPABILITIES(/transformation/kitchen/baconburger)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/bun, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bacon, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bacon, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/burger/bacon, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/omelette
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-	)
-	reagents = list(REAGENT_ID_EGG = 6)
-	reagent_mix = RECIPE_REAGENT_REPLACE
-	result = /obj/item/reagent_containers/food/snacks/omelette
+/transformation/kitchen/omelette
+CAPABILITIES(/transformation/kitchen/omelette)
+	configure(transformation(takes = list(reagent(REAGENT_ID_EGG, 6),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/omelette, 1)),
+		cooks_in = GRILL,
+		mix = RECIPE_REAGENT_REPLACE))
 
-/datum/recipe/omurice
-	appliance = GRILL
-	reagents = list(REAGENT_ID_RICE = 5, REAGENT_ID_KETCHUP = 5, REAGENT_ID_EGG = 3)
-	result = /obj/item/reagent_containers/food/snacks/omurice
+/transformation/kitchen/omurice
+CAPABILITIES(/transformation/kitchen/omurice)
+	configure(transformation(takes = list(reagent(REAGENT_ID_RICE, 5),
+			reagent(REAGENT_ID_KETCHUP, 5),
+			reagent(REAGENT_ID_EGG, 3)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/omurice, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/omurice/heart
-	appliance = GRILL
-	reagents = list(REAGENT_ID_RICE = 5, REAGENT_ID_KETCHUP = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_EGG = 3)
-	result = /obj/item/reagent_containers/food/snacks/omurice/heart
+/transformation/kitchen/omurice/heart
+CAPABILITIES(/transformation/kitchen/omurice/heart)
+	configure(transformation(takes = list(reagent(REAGENT_ID_RICE, 5),
+			reagent(REAGENT_ID_KETCHUP, 5),
+			reagent(REAGENT_ID_SUGAR, 5),
+			reagent(REAGENT_ID_EGG, 3)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/omurice/heart, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/omurice/face
-	appliance = GRILL
-	reagents = list(REAGENT_ID_RICE = 5, REAGENT_ID_KETCHUP = 5, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_EGG = 3)
-	result = /obj/item/reagent_containers/food/snacks/omurice/face
+/transformation/kitchen/omurice/face
+CAPABILITIES(/transformation/kitchen/omurice/face)
+	configure(transformation(takes = list(reagent(REAGENT_ID_RICE, 5),
+			reagent(REAGENT_ID_KETCHUP, 5),
+			reagent(REAGENT_ID_SODIUMCHLORIDE, 1),
+			reagent(REAGENT_ID_EGG, 3)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/omurice/face, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/meatsteak
-	appliance = GRILL
-	reagents = list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)
-	items = list(/obj/item/reagent_containers/food/snacks/meat)
-	result = /obj/item/reagent_containers/food/snacks/meatsteak
+/transformation/kitchen/meatsteak
+CAPABILITIES(/transformation/kitchen/meatsteak)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SODIUMCHLORIDE, 1),
+			reagent(REAGENT_ID_BLACKPEPPER, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/meatsteak, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/honeytoast
-	appliance = GRILL
-	reagents = list(REAGENT_ID_HONEY = 5)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/slice/bread
-	)
-	reagent_mix = RECIPE_REAGENT_REPLACE //Simplify end product
-	result = /obj/item/reagent_containers/food/snacks/honeytoast
+// Simplify end product
+/transformation/kitchen/honeytoast
+CAPABILITIES(/transformation/kitchen/honeytoast)
+	configure(transformation(takes = list(reagent(REAGENT_ID_HONEY, 5),
+			item_term(/obj/item/reagent_containers/food/snacks/slice/bread, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/honeytoast, 1)),
+		cooks_in = GRILL,
+		mix = RECIPE_REAGENT_REPLACE))
 
-/datum/recipe/grilled_carp
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/carpmeat,
-		/obj/item/reagent_containers/food/snacks/carpmeat,
-		/obj/item/reagent_containers/food/snacks/carpmeat,
-		/obj/item/reagent_containers/food/snacks/carpmeat,
-		/obj/item/reagent_containers/food/snacks/carpmeat,
-		/obj/item/reagent_containers/food/snacks/carpmeat
-	)
-	reagents = list(REAGENT_ID_SPACESPICE = 1)
-	fruit = list(PLANT_LETTUCE = 1, PLANT_LIME = 1)
-	result = /obj/item/reagent_containers/food/snacks/sliceable/grilled_carp
+/transformation/kitchen/grilled_carp
+CAPABILITIES(/transformation/kitchen/grilled_carp)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SPACESPICE, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			fruit_term(PLANT_LETTUCE, 1),
+			fruit_term(PLANT_LIME, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/grilledcheese
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/slice/bread,
-		/obj/item/reagent_containers/food/snacks/slice/bread,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-	)
-	result = /obj/item/reagent_containers/food/snacks/grilledcheese
+/transformation/kitchen/grilledcheese
+CAPABILITIES(/transformation/kitchen/grilledcheese)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/slice/bread, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/slice/bread, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/grilledcheese, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/toastedsandwich
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/sandwich
-	)
-	result = /obj/item/reagent_containers/food/snacks/toastedsandwich
+/transformation/kitchen/toastedsandwich
+CAPABILITIES(/transformation/kitchen/toastedsandwich)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/sandwich, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/toastedsandwich, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/cheese_cracker
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/spreads/butter,
-		/obj/item/reagent_containers/food/snacks/slice/bread,
-		/obj/item/reagent_containers/food/snacks/cheesewedge
-	)
-	reagents = list(REAGENT_ID_SPACESPICE = 1)
-	result = /obj/item/reagent_containers/food/snacks/cheesetoast
-	result_quantity = 4
+/transformation/kitchen/cheese_cracker
+CAPABILITIES(/transformation/kitchen/cheese_cracker)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SPACESPICE, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/spreads/butter, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/slice/bread, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/cheesetoast, 4)),
+		cooks_in = GRILL))
 
-/datum/recipe/bacongrill
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/spreads,
-		/obj/item/reagent_containers/food/snacks/rawbacon
-	)
-	result = /obj/item/reagent_containers/food/snacks/bacon
+/transformation/kitchen/bacongrill
+CAPABILITIES(/transformation/kitchen/bacongrill)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/spreads, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/rawbacon, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/bacon, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/chickenfillet //Also just combinable, like burgers and hot dogs.
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/chickenkatsu,
-		/obj/item/reagent_containers/food/snacks/bun
-	)
-	result = /obj/item/reagent_containers/food/snacks/chickenfillet
+// Also just combinable, like burgers and hot dogs.
+/transformation/kitchen/chickenfillet
+CAPABILITIES(/transformation/kitchen/chickenfillet)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/chickenkatsu, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/bun, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/chickenfillet, 1)),
+		cooks_in = GRILL))
 
-/datum/recipe/burgerpatty
-	appliance = GRILL
-	items = list(
-		/obj/item/reagent_containers/food/snacks/rawcutlet
-	)
-	result = /obj/item/reagent_containers/food/snacks/burgerpatty
+/transformation/kitchen/burgerpatty
+CAPABILITIES(/transformation/kitchen/burgerpatty)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/rawcutlet, 1)),
+		makes = list(item_term(/obj/item/reagent_containers/food/snacks/burgerpatty, 1)),
+		cooks_in = GRILL))
