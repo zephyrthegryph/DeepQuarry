@@ -155,7 +155,14 @@ impl Compiler<'_> {
             }
             ExprKind::Literal(literal) => {
                 if literal == "null" {
-                    self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+                    // DreamMaker reads an authored null through the Null variable reader (two words) and pushes a null
+                    // for an omitted argument (`f(1,,3)`, a zero-width literal; three words). The difference decides
+                    // whether a large initializer fits the 65,535-word procedure limit.
+                    if expr.span.start == expr.span.end {
+                        self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+                    } else {
+                        self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
+                    }
                 } else if literal == "FALSE" {
                     self.emit(opcode::PUSH_INT, vec![Word::Immediate(0)]);
                 } else if literal == "TRUE" {

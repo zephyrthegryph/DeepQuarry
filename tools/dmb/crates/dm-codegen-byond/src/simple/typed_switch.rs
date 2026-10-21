@@ -78,6 +78,14 @@ impl Compiler<'_> {
                 [Word::Value(value)] => Ok(value.clone()),
                 _ => Err(error(text, "constant switch value has invalid operands")),
             },
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::GET_VAR,
+                    operands,
+                }),
+            ] if matches!(operands.as_slice(), [Word::Variable(VariableWord::Null)]) => {
+                Ok(ValueWord::Null)
+            }
             _ => Err(error(
                 text,
                 "constant switch value requires runtime evaluation",
