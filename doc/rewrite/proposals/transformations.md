@@ -713,3 +713,10 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   until named laws (wave 4) move the numbers. `desc` and `hotspot` are new entry arguments; `init_factors()` became `factors()`. `/datum/gas_reaction`, `init_reqs`,
   `build_min_requirements`, `init_gas_reactions`, `init_factors` and `priority_group` are hard-banned. Pinned by `dq_gas_reaction_declaration_pin` (order, gases,
   windows, hotspot flags read off the old types) and `dq_gas_reaction_energy_pins` (outcomes), unchanged.
+* **Wave 3, grinding.** The 54 sheets of `GLOB.sheet_reagents` and the 20 ores of `GLOB.ore_reagents` are `/transformation/grinding/*` rules in
+  `code/_helpers/refinery.dm` (`MEDIUM_CONTENTS`, `REGIME_GRINDING`): `takes` is one `stack_term(type, 1)` (a sheet) or `item_term(type, 1)` (an ore), `makes` the list of
+  `reagent(id, 1)` terms in the table's order, a reagent named twice twice (each term is one even share, as the table's list was). A rule fits an item of exactly its type
+  (`grinding_rule_for()`, the old exact-key lookup). `grind_items_to_reagents()` keeps its loop, including the way a sheet that does not fit and an ore that does not fit leave the
+  item alone; `puny_protons()` (the supermatter stack) is untouched. The grinders, the garbage system and the wiki read the rules. Pinned by `dq_xform_grinding_pin` (recorded on
+  the tables: each rule's reagents and what grinding a stack of three or one ore puts in a holder) and `chemical_grinding_must_produce_valid_results`. `GLOB.sheet_reagents`
+  and `GLOB.ore_reagents` are hard-banned.

@@ -99,14 +99,12 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 		transfer_sludge_to_tank(rand(1,5))
 
 /obj/machinery/v_garbosystem/proc/transfer_ore_to_tank(obj/item/ore/R,multiplier)
-	if(GLOB.ore_reagents[R.type])
-		var/list/ore_components = GLOB.ore_reagents[R.type]
-		if(islist(ore_components))
-			var/amount_to_take = (REAGENTS_PER_ORE/(ore_components.len))
-			for(var/i in ore_components)
-				reagents.add_reagent(i, amount_to_take * multiplier)
-		else
-			reagents.add_reagent(ore_components, REAGENTS_PER_ORE * multiplier)
+	var/datum/xform/rule = grinding_ore_rule_for(R.type)
+	if(rule)
+		var/list/ore_components = rule.grind_ids()
+		var/amount_to_take = (REAGENTS_PER_ORE/(ore_components.len))
+		for(var/i in ore_components)
+			reagents.add_reagent(i, amount_to_take * multiplier)
 		transfer_sludge_to_tank(rand(1,5))
 
 /obj/machinery/v_garbosystem/proc/transfer_sludge_to_tank(amt)

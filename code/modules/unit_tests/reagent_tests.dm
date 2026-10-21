@@ -253,16 +253,9 @@ CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
 
 /// Test that makes sure that chemical grinding has valid results
 /datum/unit_test/chemical_grinding_must_produce_valid_results/Run()
-	for(var/grind in GLOB.sheet_reagents + GLOB.ore_reagents)
-		var/list/results = GLOB.sheet_reagents[grind]
-
-		if(!results)
-			results = GLOB.ore_reagents[grind]
-
-		// Cursed test
-		TEST_ASSERT(!(!results || !islist(results)), "[grind]: Reagents - Grinding result had invalid list.")
-		if(!results || !islist(results))
-			continue
+	for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
+		var/grind = rule.takes[1][2]
+		var/list/results = rule.grind_ids()
 
 		TEST_ASSERT(results.len, "[grind]: Reagents - Grinding result had empty.")
 		if(!results.len)

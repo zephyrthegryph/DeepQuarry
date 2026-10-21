@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "What reagent grinders break sheets and ores into is declared as transformations instead of two global tables; the results are unchanged."

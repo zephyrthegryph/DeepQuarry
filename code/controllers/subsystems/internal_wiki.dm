@@ -385,18 +385,22 @@ SYSTEM_DEF(internal_wiki)
 
 	var/grind_list = list()
 	var/list/display_reactions = list()
-	for(var/ore_type in GLOB.ore_reagents)
-		var/obj/item/ore/O = ore_type
-		if(R.id in GLOB.ore_reagents[ore_type])
+	for(var/datum/xform/grind as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
+		if(grind.takes[1][1] != XCUR_ITEM)
+			continue
+		var/obj/item/ore/O = grind.takes[1][2]
+		if(R.id in grind.grind_ids())
 			display_reactions.Add(initial(O.name))
 	grind_list["ore"] = null
 	if(length(display_reactions) > 0)
 		grind_list["ore"] = display_reactions
 
 	display_reactions = list()
-	for(var/sheet_type in GLOB.sheet_reagents)
-		var/obj/item/stack/material/M = sheet_type
-		if(R.id in GLOB.sheet_reagents[sheet_type])
+	for(var/datum/xform/grind as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
+		if(grind.takes[1][1] != XCUR_STACK)
+			continue
+		var/obj/item/stack/material/M = grind.takes[1][2]
+		if(R.id in grind.grind_ids())
 			display_reactions.Add(initial(M.name))
 	grind_list["material"] = null
 	if(length(display_reactions) > 0)
@@ -825,8 +829,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 		set_data_at("pump_reagent", REG.name)
 
 	set_data_at("grind_reagents", null)
-	if(GLOB.ore_reagents[O.ore])
-		var/list/output = GLOB.ore_reagents[O.ore]
+	var/datum/xform/ore_grind = grinding_ore_rule_for(O.ore)
+	if(ore_grind)
+		var/list/output = ore_grind.grind_ids()
 		var/list/collect = list()
 		var/total_parts = 0
 		for(var/Rid in output)
@@ -898,8 +903,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	set_data_at("ignition_point", M.ignition_point)
 
 	set_data_at("grind_reagents", null)
-	if(GLOB.sheet_reagents[M.stack_type])
-		var/list/output = GLOB.sheet_reagents[M.stack_type]
+	var/datum/xform/sheet_grind = grinding_sheet_rule_for(M.stack_type)
+	if(sheet_grind)
+		var/list/output = sheet_grind.grind_ids()
 		if(output && length(output) > 0)
 			var/list/collect = list()
 			var/total_parts = 0

@@ -731,6 +731,9 @@ banned = [
   "init_gas_reactions = SSair.gas_rules is xform_rules_in(MEDIUM_GAS, REGIME_GAS)",
   "init_factors = factors() on the /transformation/gas type",
   "priority_group = every gas reaction runs in declaration order; a priority = PRIORITY_X in the transformation() entry would order them",
+  "sheet_reagents = a sheet that grinds into reagents is a /transformation/grinding rule: takes = list(stack_term(type, 1)), makes = list(reagent(id, 1), ...) (code/_helpers/refinery.dm); grinding_sheet_rule_for(type)",
+  "ore_reagents = an ore that grinds into reagents is a /transformation/grinding rule: takes = list(item_term(type, 1)), makes = list(reagent(id, 1), ...) (code/_helpers/refinery.dm); grinding_ore_rule_for(type)",
+
   "datum/recipe = a recipe is a transformation: a type under /transformation/kitchen with a transformation(takes = list(reagent(...), item_term(...), fruit_term(...)), makes = list(item_term(type, n)), cooks_in = ...) entry (code/library/transformations/kitchen.dm)",
   "select_recipe = cooking_select(appliancetype, container, exact) (code/library/transformations/kitchen.dm)",
   "available_recipes = cooking_rules_for(appliancetype): the kitchen rules of one appliance, in the order they are tried",

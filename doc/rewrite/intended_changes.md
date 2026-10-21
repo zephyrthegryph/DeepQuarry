@@ -5307,3 +5307,8 @@ carry the new path; the spritesheet and the UI read them from the same place. `G
 The 23 `/datum/gas_reaction` types are `/transformation/gas` rules and run in the same order against the same requirements (`dq_gas_reaction_declaration_pin`,
 `dq_gas_reaction_energy_pins`). `priority_group` is gone: it was only ever used to number an auxmos registry that is empty, and the DM loop ran declaration order,
 which the rules keep. A reaction that should be ordered by band needs a `priority =` and an entry here.
+
+## Grinding tables as transformations: no change (2026-10-21)
+
+`GLOB.sheet_reagents` and `GLOB.ore_reagents` are `/transformation/grinding` rules with the same reagents in the same order; what a grinder produces is the same
+(`dq_xform_grinding_pin`).

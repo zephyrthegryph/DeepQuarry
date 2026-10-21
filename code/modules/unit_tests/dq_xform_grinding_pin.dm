@@ -1,6 +1,6 @@
 /**
- * Grinding pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy GLOB.sheet_reagents and GLOB.ore_reagents tables before they
- * became /transformation/grinding rules, and kept byte-identical through the conversion.
+ * Grinding pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy sheet and ore reagent tables before they became
+ * /transformation/grinding rules, and kept byte-identical through the conversion.
  *
  * For every sheet and ore the grinders know, one row: the reagent list the table names (in order, duplicates kept), and what grind_items_to_reagents() puts in
  * a large holder when it grinds three sheets (a stack of three) or one ore: each reagent and its amount. The supermatter stack is not ground (it explodes);
@@ -33,14 +33,11 @@
 /datum/unit_test/dq_xform_grinding_pin/Run()
 	var/turf/T = test_floor()
 	var/list/rows = list()
-	for(var/item_type in GLOB.sheet_reagents)
-		var/list/ids = GLOB.sheet_reagents[item_type]
-		var/text = "sheet: [islist(ids) ? jointext(ids, ",") : ids]"
+	for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_GRINDING))
+		var/item_type = rule.takes[1][2]
+		var/text = "[rule.takes[1][1] == XCUR_STACK ? "sheet" : "ore"]: [jointext(rule.grind_ids(), ",")]"
 		if(!ispath(item_type, /obj/item/stack/material/supermatter))
 			text += "; ground: [outcome(item_type, T)]"
 		rows["[item_type]"] = text
-	for(var/item_type in GLOB.ore_reagents)
-		var/list/ids = GLOB.ore_reagents[item_type]
-		rows["[item_type]"] = "ore: [islist(ids) ? jointext(ids, ",") : ids]; ground: [outcome(item_type, T)]"
 	var/failure = dq_xform_pin_compare(DQ_GRINDING_PIN_NAME, rows)
 	TEST_ASSERT(isnull(failure), failure)
