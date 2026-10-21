@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The change graph's reader plan is per type: a tracked write consults only the reaction, hook and form rows of the written entity's own type"

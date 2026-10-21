@@ -91,7 +91,7 @@
 	TEST_ASSERT_EQUAL(length(kinds), 4, "the slot answers four guns by type: [json_encode(kinds)]")
 	TEST_ASSERT_EQUAL(length(cabinet.contents), made_before, "and asking made none either")
 	qdel(cabinet)
-	dq_look_drain_turf(T) // the cabinet spills its guns when it goes
+	dq_draw_drain_turf(T) // the cabinet spills its guns when it goes
 
 /// A gun going in or out redraws the cabinet through the slot's occupancy, and opening it shows only the open door.
 /datum/unit_test/dq_draw_guncabinet_follows_its_slot
@@ -149,7 +149,7 @@
 	TEST_ASSERT_EQUAL(length(after), 1, "and the real one is counted by its type, the declared ones filtered out: [json_encode(after)]")
 	TEST_ASSERT_EQUAL(length(cabinet.slot_kinds(CONTAINER_SLOT_INTERIOR, /obj/item/gun/energy)), 4, "the energy guns are still the four it starts with")
 	qdel(cabinet)
-	dq_look_drain_turf(T) // the cabinet spills its guns when it goes
+	dq_draw_drain_turf(T) // the cabinet spills its guns when it goes
 
 // ---- the vehicle cage ----
 
@@ -362,3 +362,17 @@
 	for(var/i in 1 to 24)
 		TEST_ASSERT_EQUAL(carry.underlay_update(), first, "and every time it is asked: pass [i]")
 	carry.ChangeTurf(original)
+
+/// Deletes what a test left on `T` until nothing is left. Deleting a thing can make more of them (a gun cabinet spills its guns), so
+/// one pass, or leaving them for the block's release, ends with the last of them on the block as a leak.
+/datum/unit_test/proc/dq_draw_drain_turf(turf/T)
+	for(var/pass in 1 to 30)
+		var/list/left = list()
+		for(var/atom/movable/AM as anything in contents_of(T))
+			if(!QDELETED(AM) && !istype(AM, /obj/effect/landmark))
+				left += AM
+		if(!length(left))
+			return
+		for(var/atom/movable/AM as anything in left)
+			if(!QDELETED(AM))
+				qdel(AM)

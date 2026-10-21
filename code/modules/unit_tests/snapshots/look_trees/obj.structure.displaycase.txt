@@ -1,5 +1,0 @@
-/obj/structure/displaycase icon: icons/obj/stationobjs.dmi
-/obj/structure/displaycase state: glassbox1
-/obj/structure/displaycase dir: 2
-/obj/structure/displaycase overlay: icons/obj/stationobjs.dmi:glassbox1:8:#000000
-

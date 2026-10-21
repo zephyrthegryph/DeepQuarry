@@ -1,5 +1,0 @@
-/obj/structure/firedoor_assembly icon: icons/obj/doors/DoorHazard.dmi
-/obj/structure/firedoor_assembly state: door_construction
-/obj/structure/firedoor_assembly dir: 2
-/obj/structure/firedoor_assembly overlay: icons/obj/doors/DoorHazard.dmi:door_construction:8:#000000
-

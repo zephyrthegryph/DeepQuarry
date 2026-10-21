@@ -13,8 +13,48 @@ use std::time::{Duration, Instant};
 mod diagnostic_continuation;
 mod initializer_factory;
 mod prepared;
-pub(crate) mod body_patch;
+pub(crate) mod selected_lowering;
 pub use prepared::{PreparedCold, PreparedComposition};
+
+/// What the general path prepared: the whole program for composition, or an output it built
+/// incrementally on the retained one (`crate::retained_output`).
+pub enum Prepared {
+    Full(PreparedCold),
+    Incremental(Box<crate::retained_output::Patched>),
+}
+impl Prepared {
+    /// The whole-program preparation; callers that offer no retained output always get it.
+    pub fn into_full(self) -> Result<PreparedCold, ColdError> {
+        match self {
+            Self::Full(prepared) => Ok(prepared),
+            Self::Incremental(_) => Err(ColdError::InitializerInvariant(
+                "incremental output without a retained output".into(),
+            )),
+        }
+    }
+}
+
+/// One answer table per request, shared by the ABI, initializer and lowering checks. The static
+/// resolver versions every answer (declarations, procedure statics, engine catalogs).
+pub(crate) fn begin_answers<R: Resolver>(
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    frontend: &ColdFrontend,
+    resolver: &R,
+    startup: &crate::startup::CapturedStartup<'_>,
+) {
+    if let Some(db) = memo.and_then(|memo| memo.query_db()) {
+        match startup.resolver(frontend, resolver) {
+            Ok(statics) => db.begin_answers(
+                &frontend.snapshot.tree,
+                statics.domain_version(dm_ir::ReadDomain::Tree),
+                &|query| statics.resolve(*query),
+            ),
+            Err(_) => db.begin_answers(&frontend.snapshot.tree, None, &|query| {
+                resolver.resolve(*query)
+            }),
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub enum ColdStage {
@@ -244,7 +284,9 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
         memo,
         revision,
         executor,
+        None,
     )?
+    .into_full()?
     .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
 }
 
@@ -261,12 +303,9 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     revision: Option<&dm_tree::frontend::FrontendRevision>,
     executor: &dm_exec::BuildExecutor,
-) -> Result<PreparedCold, ColdError> {
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<Prepared, ColdError> {
     let total = Instant::now();
-    // One answer table per request, shared by the ABI, initializer and lowering checks.
-    if let Some(db) = memo.and_then(|memo| memo.query_db()) {
-        db.begin_answers(&frontend.snapshot.tree);
-    }
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let roster =
         crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
@@ -286,6 +325,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
     measurement.complete();
     dm_profile::request_mark("cold.startup_captured");
+    begin_answers(memo, frontend, resolver, &startup);
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
@@ -314,6 +354,28 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     measurement.complete();
     let abi_preparation = total.elapsed();
     dm_profile::request_mark("cold.abi_prepared");
+    if let Some(retained) = retained {
+        match incremental_output(
+            retained,
+            frontend,
+            resolver,
+            &policy,
+            &links,
+            config,
+            &startup,
+            memo,
+            executor,
+            &bodies,
+            &roster,
+            &prepared.prepared,
+        ) {
+            Ok(patched) => return Ok(Prepared::Incremental(Box::new(patched))),
+            Err(reason) => {
+                crate::compile_stats::note_full(format!("incremental output declined: {reason}"));
+                crate::daemon_eprintln!("native incremental output: declined, whole program: {reason}");
+            }
+        }
+    }
     let mut output = prepare_with_startup(
         frontend,
         resolver,
@@ -335,7 +397,100 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
     output.started = total;
-    Ok(output)
+    Ok(Prepared::Full(output))
+}
+
+/// The output built on the retained one (`crate::retained_output`): the declaration side of the
+/// link inputs is unchanged, so only the bodies whose text or position changed are lowered (with
+/// this request's startup, ABI policy and static resolver) and relinked into the retained image.
+#[allow(clippy::too_many_arguments)]
+fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
+    retained: crate::retained_output::RetainedOutput<'_>,
+    frontend: &'f ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: &CapturedLinkInputs<'_>,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup<'f>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'f>,
+    roster: &crate::lowering::PreparedBodyRoster<'f>,
+    prepared: &crate::driver_facts::PreparedSourceAbi,
+) -> Result<crate::retained_output::Patched, String> {
+    let started = Instant::now();
+    let answers = memo.and_then(|memo| memo.query_db()?.answers_version());
+    let admitted = crate::retained_output::admit(&retained, frontend, answers)?;
+    dm_profile::request_mark("incremental.admitted");
+    startup.validate_for(frontend)?;
+    let static_resolver = startup.resolver(frontend, resolver)?;
+    let plan = startup.plan();
+    let source_bindings = roster
+        .source_bindings(frontend)
+        .ok_or("current prepared symbolic namespace absent")?;
+    let complete = |unit: crate::lowering::CompletedInput| {
+        unit.prepare(plan.symbols.as_ref(), source_bindings, links.references, false)
+    };
+    let selected: Vec<_> = admitted
+        .changed
+        .iter()
+        .map(|&index| &frontend.bodies[index])
+        .collect();
+    let batch = crate::lowering::lower_frontend_completed_input_on_execution(
+        frontend,
+        &static_resolver,
+        policy,
+        config,
+        Some(startup),
+        None,
+        crate::lowering::LoweringExecution::new(executor, bodies)
+            .with_prepared_roster(roster)
+            .with_selected_bodies(&selected),
+        true,
+        &complete,
+    );
+    dm_profile::request_mark("incremental.lowered");
+    if !batch.diagnostics.is_empty() {
+        return Err(format!(
+            "lowering reported {} diagnostics (first: {})",
+            batch.diagnostics.len(),
+            batch.diagnostics[0].message
+        ));
+    }
+    if let Some((body, error)) = batch.completion_errors.into_iter().next() {
+        return Err(format!(
+            "completion error at {}:{}: {error:?}",
+            body.source.semantic_path, body.source.line
+        ));
+    }
+    if batch.units.len() != selected.len() {
+        return Err(format!(
+            "lowered {} units for {} changed bodies",
+            batch.units.len(),
+            selected.len()
+        ));
+    }
+    let contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
+    let patched = crate::retained_output::splice(
+        retained,
+        admitted,
+        frontend,
+        &contributions,
+        (
+            std::sync::Arc::clone(prepared.units_owner()),
+            startup.facts(),
+        ),
+        executor,
+    )?;
+    crate::compile_stats::note_patch(patched.changed_bodies);
+    crate::daemon_eprintln!(
+        "native incremental output: changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
+        patched.changed_bodies,
+        patched.shifted_initializers,
+        patched.patched_rows,
+        started.elapsed().as_secs_f64()
+    );
+    Ok(patched)
 }
 
 /// Captured map initialization and non-text output share the declaration/body
@@ -511,127 +666,175 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let detail_phase = dm_profile::detail_timer("init.startup_allocation");
-    let startup_allocation =
-        crate::startup_allocation::StartupAllocationRoster::issue_current_with_artifacts(
-            plan,
-            declarations.source_type_order,
-            frontend,
-            memo.and_then(|memo| memo.startup.as_ref()),
-        )
-        .map_err(ColdError::InitializerInvariant)?;
-    drop(detail_phase);
-    let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
-        frontend,
-        startup,
-        &evaluator,
-        resolver,
-        declarations.resource_search_context,
-        crate::initializer_lowering::InitializerExecution {
-            executor,
-            evaluator: parallel_factory.as_ref().map(|factory| {
-                crate::initializer_policy::ParallelEvaluator {
-                    factory,
-                    engine: Some(links.engine),
-                }
-            }),
-            observer: observer.map(|_| {
-                &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
-            }),
-            memo,
-            classification: memo.and_then(|memo| {
-                memo.initializers.as_ref().map(|store| {
-                    crate::initializer_policy::InitializerReuse {
-                        store: store.as_ref(),
-                        resolver,
-                        policy: memo.policy,
-                        resource_search_context: declarations.resource_search_context,
-                    }
-                })
-            }),
-        },
-        Some(&startup_allocation),
-    )
-    .map_err(|error| {
-        diagnostic_continuation::collect(error, || {
-            // This is the ordinary current body producer with no memo,
-            // contribution preparation, linker, or publication callbacks.
-            let execution = crate::lowering::LoweringExecution::new(executor, &bodies);
-            let execution = match prepared_roster {
-                Some(roster) => execution.with_prepared_roster(roster),
-                None => execution,
-            };
-            crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
-                frontend, resolver, policy, config, startup, execution,
-            )
-            .diagnostics
-        })
-    })?;
-    let detail_phase = dm_profile::detail_timer("init.class_projection");
-    let mut projection = crate::class_projection::project_classified_with_artifacts(
-        &frontend.snapshot,
-        &frontend.emission_order,
-        plan,
-        &initialization.classified,
-        &initialization.units,
-        memo.and_then(|memo| memo.class_projections.as_deref()),
-    )
-    .map_err(ColdError::Projection)?;
-    drop(detail_phase);
-    startup_allocation
-        .order_membership(&mut projection.shared_slot_order)
-        .map_err(ColdError::InitializerInvariant)?;
-    let detail_phase = dm_profile::detail_timer("init.bind_field_sources");
-    projection
-        .bind_field_sources(frontend, plan)
-        .map_err(ColdError::Projection)?;
-    drop(detail_phase);
-    crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
-        census.frontend(frontend);
-        census.startup(startup);
-        census.initializer_ledger(&initialization.classified);
-        census.body_arena(&bodies);
-        census.current_projection(&projection);
-        census.current_initializer_units(&initialization.units);
-        census.current_map_initializers(&map_initializers);
-        if let Some(prepared) = prepared_abi {
-            census.prepared_source_abi(prepared);
-        } else {
-            census.boundary_opaque_abi_policy();
-        }
-        if let Some(memo) = memo {
-            census.cold_retained_owners(memo);
-        }
-        if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
-            if census.arc_object("initializer_classification.owner", store) {
-                census.initializer_artifacts(store);
+    // The initializer stage is one query: its inputs are the answer table's version, the
+    // declaration inputs (expanded text outside bodies, every source position) and the stage's
+    // configuration. Equal inputs reuse the retained output without running the stage.
+    let initializer_stage = memo
+        .and_then(|memo| Some((memo.stages.as_ref()?, memo)))
+        .map(|(stages, memo)| {
+            let mut key = xxhash_rust::xxh3::Xxh3::new();
+            key.update(b"dm-initializer-stage-v1\0");
+            key.update(&memo.policy.to_le_bytes());
+            key.update(&links.engine.identity().to_le_bytes());
+            key.update(&declarations.resource_search_context.unwrap_or(0).to_le_bytes());
+            key.update(&[u8::from(declarations.resource_search_context.is_some())]);
+            key.update(&crate::stage_reuse::declaration_inputs(frontend, executor).to_le_bytes());
+            (stages, key.digest128())
+        });
+    let reused = initializer_stage.and_then(|(stages, key)| {
+        stages.initializers(key, memo.and_then(|memo| memo.query_db()?.answers_version()))
+    });
+    let (initializer_units, mut projection, mut warnings, pending_modified_defaults) = match reused
+    {
+        Some(products) => {
+            dm_profile::request_mark("cold.initializers_reused");
+            if let (Some(memo), Some((stages, _))) = (memo, initializer_stage) {
+                // The retained output keeps its claims in the initializer stores.
+                memo.carry_initializer_stage();
+                stages.keep_initializers(std::sync::Arc::clone(&products));
             }
+            (
+                products.units.clone(),
+                products.projection.clone(),
+                products.warnings.clone(),
+                Ok(products.modified_defaults.clone()),
+            )
         }
-    })
-    .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
-    // Capture only stored descriptor defaults while their source ledger is live.
-    // Keep failures deferred until the former seed stage so body diagnostics win
-    // exactly as before; this capture performs no resolver/evaluator operations.
-    let detail_phase = dm_profile::detail_timer("init.default_seeds_and_warnings");
-    let pending_modified_defaults =
-        crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
-    let mut warnings =
-        crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
-            .map_err(initializer_lowering_error)?;
-    warnings
-        .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
-    // Body-edit patches keep initializer and callable warnings (line-shifted),
-    // recompute local warnings and rebind unit warnings.
+        None => {
+            let detail_phase = dm_profile::detail_timer("init.startup_allocation");
+            let startup_allocation =
+                crate::startup_allocation::StartupAllocationRoster::issue_current_with_artifacts(
+                    plan,
+                    declarations.source_type_order,
+                    frontend,
+                    memo.and_then(|memo| memo.startup.as_ref()),
+                )
+                .map_err(ColdError::InitializerInvariant)?;
+            drop(detail_phase);
+            let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
+                frontend,
+                startup,
+                &evaluator,
+                resolver,
+                declarations.resource_search_context,
+                crate::initializer_lowering::InitializerExecution {
+                    executor,
+                    evaluator: parallel_factory.as_ref().map(|factory| {
+                        crate::initializer_policy::ParallelEvaluator {
+                            factory,
+                            engine: Some(links.engine),
+                        }
+                    }),
+                    observer: observer.map(|_| {
+                        &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
+                    }),
+                    memo,
+                    classification: memo.and_then(|memo| {
+                        memo.initializers.as_ref().map(|store| {
+                            crate::initializer_policy::InitializerReuse {
+                                store: store.as_ref(),
+                                resolver,
+                                policy: memo.policy,
+                                resource_search_context: declarations.resource_search_context,
+                            }
+                        })
+                    }),
+                },
+                Some(&startup_allocation),
+            )
+            .map_err(|error| {
+                diagnostic_continuation::collect(error, || {
+                    // This is the ordinary current body producer with no memo,
+                    // contribution preparation, linker, or publication callbacks.
+                    let execution = crate::lowering::LoweringExecution::new(executor, &bodies);
+                    let execution = match prepared_roster {
+                        Some(roster) => execution.with_prepared_roster(roster),
+                        None => execution,
+                    };
+                    crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
+                        frontend, resolver, policy, config, startup, execution,
+                    )
+                    .diagnostics
+                })
+            })?;
+            let detail_phase = dm_profile::detail_timer("init.class_projection");
+            let mut projection = crate::class_projection::project_classified_with_artifacts(
+                &frontend.snapshot,
+                &frontend.emission_order,
+                plan,
+                &initialization.classified,
+                &initialization.units,
+                memo.and_then(|memo| memo.class_projections.as_deref()),
+            )
+            .map_err(ColdError::Projection)?;
+            drop(detail_phase);
+            startup_allocation
+                .order_membership(&mut projection.shared_slot_order)
+                .map_err(ColdError::InitializerInvariant)?;
+            let detail_phase = dm_profile::detail_timer("init.bind_field_sources");
+            projection
+                .bind_field_sources(frontend, plan)
+                .map_err(ColdError::Projection)?;
+            drop(detail_phase);
+            crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
+                census.frontend(frontend);
+                census.startup(startup);
+                census.initializer_ledger(&initialization.classified);
+                census.body_arena(&bodies);
+                census.current_projection(&projection);
+                census.current_initializer_units(&initialization.units);
+                census.current_map_initializers(&map_initializers);
+                if let Some(prepared) = prepared_abi {
+                    census.prepared_source_abi(prepared);
+                } else {
+                    census.boundary_opaque_abi_policy();
+                }
+                if let Some(memo) = memo {
+                    census.cold_retained_owners(memo);
+                }
+                if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+                    if census.arc_object("initializer_classification.owner", store) {
+                        census.initializer_artifacts(store);
+                    }
+                }
+            })
+            .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+            // Capture only stored descriptor defaults while their source ledger is live.
+            // Keep failures deferred until the former seed stage so body diagnostics win
+            // exactly as before; this capture performs no resolver/evaluator operations.
+            let detail_phase = dm_profile::detail_timer("init.default_seeds_and_warnings");
+            let pending_modified_defaults =
+                crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
+            let mut warnings =
+                crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
+                    .map_err(initializer_lowering_error)?;
+            warnings
+                .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+            drop(detail_phase);
+            let detail_phase = dm_profile::detail_timer("init.release_classified");
+            drop(initialization.classified);
+            // Current output descriptors already own any syntax they require. The
+            // semantic classification receipts and token roster survive this release.
+            if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+                store.release_runtime_syntax();
+            }
+            drop(detail_phase);
+            if let (Some((stages, key)), Ok(defaults)) = (initializer_stage, &pending_modified_defaults) {
+                stages.keep_initializers(std::sync::Arc::new(crate::stage_reuse::InitializerProducts {
+                    key,
+                    units: initialization.units.clone(),
+                    projection: projection.clone(),
+                    warnings: warnings.clone(),
+                    modified_defaults: defaults.clone(),
+                }));
+            }
+            (initialization.units, projection, warnings, pending_modified_defaults)
+        }
+    };
+    // Local warnings are per body; they follow the initializer and callable warnings.
     let initializer_warning_count = warnings.len();
+    let detail_phase = dm_profile::detail_timer("init.local_warnings");
     warnings.extend(crate::local_warnings::capture(frontend).map_err(initializer_lowering_error)?);
-    drop(detail_phase);
-    let detail_phase = dm_profile::detail_timer("init.release_classified");
-    drop(initialization.classified);
-    // Current output descriptors already own any syntax they require. The
-    // semantic classification receipts and token roster survive this release.
-    if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
-        store.release_runtime_syntax();
-    }
     drop(detail_phase);
     measurement.complete();
     let initializers = stage.elapsed();
@@ -716,7 +919,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         unit_warnings.push((contribution.identity(), current.clone()));
         warnings.extend(current);
     }
-    let patch_warnings = crate::body_patch::PatchWarnings::new(
+    let patch_warnings = crate::retained_output::OutputWarnings::new(
         warnings[..initializer_warning_count].to_vec(),
         unit_warnings,
     );
@@ -735,8 +938,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     dm_profile::request_mark("cold.lowered");
     // Discover anonymous descriptors only from actual emitted operand sites.
     // Recursive descriptor initializers append to one request-local graph.
-    let seeds = initialization
-        .units
+    let seeds = initializer_units
         .iter()
         .map(|unit| (unit.code.as_ref(), &unit.debug_origins))
         .chain(
@@ -785,7 +987,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             source_order: declarations.source_type_order,
             source_allocation_roster: declarations.source_allocation_roster,
             body_type_requests: &body_types,
-            initializers: &initialization.units,
+            initializers: &initializer_units,
             maps: &initialization_artifacts,
             inventory: &inventory,
             symbols: plan.symbols.as_ref(),
@@ -801,6 +1003,9 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         &projection,
         plan.symbols.as_ref(),
         &source_type_order,
+        declarations
+            .source_allocation_roster
+            .map_or(&[][..], |roster| roster.touches()),
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;
@@ -810,8 +1015,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
     let initialization: Vec<crate::initialization_artifact::InitializationArtifact> =
-        initialization
-            .units
+        initializer_units
             .into_iter()
             .map(Into::into)
             .chain(initialization_artifacts)

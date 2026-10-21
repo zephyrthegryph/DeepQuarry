@@ -12,6 +12,19 @@ pub(crate) struct PublicationStore<T, Q, A, D> {
     publication: Option<Arc<ArtifactPublication<Lease<T, Q, A, D>>>>,
     attempt: Option<ArtifactAttempt<Lease<T, Q, A, D>>>,
 }
+impl<T, Q, A, D> PublicationStore<T, Q, A, D>
+where
+    T: Send + Sync + 'static,
+    Q: Send + Sync + 'static,
+    A: Send + Sync + 'static,
+    D: Send + Sync + 'static,
+{
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.attempt
+            .as_ref()
+            .is_none_or(ArtifactAttempt::publish_successful)
+    }
+}
 impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
     pub(crate) fn current_revision() -> Self {
         let core = ObservedArtifactStore::shared_current_rosters();
@@ -46,11 +59,6 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
             publication: self.publication.clone(),
             attempt,
         }
-    }
-    pub(crate) fn publish_successful(&self) -> bool {
-        self.attempt
-            .as_ref()
-            .is_none_or(ArtifactAttempt::publish_successful)
     }
     pub(crate) fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
         match &self.attempt {

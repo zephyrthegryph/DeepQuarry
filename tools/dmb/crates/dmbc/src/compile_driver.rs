@@ -304,7 +304,8 @@ pub fn prepare_revision_observed_with_memo_on_executor<R: Resolver>(
     executor: &dm_exec::BuildExecutor,
     observer: Option<&cold::ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
-) -> Result<cold::PreparedCold, cold::ColdError> {
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<cold::Prepared, cold::ColdError> {
     prepare_observed_input(
         frontend,
         resolver,
@@ -320,6 +321,7 @@ pub fn prepare_revision_observed_with_memo_on_executor<R: Resolver>(
         memo,
         Some(frontend),
         Some(executor),
+        retained,
     )
 }
 
@@ -364,7 +366,9 @@ fn compile_observed_input<R: Resolver>(
         memo,
         revision,
         Some(executor),
+        None,
     )?
+    .into_full()?
     .compose_borrowed(engine_bytes, frontend, values, stage, executor, observer)
 }
 
@@ -384,7 +388,8 @@ fn prepare_observed_input<R: Resolver>(
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     revision: Option<&dm_tree::frontend::FrontendRevision>,
     executor: Option<&dm_exec::BuildExecutor>,
-) -> Result<cold::PreparedCold, cold::ColdError> {
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<cold::Prepared, cold::ColdError> {
     let owned_executor;
     let executor = match executor {
         Some(executor) => executor,
@@ -437,5 +442,6 @@ fn prepare_observed_input<R: Resolver>(
         memo,
         revision,
         executor,
+        retained,
     )
 }

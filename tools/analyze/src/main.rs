@@ -35,9 +35,6 @@ USAGE
   analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
   analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
       AST-aware rewriters (phase 2.5); `analyze codemod help`.
-  analyze look-keys [--out FILE] [--explain TYPE] [--no-cache]
-      Write the look plan (default data/look-plan.tsv): per concrete /obj, /mob and /turf type,
-      `type TAB key TAB probes` (see src/look_keys.rs). --explain prints one type's closure and probes.
   analyze base-vars-dead [--tsv] [--few]
       Base-type vars nothing reads (dead or write-only), by name over code/ and maps/.
   analyze sem reads /type proc | oracle [--all]
@@ -337,7 +334,6 @@ fn real_main() -> ExitCode {
             }
         }
         "sem" => dq_analyze::sem::cli::run(&args.flags, &root),
-        "look-keys" => dq_analyze::look_keys::run(&args.flags, &root),
         "base-vars-dead" => dq_analyze::base_vars_dead::run(&args.flags, &root),
         "gen" => dq_analyze::sem::cli::gen(&args.flags, &root),
         "codemod" => dq_analyze::codemod::cli(&args.flags, &root),

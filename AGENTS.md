@@ -272,12 +272,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
-  that still tracks them. `deepquarry.dme`, `_unit_tests.dm` and `code/modules/unit_tests/snapshots/look_keys.txt` merge by union
-  (`.gitattributes`). `look_keys.txt` is the record of **verified** look keys: a row exists only for a type whose look pins were probed and
-  matched at that key. Nothing regenerates it from the tree; only a passing pin run (`dq_focused_test.sh`, a lane's or the merge gates') or an
-  explicit `--bless` writes a key, and the merge scripts only `--normalize` it (drop rows, never write one). A type whose analyzer key
-  (`data/look-plan.tsv`, generated, gitignored) matches no row is *unverified* and the next pin run probes it. Never hand-merge or regenerate
-  it. `doc/rewrite/agent_workflow.md`.
+  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union (`.gitattributes`).
+  `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
+  of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash
@@ -285,10 +282,10 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   per-version dir (`DQ_BUN_CACHE`), and any step over 60 s prints `still running: <step> (<elapsed>)` every
   minute; a silent long step is not a hang.
 - **Machine-wide slots** (`tools/dq_machine_slots.sh`, `doc/rewrite/agent_workflow.md` section 10): at most 1 DM compile, 2
-  test worlds, 1 cargo build and 1 look-pin run at once on the machine (the machine is also the user's desktop), everything we start
+  test worlds and 1 cargo build at once on the machine (the machine is also the user's desktop), everything we start
   runs below normal priority (test worlds idle, `DQ_PRIORITY=normal` for neither), and the dmbc daemon keeps at most 8 GB of sessions and
   12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
-  `DQ_SLOTS_CARGO`, `DQ_SLOTS_LOOK_STATE_PIN`); a waiter prints who holds them, the merge worktree goes first, a crashed
+  `DQ_SLOTS_CARGO`); a waiter prints who holds them, the merge worktree goes first, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
   master, proves the lane once and stamps it, so the merge agent tests only the combination.

@@ -306,6 +306,25 @@ Not yet (step 3 remainder): the runtime tables themselves (`rx_table_build`, `ch
 question; the plan answers only the global one. Per-type reader rows need the generator to resolve inherited and capability-composed reactions;
 `derived_mask`, `E.rel_watchers` and the backward hop walk of `hooks_change_hop_published` are unchanged.
 
+### Step 3e status (19 October 2026): reader rows per type
+
+The reader keys are rows `list(name, bits, owner)`. A name a type's own declarations give (its CAPABILITIES block, its `reactions()`,
+`derived()` and `generated_reads()` bodies) is owned by that type and inherited by its subtypes. A name a capability gives (CAPABILITY_DEF,
+CAPABILITY_TYPE defaults, capability entries and reactions), an entry proc or a plain global proc returning entries, a sequence step, a STAT, or
+the far end of a hop path is owned by no type (read on every type). At runtime `plan_reader_bits(key, type)` is the rows for every type plus
+`plan_reader_type_keys(type)`: the type chain's own rows, its generated handler rows (`GLOB.generated_reads_table`) and its draw and verb plan
+rows, cached per type. `dq_change_reader_plan_oracle` checks every runtime table against its own type's plan.
+
+Measured (`dq_change_reader_plan_oracle/representative`, boot plus the curated spread): 112 394 tracked writes asked the plan, 66 074 (59%)
+read by no static reader of the written entity's type, so no reaction table, hook index or lifeform plan was probed for them
+(`GLOB.plan_reader_probes`, `GLOB.plan_spared_reader_probes`).
+
+Why the runtime builders stay (`rx_table_build`, `change_index_of`, `lifeform_plan_build`): the plan answers *whether* a class reads a key on
+a type; the builders also hold *which* dependents run (the reaction datums with their gates and at_most windows, the hook records with their
+conditions and activations, the form entries). Generating those means generating the compiled declaration tables themselves (capability
+composition, configure/without, entry procs, stacking), which today happens at runtime in `table_of()`. That is the declaration compiler's move
+into `analyze gen` (the `.dmt` typed-declaration work, `doc/rewrite/proposals/dmt.md`), not a plan change; until it lands, deleting the builders would delete the dependents.
+
 ## 12. Edits needed in final_api.html section 7 (not made here)
 
 1. **"Execution model" paragraph**: replace "the entity at the end of a single-valued relation edge ... recompute inline" wording with

@@ -104,7 +104,8 @@ impl<L> ArtifactAttempt<L> {
             .take();
         drop(detached);
     }
-
+}
+impl<L: Send + Sync + 'static> ArtifactAttempt<L> {
     /// Call only after required request publication succeeds. A superseded
     /// attempt releases its claims and cannot overwrite newer ownership.
     pub fn publish_successful(&self) -> bool {
@@ -130,9 +131,35 @@ impl<L> ArtifactAttempt<L> {
         };
         // Lease destruction can acquire artifact-core locks or release other
         // backing. Neither the publication mutex nor pending guard is held.
-        drop(detached);
+        // The replaced group releases its claims off the request's critical
+        // path (a session's previous lease holds one claim per reused artifact).
+        if let Some(detached) = detached {
+            release_detached(detached);
+        }
         accepted
     }
+}
+
+static BACKGROUND_RELEASE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// A resident server releases replaced publication groups off the request path (see
+/// [`ArtifactAttempt::publish_successful`]); otherwise they are released synchronously.
+pub fn release_replaced_in_background(enabled: bool) {
+    BACKGROUND_RELEASE.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
+/// Drop a replaced publication group. Groups held elsewhere only lose a reference; with
+/// background release the last owner releases it on a short-lived thread, so publication
+/// returns at once.
+fn release_detached<L: Send + Sync + 'static>(detached: Arc<L>) {
+    if Arc::strong_count(&detached) > 1
+        || !BACKGROUND_RELEASE.load(std::sync::atomic::Ordering::Relaxed)
+    {
+        drop(detached);
+        return;
+    }
+    // A failed spawn drops the closure, and the group with it, here.
+    let _ = std::thread::Builder::new()
+        .name("dm-session-release".into())
+        .spawn(move || drop(detached));
 }
 
 #[cfg(test)]

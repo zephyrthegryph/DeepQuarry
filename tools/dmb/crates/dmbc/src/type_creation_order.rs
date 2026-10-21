@@ -16,7 +16,7 @@ pub fn collect(
     symbols: &SymbolTable,
     retained: &LinkInventory,
 ) -> Result<Vec<SymbolId>, String> {
-    collect_recorded(ledger, expanded_source, symbols, retained, None)
+    collect_recorded(ledger, expanded_source, symbols, retained, None).map(|(order, _)| order)
 }
 fn collect_recorded(
     ledger: &AllocationLedger,
@@ -24,7 +24,11 @@ fn collect_recorded(
     symbols: &SymbolTable,
     retained: &LinkInventory,
     mut reads: Option<&mut Vec<dm_session::Observation<SymbolId, Option<String>, ()>>>,
-) -> Result<Vec<SymbolId>, String> {
+) -> Result<(Vec<SymbolId>, Vec<SymbolId>), String> {
+    // Every path a declaration block names, in first-encounter order, engine types included
+    // (DreamMaker's type table order follows it; a parent_type value does not count).
+    let mut touches = Vec::new();
+    let mut touched = std::collections::HashSet::new();
     let mut seen: BTreeSet<_> = retained
         .fixed
         .iter()
@@ -49,6 +53,9 @@ fn collect_recorded(
             | AllocationKind::Procedure { owner, .. }
             | AllocationKind::Parent { owner, .. } => owner,
         };
+        if touched.insert(owner) {
+            touches.push(owner);
+        }
         allocate(owner, symbols, &mut seen, &mut order, reads.as_deref_mut())?;
         if let AllocationKind::Parent { value, .. } = event.kind {
             let source = expanded_source
@@ -82,7 +89,7 @@ fn collect_recorded(
             }
         }
     }
-    Ok(order)
+    Ok((order, touches))
 }
 fn allocate(
     path: SymbolId,

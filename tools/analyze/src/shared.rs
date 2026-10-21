@@ -231,7 +231,7 @@ mod tests {
         for n in ["lint-api.bin", "incr-dx-file-facts.bin", "sem-cache.bin", "sem-types.bin", "linetext.bin", "selftest.ok"] {
             assert!(shareable(n), "{}", n);
         }
-        for n in ["meta.bin", "gen-state.bin", "look-keys.bin", "durations.txt", "shared-stamp", "lint-api.bin.tmp12-3", ".used"] {
+        for n in ["meta.bin", "gen-state.bin", "durations.txt", "shared-stamp", "lint-api.bin.tmp12-3", ".used"] {
             assert!(!shareable(n), "{}", n);
         }
     }

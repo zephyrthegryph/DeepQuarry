@@ -1,5 +1,0 @@
-/obj/structure/flora/sif/frostbelle icon: icons/obj/flora/sifflora.dmi
-/obj/structure/flora/sif/frostbelle state: frostbelle
-/obj/structure/flora/sif/frostbelle dir: 2
-/obj/structure/flora/sif/frostbelle overlay: icons/obj/flora/sifflora.dmi:frostbelle:8:#000000
-

@@ -7,7 +7,6 @@
 #                                            (a 15 MB binary per analyzer source change had grown to 6.3 GB)
 #   analyze-cache/<stamp>/                  the analyzer's shared per-file results: newest DQ_ANALYZE_SHARED_KEEP (4) directories, DQ_ANALYZE_SHARED_MAX_MB (4096) MB
 #   tree-proofs/<tree>.proof                keep the newest DQ_PROOF_KEEP (default 200); tools/dq_merge_gates.sh prunes them too
-#   look-manifest/<digest>.tsv              keep the newest DQ_LOOK_MANIFEST_KEEP (default 6)
 #   dmb-bin/v/<id>/                        compiler versions: keep `current` and the newest DQ_DMB_VERSION_KEEP (default 1) other; a version a running
 #                                            daemon or compile holds cannot be deleted on Windows and stays until the next run
 #   dmbd/cache (per-file dmbc caches)       `dmbc --cache-gc`: size cap DMB_CACHE_BUDGET_GB (default 16), age cap DMB_CACHE_MAX_AGE_DAYS (default 14),
@@ -63,7 +62,6 @@ prune_newest() { # <dir> <glob> <keep>
 	ls -t "$1"/$2 2>/dev/null | tail -n +"$(( $3 + 1 ))" | while read -r f; do rm_path "$f"; [ "$dry" -eq 1 ] || rm -f "${f%.proof}.tests.json"; done
 }
 prune_newest "${DQ_PROOF_DIR:-$CACHE/tree-proofs}" '*.proof' "${DQ_PROOF_KEEP:-200}"
-prune_newest "${DQ_LOOK_MANIFEST_DIR:-$CACHE/look-manifest}" '*.tsv' "${DQ_LOOK_MANIFEST_KEEP:-6}"
 
 # Compiler versions: one latest compiler for everyone, so only `current` and the version just superseded are worth keeping.
 bin="${DQ_DMBC_BIN_DIR:-$CACHE/dmb-bin}"

@@ -1,2 +1,0 @@
-/obj/aiming_overlay deleted itself on creation
-

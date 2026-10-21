@@ -9,7 +9,9 @@ pub use artifacts::{
     ObservedArtifactLease, ObservedArtifactStorageView, ObservedArtifactStore, PressureAllocation,
     PressurePrune, UnchangedCandidate, UnchangedCandidates, DEFAULT_RESIDENT_BYTES,
 };
-pub use publication::{ArtifactAttempt, ArtifactGeneration, ArtifactPublication};
+pub use publication::{
+    release_replaced_in_background, ArtifactAttempt, ArtifactGeneration, ArtifactPublication,
+};
 pub use reads::{matching_domains, RecordingResolver, ResolverRead};
 
 pub mod observations;

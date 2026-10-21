@@ -30,7 +30,6 @@ fi
 GEN_RE='^(code/engine/_generated/|code/_generated/reads\.dm$|tgui/packages/tgui/interfaces/generated/)'
 GEN_PATHS=(code/engine/_generated code/_generated/reads.dm tgui/packages/tgui/interfaces/generated)
 
-LOOK_KEYS=code/modules/unit_tests/snapshots/look_keys.txt
 ref="${1:-}"
 if [ -z "$ref" ]; then
 	git fetch -q origin || { echo "dq_merge_master: git fetch failed" >&2; exit 1; }
@@ -38,7 +37,7 @@ if [ -z "$ref" ]; then
 fi
 
 merge_rc=0
-# --no-commit: a real merge is committed below, with the normalized look keys in it (no separate commit).
+# --no-commit: a real merge is committed below (no separate commit).
 git merge --no-edit --no-commit --no-autostash "$ref" || merge_rc=$?
 
 if [ "$merge_rc" -ne 0 ]; then
@@ -47,12 +46,15 @@ if [ "$merge_rc" -ne 0 ]; then
 		echo "dq_merge_master: git merge failed without conflicts (see above)" >&2
 		exit "$merge_rc"
 	fi
-	if printf '%s
-' "${conflicted[@]}" | grep -qxF "$LOOK_KEYS"; then
-		echo "dq_merge_master: $LOOK_KEYS conflicted; keeping both sides' rows (a union), normalized after the merge"
-		{ git show ":2:$LOOK_KEYS"; git show ":3:$LOOK_KEYS" 2>/dev/null || true; } >"$LOOK_KEYS" && git add -- "$LOOK_KEYS"
+	# The look pins are deleted: a lane that still edits their snapshot files conflicts with the deletion. Take the deletion.
+	mapfile -t dead < <(printf '%s
+' "${conflicted[@]}" | grep -E '^code/modules/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
+	if [ ${#dead[@]} -gt 0 ]; then
+		echo "dq_merge_master: dropping ${#dead[@]} look-pin snapshot file(s) the lane edited (the look pins are deleted)"
+		git rm -q --cached -- "${dead[@]}" 2>/dev/null || true
+		rm -f -- "${dead[@]}"
 		mapfile -t conflicted < <(printf '%s
-' "${conflicted[@]}" | grep -vxF "$LOOK_KEYS")
+' "${conflicted[@]}" | grep -vE '^code/modules/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
 	fi
 	gen=()
 	for f in "${conflicted[@]}"; do
@@ -83,10 +85,6 @@ fi
 if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	echo "dq_merge_master: merged $ref; regenerating"
 	tools/build/build.sh gen || exit 1
-	# look_keys.txt records VERIFIED keys: the union merge keeps both sides' rows, --normalize drops the ones the merged tree makes
-	# ambiguous or dead and never writes a key. A type whose look changed in the merge stays unverified until a pin run probes it.
-	if [ "${DQ_NO_PINS:-0}" != 1 ]; then bash tools/ci/check_look_keys_format.sh --normalize || exit 1; fi
-	git add -- "$LOOK_KEYS"
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
 	exit 0
 fi
@@ -96,5 +94,3 @@ fi
 
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
-# No merge commit to carry them: a file a union left non-canonical still gets one commit (rare).
-if [ "${DQ_NO_PINS:-0}" != 1 ]; then bash tools/ci/check_look_keys_format.sh --commit; fi

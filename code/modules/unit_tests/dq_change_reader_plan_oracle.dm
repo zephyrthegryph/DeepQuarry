@@ -1,8 +1,8 @@
-// The change graph's reader plan (doc/rewrite/proposals/change_graph.md section 11 step 3d).
+// The change graph's reader plan (doc/rewrite/proposals/change_graph.md section 11 steps 3d and 3e: per type).
 //
 // state_changed() and publish_change() probe the reaction tables, the on_change() hook index and the lifecycle forms only for the classes the
 // generated reader plan (plan_reader_bits(), code/engine/change/plan.dm) says may read a key. The plan is over-inclusive by construction; this
-// proves it covers what the runtime builders register: every key of every built rx table (reactions, derived and generated reads, sequences), of
+// proves it covers what the runtime builders register: every key of every built rx table (against its own type's plan) (reactions, derived and generated reads, sequences), of
 // every built hook index and hop registration, and of every built lifeform watch carries its class. A key the plan misses would be a silently
 // unpublished change.
 //
@@ -36,6 +36,7 @@
 	dq_fresh_look_reset(T)
 	var/list/missing = dq_reader_plan_missing()
 	log_test("reader plan oracle: [made] types made, [length(GLOB.plan_reader_keys)] plan keys, [length(missing)] missing")
+	log_test("reader plan metric: [GLOB.plan_reader_probes] tracked writes asked the plan, [GLOB.plan_spared_reader_probes] read by no static reader of any type (no table probed)")
 	TEST_ASSERT(!length(missing), "the reader plan misses keys the runtime tables register:\n[jointext(missing, "\n")]")
 
 /// Normal tier: the tables the world built, after a curated spread.
@@ -70,20 +71,21 @@
 		if(!istype(R))
 			continue
 		for(var/key in R.read_keys)
-			if(!(plan_reader_bits(key) & PLAN_READ_REACT))
+			if(!(plan_reader_bits(key, type) & PLAN_READ_REACT))
 				. |= "[key] (reaction on [type])"
 	for(var/type in GLOB.change_index_by_type)
 		var/list/index = GLOB.change_index_by_type[type]
 		if(!islist(index))
 			continue
 		for(var/key in index)
-			if(!(plan_reader_bits(key) & PLAN_READ_HOOK))
+			if(!(plan_reader_bits(key, type) & PLAN_READ_HOOK))
 				. |= "[key] (hook on [type])"
 	for(var/key in GLOB.change_hop_keys)
-		if(!(plan_reader_bits(key) & PLAN_READ_HOOK))
+		// A hop's far end is read on whatever type it reaches: the far keys are in the rows for every type.
+		if(GLOB.plan_tracked_names[key] && !(GLOB.plan_reader_keys[key] & PLAN_READ_HOOK))
 			. |= "[key] (hook hop)"
 	for(var/type in lifeform_plans)
 		var/datum/lifeform_plan/P = lifeform_plans[type]
 		for(var/key in P?.watch)
-			if(!(plan_reader_bits(key) & PLAN_READ_LIFEFORM))
+			if(!(plan_reader_bits(key, type) & PLAN_READ_LIFEFORM))
 				. |= "[key] (lifeform on [type])"
