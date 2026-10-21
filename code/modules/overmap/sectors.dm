@@ -91,7 +91,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		real_appearance.override = TRUE
 		real_name = name
 		name = unknown_name
-		icon_state = unknown_state
+		set_icon_state(unknown_state)
 		color = null
 		real_desc = desc
 		desc = "Scan this to find out more information."
