@@ -116,6 +116,7 @@ if [ "$early_reuse" -eq 0 ]; then
 	tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
 fi
 lap "gen and fetch"
+pre_shrink_tree="$(proof_tree HEAD)" # the tree a plain merge makes; the shrink below changes it (proof_alias_baseline_shrink)
 # A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
 # repair commit. Only when HEAD is an unpushed merge commit (the merge worktree's batch): a lane-ready run or any other HEAD keeps
 # its sha, which its caller already recorded. `analyze baseline --update` never adds a site or raises a ceiling.
@@ -438,6 +439,7 @@ fi
 # The proof for this tree (tools/dq_proof_cache.sh): what lets the merge of an unmoved-master lane skip every gate above.
 if [ "$reused" -eq 0 ] && [ "$run_tests" -eq 1 ] && [ "$dm_ok" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
 	proof_store "$tree" "$base_master" "${tests[*]-}" "${passed:-0}" "${nfailed:-0}" 0 "$tgui" "$analyze_tests" "$tests_json" "${DQ_PROOF_INHERITS:-}"
+	proof_alias_baseline_shrink "$pre_shrink_tree" "$tree"
 	proof_prune
 fi
 # The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
