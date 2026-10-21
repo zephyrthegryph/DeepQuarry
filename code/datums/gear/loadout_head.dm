@@ -234,7 +234,7 @@
 /datum/gear/head/kitty
 	display_name = "kitty ears"
 	path = /obj/item/clothing/head/kitty
-/datum/gear/head/halo // chompedits
+/datum/gear/head/halo
 	display_name = "holographic demonic halo"
 	path = /obj/item/clothing/head/halo
 
