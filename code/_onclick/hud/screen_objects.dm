@@ -59,12 +59,12 @@
 /atom/movable/screen/close
 	name = "close"
 
-/atom/movable/screen/close/Click()
+/atom/movable/screen/close/proc/storage_closed(datum/act/input/A)
 	var/obj/master = master_ref
 	if(master)
 		if(istype(master, /obj/item/storage))
 			var/obj/item/storage/S = master
-			S.close(usr)
+			S.close(A.actor)
 	return 1
 
 /atom/movable/screen/item_action
@@ -140,6 +140,7 @@ CAPABILITIES(/atom/movable/screen/storage)
 	var/hovering_choice
 
 CAPABILITIES(/atom/movable/screen/zone_sel)
+	hover(PROC_REF(zone_hovered))
 	owns_many(nameof(hover_overlays_cache))
 	click_on(PROC_REF(click_input))
 
@@ -160,13 +161,13 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 
 	return set_selected_zone(choice, user)
 
-/atom/movable/screen/zone_sel/MouseEntered(location, control, params)
-	MouseMove(location, control, params)
-
 /atom/movable/screen/zone_sel/MouseMove(location, control, params)
 	if(isobserver(usr))
 		return
 
+	return update_hover_position(params)
+
+/atom/movable/screen/zone_sel/proc/update_hover_position(params)
 	var/list/PL = params2list(params)
 	var/icon_x = text2num(PL["icon-x"])
 	var/icon_y = text2num(PL["icon-y"])
@@ -195,8 +196,12 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 	layer = LAYER_HUD_ABOVE
 	plane = PLANE_PLAYER_HUD_ABOVE
 
-/atom/movable/screen/zone_sel/MouseExited(location, control, params)
-	if(!isobserver(usr) && hovering_choice)
+/atom/movable/screen/zone_sel/proc/zone_hovered(datum/act/input/A)
+	if(isobserver(A.actor))
+		return
+	if(A.entered)
+		update_hover_position(A.params)
+	else if(hovering_choice)
 		vis_remove(src, hover_overlays_cache[hovering_choice])
 		hovering_choice = null
 
@@ -901,9 +906,10 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 
 CAPABILITIES(/atom/movable/screen/ammo)
 	ref_one(nameof(our_gun))
+	click_on(PROC_REF(firemode_clicked))
 
-/atom/movable/screen/ammo/Click()
-	var/mob/user = usr
+/atom/movable/screen/ammo/proc/firemode_clicked(datum/act/input/A)
+	var/mob/user = A.actor
 	if(!user.checkClickCooldown())
 		return TRUE
 	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
@@ -1055,4 +1061,8 @@ CAPABILITIES(/atom/movable/screen/ammo)
 /// The mapper holder this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return parent
+
+
+CAPABILITIES(/atom/movable/screen/close)
+	click_on(PROC_REF(storage_closed))
 

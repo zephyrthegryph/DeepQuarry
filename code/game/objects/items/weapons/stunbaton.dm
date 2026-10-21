@@ -259,15 +259,15 @@ CAPABILITIES(/obj/item/melee/baton/cattleprod)
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
 	return OP_PASS
 
-/obj/item/melee/baton/get_description_interaction()
+/obj/item/melee/baton/get_description_interaction(mob/viewer)
 	var/list/results = list()
 
 	if(bcell)
-		results += "[desc_panel_image("offhand")]to remove the weapon cell."
+		results += "[desc_panel_image("offhand", viewer)]to remove the weapon cell."
 	else
-		results += "[desc_panel_image("weapon cell")]to add a new weapon cell."
+		results += "[desc_panel_image("weapon cell", viewer)]to add a new weapon cell."
 
-	results += ..()
+	results += ..(viewer)
 
 	return results
 

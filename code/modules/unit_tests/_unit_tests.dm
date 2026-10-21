@@ -1365,6 +1365,7 @@
 #include "dq_cleanup_icon_defaults.dm"
 #include "dq_cleanup_destroy_consequences.dm"
 #include "dq_d5_landmark_registration.dm"
+#include "dq_d6_actor_inputs.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
