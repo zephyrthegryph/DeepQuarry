@@ -24,12 +24,15 @@
 	icon_reinf = "reinf_metal"
 	supply_conversion_value = 4
 
-/datum/material/titanium/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe("titanium hull sheet", /obj/item/stack/material/titanium/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]")
-	)
-	return recipes
+/transformation/stack/titanium__titanium_hull_sheet
+CAPABILITIES(/transformation/stack/titanium__titanium_hull_sheet)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/stack/material/titanium/hull, 1)),
+		chosen = chosen(title = "titanium hull sheet",
+			subject = /datum/material/titanium,
+			max_made = 5,
+			build_time = 20,
+			on_floor = 1,
+			recycle = STACK_MATERIAL_SELF)))
 
 /datum/material/iron
 	name = MAT_IRON
@@ -259,15 +262,28 @@
 	density = 10
 
 
-/datum/material/durasteel/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe("durasteel hull sheet", /obj/item/stack/material/durasteel/hull, 2, 1, 5, time = 20, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
-		new /datum/stack_recipe("durasteel fishing rod", /obj/item/material/fishing_rod/modern/strong, 2),
-		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 30),
-	)
-	return recipes
+/transformation/stack/durasteel__durasteel_hull_sheet
+CAPABILITIES(/transformation/stack/durasteel__durasteel_hull_sheet)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/stack/material/durasteel/hull, 1)),
+		chosen = chosen(title = "durasteel hull sheet",
+			subject = /datum/material/durasteel,
+			max_made = 5,
+			build_time = 20,
+			on_floor = 1,
+			recycle = STACK_MATERIAL_SELF)))
 
+/transformation/stack/durasteel__durasteel_fishing_rod
+CAPABILITIES(/transformation/stack/durasteel__durasteel_fishing_rod)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/material/fishing_rod/modern/strong, 1)),
+		chosen = chosen(title = "durasteel fishing rod",
+			subject = /datum/material/durasteel)))
+
+/transformation/stack/durasteel__whetstone
+CAPABILITIES(/transformation/stack/durasteel__whetstone)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/whetstone, 1)),
+		chosen = chosen(title = "whetstone",
+			subject = /datum/material/durasteel,
+			build_time = 30)))
 
 /datum/material/durasteel //Slightly nerfed protectivness
 	protectiveness = 55

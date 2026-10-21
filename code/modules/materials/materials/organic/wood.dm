@@ -21,83 +21,362 @@
 	sheet_plural_name = "planks"
 	supply_conversion_value = 0.25
 
-/datum/material/wood/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe("oar", /obj/item/oar, 2, time = 30, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("boat", /obj/vehicle/boat, 20, time = 10 SECONDS, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("dragon boat", /obj/vehicle/boat/dragon, 50, time = 30 SECONDS, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("wooden sandals", /obj/item/clothing/shoes/sandal, 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wood circlet", /obj/item/clothing/head/woodcirclet, 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("clipboard", /obj/item/clipboard, 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wood floor tile", /obj/item/stack/tile/wood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("large wood floor tile", /obj/item/stack/tile/wood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("parquet wood floor tile", /obj/item/stack/tile/wood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("tiled wood floor tile", /obj/item/stack/tile/wood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("vertical wood floor tile", /obj/item/stack/tile/wood/vert, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("vertical large wood floor tile", /obj/item/stack/tile/wood/vert_panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wooden chair", /obj/structure/bed/chair/wood, 3, time = 10, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("crossbow frame", /obj/item/crossbowframe, 5, time = 25, one_per_turf = 0, on_floor = 0, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("coffin", /obj/structure/closet/coffin, 5, time = 15, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("beehive assembly", /obj/item/beehive_assembly, 4, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("beehive frame", /obj/item/honey_frame, 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("book shelf", /obj/structure/bookcase, 5, time = 15, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wooden shelves", /obj/structure/table/rack/shelf/wood, 1, one_per_turf = TRUE, time = 5, on_floor = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("noticeboard frame", /obj/item/frame/noticeboard, 4, time = 5, one_per_turf = 0, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("coilgun stock", /obj/item/coilgun_assembly, 5, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("crude fishing rod", /obj/item/material/fishing_rod/built, 8, time = 10 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wooden standup figure", /obj/structure/barricade/cutout, 5, time = 10 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("noticeboard", /obj/structure/noticeboard, 1, recycle_material = "[name]"),
-		new /datum/stack_recipe("tanning rack", /obj/structure/tanning_rack, 3, one_per_turf = TRUE, time = 20, on_floor = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting easel", /obj/structure/easel, 5, one_per_turf = TRUE, time = 20, on_floor = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting frame", /obj/item/frame/painting, 5, one_per_turf = TRUE, time = 20, on_floor = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("roofing tile", /obj/item/stack/tile/roofing, 3, 4, 20, recycle_material = "[name]"),
-		new /datum/stack_recipe("shovel", /obj/item/shovel/wood, 2, time = 10, on_floor = TRUE, supplied_material = "[name]")
-	)
-	recipes += new/datum/stack_recipe_list("sofas", list( \
-		new /datum/stack_recipe("sofa middle", /obj/structure/bed/chair/sofa, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa left", /obj/structure/bed/chair/sofa/left, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
-		))
-	return recipes
+/transformation/stack/wood__oar
+CAPABILITIES(/transformation/stack/wood__oar)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/oar, 1)),
+		chosen = chosen(title = "oar",
+			subject = /datum/material/wood,
+			build_time = 30,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/wood__boat
+CAPABILITIES(/transformation/stack/wood__boat)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 20)), makes = list(item_term(/obj/vehicle/boat, 1)),
+		chosen = chosen(title = "boat",
+			subject = /datum/material/wood,
+			build_time = 10 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/wood__dragon_boat
+CAPABILITIES(/transformation/stack/wood__dragon_boat)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 50)), makes = list(item_term(/obj/vehicle/boat/dragon, 1)),
+		chosen = chosen(title = "dragon boat",
+			subject = /datum/material/wood,
+			build_time = 30 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/wood__wooden_sandals
+CAPABILITIES(/transformation/stack/wood__wooden_sandals)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/clothing/shoes/sandal, 1)),
+		chosen = chosen(title = "wooden sandals",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__wood_circlet
+CAPABILITIES(/transformation/stack/wood__wood_circlet)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/clothing/head/woodcirclet, 1)),
+		chosen = chosen(title = "wood circlet",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__clipboard
+CAPABILITIES(/transformation/stack/wood__clipboard)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/clipboard, 1)),
+		chosen = chosen(title = "clipboard",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood, 4)),
+		chosen = chosen(title = "wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__large_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__large_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/panel, 4)),
+		chosen = chosen(title = "large wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__parquet_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__parquet_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/parquet, 4)),
+		chosen = chosen(title = "parquet wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__tiled_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__tiled_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/tile, 4)),
+		chosen = chosen(title = "tiled wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__vertical_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__vertical_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/vert, 4)),
+		chosen = chosen(title = "vertical wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__vertical_large_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood__vertical_large_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/vert_panel, 4)),
+		chosen = chosen(title = "vertical large wood floor tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__wooden_chair
+CAPABILITIES(/transformation/stack/wood__wooden_chair)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/structure/bed/chair/wood, 1)),
+		chosen = chosen(title = "wooden chair",
+			subject = /datum/material/wood,
+			build_time = 10,
+			one_per_turf = 1,
+			on_floor = 1,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__crossbow_frame
+CAPABILITIES(/transformation/stack/wood__crossbow_frame)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/item/crossbowframe, 1)),
+		chosen = chosen(title = "crossbow frame",
+			subject = /datum/material/wood,
+			build_time = 25,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__coffin
+CAPABILITIES(/transformation/stack/wood__coffin)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/closet/coffin, 1)),
+		chosen = chosen(title = "coffin",
+			subject = /datum/material/wood,
+			build_time = 15,
+			one_per_turf = 1,
+			on_floor = 1,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__beehive_assembly
+CAPABILITIES(/transformation/stack/wood__beehive_assembly)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/beehive_assembly, 1)),
+		chosen = chosen(title = "beehive assembly",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__beehive_frame
+CAPABILITIES(/transformation/stack/wood__beehive_frame)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/honey_frame, 1)),
+		chosen = chosen(title = "beehive frame",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__book_shelf
+CAPABILITIES(/transformation/stack/wood__book_shelf)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/bookcase, 1)),
+		chosen = chosen(title = "book shelf",
+			subject = /datum/material/wood,
+			build_time = 15,
+			one_per_turf = 1,
+			on_floor = 1,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__wooden_shelves
+CAPABILITIES(/transformation/stack/wood__wooden_shelves)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/table/rack/shelf/wood, 1)),
+		chosen = chosen(title = "wooden shelves",
+			subject = /datum/material/wood,
+			build_time = 5,
+			one_per_turf = TRUE,
+			on_floor = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__noticeboard_frame
+CAPABILITIES(/transformation/stack/wood__noticeboard_frame)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/frame/noticeboard, 1)),
+		chosen = chosen(title = "noticeboard frame",
+			subject = /datum/material/wood,
+			build_time = 5,
+			on_floor = 1,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__coilgun_stock
+CAPABILITIES(/transformation/stack/wood__coilgun_stock)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/item/coilgun_assembly, 1)),
+		chosen = chosen(title = "coilgun stock",
+			subject = /datum/material/wood,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__crude_fishing_rod
+CAPABILITIES(/transformation/stack/wood__crude_fishing_rod)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 8)), makes = list(item_term(/obj/item/material/fishing_rod/built, 1)),
+		chosen = chosen(title = "crude fishing rod",
+			subject = /datum/material/wood,
+			build_time = 10 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__wooden_standup_figure
+CAPABILITIES(/transformation/stack/wood__wooden_standup_figure)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/barricade/cutout, 1)),
+		chosen = chosen(title = "wooden standup figure",
+			subject = /datum/material/wood,
+			build_time = 10 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__noticeboard
+CAPABILITIES(/transformation/stack/wood__noticeboard)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/noticeboard, 1)),
+		chosen = chosen(title = "noticeboard",
+			subject = /datum/material/wood,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__tanning_rack
+CAPABILITIES(/transformation/stack/wood__tanning_rack)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/structure/tanning_rack, 1)),
+		chosen = chosen(title = "tanning rack",
+			subject = /datum/material/wood,
+			build_time = 20,
+			one_per_turf = TRUE,
+			on_floor = TRUE,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__painting_easel
+CAPABILITIES(/transformation/stack/wood__painting_easel)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/easel, 1)),
+		chosen = chosen(title = "painting easel",
+			subject = /datum/material/wood,
+			build_time = 20,
+			one_per_turf = TRUE,
+			on_floor = TRUE,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__painting_frame
+CAPABILITIES(/transformation/stack/wood__painting_frame)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/item/frame/painting, 1)),
+		chosen = chosen(title = "painting frame",
+			subject = /datum/material/wood,
+			build_time = 20,
+			one_per_turf = TRUE,
+			on_floor = TRUE,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__roofing_tile
+CAPABILITIES(/transformation/stack/wood__roofing_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/stack/tile/roofing, 4)),
+		chosen = chosen(title = "roofing tile",
+			subject = /datum/material/wood,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__shovel
+CAPABILITIES(/transformation/stack/wood__shovel)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/shovel/wood, 1)),
+		chosen = chosen(title = "shovel",
+			subject = /datum/material/wood,
+			build_time = 10,
+			on_floor = TRUE,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood__sofa_middle
+CAPABILITIES(/transformation/stack/wood__sofa_middle)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair/sofa, 1)),
+		chosen = chosen(title = "sofa middle",
+			subject = /datum/material/wood,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			group = "sofas")))
+
+/transformation/stack/wood__sofa_left
+CAPABILITIES(/transformation/stack/wood__sofa_left)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair/sofa/left, 1)),
+		chosen = chosen(title = "sofa left",
+			subject = /datum/material/wood,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			group = "sofas")))
+
+/transformation/stack/wood__sofa_right
+CAPABILITIES(/transformation/stack/wood__sofa_right)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair/sofa/right, 1)),
+		chosen = chosen(title = "sofa right",
+			subject = /datum/material/wood,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			group = "sofas")))
+
+/transformation/stack/wood__sofa_corner
+CAPABILITIES(/transformation/stack/wood__sofa_corner)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair/sofa/corner, 1)),
+		chosen = chosen(title = "sofa corner",
+			subject = /datum/material/wood,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			group = "sofas")))
 
 /datum/material/wood/sif
 	name = MAT_SIFWOOD
 	stack_type = /obj/item/stack/material/wood/sif
 	icon_colour = "#0099cc" // Cyan-ish
 
-/datum/material/wood/sif/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("alien wood floor tile", /obj/item/stack/tile/wood/sif, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("large alien wood floor tile", /obj/item/stack/tile/wood/sif/panel, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("alien wood parquet tile", /obj/item/stack/tile/wood/sif/parquet, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("tiled alien wood floor tile", /obj/item/stack/tile/wood/sif/tile, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical alien wood floor tile", /obj/item/stack/tile/wood/sif/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large alien wood floor tile", /obj/item/stack/tile/wood/sif/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_sif__alien_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood_sif__alien_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif, 4)),
+		chosen = chosen(title = "alien wood floor tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair"))))
+
+/transformation/stack/wood_sif__large_alien_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood_sif__large_alien_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif/panel, 4)),
+		chosen = chosen(title = "large alien wood floor tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_sif__alien_wood_parquet_tile
+CAPABILITIES(/transformation/stack/wood_sif__alien_wood_parquet_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif/parquet, 4)),
+		chosen = chosen(title = "alien wood parquet tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_sif__tiled_alien_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood_sif__tiled_alien_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif/tile, 4)),
+		chosen = chosen(title = "tiled alien wood floor tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_sif__vertical_alien_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood_sif__vertical_alien_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif/vert, 4)),
+		chosen = chosen(title = "vertical alien wood floor tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_sif__vertical_large_alien_wood_floor_tile
+CAPABILITIES(/transformation/stack/wood_sif__vertical_large_alien_wood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/sif/vert_panel, 4)),
+		chosen = chosen(title = "vertical large alien wood floor tile",
+			subject = /datum/material/wood/sif,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/hardwood
 	name = MAT_HARDWOOD
@@ -110,40 +389,58 @@
 	hardness = 20
 	density = 20	//likewise, heavier
 
-/datum/material/wood/hardwood/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("hardwood floor tile", /obj/item/stack/tile/wood/hardwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet hardwood floor tile", /obj/item/stack/tile/wood/hardwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled hardwood floor tile", /obj/item/stack/tile/wood/hardwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_hardwood__hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood, 4)),
+		chosen = chosen(title = "hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_hardwood__large_hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__large_hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood/panel, 4)),
+		chosen = chosen(title = "large hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_hardwood__parquet_hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__parquet_hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood/parquet, 4)),
+		chosen = chosen(title = "parquet hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_hardwood__tiled_hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__tiled_hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood/tile, 4)),
+		chosen = chosen(title = "tiled hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_hardwood__vertical_hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__vertical_hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood/vert, 4)),
+		chosen = chosen(title = "vertical hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_hardwood__vertical_large_hardwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_hardwood__vertical_large_hardwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/hardwood/vert_panel, 4)),
+		chosen = chosen(title = "vertical large hardwood floor tile",
+			subject = /datum/material/wood/hardwood,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/log
 	name = MAT_LOG
@@ -156,11 +453,16 @@
 	pass_stack_colors = TRUE
 	supply_conversion_value = 0.5
 
-/datum/material/wood/log/generate_recipes()
-	var/list/recipes = list(
-		new /datum/stack_recipe("bonfire", /obj/structure/bonfire, 5, time = 50, supplied_material = "[name]", pass_stack_color = TRUE, recycle_material = "[name]")
-	)
-	return recipes
+/transformation/stack/wood_log__bonfire
+CAPABILITIES(/transformation/stack/wood_log__bonfire)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/bonfire, 1)),
+		chosen = chosen(title = "bonfire",
+			subject = /datum/material/wood/log,
+			build_time = 50,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF,
+			replaces = TRUE)))
 
 /datum/material/wood/log/sif
 	name = MAT_SIFLOG
@@ -186,8 +488,9 @@
 	sheet_singular_name = "stick"
 	sheet_plural_name = "sticks"
 
-/datum/material/wood/stick/generate_recipes()
-	return list()
+/transformation/stack/wood_stick__clears
+CAPABILITIES(/transformation/stack/wood_stick__clears)
+	configure(transformation(chosen = chosen(subject = /datum/material/wood/stick, replaces = TRUE)))
 
 /datum/material/wood/birch
 	name = MAT_BIRCHWOOD
@@ -199,40 +502,58 @@
 	hardness = 20
 	density = 20
 
-/datum/material/wood/birch/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("birch floor tile", /obj/item/stack/tile/wood/birch, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large birch floor tile", /obj/item/stack/tile/wood/birch/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet birch floor tile", /obj/item/stack/tile/wood/birch/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled birch floor tile", /obj/item/stack/tile/wood/birch/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical birch floor tile", /obj/item/stack/tile/wood/birch/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large birch floor tile", /obj/item/stack/tile/wood/birch/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_birch__birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch, 4)),
+		chosen = chosen(title = "birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_birch__large_birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__large_birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch/panel, 4)),
+		chosen = chosen(title = "large birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_birch__parquet_birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__parquet_birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch/parquet, 4)),
+		chosen = chosen(title = "parquet birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_birch__tiled_birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__tiled_birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch/tile, 4)),
+		chosen = chosen(title = "tiled birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_birch__vertical_birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__vertical_birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch/vert, 4)),
+		chosen = chosen(title = "vertical birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_birch__vertical_large_birch_floor_tile
+CAPABILITIES(/transformation/stack/wood_birch__vertical_large_birch_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/birch/vert_panel, 4)),
+		chosen = chosen(title = "vertical large birch floor tile",
+			subject = /datum/material/wood/birch,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/pine
 	name = MAT_PINEWOOD
@@ -244,40 +565,58 @@
 	hardness = 20
 	density = 20
 
-/datum/material/wood/pine/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("pine floor tile", /obj/item/stack/tile/wood/pine, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large pine floor tile", /obj/item/stack/tile/wood/pine/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet pine floor tile", /obj/item/stack/tile/wood/pine/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled pine floor tile", /obj/item/stack/tile/wood/pine/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical pine floor tile", /obj/item/stack/tile/wood/pine/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large pine floor tile", /obj/item/stack/tile/wood/pine/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_pine__pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine, 4)),
+		chosen = chosen(title = "pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_pine__large_pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__large_pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine/panel, 4)),
+		chosen = chosen(title = "large pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_pine__parquet_pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__parquet_pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine/parquet, 4)),
+		chosen = chosen(title = "parquet pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_pine__tiled_pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__tiled_pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine/tile, 4)),
+		chosen = chosen(title = "tiled pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_pine__vertical_pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__vertical_pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine/vert, 4)),
+		chosen = chosen(title = "vertical pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_pine__vertical_large_pine_floor_tile
+CAPABILITIES(/transformation/stack/wood_pine__vertical_large_pine_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/pine/vert_panel, 4)),
+		chosen = chosen(title = "vertical large pine floor tile",
+			subject = /datum/material/wood/pine,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/oak
 	name = MAT_OAKWOOD
@@ -289,40 +628,58 @@
 	hardness = 20
 	density = 20
 
-/datum/material/wood/oak/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("oak floor tile", /obj/item/stack/tile/wood/oak, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large oak floor tile", /obj/item/stack/tile/wood/oak/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet oak floor tile", /obj/item/stack/tile/wood/oak/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled oak floor tile", /obj/item/stack/tile/wood/oak/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical oak floor tile", /obj/item/stack/tile/wood/oak/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large oak floor tile", /obj/item/stack/tile/wood/oak/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_oak__oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak, 4)),
+		chosen = chosen(title = "oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_oak__large_oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__large_oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak/panel, 4)),
+		chosen = chosen(title = "large oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_oak__parquet_oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__parquet_oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak/parquet, 4)),
+		chosen = chosen(title = "parquet oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_oak__tiled_oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__tiled_oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak/tile, 4)),
+		chosen = chosen(title = "tiled oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_oak__vertical_oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__vertical_oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak/vert, 4)),
+		chosen = chosen(title = "vertical oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_oak__vertical_large_oak_floor_tile
+CAPABILITIES(/transformation/stack/wood_oak__vertical_large_oak_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/oak/vert_panel, 4)),
+		chosen = chosen(title = "vertical large oak floor tile",
+			subject = /datum/material/wood/oak,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/acacia
 	name = MAT_ACACIAWOOD
@@ -334,40 +691,58 @@
 	hardness = 20
 	density = 20
 
-/datum/material/wood/acacia/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("acacia floor tile", /obj/item/stack/tile/wood/acacia, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large acacia floor tile", /obj/item/stack/tile/wood/acacia/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet acacia floor tile", /obj/item/stack/tile/wood/acacia/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled acacia floor tile", /obj/item/stack/tile/wood/acacia/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical acacia floor tile", /obj/item/stack/tile/wood/acacia/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large acacia floor tile", /obj/item/stack/tile/wood/acacia/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_acacia__acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia, 4)),
+		chosen = chosen(title = "acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_acacia__large_acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__large_acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia/panel, 4)),
+		chosen = chosen(title = "large acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_acacia__parquet_acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__parquet_acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia/parquet, 4)),
+		chosen = chosen(title = "parquet acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_acacia__tiled_acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__tiled_acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia/tile, 4)),
+		chosen = chosen(title = "tiled acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_acacia__vertical_acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__vertical_acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia/vert, 4)),
+		chosen = chosen(title = "vertical acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_acacia__vertical_large_acacia_floor_tile
+CAPABILITIES(/transformation/stack/wood_acacia__vertical_large_acacia_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/acacia/vert_panel, 4)),
+		chosen = chosen(title = "vertical large acacia floor tile",
+			subject = /datum/material/wood/acacia,
+			max_made = 20,
+			pass_color = FALSE)))
 
 /datum/material/wood/redwood
 	name = MAT_REDWOOD
@@ -380,37 +755,56 @@
 	hardness = 20
 	density = 20
 
-/datum/material/wood/redwood/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("redwood floor tile", /obj/item/stack/tile/wood/redwood, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("large redwood floor tile", /obj/item/stack/tile/wood/redwood/panel, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("parquet redwood floor tile", /obj/item/stack/tile/wood/redwood/parquet, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("tiled redwood floor tile", /obj/item/stack/tile/wood/redwood/tile, 1, 4, 20, pass_stack_color = FALSE, recycle_material = "[name]")
-	recipes += new /datum/stack_recipe("vertical redwood floor tile", /obj/item/stack/tile/wood/redwood/vert, 1, 4, 20, pass_stack_color = FALSE)
-	recipes += new /datum/stack_recipe("vertical large redwood floor tile", /obj/item/stack/tile/wood/redwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE)
-	for(var/datum/stack_recipe/r_recipe in recipes)
-		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
-			continue
-		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
-			continue
-	return recipes
+/transformation/stack/wood_redwood__redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood, 4)),
+		chosen = chosen(title = "redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF,
+			drops = list("wood floor tile", "large wood floor tile", "parquet wood floor tile", "tiled wood floor tile", "vertical wood floor tile", "vertical large wood floor tile", "wooden chair", "wooden standup figure"))))
+
+/transformation/stack/wood_redwood__large_redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__large_redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood/panel, 4)),
+		chosen = chosen(title = "large redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_redwood__parquet_redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__parquet_redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood/parquet, 4)),
+		chosen = chosen(title = "parquet redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_redwood__tiled_redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__tiled_redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood/tile, 4)),
+		chosen = chosen(title = "tiled redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/wood_redwood__vertical_redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__vertical_redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood/vert, 4)),
+		chosen = chosen(title = "vertical redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE)))
+
+/transformation/stack/wood_redwood__vertical_large_redwood_floor_tile
+CAPABILITIES(/transformation/stack/wood_redwood__vertical_large_redwood_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wood/redwood/vert_panel, 4)),
+		chosen = chosen(title = "vertical large redwood floor tile",
+			subject = /datum/material/wood/redwood,
+			max_made = 20,
+			pass_color = FALSE)))
+

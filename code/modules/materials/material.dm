@@ -254,60 +254,269 @@
 /datum/material/proc/wall_touch_special(turf/simulated/wall/W, mob/living/L)
 	return
 
-/// Material name -> the stack recipes usable with a sheet of that material. Materials are
-/// registered DEF singletons frozen after boot, so the recipe table lives here, built on first use.
-/// The recipes are shared by every stack of the material; never write the returned list.
-GLOBAL_LIST_EMPTY(material_recipe_cache) // ALLOW(cache): recipe objects built on first use per material and kept off the frozen material definition; a shared cache would intern and snapshot the objects
+/// The stack recipes usable with a sheet of this material (a list of /datum/xform recipes and /datum/xform_group sub-lists): the /transformation/stack rules
+/// whose subject is this material's type or one above it. Built on first use and shared by every stack of the material; never write the returned list.
 /datum/material/proc/get_recipes()
-	var/list/cached = GLOB.material_recipe_cache[name]
-	if(!islist(cached))
-		cached = generate_recipes()
-		if(!islist(cached))
-			cached = list()
-		GLOB.material_recipe_cache[name] = cached
-	return cached
+	return stack_material_recipes(src)
 
-/// Builds and returns this material's stack recipe list. Overrides extend the parent's list
-/// (`var/list/recipes = ..()`) or replace it, and must return it; never store it on the material.
-/datum/material/proc/generate_recipes()
-	// If is_brittle() returns true, these are only good for a single strike.
-	var/list/recipes = list(
-		new /datum/stack_recipe("[display_name] baseball bat", /obj/item/material/twohanded/baseballbat, 10, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] staff", /obj/item/material/twohanded/staff, 10, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] ashtray", /obj/item/material/ashtray, 2, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] spoon", /obj/item/material/kitchen/utensil/spoon/plastic, 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] armor plate", /obj/item/material/armor_plating, 1, time = 20, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] armor plate insert", /obj/item/material/armor_plating/insert, 2, time = 40, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] grave marker", /obj/item/material/gravemarker, 5, time = 50, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] ring", /obj/item/clothing/accessory/ring/material, 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-		new /datum/stack_recipe("[display_name] bracelet", /obj/item/clothing/accessory/bracelet/material, 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE)
-	)
+// The recipes every material may have (code/library/transformations/stack_recipes.dm): all of them, then the sturdy ones, the solid ones and the hard ones.
+// If is_brittle() returns true, these are only good for a single strike.
+/transformation/stack/base__baseball_bat
+CAPABILITIES(/transformation/stack/base__baseball_bat)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/material/twohanded/baseballbat, 1)),
+		chosen = chosen(title = "{display_name} baseball bat",
+			subject = /datum/material,
+			build_time = 20,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
 
-	if(integrity>=50)
-		recipes += list(
-			new /datum/stack_recipe("[display_name] door", /obj/structure/simple_door, 10, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] barricade", /obj/structure/barricade, 5, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] stool", /obj/item/stool, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] chair", /obj/structure/bed/chair, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] bed", /obj/structure/bed, 2, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] double bed", /obj/structure/bed/double, 4, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] wall girders (standard)", /obj/structure/girder, 2, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] wall girders (bay)", /obj/structure/girder/bay, 2, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE)
-		)
-		if(icon_base == "solid") // few icons
-			recipes += new /datum/stack_recipe("[display_name] wall girders (eris)", /obj/structure/girder/eris, 2, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE)
-			recipes += new /datum/stack_recipe_list("low walls",list(
-			new /datum/stack_recipe("low wall (bay style)", /obj/structure/low_wall/bay, 3, time = 20, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", recycle_material = "[name]"),
-			new /datum/stack_recipe("low wall (eris style)", /obj/structure/low_wall/eris, 3, time = 20, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", recycle_material = "[name]")
-		))
-	if(hardness>50)
-		recipes += list(
-			new /datum/stack_recipe("[display_name] fork", /obj/item/material/kitchen/utensil/fork/plastic, 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] knife", /obj/item/material/knife/plastic, 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] blade", /obj/item/material/butterflyblade, 6, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
-			new /datum/stack_recipe("[display_name] defense wire", /obj/item/material/barbedwire, 10, time = 1 MINUTE, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE)
-		)
-	return recipes
+/transformation/stack/base__staff
+CAPABILITIES(/transformation/stack/base__staff)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/material/twohanded/staff, 1)),
+		chosen = chosen(title = "{display_name} staff",
+			subject = /datum/material,
+			build_time = 20,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__ashtray
+CAPABILITIES(/transformation/stack/base__ashtray)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/material/ashtray, 1)),
+		chosen = chosen(title = "{display_name} ashtray",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__spoon
+CAPABILITIES(/transformation/stack/base__spoon)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/material/kitchen/utensil/spoon/plastic, 1)),
+		chosen = chosen(title = "{display_name} spoon",
+			subject = /datum/material,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__armor_plate
+CAPABILITIES(/transformation/stack/base__armor_plate)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/material/armor_plating, 1)),
+		chosen = chosen(title = "{display_name} armor plate",
+			subject = /datum/material,
+			build_time = 20,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__armor_plate_insert
+CAPABILITIES(/transformation/stack/base__armor_plate_insert)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/material/armor_plating/insert, 1)),
+		chosen = chosen(title = "{display_name} armor plate insert",
+			subject = /datum/material,
+			build_time = 40,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__grave_marker
+CAPABILITIES(/transformation/stack/base__grave_marker)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/item/material/gravemarker, 1)),
+		chosen = chosen(title = "{display_name} grave marker",
+			subject = /datum/material,
+			build_time = 50,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__ring
+CAPABILITIES(/transformation/stack/base__ring)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/clothing/accessory/ring/material, 1)),
+		chosen = chosen(title = "{display_name} ring",
+			subject = /datum/material,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__bracelet
+CAPABILITIES(/transformation/stack/base__bracelet)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/clothing/accessory/bracelet/material, 1)),
+		chosen = chosen(title = "{display_name} bracelet",
+			subject = /datum/material,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__door
+CAPABILITIES(/transformation/stack/base__door)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/structure/simple_door, 1)),
+		chosen = chosen(title = "{display_name} door",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__barricade
+CAPABILITIES(/transformation/stack/base__barricade)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/barricade, 1)),
+		chosen = chosen(title = "{display_name} barricade",
+			subject = /datum/material,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__stool
+CAPABILITIES(/transformation/stack/base__stool)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stool, 1)),
+		chosen = chosen(title = "{display_name} stool",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__chair
+CAPABILITIES(/transformation/stack/base__chair)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair, 1)),
+		chosen = chosen(title = "{display_name} chair",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__bed
+CAPABILITIES(/transformation/stack/base__bed)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/bed, 1)),
+		chosen = chosen(title = "{display_name} bed",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__double_bed
+CAPABILITIES(/transformation/stack/base__double_bed)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/structure/bed/double, 1)),
+		chosen = chosen(title = "{display_name} double bed",
+			subject = /datum/material,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__wall_girders_standard
+CAPABILITIES(/transformation/stack/base__wall_girders_standard)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/girder, 1)),
+		chosen = chosen(title = "{display_name} wall girders (standard)",
+			subject = /datum/material,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__wall_girders_bay
+CAPABILITIES(/transformation/stack/base__wall_girders_bay)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, sturdy),
+		takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/girder/bay, 1)),
+		chosen = chosen(title = "{display_name} wall girders (bay)",
+			subject = /datum/material,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__wall_girders_eris
+CAPABILITIES(/transformation/stack/base__wall_girders_eris)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, solid),
+		takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/girder/eris, 1)),
+		chosen = chosen(title = "{display_name} wall girders (eris)",
+			subject = /datum/material,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__low_wall_bay_style
+CAPABILITIES(/transformation/stack/base__low_wall_bay_style)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, solid),
+		takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/structure/low_wall/bay, 1)),
+		chosen = chosen(title = "low wall (bay style)",
+			subject = /datum/material,
+			build_time = 20,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			recycle = STACK_MATERIAL_SELF,
+			group = "low walls")))
+
+/transformation/stack/base__low_wall_eris_style
+CAPABILITIES(/transformation/stack/base__low_wall_eris_style)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, solid),
+		takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/structure/low_wall/eris, 1)),
+		chosen = chosen(title = "low wall (eris style)",
+			subject = /datum/material,
+			build_time = 20,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			recycle = STACK_MATERIAL_SELF,
+			group = "low walls")))
+
+/transformation/stack/base__fork
+CAPABILITIES(/transformation/stack/base__fork)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, hard),
+		takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/material/kitchen/utensil/fork/plastic, 1)),
+		chosen = chosen(title = "{display_name} fork",
+			subject = /datum/material,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__knife
+CAPABILITIES(/transformation/stack/base__knife)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, hard),
+		takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/material/knife/plastic, 1)),
+		chosen = chosen(title = "{display_name} knife",
+			subject = /datum/material,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__blade
+CAPABILITIES(/transformation/stack/base__blade)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, hard),
+		takes = list(stack_term(STACK_SELF, 6)), makes = list(item_term(/obj/item/material/butterflyblade, 1)),
+		chosen = chosen(title = "{display_name} blade",
+			subject = /datum/material,
+			build_time = 20,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/base__defense_wire
+CAPABILITIES(/transformation/stack/base__defense_wire)
+	configure(transformation(holds = TYPE_PROC_REF(/transformation/stack, hard),
+		takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/material/barbedwire, 1)),
+		chosen = chosen(title = "{display_name} defense wire",
+			subject = /datum/material,
+			build_time = 1 MINUTE,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
 
 /datum/material/proc/get_wall_texture()
 	return

@@ -34,15 +34,62 @@
 		return TRUE
 	return FALSE
 
-/datum/material/resin/generate_recipes()
-	var/list/recipes = list(
-		new /datum/stack_recipe("[display_name] door", /obj/structure/simple_door/resin, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE), // Reduced material cost.
-		new /datum/stack_recipe("[display_name] barricade", /obj/structure/alien/wall, 1, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"), // Reduced material cost.
-		new /datum/stack_recipe("[display_name] nest", /obj/structure/bed/nest, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE), // Reduced material cost.
-// new /datum/stack_recipe("[display_name] wall girders", /obj/structure/girder/resin, 1, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE), // Removed, build walls with secrete resin
-		new /datum/stack_recipe("crude [display_name] bandage", /obj/item/stack/medical/crude_pack, 2, time = 2 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"), // Increased material cost.
-		new /datum/stack_recipe("[display_name] net", /obj/item/material/fishing_net, 2, time = 5 SECONDS, supplied_material = "[name]", pass_stack_color = TRUE), // Reduced material cost.
-		new /datum/stack_recipe("[display_name] membrane", /obj/structure/alien/membrane, 1, time = 2 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-// new /datum/stack_recipe("[display_name] node", /obj/effect/alien/weeds/node, 1, time = 4 SECONDS, recycle_material = "[name]") // No nodes.
-	)
-	return recipes
+/transformation/stack/resin__door
+CAPABILITIES(/transformation/stack/resin__door)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/simple_door/resin, 1)),
+		chosen = chosen(title = "{display_name} door",
+			subject = /datum/material/resin,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE,
+			replaces = TRUE)))
+
+/transformation/stack/resin__barricade
+CAPABILITIES(/transformation/stack/resin__barricade)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/alien/wall, 1)),
+		chosen = chosen(title = "{display_name} barricade",
+			subject = /datum/material/resin,
+			build_time = 5 SECONDS,
+			one_per_turf = 1,
+			on_floor = 1,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/resin__nest
+CAPABILITIES(/transformation/stack/resin__nest)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/nest, 1)),
+		chosen = chosen(title = "{display_name} nest",
+			subject = /datum/material/resin,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/resin__crude_bandage
+CAPABILITIES(/transformation/stack/resin__crude_bandage)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/stack/medical/crude_pack, 1)),
+		chosen = chosen(title = "crude {display_name} bandage",
+			subject = /datum/material/resin,
+			build_time = 2 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/resin__net
+CAPABILITIES(/transformation/stack/resin__net)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/material/fishing_net, 1)),
+		chosen = chosen(title = "{display_name} net",
+			subject = /datum/material/resin,
+			build_time = 5 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/resin__membrane
+CAPABILITIES(/transformation/stack/resin__membrane)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/alien/membrane, 1)),
+		chosen = chosen(title = "{display_name} membrane",
+			subject = /datum/material/resin,
+			build_time = 2 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+

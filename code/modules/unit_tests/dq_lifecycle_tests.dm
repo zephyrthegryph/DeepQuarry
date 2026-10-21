@@ -16,7 +16,9 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
 /// type's cache entries, but a type that picks at random (exotic_feedstock/random picks a
 /// material) warms a different key on every instance.
 GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
-	"material_recipe_cache",
+	"stack_recipes_of_material",
+	"stack_recipes_of_stack",
+	"stack_rules_by_subject",
 	// Type -> the registries it joins, filled lazily the first time a type joins (registries.dm):
 	// a per-type cache, not a registration (those are the "registry <id>" counts). The warm-up
 	// instance can't pre-fill it for randomised contents (an MRE's meal picks), so a content type

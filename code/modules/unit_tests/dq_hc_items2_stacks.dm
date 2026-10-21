@@ -149,8 +149,8 @@
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, T)
 	R.set_amount(5, TRUE)
 	H.put_in_active_hand(R)
-	var/datum/stack_recipe/grille = null
-	for(var/datum/stack_recipe/recipe in R.recipes)
+	var/datum/xform/grille = null
+	for(var/datum/xform/recipe in R.recipes)
 		if(recipe.title == "grille")
 			grille = recipe
 	TEST_ASSERT(grille, "rods know a grille recipe")
@@ -160,11 +160,13 @@
 	var/obj/structure/grille/G = locate() in T
 	TEST_ASSERT(G, "the grille is built where the builder stands")
 	// A recipe that is not the stack's own is refused.
-	var/datum/stack_recipe/foreign = new("foreign", /obj/structure/grille, 1)
+	var/datum/xform/foreign = new
+	foreign.title = "foreign"
+	foreign.result = /obj/structure/grille
 	hci_ui(H, R, "make", list("multiplier" = 1, "ref" = "\ref[foreign]"))
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(R.amount, 3, "a foreign recipe builds nothing")
-	qdel(foreign)
+	spent(foreign)
 	qdel(G)
 
 /datum/unit_test/dq_hc_items/stack_cyborg_charge_amount_is_the_synth

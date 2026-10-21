@@ -10,18 +10,62 @@
 
 //Used to make smole objects be able to be built from menu
 
-/datum/material/smolebricks/generate_recipes()
-	var/list/recipes = list(
-		new/datum/stack_recipe("road straight", /obj/structure/smoletrack/roadS, 1, time = 5),
-		new/datum/stack_recipe("road threeway", /obj/structure/smoletrack/roadT, 1, time = 5),
-		new/datum/stack_recipe("road turn ", /obj/structure/smoletrack/roadturn, 1, time = 5),
-		new/datum/stack_recipe("road fourway", /obj/structure/smoletrack/roadF, 1, time = 5),
-		new/datum/stack_recipe("smole houses", /obj/structure/smolebuilding/houses, 2, time = 10),
-		new/datum/stack_recipe("smole business", /obj/structure/smolebuilding/business, 2, time = 10),
-		new/datum/stack_recipe("smole warehouses", /obj/structure/smolebuilding/warehouses, 2, time = 10),
-		new/datum/stack_recipe("smole museum", /obj/structure/smolebuilding/museum, 2, time = 10)
-	)
-	return recipes
+/transformation/stack/smolebricks__road_straight
+CAPABILITIES(/transformation/stack/smolebricks__road_straight)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/smoletrack/roadS, 1)),
+		chosen = chosen(title = "road straight",
+			subject = /datum/material/smolebricks,
+			build_time = 5,
+			replaces = TRUE)))
+
+/transformation/stack/smolebricks__road_threeway
+CAPABILITIES(/transformation/stack/smolebricks__road_threeway)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/smoletrack/roadT, 1)),
+		chosen = chosen(title = "road threeway",
+			subject = /datum/material/smolebricks,
+			build_time = 5)))
+
+/transformation/stack/smolebricks__road_turn
+CAPABILITIES(/transformation/stack/smolebricks__road_turn)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/smoletrack/roadturn, 1)),
+		chosen = chosen(title = "road turn ",
+			subject = /datum/material/smolebricks,
+			build_time = 5)))
+
+/transformation/stack/smolebricks__road_fourway
+CAPABILITIES(/transformation/stack/smolebricks__road_fourway)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/smoletrack/roadF, 1)),
+		chosen = chosen(title = "road fourway",
+			subject = /datum/material/smolebricks,
+			build_time = 5)))
+
+/transformation/stack/smolebricks__smole_houses
+CAPABILITIES(/transformation/stack/smolebricks__smole_houses)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/smolebuilding/houses, 1)),
+		chosen = chosen(title = "smole houses",
+			subject = /datum/material/smolebricks,
+			build_time = 10)))
+
+/transformation/stack/smolebricks__smole_business
+CAPABILITIES(/transformation/stack/smolebricks__smole_business)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/smolebuilding/business, 1)),
+		chosen = chosen(title = "smole business",
+			subject = /datum/material/smolebricks,
+			build_time = 10)))
+
+/transformation/stack/smolebricks__smole_warehouses
+CAPABILITIES(/transformation/stack/smolebricks__smole_warehouses)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/smolebuilding/warehouses, 1)),
+		chosen = chosen(title = "smole warehouses",
+			subject = /datum/material/smolebricks,
+			build_time = 10)))
+
+/transformation/stack/smolebricks__smole_museum
+CAPABILITIES(/transformation/stack/smolebricks__smole_museum)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/smolebuilding/museum, 1)),
+		chosen = chosen(title = "smole museum",
+			subject = /datum/material/smolebricks,
+			build_time = 10)))
 
 /datum/material/smolebricks
 	name = MAT_SMOLEBRICKS

@@ -1,8 +1,9 @@
-/datum/material/gold/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe_list("floor tiles", list(
-			new /datum/stack_recipe("gold floor tile", /obj/item/stack/tile/floor/gold, 1, 4, 20, recycle_material = "[name]")
-		))
-	)
-	return recipes
+/transformation/stack/gold__gold_floor_tile
+CAPABILITIES(/transformation/stack/gold__gold_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/floor/gold, 4)),
+		chosen = chosen(title = "gold floor tile",
+			subject = /datum/material/gold,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF,
+			group = "floor tiles")))
+

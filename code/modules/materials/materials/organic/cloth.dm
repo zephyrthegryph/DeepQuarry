@@ -13,38 +13,258 @@
 	stack_type = /obj/item/stack/material/cloth
 
 
-/datum/material/cloth/generate_recipes() // adding some funny cool storage pouches to this so botany can do things other than food
-	var/list/recipes = list(
-		new /datum/stack_recipe("woven net", /obj/item/material/fishing_net, 10, time = 30 SECONDS, pass_stack_color = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("bedsheet", /obj/item/bedsheet, 10, time = 30 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("uniform", /obj/item/clothing/under/color/white, 8, time = 15 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("foot wraps", /obj/item/clothing/shoes/footwraps, 2, time = 5 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("gloves", /obj/item/clothing/gloves/white, 2, time = 5 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("wig", /obj/item/clothing/head/powdered_wig, 4, time = 10 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("philosopher's wig", /obj/item/clothing/head/philosopher_wig, 50, time = 2 MINUTES, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("taqiyah", /obj/item/clothing/head/taqiyah, 3, time = 6 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("turban", /obj/item/clothing/head/turban, 3, time = 6 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("hijab", /obj/item/clothing/head/hijab, 3, time = 6 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("kippa", /obj/item/clothing/head/kippa, 3, time = 6 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("scarf", /obj/item/clothing/accessory/scarf/white, 4, time = 5 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("baggy pants", /obj/item/clothing/under/pants/baggy/white, 8, time = 10 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("belt pouch", /obj/item/storage/belt/fannypack/white, 25, time = 1 MINUTE, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("pouch, small", /obj/item/storage/pouch/small, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, ammo", /obj/item/storage/pouch/ammo, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, tools", /obj/item/storage/pouch/eng_tool, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, parts", /obj/item/storage/pouch/eng_parts, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, supplies", /obj/item/storage/pouch/eng_supply, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, medical", /obj/item/storage/pouch/medical, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("pouch, flare", /obj/item/storage/pouch/flares, 10, time = 20 SECONDS, pass_stack_color = FALSE, recycle_material = "[name]"), //vorestation Add
-		new /datum/stack_recipe("crude bandage", /obj/item/stack/medical/crude_pack, 1, time = 2 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
-		new /datum/stack_recipe("empty sandbag", /obj/item/stack/emptysandbag, 2, time = 2 SECONDS, pass_stack_color = TRUE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting canvas (11x11)", /obj/item/canvas, 2, time = 2 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting canvas (19x19)", /obj/item/canvas/nineteen_nineteen, 3, time = 2 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting canvas (23x19)", /obj/item/canvas/twentythree_nineteen, 4, time = 3 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting canvas (23x23), AI", /obj/item/canvas/twentythree_twentythree, 5, time = 3 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]"),
-		new /datum/stack_recipe("painting canvas (24x24)", /obj/item/canvas/twentyfour_twentyfour, 6, time = 3 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]")
-	)
-	return recipes
+/transformation/stack/cloth__woven_net
+CAPABILITIES(/transformation/stack/cloth__woven_net)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/material/fishing_net, 1)),
+		chosen = chosen(title = "woven net",
+			subject = /datum/material/cloth,
+			build_time = 30 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE,
+			replaces = TRUE)))
+
+/transformation/stack/cloth__bedsheet
+CAPABILITIES(/transformation/stack/cloth__bedsheet)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/bedsheet, 1)),
+		chosen = chosen(title = "bedsheet",
+			subject = /datum/material/cloth,
+			build_time = 30 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__uniform
+CAPABILITIES(/transformation/stack/cloth__uniform)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 8)), makes = list(item_term(/obj/item/clothing/under/color/white, 1)),
+		chosen = chosen(title = "uniform",
+			subject = /datum/material/cloth,
+			build_time = 15 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__foot_wraps
+CAPABILITIES(/transformation/stack/cloth__foot_wraps)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/clothing/shoes/footwraps, 1)),
+		chosen = chosen(title = "foot wraps",
+			subject = /datum/material/cloth,
+			build_time = 5 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__gloves
+CAPABILITIES(/transformation/stack/cloth__gloves)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/clothing/gloves/white, 1)),
+		chosen = chosen(title = "gloves",
+			subject = /datum/material/cloth,
+			build_time = 5 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__wig
+CAPABILITIES(/transformation/stack/cloth__wig)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/head/powdered_wig, 1)),
+		chosen = chosen(title = "wig",
+			subject = /datum/material/cloth,
+			build_time = 10 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__philosopher_s_wig
+CAPABILITIES(/transformation/stack/cloth__philosopher_s_wig)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 50)), makes = list(item_term(/obj/item/clothing/head/philosopher_wig, 1)),
+		chosen = chosen(title = "philosopher's wig",
+			subject = /datum/material/cloth,
+			build_time = 2 MINUTES,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__taqiyah
+CAPABILITIES(/transformation/stack/cloth__taqiyah)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/clothing/head/taqiyah, 1)),
+		chosen = chosen(title = "taqiyah",
+			subject = /datum/material/cloth,
+			build_time = 6 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__turban
+CAPABILITIES(/transformation/stack/cloth__turban)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/clothing/head/turban, 1)),
+		chosen = chosen(title = "turban",
+			subject = /datum/material/cloth,
+			build_time = 6 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__hijab
+CAPABILITIES(/transformation/stack/cloth__hijab)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/clothing/head/hijab, 1)),
+		chosen = chosen(title = "hijab",
+			subject = /datum/material/cloth,
+			build_time = 6 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__kippa
+CAPABILITIES(/transformation/stack/cloth__kippa)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/clothing/head/kippa, 1)),
+		chosen = chosen(title = "kippa",
+			subject = /datum/material/cloth,
+			build_time = 6 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__scarf
+CAPABILITIES(/transformation/stack/cloth__scarf)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/clothing/accessory/scarf/white, 1)),
+		chosen = chosen(title = "scarf",
+			subject = /datum/material/cloth,
+			build_time = 5 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__baggy_pants
+CAPABILITIES(/transformation/stack/cloth__baggy_pants)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 8)), makes = list(item_term(/obj/item/clothing/under/pants/baggy/white, 1)),
+		chosen = chosen(title = "baggy pants",
+			subject = /datum/material/cloth,
+			build_time = 10 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__belt_pouch
+CAPABILITIES(/transformation/stack/cloth__belt_pouch)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 25)), makes = list(item_term(/obj/item/storage/belt/fannypack/white, 1)),
+		chosen = chosen(title = "belt pouch",
+			subject = /datum/material/cloth,
+			build_time = 1 MINUTE,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_small
+CAPABILITIES(/transformation/stack/cloth__pouch_small)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/small, 1)),
+		chosen = chosen(title = "pouch, small",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_ammo
+CAPABILITIES(/transformation/stack/cloth__pouch_ammo)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/ammo, 1)),
+		chosen = chosen(title = "pouch, ammo",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_tools
+CAPABILITIES(/transformation/stack/cloth__pouch_tools)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/eng_tool, 1)),
+		chosen = chosen(title = "pouch, tools",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_parts
+CAPABILITIES(/transformation/stack/cloth__pouch_parts)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/eng_parts, 1)),
+		chosen = chosen(title = "pouch, parts",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_supplies
+CAPABILITIES(/transformation/stack/cloth__pouch_supplies)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/eng_supply, 1)),
+		chosen = chosen(title = "pouch, supplies",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_medical
+CAPABILITIES(/transformation/stack/cloth__pouch_medical)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/medical, 1)),
+		chosen = chosen(title = "pouch, medical",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__pouch_flare
+CAPABILITIES(/transformation/stack/cloth__pouch_flare)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/item/storage/pouch/flares, 1)),
+		chosen = chosen(title = "pouch, flare",
+			subject = /datum/material/cloth,
+			build_time = 20 SECONDS,
+			pass_color = FALSE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__crude_bandage
+CAPABILITIES(/transformation/stack/cloth__crude_bandage)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/medical/crude_pack, 1)),
+		chosen = chosen(title = "crude bandage",
+			subject = /datum/material/cloth,
+			build_time = 2 SECONDS,
+			pass_color = TRUE,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/cloth__empty_sandbag
+CAPABILITIES(/transformation/stack/cloth__empty_sandbag)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/stack/emptysandbag, 1)),
+		chosen = chosen(title = "empty sandbag",
+			subject = /datum/material/cloth,
+			build_time = 2 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = TRUE)))
+
+/transformation/stack/cloth__painting_canvas_11x11
+CAPABILITIES(/transformation/stack/cloth__painting_canvas_11x11)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/canvas, 1)),
+		chosen = chosen(title = "painting canvas (11x11)",
+			subject = /datum/material/cloth,
+			build_time = 2 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = FALSE)))
+
+/transformation/stack/cloth__painting_canvas_19x19
+CAPABILITIES(/transformation/stack/cloth__painting_canvas_19x19)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/item/canvas/nineteen_nineteen, 1)),
+		chosen = chosen(title = "painting canvas (19x19)",
+			subject = /datum/material/cloth,
+			build_time = 2 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = FALSE)))
+
+/transformation/stack/cloth__painting_canvas_23x19
+CAPABILITIES(/transformation/stack/cloth__painting_canvas_23x19)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/item/canvas/twentythree_nineteen, 1)),
+		chosen = chosen(title = "painting canvas (23x19)",
+			subject = /datum/material/cloth,
+			build_time = 3 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = FALSE)))
+
+/transformation/stack/cloth__painting_canvas_23x23_ai
+CAPABILITIES(/transformation/stack/cloth__painting_canvas_23x23_ai)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/item/canvas/twentythree_twentythree, 1)),
+		chosen = chosen(title = "painting canvas (23x23), AI",
+			subject = /datum/material/cloth,
+			build_time = 3 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = FALSE)))
+
+/transformation/stack/cloth__painting_canvas_24x24
+CAPABILITIES(/transformation/stack/cloth__painting_canvas_24x24)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 6)), makes = list(item_term(/obj/item/canvas/twentyfour_twentyfour, 1)),
+		chosen = chosen(title = "painting canvas (24x24)",
+			subject = /datum/material/cloth,
+			build_time = 3 SECONDS,
+			material = STACK_MATERIAL_SELF,
+			pass_color = FALSE)))
 
 /datum/material/cloth/syncloth
 	name = MAT_SYNCLOTH

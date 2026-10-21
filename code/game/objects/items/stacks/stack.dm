@@ -15,8 +15,8 @@
 	randpixel = 7
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	/// A shared recipe table of /datum/stack_recipe (GLOB or the registered material holds it; never owned or cleared by the stack).
-	var/tmp/list/datum/stack_recipe/recipes
+	/// A shared recipe table of /datum/xform recipes and /datum/xform_group sub-lists (the material or stack_own_recipes() holds it; never owned or cleared by the stack).
+	var/tmp/list/recipes
 	var/singular_name
 	var/amount = 1
 	var/max_amount //also see stack recipes initialisation, param "max_res_amount" must be equal to this max_amount
@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/stack)
 	ref_many(nameof(synths), /datum/matter_synth, on_unlink = PROC_REF(synth_unlinked))
 	on_change(nameof(synths), ANY, then(PROC_REF(synth_cost_changed)))
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
-	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/stack_recipe))), then(PROC_REF(ui_act_make)))
+	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/xform))), then(PROC_REF(ui_act_make)))
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
@@ -117,31 +117,31 @@ CAPABILITIES(/obj/item/stack)
 /obj/item/stack/proc/recursively_build_recipes(list/recipe_to_iterate)
 	var/list/L = list()
 	for(var/recipe in recipe_to_iterate)
-		if(istype(recipe, /datum/stack_recipe_list))
-			var/datum/stack_recipe_list/R = recipe
+		if(istype(recipe, /datum/xform_group))
+			var/datum/xform_group/R = recipe
 			L["[R.title]"] = recursively_build_recipes(R.recipes)
-		if(istype(recipe, /datum/stack_recipe))
-			var/datum/stack_recipe/R = recipe
+		if(istype(recipe, /datum/xform))
+			var/datum/xform/R = recipe
 			L["[R.title]"] = build_recipe(R)
 
 	return L
 
-/obj/item/stack/proc/build_recipe(datum/stack_recipe/R)
+/obj/item/stack/proc/build_recipe(datum/xform/R)
 	return list(
-		"res_amount" = R.res_amount,
-		"max_res_amount" = R.max_res_amount,
-		"req_amount" = R.req_amount,
+		"res_amount" = R.result_amount,
+		"max_res_amount" = R.max_made,
+		"req_amount" = R.cost,
 		"ref" = "\ref[R]",
 	)
 
 /// The window's build button: `ref` is the recipe, `multiplier` how many batches.
-/obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/stack_recipe/ref)
+/obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/xform/ref)
 	var/mob/user = A.actor
 	if(get_amount() < 1)
 		spent(src)
 		return
 
-	var/datum/stack_recipe/R = ref
+	var/datum/xform/R = ref
 	if(!is_valid_recipe(R, recipes)) //href exploit protection
 		return FALSE
 	if(!multiplier || (multiplier <= 0)) //href exploit protection
@@ -149,20 +149,20 @@ CAPABILITIES(/obj/item/stack)
 	produce_recipe(R, multiplier, user)
 	return TRUE
 
-/obj/item/stack/proc/is_valid_recipe(datum/stack_recipe/R, list/recipe_list)
+/obj/item/stack/proc/is_valid_recipe(datum/xform/R, list/recipe_list)
 	for(var/S in recipe_list)
 		if(S == R)
 			return TRUE
-		if(istype(S, /datum/stack_recipe_list))
-			var/datum/stack_recipe_list/L = S
+		if(istype(S, /datum/xform_group))
+			var/datum/xform_group/L = S
 			if(is_valid_recipe(R, L.recipes))
 				return TRUE
 
 	return FALSE
 
-/obj/item/stack/proc/produce_recipe(datum/stack_recipe/recipe, quantity, mob/user)
-	var/required = quantity*recipe.req_amount
-	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
+/obj/item/stack/proc/produce_recipe(datum/xform/recipe, quantity, mob/user)
+	var/required = quantity*recipe.cost
+	var/produced = min(quantity*recipe.result_amount, recipe.max_made)
 
 	if(op_claimed(src))
 		return
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/item/stack)
 			to_chat(user, span_warning("You haven't got enough [src] to build \the [recipe.title]!"))
 		return
 
-	if (recipe.one_per_turf && (locate_within(user.loc, recipe.result_type)))
+	if (recipe.one_per_turf && (locate_within(user.loc, recipe.result)))
 		to_chat(user, span_warning("There is another [recipe.title] here!"))
 		return
 
@@ -182,28 +182,28 @@ CAPABILITIES(/obj/item/stack)
 		to_chat(user, span_warning("\The [recipe.title] must be constructed on the floor!"))
 		return
 
-	if (recipe.time)
+	if (recipe.build_time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
 	start_build(user, recipe, required, produced)
 
 /// Starts the build op: the recipe, what it costs and what it makes ride with the call.
-/obj/item/stack/proc/start_build(mob/user, datum/stack_recipe/recipe, required, produced)
+/obj/item/stack/proc/start_build(mob/user, datum/xform/recipe, required, produced)
 	perform_op(user, src, "build", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("recipe" = recipe, "required" = required, "produced" = produced))
 
 /obj/item/stack/proc/build_time(datum/act/op/A)
-	var/datum/stack_recipe/recipe = A.arg("recipe")
-	return recipe.time
+	var/datum/xform/recipe = A.arg("recipe")
+	return recipe.build_time
 
 /// The build time is over: spend the stack and make the thing.
 /obj/item/stack/proc/produce_recipe_done(datum/act/op/A)
-	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/datum/xform/recipe = A.arg("recipe")
 	var/mob/user = A.actor
 	var/required = A.arg("required")
 	var/produced = A.arg("produced")
 	if (use(required))
 		var/atom/O
 		if(recipe.use_material)
-			O = new recipe.result_type(user.loc, recipe.use_material)
+			O = new recipe.result(user.loc, recipe.use_material)
 
 			if(istype(O, /obj/item))
 				var/obj/item/Ob = O
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/stack)
 				Ob.set_single_material(recipe.use_material, mattermult / produced * required)
 
 		else
-			O = new recipe.result_type(user.loc)
+			O = new recipe.result(user.loc)
 
 			if(recipe.matter_material)
 				if(istype(O, /obj/item))
@@ -499,50 +499,6 @@ CAPABILITIES(/obj/item/stack)
 
 /obj/item/stack/proc/reagents_per_sheet()
 	return REAGENTS_PER_SHEET // units total of reagents when grinded
-
-/*
- * Recipe datum
- */
-/datum/stack_recipe
-	var/title = "ERROR"
-	var/result_type
-	var/req_amount = 1 //amount of material needed for this recipe
-	var/res_amount = 1 //amount of stuff that is produced in one batch (e.g. 4 for floor tiles)
-	var/max_res_amount = 1
-	var/time = 0
-	var/one_per_turf = 0
-	var/on_floor = 0
-	var/use_material
-	var/pass_color
-	var/matter_material 	// Material type used for recycling. Default, uses use_material. For non-material-based objects however, matter_material is needed.
-
-/datum/stack_recipe/New(title, result_type, req_amount = 1, res_amount = 1, max_res_amount = 1, time = 0, one_per_turf = 0, on_floor = 0, supplied_material = null, pass_stack_color, recycle_material = null)
-	src.title = title
-	src.result_type = result_type
-	src.req_amount = req_amount
-	src.res_amount = res_amount
-	src.max_res_amount = max_res_amount
-	src.time = time
-	src.one_per_turf = one_per_turf
-	src.on_floor = on_floor
-	src.use_material = supplied_material
-	src.pass_color = pass_stack_color
-
-	if(!recycle_material && src.use_material)
-		src.matter_material = src.use_material
-
-	else if(recycle_material)
-		src.matter_material = recycle_material
-
-/*
- * Recipe list datum
- */
-/datum/stack_recipe_list
-	var/title = "ERROR"
-	var/list/recipes = null
-/datum/stack_recipe_list/New(title, recipes)
-	src.title = title
-	src.recipes = recipes
 
 // Porting stack dragging/auto stacking from TG.
 

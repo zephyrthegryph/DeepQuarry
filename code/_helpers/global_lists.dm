@@ -640,16 +640,7 @@ GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list
 // color-dir-dry
 GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): a pool of fluid-track overlays reused on every step, too hot to rebuild each time
 
-GLOBAL_LIST_INIT_TYPED(sandbag_recipes, /datum/stack_recipe, list( \
-	new/datum/stack_recipe("barricade", /obj/structure/barricade/sandbag, 3, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE)))
-
-GLOBAL_LIST_INIT_TYPED(wax_recipes, /datum/stack_recipe, list( \
-	new/datum/stack_recipe("candle", /obj/item/flame/candle)))
-
-GLOBAL_LIST_INIT_TYPED(rods_recipes, /datum/stack_recipe, list( \
-	new/datum/stack_recipe("grille", /obj/structure/grille, 2, time = 10, one_per_turf = 1, on_floor = 0),
-	new/datum/stack_recipe("catwalk", /obj/structure/catwalk, 2, time = 80, one_per_turf = 1, on_floor = 1)))
-
+// The sandbag, wax and rod stack recipes are /transformation/stack rules (code/game/objects/items/stacks/own_recipes.dm).
 GLOBAL_LIST_INIT(possible_plants, list(
 	"plant-1",
 	"plant-10",

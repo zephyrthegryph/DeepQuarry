@@ -62,7 +62,7 @@
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/item/stack/material/wax/W = allocate(/obj/item/stack/material/wax, test_floor(), 1)
 	TEST_ASSERT(length(W.recipes) > 0, "Actual wax construction installs its crafting recipes")
-	TEST_ASSERT_EQUAL(W.recipes, GLOB.wax_recipes, "The declared job retains the original shared recipe catalog")
+	TEST_ASSERT_EQUAL(W.recipes, stack_own_recipes(STACK_RECIPES_WAX), "The declared job retains the original shared recipe catalog")
 
 /datum/unit_test/dq_a10_content_init/gibber_plate/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)

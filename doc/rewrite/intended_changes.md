@@ -5316,3 +5316,8 @@ which the rules keep. A reaction that should be ordered by band needs a `priorit
 ## Fusion reactions as transformations: no change (2026-10-21)
 
 The 10 fusion reactions are `/transformation/fusion` rules with the same numbers and products (`dq_xform_fusion_pin`); the field's loop and its random draws are untouched.
+
+## Stack recipes as transformations: no change (2026-10-21)
+
+The stack recipes (material sheets, tiles, rods, sandbags, wax, the cyborg recyclers) are `/transformation/stack` rules expanded over the materials; every stack of every type has the same recipes
+in the same order with the same costs, results, times and flags (`dq_xform_stack_pin`, 3,340 rows). A new material gets the base recipes by its integrity and hardness as before.

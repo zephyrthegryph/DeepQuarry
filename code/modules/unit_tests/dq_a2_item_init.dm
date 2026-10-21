@@ -11,7 +11,7 @@
 	var/obj/item/stack/sandbags/bags = allocate(/obj/item/stack/sandbags, test_floor(), 15)
 	TEST_ASSERT_EQUAL(bags.get_amount(), 15, "The stack parent applies the constructor amount before setup")
 	TEST_ASSERT_EQUAL(bags.slowdown, 1.5, "Sandbag setup computes slowdown from the parent's applied amount")
-	TEST_ASSERT_EQUAL(bags.recipes, GLOB.sandbag_recipes, "Sandbag setup attaches the actual shared recipe table")
+	TEST_ASSERT_EQUAL(bags.recipes, stack_own_recipes(STACK_RECIPES_SANDBAGS), "Sandbag setup attaches the actual shared recipe table")
 
 /datum/unit_test/dq_a2_item_init/standin_guard/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)

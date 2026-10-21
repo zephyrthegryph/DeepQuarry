@@ -16,15 +16,46 @@
 	radiation_resistance = 1
 	supply_conversion_value = 0
 
-/datum/material/snow/generate_recipes()
-	var/list/recipes = list(
-		new /datum/stack_recipe("snowball", /obj/item/material/snow/snowball, 1, time = 10, recycle_material = "[name]"),
-		new /datum/stack_recipe("snow brick", /obj/item/stack/material/snowbrick, 2, time = 10, recycle_material = "[name]"),
-		new /datum/stack_recipe("snowman", /obj/structure/snowman, 2, time = 15, recycle_material = "[name]"),
-		new /datum/stack_recipe("snow robot", /obj/structure/snowman/borg, 2, time = 10, recycle_material = "[name]"),
-		new /datum/stack_recipe("snow spider", /obj/structure/snowman/spider, 3, time = 20, recycle_material = "[name]")
-	)
-	return recipes
+/transformation/stack/snow__snowball
+CAPABILITIES(/transformation/stack/snow__snowball)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/material/snow/snowball, 1)),
+		chosen = chosen(title = "snowball",
+			subject = /datum/material/snow,
+			build_time = 10,
+			recycle = STACK_MATERIAL_SELF,
+			replaces = TRUE)))
+
+/transformation/stack/snow__snow_brick
+CAPABILITIES(/transformation/stack/snow__snow_brick)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/stack/material/snowbrick, 1)),
+		chosen = chosen(title = "snow brick",
+			subject = /datum/material/snow,
+			build_time = 10,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snow__snowman
+CAPABILITIES(/transformation/stack/snow__snowman)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/snowman, 1)),
+		chosen = chosen(title = "snowman",
+			subject = /datum/material/snow,
+			build_time = 15,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snow__snow_robot
+CAPABILITIES(/transformation/stack/snow__snow_robot)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/snowman/borg, 1)),
+		chosen = chosen(title = "snow robot",
+			subject = /datum/material/snow,
+			build_time = 10,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snow__snow_spider
+CAPABILITIES(/transformation/stack/snow__snow_spider)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/structure/snowman/spider, 1)),
+		chosen = chosen(title = "snow spider",
+			subject = /datum/material/snow,
+			build_time = 20,
+			recycle = STACK_MATERIAL_SELF)))
 
 /datum/material/snowbrick //only slightly stronger than snow, used to make igloos mostly
 	name = MAT_SNOWBRICK
@@ -45,15 +76,78 @@
 	radiation_resistance = 1
 	supply_conversion_value = 0
 
-/datum/material/snowbrick/generate_recipes()
-	var/list/recipes = list(
-		new /datum/stack_recipe("[display_name] door", /obj/structure/simple_door, 10, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] barricade", /obj/structure/barricade, 5, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] stool", /obj/item/stool, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] chair", /obj/structure/bed/chair, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] bed", /obj/structure/bed, 2, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] double bed", /obj/structure/bed/double, 4, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] wall girders", /obj/structure/girder, 2, time = 50, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"),
-		new /datum/stack_recipe("[display_name] ashtray", /obj/item/material/ashtray, 2, one_per_turf = 1, on_floor = 1, supplied_material = "[name]")
-	)
-	return recipes
+/transformation/stack/snowbrick__door
+CAPABILITIES(/transformation/stack/snowbrick__door)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 10)), makes = list(item_term(/obj/structure/simple_door, 1)),
+		chosen = chosen(title = "{display_name} door",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF,
+			replaces = TRUE)))
+
+/transformation/stack/snowbrick__barricade
+CAPABILITIES(/transformation/stack/snowbrick__barricade)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/barricade, 1)),
+		chosen = chosen(title = "{display_name} barricade",
+			subject = /datum/material/snowbrick,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__stool
+CAPABILITIES(/transformation/stack/snowbrick__stool)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stool, 1)),
+		chosen = chosen(title = "{display_name} stool",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__chair
+CAPABILITIES(/transformation/stack/snowbrick__chair)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/structure/bed/chair, 1)),
+		chosen = chosen(title = "{display_name} chair",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__bed
+CAPABILITIES(/transformation/stack/snowbrick__bed)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/bed, 1)),
+		chosen = chosen(title = "{display_name} bed",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__double_bed
+CAPABILITIES(/transformation/stack/snowbrick__double_bed)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/structure/bed/double, 1)),
+		chosen = chosen(title = "{display_name} double bed",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__wall_girders
+CAPABILITIES(/transformation/stack/snowbrick__wall_girders)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/structure/girder, 1)),
+		chosen = chosen(title = "{display_name} wall girders",
+			subject = /datum/material/snowbrick,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+
+/transformation/stack/snowbrick__ashtray
+CAPABILITIES(/transformation/stack/snowbrick__ashtray)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 2)), makes = list(item_term(/obj/item/material/ashtray, 1)),
+		chosen = chosen(title = "{display_name} ashtray",
+			subject = /datum/material/snowbrick,
+			one_per_turf = 1,
+			on_floor = 1,
+			material = STACK_MATERIAL_SELF)))
+

@@ -6,7 +6,7 @@
 //	/datum/sys_periodic_table
 //		var/datum/sys_periodic_def/while_def      // a registry type: shared by its type, no shares() line
 //	/obj/item
-//		var/list/datum/stack_recipe/recipes   // a flyweight type: same
+//		var/list/datum/xform/recipes   // a flyweight type: same
 //
 // tools/ci/ownership_lint.py reads FLYWEIGHT_TYPES (keep the two lists in step).
 
@@ -14,8 +14,7 @@
 GLOBAL_LIST_INIT(flyweight_types, typecacheof(list(
 	/datum/capability,
 	/datum/reaction,
-	/datum/stack_recipe,
-	/datum/stack_recipe_list,
+	/datum/xform_group,
 	/datum/own_entry,
 	/datum/derived_entry,
 	/datum/material,

@@ -727,3 +727,13 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   its symmetric table from the rules; the supermatter reaction's `handle_reaction_special()` is a proc on its rule type. Pinned by `dq_xform_fusion_pin` (recorded on the legacy types: the
   numbers, products, special flag and both lookup orders) and `dq_pp/fusion_reaction_rates`. The seeded field pin of section 12 was not built: the loop's random draws are untouched.
   `/datum/decl/fusion_reaction` is hard-banned. The gas-law half of wave 4 (named Rust laws for the profiled hot reactions) is not started: it needs a profile to say which reactions are hot.
+* **Wave 5, stack recipes (chosen mode, D12 (b)).** The 549 `new /datum/stack_recipe` and `stack_recipe_list` sites (the base recipes in `material.dm`, 23 files of per-material
+  `generate_recipes()` overrides, the rods, sandbag and wax lists and the two cyborg recyclers) are `/transformation/stack/*` rules: `takes = list(stack_term(STACK_SELF, cost))`,
+  `makes = list(item_term(result, amount))` and a new `chosen(...)` entry (title, subject, max_made, build_time, one_per_turf, on_floor, material, pass_color, recycle, group, replaces,
+  drops). `subject` is a `/datum/material` type (a material gets the rules of its type and of every type above it, top down; `replaces` starts a level's list afresh where the old override built
+  a new list instead of calling `..()`, `drops` removes titles the levels above made) or a key a stack asks `stack_own_recipes()` for. The template is expanded over the materials at first use:
+  `{display_name}` and `{name}` in the title and in `material`/`recycle` become the material's, and `holds` (the three base conditions are `sturdy`, `solid` and `hard` procs of
+  `/transformation/stack`) says whether the material gets the recipe. A recipe `group` is a sub-list; nested sub-lists are `a::b`. The expanded recipes are `/datum/xform` copies and the groups
+  `/datum/xform_group`; the stack window and the build op read them in place of the old datums. Pinned by `dq_xform_stack_pin`, recorded on the legacy lists before anything moved: 3,340 rows, one
+  per recipe of every stack the game makes, byte-identical through the conversion. `/datum/stack_recipe`, `/datum/stack_recipe_list`, `generate_recipes` and `material_recipe_cache` are hard-banned.
+  The gas laws of wave 4 wait: benchmarks and profiling are paused until the end, and the laws are chosen from a profile.

@@ -1,5 +1,5 @@
 /**
- * Stack recipe pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy /datum/stack_recipe lists before they became
+ * Stack recipe pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy recipe lists (the old stack recipe datums) before they became
  * /transformation/stack rules, and kept byte-identical through the conversion.
  *
  * One row per recipe of every stack the game makes: a stack of each concrete type is made and its `recipes` list read in order, nested lists included (the
@@ -18,13 +18,13 @@
 	for(var/recipe in recipes)
 		at++
 		var/place = "[prefix][prefix == "" ? "" : "/"][at]"
-		if(istype(recipe, /datum/stack_recipe_list))
-			var/datum/stack_recipe_list/group = recipe
+		if(istype(recipe, /datum/xform_group))
+			var/datum/xform_group/group = recipe
 			rows[place] = "list: [group.title]"
 			flatten(place, group.recipes, rows)
-		else if(istype(recipe, /datum/stack_recipe))
-			var/datum/stack_recipe/R = recipe
-			rows[place] = "[R.title]; result=[R.result_type]; req=[R.req_amount]; res=[R.res_amount]; max=[R.max_res_amount]; time=[R.time]; one_per_turf=[R.one_per_turf]; on_floor=[R.on_floor]; material=[R.use_material]; color=[R.pass_color]; recycle=[R.matter_material]"
+		else if(istype(recipe, /datum/xform))
+			var/datum/xform/R = recipe
+			rows[place] = "[R.title]; result=[R.result]; req=[R.cost]; res=[R.result_amount]; max=[R.max_made]; time=[R.build_time]; one_per_turf=[R.one_per_turf]; on_floor=[R.on_floor]; material=[R.use_material]; color=[R.pass_color]; recycle=[R.matter_material]"
 		else
 			rows[place] = "other: [recipe]"
 

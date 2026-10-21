@@ -20,8 +20,14 @@
 	radioactivity = 20
 	luminescence = 3
 
-/datum/material/supermatter/generate_recipes()
-	var/list/recipes = list(
-		new /datum/stack_recipe("supermatter shard", /obj/machinery/power/supermatter/shard, 30 , one_per_turf = 1, time = 600, on_floor = 1, recycle_material = "[name]")
-	)
-	return recipes
+/transformation/stack/supermatter__supermatter_shard
+CAPABILITIES(/transformation/stack/supermatter__supermatter_shard)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 30)), makes = list(item_term(/obj/machinery/power/supermatter/shard, 1)),
+		chosen = chosen(title = "supermatter shard",
+			subject = /datum/material/supermatter,
+			build_time = 600,
+			one_per_turf = 1,
+			on_floor = 1,
+			recycle = STACK_MATERIAL_SELF,
+			replaces = TRUE)))
+

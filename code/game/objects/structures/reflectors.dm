@@ -324,10 +324,14 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 	desc = "A box with an internal set of mirrors that reflects all laser beams in a single direction. This one is marked with NanoTrasen's logo."
 	can_decon = FALSE
 
-/datum/material/steel/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new/datum/stack_recipe("reflector frame", /obj/structure/reflector, 5, time = 25, one_per_turf = TRUE, on_floor = TRUE)
-	return recipes
+/transformation/stack/steel__reflector_frame
+CAPABILITIES(/transformation/stack/steel__reflector_frame)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 5)), makes = list(item_term(/obj/structure/reflector, 1)),
+		chosen = chosen(title = "reflector frame",
+			subject = /datum/material/steel,
+			build_time = 25,
+			one_per_turf = TRUE,
+			on_floor = TRUE)))
 
 /datum/supply_pack/eng/reflector
 	name = "Reflector crate"

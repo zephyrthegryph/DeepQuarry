@@ -6,6 +6,7 @@
 #define ENTRY_TRANSFORMATION "transformation"
 #define ENTRY_XTERM "xterm"
 #define ENTRY_XCOND "xcond"
+#define ENTRY_XCHOSEN "xchosen"
 
 /// Currencies: what a term counts. Each names the resource a subject's medium keeps it in.
 #define XCUR_REAGENT "reagent"
@@ -31,6 +32,7 @@
 #define REGIME_GAS "gas"
 #define REGIME_GRINDING "grinding"
 #define REGIME_FUSION "fusion"
+#define REGIME_CHOSEN "chosen"
 
 /// What happens to a product that does not fit its container. CAPACITY_TRUNCATE keeps today's chemistry: the product is clamped to the free volume and the
 /// excess is lost (D10). Items and stacks never truncate: a refused insert is how slots already behave.
@@ -56,3 +58,16 @@
 #define CONDENSING_RESULT 0.5
 #define CONDENSING_HEAT 2
 #define COOLANT_CONSUMPTION_RATE 0.01
+
+// Stack recipes (code/library/transformations/stack_recipes.dm)
+/// The cost term of a stack recipe: units of the stack the recipe is made from.
+#define STACK_SELF "self"
+/// In `material` and `recycle`: the material of the stack. Title text uses {display_name} and {name}.
+#define STACK_MATERIAL_SELF "{name}"
+
+/// The keys of the stack recipe lists a stack asks stack_own_recipes() for (code/game/objects/items/stacks/own_recipes.dm).
+#define STACK_RECIPES_SANDBAGS "sandbags"
+#define STACK_RECIPES_WAX "wax"
+#define STACK_RECIPES_RODS "rods"
+#define STACK_RECIPES_STEEL_RECYCLER "steel_recycler"
+#define STACK_RECIPES_GLASS_RECYCLER "glass_recycler"

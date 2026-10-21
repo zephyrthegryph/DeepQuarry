@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "What can be built from a stack of material (and rods, sandbags, wax) is declared as transformations instead of recipe datums built per material; the build windows are unchanged."

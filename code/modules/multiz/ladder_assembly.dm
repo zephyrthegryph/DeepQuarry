@@ -126,9 +126,12 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 		spent(above, user)
 
 // Make them constructable in hand
-/datum/material/steel/generate_recipes()
-	var/list/recipes = ..()
-	if(!islist(recipes))
-		recipes = list()
-	recipes += new /datum/stack_recipe("ladder assembly", /obj/structure/ladder_assembly, 4, time = 50, one_per_turf = 1, on_floor = 1)
-	return recipes
+/transformation/stack/steel__ladder_assembly
+CAPABILITIES(/transformation/stack/steel__ladder_assembly)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 4)), makes = list(item_term(/obj/structure/ladder_assembly, 1)),
+		chosen = chosen(title = "ladder assembly",
+			subject = /datum/material/steel,
+			build_time = 50,
+			one_per_turf = 1,
+			on_floor = 1)))
+

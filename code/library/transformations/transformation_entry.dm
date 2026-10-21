@@ -50,13 +50,13 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
 		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
-		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat))
+		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -151,6 +151,20 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/min_level = 0
 	var/min_heat = 0
 	var/list/field_products
+	/// A stack recipe (chosen mode, code/library/transformations/stack_recipes.dm): its title, who it is for, what it costs and makes, and how it is built.
+	var/title
+	var/subject
+	var/cost = 1
+	var/max_made = 1
+	var/build_time = 0
+	var/one_per_turf = 0
+	var/on_floor = 0
+	var/use_material
+	var/pass_color
+	var/matter_material
+	var/group
+	var/replaces = FALSE
+	var/list/drops
 	/// Gas taken from the air around the subject once per step, gas => moles, or null.
 	var/list/takes_ambient
 	var/holds
@@ -261,7 +275,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		var/datum/type_table/T = by_type[type]
 		var/datum/centry/C = static_find(T, ENTRY_TRANSFORMATION)
 		var/datum/entry/E = C?.item
-		if(!E || !length(E.args?["takes"]))
+		if(!E || (!length(E.args?["takes"]) && !E.args?["chosen"]))
 			continue // a base: defaults for the rules under it
 		var/datum/xform/X = xform_compile(type, E, order_of[type], C.origin)
 		if(!X)
@@ -311,12 +325,12 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.catalysts = xform_rows(arguments["catalysts"])
 	X.blocked_by = xform_rows(arguments["blocked_by"])
 	X.makes = xform_rows(arguments["makes"])
-	if(!length(X.takes))
+	if(!length(X.takes) && !arguments["chosen"])
 		declare_report("[origin]: [type]: transformation() takes no terms -- a rule takes at least one")
 		return null
-	X.anchor = X.takes[1][2]
+	X.anchor = length(X.takes) ? X.takes[1][2] : type
 	X.specificity = length(X.takes)
-	X.medium = arguments["medium"] || xform_medium_of(X.takes[1][1])
+	X.medium = arguments["medium"] || (length(X.takes) ? xform_medium_of(X.takes[1][1]) : null)
 	if(!X.medium)
 		declare_report("[origin]: [type]: no medium for currency [X.takes[1][1]] -- name it with medium =")
 		return null
@@ -377,6 +391,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.cook_time = arguments["cook_time"] || 0
 		X.mix = arguments["mix"] || 0
 		X.coating = arguments["coating"]
+	if(arguments["chosen"])
+		xform_compile_chosen(X, arguments["chosen"])
 	if(X.medium == MEDIUM_REAGENTS)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)

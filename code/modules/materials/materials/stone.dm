@@ -16,10 +16,15 @@
 	sheet_plural_name = "bricks"
 	supply_conversion_value = 0.5
 
-/datum/material/stone/generate_recipes()
-	var/list/recipes = ..()
-	recipes += new /datum/stack_recipe("planting bed", /obj/machinery/portable_atmospherics/hydroponics/soil, 3, time = 10, one_per_turf = 1, on_floor = 1, recycle_material = "[name]")
-	return recipes
+/transformation/stack/stone__planting_bed
+CAPABILITIES(/transformation/stack/stone__planting_bed)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 3)), makes = list(item_term(/obj/machinery/portable_atmospherics/hydroponics/soil, 1)),
+		chosen = chosen(title = "planting bed",
+			subject = /datum/material/stone,
+			build_time = 10,
+			one_per_turf = 1,
+			on_floor = 1,
+			recycle = STACK_MATERIAL_SELF)))
 
 /datum/material/stone/marble
 	name = MAT_MARBLE
@@ -30,14 +35,22 @@
 	stack_type = /obj/item/stack/material/marble
 	supply_conversion_value = 2
 
-/datum/material/stone/marble/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe("light marble floor tile", /obj/item/stack/tile/wmarble, 1, 4, 20, recycle_material = "[name]"),
-		new /datum/stack_recipe("dark marble floor tile", /obj/item/stack/tile/bmarble, 1, 4, 20, recycle_material = "[name]")
-	)
-	return recipes
-// ition Start
+/transformation/stack/stone_marble__light_marble_floor_tile
+CAPABILITIES(/transformation/stack/stone_marble__light_marble_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/wmarble, 4)),
+		chosen = chosen(title = "light marble floor tile",
+			subject = /datum/material/stone/marble,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF)))
+
+/transformation/stack/stone_marble__dark_marble_floor_tile
+CAPABILITIES(/transformation/stack/stone_marble__dark_marble_floor_tile)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/bmarble, 4)),
+		chosen = chosen(title = "dark marble floor tile",
+			subject = /datum/material/stone/marble,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF)))
+
 /datum/material/stone/flint
 	name = MAT_FLINT
 	icon_colour = "#9e9c99"
@@ -50,9 +63,9 @@
 	sheet_plural_name = "pieces"
 	supply_conversion_value = 0.1
 
-/datum/material/stone/flint/generate_recipes()
-	return list()
-// ition End
+/transformation/stack/stone_flint__clears
+CAPABILITIES(/transformation/stack/stone_flint__clears)
+	configure(transformation(chosen = chosen(subject = /datum/material/stone/flint, replaces = TRUE)))
 
 /datum/material/stone/concrete
 	name = MAT_CONCRETE
@@ -67,17 +80,41 @@
 	var/image/texture
 	supply_conversion_value = 0.1
 
-/datum/material/stone/concrete/generate_recipes()
-	var/list/recipes = ..()
-	recipes += list(
-		new /datum/stack_recipe_list("Concrete Pathing",list(
-			new /datum/stack_recipe("Concrete Flooring", /obj/item/stack/tile/floor/concrete, 1, 4, 20, recycle_material = "[name]"),
-			new /datum/stack_recipe("Concrete Sidewalk", /obj/item/stack/tile/floor/sidewalk, 1, 4, 20, recycle_material = "[name]"),
-			new /datum/stack_recipe("Concrete Sidewalk (Side)", /obj/item/stack/tile/floor/sidewalk/side, 1, 4, 20, recycle_material = "[name]"),
-			new /datum/stack_recipe("Concrete Sidewalk (Slab)", /obj/item/stack/tile/floor/sidewalk/slab, 1, 4, 20, recycle_material = "[name]")
-		)),
-		)
-	return recipes
+/transformation/stack/stone_concrete__concrete_flooring
+CAPABILITIES(/transformation/stack/stone_concrete__concrete_flooring)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/floor/concrete, 4)),
+		chosen = chosen(title = "Concrete Flooring",
+			subject = /datum/material/stone/concrete,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF,
+			group = "Concrete Pathing")))
+
+/transformation/stack/stone_concrete__concrete_sidewalk
+CAPABILITIES(/transformation/stack/stone_concrete__concrete_sidewalk)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/floor/sidewalk, 4)),
+		chosen = chosen(title = "Concrete Sidewalk",
+			subject = /datum/material/stone/concrete,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF,
+			group = "Concrete Pathing")))
+
+/transformation/stack/stone_concrete__concrete_sidewalk_side
+CAPABILITIES(/transformation/stack/stone_concrete__concrete_sidewalk_side)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/floor/sidewalk/side, 4)),
+		chosen = chosen(title = "Concrete Sidewalk (Side)",
+			subject = /datum/material/stone/concrete,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF,
+			group = "Concrete Pathing")))
+
+/transformation/stack/stone_concrete__concrete_sidewalk_slab
+CAPABILITIES(/transformation/stack/stone_concrete__concrete_sidewalk_slab)
+	configure(transformation(takes = list(stack_term(STACK_SELF, 1)), makes = list(item_term(/obj/item/stack/tile/floor/sidewalk/slab, 4)),
+		chosen = chosen(title = "Concrete Sidewalk (Slab)",
+			subject = /datum/material/stone/concrete,
+			max_made = 20,
+			recycle = STACK_MATERIAL_SELF,
+			group = "Concrete Pathing")))
 
 /datum/material/stone/concrete/New()
 	. = ..()

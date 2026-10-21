@@ -70,4 +70,4 @@ CAPABILITIES(/obj/item/stack/rods)
 
 /// What rods build (per_type(): the shared recipe list).
 /obj/item/stack/rods/proc/rods_recipes()
-	return GLOB.rods_recipes
+	return stack_own_recipes(STACK_RECIPES_RODS)

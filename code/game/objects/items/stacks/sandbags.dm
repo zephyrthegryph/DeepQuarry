@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 /// Declared setup: prepare sandbag recipes, after its parents initialize.
 /obj/item/stack/sandbags/proc/prepare_sandbag_recipes()
-	set_recipes(GLOB.sandbag_recipes)
+	set_recipes(stack_own_recipes(STACK_RECIPES_SANDBAGS))
 	update_slowdown()
 
 /// A bigger pile slows its carrier more.
@@ -59,9 +59,9 @@ CAPABILITIES(/obj/item/stack/sandbags)
 	if(!QDELETED(src))
 		update_slowdown()
 
-/obj/item/stack/sandbags/produce_recipe(datum/stack_recipe/recipe, quantity, mob/user)
-	var/required = quantity*recipe.req_amount
-	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
+/obj/item/stack/sandbags/produce_recipe(datum/xform/recipe, quantity, mob/user)
+	var/required = quantity*recipe.cost
+	var/produced = min(quantity*recipe.result_amount, recipe.max_made)
 
 	if (!can_use(required))
 		if (produced>1)
@@ -70,7 +70,7 @@ CAPABILITIES(/obj/item/stack/sandbags)
 			to_chat(user, span_warning("You haven't got enough [src] to build \the [recipe.title]!"))
 		return
 
-	if (recipe.one_per_turf && (locate_within(user.loc, recipe.result_type)))
+	if (recipe.one_per_turf && (locate_within(user.loc, recipe.result)))
 		to_chat(user, span_warning("There is another [recipe.title] here!"))
 		return
 
@@ -78,17 +78,17 @@ CAPABILITIES(/obj/item/stack/sandbags)
 		to_chat(user, span_warning("\The [recipe.title] must be constructed on the floor!"))
 		return
 
-	if (recipe.time)
+	if (recipe.build_time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
 	start_build(user, recipe, required, produced)
 
 /obj/item/stack/sandbags/produce_recipe_done(datum/act/op/A)
-	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/datum/xform/recipe = A.arg("recipe")
 	var/mob/user = A.actor
 	var/required = A.arg("required")
 	var/produced = A.arg("produced")
 	if (use(required))
-		var/atom/O = new recipe.result_type(user.loc, bag_material)
+		var/atom/O = new recipe.result(user.loc, bag_material)
 
 		if(istype(O, /obj/item))
 			var/obj/item/Ob = O

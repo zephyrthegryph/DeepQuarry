@@ -929,7 +929,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/internal_wiki/page)
 	var/list/mat_recipes = M.get_recipes()
 	if(length(mat_recipes))
 		var/list/recipie_list = list()
-		for(var/datum/stack_recipe/R in mat_recipes)
+		for(var/datum/xform/R in mat_recipes)
 			recipie_list.Add(R.title)
 		set_data_at("recipies", recipie_list)
 
