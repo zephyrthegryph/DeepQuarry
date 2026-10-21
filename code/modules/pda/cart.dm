@@ -332,6 +332,7 @@ CAPABILITIES(/obj/item/cartridge/syndicate)
 	var/obj/item/storage/internal/hold
 
 CAPABILITIES(/obj/item/cartridge/storage)
+	drag_onto(PROC_REF(cartridge_dropped))
 	after_init(0, then(PROC_REF(size_hold)))
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), then(PROC_REF(interaction_store)))
@@ -353,9 +354,9 @@ CAPABILITIES(/obj/item/cartridge/storage)
 /obj/item/cartridge/storage/proc/interaction_store(datum/act/op/A)
 	return hold.attackby(A.held, A.actor) ? OP_OK : OP_PASS
 
-/obj/item/cartridge/storage/MouseDrop(obj/over_object)
-	if (hold.handle_mousedrop(usr, over_object))
-		..(over_object)
+/obj/item/cartridge/storage/proc/cartridge_dropped(datum/act/input/A)
+	if(hold.handle_mousedrop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
 /// Old attack_self.
 /obj/item/cartridge/storage/proc/interaction_self(datum/act/op/A)

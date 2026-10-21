@@ -306,15 +306,15 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 	visible_message(span_warning("\The [src]'s power field hisses and sputters out."))
 	update_held_icon()
 
-/obj/item/melee/shock_maul/get_description_interaction()
+/obj/item/melee/shock_maul/get_description_interaction(mob/viewer)
 	var/list/results = list()
 
 	if(bcell)
-		results += "[desc_panel_image("offhand")]to remove the weapon cell."
+		results += "[desc_panel_image("offhand", viewer)]to remove the weapon cell."
 	else
-		results += "[desc_panel_image("weapon cell")]to add a new weapon cell."
+		results += "[desc_panel_image("weapon cell", viewer)]to add a new weapon cell."
 
-	results += ..()
+	results += ..(viewer)
 
 	return results
 

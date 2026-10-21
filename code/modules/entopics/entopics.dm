@@ -121,12 +121,12 @@ CAPABILITIES(/obj/item/entopic_debug)
 /obj/item/entopic_debug/proc/make_ent_debug(current)
 	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin")
 
-/proc/entopic_icon_helper(atom/A,holo = TRUE)
+/proc/entopic_icon_helper(atom/A, holo = TRUE, mob/user)
 	ASSERT(A)
 
 	var/icon/CI = getCompoundIcon(A)
 	var/icon/HI = getHologramIcon(CI)
 
-	usr << ftp(holo ? HI : CI,"[A.name].dmi")
+	user << ftp(holo ? HI : CI,"[A.name].dmi")
 
 

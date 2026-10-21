@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze: the write index is keyed by the declaring type, so a write of a same-named var on another type no longer makes a var read-driven tracked or non-constant; untyped receivers stay conservative"

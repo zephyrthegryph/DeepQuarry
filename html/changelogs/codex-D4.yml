@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Release petrified subjects before destruction spills the statue's contents."

@@ -50,7 +50,9 @@
 		return
 	return graph_astar(get_turf(user), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 
-/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
+/proc/pathfinding_run_all(turf/start, turf/goal, mob/user)
+	if(!start)
+		start = get_turf(user)
 	var/pass_silicons_astar = path_astar(goal = goal, start = start, target_distance = 1, max_path_length = 256)
 	var/pass_silicons_jps = path_jps(goal = goal, start = start, target_distance = 1, max_path_length = 256)
 	// old astar has been cut because it's such horrible code it's not worth benchmarking against the other 3.
@@ -70,7 +72,9 @@
 	else
 		log_and_message_admins("turf pair [COORD(start)], [COORD(goal)] succeeded")
 
-/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
+/proc/pathfinding_run_benchmark(times = 1000, turf/source, mob/user)
+	if(!source)
+		source = get_turf(user)
 	var/list/turf/nearby = RANGE_TURFS(100, source)
 	for(var/i in 1 to min(times, 10000))
 		var/turf/picked = pick(nearby)

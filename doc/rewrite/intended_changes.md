@@ -5271,6 +5271,27 @@ the same order (`dq_xform_smelting_pin`). `product_mod` is gone: each rule names
 `rand(5, 100) * product_mod` sheets of an alloy; it now asks for `rand(5, 100) * sheets / ores`, the alloy's real yield. Alloys with `product_mod = 1`
 are unchanged; durasteel asks for 1/6 instead of 0.3, plasteel 1/5, plastitanium 1/4.
 
+### D7: static all-binding vending inventory order
+
+`click_order(BIND_HAND, "ui_open", "check_logs")` replaces vending's legacy
+`priority(below("ui_open"))`. The artificial `dx_menu_order_static` producer
+creates one target-side candidate for every binding with no actor or real input;
+it has no production callers. For `/obj/machinery/vending` and `/obj/machinery/vending/nifsoft_shop` only,
+its recorded segment changes from `drag_buckle,ui_open,check_logs,ui_open` to
+`ui_open,ui_open,check_logs,drag_buckle`: canonical order moves window candidates
+above the log anchor, whereas the legacy rule moved the log below the first
+window anchor. The hand input pair remains window then logs. The two static rows are
+updated narrowly; no dynamic click/menu golden changes. Actual human, robot and
+AI input/menu projection is checked by `dq_silicon/d7_vending_input_order` in the
+same gate; approval of this static capture is conditional on that test passing.
+
+### D7: airlock static all-binding order (master, not D7)
+
+`dx_menu_order_static` was not in any gate set, and master's airlock ops changed after the golden was last recorded (2026-10-13; the
+`signaler` / `signaler_robot` split and the silicon routing). On unmodified airlock source the artificial all-binding producer now lists
+`wires_window` before `wires.cut` for the four airlock types (`/obj/machinery/door/airlock`, `external`, `glass_external`, `lift`); every
+other key keeps its place. Only those four rows swap that adjacent pair. No dynamic click or menu golden changes (`dx_menu_order` passes).
+
 ## Kitchen recipes as transformations: no change (2026-10-18)
 
 The 355 `/datum/recipe` types are `/transformation/kitchen` rules selected and cooked by the same checks in the same order (`dq_xform_select_pin`,

@@ -34,11 +34,33 @@ Energy is conserved everywhere, in SI units.
 
 ### 2.1 The DM API
 
-```dm
-/atom/proc/get_temperature()                  // from the view (or overlay); ambient if the atom has no heat node
-/atom/proc/add_heat(joules)                   // a command; creates the heat node on first divergence
-/atom/proc/thermal_properties()               // from materials and type properties: heat capacity, conductance, emissivity
-// a native heat watch: /datum/native_watch/heat on src, HEAT_WATCH_ABOVE at KELVIN(373)
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim prefixes. The remaining fallback and stale-handle cleanup branches are omitted here.
+
+```dm fragment
+/atom/proc/get_temperature()
+	if(!isnull(heat_body))
+		HEAT_BODY_RESOLVE(src)
+		var/temperature = vg_heat_body_temperature(heat_body)
+		if(!isnull(temperature))
+			return temperature
+```
+
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim prefixes. The remaining fallback and stale-handle cleanup branches are omitted here.
+
+```dm fragment
+/atom/proc/add_heat(joules)
+	if(!joules || !isnum(joules))
+		return 0
+	if(!isnull(heat_body))
+		if(vg_heat_body_add(heat_body, joules))
+			return joules
+```
+
+Current implementation excerpt ([code/modules/heat/heat.dm](../../code/modules/heat/heat.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/thermal_properties()
+	return GLOB.default_thermal_properties
 ```
 
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.
