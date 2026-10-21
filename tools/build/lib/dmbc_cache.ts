@@ -182,16 +182,64 @@ function writePointer(file: string, text: string): void {
   renameWithRetry(tmpPointer, file);
 }
 
-/** Whether `commit` may become the `current` compiler: it is, or descends from, the commit that set `current`, or none did. */
-export function mayAdvanceCurrent(root: string, commit: string, binDir: string = sharedDmbcBinDir()): boolean {
+/** The ref `current` must stay on: master as the shared remote has it. `DQ_DMBC_MASTER_REF` overrides it (tests). */
+export function dmbcMasterRef(): string {
+  return process.env.DQ_DMBC_MASTER_REF || 'origin/master';
+}
+
+function revParse(root: string, ref: string): string | null {
+  const out = git(root, ['rev-parse', '--verify', '-q', `${ref}^{commit}`]);
+  return out && /^[0-9a-f]{40}$/.test(out) ? out : null;
+}
+
+function isAncestor(root: string, ancestor: string, descendant: string): boolean {
+  return spawnSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], { cwd: root, encoding: 'utf8' }).status === 0;
+}
+
+/**
+ * The commit a publish from `commit` records as `current.commit`, or null when it must not publish. `current` only ever names a
+ * commit that is in master: a commit in master is recorded as itself; a checkout ahead of master (a lane that merged it) whose
+ * compiler sources equal master's tip builds master's compiler, so master's tip is recorded; any other commit (compiler changes
+ * not merged yet) is refused, because a pointer off master never advances. A private build for a dirty checkout never gets here.
+ * With no master ref to compare against (a repository without the remote), the commit is taken as it is.
+ */
+export function publishableCommit(root: string, commit: string, masterRef: string = dmbcMasterRef()): string | null {
+  const master = revParse(root, masterRef);
+  if (!master) return commit;
+  if (isAncestor(root, commit, master)) return commit;
+  const diff = spawnSync('git', ['diff', '--quiet', commit, master, '--', ...DMBC_CACHE_INPUTS], { cwd: root, encoding: 'utf8' });
+  return diff.status === 0 ? master : null;
+}
+
+/**
+ * Whether `commit` may become the `current` compiler. It must be publishable (see `publishableCommit`), and then:
+ * - nothing recorded, or the recorded commit is `commit` itself: yes;
+ * - the recorded commit is not an ancestor of master (dead or unmerged): yes when the checkout is at or ahead of master's
+ *   compiler sources, so a stuck pointer is replaced by the first such checkout;
+ * - otherwise (the recorded commit is on master): only a descendant of it, so a checkout behind `current` never moves it back.
+ */
+export function mayAdvanceCurrent(root: string, commit: string, binDir: string = sharedDmbcBinDir(), masterRef: string = dmbcMasterRef()): boolean {
+  const pub = publishableCommit(root, commit, masterRef);
+  if (!pub) {
+    console.log(`dmbc: ${commit.slice(0, 10)} is not in ${masterRef} and its compiler sources differ from it; it will not become the current compiler`);
+    return false;
+  }
   let recorded = '';
   try {
     recorded = fs.readFileSync(`${binDir}/current.commit`, 'utf8').trim();
   } catch {
     return true;
   }
-  if (!/^[0-9a-f]{40}$/.test(recorded) || recorded === commit) return true;
-  return spawnSync('git', ['merge-base', '--is-ancestor', recorded, commit], { cwd: root, encoding: 'utf8' }).status === 0;
+  if (!/^[0-9a-f]{40}$/.test(recorded) || recorded === pub) return true;
+  const master = revParse(root, masterRef);
+  if (master && !isAncestor(root, recorded, master)) {
+    // current names a commit that is on no path of master: it can never advance by ancestry. Replace it from a checkout whose
+    // compiler sources are master's (or master's own commit at the tip).
+    const same = pub === master || spawnSync('git', ['diff', '--quiet', pub, master, '--', ...DMBC_CACHE_INPUTS], { cwd: root }).status === 0;
+    console.log(`dmbc: current.commit ${recorded.slice(0, 10)} is not in ${masterRef}; ${same ? 'replacing it' : 'keeping it (this tree is behind master compiler sources)'}`);
+    return same;
+  }
+  return isAncestor(root, recorded, pub);
 }
 
 /** True when `current` was built from `commit` itself: a checkout at that commit has nothing to build or restore. */
@@ -234,7 +282,7 @@ export function publishDmbcVersion(srcDir: string, binDir: string = sharedDmbcBi
   const id = installDmbcVersionDir(srcDir, binDir);
   if (!for_ || mayAdvanceCurrent(for_.root, for_.commit, binDir)) {
     if (readCurrentDmbcVersion(binDir) !== id) writePointer(`${binDir}/current`, id);
-    if (for_) writePointer(`${binDir}/current.commit`, for_.commit);
+    if (for_) writePointer(`${binDir}/current.commit`, publishableCommit(for_.root, for_.commit) ?? for_.commit);
   }
   return id;
 }
@@ -259,13 +307,14 @@ export function readNextDmbcVersion(binDir: string = sharedDmbcBinDir()): string
 export function stageDmbcVersion(srcDir: string, binDir: string, for_: PublishFor): string | null {
   const id = dmbcPairId(srcDir);
   if (!mayAdvanceCurrent(for_.root, for_.commit, binDir)) return null;
+  const recordedCommit = publishableCommit(for_.root, for_.commit) ?? for_.commit;
   if (readCurrentDmbcVersion(binDir) === id) {
-    writePointer(`${binDir}/current.commit`, for_.commit);
+    writePointer(`${binDir}/current.commit`, recordedCommit);
     return null;
   }
   installDmbcVersionDir(srcDir, binDir);
   writePointer(`${binDir}/next`, id);
-  writePointer(`${binDir}/next.commit`, for_.commit);
+  writePointer(`${binDir}/next.commit`, recordedCommit);
   return id;
 }
 
