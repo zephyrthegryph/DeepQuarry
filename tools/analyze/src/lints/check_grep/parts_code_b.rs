@@ -299,7 +299,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "one_mitigation_pipeline",
             "one mitigation pipeline",
-            "a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.",
+            "a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are STAT_INCOMING_* stats.",
             Files::Code,
             line(r"\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b"),
         )
