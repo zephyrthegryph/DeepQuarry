@@ -67,8 +67,7 @@
 	glass = TRUE
 	opacity = FALSE
 
-/obj/machinery/door/airlock/angled_tgmc/wide/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/airlock/angled_tgmc/wide/proc/configure_wide_bounds()
 	SetBounds()
 	apply_opacity_to_my_turfs(opacity)
 
@@ -145,3 +144,6 @@
 	icon_state = "shutter0"
 	density = FALSE
 	opacity = 0
+
+CAPABILITIES(/obj/machinery/door/airlock/angled_tgmc/wide)
+	setup(PROC_REF(configure_wide_bounds))

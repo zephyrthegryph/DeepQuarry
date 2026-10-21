@@ -35,8 +35,7 @@
 		/obj/item/stack/material
 	)
 
-/obj/machinery/gear_painter/Initialize(mapload)
-	. = ..()
+/obj/machinery/gear_painter/proc/seed_colour_matrix()
 	color_matrix_last = list(
 		1, 0, 0,
 		0, 1, 0,
@@ -56,6 +55,7 @@
 MSG_DEF_SELF(gear_painter/loaded, "the machine is already loaded")
 
 CAPABILITIES(/obj/machinery/gear_painter)
+	setup(PROC_REF(seed_colour_matrix))
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))

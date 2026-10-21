@@ -10,10 +10,10 @@
 	autoclose = 0
 
 CAPABILITIES(/obj/machinery/door/airlock/alarmlock)
+	setup(PROC_REF(connect_alarm_radio))
 	ref_one(nameof(air_connection), /datum/radio_frequency)
 
-/obj/machinery/door/airlock/alarmlock/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/airlock/alarmlock/proc/connect_alarm_radio()
 	SSradio.remove_object(src, air_frequency)
 	rel_set(src, nameof(air_connection), SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()

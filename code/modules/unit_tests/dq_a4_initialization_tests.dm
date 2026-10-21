@@ -1,0 +1,127 @@
+// Machinery lifecycle setup is complete when a real constructor returns.
+/datum/unit_test/dq_a4_initialization
+	abstract_type = /datum/unit_test/dq_a4_initialization
+
+/datum/unit_test/dq_a4_initialization/New()
+	. = ..()
+	dview(0, test_floor())
+
+/datum/unit_test/dq_a4_initialization/proc/scope_setup()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
+
+/datum/unit_test/dq_a4_initialization/colour_matrix/Run()
+	scope_setup()
+	var/obj/machinery/gear_painter/P = allocate(/obj/machinery/gear_painter, test_floor())
+	TEST_ASSERT_EQUAL(length(P.color_matrix_last), 12, "The real painter starts with its complete identity colour matrix")
+	for(var/i = 1 to 12)
+		TEST_ASSERT_EQUAL(P.color_matrix_last[i], (i == 1 || i == 5 || i == 9) ? 1 : 0, "Identity matrix entry [i] is initialized")
+	var/obj/machinery/gear_painter/other = allocate(/obj/machinery/gear_painter, test_floor())
+	TEST_ASSERT(P.color_matrix_last != other.color_matrix_last, "Mutable matrices belong to each painter separately")
+
+/obj/machinery/requests_console/dq_a4_department
+	department = "A4 setup fixture"
+	departmentType = RC_ASSIST|RC_SUPPLY|RC_INFO
+
+/datum/unit_test/dq_a4_initialization/department_registration/Run()
+	scope_setup()
+	set_global(nameof(GLOB.req_console_assistance), GLOB.req_console_assistance.Copy())
+	set_global(nameof(GLOB.req_console_supplies), GLOB.req_console_supplies.Copy())
+	set_global(nameof(GLOB.req_console_information), GLOB.req_console_information.Copy())
+	var/obj/machinery/requests_console/C = allocate(/obj/machinery/requests_console/dq_a4_department, test_floor())
+	TEST_ASSERT_EQUAL(C.name, "A4 setup fixture requests console", "The console uses its configured department")
+	TEST_ASSERT_EQUAL(C.announcement.title, "A4 setup fixture announcement", "The declared announcement is configured after it exists")
+	TEST_ASSERT_EQUAL(C.announcement.newscast, 1, "Department announcements permit newscasts")
+	TEST_ASSERT(C.department in GLOB.req_console_assistance, "The assistance directory includes the department")
+	TEST_ASSERT(C.department in GLOB.req_console_supplies, "The supply directory includes the department")
+	TEST_ASSERT(C.department in GLOB.req_console_information, "The information directory includes the department")
+	qdel(C)
+	TEST_ASSERT(!("A4 setup fixture" in GLOB.req_console_assistance), "Destruction removes the department registration")
+
+/datum/unit_test/dq_a4_initialization/nuclear_wire_rolls/Run()
+	scope_setup()
+	var/obj/machinery/nuclearbomb/B = allocate(/obj/machinery/nuclearbomb, test_floor())
+	var/code = text2num(B.r_code)
+	TEST_ASSERT(code >= 10000 && code <= 99999, "The real bomb has a five-digit rolled authorization code")
+	TEST_ASSERT_EQUAL(length(B.wires_list), 7, "Every wire starts with an intact state")
+	for(var/wire in B.wires_list)
+		TEST_ASSERT_EQUAL(B.wires_list[wire], 0, "Wire [wire] starts intact")
+	TEST_ASSERT(B.light_wire in B.wires_list, "The light wire is a real wire")
+	TEST_ASSERT(B.timing_wire in B.wires_list, "The timer wire is a real wire")
+	TEST_ASSERT(B.safety_wire in B.wires_list, "The safety wire is a real wire")
+	TEST_ASSERT(B.light_wire != B.timing_wire && B.light_wire != B.safety_wire && B.timing_wire != B.safety_wire, "The three independent functions use distinct wires")
+
+/datum/unit_test/dq_a4_initialization/rcd_turret_integrity/Run()
+	scope_setup()
+	var/obj/machinery/porta_turret/rcd/T = allocate(/obj/machinery/porta_turret/rcd, test_floor())
+	// The real reduced-integrity setup emits sparks; the fixture owns those effects.
+	for(var/obj/effect/effect/sparks/S in test_floor())
+		own(S)
+	TEST_ASSERT_EQUAL(T.max_integrity, 20, "The RCD turret retains its compiled maximum integrity")
+	TEST_ASSERT_EQUAL(T.get_integrity(), 5, "The RCD turret starts at the reduced integrity")
+
+/datum/unit_test/dq_a4_initialization/floodlight_started_on/Run()
+	scope_setup()
+	var/obj/machinery/floodlight/F = allocate(/obj/machinery/floodlight/starts_on, test_floor())
+	TEST_ASSERT_NOTNULL(F.cell, "The declared floodlight cell exists before its startup hook")
+	TEST_ASSERT(F.on, "The starts-on floodlight is switched on before construction returns")
+
+/datum/unit_test/dq_a4_initialization/arcade_characters/Run()
+	scope_setup()
+	var/obj/machinery/computer/arcade/battle/B = allocate(/obj/machinery/computer/arcade/battle, test_floor())
+	TEST_ASSERT(B.name != initial(B.name), "The real arcade constructor supplies its generated cabinet name")
+	TEST_ASSERT(B.enemy_name != initial(B.enemy_name), "The constructor supplies its generated enemy")
+	TEST_ASSERT(findtext(B.name, B.enemy_name), "The cabinet and enemy keep their correlated character parts")
+	TEST_ASSERT(!findtext(B.enemy_name, "the "), "The enemy retains the original article removal")
+	var/list/view = B.ui_data(null)
+	TEST_ASSERT_EQUAL(view["name"], B.name, "The actual arcade window reads the initialized cabinet name")
+	TEST_ASSERT_EQUAL(view["enemyName"], B.enemy_name, "The actual window reads the matching enemy name")
+	TEST_ASSERT_EQUAL(B.player_hp, 30, "Randomizing characters preserves initial player health")
+	TEST_ASSERT_EQUAL(B.enemy_hp, 45, "Randomizing characters preserves initial enemy health")
+
+/obj/machinery/holoposter/dq_a4_forced
+	icon_forced = TRUE
+	icon_state = "hephaestus"
+
+/datum/unit_test/dq_a4_initialization/holoposter/Run()
+	scope_setup()
+	test_driver_begin()
+	exercise_posters()
+	test_driver_end()
+
+/datum/unit_test/dq_a4_initialization/holoposter/proc/exercise_posters()
+	var/turf/T = test_floor()
+	set_var(using_map, "station_levels", list(T.z))
+	set_global(nameof(GLOB.security_level), 0)
+	var/obj/machinery/holoposter/forced = allocate(/obj/machinery/holoposter/dq_a4_forced, T)
+	TEST_ASSERT_EQUAL(forced.poster, "hephaestus", "The actual constructor preserves the mapped forced advertisement")
+	TEST_ASSERT(!forced.alerting, "Green security leaves the actual poster out of alert mode")
+	TEST_ASSERT(after_pending(forced, "holoposter_rotation"), "The original constructor still schedules its first rotation even for a forced advert")
+	var/obj/machinery/holoposter/random = allocate(/obj/machinery/holoposter, T)
+	TEST_ASSERT(random.poster in random.postertypes, "The real unforced constructor selects an authored advertisement")
+	var/left = after_left(random, "holoposter_rotation")
+	TEST_ASSERT(left >= 30 MINUTES && left <= 35 MINUTES, "The real constructor preserves its original thirty-to-thirty-five minute deadline")
+	set_global(nameof(GLOB.security_level), 1)
+	var/obj/machinery/holoposter/alert = allocate(/obj/machinery/holoposter, T)
+	TEST_ASSERT(alert.alerting, "A real station poster constructed during a security alert starts in alert mode")
+	TEST_ASSERT_NULL(alert.poster, "Alert initialization does not draw a random advertisement behind the warning")
+	forced.security_changed()
+	TEST_ASSERT(forced.alerting, "The real security handler overrides a forced advert's presentation during an alert")
+	TEST_ASSERT_EQUAL(forced.poster, "hephaestus", "An alert preserves the forced advertisement for recovery")
+	set_global(nameof(GLOB.security_level), 0)
+	forced.security_changed()
+	alert.security_changed()
+	TEST_ASSERT(!forced.alerting && !alert.alerting, "The real security handler clears both alerts at green")
+	TEST_ASSERT_EQUAL(forced.poster, "hephaestus", "The mapped advert survives an alert and recovery")
+	TEST_ASSERT(alert.poster in alert.postertypes, "The unforced poster chooses a real advert on security recovery")
+	// Assert the production interval above, then deliver its real handler through a bounded native timer.
+	// This avoids simulating thirty minutes of unrelated station work just to reach the callback.
+	random.set_poster(null)
+	after(random, 0, TYPE_PROC_REF(/obj/machinery/holoposter, rotate_sprite), key = "holoposter_rotation", clock = CLOCK_WORLD)
+	after(forced, 0, TYPE_PROC_REF(/obj/machinery/holoposter, rotate_sprite), key = "holoposter_rotation", clock = CLOCK_WORLD)
+	test_time(0.1 SECONDS)
+	TEST_ASSERT(random.poster in random.postertypes, "The real rotation callback supplies an advert when its native timer fires")
+	left = after_left(random, "holoposter_rotation")
+	TEST_ASSERT(left >= 30 MINUTES && left <= 35 MINUTES, "An unforced rotation re-arms the same original interval")
+	TEST_ASSERT_EQUAL(forced.poster, "hephaestus", "The real forced rotation leaves the mapped advert untouched")
+	TEST_ASSERT(!after_pending(forced, "holoposter_rotation"), "The forced callback consumes its original timer without re-arming")

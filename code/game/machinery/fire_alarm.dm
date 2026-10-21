@@ -36,6 +36,7 @@ FIRE ALARM
 /obj/machinery/firealarm/var/timing = 0
 
 CAPABILITIES(/obj/machinery/firealarm)
+	setup(PROC_REF(sync_initial_security_level))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
@@ -68,8 +69,7 @@ CAPABILITIES(/obj/machinery/firealarm)
 	. = ..()
 	. += "Current security level: [seclevel]"
 
-/obj/machinery/firealarm/Initialize(mapload)
-	. = ..()
+/obj/machinery/firealarm/proc/sync_initial_security_level()
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 

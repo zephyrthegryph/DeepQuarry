@@ -22,6 +22,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	setup(PROC_REF(start_node_audio))
 	default_parts()
 	configure(uses_power(idle = 2500))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
@@ -40,7 +41,6 @@ CAPABILITIES(/obj/machinery/exonet_node)
 // Description: Adds components to the machine for deconstruction.
 /obj/machinery/exonet_node/Initialize(mapload)
 	. = ..()
-	soundloop.start()
 	if(mapload)
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
@@ -171,3 +171,6 @@ CAPABILITIES(/obj/machinery/exonet_node)
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/exonet_node/step_start_condition()
 	return TRUE // reconciles on/off with power
+
+/obj/machinery/exonet_node/proc/start_node_audio()
+	soundloop.start()

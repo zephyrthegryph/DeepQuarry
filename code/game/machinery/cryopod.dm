@@ -261,11 +261,6 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	name = "cryopod"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
-/obj/machinery/cryopod/Initialize(mapload)
-	. = ..()
-
-	find_control_computer()
-
 /obj/machinery/cryopod/proc/find_control_computer(urgent=0)
 	rel_clear(src, nameof(control_computer))
 
@@ -300,6 +295,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
+	setup(PROC_REF(find_control_computer))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
 	op("cryopod_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), needs(req(PROC_REF(loading_passenger_allowed), silent = TRUE)), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))

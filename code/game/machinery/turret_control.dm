@@ -55,6 +55,7 @@ MSG_DEF(turretid/shorted, "You short out the turret controls' access analysis mo
 	icon_state = "control_kill"
 
 CAPABILITIES(/obj/machinery/turretid)
+	setup(PROC_REF(resolve_control_area))
 	machine_basics(repair = NONE)
 	links(/obj/machinery/turretid::control_area, /area::turret_controls, b_many = TRUE)
 	lock(starts_locked = TRUE, alt = FALSE)
@@ -84,9 +85,7 @@ CAPABILITIES(/obj/machinery/turretid)
 	extend("remote_power", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
 	extend("remote_lethal", needs(req_silicon_or_admin(), req_unlocked_for_actor(), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(turretid/firewall))), then(PROC_REF(push_settings)))
 
-// ALLOW(init/INSTANCE_STATE): the area a mapper named (by path or by name) is found once, when the panel is placed, and linked
-/obj/machinery/turretid/Initialize(mapload)
-	. = ..()
+/obj/machinery/turretid/proc/resolve_control_area()
 	var/area/target = get_area(src)
 	if(ispath(control_area))
 		target = locate(control_area)
