@@ -160,13 +160,10 @@
 	var/obj/structure/grille/G = locate() in T
 	TEST_ASSERT(G, "the grille is built where the builder stands")
 	// A recipe that is not the stack's own is refused.
-	var/datum/xform/foreign = new
-	foreign.title = "foreign"
-	foreign.result = /obj/structure/grille
+	var/datum/xform/foreign = get_material_by_name(MAT_GOLD).get_recipes()[1]
 	hci_ui(H, R, "make", list("multiplier" = 1, "ref" = "\ref[foreign]"))
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(R.amount, 3, "a foreign recipe builds nothing")
-	spent(foreign)
 	qdel(G)
 
 /datum/unit_test/dq_hc_items/stack_cyborg_charge_amount_is_the_synth
