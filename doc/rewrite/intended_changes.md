@@ -5270,3 +5270,9 @@ The eight `/datum/alloy` types are smelting transformations (`code/modules/minin
 the same order (`dq_xform_smelting_pin`). `product_mod` is gone: each rule names the sheets it makes. The supply-demand event asked for
 `rand(5, 100) * product_mod` sheets of an alloy; it now asks for `rand(5, 100) * sheets / ores`, the alloy's real yield. Alloys with `product_mod = 1`
 are unchanged; durasteel asks for 1/6 instead of 0.3, plasteel 1/5, plastitanium 1/4.
+
+## Gas reactions as transformations: no change (2026-10-18)
+
+The 23 `/datum/gas_reaction` types are `/transformation/gas` rules and run in the same order against the same requirements (`dq_gas_reaction_declaration_pin`,
+`dq_gas_reaction_energy_pins`). `priority_group` is gone: it was only ever used to number an auxmos registry that is empty, and the DM loop ran declaration order,
+which the rules keep. A reaction that should be ordered by band needs a `priority =` and an entry here.

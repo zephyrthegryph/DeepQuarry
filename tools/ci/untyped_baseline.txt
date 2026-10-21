@@ -1,6 +1,5 @@
 # Untyped vars assigned an atom or datum, or an unknown call result (doc/rewrite/proposals/relations.md D8). rule<TAB>file<TAB>text.
 # Shrink-only: after a sweep run `analyze baseline --update --lint untyped`; it drops fixed sites and never adds one.
-typed	code/ATMOSPHERICS/gasmixtures/reactions.dm	@/datum/gas_reaction::major_gas
 typed	code/datums/reactions/legacy_notices.dm	@/datum/notice/reagent_expose_obj::reagent
 typed	code/datums/sys/damage_reactions.dm	@/datum/controller/global_vars::projectile_hit_packet
 typed	code/engine/actions/act.dm	@/datum/controller/global_vars::act_next_actor

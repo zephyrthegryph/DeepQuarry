@@ -6,7 +6,7 @@
 // we add /datum/gas subtypes with the matching IDs.
 //
 // These are bare-bones — they exist as gas types but don't participate in
-// LINDA reactions (which would need /datum/gas_reaction subtypes). For full
+// LINDA reactions (which would need /transformation/gas rules). For full
 // gameplay parity, methane combustion / volatile_fuel ignition reactions can
 // be added when needed.
 

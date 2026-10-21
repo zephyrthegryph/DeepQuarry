@@ -725,6 +725,13 @@ banned_outside = [
 banned = [
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
+  "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/ATMOSPHERICS/gasmixtures/reactions.dm)",
+  "init_reqs = takes = list(gas(type, moles), ...) and holds = temperature_in(lo, hi) in the transformation() entry",
+  "build_min_requirements = the compiled rule reads gas_takes, min_temp and max_temp (code/library/transformations/transformation_entry.dm)",
+  "init_gas_reactions = SSair.gas_rules is xform_rules_in(MEDIUM_GAS, REGIME_GAS)",
+  "init_factors = factors() on the /transformation/gas type",
+  "priority_group = every gas reaction runs in declaration order; a priority = PRIORITY_X in the transformation() entry would order them",
+
   "datum/alloy = an alloy is a transformation: a type under /transformation/smelting with a transformation(takes = ore_term(...), makes = stack_term(...)) entry (code/modules/mining/alloys.dm)",
   "alloy_data = xform_rules_in(MEDIUM_ORE_STOCK, REGIME_SMELTING): the compiled smelting transformations",
   "datum/decl/chemical_reaction = a chemical reaction is a transformation: a type under /transformation/chem with a transformation(...) entry in its CAPABILITIES block (code/library/transformations/transformation_entry.dm, doc/rewrite/proposals/transformations.md)",

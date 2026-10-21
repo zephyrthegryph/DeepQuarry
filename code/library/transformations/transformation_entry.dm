@@ -8,7 +8,7 @@
 //       transformation(takes = list(reagent(REAGENT_ID_ANTITOXIN, 1), reagent(REAGENT_ID_CARBON, 2), reagent(REAGENT_ID_PHORON, 0.1)),
 //           catalysts = list(reagent(REAGENT_ID_PHORON, 1)), makes = list(reagent(REAGENT_ID_CARTHATOLINE, 2)))
 //
-//   name, id      display name and id, for the wiki, the handbooks and the logs (the type path is the rule's key; these are for people).
+//   name, id      display name and id, for the wiki, the handbooks and the logs (the type path is the rule's key; these are for people).   desc: one line about the rule.
 //   medium        how the subject stores the terms (MEDIUM_X); inferred from the currency of the first take.
 //   regime        which holders run the rule (REGIME_X); a holder declares the regime it runs. Default REGIME_INSTANT.
 //   takes         the terms consumed. The first one is the index key (the anchor): the rule is a candidate in a subject holding it.
@@ -30,6 +30,7 @@
 //   then          TYPE_PROC_REF(/type, x): the bespoke tail, x(holder, made); counted by the lints. A reagent rule's tail is the legacy on_reaction().
 //   important     admin-visible when mixed (the legacy log_is_important).
 //   wiki          WIKI_X flags: what the in-game wiki and the handbooks do with the rule (hide it, file it under food or drinks).
+//   hotspot       TRUE for a gas rule that makes fires bigger: a hotspot's volume grows by what these rules report in the mixture's reaction_results.
 //
 // A proc named in an entry is TYPE_PROC_REF(/the/rule/type, x), not PROC_REF(x): a static block is read in a global proc, where a bare PROC_REF has no type to
 // resolve against. What the compile keeps is the proc's name, called on the rule's one owner instance, so a subtype that overrides x answers for itself.
@@ -47,9 +48,9 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
+	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
 		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki))
@@ -109,6 +110,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/rule_type
 	var/name
 	var/id
+	var/desc
 	var/medium
 	var/regime = REGIME_INSTANT
 	/// Rows of list(currency, key, amount, into).
@@ -120,6 +122,13 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/list/reagent_takes
 	var/list/reagent_catalysts
 	var/list/reagent_blocked
+	/// The gas terms of a gas rule as gas type => minimum moles (the shape the dispatcher reads the mixture's readings in), or null.
+	var/list/gas_takes
+	/// A gas rule's temperature window (null: open), read from its temperature_in() condition.
+	var/min_temp
+	var/max_temp
+	/// A gas rule that makes fires bigger (hotspot = TRUE).
+	var/expands_hotspot = FALSE
 	/// Gas taken from the air around the subject once per step, gas => moles, or null.
 	var/list/takes_ambient
 	var/holds
@@ -292,6 +301,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.regime = arguments["regime"] || REGIME_INSTANT
 	X.name = arguments["name"]
 	X.id = arguments["id"]
+	X.desc = arguments["desc"]
+	X.expands_hotspot = !!arguments["hotspot"]
 	X.holds = arguments["holds"]
 	if(!isnull(arguments["rate"]))
 		X.rate = arguments["rate"]
@@ -329,9 +340,14 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 				break
 		if(!X.result && !isnull(arguments["made"]))
 			X.result_amount = arguments["made"]
+	if(X.medium == MEDIUM_GAS)
+		X.gas_takes = xform_assoc(X.takes, XCUR_GAS)
 	for(var/list/row as anything in xform_rows(arguments["takes_ambient"]))
 		LAZYSET(X.takes_ambient, row[2], row[3])
 	X.bands = xform_cond_bands(X.holds)
+	if(X.medium == MEDIUM_GAS && length(X.bands))
+		X.min_temp = X.bands[1][1]
+		X.max_temp = X.bands[1][2]
 	X.subject_type = text2path("[xform_cond_subject_type(X.holds)]") // a type path, or null
 	X.plain = !X.then_proc && !X.data_proc && !xform_cond_calls_proc(X.holds)
 	return X

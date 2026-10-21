@@ -7,9 +7,9 @@
 /// Returns reactions which will contribute to a hotspot's size.
 /proc/init_hotspot_reactions()
 	var/list/fire_reactions = list()
-	for (var/datum/gas_reaction/reaction as anything in subtypesof(/datum/gas_reaction))
-		if(initial(reaction.expands_hotspot))
-			fire_reactions += reaction
+	for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_GAS, REGIME_GAS))
+		if(rule.expands_hotspot)
+			fire_reactions += rule.rule_type
 
 	return fire_reactions
 

@@ -67,7 +67,10 @@ SYSTEM_DEF(air)
 
 	var/list/pipe_init_dirs_cache = list()
 	//atmos singletons
+	/// The reaction registry the Rust arena reads at hook_init (it looks this var up by name). Left empty: the reactions run in DM from gas_rules.
 	var/list/gas_reactions = list()
+	/// The compiled gas reactions (xform_rules_in(MEDIUM_GAS, REGIME_GAS)), in the order they run; filled at init.
+	var/list/gas_rules = list()
 	var/list/atmos_gen
 	var/list/planetary = list() //Lets cache static planetary mixes
 	/// List of gas string -> canonical gas mixture
@@ -149,7 +152,7 @@ SYSTEM_DEF(air)
 	build_gas_data_overlays()
 	init_phase_mark("gas_overlays")
 
-	gas_reactions = init_gas_reactions()
+	gas_rules = xform_rules_in(MEDIUM_GAS, REGIME_GAS)
 	hotspot_reactions = init_hotspot_reactions()
 	init_phase_mark("reactions")
 
