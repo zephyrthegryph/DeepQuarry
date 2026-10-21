@@ -20,7 +20,7 @@ git clone -q "$tmp/origin.git" "$tmp/repo" 2>/dev/null
 cd "$tmp/repo"
 git config user.email t@t; git config user.name t
 mkdir -p tools/ci lanes
-cp "$here/tools/dq_land.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" tools/
+cp "$here/tools/dq_land.sh" "$here/tools/dq_run_lock.sh" "$here/tools/dq_git_safe.sh" "$here/tools/dq_proof_cache.sh" tools/
 echo "smoke_one" >tools/ci/smoke_tests.txt
 echo base >lanes/base.txt
 # stubs ---------------------------------------------------------------------------------------------------------------------------------
@@ -102,5 +102,14 @@ check "an already proved merge lands with no proof run" '[ "$rc" = 0 ] && [ "$(e
 lane
 rc="$(run --dry-run)"
 check "dry run pushes nothing and frees the lock" '[ "$rc" = 0 ] && ! git merge-base --is-ancestor lane-x origin/master && [ ! -f "$STATE/lock" ]'
+
+lane
+rc="$(DQ_MERGE_SESSION= run)"
+check "DQ_MERGE_SESSION unset: defaults to the branch and lands" '[ "$rc" = 0 ] && git merge-base --is-ancestor lane-x origin/master'
+
+lane
+git switch -q --detach
+rc="$(DQ_MERGE_SESSION= run)"
+check "a detached HEAD is still refused" '[ "$rc" = 2 ] && grep -q "detached HEAD" "$tmp/out.log"'
 
 [ "$fail" -eq 0 ] && echo "test_land: all passed" || { echo "test_land: FAILED"; exit 1; }
