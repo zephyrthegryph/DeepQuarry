@@ -76,13 +76,13 @@
 /datum/unit_test/dq_slot_admission_authority_grant/Run()
 	var/turf/T = test_floor()
 	var/obj/adm_fixture/from = allocate(/obj/adm_fixture, T)
-	var/obj/adm_fixture/to = allocate(/obj/adm_fixture, T)
+	var/obj/adm_fixture/dest = allocate(/obj/adm_fixture, T)
 	var/obj/item/flashlight/lamp = allocate(/obj/item/flashlight, T)
 	TEST_ASSERT(move_into(from, "adm_types", lamp), "the flashlight is in the first holder")
-	TEST_ASSERT(!from.slot_transfer(lamp, to, "adm_papers", null), "the papers slot refuses a flashlight")
+	TEST_ASSERT(!from.slot_transfer(lamp, dest, "adm_papers", null), "the papers slot refuses a flashlight")
 	var/datum/authority_grant/granted = admin_authority(null, "unit test")
-	TEST_ASSERT(from.slot_transfer(lamp, to, "adm_papers", null, authority = granted), "a granted admin authority forces it")
-	TEST_ASSERT(lamp.loc == to, "and it landed")
+	TEST_ASSERT(from.slot_transfer(lamp, dest, "adm_papers", null, authority = granted), "a granted admin authority forces it")
+	TEST_ASSERT(lamp.loc == dest, "and it landed")
 
 /datum/unit_test/dq_slot_admission_equip_action
 

@@ -43,6 +43,7 @@ pub fn check(frontend: &ColdFrontend) -> Vec<Diagnostic> {
         }
     }
     errors.extend(text_errors(frontend));
+    errors.extend(raw_text_errors(frontend));
     dm_profile::request_mark("source_checks.text");
     errors.extend(unclosed_braces(frontend));
     dm_profile::request_mark("source_checks.braces");
@@ -300,6 +301,39 @@ fn keyword_argument_errors(lines: &[Line<'_>], errors: &mut Vec<(usize, String, 
     }
 }
 
+/// `var/to`, `var/to = 1` and `var/obj/to = x`: the operator words cannot name a local. DreamMaker reports the bare form on the
+/// word (`missing left-hand argument to to.`) and the typed form on the assignment (`... to =.`); pinned 516.1687.
+fn keyword_local_errors(lines: &[Line<'_>], errors: &mut Vec<(usize, String, Option<SourceLocation>)>) {
+    for line in lines.iter().skip(1) {
+        let tokens = &line.tokens;
+        if tokens.first().map(|token| token.1) != Some("var") || tokens.get(1).map(|token| token.1) != Some("/") {
+            continue;
+        }
+        let mut index = 2;
+        let mut parts = Vec::new();
+        while let Some((TokenKind::Ident, text, _)) = tokens.get(index) {
+            parts.push((*text, tokens[index].2));
+            if tokens.get(index + 1).is_some_and(|token| token.1 == "/") {
+                index += 2;
+            } else {
+                break;
+            }
+        }
+        let Some(&(name, offset)) = parts.last() else {
+            continue;
+        };
+        if !matches!(name, "to" | "in") {
+            continue;
+        }
+        let assigned = tokens.get(index + 1).is_some_and(|token| token.1 == "=");
+        if parts.len() == 1 {
+            errors.push((offset, format!("missing left-hand argument to {name}."), None));
+        } else if assigned {
+            errors.push((offset, "missing left-hand argument to =.".to_owned(), None));
+        }
+    }
+}
+
 fn body_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
@@ -316,6 +350,7 @@ fn body_errors(
     let parameters = parameters(header);
     let mut errors = Vec::new();
     keyword_argument_errors(&lines, &mut errors);
+    keyword_local_errors(&lines, &mut errors);
     let mut braces = 0isize;
     let mut reported_types = HashSet::new();
     for line in lines.iter().skip(1) {
@@ -487,6 +522,156 @@ struct PieceScreen {
     tail: Vec<(TokenKind, String)>,
 }
 
+/// A plain `"text"` literal that runs over a line break. DreamMaker ends the literal at the newline (`unterminated text
+/// (expecting ")`); only `{"..."}` is multi-line, and a backslash before the break continues the literal. Pinned 516.1687.
+fn unterminated_plain_text(token: &str) -> bool {
+    unterminated_break(token).is_some()
+}
+
+/// The byte offset (in the token) of the first line break DreamMaker ends the literal at. A backslash before a break continues the
+/// literal and also skips the whitespace that follows, blank lines included (pinned 516.1687).
+fn unterminated_break(token: &str) -> Option<usize> {
+    if !token.starts_with('"') {
+        return None;
+    }
+    scan_text(token.as_bytes(), 0).1
+}
+
+/// Scans the literal opening at `bytes[start]`: the index after it, and the first bare break inside the text itself. Breaks inside
+/// an embedded `[expression]` are code, and its own literals are scanned the same way.
+fn scan_text(bytes: &[u8], start: usize) -> (usize, Option<usize>) {
+    let mut at = start + 1;
+    while at < bytes.len() {
+        match bytes[at] {
+            b'\\' => {
+                let mut next = at + 1;
+                if bytes.get(next) == Some(&b'\r') {
+                    next += 1;
+                }
+                if bytes.get(next) == Some(&b'\n') {
+                    at = next + 1;
+                    while bytes.get(at).is_some_and(|byte| matches!(byte, b' ' | b'\t' | b'\r' | b'\n')) {
+                        at += 1;
+                    }
+                } else {
+                    at += 2;
+                }
+            }
+            b'\n' => return (at, Some(at)),
+            b'[' => {
+                let mut depth = 1;
+                at += 1;
+                while at < bytes.len() && depth > 0 {
+                    match bytes[at] {
+                        b'"' => {
+                            let (end, bad) = scan_text(bytes, at);
+                            if bad.is_some() {
+                                return (end, bad);
+                            }
+                            at = end;
+                            continue;
+                        }
+                        b'[' => depth += 1,
+                        b']' => depth -= 1,
+                        _ => {}
+                    }
+                    at += 1;
+                }
+            }
+            b'"' => return (at + 1, None),
+            _ => at += 1,
+        }
+    }
+    (at, None)
+}
+
+/// Offsets of plain `"text"` literals that run over a line break in one source file, cached by content.
+fn unterminated_text_offsets(text: &str) -> Vec<usize> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<u128, Vec<usize>>>> =
+        std::sync::OnceLock::new();
+    let cache = CACHE.get_or_init(Default::default);
+    let digest = xxhash_rust::xxh3::xxh3_128(text.as_bytes());
+    if let Some(found) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&digest) {
+        return found.clone();
+    }
+    let found: Vec<usize> = if text.contains('"') {
+        dm_syntax::lex_spans(text)
+            .tokens
+            .iter()
+            .filter(|token| matches!(token.kind, TokenKind::String | TokenKind::Interpolation))
+            .filter_map(|token| unterminated_break(token.text(text)).map(|at| token.span.start + at))
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let mut cache = cache.lock().unwrap_or_else(|e| e.into_inner());
+    if cache.len() > 1 << 16 {
+        cache.clear();
+    }
+    cache.insert(digest, found.clone());
+    found
+}
+
+/// `"text"` over a line break, read from the source files themselves: in expanded text a backslash continuation has already become
+/// a break, so only the original bytes tell the two apart. DreamMaker: `unterminated text (expecting ")` at the opening line.
+fn raw_text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
+    let found: Vec<(usize, Vec<usize>)> = frontend
+        .files
+        .par_iter()
+        .enumerate()
+        .filter(|(_, file)| file.captured && file.path.extension().is_some_and(|extension| extension == "dm"))
+        .map(|(index, file)| (index, unterminated_text_offsets(file.text.as_str())))
+        .filter(|(_, offsets)| !offsets.is_empty())
+        .collect();
+    let mut errors = Vec::new();
+    for (index, offsets) in found {
+        let file = &frontend.files[index];
+        let Some(occurrence) = frontend
+            .plan
+            .occurrences
+            .iter()
+            .position(|include| !include.suppressed && include.path == file.path)
+        else {
+            continue;
+        };
+        let include = &frontend.plan.occurrences[occurrence];
+        let mut chain = vec![occurrence];
+        let mut parent = include.parent;
+        while let Some(next) = parent {
+            chain.push(next);
+            parent = frontend.plan.occurrences[next].parent;
+        }
+        chain.reverse();
+        let encounter_ordinal = frontend
+            .plan
+            .regions
+            .iter()
+            .find(|region| region.occurrence == occurrence)
+            .map_or(0, |region| region.encounter_ordinal);
+        for offset in offsets {
+            let line = file.line_starts.partition_point(|start| *start <= offset);
+            errors.push(source_error(
+                "unterminated text (expecting \")".to_owned(),
+                Some(SourceLocation {
+                    span: dm_ir::Span {
+                        file: file.id,
+                        start: offset as u32,
+                        end: offset as u32,
+                    },
+                    path: std::sync::Arc::clone(&include.path),
+                    semantic_path: std::sync::Arc::clone(&include.semantic_path),
+                    line,
+                    encounter_ordinal,
+                    include_occurrence: occurrence,
+                    include_chain: chain.clone().into(),
+                    macro_expansions: std::sync::Arc::new(Vec::new()),
+                }),
+            ));
+        }
+    }
+    errors
+}
+
 fn screen_piece(text: &str) -> PieceScreen {
     let lexed = dm_syntax::lex_spans(text);
     let tokens: Vec<Token<'_>> = lexed
@@ -516,10 +701,11 @@ fn screen_piece(text: &str) -> PieceScreen {
                     at = position + 1;
                 }
             }
-            TokenKind::Number if is_zero(token.1) && index >= 2 => {
+            TokenKind::Number if index >= 2 => {
                 let operator = tokens[index - 1].1;
                 let left = tokens[index - 2];
-                candidate |= operator == "%" || (operator == "/" && left.0 == TokenKind::Number);
+                candidate |= zero_divisor(token.1, operator, left.1)
+                    && (operator == "%" || left.0 == TokenKind::Number);
             }
             _ => {}
         }
@@ -593,9 +779,11 @@ fn text_may_error(frontend: &ColdFrontend) -> bool {
         window.extend(screen.head.iter().cloned());
         let base = previous.len();
         for index in base..window.len() {
-            if index >= 2 && window[index].0 == TokenKind::Number && is_zero(&window[index].1) {
+            if index >= 2 && window[index].0 == TokenKind::Number {
                 let operator = window[index - 1].1.as_str();
-                if operator == "%" || (operator == "/" && window[index - 2].0 == TokenKind::Number) {
+                if zero_divisor(&window[index].1, operator, &window[index - 2].1)
+                    && (operator == "%" || window[index - 2].0 == TokenKind::Number)
+                {
                     return true;
                 }
             }
@@ -662,10 +850,12 @@ fn text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
                     at = position + 1;
                 }
             }
-            TokenKind::Number if is_zero(token.1) && index >= 2 => {
+            TokenKind::Number if index >= 2 => {
                 let operator = tokens[index - 1].1;
                 let left = tokens[index - 2];
-                if operator == "%" || (operator == "/" && left.0 == TokenKind::Number) {
+                if zero_divisor(token.1, operator, left.1)
+                    && (operator == "%" || left.0 == TokenKind::Number)
+                {
                     errors.push(source_error(
                         format!("{}: attempted division by zero", token.1),
                         frontend.location(token.2),
@@ -678,13 +868,22 @@ fn text_errors(frontend: &ColdFrontend) -> Vec<Diagnostic> {
     errors
 }
 
-fn is_zero(number: &str) -> bool {
-    number.parse::<f64>().is_ok_and(|value| value == 0.0)
+/// A literal divisor DreamMaker rejects: `/ 0`, and `% n` where n truncates to 0 (`% 0.5` is `attempted division by zero`).
+/// `%%` is the real-valued modulo, which accepts a fraction. Pinned 516.1687 (fixtures/diagnostics/cases/mod_fractional_divisor).
+fn zero_divisor(number: &str, operator: &str, before_operator: &str) -> bool {
+    let Ok(value) = number.parse::<f64>() else {
+        return false;
+    };
+    match operator {
+        "/" => value == 0.0,
+        "%" => before_operator != "%" && value.trunc() == 0.0,
+        _ => false,
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{collapsed, keyword_argument_errors, valid_escape, RESERVED_FORMAL_NAMES};
+    use super::{collapsed, keyword_argument_errors, unterminated_plain_text, valid_escape, RESERVED_FORMAL_NAMES};
     use crate::local_warnings::significant_lines;
     fn keyword_errors(source: &str) -> Vec<String> {
         let lines = significant_lines(source);
@@ -745,6 +944,48 @@ mod tests {
     return f(1, {word} = 2)
 ")).is_empty());
         }
+    }
+
+    #[test]
+    fn operator_words_cannot_name_a_local() {
+        // Pinned 516.1687: fixtures/diagnostics/cases/keyword_local_*.
+        let local_errors = |source: &str| {
+            let lines = significant_lines(source);
+            let mut errors = Vec::new();
+            super::keyword_local_errors(&lines, &mut errors);
+            errors.into_iter().map(|error| error.1).collect::<Vec<_>>()
+        };
+        assert_eq!(local_errors("/proc/f()\n    var/to = 1\n    return 1\n"), vec!["missing left-hand argument to to."]);
+        assert_eq!(local_errors("/proc/f()\n    var/in\n    return 1\n"), vec!["missing left-hand argument to in."]);
+        assert_eq!(local_errors("/proc/f()\n    var/obj/to = null\n    return 1\n"), vec!["missing left-hand argument to =."]);
+        assert!(local_errors("/proc/f()\n    var/obj/tool = null\n    var/to_chat = 1\n    return 1\n").is_empty());
+    }
+
+    #[test]
+    fn literal_divisors_follow_dreammaker() {
+        use super::zero_divisor;
+        // Pinned 516.1687: `% 0.5` truncates the divisor to 0; `/ 0.5` and `%% 0.5` are fine.
+        assert!(zero_divisor("0", "/", "5") && zero_divisor("0", "%", "5") && zero_divisor("0.5", "%", "5"));
+        assert!(!zero_divisor("0.5", "/", "5") && !zero_divisor("1", "%", "5") && !zero_divisor("2.5", "%", "5"));
+        assert!(!zero_divisor("0.5", "%%", "5"));
+    }
+
+    #[test]
+    fn plain_text_cannot_span_a_line_break() {
+        // Pinned 516.1687: a break inside "..." is `unterminated text (expecting ")`; {"..."} and a backslash continuation are fine.
+        assert!(unterminated_plain_text("\"one\ntwo\""));
+        assert!(!unterminated_plain_text("\"one two\""));
+        assert!(!unterminated_plain_text("\"one\\\ntwo\""));
+        assert!(!unterminated_plain_text("{\"one\ntwo\"}"));
+        // The continuation skips the whitespace after it, blank lines included; a later bare break still ends the literal.
+        assert!(!unterminated_plain_text("\"one\\\n\n   two\""));
+        assert!(!unterminated_plain_text("\"one\\\r\n  two\""));
+        assert!(unterminated_plain_text("\"one\\\n   two\n  three\""));
+        assert_eq!(super::unterminated_break("\"ab\ncd\""), Some(3));
+        // Breaks inside an embedded [expression] are code, nested literals included.
+        assert!(!unterminated_plain_text("\"x [pick(\n\"a\",\n\"b\")] y\""));
+        assert!(unterminated_plain_text("\"x [pick(\"a\nb\")] y\""));
+        assert!(unterminated_plain_text("\"x [1]\ny\""));
     }
 
     #[test]

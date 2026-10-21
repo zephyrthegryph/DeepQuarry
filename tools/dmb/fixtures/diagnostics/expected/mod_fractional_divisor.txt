@@ -1,0 +1,2 @@
+mod_fractional_divisor.dm:2:error: 0.5: attempted division by zero
+mod_fractional_divisor.dmb - 1 error, 0 warnings

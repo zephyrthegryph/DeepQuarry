@@ -282,12 +282,21 @@ impl Compiler<'_> {
                         );
                     }
                 }
-                StatementKind::While { condition, body } => {
+                StatementKind::While { condition, body } => 'lowered: {
+                    // A constant condition: `while(0)` vanishes and `while(1)` loops without a test (DreamMaker 516.1687).
+                    let constant = fold_number(condition).map(|value| value != 0.0);
+                    if constant == Some(false) {
+                        // Still checked (diagnostics, source features), but nothing is emitted.
+                        self.lower_dead(|compiler| compiler.typed_statements(body))?;
+                        break 'lowered;
+                    }
                     let start = self.label();
                     let end = self.label();
                     self.result.code.items.push(CodeItem::Label(start));
-                    self.condition(condition, &statement.raw_header)?;
-                    self.emit(opcode::JZ, vec![Word::Branch(end)]);
+                    if constant.is_none() {
+                        self.condition(condition, &statement.raw_header)?;
+                        self.emit(opcode::JZ, vec![Word::Branch(end)]);
+                    }
                     self.loops.push((start, end));
                     self.breaks.push(end);
                     let result = self.typed_statements(body);
@@ -309,8 +318,15 @@ impl Compiler<'_> {
                     self.breaks.pop();
                     result?;
                     self.result.code.items.push(CodeItem::Label(continue_label));
-                    self.condition(condition, &statement.raw_header)?;
-                    self.emit(0xf9, vec![Word::Branch(start)]);
+                    match fold_number(condition) {
+                        // `do ... while(0)` runs once without a test; `while(1)` loops back unconditionally.
+                        Some(value) if value == 0.0 => {}
+                        Some(_) => self.emit(opcode::JMP_LOOP, vec![Word::Branch(start)]),
+                        None => {
+                            self.condition(condition, &statement.raw_header)?;
+                            self.emit(0xf9, vec![Word::Branch(start)]);
+                        }
+                    }
                     self.result.code.items.push(CodeItem::Label(end));
                 }
                 StatementKind::Spawn { delay, body } => {
@@ -966,7 +982,18 @@ impl Compiler<'_> {
                     condition,
                     then_branch,
                     else_branch,
-                } => {
+                } => 'lowered: {
+                    // A constant condition keeps only the branch it selects, with no test (DreamMaker 516.1687).
+                    if let Some(value) = fold_number(condition) {
+                        if value != 0.0 {
+                            self.typed_statements(then_branch)?;
+                            self.lower_dead(|compiler| compiler.typed_statements(else_branch))?;
+                        } else {
+                            self.lower_dead(|compiler| compiler.typed_statements(then_branch))?;
+                            self.typed_statements(else_branch)?;
+                        }
+                        break 'lowered;
+                    }
                     self.condition(condition, &statement.raw_header)?;
                     let else_label = self.label();
                     self.emit(opcode::JZ, vec![Word::Branch(else_label)]);

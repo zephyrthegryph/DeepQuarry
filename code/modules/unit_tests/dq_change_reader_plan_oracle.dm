@@ -37,9 +37,7 @@
 	var/list/missing = dq_reader_plan_missing()
 	log_test("reader plan oracle: [made] types made, [length(GLOB.plan_reader_keys)] plan keys, [length(missing)] missing")
 	log_test("reader plan metric: [GLOB.plan_reader_probes] tracked writes asked the plan, [GLOB.plan_spared_reader_probes] read by no static reader of any type (no table probed)")
-	TEST_ASSERT(!length(missing), "the reader plan misses keys the runtime tables register:
-[jointext(missing, "
-")]")
+	TEST_ASSERT(!length(missing), "the reader plan misses keys the runtime tables register:\n[jointext(missing, "\n")]")
 
 /// Normal tier: the tables the world built, after a curated spread.
 /datum/unit_test/dq_change_reader_plan_oracle/representative

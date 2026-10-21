@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - code_imp: "The tree compiles with DreamMaker again; dmbc rejects proc/ redeclared in a subtype, to/in as argument names and nameof on a call, and the merge gates compile with DreamMaker too"
+  - code_imp: "The tree compiles with DreamMaker again; dmbc rejects proc/ redeclared in a subtype, to/in as argument names and other DreamMaker-rejected forms, folds constants the way DreamMaker does, and the merge gates compile with DreamMaker too"

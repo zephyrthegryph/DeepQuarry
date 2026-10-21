@@ -75,9 +75,7 @@
 			if(!GLOB.stat_input_keys[name])
 				missing["[name] ([cols[1]] [cols[2]] [key])"] = TRUE
 	log_test("stat index oracle: generated input set [length(GLOB.stat_input_keys)] names, [length(missing)] missing")
-	TEST_ASSERT(!length(missing), "the generated stat input set misses what the builder registers:
-[jointext(missing, "
-")]")
+	TEST_ASSERT(!length(missing), "the generated stat input set misses what the builder registers:\n[jointext(missing, "\n")]")
 	var/path = "data/stat-index/shard-[GLOB.dq_test_shard_index].tsv"
 	fdel(path)
 	text2file(jointext(out, "\n"), path)
