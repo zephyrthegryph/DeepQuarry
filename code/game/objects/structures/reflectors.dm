@@ -212,7 +212,7 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 /obj/structure/reflector/proc/reflector_finished(mob/actor, atom/target, obj/item/held)
 	return !!finished
 
-/// Requirement (was REQ_* reflector_finished): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/structure/reflector/proc/reflector_finished_holds(datum/act/op/A)
 	var/answer = reflector_finished(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : MSG(req_failed)

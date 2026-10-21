@@ -47,7 +47,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
 
-/// Requirement (was REQ_* no_id_inserted): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/photocopier/faxmachine/proc/no_id_inserted_holds(datum/act/op/A)
 	var/answer = no_id_inserted(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed

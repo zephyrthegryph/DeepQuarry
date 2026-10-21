@@ -130,7 +130,7 @@
 /// Anything that waits for an answer (foundation X3, section 13): prompts, backend queries, client round trips.
 /// E6 owns its fields (outcome, fields, timeout) and the request layer.
 /datum/request
-	/// REQ_*: how the step ended. Null while it waits.
+	/// The REQ_ status: how the step ended. Null while it waits.
 	var/outcome
 
 /// The result of perform_op() and of the test driver's forms (round 5, NB1): a small non-pooled record, never the pooled

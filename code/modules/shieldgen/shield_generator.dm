@@ -414,7 +414,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	else if (field_integrity() > 25)
 		set_overloaded(0)
 
-/// Requirement (was REQ_* can_replace_parts): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/power/shield_generator/proc/can_replace_parts_holds(datum/act/op/A)
 	var/answer = can_replace_parts(A.actor, src, A.held)
 	if(!istext(answer) && answer)

@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 		rel_clear(src, nameof(capacitors))
 	return OP_OK
 
-/// Requirement (was REQ_* shield_gen_not_broken): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/shield_gen/proc/shield_gen_not_broken_holds(datum/act/op/A)
 	var/answer = shield_gen_not_broken(A.actor, src, A.held)
 	if(!istext(answer) && answer)

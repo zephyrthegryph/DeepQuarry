@@ -1,7 +1,7 @@
 // Requests and waiting (doc/rewrite/final_api.html, section 2 "Requests and waiting" and section 13; section 19 "E6").
 //
 // /datum/request is anything that waits for an answer: a prompt (a player answers), a backend request (/datum/io/*) or a client
-// round trip (/datum/client_query/*). One concept, one outcome enum (REQ_*), one resumption rule:
+// round trip (/datum/client_query/*). One concept, one outcome enum (the REQ_ status constants), one resumption rule:
 //
 //     open_request(owner, /datum/prompt/yes_no/x, PROC_REF(done), valid = PROC_REF(still_open), timeout = 30 SECONDS, answerer = M)
 //

@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "\The [src] already has \a [star] inside, unload it first"
 	return TRUE
 
-/// Requirement (was REQ_* can_load_star): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/firework_launcher/proc/can_load_star_holds(datum/act/op/A)
 	var/answer = can_load_star(A.actor, src, A.held)
 	if(!istext(answer) && answer)
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return TRUE
 	return TRUE
 
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
 	var/answer = dq_actor_can_act(A.actor, src, A.held)
 	if(!istext(answer) && answer)
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return "\The [src] beeps as it seems some interference is preventing launch of this type of firework"
 	return TRUE
 
-/// Requirement (was REQ_* can_launch): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/firework_launcher/proc/can_launch_holds(datum/act/op/A)
 	var/answer = can_launch(A.actor, src, A.held)
 	if(!istext(answer) && answer)

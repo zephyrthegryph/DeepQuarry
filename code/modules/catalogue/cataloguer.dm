@@ -363,7 +363,7 @@ CAPABILITIES(/obj/item/cataloguer/compact)
 	configure(item_tooling(speed = 1.2))
 	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds))), then(PROC_REF(compact_toggle_effect_op)))
 
-/// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/cataloguer/compact/proc/can_toggle_compact_holds(datum/act/op/A)
 	var/answer = can_toggle_compact(A.actor, src, A.held)
 	if(!istext(answer) && answer)

@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	toggle_shield_effect(A.actor, A.held)
 	return OP_OK
 
-/// Requirement (was REQ_* pred_has_weapon): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/personal_shield_generator/proc/pred_has_weapon_holds(datum/act/op/A)
 	return has_weapon ? null : "it has no gun"
 

@@ -280,7 +280,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	return TRUE
 
 /// Old attackby.
-/// Requirement (was REQ_* can_refund): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/technomancer_catalog/proc/can_refund_holds(datum/act/op/A)
 	var/answer = can_refund(A.actor, src, A.held)
 	if(!istext(answer) && answer)
