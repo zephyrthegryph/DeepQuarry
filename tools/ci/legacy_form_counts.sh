@@ -18,5 +18,5 @@ for f in "${forms[@]}"; do
 	files=$(printf '%s' "$out" | cut -d: -f1 | sort -u | grep -c . || true)
 	printf '%s\t%s\t%s\n' "$f" "$sites" "$files"
 done
-printf 'capabilities()/reactions()/relations() table procs\t%s\t-\n' "$(grep -rEn --include='*.dm' '^/[a-z0-9_/]+/(capabilities|reactions|relations)\(\)' code | grep -Ev '^code/(modules/unit_tests|tests|engine)/' | grep -c .)"
+printf 'capabilities()/reactions()/relations() table procs\t%s\t-\n' "$(grep -rEn --include='*.dm' '^/[a-z0-9_/]+/(capabilities|reactions|relations)\(\)' code | grep -Ev '^code/(modules/unit_tests|tests|engine)/' | grep -Ev '^[^:]*:[0-9]+:/datum/system(/|[a-z0-9_/]*)?/(capabilities|reactions|relations)\(\)' | grep -c .)"
 printf 'topic_allowed (hard ban)\t%s\t-\n' "$(grep -rEn --include='*.dm' '\btopic_allowed\b' code | grep -Ev '^code/modules/unit_tests/' | grep -c .)"

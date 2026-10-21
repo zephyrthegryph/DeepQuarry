@@ -121,8 +121,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 What is still open, and still correct to write where a file already uses it:
 
 - `flow_ask` / `prompt_flow()` prompts (replacement `asks()` steps). `rerun_ask`, `verb_ask`, `client_ask` and `cast_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`.
-- `BF_*` body factors read with `L.factor()`: the stat layer exists, the factors are not on it yet.
-- `reactions()` table procs on types that are not systems (a system's `every()` items stay there).
+- Raw `factors =` vars (replacement `factors(...)` in the type's CAPABILITIES block), about 268 vars. The `BF_*` body factors themselves are done: they are stats on `/mob/living`.
 - The init, `base_vars` and raw-overlay ratchets (baselines shrink as files convert).
 - File moves into the new tree (§3c).
 
@@ -403,7 +402,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   `damage_packet.dm`): set `max_integrity`, route hits through `receive_damage()`/`take_damage()`.
   The old `health`/`maxhealth` model is gone. Final shape: doc §14.
 - **Health.** Every `/mob/living` has a `/datum/body`; there are no health pools. Harm is
-  `injure()`, healing `mend()`, numeric mob stats are `BF_*` body factors read with `L.factor()`.
+  `injure()`, healing `mend()`, numeric mob stats are stats on `/mob/living` read as vars (`L.slowdown`).
   Read `doc/body_architecture.md`.
 - **Declaration forms.** Master writes types as `CAPABILITIES(T)` blocks with `op()`, `needs()`, `after()`/`every()`,
   relations (`ref_one()`, `owns_many()`, `links()`), look parts (`draw(datum/look/look)`), `interface()`/`ui_data`
