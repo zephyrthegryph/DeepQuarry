@@ -647,6 +647,22 @@
 	qdel(other)
 	qdel(V)
 
+/// An unscanned sector shows its unknown state and name until scanned; the real name is kept for the scan.
+/obj/effect/overmap/visitable/dq_hidden_test_sector
+	name = "real sector"
+	icon_state = "ship"
+	known = FALSE
+	unknown_name = "mystery sector"
+	unknown_state = "field"
+
+/datum/unit_test/dq_gap/overmap_unknown_sector_hides_its_icon_state
+/datum/unit_test/dq_gap/overmap_unknown_sector_hides_its_icon_state/run_gap()
+	var/obj/effect/overmap/visitable/dq_hidden_test_sector/V = new(null)
+	TEST_ASSERT_EQUAL(V.icon_state, "field", "an unknown sector shows its unknown icon state")
+	TEST_ASSERT_EQUAL(V.name, "mystery sector", "an unknown sector shows its unknown name")
+	TEST_ASSERT_EQUAL(V.real_name, "real sector", "the real name is kept for the scan")
+	qdel(V)
+
 /// J2: a question an old handler opened by hand is an asks() step of its op. A cat is named with a pen: the pen click asks, the answer names it, and a named cat refuses.
 /datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen
 /datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen/run_gap()

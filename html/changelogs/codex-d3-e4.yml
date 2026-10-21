@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unknown overmap sectors set their hidden icon state through the tracked setter; the analyzer's test harness build is cached for the merge gates."
