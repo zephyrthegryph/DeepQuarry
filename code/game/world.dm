@@ -304,7 +304,7 @@ GLOBAL_VAR(restart_counter)
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
 	Kernel.sleep_offline_after_initializations = FALSE
-	SSticker.start_immediately = TRUE
+	SSticker.request_immediate_start(TRUE)
 	CONFIG_SET(number/round_end_countdown, 0)
 	var/after_start
 #ifdef UNIT_TESTS
@@ -330,7 +330,7 @@ GLOBAL_VAR(restart_counter)
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
-	SSticker.force_ending = ADMIN_FORCE_END_ROUND
+	SSticker.request_round_ending(ADMIN_FORCE_END_ROUND)
 
 /// Returns a list of data about the world state, don't clutter
 /world/proc/get_world_state_for_logging()
@@ -441,7 +441,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 		if(length(rows) > 40)
 			rows.Cut(41)
-		return json_encode(list("world_time" = world.time, "queued" = length(SSlighting.sources_queue), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
+		return json_encode(list("world_time" = world.time, "queued" = SSlighting.pending_source_count(), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 
 	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
 	if (diag == "qdelcensus")
@@ -556,7 +556,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		return list2params(s)
 
 	else if(T == "manifest")
-		if(!SSjob.initialized)
+		if(!SSjob.is_initialized())
 			return null
 
 		var/list/positions = list()

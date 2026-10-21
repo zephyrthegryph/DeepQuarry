@@ -97,7 +97,7 @@
 	for(var/name in assets)
 		filename = name
 		break
-	var/url = SSassets.transport.get_asset_url(filename, assets[filename])
+	var/url = SSassets.get_asset_url(filename, assets[filename])
 	if(!url)
 		return null
 	return copytext(url, 1, length(url) - length(url_encode(filename)) + 1)
@@ -134,7 +134,7 @@
 	for(var/name in assets)
 		filename = name
 		break
-	var/url = SSassets.transport.get_asset_url(filename, assets[filename])
+	var/url = SSassets.get_asset_url(filename, assets[filename])
 	if(!url)
 		return null
 	return copytext(url, 1, length(url) - length(url_encode(filename)) + 1)

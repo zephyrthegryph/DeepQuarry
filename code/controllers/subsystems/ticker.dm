@@ -167,7 +167,7 @@ SYSTEM_DEF(ticker)
 					game_finished = (SSemergency_shuttle.returned() || mode.station_was_nuked)
 					mode_finished = ((end_game_state >= END_GAME_MODE_FINISHED) || mode.check_finished()) // Short circuit if already finished.
 				else // Game ends when mode does
-					game_finished = (mode.check_finished() || (SSemergency_shuttle.returned() && SSemergency_shuttle.evac)) || GLOB.universe_has_ended
+					game_finished = (mode.check_finished() || (SSemergency_shuttle.returned() && SSemergency_shuttle.is_evacuation())) || GLOB.universe_has_ended
 					mode_finished = game_finished
 
 				if(game_finished && mode_finished)

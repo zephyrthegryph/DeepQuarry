@@ -303,9 +303,9 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		data["station_monthly_income"] = can_allocate_station_budget() ? GLOB.station_account.monthly_income : null
 		data["station_monthly_expenses"] = can_allocate_station_budget() ? GLOB.station_account.monthly_expenses : null
 		data["station_income_sources"] = can_allocate_station_budget() ? finance_income_source_rows(GLOB.station_account) : list()
-		data["nt_salary_support"] = can_allocate_station_budget() ? SSsupply.nt_salary_support : null
-		data["allocation_policy"] = can_allocate_station_budget() ? SSsupply.allocation_policy : null
-		data["next_budget_cycle"] = DisplayTimeText(max(0, SSsupply.next_payroll - world.time), 1)
+		data["nt_salary_support"] = can_allocate_station_budget() ? SSsupply.salary_support_ratio() : null
+		data["allocation_policy"] = can_allocate_station_budget() ? SSsupply.allocation_policy_name() : null
+		data["next_budget_cycle"] = DisplayTimeText(SSsupply.time_until_payroll(), 1)
 		data["budget_plan"] = can_allocate_station_budget() ? list(
 			"projected_payroll" = budget_plan["projected_payroll"],
 			"nt_grant" = budget_plan["nt_grant"],
@@ -386,8 +386,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 			)))
 		data["contract_faction_standings"] = contract_faction_standings
 		var/list/contracts = list()
-		for(var/id in SScontracts.contracts_by_id)
-			var/datum/contract/contract = SScontracts.contracts_by_id[id]
+		for(var/id in SScontracts.contract_ids())
+			var/datum/contract/contract = SScontracts.contract_by_id(id)
 			if(contract.scope == CONTRACT_SCOPE_PERSONAL)
 				continue
 			if(contract.scope == CONTRACT_SCOPE_STATION && !can_allocate_station_budget())
@@ -551,7 +551,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/contract = SScontracts.contract_by_id(id_arg)
 	return accept_management_contract(contract, A.actor)
 
 /obj/machinery/computer/skills/proc/ui_act_contract_decline(datum/act/op/A, id_arg)
@@ -559,7 +559,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/contract = SScontracts.contract_by_id(id_arg)
 	return decline_management_contract(contract, A.actor)
 
 /obj/machinery/computer/skills/proc/ui_act_contract_negotiate(datum/act/op/A, clause, id_arg, option)
@@ -567,7 +567,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/contract = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/contract = SScontracts.contract_by_id(id_arg)
 	return negotiate_management_contract(contract, clause, option, A.actor)
 
 /obj/machinery/computer/skills/proc/ui_act_contract_finalize_outcome(datum/act/op/A, id_arg)
@@ -575,7 +575,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/social/contract = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/social/contract = SScontracts.contract_by_id(id_arg)
 	return finalize_social_contract(contract, A.actor)
 
 /obj/machinery/computer/skills/proc/ui_act_contract_print_trial_packet(datum/act/op/A, id_arg)
@@ -583,7 +583,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_trial/trial = SScontracts.contract_by_id(id_arg)
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
@@ -594,7 +594,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_trial/trial = SScontracts.contract_by_id(id_arg)
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	return trial.print_final_report(get_turf(src), adverse)
@@ -604,7 +604,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_trial/trial = SScontracts.contract_by_id(id_arg)
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	return trial.request_resupply(get_turf(src))
@@ -614,7 +614,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_trial/trial = SScontracts.contract_by_id(id_arg)
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
@@ -625,7 +625,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_trial/trial = SScontracts.contract_by_id(id_arg)
 	if(!istype(trial) || !can_view_department(trial.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
@@ -636,7 +636,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_case_report/report = SScontracts.contract_by_id(id_arg)
 	if(!istype(report) || !can_view_department(report.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
@@ -647,7 +647,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[id_arg]
+	var/datum/contract/medical_case_report/report = SScontracts.contract_by_id(id_arg)
 	if(!istype(report) || !can_view_department(report.department))
 		return FALSE
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null

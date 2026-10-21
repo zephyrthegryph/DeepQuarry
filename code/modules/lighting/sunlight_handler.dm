@@ -19,10 +19,10 @@ CAPABILITIES(/turf/simulated)
 
 /// The after-init pass of a simulated turf: planet sunlight. Subtypes add their own work after ..().
 /turf/simulated/proc/sim_after_init(datum/act/timer/A)
-	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
+	if(((SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
 		if(is_outdoors())
 			var/turf/T = GetAbove(src)
-			if(T && !isopenturf(T) && (SSplanets.z_to_planet.len >= T.z && SSplanets.z_to_planet[T.z]))
+			if(T && !isopenturf(T) && (SSplanets.planet_at_z(T.z)))
 				make_indoors()
 		if(!shandler_noinit)
 			rel_set(src, nameof(shandler), new /datum/sunlight_handler(src))
@@ -342,7 +342,7 @@ CAPABILITIES(/datum/sunlight_handler)
 			sunlight_mult = 0.6
 		if(SUNLIGHT_OVERHEAD)
 			sunlight_mult = 1.0
-	var/brightness = sun().brightness * sunlight_mult * SSlighting.sun_mult
+	var/brightness = sun().brightness * sunlight_mult * SSlighting.sunlight_scale()
 	var/list/color = hex2rgb(sun().color)
 	var/red = brightness * (color[1] / 255.0)
 	var/green = brightness * (color[2] / 255.0)

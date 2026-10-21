@@ -15,7 +15,7 @@
 	var/list/lum_watch
 
 /datum/lighting_object/New(turf/source)
-	if(!SSlighting.initialized)
+	if(!SSlighting.is_initialized())
 		stack_trace("lighting_object created before SSlighting up!")
 		return
 	if(!isturf(source))
@@ -39,7 +39,7 @@
 			space_tile.update_starlight()
 
 	needs_update = TRUE
-	SSlighting.objects_queue += src
+	SSlighting.queue_object(src)
 
 // Lighting engine: only a forced qdel() deletes a lighting object.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
@@ -47,7 +47,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 // The object leaves SSlighting's queue (while queued), and the turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
 	if(needs_update)
-		SSlighting.objects_queue -= src
+		SSlighting.unqueue_object(src)
 	if (isturf(affected_turf))
 		rel_clear(affected_turf, nameof(affected_turf.lighting_object))
 		affected_turf.set_luminosity(1)

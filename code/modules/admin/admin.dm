@@ -440,7 +440,7 @@ ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADM
 		to_chat(user, span_warning("Error: Start Now: Game has already started."))
 		return
 	if(!ticker_start_immediately())
-		SSticker.start_immediately = TRUE
+		SSticker.request_immediate_start(TRUE)
 		var/msg = ""
 		if(ticker_current_state() == GAME_STATE_STARTUP)
 			msg = " (The server is still setting up, but the round will be started as soon as possible.)"
@@ -449,7 +449,7 @@ ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADM
 		message_admins(span_notice("[key_name_admin(user)] has started the game.[msg]"))
 		feedback_add_details("admin_verb","SN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 		return
-	SSticker.start_immediately = FALSE
+	SSticker.request_immediate_start(FALSE)
 	to_chat(world, span_filter_system(span_blue("Immediate game start canceled. Normal startup resumed.")))
 	log_and_message_admins("cancelled immediate game start.", user.mob)
 

@@ -1369,6 +1369,10 @@
 #include "dq_d5_landmark_registration.dm"
 #include "dq_d6_actor_inputs.dm"
 #include "dq_d7_sdql_delete.dm"
+#include "dq_assets_boundary_tests.dm"
+#include "dq_lighting_planet_boundary_tests.dm"
+#include "dq_supply_contract_boundary_tests.dm"
+#include "dq_round_job_boundary_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
