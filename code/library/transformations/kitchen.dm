@@ -96,7 +96,7 @@ CAPABILITIES(/transformation/kitchen)
 			highest_count = count
 			. = rule
 
-/datum/xform/proc/cooking_check_reagents(datum/reagent_takes/avail_reagents, exact = FALSE)
+/datum/xform/proc/cooking_check_reagents(datum/reagents/avail_reagents, exact = FALSE)
 	if(!reagent_takes || !reagent_takes.len)
 		return TRUE
 
@@ -179,7 +179,7 @@ CAPABILITIES(/transformation/kitchen)
 			return FALSE
 	return .
 
-//This is called on individual cook_items within the container.
+//This is called on individual items within the container.
 /datum/xform/proc/cooking_check_coating(obj/O, exact = FALSE)
 	if(!istype(O,/obj/item/reagent_containers/food/snacks))
 		return TRUE //Only snacks can be battered
@@ -214,14 +214,14 @@ CAPABILITIES(/transformation/kitchen)
 		return
 
 
-//We will subtract all the ingredients from the container, and transfer their reagent_takes into a holder
+//We will subtract all the ingredients from the container, and transfer their reagents into a holder
 //We will not touch things which are not required for this recipe. They will be left behind for the caller
 //to decide what to do. They may be used again to make another recipe or discarded, or merged into the results,
 //thats no longer the concern of this proc
-	var/datum/reagent_takes/buffer = new /datum/reagent_takes(10000000000, null)//
+	var/datum/reagents/buffer = new /datum/reagents(10000000000, null)//
 
 
-	//Find cook_items we need
+	//Find items we need
 	if (cook_items && cook_items.len)
 		for (var/i in cook_items)
 			var/obj/item/I = locate_in_list(container, i)
@@ -251,7 +251,7 @@ CAPABILITIES(/transformation/kitchen)
 					G.reagents.trans_to_holder(buffer,G.reagents.total_volume)
 				consumed(G)
 
-	//And lastly deduct necessary quantities of reagent_takes
+	//And lastly deduct necessary quantities of reagents
 	if (reagent_takes && reagent_takes.len)
 		for (var/r in reagent_takes)
 			//Doesnt matter whether or not there's enough, we assume that check is done before
@@ -259,25 +259,25 @@ CAPABILITIES(/transformation/kitchen)
 
 	/*
 	Now we've removed all the ingredients that were used and we have the buffer containing the total of
-	all their reagent_takes.
-	Next up we create the result, and then handle the merging of reagent_takes depending on the mix setting
+	all their reagents.
+	Next up we create the result, and then handle the merging of reagents depending on the mix setting
 	*/
 	var/tally = 0
 
 	/*
-	If we have multiple results, holder will be used as a buffer to hold reagent_takes for the result objects.
+	If we have multiple results, holder will be used as a buffer to hold reagents for the result objects.
 	If, as in the most common case, there is only a single result, then it will just be a reference to
-	the single-result's reagent_takes
+	the single-result's reagents
 	*/
-	var/datum/reagent_takes/holder = new/datum/reagent_takes(10000000000)
+	var/datum/reagents/holder = new/datum/reagents(10000000000)
 	var/list/results = list()
 	while (tally < result_amount)
 		var/obj/result_obj = new result(container)
 		results.Add(result_obj)
 
 		if (!result_obj.reagents)//This shouldn't happen
-			//If the result somehow has no reagent_takes defined, then create a new holder
-			result_obj.reagents = new /datum/reagent_takes(buffer.total_volume*1.5, result_obj)
+			//If the result somehow has no reagents defined, then create a new holder
+			result_obj.reagents = new /datum/reagents(buffer.total_volume*1.5, result_obj)
 
 		if (result_amount == 1)
 			consumed(holder)
@@ -317,7 +317,7 @@ CAPABILITIES(/transformation/kitchen)
 
 
 	if (results.len > 1)
-		//If we're here, then holder is a buffer containing the total reagent_takes for all the results.
+		//If we're here, then holder is a buffer containing the total reagents for all the results.
 		//So now we redistribute it among them
 		var/total = holder.total_volume
 		for (var/i in results)
