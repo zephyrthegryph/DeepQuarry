@@ -343,6 +343,25 @@ Landed: the OUTPUT queue (`GLOB.refresh_queue`) dedupes by a per-entity pass sta
 delivery owes (an `at_most` window and the reaction's key list need them), so a bare frame stamp cannot represent them; they stay until the plan
 generates the dependents (step 3 remainder). Proof: `dq_change_refresh_pass`, `dx_review_self_mark`, the draw-queue tests, `dq_staleness_*`.
 
+### Step 7 not done (21 October 2026): the split needs a slot the base-var ratchet does not allow
+
+The split of `rx_state` into a presentation record (`look_key`, `look_overlays`, `look_underlays`, `look_filters`, `look_vis`, `look_set_bits`,
+`look_seen_dir`, `refresh_hidden_verbs`, `refresh_granted_verbs`, `refresh_swept`, `worn_watched`) and the reaction tables was built and proved to compile
+(193 call sites over 24 files), then reverted: two per-atom slots need a second var on `/atom` (`look_rec` beside `rx`), and the `base_vars` ratchet counts
+that as a new site (`base_var` 519 -> 520; it is fingerprint-based, so deleting another base var does not pay for it, and a home-type entry or an
+ALLOW would only excuse it). Reaching the record through the one slot that exists (`rx`) does not deliver the saving: a drawn atom with no reactions would
+still allocate the whole `rx_state` (about 50 vars) unless `rx_state` itself becomes a thin holder of two parts, which turns every `X.rx.<reaction var>`
+(about 500 sites) into `X.rx.react.<var>` or a typed accessor. That is a wider change than step 7 and belongs with the declaration compiler's state
+tables (`.dmt`), where the per-type state layout is generated. Until then the cost stands: every atom that draws holds a full `rx_state`.
+
+### Steps 5 and 6 remainder: wait for the `.dmt` declaration compiler (decision of 21 October 2026)
+
+Step 5's remaining parts (delete `type_derive_flags`, `derive_probing`, `derive_side_probing` and the first-instance-always-queued rule; stamp a non-empty cached
+look) need the plan to know every output a type derives (`should_run`, hidden and granted verbs, periodic work, derived values) and every var a draw reads,
+not only the draw reads it holds today; that is the same compiled-declaration work as the step-3 remainder. Step 6 (drop the `refresh_dispatched()`
+`DEP_ALL` after every handler, timer and periodic step) is proved only by the staleness checker running clean without it across everything that dispatches,
+which needs a full-suite run; the user has not authorized one. Both wait.
+
 ## 12. Edits needed in final_api.html section 7 (not made here)
 
 1. **"Execution model" paragraph**: replace "the entity at the end of a single-valued relation edge ... recompute inline" wording with
