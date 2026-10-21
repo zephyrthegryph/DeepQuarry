@@ -45,12 +45,12 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		else
 			return "vanilla"
 
-/obj/machinery/icecream_vat/Initialize(mapload)
-	. = ..()
+/obj/machinery/icecream_vat/proc/prepare_product_selections()
 	while(length(product_types) < 6)
 		LAZYADD(product_types, 5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
+	setup(PROC_REF(prepare_product_selections))
 	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
 	interface("IcecreamVat")
 	without("ui_open")

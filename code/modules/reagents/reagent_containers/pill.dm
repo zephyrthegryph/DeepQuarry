@@ -212,13 +212,12 @@ CAPABILITIES(/obj/item/reagent_containers/pill/happy)
 	icon_state = "pill4"
 
 CAPABILITIES(/obj/item/reagent_containers/pill/zoom)
+	setup(PROC_REF(prepare_zoom_dose))
 	configure(reagents(add = list(REAGENT_ID_EXPIREDMEDICINE = 5, REAGENT_ID_STIMM = 5)))
 
-// ALLOW(init/INSTANCE_STATE): rolls whether this pill carries mould
-/obj/item/reagent_containers/pill/zoom/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/pill/zoom/proc/prepare_zoom_dose()
 	if(prob(50)) // Zoom pill: chance to be more dangerous
-		reagents.add_reagent(REAGENT_ID_MOLD, 2) // ALLOW(decl): Initialize rolls a random amount per instance; a declaration has no random form
+		reagents.add_reagent(REAGENT_ID_MOLD, 2)
 	color = reagents.get_color()
 
 /obj/item/reagent_containers/pill/diet

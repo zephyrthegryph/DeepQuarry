@@ -47,8 +47,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat)
 	cooked_icon = "chickensteak"
 	filling_color = "#BBBBAA"
 
-/obj/item/reagent_containers/food/snacks/meat/chicken/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/meat/chicken/proc/remove_chicken_fat()
 	reagents.remove_reagent(REAGENT_ID_TRIGLYCERIDE, INFINITY)
 	//Chicken is low fat. Less total calories than other meats
 
@@ -120,10 +119,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenomeat)
 	bitesize = 6
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat)
+	setup(PROC_REF(remove_spider_acid))
 	configure(reagents(add = list(REAGENT_ID_SPIDERTOXIN = 12)))
 
-/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/proc/remove_spider_acid()
 	reagents.remove_reagent(REAGENT_ID_PACID,6)
 
 /obj/item/reagent_containers/food/snacks/rawturkey
@@ -341,3 +340,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_radiation)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/tyrant_bonus)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDLIFE = 5)))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/chicken)
+	setup(PROC_REF(remove_chicken_fat))

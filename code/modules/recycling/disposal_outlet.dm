@@ -15,8 +15,7 @@
 	EXPIRY_DECLARE(start_eject)
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
 
-/obj/structure/disposaloutlet/Initialize(mapload)
-	. = ..()
+/obj/structure/disposaloutlet/proc/connect_disposal_outlet()
 
 	update_target()
 
@@ -32,6 +31,7 @@
 	..()
 
 CAPABILITIES(/obj/structure/disposaloutlet)
+	setup(PROC_REF(connect_disposal_outlet))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))

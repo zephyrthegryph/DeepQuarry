@@ -30,6 +30,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	setup(PROC_REF(load_starting_cartridges))
 	configure(uses_power(idle = 100))
 	rotatable()
 	owns_one(nameof(container), /obj/item/reagent_containers)
@@ -67,8 +68,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	C.refill_dispenser(src, A.actor)
 	return OP_OK
 
-/obj/machinery/chemical_dispenser/Initialize(mapload)
-	. = ..()
+/obj/machinery/chemical_dispenser/proc/load_starting_cartridges()
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
 			add_cartridge(new type(src))

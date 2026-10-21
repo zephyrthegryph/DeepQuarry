@@ -15,6 +15,7 @@ fundamental differences
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
+	setup(PROC_REF(prepare_mixer_selection))
 	configure(uses_power(active = 3000, idle = 50))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer, starts = /datum/looping_sound/mixer)
@@ -24,8 +25,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	if(Adjacent(user))
 		. += span_notice("It is currently set to make a [selected_option]")
 
-/obj/machinery/appliance/mixer/Initialize(mapload)
-	. = ..()
+/obj/machinery/appliance/mixer/proc/prepare_mixer_selection()
 	set_cooking(FALSE)
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)

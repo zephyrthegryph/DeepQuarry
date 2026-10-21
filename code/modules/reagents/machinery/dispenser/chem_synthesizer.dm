@@ -83,6 +83,7 @@
 // The reagents datum acts as the machine's reaction vessel.
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	setup(PROC_REF(prepare_synthesizer_supplies))
 	configure(uses_power(channel = EQUIP, idle = 100, active = 150))
 	owns_one(nameof(catalyst), /obj/item/reagent_containers/glass, starts = /obj/item/reagent_containers/glass/beaker)
 	reagents(600)
@@ -129,8 +130,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
 	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), when(nameof(panel_open)), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Synthesizer", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
 
-/obj/machinery/chemical_synthesizer/Initialize(mapload)
-	. = ..()
+/obj/machinery/chemical_synthesizer/proc/prepare_synthesizer_supplies()
 
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)

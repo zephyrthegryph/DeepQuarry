@@ -27,6 +27,8 @@
 	. = ..()
 	base_name = name
 	base_desc = desc
+
+/obj/item/reagent_containers/blood/proc/label_stock_blood()
 	if(blood_type != null)
 		label_text = "[blood_type]"
 		update_iv_label()
@@ -57,6 +59,7 @@
 // A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
 // characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
 CAPABILITIES(/obj/item/reagent_containers/blood)
+	setup(PROC_REF(label_stock_blood))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	configure(reagents(starts_from = list(nameof(reag_id) = PROC_REF(stock_blood_units)), data = list(nameof(reag_id) = PROC_REF(stock_blood_data))))
 	reagent_container(

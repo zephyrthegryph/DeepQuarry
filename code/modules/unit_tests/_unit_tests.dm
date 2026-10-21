@@ -1378,6 +1378,7 @@
 #include "dq_a12_system_init.dm"
 #include "dq_a8_world_init.dm"
 #include "dq_a5_mob_init.dm"
+#include "dq_a10_content_init.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

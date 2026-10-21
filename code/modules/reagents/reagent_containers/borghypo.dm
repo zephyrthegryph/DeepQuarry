@@ -104,8 +104,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 		// Just add reagents
 		return try_add_reagent(target_reagents, user, TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode], amount_per_transfer_from_this)
 
-/obj/item/reagent_containers/borghypo/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/borghypo/proc/prepare_hypo_catalog()
 
 	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 		reagent_volumes[T] = volume
@@ -142,6 +141,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 // A cyborg hypospray makes the chosen reagent (or recipe) from its store and puts it into a person by a click (synthesizer(), code/library/reagents/synthesizer.dm);
 // a limb that is not there, or thick material over it, refuses it (unless it bypasses protection). Its store is filled again from its cyborg's cell.
 CAPABILITIES(/obj/item/reagent_containers/borghypo)
+	setup(PROC_REF(prepare_hypo_catalog))
 	every(2 SECONDS, then(PROC_REF(refill_step)), when = nameof(refilling))
 	reagent_container(
 		volume = nameof(volume),
