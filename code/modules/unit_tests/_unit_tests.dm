@@ -1362,7 +1362,6 @@
 #include "dq_decl_archaeological_find_tests.dm"
 #include "dq_decl_landmark_registration_tests.dm"
 #include "dq_decl_visual_state_tests.dm"
-#include "dq_cleanup_icon_defaults.dm"
 #include "dq_cleanup_destroy_consequences.dm"
 #include "dq_d5_landmark_registration.dm"
 #include "dq_d6_actor_inputs.dm"
