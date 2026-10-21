@@ -47,7 +47,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         for name in names(owner).iter().chain(extra) {
             let name_symbol = symbols.intern(name)?;
             let declared_type = match *name {
-                "vars" if owner == "/datum" => Some("/list"),
+                "vars" if matches!(owner, "/datum" | "/world") => Some("/list"),
                 "screen" if owner == "/client" => Some("/list"),
                 "images" if owner == "/client" => Some("/list"),
                 "locs" if owner == "/atom/movable" => Some("/list"),
@@ -221,6 +221,8 @@ pub fn names(path: &str) -> &'static [&'static str] {
             // Native Src getter proofs; defaults/modifiers remain opaque.
             "internet_address",
             "map_cpu",
+            // `world.vars` is the same list-valued field as `/datum` has (pinned 516.1687: the probe dumps it).
+            "vars",
             // native_world_sleep_offline proves runtime World-field reads and
             // writes. Header policy stays separate; declared type stays opaque.
             "sleep_offline",

@@ -154,3 +154,24 @@ fn null_and_empty_text_defaults_match_dreammaker() {
     .unwrap();
     assert!(report.equivalent(), "{}", report.render_text());
 }
+
+fn build_source_text(source: &str) -> String {
+    let root = scratch();
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(project.join("probe.dm"), source).unwrap();
+    std::fs::write(project.join("probe.dme"), "#include \"probe.dm\"\n").unwrap();
+    let manifest = std::fs::canonicalize(project.join("probe.dme")).unwrap();
+    let outcome = crate::request_runner::run_build(request(&root, &manifest));
+    let _ = std::fs::remove_dir_all(&root);
+    format!("{outcome:?}")
+}
+
+/// `world.vars` iterates like `global.vars` and a datum's `vars` (the probe `dq_compiler_behaviour` dumps all three; it did not compile
+/// natively while the catalog had no `vars` on /world).
+#[test]
+fn world_vars_can_be_iterated() {
+    let source = "/proc/p()\n\tvar/n = 0\n\tfor(var/v in world.vars)\n\t\tn++\n\tfor(var/w in global.vars)\n\t\tn++\n\treturn n\n/world/New()\n\tp()\n";
+    let outcome = build_source_text(source);
+    assert!(outcome.starts_with("Ok"), "{outcome}");
+}
