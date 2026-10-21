@@ -193,7 +193,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 	set_item_state(icon_state)
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
-		locked = 0
+		set_locked(0)
 
 	// Instantiate the decomposed subsystems.
 	power_system.cooling_on              = cooling_on

@@ -174,8 +174,8 @@
 			rel_add(C, nameof(C.friends), last_to_emag())
 
 /obj/machinery/computer/HolodeckControl/proc/link_projection_area()
-	current_program = powerdown_program
-	linkedholodeck = locate(projection_area) // an area: a plain var
+	set_current_program(powerdown_program)
+	set_linkedholodeck(locate(projection_area)) // an area: a plain var
 	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 

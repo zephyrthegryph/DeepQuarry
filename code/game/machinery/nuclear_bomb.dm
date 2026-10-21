@@ -32,13 +32,13 @@ GLOBAL_VAR(bomb_set)
 	use_power = USE_POWER_OFF
 
 /obj/machinery/nuclearbomb/proc/seed_wire_states()
-	LAZYSET(wires_list, "Red", 0)
-	LAZYSET(wires_list, "Blue", 0)
-	LAZYSET(wires_list, "Green", 0)
-	LAZYSET(wires_list, "Marigold", 0)
-	LAZYSET(wires_list, "Fuschia", 0)
-	LAZYSET(wires_list, "Black", 0)
-	LAZYSET(wires_list, "Pearl", 0)
+	set_wires_list_at("Red", 0)
+	set_wires_list_at("Blue", 0)
+	set_wires_list_at("Green", 0)
+	set_wires_list_at("Marigold", 0)
+	set_wires_list_at("Fuschia", 0)
+	set_wires_list_at("Black", 0)
+	set_wires_list_at("Pearl", 0)
 
 /obj/machinery/nuclearbomb/proc/roll_initial_code(datum/roller/R)
 	return "[R.number(10000, 99999)]"

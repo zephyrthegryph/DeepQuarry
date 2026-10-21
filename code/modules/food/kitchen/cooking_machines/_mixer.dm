@@ -27,7 +27,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 /obj/machinery/appliance/mixer/proc/prepare_mixer_selection()
 	set_cooking(FALSE)
-	selected_option = DEFAULTPICK(output_options, null)
+	set_selected_option(DEFAULTPICK(output_options, null))
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 

@@ -85,7 +85,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	for(var/stack_path in (subtypesof(/obj/item/stack/material) - typesof(/obj/item/stack/material/cyborg)))
 		var/obj/item/stack/material/S = stack_path
 		var/s_matname = initial(S.default_type)
-		LAZYSET(stack_storage, s_matname, 0)
+		set_stack_storage_at(s_matname, 0)
 		LAZYSET(stack_paths, s_matname, stack_path)
 
 	for (var/dir in GLOB.cardinal)

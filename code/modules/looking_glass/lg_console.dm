@@ -23,7 +23,7 @@
 /obj/machinery/computer/looking_glass/proc/link_viewing_area()
 	for(var/area/looking_glass/lga in world)
 		if(lga.lg_id == lg_id)
-			my_area = lga
+			set_my_area(lga)
 			break
 	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")

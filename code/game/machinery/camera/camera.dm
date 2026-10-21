@@ -96,7 +96,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /// Configure the mapped facing and installed camera upgrades after initialization.
 /obj/machinery/camera/proc/configure_initial_upgrades()
 	if (dir == NORTH)
-		layer = ABOVE_MOB_LAYER
+		set_layer(ABOVE_MOB_LAYER)
 
 	if(TYPE_TABLE_GET(src, camera_initial_emp_proof))
 		upgradeEmpProof()

@@ -71,7 +71,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forc
 /obj/item/clothing/accessory/bracelet/material/proc/show_material_identity()
 	name = "[material.display_name] bracelet"
 	desc = "A bracelet made from [material.display_name]."
-	color = material.icon_colour
+	set_color(material.icon_colour)
 
 /obj/item/clothing/accessory/bracelet/material/get_material()
 	return material

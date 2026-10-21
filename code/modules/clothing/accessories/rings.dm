@@ -166,7 +166,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/ring/material, ring_forced_mater
 /obj/item/clothing/accessory/ring/material/proc/show_material_identity()
 	name = "[material.display_name] ring"
 	desc = "A ring made from [material.display_name]."
-	color = material.icon_colour
+	set_color(material.icon_colour)
 
 /obj/item/clothing/accessory/ring/material/get_material()
 	return material

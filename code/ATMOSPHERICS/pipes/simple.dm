@@ -29,7 +29,7 @@
 	// Pipe colors and icon states are handled by an image cache - so color and icon should
 	//  be null. For mapping purposes color is defined in the object definitions.
 	set_icon(null)
-	alpha = 255
+	set_alpha(255)
 
 /obj/machinery/atmospherics/pipe/simple/set_leaking(new_leaking)
 	if(leaking != !!new_leaking)

@@ -107,7 +107,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 /obj/item/reagent_containers/borghypo/proc/prepare_hypo_catalog()
 
 	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
-		reagent_volumes[T] = volume
+		set_reagent_volumes_at(T, volume)
 		var/datum/reagent/hypo_reagent = SSchemistry.ready().chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
 

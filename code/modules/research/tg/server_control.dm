@@ -14,7 +14,7 @@
 	if(!stored_research())
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
-		stored_research_static = connected_web
+		set_stored_research_static(connected_web)
 
 /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(datum/act/op/A)
 	var/mob/user = A.actor

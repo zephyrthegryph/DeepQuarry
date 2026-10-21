@@ -177,7 +177,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	var/list/drips
 
 /obj/effect/decal/cleanable/blood/drip/proc/record_initial_drip()
-	LAZYOR(drips, icon_state)
+	include_drips(icon_state)
 
 /// The drips merged onto this tile are drawn over its own sprite.
 /obj/effect/decal/cleanable/blood/drip/draw(datum/look/look)

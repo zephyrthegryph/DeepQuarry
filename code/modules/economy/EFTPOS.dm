@@ -20,7 +20,7 @@
 	//the user of the EFTPOS device can change the target account though, and no-one will be the wiser (except whoever's being charged)
 	rel_set(src, nameof(linked_account), GLOB.station_account)
 
-	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
+	set_machine_id("[station_name()] EFTPOS #[GLOB.num_financial_terminals++]")
 	print_reference()
 
 	//create a short manual as well

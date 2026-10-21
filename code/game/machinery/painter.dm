@@ -36,12 +36,12 @@
 	)
 
 /obj/machinery/gear_painter/proc/seed_colour_matrix()
-	color_matrix_last = list(
+	set_color_matrix_last(list(
 		1, 0, 0,
 		0, 1, 0,
 		0, 0, 1,
 		0, 0, 0,
-	)
+	))
 
 /// The look (the draw sweep: from its template and its layers).
 /obj/machinery/gear_painter/draw(datum/look/look)

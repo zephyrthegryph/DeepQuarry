@@ -218,7 +218,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill/zoom)
 /obj/item/reagent_containers/pill/zoom/proc/prepare_zoom_dose()
 	if(prob(50)) // Zoom pill: chance to be more dangerous
 		reagents.add_reagent(REAGENT_ID_MOLD, 2)
-	color = reagents.get_color()
+	set_color(reagents.get_color())
 
 /obj/item/reagent_containers/pill/diet
 	name = "diet pill"

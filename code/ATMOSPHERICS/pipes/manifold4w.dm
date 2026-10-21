@@ -26,7 +26,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold4w)
 	ref_one(nameof(node4))
 
 /obj/machinery/atmospherics/pipe/manifold4w/proc/prepare_pipe_renderer()
-	alpha = 255
+	set_alpha(255)
 	set_icon(null)
 
 /obj/machinery/atmospherics/pipe/manifold4w/pipeline_expansion()

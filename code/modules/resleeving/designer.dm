@@ -31,7 +31,7 @@ CAPABILITIES(/obj/machinery/computer/transhuman/designer)
 	op("body_designer_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(body_designer_interaction_hand)))
 
 /obj/machinery/computer/transhuman/designer/proc/connect_initial_database()
-	our_db_static = SStranscore.db_by_key(db_key)
+	set_our_db_static(SStranscore.db_by_key(db_key))
 
 
 /obj/machinery/computer/transhuman/designer/dismantle()

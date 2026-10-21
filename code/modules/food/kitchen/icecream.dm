@@ -47,7 +47,7 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 
 /obj/machinery/icecream_vat/proc/prepare_product_selections()
 	while(length(product_types) < 6)
-		LAZYADD(product_types, 5)
+		add_product_types(5)
 
 CAPABILITIES(/obj/machinery/icecream_vat)
 	setup(PROC_REF(prepare_product_selections))
