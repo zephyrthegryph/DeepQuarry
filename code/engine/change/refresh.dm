@@ -843,8 +843,8 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	var/list/worn_was = engine.look_watching_worn
 	for(var/key in worn_was)
 		if(!(key in worn_keys))
-			var/atom/worn_gone = own_locate(key)
-			if(istype(worn_gone) && worn_gone.look_rec?.worn_watched)
+			var/datum/worn_gone = own_locate(key)
+			if(worn_gone?.look_rec?.worn_watched)
 				worn_gone.look_rec.worn_watched--
 	for(var/key in worn_keys)
 		if(!(key in worn_was))
@@ -872,8 +872,8 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 	if(!length(shown))
 		return
 	for(var/key in shown)
-		var/atom/worn_gone = own_locate(key)
-		if(istype(worn_gone) && worn_gone.look_rec?.worn_watched)
+		var/datum/worn_gone = own_locate(key)
+		if(worn_gone?.look_rec?.worn_watched)
 			worn_gone.look_rec.worn_watched--
 	cap_engine_state_of(A).look_watching_worn = null
 
