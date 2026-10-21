@@ -7,8 +7,8 @@
 	name = "Inactive AI Eye"
 	icon_state = "AI-eye"
 
-/mob/observer/eye/aiEye/Initialize(mapload)
-	. = ..()
+/// Declared setup: join camera visualnet, after the complete parent chain.
+/mob/observer/eye/aiEye/proc/join_camera_visualnet()
 	rel_set(src, nameof(visualnet), GLOB.cameranet)
 
 /// Phase 2: the eye leaves its visualnet.
@@ -104,3 +104,6 @@
 	eyeobj.acceleration = !eyeobj.acceleration
 	to_chat(usr, "Camera acceleration has been toggled [eyeobj.acceleration ? "on" : "off"].")
 
+
+CAPABILITIES(/mob/observer/eye/aiEye)
+	setup(PROC_REF(join_camera_visualnet))

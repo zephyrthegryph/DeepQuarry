@@ -421,6 +421,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	var/tree_type = /obj/structure/flora/tree/fur
 
 CAPABILITIES(/turf/simulated/floor/outdoors/fur)
+	setup(PROC_REF(plant_initial_tree))
 	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
 	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
 	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
@@ -458,9 +459,8 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 		var/mob/living/carbon/human/sunk = AM
 		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
-// ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
-/turf/simulated/floor/outdoors/fur/Initialize(mapload)
-	. = ..()
+/// Declared setup: plant initial tree, after the complete parent chain.
+/turf/simulated/floor/outdoors/fur/proc/plant_initial_tree()
 	if(tree_chance && prob(tree_chance) && !check_density())
 		var/obj/structure/flora/tree/tree = new tree_type(src)
 		if(tree_color)

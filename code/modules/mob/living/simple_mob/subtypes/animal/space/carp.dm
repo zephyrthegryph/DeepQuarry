@@ -84,14 +84,15 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	setup(PROC_REF(prepare_carp_colour))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 15))
 	swarming()
 
-// A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet
-/mob/living/simple_mob/animal/space/carp/Initialize(mapload)
-	. = ..()
+// Its initial color is fixed atom color, applied by the declared setup job.
+/// Declared setup: prepare carp colour, after the complete parent chain.
+/mob/living/simple_mob/animal/space/carp/proc/prepare_carp_colour()
 	carp_randomify(rarechance)
 
 // This is so carps can swarm

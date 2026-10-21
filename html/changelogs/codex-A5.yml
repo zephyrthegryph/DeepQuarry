@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declare mob initialization jobs while preserving constructor ordering."

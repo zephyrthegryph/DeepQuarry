@@ -40,6 +40,7 @@
 MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
 
 CAPABILITIES(/obj/item/robotic_multibelt)
+	setup(PROC_REF(generate_tools))
 	ref_one(nameof(selected_item))
 	owns_many(nameof(cyborg_integrated_tools))
 	op("multibelt_self", in_hand(), label("Use"), needs(req_is(nameof(cyborg_integrated_tools), TRUE, because = MSG(multibelt/cyborg_integrated_tools))), asks(/datum/prompt/choice, fields = list("radial" = TRUE, "choices" = computed(PROC_REF(tool_options)), "anchor" = computed(PROC_REF(tool_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "tool"), then(PROC_REF(tool_chosen)))
@@ -68,10 +69,6 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	return module
 
 //'Alterate Tools' means we do special tool handling in Init
-/obj/item/robotic_multibelt/Initialize(mapload)
-	. = ..()
-	generate_tools()
-
 /obj/item/robotic_multibelt/proc/generate_tools()
 	integrated_tools_by_name = list()
 
