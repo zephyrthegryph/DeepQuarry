@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Lint messages and AGENTS.md no longer point at the removed BF_* / factor() forms"
