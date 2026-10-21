@@ -740,6 +740,9 @@ banned = [
   "generate_recipes = declare the material recipes as /transformation/stack rules whose chosen(subject =) is the material type; stack_material_recipes() builds the list",
   "material_recipe_cache = GLOB.stack_recipes_of_material (code/library/transformations/stack_recipes.dm)",
 
+  "datum/crafting_recipe = a crafting recipe is a transformation: a type under /transformation/crafting with makes = list(item_term(result, 1)) and crafted(reqs = ..., build_time = ..., category = ...) (code/library/transformations/crafting_recipes.dm)",
+  "init_crafting_recipes = crafting_recipes() makes the recipes from the compiled rules on first use",
+
   "datum/recipe = a recipe is a transformation: a type under /transformation/kitchen with a transformation(takes = list(reagent(...), item_term(...), fruit_term(...)), makes = list(item_term(type, n)), cooks_in = ...) entry (code/library/transformations/kitchen.dm)",
   "select_recipe = cooking_select(appliancetype, container, exact) (code/library/transformations/kitchen.dm)",
   "available_recipes = cooking_rules_for(appliancetype): the kitchen rules of one appliance, in the order they are tried",

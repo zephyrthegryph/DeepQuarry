@@ -50,13 +50,13 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null, chosen = null, crafted = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
 		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \
-		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen))
+		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat, "chosen" = chosen, "crafted" = crafted))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -165,6 +165,20 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/group
 	var/replaces = FALSE
 	var/list/drops
+	/// A crafting recipe (code/library/transformations/crafting_recipes.dm): what the crafting window and steps read.
+	var/list/reqs
+	var/list/blacklist
+	var/list/tool_behaviors
+	var/list/tool_paths
+	var/list/parts
+	var/list/chem_catalysts
+	var/list/machinery
+	var/category
+	var/subcategory
+	var/always_available = TRUE
+	var/additional_req_text
+	var/material_template
+	var/material_total = 0
 	/// Gas taken from the air around the subject once per step, gas => moles, or null.
 	var/list/takes_ambient
 	var/holds
@@ -275,7 +289,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		var/datum/type_table/T = by_type[type]
 		var/datum/centry/C = static_find(T, ENTRY_TRANSFORMATION)
 		var/datum/entry/E = C?.item
-		if(!E || (!length(E.args?["takes"]) && !E.args?["chosen"]))
+		if(!E || (!length(E.args?["takes"]) && !E.args?["chosen"] && !E.args?["crafted"]))
 			continue // a base: defaults for the rules under it
 		var/datum/xform/X = xform_compile(type, E, order_of[type], C.origin)
 		if(!X)
@@ -325,7 +339,7 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.catalysts = xform_rows(arguments["catalysts"])
 	X.blocked_by = xform_rows(arguments["blocked_by"])
 	X.makes = xform_rows(arguments["makes"])
-	if(!length(X.takes) && !arguments["chosen"])
+	if(!length(X.takes) && !arguments["chosen"] && !arguments["crafted"])
 		declare_report("[origin]: [type]: transformation() takes no terms -- a rule takes at least one")
 		return null
 	X.anchor = length(X.takes) ? X.takes[1][2] : type
@@ -393,6 +407,8 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 		X.coating = arguments["coating"]
 	if(arguments["chosen"])
 		xform_compile_chosen(X, arguments["chosen"])
+	if(arguments["crafted"])
+		xform_compile_crafted(X, arguments["crafted"])
 	if(X.medium == MEDIUM_REAGENTS)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)

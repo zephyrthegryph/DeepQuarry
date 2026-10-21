@@ -97,20 +97,18 @@
 /obj/structure/closet/tent/B
 	icon = 'icons/obj/closets/tentB.dmi'
 
-/datum/crafting_recipe/tent
-	name = "tent (green)"
-	result = /obj/structure/closet/tent
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 10)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/tent
+CAPABILITIES(/transformation/crafting/tent)
+	configure(transformation(name = "tent (green)", makes = list(item_term(/obj/structure/closet/tent, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 10)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
 
-/datum/crafting_recipe/tentb
-	name = "tent (tan)"
-	result = /obj/structure/closet/tent/B
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 10)
-	)
-	time = 60
-	category = CAT_MISC
+
+/transformation/crafting/tentb
+CAPABILITIES(/transformation/crafting/tentb)
+	configure(transformation(name = "tent (tan)", makes = list(item_term(/obj/structure/closet/tent/B, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 10)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+

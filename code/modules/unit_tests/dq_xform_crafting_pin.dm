@@ -1,5 +1,5 @@
 /**
- * Crafting recipe pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy /datum/crafting_recipe types before they became
+ * Crafting recipe pin (doc/rewrite/proposals/transformations.md section 12), recorded on the legacy crafting recipe datums before they became
  * /transformation/crafting rules, and kept byte-identical through the conversion.
  *
  * One row per recipe, keyed by its path below the root of the recipe types: everything the crafting window and the crafting steps read once the recipe is
@@ -26,8 +26,8 @@
 
 /datum/unit_test/dq_xform_crafting_pin/Run()
 	var/list/rows = list()
-	for(var/datum/crafting_recipe/R as anything in GLOB.crafting_recipes)
-		var/key = copytext("[R.type]", length("/datum/crafting_recipe/") + 1)
-		rows[key] = "name=[R.name]; result=[R.result]; reqs=[dq_crafting_pin_text(R.reqs)]; blacklist=[dq_crafting_pin_text(R.blacklist)]; tool_behaviors=[dq_crafting_pin_text(R.tool_behaviors)]; tool_paths=[dq_crafting_pin_text(R.tool_paths)]; chem_catalysts=[dq_crafting_pin_text(R.chem_catalysts)]; machinery=[dq_crafting_pin_text(R.machinery)]; parts=[dq_crafting_pin_text(R.parts)]; time=[R.time]; category=[R.category]; subcategory=[R.subcategory]; always=[R.always_available]; extra=[R.additional_req_text]; one_per_turf=[R.one_per_turf]; material_template=[R.material_template]; material_total=[R.material_total]"
+	for(var/datum/xform/R as anything in crafting_recipes())
+		var/key = copytext("[R.rule_type]", length("/transformation/crafting/") + 1)
+		rows[key] = "name=[R.name]; result=[R.result]; reqs=[dq_crafting_pin_text(R.reqs)]; blacklist=[dq_crafting_pin_text(R.blacklist)]; tool_behaviors=[dq_crafting_pin_text(R.tool_behaviors)]; tool_paths=[dq_crafting_pin_text(R.tool_paths)]; chem_catalysts=[dq_crafting_pin_text(R.chem_catalysts)]; machinery=[dq_crafting_pin_text(R.machinery)]; parts=[dq_crafting_pin_text(R.parts)]; time=[R.build_time]; category=[R.category]; subcategory=[R.subcategory]; always=[R.always_available]; extra=[R.additional_req_text]; one_per_turf=[R.one_per_turf]; material_template=[R.material_template]; material_total=[R.material_total]"
 	var/failure = dq_xform_pin_compare(DQ_CRAFTING_PIN_NAME, rows)
 	TEST_ASSERT(isnull(failure), failure)

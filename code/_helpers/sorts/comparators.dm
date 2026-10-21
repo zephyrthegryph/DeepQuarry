@@ -46,7 +46,7 @@
 	return sorttext("[B]","[A]")
 
 /**
- * Sorts crafting recipe requirements before the crafting recipe is inserted into GLOB.crafting_recipes
+ * Sorts crafting recipe requirements when crafting_recipes() makes the recipe
  *
  * Prioritises [/datum/reagent] to ensure reagent requirements are always processed first when crafting.
  * This prevents any reagent_containers from being consumed before the reagents they contain, which can

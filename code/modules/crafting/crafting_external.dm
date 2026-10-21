@@ -10,7 +10,7 @@
  *
  * Otherwise it simply forceMoves the atom into this atom
  */
-/atom/proc/CheckParts(list/parts_list, datum/crafting_recipe/R)
+/atom/proc/CheckParts(list/parts_list, datum/xform/R)
 	if(LAZYLEN(parts_list))
 		if(istype(parts_list["reagents"], /datum/reagents))
 			var/datum/reagents/RG = parts_list["reagents"]

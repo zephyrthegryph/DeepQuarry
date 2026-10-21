@@ -427,11 +427,10 @@ CAPABILITIES(/obj/item/leash)
 	icon = 'icons/obj/leash.dmi'
 	icon_state = "cable"
 
-/datum/crafting_recipe/leash
-	name = "cable leash"
-	result = /obj/item/leash/cable
-	reqs = list(
-		list(/obj/item/stack/cable_coil = 3)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/leash
+CAPABILITIES(/transformation/crafting/leash)
+	configure(transformation(name = "cable leash", makes = list(item_term(/obj/item/leash/cable, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/cable_coil = 3)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+

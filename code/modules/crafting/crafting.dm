@@ -111,10 +111,10 @@
  * Check that the contents of the recipe meet the requirements.
  *
  * user: The /mob that initated the crafting.
- * R: The /datum/crafting_recipe being attempted.
+ * R: The /datum/xform crafting recipe being attempted.
  * contents: List of items to search for R's reqs.
  */
-/datum/personal_crafting/proc/check_contents(atom/a, datum/crafting_recipe/R, list/contents)
+/datum/personal_crafting/proc/check_contents(atom/a, datum/xform/R, list/contents)
 	var/list/item_instances = contents["instances"]
 	contents = contents["other"]
 
@@ -151,10 +151,11 @@
 		if(!satisfied)
 			return FALSE
 
-	return R.check_requirements(a, requirements_list)
+	var/transformation/crafting/hooks = R.owner_of()
+	return hooks.check_requirements(a, requirements_list)
 
 /// Returns a boolean on whether the tool requirements of the input recipe are satisfied by the input source and surroundings.
-/datum/personal_crafting/proc/check_tools(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_tools(atom/source, datum/xform/R, list/surroundings)
 	if(!length(R.tool_behaviors) && !length(R.tool_paths))
 		return TRUE
 	var/list/available_tools = list()
@@ -188,21 +189,21 @@
 
 	return TRUE
 
-/datum/personal_crafting/proc/check_reagents(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_reagents(atom/source, datum/xform/R, list/surroundings)
 	var/list/reagents = surroundings["other"]
 	for(var/requirement_path in R.chem_catalysts)
 		if(reagents[requirement_path] < LAZYACCESS(R.chem_catalysts, requirement_path))
 			return FALSE
 	return TRUE
 
-/datum/personal_crafting/proc/check_machinery(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_machinery(atom/source, datum/xform/R, list/surroundings)
 	var/list/machines = surroundings["machinery"]
 	for(var/machinery_path in R.machinery)
 		if(!machines[machinery_path])//We don't care for volume with machines, just if one is there or not
 			return FALSE
 	return TRUE
 
-/datum/personal_crafting/proc/check_requirements(atom/source, datum/crafting_recipe/R, list/surroundings)
+/datum/personal_crafting/proc/check_requirements(atom/source, datum/xform/R, list/surroundings)
 	if(!check_contents(source, R, surroundings))
 		return ", missing component."
 	if(!check_tools(source, R, surroundings))
@@ -214,7 +215,7 @@
 	return
 
 /// Can `R` be crafted now, before the timed part starts? Returns the text of the failure, or null.
-/datum/personal_crafting/proc/craft_precheck(atom/a, datum/crafting_recipe/R, list/material_choices)
+/datum/personal_crafting/proc/craft_precheck(atom/a, datum/xform/R, list/material_choices)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
 	. = check_requirements(a, R, surroundings)
 	if(.)
@@ -230,7 +231,7 @@
 				return ", object already present."
 	return null
 
-/datum/personal_crafting/proc/construct_item_checked(atom/a, datum/crafting_recipe/R, list/material_choices)
+/datum/personal_crafting/proc/construct_item_checked(atom/a, datum/xform/R, list/material_choices)
 	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
 	var/list/resolved_materials = blueprint?.resolve(material_choices)
 	var/list/surroundings = get_surroundings(a, R.blacklist)
@@ -251,7 +252,7 @@
 	return I //Send the item back to whatever called this proc so it can handle whatever it wants to do with the new item
 
 /// Sheets of each chosen material a recipe's blueprint needs.
-/datum/personal_crafting/proc/crafting_sheets_needed(datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/crafting_sheets_needed(datum/xform/R, list/resolved)
 	var/list/needed = list()
 	var/datum/material_template/blueprint = material_template_singleton(R.material_template)
 	var/list/amounts = blueprint.role_amounts(R.material_total)
@@ -259,7 +260,7 @@
 		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(amounts[role] / SHEET_MATERIAL_AMOUNT, 1)
 	return needed
 
-/datum/personal_crafting/proc/crafting_materials_available(list/surroundings, datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/crafting_materials_available(list/surroundings, datum/xform/R, list/resolved)
 	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
@@ -271,7 +272,7 @@
 			return FALSE
 	return TRUE
 
-/datum/personal_crafting/proc/consume_crafting_materials(list/surroundings, datum/crafting_recipe/R, list/resolved)
+/datum/personal_crafting/proc/consume_crafting_materials(list/surroundings, datum/xform/R, list/resolved)
 	var/list/needed = crafting_sheets_needed(R, resolved)
 	var/list/instances = surroundings["instances"]
 	for(var/instance_path in instances)
@@ -307,7 +308,7 @@
 	del_reqs return the list of parts resulting object will receive as argument of CheckParts proc, on the atom level it will add them all to the contents, on all other levels it calls ..() and does whatever is needed afterwards but from contents list already
 */
 
-/datum/personal_crafting/proc/del_reqs(datum/crafting_recipe/R, atom/a)
+/datum/personal_crafting/proc/del_reqs(datum/xform/R, atom/a)
 	var/list/surroundings = get_environment(a)
 	var/list/parts = list("items" = list())
 	if(R.get_parts_reagents_volume())
@@ -473,9 +474,9 @@
 	data["materialChoices"] = material_choices
 
 	var/list/craftability = list()
-	for(var/datum/crafting_recipe/R as anything in GLOB.crafting_recipes)
+	for(var/datum/xform/R as anything in crafting_recipes())
 
-		if(!R.always_available && !(R.type in user?.mind?.learned_recipes)) //User doesn't actually know how to make this.
+		if(!R.always_available && !(R.rule_type in user?.mind?.learned_recipes)) //User doesn't actually know how to make this.
 			continue
 
 		if((R.category != cur_category) || (R.subcategory != cur_subcategory))
@@ -495,13 +496,9 @@
 	var/list/data = list()
 
 	var/list/crafting_recipes = list()
-	for(var/datum/crafting_recipe/R as anything in GLOB.crafting_recipes)
+	for(var/datum/xform/R as anything in crafting_recipes())
 
-		if(R.name == "") //This is one of the invalid parents that sneaks in
-			GLOB.crafting_recipes -= R
-			continue
-
-		if(!R.always_available && !(R.type in user?.mind?.learned_recipes)) //User doesn't actually know how to make this.
+		if(!R.always_available && !(R.rule_type in user?.mind?.learned_recipes)) //User doesn't actually know how to make this.
 			continue
 
 		if(isnull(crafting_recipes[R.category]))
@@ -545,20 +542,20 @@ CAPABILITIES(/datum/personal_crafting)
 
 /// The recipe the window sent, or null when it is not one of the known recipes.
 /datum/personal_crafting/proc/make_recipe(datum/act/op/A)
-	var/datum/crafting_recipe/R = A.arg("recipe")
-	if(isnull(R) || !(R in GLOB.crafting_recipes))
+	var/datum/xform/R = A.arg("recipe")
+	if(isnull(R) || !(R in crafting_recipes()))
 		return null
 	return R
 
 /// How long the recipe takes.
 /datum/personal_crafting/proc/make_time(datum/act/op/A)
-	var/datum/crafting_recipe/R = make_recipe(A)
-	return R ? R.time : 0
+	var/datum/xform/R = make_recipe(A)
+	return R ? R.build_time : 0
 
 /// The craft begins: what is missing now is said at once and nothing starts.
 /datum/personal_crafting/proc/make_started(datum/act/op/A)
 	var/mob/user = A.actor
-	var/datum/crafting_recipe/R = make_recipe(A)
+	var/datum/xform/R = make_recipe(A)
 	if(!R)
 		return MSG(req_silent)
 	var/failure = craft_precheck(user, R, A.arg("materialSlots"))
@@ -570,7 +567,7 @@ CAPABILITIES(/datum/personal_crafting)
 
 /// The user moved or lost the craft some other way: a failed construction.
 /datum/personal_crafting/proc/make_interrupted(datum/act/op/A)
-	var/datum/crafting_recipe/R = make_recipe(A)
+	var/datum/xform/R = make_recipe(A)
 	if(R)
 		make_finished(A.actor, R, ".")
 	tgui_interact(A.actor)
@@ -578,25 +575,26 @@ CAPABILITIES(/datum/personal_crafting)
 /// The time is up: the item, or the text of why it failed.
 /datum/personal_crafting/proc/make_done(datum/act/op/A, materialSlots, recipe)
 	var/mob/user = A.actor
-	var/datum/crafting_recipe/R = make_recipe(A)
+	var/datum/xform/R = make_recipe(A)
 	if(!R)
 		return
 	make_finished(user, R, construct_item_checked(user, R, materialSlots))
 	tgui_interact(user)
 
 /// The end of a craft: the item, or the text of why it failed.
-/datum/personal_crafting/proc/make_finished(mob/user, datum/crafting_recipe/TR, atom/movable/result)
+/datum/personal_crafting/proc/make_finished(mob/user, datum/xform/TR, atom/movable/result)
 	if(!istext(result)) //We made an item and didn't get a fail message
 		if(ismob(user) && isitem(result)) //In case the user is actually possessing a non mob like a machine
 			user.put_in_hands(result)
 		else
 			result.forceMove(user.drop_location())
 		to_chat(user, span_notice("[TR.name] constructed."))
-		TR.on_craft_completion(user, result)
+		var/transformation/crafting/hooks = TR.owner_of()
+		hooks.on_craft_completion(user, result)
 	else
 		to_chat(user, span_warning("Construction failed[result]"))
 
-/datum/personal_crafting/proc/build_recipe_data(datum/crafting_recipe/R)
+/datum/personal_crafting/proc/build_recipe_data(datum/xform/R)
 	var/list/data = list()
 	data["name"] = R.name
 	data["ref"] = "[REF(R)]"

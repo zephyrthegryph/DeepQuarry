@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Crafting recipes are declared as transformations instead of recipe datums; the crafting window is unchanged."

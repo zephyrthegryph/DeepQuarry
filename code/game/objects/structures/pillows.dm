@@ -217,77 +217,69 @@ MSG_DEF_SELF(pillowpilefront/disassembling, span_notice("Now disassembling the f
 
 //crafting
 
-/datum/crafting_recipe/pillowpink
-	name = "pillow (pink)"
-	result = /obj/item/bedsheet/pillow
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/pillowpink
+CAPABILITIES(/transformation/crafting/pillowpink)
+	configure(transformation(name = "pillow (pink)", makes = list(item_term(/obj/item/bedsheet/pillow, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
 
-/datum/crafting_recipe/pillowteal
-	name = "pillow (teal)"
-	result = /obj/item/bedsheet/pillow/teal
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
 
-/datum/crafting_recipe/pillowwhite
-	name = "pillow (white)"
-	result = /obj/item/bedsheet/pillow/white
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/pillowteal
+CAPABILITIES(/transformation/crafting/pillowteal)
+	configure(transformation(name = "pillow (teal)", makes = list(item_term(/obj/item/bedsheet/pillow/teal, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
 
-/datum/crafting_recipe/pillowblack
-	name = "pillow (black)"
-	result = /obj/item/bedsheet/pillow/black
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
 
-/datum/crafting_recipe/pillowgreen
-	name = "pillow (green)"
-	result = /obj/item/bedsheet/pillow/green
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/pillowwhite
+CAPABILITIES(/transformation/crafting/pillowwhite)
+	configure(transformation(name = "pillow (white)", makes = list(item_term(/obj/item/bedsheet/pillow/white, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
 
-/datum/crafting_recipe/pillowyellow
-	name = "pillow (yellow)"
-	result = /obj/item/bedsheet/pillow/yellow
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
 
-/datum/crafting_recipe/pillowred
-	name = "pillow (red)"
-	result = /obj/item/bedsheet/pillow/red
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
+/transformation/crafting/pillowblack
+CAPABILITIES(/transformation/crafting/pillowblack)
+	configure(transformation(name = "pillow (black)", makes = list(item_term(/obj/item/bedsheet/pillow/black, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
 
-/datum/crafting_recipe/pilloworange
-	name = "pillow (orange)"
-	result = /obj/item/bedsheet/pillow/orange
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 60
-	category = CAT_MISC
+
+/transformation/crafting/pillowgreen
+CAPABILITIES(/transformation/crafting/pillowgreen)
+	configure(transformation(name = "pillow (green)", makes = list(item_term(/obj/item/bedsheet/pillow/green, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+
+
+/transformation/crafting/pillowyellow
+CAPABILITIES(/transformation/crafting/pillowyellow)
+	configure(transformation(name = "pillow (yellow)", makes = list(item_term(/obj/item/bedsheet/pillow/yellow, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+
+
+/transformation/crafting/pillowred
+CAPABILITIES(/transformation/crafting/pillowred)
+	configure(transformation(name = "pillow (red)", makes = list(item_term(/obj/item/bedsheet/pillow/red, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+
+
+/transformation/crafting/pilloworange
+CAPABILITIES(/transformation/crafting/pilloworange)
+	configure(transformation(name = "pillow (orange)", makes = list(item_term(/obj/item/bedsheet/pillow/orange, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 6)),
+			build_time = 6 SECONDS,
+			category = CAT_MISC)))
+
 
 /// The front half of the pile (owns_one(starts =)), on the pile's turf.
 /obj/structure/bed/pillowpile/proc/make_front(current)

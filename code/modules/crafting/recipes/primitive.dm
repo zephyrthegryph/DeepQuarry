@@ -1,39 +1,37 @@
 /*
  * Misc
  */
-/datum/crafting_recipe/cloth
-	name = "Cloth bolt"
-	result = /obj/item/stack/material/cloth
-	reqs = list(list(/obj/item/stack/material/fiber = 3))
-	time = 40
-	category = CAT_PRIMAL
+/transformation/crafting/cloth
+CAPABILITIES(/transformation/crafting/cloth)
+	configure(transformation(name = "Cloth bolt", makes = list(item_term(/obj/item/stack/material/cloth, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/fiber = 3)),
+			build_time = 4 SECONDS,
+			category = CAT_PRIMAL)))
 
-/datum/crafting_recipe/crude_bandage
-	name = "Crude bandages (x10)"
-	result = /obj/item/stack/medical/crude_pack
-	reqs = list(list(/obj/item/stack/material/cloth = 2))
-	time = 40
-	category = CAT_PRIMAL
+
+/transformation/crafting/crude_bandage
+CAPABILITIES(/transformation/crafting/crude_bandage)
+	configure(transformation(name = "Crude bandages (x10)", makes = list(item_term(/obj/item/stack/medical/crude_pack, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 2)),
+			build_time = 4 SECONDS,
+			category = CAT_PRIMAL)))
+
 
 /*
  * Primitive Clothing
  */
-/datum/crafting_recipe/primitive_clothes
-	name = "primitive clothes"
-	result = /obj/item/clothing/under/primitive
-	reqs = list(
-		list(/obj/item/stack/material/fiber = 4),
-		list(/obj/item/stack/material/cloth = 6)
-	)
-	time = 90
-	category = CAT_CLOTHING
+/transformation/crafting/primitive_clothes
+CAPABILITIES(/transformation/crafting/primitive_clothes)
+	configure(transformation(name = "primitive clothes", makes = list(item_term(/obj/item/clothing/under/primitive, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/fiber = 4), list(/obj/item/stack/material/cloth = 6)),
+			build_time = 9 SECONDS,
+			category = CAT_CLOTHING)))
 
-/datum/crafting_recipe/primitive_shoes
-	name = "primitive shoes"
-	result = /obj/item/clothing/shoes/primitive
-	reqs = list(
-		list(/obj/item/stack/material/fiber = 2),
-		list(/obj/item/stack/material/cloth = 3)
-	)
-	time = 60
-	category = CAT_CLOTHING
+
+/transformation/crafting/primitive_shoes
+CAPABILITIES(/transformation/crafting/primitive_shoes)
+	configure(transformation(name = "primitive shoes", makes = list(item_term(/obj/item/clothing/shoes/primitive, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/fiber = 2), list(/obj/item/stack/material/cloth = 3)),
+			build_time = 6 SECONDS,
+			category = CAT_CLOTHING)))
+

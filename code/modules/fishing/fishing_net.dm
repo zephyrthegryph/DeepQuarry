@@ -208,11 +208,10 @@ CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
 /obj/item/material/fishing_net/butterfly_net/look_trapped(datum/look/look, mob/M)
 	look.identity(name = "filled butterfly net", desc = "A net with [M] inside.")
 
-/datum/crafting_recipe/butterfly_net
-	name = "butterfly net"
-	result = /obj/item/material/fishing_net/butterfly_net
-	reqs = list(
-		list(/obj/item/stack/material/cloth = 2)
-	)
-	time = 20
-	category = CAT_MISC
+/transformation/crafting/butterfly_net
+CAPABILITIES(/transformation/crafting/butterfly_net)
+	configure(transformation(name = "butterfly net", makes = list(item_term(/obj/item/material/fishing_net/butterfly_net, 1)),
+		crafted = crafted(reqs = list(list(/obj/item/stack/material/cloth = 2)),
+			build_time = 2 SECONDS,
+			category = CAT_MISC)))
+

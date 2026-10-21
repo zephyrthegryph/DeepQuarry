@@ -5321,3 +5321,8 @@ The 10 fusion reactions are `/transformation/fusion` rules with the same numbers
 
 The stack recipes (material sheets, tiles, rods, sandbags, wax, the cyborg recyclers) are `/transformation/stack` rules expanded over the materials; every stack of every type has the same recipes
 in the same order with the same costs, results, times and flags (`dq_xform_stack_pin`, 3,340 rows). A new material gets the base recipes by its integrity and hardness as before.
+
+## Crafting recipes as transformations: no change (2026-10-21)
+
+The 53 crafting recipes are `/transformation/crafting` rules; the crafting window and the crafting steps see the same requirements, tools, parts, times and categories (`dq_xform_crafting_pin`).
+Recipes are made on first use rather than at world start.

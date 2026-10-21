@@ -737,3 +737,9 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   `/datum/xform_group`; the stack window and the build op read them in place of the old datums. Pinned by `dq_xform_stack_pin`, recorded on the legacy lists before anything moved: 3,340 rows, one
   per recipe of every stack the game makes, byte-identical through the conversion. `/datum/stack_recipe`, `/datum/stack_recipe_list`, `generate_recipes` and `material_recipe_cache` are hard-banned.
   The gas laws of wave 4 wait: benchmarks and profiling are paused until the end, and the laws are chosen from a profile.
+* **Wave 5, crafting recipes.** The 53 `/datum/crafting_recipe` types are `/transformation/crafting/*` rules (the 11 files that declared them): `makes = list(item_term(result, 1))` and a `crafted(...)`
+  entry that carries the recipe's lists as written (`reqs` groups of "this OR that" with amounts, `parts`, `tool_paths`, `tool_behaviors`, `chem_catalysts`, `machinery`, `build_time`, `category`, `subcategory`,
+  `always_available`, `extra_text`, `one_per_turf`). `crafting_recipes()` makes each rule into the `/datum/xform` the crafting window and steps read, doing what the old constructor did (a material product
+  splits its sheet cost into a material template, the result is forbidden as an ingredient, the requirements are sorted), on first use because the material registry is read there. The two hooks
+  (`check_requirements`, `on_craft_completion`) are procs on the rule type, called on its owner instance; the spear and toilet recipes override them. Pinned by `dq_xform_crafting_pin` (recorded on the
+  legacy recipes: every field the window and steps read, after the constructor ran), byte-identical through the conversion. `/datum/crafting_recipe` and `init_crafting_recipes` are hard-banned.

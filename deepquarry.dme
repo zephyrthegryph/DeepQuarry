@@ -5728,6 +5728,7 @@
 #include "code\library\transformations\transformation_conditions.dm"
 #include "code\library\transformations\transformation_entry.dm"
 #include "code\library\transformations\transformation_settle.dm"
+#include "code\library\transformations\crafting_recipes.dm"
 #include "code\library\transformations\kitchen.dm"
 #include "code\library\transformations\res_gas.dm"
 #include "code\library\transformations\stack_recipes.dm"

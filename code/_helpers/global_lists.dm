@@ -240,7 +240,6 @@ GLOBAL_LIST_EMPTY(mannequins)
 	for(var/path in paths)
 		var/datum/digest_mode/DM = new path
 		GLOB.digest_modes[DM.id] = DM
-	init_crafting_recipes(GLOB.crafting_recipes)
 
 	paths = subtypesof(/datum/ai_laws)
 	for(var/path in paths)
@@ -290,13 +289,6 @@ GLOBAL_LIST_EMPTY(mannequins)
 
 	cache_no_ceiling_image()
 
-/// Inits the crafting recipe list, sorting crafting recipe requirements in the process.
-/proc/init_crafting_recipes(list/crafting_recipes)
-	for(var/path in subtypesof(/datum/crafting_recipe))
-		var/datum/crafting_recipe/recipe = new path()
-		if(recipe.reqs) recipe.reqs = sortList(recipe.reqs, GLOBAL_PROC_REF(cmp_crafting_req_priority))
-		crafting_recipes += recipe
-	return crafting_recipes
 /* // Uncomment to debug chemical reaction list.
 /client/verb/debug_chemical_list()
 
