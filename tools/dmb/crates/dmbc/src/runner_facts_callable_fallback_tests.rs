@@ -62,7 +62,7 @@ fn finite_callable_exclusion_tracks_removal_move_and_shadow() {
     // These bytes are the exact answer projection used by persisted read replay;
     // process-local domain versions never authorize disk answers.
     let persisted_answer = first_host.resolve(query).canonical_bytes();
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-native-v2/callable-fallback-tests")
+    let root = crate::test_scratch::root()
         .join(format!("{}-{}", std::process::id(), first_version));
     std::fs::create_dir_all(&root).unwrap();
     let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
@@ -185,7 +185,7 @@ fn procedure_memo_executable_disk_replay_rejects_last_name_removal_and_shadow() 
     )
     .unwrap();
     let token = first_host.domain_version(query.domain()).unwrap();
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-native-v2/callable-fallback-tests")
+    let root = crate::test_scratch::root()
         .join(format!("procedure-{}-{token}", std::process::id()));
     std::fs::create_dir_all(&root).unwrap();
     let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
@@ -268,7 +268,7 @@ fn actual_cached_failure_revalidates_member_global_and_deleted_callable() {
     let retained = build_host.host_facts().unwrap();
     let semantic = std::cell::RefCell::new(dm_tree::frontend::RetainedSemanticTree::default());
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-native-v2/callable-fallback-tests").join(
+    let root = crate::test_scratch::root().join(
         format!(
             "failure-{}-{}",
             std::process::id(),

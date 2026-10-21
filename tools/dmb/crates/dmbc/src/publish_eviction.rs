@@ -19,6 +19,18 @@ impl PairStore {
     /// DESIGN's seven-day retention is supplied by the host, with an explicit
     /// clock for deterministic tests. Every session's last three pairs are roots.
     pub fn evict(&self, now: SystemTime, retention: Duration) -> io::Result<EvictionResult> {
+        self.evict_to_budget(now, retention, None)
+    }
+    /// `evict`, plus a byte cap: when the pairs left after the age pass still hold more than `max_bytes`
+    /// (dmb + rsc sizes), the least recently modified unprotected pairs go until the store fits, and the
+    /// resource archives only they used are released with them. Protected roots (each session's last
+    /// three pairs) are never removed, so a store of nothing but roots may stay over the cap.
+    pub fn evict_to_budget(
+        &self,
+        now: SystemTime,
+        retention: Duration,
+        max_bytes: Option<u64>,
+    ) -> io::Result<EvictionResult> {
         let _lock = self.lock()?;
         let mut roots = BTreeSet::new();
         for entry in fs::read_dir(self.root.join("sessions"))? {
@@ -72,11 +84,32 @@ impl PairStore {
                 .duration_since(entry.metadata()?.modified()?)
                 .unwrap_or_default()
                 > retention;
-            pairs.push((entry.path(), pair, old));
+            pairs.push((entry.path(), pair, old, entry.metadata()?.modified()?));
         }
+        let mut size_pruned = false;
+        if let Some(cap) = max_bytes {
+            // Oldest first; whatever the age pass keeps counts against the cap.
+            pairs.sort_by_key(|entry| entry.3);
+            let mut total: u64 = pairs
+                .iter()
+                .filter(|entry| !entry.2 || roots.contains(&entry.1.id))
+                .map(|entry| entry.1.dmb_bytes.saturating_add(entry.1.rsc_bytes))
+                .sum();
+            for entry in pairs.iter_mut() {
+                if total <= cap {
+                    break;
+                }
+                if !entry.2 && !roots.contains(&entry.1.id) {
+                    entry.2 = true;
+                    size_pruned = true;
+                    total = total.saturating_sub(entry.1.dmb_bytes.saturating_add(entry.1.rsc_bytes));
+                }
+            }
+        }
+        let archive_retention = if size_pruned { Duration::ZERO } else { retention };
         let mut result = EvictionResult::default();
         let mut archives = BTreeSet::new();
-        for (path, pair, old) in pairs {
+        for (path, pair, old, _) in pairs {
             let protected = roots.contains(&pair.id);
             if protected {
                 result.protected_pairs += 1;
@@ -116,7 +149,7 @@ impl PairStore {
             if now
                 .duration_since(entry.metadata()?.modified()?)
                 .unwrap_or_default()
-                <= retention
+                <= archive_retention
             {
                 continue;
             }
@@ -343,5 +376,40 @@ mod tests {
                 Err(error) => assert_eq!(error.kind(), io::ErrorKind::NotFound),
             }
         });
+    }
+    #[test]
+    fn a_store_over_its_byte_cap_is_evicted_down_to_it_oldest_first_and_never_below_the_roots() {
+        let root = Temp::new();
+        let store = &root.0;
+        // Five 1000 byte pairs in session 1: the last three are roots, the first two are not.
+        let mut published = Vec::new();
+        for number in 0..5u8 {
+            let world = vec![number; 600];
+            let resource = vec![number.wrapping_add(100); 400];
+            published.push(store.publish(1, &world, &resource).unwrap());
+            std::thread::sleep(Duration::from_millis(30));
+        }
+        let now = SystemTime::now();
+        // Within the age window and under the cap: nothing moves.
+        let none = store
+            .evict_to_budget(now, Duration::from_secs(7 * 86400), Some(10_000))
+            .unwrap();
+        assert_eq!((none.pairs, none.protected_pairs), (0, 3));
+        // Cap of 4000: 5000 bytes held, so exactly the oldest one goes.
+        let one = store
+            .evict_to_budget(now, Duration::from_secs(7 * 86400), Some(4_000))
+            .unwrap();
+        assert_eq!(one.pairs, 1);
+        assert!(store.verify(published[0].id, true).is_err());
+        store.verify(published[1].id, true).unwrap();
+        // A cap below what the roots alone need removes every unprotected pair and keeps the roots.
+        let rest = store
+            .evict_to_budget(now, Duration::from_secs(7 * 86400), Some(1))
+            .unwrap();
+        assert_eq!(rest.pairs, 1);
+        assert_eq!(rest.protected_pairs, 3);
+        for pair in &published[2..] {
+            store.verify(pair.id, true).unwrap();
+        }
     }
 }

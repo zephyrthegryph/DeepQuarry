@@ -3,6 +3,9 @@
 //! Jobs may borrow build data. Scope completion joins all jobs, including on
 //! panic; dropping the executor terminates and joins its actual OS workers.
 //! There is no global Rayon pool or hardware-dependent worker-count cap.
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 mod request_scope;
 mod weighted;
 pub use request_scope::RequestError;

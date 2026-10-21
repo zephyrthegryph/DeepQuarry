@@ -8,7 +8,7 @@ impl Directory {
             .unwrap()
             .as_nanos();
         Self(
-            PathBuf::from("E:/dq-cache/dmb-protocol-checks").join(format!(
+            crate::test_scratch::root().join(format!(
                 "batch-{}-{stamp}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)

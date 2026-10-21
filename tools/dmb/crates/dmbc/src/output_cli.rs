@@ -257,7 +257,7 @@ mod tests {
     #[test]
     fn compile_receipt_uses_exact_hex_strings_and_refuses_overwriting() {
         let base = if cfg!(windows) {
-            PathBuf::from("E:/dq-cache/dmb-native-v2/contract-tests")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };
@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn acquire_returns_independent_writable_copies_and_preserves_generation_on_failure() {
         let base = if cfg!(windows) {
-            PathBuf::from("E:/dq-cache/dmb-native-v2/contract-tests")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };

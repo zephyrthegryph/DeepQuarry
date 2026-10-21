@@ -4,6 +4,9 @@
 //! generation/proof machinery. The cold pipeline and command-line driver will
 //! consume this library once their declaration/lowering contracts are complete.
 
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 pub(crate) mod artifact_publication_store;
 pub mod cache_maintenance;
 pub mod cli;

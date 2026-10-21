@@ -21,20 +21,7 @@ const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n       
 struct Roots(PathBuf);
 impl Roots {
     fn new() -> Self {
-        let parent = if cfg!(windows) {
-            PathBuf::from("E:/dq-cache/dmb-protocol-checks")
-        } else {
-            std::env::temp_dir()
-        };
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let root = parent.join(format!(
-            "six-session-contract-{}-{stamp}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&root).unwrap();
+        let root = crate::test_scratch::dir("six-session-contract");
         for index in 0..6 {
             let directory = root.join(format!("root-{index}"));
             std::fs::create_dir(&directory).unwrap();

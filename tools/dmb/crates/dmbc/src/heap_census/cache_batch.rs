@@ -26,7 +26,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root = PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        let root = crate::test_scratch::root()
             .join(format!("spool-census-{}-{stamp}", std::process::id()));
         let disk = crate::runner_disk::LazyDisk::new(root.clone());
         let attempt = disk.batch_attempt();

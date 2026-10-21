@@ -48,7 +48,7 @@ mod tests {
     use super::*;
     #[test]
     fn contended_lease_checks_cancellation_and_deadline_without_removing_owner() {
-        let path = std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks").join(format!(
+        let path = crate::test_scratch::root().join(format!(
             "lease-{}-{}.lock",
             std::process::id(),
             SystemTimeKey::next()

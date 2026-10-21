@@ -207,7 +207,7 @@ fn identical_body_bytes_cannot_replay_across_pending_body_context_change() {
         }
     }
     let root = if cfg!(windows) {
-        std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        crate::test_scratch::root()
     } else {
         std::env::temp_dir()
     };

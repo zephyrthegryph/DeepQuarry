@@ -1,5 +1,8 @@
 //! Immutable compiler cache. Stage-specific payloads require caller bytecheck;
 //! no semantic meaning or cross-segment pointers are trusted by this crate.
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 mod segment;
 mod store;
 pub use segment::{

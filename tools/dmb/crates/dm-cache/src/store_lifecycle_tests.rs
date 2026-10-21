@@ -4,7 +4,7 @@ static NEXT_TEST: AtomicU64 = AtomicU64::new(0);
 struct Temporary(PathBuf);
 impl Temporary {
     fn new() -> Self {
-        let root = PathBuf::from("E:/dq-cache/dmb-protocol-checks").join(format!(
+        let root = crate::test_scratch::root().join(format!(
             "cache-age-{}-{}-{}",
             std::process::id(),
             SystemTime::now()

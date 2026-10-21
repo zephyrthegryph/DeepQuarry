@@ -5,7 +5,7 @@ struct Temp(std::path::PathBuf);
 impl Temp {
     fn new() -> Self {
         let base = if cfg!(windows) {
-            std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };

@@ -670,7 +670,7 @@ fn abi_disk_helper_transport_reissues_current_expression_and_rejects_change() {
     disk_roundtrip("value in list(1,2)", "value in list(1,3)");
 }
 fn disk_roundtrip(signature: &str, changed_signature: &str) {
-    let root = std::path::PathBuf::from("E:/dq-cache/dmb-abi-disk-tests").join(format!(
+    let root = crate::test_scratch::root().join(format!(
         "{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
