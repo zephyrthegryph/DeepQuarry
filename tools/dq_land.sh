@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Land a lane on master with the merge lock held only for the cheap part: prove OUTSIDE the lock, lock only to merge and push.
 #
-#   export DQ_MERGE_SESSION=<the lane branch>
+#   export DQ_MERGE_SESSION=<the lane branch>   # optional: defaults to the current branch
 #   bash tools/dq_land.sh --light                     # a LIGHT lane (docs/tooling/Rust only): queue it, land the batch (tools/dq_land_batch.sh)
 #   bash tools/dq_land.sh [--tests "a b"] [--covers GLOB] [--rounds N] [--dry-run]     # from the lane's pool worktree
 #
@@ -51,8 +51,9 @@ while [ $# -gt 0 ]; do
 	shift
 done
 case "$rounds" in ''|*[!0-9]*|0) echo "dq_land: --rounds must be a positive number" >&2; exit 2 ;; esac
-[ -n "${DQ_MERGE_SESSION:-}" ] || { echo "dq_land: set DQ_MERGE_SESSION=<your lane branch> (the merge tools need it)" >&2; exit 2; }
 branch="$(git symbolic-ref -q --short HEAD)" || { echo "dq_land: a detached HEAD; run it on the lane's branch" >&2; exit 2; }
+# The merge tools need a session name; default it to the lane branch (an explicit DQ_MERGE_SESSION wins).
+[ -n "${DQ_MERGE_SESSION:-}" ] || export DQ_MERGE_SESSION="$branch"
 case "$branch" in master|rewrite/integ-current) echo "dq_land: $branch is not a lane branch" >&2; exit 2 ;; esac
 
 log() { echo "== dq_land: $*"; }
