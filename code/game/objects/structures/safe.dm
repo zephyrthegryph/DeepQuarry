@@ -181,8 +181,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	plane = PLATING_PLANE
 	layer = ABOVE_UTILITY
 
-/obj/structure/safe/floor/Initialize(mapload)
-	. = ..()
+/obj/structure/safe/floor/proc/hide_under_mapped_floor()
 	var/turf/T = loc
 	if(istype(T) && !T.is_plating())
 		hide(1)
@@ -192,3 +191,6 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 
 /obj/structure/safe/floor/hides_under_flooring()
 	return 1
+
+CAPABILITIES(/obj/structure/safe/floor)
+	setup(PROC_REF(hide_under_mapped_floor))

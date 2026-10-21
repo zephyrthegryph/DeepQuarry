@@ -22,8 +22,7 @@
 
 /obj/structure/prop/nest/proximity_tracked = TRUE
 
-/obj/structure/prop/nest/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/nest/proc/arm_initial_spawn_cooldown()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 
 /// Rolled before init (rolls()): not the biggest shift in spawn time, up to a tenth either way.
@@ -32,6 +31,7 @@
 	return spawn_delay + R.number(-shift, shift)
 
 CAPABILITIES(/obj/structure/prop/nest)
+	setup(PROC_REF(arm_initial_spawn_cooldown))
 	rolls(nameof(spawn_delay), PROC_REF(roll_spawn_delay), when = nameof(randomize_spawning))
 	every(2 SECONDS, then(PROC_REF(nest_step)), when = STAT_RELEVANCE)
 	without("message")   // the disturbance shows the message itself

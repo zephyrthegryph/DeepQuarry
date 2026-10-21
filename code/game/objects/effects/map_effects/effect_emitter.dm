@@ -8,14 +8,13 @@
 	var/effect_forced_dir = null		// If set, effects emitted will always move in this direction.
 
 CAPABILITIES(/obj/effect/map_effect/interval/effect_emitter)
+	setup(PROC_REF(attach_emitter_system))
 	owns_one(nameof(effect_system), /datum/effect/effect/system, starts = nameof(effect_system_type), starts_args = NO_LOC)
 
-/obj/effect/map_effect/interval/effect_emitter/Initialize(mapload)
-	. = ..()
+/obj/effect/map_effect/interval/effect_emitter/proc/attach_emitter_system()
 	if(effect_system)
 		effect_system.attach(src)
 		configure_effects()
-
 
 /obj/effect/map_effect/interval/effect_emitter/proc/configure_effects()
 	effect_system.set_up(effect_amount, effect_cardinals_only, src.loc, effect_forced_dir)
