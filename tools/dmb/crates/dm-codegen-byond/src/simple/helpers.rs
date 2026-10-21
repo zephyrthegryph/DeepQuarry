@@ -695,7 +695,8 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
 /// `max` are not folded). Angles are in degrees; arguments outside a function's domain are compile errors there, not folded.
 /// `round(x)` is a floor (`round(0.5)` is 0, `round(-2.5)` is -3) and `round(x, step)` is `floor(x / step + 0.5) * step`.
 pub(super) fn fold_builtin_call(name: &str, values: &[f32]) -> Option<f32> {
-    let radians = |degrees: f32| f64::from(degrees).to_radians();
+    // The angle is reduced to a turn first (it changes the last digit of `tan(-2147483648)`).
+    let radians = |degrees: f32| (f64::from(degrees) % 360.0).to_radians();
     let x = |index: usize| f64::from(values[index]);
     let result: f64 = match (name, values.len()) {
         ("abs", 1) => x(0).abs(),
