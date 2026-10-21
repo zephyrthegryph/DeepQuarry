@@ -133,3 +133,15 @@ proof_covers_tree() {
 	mapfile -t tests < <(proof_smoke_tests)
 	proof_find "$tree" "$tgui" "$an" "${tests[@]}" "$@" >/dev/null
 }
+
+# proof_alias_baseline_shrink <tree-before> <tree-after>: the gates shrink ratchet baselines into the merge commit AFTER the tests ran, so the proof is
+# stored under the shrunk tree while dq_land asks for the tree the plain merge makes (the unshrunk one) and would prove the lane again. A shrink
+# only drops fixed sites from tools/ci/*_baseline.txt (analyze baseline --update never adds one), so when those files are the whole difference the
+# proof of the shrunk tree also stands for the unshrunk one. Any other difference: no alias.
+proof_alias_baseline_shrink() {
+	local before="$1" after="$2" other
+	[ -n "$before" ] && [ "$before" != "$after" ] || return 0
+	other="$(git diff --name-only "$before" "$after" 2>/dev/null | grep -v -E '^tools/ci/[^/]*_baseline\.txt$' || true)"
+	[ -z "$other" ] || return 0
+	proof_alias "$after" "$before"
+}

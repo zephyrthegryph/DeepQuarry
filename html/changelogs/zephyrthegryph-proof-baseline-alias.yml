@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A baseline-shrink-only commit by the merge gates keeps the lane's proof, so dq_land no longer proves it again"
