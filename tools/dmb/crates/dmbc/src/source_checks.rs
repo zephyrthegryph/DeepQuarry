@@ -334,6 +334,51 @@ fn keyword_local_errors(lines: &[Line<'_>], errors: &mut Vec<(usize, String, Opt
     }
 }
 
+/// `typesof(/T/verb)` and `typesof(/T/proc)` name a path that exists only when `/T` itself declares such a member (inherited ones do
+/// not count), and `typesof(/world)` is not a prototype. DreamMaker: `<path>: undefined type path`, `/world: not a prototype`; pinned
+/// 516.1687 (fixtures/diagnostics/cases/typesof_*). Only `verb` is checked here: the engine's own procs are not in the tree.
+fn typesof_errors(
+    tree: &dm_tree::SemanticTree,
+    lines: &[Line<'_>],
+    errors: &mut Vec<(usize, String, Option<SourceLocation>)>,
+) {
+    for line in lines {
+        let tokens = &line.tokens;
+        for (index, token) in tokens.iter().enumerate() {
+            if token.1 != "typesof" || tokens.get(index + 1).map(|next| next.1) != Some("(") {
+                continue;
+            }
+            let mut at = index + 2;
+            let start = at;
+            let mut path = String::new();
+            while tokens.get(at).map(|token| token.1) == Some("/") {
+                match tokens.get(at + 1) {
+                    Some((TokenKind::Ident, name, _)) => {
+                        path.push('/');
+                        path.push_str(name);
+                        at += 2;
+                    }
+                    _ => break,
+                }
+            }
+            if path.is_empty() || !matches!(tokens.get(at).map(|token| token.1), Some(")" | ",")) {
+                continue;
+            }
+            let offset = tokens[start].2;
+            if path == "/world" {
+                errors.push((offset, "/world: not a prototype".to_owned(), None));
+            } else if let Some(owner) = path.strip_suffix("/verb") {
+                let declares = tree
+                    .lookup_type(SymbolId::of(owner))
+                    .is_some_and(|owner| tree.members().iter().any(|member| member.owner == owner && member.kind == MemberKind::Verb));
+                if !declares {
+                    errors.push((offset, format!("{path}: undefined type path"), None));
+                }
+            }
+        }
+    }
+}
+
 fn body_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
@@ -351,6 +396,7 @@ fn body_errors(
     let mut errors = Vec::new();
     keyword_argument_errors(&lines, &mut errors);
     keyword_local_errors(&lines, &mut errors);
+    typesof_errors(tree, &lines, &mut errors);
     let mut braces = 0isize;
     let mut reported_types = HashSet::new();
     for line in lines.iter().skip(1) {

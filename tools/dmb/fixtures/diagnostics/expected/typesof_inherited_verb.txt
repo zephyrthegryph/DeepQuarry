@@ -1,0 +1,2 @@
+typesof_inherited_verb.dm:7:error: /datum/a/b/verb: undefined type path
+typesof_inherited_verb.dmb - 1 error, 0 warnings
