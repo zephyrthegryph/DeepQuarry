@@ -26,6 +26,7 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 	set_busy(FALSE)
 
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
+	setup(PROC_REF(configure_initial_scan_parts))
 	configure(uses_power(idle = 30, active = 2500))
 	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
 	interface("DestructiveAnalyzer")
@@ -55,6 +56,8 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		experiment_events = destructive_events, \
 	)
 	. = ..()
+
+/obj/machinery/rnd/destructive_analyzer/proc/configure_initial_scan_parts()
 	default_apply_parts()
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 

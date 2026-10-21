@@ -20,14 +20,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/list/obj/effect/meteor/targets
 	var/id_tag = null
 
-/obj/machinery/pointdefense_control/Initialize(mapload)
-	. = ..()
+/obj/machinery/pointdefense_control/proc/register_controller_identity()
 	if(id_tag)
 		//No more than 1 controller please.
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == id_tag)
 				WARNING("Two [src] with the same id_tag of [id_tag]")
-				id_tag = null
+				set_id_tag(null)
 	default_apply_parts()
 
 /obj/machinery/pointdefense_control/get_description_interaction(mob/viewer)
@@ -36,6 +35,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		. += "[desc_panel_image("multitool", viewer)]to set ident tag"
 
 CAPABILITIES(/obj/machinery/pointdefense_control)
+	setup(PROC_REF(register_controller_identity))
 	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
 	interface("PointDefenseControl")
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
@@ -297,3 +297,4 @@ CAPABILITIES(/obj/machinery/pointdefense)
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pointdefense/step_start_condition()
 	return active && LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))
+

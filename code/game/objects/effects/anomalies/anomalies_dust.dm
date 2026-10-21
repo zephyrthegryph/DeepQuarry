@@ -13,11 +13,9 @@
 	COOLDOWN_DECLARE(pulse_cooldown)
 	var/pulse_delay = 5 SECONDS
 
-/obj/effect/anomaly/dust/Initialize(mapload)
-	. = ..()
-
-	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
-	animate(transform = matrix(), time = 3, loop = -1)
+/obj/effect/anomaly/dust/proc/start_dust_animation()
+	animate(src, transform = matrix()*0.85, time = 0.3 SECONDS, loop = -1)
+	animate(transform = matrix(), time = 0.3 SECONDS, loop = -1)
 
 /obj/effect/anomaly/dust/Crossed(atom/movable/AM, oldloc)
 	. = ..()
@@ -86,3 +84,6 @@
 			fx_sparks(src, 3)
 		else
 			anomalyEffect()
+
+CAPABILITIES(/obj/effect/anomaly/dust)
+	setup(PROC_REF(start_dust_animation))

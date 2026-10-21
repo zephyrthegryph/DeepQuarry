@@ -22,8 +22,7 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-/obj/vehicle/train/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/proc/latch_initial_neighbors()
 	for(var/obj/vehicle/train/T in orange(1, src))
 		if(latch_on_start)
 			latch(T, null)
@@ -278,6 +277,7 @@ MSG_DEF_SELF(vehicle/already_running, "The engine is already running.")
 MSG_DEF_SELF(vehicle/already_stopped, "The engine is already stopped.")
 
 CAPABILITIES(/obj/vehicle/train)
+	setup(PROC_REF(latch_initial_neighbors))
 	links(/obj/vehicle/train::lead, /obj/vehicle/train::tow)
 	op("train_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Load"), then(PROC_REF(interaction_train_drag)))
 	op("train_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Interaction train hand"), then(PROC_REF(interaction_train_hand)))

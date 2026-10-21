@@ -176,9 +176,8 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	amount = 0
 	var/list/drips
 
-/obj/effect/decal/cleanable/blood/drip/Initialize(mapload)
-	. = ..()
-	LAZYOR(drips, icon_state)
+/obj/effect/decal/cleanable/blood/drip/proc/record_initial_drip()
+	include_drips(icon_state)
 
 /// The drips merged onto this tile are drawn over its own sprite.
 /obj/effect/decal/cleanable/blood/drip/draw(datum/look/look)
@@ -346,3 +345,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/vomit)
 
 #undef DRYING_TIME
 
+
+CAPABILITIES(/obj/effect/decal/cleanable/blood/drip)
+	setup(PROC_REF(record_initial_drip))

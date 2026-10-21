@@ -78,6 +78,7 @@
 	var/segment_count = 6
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
+	setup(PROC_REF(grow_initial_segments))
 	configure(mob_movement(hovering = TRUE))
 
 /mob/living/simple_mob/animal/space/space_worm/head/severed
@@ -112,8 +113,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 /mob/living/simple_mob/animal/space/space_worm/head/refresh_links()
 	set_segment_dir(previous ? get_dir(previous, src) : 0)
 
-/mob/living/simple_mob/animal/space/space_worm/head/Initialize(mapload)
-	. = ..()
+/// Declared setup: grow initial segments, after the complete parent chain.
+/mob/living/simple_mob/animal/space/space_worm/head/proc/grow_initial_segments()
 
 	var/mob/living/simple_mob/animal/space/space_worm/current = src
 

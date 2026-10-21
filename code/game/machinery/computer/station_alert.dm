@@ -12,6 +12,7 @@
 
 
 CAPABILITIES(/obj/machinery/computer/station_alert)
+	setup(PROC_REF(subscribe_alarm_monitor))
 	configure(light_glow(color = "#e6ffff"))
 	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor, starts = nameof(monitor_type))
 	op("station_alert_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
@@ -25,8 +26,7 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 	monitor_type = /datum/tgui_module/alarm_monitor/all
 	circuit = /obj/item/circuitboard/stationalert_all
 
-/obj/machinery/computer/station_alert/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/station_alert/proc/subscribe_alarm_monitor()
 	alarm_monitor.register_alarm(src, "update_console_icon")
 
 /// Phase 2: leaves its alarm monitor's listeners.

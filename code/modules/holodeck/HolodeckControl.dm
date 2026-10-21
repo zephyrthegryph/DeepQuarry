@@ -173,16 +173,16 @@
 			rel_clear(C, nameof(C.friends))
 			rel_add(C, nameof(C.friends), last_to_emag())
 
-/obj/machinery/computer/HolodeckControl/Initialize(mapload)
-	. = ..()
-	current_program = powerdown_program
-	linkedholodeck = locate(projection_area) // an area: a plain var
+/obj/machinery/computer/HolodeckControl/proc/link_projection_area()
+	set_current_program(powerdown_program)
+	set_linkedholodeck(locate(projection_area)) // an area: a plain var
 	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
 CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	setup(PROC_REF(link_projection_area))
 	configure(uses_power(active = 8000))
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(holographic_objs))

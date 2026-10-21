@@ -38,9 +38,8 @@
 
 	var/global/amount = 0
 
-// ALLOW(init/INSTANCE_STATE): takes the beacon on its tile as home and numbers itself
-/mob/living/bot/mulebot/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare home and name, after the complete parent chain.
+/mob/living/bot/mulebot/proc/prepare_home_and_name()
 
 	var/turf/T = get_turf(loc)
 	var/obj/machinery/navbeacon/N = locate_on(T, /obj/machinery/navbeacon)
@@ -69,6 +68,7 @@
 
 // The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/mulebot)
+	setup(PROC_REF(prepare_home_and_name))
 	configure(mob_movement(bump = HEAVY))
 	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
 	without("bot_item")

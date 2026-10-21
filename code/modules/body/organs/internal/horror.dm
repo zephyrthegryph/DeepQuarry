@@ -226,8 +226,7 @@ CAPABILITIES(/obj/item/organ/internal/intestine/horror)
 	var/datum/language/redspace
 	mute = TRUE //You can only speak the hivemind language~
 
-/obj/item/organ/internal/voicebox/horror/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/voicebox/horror/proc/prepare_redspace_language()
 	redspace = GLOB.all_languages[LANGUAGE_REDSPACE]
 
 /obj/item/organ/internal/voicebox/horror/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
@@ -276,3 +275,6 @@ CAPABILITIES(/obj/item/organ/internal/intestine/horror)
 /obj/item/organ/internal/voicebox/horror/life_step_idle()
 	return FALSE
 
+
+CAPABILITIES(/obj/item/organ/internal/voicebox/horror)
+	setup(PROC_REF(prepare_redspace_language))

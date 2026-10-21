@@ -7,13 +7,13 @@
 	opacity = 0
 	density = TRUE
 
-/obj/structure/foodcart/Initialize(mapload)
-	. = ..()
+/obj/structure/foodcart/proc/gather_mapped_food()
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/reagent_containers/food))
 			I.forceMove(src)
 
 CAPABILITIES(/obj/structure/foodcart)
+	setup(PROC_REF(gather_mapped_food))
 	op("stock", item(/obj/item/reagent_containers/food), label("Use"), then(PROC_REF(interaction_item)))
 	op("grab_food", hand(), label("Grab food"), when(req_full(nameof(contents))),
 		asks(/datum/prompt/choice, fields = list("title" = "Grab Choice", "question" = "What would you like to grab from the cart?", "choices" = computed(PROC_REF(food_choices)), "timeout" = 0)),

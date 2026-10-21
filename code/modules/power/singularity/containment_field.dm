@@ -21,13 +21,14 @@
 // whoever touches it or stands beside it (at most every 2 s), destroys any dense object that crosses it, and falls when either generator is
 // gone. A singularity cannot step onto it (/obj/singularity/proc/can_move()).
 CAPABILITIES(/obj/machinery/containment_field)
+	setup(PROC_REF(prepare_field_proximity))
 	configure(light_glow(range = 2, power = 0.5, color = "#5BA8FF"))
 	ref_one(nameof(FG1), /obj/machinery/field_generator)
 	ref_one(nameof(FG2), /obj/machinery/field_generator)
 	op("touch", hand(), when(req_empty_hand()), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
 
-/obj/machinery/containment_field/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare field proximity, after the complete parent chain.
+/obj/machinery/containment_field/proc/prepare_field_proximity()
 	shockdirs = list(turn(dir,90),turn(dir,-90))
 	sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 

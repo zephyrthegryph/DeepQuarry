@@ -105,6 +105,9 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 
 /mob/living/silicon/robot/drone/Initialize(mapload)
 	. = ..(mapload, FALSE)
+
+/// Its language and final name follow the complete robot parent setup.
+/mob/living/silicon/robot/drone/proc/prepare_drone_languages()
 	remove_language(LANGUAGE_ROBOT_TALK)
 	add_language(LANGUAGE_ROBOT_TALK, 0)
 	add_language(LANGUAGE_DRONE_TALK, 1)
@@ -224,6 +227,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	setup(PROC_REF(prepare_drone_languages))
 	configure(mob_kind(can_be_antagged = FALSE))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))
 	rolls(nameof(serial_number), range_of(0, 999))

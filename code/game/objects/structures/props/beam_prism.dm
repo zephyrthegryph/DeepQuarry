@@ -261,13 +261,13 @@ GLOBAL_LIST_INIT(prism_compass_points, list("North" = 0, "South" = 180, "East" =
 		PR.rotate_auto(new_bearing)
 	return OP_OK
 
-/obj/structure/prop/prismcontrol/Initialize(mapload)
-	. = ..()
+/obj/structure/prop/prismcontrol/proc/link_preset_prisms()
 	if(length(my_turrets)) //Preset controls.
 		for(var/obj/structure/prop/prism/P in my_turrets)
 			rel_set(P, nameof(P.remote_dial), src)
 
 CAPABILITIES(/obj/structure/prop/prismcontrol)
+	setup(PROC_REF(link_preset_prisms))
 	after_init(0, then(PROC_REF(find_turrets)))
 	// the old attack_hand: a yes/no, a bearing (or a compass point when a linked prism turns by points), a last yes, then every linked prism turns
 	op("rotate", hand(), label("Rotate"),

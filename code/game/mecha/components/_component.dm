@@ -42,9 +42,7 @@
 		if(0 to 1)
 			. += span_boldwarning("It is completely destroyed.")
 
-// ALLOW(init/INSTANCE_STATE): a part flagged to start damaged begins at its danger integrity
-/obj/item/mecha_parts/component/Initialize(mapload)
-	. = ..()
+/obj/item/mecha_parts/component/proc/apply_starting_damage()
 	if(start_damaged)
 		update_integrity(round(max_integrity * integrity_danger_mod))
 
@@ -169,6 +167,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/mecha_parts/component)
+	setup(PROC_REF(apply_starting_damage))
 	ref_one(nameof(chassis))
 	// One nanopaste repair a second (paste_repair_step starts the next while the paste lasts).
 	op("paste_repair", ai(), takes("site"), wait(1 SECOND), then(PROC_REF(paste_repair_done)))

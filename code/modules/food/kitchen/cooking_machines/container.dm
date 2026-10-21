@@ -207,13 +207,12 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 	max_space = 30
 	max_reagents = 120
 
-/obj/item/reagent_containers/cooking_container/oven/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/cooking_container/oven/proc/prepare_oven_insertions()
 
 	// We add to the insertable list specifically for the oven trays, to allow specialty cakes.
-	insertable += list(
+	add_insertable(list(
 		/obj/item/organ/internal/brain // As before, needed for braincake
-	)
+	))
 
 /obj/item/reagent_containers/cooking_container/fryer
 	name = "fryer basket"
@@ -227,14 +226,19 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 	desc = "Put ingredients 'in'/on this; designed for use with a grill. Warranty void if used incorrectly. Alt click to remove contents."
 	icon_state = "grillrack"
 
-/obj/item/reagent_containers/cooking_container/grill/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/cooking_container/grill/proc/prepare_grill_insertions()
 
 	// Needed for the special recipes of the grill
-	insertable += list(
+	add_insertable(list(
 		/obj/item/organ/internal/brain,
 		/obj/item/robot_parts/head,
 		/obj/item/ectoplasm,
 		/obj/item/holder/mouse,
 		/obj/item/stack/rods
-	)
+	))
+
+CAPABILITIES(/obj/item/reagent_containers/cooking_container/oven)
+	setup(PROC_REF(prepare_oven_insertions))
+
+CAPABILITIES(/obj/item/reagent_containers/cooking_container/grill)
+	setup(PROC_REF(prepare_grill_insertions))

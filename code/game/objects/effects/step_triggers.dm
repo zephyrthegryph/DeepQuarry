@@ -168,10 +168,10 @@
 	var/landmark_id = null
 
 CAPABILITIES(/obj/effect/step_trigger/teleporter/landmark)
+	setup(PROC_REF(find_destination_landmark))
 	ref_one(nameof(the_landmark))
 
-/obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
-	. = ..()
+/obj/effect/step_trigger/teleporter/landmark/proc/find_destination_landmark()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 		if(mark.landmark_id == landmark_id)
 			rel_set(src, nameof(the_landmark), mark)

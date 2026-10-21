@@ -59,8 +59,7 @@
 // Standard procs
 //-------------------------------------------
 
-/obj/vehicle/train/security/engine/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/security/engine/proc/stop_initial_security_train()
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/security/engine/Move(atom/newloc, direct = 0, movetime)
@@ -83,6 +82,7 @@ CAPABILITIES(/obj/vehicle/train/security/trolley)
 	op("train_limiter_cable", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle load limiter"), then(PROC_REF(interaction_train_limiter_cable)))
 
 CAPABILITIES(/obj/vehicle/train/security/engine)
+	setup(PROC_REF(stop_initial_security_train))
 	op("security_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_security_engine_key)))
 	op("security_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(security_engine_start_engine)))
 	op("security_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(security_engine_stop_engine)))

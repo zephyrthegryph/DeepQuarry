@@ -448,7 +448,6 @@ call	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::forwards
 call	code/modules/recycling/conveyor2.dm	@/obj/machinery/conveyor::backwards
 call	code/modules/recycling/disposal_holder.dm	@/obj/structure/disposalholder::destinationTag
 call	code/modules/recycling/disposal_junctions.dm	@/obj/structure/disposalpipe/sortjunction::sortdir
-call	code/modules/research/message_server.dm	@/obj/machinery/message_server::decryptkey
 call	code/modules/research/tg/designs.dm	@/datum/design_techweb::material_template
 call	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::part_time
 call	code/modules/samples/samples.dm	@/obj/item/research_sample::hazard_type

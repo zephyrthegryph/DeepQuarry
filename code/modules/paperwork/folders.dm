@@ -62,8 +62,10 @@ MSG_DEF_SELF(folder/only_paper, "only paper, photos and bundles fit")
 	desc = "A white folder with RD markings."
 	icon_state = "folder_rd"
 
-/obj/item/folder/white_rd/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/folder/white_rd)
+	setup(PROC_REF(prepare_analysis_memo))
+
+/obj/item/folder/white_rd/proc/prepare_analysis_memo()
 	//add some memos
 	var/obj/item/paper/P = new()
 	P.name = "Memo RE: proper analysis procedure"

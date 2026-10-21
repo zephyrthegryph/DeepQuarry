@@ -26,6 +26,7 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	setup(PROC_REF(start_initial_countdown))
 	configure(light_glow(range = 3))
 	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
@@ -59,6 +60,7 @@ CAPABILITIES(/obj/effect/anomaly)
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
 
+/obj/effect/anomaly/proc/start_initial_countdown()
 	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)

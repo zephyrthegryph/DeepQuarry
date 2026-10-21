@@ -41,10 +41,9 @@
 	//2: Do not pass input_pressure_min
 	//4: Do not pass output_pressure_max
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/prepare_vent_renderer()
 
-	icon = null
+	set_icon(null)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
 	rust_device_dirty()
@@ -198,6 +197,7 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
+	setup(PROC_REF(prepare_vent_renderer))
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	examine_line(PROC_REF(gauge_text))

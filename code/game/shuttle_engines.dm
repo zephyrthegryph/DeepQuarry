@@ -16,11 +16,8 @@
 	var/wall_flags = 0 // Bitflags to indicate connected walls
 
 CAPABILITIES(/obj/structure/shuttle/window)
+	setup(PROC_REF(auto_join))
 	passable(pass_flags = PASSGLASS) // movers with PASSGLASS go through (admission.md D7: the old CanPass override)
-
-/obj/structure/shuttle/window/Initialize(mapload)
-	. = ..()
-	auto_join()
 
 /obj/structure/shuttle/window/proc/auto_join()
 	match_windows(NORTH, NORTH)

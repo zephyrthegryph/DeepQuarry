@@ -25,8 +25,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
-/obj/machinery/holoposter/Initialize(mapload)
-	. = ..()
+/obj/machinery/holoposter/proc/prepare_initial_poster()
 	if(icon_forced && (icon_state in postertypes))
 		set_poster(icon_state) // a mapped poster keeps its advert
 	security_changed()
@@ -121,6 +120,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/holoposter)
+	setup(PROC_REF(prepare_initial_poster))
 	configure(uses_power(idle = 80, channel = ENVIRON))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),

@@ -21,13 +21,13 @@
 	level = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold4w)
+	setup(PROC_REF(prepare_pipe_renderer))
 	ref_one(nameof(node3))
 	ref_one(nameof(node4))
 
-/obj/machinery/atmospherics/pipe/manifold4w/Initialize(mapload)
-	. = ..()
-	alpha = 255
-	icon = null
+/obj/machinery/atmospherics/pipe/manifold4w/proc/prepare_pipe_renderer()
+	set_alpha(255)
+	set_icon(null)
 
 /obj/machinery/atmospherics/pipe/manifold4w/pipeline_expansion()
 	return list(node1, node2, node3, node4)
@@ -261,5 +261,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold4w)
 
 /obj/machinery/atmospherics/pipe/manifold4w/hidden/purple
 	color = PIPE_COLOR_PURPLE
+
 
 

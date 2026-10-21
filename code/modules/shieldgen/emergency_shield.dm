@@ -19,12 +19,12 @@
 	name = "emergency forcefield"
 	desc = "A weak forcefield which seems to be projected by the station's emergency atmosphere containment field"
 
-/obj/machinery/shield/malfai/Initialize(mapload)
-	. = ..()
+/obj/machinery/shield/malfai/proc/apply_initial_damage()
 	update_integrity(max_integrity/2) // Half health, it's not suposed to resist much.
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield/malfai)
+	setup(PROC_REF(apply_initial_damage))
 	started_work(step = PROC_REF(work_step))
 
 /obj/machinery/shield/malfai/proc/work_step(datum/act/timer/A)
@@ -36,8 +36,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	visible_message(span_boldnotice("\The [src]") + " dissipates!")
 	destroyed(src)
 
-/obj/machinery/shield/Initialize(mapload)
-	. = ..()
+/obj/machinery/shield/proc/refresh_initial_atmos()
 	update_nearby_tiles(need_rebuild=1)
 
 // leaves its generator's deployed shields (the generator is a handle).
@@ -49,6 +48,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	..()
 
 CAPABILITIES(/obj/machinery/shield)
+	setup(PROC_REF(refresh_initial_atmos))
 	rolls(nameof(dir), pick_one(list(1, 2, 3, 4)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
 	extend(/datum/act/hit, instead(then(PROC_REF(shield_thrown_hit))))

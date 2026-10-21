@@ -59,8 +59,7 @@
 // Standard procs
 //-------------------------------------------
 
-/obj/vehicle/train/rover/engine/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/rover/engine/proc/stop_initial_rover()
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/rover/engine/Move(atom/newloc, direct = 0, movetime)
@@ -83,6 +82,7 @@ CAPABILITIES(/obj/vehicle/train/rover/trolley)
 	op("train_limiter_cable", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle load limiter"), then(PROC_REF(interaction_train_limiter_cable)))
 
 CAPABILITIES(/obj/vehicle/train/rover/engine)
+	setup(PROC_REF(stop_initial_rover))
 	configure(light_glow(power = 2, range = 6))
 	op("rover_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_rover_engine_key)))
 	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))

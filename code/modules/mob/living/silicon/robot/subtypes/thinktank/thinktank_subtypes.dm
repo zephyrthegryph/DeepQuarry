@@ -4,9 +4,9 @@
 	modtype = "Recon"
 	module = /obj/item/robot_module/robot/platform/explorer
 
-/mob/living/silicon/robot/platform/explorer/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(laws), new /datum/ai_laws/explorer) // ALLOW(decl): replaces the laws the base set up
+/// Declared setup: prepare explorer laws, after the complete parent chain.
+/mob/living/silicon/robot/platform/explorer/proc/prepare_explorer_laws()
+	rel_set(src, nameof(laws), new /datum/ai_laws/explorer)
 
 /mob/living/silicon/robot/platform/explorer/welcome_client()
 	..()
@@ -28,3 +28,6 @@
 
 /obj/effect/landmark/robot_platform/cargo
 	platform_type = /mob/living/silicon/robot/platform/cargo
+
+CAPABILITIES(/mob/living/silicon/robot/platform/explorer)
+	setup(PROC_REF(prepare_explorer_laws))

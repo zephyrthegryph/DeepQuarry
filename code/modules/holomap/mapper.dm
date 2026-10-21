@@ -42,6 +42,7 @@
 
 
 CAPABILITIES(/obj/item/mapping_unit)
+	setup(PROC_REF(prepare_mapper_images))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
 	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(make_cell))
@@ -89,8 +90,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 		"/obj/item/rig/ert/medical" = "ertm"
 	)
 
-/obj/item/mapping_unit/Initialize(mapload)
-	. = ..()
+/obj/item/mapping_unit/proc/prepare_mapper_images()
 	base_prefix = marker_prefix
 
 	if(!mask_icon)

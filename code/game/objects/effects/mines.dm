@@ -14,15 +14,12 @@
 	// The trap item will be triggered in some manner when detonating. Default only checks for grenades.
 	var/obj/item/trap = null
 
-/obj/effect/mine/Initialize(mapload)
-	. = ..()
-	register_dangerous_to_step()
-
 /// A mine under a camouflage net is faint (derives(), at init).
 /obj/effect/mine/proc/camo_alpha()
 	return camo_net ? 50 : alpha
 
 CAPABILITIES(/obj/effect/mine)
+	setup(PROC_REF(register_dangerous_to_step))
 	owns_one(nameof(trap), starts = nameof(trap))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Explosive Wires", count = 7, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))

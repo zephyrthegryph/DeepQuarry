@@ -15,8 +15,7 @@
 		return
 	name = initial(name)
 
-/obj/structure/disposalpipe/tagger/Initialize(mapload)
-	. = ..()
+/obj/structure/disposalpipe/tagger/proc/register_disposal_tagger()
 	if(sort_tag)
 		LAZYADD(GLOB.tagger_locations["[sort_tag]"], get_z(src))
 	updatename()
@@ -29,6 +28,7 @@
 		LAZYREMOVE(GLOB.tagger_locations["[sort_tag]"], get_z(src))
 
 CAPABILITIES(/obj/structure/disposalpipe/tagger)
+	setup(PROC_REF(register_disposal_tagger))
 	derives(nameof(dpdir), PROC_REF(tagger_ends)) // at init: the pipe's ends follow how it was placed
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

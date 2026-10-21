@@ -38,6 +38,7 @@
 //-------------------------------------------
 
 CAPABILITIES(/obj/vehicle/train/engine/janicart)
+	setup(PROC_REF(stop_initial_janicart))
 	rolls(nameof(callme), PROC_REF(roll_callme)) // one cart in five gets a nickname
 	reagents(600)
 	op("janicart_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart item"), then(PROC_REF(interaction_janicart_item)))
@@ -47,8 +48,7 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	owns_one(nameof(key), starts = nameof(key_type), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(mybag))
 
-/obj/vehicle/train/engine/janicart/Initialize(mapload)
-	. = ..()
+/obj/vehicle/train/engine/janicart/proc/stop_initial_janicart()
 	turn_off()	//so engine verbs are correctly set
 
 // Nothing to unlatch (old verbs -= unlatch_v on Initialize).

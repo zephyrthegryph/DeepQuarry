@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/item/communicator)
 	drag_onto(PROC_REF(communicator_dropped))
+	setup(PROC_REF(prepare_camera_connection))
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(communicating))

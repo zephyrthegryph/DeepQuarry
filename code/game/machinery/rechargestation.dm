@@ -29,9 +29,7 @@
 /obj/machinery/recharge_station/proc/unbroken()
 	return !broken_now()
 
-// ALLOW(init/INSTANCE_STATE): takes its built parts and the high-capacity cell among them
-/obj/machinery/recharge_station/Initialize(mapload)
-	. = ..()
+/obj/machinery/recharge_station/proc/bind_buffer_cell()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 	refresh_gauge()
 
@@ -281,6 +279,7 @@ MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
 MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	setup(PROC_REF(bind_buffer_cell))
 	configure(uses_power(idle = 50))
 	default_parts()
 	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell

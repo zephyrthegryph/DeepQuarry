@@ -25,8 +25,7 @@
 	if(my_vehicle())
 		. += span_notice("It seems to contain \the [my_vehicle()].")
 
-/obj/structure/vehiclecage/Initialize(mapload)
-	. = ..()
+/obj/structure/vehiclecage/proc/gather_mapped_vehicle()
 	if(my_vehicle_type)
 		for(var/obj/I in get_turf(src))
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
@@ -37,6 +36,7 @@ MSG_DEF(vehiclecage/unbolting, "You begin loosening %T%'s bolts.", "%U% begins l
 MSG_DEF(vehiclecage/cutting, "You begin cutting %T%'s bolts.", "%U% begins cutting %T%'s bolts.")
 
 CAPABILITIES(/obj/structure/vehiclecage)
+	setup(PROC_REF(gather_mapped_vehicle))
 	owns_one(nameof(my_vehicle), /obj/vehicle, starts = nameof(my_vehicle_type), on_destroy = ON_DESTROY_SPILL) // a cage destroyed any other way than taken apart puts its vehicle out
 	op("unbolt", tool(TOOL_WRENCH), label("Take apart"), wait(6 SECONDS), begins(MSG(vehiclecage/unbolting)), then(PROC_REF(taken_apart)))
 	op("cut_bolts", tool(TOOL_WIRECUTTER), label("Cut apart"), wait(7 SECONDS), begins(MSG(vehiclecage/cutting)), then(PROC_REF(taken_apart)))

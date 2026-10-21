@@ -346,9 +346,9 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	desc = "A 'reset' AI module: 'Clears all, except the inherent, laws.'"
 
 // Use map default laws.
-/obj/item/aiModule/reset/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
+/// Declared setup: prepare map laws, after its parents initialize.
+/obj/item/aiModule/reset/proc/prepare_map_laws()
+	rel_set(src, nameof(laws), new using_map.default_law_type)
 
 /obj/item/aiModule/reset/transmitInstructions(mob/living/silicon/ai/target, mob/sender)
 	log_law_changes(target, sender)
@@ -601,3 +601,6 @@ CAPABILITIES(/obj/item/aiModule/syndicate)
 	desc = "A Consuming Eradicator Core AI Module: 'Reconfigures the AI's core laws.'"
 	laws = new/datum/ai_laws/consuming_eradicator()
 
+
+CAPABILITIES(/obj/item/aiModule/reset)
+	setup(PROC_REF(prepare_map_laws))

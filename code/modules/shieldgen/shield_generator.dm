@@ -792,9 +792,8 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return turfs
 
 // Starts fully charged
-/obj/machinery/power/shield_generator/charged/Initialize(mapload)
-	. = ..()
-	current_energy = max_energy
+/obj/machinery/power/shield_generator/charged/proc/charge_initial_shield()
+	set_current_energy(max_energy)
 
 // Best coil and capacitor, as data (roadmap C6) -- no eager objects.
 // `list(circuit = 1, ...)` would use the literal identifier "circuit" as the
@@ -809,10 +808,9 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return gen
 
 // Starts with the best SMES coil and capacitor (and fully charged)
-/obj/machinery/power/shield_generator/upgraded/Initialize(mapload)
-	. = ..()
+/obj/machinery/power/shield_generator/upgraded/proc/configure_upgraded_shield()
 	RefreshParts()
-	current_energy = max_energy
+	set_current_energy(max_energy)
 
 // Only uses 20% as much power (and starts upgraded and charged and hacked)
 /obj/machinery/power/shield_generator/upgraded/admin
@@ -820,3 +818,9 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	power_coefficient = 0.2
 	hacked = TRUE
 
+
+CAPABILITIES(/obj/machinery/power/shield_generator/charged)
+	setup(PROC_REF(charge_initial_shield))
+
+CAPABILITIES(/obj/machinery/power/shield_generator/upgraded)
+	setup(PROC_REF(configure_upgraded_shield))

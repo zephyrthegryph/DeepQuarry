@@ -20,8 +20,7 @@
 	var/legacy_zone = 0 //Disable scanning and whatnot.
 	var/tmp/obj/machinery/computer/shuttle_control/belter/shuttle_control
 
-/obj/machinery/computer/roguezones/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/roguezones/proc/link_shuttle_console()
 	rel_set(src, nameof(shuttle_control), locate(/obj/machinery/computer/shuttle_control/belter))
 
 /// Makes the rogue controller the first console needs.
@@ -38,6 +37,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/roguezones)
+	setup(PROC_REF(link_shuttle_console))
 	configure(light_glow(color = "#315ab4"))
 	configure(uses_power(idle = 250, active = 500))
 	after_init(0, then(PROC_REF(make_controller)))

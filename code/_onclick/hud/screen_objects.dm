@@ -701,6 +701,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	after_init(0, then(PROC_REF(lay_out_layers))) // its layers are stacked once Initialize() returns (relations proposal D11)
 	ref_one(nameof(owner))
 	ref_one(nameof(extras_holder))
+	setup(PROC_REF(prepare_mapper_frame))
 	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
 	owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping)
 	owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg)
@@ -709,11 +710,9 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
 	param(nameof(owner), pos = 1)
 
-// ALLOW(init/INSTANCE_STATE): the minimap holder frames itself for its owner's HUD and lays out its layers
-/atom/movable/screen/movable/mapper_holder/Initialize(mapload)
-	. = ..()
+/atom/movable/screen/movable/mapper_holder/proc/prepare_mapper_frame()
 
-	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
+	frame.set_icon_state(initial(frame.icon_state)+owner().hud_frame_hint)
 
 
 /// The vis_contents layout is: this(frame, extras_holder(), mask(bg(map))); bg is set to BLEND_MULTIPLY against the mask to crop it.

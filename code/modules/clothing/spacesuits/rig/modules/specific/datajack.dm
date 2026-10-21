@@ -14,8 +14,7 @@
 	interface_desc = "An induction-powered high-throughput datalink suitable for hacking encrypted networks."
 	var/list/stored_research
 
-/obj/item/rig_module/datajack/Initialize(mapload)
-	. = ..()
+/obj/item/rig_module/datajack/proc/prepare_research_storage()
 	stored_research = list()
 
 /obj/item/rig_module/datajack/engage(atom/target, notify_ai, mob/user)
@@ -49,3 +48,6 @@
 		return 1
 
 	return 0
+
+CAPABILITIES(/obj/item/rig_module/datajack)
+	setup(PROC_REF(prepare_research_storage))

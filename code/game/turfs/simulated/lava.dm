@@ -15,6 +15,7 @@
 	var/datum/looping_sound/lava/soundloop
 
 CAPABILITIES(/turf/simulated/floor/lava)
+	setup(PROC_REF(start_lava_audio))
 	configure(light_glow(range = 2, power = 0.75, color = LIGHT_COLOR_LAVA))
 	owns_one(nameof(soundloop), /datum/looping_sound/lava, starts = /datum/looping_sound/lava)
 	every(2 SECONDS, then(PROC_REF(lava_step)), when = nameof(burning))
@@ -28,7 +29,6 @@ CAPABILITIES(/turf/simulated/floor/lava)
 		name = "magma"
 	update_light()
 	. = ..()
-	soundloop.start()
 
 
 /turf/simulated/floor/lava/make_outdoors()
@@ -102,3 +102,6 @@ CAPABILITIES(/turf/simulated/floor/lava)
 	if(!is_safe() && !dq_get_hovering(L))
 		return FALSE
 	return ..()
+
+/turf/simulated/floor/lava/proc/start_lava_audio()
+	soundloop.start()

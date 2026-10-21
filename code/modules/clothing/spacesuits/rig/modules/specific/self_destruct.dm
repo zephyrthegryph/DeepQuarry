@@ -15,12 +15,11 @@
 	interface_desc = "An integrated self-destruct module. When the wearer dies, they vanish in smoke. Do not press this button."
 
 CAPABILITIES(/obj/item/rig_module/self_destruct)
+	setup(PROC_REF(attach_smoke_system))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 
-/obj/item/rig_module/self_destruct/Initialize(mapload)
-	. = ..()
+/obj/item/rig_module/self_destruct/proc/attach_smoke_system()
 	smoke.attach(src)
-
 
 /obj/item/rig_module/self_destruct/activate(skip_engage = 0, mob/user)
 	return

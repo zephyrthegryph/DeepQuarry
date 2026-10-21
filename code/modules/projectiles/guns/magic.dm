@@ -22,6 +22,7 @@
 
 /obj/item/gun/magic/var/can_charge = TRUE
 CAPABILITIES(/obj/item/gun/magic)
+	setup(PROC_REF(charge_initial_magic))
 	/// Regains charges while it can charge.
 	every(2 SECONDS, then(PROC_REF(magic_step)), when = nameof(can_charge))
 
@@ -34,8 +35,7 @@ CAPABILITIES(/obj/item/gun/magic)
 
 	return new projectile_type(src)
 
-/obj/item/gun/magic/Initialize(mapload)
-	. = ..()
+/obj/item/gun/magic/proc/charge_initial_magic()
 	charges = max_charges
 
 /obj/item/gun/magic/proc/magic_step(datum/act/timer/A)

@@ -8,12 +8,8 @@
 	var/codelen = 4
 	locked = 1
 
-// ALLOW(init/INSTANCE_STATE): fills itself with its rolled loot
-/obj/structure/closet/crate/secure/loot/Initialize(mapload)
-	. = ..()
-	generate_loot()
-
 /// Its lock code: codelen distinct digits.
+
 /obj/structure/closet/crate/secure/loot/proc/roll_code(datum/roller/R)
 	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 	. = list()
@@ -156,6 +152,7 @@ MSG_DEF_SELF(loot_crate/locked_with_code, "The crate is locked with a Deca-code 
 
 // An abandoned crate has no ID lock: a hand or any held thing asks for the code, an emag opens it, and a multitool reads how close the last guess was.
 CAPABILITIES(/obj/structure/closet/crate/secure/loot)
+	setup(PROC_REF(generate_loot))
 	rolls(nameof(code), PROC_REF(roll_code))
 	without("lock.toggle")
 	without("lock.toggle_worn")

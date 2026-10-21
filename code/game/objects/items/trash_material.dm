@@ -7,14 +7,15 @@
 	var/scrap_variants = 0
 
 CAPABILITIES(/obj/item/trash/material)
+	setup(PROC_REF(add_scrap_materials))
 	rolls(nameof(icon_state), PROC_REF(roll_scrap_icon), when = nameof(scrap_icon))
 
 /// Rolled before init (rolls()): one of the family's sprites.
 /obj/item/trash/material/proc/roll_scrap_icon(datum/roller/R)
 	return "[scrap_icon][R.number(0, scrap_variants)]"
 
-/obj/item/trash/material/Initialize(mapload)
-	. = ..()
+/// Declared setup: add scrap materials, after its parents initialize.
+/obj/item/trash/material/proc/add_scrap_materials()
 	for(var/list/L in matter_chances)
 		if(prob(L[2]))
 			var/list/added = list()

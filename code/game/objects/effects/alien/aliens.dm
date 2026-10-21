@@ -54,9 +54,7 @@
 
 	var/node_range = NODERANGE
 
-/obj/effect/alien/weeds/node/Initialize(mapload)
-	. = ..()
-
+/obj/effect/alien/weeds/node/proc/claim_node_tile()
 	for(var/obj/effect/alien/weeds/existing in contents_of(loc))
 		if(existing == src)
 			continue
@@ -144,6 +142,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	rolls(nameof(icon_state), PROC_REF(roll_variant)) // more icon variants
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
+	setup(PROC_REF(claim_node_tile))
 	configure(light_glow(range = 3, color = "#673972")) // NODERANGE
 	every(2 SECONDS, then(PROC_REF(node_step)))
 

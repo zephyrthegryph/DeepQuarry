@@ -69,10 +69,6 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 		desc = "A powdered form of what appears to be [R.name]. There's about [reagents.total_volume] units here."
 	return ..()
 
-/obj/item/reagent_containers/powder/Initialize(mapload)
-	. = ..()
-	get_appearance()
-
 /obj/item/reagent_containers/powder/proc/get_appearance()
 	/// Names and colors based on dominant reagent.
 	if (reagents.reagent_list.len > 0)
@@ -85,6 +81,7 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 
 // A powder is a sealed holder of its volume; a straw or a rolling paper used on it snorts a little (two units, into the blood of somebody who is flesh).
 CAPABILITIES(/obj/item/reagent_containers/powder)
+	setup(PROC_REF(get_appearance))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

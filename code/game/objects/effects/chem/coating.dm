@@ -7,10 +7,10 @@
 	icon_state = "dirt"
 
 CAPABILITIES(/obj/effect/decal/cleanable/chemcoating)
+	setup(PROC_REF(merge_existing_coatings))
 	reagents(100)
 
-/obj/effect/decal/cleanable/chemcoating/Initialize(mapload)
-	. = ..()
+/obj/effect/decal/cleanable/chemcoating/proc/merge_existing_coatings()
 	var/turf/T = get_turf(src)
 	if(T)
 		for(var/obj/O in get_turf(src))

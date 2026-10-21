@@ -256,8 +256,8 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	endurance = 100
 	var/static/killswitch = FALSE
 
-/mob/living/simple_mob/vore/woof/hostile/aweful/Initialize(mapload)
-	. = ..()
+/// Declared setup: join woof population, after the complete parent chain.
+/mob/living/simple_mob/vore/woof/hostile/aweful/proc/join_woof_population()
 	var/thismany = (rand(25,500)) / 100
 	resize(thismany, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
 	if(!GLOB.woof_current) //all our previous brothers have gone to valhallah
@@ -294,3 +294,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 
 	projectiletype = /obj/item/projectile/awoo_missile
 	projectilesound = SFX_VOICE_LONG_AWOO
+
+CAPABILITIES(/mob/living/simple_mob/vore/woof/hostile/aweful)
+	setup(PROC_REF(join_woof_population))

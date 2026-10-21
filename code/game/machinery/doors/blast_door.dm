@@ -401,9 +401,6 @@ CAPABILITIES(/obj/machinery/door/blast)
 /obj/machinery/door/blast/multi_tile
 	name = "large blast door"
 
-/obj/machinery/door/blast/multi_tile/Initialize(mapload)
-	. = ..()
-	apply_opacity_to_my_turfs(opacity)
 
 /obj/machinery/door/blast/multi_tile/set_opacity()
 	. = ..()
@@ -505,3 +502,9 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// Shielding while shut: its plasteel slab, or RAD_EXTREME_INSULATION without one.
 /obj/machinery/door/blast/proc/closed_rad_insulation()
 	return material_rad_insulation(implicit_material?.name, RAD_BLAST_DOOR_THICKNESS_MM, RAD_EXTREME_INSULATION)
+
+CAPABILITIES(/obj/machinery/door/blast/multi_tile)
+	setup(PROC_REF(apply_initial_turf_opacity))
+
+/obj/machinery/door/blast/multi_tile/proc/apply_initial_turf_opacity()
+	apply_opacity_to_my_turfs(opacity)

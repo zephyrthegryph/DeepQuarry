@@ -12,11 +12,11 @@
 	tooltype = /obj/item/inflatable_dispenser/robot
 	var/obj/item/inflatable_dispenser/my_deployer
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Initialize(mapload)
-	. = ..()
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/link_deployer()
 	rel_set(src, nameof(my_deployer), my_tool)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables)
+	setup(PROC_REF(link_deployer))
 	ref_one(nameof(my_deployer))
 	op("toggle_deployable_mode", topic("toggle_deployable_mode"), then(PROC_REF(topic_toggle_deployable_mode)))
 

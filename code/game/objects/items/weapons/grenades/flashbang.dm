@@ -135,10 +135,11 @@
 	banglet = TRUE
 
 CAPABILITIES(/obj/item/grenade/flashbang/clusterbang/segment)
+	setup(PROC_REF(scatter_segment))
 	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
 
-/obj/item/grenade/flashbang/clusterbang/segment/Initialize(mapload) //Segments should never exist except part of the clusterbang, since these immediately 'do their thing' and asplode
-	. = ..()
+/// Declared setup: scatter segment, after its parents initialize.
+/obj/item/grenade/flashbang/clusterbang/segment/proc/scatter_segment()
 
 	var/stepdist = rand(1,4)//How far to step
 	var/temploc = src.loc//Saves the current location to know where to step away from
@@ -150,10 +151,11 @@ CAPABILITIES(/obj/item/grenade/flashbang/clusterbang/segment)
 	banglet = TRUE
 
 CAPABILITIES(/obj/item/grenade/flashbang/cluster)
+	setup(PROC_REF(scatter_flashbang))
 	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
 
-/obj/item/grenade/flashbang/cluster/Initialize(mapload)//Same concept as the segments, so that all of the parts don't become reliant on the clusterbang
-	. = ..()
+/// Declared setup: scatter flashbang, after its parents initialize.
+/obj/item/grenade/flashbang/cluster/proc/scatter_flashbang()
 
 	var/stepdist = rand(1,3)
 	var/temploc = src.loc
@@ -163,10 +165,6 @@ CAPABILITIES(/obj/item/grenade/flashbang/cluster)
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."
 
-/obj/item/grenade/flashbang/clusterbang/primed/Initialize(mapload)
-	. = ..()
-	activate()
-
 /// A scattered bang's fuse: 1.5 to 6 seconds (after_init()).
 /obj/item/grenade/flashbang/proc/scattered_fuse(datum/act/timer/A)
 	return rand(1.5 SECONDS, 6 SECONDS)
@@ -174,3 +172,6 @@ CAPABILITIES(/obj/item/grenade/flashbang/cluster)
 /// Its fuse burnt out (after_init()).
 /obj/item/grenade/flashbang/proc/fuse_out(datum/act/timer/A)
 	detonate()
+
+CAPABILITIES(/obj/item/grenade/flashbang/clusterbang/primed)
+	setup(PROC_REF(activate))

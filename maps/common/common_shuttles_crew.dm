@@ -102,8 +102,7 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	. = ..()
 	. += "[shuttle_tag] is currently [location_desc]."
 
-/obj/machinery/status_display/shuttle_display/Initialize(mapload)
-	. = ..()
+/obj/machinery/status_display/shuttle_display/proc/register_shuttle_display()
 	GLOB.shuttdisp_list |= src //Populates the global list for the roundstart hook.
 	get_my_shuttle()
 	update()
@@ -162,3 +161,6 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 
 /obj/machinery/status_display/shuttle_display/on_alert_changed() //Same as above but for alert levels.
 	return
+
+CAPABILITIES(/obj/machinery/status_display/shuttle_display)
+	setup(PROC_REF(register_shuttle_display))

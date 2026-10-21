@@ -15,12 +15,12 @@
 	var/instrument_range = 15
 
 CAPABILITIES(/obj/item/instrument)
+	setup(PROC_REF(clear_initial_instrument_ids))
 	configure(item_combat(force = 10))
 	owns_one(nameof(song), /datum/song/handheld, starts = PROC_REF(make_song))
 	op("controls", in_hand(), label("Open instrument controls"), then(PROC_REF(instrument_controls_opened)))
 
-/obj/item/instrument/Initialize(mapload)
-	. = ..()
+/obj/item/instrument/proc/clear_initial_instrument_ids()
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
 
 /// The starting song (owns_one(starts =)).
