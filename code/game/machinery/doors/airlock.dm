@@ -132,8 +132,6 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
-	click_order(TOOL_CROWBAR, "remove_electronics", "pry")
-	click_order(TOOL_WELDER, "weld_shut.toggle", "repair")
 	name_prefix("\improper")
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
@@ -173,7 +171,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	section(touch, "What a hand or a held thing does to the door")
 	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),
 		needs(req(PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
-	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)),
+	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
 	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
 		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
@@ -189,7 +187,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
 		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable))), then(PROC_REF(panel_toggled)))
-	extend("weld_shut.toggle", when(any_of(not(PROC_REF(damaged)), not(req_stance(I_HELP)))))
+	extend("weld_shut.toggle", priority(above("repair")), when(any_of(not(PROC_REF(damaged)), not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	// Touching a live door shocks you instead of doing what you meant. Window buttons and a silicon's link are not touches.
