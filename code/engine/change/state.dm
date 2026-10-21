@@ -62,6 +62,13 @@
 	/// The presentation record, or null (see /datum/rx_look).
 	var/tmp/datum/rx_look/look_rec
 
+/// Whether the drift sweep covers D (a non-atom has no presentation record).
+/proc/look_rec_swept(datum/D)
+	if(!isatom(D))
+		return FALSE
+	var/atom/A = D
+	return A.look_rec?.refresh_swept
+
 /// A's presentation record, made when first needed.
 /proc/look_rec_of(atom/A)
 	RETURN_TYPE(/datum/rx_look)
@@ -404,7 +411,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		if(A.look_rec)
 			if(A.look_rec.look_key)
 				look_worn_release(A) // a look that dies shows nothing worn or held any more
-			A.look_rec = null // ALLOW(ownership): flyweight framework bookkeeping: the framework is the accessor, not a holder of a relation
+			A.look_rec = null
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return

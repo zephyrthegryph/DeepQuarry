@@ -454,7 +454,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		return
 	if(D.rx?.stats)
 		staleness_check_stats(D, trigger)
-	if(isatom(D) && D.look_rec?.refresh_swept)
+	if(isatom(D) && look_rec_swept(D))
 		staleness_check_draw(D, trigger, forced = TRUE)
 		staleness_check_derive(D, trigger)
 		if(GLOB.staleness_strict)
