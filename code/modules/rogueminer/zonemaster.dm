@@ -249,7 +249,8 @@
 	while(length(xenoarch_artifact_spawning_turfs()) > num_artifacts_spawn)
 		rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), pick(xenoarch_artifact_spawning_turfs()))
 
-	var/list/artifacts_spawnturf_temp = length(xenoarch_artifact_spawning_turfs()) ? xenoarch_artifact_spawning_turfs().Copy() : list()
+	var/list/artifact_turfs = xenoarch_artifact_spawning_turfs()
+	var/list/artifacts_spawnturf_temp = length(artifact_turfs) ? artifact_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
 		rel_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
