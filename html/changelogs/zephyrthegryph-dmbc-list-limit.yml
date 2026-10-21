@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler: an authored null is the two-word Null reader like DreamMaker (was a three-word push), so a large static table fits the 65,535-word initializer limit exactly where DreamMaker's does"
