@@ -65,10 +65,6 @@
 	if(anchored)
 		update_music()
 
-/obj/machinery/media/Initialize(mapload)
-	. = ..()
-	update_media_source()
-
 // disconnects from its media source.
 /obj/machinery/media/on_destroy(force)
 	disconnect_media_source()
@@ -77,3 +73,6 @@
 /// My area (a plain var: areas never die).
 /obj/machinery/media/proc/master_area() as /area
 	return master_area
+
+CAPABILITIES(/obj/machinery/media)
+	setup(PROC_REF(update_media_source))

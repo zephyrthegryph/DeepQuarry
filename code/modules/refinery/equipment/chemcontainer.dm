@@ -21,6 +21,7 @@
 /obj/item/reagent_containers/chem_canister
 
 CAPABILITIES(/obj/item/reagent_containers/chem_canister)
+	setup(PROC_REF(identify_loaded_reagent))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	configure(reagents(contents_from = PROC_REF(loaded_contents)))
 
@@ -31,8 +32,7 @@ CAPABILITIES(/obj/item/reagent_containers/chem_canister)
 		. = list()
 		.[R.id] = volume
 
-/obj/item/reagent_containers/chem_canister/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/chem_canister/proc/identify_loaded_reagent()
 	if(loaded_reagent)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
 		if(R) // Sanity check the reagent

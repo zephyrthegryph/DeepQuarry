@@ -1,0 +1,597 @@
+Source-only estimate; root must certify.
+init_lines 477 -> 289
+Raw scoped baseline rows 491
+init_lines	code/_helpers/radiation.dm	@/turf/simulated::Initialize::RAD_SHIELDING_CHANGED count=1
+init_lines	code/_helpers/radiation.dm	@/turf/simulated::Initialize::if count=1
+init_lines	code/_onclick/hud/screen_objects.dm	@/atom/movable/screen/mapper::Initialize::rel_set count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::WARNING count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::expected_global_procs count=2
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::expected_len count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::for count=2
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::global_procs count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::gvars_datum_init_order count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::gvars_datum_protected_varlist count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::if count=2
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::log_world count=1
+init_lines	code/controllers/globals.dm	@/datum/controller/global_vars::Initialize::start_tick count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::expire count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::for count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::if count=2
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::m count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::m.drop_from_inventory count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::moveToNullspace count=1
+init_lines	code/datums/gear/loadout_shoes.dm	@/obj/item/clothing/shoes/none::Initialize::thing.forceMove count=1
+init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_CALL_PARENT count=1
+init_lines	code/datums/repositories/decls.dm	@/datum/decl::Initialize::SHOULD_NOT_SLEEP count=1
+init_lines	code/datums/variants/crayon_variants.dm	@/obj/item/pen/crayon::Initialize::apply_variant count=1
+init_lines	code/game/area/areas.dm	@/area::Initialize::apply_ceiling count=1
+init_lines	code/game/area/areas.dm	@/area::Initialize::luminosity count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::SHOULD_CALL_PARENT count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::SHOULD_NOT_SLEEP count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::add_atom_colour count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::atom_integrity count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::caps_init count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::flags count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::flags_1 count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::if count=3
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::lifecycle_decls_init count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::return count=1
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	@/atom::Initialize::stack_trace count=1
+init_lines	code/game/atoms_movable.dm	@/atom/movable::Initialize::movable_instance_setup count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetSE count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetUI count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::for count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::rel_add count=1
+init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::rel_set count=1
+init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::GLOB.AdminProcCallHandler count=1
+init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if count=1
+init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::return count=1
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::color count=1
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::else count=1
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::glow_color count=1
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::if count=3
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::mate count=5
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::on_floor count=1
+init_lines	code/modules/artifice/telecube.dm	@/obj/item/telecube::Initialize::rel_set count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::grant count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::if count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::ign count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::ign.set_secured count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::name count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::rel_set count=4
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::secured count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr.set_secured count=1
+init_lines	code/modules/assembly/holder.dm	@/obj/item/assembly_holder/timer_igniter::Initialize::tmr.time count=1
+init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::after count=1
+init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::for count=1
+init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::if count=1
+init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::preload count=1
+init_lines	code/modules/awaymissions/redgate.dm	@/obj/item/laserdome_flag::Initialize::start_pos count=1
+init_lines	code/modules/awaymissions/redgate.dm	@/obj/item/laserdome_hyperball::Initialize::start_pos count=1
+init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::consume_tile count=1
+init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::faction count=1
+init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::if count=1
+init_lines	code/modules/blob2/blobs/base_blob.dm	@/obj/structure/blob::Initialize::sync_overmind_look count=1
+init_lines	code/modules/blob2/blobs/core.dm	@/obj/structure/blob/core::Initialize::desired_blob_type count=1
+init_lines	code/modules/blob2/blobs/core.dm	@/obj/structure/blob/core::Initialize::if count=2
+init_lines	code/modules/blob2/blobs/core.dm	@/obj/structure/blob/core::Initialize::make_overmind count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::color count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::default_language_static count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::for count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if count=2
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::languages count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::name count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::new_name count=1
+init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::real_name count=1
+init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::if count=1
+init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::initialize_ai_brain count=1
+init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET count=1
+init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if count=1
+init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::generate_loot count=1
+init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::make_code count=1
+init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::generate_loot count=1
+init_lines	code/modules/exploration/lootsafe.dm	@/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::make_code count=1
+init_lines	code/modules/fireworks/firework_launcher.dm	@/obj/machinery/firework_launcher::Initialize::EXPIRY_STAMP count=1
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P count=2
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.back_icon count=1
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.card_icon count=1
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::P.name count=1
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::for count=1
+init_lines	code/modules/games/wizoff.dm	@/obj/item/deck/wizoff::Initialize::rel_add count=1
+init_lines	code/modules/identification/item_procs.dm	@/obj/item::Initialize::if count=1
+init_lines	code/modules/identification/item_procs.dm	@/obj/item::Initialize::rel_set count=1
+init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::calculate_samples count=1
+init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::if count=1
+init_lines	code/modules/lore_codex/codex.dm	@/obj/item/book/codex::Initialize::rel_set count=1
+init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry count=1
+init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::entry.initialize count=1
+init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::for count=1
+init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::rel_add count=1
+init_lines	code/modules/maint_recycler/code/maint_vendor.dm	@/obj/machinery/maint_vendor::Initialize::shuffle_inplace count=1
+init_lines	code/modules/maint_recycler/code/util.dm	@/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations count=1
+init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST count=1
+init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST.link_to count=1
+init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2 count=1
+init_lines	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm	@/obj/item/storage/box/remote_scene_tools::Initialize::RST2.link_to count=1
+init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::CRASH count=1
+init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::msg count=1
+init_lines	code/modules/maps/merge_conflicts.dm	@/obj/merge_conflict_marker::Initialize::to_chat count=1
+init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::if count=2
+init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::install_default_hardware count=1
+init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::install_default_programs count=1
+init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	@/obj/item/modular_computer::Initialize::overlay_icon count=1
+init_lines	code/modules/modular_computers/hardware/_hardware.dm	@/obj/item/computer_hardware::Initialize::if count=1
+init_lines	code/modules/modular_computers/hardware/_hardware.dm	@/obj/item/computer_hardware::Initialize::rel_set count=1
+init_lines	code/modules/modular_computers/hardware/hard_drive.dm	@/obj/item/computer_hardware/hard_drive::Initialize::install_default_programs count=1
+init_lines	code/modules/modular_computers/hardware/portable_hard_drive.dm	@/obj/item/computer_hardware/hard_drive/portable::Initialize::recalculate_size count=1
+init_lines	code/modules/modular_computers/hardware/portable_hard_drive.dm	@/obj/item/computer_hardware/hard_drive/portable::Initialize::stored_files count=1
+init_lines	code/modules/multiz/turf.dm	@/turf/simulated/open::Initialize::ASSERT count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::H count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::WARNING count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::big_icon count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::durability count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::examine_msg count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::if count=5
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::return count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::save_data count=1
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::saved_examine_msg count=2
+init_lines	code/modules/nifsoft/nif.dm	@/obj/item/nif::Initialize::wear count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::brainmob count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::brainmob.take_eye count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::dq_add_recursive_move count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::forceMove count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::global.observe count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::if count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::name count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::real_name count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::return count=1
+init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/observer/eye/ar_soul::Initialize::sight count=1
+init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::I.forceMove count=1
+init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::for count=1
+init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::if count=1
+init_lines	code/modules/paperwork/folders.dm	@/obj/item/folder/white_rd::Initialize::P count=1
+init_lines	code/modules/paperwork/folders.dm	@/obj/item/folder/white_rd::Initialize::P.name count=1
+init_lines	code/modules/paperwork/folders.dm	@/obj/item/folder/white_rd::Initialize::P.set_info count=1
+init_lines	code/modules/paperwork/folders.dm	@/obj/item/folder/white_rd::Initialize::move_into count=1
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::desc count=1
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::if count=3
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::info count=3
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::update_space count=1
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::updateinfolinks count=1
+init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::was_maploaded count=1
+init_lines	code/modules/paperwork/pen.dm	@/obj/item/pen/crayon::Initialize::name count=1
+init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::ProcessAndApplyTokens count=1
+init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::for count=1
+init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if count=2
+init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::tokens count=2
+init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::SSpersistence.track_value count=1
+init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::if count=1
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::P.load_persistent count=1
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::SSpersistence.all_paintings count=1
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::SSpersistence.unpicked_paintings count=1
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::expr count=1
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::for count=2
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::if count=2
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::tokens count=2
+init_lines	code/modules/planet/sun.dm	@/atom/movable/sun_visuals::Initialize::LAZYINITLIST count=1
+init_lines	code/modules/planet/sun.dm	@/atom/movable/sun_visuals::Initialize::expr count=12
+init_lines	code/modules/planet/thor.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::RCon count=1
+init_lines	code/modules/planet/thor.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_attempt count=1
+init_lines	code/modules/planet/thor.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_level count=1
+init_lines	code/modules/planet/thor.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::output_level count=1
+init_lines	code/modules/planet/thor.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::stored_charge count=1
+init_lines	code/modules/planet/virgo4.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::RCon count=1
+init_lines	code/modules/planet/virgo4.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_attempt count=1
+init_lines	code/modules/planet/virgo4.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_level count=1
+init_lines	code/modules/planet/virgo4.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::output_level count=1
+init_lines	code/modules/planet/virgo4.dm	@/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::stored_charge count=1
+init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle count=1
+init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::for count=1
+init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::imp count=1
+init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::imp.germ_level count=1
+init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::rel_add count=1
+init_lines	code/modules/resleeving/implant.dm	@/obj/item/backup_implanter::Initialize::update count=1
+init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::default_language count=1
+init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.name count=1
+init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.ownjob count=1
+init_lines	code/modules/resleeving/sleevecard.dm	@/mob/living/silicon/pai/infomorph::Initialize::pda.set_owner count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_y count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_z count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/north::Initialize::teleport_x count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/north::Initialize::teleport_z count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_x count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_y count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_z count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_x count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_y count=1
+init_lines	code/modules/rogueminer/wrappers.dm	@/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_z count=1
+init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::expr count=2
+init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::for count=1
+init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if count=4
+init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::rel_set count=1
+init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::SM count=1
+init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::for count=1
+init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::rel_add count=1
+init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::rel_take_all count=1
+init_lines	code/modules/shieldgen/shield_generator.dm	@/obj/machinery/power/shield_generator::Initialize::toggle_flag count=1
+init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if count=2
+init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::rel_set count=1
+init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::return count=1
+init_lines	code/modules/spells/targeted/ethereal_jaunt.dm	@/obj/effect/dummy/spell_jaunt::Initialize::rel_set count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::alpha count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::break_to_parts count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::color count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::for count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::if count=2
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::layers count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_connections count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_desc count=1
+init_lines	code/modules/tables/tables.dm	@/obj/structure/table::Initialize::update_material count=1
+init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::flags count=1
+init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::if count=1
+init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::log_mapping count=1
+init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::return count=1
+init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::spawning count=1
+init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::SSmapping.engine_loader count=1
+init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::WARNING count=1
+init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::delete_me count=1
+init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::if count=1
+
+Raw retained bodies:
+code/_helpers/radiation.dm /turf/simulated
+93 @/turf/simulated::Initialize::if if(rad_insulation != RAD_NO_INSULATION)
+94 @/turf/simulated::Initialize::RAD_SHIELDING_CHANGED RAD_SHIELDING_CHANGED(src)
+code/_onclick/hud/screen_objects.dm /atom/movable/screen/mapper
+908 @/atom/movable/screen/mapper::Initialize::rel_set rel_set(src, nameof(parent), loc)
+code/controllers/globals.dm /datum/controller/global_vars
+46 @/datum/controller/global_vars::Initialize::gvars_datum_init_order gvars_datum_init_order = list()
+47 @/datum/controller/global_vars::Initialize::gvars_datum_protected_varlist gvars_datum_protected_varlist = list(NAMEOF(src, gvars_datum_protected_varlist) = TRUE)
+48 @/datum/controller/global_vars::Initialize::global_procs var/list/global_procs = typesof(/datum/controller/global_vars/proc)
+49 @/datum/controller/global_vars::Initialize::expected_len var/expected_len = vars.len - gvars_datum_in_built_vars.len
+50 @/datum/controller/global_vars::Initialize::if if(global_procs.len != expected_len)
+51 @/datum/controller/global_vars::Initialize::WARNING WARNING("Unable to detect all global initialization procs! Expected [expected_len] got [global_procs.len]!")
+52 @/datum/controller/global_vars::Initialize::if if(global_procs.len)
+53 @/datum/controller/global_vars::Initialize::expected_global_procs var/list/expected_global_procs = vars - gvars_datum_in_built_vars
+54 @/datum/controller/global_vars::Initialize::for for(var/I in global_procs)
+55 @/datum/controller/global_vars::Initialize::expected_global_procs expected_global_procs -= replacetext("[I]", "InitGlobal", "")
+56 @/datum/controller/global_vars::Initialize::log_world log_world("Missing procs: [expected_global_procs.Join(", ")]")
+58 @/datum/controller/global_vars::Initialize::for for(var/I in global_procs)
+59 @/datum/controller/global_vars::Initialize::start_tick var/start_tick = world.time
+code/datums/gear/loadout_shoes.dm /obj/item/clothing/shoes/none
+325 @/obj/item/clothing/shoes/none::Initialize::if if(istype(loc, /mob))
+326 @/obj/item/clothing/shoes/none::Initialize::m var/mob/m = loc
+327 @/obj/item/clothing/shoes/none::Initialize::m.drop_from_inventory m.drop_from_inventory(src, get_turf(m))
+328 @/obj/item/clothing/shoes/none::Initialize::if if(contents_count(src))
+329 @/obj/item/clothing/shoes/none::Initialize::for for(var/atom/movable/thing in contents)
+330 @/obj/item/clothing/shoes/none::Initialize::thing.forceMove thing.forceMove(get_turf(src))
+331 @/obj/item/clothing/shoes/none::Initialize::moveToNullspace moveToNullspace()
+332 @/obj/item/clothing/shoes/none::Initialize::expire expire(1)
+code/datums/repositories/decls.dm /datum/decl
+62 @/datum/decl::Initialize::SHOULD_CALL_PARENT SHOULD_CALL_PARENT(TRUE)
+63 @/datum/decl::Initialize::SHOULD_NOT_SLEEP SHOULD_NOT_SLEEP(TRUE)
+code/datums/variants/crayon_variants.dm /obj/item/pen/crayon
+43 @/obj/item/pen/crayon::Initialize::apply_variant apply_variant()
+code/game/area/areas.dm /area
+67 @/area::Initialize::apply_ceiling apply_ceiling()
+69 @/area::Initialize::luminosity luminosity = !(dynamic_lighting)
+code/game/atom/atoms_initializing_EXPENSIVE.dm /atom
+178 @/atom::Initialize::SHOULD_NOT_SLEEP SHOULD_NOT_SLEEP(TRUE)
+179 @/atom::Initialize::SHOULD_CALL_PARENT SHOULD_CALL_PARENT(TRUE)
+181 @/atom::Initialize::if if(flags & ATOM_INITIALIZED)
+182 @/atom::Initialize::stack_trace stack_trace("Warning: [src]([type]) initialized multiple times!")
+183 @/atom::Initialize::flags flags |= ATOM_INITIALIZED
+188 @/atom::Initialize::flags_1 flags_1 |= INITIALIZED_1
+191 @/atom::Initialize::if if(color)
+192 @/atom::Initialize::add_atom_colour add_atom_colour(color, FIXED_COLOUR_PRIORITY)
+194 @/atom::Initialize::if if(uses_integrity)
+195 @/atom::Initialize::atom_integrity atom_integrity = max_integrity
+199 @/atom::Initialize::lifecycle_decls_init lifecycle_decls_init(src, mapload)
+201 @/atom::Initialize::caps_init caps_init(src, mapload)
+207 @/atom::Initialize::return return INITIALIZE_HINT_NORMAL
+code/game/atoms_movable.dm /atom/movable
+40 @/atom/movable::Initialize::movable_instance_setup movable_instance_setup()
+code/game/dna/dna_modifier.dm /obj/machinery/computer/scan_consolenew
+409 @/obj/machinery/computer/scan_consolenew::Initialize::for for(var/i=0;i<3;i++)
+411 @/obj/machinery/computer/scan_consolenew::Initialize::R var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
+412 @/obj/machinery/computer/scan_consolenew::Initialize::rel_set rel_set(R, nameof(R.mydna), new /datum/dna2/record)
+413 @/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna R.mydna.dna = new
+414 @/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetUI R.mydna.dna.ResetUI()
+415 @/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetSE R.mydna.dna.ResetSE()
+416 @/obj/machinery/computer/scan_consolenew::Initialize::rel_add rel_add(src, nameof(buffers), R, i+1)
+code/modules/admin/callproc/callproc.dm /mob/proccall_handler
+29 @/mob/proccall_handler::Initialize::if if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
+30 @/mob/proccall_handler::Initialize::return return INITIALIZE_HINT_QDEL
+31 @/mob/proccall_handler::Initialize::GLOB.AdminProcCallHandler GLOB.AdminProcCallHandler = src
+code/modules/artifice/telecube.dm /obj/item/telecube
+56 @/obj/item/telecube::Initialize::on_floor set_on_floor(isturf(loc))
+58 @/obj/item/telecube::Initialize::if if(randomize_colors)
+59 @/obj/item/telecube::Initialize::glow_color set_glow_color(rgb(rand(0, 255),rand(0, 255),rand(0, 255)))
+60 @/obj/item/telecube::Initialize::color color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
+62 @/obj/item/telecube::Initialize::if if(start_paired)
+63 @/obj/item/telecube::Initialize::rel_set rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
+64 @/obj/item/telecube::Initialize::if if(mirror_colors)
+65 @/obj/item/telecube::Initialize::mate mate().set_glow_color(color)
+66 @/obj/item/telecube::Initialize::mate mate().color = glow_color
+67 @/obj/item/telecube::Initialize::else else
+68 @/obj/item/telecube::Initialize::mate mate().set_glow_color(glow_color)
+69 @/obj/item/telecube::Initialize::mate mate().color = color
+70 @/obj/item/telecube::Initialize::mate mate().pair_cube(src)
+code/modules/assembly/holder.dm /obj/item/assembly_holder/timer_igniter
+190 @/obj/item/assembly_holder/timer_igniter::Initialize::ign var/obj/item/assembly/igniter/ign = new(src)
+191 @/obj/item/assembly_holder/timer_igniter::Initialize::ign.set_secured ign.set_secured(TRUE)
+192 @/obj/item/assembly_holder/timer_igniter::Initialize::rel_set rel_set(ign, nameof(ign.holder), src)
+194 @/obj/item/assembly_holder/timer_igniter::Initialize::tmr var/obj/item/assembly/timer/tmr = new(src)
+195 @/obj/item/assembly_holder/timer_igniter::Initialize::tmr.time tmr.time = 5
+196 @/obj/item/assembly_holder/timer_igniter::Initialize::tmr.set_secured tmr.set_secured(TRUE)
+197 @/obj/item/assembly_holder/timer_igniter::Initialize::rel_set rel_set(tmr, nameof(tmr.holder), src)
+199 @/obj/item/assembly_holder/timer_igniter::Initialize::rel_set rel_set(src, nameof(a_left), tmr)
+200 @/obj/item/assembly_holder/timer_igniter::Initialize::rel_set rel_set(src, nameof(a_right), ign)
+201 @/obj/item/assembly_holder/timer_igniter::Initialize::secured set_secured(TRUE)
+202 @/obj/item/assembly_holder/timer_igniter::Initialize::name name = initial(name) + " ([tmr.time] secs)"
+204 @/obj/item/assembly_holder/timer_igniter::Initialize::if if(loc)
+205 @/obj/item/assembly_holder/timer_igniter::Initialize::grant grant(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
+code/modules/asset_cache/transports/asset_transport.dm /datum/asset_transport
+18 @/datum/asset_transport::Initialize::preload preload = assets.Copy()
+19 @/datum/asset_transport::Initialize::if if (!CONFIG_GET(flag/asset_simple_preload))
+21 @/datum/asset_transport::Initialize::for for(var/client/C in GLOB.clients)
+22 @/datum/asset_transport::Initialize::after after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
+code/modules/awaymissions/redgate.dm /obj/item/laserdome_flag
+231 @/obj/item/laserdome_flag::Initialize::start_pos start_pos = src.loc
+code/modules/awaymissions/redgate.dm /obj/item/laserdome_hyperball
+386 @/obj/item/laserdome_hyperball::Initialize::start_pos start_pos = src.loc
+code/modules/blob2/blobs/base_blob.dm /obj/structure/blob
+35 @/obj/structure/blob::Initialize::if if(overmind)
+36 @/obj/structure/blob::Initialize::faction faction = overmind.blob_type.faction
+37 @/obj/structure/blob::Initialize::consume_tile consume_tile()
+38 @/obj/structure/blob::Initialize::sync_overmind_look sync_overmind_look()
+code/modules/blob2/blobs/core.dm /obj/structure/blob/core
+120 @/obj/structure/blob/core::Initialize::if if(placed_at_make || overmind)
+121 @/obj/structure/blob/core::Initialize::make_overmind make_overmind = FALSE
+124 @/obj/structure/blob/core::Initialize::if if(make_overmind && ai_controlled && !desired_blob_type)
+125 @/obj/structure/blob/core::Initialize::desired_blob_type desired_blob_type = isnull(difficulty_threshold) ? pick(subtypesof(/datum/blob_type)) : get_random_blob_type()
+code/modules/blob2/overmind/overmind.dm /mob/observer/blob
+48 @/mob/observer/blob::Initialize::new_name var/new_name = "[initial(name)] ([rand(1, 999)])"
+49 @/mob/observer/blob::Initialize::name name = new_name
+50 @/mob/observer/blob::Initialize::real_name set_real_name(new_name)
+51 @/mob/observer/blob::Initialize::for for(var/L in TYPE_TABLE_GET(src, blob_langs))
+52 @/mob/observer/blob::Initialize::languages languages |= GLOB.all_languages[L]
+53 @/mob/observer/blob::Initialize::if if(languages.len)
+54 @/mob/observer/blob::Initialize::default_language_static default_language_static = languages[1]
+57 @/mob/observer/blob::Initialize::color color = blob_type.complementary_color
+58 @/mob/observer/blob::Initialize::if if(blob_core())
+59 @/mob/observer/blob::Initialize::blob_core blob_core().sync_overmind_look()
+code/modules/combat_ai/integration/mob_living.dm /mob/living
+140 @/mob/living::Initialize::if if(!ai_brain)
+141 @/mob/living::Initialize::initialize_ai_brain initialize_ai_brain()
+code/modules/emotes/emote_define.dm /datum/decl/emote
+49 @/datum/decl/emote::Initialize::if if(key)
+50 @/datum/decl/emote::Initialize::LAZYSET LAZYSET(GLOB.emotes_by_key, key, src)
+code/modules/exploration/lootsafe.dm /obj/structure/closet/crate/secure/lootsafe/numberlock
+206 @/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::make_code make_code()
+207 @/obj/structure/closet/crate/secure/lootsafe/numberlock::Initialize::generate_loot generate_loot()
+code/modules/exploration/lootsafe.dm /obj/structure/closet/crate/secure/lootsafe/devillock
+236 @/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::make_code make_code()
+237 @/obj/structure/closet/crate/secure/lootsafe/devillock::Initialize::generate_loot generate_loot()
+code/modules/fireworks/firework_launcher.dm /obj/machinery/firework_launcher
+20 @/obj/machinery/firework_launcher::Initialize::EXPIRY_STAMP EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
+code/modules/games/wizoff.dm /obj/item/deck/wizoff
+20 @/obj/item/deck/wizoff::Initialize::P var/datum/playingcard/P
+21 @/obj/item/deck/wizoff::Initialize::for for(var/cardtext in card_wiz_list)
+22 @/obj/item/deck/wizoff::Initialize::P P = new()
+23 @/obj/item/deck/wizoff::Initialize::P.name P.name = "[cardtext]"
+24 @/obj/item/deck/wizoff::Initialize::P.card_icon P.card_icon = "[icon_state]_card"
+25 @/obj/item/deck/wizoff::Initialize::P.back_icon P.back_icon = "[icon_state]_card_back"
+26 @/obj/item/deck/wizoff::Initialize::rel_add rel_add(src, nameof(cards), P)
+code/modules/identification/item_procs.dm /obj/item
+2 @/obj/item::Initialize::if if(init_hide_identity)
+3 @/obj/item::Initialize::rel_set rel_set(src, nameof(identity), new identity_type(src))
+code/modules/instruments/instrument_data/_instrument_data.dm /datum/instrument
+61 @/datum/instrument::Initialize::if if(instrument_flags & (INSTRUMENT_LEGACY | INSTRUMENT_DO_NOT_AUTOSAMPLE))
+63 @/datum/instrument::Initialize::calculate_samples calculate_samples()
+code/modules/lore_codex/codex.dm /obj/item/book/codex
+16 @/obj/item/book/codex::Initialize::rel_set rel_set(src, nameof(tree), CACHED_KEY(codex_trees, root_type, src, root_type))
+code/modules/maint_recycler/code/maint_vendor.dm /obj/machinery/maint_vendor
+45 @/obj/machinery/maint_vendor::Initialize::for for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
+46 @/obj/machinery/maint_vendor::Initialize::entry var/datum/maint_recycler_vendor_entry/entry = new t()
+47 @/obj/machinery/maint_vendor::Initialize::entry.initialize entry.initialize()
+48 @/obj/machinery/maint_vendor::Initialize::rel_add rel_add(src, nameof(product_datums), entry)
+49 @/obj/machinery/maint_vendor::Initialize::shuffle_inplace shuffle_inplace(product_datums)
+code/modules/maint_recycler/code/util.dm /obj/effect/recycler_vendor_beacon
+52 @/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations GLOB.recycler_vendor_locations |= get_turf(src)
+code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm /obj/item/storage/box/remote_scene_tools
+181 @/obj/item/storage/box/remote_scene_tools::Initialize::RST var/obj/item/remote_scene_tool/RST = new primary(loc = src)
+182 @/obj/item/storage/box/remote_scene_tools::Initialize::RST2 var/obj/item/remote_scene_tool/RST2 = new secondary(loc = src)
+183 @/obj/item/storage/box/remote_scene_tools::Initialize::RST.link_to RST.link_to(RST2)
+184 @/obj/item/storage/box/remote_scene_tools::Initialize::RST2.link_to RST2.link_to(RST)
+code/modules/maps/merge_conflicts.dm /obj/merge_conflict_marker
+15 @/obj/merge_conflict_marker::Initialize::msg var/msg = "HEY, LISTEN!!! Merge Conflict Marker detected at [COORD(src)]! Please manually address all potential merge conflicts!!!"
+16 @/obj/merge_conflict_marker::Initialize::to_chat to_chat(world, span_warning("[msg]"))
+17 @/obj/merge_conflict_marker::Initialize::CRASH CRASH(msg)
+code/modules/modular_computers/computers/modular_computer/core.dm /obj/item/modular_computer
+68 @/obj/item/modular_computer::Initialize::if if(!overlay_icon)
+69 @/obj/item/modular_computer::Initialize::overlay_icon overlay_icon = icon
+70 @/obj/item/modular_computer::Initialize::install_default_hardware install_default_hardware()
+71 @/obj/item/modular_computer::Initialize::if if(hard_drive)
+72 @/obj/item/modular_computer::Initialize::install_default_programs install_default_programs()
+code/modules/modular_computers/hardware/_hardware.dm /obj/item/computer_hardware
+85 @/obj/item/computer_hardware::Initialize::if if(istype(loc, /obj/item/modular_computer))
+86 @/obj/item/computer_hardware::Initialize::rel_set rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
+code/modules/modular_computers/hardware/hard_drive.dm /obj/item/computer_hardware/hard_drive
+186 @/obj/item/computer_hardware/hard_drive::Initialize::install_default_programs install_default_programs()
+code/modules/modular_computers/hardware/portable_hard_drive.dm /obj/item/computer_hardware/hard_drive/portable
+37 @/obj/item/computer_hardware/hard_drive/portable::Initialize::stored_files stored_files = list()
+38 @/obj/item/computer_hardware/hard_drive/portable::Initialize::recalculate_size recalculate_size()
+code/modules/multiz/turf.dm /turf/simulated/open
+65 @/turf/simulated/open::Initialize::ASSERT ASSERT(HasBelow(z))
+code/modules/nifsoft/nif.dm /obj/item/nif
+80 @/obj/item/nif::Initialize::if if(!big_icon)
+81 @/obj/item/nif::Initialize::big_icon big_icon = new(icon,icon_state = "nif_full")
+84 @/obj/item/nif::Initialize::save_data save_data = islist(load_data_at_make) ? load_data_at_make.Copy() : list()
+85 @/obj/item/nif::Initialize::saved_examine_msg var/saved_examine_msg = save_data["examine_msg"]
+88 @/obj/item/nif::Initialize::if if(isnull(saved_examine_msg))
+89 @/obj/item/nif::Initialize::saved_examine_msg saved_examine_msg = "There's a certain spark to their eyes."
+90 @/obj/item/nif::Initialize::examine_msg examine_msg = saved_examine_msg
+93 @/obj/item/nif::Initialize::if if(ishuman(loc))
+94 @/obj/item/nif::Initialize::H var/mob/living/carbon/human/H = loc
+95 @/obj/item/nif::Initialize::if if(!quick_implant(H))
+96 @/obj/item/nif::Initialize::WARNING WARNING("NIF spawned in [H] failed to implant")
+97 @/obj/item/nif::Initialize::return return INITIALIZE_HINT_QDEL
+100 @/obj/item/nif::Initialize::if if(wear_at_make)
+101 @/obj/item/nif::Initialize::durability set_durability(wear_at_make)
+102 @/obj/item/nif::Initialize::wear wear(0)
+code/modules/nifsoft/software/13_soulcatcher.dm /mob/observer/eye/ar_soul
+457 @/mob/observer/eye/ar_soul::Initialize::brainmob var/mob/brainmob = loc
+458 @/mob/observer/eye/ar_soul::Initialize::if if(!istype(brainmob) || !brainmob.client)
+459 @/mob/observer/eye/ar_soul::Initialize::return return INITIALIZE_HINT_QDEL
+461 @/mob/observer/eye/ar_soul::Initialize::brainmob.take_eye brainmob.take_eye(src)
+462 @/mob/observer/eye/ar_soul::Initialize::sight sight |= SEE_SELF
+464 @/mob/observer/eye/ar_soul::Initialize::name name = "[brainmob.name] (AR)"
+465 @/mob/observer/eye/ar_soul::Initialize::real_name set_real_name(brainmob.real_name)
+467 @/mob/observer/eye/ar_soul::Initialize::forceMove forceMove(get_turf(parent_human()))
+468 @/mob/observer/eye/ar_soul::Initialize::dq_add_recursive_move dq_add_recursive_move(parent_human())
+469 @/mob/observer/eye/ar_soul::Initialize::global.observe global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
+code/modules/paperwork/filingcabinet.dm /obj/structure/filingcabinet
+41 @/obj/structure/filingcabinet::Initialize::for for(var/obj/item/I in contents_of(loc))
+42 @/obj/structure/filingcabinet::Initialize::if if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
+43 @/obj/structure/filingcabinet::Initialize::I.forceMove I.forceMove(src)
+code/modules/paperwork/folders.dm /obj/item/folder/white_rd
+68 @/obj/item/folder/white_rd::Initialize::P var/obj/item/paper/P = new()
+69 @/obj/item/folder/white_rd::Initialize::P.name P.name = "Memo RE: proper analysis procedure"
+70 @/obj/item/folder/white_rd::Initialize::P.set_info P.set_info("<br>We keep test dummies in pens here for a reason")
+71 @/obj/item/folder/white_rd::Initialize::move_into move_into(src, null, P)
+code/modules/paperwork/paper.dm /obj/item/paper
+147 @/obj/item/paper::Initialize::if if(mapload)
+148 @/obj/item/paper::Initialize::was_maploaded was_maploaded = TRUE
+151 @/obj/item/paper::Initialize::if if(name != "paper")
+152 @/obj/item/paper::Initialize::desc desc = "This is a paper titled '" + name + "'."
+154 @/obj/item/paper::Initialize::if if(info != initial(info))
+155 @/obj/item/paper::Initialize::info set_info(html_encode(info))
+156 @/obj/item/paper::Initialize::info set_info(replacetext(info, "\n", "<BR>"))
+157 @/obj/item/paper::Initialize::info set_info(parsepencode(info))
+159 @/obj/item/paper::Initialize::update_space update_space(info)
+160 @/obj/item/paper::Initialize::updateinfolinks updateinfolinks()
+code/modules/paperwork/pen.dm /obj/item/pen/crayon
+387 @/obj/item/pen/crayon::Initialize::name name = "[colourName] [name]"
+code/modules/persistence/datum/persistence_datum.dm /datum/persistent
+24 @/datum/persistent::Initialize::if if(fexists(filename))
+25 @/datum/persistent::Initialize::tokens var/list/tokens = json_decode(file2text(filename))
+26 @/datum/persistent::Initialize::for for(var/list/token in tokens)
+27 @/datum/persistent::Initialize::if if(!CheckTokenSanity(token))
+28 @/datum/persistent::Initialize::tokens tokens -= token
+29 @/datum/persistent::Initialize::ProcessAndApplyTokens ProcessAndApplyTokens(tokens)
+code/modules/persistence/graffiti.dm /obj/effect/decal/writing
+30 @/obj/effect/decal/writing::Initialize::if if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
+31 @/obj/effect/decal/writing::Initialize::SSpersistence.track_value SSpersistence.track_value(src, /datum/persistent/graffiti)
+code/modules/persistence/paintings.dm /datum/persistent/paintings
+11 @/datum/persistent/paintings::Initialize::if if(fexists(filename))
+12 @/datum/persistent/paintings::Initialize::SSpersistence.all_paintings SSpersistence.all_paintings = json_decode(file2text(filename))
+13 @/datum/persistent/paintings::Initialize::tokens var/list/tokens = persistence_all_paintings()
+14 @/datum/persistent/paintings::Initialize::for for(var/list/token in tokens)
+15 @/datum/persistent/paintings::Initialize::expr token["age"]++
+16 @/datum/persistent/paintings::Initialize::if if(!CheckTokenSanity(token))
+17 @/datum/persistent/paintings::Initialize::tokens tokens -= token
+19 @/datum/persistent/paintings::Initialize::SSpersistence.unpicked_paintings SSpersistence.unpicked_paintings = SSpersistence.all_paintings.Copy()
+21 @/datum/persistent/paintings::Initialize::for for(var/obj/structure/sign/painting/P in persistence_painting_frames())
+22 @/datum/persistent/paintings::Initialize::P.load_persistent P.load_persistent()
+code/modules/planet/sun.dm /atom/movable/sun_visuals
+102 @/atom/movable/sun_visuals::Initialize::LAZYINITLIST LAZYINITLIST(spreads)
+103 @/atom/movable/sun_visuals::Initialize::expr spreads["1"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTH, icon_state = "white_gradient")
+104 @/atom/movable/sun_visuals::Initialize::expr spreads["2"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTH, icon_state = "white_gradient")
+105 @/atom/movable/sun_visuals::Initialize::expr spreads["4"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = EAST, icon_state = "white_gradient")
+106 @/atom/movable/sun_visuals::Initialize::expr spreads["8"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = WEST, icon_state = "white_gradient")
+108 @/atom/movable/sun_visuals::Initialize::expr spreads["i5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_inner")
+109 @/atom/movable/sun_visuals::Initialize::expr spreads["i6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_inner")
+110 @/atom/movable/sun_visuals::Initialize::expr spreads["i9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_inner")
+111 @/atom/movable/sun_visuals::Initialize::expr spreads["i10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_inner")
+113 @/atom/movable/sun_visuals::Initialize::expr spreads["o5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_outer")
+114 @/atom/movable/sun_visuals::Initialize::expr spreads["o6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_outer")
+115 @/atom/movable/sun_visuals::Initialize::expr spreads["o9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_outer")
+116 @/atom/movable/sun_visuals::Initialize::expr spreads["o10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_outer")
+code/modules/planet/thor.dm /obj/machinery/power/smes/buildable/offmap_spawn/empty
+768 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::stored_charge set_stored_charge(0)
+769 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::RCon set_RCon(TRUE)
+770 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_level set_input_level(input_level_max)
+771 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::output_level set_output_level(output_level_max)
+772 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_attempt set_input_attempt(TRUE)
+code/modules/planet/virgo4.dm /obj/machinery/power/smes/buildable/offmap_spawn/empty
+617 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::stored_charge set_stored_charge(0)
+618 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::RCon set_RCon(TRUE)
+619 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_level set_input_level(input_level_max)
+620 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::output_level set_output_level(output_level_max)
+621 @/obj/machinery/power/smes/buildable/offmap_spawn/empty::Initialize::input_attempt set_input_attempt(TRUE)
+code/modules/refinery/core/industrial_reagent_mixer.dm /obj/machinery/reagent_refinery/mixer
+15 @/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle set_mixer_angle(dir2angle(dir))
+code/modules/resleeving/implant.dm /obj/item/backup_implanter
+68 @/obj/item/backup_implanter::Initialize::for for(var/i = 1 to max_implants)
+69 @/obj/item/backup_implanter::Initialize::imp var/obj/item/implant/backup/imp = new(src, db_key)
+70 @/obj/item/backup_implanter::Initialize::rel_add rel_add(src, nameof(imps), imp)
+71 @/obj/item/backup_implanter::Initialize::imp.germ_level imp.germ_level = 0
+72 @/obj/item/backup_implanter::Initialize::update update()
+code/modules/resleeving/sleevecard.dm /mob/living/silicon/pai/infomorph
+113 @/mob/living/silicon/pai/infomorph::Initialize::pda.ownjob pda.ownjob = "Sleevecard"
+114 @/mob/living/silicon/pai/infomorph::Initialize::pda.set_owner pda.set_owner(text("[]", src))
+115 @/mob/living/silicon/pai/infomorph::Initialize::pda.name pda.name = pda.owner + " (" + pda.ownjob + ")"
+117 @/mob/living/silicon/pai/infomorph::Initialize::default_language default_language = GLOB.all_languages[LANGUAGE_GALCOM]
+code/modules/rogueminer/wrappers.dm /obj/effect/step_trigger/teleporter/roguemine_loop/north
+4 @/obj/effect/step_trigger/teleporter/roguemine_loop/north::Initialize::teleport_x teleport_x = x
+5 @/obj/effect/step_trigger/teleporter/roguemine_loop/north::Initialize::teleport_z teleport_z = z
+code/modules/rogueminer/wrappers.dm /obj/effect/step_trigger/teleporter/roguemine_loop/south
+10 @/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_x teleport_x = x
+11 @/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_y teleport_y = world.maxy - 16
+12 @/obj/effect/step_trigger/teleporter/roguemine_loop/south::Initialize::teleport_z teleport_z = z
+code/modules/rogueminer/wrappers.dm /obj/effect/step_trigger/teleporter/roguemine_loop/west
+17 @/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_x teleport_x = world.maxx - 16
+18 @/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_y teleport_y = y
+19 @/obj/effect/step_trigger/teleporter/roguemine_loop/west::Initialize::teleport_z teleport_z = z
+code/modules/rogueminer/wrappers.dm /obj/effect/step_trigger/teleporter/roguemine_loop/east
+24 @/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_y teleport_y = y
+25 @/obj/effect/step_trigger/teleporter/roguemine_loop/east::Initialize::teleport_z teleport_z = z
+code/modules/shieldgen/shield_gen.dm /obj/machinery/shield_gen
+60 @/obj/machinery/shield_gen::Initialize::if if(anchored)
+61 @/obj/machinery/shield_gen::Initialize::for for(var/obj/machinery/shield_capacitor/cap in range(1, src))
+62 @/obj/machinery/shield_gen::Initialize::if if(!cap.anchored)
+63 @/obj/machinery/shield_gen::Initialize::expr continue
+64 @/obj/machinery/shield_gen::Initialize::if if(cap.owned_gen())
+65 @/obj/machinery/shield_gen::Initialize::expr continue
+66 @/obj/machinery/shield_gen::Initialize::if if(get_dir(cap, src) == cap.dir)
+67 @/obj/machinery/shield_gen::Initialize::rel_set rel_set(cap, nameof(cap.owned_gen), src)
+code/modules/shieldgen/shield_generator.dm /obj/machinery/power/shield_generator
+127 @/obj/machinery/power/shield_generator::Initialize::rel_take_all rel_take_all(src, nameof(mode_list))
+128 @/obj/machinery/power/shield_generator::Initialize::for for(var/st in subtypesof(/datum/shield_mode))
+129 @/obj/machinery/power/shield_generator::Initialize::SM var/datum/shield_mode/SM = new st()
+130 @/obj/machinery/power/shield_generator::Initialize::rel_add rel_add(src, nameof(mode_list), SM)
+131 @/obj/machinery/power/shield_generator::Initialize::toggle_flag toggle_flag(initial_shield_modes)
+code/modules/spells/spells.dm /obj/item/spell/unrestricted
+131 @/obj/item/spell/unrestricted::Initialize::if if(isliving(loc))
+132 @/obj/item/spell/unrestricted::Initialize::rel_set rel_set(src, nameof(owner), loc)
+133 @/obj/item/spell/unrestricted::Initialize::if if(!owner_ref())
+134 @/obj/item/spell/unrestricted::Initialize::return return INITIALIZE_HINT_QDEL
+code/modules/spells/targeted/ethereal_jaunt.dm /obj/effect/dummy/spell_jaunt
+102 @/obj/effect/dummy/spell_jaunt::Initialize::rel_set rel_set(src, nameof(last_valid_turf), get_turf(loc))
+code/modules/tables/tables.dm /obj/structure/table
+270 @/obj/structure/table::Initialize::if if(plating_id)
+271 @/obj/structure/table::Initialize::layers set_layers(get_material_by_name(plating_id), reinforcement_id ? get_material_by_name(reinforcement_id) : null)
+274 @/obj/structure/table::Initialize::for for(var/obj/structure/table/T in contents_of(loc))
+275 @/obj/structure/table::Initialize::if if(T != src)
+278 @/obj/structure/table::Initialize::break_to_parts break_to_parts(full_return = 1)
+282 @/obj/structure/table::Initialize::color color = "#ffffff"
+283 @/obj/structure/table::Initialize::alpha alpha = 255
+284 @/obj/structure/table::Initialize::update_connections update_connections()
+285 @/obj/structure/table::Initialize::update_desc update_desc()
+286 @/obj/structure/table::Initialize::update_material update_material()
+maps/common/common_things.dm /obj/sc_away_spawner
+248 @/obj/sc_away_spawner::Initialize::if if(!LAZYLEN(mobs_to_pick_from))
+249 @/obj/sc_away_spawner::Initialize::log_mapping log_mapping("Mob spawner at [x],[y],[z] ([get_area(src)]) had no mobs_to_pick_from set on it!")
+250 @/obj/sc_away_spawner::Initialize::flags flags |= ATOM_INITIALIZED
+251 @/obj/sc_away_spawner::Initialize::return return INITIALIZE_HINT_QDEL
+252 @/obj/sc_away_spawner::Initialize::spawning set_spawning(TRUE)
+maps/submaps/engine_submaps/engine.dm /obj/effect/landmark/engine_loader
+8 @/obj/effect/landmark/engine_loader::Initialize::if if(mapping_engine_loader())
+9 @/obj/effect/landmark/engine_loader::Initialize::WARNING WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
+10 @/obj/effect/landmark/engine_loader::Initialize::delete_me delete_me = TRUE
+11 @/obj/effect/landmark/engine_loader::Initialize::SSmapping.engine_loader SSmapping.engine_loader = src
+world_reads estimate 14 -> 8 (NTNet relay 4, train 1, shuttle display 1 moved)

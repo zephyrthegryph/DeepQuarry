@@ -10,12 +10,12 @@
 	var/active = FALSE
 
 CAPABILITIES(/area/looking_glass)
+	setup(PROC_REF(link_viewing_tiles))
 	ref_one(nameof(our_landmark), /obj/effect/landmark/looking_glass)
 	ref_many(nameof(our_optional_turfs))
 	ref_many(nameof(our_turfs))
 
-/area/looking_glass/Initialize(mapload)
-	. = ..()
+/area/looking_glass/proc/link_viewing_tiles()
 	rel_set(src, nameof(our_landmark), locate_within(src, /obj/effect/landmark/looking_glass))
 	if(!our_landmark())
 		log_mapping("Looking glass area [name] couldn't find a landmark")

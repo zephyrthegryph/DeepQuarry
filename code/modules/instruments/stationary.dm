@@ -9,12 +9,12 @@
 	var/datum/song/stationary/song
 
 CAPABILITIES(/obj/structure/musician)
+	setup(PROC_REF(clear_initial_instrument_ids))
 	owns_one(nameof(song), /datum/song/stationary, starts = PROC_REF(make_song))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 
-/obj/structure/musician/Initialize(mapload)
-	. = ..()
+/obj/structure/musician/proc/clear_initial_instrument_ids()
 	allowed_instrument_ids = null
 
 /// The starting song (owns_one(starts =)).
