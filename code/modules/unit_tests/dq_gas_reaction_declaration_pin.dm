@@ -7,7 +7,7 @@
 /// Run by dq_gas_reaction_energy_pins (a test type of its own would add one more type to the test world).
 /proc/dq_gas_reaction_declaration_failure()
 	// id = list(list(gas type = minimum moles, ...), minimum K or null, maximum K or null, expands a hotspot), in the order the reactions run.
-	var/static/list/legacy = list(
+	var/list/legacy = list(
 		"vapor" = list(list(/datum/gas/water_vapor = MOLES_GAS_VISIBLE), null, WATER_VAPOR_CONDENSATION_POINT, FALSE),
 		"sterilization" = list(list(/datum/gas/miasma = MINIMUM_MOLE_COUNT), MIASTER_STERILIZATION_TEMP, null, FALSE),
 		"plasmafire" = list(list(/datum/gas/plasma = MINIMUM_MOLE_COUNT, /datum/gas/oxygen = MINIMUM_MOLE_COUNT), PLASMA_MINIMUM_BURN_TEMPERATURE, null, TRUE),
