@@ -32,6 +32,7 @@
 //   wiki          WIKI_X flags: what the in-game wiki and the handbooks do with the rule (hide it, file it under food or drinks).
 //   hotspot       TRUE for a gas rule that makes fires bigger: a hotspot's volume grows by what these rules report in the mixture's reaction_results.
 //   cooks_in, cook_time, mix, coating   a kitchen rule's appliance bitfield, cooking time, reagent merge mode and required coating (code/library/transformations/kitchen.dm).
+//   energy_in, energy_out, radiation, instability, min_level, min_heat   a fusion rule's numbers per reacting pair (code/modules/power/fusion/fusion_reactions.dm).
 //
 // A proc named in an entry is TYPE_PROC_REF(/the/rule/type, x), not PROC_REF(x): a static block is read in a global proc, where a bare PROC_REF has no type to
 // resolve against. What the compile keeps is the proc's name, called on the rule's one owner instance, so a subtype that overrides x answers for itself.
@@ -49,12 +50,12 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null, energy_in = null, energy_out = null, radiation = null, instability = null, min_level = null, min_heat = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
-		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating))
+		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating, \n		"energy_in" = energy_in, "energy_out" = energy_out, "radiation" = radiation, "instability" = instability, "min_level" = min_level, "min_heat" = min_heat))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -138,6 +139,17 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/mix = 0
 	/// The coating the items must carry: null for none, -1 for any, or a type.
 	var/coating
+	/// A fusion rule: its two reactants (the first two reagent terms of `takes`), the energy it consumes and releases, the radiation and instability it adds per pair,
+	/// the field energy and temperature it needs, and what it makes (reagent id => amount per pair).
+	var/reactant_a
+	var/reactant_b
+	var/energy_in = 0
+	var/energy_out = 0
+	var/radiation = 0
+	var/instability = 0
+	var/min_level = 0
+	var/min_heat = 0
+	var/list/field_products
 	/// Gas taken from the air around the subject once per step, gas => moles, or null.
 	var/list/takes_ambient
 	var/holds
@@ -338,6 +350,17 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.then_proc = "[xform_proc_name(arguments["then"])]" // a proc name (text): "" when there is none
 	X.important = !!arguments["important"]
 	X.wiki = arguments["wiki"] || 0
+	if(X.medium == MEDIUM_FIELD)
+		if(length(X.takes) >= 2)
+			X.reactant_a = X.takes[1][2]
+			X.reactant_b = X.takes[2][2]
+		X.field_products = xform_assoc(X.makes, XCUR_REAGENT)
+		X.energy_in = arguments["energy_in"] || 0
+		X.energy_out = arguments["energy_out"] || 0
+		X.radiation = arguments["radiation"] || 0
+		X.instability = arguments["instability"] || 0
+		X.min_level = arguments["min_level"] || 0
+		X.min_heat = arguments["min_heat"] || 0
 	if(X.medium == MEDIUM_CONTENTS)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.fruit_takes = xform_assoc(X.takes, XCUR_FRUIT)

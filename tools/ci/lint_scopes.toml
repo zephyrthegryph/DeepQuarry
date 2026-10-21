@@ -734,6 +734,7 @@ banned = [
   "sheet_reagents = a sheet that grinds into reagents is a /transformation/grinding rule: takes = list(stack_term(type, 1)), makes = list(reagent(id, 1), ...) (code/_helpers/refinery.dm); grinding_sheet_rule_for(type)",
   "ore_reagents = an ore that grinds into reagents is a /transformation/grinding rule: takes = list(item_term(type, 1)), makes = list(reagent(id, 1), ...) (code/_helpers/refinery.dm); grinding_ore_rule_for(type)",
 
+  "datum/decl/fusion_reaction = a fusion reaction is a transformation: a type under /transformation/fusion with a transformation(takes = list(reagent(a, 1), reagent(b, 1)), makes = ..., energy_in = ..., energy_out = ...) entry (code/modules/power/fusion/fusion_reactions.dm)",
   "datum/recipe = a recipe is a transformation: a type under /transformation/kitchen with a transformation(takes = list(reagent(...), item_term(...), fruit_term(...)), makes = list(item_term(type, n)), cooks_in = ...) entry (code/library/transformations/kitchen.dm)",
   "select_recipe = cooking_select(appliancetype, container, exact) (code/library/transformations/kitchen.dm)",
   "available_recipes = cooking_rules_for(appliancetype): the kitchen rules of one appliance, in the order they are tried",

@@ -389,8 +389,8 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 			for(var/cur_s_react in possible_s_reacts)
 				if(possible_s_reacts[cur_s_react] < 1)
 					continue
-				var/datum/decl/fusion_reaction/cur_reaction = get_fusion_reaction(cur_p_react, cur_s_react)
-				if(cur_reaction && plasma_temperature >= cur_reaction.minimum_energy_level)
+				var/datum/xform/cur_reaction = get_fusion_reaction(cur_p_react, cur_s_react)
+				if(cur_reaction && plasma_temperature >= cur_reaction.min_level)
 					possible_reactions.Add(cur_reaction)
 
 			//if there are no possible reactions here, abandon this primary reactant and move on
@@ -399,21 +399,21 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 
 			//split up the reacting atoms between the possible reactions
 			while(possible_reactions.len)
-				var/datum/decl/fusion_reaction/cur_reaction = pick(possible_reactions)
+				var/datum/xform/cur_reaction = pick(possible_reactions)
 				possible_reactions.Remove(cur_reaction)
 
 				//set the randmax to be the lower of the two involved reactants
-				var/max_num_reactants = react_pool[cur_reaction.p_react] > react_pool[cur_reaction.s_react] ? \
-				react_pool[cur_reaction.s_react] : react_pool[cur_reaction.p_react]
+				var/max_num_reactants = react_pool[cur_reaction.reactant_a] > react_pool[cur_reaction.reactant_b] ? \
+				react_pool[cur_reaction.reactant_b] : react_pool[cur_reaction.reactant_a]
 				if(max_num_reactants < 1)
 					continue
 
 				//make sure we have enough energy
-				if(plasma_temperature < cur_reaction.minimum_reaction_temperature)
+				if(plasma_temperature < cur_reaction.min_heat)
 					continue
 
-				if(plasma_temperature < max_num_reactants * cur_reaction.energy_consumption)
-					max_num_reactants = round(plasma_temperature / cur_reaction.energy_consumption)
+				if(plasma_temperature < max_num_reactants * cur_reaction.energy_in)
+					max_num_reactants = round(plasma_temperature / cur_reaction.energy_in)
 					if(max_num_reactants < 1)
 						continue
 
@@ -422,41 +422,42 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 
 				//removing the reacting substances from the list of substances that are primed to react this cycle
 				//if there aren't enough of that substance (there should be) then modify the reactant amounts accordingly
-				if( react_pool[cur_reaction.p_react] - amount_reacting >= 0 )
-					react_pool[cur_reaction.p_react] -= amount_reacting
+				if( react_pool[cur_reaction.reactant_a] - amount_reacting >= 0 )
+					react_pool[cur_reaction.reactant_a] -= amount_reacting
 				else
-					amount_reacting = react_pool[cur_reaction.p_react]
-					react_pool[cur_reaction.p_react] = 0
+					amount_reacting = react_pool[cur_reaction.reactant_a]
+					react_pool[cur_reaction.reactant_a] = 0
 				//same again for secondary reactant
-				if(react_pool[cur_reaction.s_react] - amount_reacting >= 0 )
-					react_pool[cur_reaction.s_react] -= amount_reacting
+				if(react_pool[cur_reaction.reactant_b] - amount_reacting >= 0 )
+					react_pool[cur_reaction.reactant_b] -= amount_reacting
 				else
-					react_pool[cur_reaction.p_react] += amount_reacting - react_pool[cur_reaction.p_react]
-					amount_reacting = react_pool[cur_reaction.s_react]
-					react_pool[cur_reaction.s_react] = 0
+					react_pool[cur_reaction.reactant_a] += amount_reacting - react_pool[cur_reaction.reactant_a]
+					amount_reacting = react_pool[cur_reaction.reactant_b]
+					react_pool[cur_reaction.reactant_b] = 0
 
-				plasma_temperature -= max_num_reactants * cur_reaction.energy_consumption  // Remove the consumed energy.
-				plasma_temperature += max_num_reactants * cur_reaction.energy_production   // Add any produced energy.
+				plasma_temperature -= max_num_reactants * cur_reaction.energy_in  // Remove the consumed energy.
+				plasma_temperature += max_num_reactants * cur_reaction.energy_out   // Add any produced energy.
 				radiation +=   max_num_reactants * cur_reaction.radiation           // Add any produced radiation.
 				tick_instability += max_num_reactants * cur_reaction.instability
 
 				// Create the reaction products.
-				for(var/reactant in cur_reaction.products)
+				for(var/reactant in cur_reaction.field_products)
 					var/success = 0
 					for(var/check_reactant in produced_reactants)
 						if(check_reactant == reactant)
-							produced_reactants[reactant] += cur_reaction.products[reactant] * amount_reacting
+							produced_reactants[reactant] += cur_reaction.field_products[reactant] * amount_reacting
 							success = 1
 							break
 					if(!success)
-						produced_reactants[reactant] = cur_reaction.products[reactant] * amount_reacting
+						produced_reactants[reactant] = cur_reaction.field_products[reactant] * amount_reacting
 
 				// Handle anything special. If this proc returns true, abort the current reaction.
-				if(cur_reaction.handle_reaction_special(src))
+				var/transformation/fusion/special = cur_reaction.owner_of()
+				if(special.handle_reaction_special(src))
 					return
 
 				// This reaction is done, and can't be repeated this sub-cycle.
-				possible_reactions.Remove(cur_reaction.s_react)
+				possible_reactions.Remove(cur_reaction.reactant_b)
 
 		// Loop through the newly produced reactants and add them to the pool.
 		for(var/reactant in produced_reactants)

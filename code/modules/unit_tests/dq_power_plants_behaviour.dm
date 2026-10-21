@@ -853,17 +853,17 @@
 /datum/unit_test/dq_pp/fusion_reaction_rates
 
 /datum/unit_test/dq_pp/fusion_reaction_rates/run_pp()
-	var/datum/decl/fusion_reaction/R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_DEUTERIUM)
-	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 2, "D+D")
+	var/datum/xform/R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_DEUTERIUM)
+	TEST_ASSERT(R && R.energy_in == 1 && R.energy_out == 2, "D+D")
 	R = get_fusion_reaction(REAGENT_ID_HELIUM3, REAGENT_ID_DEUTERIUM)
-	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 5, "D+He3 either way round")
+	TEST_ASSERT(R && R.energy_in == 1 && R.energy_out == 5, "D+He3 either way round")
 	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_SLIMEJELLY)
-	TEST_ASSERT(R && R.energy_production == 1 && R.instability == 0.5 && R.products[REAGENT_ID_HELIUM3] == 1, "D+T")
+	TEST_ASSERT(R && R.energy_out == 1 && R.instability == 0.5 && R.field_products[REAGENT_ID_HELIUM3] == 1, "D+T")
 	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_LITHIUM)
-	TEST_ASSERT(R && R.energy_consumption == 2 && R.radiation == 3 && R.instability == 1, "D+Li")
+	TEST_ASSERT(R && R.energy_in == 2 && R.radiation == 3 && R.instability == 1, "D+Li")
 	R = get_fusion_reaction(REAGENT_ID_OXYGEN, REAGENT_ID_OXYGEN)
-	TEST_ASSERT(R && R.energy_consumption == 10, "O+O")
-	TEST_ASSERT_EQUAL(R.minimum_reaction_temperature, 100, "reactions need 100 K")
+	TEST_ASSERT(R && R.energy_in == 10, "O+O")
+	TEST_ASSERT_EQUAL(R.min_heat, 100, "reactions need 100 K")
 
 /// The fuel injector fires one particle per fuel in its rod a step, and burns fuel_usage (30) of each; it stops when it cannot work.
 /datum/unit_test/dq_pp/fusion_injector_fuel_use

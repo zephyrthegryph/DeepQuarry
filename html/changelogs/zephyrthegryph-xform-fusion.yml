@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Fusion reactions are declared as transformations instead of reaction datums; the reactor behaves the same."

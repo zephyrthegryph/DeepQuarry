@@ -5312,3 +5312,7 @@ which the rules keep. A reaction that should be ordered by band needs a `priorit
 
 `GLOB.sheet_reagents` and `GLOB.ore_reagents` are `/transformation/grinding` rules with the same reagents in the same order; what a grinder produces is the same
 (`dq_xform_grinding_pin`).
+
+## Fusion reactions as transformations: no change (2026-10-21)
+
+The 10 fusion reactions are `/transformation/fusion` rules with the same numbers and products (`dq_xform_fusion_pin`); the field's loop and its random draws are untouched.

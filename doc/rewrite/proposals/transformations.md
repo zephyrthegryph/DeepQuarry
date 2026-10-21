@@ -720,3 +720,10 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   item alone; `puny_protons()` (the supermatter stack) is untouched. The grinders, the garbage system and the wiki read the rules. Pinned by `dq_xform_grinding_pin` (recorded on
   the tables: each rule's reagents and what grinding a stack of three or one ore puts in a holder) and `chemical_grinding_must_produce_valid_results`. `GLOB.sheet_reagents`
   and `GLOB.ore_reagents` are hard-banned.
+* **Wave 4, fusion declarations.** The 10 `/datum/decl/fusion_reaction` types are `/transformation/fusion/*` rules (`code/modules/power/fusion/fusion_reactions.dm`),
+  `medium = MEDIUM_FIELD` (a fusion field's reactant pool; not `MEDIUM_REAGENTS`, so the chemistry lists never see them), `regime = REGIME_FUSION`. `takes` names the two reactants (the
+  same reagent twice for a self-reaction), `makes` the products per reacting pair, and six new entry arguments carry the numbers: `energy_in`, `energy_out`, `radiation`, `instability`,
+  `min_level` (the old `minimum_energy_level`) and `min_heat` (`minimum_reaction_temperature`). The field's loop is unchanged apart from the field names; `get_fusion_reaction()` builds
+  its symmetric table from the rules; the supermatter reaction's `handle_reaction_special()` is a proc on its rule type. Pinned by `dq_xform_fusion_pin` (recorded on the legacy types: the
+  numbers, products, special flag and both lookup orders) and `dq_pp/fusion_reaction_rates`. The seeded field pin of section 12 was not built: the loop's random draws are untouched.
+  `/datum/decl/fusion_reaction` is hard-banned. The gas-law half of wave 4 (named Rust laws for the profiled hot reactions) is not started: it needs a profile to say which reactions are hot.

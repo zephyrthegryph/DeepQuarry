@@ -20,11 +20,11 @@
 
 /datum/unit_test/dq_xform_fusion_pin/Run()
 	var/list/rows = list()
-	for(var/datum/decl/fusion_reaction/R as anything in subtypesof(/datum/decl/fusion_reaction))
-		var/datum/decl/fusion_reaction/made = new R
-		var/datum/decl/fusion_reaction/a = get_fusion_reaction(made.p_react, made.s_react)
-		var/datum/decl/fusion_reaction/b = get_fusion_reaction(made.s_react, made.p_react)
-		var/special = (made.type != /datum/decl/fusion_reaction) && made.type == /datum/decl/fusion_reaction/phoron_supermatter
-		rows[copytext("[R]", length("/datum/decl/fusion_reaction/") + 1)] = row(R, made.p_react, made.s_react, made.energy_consumption, made.energy_production, made.radiation, made.instability, made.products, made.minimum_energy_level, made.minimum_reaction_temperature, special, a ? copytext("[a.type]", length("/datum/decl/fusion_reaction/") + 1) : "-", b ? copytext("[b.type]", length("/datum/decl/fusion_reaction/") + 1) : "-")
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_FIELD, REGIME_FUSION))
+		var/datum/xform/a = get_fusion_reaction(R.reactant_a, R.reactant_b)
+		var/datum/xform/b = get_fusion_reaction(R.reactant_b, R.reactant_a)
+		var/special = R.rule_type == /transformation/fusion/phoron_supermatter
+		var/root = length("/transformation/fusion/")
+		rows[copytext("[R.rule_type]", root + 1)] = row(R, R.reactant_a, R.reactant_b, R.energy_in, R.energy_out, R.radiation, R.instability, R.field_products, R.min_level, R.min_heat, special, a ? copytext("[a.rule_type]", root + 1) : "-", b ? copytext("[b.rule_type]", root + 1) : "-")
 	var/failure = dq_xform_pin_compare(DQ_FUSION_PIN_NAME, rows)
 	TEST_ASSERT(isnull(failure), failure)

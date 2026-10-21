@@ -21,6 +21,7 @@
 #define MEDIUM_CONTENTS "contents"
 #define MEDIUM_ORE_STOCK "ore_stock"
 #define MEDIUM_BATCH "batch"
+#define MEDIUM_FIELD "field"
 
 /// Regimes: which holders run a rule. A holder declares the regime it runs (/datum/reagents/proc/xform_regime()).
 #define REGIME_INSTANT "instant"
@@ -29,6 +30,7 @@
 #define REGIME_SMELTING "smelting"
 #define REGIME_GAS "gas"
 #define REGIME_GRINDING "grinding"
+#define REGIME_FUSION "fusion"
 
 /// What happens to a product that does not fit its container. CAPACITY_TRUNCATE keeps today's chemistry: the product is clamped to the free volume and the
 /// excess is lost (D10). Items and stacks never truncate: a refused insert is how slots already behave.

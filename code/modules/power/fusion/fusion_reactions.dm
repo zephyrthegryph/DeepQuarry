@@ -1,30 +1,34 @@
-GLOBAL_LIST(fusion_reactions)
+// Fusion reactions as transformations (doc/rewrite/proposals/transformations.md, wave 4): a reaction is a type under /transformation/fusion in MEDIUM_FIELD,
+// REGIME_FUSION. `takes` names its two reactants (a reagent term each; the same reactant twice for a self-reaction), `makes` what it produces per reacting pair,
+// and the numbers are energy_in (consumed), energy_out (produced), radiation, instability, min_level (the field energy it needs) and min_heat (the temperature
+// it needs; the base says 100). The field's loop (code/modules/power/fusion/core/core_field.dm) picks pairs and amounts as it always did. A reaction with a
+// special step overrides handle_reaction_special(field) on its type (called on the rule's owner instance); it returns true to abort the field's reaction.
 
-/datum/decl/fusion_reaction
-	var/p_react = "" // Primary reactant.
-	var/s_react = "" // Secondary reactant.
-	var/minimum_energy_level = 1
-	var/energy_consumption = 0
-	var/energy_production = 0
-	var/radiation = 0
-	var/instability = 0
-	var/list/products = list() // ALLOW(instance_list): d: reaction singleton table
-	var/minimum_reaction_temperature = 100
+/transformation/fusion
 
-/datum/decl/fusion_reaction/proc/handle_reaction_special(obj/effect/fusion_em_field/holder)
+CAPABILITIES(/transformation/fusion)
+	transformation(medium = MEDIUM_FIELD, regime = REGIME_FUSION, min_level = 1, min_heat = 100)
+
+/// The special step of a reaction; true aborts the field's current reaction.
+/transformation/fusion/proc/handle_reaction_special(obj/effect/fusion_em_field/holder)
 	return 0
 
+/// Reactant => reactant => rule, both ways round (the table is symmetric; a pair two rules name answers the later one). Built on first use.
+GLOBAL_LIST(fusion_reactions)
+
+/// The fusion rule for a pair of reactants in either order, or null.
 /proc/get_fusion_reaction(p_react, s_react, m_energy)
+	RETURN_TYPE(/datum/xform)
 	if(!GLOB.fusion_reactions)
-		GLOB.fusion_reactions = list()
-		for(var/rtype in subtypesof(/datum/decl/fusion_reaction))
-			var/datum/decl/fusion_reaction/cur_reaction = new rtype()
-			if(!GLOB.fusion_reactions[cur_reaction.p_react])
-				GLOB.fusion_reactions[cur_reaction.p_react] = list()
-			GLOB.fusion_reactions[cur_reaction.p_react][cur_reaction.s_react] = cur_reaction
-			if(!GLOB.fusion_reactions[cur_reaction.s_react])
-				GLOB.fusion_reactions[cur_reaction.s_react] = list()
-			GLOB.fusion_reactions[cur_reaction.s_react][cur_reaction.p_react] = cur_reaction
+		var/list/table = list()
+		for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_FIELD, REGIME_FUSION))
+			if(!table[rule.reactant_a])
+				table[rule.reactant_a] = list()
+			table[rule.reactant_a][rule.reactant_b] = rule
+			if(!table[rule.reactant_b])
+				table[rule.reactant_b] = list()
+			table[rule.reactant_b][rule.reactant_a] = rule
+		GLOB.fusion_reactions = table
 
 	if(GLOB.fusion_reactions.Find(p_react))
 		var/list/secondary_reactions = GLOB.fusion_reactions[p_react]
@@ -43,74 +47,75 @@ GLOBAL_LIST(fusion_reactions)
 //  boron-11
 
 // Basic power production reactions.
-/datum/decl/fusion_reaction/deuterium_deuterium
-	p_react = REAGENT_ID_DEUTERIUM
-	s_react = REAGENT_ID_DEUTERIUM
-	energy_consumption = 1
-	energy_production = 2
+/transformation/fusion/deuterium_deuterium
+CAPABILITIES(/transformation/fusion/deuterium_deuterium)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DEUTERIUM, 1), reagent(REAGENT_ID_DEUTERIUM, 1)),
+		energy_in = 1,
+		energy_out = 2))
 // Advanced production reactions (todo)
 
-/datum/decl/fusion_reaction/deuterium_helium
-	p_react = REAGENT_ID_DEUTERIUM
-	s_react = REAGENT_ID_HELIUM3
-	energy_consumption = 1
-	energy_production = 5
+/transformation/fusion/deuterium_helium
+CAPABILITIES(/transformation/fusion/deuterium_helium)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DEUTERIUM, 1), reagent(REAGENT_ID_HELIUM3, 1)),
+		energy_in = 1,
+		energy_out = 5))
 
-/datum/decl/fusion_reaction/deuterium_tritium
-	p_react = REAGENT_ID_DEUTERIUM
-	s_react = REAGENT_ID_SLIMEJELLY
-	energy_consumption = 1
-	energy_production = 1
-	products = list(REAGENT_ID_HELIUM3 = 1)
-	instability = 0.5
+/transformation/fusion/deuterium_tritium
+CAPABILITIES(/transformation/fusion/deuterium_tritium)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DEUTERIUM, 1), reagent(REAGENT_ID_SLIMEJELLY, 1)),
+		makes = list(reagent(REAGENT_ID_HELIUM3, 1)),
+		energy_in = 1,
+		energy_out = 1,
+		instability = 0.5))
 
-/datum/decl/fusion_reaction/deuterium_lithium
-	p_react = REAGENT_ID_DEUTERIUM
-	s_react = REAGENT_ID_LITHIUM
-	energy_consumption = 2
-	energy_production = 0
-	radiation = 3
-	products = list(REAGENT_ID_SLIMEJELLY= 1)
-	instability = 1
+/transformation/fusion/deuterium_lithium
+CAPABILITIES(/transformation/fusion/deuterium_lithium)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DEUTERIUM, 1), reagent(REAGENT_ID_LITHIUM, 1)),
+		makes = list(reagent(REAGENT_ID_SLIMEJELLY, 1)),
+		energy_in = 2,
+		energy_out = 0,
+		radiation = 3,
+		instability = 1))
 
 // Unideal/material production reactions
-/datum/decl/fusion_reaction/oxygen_oxygen
-	p_react = REAGENT_ID_OXYGEN
-	s_react = REAGENT_ID_OXYGEN
-	energy_consumption = 10
-	energy_production = 0
-	instability = 5
-	radiation = 5
-	products = list(REAGENT_ID_SILICON= 1)
+/transformation/fusion/oxygen_oxygen
+CAPABILITIES(/transformation/fusion/oxygen_oxygen)
+	configure(transformation(takes = list(reagent(REAGENT_ID_OXYGEN, 1), reagent(REAGENT_ID_OXYGEN, 1)),
+		makes = list(reagent(REAGENT_ID_SILICON, 1)),
+		energy_in = 10,
+		energy_out = 0,
+		radiation = 5,
+		instability = 5))
 
-/datum/decl/fusion_reaction/iron_iron
-	p_react = REAGENT_ID_IRON
-	s_react = REAGENT_ID_IRON
-	products = list(REAGENT_ID_SILVER = 1, REAGENT_ID_GOLD = 1, REAGENT_ID_PLATINUM = 1) // Not realistic but w/e
-	energy_consumption = 10
-	energy_production = 0
-	instability = 2
-	minimum_reaction_temperature = 10000
+// Not realistic but w/e
+/transformation/fusion/iron_iron
+CAPABILITIES(/transformation/fusion/iron_iron)
+	configure(transformation(takes = list(reagent(REAGENT_ID_IRON, 1), reagent(REAGENT_ID_IRON, 1)),
+		makes = list(reagent(REAGENT_ID_SILVER, 1), reagent(REAGENT_ID_GOLD, 1), reagent(REAGENT_ID_PLATINUM, 1)),
+		energy_in = 10,
+		energy_out = 0,
+		instability = 2,
+		min_heat = 10000))
 
-/datum/decl/fusion_reaction/phoron_hydrogen
-	p_react = REAGENT_ID_HYDROGEN
-	s_react = REAGENT_ID_PHORON
-	energy_consumption = 10
-	energy_production = 0
-	instability = 5
-	products = list("mydrogen" = 1)
-	minimum_reaction_temperature = 8000
+/transformation/fusion/phoron_hydrogen
+CAPABILITIES(/transformation/fusion/phoron_hydrogen)
+	configure(transformation(takes = list(reagent(REAGENT_ID_HYDROGEN, 1), reagent(REAGENT_ID_PHORON, 1)),
+		makes = list(reagent("mydrogen", 1)),
+		energy_in = 10,
+		energy_out = 0,
+		instability = 5,
+		min_heat = 8000))
 
 // VERY UNIDEAL REACTIONS.
-/datum/decl/fusion_reaction/phoron_supermatter
-	p_react = REAGENT_ID_SUPERMATTER
-	s_react = REAGENT_ID_PHORON
-	energy_consumption = 0
-	energy_production = 5
-	radiation = 20
-	instability = 20
+/transformation/fusion/phoron_supermatter
+CAPABILITIES(/transformation/fusion/phoron_supermatter)
+	configure(transformation(takes = list(reagent(REAGENT_ID_SUPERMATTER, 1), reagent(REAGENT_ID_PHORON, 1)),
+		energy_in = 0,
+		energy_out = 5,
+		radiation = 20,
+		instability = 20))
 
-/datum/decl/fusion_reaction/phoron_supermatter/handle_reaction_special(obj/effect/fusion_em_field/holder)
+/transformation/fusion/phoron_supermatter/handle_reaction_special(obj/effect/fusion_em_field/holder)
 
 	wormhole_event()
 
@@ -141,20 +146,20 @@ GLOBAL_LIST(fusion_reactions)
 	return 1
 
 // High end reactions.
-/datum/decl/fusion_reaction/boron_hydrogen
-	p_react = REAGENT_ID_BORON11
-	s_react = REAGENT_ID_HYDROGEN
-	minimum_energy_level = FUSION_HEAT_CAP * 0.5
-	energy_consumption = 3
-	energy_production = 15
-	radiation = 3
-	instability = 3
+/transformation/fusion/boron_hydrogen
+CAPABILITIES(/transformation/fusion/boron_hydrogen)
+	configure(transformation(takes = list(reagent(REAGENT_ID_BORON11, 1), reagent(REAGENT_ID_HYDROGEN, 1)),
+		energy_in = 3,
+		energy_out = 15,
+		radiation = 3,
+		instability = 3,
+		min_level = FUSION_HEAT_CAP * 0.5))
 
-/datum/decl/fusion_reaction/hydrogen_hydrogen
-	p_react = REAGENT_ID_HYDROGEN
-	s_react = REAGENT_ID_HYDROGEN
-	minimum_energy_level = FUSION_HEAT_CAP * 0.75
-	energy_consumption = 0
-	energy_production = 20
-	radiation = 5
-	instability = 5
+/transformation/fusion/hydrogen_hydrogen
+CAPABILITIES(/transformation/fusion/hydrogen_hydrogen)
+	configure(transformation(takes = list(reagent(REAGENT_ID_HYDROGEN, 1), reagent(REAGENT_ID_HYDROGEN, 1)),
+		energy_in = 0,
+		energy_out = 20,
+		radiation = 5,
+		instability = 5,
+		min_level = FUSION_HEAT_CAP * 0.75))
