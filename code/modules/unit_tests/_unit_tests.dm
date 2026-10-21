@@ -1374,6 +1374,7 @@
 #include "dq_round_job_boundary_tests.dm"
 #include "dq_a6_power_init.dm"
 #include "dq_a1_archaeology_init.dm"
+#include "dq_a9_initialization_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

@@ -17,10 +17,10 @@
 /obj/item/ammo_casing/macrobattery/var/charge_short = FALSE
 /// Recharges while below full; full, it parks until a shot is expended.
 CAPABILITIES(/obj/item/ammo_casing/macrobattery)
+	setup(PROC_REF(charge_initial_battery))
 	every(2 SECONDS, then(PROC_REF(macrobattery_step)), when = nameof(charge_short))
 
-/obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
-	. = ..()
+/obj/item/ammo_casing/macrobattery/proc/charge_initial_battery()
 	set_charge(max_charge)
 	set_charge_short(charge < max_charge)
 

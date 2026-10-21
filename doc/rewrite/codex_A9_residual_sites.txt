@@ -1,0 +1,276 @@
+Source-only baseline identity estimate; root must certify.
+init_lines 185 -> 135
+world_reads 2 -> 2
+init_lines	code/game/mecha/combat/durand.dm	@/obj/mecha/combat/durand/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/combat/durand.dm	@/obj/mecha/combat/durand/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/combat/gygax.dm	@/obj/mecha/combat/gygax/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/combat/gygax.dm	@/obj/mecha/combat/gygax/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/combat/marauder.dm	@/obj/mecha/combat/marauder/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/combat/marauder.dm	@/obj/mecha/combat/marauder/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/combat/phazon.dm	@/obj/mecha/combat/phazon/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/combat/phazon.dm	@/obj/mecha/combat/phazon/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::dq_add_recursive_move count=1
+init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::observe count=1
+init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::rel_set count=1
+init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::update_shift count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::C count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::C.attach count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::ME count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::ME.attach count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_airtank count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_cabin count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_cell count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_radio count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::for count=2
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::icon_state count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::if count=2
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::loc.Entered count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::mecha_log_message count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::smoke_system.attach count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::smoke_system.set_up count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::starting_equipment_types count=1
+init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::update_transform count=1
+init_lines	code/game/mecha/medical/odysseus.dm	@/obj/mecha/medical/odysseus/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/medical/odysseus.dm	@/obj/mecha/medical/odysseus/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::cell.set_charge count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::update_integrity count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D count=2
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D.attach count=2
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::else count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::for count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::if count=1
+init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::spent count=1
+init_lines	code/modules/projectiles/ammunition.dm	@/obj/item/ammo_magazine::Initialize::forged count=1
+init_lines	code/modules/projectiles/ammunition.dm	@/obj/item/ammo_magazine::Initialize::forged_material count=1
+init_lines	code/modules/projectiles/ammunition.dm	@/obj/item/ammo_magazine::Initialize::if count=4
+init_lines	code/modules/projectiles/ammunition.dm	@/obj/item/ammo_magazine::Initialize::initialize_magazine_icondata count=1
+init_lines	code/modules/projectiles/ammunition.dm	@/obj/item/ammo_magazine::Initialize::latent_rounds count=1
+init_lines	code/modules/projectiles/gun.dm	@/obj/item/gun::Initialize::if count=2
+init_lines	code/modules/projectiles/gun.dm	@/obj/item/gun::Initialize::new_mode count=1
+init_lines	code/modules/projectiles/gun.dm	@/obj/item/gun::Initialize::new_mode.apply_to count=1
+init_lines	code/modules/projectiles/gun.dm	@/obj/item/gun::Initialize::scoped_accuracy count=1
+init_lines	code/modules/projectiles/guns/energy.dm	@/obj/item/gun/energy::Initialize::else count=2
+init_lines	code/modules/projectiles/guns/energy.dm	@/obj/item/gun/energy::Initialize::if count=3
+init_lines	code/modules/projectiles/guns/energy.dm	@/obj/item/gun/energy::Initialize::power_supply.set_charge count=1
+init_lines	code/modules/projectiles/guns/energy.dm	@/obj/item/gun/energy::Initialize::rel_clear count=1
+init_lines	code/modules/projectiles/guns/energy.dm	@/obj/item/gun/energy::Initialize::rel_set count=2
+init_lines	code/modules/projectiles/guns/energy/laser.dm	@/obj/item/gun/energy/laser::Initialize::icon count=1
+init_lines	code/modules/projectiles/guns/energy/laser.dm	@/obj/item/gun/energy/laser::Initialize::icon_expected_width count=1
+init_lines	code/modules/projectiles/guns/energy/laser.dm	@/obj/item/gun/energy/laser::Initialize::if count=4
+init_lines	code/modules/projectiles/guns/energy/laser.dm	@/obj/item/gun/energy/laser::Initialize::is64x32 count=1
+init_lines	code/modules/projectiles/guns/energy/laser.dm	@/obj/item/gun/energy/laser::Initialize::update_transform count=1
+init_lines	code/modules/projectiles/guns/magnetic/magnetic_railgun.dm	@/obj/item/gun/magnetic/railgun::Initialize::icon count=1
+init_lines	code/modules/projectiles/guns/magnetic/magnetic_railgun.dm	@/obj/item/gun/magnetic/railgun::Initialize::icon_expected_width count=1
+init_lines	code/modules/projectiles/guns/magnetic/magnetic_railgun.dm	@/obj/item/gun/magnetic/railgun::Initialize::if count=4
+init_lines	code/modules/projectiles/guns/magnetic/magnetic_railgun.dm	@/obj/item/gun/magnetic/railgun::Initialize::is64x32 count=1
+init_lines	code/modules/projectiles/guns/magnetic/magnetic_railgun.dm	@/obj/item/gun/magnetic/railgun::Initialize::update_transform count=1
+init_lines	code/modules/projectiles/guns/modular_guns.dm	@/obj/item/gun/energy/modular::Initialize::CheckParts count=1
+init_lines	code/modules/projectiles/guns/modular_guns.dm	@/obj/item/gun/energy/modular::Initialize::FireModeModify count=1
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::allowed_magazines count=1
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::ammo_cut count=1
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::for count=1
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::if count=4
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::own_remove count=1
+init_lines	code/modules/projectiles/guns/projectile.dm	@/obj/item/gun/projectile::Initialize::update_transform count=1
+init_lines	code/modules/projectiles/guns/projectile/automatic.dm	@/obj/item/gun/projectile/automatic/mini_uzi::Initialize::if count=1
+init_lines	code/modules/projectiles/guns/projectile/automatic.dm	@/obj/item/gun/projectile/automatic/mini_uzi::Initialize::update_transform count=1
+init_lines	code/modules/projectiles/guns/projectile/automatic_serdy.dm	@/obj/item/gun/projectile/shotgun/pump::Initialize::if count=1
+init_lines	code/modules/projectiles/guns/projectile/automatic_serdy.dm	@/obj/item/gun/projectile/shotgun/pump::Initialize::update_transform count=1
+init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo count=1
+init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo_type count=1
+init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::caliber count=1
+init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc count=1
+init_lines	code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm	@/obj/item/sniper_rifle_part/barrel::Initialize::rel_set count=1
+init_lines	code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm	@/obj/item/sniper_rifle_part/stock::Initialize::rel_set count=1
+init_lines	code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm	@/obj/item/sniper_rifle_part/trigger_group::Initialize::rel_set count=1
+init_lines	code/modules/projectiles/projectile.dm	@/obj/item/projectile::Initialize::if count=1
+init_lines	code/modules/projectiles/projectile.dm	@/obj/item/projectile::Initialize::rel_set count=1
+init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::if count=1
+init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::moveToNullspace count=1
+init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::rel_set count=1
+init_lines	code/modules/projectiles/targeting/targeting_overlay.dm	@/obj/aiming_overlay::Initialize::return count=1
+init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_reschedule count=1
+init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists count=1
+init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::if count=1
+init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::rel_add count=1
+init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::rel_set count=1
+init_lines	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::Initialize::if count=1
+init_lines	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::Initialize::rel_set count=1
+init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr count=1
+init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for count=1
+init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots count=1
+init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr count=7
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::expr count=2
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.max_storage_space count=1
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.restrict_hold count=1
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::holds count=1
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::closed_state count=1
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if count=2
+init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::open_state count=1
+
+Raw retained bodies:
+code/game/mecha/combat/durand.dm /obj/mecha/combat/durand/old
+59 @/obj/mecha/combat/durand/old::Initialize::update_integrity update_integrity(25)
+60 @/obj/mecha/combat/durand/old::Initialize::cell.set_charge cell.set_charge(rand(0, (cell.charge/2)))
+code/game/mecha/combat/gygax.dm /obj/mecha/combat/gygax/old
+135 @/obj/mecha/combat/gygax/old::Initialize::update_integrity update_integrity(25)
+136 @/obj/mecha/combat/gygax/old::Initialize::cell.set_charge cell.set_charge(rand(0, (cell.charge/2)))
+code/game/mecha/combat/marauder.dm /obj/mecha/combat/marauder/old
+135 @/obj/mecha/combat/marauder/old::Initialize::update_integrity update_integrity(25)
+136 @/obj/mecha/combat/marauder/old::Initialize::cell.set_charge cell.set_charge(rand(0, (cell.charge/2)))
+code/game/mecha/combat/phazon.dm /obj/mecha/combat/phazon/old
+175 @/obj/mecha/combat/phazon/old::Initialize::update_integrity update_integrity(25)
+176 @/obj/mecha/combat/phazon/old::Initialize::cell.set_charge cell.set_charge(rand(0, (cell.charge/2)))
+code/game/mecha/equipment/tools/shield_omni.dm /obj/item/shield_projector/rectangle/mecha
+80 @/obj/item/shield_projector/rectangle/mecha::Initialize::rel_set rel_set(src, nameof(my_mech), loc)
+81 @/obj/item/shield_projector/rectangle/mecha::Initialize::observe observe(my_mech(), /datum/notice/movable_attempted_move, src, then(TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions)))
+82 @/obj/item/shield_projector/rectangle/mecha::Initialize::dq_add_recursive_move dq_add_recursive_move(my_mech())
+83 @/obj/item/shield_projector/rectangle/mecha::Initialize::update_shift update_shift(my_mech())
+code/game/mecha/mecha.dm /obj/mecha
+324 @/obj/mecha::Initialize::for for(var/path in TYPE_TABLE_GET(src, mecha_starting_components))
+325 @/obj/mecha::Initialize::C var/obj/item/mecha_parts/component/C = new path(src)
+326 @/obj/mecha::Initialize::C.attach C.attach(src)
+328 @/obj/mecha::Initialize::starting_equipment_types var/list/starting_equipment_types = TYPE_TABLE_GET(src, mecha_starting_equipment)
+329 @/obj/mecha::Initialize::if if(starting_equipment_types && LAZYLEN(starting_equipment_types))
+330 @/obj/mecha::Initialize::for for(var/path in starting_equipment_types)
+331 @/obj/mecha::Initialize::ME var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
+332 @/obj/mecha::Initialize::ME.attach ME.attach(src)
+334 @/obj/mecha::Initialize::update_transform update_transform()
+336 @/obj/mecha::Initialize::icon_state icon_state += "-open"
+337 @/obj/mecha::Initialize::add_radio add_radio()
+338 @/obj/mecha::Initialize::add_cabin add_cabin()
+339 @/obj/mecha::Initialize::add_airtank add_airtank()
+341 @/obj/mecha::Initialize::if if(smoke_possible)
+342 @/obj/mecha::Initialize::smoke_system.set_up src.smoke_system.set_up(3, 0, src)
+343 @/obj/mecha::Initialize::smoke_system.attach src.smoke_system.attach(src)
+345 @/obj/mecha::Initialize::add_cell add_cell()
+346 @/obj/mecha::Initialize::mecha_log_message src.mecha_log_message("[src.name] created.")
+347 @/obj/mecha::Initialize::loc.Entered loc.Entered(src)
+code/game/mecha/medical/odysseus.dm /obj/mecha/medical/odysseus/old
+115 @/obj/mecha/medical/odysseus/old::Initialize::update_integrity update_integrity(25)
+116 @/obj/mecha/medical/odysseus/old::Initialize::cell.set_charge cell.set_charge(rand(0, (cell.charge/2)))
+code/game/mecha/working/ripley.dm /obj/mecha/working/ripley/mining
+94 @/obj/mecha/working/ripley/mining::Initialize::if if(prob(25))
+95 @/obj/mecha/working/ripley/mining::Initialize::D var/obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill/D = new /obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill
+96 @/obj/mecha/working/ripley/mining::Initialize::D.attach D.attach(src)
+97 @/obj/mecha/working/ripley/mining::Initialize::else else
+98 @/obj/mecha/working/ripley/mining::Initialize::D var/obj/item/mecha_parts/mecha_equipment/tool/drill/D = new /obj/item/mecha_parts/mecha_equipment/tool/drill
+99 @/obj/mecha/working/ripley/mining::Initialize::D.attach D.attach(src)
+101 @/obj/mecha/working/ripley/mining::Initialize::for for(var/obj/item/mecha_parts/mecha_tracking/B in slot_contents())
+102 @/obj/mecha/working/ripley/mining::Initialize::spent spent(B)
+code/game/mecha/working/ripley.dm /obj/mecha/working/ripley/mining/old
+132 @/obj/mecha/working/ripley/mining/old::Initialize::update_integrity update_integrity(25)
+133 @/obj/mecha/working/ripley/mining/old::Initialize::cell.set_charge cell.set_charge(rand(0, cell.charge))
+code/modules/projectiles/ammunition.dm /obj/item/ammo_magazine
+187 @/obj/item/ammo_magazine::Initialize::if if(multiple_sprites)
+188 @/obj/item/ammo_magazine::Initialize::initialize_magazine_icondata initialize_magazine_icondata(src)
+190 @/obj/item/ammo_magazine::Initialize::if if(initial_ammo && starts_latent())
+191 @/obj/item/ammo_magazine::Initialize::latent_rounds set_latent_rounds(initial_ammo)
+195 @/obj/item/ammo_magazine::Initialize::if if(forge_material)
+196 @/obj/item/ammo_magazine::Initialize::forged var/datum/material/forged = get_material_by_name(forge_material)
+197 @/obj/item/ammo_magazine::Initialize::if if(forged)
+198 @/obj/item/ammo_magazine::Initialize::forged_material set_forged_material(forged)
+code/modules/projectiles/gun.dm /obj/item/gun
+158 @/obj/item/gun::Initialize::if if(isnull(scoped_accuracy))
+159 @/obj/item/gun::Initialize::scoped_accuracy scoped_accuracy = accuracy
+161 @/obj/item/gun::Initialize::if if(sel_mode <= length(firemodes))
+162 @/obj/item/gun::Initialize::new_mode var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
+163 @/obj/item/gun::Initialize::new_mode.apply_to new_mode.apply_to(src)
+code/modules/projectiles/guns/energy.dm /obj/item/gun/energy
+43 @/obj/item/gun/energy::Initialize::if if(self_recharge)
+44 @/obj/item/gun/energy::Initialize::rel_set rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
+45 @/obj/item/gun/energy::Initialize::else else
+46 @/obj/item/gun/energy::Initialize::if if(cell_type)
+47 @/obj/item/gun/energy::Initialize::rel_set rel_set(src, nameof(power_supply), new cell_type(src))
+48 @/obj/item/gun/energy::Initialize::else else
+49 @/obj/item/gun/energy::Initialize::rel_clear rel_clear(src, nameof(power_supply))
+51 @/obj/item/gun/energy::Initialize::if if(random_start_ammo && cell_type)
+52 @/obj/item/gun/energy::Initialize::power_supply.set_charge power_supply.set_charge(charge_cost*rand(0,power_supply.maxcharge/charge_cost))
+code/modules/projectiles/guns/energy/laser.dm /obj/item/gun/energy/laser
+439 @/obj/item/gun/energy/laser::Initialize::if if((!(type == /obj/item/gun/energy/laser)) && !is64x32_override)
+440 @/obj/item/gun/energy/laser::Initialize::is64x32 is64x32 = FALSE
+441 @/obj/item/gun/energy/laser::Initialize::if if(icon_expected_width == 64)
+442 @/obj/item/gun/energy/laser::Initialize::icon_expected_width icon_expected_width = 32
+443 @/obj/item/gun/energy/laser::Initialize::if if(icon == 'icons/obj/64x32guns_ch.dmi')
+444 @/obj/item/gun/energy/laser::Initialize::icon icon = 'icons/obj/gun.dmi'
+445 @/obj/item/gun/energy/laser::Initialize::if if(is64x32)
+446 @/obj/item/gun/energy/laser::Initialize::update_transform update_transform()
+code/modules/projectiles/guns/magnetic/magnetic_railgun.dm /obj/item/gun/magnetic/railgun
+276 @/obj/item/gun/magnetic/railgun::Initialize::if if((!(type == /obj/item/gun/magnetic/railgun)) && !is64x32_override)
+277 @/obj/item/gun/magnetic/railgun::Initialize::is64x32 is64x32 = FALSE
+278 @/obj/item/gun/magnetic/railgun::Initialize::if if(icon_expected_width == 64)
+279 @/obj/item/gun/magnetic/railgun::Initialize::icon_expected_width icon_expected_width = 32
+280 @/obj/item/gun/magnetic/railgun::Initialize::if if(icon == 'icons/obj/64x32guns_ch.dmi')
+281 @/obj/item/gun/magnetic/railgun::Initialize::icon icon = 'icons/obj/railgun.dmi'
+282 @/obj/item/gun/magnetic/railgun::Initialize::if if(is64x32)
+283 @/obj/item/gun/magnetic/railgun::Initialize::update_transform update_transform()
+code/modules/projectiles/guns/modular_guns.dm /obj/item/gun/energy/modular
+37 @/obj/item/gun/energy/modular::Initialize::CheckParts CheckParts()
+38 @/obj/item/gun/energy/modular::Initialize::FireModeModify FireModeModify()
+code/modules/projectiles/guns/projectile.dm /obj/item/gun/projectile
+62 @/obj/item/gun/projectile::Initialize::if if(starts_loaded)
+63 @/obj/item/gun/projectile::Initialize::if if(ammo_magazine && (load_method & MAGAZINE))
+64 @/obj/item/gun/projectile::Initialize::allowed_magazines allowed_magazines += /obj/item/ammo_magazine/smart
+65 @/obj/item/gun/projectile::Initialize::if if(random_start_ammo)
+66 @/obj/item/gun/projectile::Initialize::ammo_cut var/ammo_cut = rand(0,ammo_magazine.max_ammo)
+67 @/obj/item/gun/projectile::Initialize::for for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
+68 @/obj/item/gun/projectile::Initialize::own_remove own_remove(ammo_magazine, nameof(ammo_magazine.stored_ammo), ammo_magazine.stored_ammo[1])
+70 @/obj/item/gun/projectile::Initialize::if if(TYPE_TABLE_GET(src, projectile_initial_transform))
+71 @/obj/item/gun/projectile::Initialize::update_transform update_transform()
+code/modules/projectiles/guns/projectile/automatic.dm /obj/item/gun/projectile/automatic/mini_uzi
+377 @/obj/item/gun/projectile/automatic/mini_uzi::Initialize::if if(is64x32)
+378 @/obj/item/gun/projectile/automatic/mini_uzi::Initialize::update_transform update_transform()
+code/modules/projectiles/guns/projectile/automatic_serdy.dm /obj/item/gun/projectile/shotgun/pump
+1430 @/obj/item/gun/projectile/shotgun/pump::Initialize::if if(is64x32)
+1431 @/obj/item/gun/projectile/shotgun/pump::Initialize::update_transform update_transform()
+code/modules/projectiles/guns/projectile/pistol.dm /obj/item/gun/projectile/pirate
+312 @/obj/item/gun/projectile/pirate::Initialize::ammo_type ammo_type = pick(GLOB.global_ammo_types)
+313 @/obj/item/gun/projectile/pirate::Initialize::desc desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
+315 @/obj/item/gun/projectile/pirate::Initialize::ammo var/obj/item/ammo_casing/ammo = ammo_type
+316 @/obj/item/gun/projectile/pirate::Initialize::caliber caliber = initial(ammo.caliber)
+code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm /obj/item/sniper_rifle_part/barrel
+50 @/obj/item/sniper_rifle_part/barrel::Initialize::rel_set rel_set(src, nameof(barrel), src)
+code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm /obj/item/sniper_rifle_part/stock
+58 @/obj/item/sniper_rifle_part/stock::Initialize::rel_set rel_set(src, nameof(stock), src)
+code/modules/projectiles/guns/projectile/sniper/collapsible_sniper.dm /obj/item/sniper_rifle_part/trigger_group
+66 @/obj/item/sniper_rifle_part/trigger_group::Initialize::rel_set rel_set(src, nameof(trigger_group), src)
+code/modules/projectiles/projectile.dm /obj/item/projectile
+170 @/obj/item/projectile::Initialize::if if(istype(loc, /obj/item/ammo_casing))
+171 @/obj/item/projectile::Initialize::rel_set rel_set(src, nameof(my_case), loc)
+code/modules/projectiles/targeting/targeting_overlay.dm /obj/aiming_overlay
+29 @/obj/aiming_overlay::Initialize::rel_set rel_set(src, nameof(owner), loc)
+30 @/obj/aiming_overlay::Initialize::if if(!istype(owner(), /mob))
+31 @/obj/aiming_overlay::Initialize::return return INITIALIZE_HINT_QDEL
+32 @/obj/aiming_overlay::Initialize::moveToNullspace moveToNullspace()
+code/modules/vore/eating/belly_obj.dm /obj/belly
+297 @/obj/belly::Initialize::belly_share_lists belly_share_lists()
+300 @/obj/belly::Initialize::if if(ismob(loc))
+301 @/obj/belly::Initialize::rel_set rel_set(src, nameof(owner), loc)
+302 @/obj/belly::Initialize::rel_add rel_add(owner, nameof(owner.vore_organs), src)
+303 @/obj/belly::Initialize::belly_reschedule belly_reschedule()
+code/modules/vore/eating/soulcatcher.dm /obj/soulgem
+43 @/obj/soulgem::Initialize::if if(ismob(loc))
+44 @/obj/soulgem::Initialize::rel_set rel_set(src, nameof(owner), loc)
+code/modules/vore/fluffstuff/custom_boxes.dm /obj/item/storage/box/fluff
+12 @/obj/item/storage/box/fluff::Initialize::storage_slots storage_slots = length(has_items)
+13 @/obj/item/storage/box/fluff::Initialize::for for(var/P in has_items)
+14 @/obj/item/storage/box/fluff::Initialize::expr new P(src)
+code/modules/vore/fluffstuff/custom_clothes.dm /obj/item/storage/belt/utility/fluff/vulpine
+875 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/tool/screwdriver(src)
+876 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/tool/wrench(src)
+877 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/weldingtool(src)
+878 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/tool/crowbar(src)
+879 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/tool/wirecutters(src)
+880 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/multitool(src)
+881 @/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr new /obj/item/stack/cable_coil(src, 30, "red")
+code/modules/vore/fluffstuff/custom_items.dm /obj/item/storage/fancy/fluff/charlotte
+1401 @/obj/item/storage/fancy/fluff/charlotte::Initialize::if if(!open_state)
+1402 @/obj/item/storage/fancy/fluff/charlotte::Initialize::open_state open_state = "[initial(icon_state)]0"
+1403 @/obj/item/storage/fancy/fluff/charlotte::Initialize::if if(!closed_state)
+1404 @/obj/item/storage/fancy/fluff/charlotte::Initialize::closed_state closed_state = "[initial(icon_state)]"
+code/modules/vore/fluffstuff/custom_items.dm /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette
+1452 @/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.max_storage_space hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
+1453 @/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::holds var/static/list/holds = list(/obj/item/material/knife, /obj/item/reagent_containers/glass/bottle)
+1454 @/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.restrict_hold hold.restrict_hold(holds)
+1456 @/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::expr new /obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette(hold)
+1457 @/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::expr new /obj/item/reagent_containers/glass/bottle/poppy(hold)

@@ -11,6 +11,7 @@
 
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
+	setup(PROC_REF(configure_initial_ratings))
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
 	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
 	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
@@ -22,8 +23,7 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	else
 		rating_modifier = FALSE
 
-/obj/item/gun/magnetic/matfed/Initialize(mapload)
-	. = ..()
+/obj/item/gun/magnetic/matfed/proc/configure_initial_ratings()
 	if(manipulator)
 		mat_cost = initial(mat_cost) / (2*manipulator.rating)
 	update_rating_mod()
@@ -207,8 +207,6 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
 	else // rating_mod 0 = something's not right
 		. += span_warning("A display on the side slowly scrolls the text \"ERR: MISSING COMPONENT - EFFICIENCY MODIFICATION INCOMPLETE\".")
 
-/obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
-	. = ..()
 
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)

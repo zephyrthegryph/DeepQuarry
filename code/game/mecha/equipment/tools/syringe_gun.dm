@@ -16,6 +16,7 @@
 	required_type = list(/obj/mecha/medical)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	setup(PROC_REF(configure_initial_synthesizer))
 	reagents(nameof(max_volume))
 	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
 	interface("MechaSyringeGun")
@@ -47,8 +48,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	. = ..()
 	set_synthesizing(synthesis_wanted())
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
-	. = ..()
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/configure_initial_synthesizer()
 	flags |= NOREACT
 	rel_take_all(src, nameof(syringes))
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
