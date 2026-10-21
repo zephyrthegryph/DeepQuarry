@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze: the stored model is no longer reused when a .dm the .dme includes appears after it was stored, so gen and the ratchets give the same answer cold and warm; merge gates run the ratchets with no cache"
