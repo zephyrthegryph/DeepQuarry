@@ -6,8 +6,8 @@
 /datum/unit_test/dq_change_refresh_pass/Run()
 	var/turf/T = test_floor()
 	refresh_flush()
-	var/obj/dq_stamp_plain/A = new(T)
-	var/obj/dq_stamp_plain/B = new(T)
+	var/obj/cap_fixture/dx_core/A = allocate(/obj/cap_fixture/dx_core) // a type that derives something, so its refresh is wanted
+	var/obj/cap_fixture/dx_core/B = allocate(/obj/cap_fixture/dx_core)
 	refresh_flush()
 	var/before = GLOB.refresh_bench_drained
 	refresh_mark(A, DEP_ALL)
