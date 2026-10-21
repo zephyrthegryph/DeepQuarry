@@ -77,8 +77,7 @@
 	var/datum/spell/rune_write/spell = allocate(/datum/spell/rune_write)
 	spell.spell_flags = NONE
 	spell.charge_counter = 42
-	runerandom() // consumes the shared word table, so the beacon question is given words of its own
-	set_global(nameof(GLOB.rnwords), list("ire", "ego"))
+	runerandom()
 	spell.perform_cast(user, TRUE)
 	test_answer(user, "Teleport")
 	test_answer(user, "ire")
@@ -87,3 +86,16 @@
 	TEST_ASSERT(istype(rune), "the answered questions scribe a rune")
 	TEST_ASSERT_EQUAL(rune.word1, GLOB.cultwords["travel"], "the teleport rune's first word")
 	TEST_ASSERT_EQUAL(rune.word3, "ire", "the answered last word")
+
+/// Handing out the cult words leaves the full rune-word set for the last-word question to offer.
+/datum/unit_test/dq_rune_words_kept
+/datum/unit_test/dq_rune_words_kept/Run()
+	var/before = length(GLOB.rnwords)
+	TEST_ASSERT(before > 0, "the rune-word set starts filled")
+	runerandom()
+	TEST_ASSERT_EQUAL(length(GLOB.rnwords), before, "randomizing the cult words leaves the rune-word set whole")
+	var/list/handed = list()
+	for(var/word in GLOB.engwords)
+		TEST_ASSERT(GLOB.cultwords[word] in GLOB.rnwords, "[word] is given a rune word")
+		TEST_ASSERT(!(GLOB.cultwords[word] in handed), "[word] gets a rune word of its own")
+		handed += GLOB.cultwords[word]

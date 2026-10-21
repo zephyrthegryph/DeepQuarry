@@ -8,6 +8,8 @@ forms=(om_after om_hook om_ask om_grant OM_EMIT OM_FIELD TOPIC_ACTION DECLARE_PE
 for f in "${forms[@]}"; do
 	case "$f" in
 		OWN|REL) re="\b${f}\(" ;;
+		# APPEARANCE_ also names live constants (APPEARANCE_ALL_HAIR changer flags, APPEARANCE_UI_IGNORE_ALPHA); only the banned look forms count.
+		APPEARANCE_) re="APPEARANCE_(TEMPLATE|LEVEL|EMISSIVE|WATCH|NONE|SLOT)" ;;
 		*_) re="\b${f}[A-Z0-9_]+" ;;
 		*) re="\b${f}\b" ;;
 	esac
