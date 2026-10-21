@@ -671,7 +671,7 @@ Current implementation excerpt ([code/modules/power/apc.dm](../../code/modules/p
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
 		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
-		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
+		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
 ```
 
 **Traps:**
