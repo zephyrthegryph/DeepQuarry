@@ -7,8 +7,7 @@
 	var/supply_conversion_value = 0
 
 
-/obj/item/organ/internal/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/proc/prepare_organ_sale()
 	if(supply_conversion_value)
 		make_sellable(/datum/sellable/organ)
 
@@ -45,3 +44,6 @@
 	if(. >= 3 && antibiotics < ANTIBIO_OD)	//INFECTION_LEVEL_THREE
 		if (prob(50))
 			apply_lesion_damage(1, /datum/affliction/lesion/necrosis, prob(15))
+
+CAPABILITIES(/obj/item/organ/internal)
+	setup(PROC_REF(prepare_organ_sale))

@@ -26,9 +26,7 @@
 			return TRUE
 	return FALSE
 
-// ALLOW(init/INSTANCE_STATE): names itself after the refill type it was given
-/obj/item/refill_cartridge/autoname/Initialize(mapload)
-	. = ..()
+/obj/item/refill_cartridge/autoname/proc/name_refill_type()
 	if(refill_type && ispath(refill_type))
 		var/atom/tmp = refill_type
 		src.name = "[initial(tmp.name)] refill cartridge"
@@ -163,3 +161,6 @@
 
 /obj/item/refill_cartridge/autoname/giftvendor
 	refill_type = /obj/machinery/vending/giftvendor
+
+CAPABILITIES(/obj/item/refill_cartridge/autoname)
+	setup(PROC_REF(name_refill_type))

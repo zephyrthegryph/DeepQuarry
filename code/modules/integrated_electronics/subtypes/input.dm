@@ -482,11 +482,11 @@
 	var/datum/radio_frequency/radio_connection
 
 CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
+	setup(PROC_REF(configure_signaler_pins))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	after_init(4 SECONDS, then(PROC_REF(retune_after_init)))
 
-/obj/item/integrated_circuit/input/signaler/Initialize(mapload)
-	. = ..()
+/obj/item/integrated_circuit/input/signaler/proc/configure_signaler_pins()
 	set_pin_data(IC_INPUT, 1, frequency)
 	set_pin_data(IC_INPUT, 2, code)
 
@@ -574,11 +574,11 @@ CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
 	return 0
 
 CAPABILITIES(/obj/item/integrated_circuit/input/EPv2)
+	setup(PROC_REF(prepare_exonet_address))
 	ref_one(nameof(node), /obj/machinery/exonet_node)
 	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
-/obj/item/integrated_circuit/input/EPv2/Initialize(mapload)
-	. = ..()
+/obj/item/integrated_circuit/input/EPv2/proc/prepare_exonet_address()
 	exonet.make_address("EPv2_circuit-\ref[src]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	rel_set(src, nameof(node), get_exonet_node())

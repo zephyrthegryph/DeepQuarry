@@ -23,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	var/tmp/defib_decaying = FALSE
 
 CAPABILITIES(/obj/item/organ/internal/brain)
+	setup(PROC_REF(prepare_brain_host))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0, attack_verbs = list("attacked", "slapped", "whacked")))
 
@@ -133,8 +134,7 @@ CAPABILITIES(/obj/item/organ/internal/brain)
 		new replace_path(tmp_owner, 1) // takes the freed brain slot
 		tmp_owner = null
 
-/obj/item/organ/internal/brain/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/brain/proc/prepare_brain_host()
 	sync_defib_window()
 	make_mind_host(src)
 

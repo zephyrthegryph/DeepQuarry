@@ -10,6 +10,7 @@
 
 
 CAPABILITIES(/obj/item/assembly/electronic_assembly)
+	setup(PROC_REF(bind_electronic_holder))
 	// the device answers an item itself (circuits when opened, the assembly attach when closed): the parent's attach op would clash at the same tier
 	without("attach")
 	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
@@ -17,8 +18,7 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	op("device_assembly_verb_toggle", menu(), label("Open/Close Device Assembly"), needs(carried()), then(PROC_REF(device_assembly_verb_toggle)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
-/obj/item/assembly/electronic_assembly/Initialize(mapload)
-	. = ..()
+/obj/item/assembly/electronic_assembly/proc/bind_electronic_holder()
 	rel_set(EA, nameof(EA.holder), src)
 
 
@@ -85,17 +85,17 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	max_complexity = IC_COMPLEXITY_BASE * 3/4
 
 CAPABILITIES(/obj/item/electronic_assembly/device)
+	setup(PROC_REF(make_builtin_device_pins))
 	ref_one(nameof(holder), /obj/item/assembly/electronic_assembly)
 
-/obj/item/electronic_assembly/device/Initialize(mapload)
-	. = ..()
+/obj/item/electronic_assembly/device/proc/make_builtin_device_pins()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
 	rel_set(input, nameof(input.assembly), src)
 	rel_set(output, nameof(output.assembly), src)
 
-// The holder device owns us (its EA default child); holder is a plain relation back.
 
+// The holder device owns us (its EA default child); holder is a plain relation back.
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))
 		return 0
