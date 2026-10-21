@@ -191,3 +191,7 @@
 		"last_epoch_wall_ms" = last_epoch_ms,
 		"topology_batch_open" = atmos_topology_batch_open,
 	)
+
+/// Starts the per-atom-type explosion profiling (benchmarks).
+/datum/system/explosions/proc/enable_atom_type_profiling()
+	profile_atom_types = TRUE

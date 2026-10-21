@@ -77,11 +77,11 @@ CAPABILITIES(/datum/map_template)
 /// context list (its "targets" are the atoms to initialize, in order: areas, turfs, then movables) for
 /// init_bounds_end(), or null when SSatoms is still setting up (proper initialisation handles them later).
 /datum/map_template/proc/init_bounds_begin(list/bounds)
-	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
+	if(SSatoms.is_initialized() == INITIALIZATION_INSSATOMS)
 		return null
 
 	var/prev_shuttle_queue_state = shuttles_block_init_queue()
-	SSshuttles.block_init_queue = TRUE
+	SSshuttles.set_block_init_queue(TRUE)
 
 	var/list/atom/atoms = list()
 	var/list/area/areas = list()
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/map_template)
 	for(var/obj/machinery/atmospherics/atmos_to_reenable as anything in atmos_machines)
 		atmos_to_reenable.being_loaded = FALSE
 
-	SSshuttles.block_init_queue = ctx["shuttle_queue"]
+	SSshuttles.set_block_init_queue(ctx["shuttle_queue"])
 	SSshuttles.process_init_queues() // We will flush the queue unless there were other blockers, in which case they will do it.
 
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)
@@ -381,7 +381,7 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 	// was T.update_air_properties() (ZAS zone-graph refresh). LINDA
 	// equivalent: rebuild adjacency + add to active so SSair processes the
 	// newly-loaded turfs next tick.
-	if(SSair.initialized)
+	if(SSair.is_initialized())
 		for(var/turf/simulated/T in block(locate(1,1,z), locate(world.maxx, world.maxy, z)))
 			T.air_update_turf(TRUE, FALSE)
 	//We missed sslighting init!

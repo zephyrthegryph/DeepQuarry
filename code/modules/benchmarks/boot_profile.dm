@@ -251,8 +251,9 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")
-	for(var/phase in SSair.init_phase_ms)
-		metric("air_init_ms_[phase]", SSair.init_phase_ms[phase], "ms")
+	var/list/air_phases = air_init_phase_ms()
+	for(var/phase in air_phases)
+		metric("air_init_ms_[phase]", air_phases[phase], "ms")
 	benchmark_rust_mark("booted")
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	detail("early_notes", benchmark_early_notes)
@@ -511,8 +512,8 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 
 /datum/benchmark/explosion_dense/proc/garbage_snapshot()
 	var/list/snapshot = list()
-	for(var/path in SSgarbage.items)
-		var/datum/qdel_item/item = SSgarbage.items[path]
+	for(var/path in garbage_items())
+		var/datum/qdel_item/item = garbage_items()[path]
 		snapshot[path] = list(item.qdels, item.destroy_time, item.phase_ms ? item.phase_ms.Copy() : null)
 	return snapshot
 
@@ -529,8 +530,8 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /datum/benchmark/explosion_dense/proc/record_garbage_delta(list/before)
 	var/list/delta = list()
 	var/total_qdels = 0
-	for(var/path in SSgarbage.items)
-		var/datum/qdel_item/item = SSgarbage.items[path]
+	for(var/path in garbage_items())
+		var/datum/qdel_item/item = garbage_items()[path]
 		var/list/prior = before[path]
 		var/qdels = item.qdels - (prior ? prior[1] : 0)
 		if(!qdels)

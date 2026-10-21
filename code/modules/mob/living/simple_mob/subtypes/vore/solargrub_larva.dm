@@ -70,7 +70,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		return
 
 	if(istype(src.loc, /obj/machinery))
-		if(src.machine_effect && SSair.times_fired%30)
+		if(src.machine_effect && SSair.cycles_run()%30)
 			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				M << src.machine_effect
 		if(prob(10))

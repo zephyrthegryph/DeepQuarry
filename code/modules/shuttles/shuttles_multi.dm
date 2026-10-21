@@ -37,7 +37,7 @@
 
 /// Name -> landmark, built fresh from the destinations_cache relation list (a deleted landmark leaves it).
 /datum/shuttle/autodock/multi/proc/get_destinations()
-	if (last_cache_rebuild_time < SSshuttles.last_landmark_registration_time)
+	if (last_cache_rebuild_time < SSshuttles.landmark_registration_time())
 		build_destinations_cache()
 	var/list/by_name = list()
 	for(var/obj/effect/shuttle_landmark/landmark as anything in destinations_cache)

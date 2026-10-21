@@ -21,3 +21,21 @@
 /// Preserve the existing public collection API: callers receive numeric IDs.
 /proc/machines_power_grids()
 	return SSmachines.power_grid_registry().ids()
+
+/// An engineered conductor joins the material power overlay's cable set.
+/datum/system/machines/proc/track_material_cable(obj/structure/cable/cable)
+	rel_add(src, nameof(power_material_cables), cable)
+
+/datum/system/machines/proc/untrack_material_cable(obj/structure/cable/cable)
+	rel_remove(src, nameof(power_material_cables), cable)
+
+/// The next id of a detached test grid (they count down from -1; Rust never sees them).
+/datum/system/machines/proc/next_test_grid_id()
+	return --power_test_grid_serial
+
+/// Profile reads for the time-track log (the machine system's own cost and fire count).
+/datum/system/machines/proc/profile_fire_cost()
+	return fire_cost
+
+/datum/system/machines/proc/cycles_run()
+	return times_fired

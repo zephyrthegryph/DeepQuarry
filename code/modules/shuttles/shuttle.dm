@@ -100,19 +100,17 @@ CAPABILITIES(/datum/shuttle)
 
 	if(src.name in shuttles_shuttles())
 		CRASH("A shuttle with the name '[name]' is already defined.")
-	SSshuttles.shuttles[src.name] = src
+	SSshuttles.register_shuttle(src)
 	registered = TRUE
 	refresh_working()
 	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
-		rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), src)
+		SSshuttles.start_processing_shuttle(src)
 	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
 		SSsupply.register_cargo_shuttle(src)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()
-	SSshuttles.shuttles -= src.name
-	rel_remove(SSshuttles, nameof(SSshuttles.process_shuttles), src)
-	SSshuttles.shuttle_logs -= src
+	SSshuttles.unregister_shuttle(src)
 	SSsupply.unregister_cargo_shuttle(src)
 	return ..()
 

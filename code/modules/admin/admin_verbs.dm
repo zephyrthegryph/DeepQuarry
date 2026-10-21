@@ -475,8 +475,8 @@ ADMIN_VERB(object_talk, R_FUN, "oSay", "Display a message to everyone who can he
 	feedback_add_details("admin_verb","OT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSair.can_fire = !SSair.can_fire
-	to_chat(user, span_filter_system(span_bold("[SSair.can_fire ? "En" : "Dis"]abled air processing.")))
+	var/air_enabled = SSair.toggle_processing()
+	to_chat(user, span_filter_system(span_bold("[air_enabled ? "En" : "Dis"]abled air processing.")))
 	feedback_add_details("admin_verb","KA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_and_message_admins("used 'kill air'.", user)
 
@@ -851,7 +851,7 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	GLOB.ghostnet.removeArea(target_area)
 
 ADMIN_VERB(hide_motion_tracker_feedback, R_ADMIN|R_EVENT, "Toggle Motion Echos", "Hides or reveals motion tracker echos globally.", ADMIN_CATEGORY_EVENTS)
-	SSmotiontracker.hide_all = !motiontracker_hide_all()
+	SSmotiontracker.toggle_hide_all()
 	log_admin("[key_name(user)] changed the motion echo visibility to [motiontracker_hide_all() ? "hidden" : "visible"].")
 
 ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around something else.", ADMIN_CATEGORY_FUN_EVENT_KIT)

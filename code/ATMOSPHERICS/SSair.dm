@@ -277,44 +277,6 @@ SYSTEM_DEF(air)
 	gas_frames += frames
 	process_high_pressure_delta()
 
-/// A turf's gas may react (`GasEvent::CellReactionReady`,
-/// verdigris/domains/gas/src/laws.rs): the same `air.react(turf)` the old
-/// flat-encoded `GAS_EVENT_REACT` dispatched.
-/datum/system/native/on_gas_cell_reaction_ready(cell, reaction)
-	SSair.gas_events_last++
-	var/turf/open/T = vg_turf_of(cell)
-	if(!istype(T))
-		return
-	SSair.gas_reactions_last++
-	native_fired(NATIVE_SRC_GAS_EVENT)
-	if(T.air)
-		T.air.react(T)
-
-/// A turf's visible gas changed (`GasEvent::CellVisualChange`): the same
-/// `set_visuals()` the old `GAS_EVENT_VISUAL` dispatched.
-/datum/system/native/on_gas_cell_visual_change(cell, vis)
-	SSair.gas_events_last++
-	var/turf/open/T = vg_turf_of(cell)
-	if(!istype(T))
-		return
-	SSair.gas_visuals_last++
-	T.set_visuals()
-	native_fired(NATIVE_SRC_GAS_EVENT)
-
-/// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
-/// more than the threshold (`GasEvent::PressureJump`): the same
-/// `consider_pressure_difference(other, value)` the old `GAS_EVENT_PRESSURE`
-/// dispatched.
-/datum/system/native/on_gas_pressure_jump(cell, neighbor, delta)
-	SSair.gas_events_last++
-	var/turf/open/T = vg_turf_of(cell)
-	var/turf/open/other = vg_turf_of(neighbor)
-	if(!istype(T) || !istype(other))
-		return
-	SSair.gas_pressure_last++
-	native_fired(NATIVE_SRC_GAS_EVENT)
-	T.consider_pressure_difference(other, delta)
-
 /datum/system/air/proc/process_pipenets(resumed = FALSE)
 	if (!resumed)
 		var/stage_timer = TICK_USAGE_REAL
@@ -423,7 +385,7 @@ SYSTEM_DEF(air)
 	if(!SSmapping)
 		return
 	if(length(mapping_multiz_levels()) < world.maxz)
-		SSmapping.multiz_levels.len = world.maxz
+		SSmapping.set_multiz_level_count(world.maxz)
 	for(var/z in 1 to world.maxz)
 		// Z_LEVEL_UP / Z_LEVEL_DOWN are the numeric direction constants UP (16)
 		// and DOWN (32); the per-z list is read POSITIONALLY, so it must be at
@@ -431,7 +393,7 @@ SYSTEM_DEF(air)
 		var/list/traits = new /list(Z_LEVEL_DOWN)
 		traits[Z_LEVEL_UP] = HasAbove(z) ? TRUE : FALSE
 		traits[Z_LEVEL_DOWN] = HasBelow(z) ? TRUE : FALSE
-		SSmapping.multiz_levels[z] = traits
+		SSmapping.set_multiz_level_traits(z, traits)
 	push_z_links()
 
 /// Update only a newly-added dynamic level and its immediate boundary. A full
@@ -441,12 +403,12 @@ SYSTEM_DEF(air)
 	if(!SSmapping || z < 1 || z > world.maxz)
 		return
 	if(length(mapping_multiz_levels()) < world.maxz)
-		SSmapping.multiz_levels.len = world.maxz
+		SSmapping.set_multiz_level_count(world.maxz)
 	for(var/level in max(1, z - 1) to min(world.maxz, z + 1))
 		var/list/traits = new /list(Z_LEVEL_DOWN)
 		traits[Z_LEVEL_UP] = HasAbove(level) ? TRUE : FALSE
 		traits[Z_LEVEL_DOWN] = HasBelow(level) ? TRUE : FALSE
-		SSmapping.multiz_levels[level] = traits
+		SSmapping.set_multiz_level_traits(level, traits)
 	push_z_links()
 
 /// Sends Rust one UP|DOWN link mask per z-level from SSmapping.multiz_levels.

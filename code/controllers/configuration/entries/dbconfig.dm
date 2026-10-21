@@ -47,7 +47,7 @@
 /datum/config_entry/number/max_concurrent_queries/ValidateAndSet(str_val)
 	. = ..()
 	if (.)
-		SSdbcore.max_concurrent_queries = config_entry_value
+		SSdbcore.set_max_concurrent_queries(config_entry_value)
 
 /// The exe for mariadbd.exe.
 /// Shouldn't really be set on production servers, primarily for EZDB.

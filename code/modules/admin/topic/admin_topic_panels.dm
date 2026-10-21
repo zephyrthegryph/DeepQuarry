@@ -73,7 +73,7 @@
 /datum/admins/proc/shuttle_countdown_kind()
 	if(emergency_shuttle_wait_for_launch())
 		return "launch"
-	if(read_once(SSemergency_shuttle.shuttle.has_arrive_time()))
+	if(read_once(SSemergency_shuttle.has_arrival_countdown()))
 		return "arrive"
 	return null
 
