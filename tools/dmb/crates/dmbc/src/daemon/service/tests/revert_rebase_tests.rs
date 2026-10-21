@@ -52,3 +52,46 @@ fn a_revert_answered_from_the_stored_record_rebases_the_patch_base() {
     let fresh = published(crate::request_runner::run_build(fresh_request).unwrap(), &destination);
     assert_equivalent_outputs(&second, &fresh, "edit after a revert vs a fresh compile");
 }
+
+/// A retained session must survive a bulk edit, the edit back, and a bulk edit that also touches declarations: every build
+/// publishes, none reports a consumed body, and each equals a fresh compile of the same tree.
+#[test]
+fn a_bulk_edit_and_the_edit_back_never_corrupt_the_retained_session() {
+    let procs = |tag: &str, count: usize| -> String {
+        let mut text = String::from("/proc/anchor()\n    return 0\n/datum/holder\n    var/list/items = list(1, 2)\n    proc/count()\n        return items.len\n");
+        for index in 0..count {
+            text.push_str(&format!("/proc/site_{index}(a)\n    var/x = a + {index}\n    if(x)\n        return \"{tag}{index}\"\n    return x\n"));
+        }
+        text
+    };
+    let roots = Roots::new();
+    let mut shared = shared();
+    Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+    let base = procs("a", 600);
+    roots.edit(0, &base);
+    let initial = build(&shared, &roots);
+
+    // Rule-style edit: every body now references more of the program (calls, types, strings), changing link footprints.
+    let bulk = procs("b", 600)
+        .replace("    var/x = a + ", "    anchor()
+    var/datum/holder/h = new /datum/holder()
+    h.count()
+    var/x = a + ");
+    roots.edit(0, &bulk);
+    let edited = build(&shared, &roots);
+    assert_ne!(initial.0, edited.0, "the bulk edit must publish a new image");
+
+    roots.edit(0, &base);
+    let back = build(&shared, &roots);
+    assert_equivalent_outputs(&back, &initial, "edit back vs the initial build");
+
+    // Declarations move too (procs added and removed), then the session must still answer.
+    let reshaped = format!("{}/proc/extra(a)\n    return a\n", procs("c", 550));
+    roots.edit(0, &reshaped);
+    let reshaped_build = build(&shared, &roots);
+    let fresh_request = request(&roots, 0, true);
+    let destination = fresh_request.artifact_directory.as_ref().unwrap().clone();
+    let _oracle = control::bind(control::Cancellation::default());
+    let fresh = published(crate::request_runner::run_build(fresh_request).unwrap(), &destination);
+    assert_equivalent_outputs(&reshaped_build, &fresh, "reshaped tree vs a fresh compile");
+}
