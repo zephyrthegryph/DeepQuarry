@@ -37,6 +37,7 @@ cd "$(git rev-parse --show-toplevel)"
 run_lock_take "dq_lane_ready.sh $(git symbolic-ref -q --short HEAD)" || exit 1
 trap run_lock_release EXIT
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_declared_tests.sh"
 
 tests=()
 covers=()
@@ -124,7 +125,8 @@ if ! git diff --quiet || ! git diff --cached --quiet; then die "the merge left u
 list=(${tests[@]+"${tests[@]}"})
 gate_extra=()
 if [ -n "$lite_tree" ] && [ "$master" = "$lite_master" ] && [ ${#lite_tests[@]} -gt 0 ]; then
-	for l in "${lite_tests[@]}"; do case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac; done
+	mapfile -t lite_tests < <(filter_declared_tests "lite re-proof list" "${lite_tests[@]}")
+	for l in ${lite_tests[@]+"${lite_tests[@]}"}; do case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac; done
 	gate_extra=(--no-smoke)
 	export DQ_PROOF_INHERITS="$lite_tree"
 elif [ -n "$lite_tree" ]; then
