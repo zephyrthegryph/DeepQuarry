@@ -338,7 +338,7 @@ go first.
 
 ### Step 4 status (20 October 2026): the pass stamp
 
-Landed: the OUTPUT queue (`GLOB.refresh_queue`) dedupes by a per-entity pass stamp (`datum/refresh_pass`, `GLOB.refresh_pass`) in place of the per-drain
+Landed: the OUTPUT queue (`GLOB.refresh_queue`) dedupes by a per-entity pass stamp (`datum/refresh_pass`, `GLOB.refresh_drain_pass`) in place of the per-drain
 `done` list. The DRAIN queues (`GLOB.rx_pending`, `GLOB.hook_change_pending`) are already deduped per (entity, dependent) and carry the keys each
 delivery owes (an `at_most` window and the reaction's key list need them), so a bare frame stamp cannot represent them; they stay until the plan
 generates the dependents (step 3 remainder). Proof: `dq_change_refresh_pass`, `dx_review_self_mark`, the draw-queue tests, `dq_staleness_*`.

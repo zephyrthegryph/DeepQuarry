@@ -22,7 +22,7 @@
 	var/tmp/refresh_queued = 0
 	/// The channels raised since the last refresh (on_state_changed() reads them).
 	var/tmp/refresh_bits = 0
-	/// The refresh_drain() pass that last ran this entity's outputs (GLOB.refresh_pass): an entity runs at most once per pass, and a mark that lands
+	/// The refresh_drain() pass that last ran this entity's outputs (GLOB.refresh_drain_pass): an entity runs at most once per pass, and a mark that lands
 	/// during its own run waits for the next pass.
 	var/tmp/refresh_pass = 0
 
@@ -197,7 +197,7 @@
 
 GLOBAL_LIST_EMPTY(refresh_queue)
 /// The number of the last refresh_drain() pass (the stamp of datum/refresh_pass).
-GLOBAL_VAR_INIT(refresh_pass, 0)
+GLOBAL_VAR_INIT(refresh_drain_pass, 0)
 /// A type whose marks are counted by where they came from (the draw-queue test's re-queue census, or an admin's question); null: off.
 GLOBAL_VAR_INIT(refresh_mark_probe_type, null)
 /// "caller <- caller's caller" -> marks.
@@ -339,7 +339,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
 	// by a chain that comes back to it) waits for the next frame instead of spinning here. The pass stamp (refresh_pass) replaces a per-drain
 	// list of the entities already run: a nested drain takes its own pass number, as it had its own list.
-	var/pass = ++GLOB.refresh_pass
+	var/pass = ++GLOB.refresh_drain_pass
 	var/list/deferred
 	var/i = 0
 	while(i < length(Q))

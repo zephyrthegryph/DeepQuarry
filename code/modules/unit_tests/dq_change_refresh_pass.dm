@@ -14,16 +14,16 @@
 	refresh_mark(A, DEP_ALL)
 	refresh_mark(B, DEP_ALL)
 	refresh_mark(A, DEP_ALL)
-	var/pass_before = GLOB.refresh_pass
+	var/pass_before = GLOB.refresh_drain_pass
 	refresh_drain(null)
-	TEST_ASSERT_EQUAL(GLOB.refresh_pass, pass_before + 1, "a drain takes one pass number")
+	TEST_ASSERT_EQUAL(GLOB.refresh_drain_pass, pass_before + 1, "a drain takes one pass number")
 	TEST_ASSERT_EQUAL(GLOB.refresh_bench_drained - before, 2, "three marks of A and one of B run two entities once each")
-	TEST_ASSERT_EQUAL(A.refresh_pass, GLOB.refresh_pass, "A carries the pass that ran it")
-	TEST_ASSERT_EQUAL(B.refresh_pass, GLOB.refresh_pass, "B carries it too")
+	TEST_ASSERT_EQUAL(A.refresh_pass, GLOB.refresh_drain_pass, "A carries the pass that ran it")
+	TEST_ASSERT_EQUAL(B.refresh_pass, GLOB.refresh_drain_pass, "B carries it too")
 	TEST_ASSERT(!A.refresh_queued && !B.refresh_queued, "nothing is left queued")
 	// A mark after the drain runs in the next pass, not never.
 	refresh_mark(A, DEP_ALL)
 	var/second = GLOB.refresh_bench_drained
 	refresh_drain(null)
 	TEST_ASSERT_EQUAL(GLOB.refresh_bench_drained - second, 1, "a later mark runs in the next pass")
-	TEST_ASSERT_EQUAL(A.refresh_pass, GLOB.refresh_pass, "with the next pass number")
+	TEST_ASSERT_EQUAL(A.refresh_pass, GLOB.refresh_drain_pass, "with the next pass number")
