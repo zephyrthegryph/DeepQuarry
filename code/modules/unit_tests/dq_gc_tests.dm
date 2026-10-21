@@ -274,7 +274,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_gc_kept)
 /datum/unit_test/dq_refused_ending_drops_its_cause/Run()
 	var/datum/dq_gc_kept/kept = new
 	var/atom/movable/screen/by = new
+	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
 	ended_with(kept, by)
+	GLOB.lifecycle_keep_expected = FALSE
 	TEST_ASSERT(!QDELETED(kept), "the kept thing refused the delete")
 	TEST_ASSERT(!(kept in ending_causes), "the refused ending's cause stays in ending_causes, holding its `by`")
 	qdel(by)
