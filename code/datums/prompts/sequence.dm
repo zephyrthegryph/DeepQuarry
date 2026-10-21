@@ -34,6 +34,7 @@ CAPABILITIES(/datum/ask_sequence)
 	ref_one(nameof(owner))
 
 /// The default answerer, or null when they are gone.
+	RETURN_TYPE(/mob)
 /datum/ask_sequence/proc/actor()
 	return rerun_unwrap(answerer_w)
 
