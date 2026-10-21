@@ -6,8 +6,7 @@
 	var/list/modes
 	var/mode
 
-/obj/item/pipe_painter/Initialize(mapload)
-	. = ..()
+/obj/item/pipe_painter/proc/choose_initial_mode()
 	set_mode(pick(modes))
 
 
@@ -18,6 +17,7 @@
 		. += "[C]"
 
 CAPABILITIES(/obj/item/pipe_painter)
+	setup(PROC_REF(choose_initial_mode))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("choose_mode", in_hand(), label("Choose paint colour"), needs(carried()),
 		asks(/datum/prompt/choice/pipe_painter_mode, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(mode_picked)))

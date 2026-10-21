@@ -48,10 +48,11 @@ CAPABILITIES(/obj/item/flamethrower)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 CAPABILITIES(/obj/item/flamethrower/full)
+	setup(PROC_REF(prepare_full_assembly))
 	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter, starts_set = list("secured" = FALSE)) // for disassembly
 
-/obj/item/flamethrower/full/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare full assembly, after its parents initialize.
+/obj/item/flamethrower/full/proc/prepare_full_assembly()
 	set_status(TRUE)
 
 /// On or off: while lit it heats its turf every 2 s.

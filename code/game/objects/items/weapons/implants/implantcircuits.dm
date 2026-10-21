@@ -8,11 +8,12 @@
 /obj/item/implant/integrated_circuit/islegal()
 	return TRUE
 
-/obj/item/implant/integrated_circuit/Initialize(mapload)
-	. = ..()
+/// Declared setup: link initial assembly, after its parents initialize.
+/obj/item/implant/integrated_circuit/proc/link_initial_assembly()
 	rel_set(IC, nameof(IC.implant), src)
 
 CAPABILITIES(/obj/item/implant/integrated_circuit)
+	setup(PROC_REF(link_initial_assembly))
 	owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(circuit_implant_emp))))
 	op("use", in_hand(), label("Use"), then(PROC_REF(circuit_use)))

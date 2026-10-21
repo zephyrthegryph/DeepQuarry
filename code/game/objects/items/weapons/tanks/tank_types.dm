@@ -95,8 +95,8 @@ DECLARE_GAS(/obj/item/tank/vox, "air_contents", "volume", T20C, list(GAS_PHORON 
 
 DECLARE_GAS(/obj/item/tank/phoron/pressurized, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 
-/obj/item/tank/phoron/pressurized/Initialize(mapload)
-	. = ..()
+/// Declared setup: scale pressurized tank, after its parents initialize.
+/obj/item/tank/phoron/pressurized/proc/scale_pressurized_tank()
 	adjust_scale(0.8)
 
 /*
@@ -341,3 +341,6 @@ DECLARE_GAS(/obj/item/tank/emergency/phoron/double, "air_contents", "volume", T2
 	gauge_icon = "indicator_double"
 	volume = 12
 	gauge_cap = 3
+
+CAPABILITIES(/obj/item/tank/phoron/pressurized)
+	setup(PROC_REF(scale_pressurized_tank))
