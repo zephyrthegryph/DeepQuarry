@@ -150,6 +150,17 @@ drop_outputs() { # <wt>: build outputs only; icons/gen, node_modules, tools/anal
 }
 
 size_of() { du -sk "$1" 2>/dev/null | cut -f1; }
+# size_cached <path>: KB from a per-path cache under $STATE_DIR/sizes; `du` over a built worktree takes a minute on Windows, so status never waits for it:
+# a missing or older-than-30-minutes entry is refreshed by a detached du and the last known value (or 0) is printed now.
+size_cached() {
+	local f="$STATE_DIR/sizes/$(printf '%s' "$1" | tr -c 'A-Za-z0-9' '_')"
+	mkdir -p "$STATE_DIR/sizes" 2>/dev/null
+	if [ -z "$(find "$f" -mmin -30 2>/dev/null)" ] && [ -z "$(find "$f.busy" -mmin -10 2>/dev/null)" ]; then
+		: >"$f.busy"
+		( nohup bash -c 'du -sk "$1" 2>/dev/null | cut -f1 >"$2.tmp" && mv -f "$2.tmp" "$2"; rm -f "$2.busy"' _ "$1" "$f" >/dev/null 2>&1 & ) >/dev/null 2>&1
+	fi
+	cat "$f" 2>/dev/null || echo 0
+}
 
 # ---- release ----------------------------------------------------------------------------------------------------------------------
 release_slot() { # <slot> <force> <keep_outputs>
@@ -417,9 +428,9 @@ cmd_status() {
 		wt="$(slot_path "$i")"
 		if [ -f "$(lease_file "$i")" ]; then
 			held=$((held + 1))
-			echo "  pool-$i  LEASED  $(lease_get "$i" branch)  since $(lease_get "$i" since)  ($(lease_get "$i" owner))  $([ -d "$wt" ] && echo "$(( $(size_of "$wt") / 1024 )) MB")"
+			echo "  pool-$i  LEASED  $(lease_get "$i" branch)  since $(lease_get "$i" since)  ($(lease_get "$i" owner))  $([ -d "$wt" ] && echo "$(( $(size_cached "$wt") / 1024 )) MB")"
 		elif [ -d "$wt" ]; then
-			echo "  pool-$i  free    $(wt_clean "$wt" && echo clean || echo DIRTY)  $(( $(size_of "$wt") / 1024 )) MB"
+			echo "  pool-$i  free    $(wt_clean "$wt" && echo clean || echo DIRTY)  $(( $(size_cached "$wt") / 1024 )) MB"
 		else
 			echo "  pool-$i  free    (not created yet: the first lease checks it out)"
 		fi
