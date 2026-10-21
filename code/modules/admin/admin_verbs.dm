@@ -949,7 +949,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 
 /datum/admin_verb/adminorbit/proc/orbit_chosen(datum/ask_sequence/admin_verb/asked)
 	var/list/pair = orbit_pair(asked)
-	var/center = pair[1]
+	var/datum/center = pair[1]
 	var/atom/movable/orbiter = pair[2]
 	var/distance = asked.get("distance")
 	var/speed = asked.get("speed")

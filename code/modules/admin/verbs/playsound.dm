@@ -100,7 +100,7 @@ ADMIN_VERB(play_z_sound, R_SOUNDS, "Play Z Sound", "Plays a sound to a single z-
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
 	var/target_z = user.mob.z
-	var/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = 777)
+	var/sound/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = 777)
 	uploaded_sound.priority = 250
 
 	GLOB.sounds_cache += S
