@@ -227,7 +227,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "body_factors_no_chemical_effects",
             "body factors: no chemical effects",
-            "chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).",
+            "chem_effects / add_chemical_effect detected. Declare the reagent's stats as a factors = alist(STAT_X = value) table and read the stat as a var on the mob (L.slowdown).",
             Files::Code,
             line(r"\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b"),
         )
@@ -259,7 +259,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "physiology_no_asphyxia_injury",
             "physiology: no asphyxia injury",
-            "asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().",
+            "asphyxia injury detected. Model the mechanism (restriction, breath quality, a stat) or use add_oxygen_debt() / oxygen_debt().",
             Files::Code,
             line(r"\b(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)\b"),
         )
@@ -267,7 +267,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "body_factors_no_mechanical_effects",
             "body factors: no mechanical effects",
-            "mechanical_effects / vital_effects / od_boost detected. Declare body factors on the affliction (factors = alist(BF_X = value)).",
+            "mechanical_effects / vital_effects / od_boost detected. Declare the affliction's stats as a factors = alist(STAT_X = value) table.",
             Files::Code,
             line(r"\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b"),
         )
