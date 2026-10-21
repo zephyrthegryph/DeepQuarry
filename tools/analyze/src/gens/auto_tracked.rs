@@ -22,7 +22,7 @@
 //! subtype without being its registered setter, or when it cannot take a generated setter: a built-in var, a `static` / `const` var, a
 //! var of a type that is not a /datum.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 use crate::sem::gen::{GenCx, GenOut, Generator};
@@ -92,24 +92,22 @@ fn declared_reactive(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 
 /// The var names some proc writes, not counting a setter's write of its own var (`set_v` writing `v`: the TRACKED() macro's body, and the one line of
 /// every hand-written setter): a var written only there is written by nobody who could be asked to publish.
-pub fn writes_outside_setters(sem: &crate::sem::Sem) -> HashSet<String> {
+pub fn writes_outside_setters(sem: &crate::sem::Sem) -> crate::sem::reads::WriteIndex {
     // The generated setters and list mutators write the vars they are generated for: counting them would keep a var tracked because it was tracked.
     let procs: Vec<dreammaker::objtree::ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin() && !matches!(sem.file_of(p.get().location), Some(AUTO_REL) | Some(TRACKED_LISTS_REL))).collect();
-    // Per proc, kept between runs by file (`body_facts`); sorted, as the facts are digested.
-    let fact = |p: dreammaker::objtree::ProcRef| -> Vec<String> {
-        let mut w = crate::sem::reads::proc_writes(p);
+    // Per proc, kept between runs by file (`body_facts`); sorted, as the facts are digested. The writes carry the type that declares the var (`reads::WriteIndex`).
+    let fact = |p: dreammaker::objtree::ProcRef| -> Vec<(String, String)> {
+        let mut w = crate::sem::reads::typed_writes(sem, p);
         if let Some(v) = p.name().strip_prefix("set_") {
-            w.remove(v);
+            w.retain(|(_, var)| var != v);
         }
-        let mut v: Vec<String> = w.into_iter().collect();
-        v.sort();
-        v
+        w
     };
-    crate::sem::body_facts::indexed(sem, "writes-outside-setters", 0, &procs, fact, |sets: Vec<Vec<String>>| sets.into_iter().flatten().collect::<HashSet<String>>())
+    crate::sem::body_facts::indexed(sem, "writes-outside-setters-typed", sem.structure_digest(), &procs, fact, crate::sem::reads::WriteIndex::from_facts)
 }
 
 /// `writes_outside_setters`, computed once per tree.
-pub fn writes_outside_setters_of(tree: &Tree, sem: &crate::sem::Sem) -> Arc<HashSet<String>> {
+pub fn writes_outside_setters_of(tree: &Tree, sem: &crate::sem::Sem) -> Arc<crate::sem::reads::WriteIndex> {
     tree.memo("gen/writes-outside-setters", || writes_outside_setters(sem))
 }
 
@@ -119,14 +117,14 @@ pub fn named_candidate(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
 }
 
 /// A read the inference tracks: no declaration makes it reactive, it is not constant, and something writes it.
-pub fn candidate(eng: &ReadsEngine, written: &HashSet<String>, calls: &BTreeSet<String>, owner: &str, var: &str) -> bool {
+pub fn candidate(eng: &ReadsEngine, written: &crate::sem::reads::WriteIndex, calls: &BTreeSet<String>, owner: &str, var: &str) -> bool {
     if declared_reactive(eng, owner, var) {
         return false;
     }
     if eng.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
         return false;
     }
-    if written.contains(var) || calls.contains(var) {
+    if written.is_written_on(eng.sem, owner, var) || calls.contains(var) {
         return true;
     }
     // A list is written through its generated mutators once `analyze fix` has rewritten the raw edits.
@@ -138,7 +136,7 @@ pub fn candidate(eng: &ReadsEngine, written: &HashSet<String>, calls: &BTreeSet<
 /// dropped `TRACKED(T, v)` lines become: a var nobody walked reads is still published for what asks at run time (`on_change`, a Life step's
 /// `woken_by`, an observer, a VV edit), and the calls `analyze fix` wrote have to keep compiling when the last static reader goes. Only the
 /// declaring type of a var is a candidate (a subtype reads the same var), and `decide` drops the ones a hand-written `set_v` already covers.
-pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, written: &HashSet<String>, calls: &BTreeSet<String>) -> BTreeSet<(String, String)> {
+pub fn called_candidates(tree: &Tree, sem: &crate::sem::Sem, eng: &ReadsEngine, written: &crate::sem::reads::WriteIndex, calls: &BTreeSet<String>) -> BTreeSet<(String, String)> {
     let defs = setter_defs(tree, sem);
     let mut out = BTreeSet::new();
     for t in sem.objtree.iter_types() {
@@ -473,6 +471,15 @@ impl Generator for AutoTracked {
             eprintln!("auto_tracked: {} tracked ({} lists), {} blocked", set.tracked.len(), set.tracked.iter().filter(|a| a.list).count(), set.blocked.len());
             for (t, v, why) in &set.blocked {
                 eprintln!("auto_tracked: blocked {}.{}: {}", t, v, why);
+            }
+            // A write through a receiver the scan could not type counts for every var of that name: these are the names whose tracking rests on one.
+            if let Some(sem) = crate::sem::sem_for(cx.tree) {
+                let writes = writes_outside_setters_of(cx.tree, &sem);
+                for a in &set.tracked {
+                    if writes.untyped().contains(&a.var) {
+                        eprintln!("auto_tracked: untyped writer: {}.{} is written through a receiver that could not be typed", a.ty, a.var);
+                    }
+                }
             }
         }
         let tests = crate::sem::gen::test_only_types(cx.tree);

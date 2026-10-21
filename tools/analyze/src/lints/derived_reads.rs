@@ -822,7 +822,7 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) 
     let mut findings: Vec<Finding> = Vec::new();
     // A var no proc writes (outside a setter) and no setter call names never changes: nothing can fail to publish it. The same test the
     // inference uses to leave a var constant (`auto_tracked::candidate`).
-    let writers: Option<(Arc<HashSet<String>>, Arc<BTreeSet<String>>)> = if generated_covers {
+    let writers: Option<(Arc<crate::sem::reads::WriteIndex>, Arc<BTreeSet<String>>)> = if generated_covers {
         crate::sem::sem_for(tree).map(|sem| (crate::gens::auto_tracked::writes_outside_setters_of(tree, &sem), crate::gens::auto_tracked::set_calls(tree)))
     } else {
         None
@@ -830,7 +830,7 @@ fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) 
     let sem_model = if generated_covers { crate::sem::sem_for(tree) } else { None };
     let never_written = |owner: &str, name: &str| {
         let constant_decl = sem_model.as_ref().and_then(|s| s.var_decl(owner, name)).is_some_and(|v| v.is_static || v.is_const);
-        constant_decl || writers.as_ref().is_some_and(|(w, c)| !w.contains(name) && !c.contains(name) && !c.contains(&format!("{}[]", name)))
+        constant_decl || writers.as_ref().is_some_and(|(w, c)| !sem_model.as_ref().is_some_and(|s| w.is_written_on(s, owner, name)) && !c.contains(name) && !c.contains(&format!("{}[]", name)))
     };
     for proc in &model.procs {
         if proc.owner == "/" || starts_any(&proc.rel, SKIP_SITE_DIRS) || proc.owner.starts_with("/datum/capability") {
