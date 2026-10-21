@@ -46,6 +46,7 @@ MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack)
+	setup(PROC_REF(sync_look))
 	default_parts()
 	without("tryinput")
 	without("tryoutput")
@@ -63,10 +64,6 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	op("equaliseoff", ui_act(), sets(nameof(equalise), FALSE))
 	op("ejectcell", ui_act(arg("ejectcell")), then(PROC_REF(ui_eject_cell)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(power_frame)))
-
-/obj/machinery/power/smes/batteryrack/Initialize(mapload)
-	. = ..()
-	sync_look()
 
 /obj/machinery/power/smes/batteryrack/RefreshParts()
 	var/capacitor_efficiency = get_part_rating(/obj/item/stock_parts/capacitor)
@@ -331,8 +328,8 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	var/cell_type = /obj/item/cell/apc
 	var/cell_number = 3
 
-/obj/machinery/power/smes/batteryrack/mapped/Initialize(mapload)
-	. = ..()
+/// Declared setup: fill mapped cell rack, after the complete parent chain.
+/obj/machinery/power/smes/batteryrack/mapped/proc/fill_mapped_cell_rack()
 	for(var/i = 1 to cell_number)
 		if(i > max_cells)
 			break
@@ -352,3 +349,6 @@ CAPABILITIES(/obj/item/module/power_control)
 	var/mob/user = A.actor
 	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
 	user.put_in_hands(newcircuit)
+
+CAPABILITIES(/obj/machinery/power/smes/batteryrack/mapped)
+	setup(PROC_REF(fill_mapped_cell_rack))

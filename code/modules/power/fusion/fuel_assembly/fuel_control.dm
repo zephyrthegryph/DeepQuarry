@@ -12,14 +12,15 @@
 
 // Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/fusion_fuel_control)
+	setup(PROC_REF(prepare_fuel_monitor))
 	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
 	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Fuel Control", "question" = "Enter a new ident tag.", "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(tag_entered)))
 	owns_one(nameof(monitor), starts = /datum/tgui_module/rustfuel_control)
 
-/obj/machinery/computer/fusion_fuel_control/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare fuel monitor, after the complete parent chain.
+/obj/machinery/computer/fusion_fuel_control/proc/prepare_fuel_monitor()
 	monitor.fuel_tag = id_tag
 
 

@@ -39,17 +39,17 @@ MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes t
 // its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
 // takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
+	setup(PROC_REF(prepare_reinforced_integrity))
 	configure(uses_power(idle = 0, active = 0))
 	climb()
 	ref_one(nameof(control), /obj/machinery/power/solar_control)
 	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
 	param(nameof(glass_type), pos = 1, overrides = TRUE)
 
-// ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
-/obj/machinery/power/solar/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare reinforced integrity, after the complete parent chain.
+/obj/machinery/power/solar/proc/prepare_reinforced_integrity()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
-		max_integrity *= 2
+		set_max_integrity(max_integrity * 2)
 		update_integrity(max_integrity)
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
@@ -300,8 +300,8 @@ CAPABILITIES(/obj/item/solar_assembly)
 /obj/machinery/power/solar_control/config_start
 	auto_start = SOLAR_AUTO_START_CONFIG
 
-/obj/machinery/power/solar_control/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare panel direction, after the complete parent chain.
+/obj/machinery/power/solar_control/proc/prepare_panel_direction()
 	set_panels(cdir)
 
 // its panels and tracker lose their controller.
@@ -408,6 +408,7 @@ CAPABILITIES(/obj/item/solar_assembly)
 // every machine service interval the controller keeps its links honest and steps a manual rotation (control_step()). A screwdriver takes it
 // apart into its frame.
 CAPABILITIES(/obj/machinery/power/solar_control)
+	setup(PROC_REF(prepare_panel_direction))
 	configure(uses_power(idle = 250))
 	membership(joins = REGISTRY_SOLAR_CONTROLS)
 	ref_one(nameof(connected_tracker), /obj/machinery/power/tracker)

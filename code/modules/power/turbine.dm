@@ -50,6 +50,7 @@
 // while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
 // (turbine_step(): ((rpm / TURBGENQ) ^ TURBGENG) * TURBGENQ * productivity W for the next power step) and vents the gas behind it.
 CAPABILITIES(/obj/machinery/compressor)
+	setup(PROC_REF(prepare_compressor_pair))
 	default_parts()
 	owns_one(nameof(gas_contained), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	ref_one(nameof(turbine), /obj/machinery/power/turbine)
@@ -114,8 +115,8 @@ CAPABILITIES(/obj/machinery/compressor)
 #define COMPFRICTION 5e5
 #define COMPSTARTERLOAD 2800
 
-/obj/machinery/compressor/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare compressor pair, after the complete parent chain.
+/obj/machinery/compressor/proc/prepare_compressor_pair()
 	rel_set(src, nameof(inturf), get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
@@ -200,8 +201,8 @@ CAPABILITIES(/obj/machinery/compressor)
 #define TURBGENQ 100000
 #define TURBGENG 0.8
 
-/obj/machinery/power/turbine/Initialize(mapload)
-	. = ..()
+/// Declared setup: prepare turbine pair, after the complete parent chain.
+/obj/machinery/power/turbine/proc/prepare_turbine_pair()
 	// The outlet is pointed at the direction of the turbine component
 	rel_set(src, nameof(outturf), get_step(src, dir))
 	locate_machinery()
@@ -260,6 +261,7 @@ CAPABILITIES(/obj/machinery/compressor)
 		look.overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
 CAPABILITIES(/obj/machinery/power/turbine)
+	setup(PROC_REF(prepare_turbine_pair))
 	default_parts()
 	ref_one(nameof(compressor), /obj/machinery/compressor)
 	ref_one(nameof(outturf), /turf/simulated)
