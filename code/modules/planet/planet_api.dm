@@ -3,7 +3,23 @@
 //   SSplanets.addTurf(turf)       a turf joins its planet's floors or walls (turf/simulated/proc/make_outdoors() calls it)
 //   SSplanets.removeTurf(turf)    it leaves them
 //
-// planets and z_to_planet are read as vars by the lighting, solar and event code.
+// Lighting, solar and events query planet_at_z(); the registry remains private.
+
+/// Lookup also works before initialization, for the callers that already did so.
+/datum/system/planets/proc/planet_at_z(z)
+	if(!isnum(z) || z <= 0 || z > length(z_to_planet))
+		return null
+	return z_to_planet[z]
+
+/datum/system/planets/proc/is_initialized()
+	return initialized
+
+/datum/system/planets/proc/planet_count()
+	return length(planets)
+
+/// Select from the live registry with the same distribution as pick(planets).
+/datum/system/planets/proc/pick_planet()
+	return pick(planets)
 
 // DO NOT CALL THIS DIRECTLY UNLESS IT'S IN INITIALIZE,
 // USE turf/simulated/proc/make_indoors() and

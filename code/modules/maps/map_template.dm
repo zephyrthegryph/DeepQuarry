@@ -385,7 +385,7 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 		for(var/turf/simulated/T in block(locate(1,1,z), locate(world.maxx, world.maxy, z)))
 			T.air_update_turf(TRUE, FALSE)
 	//We missed sslighting init!
-	if(SSlighting.initialized)
+	if(SSlighting.is_initialized())
 		for(var/Trf in block(locate(1,1,z), locate(world.maxx, world.maxy, z)))
 			var/turf/T = Trf //faster than implicit istype with typed for loop
 			T.lighting_build_overlay()
