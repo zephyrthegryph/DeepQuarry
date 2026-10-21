@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Transit tube pods declare their air as an owned relation; lifecycle test fixtures declare their relations and force-delete kept types"
