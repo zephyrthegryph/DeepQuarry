@@ -154,3 +154,29 @@ fn null_and_empty_text_defaults_match_dreammaker() {
     .unwrap();
     assert!(report.equivalent(), "{}", report.render_text());
 }
+
+fn build_source_text(source: &str) -> String {
+    let root = scratch();
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    std::fs::write(project.join("probe.dm"), source).unwrap();
+    std::fs::write(project.join("probe.dme"), "#include \"probe.dm\"\n").unwrap();
+    let manifest = std::fs::canonicalize(project.join("probe.dme")).unwrap();
+    let outcome = crate::request_runner::run_build(request(&root, &manifest));
+    let _ = std::fs::remove_dir_all(&root);
+    format!("{outcome:?}")
+}
+
+/// Pinned DreamMaker 516.1687 (fixtures/diagnostics/cases/typesof_*, which hold the messages; a failed build carries none here): `/T/verb` exists only when `/T` itself declares a verb, and
+/// `/world` is not a prototype.
+#[test]
+fn typesof_paths_follow_dreammaker() {
+    let declared = "/datum/a/verb/v1()\n\t/datum/a/b\n/proc/p()\n\treturn typesof(/datum/a/verb)\n/world/New()\n\tp()\n";
+    assert!(build_source_text(declared).starts_with("Ok"), "own verb");
+    let inherited = "/datum/a/verb/v1()\n/datum/a/b\n/proc/p()\n\treturn typesof(/datum/a/b/verb)\n/world/New()\n\tp()\n";
+    assert!(build_source_text(inherited).contains("kind: Source"), "inherited verb");
+    let none = "/datum/g\n/proc/p()\n\treturn typesof(/datum/g/verb)\n/world/New()\n\tp()\n";
+    assert!(build_source_text(none).contains("kind: Source"), "no verb");
+    let world = "/proc/p()\n\treturn typesof(/world)\n/world/New()\n\tp()\n";
+    assert!(build_source_text(world).contains("kind: Source"), "world");
+}

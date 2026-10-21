@@ -1,0 +1,2 @@
+typesof_no_verb.dm:4:error: /datum/g/verb: undefined type path
+typesof_no_verb.dmb - 1 error, 0 warnings
