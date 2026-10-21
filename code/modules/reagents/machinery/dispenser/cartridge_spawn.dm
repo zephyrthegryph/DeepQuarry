@@ -1,16 +1,18 @@
 ADMIN_VERB(spawn_chemdisp_cartridge, R_SPAWN, "Spawn Chemical Dispenser Cartridge", "Spawns a chemical dispenser catridge.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/size = verb_ask(user, "a1", args, /datum/prompt/choice, question = "Select the catridge size", title = "Select Size", choices = list("small", "medium", "large"), default = "small")
-	if(isnull(size))
+	ask_steps(user, /datum/ask_sequence/admin_verb, list(
+		question_step("size", /datum/prompt/choice, question = "Select the catridge size", title = "Select Size", choices = list("small", "medium", "large"), default = "small"),
+		question_step("reagent", /datum/prompt/choice, question = "Select the reagent to put into the catridge", title = "Select Reagent", choices = SSchemistry.ready().chemical_reagents)), PROC_REF(cartridge_chosen))
+
+/datum/admin_verb/spawn_chemdisp_cartridge/proc/cartridge_chosen(datum/ask_sequence/admin_verb/asked)
+	var/mob/user_mob = asked.actor()
+	var/client/user = user_mob?.client
+	if(!user)
 		return
-	if(!size)
-		return
-	var/reagent = verb_ask(user, "a2", args, /datum/prompt/choice, question = "Select the reagent to put into the catridge", title = "Select Reagent", choices = SSchemistry.ready().chemical_reagents)
-	if(isnull(reagent))
-		return
-	if(!reagent)
+	var/size = asked.get("size")
+	var/reagent = asked.get("reagent")
+	if(!size || !reagent)
 		return
 	var/obj/item/reagent_containers/chem_disp_cartridge/new_catridge
-	var/mob/user_mob = user.mob
 	switch(size)
 		if("small") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge/small(user_mob.loc)
 		if("medium") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge/medium(user_mob.loc)

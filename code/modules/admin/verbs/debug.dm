@@ -657,15 +657,22 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 			open_request(user.mob, /datum/prompt/choice, null, answerer = user.mob, question = "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", title = "HEED THIS WARNING CAREFULLY MORTAL", choices = list("Ok"), buttons = TRUE, timeout = 0)
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = planets_planets())
-	if(isnull(planet))
-		return
+	ask_steps(user, /datum/ask_sequence/admin_verb, list(
+		question_step("planet", /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = planets_planets()),
+		PROC_REF(ask_new_weather)), PROC_REF(weather_chosen))
+
+/// The second question of Change Weather: the weathers the chosen planet allows.
+/datum/admin_verb/change_weather/proc/ask_new_weather(datum/ask_sequence/admin_verb/asked)
+	var/datum/planet/planet = asked.get("planet")
 	if(!istype(planet))
-		return
-	var/datum/weather/new_weather = verb_ask(user, "a9", args, /datum/prompt/choice, question = "What weather do you want to change to?", title = "Change Weather", choices = planet.weather_holder.allowed_weather_types)
-	if(isnull(new_weather))
-		return
-	if(!new_weather)
+		return ASK_STOP
+	return question_step("weather", /datum/prompt/choice, question = "What weather do you want to change to?", title = "Change Weather", choices = planet.weather_holder.allowed_weather_types)
+
+/datum/admin_verb/change_weather/proc/weather_chosen(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	var/datum/planet/planet = asked.get("planet")
+	var/datum/weather/new_weather = asked.get("weather")
+	if(!user || !istype(planet) || !new_weather)
 		return
 	planet.weather_holder.change_weather(new_weather)
 	planet.weather_holder.rebuild_forecast()
@@ -690,29 +697,42 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 		log_admin(log)
 
 ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time of a planet.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/prompt/choice, question = "Which planet do you want to modify time on?", title = "Change Time", choices = planets_planets())
-	if(isnull(planet))
-		return
+	ask_steps(user, /datum/ask_sequence/admin_verb, list(
+		question_step("planet", /datum/prompt/choice, question = "Which planet do you want to modify time on?", title = "Change Time", choices = planets_planets()),
+		PROC_REF(ask_new_hour),
+		PROC_REF(ask_new_minute)), PROC_REF(time_chosen))
+
+/// The hour question of Change Planet Time, from the chosen planet's day.
+/datum/admin_verb/change_time/proc/ask_new_hour(datum/ask_sequence/admin_verb/asked)
+	var/datum/planet/planet = asked.get("planet")
 	if(!istype(planet))
-		return
+		return ASK_STOP
 	var/datum/time/current_time_datum = planet.current_time
 	var/planet_hours = max(round(current_time_datum.seconds_in_day / 36000) - 1, 0)
-	var/new_hour = verb_ask(user, "a12", args, /datum/prompt/number, question = "What hour do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("hh")), max_value = planet_hours)
-	if(isnull(new_hour))
-		return
-	if(isnull(new_hour))
-		return
+	return question_step("hour", /datum/prompt/number, question = "What hour do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("hh")), max_value = planet_hours)
+
+/// The minute question of Change Planet Time, from the chosen planet's hour.
+/datum/admin_verb/change_time/proc/ask_new_minute(datum/ask_sequence/admin_verb/asked)
+	var/datum/planet/planet = asked.get("planet")
+	if(!istype(planet))
+		return ASK_STOP
+	var/datum/time/current_time_datum = planet.current_time
 	var/planet_minutes = max(round(current_time_datum.seconds_in_hour / 600) - 1, 0)
-	var/new_minute = verb_ask(user, "a13", args, /datum/prompt/number, question = "What minute do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("mm")), max_value = planet_minutes)
-	if(isnull(new_minute))
+	return question_step("minute", /datum/prompt/number, question = "What minute do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("mm")), max_value = planet_minutes)
+
+/datum/admin_verb/change_time/proc/time_chosen(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	var/datum/planet/planet = asked.get("planet")
+	var/new_hour = asked.get("hour")
+	var/new_minute = asked.get("minute")
+	if(!user || !istype(planet) || isnull(new_hour) || isnull(new_minute))
 		return
-	if(isnull(new_minute))
-		return
+	var/datum/time/current_time_datum = planet.current_time
 	var/type_needed = current_time_datum.type
 	var/datum/time/new_time = new type_needed()
 	new_time = new_time.add_hours(new_hour)
 	new_time = new_time.add_minutes(new_minute)
-	planet.current_time = new_time
+	rel_set(planet, nameof(planet.current_time), new_time)
 	planet.update_sun()
 
 	var/log = "[key_name(user)] changed [planet.name]'s time to [planet.current_time.show_time("hh:mm")]."
@@ -751,45 +771,54 @@ ADMIN_VERB(cmd_reload_robot_sprite_test, R_DEBUG|R_SERVER, "Reload Robot Test Sp
 	SSrobot_sprites.reload_test_sprites()
 
 ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-implant mode.", ADMIN_CATEGORY_FUN_ADD_NIF)
-	var/input_NIF
-	var/mob/living/carbon/human/H = verb_ask(user, "a14", args, /datum/prompt/choice, question = "Pick a mob with a player", title = "Quick NIF", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	if(isnull(H))
-		return
+	ask_steps(user, /datum/ask_sequence/admin_verb, list(
+		question_step("target", /datum/prompt/choice, question = "Pick a mob with a player", title = "Quick NIF", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS)),
+		PROC_REF(ask_nif_type)), PROC_REF(nif_chosen))
 
-	if(!H)
-		return
+/// The NIF types a body can be given, by their capitalized names.
+/datum/admin_verb/quick_nif/proc/nif_choices()
+	var/list/NIF_types = typesof(/obj/item/nif)
+	var/list/NIFs = list()
 
+	for(var/NIF_type in NIF_types)
+		var/obj/item/nif/S = NIF_type
+		NIFs[capitalize(initial(S.name))] = NIF_type
+	return NIFs
+
+/// The target is checked before the NIF type is asked: an unsuitable body ends the questions with the reason, and a body with no DNA is given the bioadaptive NIF without asking.
+/datum/admin_verb/quick_nif/proc/ask_nif_type(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	var/mob/living/carbon/human/H = asked.get("target")
+	if(!user || !H)
+		return ASK_STOP
 	if(!istype(H))
 		to_chat(user, span_warning("That mob type ([H.type]) doesn't support NIFs, sorry."))
-		return
-
+		return ASK_STOP
 	if(!H.get_organ(BP_HEAD))
 		to_chat(user, span_warning("Target is unsuitable."))
-		return
-
+		return ASK_STOP
 	if(H.nif)
 		to_chat(user, span_warning("Target already has a NIF."))
-		return
+		return ASK_STOP
+	if(H.species.flags & NO_DNA)
+		return null
+	return question_step("nif_type", /datum/prompt/choice, question = "Pick the NIF type", title = "Quick NIF", choices = sortList(nif_choices()))
 
+/datum/admin_verb/quick_nif/proc/nif_chosen(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	var/mob/living/carbon/human/H = asked.get("target")
+	if(!user || !istype(H) || QDELETED(H) || H.nif)
+		return
+	var/input_NIF
 	if(H.species.flags & NO_DNA)
 		var/obj/item/nif/S = /obj/item/nif/bioadap
 		input_NIF = initial(S.name)
 		new /obj/item/nif/bioadap(H)
 	else
-		var/list/NIF_types = typesof(/obj/item/nif)
-		var/list/NIFs = list()
-
-		for(var/NIF_type in NIF_types)
-			var/obj/item/nif/S = NIF_type
-			NIFs[capitalize(initial(S.name))] = NIF_type
-
-		var/list/show_NIFs = sortList(NIFs) // the list that will be shown to the user to pick from
-
-		var/_answer_a15 = verb_ask(user, "a15", args, /datum/prompt/choice, question = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
-		if(isnull(_answer_a15))
+		input_NIF = asked.get("nif_type")
+		if(isnull(input_NIF))
 			return
-		input_NIF = _answer_a15
-		var/chosen_NIF = NIFs[capitalize(input_NIF)]
+		var/chosen_NIF = nif_choices()[capitalize(input_NIF)]
 
 		if(chosen_NIF)
 			new chosen_NIF(H)
