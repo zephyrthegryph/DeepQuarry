@@ -4,9 +4,8 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/unit_test/dq_gas_reaction_declaration_pin
-
-/datum/unit_test/dq_gas_reaction_declaration_pin/Run()
+/// Run by dq_gas_reaction_energy_pins (a test type of its own would add one more type to the test world).
+/proc/dq_gas_reaction_declaration_failure()
 	// id = list(list(gas type = minimum moles, ...), minimum K or null, maximum K or null, expands a hotspot), in the order the reactions run.
 	var/static/list/legacy = list(
 		"vapor" = list(list(/datum/gas/water_vapor = MOLES_GAS_VISIBLE), null, WATER_VAPOR_CONDENSATION_POINT, FALSE),
@@ -34,30 +33,40 @@
 		"antinoblium_replication" = list(list(/datum/gas/antinoblium = MOLES_GAS_VISIBLE), REACTION_OPPRESSION_MIN_TEMP, null, FALSE)
 	)
 	var/list/rules = xform_rules_in(MEDIUM_GAS, REGIME_GAS)
-	TEST_ASSERT_EQUAL(length(rules), length(legacy), "the number of gas reactions")
+	if(length(rules) != length(legacy))
+		return "the number of gas reactions is [length(rules)], was [length(legacy)]"
 	var/at = 0
 	var/list/hotspot_types = list()
 	for(var/id in legacy)
 		at++
 		var/list/expected = legacy[id]
 		var/datum/xform/rule = at <= length(rules) ? rules[at] : null
-		TEST_ASSERT_NOTNULL(rule, "[id] has no rule at place [at]")
 		if(!rule)
-			continue
-		TEST_ASSERT_EQUAL(rule.id, id, "the reaction at place [at]")
+			return "[id] has no rule at place [at]"
+		if(rule.id != id)
+			return "the reaction at place [at] is [rule.id], was [id]"
 		var/list/takes = expected[1]
-		TEST_ASSERT_EQUAL(length(rule.gas_takes), length(takes), "[id]: the number of gases it needs")
+		if(length(rule.gas_takes) != length(takes))
+			return "[id]: the number of gases it needs is [length(rule.gas_takes)], was [length(takes)]"
 		for(var/gas_type in takes)
-			TEST_ASSERT_EQUAL(rule.gas_takes[gas_type], takes[gas_type], "[id]: minimum moles of [gas_type]")
-		TEST_ASSERT_EQUAL(rule.min_temp, expected[2], "[id]: minimum temperature")
-		TEST_ASSERT_EQUAL(rule.max_temp, expected[3], "[id]: maximum temperature")
-		TEST_ASSERT_EQUAL(rule.expands_hotspot, expected[4], "[id]: expands a hotspot")
+			if(rule.gas_takes[gas_type] != takes[gas_type])
+				return "[id]: minimum moles of [gas_type] is [rule.gas_takes[gas_type]], was [takes[gas_type]]"
+		if(rule.min_temp != expected[2])
+			return "[id]: minimum temperature is [rule.min_temp], was [expected[2]]"
+		if(rule.max_temp != expected[3])
+			return "[id]: maximum temperature is [rule.max_temp], was [expected[3]]"
+		if(rule.expands_hotspot != expected[4])
+			return "[id]: expands a hotspot is [rule.expands_hotspot], was [expected[4]]"
 		if(expected[4])
 			hotspot_types += rule.rule_type
 		var/transformation/gas/owner = rule.owner_of()
-		TEST_ASSERT(istype(owner, rule.rule_type), "[id]: the owner instance is its type")
-	TEST_ASSERT_EQUAL(length(SSair.hotspot_reactions), length(hotspot_types), "the number of reactions a hotspot reads")
+		if(!istype(owner, rule.rule_type))
+			return "[id]: the owner instance is not its type"
+	if(length(SSair.hotspot_reactions) != length(hotspot_types))
+		return "the number of reactions a hotspot reads is [length(SSair.hotspot_reactions)], was [length(hotspot_types)]"
 	for(var/hotspot_type in hotspot_types)
-		TEST_ASSERT(hotspot_type in SSair.hotspot_reactions, "[hotspot_type] is read by a hotspot")
+		if(!(hotspot_type in SSair.hotspot_reactions))
+			return "[hotspot_type] is not read by a hotspot"
+	return null
 
 #endif

@@ -38,6 +38,8 @@
 /datum/unit_test/dq_gas_reaction_energy_pins
 
 /datum/unit_test/dq_gas_reaction_energy_pins/Run()
+	var/declaration_failure = dq_gas_reaction_declaration_failure()
+	TEST_ASSERT(isnull(declaration_failure), "the gas reaction declarations changed: [declaration_failure]")
 	// id = list(temperature K, total moles) after one reaction on the DM model.
 	var/static/list/golden = list(
 		"sterilization" = list(664.787, 100),
