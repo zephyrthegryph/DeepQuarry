@@ -447,6 +447,7 @@
 #include "dq_change_plan_parity.dm"
 #include "dq_stat_index_oracle.dm"
 #include "dq_change_reader_plan_oracle.dm"
+#include "dq_change_refresh_pass.dm"
 #include "dq_hit_pins.dm"
 #include "dq_loot_pins.dm"
 #include "dq_loot_search_tests.dm"
