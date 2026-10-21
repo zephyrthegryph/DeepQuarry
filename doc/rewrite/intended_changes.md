@@ -5297,3 +5297,9 @@ other key keeps its place. Only those four rows swap that adjacent pair. No dyna
 The 355 `/datum/recipe` types are `/transformation/kitchen` rules selected and cooked by the same checks in the same order (`dq_xform_select_pin`,
 `dq_xform_cooking_make`). Recipe type paths changed (`/datum/recipe/x` to `/transformation/kitchen/x`), so the microwave's recipe class name and the wiki's recipe keys
 carry the new path; the spritesheet and the UI read them from the same place. `GLOB.acceptable_items` and `GLOB.acceptable_reagents` are built on first use.
+
+
+## A11 native initialization rolls
+
+- /obj/machinery/message_server: preserves word + word + digit distributions, using the native per-instance seeded stream. Explicit key overrides survive; legacy initialization overwrote them.
+- /obj/item/disk/tech_disk: preserves configured +/- randpixel jitter with the native seeded stream. Explicit map offsets remain overrides; research-store and debug-store constructor ordering is unchanged.

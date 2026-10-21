@@ -1380,6 +1380,7 @@
 #include "dq_a5_mob_init.dm"
 #include "dq_a10_content_init.dm"
 #include "dq_a2_item_init.dm"
+#include "dq_a11_initialization_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

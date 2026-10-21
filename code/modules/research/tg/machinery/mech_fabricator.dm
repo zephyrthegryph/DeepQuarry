@@ -66,6 +66,7 @@ MSG_DEF_SELF(exofab/processing, "It is currently processing! Please wait until c
 
 
 CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
+	setup(PROC_REF(configure_initial_fabricator))
 	machine_basics(repair = NONE, frame = board_machine())
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
 	owns_one(nameof(rmat), /datum/remote_materials)
@@ -93,6 +94,8 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	available_designs = list()
 	illegal_local_designs = list()
 	. = ..()
+
+/obj/machinery/mecha_part_fabricator_tg/proc/configure_initial_fabricator()
 	default_apply_parts()
 	RefreshParts()
 	if(!stored_research())

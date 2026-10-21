@@ -10,8 +10,7 @@
 	var/tmp/datum/techweb/stored_research_static
 	var/badmin = FALSE // old compatibility
 
-/obj/machinery/computer/rdservercontrol/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/rdservercontrol/proc/connect_initial_server_control()
 	if(!stored_research())
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
@@ -35,6 +34,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/computer/rdservercontrol)
+	setup(PROC_REF(connect_initial_server_control))
 	interface("ServerControl")
 	without("ui_open")
 	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))

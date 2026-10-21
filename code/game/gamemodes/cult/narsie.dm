@@ -32,6 +32,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	var/cause_hell = 1
 
 CAPABILITIES(/obj/singularity/narsie/large)
+	setup(PROC_REF(announce_arrival))
 	configure(light_glow(range = 1, color = "#3e0000"))
 	when(nameof(calls_evac), after_init(10 SECONDS, then(PROC_REF(call_evac_after_init))))
 
@@ -41,8 +42,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 /obj/singularity/narsie/large/proc/call_evac_after_init(datum/act/A)
 	narsie_call_evac()
 
-/obj/singularity/narsie/large/Initialize(mapload)
-	. = ..()
+/obj/singularity/narsie/large/proc/announce_arrival()
 	if(announce)
 		to_chat(world, span_world(span_narsie(span_red("[uppertext(name)] HAS RISEN"))))
 		world << sound('sound/effects/weather/old_wind/wind_5_1.ogg') // For some reason different wind sound path
@@ -54,7 +54,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		calls_evac = TRUE // the first Nar-Sie calls the evacuation ten seconds on (after_init())
+		set_calls_evac(TRUE) // the first Nar-Sie calls the evacuation ten seconds on (after_init())
 
 /// Nar-Sie's step (the singularity's every()): it eats, hunts a cultist and moves.
 /obj/singularity/narsie/singularity_frame(datum/act/timer/A)

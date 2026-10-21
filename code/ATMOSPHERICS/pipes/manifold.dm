@@ -20,12 +20,12 @@
 	level = 1
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold)
+	setup(PROC_REF(prepare_pipe_renderer))
 	ref_one(nameof(node3))
 
-/obj/machinery/atmospherics/pipe/manifold/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/pipe/manifold/proc/prepare_pipe_renderer()
 	alpha = 255
-	icon = null
+	set_icon(null)
 
 /obj/machinery/atmospherics/pipe/manifold/init_dir()
 	switch(dir)
@@ -288,5 +288,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold)
 
 /obj/machinery/atmospherics/pipe/manifold/hidden/purple
 	color = PIPE_COLOR_PURPLE
+
 
 
