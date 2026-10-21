@@ -10,6 +10,7 @@ struct Origins<'a> {
     line_starts: &'a [usize],
     source_length: usize,
     entry: usize,
+    ops: bool,
     collector: RefCell<DebugOriginCollector>,
     offsets: RefCell<Vec<usize>>,
 }
@@ -61,6 +62,9 @@ impl DebugOriginProvider for Origins<'_> {
     }
 }
 impl dm_codegen_byond::DebugSourceProvider for Origins<'_> {
+    fn emits_debug_ops(&self) -> bool {
+        self.ops
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         self.ordinal(self.entry)
     }
@@ -170,6 +174,7 @@ pub(crate) fn lower_with_memo<R: Resolver>(
             line_starts: &lines[atom.map],
             source_length: map.captured.source.len(),
             entry,
+            ops: frontend.plan.final_macros.contains_key("DEBUG"),
             collector: RefCell::new(DebugOriginCollector::default()),
             offsets: RefCell::new(Vec::new()),
         };
@@ -184,6 +189,7 @@ pub(crate) fn lower_with_memo<R: Resolver>(
                         line_starts: origins.line_starts,
                         source_length: origins.source_length,
                         entry: origins.entry,
+                        ops: origins.ops,
                         collector: RefCell::new(DebugOriginCollector::default()),
                         offsets: RefCell::new(Vec::new()),
                     };

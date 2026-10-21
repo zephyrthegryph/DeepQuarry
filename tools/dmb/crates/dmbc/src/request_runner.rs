@@ -270,6 +270,8 @@ fn run_build_attempt(
         policy_bytes.extend_from_slice(&compiler.to_le_bytes());
         policy_bytes.extend_from_slice(&engine_identity.to_le_bytes());
         policy_bytes.push(u8::from(bootstrap_catalog));
+        // DbgFile/DbgLine are emitted only under DEBUG, so a DEBUG flip must not reuse memoized code.
+        policy_bytes.push(u8::from(defines.contains_key("DEBUG")));
         memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
         Some(compiler)
     } else {

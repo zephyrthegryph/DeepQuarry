@@ -91,6 +91,9 @@ struct MemoDebugProvider<'a> {
     parameters: Option<crate::argument_sources::ParameterDiagnosticSource<'a>>,
 }
 impl dm_codegen_byond::DebugSourceProvider for MemoDebugProvider<'_> {
+    fn emits_debug_ops(&self) -> bool {
+        self.original.emits_debug_ops()
+    }
     fn parameter_declaration(
         &self,
         name: &str,
