@@ -226,10 +226,8 @@ CAPABILITIES(/datum/system/tgui)
 		return
 
 	if(CONFIG_GET(string/asset_transport) == "webroot")
-		var/datum/asset_transport/webroot/webroot = SSassets.transport
-
-		var/datum/asset_cache_item/item = webroot.register_asset("iframe.html", file("tgui/public/iframe.html"))
-		basehtml = replacetextEx(basehtml, "\[tgui:storagecdn]", webroot.get_asset_url("iframe.html", item))
+		var/datum/asset_cache_item/item = SSassets.register_asset("iframe.html", file("tgui/public/iframe.html"))
+		basehtml = replacetextEx(basehtml, "\[tgui:storagecdn]", SSassets.get_asset_url("iframe.html", item))
 		return
 
 	if(!storage_iframe)
