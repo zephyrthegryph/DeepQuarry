@@ -7,6 +7,7 @@ import {
   currentIsCommit,
   dmbcVersionDir,
   mayAdvanceCurrent,
+  publishableCommit,
   pinnedDmbcVersion,
   pruneDmbcVersions,
   publishDmbcVersion,
@@ -155,6 +156,106 @@ describe('current moves forward only', () => {
     expect(mayAdvanceCurrent(root, first, bin)).toBe(true);
     const id = publishDmbcVersion(pair('only', 'only'), bin, { root, commit: first });
     expect(readCurrentDmbcVersion(bin)).toBe(id);
+  });
+});
+
+// `current` must stay on a commit that is in master; a pointer off master is replaced, an unmerged commit never becomes it.
+describe('current stays on master', () => {
+  const git = (cwd: string, ...args: string[]) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
+    return r.stdout.trim();
+  };
+  const commitFile = (root: string, file: string, text: string, msg: string): string => {
+    fs.mkdirSync(path.dirname(`${root}/${file}`), { recursive: true });
+    fs.writeFileSync(`${root}/${file}`, text);
+    git(root, 'add', '-A');
+    git(root, 'commit', '-qm', msg);
+    return git(root, 'rev-parse', 'HEAD');
+  };
+  let saved: string | undefined;
+  beforeEach(() => {
+    saved = process.env.DQ_DMBC_MASTER_REF;
+    process.env.DQ_DMBC_MASTER_REF = 'master';
+  });
+  afterEach(() => {
+    if (saved === undefined) delete process.env.DQ_DMBC_MASTER_REF;
+    else process.env.DQ_DMBC_MASTER_REF = saved;
+  });
+  // master: m1 -> m2 -> m3 (m2 and m3 change compiler sources); unmerged: u1 (compiler change on m3); lane: l1 (non-compiler change on m3)
+  function repo() {
+    const root = path.join(tmp, 'repo').split(path.sep).join('/');
+    fs.mkdirSync(root, { recursive: true });
+    git(root, 'init', '-q', '-b', 'master');
+    const m1 = commitFile(root, 'tools/dmb/src/a.rs', '1', 'm1');
+    const m2 = commitFile(root, 'tools/dmb/src/a.rs', '2', 'm2');
+    const m3 = commitFile(root, 'tools/dmb/src/a.rs', '3', 'm3');
+    git(root, 'switch', '-q', '-c', 'unmerged');
+    const u1 = commitFile(root, 'tools/dmb/src/a.rs', 'unmerged', 'u1');
+    git(root, 'switch', '-q', '--detach', m3);
+    const l1 = commitFile(root, 'docs.txt', 'x', 'lane');
+    git(root, 'switch', '-q', 'master');
+    return { root, m1, m2, m3, u1, l1 };
+  }
+  const recorded = () => fs.readFileSync(`${bin}/current.commit`, 'utf8').trim();
+
+  test('the normal case: current on master advances to a descendant on master and not back', () => {
+    const { root, m1, m2, m3 } = repo();
+    const v1 = publishDmbcVersion(pair('v1', 'one'), bin, { root, commit: m2 });
+    expect(recorded()).toBe(m2);
+    const v2 = publishDmbcVersion(pair('v2', 'two'), bin, { root, commit: m3 });
+    expect(readCurrentDmbcVersion(bin)).toBe(v2);
+    expect(recorded()).toBe(m3);
+    expect(mayAdvanceCurrent(root, m1, bin)).toBe(false);
+    expect(mayAdvanceCurrent(root, m2, bin)).toBe(false);
+    expect(v1).not.toBe(v2);
+  });
+
+  test('current behind master moves to master', () => {
+    const { root, m1, m3 } = repo();
+    publishDmbcVersion(pair('old', 'old'), bin, { root, commit: m1 });
+    const fresh = publishDmbcVersion(pair('fresh', 'fresh'), bin, { root, commit: m3 });
+    expect(readCurrentDmbcVersion(bin)).toBe(fresh);
+    expect(recorded()).toBe(m3);
+  });
+
+  test('a dead current (on no branch) is replaced by a checkout at master compiler sources, not by an older one', () => {
+    const { root, m2, m3, l1 } = repo();
+    fs.writeFileSync(`${bin}/current.commit`, `${'4bfe32aa06'.padEnd(40, 'a')}
+`);
+    const dead = publishDmbcVersion(pair('dead', 'dead'), bin);
+    fs.writeFileSync(`${bin}/current`, `${dead}
+`);
+    // m2 is in master but its compiler sources are behind m3: it must not replace the dead pointer.
+    expect(mayAdvanceCurrent(root, m2, bin)).toBe(false);
+    expect(readCurrentDmbcVersion(bin)).toBe(dead);
+    // a lane ahead of master with master's compiler sources replaces it and records master's tip, not its own commit
+    expect(publishableCommit(root, l1, 'master')).toBe(m3);
+    const fresh = publishDmbcVersion(pair('fresh', 'fresh'), bin, { root, commit: l1 });
+    expect(readCurrentDmbcVersion(bin)).toBe(fresh);
+    expect(recorded()).toBe(m3);
+  });
+
+  test('a current ahead on an unmerged branch is replaced by master, and the unmerged commit cannot publish', () => {
+    const { root, m3, u1 } = repo();
+    fs.writeFileSync(`${bin}/current.commit`, `${u1}
+`);
+    const stuck = publishDmbcVersion(pair('stuck', 'stuck'), bin);
+    fs.writeFileSync(`${bin}/current`, `${stuck}
+`);
+    // a checkout of the unmerged branch descends from the recorded commit but is not in master and differs from it
+    expect(mayAdvanceCurrent(root, u1, bin)).toBe(false);
+    expect(publishableCommit(root, u1, 'master')).toBeNull();
+    expect(readCurrentDmbcVersion(bin)).toBe(stuck);
+    const fresh = publishDmbcVersion(pair('fresh', 'fresh'), bin, { root, commit: m3 });
+    expect(readCurrentDmbcVersion(bin)).toBe(fresh);
+    expect(recorded()).toBe(m3);
+  });
+
+  test('the first publication still needs a commit that is in master', () => {
+    const { root, m3, u1 } = repo();
+    expect(mayAdvanceCurrent(root, u1, bin)).toBe(false);
+    expect(mayAdvanceCurrent(root, m3, bin)).toBe(true);
   });
 });
 
