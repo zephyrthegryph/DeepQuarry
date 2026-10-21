@@ -1,5 +1,5 @@
 /obj/effect/catwalk_plated => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/structure/catwalk
-/obj/effect/decal/warning_stripes => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
+/obj/effect/decal/warning_stripes => turf /turf/simulated/floor/tiled/steel | decals 1 | nothing
 /obj/effect/falling_effect => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 /obj/effect/fancy_shuttle_floor_preview => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/floorbreak => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing

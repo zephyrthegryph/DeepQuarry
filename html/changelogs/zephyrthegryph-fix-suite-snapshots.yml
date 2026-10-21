@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Humans no longer get a simple mob's vore defaults: a profile with its own starting fields changed the shared base profile of every mob"
+  - bugfix: "The custom-fitted welding goggles can be worn only by their owner again"

@@ -65,6 +65,15 @@ CAPABILITIES(/datum/dq_state_probe)
 	var/start = max(1, index - 60)
 	return "at [index]: before ...[copytext(expected, start, index + 80)]... after ...[copytext(actual, start, index + 80)]..."
 
+/// Deletes an atom and everything inside it, deepest first, real and latent: deleting a container drops its contents onto the floor, where the test would leak them.
+/proc/dq_state_discard(atom/movable/thing)
+	if(QDELETED(thing))
+		return
+	thing.latent_discard() // the contents it holds as entries would be created on the floor at deletion
+	for(var/atom/movable/inner as anything in contents_of(thing))
+		dq_state_discard(inner)
+	qdel(thing)
+
 /// Every latent-safe type (and subtype) survives serialize -> materialize, also through JSON.
 /datum/unit_test/dq_state_latent_round_trip
 	is_sweep_test = TRUE
@@ -94,7 +103,7 @@ CAPABILITIES(/datum/dq_state_probe)
 		var/list/blob = state_serialize(original, STATE_FULL, errors)
 		if(!blob)
 			failures += "[path]: did not serialize: [jointext(errors, "; ")]"
-			qdel(original)
+			dq_state_discard(original)
 			continue
 		var/expected = state_canonical(blob)
 		for(var/pass in 1 to 2)
@@ -107,8 +116,8 @@ CAPABILITIES(/datum/dq_state_probe)
 			var/actual = dq_state_canonical_of(copy, errors)
 			if(actual != expected)
 				failures += "[path]: round trip[pass == 2 ? " through JSON" : ""] changed the state: [dq_state_first_difference(expected, actual)]"
-			qdel(copy)
-		qdel(original)
+			dq_state_discard(copy)
+		dq_state_discard(original)
 	TEST_ASSERT(tested > 0, "no latent-safe types found")
 	var/list/curated = curated_types()
 	if(curated)
@@ -278,6 +287,8 @@ CAPABILITIES(/datum/dq_state_probe)
 			found_timer = TRUE
 	TEST_ASSERT(found_timer, "an active timer should block collapse: [jointext(blockers, "; ")]")
 	qdel(timed)
+	for(var/obj/item/paper/inside in box)
+		qdel(inside) // deleting a box drops what it holds onto the block
 	qdel(box)
 
 /// The legacy belly save keys, from the removed /datum/belly_serializer schema:

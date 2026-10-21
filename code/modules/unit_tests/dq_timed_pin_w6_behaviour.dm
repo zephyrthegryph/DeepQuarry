@@ -154,8 +154,8 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(LAZYACCESS(B.ckeys_that_took, "pinrummager"), "a costume is found at the end")
 	TEST_ASSERT(said(user, "found a costume"), "it says it finished")
-	for(var/obj/item/storage/box/halloween/X in run_loc_floor_bottom_left)
-		qdel(X)
+	for(var/obj/item/costume_piece in run_loc_floor_bottom_left)
+		dq_state_discard(costume_piece) // the costume box and what it holds are the test's to clear: deleting a box drops its contents
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_one_rummager

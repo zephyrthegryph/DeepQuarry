@@ -20,9 +20,13 @@
 /// base-type var was overridden in the type's definition: profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = FALSE)).
 /proc/profile(var_name, type, fields = null)
 	var/datum/entry/E = owns_one(var_name, type, starts = type)
-	if(fields)
-		E.args["profile_set"] = fields
-	return E
+	if(!fields)
+		return E
+	// Entries are interned: writing the fields into E would change every other declaration of the same record (the plain profile() of a
+	// base type), so the fields make an entry of their own.
+	var/list/given = E.args.Copy()
+	given["profile_set"] = fields
+	return entry_make(E.kind, E.key, given, E.children)
 
 /// var name -> list(field = value): the merged profile(fields =) values of D's type, ancestors first (cached per type).
 /proc/profile_sets_of(datum/D)

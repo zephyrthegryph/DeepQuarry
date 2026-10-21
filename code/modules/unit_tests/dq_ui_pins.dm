@@ -60,7 +60,7 @@
 
 /// Attaches the probe window to the host: from here on every snap() records the pushes the step before it caused.
 /datum/ui_pin/proc/watch_host()
-	probe = new
+	probe = test.allocate(/datum/tgui/dq_ui_probe)
 	LAZYADD(host.open_tguis, probe)
 
 /// Writes the rows of the host's window data under `label`.
@@ -87,8 +87,15 @@
 /// The text of one value of window data: JSON with refs and clock readings made stable.
 /proc/dq_ui_pin_text(value)
 	var/static/regex/ref_text = regex(@"\[0x[0-9a-fA-F]+\]", "g")
+	var/static/regex/token_text = regex(@"admin_token=[0-9]+", "g")
+	var/static/regex/gene_text = regex(@".name.:.[^,}]*:([0-9]+).,.tname.:.[^}]*?.,.state.", "g")
 	var/text = json_encode(value)
-	return ref_text.Replace(text, "\[ref\]")
+	text = ref_text.Replace(text, "\[ref\]")
+	// Only values rolled per world are masked: the admin href token, and the gene behind each DNA block (the block and its state are what
+	// the window shows).
+	text = token_text.Replace(text, "admin_token=\[token\]")
+	text = gene_text.Replace(text, "\"name\":\"gene:$1\",\"state\"")
+	return text
 
 /proc/dq_ui_pin_same(list/a, list/b)
 	if(length(a) != length(b))
@@ -101,6 +108,9 @@
 /// Makes the human who reads the window.
 /datum/ui_pin/proc/make_user(turf/T)
 	user = test.allocate(/mob/living/carbon/human, T)
+	// A spawned human rolls its name and its nutrition: the windows show both, so pin them.
+	user.fully_replace_character_name(user.real_name, "Pin Tester")
+	user.set_nutrition(user.max_nutrition)
 	return user
 
 /// The pin of `host_type`, or null.

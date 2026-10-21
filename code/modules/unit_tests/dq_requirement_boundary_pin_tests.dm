@@ -3,6 +3,24 @@
 // No copied callback logic, no Boolean callback return assertions, no holder gate override.
 /datum/unit_test/dq_requirement_boundary_pin
 
+/// Whether the op's compiled selectors show it for this actor (true) or hide it (false).
+/datum/unit_test/dq_requirement_boundary_pin/proc/check_when(datum/holder, mob/actor, key, expected)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real [holder.type] [key] op exists")
+	TEST_ASSERT(length(P.conds), "The actual op carries a selector")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.target = holder
+	A.oplan = P
+	var/actual = TRUE
+	for(var/condition in P.conds)
+		if(!op_cond(A, condition))
+			actual = FALSE
+			break
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "[key] preserves actual compiled selector visibility")
+
 /datum/unit_test/dq_requirement_boundary_pin/proc/check(datum/holder, mob/actor, key, callback, expected)
 	var/datum/op_plan/P = op_plan_for(holder, key)
 	TEST_ASSERT_NOTNULL(P, "the real [holder.type] [key] plan exists")
@@ -187,6 +205,7 @@
 // OLD-code boundary pins: evaluate the actual compiled requirement before conversion,
 // and the same compiled req afterwards. No callback-result shape assertion.
 /datum/unit_test/dq_requirement_fourth_boundary
+	abstract_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_fourth_boundary/proc/check(datum/holder, mob/actor, key, callback, expected, obj/held = null, atom/target = null)
 	var/datum/op_plan/P = op_plan_for(holder, key)
@@ -206,6 +225,9 @@
 	A.oplan = P
 	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
 	A.release()
+	if(ispath(actual, /datum/msg))
+		var/datum/msg/refusal_msg = actual
+		actual = initial(refusal_msg.self) // a refusal is a message type: compare the line it shows
 	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
 
 /datum/unit_test/dq_requirement_fourth_boundary/tape/Run()
@@ -294,8 +316,15 @@
 	storage.set_isbroken(FALSE)
 	check(storage, H, "door", "ui_gate", null)
 	var/obj/structure/AIcore/core = allocate(/obj/structure/AIcore, H.loc)
-	check(core, H, "wrench_wrong_stage", "construction_tool_blocked", /datum/msg/req_silent)
-	check(core, H, "welder_wrong_stage", "construction_tool_blocked", /datum/msg/req_silent)
+	// The wrong-stage refusals are the stage ladder's selectors now (stages() in the core's CAPABILITIES): a wrench or welder step is
+	// a candidate only at the stage it belongs to.
+	check_when(core, H, "anchor", TRUE)
+	check_when(core, H, "unanchor", FALSE)
+	check_when(core, H, "dismantle", TRUE)
+	core.set_state(1)
+	check_when(core, H, "anchor", FALSE)
+	check_when(core, H, "unanchor", TRUE)
+	check_when(core, H, "dismantle", FALSE)
 
 // Compiled requirement-only boundary. Does not bypass or claim admin UI authorization.
 /datum/unit_test/dq_requirement_boundary_pin/player_effects/Run()
@@ -421,6 +450,7 @@
 
 // Append to the included dq_requirement_boundary_pin_tests.dm.
 /datum/unit_test/dq_requirement_fifth_machinery
+	abstract_type = /datum/unit_test/dq_requirement_fifth_machinery
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_fifth_machinery/pipelayer/Run()
@@ -472,6 +502,7 @@
 // Old-code boundary proof for the industrial requirement cohort; the same
 // compiled clause is checked after its null-or-reason conversion.
 /datum/unit_test/dq_requirement_industry_boundary
+	abstract_type = /datum/unit_test/dq_requirement_industry_boundary
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_industry_boundary/pump/Run()
@@ -571,6 +602,7 @@
 
 // Actual compiled clauses: no duplicated predicate logic or fake client eligibility.
 /datum/unit_test/dq_requirement_fifth_boundary
+	abstract_type = /datum/unit_test/dq_requirement_fifth_boundary
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_fifth_boundary/void_components/Run()
@@ -646,11 +678,13 @@
 // Append to dq_requirement_boundary_pin_tests.dm BEFORE production conversion.
 // Uses real compiled needs/when; callback protocol is intentionally not asserted.
 /datum/unit_test/dq_requirement_sixth_boundary
+	abstract_type = /datum/unit_test/dq_requirement_sixth_boundary
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_sixth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
 // Self-contained OLD proof draft for fresh origin/master; no F helper dependency.
 /datum/unit_test/dq_requirement_eighth_boundary
+	abstract_type = /datum/unit_test/dq_requirement_eighth_boundary
 	parent_type = /datum/unit_test
 
 /datum/unit_test/dq_requirement_eighth_boundary/proc/check(datum/holder, mob/actor, key, callback, expected, obj/held = null, atom/target = null)
@@ -671,6 +705,9 @@
 	A.oplan = P
 	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
 	A.release()
+	if(ispath(actual, /datum/msg))
+		var/datum/msg/refusal_msg = actual
+		actual = initial(refusal_msg.self) // a refusal is a message type: compare the line it shows
 	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
 
 /datum/unit_test/dq_requirement_eighth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
@@ -855,6 +892,7 @@
 // Ignored draft: append BEFORE native requirement conversion, then run on old code.
 // Select actual compiled needs, preserving callback identity across conversion.
 /datum/unit_test/dq_requirement_seventh_boundary
+	abstract_type = /datum/unit_test/dq_requirement_seventh_boundary
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_seventh_boundary/filing_contents/Run()
