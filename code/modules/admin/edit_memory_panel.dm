@@ -47,7 +47,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 
 /datum/edit_memory_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(target_mind && SSantag.all_antag_types)
+	if(target_mind && antag_all_antag_types())
 		for(var/antag_type in antag_all_antag_types())
 			var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 			var/list/entry = A?.get_panel_data(target_mind)

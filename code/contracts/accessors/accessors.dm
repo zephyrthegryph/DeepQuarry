@@ -167,6 +167,16 @@ SYSTEM_ACCESSOR(transcore, transcore_databases, nameof(databases))
 SYSTEM_ACCESSOR(xenoarch, xenoarch_artifact_spawning_turfs, nameof(artifact_spawning_turfs))
 SYSTEM_ACCESSOR(xenoarch, xenoarch_digsite_spawning_turfs, nameof(digsite_spawning_turfs))
 SYSTEM_ACCESSOR(mapping, mapping_engine_loader, nameof(engine_loader))
+SYSTEM_ACCESSOR(air, air_init_phase_ms, nameof(init_phase_ms))
+SYSTEM_ACCESSOR(air, air_profile_gas_frames, nameof(gas_frames))
+SYSTEM_ACCESSOR(garbage, garbage_items, nameof(items))
+SYSTEM_ACCESSOR(garbage, garbage_queues, nameof(queues))
+SYSTEM_ACCESSOR(garbage, garbage_should_save_refs, nameof(should_save_refs))
+SYSTEM_ACCESSOR(garbage, garbage_find_reference_on_fail_global_toggle, nameof(find_reference_on_fail_global_toggle))
+SYSTEM_ACCESSOR(atoms, atoms_atom_initialized, nameof(atom_initialized))
+SYSTEM_ACCESSOR(atoms, atoms_initialize_depth, nameof(initialize_depth))
+SYSTEM_ACCESSOR(media_tracks, media_tracks_all_tracks, nameof(all_tracks))
+SYSTEM_ACCESSOR(media_tracks, media_tracks_casino_tracks, nameof(casino_tracks))
 
 // ---- Readers of registries that replaced a system's list of the same name ----
 

@@ -34,3 +34,7 @@
 
 /datum/system/radiation/proc/is_enabled()
 	return enabled
+
+/// A turf's radiation shielding changed: the next sync re-reads it.
+/datum/system/radiation/proc/mark_turf_dirty(turf/T)
+	dirty_turfs[T] = TRUE

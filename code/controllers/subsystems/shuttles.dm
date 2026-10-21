@@ -60,7 +60,7 @@ SYSTEM_DEF(shuttles)
 			continue // Its an "abstract class" datum, not for a real shuttle.
 		if(!initial(shuttle.defer_initialisation)) // Skip if it asks not to be initialized at startup.
 			LAZYDISTINCTADD(shuttles_to_initialize, shuttle_type)
-	block_init_queue = FALSE
+	set_block_init_queue(FALSE)
 	process_init_queues()
 
 /// A shuttle with work: one shuttle_step() every 2 s while it is launching, moving or always
@@ -194,6 +194,7 @@ SYSTEM_DEF(shuttles)
 		shuttle = new shuttle()
 		shuttle_areas |= shuttle.shuttle_area
 		log_world("Initialized shuttle [shuttle] ([shuttle.type])")
+		PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_added, shuttle)
 		return shuttle
 		// Historical note:  No need to call shuttle.init_docking_controllers(), controllers register themselves
 		// and shuttles fetch refs in New().  Shuttles also dock() themselves in new if they want.

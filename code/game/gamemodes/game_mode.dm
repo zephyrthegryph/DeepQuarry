@@ -209,7 +209,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 /datum/game_mode/proc/refresh_event_modifiers()
 	if(event_delay_mod_moderate || event_delay_mod_major)
-		SSevents.report_at_round_end = TRUE
+		SSevents.request_round_end_report()
 		if(event_delay_mod_moderate)
 			var/datum/event_container/EModerate = events_event_containers()[EVENT_LEVEL_MODERATE]
 			EModerate.delay_modifier = event_delay_mod_moderate

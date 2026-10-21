@@ -23,10 +23,10 @@
 	if(!name_holders)
 		return
 	// Name the holder. Slow (it walks the world), so test builds only.
-	SSgarbage.should_save_refs = TRUE
+	SSgarbage.set_should_save_refs(TRUE)
 	node.found_refs = null
 	node.find_references()
-	SSgarbage.should_save_refs = FALSE
+	SSgarbage.set_should_save_refs(FALSE)
 	var/list/names = list()
 	for(var/where in node.found_refs)
 		if(!islist(where))

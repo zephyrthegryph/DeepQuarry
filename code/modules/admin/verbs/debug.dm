@@ -226,9 +226,9 @@ ADMIN_VERB(cmd_debug_tog_aliens, R_DEBUG, "Toggle Aliens", "Toggle if aliens are
 
 ADMIN_VERB(cmd_display_del_log, R_DEBUG, "Display del() Log", "Display del's log of everything that's passed through it.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/list/dellog = list(span_bold("List of things that have gone through qdel this round") + "<BR><BR><ol>")
-	sortTim(SSgarbage.items, cmp=/proc/cmp_qdel_item_time, associative = TRUE)
-	for(var/path in SSgarbage.items)
-		var/datum/qdel_item/I = SSgarbage.items[path]
+	sortTim(garbage_items(), cmp=/proc/cmp_qdel_item_time, associative = TRUE)
+	for(var/path in garbage_items())
+		var/datum/qdel_item/I = garbage_items()[path]
 		dellog += "<li><u>[path]</u><ul>"
 		if (I.failures)
 			dellog += "<li>Failures: [I.failures]</li>"

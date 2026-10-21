@@ -529,7 +529,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		var/churnsound = SFX_CLASSIC_DIGESTION_SOUNDS
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
-	if(SSair.times_fired%3==1)
+	if(SSair.cycles_run()%3==1)
 		// digest_brute / digest_burn are rates per BELLY_BASELINE_TICK, applied as
 		// continuous harm for the time since the last digestion pass.
 		var/delta_factor = last_digest_time ? clamp((world.time - last_digest_time) / BELLY_BASELINE_TICK, 0, DOGBORG_DIGEST_MAX_CATCHUP) : 1

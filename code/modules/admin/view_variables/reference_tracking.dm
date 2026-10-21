@@ -29,11 +29,11 @@
 #endif
 	src.references_to_clear = references_to_clear
 	//this keeps the garbage collector from failing to collect objects being searched for in here
-	SSgarbage.can_fire = FALSE
+	SSgarbage.pause()
 
 	_search_references(src)
 	//restart the garbage collector
-	SSgarbage.can_fire = TRUE
+	SSgarbage.resume()
 #ifdef UNIT_TESTS
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif
@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					/*is_special_list = */ is_atom && (varname == "contents" || varname == "vis_contents" || varname == "locs"))
 			else if(variable == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(SSgarbage.should_save_refs)
+				if(garbage_should_save_refs())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[varname] = TRUE
@@ -198,7 +198,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 			//Check normal entrys
 			else if(element_in_list == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(SSgarbage.should_save_refs)
+				if(garbage_should_save_refs())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[potential_cache] = TRUE
@@ -213,7 +213,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 				// I don't want the garbage subsystem to count as a ref for the purposes of this number
 				// If we find all other refs before it I want to early exit, and if we don't I want to keep searching past it
 				var/ignore_ref = FALSE
-				var/list/queues = SSgarbage.queues
+				var/list/queues = garbage_queues()
 				for(var/list/queue in queues)
 					if(potential_cache in queue)
 						ignore_ref = TRUE
@@ -238,7 +238,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					//Check assoc entry
 					else if(assoc_val == src)
 						#ifdef REFERENCE_TRACKING_DEBUG
-						if(SSgarbage.should_save_refs)
+						if(garbage_should_save_refs())
 							if(!found_refs)
 								found_refs = list()
 							found_refs[potential_cache] = TRUE

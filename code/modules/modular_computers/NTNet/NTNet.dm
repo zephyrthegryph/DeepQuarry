@@ -52,7 +52,7 @@ CAPABILITIES(/datum/ntnet)
 /datum/ntnet/New()
 	if(GLOB.ntnet_global && (GLOB.ntnet_global != src))
 		GLOB.ntnet_global = src // There can be only one.
-	if (SSatoms && SSatoms.initialized > INITIALIZATION_INSSATOMS)
+	if (SSatoms && SSatoms.is_initialized() > INITIALIZATION_INSSATOMS)
 		for(var/obj/machinery/ntnet_relay/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			rel_add(src, nameof(relays), R)
 			R.NTNet_static = src // a registered singleton: shared

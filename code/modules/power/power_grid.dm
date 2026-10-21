@@ -222,7 +222,7 @@ PROC_SUMMARY(/proc/vg_power_region_read)
 	var/datum/power_grid/grid = power_grid(id)
 	if(!grid || amount <= 0)
 		return 0
-	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[id]
+	var/datum/material_power_overlay/overlay = machines_power_material_overlays()[id]
 	var/efficiency = 1
 	if(consumer && overlay?.material_graph)
 		efficiency = overlay.material_graph.efficiency_for(consumer)
@@ -266,16 +266,16 @@ PROC_SUMMARY(/proc/vg_power_region_read)
 	var/datum/power_grid/new_grid = power_grid(new_id)
 	if(new_grid)
 		rel_add(new_grid, nameof(new_grid.nodes), M)
-	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[old_id]
+	var/datum/material_power_overlay/overlay = machines_power_material_overlays()[old_id]
 	overlay?.material_cache_dirty = TRUE
-	overlay = SSmachines.power_material_overlays[new_id]
+	overlay = machines_power_material_overlays()[new_id]
 	overlay?.material_cache_dirty = TRUE
 
 // ---- detached test grids ----------------------------------------------------
 
 /// A detached grid holding `avail` W that Rust never sees (tests). Returns its id.
 /proc/power_test_grid(avail = 0)
-	var/id = --SSmachines.power_test_grid_serial
+	var/id = SSmachines.next_test_grid_id()
 	var/datum/power_grid/grid = power_grid(id)
 	grid.set_avail(avail)
 	return id

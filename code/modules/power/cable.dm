@@ -92,9 +92,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 /obj/structure/cable/proc/power_material_changed()
 	if(!engineered_material_id && !material_assembly_view(src).custom)
 		return
-	rel_add(SSmachines, nameof(SSmachines.power_material_cables), src)
+	SSmachines.track_material_cable(src)
 	if(power_entity)
-		var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[get_power_region()]
+		var/datum/material_power_overlay/overlay = machines_power_material_overlays()[get_power_region()]
 		overlay?.invalidate_material_cache()
 
 /obj/structure/cable/proc/recover_coil(turf/location, length)
@@ -220,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /// Phase 1 (unbind): the cable leaves its power region and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
-	rel_remove(SSmachines, nameof(SSmachines.power_material_cables), src)
+	SSmachines.untrack_material_cable(src)
 	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 
