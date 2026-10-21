@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_focused_test.sh says what a sweep-pin run costs (shards, slot cap, watchdog)"
