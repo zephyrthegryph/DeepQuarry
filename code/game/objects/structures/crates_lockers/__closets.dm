@@ -63,6 +63,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	click_order(TOOL_WELDER, "cut_apart", "weld_shut.toggle")
 	silicon_hand(adjacent = TRUE)
 	ref_many(nameof(bluespace_exit_points))
 	blast_contents(shield = 1) // a closet shields its contents a step
@@ -75,7 +76,7 @@ CAPABILITIES(/obj/structure/closet)
 	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
 	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req(PROC_REF(bare_hand_or_menu))),
 		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
-	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
+	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), wait(0), costs(RES_FUEL, 0),
 		needs(req(PROC_REF(welder_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
 	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
 		then(PROC_REF(basket_emptied)), says(MSG(closet/emptied_basket)))

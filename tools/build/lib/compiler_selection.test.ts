@@ -12,7 +12,7 @@ import { withCompiledOutput } from './native_pair';
 import { createHash } from 'node:crypto';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DMB_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT', 'DQ_BUILD_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_COMPILER_FALLBACK', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DMB_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT', 'DQ_BUILD_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -208,6 +208,7 @@ test('shadow rejects malformed, contradictory and unrelated receipts', () => {
 
 test('native internal status 70 falls back once and propagates BYOND failure', async () => {
   process.env.DQ_COMPILER = 'native';
+  process.env.DQ_COMPILER_FALLBACK = '1'; // fallback is opt-in; the default is strict
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   let calls = 0;
@@ -294,16 +295,20 @@ test('strict native gate preserves internal status and never invokes BYOND', asy
   }
 });
 
-test('strict policy changes native cache admission while unset and zero agree', () => {
+test('strict is the default: unset and one agree, an explicit fallback request differs', () => {
   process.env.DQ_COMPILER = 'native';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   delete process.env.DQ_COMPILER_STRICT;
   const defaultIdentity = compilerCacheIdentity();
-  process.env.DQ_COMPILER_STRICT = '0';
-  expect(compilerCacheIdentity()).toBe(defaultIdentity);
   process.env.DQ_COMPILER_STRICT = '1';
-  expect(compilerCacheIdentity()).not.toBe(defaultIdentity);
+  expect(compilerCacheIdentity()).toBe(defaultIdentity);
+  process.env.DQ_COMPILER_STRICT = '0';
+  const fallbackIdentity = compilerCacheIdentity();
+  expect(fallbackIdentity).not.toBe(defaultIdentity);
+  delete process.env.DQ_COMPILER_STRICT;
+  process.env.DQ_COMPILER_FALLBACK = '1';
+  expect(compilerCacheIdentity()).toBe(fallbackIdentity);
 });
 
 test('invalid strict native policy rejects before either compiler and leaves BYOND mode alone', async () => {

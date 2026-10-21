@@ -421,6 +421,8 @@
 #include "dq_snapshot_files.dm"
 #include "dq_chem_math_pins.dm"
 #include "dq_xform_pins.dm"
+#include "dq_xform_select_pin.dm"
+#include "dq_xform_cooking_make.dm"
 #include "dq_xform_smelting_pin.dm"
 #include "dq_transformation_tests.dm"
 #include "dq_reagents_start_snapshot.dm"
@@ -1363,6 +1365,10 @@
 #include "dq_decl_archaeological_find_tests.dm"
 #include "dq_decl_landmark_registration_tests.dm"
 #include "dq_decl_visual_state_tests.dm"
+#include "dq_cleanup_destroy_consequences.dm"
+#include "dq_d5_landmark_registration.dm"
+#include "dq_d6_actor_inputs.dm"
+#include "dq_d7_sdql_delete.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

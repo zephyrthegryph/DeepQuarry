@@ -6,12 +6,12 @@
 	var/find_type = 0
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
-/proc/artifact_spawn_debug_tool(mob/target)
+/proc/artifact_spawn_debug_tool(mob/target, mob/user)
 	if(!target?.loc)
-		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
+		to_chat(user, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	open_request(usr.client, /datum/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), answerer = usr, subject = target, title = "Spawn Artifact", question = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", timeout = 0)
+	open_request(user.client, /datum/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), answerer = user, subject = target, title = "Spawn Artifact", question = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", timeout = 0)
 
 /client/proc/artifact_spawn_debug_chosen(datum/act/request/A)
 	var/mob/target = A.request.subject

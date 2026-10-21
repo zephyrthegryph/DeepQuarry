@@ -266,6 +266,20 @@ cache is stamped for another analyzer build or scope list first copies the files
 (`DQ_ANALYZE_SHARED_CACHE`, `off` disables), and every run publishes the files it rewrote there. A fresh worktree's first `analyze check`
 goes from about 64 s to 2 s. Four stamps and 4 GB are kept (`tools/dq_cache_prune.sh` applies the same rule).
 
+### Caches and truth
+
+Every cache here is an optimisation: the answer of `analyze gen` and `analyze check` is a function of the tree alone. A cache whose key leaves out an
+input is a bug, because the same tree then answers differently depending on what ran before it. `tests/cache_truth.rs` holds the property for `gen`
+(an uncached run, a fresh tree, a warm second run, a cache filled by other sources, a seeded cache over a fresh tree must write the same files) and
+`tests/model_store_appears.rs` holds the case that broke it: the model store listed only the files the preprocessor registered, so a `.dm` the `.dme`
+includes that did not exist when the model was stored (a generated file, on the first `gen` pass of a fresh tree) never changed any key, pass 2
+reused the model without it, and `auto_tracked`, `plans` and `reads` wrote less than an uncached run (`print_cooldown` of the gold star and ticket
+printers was not tracked, so `untracked_inputs` failed on some trees and not on others). `model_store::appeared_include` now makes that a full parse.
+
+Merge gates take no cache on trust: `DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh` (set by `tools/dq_merge_gates.sh`) runs gen and the lints
+with an empty private cache directory, no shared-cache seed and no gen store. To compare by hand: wipe `data/analyze-cache` and the generated
+files, set `DQ_GEN_STORE=off DQ_ANALYZE_SHARED_CACHE=off`, and add `DQ_MODEL_STORE=off DQ_WALK_CACHE=off DQ_BODY_FACTS=off` for the uncached truth.
+
 ### Declarations the analysis reads
 
 Markers expand to nothing in DM (`code/__defines/engine/markers.dm`), so they are read from comment-stripped text with

@@ -2,8 +2,8 @@
 	name = "kitchen_recipes"
 
 /datum/asset/spritesheet_batched/kitchen_recipes/create_spritesheets()
-	for(var/datum/recipe/R as anything in subtypesof(/datum/recipe))
-		var/key = sanitize_css_class_name("[R.type]")
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
+		var/key = sanitize_css_class_name("[R.rule_type]")
 
 		var/atom/item = R.result
 		var/datum/universal_icon/icon = get_display_icon_for(item)

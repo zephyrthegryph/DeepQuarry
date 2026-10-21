@@ -8,7 +8,7 @@
 	var/obj/machinery/microwave/microwave = allocate(/obj/machinery/microwave, T)
 	var/obj/item/reagent_containers/food/snacks/grown/produce = allocate(/obj/item/reagent_containers/food/snacks/grown, T, PLANT_APPLE)
 	var/original_volume = produce.reagents.total_volume
-	TEST_ASSERT(is_type_in_list(produce, GLOB.acceptable_items), "the actual original apple is an accepted microwave ingredient")
+	TEST_ASSERT(is_type_in_list(produce, kitchen_acceptable_items()), "the actual original apple is an accepted microwave ingredient")
 	TEST_ASSERT_EQUAL(length(microwave.cookingContents()), 0, "the actual initialized microwave starts without cooking ingredients")
 	TEST_ASSERT(!microwave.operating, "the actual microwave starts outside a cooking cycle")
 	TEST_ASSERT(user.put_in_active_hand(produce), "the actor holds the original real apple")

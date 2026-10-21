@@ -314,9 +314,37 @@ fn file_list(paths: &[PathBuf]) -> dreammaker::FileList {
     fl
 }
 
+/// The first `.dm` file the `.dme` includes that exists on disk but is not in `paths` (the files the stored model was parsed from).
+fn appeared_include(root: &Path, dme_path: &Path, paths: &[PathBuf]) -> Option<String> {
+    let text = std::fs::read_to_string(dme_path).ok()?;
+    let known: std::collections::HashSet<String> = paths.iter().map(|p| norm_in(root, p)).collect();
+    let base = dme_path.parent().unwrap_or(root);
+    for line in text.lines() {
+        let Some(rest) = line.trim_start().strip_prefix("#include") else { continue };
+        let Some(name) = rest.trim().strip_prefix('"').and_then(|r| r.split('"').next()) else { continue };
+        if !name.to_ascii_lowercase().ends_with(".dm") {
+            continue;
+        }
+        let rel = PathBuf::from(name.replace('\\', "/"));
+        if known.contains(&norm_in(root, &rel)) || known.contains(&norm_in(root, &base.join(&rel))) {
+            continue;
+        }
+        if abs_in(base, &rel).is_file() {
+            return Some(name.replace('\\', "/"));
+        }
+    }
+    None
+}
+
 /// The stored model brought up to this tree: the delta's patches of files whose content they still describe, a fresh patch of every other
 /// changed file. Returns the model and how many files were parsed and patched.
 fn update(root: &Path, tree: &Tree, dme_path: &Path, mut s: Base, delta: Option<Delta>) -> Result<(Parsed, usize, usize), String> {
+    // The stored file table lists only the files the preprocessor registered. A `.dm` the `.dme` includes that was missing when the model
+    // was parsed (a generated file `analyze gen` had not written yet) is in no table, so comparing keys cannot see it appear: the model
+    // would be reused without it. Any included `.dm` that exists now and is not in the table is a full parse.
+    if let Some(appeared) = appeared_include(root, dme_path, &s.paths) {
+        return Err(format!("{} appeared", appeared));
+    }
     let now: Vec<Hash> = super::par_map(&s.paths, |p| key_of(tree, root, p));
     let changed: Vec<usize> = (0..s.paths.len()).filter(|&i| now[i] != s.keys[i]).collect();
     let files = file_list(&s.paths);

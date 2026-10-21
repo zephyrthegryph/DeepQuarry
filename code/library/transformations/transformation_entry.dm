@@ -31,6 +31,7 @@
 //   important     admin-visible when mixed (the legacy log_is_important).
 //   wiki          WIKI_X flags: what the in-game wiki and the handbooks do with the rule (hide it, file it under food or drinks).
 //   hotspot       TRUE for a gas rule that makes fires bigger: a hotspot's volume grows by what these rules report in the mixture's reaction_results.
+//   cooks_in, cook_time, mix, coating   a kitchen rule's appliance bitfield, cooking time, reagent merge mode and required coating (code/library/transformations/kitchen.dm).
 //
 // A proc named in an entry is TYPE_PROC_REF(/the/rule/type, x), not PROC_REF(x): a static block is read in a global proc, where a bare PROC_REF has no type to
 // resolve against. What the compile keeps is the proc's name, called on the rule's one owner instance, so a subtype that overrides x answers for itself.
@@ -48,12 +49,12 @@ STATIC_ENTRY(transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/transformation)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/xform)
 
-/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null)
+/proc/transformation(name = null, id = null, desc = null, medium = null, regime = null, takes = null, catalysts = null, blocked_by = null, holds = null, rate = null, yield = null, floor = null, makes = null, made = null, data = null, energy = null, heat_to = null, takes_ambient = null, priority = null, capacity = null, says = null, plays = null, notice = null, then = null, important = null, wiki = null, hotspot = null, cooks_in = null, cook_time = null, mix = null, coating = null)
 	RETURN_TYPE(/datum/entry)
 	return entry_make(ENTRY_TRANSFORMATION, null, list("name" = name, "id" = id, "desc" = desc, "hotspot" = hotspot, "medium" = medium, "regime" = regime, "takes" = takes, "catalysts" = catalysts, \
 		"blocked_by" = blocked_by, "holds" = holds, "rate" = rate, "yield" = yield, "floor" = floor, "makes" = makes, "made" = made, "data" = data, "energy" = energy, \
 		"heat_to" = heat_to, "takes_ambient" = takes_ambient, "priority" = priority, "capacity" = capacity, "says" = says, "plays" = plays, \
-		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki))
+		"notice" = notice, "then" = then, "important" = important, "wiki" = wiki, "cooks_in" = cooks_in, "cook_time" = cook_time, "mix" = mix, "coating" = coating))
 
 /// rate = half_life(n): half the reagents react after n chemistry ticks (0: at once).
 /proc/half_life(ticks)
@@ -129,6 +130,14 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	var/max_temp
 	/// A gas rule that makes fires bigger (hotspot = TRUE).
 	var/expands_hotspot = FALSE
+	/// A kitchen rule's ingredients: the item types in order (one entry per term, duplicates kept) and the grown items by kitchen tag.
+	var/list/cook_items
+	var/list/fruit_takes
+	var/cooks_in = 0
+	var/cook_time = 0
+	var/mix = 0
+	/// The coating the items must carry: null for none, -1 for any, or a type.
+	var/coating
 	/// Gas taken from the air around the subject once per step, gas => moles, or null.
 	var/list/takes_ambient
 	var/holds
@@ -329,6 +338,21 @@ GLOBAL_LIST_EMPTY(xform_empty_table)
 	X.then_proc = "[xform_proc_name(arguments["then"])]" // a proc name (text): "" when there is none
 	X.important = !!arguments["important"]
 	X.wiki = arguments["wiki"] || 0
+	if(X.medium == MEDIUM_CONTENTS)
+		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
+		X.fruit_takes = xform_assoc(X.takes, XCUR_FRUIT)
+		for(var/list/row as anything in X.takes)
+			if(row[1] == XCUR_ITEM)
+				LAZYADD(X.cook_items, row[2])
+		for(var/list/row as anything in X.makes)
+			if(row[1] == XCUR_ITEM)
+				X.result = row[2]
+				X.result_amount = row[3]
+				break
+		X.cooks_in = arguments["cooks_in"] || 0
+		X.cook_time = arguments["cook_time"] || 0
+		X.mix = arguments["mix"] || 0
+		X.coating = arguments["coating"]
 	if(X.medium == MEDIUM_REAGENTS)
 		X.reagent_takes = xform_assoc(X.takes, XCUR_REAGENT)
 		X.reagent_catalysts = xform_assoc(X.catalysts, XCUR_REAGENT)

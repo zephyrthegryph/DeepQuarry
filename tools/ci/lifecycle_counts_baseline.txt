@@ -2,4 +2,3 @@
 # tools/ci/lifecycle_counts_lint.py fails on a site not listed here (Destroy() overrides are
 # banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.
 # Shrink-only: after a sweep, `python tools/ci/lifecycle_counts_lint.py --update`.
-qdel	code/modules/admin/verbs/SDQL2/SDQL_2.dm	#define SDQL_qdel_datum(d) qdel(d)

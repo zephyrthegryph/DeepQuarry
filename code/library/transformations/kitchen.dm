@@ -1,101 +1,133 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * *
- * /datum/recipe by rastaf0            13 apr 2011 *
- * * * * * * * * * * * * * * * * * * * * * * * * * *
- * This is powerful and flexible recipe system.
- * It exists not only for food.
- * supports both reagents and objects as prerequisites.
- * In order to use this system you have to define a deriative from /datum/recipe
- * * reagents are reagents. Acid, milc, booze, etc.
- * * items are objects. Fruits, tools, circuit boards.
- * * result is type to create as new object
- * * time is optional parameter, you shall use in in your machine,
- *	default /datum/recipe/ procs does not rely on this parameter.
- *
- *  Functions you need:
- *  /datum/recipe/proc/make(var/obj/container as obj)
- *    Creates result inside container,
- *    deletes prerequisite reagents,
- *    transfers reagents from prerequisite objects,
- *    deletes all prerequisite objects (even not needed for recipe at the moment).
- *
- *  /proc/select_recipe(list/datum/recipe/available_recipes, obj/obj as obj, exact = 1)
- *    Wonderful function that select suitable recipe for you.
- *    obj is a machine (or magik hat) with prerequisites,
- *    exact = 0 forces algorithm to ignore superfluous stuff.
- *
- *
- *  Functions you do not need to call directly but could:
- *  /datum/recipe/proc/check_reagents(var/datum/reagents/avail_reagents)
- *  /datum/recipe/proc/check_items(var/obj/container as obj)
- *
- * */
+// Cooking (doc/rewrite/proposals/transformations.md, wave 3): a recipe is a /transformation/kitchen rule in MEDIUM_CONTENTS, REGIME_COOKING.
+//
+//   takes = list(reagent(id, n), item_term(type, 1), fruit_term(kitchen_tag, n))   the contents of the cooking container: the reagents it holds (and no others),
+//                                                                                   the items (one term per item; non-exact by default) and the grown items by kitchen tag
+//   makes = list(item_term(type, n))                                                n copies of the result, made inside the container
+//   cooks_in   the appliance bitfield the recipe is made in (MICROWAVE, OVEN, ...); cooking_rules_for() lists the rules of one appliance type
+//   mix        how the ingredients' reagents are merged into the result (RECIPE_REAGENT_MAX / MIN / SUM / REPLACE)
+//   coating    the coating every snack in the recipe must carry: null requires none, -1 does not care, a type is that coating
+//   cook_time  how long a machine cooks it
+//
+// Selection (cooking_select) is the old select_recipe(): every rule of the appliance whose reagents, items and fruit hold is a candidate, the one with the most
+// terms wins, and a tie goes to the later rule in the list (the order the types are declared in). dq_xform_select_pin pins it.
+//
+// A rule that does more than make its result overrides the owner's hooks: before_cook(container) and after_cook(container) around a machine's cooking,
+// make_food(container) to change what is made (call ..() to make the result, then fix up what it returns).
 
-/datum/recipe
-	var/list/reagents		// Example: = list(REAGENT_ID_BERRYJUICE = 5) // do not list same reagent twice
-	var/list/items			// Example: = list(/obj/item/tool/crowbar, /obj/item/welder) // place /foo/bar before /foo
-	var/list/fruit			// Example: = list("fruit" = 3)
-	var/coating = null		// Required coating on all items in the recipe. The default value of null explitly requires no coating
-							// A value of -1 is permissive and cares not for any coatings
-							// Any typepath indicates a specific coating that should be present
-							// Coatings are used for batter, breadcrumbs, beer-batter, colonel's secret coating, etc
+/// The kitchen rules by appliance type (the exact bitfield a machine declares), in the order they are tried. Built on first use.
+GLOBAL_ALIST_EMPTY(cooking_by_appliance)
 
-	var/result				// Example: = /obj/item/reagent_containers/food/snacks/donut/normal
-	var/result_quantity = 1 // Number of instances of result that are created.
-	var/time = 100			// 1/10 part of second
+/// The kitchen rules of one appliance type. The list is shared: read it, never write it.
+/proc/cooking_rules_for(appliancetype)
+	RETURN_TYPE(/list)
+	if(!length(GLOB.cooking_by_appliance))
+		for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
+			LAZYADD(GLOB.cooking_by_appliance[rule.cooks_in], rule)
+	return GLOB.cooking_by_appliance[appliancetype]
 
-	//Only the reagents present in the result at compiletime are used
-	#define RECIPE_REAGENT_MAX	1 //The result will contain the maximum of each reagent present between the two pools. Compiletime result, and sum of ingredients
-	#define RECIPE_REAGENT_MIN 2 //As above, but the minimum, ignoring zero values.
-	#define RECIPE_REAGENT_SUM 3 //The entire quantity of the ingredients are added to the result
+/// Every appliance type some recipe is made in.
+/proc/cooking_appliances()
+	cooking_rules_for(MICROWAVE)
+	var/list/appliances = list()
+	for(var/appliance, rules in GLOB.cooking_by_appliance)
+		appliances += appliance
+	return appliances
 
-	var/reagent_mix = RECIPE_REAGENT_MAX	//How to handle reagent differences between the ingredients and the results
+/// The things a machine can be offered: every item type some recipe lists, plus the few the machines always take. Built on first use.
+GLOBAL_LIST(acceptable_items)
+/// The reagents some recipe lists. Built on first use.
+GLOBAL_LIST(acceptable_reagents)
 
-	var/appliance = MICROWAVE // Which apppliances this recipe can be made in. New Recipes will DEFAULT to using the Microwave, as a catch-all (and just in case)
-	// List of defines is in _defines/misc.dm. But for reference they are:
-	/*
-		MICROWAVE
-		FRYER
-		OVEN
-		CANDYMAKER
-		CEREALMAKER
-	*/
-	// This is a bitfield, more than one type can be used
-	// Grill is presently unused and not listed
+/proc/kitchen_acceptable_items()
+	RETURN_TYPE(/list)
+	if(!GLOB.acceptable_items)
+		var/list/acceptable = list()
+		for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
+			for(var/item in rule.cook_items)
+				acceptable |= item
+		acceptable |= /obj/item/holder
+		acceptable |= /obj/item/reagent_containers/food/snacks/grown
+		acceptable |= /obj/item/soulstone
+		acceptable |= /obj/item/fuel_assembly/supermatter
+		GLOB.acceptable_items = acceptable
+	return GLOB.acceptable_items
 
-	var/wiki_flag = 0
+/proc/kitchen_acceptable_reagents()
+	RETURN_TYPE(/list)
+	if(!GLOB.acceptable_reagents)
+		var/list/acceptable = list()
+		for(var/datum/xform/rule as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
+			for(var/reagent in rule.reagent_takes)
+				acceptable |= reagent
+		GLOB.acceptable_reagents = acceptable
+	return GLOB.acceptable_reagents
 
-/datum/recipe/proc/check_reagents(datum/reagents/avail_reagents, exact = FALSE)
-	if(!reagents || !reagents.len)
+/// The root of the recipes. The hooks a recipe can override are called on its owner instance (xform.owner_of()).
+/transformation/kitchen
+
+CAPABILITIES(/transformation/kitchen)
+	transformation(medium = MEDIUM_CONTENTS, regime = REGIME_COOKING, cooks_in = MICROWAVE, cook_time = 10 SECONDS, mix = RECIPE_REAGENT_MAX)
+
+/// Called before a machine starts its delays and cooking.
+/transformation/kitchen/proc/before_cook(obj/container)
+	return
+
+/// Called when the machine has finished.
+/transformation/kitchen/proc/after_cook(obj/container)
+	return
+
+/// Makes the result inside `container` and returns the list of what was made. Override to change what is made.
+/transformation/kitchen/proc/make_food(obj/container as obj)
+	var/datum/xform/rule = xform_of(type)
+	return rule.cook(container)
+
+/// The recipe that fits `container` best among those of `appliancetype`, or null. With `exact`, extraneous ingredients fail a recipe; without, they are ignored.
+/// In both cases the full set of required ingredients is still needed.
+/proc/cooking_select(appliancetype, obj/container, exact)
+	RETURN_TYPE(/datum/xform)
+	var/highest_count = 0
+	var/count = 0
+	for(var/datum/xform/rule as anything in cooking_rules_for(appliancetype))
+		if(!rule.cooking_check_reagents(container.reagents, exact) || !rule.cooking_check_items(container, exact) || !rule.cooking_check_fruit(container, exact))
+			continue
+		// Taken from cmp_recipe_complexity_dsc, but is way faster.
+		count = LAZYLEN(rule.cook_items) + LAZYLEN(rule.reagent_takes) + LAZYLEN(rule.fruit_takes)
+		if(count >= highest_count)
+			highest_count = count
+			. = rule
+
+/datum/xform/proc/cooking_check_reagents(datum/reagents/avail_reagents, exact = FALSE)
+	if(!reagent_takes || !reagent_takes.len)
 		return TRUE
 
 	if(!avail_reagents)
 		return FALSE
 
-	for(var/r_r in reagents)
+	for(var/r_r in reagent_takes)
 		var/aval_r_amnt = avail_reagents.get_reagent_amount(r_r)
-		if(aval_r_amnt - reagents[r_r] < 0)
+		if(aval_r_amnt - reagent_takes[r_r] < 0)
 			return FALSE
 
-		if(aval_r_amnt > (reagents[r_r]) && exact)
+		if(aval_r_amnt > (reagent_takes[r_r]) && exact)
 			return FALSE
 
-	if(LAZYLEN(reagents) < avail_reagents.reagent_list.len)
+	if(LAZYLEN(reagent_takes) < avail_reagents.reagent_list.len)
 		return FALSE
 	return TRUE
 
-/datum/recipe/proc/check_fruit(obj/container, exact = FALSE)
-	if (!fruit || !fruit.len)
+/datum/xform/proc/cooking_check_fruit(obj/container, exact = FALSE)
+	if (!fruit_takes || !fruit_takes.len)
 		return TRUE
 
 	. = TRUE
-	if(fruit && fruit.len)
+	if(fruit_takes && fruit_takes.len)
 		var/list/checklist = list()
 		// You should trust Copy().
-		checklist = fruit.Copy()
+		checklist = fruit_takes.Copy()
 		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(container))
 			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
 				continue
-			if(check_coating(G))
+			if(cooking_check_coating(G))
 				checklist[G.seed().kitchen_tag]--
 		for(var/ktag in checklist)
 			if(!isnull(checklist[ktag]))
@@ -106,20 +138,20 @@
 					break
 	return .
 
-/datum/recipe/proc/check_items(obj/container as obj, exact = FALSE)
-	if(!items || !items.len)
+/datum/xform/proc/cooking_check_items(obj/container as obj, exact = FALSE)
+	if(!cook_items || !cook_items.len)
 		return TRUE
 
 	. = TRUE
-	if(items && items.len)
+	if(cook_items && cook_items.len)
 		var/list/checklist = list()
-		checklist = items.Copy() // You should really trust Copy
+		checklist = cook_items.Copy() // You should really trust Copy
 		if(istype(container, /obj/machinery))
 			var/obj/machinery/machine = container
 			machine.latent_materialize_all() // a walk needs real things (C5)
 			for(var/obj/O in ((machine.contents - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
-					continue // Fruit is handled in check_fruit().
+					continue // Fruit is handled in cooking_check_fruit().
 				var/found = FALSE
 				for(var/i = 1; i < checklist.len+1; i++)
 					var/item_type = checklist[i]
@@ -132,12 +164,12 @@
 		else
 			for(var/obj/O in contents_of(container))
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
-					continue // Fruit is handled in check_fruit().
+					continue // Fruit is handled in cooking_check_fruit().
 				var/found = FALSE
 				for(var/i = 1; i < checklist.len+1; i++)
 					var/item_type = checklist[i]
 					if (istype(O,item_type))
-						if(check_coating(O))
+						if(cooking_check_coating(O))
 							checklist.Cut(i, i+1)
 							found = TRUE
 							break
@@ -148,7 +180,7 @@
 	return .
 
 //This is called on individual items within the container.
-/datum/recipe/proc/check_coating(obj/O, exact = FALSE)
+/datum/xform/proc/cooking_check_coating(obj/O, exact = FALSE)
 	if(!istype(O,/obj/item/reagent_containers/food/snacks))
 		return TRUE //Only snacks can be battered
 
@@ -165,27 +197,10 @@
 
 	return FALSE
 
-//general version
-/datum/recipe/proc/make(obj/container as obj)
-	var/obj/result_obj = new result(container)
-	if(istype(container, /obj/machinery))
-		var/obj/machinery/machine = container
-		machine.latent_materialize_all() // a walk needs real things (C5)
-		for (var/obj/O in ((machine.contents-result_obj - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
-			consumed(O, result_obj)
-	else
-		for (var/obj/O in (container.contents-result_obj))
-			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
-			consumed(O, result_obj)
-	container.reagents.clear_reagents()
-	return result_obj
-
-// food-related
 // This proc is called under the assumption that the container has already been checked and found to contain the necessary ingredients
-/datum/recipe/proc/make_food(obj/container as obj)
+/datum/xform/proc/cook(obj/container as obj)
 	if(!result)
-		log_runtime(EXCEPTION(span_danger("Recipe [type] is defined without a result, please bug report this.")))
+		log_runtime(EXCEPTION(span_danger("Recipe [rule_type] is defined without a result, please bug report this.")))
 		if(istype(container, /obj/machinery/microwave))
 			var/obj/machinery/microwave/M = container
 			M.dispose(FALSE)
@@ -207,8 +222,8 @@
 
 
 	//Find items we need
-	if (items && items.len)
-		for (var/i in items)
+	if (cook_items && cook_items.len)
+		for (var/i in cook_items)
 			var/obj/item/I = locate_in_list(container, i)
 			if (I && I.reagents)
 				I.reagents.trans_to_holder(buffer,I.reagents.total_volume)
@@ -221,9 +236,9 @@
 			consumed(I)
 
 	//Find fruits
-	if (fruit && fruit.len)
+	if (fruit_takes && fruit_takes.len)
 		var/list/checklist = list()
-		checklist = fruit.Copy()
+		checklist = fruit_takes.Copy()
 
 		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(container))
 			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
@@ -237,10 +252,10 @@
 				consumed(G)
 
 	//And lastly deduct necessary quantities of reagents
-	if (reagents && reagents.len)
-		for (var/r in reagents)
+	if (reagent_takes && reagent_takes.len)
+		for (var/r in reagent_takes)
 			//Doesnt matter whether or not there's enough, we assume that check is done before
-			container.reagents.trans_type_to(buffer, r, reagents[r])
+			container.reagents.trans_type_to(buffer, r, reagent_takes[r])
 
 	/*
 	Now we've removed all the ingredients that were used and we have the buffer containing the total of
@@ -256,7 +271,7 @@
 	*/
 	var/datum/reagents/holder = new/datum/reagents(10000000000)
 	var/list/results = list()
-	while (tally < result_quantity)
+	while (tally < result_amount)
 		var/obj/result_obj = new result(container)
 		results.Add(result_obj)
 
@@ -264,14 +279,14 @@
 			//If the result somehow has no reagents defined, then create a new holder
 			result_obj.reagents = new /datum/reagents(buffer.total_volume*1.5, result_obj)
 
-		if (result_quantity == 1)
+		if (result_amount == 1)
 			consumed(holder)
 			holder = result_obj.reagents
 		else
 			result_obj.reagents.trans_to(holder, result_obj.reagents.total_volume)
 		tally++
 
-	switch(reagent_mix)
+	switch(mix)
 		if (RECIPE_REAGENT_REPLACE)
 			pass() //We do no transferring
 		if (RECIPE_REAGENT_SUM)
@@ -310,28 +325,3 @@
 			holder.trans_to(a, total / results.len)
 
 	return results
-
-// When exact is false, extraneous ingredients are ignored
-// When exact is true, extraneous ingredients will fail the recipe
-// In both cases, the full set of required ingredients is still needed
-/proc/select_recipe(list/datum/recipe/available_recipes, obj/obj as obj, exact)
-	var/highest_count = 0
-	var/count = 0
-	for (var/datum/recipe/recipe in available_recipes)
-		if(!recipe.check_reagents(obj.reagents, exact) || !recipe.check_items(obj, exact)  || !recipe.check_fruit(obj, exact))
-			continue
-		// Taken from cmp_recipe_complexity_dsc, but is way faster.
-		count = LAZYLEN(recipe.items) + LAZYLEN(recipe.reagents) + LAZYLEN(recipe.fruit)
-		if(count >= highest_count)
-			highest_count = count
-			. = recipe
-
-// Both of these are just placeholders to allow special behavior for mob holders, but you can do other things in here later if you feel like it.
-/datum/recipe/proc/before_cook(obj/container) // Called Before the Microwave starts delays and cooking stuff
-
-
-/datum/recipe/proc/after_cook(obj/container) // Called When the Microwave is finished.
-
-#undef RECIPE_REAGENT_MAX
-#undef RECIPE_REAGENT_MIN
-#undef RECIPE_REAGENT_SUM

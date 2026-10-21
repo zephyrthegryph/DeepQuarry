@@ -548,6 +548,19 @@ version a new compile uses, a process resolves it once and keeps it (`tools/buil
 pointer atomically; it never touches a version a running compile or daemon holds, so a republish mid-gate cannot produce "Native executable changed during
 compilation". Old versions are pruned (the current and the 3 newest others stay). A bin dir with no `current` is the old layout, still honoured.
 
+**`current` stays on master.** `dmb-bin/current.commit` names the commit whose compiler `current` is, and it is always a commit in `origin/master`
+(`mayAdvanceCurrent`, `publishableCommit` in `tools/build/lib/dmbc_cache.ts`). A publish from a commit that is in master records that commit; a checkout
+ahead of master whose compiler sources (`DMBC_CACHE_INPUTS`) equal master's tip builds master's compiler and records master's tip; a commit with compiler
+changes master lacks is refused (it logs "will not become the current compiler" and the build uses `current`), and a checkout with dirty compiler sources
+builds privately and never publishes. If `current.commit` is not an ancestor of master (a dead commit, or one on an unmerged branch), any checkout at or
+ahead of master's compiler sources replaces it; otherwise `current` moves only to a descendant of the recorded commit. `DQ_DMBC_MASTER_REF` names the ref
+(default `origin/master`). `bash tools/ci/test_dmbc_current.sh` covers the normal, behind, dead and unmerged-ahead cases.
+
+**Stale test names in stamps.** A stamped test list can name a test master has since deleted. `tools/dq_declared_tests.sh` (`filter_declared_tests`) drops
+exact names no `/datum/unit_test/` declares and logs each ("dropped (no longer declared, ...)"). `dq_merge_gates.sh` applies it to every lane stamp and to the
+`--reproof` list (the push recheck's replay of a stamped list); `dq_lane_ready.sh` applies it to the lite re-proof list. Globs are kept, and a name typed in
+`--tests` or on the `dq_focused_test.sh` command line is not filtered, so a typo still fails. `bash tools/ci/test_declared_tests.sh`.
+
 **`no method named evict_to_budget` (dmbc build).** The method exists in `tools/dmb/crates/dm-cache/src/store_budget.rs` and the call in `dmbc/src/daemon/cache_gc.rs`; the
 error came from the one shared cargo target (`E:/dq-cache/dmb-build`) holding stale artifacts of another revision of the path crates (each worktree is a different
 path, but pool slots reuse a path across revisions and the target is incremental). It was not reproducible from source. `DmbcTarget` now treats a build that fails with

@@ -36,6 +36,7 @@ cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 # In the shared merge worktree only the batch that holds the merge lock (tools/dq_merge_worktree.sh) may gate.
 . "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/dq_declared_tests.sh"
 merge_lock_require || exit 1
 # shellcheck source=tools/dq_proof_cache.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dq_proof_cache.sh"
@@ -192,17 +193,7 @@ if [ -n "$lanes" ]; then
 				echo "      -> tests rerun in the combined world: ${names//,/ }"
 				IFS=, read -r -a lt <<<"$names"
 				# A lane stamped before master deleted or renamed a test still lists it: leave out the exact names no longer declared.
-				if [ -z "${declared_tests-}" ]; then
-					declared_tests=" $(grep -rhoE '^/datum/unit_test/[A-Za-z0-9_/]+' code | sed 's#^/datum/unit_test/##' | tr '
-' ' ') "
-				fi
-				kept_lt=()
-				for t in ${lt[@]+"${lt[@]}"}; do
-					case "$t" in
-						*'*'*|*'?'*) kept_lt+=("$t") ;;
-						*) case "$declared_tests" in *" $t "*|*" ${t%%/*} "*) kept_lt+=("$t") ;; *) echo "      -> dropped (no longer declared): $t" ;; esac ;;
-					esac
-				done
+				mapfile -t kept_lt < <(filter_declared_tests "stamp of ${row%% *}" ${lt[@]+"${lt[@]}"})
 				add_test ${kept_lt[@]+"${kept_lt[@]}"}
 				;;
 			UNSTAMPED) unstamped+=("$(awk '{print $2}' <<<"$row")") ;;
@@ -222,6 +213,8 @@ if [ "$reproof" -eq 1 ]; then
 	rp="$(bash tools/dq_reproof_source.sh HEAD)" || { echo "dq_merge_gates: REFUSED: nothing to re-prove on HEAD: $(bash tools/dq_reproof_source.sh HEAD 2>&1 >/dev/null | head -n 1)" >&2; exit 1; }
 	reproof_of="$(sed -n 1p <<<"$rp")"
 	read -r -a rp_tests <<<"$(sed -n 2p <<<"$rp")"
+	# The stamped list may name tests master has since deleted (a look pin): the same rule as a lane's stale stamp drops them.
+	mapfile -t rp_tests < <(filter_declared_tests "re-proof list" ${rp_tests[@]+"${rp_tests[@]}"})
 	reproof_reason="$(bash tools/dq_lane_check.sh "$reproof_of" 2>&1 | sed 's/ tests=.*//' | head -n 1 | tr -d '"\\' | head -c 300)"
 	echo "== re-proof: the stamp on ${reproof_of:0:12} is stale because master moved; running its full stamped list (${#rp_tests[@]} test(s)) on the merged tree ${sha:0:12}"
 	echo "   why: ${reproof_reason:-master moved}"
@@ -290,7 +283,8 @@ dreammaker_crosscheck() {
 	echo "== dreammaker cross-check: passed"
 }
 job_ratchets() {
-	bash tools/ci/check_ratchets.sh || return 1
+	# Cold: a merge verdict must not depend on what a worktree's analyze caches or the shared ones hold (doc: tools/analyze/README.md, "Caches and truth").
+	DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh || return 1
 	tools/build/build.sh analyze || return 2
 	if [ "$shrink_after" -eq 1 ]; then
 		local abin

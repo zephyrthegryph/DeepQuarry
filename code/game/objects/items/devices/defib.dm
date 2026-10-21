@@ -315,7 +315,7 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	else if(heart.is_bruised())
 		blood_volume *= 0.7
 	else if(heart.damage > 5) // so ONE heart damage isnt 20% of blood missing, now its 5
-		blood_volume *= 0.9 //chompedit, 90% instead of 80%
+		blood_volume *= 0.9
 	return blood_volume < H.species.blood_volume*H.species.blood_level_fatal
 
 /obj/item/shockpaddles/proc/check_charge(charge_amt)

@@ -420,7 +420,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	the akula have been incidentally uplifted by the FTU \
 	sharing much of their more modern culture with interstellar \
 	humanity. Many of them have spread among the stars, either \
-	in the nomad or joining colonies as capable hard labour." //CHOMPedit
+	in the nomad or joining colonies as capable hard labour."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/sergal
@@ -431,7 +431,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	organising themselves in tribes and city states, they have \
 	eclipsed the private colony venture trying to hold them \
 	economically beholden and now have joined the galactic \
-	stage as a minor power." //CHOMPedit
+	stage as a minor power."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/nevrean
@@ -441,7 +441,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	developing a rich oral tradition that is being slowly \
 	codified by the sergals in an efforts to culturally export \
 	it through the stars. The modern nevrean co-inhabits most \
-	sergal territory as comrades and historical allies." //CHOMPedit
+	sergal territory as comrades and historical allies."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/rapala
@@ -450,7 +450,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	in form of winged Humanoids. While they share a similar outwards appearance with humans, \
 	they have a much more complex system of sexual genetics, as well superior 3D awareness. \
 	The rapala act as emissaries, diplomats and spies for their overlords, although it is an open \
-	secret that they work for more autonomy and self-governance." //CHOMPedit
+	secret that they work for more autonomy and self-governance."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/xenochimera
@@ -463,7 +463,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	is also capable of thought. \
 	<br> <br>\
 	Contrary to popular belief, Roanoke Syndrome colonies do not seek out sapient life. Any exposure \
-	is incidental and not part of a plot – xenochimera without sapient thought are simply wild animals or disease vectors." //CHOMPedit
+	is incidental and not part of a plot – xenochimera without sapient thought are simply wild animals or disease vectors."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/vulpkanin
@@ -474,7 +474,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	to pre-industrial standards until being found again by humanity. At this point \
 	they have formed an early spacefaring society and smoothly entered the galacic stage. \
 	Vulpkanin are the closest successor to the precursors, genetically, although genelocked devices still do not \
-	recognize them due to genetic drift." //CHOMpedit
+	recognize them due to genetic drift."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/alraune
@@ -482,7 +482,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	desc = "Alraune are enigmatic, strange creatures from the Elysian system. While their main culture is still \
 	in the early neolithic, a large diaspora has formed from previous abductions and trade with these creatures, who \
 	seem to mimic many cultivars throughout space through yet an unknown mechanism. Alraune are pleasant, but \
-	predatorily autocannibalize their own products as a form of nutriment transfer and storage." //CHOMPedit
+	predatorily autocannibalize their own products as a form of nutriment transfer and storage."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/vasilissan
@@ -491,7 +491,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	surface-to-orbit buildings with relatively primitive materials. Exploited for a while, they have managed to \
 	connect to the wider galactic stage and circumvent further TSC exploitation. \
 	Vasilissans are frequently adopted into foreign colonies, valued for their infrastructural acumen \
-	and their craftsmanship with their natural silk." //CHOMPedit
+	and their craftsmanship with their natural silk."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/zorren
@@ -500,7 +500,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	but known to SolGov as Virgo 4. Zorren organise themselves through various feudal-styled kingdoms and monarchies, \
 	of which the most prominent is the Kingdom of An-Tahk-Et. They are obsessed over their ancient heritage \
 	and the power of the noble houses comes through the control and excavation of old technology \
-	of their precursors, leading to a massive divide between commoners and the nobility." //CHOMPedit
+	of their precursors, leading to a massive divide between commoners and the nobility."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/altevian
@@ -520,13 +520,13 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	capable of localized bluespace events (although the credibility of them actually manipulating bluespace effects \
 	still is in question), allowing them to “shift” through phases of existence without assistance of machines. \
 	Observation of NT-495 is notoriously difficult, as they rarely exhibit these traits when in direct view unless \
-	threatened." //CHOMPedit
+	threatened."
 	value = CATALOGUER_REWARD_EASY
 
 /datum/category_item/catalogue/fauna/custom_species
 	name = "Sapients - Other"
 	desc = "ERROR : DNA scan inconclusive. Please interview subject to catalogue them manually. \
-	We apologise for the inconvenience." //CHOMPedit
+	We apologise for the inconvenience."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/technology/resleeving
@@ -534,7 +534,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	desc = "Resleeving is a direct upgrade to the well-established flash cloning still popular across the galaxy. \
 	Resleeving creates near perfect copies of a body within a database, capable of uploading user consciousness \
 	into a dormant brain via direct electro-uploading. The technology remains imperfect and \
-	non-zero error margins exist. Handle with care! Or don't. Stress testing this stuff makes a lucrative market." //CHOMPedit
+	non-zero error margins exist. Handle with care! Or don't. Stress testing this stuff makes a lucrative market."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /datum/category_item/catalogue/fauna/grey

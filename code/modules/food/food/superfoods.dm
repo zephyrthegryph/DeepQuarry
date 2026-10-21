@@ -1,119 +1,135 @@
 //The collection of everything 'cake' related
 // adjust recipes, make ingredients mobs
 
-/datum/recipe/thecake_firstlayer
-	reagents = list(REAGENT_ID_FLOUR = 500,REAGENT_ID_MILK = 200, REAGENT_ID_SUGAR = 200, REAGENT_ID_EGG = 100)
-	fruit = list(PLANT_ICECHILI = 30, PLANT_PLASTIC =  15)
-	items = list(
-			/obj/item/stack/material/silver,
-			/obj/item/stack/material/silver,
-			/obj/item/stack/material/silver,
-			/obj/item/stack/material/silver,
-			/obj/item/stack/material/silver,
-			/obj/item/slime_extract/grey,
-			/obj/item/slime_extract/grey,
-			/obj/item/slime_extract/grey,
-			/obj/item/slime_extract/grey,
-			/obj/item/slime_extract/grey,
-			/obj/item/reagent_containers/food/snacks/meat/grubmeat,
-			/obj/item/reagent_containers/food/snacks/meat/grubmeat,
-			/obj/item/reagent_containers/food/snacks/meat/grubmeat,
-			/obj/item/reagent_containers/food/snacks/meat/grubmeat,
-			/obj/item/reagent_containers/food/snacks/meat/grubmeat
-		)
-	result = /obj/structure/thecake
+/transformation/kitchen/thecake_firstlayer
+CAPABILITIES(/transformation/kitchen/thecake_firstlayer)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 500),
+			reagent(REAGENT_ID_MILK, 200),
+			reagent(REAGENT_ID_SUGAR, 200),
+			reagent(REAGENT_ID_EGG, 100),
+			item_term(/obj/item/stack/material/silver, 1),
+			item_term(/obj/item/stack/material/silver, 1),
+			item_term(/obj/item/stack/material/silver, 1),
+			item_term(/obj/item/stack/material/silver, 1),
+			item_term(/obj/item/stack/material/silver, 1),
+			item_term(/obj/item/slime_extract/grey, 1),
+			item_term(/obj/item/slime_extract/grey, 1),
+			item_term(/obj/item/slime_extract/grey, 1),
+			item_term(/obj/item/slime_extract/grey, 1),
+			item_term(/obj/item/slime_extract/grey, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/grubmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/grubmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/grubmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/grubmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/grubmeat, 1),
+			fruit_term(PLANT_ICECHILI, 30),
+			fruit_term(PLANT_PLASTIC, 15)),
+		makes = list(item_term(/obj/structure/thecake, 1))))
 
-/datum/recipe/thecake_secondlayer
-	reagents = list(REAGENT_ID_FLOUR = 400, REAGENT_ID_MILK = 200, REAGENT_ID_SUGAR = 100, REAGENT_ID_CRYOXADONE = 200, REAGENT_ID_FROSTOIL = 100)
-	fruit = list(PLANT_VANILLA =  30, PLANT_SIFLETTUCE = 15)
-	items = list(
-			/obj/item/stack/material/glass/phoronglass,
-			/obj/item/stack/material/glass/phoronglass,
-			/obj/item/stack/material/glass/phoronglass,
-			/obj/item/stack/material/glass/phoronglass,
-			/obj/item/stack/material/glass/phoronglass,
-			/obj/item/organ/internal/eyes,
-			/obj/item/organ/internal/eyes,
-			/obj/item/organ/internal/eyes,
-			/obj/item/organ/internal/eyes,
-			/obj/item/organ/internal/eyes,
-			/obj/item/stack/material/diamond,
-			/obj/item/stack/material/diamond,
-			/obj/item/stack/material/diamond,
-			/obj/item/stack/material/diamond,
-			/obj/item/stack/material/diamond
-		)
-	result = /obj/item/thecake_layer
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/thecake_secondlayer
+CAPABILITIES(/transformation/kitchen/thecake_secondlayer)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 400),
+			reagent(REAGENT_ID_MILK, 200),
+			reagent(REAGENT_ID_SUGAR, 100),
+			reagent(REAGENT_ID_CRYOXADONE, 200),
+			reagent(REAGENT_ID_FROSTOIL, 100),
+			item_term(/obj/item/stack/material/glass/phoronglass, 1),
+			item_term(/obj/item/stack/material/glass/phoronglass, 1),
+			item_term(/obj/item/stack/material/glass/phoronglass, 1),
+			item_term(/obj/item/stack/material/glass/phoronglass, 1),
+			item_term(/obj/item/stack/material/glass/phoronglass, 1),
+			item_term(/obj/item/organ/internal/eyes, 1),
+			item_term(/obj/item/organ/internal/eyes, 1),
+			item_term(/obj/item/organ/internal/eyes, 1),
+			item_term(/obj/item/organ/internal/eyes, 1),
+			item_term(/obj/item/organ/internal/eyes, 1),
+			item_term(/obj/item/stack/material/diamond, 1),
+			item_term(/obj/item/stack/material/diamond, 1),
+			item_term(/obj/item/stack/material/diamond, 1),
+			item_term(/obj/item/stack/material/diamond, 1),
+			item_term(/obj/item/stack/material/diamond, 1),
+			fruit_term(PLANT_VANILLA, 30),
+			fruit_term(PLANT_SIFLETTUCE, 15)),
+		makes = list(item_term(/obj/item/thecake_layer, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/thecake_thirdlayer
-	reagents = list(REAGENT_ID_FLOUR = 300, REAGENT_ID_SINGULO = 300, REAGENT_ID_ATOMICBOMB = 150, REAGENT_ID_THREEMILEISLAND = 150, REAGENT_ID_MANHATTANPROJ = 100)
-	fruit = list(PLANT_GLOWBERRIES = 30, PLANT_GLOWSHROOM =  15)
-	items = list(
-			/obj/item/stack/material/uranium,
-			/obj/item/stack/material/uranium,
-			/obj/item/stack/material/uranium,
-			/obj/item/stack/material/uranium,
-			/obj/item/stack/material/uranium,
-			/obj/item/slime_extract/green,
-			/obj/item/slime_extract/green,
-			/obj/item/slime_extract/green,
-			/obj/item/slime_extract/green,
-			/obj/item/slime_extract/green,
-			/obj/item/reagent_containers/food/snacks/carpmeat,
-			/obj/item/reagent_containers/food/snacks/carpmeat,
-			/obj/item/reagent_containers/food/snacks/carpmeat,
-			/obj/item/reagent_containers/food/snacks/carpmeat,
-			/obj/item/reagent_containers/food/snacks/carpmeat
-		)
-	result = /obj/item/thecake_layer/three
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/thecake_thirdlayer
+CAPABILITIES(/transformation/kitchen/thecake_thirdlayer)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 300),
+			reagent(REAGENT_ID_SINGULO, 300),
+			reagent(REAGENT_ID_ATOMICBOMB, 150),
+			reagent(REAGENT_ID_THREEMILEISLAND, 150),
+			reagent(REAGENT_ID_MANHATTANPROJ, 100),
+			item_term(/obj/item/stack/material/uranium, 1),
+			item_term(/obj/item/stack/material/uranium, 1),
+			item_term(/obj/item/stack/material/uranium, 1),
+			item_term(/obj/item/stack/material/uranium, 1),
+			item_term(/obj/item/stack/material/uranium, 1),
+			item_term(/obj/item/slime_extract/green, 1),
+			item_term(/obj/item/slime_extract/green, 1),
+			item_term(/obj/item/slime_extract/green, 1),
+			item_term(/obj/item/slime_extract/green, 1),
+			item_term(/obj/item/slime_extract/green, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/carpmeat, 1),
+			fruit_term(PLANT_GLOWBERRIES, 30),
+			fruit_term(PLANT_GLOWSHROOM, 15)),
+		makes = list(item_term(/obj/item/thecake_layer/three, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/thecake_fourthlayer
-	reagents = list(REAGENT_ID_FLOUR = 400, REAGENT_ID_HOLYMARY = 100, REAGENT_ID_ANGELSKISS = 100, REAGENT_ID_GOLDSCHLAGER = 100, REAGENT_ID_GOLD = 300)
-	fruit = list(PLANT_AMBROSIADEUS = 30, PLANT_GOLDAPPLE =  15)
-	items = list(
-			/obj/item/stack/material/gold,
-			/obj/item/stack/material/gold,
-			/obj/item/stack/material/gold,
-			/obj/item/stack/material/gold,
-			/obj/item/stack/material/gold,
-			/obj/item/organ/internal/heart,
-			/obj/item/organ/internal/heart,
-			/obj/item/organ/internal/heart,
-			/obj/item/organ/internal/heart,
-			/obj/item/organ/internal/heart,
-			/obj/item/reagent_containers/food/snacks/appletart,
-			/obj/item/reagent_containers/food/snacks/appletart,
-			/obj/item/reagent_containers/food/snacks/appletart,
-			/obj/item/reagent_containers/food/snacks/appletart,
-			/obj/item/reagent_containers/food/snacks/appletart
-		)
-	result = /obj/item/thecake_layer/four
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/thecake_fourthlayer
+CAPABILITIES(/transformation/kitchen/thecake_fourthlayer)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 400),
+			reagent(REAGENT_ID_HOLYMARY, 100),
+			reagent(REAGENT_ID_ANGELSKISS, 100),
+			reagent(REAGENT_ID_GOLDSCHLAGER, 100),
+			reagent(REAGENT_ID_GOLD, 300),
+			item_term(/obj/item/stack/material/gold, 1),
+			item_term(/obj/item/stack/material/gold, 1),
+			item_term(/obj/item/stack/material/gold, 1),
+			item_term(/obj/item/stack/material/gold, 1),
+			item_term(/obj/item/stack/material/gold, 1),
+			item_term(/obj/item/organ/internal/heart, 1),
+			item_term(/obj/item/organ/internal/heart, 1),
+			item_term(/obj/item/organ/internal/heart, 1),
+			item_term(/obj/item/organ/internal/heart, 1),
+			item_term(/obj/item/organ/internal/heart, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/appletart, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/appletart, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/appletart, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/appletart, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/appletart, 1),
+			fruit_term(PLANT_AMBROSIADEUS, 30),
+			fruit_term(PLANT_GOLDAPPLE, 15)),
+		makes = list(item_term(/obj/item/thecake_layer/four, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/thecake_fifthlayer
-	reagents = list(REAGENT_ID_DEATHBELL = 1000)
-	fruit = list(PLANT_LIBERTYCAP = 10, PLANT_DEATHNETTLE =  10, PLANT_DESTROYINGANGEL = 10)
-	items = list(
-			/obj/item/stack/material/platinum,
-			/obj/item/stack/material/platinum,
-			/obj/item/stack/material/platinum,
-			/obj/item/stack/material/platinum,
-			/obj/item/stack/material/platinum,
-			/obj/item/slime_extract/emerald,
-			/obj/item/slime_extract/emerald,
-			/obj/item/slime_extract/emerald,
-			/obj/item/slime_extract/emerald,
-			/obj/item/slime_extract/emerald,
-			/obj/item/reagent_containers/food/snacks/xenomeat,
-			/obj/item/reagent_containers/food/snacks/xenomeat,
-			/obj/item/reagent_containers/food/snacks/xenomeat,
-			/obj/item/reagent_containers/food/snacks/xenomeat,
-			/obj/item/reagent_containers/food/snacks/xenomeat
-		)
-	result = /obj/item/thecake_layer/five
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/thecake_fifthlayer
+CAPABILITIES(/transformation/kitchen/thecake_fifthlayer)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DEATHBELL, 1000),
+			item_term(/obj/item/stack/material/platinum, 1),
+			item_term(/obj/item/stack/material/platinum, 1),
+			item_term(/obj/item/stack/material/platinum, 1),
+			item_term(/obj/item/stack/material/platinum, 1),
+			item_term(/obj/item/stack/material/platinum, 1),
+			item_term(/obj/item/slime_extract/emerald, 1),
+			item_term(/obj/item/slime_extract/emerald, 1),
+			item_term(/obj/item/slime_extract/emerald, 1),
+			item_term(/obj/item/slime_extract/emerald, 1),
+			item_term(/obj/item/slime_extract/emerald, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/xenomeat, 1),
+			fruit_term(PLANT_LIBERTYCAP, 10),
+			fruit_term(PLANT_DEATHNETTLE, 10),
+			fruit_term(PLANT_DESTROYINGANGEL, 10)),
+		makes = list(item_term(/obj/item/thecake_layer/five, 1)),
+		wiki = WIKI_SPOILER))
 
 /obj/structure/thecake/proc/HasSliceMissing()
 	if(slices < maxslices)
@@ -238,105 +254,130 @@ CAPABILITIES(/obj/structure/thecake)
 
 // Chaos cake
 
-/datum/recipe/chaoscake_layerone
-	reagents = list(REAGENT_ID_FLOUR = 300,REAGENT_ID_MILK = 200, REAGENT_ID_SUGAR = 100, REAGENT_ID_EGG = 30)
-	fruit = list(PLANT_POISONBERRIES = 15, PLANT_CHERRY =  15)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/meat/,
-			/obj/item/reagent_containers/food/snacks/meat/,
-			/obj/item/reagent_containers/food/snacks/meat/,
-			/obj/item/reagent_containers/food/snacks/meat/
-		)
-	result = /obj/structure/chaoscake
+/transformation/kitchen/chaoscake_layerone
+CAPABILITIES(/transformation/kitchen/chaoscake_layerone)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 300),
+			reagent(REAGENT_ID_MILK, 200),
+			reagent(REAGENT_ID_SUGAR, 100),
+			reagent(REAGENT_ID_EGG, 30),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat/, 1),
+			fruit_term(PLANT_POISONBERRIES, 15),
+			fruit_term(PLANT_CHERRY, 15)),
+		makes = list(item_term(/obj/structure/chaoscake, 1))))
 
-/datum/recipe/chaoscake_layertwo
-	reagents = list(REAGENT_ID_FLOUR = 300, REAGENT_ID_MILK = 200, REAGENT_ID_SUGAR = 100, REAGENT_ID_EGG = 30, )
-	fruit = list(PLANT_VANILLA =  15, PLANT_BANANA = 15)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough
-		)
-	result = /obj/item/chaoscake_layer
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layertwo
+CAPABILITIES(/transformation/kitchen/chaoscake_layertwo)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 300),
+			reagent(REAGENT_ID_MILK, 200),
+			reagent(REAGENT_ID_SUGAR, 100),
+			reagent(REAGENT_ID_EGG, 30),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			fruit_term(PLANT_VANILLA, 15),
+			fruit_term(PLANT_BANANA, 15)),
+		makes = list(item_term(/obj/item/chaoscake_layer, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layerthree
-	reagents = list(REAGENT_ID_FLOUR = 240, REAGENT_ID_MILK = 150, REAGENT_ID_SUGAR = 80, REAGENT_ID_EGG = 24, REAGENT_ID_DEATHBELL = 100)
-	fruit = list(PLANT_GRAPES = 30)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough
-		)
-	result = /obj/item/chaoscake_layer/three
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layerthree
+CAPABILITIES(/transformation/kitchen/chaoscake_layerthree)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 240),
+			reagent(REAGENT_ID_MILK, 150),
+			reagent(REAGENT_ID_SUGAR, 80),
+			reagent(REAGENT_ID_EGG, 24),
+			reagent(REAGENT_ID_DEATHBELL, 100),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			fruit_term(PLANT_GRAPES, 30)),
+		makes = list(item_term(/obj/item/chaoscake_layer/three, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layerfour
-	reagents = list(REAGENT_ID_FLOUR = 240, REAGENT_ID_MILK = 150, REAGENT_ID_SUGAR = 80, REAGENT_ID_EGG = 24, REAGENT_ID_MILKSHAKE = 300)
-	fruit = list(PLANT_RICE = 30)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough
-		)
-	result = /obj/item/chaoscake_layer/four
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layerfour
+CAPABILITIES(/transformation/kitchen/chaoscake_layerfour)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 240),
+			reagent(REAGENT_ID_MILK, 150),
+			reagent(REAGENT_ID_SUGAR, 80),
+			reagent(REAGENT_ID_EGG, 24),
+			reagent(REAGENT_ID_MILKSHAKE, 300),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			fruit_term(PLANT_RICE, 30)),
+		makes = list(item_term(/obj/item/chaoscake_layer/four, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layerfive
-	reagents = list(REAGENT_ID_FLOUR = 180, REAGENT_ID_MILK = 100, REAGENT_ID_SUGAR = 60, REAGENT_ID_EGG = 18, REAGENT_ID_BLOOD = 300)
-	fruit = list(PLANT_TOMATO = 20)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/lobster,
-		/obj/item/reagent_containers/food/snacks/lobster,
-		/obj/item/reagent_containers/food/snacks/lobster,
-		/obj/item/reagent_containers/food/snacks/lobster
-		)
-	result = /obj/item/chaoscake_layer/five
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layerfive
+CAPABILITIES(/transformation/kitchen/chaoscake_layerfive)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 180),
+			reagent(REAGENT_ID_MILK, 100),
+			reagent(REAGENT_ID_SUGAR, 60),
+			reagent(REAGENT_ID_EGG, 18),
+			reagent(REAGENT_ID_BLOOD, 300),
+			item_term(/obj/item/reagent_containers/food/snacks/lobster, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/lobster, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/lobster, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/lobster, 1),
+			fruit_term(PLANT_TOMATO, 20)),
+		makes = list(item_term(/obj/item/chaoscake_layer/five, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layersix
-	reagents = list(REAGENT_ID_FLOUR = 180, REAGENT_ID_MILK = 100, REAGENT_ID_SUGAR = 60, REAGENT_ID_EGG = 18, REAGENT_ID_SPRINKLES = 10)
-	fruit = list(PLANT_APPLE = 30)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/chocolatebar,
-			/obj/item/reagent_containers/food/snacks/chocolatebar,
-			/obj/item/reagent_containers/food/snacks/chocolatebar
-		)
-	result = /obj/item/chaoscake_layer/six
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layersix
+CAPABILITIES(/transformation/kitchen/chaoscake_layersix)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 180),
+			reagent(REAGENT_ID_MILK, 100),
+			reagent(REAGENT_ID_SUGAR, 60),
+			reagent(REAGENT_ID_EGG, 18),
+			reagent(REAGENT_ID_SPRINKLES, 10),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/chocolatebar, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/chocolatebar, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/chocolatebar, 1),
+			fruit_term(PLANT_APPLE, 30)),
+		makes = list(item_term(/obj/item/chaoscake_layer/six, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layerseven
-	reagents = list(REAGENT_ID_FLOUR = 120, REAGENT_ID_MILK = 50, REAGENT_ID_SUGAR = 40, REAGENT_ID_EGG = 12, REAGENT_ID_DEVILSKISS = 200)
-	fruit = list(PLANT_POTATO = 10)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough
-		)
-	result = /obj/item/chaoscake_layer/seven
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layerseven
+CAPABILITIES(/transformation/kitchen/chaoscake_layerseven)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 120),
+			reagent(REAGENT_ID_MILK, 50),
+			reagent(REAGENT_ID_SUGAR, 40),
+			reagent(REAGENT_ID_EGG, 12),
+			reagent(REAGENT_ID_DEVILSKISS, 200),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			fruit_term(PLANT_POTATO, 10)),
+		makes = list(item_term(/obj/item/chaoscake_layer/seven, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layereight
-	reagents = list(REAGENT_ID_FLOUR = 120, REAGENT_ID_MILK = 50, REAGENT_ID_SUGAR = 40, REAGENT_ID_EGG = 12, REAGENT_ID_CREAM = 200)
-	fruit = list(PLANT_LEMON = 10)
-	items = list(
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough,
-			/obj/item/reagent_containers/food/snacks/dough
-		)
-	result = /obj/item/chaoscake_layer/eight
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layereight
+CAPABILITIES(/transformation/kitchen/chaoscake_layereight)
+	configure(transformation(takes = list(reagent(REAGENT_ID_FLOUR, 120),
+			reagent(REAGENT_ID_MILK, 50),
+			reagent(REAGENT_ID_SUGAR, 40),
+			reagent(REAGENT_ID_EGG, 12),
+			reagent(REAGENT_ID_CREAM, 200),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/dough, 1),
+			fruit_term(PLANT_LEMON, 10)),
+		makes = list(item_term(/obj/item/chaoscake_layer/eight, 1)),
+		wiki = WIKI_SPOILER))
 
-/datum/recipe/chaoscake_layernine
-	reagents = list(REAGENT_ID_WATER = 100, REAGENT_ID_BLOOD = 100)
-	fruit = list(PLANT_GOLDAPPLE = 50)
-	items = list()
-	result = /obj/item/chaoscake_layer/nine
-	wiki_flag = WIKI_SPOILER
+/transformation/kitchen/chaoscake_layernine
+CAPABILITIES(/transformation/kitchen/chaoscake_layernine)
+	configure(transformation(takes = list(reagent(REAGENT_ID_WATER, 100),
+			reagent(REAGENT_ID_BLOOD, 100),
+			fruit_term(PLANT_GOLDAPPLE, 50)),
+		makes = list(item_term(/obj/item/chaoscake_layer/nine, 1)),
+		wiki = WIKI_SPOILER))
 
 /obj/structure/chaoscake
 	name = "An strange unfinished cake"
@@ -593,26 +634,29 @@ CAPABILITIES(/obj/structure/theonepizza)
 	desc = "So healthy it'll give you a heart attack."
 	icon_state = "big_veggie_slice"
 
-/datum/recipe/theonepizza
-	fruit = list(PLANT_TOMATO = 5, PLANT_MUSHROOMS = 5, PLANT_EGGPLANT = 1, PLANT_CARROT = 1, PLANT_CORN = 1)
-	items = list(
-		/obj/item/reagent_containers/food/snacks/sliceable/flatdough,
-		/obj/item/reagent_containers/food/snacks/sliceable/flatdough,
-		/obj/item/reagent_containers/food/snacks/sliceable/flatdough,
-		/obj/item/reagent_containers/food/snacks/sliceable/flatdough,
-		/obj/item/reagent_containers/food/snacks/sliceable/flatdough,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/cheesewedge,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/meat,
-		/obj/item/reagent_containers/food/snacks/pineapple_ring,
-		/obj/item/reagent_containers/food/snacks/pineapple_ring
-	)
-	result = /obj/structure/theonepizza
+/transformation/kitchen/theonepizza
+CAPABILITIES(/transformation/kitchen/theonepizza)
+	configure(transformation(takes = list(item_term(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/cheesewedge, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/meat, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/pineapple_ring, 1),
+			item_term(/obj/item/reagent_containers/food/snacks/pineapple_ring, 1),
+			fruit_term(PLANT_TOMATO, 5),
+			fruit_term(PLANT_MUSHROOMS, 5),
+			fruit_term(PLANT_EGGPLANT, 1),
+			fruit_term(PLANT_CARROT, 1),
+			fruit_term(PLANT_CORN, 1)),
+		makes = list(item_term(/obj/structure/theonepizza, 1))))

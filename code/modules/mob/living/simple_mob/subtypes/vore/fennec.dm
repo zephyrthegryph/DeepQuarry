@@ -16,7 +16,7 @@
 	<br>\
 	Virgo fennecs have been observed to be passive and do not actively hunt large prey as their bodies have \
 	grown accustomed to less available food sources. However, travellers are still cautioned on approaching \
-	them as Virgo Fennec have been known to swallow prey whole depending on the prey's size." //CHOMPedit
+	them as Virgo Fennec have been known to swallow prey whole depending on the prey's size."
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /mob/living/simple_mob/vore/fennec

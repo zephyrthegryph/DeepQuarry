@@ -2998,7 +2998,6 @@ init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/bel
 init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
 init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/collar/khcrystal::Initialize::update_state
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/backpack/saddlebag/tempest::Initialize::soundloop
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::open_state
 init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if

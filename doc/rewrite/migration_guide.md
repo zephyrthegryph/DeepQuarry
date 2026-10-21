@@ -315,14 +315,12 @@ Every entry a library capability builds is a real op [built: a2-ops, G16]: it ha
 
 > Foundation: `layer =` is replaced by the naming convention (`look.variant`/`part`/`glow`), F1 and [look.md](look.md).
 
-```dm
-/obj/machinery/thing/draw(datum/look/look)
-	..()                                   // capabilities draw first: broken, cover_open, panel_open, emagged
-	look.state("thing_on")                 // icon_state
-	look.overlay("thing_lights", when = on)
-	look.gauge("thing_charge", level = charge, levels = 5)
-	look.glow("thing_screen", when = on)   // emissive
-	look.light(2, 0.25, COLOR_GREEN)       // set_light
+Current implementation excerpt ([code/game/machinery/floodlight.dm](../../code/game/machinery/floodlight.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/machinery/floodlight/draw(datum/look/look)
+	..()
+	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
 ```
 
 [built] Things the framework handles for you:
@@ -356,17 +354,12 @@ python tools/dq_icons/rename_states.py icons/obj/power.dmi.toml --standard --ref
 
 > Foundation: periodic work becomes `every(...)` (F1); verbs are unchanged.
 
-```dm
-/obj/machinery/thing
-	periodic_cadence = CADENCE_SLOW        // CADENCE_SLOW (2 s) / CADENCE_SECOND / CADENCE_FAST, or periodic_interval = N for a custom interval
-/obj/machinery/thing/derived()
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/machines/reactions()
 	. = ..()
-	. += runs_while(nameof(on))            // A2a: what should_run() reads
-/obj/machinery/thing/should_run()      // re-evaluated when a declared read changes; FALSE parks at zero cost
-	return on && !is_broken(src)
-/obj/machinery/thing/periodic_step(delta)   // delta = the cadence's interval in deciseconds; scale by it
-	...
-	return PROCESS_KILL                    // optional: park until the next change
+	. += every(MACHINE_SERVICE_INTERVAL, PROC_REF(machine_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 ```
 
 Side effects of a change (a Rust device sync, a network rebuild): override `on_state_changed(bits)` [built]. The refresh engine calls it at most once per frame after a change, with the channels raised since the last refresh. Never call it by hand; it must not write the state it reacts to (test builds report a self-mark).
@@ -382,21 +375,17 @@ Verbs:
 
 ## A7. UI
 
-```dm
-/obj/machinery/thing/tgui_data(mob/user)
-	. = ..()                                      // capabilities add their data (locked, broken, cell…)
-	.["on"] = on
-	.["target"] = target_pressure
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/obj/machinery/thing/proc/act_set_pressure(mob/user, pressure)   // the TSX sends act("set_pressure", {pressure})
-	pressure = ui_number(pressure, 0, MAX_PRESSURE, round_to = 1)
-	if(isnull(pressure))
-		return refuse(user, null)
-	target_pressure = pressure
-	return TRUE
+```dm fragment
+/obj/machinery/atmospherics/binary/pump/ui_data(datum/act/eval/A)
+	// this is the data which will be sent to the ui
+	var/list/data = list()
 
-/obj/machinery/thing/ui_allowed(mob/user, action)                  // type-wide gate
-	return !is_locked(src) || issilicon(user)
+	data = list(
+		"on" = use_power,
+		"pressure_set" = round(get_target_pressure()*100),	//Nano UI can't handle rounded non-integers, apparently.
+		"max_pressure" = max_pressure_setting,
 ```
 
 [built]:
@@ -422,12 +411,12 @@ Verbs:
 
 ## A8. Prompts
 
-```dm
-/obj/machinery/thing/proc/rename(mob/user)
-	var/name = ask_text(user, "New name?", max_length = MAX_NAME_LEN)
-	if(!name)
-		return                     // cancelled, or no longer valid (the player was told why)
-	set_name(name)
+Prompts use declared asks steps, not synchronous ask_text calls ([code/game/machinery/atmo_control.dm](../../code/game/machinery/atmo_control.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		asks(/datum/prompt/choice, fields = list("title" = "Options!", "question" = computed(PROC_REF(options_question)), "choices" = computed(PROC_REF(option_names)), "timeout" = 0), step = "option"),
+		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(tag_question)), "default" = computed(PROC_REF(tag_default)), "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "tag", when = PROC_REF(saving_to_buffer)),
 ```
 
 [built]:
@@ -663,32 +652,26 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 
 ## B2. Tool acts → `cap_tool` or the library
 
-```dm
-// BEFORE: laserpointer.dm:63-69
-/obj/item/laser_pointer/screwdriver_act(mob/user, obj/item/tool)
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/obj/item/laser_pointer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!diode)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	own_take(src, "diode")
-	return ITEM_INTERACT_SUCCESS
-// AFTER: covered by cap_slot(..., eject_tool = TOOL_SCREWDRIVER) in B1. Delete the proc.
+	rel_take(src, nameof(diode))
+	return OP_OK
 ```
 
-```dm
-// BEFORE: apc.dm:436-463 (15 lines of state checks around "open the cover")
-/obj/machinery/power/apc/crowbar_act(mob/user, obj/item/tool)
-	...
-	if(coverlocked && !(stat & MAINT) && remaining_power > 15)
-		to_chat(user, span_warning("The cover is locked and cannot be opened."))
-		return ITEM_INTERACT_BLOCKING
-	opened = 1
-// AFTER
-CAPABILITIES(/obj/machinery/power/apc)
-	cover(open = tool(TOOL_CROWBAR))
-	extend("cover.open", needs(req(PROC_REF(cover_latch_reason))))
-// cover_latch_reason(A) returns null when the cover can open, otherwise its refusal.
-// The complete APC uses maintenance_hatch() for its cover, panel and wires.
+Current implementation excerpt ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	maintenance_hatch(
+		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
+		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
+		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
 ```
 
 **Traps:**
@@ -697,23 +680,13 @@ CAPABILITIES(/obj/machinery/power/apc)
 
 ## B3. Emag → `cap_emag`
 
-```dm
-// BEFORE: apc.dm:700-715
-/obj/machinery/power/apc/emag_act(remaining_charges, mob/user)
-	if(!(emagged || hacker))
-		if(opened)
-			to_chat(user, "You must close the cover to do that.")
-		else if(wiresexposed)
-			to_chat(user, "You must close the wire panel first.")
-		...
-			if(do_after(user, 6, target = src))
-				emagged = 1
-				locked = 0
-// AFTER
-CAPABILITIES(/obj/machinery/power/apc)
-	emag(list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)), say = MSG(apc/emagged))
-	extend("emag.use", needs(req_closed(SPACE_HATCH), req_closed(SPACE_PANEL)))
-// Refusals belong in needs(req(...)); effects run only after requirements allow the operation.
+Current implementation excerpt ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
+		emag_say = MSG(apc/emagged),
+		panel_needs_cover_closed = TRUE,
+		starts_locked = nameof(lock_at_start))
 ```
 
 **Traps:**
@@ -839,14 +812,18 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 	return TRUE
 ```
 
-```dm
-// AFTER (round_status_panel.dm is converted: tgui_id, ui_rights, act_<x>() procs, no update_uis)
+Current implementation excerpt ([code/modules/admin/round_status_panel.dm](../../code/modules/admin/round_status_panel.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
-	var/why_not = shuttle_api_why_cant_call()
-	if(why_not)
-		return refuse(user, "You can't call the shuttle: [why_not].")
-	shuttle_api_call_evac(caller = user)
-	return TRUE
+	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
+		return FALSE
+	if(ticker_mode()?.name == "blob")
+		return refuse(user, "You can't call the shuttle during blob!")
+	if(!SSticker || !SSemergency_shuttle.location())
+		return FALSE
+	if(SSemergency_shuttle.can_call())
+		SSemergency_shuttle.call_evac()
 ```
 
 | Old | New |
@@ -882,21 +859,13 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 
 ## B9. Expiry → `COOLDOWN_*`, `timed_set` or a grant
 
-```dm
-// BEFORE: laserpointer.dm:16, 81, 206
-	EXPIRY_DECLARE(last_used_time)
-	...
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
 	if(!(ELAPSED(src, last_used_time, CLOCK_WORLD) >= cooldown))
 		return
-	...
-	EXPIRY_STAMP(src, last_used_time, CLOCK_WORLD)
-// AFTER
-	COOLDOWN_DECLARE(point_cooldown)
-	...
-	if(!COOLDOWN_FINISHED(src, point_cooldown))
-		return
-	...
-	COOLDOWN_START(src, point_cooldown, cooldown)
+	if (!diode)
+		to_chat(user, span_notice("You point [src] at [target], but nothing happens!"))
 ```
 
 | Old | Means | New |
@@ -917,18 +886,10 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 
 ## B10. Fields → a plain var or `TRACKED`
 
-```dm
-// BEFORE: laserpointer.dm:230
-TRACKED(/obj/item/laser_pointer, recharging)
-// AFTER: nothing. `recharging` disappears entirely (B12 derives it from `energy < max_energy`).
+The existing TRACKED form supplies a setter that publishes a changed value ([code/__defines/capabilities.dm](../../code/__defines/capabilities.dm)); kept lines are verbatim, with surrounding code omitted.
 
-// BEFORE: atmo_control.dm:714
-TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
-// AFTER: a plain var; written only in act_ handlers (dispatched, so auto-marked)
-/obj/machinery/computer/general_air_control/fuel_injection
-	var/automation = FALSE
-// Only if something outside a dispatched call writes it:
-TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation, CHANGE_MACHINE_SETTINGS)
+```dm fragment
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
 ```
 
 **Trap:** `OM_DERIVE_FIELD`'s `inputs = list(...)` goes away. A derived value is a proc, and the refresh re-reads it.
@@ -964,23 +925,10 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 
 ## B12. Periodic → a cadence
 
-```dm
-// BEFORE: atmo_control.dm:714-745
-TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
-every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(fuel_step)), when = nameof(automation))
-/obj/machinery/computer/general_air_control/fuel_injection/machine_step()
-	if(!radio_connection())
-		return PROCESS_KILL
-	if(automation)
-		...
-// AFTER
-/obj/machinery/computer/general_air_control/fuel_injection
-	var/automation = FALSE
-	periodic_cadence = CADENCE_SLOW
-/obj/machinery/computer/general_air_control/fuel_injection/should_run()
-	return automation && radio_connection()
-/obj/machinery/computer/general_air_control/fuel_injection/periodic_step(dt)
-	...                                    // the old body, minus the guard
+Current implementation excerpt ([code/game/machinery/atmo_control.dm](../../code/game/machinery/atmo_control.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(automation), wakes_on = list(nameof(automation)))
 ```
 
 | Old | New |
@@ -1016,26 +964,17 @@ every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(fuel_step)), when = nameof(automat
 | `om_task_periodic` | 74 | a cadence (B12) |
 | `om_task_slices` | 11 | a system `periodic_step` returning `STEP_YIELD` [planned]; keep until the kernel lands |
 
-```dm
-// BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
-	icon_state = "[initial(icon_state)]_[pointer_icon_state]"
-	...
-	after(src, cooldown, PROC_REF(reset_laser_icon))
+Current implementation excerpt ([code/game/objects/items/devices/laserpointer.dm](../../code/game/objects/items/devices/laserpointer.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
 /obj/item/laser_pointer/proc/reset_laser_icon()
-	icon_state = initial(icon_state)
-// AFTER: a timed var the look reads; no reset proc
-	timed_set(src, nameof(pointing), TRUE, for_time = cooldown)
-/obj/item/laser_pointer/draw(datum/look/look)
-	..()
-	if(pointing)
-		look.state("pointer_[pointer_icon_state]")
+	set_icon_state(initial(icon_state))
 ```
 
-```dm
-// BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
-	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "reset_danger")
-// AFTER: a timed value that reverts by itself
-	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
+Another observation replaces the same keyed geiger-reset timer ([code/game/objects/items/devices/geiger.dm](../../code/game/objects/items/devices/geiger.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
 ```
 
 See the temporary-state table in B9 before choosing between a timer, `timed_set` and a grant.
@@ -1044,19 +983,10 @@ See the temporary-state table in B9 before choosing between a timer, `timed_set`
 
 Any var or field that exists only to hold a temporary condition with behaviour becomes a capability held for a time by a source. Examples: `failure_until`, `emp_until`, `jammed_until`, `shocked_until`, `overloaded`, `on_fire_until`.
 
-```dm
-// BEFORE (the APC today): a field, a check in every handler, a draw branch, a UI key
-	var/failure_until
-	...
-	if(failure_until > world.time) ...          // repeated wherever it matters
-// AFTER
-/obj/machinery/power/apc/proc/energy_fail(duration, datum/source)
-	grant(src, held_condition(/datum/capability/condition/power_failure), source, duration)
-/datum/capability/condition/power_failure
-	blocks = ALL_ENTRIES
-	else_say = "it isn't responding"
-/datum/capability/condition/power_failure/draw(atom/holder, datum/look/look)
-	look.state("emagged")
+Temporary inability to operate is a timed stat contribution ([code/modules/power/apc.dm](../../code/modules/power/apc.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+	hold(src, STAT_OPERABLE, FALSE, SRC_POWER_FAILURE, lasts, reason = /datum/msg/apc/power_failure)
 ```
 
 - **Keep:** `timed_set` for pure value reverts that have no behaviour.
@@ -1081,23 +1011,12 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 
 ## B17. Relations → `relations()` [built; typed relations planned]
 
-```dm
-// BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
-/datum/om/relation/throw_of
-	source_single = TRUE
-	target_single = TRUE
-	on_target_delete = OM_END_DELETE_OTHER
-/datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	unobserve(target, /datum/notice/living_turf_collision, source)
-	if(target.throwing == source)
-		rel_clear(target, "throwing")
-... rel_set(src, nameof(throwing), thrownthing)
-... rel_set(src, "throwing", TT)
-// AFTER
-/atom/movable/relations()
-	. = ..()
-	. += rel_one(nameof(throwing), back = nameof(/datum/thrownthing::subject), other_deleted = DELETE_ME, on_unlink = PROC_REF(throw_ended))
-... rel_link(src, nameof(throwing), TT)
+Current implementation excerpt ([code/engine/refs/containment/ledger.dm](../../code/engine/refs/containment/ledger.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/atom/proc/containment_ledger()
+	RETURN_TYPE(/datum/ledger)
+	return rx?.containment_ledger
 ```
 
 `relations()` and the REL* migration are built (doc/rewrite/archive/ownership.md §4.1); the typed
@@ -1160,14 +1079,19 @@ After the kernel: `SUBSYSTEM_DEF(x)` becomes `/datum/system/x`, `Initialize()` b
 
 ## B24. Cross-system field access → `api.dm`
 
-```dm
-// BEFORE: expedition_controller.dm:249 (expedition writes flight's private index)
-	GLOB.flight_service.destination_by_target[REF(site.overmap_sector())] = destination.id
-// AFTER: expedition announces; flight owns its index (systems design §3.6)
-	release_or_move_site(site, new_name = descriptor_name)     // emits site_moved
-/datum/system/flight/proc/retarget_expedition(datum/expedition_site/site, old_destination_id)
-	...
-	destination_by_target[REF(site.overmap_sector())] = D.id
+Current implementation excerpt ([code/modules/expedition/api.dm](../../code/modules/expedition/api.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/expedition/proc/abandon_assignment(mob/user, datum/flight_vessel/vessel)
+	var/datum/expedition_site/site = vessel?.active_expedition()
+	if(!site || QDELETED(site))
+		return FALSE
+	var/datum/flight_destination/destination = SSflight?.destinations[site.flight_destination_id]
+	if(LAZYLEN(destination?.active_plans))
+		to_chat(user, span_warning("The assignment cannot be abandoned while a flight plan is using it."))
+		return FALSE
+	if(site.z_level > 0 && players_on_z(site.z_level))
+		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 ```
 
 - **Reads:** a query proc in the owner's `api.dm`.

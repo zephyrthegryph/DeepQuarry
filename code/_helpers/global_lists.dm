@@ -1176,9 +1176,6 @@ GLOBAL_LIST_INIT(allows_eye_color, list(
 GLOBAL_LIST_EMPTY(entopic_images)
 
 
-GLOBAL_ALIST_INIT(available_recipes, build_kitchen_recipes()) //List of all recipies. THIS MUST COME FIRST before acceptable_items and acceptable_reagents because it is used to build those lists.
-GLOBAL_LIST_INIT(acceptable_items, build_kitchen_items()) // List of the items you can put in
-GLOBAL_LIST_INIT(acceptable_reagents, build_kitchen_reagents()) // List of the reagents you can put in
 
 
 GLOBAL_LIST_INIT(all_ui_styles, list(
