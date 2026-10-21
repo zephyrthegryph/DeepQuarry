@@ -19,16 +19,29 @@
 	var/picked_rune
 	var/picked_beacon
 
-/datum/spell/rune_write/choose_targets(mob/user)
+/datum/spell/rune_write/target_questions(mob/user)
 	var/static/list/runes = list("Teleport", "Teleport Other", "Spawn a Tome", "Change Construct Type", "Convert", "EMP", "Drain Blood", "See Invisible", "Resurrect", "Hide Runes", "Reveal Runes", "Astral Journey", "Manifest a Ghost", "Imbue Talisman", "Sacrifice", "Wall", "Free Cultist", "Summon Cultist", "Deafen", "Blind", "BloodBoil", "Communicate", "Stun")
 	if(!GLOB.cultwords["travel"])
 		runerandom()
-	var/r = cast_ask(user, "rune", /datum/prompt/choice, question = "Choose a rune to scribe", title = "Rune Scribing", choices = runes, timeout = 30 SECONDS)
+	return list(question_step("rune", /datum/prompt/choice, question = "Choose a rune to scribe", title = "Rune Scribing", choices = runes, timeout = 30 SECONDS), PROC_REF(ask_beacon))
+
+/// The last word of a teleport rune.
+/datum/spell/rune_write/proc/ask_beacon(datum/ask_sequence/spell_cast/asked)
+	var/r = asked.get("rune")
+	if(r != "Teleport" && r != "Teleport Other")
+		return null
+	return question_step("beacon", /datum/prompt/choice, question = "Select the last rune", title = "Rune Scribing", choices = GLOB.rnwords, timeout = 30 SECONDS)
+
+/datum/spell/rune_write/choose_targets(mob/user)
+	return list()
+
+/datum/spell/rune_write/targets_from_answers(mob/user, datum/ask_sequence/spell_cast/asked)
+	var/r = asked.get("rune")
 	if(!r)
 		return list()
 	var/beacon
 	if(r == "Teleport" || r == "Teleport Other")
-		beacon = cast_ask(user, "beacon", /datum/prompt/choice, question = "Select the last rune", title = "Rune Scribing", choices = GLOB.rnwords, timeout = 30 SECONDS)
+		beacon = asked.get("beacon")
 		if(!beacon)
 			return list()
 	picked_rune = r

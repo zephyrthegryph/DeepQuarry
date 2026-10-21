@@ -73,11 +73,19 @@ ADMIN_VERB(play_local_sound, R_SOUNDS, "Play Local Sound", "Plays a sound around
 	feedback_add_details("admin_verb", "Play Local Sound")
 
 ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a sound to a single mob.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
-	var/mob/target_mob = verb_ask(user, "a3", args, /datum/prompt/choice, question = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
-	if(isnull(target_mob))
+	ask_steps(user, /datum/ask_sequence/admin_verb/direct_sound, list(
+		question_step("target", /datum/prompt/choice, question = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))), PROC_REF(direct_sound_target_chosen), list("uploaded" = S))
+
+/// The sound an admin plays to one mob, kept while they choose the mob.
+/datum/ask_sequence/admin_verb/direct_sound
+	var/uploaded
+
+/datum/admin_verb/play_direct_mob_sound/proc/direct_sound_target_chosen(datum/ask_sequence/admin_verb/direct_sound/asked)
+	var/client/user = asked.actor()?.client
+	var/mob/target_mob = asked.get("target")
+	if(!user || !target_mob || QDELETED(target_mob))
 		return
-	if(QDELETED(target_mob))
-		return
+	var/S = asked.uploaded
 	log_admin("[key_name(user)] played a direct mob sound [S] to [target_mob].")
 	message_admins("[key_name_admin(user)] played a direct mob sound [S] to [ADMIN_LOOKUPFLW(target_mob)].")
 	SEND_SOUND(target_mob, S)
