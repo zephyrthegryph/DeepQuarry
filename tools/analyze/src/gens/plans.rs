@@ -303,7 +303,7 @@ fn emit_reader_keys(cx: &GenCx, decls: &crate::sem::decls::Decls, out: &mut GenO
     }
     if let Some(sem) = cx.sem() {
         let mut texts: BTreeMap<String, String> = BTreeMap::new();
-        for d in crate::sem::procs::proc_defs(&sem, &["reactions", "derived", "generated_reads"]) {
+        for d in crate::sem::procs::proc_defs(&sem, &["reactions", "derived", "generated_reads", "derived_reads"]) {
             let text = texts.entry(d.rel.clone()).or_insert_with(|| crate::sem::incremental::text_of(cx.tree, &d.rel));
             let body = proc_body(text, d.header);
             // A generated_reads() body's reaction_reads() also feed the hooks whose then() is that handler (change_generated_reads()).
