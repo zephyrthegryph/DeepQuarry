@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn physical_handles_block_ancestor_rename_until_observation_finishes() {
         let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let root = PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        let root = crate::test_scratch::root()
             .join(format!("physical-handles-{}-{nonce}", std::process::id()));
         let directory = root.join("assets");
         fs::create_dir_all(&directory).unwrap();

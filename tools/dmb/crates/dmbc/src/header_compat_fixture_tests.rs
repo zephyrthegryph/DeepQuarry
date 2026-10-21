@@ -9,7 +9,7 @@ fn fixture_root() -> PathBuf {
 
 fn scratch() -> PathBuf {
     let parent = if cfg!(windows) {
-        PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        crate::test_scratch::root()
     } else {
         std::env::temp_dir()
     };

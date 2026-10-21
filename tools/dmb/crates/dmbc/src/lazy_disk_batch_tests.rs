@@ -8,7 +8,7 @@ struct Temporary(PathBuf);
 impl Temporary {
     fn new() -> Self {
         Self(
-            PathBuf::from("E:/dq-cache/dmb-protocol-checks").join(format!(
+            crate::test_scratch::root().join(format!(
                 "request-batch-{}-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()

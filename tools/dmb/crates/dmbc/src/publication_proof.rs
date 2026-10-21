@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn issued_sidecar_reuses_exact_document_and_rejects_tampering() {
         let base = if cfg!(windows) {
-            PathBuf::from("E:/dq-cache/dmb-publication-proof-tests")
+            crate::test_scratch::root()
         } else {
             std::env::temp_dir()
         };
