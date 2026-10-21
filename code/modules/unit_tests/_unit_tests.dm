@@ -1376,6 +1376,7 @@
 #include "dq_a1_archaeology_init.dm"
 #include "dq_a9_initialization_tests.dm"
 #include "dq_a12_system_init.dm"
+#include "dq_a8_world_init.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

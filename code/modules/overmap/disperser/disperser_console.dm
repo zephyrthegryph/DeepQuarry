@@ -25,8 +25,7 @@
 	var/next_shot = 0 //round time where the next shot can start from
 	var/const/coolinterval = 2 MINUTES //time to wait between safe shots in deciseconds
 
-/obj/machinery/computer/ship/disperser/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/ship/disperser/proc/prepare_disperser_parts()
 	link_parts()
 	reset_calibration()
 
@@ -114,6 +113,7 @@
 
 // The disperser window: one op per button; a setting's number is asked in its op (asks()) and applied by the handler.
 CAPABILITIES(/obj/machinery/computer/ship/disperser)
+	setup(PROC_REF(prepare_disperser_parts))
 	interface("OvermapDisperser")
 	without("ui_open")
 	op("choose", ui_act("choose", arg("dir", num())), then(PROC_REF(ui_act_choose)))

@@ -131,8 +131,7 @@
 	var/loaded = FALSE
 
 
-/obj/structure/fuel_port/Initialize(mapload)
-	. = ..()
+/obj/structure/fuel_port/proc/fill_starting_tank()
 	if(base_tank)
 		new base_tank(src)
 	set_loaded(contents_count(src) > 0)
@@ -197,6 +196,7 @@
 
 /// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
 CAPABILITIES(/obj/structure/fuel_port)
+	setup(PROC_REF(fill_starting_tank))
 	links(/obj/structure/fuel_port::parent_shuttle, /datum/shuttle/autodock/overmap::fuel_ports, b_many = TRUE)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
