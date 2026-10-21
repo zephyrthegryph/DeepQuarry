@@ -438,6 +438,14 @@ focus="$FOCUS_ARG"
 # the 15 minute focused timeout): they run as DQ_SWEEP_SHARDS (default 4; --sweep-shards=N) worlds, each rolling its slice of the declarations
 # (DQ_FOCUS_SHARD=i/N; the test slices through sweep_types()) and comparing the rows it made. Not used with --bless or --repeat (a record is
 # whole), nor with --no-split-slow or DQ_FOCUS_SPLIT=0 (one world, as before).
+# sweep_notice <pins> <requested shards> <actual shards> <world cap> <timeout minutes>: the one line that says what a sweep run costs. A sweep pin
+# is a long test (dq_loot_roll_pin is about 45 minutes in one world), not a hang: a cap below the requested shard count makes each slice longer, and
+# a loaded machine longer still; the world prints nothing while a slice runs, and only the watchdog ends it.
+sweep_notice() {
+	local note="== sweep: $1 runs as $3 shard world(s), one slice each, silent until it ends (watchdog $5 min)"
+	if [ "$3" -lt "$2" ]; then note+="; $2 were asked for but the machine has $4 test-world slot(s), so each slice is $2/$3 times longer"; fi
+	echo "$note"
+}
 sweep_pins=" dq_loot_roll_pin dq_fresh_look_default dq_stat_index_oracle dq_change_reader_plan_oracle "
 sweep_on=0
 if [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ] && [ "$sweep_shards" -gt 1 ]; then sweep_on=1; fi
@@ -463,6 +471,7 @@ main_max="${DQ_MAIN_WORLDS:-4}"
 # No run asks for more worlds than the machine's test_world slots (tools/dq_machine_slots.sh, 2 by default): sweep shards
 # and main worlds beyond it would only queue, each one a booted DreamDaemon held in memory while it waits.
 world_cap="$(bash -c '. tools/dq_machine_slots.sh; slots_capacity test_world' 2>/dev/null || true)"
+sweep_requested="$sweep_shards"
 if [[ "$world_cap" =~ ^[1-9][0-9]*$ ]]; then
 	[ "$sweep_shards" -gt "$world_cap" ] && sweep_shards="$world_cap"
 	[ "$main_max" -gt "$world_cap" ] && main_max="$world_cap"
@@ -625,6 +634,7 @@ run_worlds() {
 	export DQ_KEEP_DERIVED_DME=1
 	if [ ${#slow_group[@]} -gt 0 ] || [ ${#sweep_group[@]} -gt 0 ]; then
 		if [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then export DQ_FOCUS_TIMEOUT_MINUTES=45; fi
+		if [ ${#sweep_group[@]} -gt 0 ]; then sweep_notice "${sweep_group[*]}" "$sweep_requested" "$sweep_shards" "${world_cap:-?}" "$DQ_FOCUS_TIMEOUT_MINUTES"; fi
 	fi
 	start_world 0
 	# Wait for world 0 to finish compiling (it logs "Test world runN" when it launches), or to die.
