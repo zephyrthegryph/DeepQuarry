@@ -541,7 +541,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 		if(ticker_mode().auto_recall_shuttle)
 			//New version pretends to call the shuttle but cause the shuttle to return after a random duration.
-			SSemergency_shuttle.auto_recall = TRUE
+			SSemergency_shuttle.set_auto_recall(TRUE)
 
 		if(ticker_mode().name == "blob" || ticker_mode().name == "epidemic")
 			to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")

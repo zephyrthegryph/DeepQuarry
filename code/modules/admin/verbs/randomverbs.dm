@@ -553,7 +553,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 	if(charjob())
 		ask_equipment()
 		return
-	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(job_picked), title = "Job Select", question = "Pick a job to assign them (or none).", choices = SSjob.occupations_by_name.Copy() + "-No Job-", default = "-No Job-")
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(job_picked), title = "Job Select", question = "Pick a job to assign them (or none).", choices = SSjob.job_choices() + "-No Job-", default = "-No Job-")
 
 /datum/respawn_review/proc/job_picked(datum/act/request/A)
 	if(!A.answer)
@@ -1103,7 +1103,7 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
 	var/mob/user = src
 	if(ask.recall)
-		SSemergency_shuttle.auto_recall = TRUE	//enable auto-recall
+		SSemergency_shuttle.set_auto_recall(TRUE)	//enable auto-recall
 	if (ask.value == "Emergency")
 		SSemergency_shuttle.call_evac()
 	else
@@ -1136,7 +1136,7 @@ ADMIN_VERB(admin_deny_shuttle, R_ADMIN, "Toggle Deny Shuttle", "Prevents the shu
 	if (!SSticker)
 		return
 
-	SSemergency_shuttle.deny_shuttle = !emergency_shuttle_deny_shuttle()
+	SSemergency_shuttle.toggle_calls_denied()
 
 	log_admin("[key_name(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
 	message_admins("[key_name_admin(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")

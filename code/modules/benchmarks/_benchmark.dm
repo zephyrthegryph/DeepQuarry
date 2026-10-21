@@ -351,7 +351,7 @@
 	// Same isolation as RunUnitTests: mapped patrol bots add unrelated load.
 	for(var/mob/living/bot/map_bot in world)
 		qdel(map_bot)
-	SSticker.delay_end = TRUE
+	SSticker.set_round_end_delay(TRUE)
 
 	var/list/params = world.params
 	var/list/available = list()
@@ -419,7 +419,7 @@
 			"name" = "/datum/benchmark/[scenario_id]",
 			"duration_ds" = (result["duration_seconds"] || 0) * 10,
 		)
-	SSticker.delay_end = FALSE
+	SSticker.set_round_end_delay(FALSE)
 
 	var/list/document = list(
 		"byond_version" = "[world.byond_version].[world.byond_build]",
@@ -436,7 +436,7 @@
 	fdel("data/unit_tests.json")
 	file("data/unit_tests.json") << json_encode(unit_results)
 	log_test("Benchmark run finished.")
-	SSticker.force_ending = ADMIN_FORCE_END_ROUND
+	SSticker.request_round_ending(ADMIN_FORCE_END_ROUND)
 	SSticker.declare_completion()
 
 #undef BENCHMARK_RESULTS_FILE

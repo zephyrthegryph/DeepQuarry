@@ -364,4 +364,4 @@ CAPABILITIES(/obj/singularity/narsie/large)
 /proc/narsie_call_evac()
 	if(SSemergency_shuttle)
 		SSemergency_shuttle.call_evac()
-		SSemergency_shuttle.launch_time = 0	// Cannot recall
+		SSemergency_shuttle.make_launch_irrevocable()	// Cannot recall

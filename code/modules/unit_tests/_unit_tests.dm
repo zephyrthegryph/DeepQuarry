@@ -1369,6 +1369,7 @@
 #include "dq_assets_boundary_tests.dm"
 #include "dq_lighting_planet_boundary_tests.dm"
 #include "dq_supply_contract_boundary_tests.dm"
+#include "dq_round_job_boundary_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
