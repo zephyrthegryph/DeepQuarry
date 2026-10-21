@@ -319,6 +319,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
 /obj/item/clothing/accessory/dosimeter/var/obj/item/dosimeter_film/current_film
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
+	setup(PROC_REF(show_initial_film_state))
 	configure(item_worn(slots = SLOT_TIE))
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
 	op("dosimeter_remove_film_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Dosimeter remove film hand"), then(PROC_REF(dosimeter_remove_film_hand)))
@@ -329,8 +330,7 @@ CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 /obj/item/clothing/accessory/dosimeter/proc/film_live(datum/act/A)
 	return current_film && current_film.state < 2
 
-/obj/item/clothing/accessory/dosimeter/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/dosimeter/proc/show_initial_film_state()
 	update_state(current_film.state)
 
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_step(datum/act/timer/A)

@@ -130,9 +130,7 @@ CAPABILITIES(/obj/item/clothing/gloves/vox)
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_gloves"
 
-// ALLOW(init/INSTANCE_STATE): its name and sprite follow the glove colour it was given
-/obj/item/clothing/gloves/ranger/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/gloves/ranger/proc/apply_ranger_glove_name()
 	if(icon_state == "ranger_gloves")
 		name = "[glovecolor] ranger gloves"
 
@@ -251,3 +249,6 @@ CAPABILITIES(/obj/item/clothing/gloves/heavy_engineer)
 	..()
 	if(look.state_so_far(src) == "ranger_gloves")
 		look.state("[glovecolor]_ranger_gloves")
+
+CAPABILITIES(/obj/item/clothing/gloves/ranger)
+	setup(PROC_REF(apply_ranger_glove_name))

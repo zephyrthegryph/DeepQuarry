@@ -1383,6 +1383,7 @@
 #include "dq_a11_initialization_tests.dm"
 #include "dq_a3_initialization_tests.dm"
 #include "dq_a4_initialization_tests.dm"
+#include "dq_a7_initialization_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

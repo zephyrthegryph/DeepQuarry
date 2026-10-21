@@ -86,6 +86,7 @@ CAPABILITIES(/datum/rig_vision)
 	var/vision_index
 
 CAPABILITIES(/obj/item/rig_module/vision)
+	setup(PROC_REF(prepare_vision_modes))
 	ref_one(nameof(vision), /datum/rig_vision)
 	owns_many(nameof(vision_modes))
 
@@ -244,8 +245,7 @@ CAPABILITIES(/obj/item/rig_module/vision)
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 
-/obj/item/rig_module/vision/Initialize(mapload)
-	. = ..()
+/obj/item/rig_module/vision/proc/prepare_vision_modes()
 
 	if(!vision_modes)
 		return

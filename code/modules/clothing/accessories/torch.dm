@@ -207,11 +207,10 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/solgov/security)
 	badge_string = "Sol Central Government"
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/solgov/tags)
+	setup(PROC_REF(identify_initial_holder))
 	configure(item_worn(slots = SLOT_MASK | SLOT_TIE))
 
-// ALLOW(init/INSTANCE_STATE): names its tags after the human it is made on
-/obj/item/clothing/accessory/badge/solgov/tags/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/badge/solgov/tags/proc/identify_initial_holder()
 	var/mob/living/carbon/human/H
 	H = get_holder_of_type(src, /mob/living/carbon/human)
 	if(H)

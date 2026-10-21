@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Declare clothing and turf setup jobs while preserving inheritance order."

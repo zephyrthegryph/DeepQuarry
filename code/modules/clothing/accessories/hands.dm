@@ -68,6 +68,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forc
 	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
+/obj/item/clothing/accessory/bracelet/material/proc/show_material_identity()
 	name = "[material.display_name] bracelet"
 	desc = "A bracelet made from [material.display_name]."
 	color = material.icon_colour
@@ -140,3 +141,6 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	name = "wristband collection"
 	desc = "A mix of colourable plastic wristbands."
 	icon_state = "wristband_collection6"
+
+CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
+	setup(PROC_REF(show_material_identity))

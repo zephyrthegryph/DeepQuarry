@@ -7,9 +7,11 @@
 	icon_state = "dark"
 	can_dirty = FALSE
 
-// ALLOW(init/INSTANCE_STATE): rolls whether this tile glows
-/turf/simulated/floor/weird_things/dark/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/turf/simulated/floor/weird_things/dark)
+	setup(PROC_REF(prepare_initial_glow))
+
+/// Finish the original post-parent glow decision before the newly made tile is returned.
+/turf/simulated/floor/weird_things/dark/proc/prepare_initial_glow()
 	if(prob(5))
 		add_glow()
 
