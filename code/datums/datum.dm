@@ -89,7 +89,7 @@
 	#ifdef REFERENCE_TRACKING
 	if(find_references_on_destroy)
 		return QDEL_HINT_FINDREFERENCE
-	if(garbage_find_reference_on_fail_global_toggle())
+	if(SSgarbage.find_reference_on_fail_enabled())
 		return QDEL_HINT_IFFAIL_FINDREFERENCE
 	#endif
 

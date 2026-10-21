@@ -47,14 +47,16 @@ SYSTEM_DEF(garbage)
 
 	//Queue
 	var/list/queues
-	// Both flags are read through accessors in every build; only a reference-tracking build ever sets them.
-	var/find_reference_on_fail_global_toggle = FALSE
-	//Should we save found refs. Used for unit testing
-	var/should_save_refs = FALSE
 	#ifdef REFERENCE_TRACKING
 	var/list/reference_find_on_fail = list()
+	var/find_reference_on_fail_global_toggle = FALSE
 
 	// start - unique to us
+	#ifdef REFERENCE_TRACKING_DEBUG
+	//Should we save found refs. Used for unit testing
+	var/should_save_refs = FALSE
+	#endif
+
 	#endif
 
 

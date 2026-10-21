@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					/*is_special_list = */ is_atom && (varname == "contents" || varname == "vis_contents" || varname == "locs"))
 			else if(variable == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(garbage_should_save_refs())
+				if(SSgarbage.references_saved())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[varname] = TRUE
@@ -198,7 +198,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 			//Check normal entrys
 			else if(element_in_list == src)
 				#ifdef REFERENCE_TRACKING_DEBUG
-				if(garbage_should_save_refs())
+				if(SSgarbage.references_saved())
 					if(!found_refs)
 						found_refs = list()
 					found_refs[potential_cache] = TRUE
@@ -238,7 +238,7 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 					//Check assoc entry
 					else if(assoc_val == src)
 						#ifdef REFERENCE_TRACKING_DEBUG
-						if(garbage_should_save_refs())
+						if(SSgarbage.references_saved())
 							if(!found_refs)
 								found_refs = list()
 							found_refs[potential_cache] = TRUE
