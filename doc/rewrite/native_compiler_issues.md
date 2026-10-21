@@ -292,3 +292,7 @@ dme, a string with a raw newline in three files and a local named `to`. Still op
 table order) landed. `typesof(/T/verb)` is now rejected unless `/T` itself declares a verb (an inherited one does not count: `undefined type path`),
 and `typesof(/world)` is `not a prototype` (`source_checks.rs::typesof_errors`; corpus `typesof_*`, test `typesof_paths_follow_dreammaker`).
 `typesof(/T/proc)` is not checked: the engine's own procs are not in the tree.
+
+**To do when the engine catalog allows it:** `typesof(/T/proc)` is not rejected for a type that declares no procs of its own (DreamMaker:
+`undefined type path`), because the engine's built-in procs are not in the semantic catalog and a user type may inherit them. Add the check
+beside `typesof_errors` once built-in procs are catalogued.
