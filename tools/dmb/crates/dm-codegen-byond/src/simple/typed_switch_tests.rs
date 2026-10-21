@@ -358,3 +358,45 @@ fn authored_goto_dispatch_matches_existing_native_matrix() {
         );
     }
 }
+
+#[test]
+fn debug_ops_follow_the_provider_and_origins_are_still_issued() {
+    struct Debug(bool, std::cell::Cell<u32>);
+    impl DebugSourceProvider for Debug {
+        fn emits_debug_ops(&self) -> bool {
+            self.0
+        }
+        fn entry_ordinal(&self) -> Result<u32, String> {
+            Ok(0)
+        }
+        fn ordinal(&self, offset: usize) -> Result<u32, String> {
+            self.1.set(self.1.get() + 1);
+            u32::try_from(offset).map_err(|error| error.to_string())
+        }
+    }
+    let parsed = dm_syntax::parse("/proc/probe(value)
+  var/x = value
+  return x
+");
+    let bindings = LowerBindings {
+        parameters: vec!["value".into()],
+        ..Default::default()
+    };
+    for emits in [true, false] {
+        let debug = Debug(emits, Default::default());
+        let compiled =
+            compile_with_lookup(&parsed.items[0].children, None, &bindings, None, Some(&debug))
+                .unwrap();
+        let ops = compiled
+            .code
+            .items
+            .iter()
+            .filter(|item| {
+                matches!(item, CodeItem::Instruction(i) if i.opcode == 0x84 || i.opcode == 0x85)
+            })
+            .count();
+        // Origins are recorded for diagnostics either way; only the instructions differ.
+        assert!(debug.1.get() > 0);
+        assert_eq!(ops > 0, emits, "emits_debug_ops = {emits}");
+    }
+}

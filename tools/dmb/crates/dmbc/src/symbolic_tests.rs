@@ -54,7 +54,9 @@ impl AbiPolicy for Policy {
     }
 }
 fn frontend() -> ColdFrontend {
-    dm_tree::frontend::build(Path::new("project.dme"), &Source, &BTreeMap::new(), 1).unwrap()
+    // DbgFile/DbgLine exist only under DEBUG, and these tests exercise the debug origins.
+    let defines = BTreeMap::from([("DEBUG".to_string(), "1".to_string())]);
+    dm_tree::frontend::build(Path::new("project.dme"), &Source, &defines, 1).unwrap()
 }
 
 #[test]

@@ -176,6 +176,9 @@ impl<'a> FrontendDebugProvider<'a> {
     }
 }
 impl dm_codegen_byond::DebugSourceProvider for FrontendDebugProvider<'_> {
+    fn emits_debug_ops(&self) -> bool {
+        self.frontend.plan.final_macros.contains_key("DEBUG")
+    }
     fn diagnostic_ordinal(
         &self,
         anchor: dm_codegen_byond::DiagnosticAnchor,

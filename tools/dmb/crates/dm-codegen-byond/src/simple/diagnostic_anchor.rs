@@ -5,6 +5,11 @@ pub trait DebugSourceProvider {
     fn parameter_declaration(&self, _name: &str) -> Result<Option<super::LowerSpan>, String> {
         Ok(None)
     }
+    /// Whether `DbgFile`/`DbgLine` instructions are emitted. DreamMaker emits them only when
+    /// `DEBUG` is defined; origins are still recorded for diagnostics either way.
+    fn emits_debug_ops(&self) -> bool {
+        true
+    }
     fn entry_ordinal(&self) -> Result<u32, String>;
     fn ordinal(&self, expanded_offset: usize) -> Result<u32, String>;
     /// Optional current diagnostic cursor authority. Unsupported providers

@@ -133,7 +133,9 @@ impl<'a> PreparedAssignmentGroup<'a> {
         let assignment = self.assignments.get(index).ok_or_else(|| {
             InitializerError::Invalid("initializer assignment fragment index missing".into())
         })?;
-        let debug = LocalDebug;
+        let debug = LocalDebug {
+            ops: self.context.debug.is_none_or(|provider| provider.emits_debug_ops()),
+        };
         let code = crate::simple::compile_assignment_fragment_with_resolver(
             crate::typed_scopes::AssignmentScope {
                 inputs: &self.inputs[index],
@@ -162,7 +164,12 @@ impl<'a> PreparedAssignmentGroup<'a> {
                 "initializer fragment roster differs from admitted writes".into(),
             ));
         }
-        let code = fragments::assemble_continuations(fragments, self.context.debug.is_some())?;
+        let code = fragments::assemble_continuations(
+            fragments,
+            self.context
+                .debug
+                .is_some_and(|provider| provider.emits_debug_ops()),
+        )?;
         self.finish(code)
     }
     fn finish(self, mut code: ResolverProc) -> Result<ResolverProc, InitializerError> {
@@ -185,8 +192,13 @@ impl<'a> PreparedAssignmentGroup<'a> {
         Ok(code)
     }
 }
-struct LocalDebug;
+struct LocalDebug {
+    ops: bool,
+}
 impl crate::DebugSourceProvider for LocalDebug {
+    fn emits_debug_ops(&self) -> bool {
+        self.ops
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         Ok(0)
     }
