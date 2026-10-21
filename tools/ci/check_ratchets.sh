@@ -17,6 +17,17 @@ cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
 
+# DQ_ANALYZE_COLD=1 (the merge gates set it) runs gen and the lints with no cache they did not just fill: an empty private cache directory, no
+# shared cache seed, no gen store. The result then depends on the tree alone, whatever the worktree's data/analyze-cache, the machine-wide
+# E:/dq-cache/analyze-cache or the gen store hold. Costs a cold run (about a minute) instead of a warm one.
+cold_cache=""
+if [ "${DQ_ANALYZE_COLD:-0}" = "1" ]; then
+	cold_cache="$(mktemp -d)"
+	export DQ_ANALYZE_CACHE="$cold_cache" DQ_ANALYZE_SHARED_CACHE=off DQ_GEN_STORE=off
+	trap '[ -n "$cold_cache" ] && rm -rf "$cold_cache"' EXIT
+	echo "check_ratchets: cold mode (private analyze cache, no shared cache, no gen store)"
+fi
+
 bin="$(bash tools/ci/analyze.sh)" || {
 	echo "Ratchet lints failed: the analyze engine could not be built (is cargo installed?)"
 	exit 1
