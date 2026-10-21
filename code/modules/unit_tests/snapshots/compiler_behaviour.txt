@@ -1,0 +1,63 @@
+# GENERATED from a DreamMaker build by tools/dmb/scripts/pin_behaviour.py; see dq_compiler_behaviour_probe.dm.
+branches 149
+iter obj 4
+iter obj_a 3
+iter obj_a2 1
+iter mob 1
+iter datum 6
+iter atom 5
+iter movable 5
+iter turf 0
+iter untyped 9
+iter anything 9
+iter break 1
+iter nested 4
+iter datum_d /datum/compiler_probe_d
+iter atom_each /obj/compiler_probe_a
+iter atom_each /mob/compiler_probe_m
+iter atom_each /obj/compiler_probe_b
+iter atom_each /obj/compiler_probe_a/compiler_probe_a2
+iter atom_each /obj/compiler_probe_a
+spread 3
+fold add 196 73f62172e2867f97aefa50e9288d92ad
+fold sub 196 bdbd7cb30487b5929f91ebf74c355d78
+fold mul 196 ed167a1b88868da3d091b7e9a0e4e488
+fold div 182 32a2a10697d80bbc5f8e1413b0fd1c28
+fold mod 167 62e7d6df7b12b26fa52c1b0191202ee4
+fold pow 184 52828d958c28892741f88994d9761370
+fold shl 84 d1846ca5462d1be05e972120cabe599a
+fold shr 84 b087e8e0fab9b2aa74f27e2c4b85a9e6
+fold band 196 dd8aa7db02bf8a76b78a63d0e2196911
+fold bor 196 25315e9685f5d9017ed6720716059c9f
+fold bxor 196 c6d988b2117d87ce2099ef6ee6c2e2f8
+fold eq 196 f78a64e1babb9b80805511e9a855f892
+fold ne 196 7c01360d7c6fe2adb0968aa65dcddb9d
+fold lt 196 9e9dcde2ce663c2588285b6585425609
+fold gt 196 e3880f5d34d28a88e8a94ad0b83b1ff2
+fold le 196 73726de1f64b3b7fa93c490078f313af
+fold ge 196 ecf581de612cc3794ceb8956736b6f0d
+fold and 196 c12a224eb3c545d88ec15c85c8829071
+fold or 196 309b10dff72dfce79dcf28643e3f510a
+fold equiv 196 e3aca1a59a9ffa4af4f86731867a26e5
+fold neg 14 b763fc328a5ca11826d207e01e4fe394
+fold not 14 093f0c149492e210fce019e8b588dea6
+fold bnot 14 fe58c8d996d020b159f3e67ff0e77cc3
+fold f1_round 14 e4f2707547638fd429cb8b2c483ad0a2
+fold f1_floor 14 04cf789b736b2e4162f2a10f9ed4f83a
+fold f1_ceil 14 2277a21d1f0318cf041d374030e1edab
+fold f1_sqrt 11 f7348a5619a937bc76f800ae6db8e8fe
+fold f1_abs 14 7cd56130c1f12694af9734651123711e
+fold f1_sin 14 765c9badefa9fe2222179467a5547bdb
+fold f1_cos 14 3bd093114138adb4d248630fb971eede
+fold f1_tan 14 25825a8bddbcd00cd819ad271948b3e4
+fold f1_arcsin 4 51735135b27515bf11481d69c754ff40
+fold f1_arccos 4 e99d8a36c2989f3d99493b62e5212a0a
+fold f1_arctan 14 601620cbff98e2616da117ba13398829
+fold f1_log 10 a67805eef3907555ad49b51e56d23271
+fold f2_round 182 331b78dea5fb01482d99fb4c7c4421dd
+fold f2_min 196 352c0afd5f785df1c2178d49355fc9d6
+fold f2_max 196 3107145ffa9398ea16d3808b2d843a45
+fold f2_log 90 eda48fe08a2e5a7118c3d186f277c862
+fold f2_arctan 196 67265f192bb2ece37dc468675ad0b752
+fold f3_clamp 125 42c87550048275a155cc3b74adc13bbd
+fold ternary 14 df701259dc902be3c9712ab64c7e293a

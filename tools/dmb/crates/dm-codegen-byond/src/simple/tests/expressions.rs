@@ -17,19 +17,22 @@ fn shifts_fold_native_unsigned_24_bit_values_and_leave_unsafe_cases_to_runtime()
             native.proc_code_words(id).unwrap()
         );
     }
-    for source in [
-        "1 << 32",
-        "1 << -1",
-        "1 >> 32",
-        "1 >> -1",
-        "1.#INF << 1",
-        "2147483648 >> 1",
-        "-2147483904 << 1",
-        "5.5 >> 1",
-        "1 << 1.5",
+    // Pinned DreamMaker 516.1687 results (fixtures/diagnostics, `dmb-equiv dump-proc`): counts are taken modulo 32 and a negative
+    // count is 0, fractions truncate, values saturate at 32 bits, and results are 24 bits wide.
+    for (source, expected) in [
+        ("1 << 32", 1.0),
+        ("1 << -1", 1.0),
+        ("1 >> 32", 1.0),
+        ("1 >> -1", 1.0),
+        ("1.#INF << 1", 16777214.0),
+        ("2147483648 >> 1", 0.0),
+        ("-2147483904 << 1", 0.0),
+        ("5.5 >> 1", 2.0),
+        ("1 << 1.5", 2.0),
     ] {
-        assert!(
-            fold_number(&parse_expression(source).expr.unwrap()).is_none(),
+        assert_eq!(
+            fold_number(&parse_expression(source).expr.unwrap()),
+            Some(expected),
             "{source}"
         );
     }
@@ -268,4 +271,116 @@ fn augmented_assignments_decode_without_stack_pop() {
     assert!(decoded
         .iter()
         .any(|instruction| instruction.opcode == opcode::AUG_BAND));
+}
+
+/// Constants measured on DreamMaker 516.1687 (a grid of 196 operand pairs per operator, compiled with `dm.exe` and read back
+/// with `dmb-equiv dump-proc`; the unit-test world repeats the whole grid at runtime: `dq_compiler_behaviour`).
+#[test]
+fn constant_folds_match_dreammaker() {
+    for (source, expected) in [
+        ("1 | 2 | 4", Some(7.0)),
+        ("1 | 2 | 8", Some(11.0)),
+        ("7 & 3", Some(3.0)),
+        ("5 ^ 1", Some(4.0)),
+        ("16777215 & 255", Some(255.0)),
+        ("255 | 16777216", Some(255.0)),
+        ("-1 | 1", Some(16777215.0)),
+        ("-2.5 & 255", Some(254.0)),
+        ("-2.5 ^ -1", Some(1.0)),
+        ("3.14159 ^ 255", Some(252.0)),
+        ("~0", Some(16777215.0)),
+        ("~255", Some(16776960.0)),
+        ("~-1", Some(16777215.0)),
+        ("~16777215", Some(0.0)),
+        ("!0", Some(1.0)),
+        ("!3", Some(0.0)),
+        ("2 ** 3", Some(8.0)),
+        ("2 ** 0.5", Some(1.4142135)),
+        ("255 ** -2.5", Some(9.630515e-7)),
+        ("2 ** 256", Some(f32::INFINITY)),
+        ("0 && 5", Some(0.0)),
+        ("5 && 6", Some(6.0)),
+        ("0 || 7", Some(7.0)),
+        ("-1 || 0", Some(-1.0)),
+        ("1 ? 2 : 3", Some(2.0)),
+        ("0 ? 2 : 3", Some(3.0)),
+        ("0 && x", Some(0.0)),
+        ("1 || x", Some(1.0)),
+        ("1 ? 2 : x", Some(2.0)),
+        ("(3 | 4) ? 16 : 32", Some(16.0)),
+        // DreamMaker rejects these, or leaves them to the runtime.
+        ("-1 ** 0.5", None),
+        ("0 ** -1", None),
+        ("3 == 3", None),
+        ("3 < 4", None),
+        ("1 && x", None),
+        ("x ? 1 : 2", None),
+    ] {
+        assert_eq!(
+            fold_number(&parse_expression(source).expr.unwrap()),
+            expected,
+            "{source}"
+        );
+    }
+}
+
+/// Builtin math on literal arguments, measured the same way (`f1_*`, `f2_*`, `f3_*` in the grid): `round(x)` floors, angles are
+/// degrees, `min` and `max` are left to the runtime, a reversed `clamp` range is swapped, and a domain error is not a number.
+#[test]
+fn builtin_math_folds_match_dreammaker() {
+    for (source, expected) in [
+        ("round(303.975)", Some(303.0)),
+        ("round(-2.5)", Some(-3.0)),
+        ("floor(-2.5)", Some(-3.0)),
+        ("ceil(-2.5)", Some(-2.0)),
+        ("abs(-2.5)", Some(2.5)),
+        ("sqrt(3)", Some(1.7320508)),
+        ("sqrt(3) + 1", Some(2.7320508)),
+        ("sin(1)", Some(0.017452406)),
+        ("cos(0)", Some(1.0)),
+        ("arcsin(1)", Some(90.0)),
+        ("arccos(-1)", Some(180.0)),
+        ("arctan(1)", Some(45.0)),
+        ("arctan(-1, 1)", Some(135.0)),
+        ("log(2)", Some(0.6931472)),
+        ("log(2, 256)", Some(8.0)),
+        ("round(3.14159, 2)", Some(4.0)),
+        ("round(-2.5, 3)", Some(-3.0)),
+        ("round(16777215, 1)", Some(16777216.0)),
+        ("clamp(0, 2, -2.5)", Some(0.0)),
+        ("clamp(5, 0, 3)", Some(3.0)),
+        ("clamp(-5, 0, 3)", Some(0.0)),
+        ("min(1, 2)", None),
+        ("max(1, 2)", None),
+        ("sqrt(-1)", None),
+        ("arcsin(2)", None),
+        ("log(0)", None),
+        ("log(1, 5)", None),
+        ("round(x)", None),
+    ] {
+        assert_eq!(
+            fold_number(&parse_expression(source).expr.unwrap()),
+            expected,
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn diagnostic_numbers_print_like_printf_g() {
+    use crate::simple::calls_intrinsics::format_g;
+    for (value, expected) in [
+        (0.0, "0"),
+        (2.0, "2"),
+        (-2.5, "-2.5"),
+        (0.5, "0.5"),
+        (65535.0, "65535"),
+        (16777216.0, "1.67772e+07"),
+        (-2147483648.0, "-2.14748e+09"),
+        (3.14159, "3.14159"),
+        (0.0001, "0.0001"),
+        (0.00001, "1e-05"),
+    ] {
+        assert_eq!(format_g(value), expected, "{value}");
+    }
 }

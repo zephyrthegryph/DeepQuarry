@@ -1,0 +1,2 @@
+sqrt_negative_constant.dm:2:error: -2.5: invalid square root
+sqrt_negative_constant.dmb - 1 error, 0 warnings

@@ -566,6 +566,14 @@ impl Compiler<'_> {
         }
         if let ExprKind::Binary { op, lhs, rhs } = &expr.kind {
             if op == "||" || op == "&&" {
+                if let Some(left) = fold_number(lhs) {
+                    if (op == "&&") == (left != 0.0) {
+                        self.lower_dead(|compiler| compiler.local_initializer(lhs, declaration, statement))?;
+                        return self.local_initializer(rhs, declaration, statement);
+                    }
+                    self.lower_dead(|compiler| compiler.local_initializer(rhs, declaration, statement))?;
+                    return self.local_initializer(lhs, declaration, statement);
+                }
                 self.local_initializer(lhs, declaration, statement)?;
                 let end = self.label();
                 self.emit(
@@ -643,6 +651,12 @@ impl Compiler<'_> {
             else_value,
         } = &expr.kind
         {
+            // A constant condition keeps one branch (DreamMaker 516.1687); the other is still checked.
+            if let Some(value) = fold_number(condition) {
+                let (kept, dead) = if value != 0.0 { (then_value, else_value) } else { (else_value, then_value) };
+                self.lower_dead(|compiler| compiler.local_initializer(dead, declaration, statement))?;
+                return self.local_initializer(kept, declaration, statement);
+            }
             self.expression(condition, statement)?;
             self.emit(opcode::TEST, vec![]);
             let else_label = self.label();

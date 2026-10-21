@@ -10,6 +10,11 @@ impl Compiler<'_> {
         named_arguments: bool,
         arglist_argument: Option<&Expr>,
     ) -> Result<bool, LowerError> {
+        if !named_arguments && arglist_argument.is_none() {
+            if let Some(message) = builtin_domain_error(name, args) {
+                return Err(source_error(statement, &message));
+            }
+        }
         if matches!(name, "cmptext" | "cmptextEx") {
             if args.len() < 2 || named_arguments || arglist_argument.is_some() {
                 return Err(error(
@@ -440,5 +445,51 @@ impl Compiler<'_> {
             return Err(error(statement, "del() requires statement context"));
         }
         Ok(false)
+    }
+}
+
+/// C's `%g` with the default precision, which is how DreamMaker prints a number in a diagnostic (`1.67772e+07`, `-2.5`, `65535`).
+pub(super) fn format_g(value: f32) -> String {
+    let value = f64::from(value);
+    if value == 0.0 {
+        return "0".into();
+    }
+    if !value.is_finite() {
+        return if value > 0.0 { "inf".into() } else { "-inf".into() };
+    }
+    let scientific = format!("{:.5e}", value);
+    let (mantissa, exponent) = scientific.split_once('e').unwrap_or((&scientific, "0"));
+    let exponent: i32 = exponent.parse().unwrap_or(0);
+    if !(-4..6).contains(&exponent) {
+        let mantissa = mantissa.trim_end_matches('0').trim_end_matches('.');
+        return format!("{mantissa}e{}{:02}", if exponent < 0 { '-' } else { '+' }, exponent.abs());
+    }
+    let decimals = (5 - exponent).max(0) as usize;
+    let fixed = format!("{value:.decimals$}");
+    if fixed.contains('.') {
+        fixed.trim_end_matches('0').trim_end_matches('.').to_owned()
+    } else {
+        fixed
+    }
+}
+
+/// DreamMaker's compile-time rejection of builtin math on literal arguments outside the function's domain (pinned 516.1687).
+fn builtin_domain_error(name: &str, args: &[Expr]) -> Option<String> {
+    if !matches!(name, "sqrt" | "arcsin" | "arccos" | "log") || args.is_empty() || args.len() > 2 {
+        return None;
+    }
+    let values: Vec<f32> = args.iter().map(fold_number).collect::<Option<_>>()?;
+    match (name, values.as_slice()) {
+        ("sqrt", [a]) if *a < 0.0 => Some(format!("{}: invalid square root", format_g(*a))),
+        ("arcsin" | "arccos", [a]) if a.abs() > 1.0 => Some(format!("{}: invalid {name}", format_g(*a))),
+        ("log", [a]) if *a <= 0.0 => {
+            Some(format!("{0}: log({0}) is not computable", format_g(*a)))
+        }
+        ("log", [base, a]) if *base <= 0.0 || *base == 1.0 || *a <= 0.0 => Some(format!(
+            "{0}: log({0},{1}) is not computable",
+            format_g(*base),
+            format_g(*a)
+        )),
+        _ => None,
     }
 }

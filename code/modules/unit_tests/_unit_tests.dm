@@ -216,6 +216,7 @@
 #include "dq_machine_reqs_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"
+#include "dq_compiler_behaviour_probe.dm"
 #include "dq_gas_arena_leak_tests.dm"
 #include "dq_gas_watch_fire_tests.dm"
 #include "dq_gas_level_tests.dm"

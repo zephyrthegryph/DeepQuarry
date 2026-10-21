@@ -1,0 +1,2 @@
+keyword_local_to.dm:2:error: missing left-hand argument to to.
+keyword_local_to.dmb - 1 error, 0 warnings

@@ -574,17 +574,81 @@ fn interpolation_starts_sentence(mut prefix: &[u8]) -> bool {
     }
 }
 
+/// Bits DreamMaker's constant folder sees for a number: positive values saturate at 32 bits, negative ones at `i32::MIN`
+/// (pinned 516.1687: `1.#INF | 1` is 16777215, `2147483648 | 1` is 1, `4294967296 | 1` is 16777215).
+fn fold_bits(number: f32) -> Option<u32> {
+    if number.is_nan() {
+        return None;
+    }
+    Some(if number >= 0.0 {
+        (number as u64).min(u64::from(u32::MAX)) as u32
+    } else {
+        (number as i64).max(i64::from(i32::MIN)) as i32 as u32
+    })
+}
+
+/// Bitwise results are 24 bits wide.
+const FOLD_MASK: u32 = 0x00ff_ffff;
+
+/// A shift count: negative counts act as 0 and the rest is taken modulo 32.
+fn fold_shift_count(number: f32) -> Option<u32> {
+    if number.is_nan() {
+        return None;
+    }
+    Some(if number < 0.0 { 0 } else { (number as u64 & 31) as u32 })
+}
+
+/// The value DreamMaker's constant folder gives a numeric expression, or `None` where DreamMaker does not fold (comparisons, strings,
+/// non-constant operands) or reports an error (`x % 0.5`, `0 ** -1`, `-1 ** 0.5`). Numbers are 32-bit floats.
 pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
     match &expr.kind {
         ExprKind::Literal(value) if value == "1.#INF" => Some(f32::INFINITY),
+        ExprKind::Literal(value) if value == "TRUE" => Some(1.0),
+        ExprKind::Literal(value) if value == "FALSE" => Some(0.0),
         ExprKind::Literal(value) if value.starts_with("0x") || value.starts_with("0X") => {
             u64::from_str_radix(&value[2..].replace('_', ""), 16)
                 .ok()
                 .map(|number| number as f32)
         }
         ExprKind::Literal(value) => value.parse().ok(),
-        ExprKind::Unary { op, value } if op == "-" => Some(-fold_number(value)?),
+        ExprKind::Unary { op, value } => {
+            let a = fold_number(value)?;
+            match op.as_str() {
+                "-" => Some(-a),
+                "!" => Some(if a == 0.0 { 1.0 } else { 0.0 }),
+                // Negative operands count as 0 here, as they do for `<<`.
+                "~" => Some((!(if a < 0.0 { 0 } else { fold_bits(a)? }) & FOLD_MASK) as f32),
+                _ => None,
+            }
+        }
         ExprKind::Group(value) => fold_number(value),
+        ExprKind::Call { callee, args } => {
+            let ExprKind::Ident(name) = &callee.kind else {
+                return None;
+            };
+            let values: Vec<f32> = args.iter().map(fold_number).collect::<Option<_>>()?;
+            fold_builtin_call(name, &values)
+        }
+        ExprKind::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => {
+            if fold_number(condition)? != 0.0 {
+                fold_number(then_value)
+            } else {
+                fold_number(else_value)
+            }
+        }
+        ExprKind::Binary { op, lhs, rhs } if op == "&&" || op == "||" => {
+            let a = fold_number(lhs)?;
+            // The right side is not evaluated when the left decides, so it need not be constant then.
+            if (op == "&&") == (a != 0.0) {
+                fold_number(rhs)
+            } else {
+                Some(a)
+            }
+        }
         ExprKind::Binary { op, lhs, rhs } => {
             let a = fold_number(lhs)?;
             let b = fold_number(rhs)?;
@@ -593,42 +657,83 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
                 "-" => a - b,
                 "*" => a * b,
                 "/" if b != 0.0 => a / b,
-                "%" if a.is_finite()
-                    && b.is_finite()
-                    && a >= i32::MIN as f32
-                    && a < 2_147_483_648.0
-                    && b >= i32::MIN as f32
-                    && b < 2_147_483_648.0 =>
-                {
-                    // DM's % truncates both operands; %% is the real-valued
-                    // modulo operator. Checked remainder avoids zero/overflow.
-                    (a as i32).checked_rem(b as i32)? as f32
+                "%" => {
+                    // DM's % truncates both operands; %% is the real-valued modulo operator. A divisor that truncates to 0 is a
+                    // compile error, and DreamMaker's own folder crashes on i32::MIN % -1, so neither is folded.
+                    let (x, y) = (fold_bits_signed(a)?, fold_bits_signed(b)?);
+                    if y == 0 || (x == i64::from(i32::MIN) && y == -1) {
+                        return None;
+                    }
+                    (x % y) as f32
                 }
-                "<<" if a.is_finite()
-                    && b.is_finite()
-                    && a.fract() == 0.0
-                    && b.fract() == 0.0
-                    && a >= i32::MIN as f32
-                    && a < 2_147_483_648.0
-                    && (0.0..32.0).contains(&b) =>
-                {
-                    ((a.max(0.0) as u32).wrapping_shl(b as u32) & 0x00ff_ffff) as f32
+                "**" => {
+                    if (a < 0.0 && b.fract() != 0.0) || (a == 0.0 && b < 0.0) {
+                        return None;
+                    }
+                    (f64::from(a)).powf(f64::from(b)) as f32
                 }
-                ">>" if a.is_finite()
-                    && b.is_finite()
-                    && a.fract() == 0.0
-                    && b.fract() == 0.0
-                    && a >= i32::MIN as f32
-                    && a < 2_147_483_648.0
-                    && (0.0..32.0).contains(&b) =>
-                {
-                    ((a as i32 & 0x00ff_ffff) as u32).wrapping_shr(b as u32) as f32
+                "&" => ((fold_bits(a)? & fold_bits(b)?) & FOLD_MASK) as f32,
+                "|" => ((fold_bits(a)? | fold_bits(b)?) & FOLD_MASK) as f32,
+                "^" => ((fold_bits(a)? ^ fold_bits(b)?) & FOLD_MASK) as f32,
+                "<<" => {
+                    // Negative values shift to 0.
+                    if a < 0.0 {
+                        0.0
+                    } else {
+                        (fold_bits(a)?.wrapping_shl(fold_shift_count(b)?) & FOLD_MASK) as f32
+                    }
                 }
+                ">>" => ((fold_bits(a)? & FOLD_MASK) >> fold_shift_count(b)?) as f32,
                 _ => return None,
             })
         }
         _ => None,
     }
+}
+
+/// The builtin math functions DreamMaker evaluates at compile time when every argument is a literal (pinned 516.1687; `min` and
+/// `max` are not folded). Angles are in degrees; arguments outside a function's domain are compile errors there, not folded.
+/// `round(x)` is a floor (`round(0.5)` is 0, `round(-2.5)` is -3) and `round(x, step)` is `floor(x / step + 0.5) * step`.
+pub(super) fn fold_builtin_call(name: &str, values: &[f32]) -> Option<f32> {
+    let radians = |degrees: f32| f64::from(degrees).to_radians();
+    let x = |index: usize| f64::from(values[index]);
+    let result: f64 = match (name, values.len()) {
+        ("abs", 1) => x(0).abs(),
+        ("floor", 1) | ("round", 1) => x(0).floor(),
+        ("ceil", 1) => x(0).ceil(),
+        ("sqrt", 1) if values[0] >= 0.0 => x(0).sqrt(),
+        ("sin", 1) => radians(values[0]).sin(),
+        ("cos", 1) => radians(values[0]).cos(),
+        // Differs from DreamMaker in the last digit only for angles beyond 2^30 degrees.
+        ("tan", 1) => radians(values[0]).tan(),
+        ("arcsin", 1) if values[0].abs() <= 1.0 => x(0).asin().to_degrees(),
+        ("arccos", 1) if values[0].abs() <= 1.0 => x(0).acos().to_degrees(),
+        ("arctan", 1) => x(0).atan().to_degrees(),
+        ("arctan", 2) => x(1).atan2(x(0)).to_degrees(),
+        ("log", 1) if values[0] > 0.0 => x(0).ln(),
+        ("log", 2) if values[0] > 0.0 && values[0] != 1.0 && values[1] > 0.0 => x(1).ln() / x(0).ln(),
+        // 32-bit arithmetic, as DreamMaker does it (`round(16777215, 1)` is 16777216).
+        ("round", 2) if values[1] != 0.0 => return Some((values[0] / values[1] + 0.5).floor() * values[1]),
+        // A reversed range is swapped first.
+        ("clamp", 3) => {
+            let (low, high) = if values[1] > values[2] { (values[2], values[1]) } else { (values[1], values[2]) };
+            return Some(values[0].max(low).min(high));
+        }
+        _ => return None,
+    };
+    Some(result as f32)
+}
+
+/// `%` operands: positive values saturate at 32 bits unsigned, negative ones at `i32::MIN`, as 64-bit integers.
+fn fold_bits_signed(number: f32) -> Option<i64> {
+    if number.is_nan() {
+        return None;
+    }
+    Some(if number >= 0.0 {
+        (number as u64).min(u64::from(u32::MAX)) as i64
+    } else {
+        (number as i64).max(i64::from(i32::MIN))
+    })
 }
 
 pub(super) fn is_output_target(expr: &Expr) -> bool {

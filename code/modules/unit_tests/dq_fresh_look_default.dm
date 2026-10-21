@@ -28,9 +28,7 @@
 		log_test("fresh look default: making [type]")
 		var/list/first = dq_fresh_look_rows(type, T)
 		var/list/second = dq_fresh_look_rows(type, T)
-		if(jointext(first, "
-") != jointext(second, "
-"))
+		if(jointext(first, "\n") != jointext(second, "\n"))
 			var/row = "[type]: [dq_fresh_look_difference(first, second)]"
 			candidates += row
 			if(GLOB.type_look_stamp[type])
@@ -39,9 +37,7 @@
 	log_test("fresh look default: [checked] types, [length(candidates)] with an instance-dependent first look (they keep a forced first draw)")
 	for(var/row in candidates)
 		log_test("fresh look default: forced-draw candidate [row]")
-	TEST_ASSERT(!length(bad), "a type the default-look stamp covers must draw its type's default when fresh; these differ from a second fresh instance:
-[jointext(bad, "
-")]")
+	TEST_ASSERT(!length(bad), "a type the default-look stamp covers must draw its type's default when fresh; these differ from a second fresh instance:\n[jointext(bad, "\n")]")
 
 /// Normal tier: a curated spread of the sweep.
 /datum/unit_test/dq_fresh_look_default/representative

@@ -844,7 +844,7 @@ fn initializerless_local_inside_loop_resets_each_iteration() {
 }
 #[test]
 fn break_inside_switch_exits_enclosing_loop() {
-    let ast = dm_syntax::parse("/proc/test()\n    while(1)\n        switch(1)\n            if(1)\n                break\n    return 7\n");
+    let ast = dm_syntax::parse("/proc/test()\n    while(src)\n        switch(1)\n            if(1)\n                break\n    return 7\n");
     let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
@@ -917,4 +917,39 @@ fn authenticated_var_block_commas_reject_at_current_comma() {
         assert_eq!(errors[0].related[0].span, span);
         assert_eq!(errors[0].related[0].message, "location of top-most unmatched {");
     }
+}
+
+/// DreamMaker 516.1687 (probe procs a..k, `dmb-equiv dump-proc`): a constant condition keeps only the branch it selects and emits no
+/// test; `while(0)` vanishes; `while(1)` and `do..while(1)` loop without a test.
+#[test]
+fn constant_conditions_emit_no_tests_and_drop_dead_branches() {
+    let opcodes = |source: &str| -> Vec<u32> {
+        let parsed = dm_syntax::parse(source);
+        let compiled = compile_simple_proc(&parsed.items[0].children).unwrap();
+        compiled
+            .code
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                CodeItem::Instruction(instruction) => Some(instruction.opcode),
+                _ => None,
+            })
+            .collect()
+    };
+    let calls = |source: &str| opcodes(source).iter().filter(|op| **op == opcode::PUSH_INT || **op == opcode::PUSH_VAL).count();
+    let tests = |source: &str| opcodes(source).iter().filter(|op| **op == opcode::TEST || **op == opcode::JZ).count();
+    for (source, pushes, branch_ops) in [
+        ("/proc/p()\n    if(1)\n        return 1\n    else\n        return 2\n    return 3\n", 2, 0),
+        ("/proc/p()\n    if(0)\n        return 1\n    else\n        return 2\n    return 3\n", 2, 0),
+        ("/proc/p()\n    if(0)\n        return 1\n    return 3\n", 1, 0),
+        ("/proc/p()\n    if(2 + 2)\n        return 1\n    else if(0)\n        return 2\n    return 3\n", 2, 0),
+        ("/proc/p()\n    while(0)\n        return 1\n    return 3\n", 1, 0),
+        ("/proc/p()\n    while(1)\n        return 1\n    return 3\n", 2, 0),
+    ] {
+        assert_eq!(calls(source), pushes, "{source}");
+        assert_eq!(tests(source), branch_ops, "{source}");
+    }
+    let parsed = dm_syntax::parse("/proc/p(x)\n    if(x)\n        return 1\n    return 3\n");
+    let compiled = compile_simple_proc_with_params(&parsed.items[0].children, &["x".into()]).unwrap();
+    assert!(compiled.code.items.iter().any(|item| matches!(item, CodeItem::Instruction(instruction) if instruction.opcode == opcode::JZ)));
 }

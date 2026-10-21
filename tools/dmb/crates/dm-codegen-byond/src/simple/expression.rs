@@ -2,6 +2,18 @@
 use super::*;
 
 impl Compiler<'_> {
+    /// Lowers code DreamMaker drops (the dead side of a constant condition) so that its diagnostics and source features still count,
+    /// and discards the instructions.
+    pub(super) fn lower_dead(
+        &mut self,
+        lower: impl FnOnce(&mut Self) -> Result<(), LowerError>,
+    ) -> Result<(), LowerError> {
+        let mark = self.result.code.items.len();
+        let lowered = lower(self);
+        self.result.code.items.truncate(mark);
+        lowered
+    }
+
     pub(super) fn expression(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
         self.source_feature_reference(
             expr,
@@ -18,6 +30,30 @@ impl Compiler<'_> {
                 );
             }
             return Ok(());
+        }
+        // A constant condition leaves only the branch DreamMaker keeps; `0 && x` and `1 || x` never reach `x`.
+        match &expr.kind {
+            ExprKind::Conditional {
+                condition,
+                then_value,
+                else_value,
+            } => {
+                if let Some(condition) = fold_number(condition) {
+                    let (kept, dead) = if condition != 0.0 { (then_value, else_value) } else { (else_value, then_value) };
+                    self.lower_dead(|compiler| compiler.expression(dead, statement))?;
+                    return self.expression(kept, statement);
+                }
+            }
+            ExprKind::Binary { op, lhs, rhs } if op == "&&" || op == "||" => {
+                if let Some(left) = fold_number(lhs) {
+                    if (op == "&&") == (left != 0.0) {
+                        return self.expression(rhs, statement);
+                    }
+                    self.lower_dead(|compiler| compiler.expression(rhs, statement))?;
+                    return self.expression(lhs, statement);
+                }
+            }
+            _ => {}
         }
         if let Some(bytes) = fold_literal_string_expression(expr) {
             let id = self.intern_format_template(bytes);

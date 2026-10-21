@@ -17,14 +17,17 @@ fn modulo_constant_folding_truncates_operands_like_native() {
             native.proc_code_words(id).unwrap()
         );
     }
-    for source in [
-        "5 % 0.5",
-        "-2147483648 % -1",
-        "1.#INF % 2",
-        "2147483648 % 2",
-    ] {
+    for source in ["5 % 0.5", "-2147483648 % -1"] {
         assert!(
             fold_number(&parse_expression(source).expr.unwrap()).is_none(),
+            "{source}"
+        );
+    }
+    // DreamMaker folds these (516.1687): the operands saturate at 32 bits, unsigned when positive.
+    for (source, expected) in [("1.#INF % 2", 1.0), ("2147483648 % 2", 0.0)] {
+        assert_eq!(
+            fold_number(&parse_expression(source).expr.unwrap()),
+            Some(expected),
             "{source}"
         );
     }
