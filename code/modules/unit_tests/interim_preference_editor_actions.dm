@@ -8,4 +8,4 @@
 	TEST_ASSERT_EQUAL(editor.handle_action(p, "set_month", list("value" = "3"), null), PREF_UPDATE_ACCEPTED, "numeric text is read as a number")
 	TEST_ASSERT_EQUAL(p.read_preference(/datum/preference/numeric/human/bday_month), 3, "the month is written")
 	TEST_ASSERT_EQUAL(editor.handle_action(p, "no_such_action", list(), null), PREF_UPDATE_UNCHANGED, "an unknown action changes nothing")
-	qdel(p)
+	qdel(p, TRUE)

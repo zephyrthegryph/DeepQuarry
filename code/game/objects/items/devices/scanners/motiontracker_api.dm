@@ -36,3 +36,8 @@
 	else
 		var/list/data = queued_echo_turfs[rfe]
 		data[4] += list(client)
+
+/// Flips the global hide-and-seek mode (motion echoes hidden or shown); returns the new state.
+/datum/system/motiontracker/proc/toggle_hide_all()
+	hide_all = !hide_all
+	return hide_all

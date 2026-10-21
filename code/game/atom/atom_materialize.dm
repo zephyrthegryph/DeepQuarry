@@ -99,11 +99,11 @@
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has
 /// its own state but no world registrations. Call materialize() to make it live.
 /proc/new_unmaterialized(path, loc, ...)
-	SSatoms.materialize_suppressed++
+	SSatoms.suppress_materialize()
 	var/list/arguments = args.Copy(2)
 	try
 		. = new path(arglist(arguments))
 	catch(var/exception/error)
-		SSatoms.materialize_suppressed--
+		SSatoms.resume_materialize()
 		throw error
-	SSatoms.materialize_suppressed--
+	SSatoms.resume_materialize()

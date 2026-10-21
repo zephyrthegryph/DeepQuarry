@@ -102,12 +102,12 @@ SYSTEM_DEF(profiler)
 		),
 		"queues" = list(
 			"hotspots" = REGISTRY_COUNT(REGISTRY_HOTSPOTS),
-			"pressure_deltas" = length(SSair.high_pressure_delta),
-			"pipenets" = length(SSair.networks),
+			"pressure_deltas" = SSair.high_pressure_delta_count(),
+			"pipenets" = SSair.pipenet_count(),
 			"pipe_devices" = air_profile_rust_pipe_device_count(),
 			"pipe_devices_reported" = native_system().pipe_devices_last,
-			"rebuild" = length(SSair.rebuild_queue),
-			"expansion" = length(SSair.expansion_queue),
+			"rebuild" = SSair.rebuild_queue_count(),
+			"expansion" = SSair.expansion_queue_count(),
 		),
 	)
 	subsystems["machines"] += list(

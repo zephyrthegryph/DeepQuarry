@@ -13,7 +13,7 @@
 	// Special case to prevent us from being part of a zone during the first air master tick.
 	// We must merge ourselves into a zone on next tick.  This will cause a bit of lag on
 	// startup, but it can't really be helped you know?
-	if(SSair && SSair.times_fired == 0)
+	if(SSair && SSair.cycles_run() == 0)
 		after(src, 0.1 SECONDS, PROC_REF(join_zone))
 		return FALSE
 	return is_zone ? FALSE : TRUE // Anything except zones can pass

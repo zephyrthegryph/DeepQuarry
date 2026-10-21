@@ -230,7 +230,7 @@ DECLARE_SHARED_CACHE(loot_type_hashes, GLOBAL_PROC_REF(build_loot_type_hash), SC
 	h = (h * 31 + (T ? T.y : 0)) % LOOT_HASH_MOD
 	h = (h * 31 + (T ? T.z : 0)) % LOOT_HASH_MOD
 	h = (h * 31 + loot_type_hash(path)) % LOOT_HASH_MOD
-	if(SSatoms.atom_initialized == INITIALIZATION_INNEW_REGULAR)
+	if(atoms_atom_initialized() == INITIALIZATION_INNEW_REGULAR)
 		GLOB.loot_roll_serial = (GLOB.loot_roll_serial + 1) % LOOT_HASH_MOD
 		h = (h * 31 + GLOB.loot_roll_serial) % LOOT_HASH_MOD
 	return new /datum/loot_rng(h)

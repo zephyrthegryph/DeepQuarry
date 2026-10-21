@@ -170,7 +170,7 @@
 	return rand(32000, 55000) //Frequency stuff only works with 45kbps oggs.
 
 /client/proc/playtitlemusic()
-	if(!SSticker || !SSmedia_tracks.lobby_tracks.len || !media)	return
+	if(!SSticker || !length(media_tracks_lobby_tracks()) || !media)	return
 	if(prefs?.read_preference(/datum/preference/toggle/play_lobby_music))
 		var/datum/track/T = pick(media_tracks_lobby_tracks())
 		media.push_music(T.url, world.time, 0.35)

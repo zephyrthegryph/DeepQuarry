@@ -475,8 +475,8 @@ ADMIN_VERB(object_talk, R_FUN, "oSay", "Display a message to everyone who can he
 	feedback_add_details("admin_verb","OT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(kill_air, R_SERVER, "Kill Air", "Toggle Air Processing.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSair.can_fire = !SSair.can_fire
-	to_chat(user, span_filter_system(span_bold("[SSair.can_fire ? "En" : "Dis"]abled air processing.")))
+	var/air_enabled = SSair.toggle_processing()
+	to_chat(user, span_filter_system(span_bold("[air_enabled ? "En" : "Dis"]abled air processing.")))
 	feedback_add_details("admin_verb","KA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_and_message_admins("used 'kill air'.", user)
 
@@ -851,25 +851,21 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	GLOB.ghostnet.removeArea(target_area)
 
 ADMIN_VERB(hide_motion_tracker_feedback, R_ADMIN|R_EVENT, "Toggle Motion Echos", "Hides or reveals motion tracker echos globally.", ADMIN_CATEGORY_EVENTS)
-	SSmotiontracker.hide_all = !motiontracker_hide_all()
+	SSmotiontracker.toggle_hide_all()
 	log_admin("[key_name(user)] changed the motion echo visibility to [motiontracker_hide_all() ? "hidden" : "visible"].")
 
 ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around something else.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/center
-	var/atom/movable/orbiter
-	var/input
+	ask_steps(user, /datum/ask_sequence/admin_verb, list(
+		PROC_REF(ask_marked_role),
+		PROC_REF(ask_center),
+		PROC_REF(ask_orbiter),
+		PROC_REF(ask_radius),
+		question_step("speed", /datum/prompt/number, question = "How fast will they orbit (negative numbers spin clockwise)", title = "Orbit Speed", default = 20),
+		question_step("segments", /datum/prompt/number, question = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", title = "Orbit Segments", default = 36),
+		PROC_REF(ask_orbit_confirm)), PROC_REF(orbit_chosen))
 
-	var/datum/marked_datum = user.holder.marked_datum()
-	if(marked_datum)
-		var/_answer_a25 = verb_ask(user, "a25", args, /datum/prompt/choice, question = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", title = "Orbit", choices = list("Center", "Orbiter", "Neither"), buttons = TRUE)
-		if(isnull(_answer_a25))
-			return
-		input = _answer_a25
-		switch(input)
-			if("Center")
-				center = marked_datum
-			if("Orbiter")
-				orbiter = marked_datum
+/// The atoms in view of the admin that can be the center or the orbiter: mobs first, then objects.
+/datum/admin_verb/adminorbit/proc/orbit_candidates(client/user)
 	var/list/possible_things = list()
 	for(var/T as mob in view(user.view))	//Let's do mobs before objects
 		if(ismob(T))
@@ -877,34 +873,88 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	for(var/T as obj in view(user.view))
 		if(isobj(T))
 			possible_things |= T
+	return possible_things
+
+/// The datum the admin has marked, or null.
+/datum/admin_verb/adminorbit/proc/orbit_marked(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	return user?.holder?.marked_datum()
+
+/// The center and the orbiter so far: the marked datum in the role the admin gave it, the rest from the answers. list(center, orbiter).
+/datum/admin_verb/adminorbit/proc/orbit_pair(datum/ask_sequence/admin_verb/asked)
+	var/datum/marked_datum = orbit_marked(asked)
+	var/center
+	var/atom/movable/orbiter
+	if(marked_datum)
+		switch(asked.get("marked"))
+			if("Center")
+				center = marked_datum
+			if("Orbiter")
+				orbiter = marked_datum
 	if(!center)
-		var/_answer_a26 = verb_ask(user, "a26", args, /datum/prompt/choice, question = "What should act as the center of the orbit?", title = "Center", choices = possible_things)
-		if(isnull(_answer_a26))
-			return
-		center = _answer_a26
-		possible_things -= center
+		center = asked.get("center")
 	if(!orbiter)
-		var/_answer_a27 = verb_ask(user, "a27", args, /datum/prompt/choice, question = "What should act as the orbiter of the orbit?", title = "Orbiter", choices = possible_things)
-		if(isnull(_answer_a27))
-			return
-		orbiter = _answer_a27
+		orbiter = asked.get("orbiter")
+	return list(center, orbiter)
+
+/datum/admin_verb/adminorbit/proc/ask_marked_role(datum/ask_sequence/admin_verb/asked)
+	var/datum/marked_datum = orbit_marked(asked)
+	if(!marked_datum)
+		return null
+	return question_step("marked", /datum/prompt/choice, question = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", title = "Orbit", choices = list("Center", "Orbiter", "Neither"), buttons = TRUE)
+
+/datum/admin_verb/adminorbit/proc/ask_center(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	if(!user)
+		return ASK_STOP
+	var/list/pair = orbit_pair(asked)
+	if(pair[1])
+		return null
+	return question_step("center", /datum/prompt/choice, question = "What should act as the center of the orbit?", title = "Center", choices = orbit_candidates(user))
+
+/datum/admin_verb/adminorbit/proc/ask_orbiter(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	if(!user)
+		return ASK_STOP
+	var/list/pair = orbit_pair(asked)
+	if(pair[2])
+		return null
+	var/list/possible_things = orbit_candidates(user)
+	if(asked.get("center"))
+		possible_things -= asked.get("center") // asked, not marked: the old second question only dropped what the first one picked
+	return question_step("orbiter", /datum/prompt/choice, question = "What should act as the orbiter of the orbit?", title = "Orbiter", choices = possible_things)
+
+/// Checks the pair once both are known, then asks the radius.
+/datum/admin_verb/adminorbit/proc/ask_radius(datum/ask_sequence/admin_verb/asked)
+	var/client/user = asked.actor()?.client
+	if(!user)
+		return ASK_STOP
+	var/list/pair = orbit_pair(asked)
+	var/center = pair[1]
+	var/atom/movable/orbiter = pair[2]
 	if(!center || !orbiter)
 		to_chat(user, span_warning("A center of orbit and an orbiter must be configured. You can also do this by marking a target."))
-		return
+		return ASK_STOP
 	if(center == orbiter)
 		to_chat(user, span_warning("The center of the orbit cannot also be the orbiter."))
-		return
+		return ASK_STOP
 	if(isturf(orbiter))
 		to_chat(user, span_warning("The orbiter cannot be a turf. It can only be used as a center."))
-		return
-	var/distance = verb_ask(user, "a28", args, /datum/prompt/number, question = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", title = "Orbit Radius", default = 32)
-	if(isnull(distance))
-		return
-	var/speed = verb_ask(user, "a29", args, /datum/prompt/number, question = "How fast will they orbit (negative numbers spin clockwise)", title = "Orbit Speed", default = 20)
-	if(isnull(speed))
-		return
-	var/segments = verb_ask(user, "a30", args, /datum/prompt/number, question = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", title = "Orbit Segments", default = 36)
-	if(isnull(segments))
+		return ASK_STOP
+	return question_step("distance", /datum/prompt/number, question = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", title = "Orbit Radius", default = 32)
+
+/datum/admin_verb/adminorbit/proc/ask_orbit_confirm(datum/ask_sequence/admin_verb/asked)
+	var/list/pair = orbit_pair(asked)
+	return question_step("confirm", /datum/prompt/choice, question = "\The [pair[2]] will orbit around [pair[1]]. Is this okay?", title = "Confirm Orbit", choices = list("Yes", "No"), buttons = TRUE)
+
+/datum/admin_verb/adminorbit/proc/orbit_chosen(datum/ask_sequence/admin_verb/asked)
+	var/list/pair = orbit_pair(asked)
+	var/datum/center = pair[1]
+	var/atom/movable/orbiter = pair[2]
+	var/distance = asked.get("distance")
+	var/speed = asked.get("speed")
+	var/segments = asked.get("segments")
+	if(!center || !orbiter || QDELETED(center) || QDELETED(orbiter))
 		return
 	var/clock = FALSE
 	if(!distance)
@@ -916,10 +966,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		speed *= -1
 	if(!segments)
 		segments = 36
-	var/_answer_a31 = verb_ask(user, "a31", args, /datum/prompt/choice, question = "\The [orbiter] will orbit around [center]. Is this okay?", title = "Confirm Orbit", choices = list("Yes", "No"), buttons = TRUE)
-	if(isnull(_answer_a31))
-		return
-	if(_answer_a31 == "Yes")
+	if(asked.get("confirm") == "Yes")
 		orbiter.orbit(center, distance, clock, speed, segments)
 
 ADMIN_VERB(removetickets, R_ADMIN, "Security Tickets", "Allows one to remove tickets from the global list.", ADMIN_CATEGORY_INVESTIGATE)

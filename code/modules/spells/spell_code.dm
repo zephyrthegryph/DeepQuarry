@@ -109,13 +109,48 @@ CAPABILITIES(/datum/spell)
 /datum/spell/proc/cast_delayed(datum/act/op/A)
 	perform_cast(A.actor, A.arg("skipcharge"))
 
-/// The arguments of the perform_cast() running now, so target questions re-run it. Only set while it runs.
-GLOBAL_LIST_EMPTY(spell_cast_args)
-
-/// The cast itself, after any cast delay.
+/// The cast itself, after any cast delay. A spell that asks its caster for targets (target_questions()) casts when the questions are answered.
 /datum/spell/proc/perform_cast(mob/user, skipcharge)
-	GLOB.spell_cast_args = args.Copy()
-	var/list/targets = choose_targets(user)
+	var/list/steps = target_questions(user)
+	if(length(steps))
+		var/started = ask_sequence_begin(src, /datum/ask_sequence/spell_cast, user, null, steps, PROC_REF(targets_answered), PROC_REF(targets_stopped), null, list("skipcharge" = skipcharge))
+		if(istext(started))
+			log_game("spell: [name] did not ask [key_name(user)] for targets ([started])")
+		return
+	cast_at_targets(user, skipcharge, choose_targets(user))
+
+/// The questions the caster answers before the cast: a list of question_step() specs or step procs (code/datums/prompts/sequence.dm), or null to ask nothing.
+/datum/spell/proc/target_questions(mob/user)
+	return null
+
+/// The targets once target_questions() were answered (`asked` holds the answers).
+/datum/spell/proc/targets_from_answers(mob/user, datum/ask_sequence/spell_cast/asked)
+	return choose_targets(user)
+
+/// All the questions are answered: cast.
+/datum/spell/proc/targets_answered(datum/ask_sequence/spell_cast/asked)
+	var/mob/user = asked.actor()
+	if(!user)
+		return
+	cast_at_targets(user, asked.skipcharge, targets_from_answers(user, asked))
+
+/// The questions ended early. A spell that takes as many targets as the caster picks (casts_picked_on_stop()) casts with the ones picked; any other ending drops the cast.
+/datum/spell/proc/targets_stopped(datum/ask_sequence/spell_cast/asked, reason)
+	log_game("spell: [name] target questions ended ([reason])")
+	if(reason != "stopped" || !casts_picked_on_stop())
+		return
+	var/mob/user = asked.actor()
+	if(!user)
+		return
+	cast_at_targets(user, asked.skipcharge, targets_from_answers(user, asked))
+
+/// TRUE when closing a target question ends the picking and casts with the targets picked so far.
+/datum/spell/proc/casts_picked_on_stop()
+	return FALSE
+
+/// Casts at `targets` (nothing happens without any).
+/datum/spell/proc/cast_at_targets(mob/user, skipcharge, list/targets)
+	log_game("spell: [name] cast by [key_name(user)] at [length(targets)] target(s)")
 	if(targets && targets.len)
 		invocation(user, targets)
 		take_charge(user, skipcharge)
@@ -127,6 +162,10 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		else
 			cast(targets, user)
 		after_cast(targets) //generates the sparks, smoke, target messages etc.
+
+/// The answers to a spell's target questions, and the cast's charge flag.
+/datum/ask_sequence/spell_cast
+	var/skipcharge = 0
 
 
 /datum/spell/proc/cast(list/targets, mob/user) //the actual meat of the spell

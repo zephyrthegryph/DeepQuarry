@@ -488,7 +488,7 @@ CAPABILITIES(/obj/structure/sign/painting)
  * Deleting paintings leaves their json, so this proc will remove the json and try again if it finds one of those.
  */
 /obj/structure/sign/painting/proc/load_persistent()
-	if(!persistence_id || !LAZYLEN(SSpersistence.unpicked_paintings))
+	if(!persistence_id || !LAZYLEN(persistence_unpicked_paintings()))
 		return
 
 	var/list/painting_category = list()
@@ -503,10 +503,10 @@ CAPABILITIES(/obj/structure/sign/painting)
 		var/list/chosen = pick(painting_category)
 		if(!fexists("data/persistent/paintings/[persistence_id]/[chosen["md5"]].png")) //shitmin deleted this art, lets remove json entry to avoid errors
 			painting_category -= list(chosen)
-			SSpersistence.unpicked_paintings -= list(chosen)
+			SSpersistence.take_unpicked_painting(chosen)
 			continue //and try again
 		painting = chosen
-		SSpersistence.unpicked_paintings -= list(chosen)
+		SSpersistence.take_unpicked_painting(chosen)
 
 	var/title = painting["title"]
 	var/author_name = painting["author"]
@@ -655,7 +655,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	if(result)
 		CRASH("Error saving persistent painting: [result]")
 
-	SSpersistence.all_paintings += list(list(
+	SSpersistence.add_painting(list(
 		"persistence_id" = persistence_id,
 		"title" = current_canvas.painting_name,
 		"md5" = md5,
@@ -672,8 +672,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	var/md5 = md5(lowertext(data))
 	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5 && entry["persistence_id"] == persistence_id)
-			SSpersistence.all_paintings.Remove(list(entry))
-			SSpersistence.all_paintings.Add(list(entry))
+			SSpersistence.renew_painting(entry)
 			art_appreciators += user.ckey
 			to_chat(user, span_notice("Showing interest in this painting renews its position in the curator database."))
 
@@ -693,7 +692,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5)
 			filenames_found += "data/persistent/paintings/[entry["persistence_id"]]/[entry["md5"]].png"
-			SSpersistence.all_paintings -= list(entry)
+			SSpersistence.remove_painting(entry)
 	for(var/png in filenames_found)
 		if(fexists(png))
 			fdel(png)

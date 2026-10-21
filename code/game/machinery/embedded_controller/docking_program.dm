@@ -77,12 +77,12 @@
 	if(id_tag)
 		if(SSshuttles.docking_program(id_tag))
 			stack_trace("Docking controller tag [id_tag] had multiple associated programs.")
-		SSshuttles.docking_registry[id_tag] = ref_token(src)
+		SSshuttles.register_docking_program(id_tag, src)
 
 /// Phase 2: leaves the shuttle docking registry.
 /datum/embedded_program/docking/lifecycle_dematerialize()
 	. = ..()
-	SSshuttles.docking_registry -= id_tag
+	SSshuttles.unregister_docking_program(id_tag)
 
 /datum/embedded_program/docking/receive_signal(datum/signal/signal, receive_method, receive_param)
 	var/receive_tag = signal.data["tag"]		//for docking signals, this is the sender id

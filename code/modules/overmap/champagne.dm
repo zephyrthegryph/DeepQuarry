@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/champagne)
 	// Unfortunately we can't simply call initialize_shuttle because it takes a typepath.
 	// I Don't want to rewrite that right now, so we must emulate. This is a special case anyway.
 	// Emulation of SSshuttles.initialize_shuttle(): All it does is add to shuttle areas and populate objects
-	SSshuttles.shuttle_areas |= shuttle.shuttle_area
+	SSshuttles.note_shuttle_areas(shuttle.shuttle_area)
 	shuttle.populate_shuttle_objects()
 
 	// Okay now create the SHIP part

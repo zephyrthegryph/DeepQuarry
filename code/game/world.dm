@@ -446,8 +446,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
 	if (diag == "qdelcensus")
 		var/list/rows = list()
-		for(var/path in SSgarbage.items)
-			var/datum/qdel_item/item = SSgarbage.items[path]
+		for(var/path in garbage_items())
+			var/datum/qdel_item/item = garbage_items()[path]
 			rows[item.name] = item.qdels
 		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 		if(length(rows) > 40)

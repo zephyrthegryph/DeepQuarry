@@ -4,7 +4,7 @@
 // turfs converging on equilibrium), hotspot count from REGISTRY_HOTSPOTS, and
 // the high-pressure delta queue (spacewind).
 ADMIN_VERB(air_report, R_DEBUG, "Show Air Report", "Displays the current atmos stats.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	if(!SSair.initialized)
+	if(!SSair.is_initialized())
 		open_request(user.mob, /datum/prompt/choice/air_report_notification, null, answerer = user.mob, question = "SSair not ready.", title = "Air Report", choices = list("Ok"))
 		return
 

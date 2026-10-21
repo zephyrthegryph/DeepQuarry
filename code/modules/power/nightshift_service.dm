@@ -17,7 +17,7 @@ SYSTEM_DEF(nightshift)
 /datum/system/nightshift/initialize()
 	initialized = TRUE
 	if(!CONFIG_GET(flag/enable_night_shifts))
-		automatic = FALSE
+		set_automatic(FALSE)
 	log_world("World service [name] initialized: [automatic ? "automatic" : "disabled by config"].")
 
 /datum/system/nightshift/reactions()

@@ -31,15 +31,15 @@
 	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.save_persistent()
 
-	if(SSpersistence.all_paintings.len > max_entries)
-		var/this_many = SSpersistence.all_paintings.len
+	if(SSpersistence.painting_count() > max_entries)
+		var/this_many = SSpersistence.painting_count()
 		var/over = this_many - max_entries
 		log_admin("There are [over] more painting(s) stored than the maximum allowed.")
 		while(over > 0)
 			var/list/d = persistence_all_paintings()[1]
 			var/png_filename = "data/paintings/[d["persistence_id"]]/[d["md5"]].png"
 			fdel(png_filename)
-			if(SSpersistence.all_paintings.Remove(list(d)))
+			if(SSpersistence.remove_painting(d))
 				log_admin("A painting was deleted")
 			else
 				log_and_message_admins("Attempted to delete a painting, but failed.")

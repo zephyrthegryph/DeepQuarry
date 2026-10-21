@@ -66,7 +66,7 @@
 	// After a balanced cascade the counter should be back to 0; the guard inside the
 	// constraint bodies prevented the recursion from going past PREF_CONSTRAINT_MAX_DEPTH.
 	TEST_ASSERT_EQUAL(p.constraint_cascade_depth, 0, "depth counter not unwound after cycle")
-	qdel(p)
+	qdel(p, TRUE)
 
 // Test-only constraint pair that intentionally cycles. Trigger keys start with "__" so
 // they never collide with real prefs.
@@ -103,7 +103,7 @@
 	p.end_update_batch()
 	p.end_update_batch()
 	TEST_ASSERT_EQUAL(p.save_batch_depth, 0, "batch depth back to 0 after balanced ends")
-	qdel(p)
+	qdel(p, TRUE)
 
 
 /datum/unit_test/dq_pref_composite_roundtrip

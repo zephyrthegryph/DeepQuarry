@@ -52,7 +52,7 @@
 	for(var/kind in types)
 		count_metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Kernel.initializations_seconds, "s")
-	metric("init_atmos_ms", SSair.init_time_ms, "ms")
+	metric("init_atmos_ms", SSair.init_time(), "ms")
 	count_metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Per-instance composition lists. Blueprints are per type; an item owns a list only
 	// for an arbitrary mix (its build record's mix). Override lists are interned and shared.
@@ -150,7 +150,7 @@
 /// maxima and SSair's main-thread time.
 /datum/benchmark/proc/measure_atmos_cycles(prefix, cycles)
 	begin_window()
-	var/start_cycle = SSair.times_fired
+	var/start_cycle = SSair.cycles_run()
 	var/list/stats_before = vg_gas_stats()
 	var/list/maxima = list(
 		"events" = 0,
@@ -159,17 +159,17 @@
 		"pressure_pushes" = 0,
 	)
 	var/deadline = REALTIMEOFDAY + 3000
-	while(SSair.times_fired < start_cycle + cycles)
+	while(SSair.cycles_run() < start_cycle + cycles)
 		if(REALTIMEOFDAY > deadline)
-			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
+			fail("SSair ran [SSair.cycles_run() - start_cycle]/[cycles] cycles in 300s")
 		stoplag()
-		maxima["events"] = max(maxima["events"], SSair.gas_events_last)
-		maxima["reactions"] = max(maxima["reactions"], SSair.gas_reactions_last)
-		maxima["visuals"] = max(maxima["visuals"], SSair.gas_visuals_last)
-		maxima["pressure_pushes"] = max(maxima["pressure_pushes"], SSair.gas_pressure_last)
+		maxima["events"] = max(maxima["events"], air_profile_gas_events_last())
+		maxima["reactions"] = max(maxima["reactions"], air_profile_gas_reactions_last())
+		maxima["visuals"] = max(maxima["visuals"], air_profile_gas_visuals_last())
+		maxima["pressure_pushes"] = max(maxima["pressure_pushes"], air_profile_gas_pressure_last())
 	end_window(prefix)
 	var/list/stats_after = vg_gas_stats()
-	count_metric("[prefix]_cycles", SSair.times_fired - start_cycle, "cycles", "none")
+	count_metric("[prefix]_cycles", SSair.cycles_run() - start_cycle, "cycles", "none")
 	count_metric("[prefix]_gas_commands", stats_after[2] - stats_before[2], "commands")
 	count_metric("[prefix]_gas_frames_skipped", stats_after[13] - stats_before[13], "frames")
 	metric("[prefix]_gas_last_frame_ms", stats_after[9] / 1000, "ms")
@@ -257,9 +257,9 @@
 
 /datum/benchmark/major_events/proc/measure_event(event_name, trigger, atmos_cycles = 60)
 	begin_window()
-	var/start_cycle = SSair.times_fired
+	var/start_cycle = SSair.cycles_run()
 	call(src, trigger)()
-	wait_fires(SSair, atmos_cycles - (SSair.times_fired - start_cycle))
+	wait_fires(SSair, atmos_cycles - (SSair.cycles_run() - start_cycle))
 	end_window(event_name)
 
 /datum/benchmark/major_events/proc/trigger_large_explosion()
@@ -341,7 +341,7 @@
 /datum/benchmark/sm_soak/Run()
 	wait_for_assets()
 	if(param("profile_types", 0))
-		SSexplosions.profile_atom_types = TRUE
+		SSexplosions.enable_atom_type_profiling()
 	mark("before")
 	var/blasts = param("blasts", 4)
 	var/list/drains = list()

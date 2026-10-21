@@ -3,11 +3,13 @@
 # code/datums/om, code/datums/sys, code/__defines). Prints "form<TAB>sites<TAB>files". doc/rewrite/README.md keeps the last run.
 cd "$(dirname "$0")/../.." || exit 1
 forms=(om_after om_hook om_ask om_grant OM_EMIT OM_FIELD TOPIC_ACTION DECLARE_PERIODIC_WHILE DECLARE_REPEAT DECLARE_EMAG DAMAGE_REACTION
-	DECLARE_INTERACTIONS EXTEND_INTERACTIONS INTERACT_HAND APPEARANCE_ act_ask rerun_ask
+	DECLARE_INTERACTIONS EXTEND_INTERACTIONS INTERACT_HAND APPEARANCE_ act_ask rerun_ask verb_ask client_ask cast_ask
 	world_service OWN REL om_changed om_raise_change PERIODIC_ REQ_ CHANGE_ DECLARE_UI DECLARE_VERB)
 for f in "${forms[@]}"; do
 	case "$f" in
 		OWN|REL) re="\b${f}\(" ;;
+		# APPEARANCE_ also names live constants (APPEARANCE_ALL_HAIR changer flags, APPEARANCE_UI_IGNORE_ALPHA); only the banned look forms count.
+		APPEARANCE_) re="APPEARANCE_(TEMPLATE|LEVEL|EMISSIVE|WATCH|NONE|SLOT)" ;;
 		*_) re="\b${f}[A-Z0-9_]+" ;;
 		*) re="\b${f}\b" ;;
 	esac

@@ -105,7 +105,7 @@
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_world_wakes = GLOB.om_live_sched?.world_wakes
-	window_machines_ms = kernel().work_cost_of(SSmachines.type)["total_ms"]
+	window_machines_ms = kernel().work_cost_of(/datum/system/machines)["total_ms"]
 	window_stat_evals = GLOB.stat_evals
 	window_stat_read_computes = GLOB.stat_read_computes
 	GLOB.stat_read_compute_by = list()
@@ -160,13 +160,13 @@
 	detail("[prefix]_subsystems", subsystems)
 	// SSair's main-thread time over the window (M1b's "Air time"), from the same
 	// estimate as the subsystem details.
-	var/list/air = subsystems[SSair.name]
+	var/list/air = subsystems[SSair.display_name()]
 	metric("[prefix]_air_ms", air ? air["estimated_total_ms"] : 0, "ms")
 	// Per-second rates: windows measured in subsystem cycles last as long as
 	// that subsystem's cadence, so totals only compare at equal length.
 	metric("[prefix]_air_ms_per_s", (air ? air["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
 	// Machine system work uses the kernel's cumulative measured cost, not an estimate.
-	metric("[prefix]_machines_ms_per_s", (kernel().work_cost_of(SSmachines.type)["total_ms"] - window_machines_ms) / elapsed_seconds, "ms/s")
+	metric("[prefix]_machines_ms_per_s", (kernel().work_cost_of(/datum/system/machines)["total_ms"] - window_machines_ms) / elapsed_seconds, "ms/s")
 
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.

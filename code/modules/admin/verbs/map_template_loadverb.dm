@@ -138,7 +138,7 @@ ADMIN_VERB(map_template_upload, R_SPAWN, "Map Template - Upload", "Uploads the s
 	var/datum/map_template/M = new(map, "[map]")
 	if(M.preload_size(map))
 		to_chat(user, "Map template '[map]' ready to place ([M.width]x[M.height])")
-		SSmapping.map_templates[M.name] = M
+		SSmapping.register_map_template(M)
 		message_admins(span_adminnotice("[key_name_admin(user)] has uploaded a map template ([map])"))
 	else
 		to_chat(user, "Map template '[map]' failed to load properly")

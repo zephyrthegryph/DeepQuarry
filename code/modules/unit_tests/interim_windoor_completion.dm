@@ -110,3 +110,6 @@
 
 CAPABILITIES(/obj/structure/windoor_assembly/interim_completion_trace)
 	ref_one(nameof(trace))
+
+CAPABILITIES(/obj/structure/windoor_assembly/secure/interim_completion_trace)
+	ref_one(nameof(trace))
