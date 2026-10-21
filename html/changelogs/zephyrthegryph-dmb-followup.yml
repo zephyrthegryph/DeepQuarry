@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dmbc rejects typesof of a verb path the type does not declare and typesof(/world), as DreamMaker does"

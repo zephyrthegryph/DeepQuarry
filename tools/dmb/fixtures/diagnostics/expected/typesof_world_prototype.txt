@@ -1,0 +1,2 @@
+typesof_world_prototype.dm:2:error: /world: not a prototype
+typesof_world_prototype.dmb - 1 error, 0 warnings
