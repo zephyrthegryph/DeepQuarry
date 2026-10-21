@@ -590,29 +590,26 @@ SYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// Build the kitchen recipe lists
-	var/list/food_recipes = subtypesof(/datum/recipe)
-	for(var/datum/recipe/Rp as anything in food_recipes)
-		//Lists don't work with datum-stealing no-instance initial() so we have to.
-		var/datum/recipe/R = new Rp()
+	var/list/food_recipes = list()
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
 		if(!isnull(R.result))
 			var/obj/item/res = R.result
-			food_recipes[Rp] = list(
+			food_recipes[R.rule_type] = list(
 						"Result" = "[initial(res.name)]",
 						"ResultPath" = res,
 						"Desc" = "[initial(res.desc)]",
 						"ResAmt" = "1",
-						"Reagents" = R.reagents ? R.reagents.Copy() : list(),
+						"Reagents" = R.reagent_takes ? R.reagent_takes.Copy() : list(),
 						"Catalysts" = list(),
-						"Fruit" = R.fruit ? R.fruit.Copy() : list(),
-						"Ingredients" = R.items ? R.items.Copy() : list(),
+						"Fruit" = R.fruit_takes ? R.fruit_takes.Copy() : list(),
+						"Ingredients" = R.cook_items ? R.cook_items.Copy() : list(),
 						"Coating" = R.coating,
-						"Appliance" = R.appliance,
+						"Appliance" = R.cooks_in,
 						"Allergens" = 0,
 						"Medallergens" = 0,
 						"Price" = initial(res.price_tag),
-						"Flags" = R.wiki_flag
+						"Flags" = R.wiki
 						)
-		spent(R)
 	// basically condiments, tofu, cheese, soysauce, etc
 	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))
 		if(!allow_reagent(CR.result))

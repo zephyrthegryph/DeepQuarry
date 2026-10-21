@@ -1,9 +1,12 @@
-/// Validates every /datum/recipe defines a well-formed result.
+/// Validates every kitchen recipe defines a well-formed result.
 
 /datum/unit_test/recipe_test/Run()
-	for(var/datum/recipe/R as anything in subtypesof(/datum/recipe))
-		TEST_ASSERT_NOTNULL(initial(R.result), "[R]: Recipes - Missing result.")
-		TEST_ASSERT(ispath(initial(R.result), /atom/movable), "[R]: Recipes - Improper result; [initial(R.result)] is not an obj or mob.")
-		TEST_ASSERT_NOTNULL(initial(R.result_quantity), "[R]: Recipes - result_quantity must be set.")
-		TEST_ASSERT(initial(R.result_quantity) > 0, "[R]: Recipes - result_quantity must be greater than zero.")
-		TEST_ASSERT(ISINTEGER(initial(R.result_quantity)), "[R]: Recipes - result_quantity must be an integer.")
+	var/list/rules = xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING)
+	TEST_ASSERT(length(rules) > 0, "Recipes - no kitchen recipe was compiled.")
+	for(var/datum/xform/R as anything in rules)
+		TEST_ASSERT_NOTNULL(R.result, "[R.rule_type]: Recipes - Missing result.")
+		TEST_ASSERT(ispath(R.result, /atom/movable), "[R.rule_type]: Recipes - Improper result; [R.result] is not an obj or mob.")
+		TEST_ASSERT_NOTNULL(R.result_amount, "[R.rule_type]: Recipes - result_quantity must be set.")
+		TEST_ASSERT(R.result_amount > 0, "[R.rule_type]: Recipes - result_quantity must be greater than zero.")
+		TEST_ASSERT(ISINTEGER(R.result_amount), "[R.rule_type]: Recipes - result_quantity must be an integer.")
+		TEST_ASSERT(R.cooks_in > 0, "[R.rule_type]: Recipes - no appliance.")

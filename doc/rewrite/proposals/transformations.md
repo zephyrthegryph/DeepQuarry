@@ -691,3 +691,14 @@ Where the code differs from the syntax this proposal sketched, and why. The deci
   `id` the material made. The processor (`machine_processing.dm`) walks `xform_rules_in()` with the legacy loop unchanged (every taken ore set to alloy, once per
   alloy per tick); no generic ore settle was built, since one caller has it. `product_mod` became the sheet count written out. `/datum/alloy` and `alloy_data`
   are hard-banned.
+* **Wave 3, kitchen.** The 355 `/datum/recipe` types are `/transformation/kitchen/*` (`recipes_{microwave,oven,fryer,grill}.dm`, `superfoods.dm`, the splat recipe in
+  `kitchen/microwave.dm`), `medium = MEDIUM_CONTENTS`, `regime = REGIME_COOKING`: `takes` are `reagent()`, `item_term()` (one per item, duplicates kept) and `fruit_term()`,
+  `makes` one `item_term(result, quantity)`, and the entry gains `cooks_in` (the appliance bitfield), `cook_time`, `mix` (the `RECIPE_REAGENT_*` modes) and `coating`.
+  `code/library/transformations/kitchen.dm` holds the policy: `cooking_select(appliancetype, container, exact)` is `select_recipe()` (the same checks, the most terms wins,
+  a tie goes to the later rule, rules in declaration order), `/datum/xform/proc/cook()` is `make_food()`, and `cooking_rules_for(appliancetype)` replaces
+  `GLOB.available_recipes[appliancetype]`. The four recipes that override `make_food` (donkpocket, donkpocket/warm, amanitajelly, validsalad) and the splat recipe's
+  `before_cook`/`make_food` are procs on their rule type, called on the owner instance. `before_cook`/`after_cook` keep their (single) callers as they were: nothing calls
+  `before_cook`. The acceptable item and reagent lists became lazy procs (`kitchen_acceptable_items()`), since the rules compile at setup, after the global lists
+  initialize. `dq_xform_select_pin` (recorded on the legacy recipes, unchanged through the conversion) pins selection and the recipe facts; `dq_xform_cooking_make` pins what
+  is made. `/datum/recipe`, `select_recipe`, `available_recipes` and the `build_kitchen_*` procs are hard-banned. Recipe type paths are now
+  `/transformation/kitchen/*`, which the microwave UI's class names and the wiki keys follow.

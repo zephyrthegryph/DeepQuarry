@@ -433,13 +433,13 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		return PROCESS_KILL
 
 /obj/machinery/appliance/proc/predict_cooking(datum/cooking_item/CI)
-	var/datum/recipe/recipe = null
+	var/datum/xform/recipe = null
 	var/atom/C = null
 	if(CI.container())
 		C = CI.container()
 	else
 		C = src
-	recipe = select_recipe(GLOB.available_recipes[appliancetype], C)
+	recipe = cooking_select(appliancetype, C)
 
 	var/list/results = list()
 	if(recipe)
@@ -486,17 +486,18 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	if(cooked_sound)
 		playsound(get_turf(src), cooked_sound, 50, 1)
 	//Check recipes first, a valid recipe overrides other options
-	var/datum/recipe/recipe = null
+	var/datum/xform/recipe = null
 	var/atom/C = null
 	if (CI.container())
 		C = CI.container()
 	else
 		C = src
-	recipe = select_recipe(GLOB.available_recipes[appliancetype],C)
+	recipe = cooking_select(appliancetype, C)
 
 	if (recipe)
 		CI.result_type = 4//Recipe type, a specific recipe will transform the ingredients into a new food
-		var/list/results = recipe.make_food(C)
+		var/transformation/kitchen/cooking = recipe.owner_of()
+		var/list/results = cooking.make_food(C)
 
 		var/obj/temp = new /obj(src) //To prevent infinite loops, all results will be moved into a temporary location so they're not considered as inputs for other recipes
 
@@ -504,9 +505,9 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 			AM.forceMove(temp)
 
 		//making multiple copies of a recipe from one container. For example, tons of fries
-		while (select_recipe(GLOB.available_recipes[appliancetype],C) == recipe)
+		while (cooking_select(appliancetype, C) == recipe)
 			var/list/TR = list()
-			TR += recipe.make_food(C)
+			TR += cooking.make_food(C)
 			for (var/atom/movable/AM in TR) //Move results to buffer
 				AM.forceMove(temp)
 			results += TR

@@ -10,30 +10,27 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 								"Catalysts" = (CR.reagent_catalysts || list()))
 
 	//////////////////////// FOOD
-	var/list/food_recipes = subtypesof(/datum/recipe)
+	var/list/food_recipes = list()
 	//Build a useful list
-	for(var/Rp in food_recipes)
-		//Lists don't work with datum-stealing no-instance initial() so we have to.
-		var/datum/recipe/R = new Rp()
+	for(var/datum/xform/R as anything in xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING))
 		var/obj/res = new R.result()
 
 		var/icon/result_icon = icon(res.icon,res.icon_state)
 		result_icon.Scale(64,64)
 
-		food_recipes[Rp] = list(
+		food_recipes[R.rule_type] = list(
 						"Result" = "[res.name]",
 						"ResAmt" = "1",
-						"Reagents" = R.reagents,
+						"Reagents" = R.reagent_takes,
 						"Catalysts" = list(),
-						"Fruit" = R.fruit,
-						"Ingredients" = R.items,
+						"Fruit" = R.fruit_takes,
+						"Ingredients" = R.cook_items,
 						"Coating" = R.coating,
-						"Appliance" = R.appliance,
+						"Appliance" = R.cooks_in,
 						"Image" = result_icon
 						)
 
 		spent(res)
-		spent(R)
 
 	//////////////////////// FOOD+ (basically condiments, tofu, cheese, soysauce, etc)
 	for(var/datum/xform/CR as anything in xform_rules_in(MEDIUM_REAGENTS, REGIME_INSTANT))

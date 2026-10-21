@@ -286,11 +286,11 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 //
 
 /datum/event/supply_demand/proc/choose_food_items(differentTypes)
-	var/list/types = subtypesof(/datum/recipe)
+	var/list/types = xform_rules_in(MEDIUM_CONTENTS, REGIME_COOKING).Copy()
 	for(var/i in 1 to differentTypes)
-		var/datum/recipe/R = pick(types)
+		var/datum/xform/R = pick(types)
 		types -= R // Don't pick the same thing twice
-		var/chosen_path = initial(R.result)
+		var/chosen_path = R.result
 		var/chosen_qty = rand(1, 5)
 		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return

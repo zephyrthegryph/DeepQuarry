@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Kitchen recipes are declared as transformations (ingredients, result, appliance) instead of recipe datums; cooking is unchanged."
