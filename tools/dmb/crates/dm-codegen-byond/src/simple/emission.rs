@@ -6,6 +6,7 @@ impl Compiler<'_> {
         // Branch entries must establish their own source before executing.
         if opcode != 0x84
             && opcode != 0x85
+            && self.debug.is_none_or(|provider| provider.emits_debug_ops())
             && (self.debug_last != self.debug_current
                 || matches!(self.result.code.items.last(), Some(CodeItem::Label(_))))
         {

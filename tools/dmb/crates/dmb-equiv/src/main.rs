@@ -19,6 +19,8 @@ fn main() -> ExitCode {
     match args.first().map(String::as_str) {
         Some("permute") => permute_cmd(&args[1..]),
         Some("dump-proc") => dump_proc(&args[1..]),
+        Some("word-report") => word_report(&args[1..]),
+        Some("no-debug-ops") => no_debug_ops(&args[1..]),
         Some("dump-types") => {
             let Some(path) = args.get(1) else {
                 return fail("dump-types FILE.dmb");
@@ -239,4 +241,94 @@ fn dump_proc(args: &[String]) -> ExitCode {
         }
     }
     ExitCode::SUCCESS
+}
+
+/// `word-report FILE.dmb [TOP]`: the `<global-init>` code size in words, attributed to the global each
+/// statement assigns (words since the previous assignment, debug words included and totalled separately).
+fn word_report(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        return fail("word-report FILE.dmb [TOP]");
+    };
+    let top: usize = args.get(1).and_then(|t| t.parse().ok()).unwrap_or(40);
+    let dmb = match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+        Ok(d) => d,
+        Err(e) => return fail(e),
+    };
+    let ctx = Ctx::new(&dmb, None);
+    let Some(p) = ctx.proc_keys.iter().position(|k| k == "<global-init>") else {
+        return fail("no <global-init>");
+    };
+    let Some(words) = dmb.proc_code_words(p) else {
+        return fail("no code");
+    };
+    let Ok(ins) = byond_dmb::bytecode::decode(words) else {
+        return fail("decode error");
+    };
+    let Ok(lines) = dmb_equiv::canon::render_code_lines_pub(&ctx, words) else {
+        return fail("render error");
+    };
+    let mut file = String::new();
+    let mut acc = 0usize;
+    let mut debug_words = 0usize;
+    let mut rows: Vec<(usize, String, String)> = Vec::new();
+    for (i, ((dbg, text), instr)) in lines.iter().zip(ins.iter()).enumerate() {
+        let end = ins.get(i + 1).map(|n| n.offset).unwrap_or(words.len());
+        let w = end - instr.offset;
+        acc += w;
+        if *dbg {
+            debug_words += w;
+            if let Some(f) = text.strip_prefix("DbgFile ") {
+                file = f.trim_matches('"').to_string();
+            }
+        } else if text.starts_with("SetVar global:") || text.starts_with("SetVar ") {
+            rows.push((acc, text.clone(), file.clone()));
+            acc = 0;
+        }
+    }
+    println!("total_words	{}", words.len());
+    println!("debug_words	{debug_words}");
+    println!("instructions	{}", ins.len());
+    println!("trailing_words	{acc}");
+    rows.sort_by(|a, b| b.0.cmp(&a.0));
+    println!("assignments	{}", rows.len());
+    for (w, t, f) in rows.iter().take(top) {
+        println!("{w}	{t}	{f}");
+    }
+    ExitCode::SUCCESS
+}
+
+/// `no-debug-ops FILE.dmb`: exit 1 when any procedure carries `DbgFile`/`DbgLine`. DreamMaker emits them only
+/// under `DEBUG`, so a production (no `DEBUG`) build must have none, in every procedure.
+fn no_debug_ops(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        return fail("no-debug-ops FILE.dmb");
+    };
+    let dmb = match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+        Ok(d) => d,
+        Err(e) => return fail(e),
+    };
+    let (mut procs, mut ops) = (0usize, 0usize);
+    for p in 0..dmb.procs.len() {
+        let Some(words) = dmb.proc_code_words(p) else {
+            continue;
+        };
+        let Ok(ins) = byond_dmb::bytecode::decode(words) else {
+            return fail(format!("decode error in procedure #{p}"));
+        };
+        let n = ins.iter().filter(|i| i.opcode == 0x84 || i.opcode == 0x85).count();
+        if n > 0 {
+            procs += 1;
+            ops += n;
+            if procs <= 5 {
+                eprintln!("procedure #{p}: {n} debug instructions");
+            }
+        }
+    }
+    println!("procedures_with_debug_ops	{procs}
+debug_instructions	{ops}");
+    if ops == 0 {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    }
 }

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_focused_test.sh accepts every test name a full-suite record holds at any depth, and dq_land.sh defaults DQ_MERGE_SESSION to the branch"

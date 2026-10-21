@@ -79,8 +79,12 @@ pub struct LoweredInitializers {
 }
 struct CapturedOrigins {
     origins: DebugOrigins,
+    ops: bool,
 }
 impl DebugSourceProvider for CapturedOrigins {
+    fn emits_debug_ops(&self) -> bool {
+        self.ops
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         Ok(0)
     }
@@ -625,6 +629,7 @@ fn lower_group<R: Resolver>(
     }
     let debug = CapturedOrigins {
         origins: DebugOrigins { entries },
+        ops: frontend.plan.final_macros.contains_key("DEBUG"),
     };
     // Current classification and provenance are always validated above.
     // Exact authored values and policy-issued array dimensions describe the

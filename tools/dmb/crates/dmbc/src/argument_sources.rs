@@ -148,6 +148,9 @@ fn source_offset(
 }
 struct FixedOrigin;
 impl dm_codegen_byond::DebugSourceProvider for FixedOrigin {
+    fn emits_debug_ops(&self) -> bool {
+        false
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         Ok(0)
     }
