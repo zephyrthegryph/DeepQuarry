@@ -28,7 +28,7 @@ CAPABILITIES(/obj/item/mass_spectrometer)
 	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_analyze_holds))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the spectrometer.
-/// Requirement (was REQ_* can_analyze): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/mass_spectrometer/proc/can_analyze_holds(datum/act/op/A)
 	if(A.actor.stat)
 		return null // the effect declines silently

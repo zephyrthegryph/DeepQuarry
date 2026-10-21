@@ -266,7 +266,7 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 	return TRUE
 
 /// Old attack_self.
-/// Requirement (was REQ_* can_exercise): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise_holds(datum/act/op/A)
 	var/answer = can_exercise(A.actor, src, A.held)
 	if(!istext(answer) && answer)

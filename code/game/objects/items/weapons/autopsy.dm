@@ -73,7 +73,7 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 			rel_add(src, nameof(chemtraces), V)
 
 /// Requirement: only a conscious human can print the data.
-/// Requirement (was REQ_* can_print_data): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/autopsy_scanner/proc/can_print_data_holds(datum/act/op/A)
 	if(A.actor.stat || !ishuman(A.actor))
 		return "no"

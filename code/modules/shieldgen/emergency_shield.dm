@@ -227,12 +227,12 @@ CAPABILITIES(/obj/machinery/shieldgen)
 				set_malfunction(1)
 	return OP_OK
 
-/// Requirement (was REQ_* needs_repair): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/shieldgen/proc/needs_repair_holds(datum/act/op/A)
 	var/answer = needs_repair(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
 
-/// Requirement (was REQ_* unlocked): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/shieldgen/proc/unlocked_holds(datum/act/op/A)
 	var/answer = unlocked(A.actor, src, A.held)
 	if(!istext(answer) && answer)
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	return req_refusal_value(answer, "the machine is locked, you are unable to use it")
 
 /// Why unlocked_holds refuses: the legacy check's text, else the clause's own reason.
-/// Requirement (was REQ_* panel_closed): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/shieldgen/proc/panel_closed_holds(datum/act/op/A)
 	var/answer = panel_closed(A.actor, src, A.held)
 	if(!istext(answer) && answer)

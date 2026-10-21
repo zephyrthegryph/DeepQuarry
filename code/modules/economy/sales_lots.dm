@@ -224,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/department_storefront, REGISTRY_TRANSACTION_D
 	. = ..()
 	. += "It deposits revenue into the [department_id] budget. Department staff can stock it by using an item on it."
 
-/// Requirement (was REQ_* can_stock): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/department_storefront/proc/can_stock_holds(datum/act/op/A)
 	var/answer = can_stock(A.actor, src, A.held)
 	if(!istext(answer) && answer)
