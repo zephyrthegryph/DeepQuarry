@@ -373,6 +373,9 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
             Err(reason) => {
                 crate::compile_stats::note_full(format!("incremental output declined: {reason}"));
                 crate::daemon_eprintln!("native incremental output: declined, whole program: {reason}");
+                // The attempt consumed the parsed bodies it lowered; the whole-program path needs them all.
+                let renewed = bodies.renew();
+                crate::daemon_eprintln!("native body arena: renewed {renewed} slots after the declined patch");
             }
         }
     }

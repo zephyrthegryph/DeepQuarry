@@ -134,6 +134,22 @@ impl<'frontend> BodyArena<'frontend> {
         }
     }
 
+    /// Self-heal after an attempt that consumed bodies and was abandoned (a declined incremental
+    /// patch, a cancelled or failed request): every consumed or retained slot goes back to
+    /// unparsed, so the next consumer re-parses from the issued source (the body's query) instead
+    /// of failing with "already consumed". Returns how many slots were rebuilt.
+    pub fn renew(&self) -> usize {
+        let mut renewed = 0;
+        for slot in &self.slots {
+            let mut slot = slot.lock().unwrap_or_else(|error| error.into_inner());
+            if !matches!(*slot, BodyState::Unparsed) {
+                *slot = BodyState::Unparsed;
+                renewed += 1;
+            }
+        }
+        renewed
+    }
+
     fn slot(
         &self,
         occurrence: &BodyOccurrence,
@@ -211,6 +227,19 @@ mod tests {
         assert!(arena.take_parsed(body).is_err());
         assert_eq!(arena.parses.load(Ordering::Relaxed), 0);
         assert_eq!(fork.parses.load(Ordering::Relaxed), 1);
+    }
+    #[test]
+    fn renew_rebuilds_consumed_bodies_from_source() {
+        let frontend = frontend();
+        let arena = BodyArena::new_typed(&frontend, |_| true);
+        let body = &frontend.bodies[0];
+        arena.take_parsed(body).unwrap();
+        arena.discard_parsed(&frontend.bodies[1]).unwrap();
+        assert!(arena.take_parsed(body).is_err());
+        assert_eq!(arena.renew(), 2);
+        assert!(arena.take_parsed(body).unwrap().statement_body().is_some());
+        assert!(arena.take_parsed(&frontend.bodies[1]).is_ok());
+        assert_eq!(arena.renew(), 2);
     }
     #[test]
     fn lazy_slots_do_not_reserve_each_unparsed_body_payload() {
