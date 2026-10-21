@@ -96,9 +96,9 @@ GLOBAL_REAL_VAR(_appearance_var_list) = list(
 	// "vis_flags"
 )
 
-/proc/__appearance_v_debug(appearance/A, name)
+/proc/__appearance_v_debug(appearance/A, name, mob/viewer)
 	switch(name)
-#define DEBUG_APPEARANCE_VAR(n) if(#n) return debug_variable(name, A.n, 0, null)
+#define DEBUG_APPEARANCE_VAR(n) if(#n) return debug_variable(name, A.n, 0, null, viewer = viewer)
 		DEBUG_APPEARANCE_VAR(alpha)
 		DEBUG_APPEARANCE_VAR(appearance_flags)
 		DEBUG_APPEARANCE_VAR(blend_mode)

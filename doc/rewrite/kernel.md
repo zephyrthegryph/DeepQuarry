@@ -676,32 +676,18 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 
 **After** (`code/controllers/kernel/kernel.dm`):
 
-```dm
-/// The kernel loop: one budgeted pass per tick. The OM scheduler is the engine; the kernel owns the
-/// host duties the MC had (budget, failsafe heartbeat, runlevels) and the five kernel subsystems.
-/datum/controller/kernel/proc/loop()
-	while(TRUE)
-		last_tick = world.time
-		var/limit = TICK_LIMIT_RUNNING
-		if(TICK_USAGE > TICK_LIMIT_MC)              // BYOND resumed us late: yield this tick
-			sleep(world.tick_lag) // ALLOW(scheduler): kernel host loop
-			continue
-		run_kernel_subsystems(limit * KERNEL_SHARE)  // input, verb_manager (+ dbcore pump, tgui transport)
-		sched.native_step()                          // the ONE Rust driver (section 3.3)
-		sched.run_pass(limit)                        // deadlines, borrow, lanes, leftovers (unchanged)
-		run_garbage(limit)                           // tg GC, whatever is left, floor per second
-		record_performance_tick(TICK_USAGE)
-		sleep(world.tick_lag) // ALLOW(scheduler): kernel host loop
+Current implementation excerpt ([code/controllers/kernel/kernel.dm](../../code/controllers/kernel/kernel.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/// Kernel subsystems keep tg's /datum/controller/subsystem shape (fire(resumed), Recover()) but
-/// run in fixed order with a cap: no priority queue, no next_fire bookkeeping for gameplay.
-/datum/controller/kernel/proc/run_kernel_subsystems(cap)
-	var/stop = TICK_USAGE + cap
-	for(var/datum/controller/subsystem/SS as anything in kernel_subsystems)
-		if(SS.can_fire && SS.due())
-			SS.ignite(FALSE)
-		if(TICK_USAGE > stop)
-			return
+```dm fragment
+/datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX, light = FALSE)
+	var/tick_start = TICK_USAGE
+	var/saved_limit = Kernel.current_ticklimit
+```
+
+Phase G now dispatches registered garbage work through the same phase runner:
+
+```dm fragment
+			work_run_phase(KERNEL_PHASE_G, g_limit)
 ```
 
 **What goes away:**
@@ -731,15 +717,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 	machine_first_wakes_flush()
 ```
 
-```dm
-// controllers/subsystems/atoms.dm:46-51 — a subsystem booting services by hand
-/datum/controller/subsystem/atoms/Initialize()
-	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
-	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
-	boot_world_service(GLOB.transcore_service)
-	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
-	boot_world_service(GLOB.planet_service)
-```
+Manual boot_world_service calls are gone. The host collects systems and resolves their declared dependencies as one boot graph. See [code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm).
 
 ```dm before
 // ATMOSPHERICS/SSair.dm:1-8, 124-128 — a dependency that is really on a side effect, plus a hand boot
@@ -760,43 +738,21 @@ SUBSYSTEM_DEF(air)
 
 **After:**
 
-```dm
-/datum/system/transcore
-	needs = list(/datum/system/mapping)           // atoms' resleevers join it via capability, before it inits
-/datum/system/planets
-	needs = list(/datum/system/mapping)
-/datum/system/atoms
-	needs = list(/datum/system/mapping, /datum/system/jobs, /datum/system/transcore, /datum/system/planets)
-/datum/system/pois                                 // split out of holomaps: the side effect gets a node
-	needs = list(/datum/system/atoms)
-/datum/system/machines
-	needs = list(/datum/system/atoms, /datum/system/pois, /datum/system/native)
-/datum/system/atmos_pipes
-	needs = list(/datum/system/atoms, /datum/system/gas_registry, /datum/system/machines)
+Current implementation excerpt ([code/controllers/kernel/host.dm](../../code/controllers/kernel/host.dm)); kept lines are verbatim, with surrounding code omitted.
 
-// code/controllers/kernel/boot.dm
-/datum/controller/kernel/proc/boot_systems()
-	var/list/nodes = list()
-	var/list/deps = list()
-	for(var/path in subtypesof(/datum/system))
-		var/datum/system/proto = path
-		if(initial(proto.abstract_type) == path)
-			continue
-		var/datum/system/S = systems_by_type[path] || (systems_by_type[path] = new path)
-		nodes += S
-	for(var/datum/system/S as anything in nodes)
-		deps[S] = resolve_needs(S)                  // needs + others' needed_by; unknown path = boot error
-	var/list/cycle = list()
-	var/list/order = boot_dependency_order(nodes, deps, cycle)   // the existing Kahn sort
-	if(length(order) != length(nodes))
-		boot_cycle = jointext(cycle, " -> ")
-		stack_trace("KERNEL: system dependency cycle: [boot_cycle]")
-	for(var/datum/system/S as anything in order)
-		S.initialize()
-		S.ready = TRUE
-		S.on_members_ready()                        // first should_run() of members that joined early
-		attach_rings(S)                             // system cadence + member cadence rings
-		CHECK_TICK
+```dm fragment
+	var/list/boot_systems = kernel_boot_systems()
+	var/list/type_to_node = list()
+	for(var/datum/system/boot_system as anything in boot_systems)
+		type_to_node[boot_system.type] = boot_system
+	boot_errors = list()
+	var/list/deps_by_node = kernel_system_deps(boot_systems, type_to_node, boot_errors)
+	for(var/boot_error in boot_errors)
+		stack_trace("ERROR: kernel: boot: [boot_error]")
+		log_world("ERROR: kernel: boot: [boot_error]")
+
+	var/datum/graph_check/boot_graph = graph_validate(boot_systems, deps_by_node)
+	var/list/cycle = boot_graph.cycle
 ```
 
 **What changes:**
@@ -874,24 +830,17 @@ SUBSYSTEM_DEF(air)
 **After** (four folders: `code/modules/native/`, `code/ATMOSPHERICS/gas/`,
 `code/ATMOSPHERICS/pipes/`, `code/modules/heat/`):
 
-```dm
-// code/modules/native/_native.dm — the ONE Rust driver; runs as kernel phase N, not on a lane
-/datum/system/native
-	name = "Native (Rust world)"
-	emits = list(/datum/om/event/native/gas_reaction_ready, /datum/om/event/native/gas_visual,
-		/datum/om/event/native/spacewind, /datum/om/event/native/power_region)
-	VAR_PRIVATE/last_tick = 0
+Current implementation excerpt ([code/datums/native/system.dm](../../code/datums/native/system.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/datum/system/native/proc/kernel_step()            // called by sched.native_step(), once per tick
-	var/elapsed = (world.time - last_tick) / (1 SECONDS)
-	last_tick = world.time
-	vg_world_tick(elapsed)                          // gas + power laws (was SSvg) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
-	vg_heat_tick(elapsed)                           // heat frames (was SSair superconductivity) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
-	sched.world_step()                              // timers, keys, rates, native watches (unchanged) // ALLOW(doc_snippets): the driver entry points as designed; the final names follow the Rust bindings
-	native_dispatch(vg_drain_events())              // the ONLY drain; typed events -> OM_EMIT_WORLD
-
-/datum/system/native/metrics()
-	return alist("gas" = vg_gas_stats(), "heat" = vg_heat_stats(), "laws" = vg_world_laws())
+```dm fragment
+/datum/system/native/proc/run_frame(elapsed, budget = NATIVE_WAKE_BUDGET)
+	var/start = TICK_USAGE_REAL
+	frames++
+	read_cache = null
+	var/list/box = vg_frame(elapsed, budget)
+	deliver(box)
+	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	return TRUE
 ```
 
 ```dm
@@ -915,20 +864,12 @@ SUBSYSTEM_DEF(air)
 	return alist("reactions" = reactions_last)
 ```
 
-```dm
-// code/ATMOSPHERICS/pipes/_atmos_pipes.dm — pipenets only; members come from the pipe capability
-/datum/system/atmos_pipes
-	needs = list(/datum/system/atoms, /datum/system/gas_registry, /datum/system/machines)
-	periodic_cadence = CADENCE_HALF_SECOND
-	after = list(/datum/system/native)
-	VAR_PRIVATE/list/networks = list()              // was SSair.networks + START_PROCESSING_PIPENET
+There is no separate atmos_pipes system: SSair owns the native pipe-port wrappers ([code/ATMOSPHERICS/rust_pipenets.dm](../../code/ATMOSPHERICS/rust_pipenets.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/datum/system/atmos_pipes/periodic_step(dt)
-	return process_pipenets()                       // STEP_YIELD while budget runs out
-
-// code/ATMOSPHERICS/pipes/api.dm
-/datum/system/atmos_pipes/proc/add_network(datum/pipe_network/N)     // command (was the macro)
-/datum/system/atmos_pipes/proc/network_count()                        // query
+```dm fragment
+/proc/rust_pipe_port_of(handle)
+	var/datum/pipe_port/port = SSvg.entity_lookup(handle)
+	return (istype(port) && port.handle == handle) ? port : null
 ```
 
 **What changes:**
@@ -956,21 +897,13 @@ SUBSYSTEM_DEF(air)
 
 **Before:**
 
-```dm
-// game/machinery/machine_service.dm:10-13, 56-74 — gas watch dispatch + atmos pump commit + power step
-GLOBAL_DATUM_INIT(machine_service, /datum/system/machines, new)
-/datum/system/machines
-	name = "Machines"
-	lane = /datum/om/behaviour/world/machines
-...
-/datum/system/machines/service_step(resumed)
-	...
-	var/complete = wake_dirty_gas_subscribers(TRUE)
-	if(complete)
-		flush_pump_transfers()
-	...
-	var/power_started = TICK_USAGE
-	process_power()
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/system/machines/proc/machine_step(dt)
+	var/done = step_machines(machines_resuming)
+	machines_resuming = !done
+	return done ? STEP_DONE : STEP_YIELD
 ```
 
 ```dm
@@ -1005,61 +938,21 @@ every(2 SECONDS, then(PROC_REF(floodlight_step)), when = nameof(on))
 
 **After:**
 
-```dm
-// A floodlight is ordinary DX: a cadence, a gate, a step. No roster entry, no MACHINE_WAKE.
-/obj/machinery/floodlight
-	periodic_cadence = CADENCE_SLOW
+Current implementation excerpt ([code/game/machinery/floodlight.dm](../../code/game/machinery/floodlight.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/obj/machinery/floodlight/capabilities()
-	. = ..()
-	. += floor_machine()                          // includes powered(): joins /datum/system/power
-	. += slot(nameof(cell), /obj/item/cell, behind = COVER)
-
-/obj/machinery/floodlight/should_run()
-	return on && cell && cap_powered()          // re-evaluated on changed(); parks when FALSE
-
-/obj/machinery/floodlight/periodic_step(dt)
-	if(cell.charge < use * CELLRATE)
-		turn_off(TRUE)                          // a TRACKED set_on(FALSE) -> should_run() FALSE -> parked
-		return
-	cell.use(use * CELLRATE)
+```dm fragment
+CAPABILITIES(/obj/machinery/floodlight)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	climb()
 ```
 
-```dm
-// code/modules/power/_power.dm — the Rust power domain's DM side, members from `powered`
-/datum/system/power
-	needs = list(/datum/system/native, /datum/system/atoms)
-	periodic_cadence = CADENCE_SLOW
-	after = list(/datum/system/native)
-	VAR_PRIVATE/alist/power_grids = alist()       // was machine_service.power_grids (12 external reads)
+Current implementation excerpt ([code/game/machinery/machine_service.dm](../../code/game/machinery/machine_service.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/datum/system/power/periodic_step(dt)
-	power_grid_refresh()                          // reads vg_power_region_read (power_grid.dm)
-
-/datum/system/power/events()
-	return list(/datum/om/event/native/power_region = PROC_REF(on_region))
-
-// code/modules/power/api.dm
-/datum/system/power/proc/region_of(atom/A)                   // query
-/datum/system/power/proc/material_overlay_for(region_id)     // query (was power_material_overlays poke)
-
-// code/ATMOSPHERICS/devices/_atmos_devices.dm — the pump batch belongs to atmos, not "machines"
-/datum/system/atmos_devices
-	needs = list(/datum/system/atmos_pipes)
-	periodic_cadence = CADENCE_SLOW
-	after = list(/datum/system/atmos_pipes)
-	VAR_PRIVATE/list/pending_pump_transfers = list()
-/datum/system/atmos_devices/periodic_step(dt)
-	flush_pump_transfers()
-// api.dm: /datum/system/atmos_devices/proc/queue_pump_transfer(...)   // command
-
-// code/modules/atmos_watch/_gas_watch.dm — gas dependency wakes: native dirty-set -> watches
-/datum/system/gas_watch
-	needs = list(/datum/system/native)
-	periodic_cadence = CADENCE_SLOW
-	after = list(/datum/system/native)
-/datum/system/gas_watch/periodic_step(dt)
-	return wake_dirty_gas_subscribers()           // STEP_YIELD mid-batch, as today
+```dm fragment
+/datum/system/machines/proc/process_power()
+	process_power_begin()
+	poll_power_storage(FALSE)
+	process_power_finish()
 ```
 
 **What changes:**
@@ -1134,56 +1027,22 @@ every(2 MINUTES, then(PROC_REF(dump_profile)), when = nameof(profiling))
 
 **After:**
 
-```dm
-// code/modules/mob/living/life/_life.dm
-/datum/system/life
-	name = "Life"
-	needs = list(/datum/system/atoms)
-	member_cadence = CADENCE_LIFE                 // fixed step, bio clock, relevance park: cadence data
+Current implementation excerpt ([code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+/datum/sequence/life
+	name = "life"
+	interval = LIFE_CYCLE
+	step = LIFE_CYCLE_SECONDS
+	max_catchup = LIFE_MAX_CATCHUP
+	clock = CLOCK_WORLD
 	lane = LANE_SIMULATION
-
-/// The ordered stage families (the same 66 /datum/om/stage/life families, variants per mob type).
-/datum/system/life/proc/stages()
-	return list(/datum/om/stage/life)
-
-/datum/system/life/member_should_run(mob/living/L)
-	return L.loc && !L.transforming && life_any_stage_wants(L)   // == today's "not every stage idle"
-
-/datum/system/life/member_step(mob/living/L, dt)
-	run_life_frame(L, dt)                         // the existing pipeline runner, unchanged inside
-
-// The stage keeps its shape; only the names align with DX.
-/datum/om/stage/life/heartbeat/should_run(mob/living/carbon/human/self)
-	return self.client && self.pulse != PULSE_NONE && (self.pulse >= PULSE_2FAST || self.shock_stage >= 10 || istype(get_turf(self), /turf/space))
-
-/datum/om/stage/life/heartbeat/periodic_step(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	...                                          // was perform(); returns rewake_in(4 SECONDS) when a raw pulse write is possible
+	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	park_after = LIFE_PARK_AFTER
+	min_relevance = RELEVANCE_NEAR
 ```
 
-```dm
-// derive / present / vision are the same system's other passes, not three more pipelines:
-/datum/system/life_present
-	needs = list(/datum/system/life)
-	lane = LANE_PRESENTATION
-	member_cadence = CADENCE_PRESENT              // min_interval LIFE_PRESENT_MIN_INTERVAL, has_client gate
-/datum/system/life_present/member_should_run(mob/living/L)
-	return L.client && life_present_dirty(L)
-
-// Death reporting: the mobs service stops reaching into the round's game mode.
-/mob/living/proc/death(gibbed)
-	...
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)   // exists today (mob/death.dm:125)
-
-/datum/system/round/events()
-	return list(/datum/om/event/world_mob_death = PROC_REF(on_mob_death))   // check_win() lives here
-
-/datum/system/death_stats                          // was mob_service's DB half
-	uses = list(/datum/system/db)
-/datum/system/death_stats/events()
-	return list(/datum/om/event/world_mob_death = PROC_REF(queue_death_row))
-/datum/system/death_stats/periodic_step(dt)        // CADENCE_SLOW; should_run() = length(rows)
-	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
-```
+The proposed life_present and death_stats systems were not implemented under those names. Living work uses the Life sequence and state reactions; these proposed wrappers have no direct rename. See [code/modules/mob/living/life/life_sequence.dm](../../code/modules/mob/living/life/life_sequence.dm).
 
 **What changes:**
 - `/datum/om/decl/living` and `/datum/system/mobs` are deleted.
@@ -1225,54 +1084,19 @@ every(2 MINUTES, then(PROC_REF(dump_profile)), when = nameof(profiling))
 
 **After:**
 
-```dm
-// code/modules/expedition/_expedition.dm
-/datum/system/expedition
-	needs = list(/datum/system/mapping)
-	periodic_cadence = CADENCE_SLOW
-	emits = list(/datum/om/event/expedition/site_opened, /datum/om/event/expedition/site_released,
-		/datum/om/event/expedition/site_moved)
-	uses = list(/datum/system/flight)             // one query: destination_busy()
-	VAR_PRIVATE/list/sites = list()
-	VAR_PRIVATE/list/free_z = list()
+Current implementation excerpt ([code/modules/expedition/api.dm](../../code/modules/expedition/api.dm)); kept lines are verbatim, with surrounding code omitted.
 
-/datum/system/expedition/should_run()
-	return length(teardown_z) || has_generation_queued()   // was on_demand + has_work()
-
-// code/modules/expedition/api.dm
-/datum/system/expedition/proc/site(id)                    // query
-/datum/system/expedition/proc/open_sites()                // query: a copy
-/datum/system/expedition/proc/abandon(mob/user, datum/flight_vessel/vessel)   // command
+```dm fragment
+/datum/system/expedition/proc/abandon_assignment(mob/user, datum/flight_vessel/vessel)
 	var/datum/expedition_site/site = vessel?.active_expedition()
 	if(!site || QDELETED(site))
 		return FALSE
-	if(system(/datum/system/flight).destination_busy(site.flight_destination_id))
-		return refuse(user, "The assignment cannot be abandoned while a flight plan is using it.")
+	var/datum/flight_destination/destination = SSflight?.destinations[site.flight_destination_id]
+	if(LAZYLEN(destination?.active_plans))
+		to_chat(user, span_warning("The assignment cannot be abandoned while a flight plan is using it."))
+		return FALSE
 	if(site.z_level > 0 && players_on_z(site.z_level))
-		return refuse(user, "The assignment cannot be abandoned while crew remain at the site.")
-	rel_clear(vessel, "active_expedition")
-	release_site(site, "assignment abandoned")    // emits site_released; flight unregisters its OWN destination
-	return TRUE
-
-// code/modules/flight_operations/_flight.dm
-/datum/system/flight
-	needs = list(/datum/system/shuttles)          // no order_after on expedition any more
-	periodic_cadence = CADENCE_SECOND
-	uses = list(/datum/system/expedition, /datum/system/shuttles)
-	VAR_PRIVATE/list/destinations = list()
-	VAR_PRIVATE/list/destination_by_target = list()
-
-/datum/system/flight/events()
-	return list(
-		/datum/om/event/expedition/site_opened = PROC_REF(register_expedition),
-		/datum/om/event/expedition/site_moved = PROC_REF(retarget_expedition),   // replaces the external write
-		/datum/om/event/expedition/site_released = PROC_REF(unregister_expedition),
-	)
-
-/datum/system/flight/initialize()
-	rebuild_registry()
-	for(var/datum/expedition_site/site as anything in system(/datum/system/expedition).open_sites())
-		register_expedition(site)                 // replay: works whichever booted first
+		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 ```
 
 **What changes:**

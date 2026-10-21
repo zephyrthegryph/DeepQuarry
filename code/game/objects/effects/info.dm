@@ -10,11 +10,12 @@
 	var/info_text
 
 CAPABILITIES(/obj/effect/abstract/info)
+	click_on(PROC_REF(info_clicked))
 	param(nameof(info_text), pos = 1)
 
-/obj/effect/abstract/info/Click()
-	. = ..()
-	to_chat(usr, info_text)
+/obj/effect/abstract/info/proc/info_clicked(datum/act/input/A)
+	input_submit(new /datum/input_event/click(A.actor, src, A.native?["location"], A.native?["control"], A.params))
+	to_chat(A.actor, info_text)
 
 /obj/effect/abstract/info/MouseEntered(location, control, params)
 	. = ..()

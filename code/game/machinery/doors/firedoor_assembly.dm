@@ -42,13 +42,14 @@ MSG_DEF_SELF(firedoor_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(firedoor_assembly/glazed, "Take the glass out first.")
 
 CAPABILITIES(/obj/structure/firedoor_assembly)
+	click_order(TOOL_WELDER, "unglaze", "construction.dismantle")
 	construction(start(STAGE_FIREDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),
 		stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, item(/obj/item/circuitboard/airalarm), wait(0), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first)), req(PROC_REF(board_releasable))), then(PROC_REF(finish_firedoor)), undo = NO_UNDO),
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	op("anchor", tool(TOOL_WRENCH), label("Bolt or unbolt"), wait(0), then(PROC_REF(anchor_toggled)))
 	op("plate_glass", item(/obj/item/stack/material/glass/reinforced), label("Install windows"), when(PROC_REF(unglazed)), wait(4 SECONDS), then(PROC_REF(glass_in)))
-	op("unglaze", tool(TOOL_WELDER), label("Take the glass out"), when(nameof(glass)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(glass_out)))
+	op("unglaze", tool(TOOL_WELDER), label("Take the glass out"), when(nameof(glass)), wait(4 SECONDS), then(PROC_REF(glass_out)))
 	extend("construction.dismantle", needs(req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down))))
 
 /// No glass is fitted.

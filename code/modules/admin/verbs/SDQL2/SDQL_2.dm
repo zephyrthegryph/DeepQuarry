@@ -1,4 +1,4 @@
-#define SDQL_qdel_datum(d) qdel(d)
+
 
 //SDQL2 datumized, /tg/station special!
 
@@ -658,7 +658,7 @@ CAPABILITIES(/datum/SDQL2_query)
 
 		if("delete")
 			for(var/datum/d in found)
-				SDQL_qdel_datum(d)
+				lifeform_end(d, END_ENGINE)
 				obj_count_finished += 1
 				SDQL2_TICK_CHECK
 				SDQL2_HALT_CHECK
@@ -1153,10 +1153,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/obj/effect/statclick/SDQL2_VV_all)
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"
 
-/obj/effect/statclick/SDQL2_VV_all/Click()
-	usr.client.debug_variables(REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
+/obj/effect/statclick/SDQL2_VV_all/proc/queries_clicked(datum/act/input/A)
+	A.actor.client.debug_variables(REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 
-#undef SDQL_qdel_datum
+
 
 #undef SDQL2_STATE_ERROR
 #undef SDQL2_STATE_IDLE
@@ -1206,3 +1206,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/obj/effect/statclick/SDQL2_VV_all)
 	if(!user)
 		return
 	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_query_text"], A.answer)
+
+CAPABILITIES(/obj/effect/statclick/SDQL2_VV_all)
+	click_on(PROC_REF(queries_clicked))

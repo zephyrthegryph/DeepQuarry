@@ -24,15 +24,12 @@ TYPE_TABLE_* bits per type) is the one per-type table outside it: it is the type
 
 ## 1. Declaring and reading
 
-```dm
-/proc/build_window_overlays(icon_file, basestate, connections)
-	. = list()
-	...
+Current implementation excerpt ([code/_helpers/icons.dm](../../code/_helpers/icons.dm)); kept lines are verbatim, with surrounding code omitted.
 
-DECLARE_SHARED_CACHE(window_overlays, GLOBAL_PROC_REF(build_window_overlays), SC_NEVER)
-
-/obj/structure/window/update_overlays()
-	add_overlay(CACHED3(window_overlays, icon, basestate, connections))
+```dm fragment
+DECLARE_SHARED_CACHE(icon_resolved_path, GLOBAL_PROC_REF(build_resolved_icon_path), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_dmi_metadata, GLOBAL_PROC_REF(build_icon_metadata), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_state_names, GLOBAL_PROC_REF(build_icon_state_names), SC_NEVER)
 ```
 
 | Macro | Use |
@@ -88,8 +85,12 @@ The hooks are a null check in `om_emit()`/`om_wants()` and a mask test in
 
 The store is a plain global list (`_scs_<name>`). In release builds `CACHED(n, k)` expands to
 
-```dm
-(_scs_n[k] || _sc_n.miss(k))
+The uncounted release fast paths remain list lookups with a miss call ([code/__defines/shared_cache.dm](../../code/__defines/shared_cache.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
+#define CACHED_FAST(N, K) (_scs_##N[K] || _sc_##N.miss(K))
+#define CACHED_INT_FAST(N, I) ((I) <= length(_scs_##N) && _scs_##N[I] || _sc_##N.miss_int(I))
+#define _CACHED_KEY_FAST(N, K, A...) (_scs_##N[K] || _sc_##N.miss(K, ##A))
 ```
 
 one list index, with the proc call only on a miss: the same code as a hand-rolled inline

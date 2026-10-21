@@ -108,27 +108,12 @@ The generator writes procs and defines into
 `code/__defines/verdigris/_bindings.dm`, and type-level declarations into
 `_bindings_types.dm`. Nothing in them is written by hand.
 
-```dm
-// Which component this type holds (type-level, no per-instance memory).
-/obj/machinery/atmospherics/binary/pump/vg_gas = VG_GAS_PUMP
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
 
-// Initial values for config: set on subtypes or var-edited in maps, read once when bound.
-/obj/machinery/atmospherics/binary/pump/var/tmp/init_target_pressure
-/obj/machinery/atmospherics/binary/pump/var/tmp/init_power_rating
-/obj/machinery/atmospherics/binary/pump/var/tmp/init_on
-
-// The only way to reach the values.
-/obj/machinery/atmospherics/binary/pump/proc/get_target_pressure()        // kPa
-/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)   // kPa; returns what was stored
-/obj/machinery/atmospherics/binary/pump/proc/get_flow_rate()              // mol/s, read-only
-/obj/machinery/atmospherics/binary/pump/proc/pump_query_ui()              // assoc list, one call
-
-// Schema constants for UIs; no copied limits.
-#define VG_PUMP_TARGET_PRESSURE_MAX 4500
-
-// Event handlers, with no-op defaults. Override the ones you need.
-/obj/machinery/atmospherics/binary/pump/proc/on_pump_target_reached()
-/obj/machinery/atmospherics/binary/pump/proc/on_pump_starved()
+```dm fragment
+/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure(value)
+	. = native_write(src, NATIVE_PUMP_TARGET_PRESSURE, value)
+	rust_device_dirty()
 ```
 
 - **Initial values** (`init_*`) are constructor arguments, not state. A lint
@@ -349,23 +334,20 @@ Before (`pump.dm` today):
 
 After (the whole binding-related part of the file):
 
-```dm
+Current implementation excerpt ([code/ATMOSPHERICS/components/binary_devices/pump.dm](../../code/ATMOSPHERICS/components/binary_devices/pump.dm)); kept lines are verbatim, with surrounding code omitted.
+
+```dm fragment
 /obj/machinery/atmospherics/binary/pump/high_power
-	init_target_pressure = 9000
-	init_power_rating = 45000
+	icon = 'icons/atmos/volume_pump.dmi'
+	icon_state = "map_off"
+	construction_type = /obj/item/pipe/directional
+	pipe_state = "volumepump"
+	level = 1
 
-/obj/machinery/atmospherics/binary/pump/ui_data(mob/user)
-	return pump_query_ui()
+	name = "high power gas pump"
+	desc = "A pump that moves gas from one place to another. Has double the power rating of the standard gas pump."
 
-/obj/machinery/atmospherics/binary/pump/ui_act(action, list/params)
-	. = ..()
-	switch(action)
-		if("pressure")
-			set_target_pressure(text2num(params["pressure"]))
-			return TRUE
-		if("power")
-			set_on(!get_on())
-			return TRUE
+	init_power_rating = 15000	//15000 W ~ 20 HP
 ```
 
 No `process()`, no sync calls, no ids, no port numbers, no per-tick callbacks.
