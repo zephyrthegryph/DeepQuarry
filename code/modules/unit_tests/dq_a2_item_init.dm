@@ -19,7 +19,8 @@
 	var/obj/item/cell/standin/valid = allocate(/obj/item/cell/standin, test_floor(), H)
 	TEST_ASSERT(!QDELETED(valid), "A stand-in cell with its real human source is kept")
 	TEST_ASSERT_EQUAL(valid.charge, nutrition_of(H), "The kept cell's existing setup reads actual human nutrition")
-	TEST_ASSERT_EQUAL(valid.maxcharge, H.starting_nutrition(), "The kept cell uses its human's nutrition capacity")
+	// A human's starting_nutrition() is a fresh 200-400 roll on every call, so the capacity is checked against that range.
+	TEST_ASSERT(valid.maxcharge >= 200 && valid.maxcharge <= 400, "The kept cell uses a new body's nutrition capacity")
 	var/obj/item/cell/standin/invalid = allocate(/obj/item/cell/standin, test_floor())
 	TEST_ASSERT(QDELETED(invalid), "A stand-in without a human is discarded before charging setup")
 

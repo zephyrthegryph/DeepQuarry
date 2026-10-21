@@ -92,7 +92,8 @@
 		rand_seed(seed)
 		var/turf/current = locate(x, y, z)
 		var/turf/simulated/floor/weird_things/dark/D = current.ChangeTurf(/turf/simulated/floor/weird_things/dark)
-		TEST_ASSERT_EQUAL(length(D.overlays), should_glow ? 1 : 0, "Real initialization preserves the conditional glow effect")
+		// The glow is drawn from glow_state now (the tile has no overlays of its own).
+		TEST_ASSERT_EQUAL(!isnull(D.glow_state), should_glow, "Real initialization preserves the conditional glow effect")
 		restore_tile(x, y, z, original_type)
 
 /datum/unit_test/dq_a7_initialization/vision_modes/Run()
