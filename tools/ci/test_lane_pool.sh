@@ -111,5 +111,14 @@ sleep 2
 check "a compiler waiter sorts ahead of a general waiter" '[ "$(pool status | grep "queue [0-9]" | head -n 1 | grep -c dmb-late)" -eq 1 ]'
 kill "$gw" "$late" 2>/dev/null; wait 2>/dev/null
 
+# status never waits for `du` (a built worktree takes a minute on Windows): a slow du is refreshed in the background
+mkdir -p "$tmp/slowbin"; printf '#!/bin/sh
+sleep 25
+echo 1024 "$2"
+' >"$tmp/slowbin/du"; chmod +x "$tmp/slowbin/du"
+rm -rf "$tmp/state/sizes"
+t0=$(date +%s); PATH="$tmp/slowbin:$PATH" pool status >/dev/null 2>&1; t1=$(date +%s)
+check "status returns promptly even when du is slow" '[ $((t1 - t0)) -lt 12 ]'
+
 [ "$fail" -eq 0 ] && echo "test_lane_pool: all passed" || echo "test_lane_pool: FAILED"
 exit "$fail"
