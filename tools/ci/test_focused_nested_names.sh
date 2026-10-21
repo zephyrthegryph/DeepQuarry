@@ -16,8 +16,7 @@ eval "$(sed -n '/^included_files() {/,/^}/p' "$ROOT/tools/dq_focused_test.sh")"
 eval "$(sed -n '/^test_types() {/,/^}/p' "$ROOT/tools/dq_focused_test.sh")"
 
 cd "$T" && git init -q . && mkdir -p code/modules/unit_tests
-printf '%s
-' '#include "codemodulesNit_tests_unit_tests.dm"' >deepquarry.dme
+echo '#include "code\modules\unit_tests\_unit_tests.dm"' >deepquarry.dme
 printf '#include "fixture.dm"\n' >code/modules/unit_tests/_unit_tests.dm
 cat >code/modules/unit_tests/fixture.dm <<'DM'
 /datum/unit_test/plain_top
