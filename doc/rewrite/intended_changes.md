@@ -5284,3 +5284,10 @@ window anchor. The hand input pair remains window then logs. The two static rows
 updated narrowly; no dynamic click/menu golden changes. Actual human, robot and
 AI input/menu projection is checked by `dq_silicon/d7_vending_input_order` in the
 same gate; approval of this static capture is conditional on that test passing.
+
+### D7: airlock static all-binding order (master, not D7)
+
+`dx_menu_order_static` was not in any gate set, and master's airlock ops changed after the golden was last recorded (2026-10-13; the
+`signaler` / `signaler_robot` split and the silicon routing). On unmodified airlock source the artificial all-binding producer now lists
+`wires_window` before `wires.cut` for the four airlock types (`/obj/machinery/door/airlock`, `external`, `glass_external`, `lift`); every
+other key keeps its place. Only those four rows swap that adjacent pair. No dynamic click or menu golden changes (`dx_menu_order` passes).
