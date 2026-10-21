@@ -538,7 +538,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
         let calls = crate::gens::auto_tracked::set_calls(tree);
         for t in sem.objtree.iter_types() {
             for (name, v) in &t.get().vars {
-                if v.declaration.is_some() && !written.contains(name.as_str()) && !calls.contains(name.as_str()) {
+                if v.declaration.is_some() && !written.is_written(name.as_str()) && !calls.contains(name.as_str()) {
                     ctx.tracked.insert(name.clone());
                 }
             }
