@@ -272,7 +272,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 		C.set_operating(position)
 	return PROCESS_KILL
 
-/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/conveyor_switch/proc/lets_in_holds(datum/act/op/A)
 	var/answer = lets_in(A.actor, src, A.held)
 	if(!istext(answer) && answer)

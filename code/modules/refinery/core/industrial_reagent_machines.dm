@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 
 MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to drain")
 
-/// Requirement (was REQ_* has_reagents_holder): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/reagent_refinery/proc/has_reagents_holder_holds(datum/act/op/A)
 	var/answer = has_reagents_holder(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed

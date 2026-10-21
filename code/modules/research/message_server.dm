@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
 	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
 
-/// Requirement (was REQ_* can_upgrade): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/message_server/proc/can_upgrade_holds(datum/act/op/A)
 	var/answer = can_upgrade(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed

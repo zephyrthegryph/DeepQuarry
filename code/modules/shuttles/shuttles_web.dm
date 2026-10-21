@@ -208,7 +208,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
 	return read_once(shuttles_shuttles()[shuttle_tag])
 
-/// Requirement (was REQ_* has_shuttle): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle_holds(datum/act/op/A)
 	var/answer = has_shuttle(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed

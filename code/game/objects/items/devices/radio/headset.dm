@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/radio/headset)
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 
 /// Requirement: a free key slot.
-/// Requirement (was REQ_* can_insert_key): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/radio/headset/proc/can_insert_key_holds(datum/act/op/A)
 	if(keyslot1 && keyslot2)
 		return "the headset can't hold another key"

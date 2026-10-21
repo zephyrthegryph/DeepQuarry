@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /obj/machinery/computer/telescience/proc/has_crystal_slot(mob/user, atom/target, obj/item/held)
 	return length(crystals) >= max_crystals ? "there are not enough crystal slots" : TRUE
 
-/// Requirement (was REQ_* has_crystal_slot): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/computer/telescience/proc/has_crystal_slot_holds(datum/act/op/A)
 	var/answer = has_crystal_slot(A.actor, src, A.held)
 	if(!istext(answer) && answer)

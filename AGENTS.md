@@ -73,7 +73,7 @@ definition before using it.
 | Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | yes (the table procs are hard-banned) | `CAPABILITIES(T)` |
 | Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | yes | `CAPABILITIES`, `section()`; shared capabilities in `code/library/` and `code/datums/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | yes (interactions, the task engine, `DECLARE_INTERACTIONS`, `om_ask` are gone and banned) | `op(...)`; a window button is `op(key, ui_act(key, arg(...)), needs(...), asks(...), then(...))` |
-| Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes; the `REQ_*` predicate macros (`code/__defines/constraints.dm`) are the open conversion | `needs(...)` with a requirement proc; `REQ_*` only in a file not yet converted |
+| Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes (the `REQ_*` predicate macros are gone and banned) | `needs(...)` with a native `req_*` part |
 | Typed world events | `/datum/act` contexts from `ACTION()`; `intercept()` | §8, §10 | `ACTION()` and hit hooks yes; `intercept()` **new** | `ACTION()`, hooks in `CAPABILITIES` (`DAMAGE_REACTION`, `OM_EMIT`, `om_hook` are banned) |
 | React after | `on_notice(/datum/notice/x, ...)`, `PUBLISH()` | §10 | yes (notices come from `ACTION()`; master's `NOTICE()` is an unrelated log macro) | `on_notice()`, `PUBLISH()` |
 | React to a state key | `on_change(nameof(v), ...)` | §7, §10 | yes | `on_change()` |
@@ -120,8 +120,6 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 
 What is still open, and still correct to write where a file already uses it:
 
-- `REQ_*` predicate macros (`code/__defines/constraints.dm`; replacement `needs(req...)`), about 99
-  sites in 23 files.
 - `rerun_ask` / `verb_ask` / `client_ask` prompts (replacement `asks()` steps), about 76 sites in 41 files.
 - `BF_*` body factors read with `L.factor()`: the stat layer exists, the factors are not on it yet.
 - `reactions()` table procs on types that are not systems (a system's `every()` items stay there).

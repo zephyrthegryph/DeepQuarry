@@ -61,7 +61,7 @@ CAPABILITIES(/obj/machinery/slot_machine)
 		return OP_OK
 	return OP_DECLINE
 
-/// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/slot_machine/proc/not_running_holds(datum/act/op/A)
 	var/answer = not_running(A.actor, src, A.held)
 	if(!istext(answer) && answer)
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/machinery/station_slot_machine)
 		return OP_OK
 	return OP_DECLINE
 
-/// Requirement (was REQ_* not_running): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/station_slot_machine/proc/not_running_holds(datum/act/op/A)
 	var/answer = not_running(A.actor, src, A.held)
 	if(!istext(answer) && answer)

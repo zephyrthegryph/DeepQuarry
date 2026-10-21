@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(store_question)), "title" = computed(PROC_REF(store_title)), "choices" = list("Store", "Cancel"), "timeout" = 10 SECONDS, "buttons" = TRUE), step = "store", when = PROC_REF(store_asks)),
 		then(PROC_REF(interaction_store)))
 
-/// Requirement (was REQ_* can_store): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/item_bank/proc/can_store_holds(datum/act/op/A)
 	var/answer = can_store(A.actor, src, A.held)
 	if(!istext(answer) && answer)

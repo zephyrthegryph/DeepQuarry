@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(can_toggle_holds))), then(PROC_REF(interaction_toggle)))
 
-/// Requirement (was REQ_* can_toggle): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/machinery/shieldwallgen/proc/can_toggle_holds(datum/act/op/A)
 	var/answer = can_toggle(A.actor, src, A.held)
 	if(!istext(answer) && answer)

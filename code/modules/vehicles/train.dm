@@ -101,7 +101,7 @@
 
 	return 1
 
-/// Requirement (was REQ_* pred_train_unlatchable): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/vehicle/train/proc/pred_train_unlatchable_holds(datum/act/op/A)
 	var/answer = pred_train_unlatchable(A.actor, src, A.held)
 	if(!istext(answer) && answer)

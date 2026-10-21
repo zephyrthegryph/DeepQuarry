@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	return TRUE
 
 /// Old attack_self.
-/// Requirement (was REQ_* can_use_mapper): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/item/mapping_unit/proc/can_use_mapper_holds(datum/act/op/A)
 	var/answer = can_use_mapper(A.actor, src, A.held)
 	if(!istext(answer) && answer)

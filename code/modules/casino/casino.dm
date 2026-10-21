@@ -76,7 +76,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	return TRUE
 
 /// Old attack_hand.
-/// Requirement (was REQ_* can_spin): the legacy check answers TRUE to pass.
+/// Requirement: answers null to allow or a reason.
 /obj/structure/casino_table/roulette_table/proc/can_spin_holds(datum/act/op/A)
 	var/answer = can_spin(A.actor, src, A.held)
 	if(!istext(answer) && answer)
