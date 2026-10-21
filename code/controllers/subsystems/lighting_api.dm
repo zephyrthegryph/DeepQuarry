@@ -18,16 +18,6 @@
 /datum/system/lighting/proc/unqueue_object(datum/lighting_object/object)
 	objects_queue -= object
 
-/// Sleep/wake uses membership; visibility changes use the original append path.
-/datum/system/lighting/proc/queue_sunlight(datum/sunlight_handler/handler, unique = FALSE)
-	if(unique)
-		sunlight_queue |= handler
-	else
-		sunlight_queue += handler
-
-/datum/system/lighting/proc/unqueue_sunlight(datum/sunlight_handler/handler)
-	sunlight_queue -= handler
-
 /// Fake suns register their precomputed handler before requesting its update.
 /datum/system/lighting/proc/register_sunlight_z(z, datum/planet_sunlight_handler/handler)
 	if(z > length(z_to_pshandler))
