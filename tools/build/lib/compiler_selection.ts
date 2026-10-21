@@ -121,11 +121,17 @@ function nativeNoDaemon(): boolean {
   if (value !== '0' && value !== '1') throw new Error('DQ_NATIVE_NO_DAEMON must be 0 or 1.');
   return value === '1';
 }
-/** Native-only gates preserve internal failures instead of running DreamMaker. */
+/**
+ * A native compiler failure fails the build; DreamMaker is not run in its place. Fallback is opt-in: DQ_COMPILER_FALLBACK=1 (or
+ * DQ_COMPILER_STRICT=0 explicitly). A silent fallback once hid a native compile failure on master behind a green DreamMaker build.
+ */
 function nativeStrict(): boolean {
-  const value = process.env.DQ_COMPILER_STRICT ?? '0';
-  if (value !== '0' && value !== '1') throw new Error('DQ_COMPILER_STRICT must be 0 or 1.');
-  return value === '1';
+  const value = process.env.DQ_COMPILER_STRICT;
+  if (value !== undefined && value !== '0' && value !== '1') throw new Error('DQ_COMPILER_STRICT must be 0 or 1.');
+  const fallback = process.env.DQ_COMPILER_FALLBACK ?? '0';
+  if (fallback !== '0' && fallback !== '1') throw new Error('DQ_COMPILER_FALLBACK must be 0 or 1.');
+  if (value !== undefined) return value === '1';
+  return fallback !== '1';
 }
 /** Include backend configuration and actual binaries in derived-build admission. */
 export function compilerCacheIdentity(): string {

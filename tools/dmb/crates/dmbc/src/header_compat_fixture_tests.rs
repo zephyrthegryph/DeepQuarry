@@ -167,6 +167,15 @@ fn build_source_text(source: &str) -> String {
     format!("{outcome:?}")
 }
 
+/// `world.vars` iterates like `global.vars` and a datum's `vars` (the probe `dq_compiler_behaviour` dumps all three; it did not compile
+/// natively while the catalog had no `vars` on /world).
+#[test]
+fn world_vars_can_be_iterated() {
+    let source = "/proc/p()\n\tvar/n = 0\n\tfor(var/v in world.vars)\n\t\tn++\n\tfor(var/w in global.vars)\n\t\tn++\n\treturn n\n/world/New()\n\tp()\n";
+    let outcome = build_source_text(source);
+    assert!(outcome.starts_with("Ok"), "{outcome}");
+}
+
 /// Pinned DreamMaker 516.1687 (fixtures/diagnostics/cases/typesof_*, which hold the messages; a failed build carries none here): `/T/verb` exists only when `/T` itself declares a verb, and
 /// `/world` is not a prototype.
 #[test]
