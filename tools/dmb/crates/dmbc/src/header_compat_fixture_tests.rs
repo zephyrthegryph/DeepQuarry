@@ -189,3 +189,36 @@ fn typesof_paths_follow_dreammaker() {
     let world = "/proc/p()\n\treturn typesof(/world)\n/world/New()\n\tp()\n";
     assert!(build_source_text(world).contains("kind: Source"), "world");
 }
+
+/// A static table of 1,400 rows of twenty authored nulls is 58,806 words of global initializer under DreamMaker 516.1687, inside the
+/// 65,535-word procedure limit. Native used to push every null as a three-word `PushVal` (87,000 words) and failed the composition step with
+/// "list exceeds u16 element count"; an authored null is the two-word `GetVar` of the Null reader.
+#[test]
+fn large_static_table_of_nulls_fits_as_it_does_under_dreammaker() {
+    let root = scratch();
+    let project = root.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    let row = format!("\t\tlist({})", vec!["null"; 20].join(","));
+    let rows = vec![row; 1400].join(",\n");
+    std::fs::write(
+        project.join("null_table.dm"),
+        format!(
+            "/datum/table\n\tvar/static/list/rows = list(\n{rows}\n\t)\n/world/New()\n\t..()\n\tworld.log << length(new /datum/table)\n\tdel(src)\n"
+        ),
+    )
+    .unwrap();
+    std::fs::write(project.join("null_table.dme"), "#include \"null_table.dm\"\n").unwrap();
+    let manifest = std::fs::canonicalize(project.join("null_table.dme")).unwrap();
+    let outcome = crate::request_runner::run_build(request(&root, &manifest)).unwrap();
+    let BuildOutcome::Published { output_project, .. } = outcome else {
+        panic!("executable publication expected")
+    };
+    let dmb = byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(output_project.with_extension("dmb")).unwrap()).unwrap();
+    let _ = std::fs::remove_dir_all(&root);
+    let largest = (0..dmb.procs.len())
+        .filter_map(|index| dmb.proc_code_words(index).map(<[u32]>::len))
+        .max()
+        .unwrap();
+    // DreamMaker: 58,806 words (no debug stream). Native adds a few debug words but must stay close, never the 87,000 of PushVal nulls.
+    assert!((58_000..=61_000).contains(&largest), "largest procedure is {largest} words");
+}

@@ -87,6 +87,8 @@ impl Compiler<'_> {
             // assignment producer repeats receiver/key evaluation and guards.
             let mut null = selected.clone();
             null.kind = ExprKind::Literal("null".into());
+            // Not authored: a zero-width span makes the shared expression producer push a null value, as DreamMaker does.
+            null.span = dm_syntax::Span::new(selected.span.start, selected.span.start);
             self.assign_expr(selected, "=", &null, statement)?;
         }
         self.emit(0x0c, vec![]);

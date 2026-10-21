@@ -384,3 +384,36 @@ fn diagnostic_numbers_print_like_printf_g() {
         assert_eq!(format_g(value), expected, "{value}");
     }
 }
+
+/// An authored `null` is read through the Null variable reader (`GetVar 65510`, two words) and an omitted argument pushes a null value
+/// (`PushVal null`, three words). The words are DreamMaker 516.1687's for the same source. The two-word form is what lets a large static
+/// table of nested lists fit the 65,535-word limit of the global initializer exactly as it does under DreamMaker.
+#[test]
+fn authored_null_is_a_variable_read_and_an_omitted_argument_is_a_pushed_null() {
+    let ast = dm_syntax::parse(
+        "/proc/hole(a, b, c)\n\treturn b\n/proc/null_literals()\n\treturn list(list(1), null, 2, null)\n/proc/null_hole()\n\treturn hole(1,,null)\n",
+    );
+    assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+    let mut bindings = LowerBindings::default();
+    bindings
+        .global_procs
+        .insert("hole".into(), reference(Table::Proc, "/proc/hole"));
+    let mut ledger = Ledger::default();
+    ledger.bind(reference(Table::Proc, "/proc/hole"), 0).unwrap();
+    for (item, expected) in [
+        (
+            1,
+            vec![80, 1, 26, 1, 51, 65510, 80, 2, 51, 65510, 26, 4, 18, 0],
+        ),
+        (2, vec![80, 1, 96, 0, 0, 51, 65510, 48, 3, 0, 18, 0]),
+    ] {
+        let compiled =
+            compile_fixture_proc_with_bindings(&ast.items[item].children, &bindings).unwrap();
+        assert_eq!(
+            link_proc(&compiled.code, &ledger).unwrap().words,
+            expected.as_slice(),
+            "item {}",
+            item
+        );
+    }
+}
