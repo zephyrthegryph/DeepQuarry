@@ -290,7 +290,8 @@ dreammaker_crosscheck() {
 	echo "== dreammaker cross-check: passed"
 }
 job_ratchets() {
-	bash tools/ci/check_ratchets.sh || return 1
+	# Cold: a merge verdict must not depend on what a worktree's analyze caches or the shared ones hold (doc: tools/analyze/README.md, "Caches and truth").
+	DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh || return 1
 	tools/build/build.sh analyze || return 2
 	if [ "$shrink_after" -eq 1 ]; then
 		local abin
