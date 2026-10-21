@@ -424,6 +424,7 @@
 #include "dq_xform_select_pin.dm"
 #include "dq_xform_cooking_make.dm"
 #include "dq_xform_grinding_pin.dm"
+#include "dq_xform_fusion_pin.dm"
 #include "dq_xform_smelting_pin.dm"
 #include "dq_transformation_tests.dm"
 #include "dq_reagents_start_snapshot.dm"

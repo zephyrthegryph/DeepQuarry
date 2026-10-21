@@ -1,0 +1,11 @@
+boron_hydrogen => boron11+hydrogen; consumes=3; produces=15; radiation=3; instability=3; products=; min_level=7850000; min_temp=100; special=0; lookup=boron_hydrogen/boron_hydrogen
+deuterium_deuterium => deuterium+deuterium; consumes=1; produces=2; radiation=0; instability=0; products=; min_level=1; min_temp=100; special=0; lookup=deuterium_deuterium/deuterium_deuterium
+deuterium_helium => deuterium+helium3; consumes=1; produces=5; radiation=0; instability=0; products=; min_level=1; min_temp=100; special=0; lookup=deuterium_helium/deuterium_helium
+deuterium_lithium => deuterium+lithium; consumes=2; produces=0; radiation=3; instability=1; products=slimejelly=1; min_level=1; min_temp=100; special=0; lookup=deuterium_lithium/deuterium_lithium
+deuterium_tritium => deuterium+slimejelly; consumes=1; produces=1; radiation=0; instability=0.5; products=helium3=1; min_level=1; min_temp=100; special=0; lookup=deuterium_tritium/deuterium_tritium
+hydrogen_hydrogen => hydrogen+hydrogen; consumes=0; produces=20; radiation=5; instability=5; products=; min_level=11775000; min_temp=100; special=0; lookup=hydrogen_hydrogen/hydrogen_hydrogen
+iron_iron => iron+iron; consumes=10; produces=0; radiation=0; instability=2; products=silver=1,gold=1,platinum=1; min_level=1; min_temp=10000; special=0; lookup=iron_iron/iron_iron
+oxygen_oxygen => oxygen+oxygen; consumes=10; produces=0; radiation=5; instability=5; products=silicon=1; min_level=1; min_temp=100; special=0; lookup=oxygen_oxygen/oxygen_oxygen
+phoron_hydrogen => hydrogen+phoron; consumes=10; produces=0; radiation=0; instability=5; products=mydrogen=1; min_level=1; min_temp=8000; special=0; lookup=phoron_hydrogen/phoron_hydrogen
+phoron_supermatter => supermatter+phoron; consumes=0; produces=5; radiation=20; instability=20; products=; min_level=1; min_temp=100; special=1; lookup=phoron_supermatter/phoron_supermatter
+
