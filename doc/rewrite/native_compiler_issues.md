@@ -65,10 +65,7 @@ this branch. Items marked OPEN are not.
      after a backward `goto` now stores null again; one site unexplained (`/mob/death`, `a?.b?.c = const` pushes the constant before
      the guards); (c) the anonymous procs are type initializers (DreamMaker shares the class and map-instance procedure, store order
      differs): now compared by body under the type. Same-tree counts: `proc.bytecode` 4,779, `proc.extra`/`proc.missing`/
-     `type.type_meta`/`map_objects` 0. New finding: `/obj/item/book/tome` `tomedat` keeps `
-` from a CRLF source file in a multi-line
-     string, DreamMaker has `
-` (`type.type_var_default` 1).
+     `type.type_meta`/`map_objects` 0. New finding: `/obj/item/book/tome` `tomedat` keeps `\r\n` from a CRLF source file in a multi-line string, DreamMaker has `\n` (`type.type_var_default` 1).
    Repro: `build.sh dm` and `DQ_COMPILER=dreammaker build.sh dm` (delete `deepquarry.dmb/.rsc` between), then `dmb-equiv A.dmb B.dmb
    [--ignore-debug] [--max-examples N]`. Kept at `E:/dq-cache/dmb-equiv-20261021/` (dm.dmb, native.dmb, equiv*.log).
 6. **dmbc daemon memory (high).** The daemon sits at 9.7-10.6 GB working set after one build (`dmbd` soft private limit 8 GB, hard
