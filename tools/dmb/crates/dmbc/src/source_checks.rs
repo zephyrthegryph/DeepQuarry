@@ -482,23 +482,38 @@ fn body_errors(
         }
     }
     let _ = braces;
-    // A line whose indentation is neither an extension nor a prefix of the
-    // previous code line's (tabs against spaces).
-    let mut previous: Option<&str> = None;
+    indentation_errors(&lines, &mut errors);
+    errors
+}
+
+/// DreamMaker takes the length of the first indented line (tabs and spaces count one each) as the indent unit; a later
+/// line must be a whole number of units and at most one unit deeper than the previous code line. A rejected line does
+/// not become the previous line, so each line of a bad run is reported (pinned 516.1681,
+/// fixtures/diagnostics/cases/tab_space_mix).
+fn indentation_errors(lines: &[Line<'_>], errors: &mut Vec<(usize, String, Option<SourceLocation>)>) {
+    let mut unit = 0usize;
+    let mut previous_depth = 0usize;
     for line in lines.iter().skip(1) {
         if line.tokens.is_empty() || line.continuation {
             continue;
         }
-        if let Some(previous) = previous {
-            let current = line.indent_text;
-            if !current.starts_with(previous) && !previous.starts_with(current) {
-                errors.push((line.tokens[0].2, "inconsistent indentation".into(), None));
-                break;
-            }
+        let width = line.indent_text.chars().count();
+        if width == 0 {
+            // A new top-level definition starts its own unit.
+            unit = 0;
+            previous_depth = 0;
+            continue;
         }
-        previous = Some(line.indent_text);
+        if unit == 0 {
+            unit = width;
+        }
+        let depth = width / unit;
+        if width % unit != 0 || depth > previous_depth + 1 {
+            errors.push((line.tokens[0].2, "inconsistent indentation".into(), None));
+            continue;
+        }
+        previous_depth = depth;
     }
-    errors
 }
 
 /// DreamMaker's text macros and escapes that a word after `\` may name.
@@ -969,6 +984,60 @@ mod tests {
         let mut errors = Vec::new();
         keyword_argument_errors(&lines, &mut errors);
         errors.into_iter().map(|error| error.1).collect()
+    }
+
+    fn indentation(source: &str) -> usize {
+        let lines = significant_lines(source);
+        let mut errors = Vec::new();
+        super::indentation_errors(&lines, &mut errors);
+        errors.len()
+    }
+
+    #[test]
+    fn indent_unit_is_the_first_indented_line() {
+        // Pinned 516.1681: fixtures/diagnostics/cases/tab_space_mix.
+        assert_eq!(indentation("/proc/t()
+	if(1)
+	  return 1
+	return 2
+"), 1);
+        assert_eq!(indentation("/proc/t()
+	if(1)
+	  return 1
+	  return 3
+	return 2
+"), 2);
+        assert_eq!(indentation("/proc/t()
+  if(1)
+	return 1
+  return 2
+"), 1);
+        assert_eq!(indentation("/proc/t()
+  if(1)
+    if(1)
+          return 1
+"), 1);
+        // Mixed tabs and spaces count one column each: these are accepted.
+        assert_eq!(indentation("/proc/t()
+	if(1)
+  return 1
+	return 2
+"), 0);
+        assert_eq!(indentation("/proc/t()
+	if(1)
+	 return 1
+	return 2
+"), 0);
+        assert_eq!(indentation("/proc/t()
+	if(1)
+		return 1
+	return 2
+"), 0);
+        assert_eq!(indentation("/proc/a()
+	return 1
+/proc/b()
+    return 1
+"), 0);
     }
 
     #[test]

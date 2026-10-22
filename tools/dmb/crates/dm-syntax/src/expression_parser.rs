@@ -507,7 +507,7 @@ impl ExprParser {
                 span,
                 kind: ExprKind::Literal(token.text),
             }),
-            TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~") => {
+            TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*") => {
                 if matches!(token.text.as_str(), "-" | "+")
                     && self.peek().is_some_and(|next| {
                         next.text == token.text && next.span.start == token.span.end
@@ -733,6 +733,14 @@ impl ExprParser {
 #[cfg(test)]
 mod incomplete_tests {
     use super::*;
+    #[test]
+    fn prefix_pointer_dereference_parses_after_a_binary_operator() {
+        // DreamMaker 516.1681 accepts `a +* 2` and `a * * 2` (fixtures/diagnostics/cases/bad_operator).
+        for source in ["a +* 2", "a * * 2", "*a", "a -* 2"] {
+            let parsed = parse_expression(source);
+            assert!(parsed.diagnostics.is_empty(), "{source}: {:?}", parsed.diagnostics);
+        }
+    }
     #[test]
     fn unary_eof_certificates_survive_statement_parsing_at_exact_operand_spans() {
         for (operator, message) in [

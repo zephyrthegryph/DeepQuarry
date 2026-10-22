@@ -671,7 +671,9 @@ impl Compiler<'_> {
                     "-" => opcode::UNARY_NEG,
                     "!" => opcode::NOT,
                     "~" => opcode::BNOT,
-                    "+" => return Ok(()),
+                    // DreamMaker accepts the pointer dereference `*x` on any operand; the
+                    // value of a non-pointer operand is the operand itself.
+                    "+" | "*" => return Ok(()),
                     _ => return Err(error(statement, "unsupported unary operator")),
                 };
                 self.emit(opcode, vec![]);
