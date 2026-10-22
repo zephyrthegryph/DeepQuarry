@@ -99,11 +99,11 @@ CAPABILITIES(/obj/machinery/door)
 /obj/machinery/door/proc/settle_door_state()
 	apply_rad_shield_material()
 	if(density)
-		set_layer(closed_layer)
+		layer = closed_layer
 		explosion_resistance = initial(explosion_resistance)
 		update_heat_protection(get_turf(src))
 	else
-		set_layer(open_layer)
+		layer = open_layer
 		explosion_resistance = 0
 
 	if(width > 1)

@@ -196,7 +196,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		var/default = starts[var_name]
 		var/list/start_args = null
 		if(istype(default, /datum/entry)) // pick_one(), when(), a proc, or starts_args = (code/engine/declare/relations.dm)
-			var/list/resolved = starts_resolve(D, default)
+			var/list/resolved = starts_resolve(D, default, mapload)
 			default = resolved[1]
 			start_args = starts_args_resolve(D, resolved[2]) // OWNER is the holder (code/engine/lifeforms/contents.dm)
 		else if(istext(default))

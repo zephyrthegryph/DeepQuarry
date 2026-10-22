@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/cell)
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
 	enable_material_service()
-	set_c_uid(cell_uid++)
+	c_uid = cell_uid++
 
 /obj/item/cell/get_cell()
 	return src

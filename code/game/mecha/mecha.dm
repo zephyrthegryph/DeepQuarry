@@ -334,7 +334,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	update_transform()
 
-	set_icon_state("[icon_state]-open")
+	icon_state += "-open"
 	add_radio()
 	add_cabin()
 	add_airtank() // without an internal tank the port/airtank Menu entries are not offered (pred_mecha_has_airtank)
