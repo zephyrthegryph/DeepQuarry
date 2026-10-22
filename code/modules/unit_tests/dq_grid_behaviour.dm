@@ -340,6 +340,8 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	term.connect_to_network()
 	term.set_power_supply(0)
 	apc.set_operating(TRUE)
+	apc.set_chargelevel(0) // the terminal's own supply is zeroed, but the station grid behind it is live (a SMES and generators with surplus): the cell must not charge from it between steps
+	refresh_flush() // the setting reaches Rust at the frame's push, which a test step does not run
 	apc.cell.set_charge(apc.cell.maxcharge * 0.8)
 	apc.seat_cell_charge(TRUE)
 	dq_power_test_step()
