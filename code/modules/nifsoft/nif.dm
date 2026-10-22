@@ -72,16 +72,14 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/var/tmp/list/load_data_at_make
 
 //Constructor comes with a free AR HUD
-// ALLOW(init/INSTANCE_STATE): a NIF loads its saved data, implants into the human it is made in and takes its starting wear
-/obj/item/nif/Initialize(mapload)
-	. = ..()
-
+/// A NIF loads its saved data, implants into the human it is made in and takes its starting wear (setup(), mapload = TRUE).
+/obj/item/nif/proc/setup_nif(mapload)
 	//First one to spawn in the game, make a big icon
 	if(!big_icon)
 		big_icon = new(icon,icon_state = "nif_full")
 
 	//Put loaded data here if we loaded any
-	save_data = islist(load_data_at_make) ? load_data_at_make.Copy() : list()
+	set_save_data(islist(load_data_at_make) ? load_data_at_make.Copy() : list())
 	var/saved_examine_msg = save_data["examine_msg"]
 
 	//If it's an empty string, they want it blank. If null, it's never been saved, give default.
@@ -102,6 +100,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		wear(0) //Just make it update.
 
 	//Draw me yo.
+	return INITIALIZE_HINT_NORMAL
 
 /obj/item/nif/proc/register_human()
 	observe(human, /datum/notice/mob_death, src, then(PROC_REF(on_human_death)))

@@ -109,8 +109,7 @@
 /obj/item/gripper/dq_test
 	total_pockets = 0
 
-/obj/item/gripper/dq_test/Initialize(mapload)
-	. = ..()
+/obj/item/gripper/dq_test/setup_pockets(mapload)
 	return INITIALIZE_HINT_NORMAL
 
 /datum/unit_test/dq_refs_gripper_holding
