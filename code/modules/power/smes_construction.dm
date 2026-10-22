@@ -122,6 +122,7 @@ MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
 MSG_DEF_SELF(smes/coil_installed, "You install the coil into the SMES unit!")
 
 CAPABILITIES(/obj/machinery/power/smes/buildable)
+	setup(PROC_REF(sum_coils), mapload = TRUE)
 	owns_many(nameof(component_parts), starts = PROC_REF(starting_parts))
 	wires(name = "SMES", count = 5, tools = FALSE, status_lines = PROC_REF(wire_lights))
 	on_wire(WIRE_SMES_RCON, cut = PROC_REF(rcon_wire_cut), pulse = PROC_REF(rcon_wire_pulsed))
@@ -150,7 +151,10 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 // ALLOW(init/INSTANCE_STATE): whether the map placed the unit (its standard coils come with it) is set before the parent makes its parts; the capacity and I/O caps are the sums of the coils it starts with
 /obj/machinery/power/smes/buildable/Initialize(mapload)
 	placed_by_map = mapload
-	. = ..()
+	return ..()
+
+/// The coils' sums, after the parent's setup hook has wired the unit (the order Initialize() had: terminals and network first, then the coils).
+/obj/machinery/power/smes/buildable/proc/sum_coils(mapload)
 	if(locate_in_list(component_parts, /obj/item/smes_coil)) // a unit made bare (a frame fills it) keeps its type's numbers until its parts arrive
 		recalc_coils()
 
