@@ -43,6 +43,31 @@ impl Compiler<'_> {
         (!text.is_empty()).then(|| text.to_string())
     }
 
+    /// `Type::name` for a variable whose default is a list: DreamMaker builds that list from the default expression where it
+    /// is written (`NewList`, `NewAssocList`) instead of reading `initial()`, which answers null for a list variable.
+    pub(super) fn static_list_default(&self, path: &str, name: &str) -> Option<Expr> {
+        let lookup = self.lookup?;
+        let query = ResolveQuery::Var {
+            owner: dm_ir::SymbolId::of(path),
+            name: dm_ir::SymbolId::of(name),
+        };
+        let data = match lookup.resolver.resolve(query) {
+            ResolvedMeaning::Member { data, .. } => data,
+            _ => return None,
+        };
+        let initializer = data.initializer.as_ref().or(data.declared_initializer.as_ref())?;
+        let text = initializer.source_text(lookup.symbols)?;
+        let parsed = dm_syntax::parse_expression(&text);
+        if !parsed.diagnostics.is_empty() {
+            return None;
+        }
+        let expr = parsed.expr?;
+        match &expr.kind {
+            ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(callee) if callee == "list") => Some(expr),
+            _ => None,
+        }
+    }
+
     /// The value of the `const` variable a shared-storage reference names, as a literal expression. None for anything
     /// that is not a constant with a scalar value (including every local and argument).
     fn const_literal(&self, symbol: SymRef, span: dm_syntax::Span) -> Option<Expr> {

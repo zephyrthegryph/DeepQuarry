@@ -395,23 +395,31 @@ impl Compiler<'_> {
                         opcode::SET_VAR,
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
+                    // `for(var/T/x)` is `for(var/T/x in world)` for the atom types (the pre-filter of the declared type and the
+                    // type test, as in the `in` form) and iterates the instances of the type itself for every other type.
+                    let world_mask = iterator_mask(type_name);
                     self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::World)]);
                     if self.seen_classes.insert(SymbolId::of(&path)) {
                         self.result.class_paths.push(SymbolId::of(&path));
                     }
-                    self.emit(
-                        opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::ClassPath {
-                            path: SymbolId::of(&path),
-                            tag,
-                        })],
-                    );
+                    if world_mask == 0 {
+                        self.emit(
+                            opcode::PUSH_VAL,
+                            vec![Word::Value(ValueWord::ClassPath {
+                                path: SymbolId::of(&path),
+                                tag,
+                            })],
+                        );
+                    }
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
                     }
                     self.emit(
                         opcode::ITER_LOAD,
-                        vec![Word::Immediate(5), Word::Immediate(0x4000)],
+                        vec![
+                            Word::Immediate(5),
+                            Word::Immediate(if world_mask == 0 { 0x4000 } else { world_mask }),
+                        ],
                     );
                     let start = self.label();
                     let end = self.label();
@@ -422,6 +430,22 @@ impl Compiler<'_> {
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
+                    if world_mask != 0 && (type_name == "obj" || type_name == "atom" || type_name.contains('/')) {
+                        self.emit(
+                            opcode::GET_VAR,
+                            vec![Word::Variable(VariableWord::Local(slot))],
+                        );
+                        self.emit(
+                            opcode::PUSH_VAL,
+                            vec![Word::Value(ValueWord::ClassPath {
+                                path: SymbolId::of(&path),
+                                tag,
+                            })],
+                        );
+                        self.emit(0x7d, vec![]);
+                        self.emit(opcode::TEST, vec![]);
+                        self.emit(0xfa, vec![Word::Branch(start)]);
+                    }
                     self.iterator_depth += 1;
                     self.loops.push((start, end));
                     self.breaks.push(end);
@@ -486,20 +510,7 @@ impl Compiler<'_> {
                     };
                     // The pre-filter DreamMaker derives from the declared type: the category bits of `as` (mob 1, obj 2,
                     // turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj.
-                    let mask = explicit_mask.unwrap_or_else(|| {
-                        let path = declared_type.as_deref().unwrap_or("");
-                        match path {
-                            "atom" => 291,
-                            p if p == "atom/movable" || p.starts_with("atom/movable/") => 3,
-                            _ => match path.split('/').next().unwrap_or("") {
-                                "mob" => 1,
-                                "obj" => 2,
-                                "turf" => 32,
-                                "area" => 256,
-                                _ => 0,
-                            },
-                        }
-                    });
+                    let mask = explicit_mask.unwrap_or_else(|| iterator_mask(declared_type.as_deref().unwrap_or("")));
                     let binding_variable = if let Some(name) = local_name(binding) {
                         self.check_local_declaration(
                             name,
@@ -1094,5 +1105,21 @@ impl Compiler<'_> {
             }
         }
         Ok(())
+    }
+}
+
+/// The pre-filter DreamMaker derives from the declared type of a loop variable: the category bits of `as` (mob 1, obj 2,
+/// turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj. 0 for every other type.
+fn iterator_mask(path: &str) -> u32 {
+    match path {
+        "atom" => 291,
+        p if p == "atom/movable" || p.starts_with("atom/movable/") => 3,
+        _ => match path.split('/').next().unwrap_or("") {
+            "mob" => 1,
+            "obj" => 2,
+            "turf" => 32,
+            "area" => 256,
+            _ => 0,
+        },
     }
 }

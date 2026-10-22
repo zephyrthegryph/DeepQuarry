@@ -153,7 +153,8 @@ impl Compiler<'_> {
         let mut exact = Vec::new();
         let mut ranges = Vec::new();
         for (case, label) in alternatives.iter().zip(&labels) {
-            for alternative in case {
+            // DreamMaker tables the alternatives of one case last to first (`if(1, 2, 3)` is 3, 2, 1).
+            for alternative in case.iter().rev() {
                 match alternative {
                     SwitchAlternative::Exact(value) => {
                         exact.push((self.switch_value(value, text)?, *label));

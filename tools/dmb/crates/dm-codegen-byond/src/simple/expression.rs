@@ -20,7 +20,9 @@ impl Compiler<'_> {
     /// call argument).
     pub(super) fn expression(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
         let before = self.assoc_off_op.clone();
-        let shape = match &peel_groups(expr).kind {
+        // Only the chain itself is exempt: a parenthesised sub-expression (a `Group`, also the macro-generated parentheses
+        // around a whole value) is an expression of its own and is rewritten.
+        let shape = match &expr.kind {
             ExprKind::Binary { op, .. } if is_associative_operator(op) => Some(op.clone()),
             _ => None,
         };
@@ -537,6 +539,11 @@ impl Compiler<'_> {
                 self.result.code.items.extend(safe_labels);
             }
             ExprKind::StaticMember { object, selector } => {
+                if let ExprKind::TypePath(path) = &peel_groups(object).kind {
+                    if let Some(default) = self.static_list_default(path, selector) {
+                        return self.expression(&default, statement);
+                    }
+                }
                 self.record_property_selection(
                     expr,
                     selector,

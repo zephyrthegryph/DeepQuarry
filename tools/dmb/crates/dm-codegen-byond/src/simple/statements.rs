@@ -577,6 +577,11 @@ impl Compiler<'_> {
         expr: &Expr,
         statement: &str,
     ) -> Result<(), LowerError> {
+        // A statement that only names a variable (`x`, `a.b`, `src`) does nothing: DreamMaker emits no code for it (the
+        // expression is still checked, so an undefined name is still an error).
+        if super::assignments::is_reference_chain(expr) {
+            return self.lower_dead(|compiler| compiler.expression(expr, statement));
+        }
         let previous = self.discarded_call_root.replace(expr);
         let result = self.expression(expr, statement);
         self.discarded_call_root = previous;

@@ -287,6 +287,14 @@ fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, Strin
 }
 
 pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {
+    // DreamMaker drops every carriage return from a literal (also one that stands alone in the middle of the text).
+    let stripped;
+    let value = if value.contains('\r') {
+        stripped = value.replace('\r', "");
+        stripped.as_str()
+    } else {
+        value
+    };
     let mut template = Vec::new();
     let mut expressions = Vec::new();
     let mut next_marker = None;

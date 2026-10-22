@@ -798,7 +798,7 @@ fn path_like_target(statement: &str) -> bool {
 
 /// A receiver that only names things (identifiers and member reads, possibly parenthesised): evaluating it has no effect,
 /// so a shared (`global`) variable behind it can be read or written without evaluating it.
-fn is_reference_chain(expr: &Expr) -> bool {
+pub(super) fn is_reference_chain(expr: &Expr) -> bool {
     match &expr.kind {
         ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => true,
         ExprKind::Group(inner) => is_reference_chain(inner),
