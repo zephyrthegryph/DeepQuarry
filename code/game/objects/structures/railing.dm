@@ -28,14 +28,14 @@
 /// A railing a player built (its constructor param).
 /obj/structure/railing/var/constructed = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a railing turns, a player-built one starts loose, and an anchored one joins its neighbours
-/obj/structure/railing/Initialize(mapload)
-	. = ..()
+/// Setup: a player-built railing starts loose.
+/obj/structure/railing/proc/start_loose()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
 
 CAPABILITIES(/obj/structure/railing)
+	setup(PROC_REF(start_loose))
 	rotatable(while_anchored = TRUE)
 	extend(CAP_ROTATABLE, needs(req(PROC_REF(physical_contact), silent = TRUE), req(PROC_REF(free_limbs)), req(PROC_REF(awake_upright), silent = TRUE),
 		req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = span_notice("You need hands for this.")),

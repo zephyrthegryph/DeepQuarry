@@ -7,6 +7,8 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/landmark/poi_loader)
 
-/obj/effect/landmark/poi_loader/Initialize(mapload)
+CAPABILITIES(/obj/effect/landmark/poi_loader)
+	setup(PROC_REF(queue_poi))
+
+/obj/effect/landmark/poi_loader/proc/queue_poi()
 	SSpois.enqueue(src)
-	return ..()

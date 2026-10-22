@@ -140,11 +140,8 @@ CAPABILITIES(/obj/effect/map_effect/portal)
 
 REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTERS)
 
-/obj/effect/map_effect/portal/master/Initialize(mapload)
-	find_lines()
-	. = ..()
-
 CAPABILITIES(/obj/effect/map_effect/portal/master)
+	setup(PROC_REF(find_lines))
 	after_init(0, then(PROC_REF(pair_up)))
 
 /// Finds its counterparts and draws, once every portal of the map exists.

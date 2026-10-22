@@ -287,9 +287,9 @@ CAPABILITIES(/obj/item/card_fluff)
 
 CAPABILITIES(/obj/item/card/id/synthetic/borg)
 	ref_one(nameof(robot_owner), /mob/living/silicon/robot)
+	setup(PROC_REF(bind_robot_owner))
 
-/obj/item/card/id/synthetic/borg/Initialize(mapload)
-	. = ..()
+/obj/item/card/id/synthetic/borg/proc/bind_robot_owner()
 	if(isrobot(loc))
 		rel_set(src, nameof(robot_owner), loc)
 		set_registered_name(robot_owner().braintype)

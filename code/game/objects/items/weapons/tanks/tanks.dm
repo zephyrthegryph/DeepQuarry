@@ -40,6 +40,7 @@
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	setup(PROC_REF(start_up))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 5.0))
@@ -64,8 +65,7 @@ CAPABILITIES(/obj/item/tank)
 	rel_set(proxy, nameof(proxy.tank), src)
 	rel_set(src, nameof(proxyassembly), proxy)
 
-/obj/item/tank/Initialize(mapload)
-	. = ..()
+/obj/item/tank/proc/start_up()
 	apply_blueprint_effects()
 
 	src.init_proxy()
