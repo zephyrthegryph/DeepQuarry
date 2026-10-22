@@ -40,11 +40,21 @@ gate_infra_failure() { # <log>
 	grep -qiE 'Native executable changed during compilation|daemon startup deadline expired|no method named `evict_to_budget`|watchdog|world did not start|FOCUSED RESULT: no results' "$1"
 }
 
+# gate_cap_minutes <test count>: the wall-clock cap a gate gives dq_focused_test.sh (base 25 min plus 1 min per test, ceiling 60).
+# Gate-only: it travels as DQ_GATE_FOCUSED_MAX_MIN, which dq_focused_test.sh honours instead of the agent cap (DQ_FOCUSED_MAX_MIN).
+gate_cap_minutes() {
+	local n="${1:-0}" cap
+	case "$n" in '' | *[!0-9]*) n=0 ;; esac
+	cap=$(( 25 + n ))
+	[ "$cap" -gt 60 ] && cap=60
+	echo "$cap"
+}
+
 gate_tests_with_retry() {
 	local focused="${DQ_FOCUSED_TEST_CMD:-bash tools/dq_focused_test.sh}" log rc json names n first_line res passed failed rlog
 	log="$(mktemp)"
 	# shellcheck disable=SC2086  # the command may be several words
-	$focused "$@" 2>&1 | tee "$log"
+	DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes $#)" $focused "$@" 2>&1 | tee "$log"
 	rc=${PIPESTATUS[0]}
 	if [ "$rc" -eq 0 ] || [ "${DQ_GATE_RETRY:-1}" = 0 ]; then rm -f "$log"; return "$rc"; fi
 	res="$(grep -h '^FOCUSED RESULT:' "$log" | tail -n 1)"
@@ -56,7 +66,7 @@ gate_tests_with_retry() {
 		echo "== GATE RETRY: ${#names[@]} test(s) failed; running only those once more in a fresh world: ${names[*]:0:8}"
 		rlog="$(mktemp)"
 		# shellcheck disable=SC2086
-		$focused --force "${names[@]}" 2>&1 | tee "$rlog"
+		DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes ${#names[@]})" $focused --force "${names[@]}" 2>&1 | tee "$rlog"
 		if [ "${PIPESTATUS[0]}" -eq 0 ]; then
 			passed="$(sed -n 's/^FOCUSED RESULT: \([0-9]*\) passed.*/\1/p' <<<"$res")"
 			failed="$(sed -n 's/^FOCUSED RESULT: [0-9]* passed, \([0-9]*\) failed.*/\1/p' <<<"$res")"
@@ -77,7 +87,7 @@ gate_tests_with_retry() {
 		flake_record infra "-" "$first_line"
 		rm -f "$log"
 		# shellcheck disable=SC2086
-		$focused --force "$@"
+		DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes $#)" $focused --force "$@"
 		return $?
 	fi
 	rm -f "$log"
