@@ -26,6 +26,7 @@ MSG_DEF(portable/connected, "You connect %T% to the port.", "%U% connects %T% to
 MSG_DEF(portable/disconnected, "You disconnect %T% from the port.", "%U% disconnects %T% from the port.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics)
+	setup(PROC_REF(make_air_contents))
 	after_init(0, then(PROC_REF(port_after_init)))
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(holding), /obj/item/tank)
@@ -36,8 +37,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 		says(PROC_REF(port_message)), then(PROC_REF(port_wrenched)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
-/obj/machinery/portable_atmospherics/Initialize(mapload)
-	. = ..()
+/obj/machinery/portable_atmospherics/proc/make_air_contents()
 	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	heat_set(air_contents, T20C)

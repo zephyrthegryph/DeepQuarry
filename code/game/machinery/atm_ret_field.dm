@@ -106,6 +106,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
 		disable_field()
 
 CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	keeps_if(PROC_REF(no_duplicate_generator))
 	configure(uses_power(channel = ENVIRON, idle = 10, active = 2500))
 	emp_disable(7.5 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
@@ -160,13 +161,13 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 			set_isactive(FALSE)
 	return
 
-/obj/machinery/atmospheric_field_generator/Initialize(mapload)
-	. = ..()
-	//Delete ourselves if we find extra mapped in arfgs
+/// Extra field generators mapped onto one tile are discarded (keeps_if()).
+/obj/machinery/atmospheric_field_generator/proc/no_duplicate_generator()
 	for(var/obj/machinery/atmospheric_field_generator/F in contents_of(loc))
 		if(F != src)
 			log_mapping("Duplicate ARFGS at [x],[y],[z]")
-			return INITIALIZE_HINT_QDEL
+			return FALSE
+	return TRUE
 
 
 /obj/structure/atmospheric_retention_field

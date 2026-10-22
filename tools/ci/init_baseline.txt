@@ -106,17 +106,8 @@ init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolene
 init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetUI
 init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::R.mydna.dna.ResetSE
 init_lines	code/game/dna/dna_modifier.dm	@/obj/machinery/computer/scan_consolenew::Initialize::rel_add
-init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::if
-init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::rel_set
-init_lines	code/game/gamemodes/changeling/state/powers/fabricate_clothing.dm	@/obj/item/card/id/syndicate/changeling::Initialize::access
 init_lines	code/game/gamemodes/cult/construct_spells.dm	@/obj/item/spell/construct::Initialize::if
 init_lines	code/game/gamemodes/cult/construct_spells.dm	@/obj/item/spell/construct::Initialize::return
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/effect/rune::Initialize::blood_image
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/effect/rune::Initialize::blood_image.override
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/item/book/tome::Initialize::if
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/item/book/tome::Initialize::runerandom
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/item/book/tome::Initialize::for
-init_lines	code/game/gamemodes/cult/ritual.dm	@/obj/item/book/tome::Initialize::words[GLOB.cultwords[V]]
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::if
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::rel_set
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::if
@@ -124,28 +115,6 @@ init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Init
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::if
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::to_chat
 init_lines	code/game/gamemodes/technomancer/spell_objs.dm	@/obj/item/spell::Initialize::return
-init_lines	code/game/gamemodes/technomancer/spells/aura/aura.dm	@/obj/item/spell/aura::Initialize::log_and_message_admins
-init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::visible_message
-init_lines	code/game/gamemodes/technomancer/spells/flame_tongue.dm	@/obj/item/spell/flame_tongue::Initialize::welder.setWelding
-init_lines	code/game/gamemodes/technomancer/spells/radiance.dm	@/obj/item/spell/radiance::Initialize::log_and_message_admins
-init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::to_chat
-init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	@/obj/item/spell/reflect::Initialize::expire
-init_lines	code/game/machinery/atm_ret_field.dm	@/obj/machinery/atmospheric_field_generator::Initialize::for
-init_lines	code/game/machinery/atm_ret_field.dm	@/obj/machinery/atmospheric_field_generator::Initialize::if
-init_lines	code/game/machinery/atm_ret_field.dm	@/obj/machinery/atmospheric_field_generator::Initialize::log_mapping
-init_lines	code/game/machinery/atm_ret_field.dm	@/obj/machinery/atmospheric_field_generator::Initialize::return
-init_lines	code/game/machinery/atmoalter/canister.dm	@/obj/machinery/portable_atmospherics/canister::Initialize::fill_preset
-init_lines	code/game/machinery/atmoalter/clamp.dm	@/obj/machinery/clamp::Initialize::if
-init_lines	code/game/machinery/atmoalter/clamp.dm	@/obj/machinery/clamp::Initialize::rel_set
-init_lines	code/game/machinery/atmoalter/clamp.dm	@/obj/machinery/clamp::Initialize::if
-init_lines	code/game/machinery/atmoalter/clamp.dm	@/obj/machinery/clamp::Initialize::update_networks
-init_lines	code/game/machinery/atmoalter/clamp.dm	@/obj/machinery/clamp::Initialize::dir
-init_lines	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::Initialize::target
-init_lines	code/game/machinery/atmoalter/portable_atmospherics.dm	@/obj/machinery/portable_atmospherics::Initialize::atmos_air_set
-init_lines	code/game/machinery/atmoalter/portable_atmospherics.dm	@/obj/machinery/portable_atmospherics::Initialize::air_contents.set_volume
-init_lines	code/game/machinery/atmoalter/portable_atmospherics.dm	@/obj/machinery/portable_atmospherics::Initialize::heat_set
-init_lines	code/game/machinery/atmoalter/pump.dm	@/obj/machinery/portable_atmospherics/powered/pump::Initialize::air_mix
-init_lines	code/game/machinery/atmoalter/pump.dm	@/obj/machinery/portable_atmospherics/powered/pump::Initialize::air_contents.adjust_multi
 init_lines	code/game/machinery/atmoalter/pump.dm	@/obj/machinery/portable_atmospherics/powered/pump/huge::Initialize::.
 init_lines	code/game/machinery/atmoalter/pump.dm	@/obj/machinery/portable_atmospherics/powered/pump/huge::Initialize::id
 init_lines	code/game/machinery/atmoalter/pump.dm	@/obj/machinery/portable_atmospherics/powered/pump/huge::Initialize::expr
@@ -164,8 +133,6 @@ init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initiali
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::network
-init_lines	code/game/machinery/cloning.dm	@/obj/machinery/clonepod/full::Initialize::for
-init_lines	code/game/machinery/cloning.dm	@/obj/machinery/clonepod/full::Initialize::track_biomass_container
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::mask
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::rel_set
 init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bpinboard.add_filter
@@ -182,20 +149,10 @@ init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/secur
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::radio.set_frequency
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::radio.canhear_range
 init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::power_change
-init_lines	code/game/machinery/computer/timeclock.dm	@/obj/item/card/id::Initialize::EXPIRY_STAMP
-init_lines	code/game/machinery/cryo.dm	@/obj/machinery/atmospherics/unary/cryo_cell::Initialize::initialize_directions
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::if
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::pixel_x
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::pixel_y
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::if
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::assign_uid
-init_lines	code/game/machinery/doorbell.dm	@/obj/machinery/button/doorbell::Initialize::id
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::T
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::if
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::secured_wires
 init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/airlock/angled_bay::Initialize::obtain_icon
-init_lines	code/game/machinery/doors/blast_door.dm	@/obj/machinery/door/blast::Initialize::implicit_material
-init_lines	code/game/machinery/doors/blast_door.dm	@/obj/machinery/door/blast::Initialize::rad_insulation
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::apply_rad_shield_material
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::if
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::layer
@@ -212,20 +169,6 @@ init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::e
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::bound_width
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::bound_height
 init_lines	code/game/machinery/doors/door.dm	@/obj/machinery/door::Initialize::update_nearby_tiles
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::for
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::if
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::log_mapping
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::return
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::A
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::ASSERT
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::LAZYADD
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::for
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::A
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::if
-init_lines	code/game/machinery/doors/firedoor.dm	@/obj/machinery/door/firedoor::Initialize::LAZYADD
-init_lines	code/game/machinery/doors/windowdoor.dm	@/obj/machinery/door/window::Initialize::update_nearby_tiles
-init_lines	code/game/machinery/doors/windowdoor.dm	@/obj/machinery/door/window::Initialize::if
-init_lines	code/game/machinery/doors/windowdoor.dm	@/obj/machinery/door/window::Initialize::base_state
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::explosive_events
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
@@ -235,24 +178,7 @@ init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::I
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::config_flags
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::experiment_events
 init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller.dm	@/obj/machinery/embedded_controller/radio/airlock/docking_port::Initialize::rel_set
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller.dm	@/obj/machinery/embedded_controller/radio/airlock/docking_port::Initialize::if
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller.dm	@/obj/machinery/embedded_controller/radio/airlock/docking_port::Initialize::docking_program.display_name
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller_multi.dm	@/obj/machinery/embedded_controller/radio/docking_port_multi::Initialize::names
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller_multi.dm	@/obj/machinery/embedded_controller/radio/docking_port_multi::Initialize::tags
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller_multi.dm	@/obj/machinery/embedded_controller/radio/docking_port_multi::Initialize::if
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller_multi.dm	@/obj/machinery/embedded_controller/radio/docking_port_multi::Initialize::for
-init_lines	code/game/machinery/embedded_controller/airlock_docking_controller_multi.dm	@/obj/machinery/embedded_controller/radio/docking_port_multi::Initialize::LAZYSET
 init_lines	code/game/machinery/embedded_controller/embedded_controller_base.dm	@/obj/machinery/embedded_controller/radio::Initialize::frequency
-init_lines	code/game/machinery/exonet_node.dm	@/obj/machinery/exonet_node::Initialize::if
-init_lines	code/game/machinery/exonet_node.dm	@/obj/machinery/exonet_node::Initialize::desc
-init_lines	code/game/machinery/exonet_node.dm	@/obj/machinery/exonet_node::Initialize::expr
-init_lines	code/game/machinery/floodlight.dm	@/obj/machinery/floodlight/starts_on::Initialize::turn_on
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::real_gear_list
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::for
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::S
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::real_gear_list[S.name]
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser::Initialize::dispenses
 init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser/custom::Initialize::dispenses
 init_lines	code/game/machinery/machinery.dm	@/obj/machinery::Initialize::if
 init_lines	code/game/machinery/machinery.dm	@/obj/machinery::Initialize::switched_on
@@ -268,14 +194,6 @@ init_lines	code/game/machinery/machinery_power.dm	@/obj/machinery::Initialize::d
 init_lines	code/game/machinery/machinery_power.dm	@/obj/machinery::Initialize::observe
 init_lines	code/game/machinery/machinery_power.dm	@/obj/machinery::Initialize::power_init_complete
 init_lines	code/game/machinery/machinery_power.dm	@/obj/machinery::Initialize::rel_set
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::if
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::for
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::if
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::rel_add
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::if
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::rel_set
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::if
-init_lines	code/game/machinery/magnet.dm	@/obj/machinery/magnetic_controller::Initialize::filter_path
 init_lines	code/game/machinery/navbeacon.dm	@/obj/machinery/navbeacon/patrol::Initialize::codes
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::if
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::make_from_existing
@@ -295,18 +213,6 @@ init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/se
 init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::if
 init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::expr
 init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::LAZYOR
-init_lines	code/game/mecha/combat/durand.dm	@/obj/mecha/combat/durand/old::Initialize::update_integrity
-init_lines	code/game/mecha/combat/durand.dm	@/obj/mecha/combat/durand/old::Initialize::cell.set_charge
-init_lines	code/game/mecha/combat/gygax.dm	@/obj/mecha/combat/gygax/old::Initialize::update_integrity
-init_lines	code/game/mecha/combat/gygax.dm	@/obj/mecha/combat/gygax/old::Initialize::cell.set_charge
-init_lines	code/game/mecha/combat/marauder.dm	@/obj/mecha/combat/marauder/old::Initialize::update_integrity
-init_lines	code/game/mecha/combat/marauder.dm	@/obj/mecha/combat/marauder/old::Initialize::cell.set_charge
-init_lines	code/game/mecha/combat/phazon.dm	@/obj/mecha/combat/phazon/old::Initialize::update_integrity
-init_lines	code/game/mecha/combat/phazon.dm	@/obj/mecha/combat/phazon/old::Initialize::cell.set_charge
-init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::rel_set
-init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::observe
-init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::dq_add_recursive_move
-init_lines	code/game/mecha/equipment/tools/shield_omni.dm	@/obj/item/shield_projector/rectangle/mecha::Initialize::update_shift
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::for
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::C
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::C.attach
@@ -326,18 +232,6 @@ init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::smoke_system.attach
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_cell
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::mecha_log_message
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::loc.Entered
-init_lines	code/game/mecha/medical/odysseus.dm	@/obj/mecha/medical/odysseus/old::Initialize::update_integrity
-init_lines	code/game/mecha/medical/odysseus.dm	@/obj/mecha/medical/odysseus/old::Initialize::cell.set_charge
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::if
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D.attach
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::else
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::D.attach
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::for
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining::Initialize::spent
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::update_integrity
-init_lines	code/game/mecha/working/ripley.dm	@/obj/mecha/working/ripley/mining/old::Initialize::cell.set_charge
 init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::impact_area
 init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::if
 init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::return
@@ -626,7 +520,6 @@ init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector:
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::setAngle
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::else
 init_lines	code/game/objects/structures/reflectors.dm	@/obj/structure/reflector::Initialize::setAngle
-init_lines	code/game/objects/structures/reflectors.dm	@/obj/machinery/portable_atmospherics/canister/phoron/cold::Initialize::heat_set
 init_lines	code/game/objects/structures/trash_pile.dm	@/obj/structure/mob_spawner/mouse_nest::Initialize::COOLDOWN_START
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::rel_set
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
@@ -692,34 +585,6 @@ init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::if
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::dirt
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::update_dirt
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::rel_set
-init_lines	code/game/turfs/simulated/floor_types.dm	@/obj/landed_holder::Initialize::moveToNullspace
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::apply_rad_shield_material
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::if
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle::Initialize::underlay_update
-init_lines	code/game/turfs/simulated/floor_types.dm	@/turf/simulated/shuttle/floor/alien::Initialize::update_light
-init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::if
-init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::name
-init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::update_light
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::grass_type
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::animal_type
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::name
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::if
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::auto_join
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::if
-init_lines	code/game/turfs/simulated/wall_types.dm	@/turf/simulated/shuttle/wall::Initialize::underlay_update
-init_lines	code/game/turfs/simulated/water.dm	@/turf/simulated/floor/water::Initialize::handle_fish
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
 init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if
@@ -1600,17 +1465,11 @@ init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_lo
 init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::delete_me
 init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::SSmapping.engine_loader
 world_reads	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	for(var/d in GLOB.cardinal)
-world_reads	code/game/gamemodes/cult/ritual.dm	if(!GLOB.cultwords["travel"])
-world_reads	code/game/gamemodes/cult/ritual.dm	for(var/V in GLOB.cultwords)
-world_reads	code/game/gamemodes/cult/ritual.dm	words[GLOB.cultwords[V]] = V
-world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
-world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
-world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
 world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = src
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
