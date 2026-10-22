@@ -252,6 +252,15 @@ pub(super) fn fold_literal_string_expression(expr: &Expr) -> Option<Vec<u8>> {
 /// One shared literal parser for emission and source registration. Expression
 /// nodes exist only for this literal's interpolation leaves, never a whole body.
 fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
+    // DreamMaker drops every carriage return from a literal, so a CRLF source file and a
+    // lone CR give the same text as an LF file (checked against dm.exe, 516.1681).
+    let stripped;
+    let raw = if raw.contains('\r') {
+        stripped = raw.replace('\r', "");
+        stripped.as_str()
+    } else {
+        raw
+    };
     // Raw literals preserve escapes and brackets exactly, including multiline text.
     let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
         Some(&raw[3..raw.len() - 2])

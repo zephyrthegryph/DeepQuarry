@@ -9,6 +9,20 @@ impl Compiler<'_> {
         value: &Expr,
         statement: &str,
     ) -> Result<(), LowerError> {
+        self.assign_expr_ordered(target, op, value, statement, false)
+    }
+
+    /// `null_first` pushes the value before a safe receiver's guard, which is how DreamMaker lowers the
+    /// clearing store of `del(a?.b)`. An authored `a?.b = const` pushes it after the guard instead, so the
+    /// short-circuit path leaves nothing on the stack.
+    pub(super) fn assign_expr_ordered(
+        &mut self,
+        target: &Expr,
+        op: &str,
+        value: &Expr,
+        statement: &str,
+        null_first: bool,
+    ) -> Result<(), LowerError> {
         if op == "||=" || op == "&&=" {
             let variable = self.assignment_variable(target, statement)?;
             self.emit(opcode::GET_VAR, vec![Word::Variable(variable.clone())]);
@@ -57,14 +71,15 @@ impl Compiler<'_> {
         } = &target.kind
         {
             self.source_feature_reference(target, true, statement)?;
-            let constant_first = op == "=" && Self::safe_assignment_constant(value);
-            if constant_first {
+            if null_first {
                 self.expression(value, statement)?;
             }
             self.expression(object, statement)?;
             let end = self.label();
             self.emit(318, vec![Word::Branch(end)]);
-            if !constant_first {
+            if !null_first {
+                // The value follows the guard, as in DreamMaker: a null receiver skips the write
+                // with nothing pushed, so the short-circuit path leaves the stack balanced.
                 self.emit(opcode::PUSH_CACHE, vec![]);
                 self.expression(value, statement)?;
                 self.emit(opcode::POP_CACHE, vec![]);
@@ -99,14 +114,15 @@ impl Compiler<'_> {
             return Ok(());
         }
         if let ExprKind::SafeIndex { object, index } = &target.kind {
-            let constant_first = op == "=" && Self::safe_assignment_constant(value);
-            if constant_first {
+            if null_first {
                 self.expression(value, statement)?;
             }
             self.expression(object, statement)?;
             let end = self.label();
             self.emit(318, vec![Word::Branch(end)]);
-            if !constant_first {
+            if !null_first {
+                // The value follows the guard, as in DreamMaker: a null receiver skips the write
+                // with nothing pushed, so the short-circuit path leaves the stack balanced.
                 self.emit(opcode::PUSH_CACHE, vec![]);
                 self.expression(value, statement)?;
                 self.emit(opcode::POP_CACHE, vec![]);
@@ -341,21 +357,6 @@ impl Compiler<'_> {
             self.emit(opcode::POP_CACHE, vec![]);
         }
         Ok(())
-    }
-
-    // Immutable RHS values cannot observe receiver evaluation or overwrite its
-    // cache. Native safe writes place them before the receiver guard; dynamic
-    // RHS expressions retain their guarded cache-preserving continuation.
-    fn safe_assignment_constant(value: &Expr) -> bool {
-        if fold_number(value).is_some() {
-            return true;
-        }
-        match &value.kind {
-            ExprKind::Group(inner) => Self::safe_assignment_constant(inner),
-            ExprKind::Literal(raw) if matches!(raw.as_str(), "null" | "TRUE" | "FALSE") => true,
-            ExprKind::Literal(raw) => matches!(decode_constant_string_literal(raw), Ok(Some(_))),
-            _ => false,
-        }
     }
 
     pub(super) fn assignment_variable(

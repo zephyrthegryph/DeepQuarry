@@ -62,10 +62,20 @@ this branch. Items marked OPEN are not.
      `infoplain`/`bold` literals are `A + (B + ...)` against `AB + ...`, the same text; (b) the 214 `PushVal null` sites are
      DreamMaker's dead null store for every `var` (native omits it outside loops), a dead `Jmp` after `Ret`, `/T::field` folded to its
      default against a runtime `initial()`, and DreamMaker's `0x1000_0000|id` field-name operands; one real gap fixed: a bare `var/x`
-     after a backward `goto` now stores null again; one site unexplained (`/mob/death`, `a?.b?.c = const` pushes the constant before
-     the guards); (c) the anonymous procs are type initializers (DreamMaker shares the class and map-instance procedure, store order
+     after a backward `goto` now stores null again; `/mob/death`'s `a?.b?.c = const` pushed the constant before the guards (fixed 2026-10-22, below); (c) the anonymous procs are type initializers (DreamMaker shares the class and map-instance procedure, store order
      differs): now compared by body under the type. Same-tree counts: `proc.bytecode` 4,779, `proc.extra`/`proc.missing`/
-     `type.type_meta`/`map_objects` 0. New finding: `/obj/item/book/tome` `tomedat` keeps `\r\n` from a CRLF source file in a multi-line string, DreamMaker has `\n` (`type.type_var_default` 1).
+     `type.type_meta`/`map_objects` 0.
+   **2026-10-22 (tools/dmb-crlf-strings).** Two real causes fixed. (1) DreamMaker drops every carriage return inside a string literal (`{"..."}`,
+   `"..."`, `@"..."`, `@{"..."}`; probed with dm.exe 516.1681: CRLF gives `
+`, a lone CR vanishes), native kept them, so `/obj/item/book/tome`
+   `tomedat` (CRLF file `ritual.dm`) differed; `string_literal_parts` (`dm-codegen-byond/src/simple/helpers.rs`) now strips CR first.
+   (2) `a?.b?.c = const` and `a?[i] = const` pushed the constant before the null guards, so a null receiver left it on the stack
+   (one leaked slot per execution; DreamMaker pushes it between `PushCache` and `PopCache` after the guards). `assign_expr` now does the same;
+   only the clearing store of `del(a?.b)` keeps the value first, which the pinned `delete_lvalue` DreamMaker fixture shows (`assign_expr_ordered`).
+   Tests: `string_literals_drop_carriage_returns_like_dreammaker`, `safe_member_assignment_of_a_constant_pushes_it_after_every_guard`.
+   Production `dmb-equiv --ignore-debug` (dm and native rebuilt on the same tree, `E:/dq-cache/dmb-equiv-20261021/*-crlf.*`): 102,534
+   differences (ordering 97,679, rest 4,855: `proc.bytecode` 4,768, `proc.proc_locals` 87); `type.type_var_default` 1 to 0, `proc.bytecode` 4,779 to 4,768,
+   and `/mob/proc/death` now differs only in guard kind and DreamMaker's outer `PushCache`/`PopCache` pair (native's stack is balanced).
    Repro: `build.sh dm` and `DQ_COMPILER=dreammaker build.sh dm` (delete `deepquarry.dmb/.rsc` between), then `dmb-equiv A.dmb B.dmb
    [--ignore-debug] [--max-examples N]`. Kept at `E:/dq-cache/dmb-equiv-20261021/` (dm.dmb, native.dmb, equiv*.log).
 6. **dmbc daemon memory (high).** The daemon sits at 9.7-10.6 GB working set after one build (`dmbd` soft private limit 8 GB, hard
