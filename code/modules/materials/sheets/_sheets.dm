@@ -23,7 +23,6 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
-	keeps_if(PROC_REF(material_exists), warn = "Material of the stack does not exist")
 	setup(PROC_REF(stack_material_setup))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5.0))
@@ -32,16 +31,18 @@ CAPABILITIES(/obj/item/stack/material)
 	op("material_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Material self"), then(PROC_REF(material_self)))
 	op("material_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(material_interaction_item)))
 
-/// The stack's material (default steel) must exist.
-/obj/item/stack/material/proc/material_exists()
-	return !!get_material_by_name("[default_type || MAT_STEEL]")
-
-/obj/item/stack/material/proc/stack_material_setup()
-	randpixel_xy()
-
+// The material is named by a constructor param (default_type), which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
+/obj/item/stack/material/Initialize(mapload)
+	. = ..()
 	if(!default_type)
 		set_default_type(MAT_STEEL)
 	set_material(get_material_by_name("[default_type]"))
+	if(!material)
+		stack_trace("Material of type: [default_type] does not exist.")
+		return INITIALIZE_HINT_QDEL
+
+/obj/item/stack/material/proc/stack_material_setup()
+	randpixel_xy()
 
 	set_recipes(material.get_recipes())
 	set_stacktype(material.stack_type)

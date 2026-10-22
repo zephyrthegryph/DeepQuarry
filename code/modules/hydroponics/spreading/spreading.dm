@@ -67,7 +67,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 CAPABILITIES(/obj/effect/plant)
 	keeps_if(PROC_REF(not_on_open_turf))
 	keeps_if(PROC_REF(plant_controller_exists), warn = "Plant controller does not exist and the plant requires it")
-	keeps_if(PROC_REF(has_a_seed), warn = "Plant has no seed to grow from")
 	setup(PROC_REF(effect_plant_setup))
 	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
@@ -104,18 +103,20 @@ CAPABILITIES(/obj/effect/plant)
 /obj/effect/plant/proc/plant_controller_exists()
 	return !!SSplants
 
-/// A plant grows from the seed it was made with, else the default seed.
-/obj/effect/plant/proc/has_a_seed()
-	return istype(seed_at_make, /datum/seed) || !!SSplants.seeds[DEFAULT_SEED]
+// A vine grows from the seed it was made with (a constructor param, which keeps_if() cannot read: it is asked before the params apply), else the default seed.
+/obj/effect/plant/Initialize(mapload)
+	. = ..()
+	var/datum/seed/newseed = seed_at_make
+	if(!istype(newseed))
+		newseed = SSplants.seeds[DEFAULT_SEED]
+	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
+	if(!seed())
+		return INITIALIZE_HINT_QDEL
 
 /obj/effect/plant/proc/effect_plant_setup()
 	if(!parent)
 		rel_set(src, nameof(parent), src)
 
-	var/datum/seed/newseed = seed_at_make
-	if(!istype(newseed))
-		newseed = SSplants.seeds[DEFAULT_SEED]
-	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
 	name = seed().display_name
 	max_health = round(seed().get_trait(TRAIT_ENDURANCE)/2)
 	if(seed().get_trait(TRAIT_SPREAD)==2)

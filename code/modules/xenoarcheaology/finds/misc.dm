@@ -38,10 +38,10 @@
 	anchored = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)
 
-CAPABILITIES(/obj/machinery/crystal)
-	setup(PROC_REF(randomize_color))
+/obj/machinery/crystal/Initialize(mapload)
+	randomize_color()
+	return ..()
 
-/// Rolls the colour of each crystal.
 /obj/machinery/crystal/proc/randomize_color()
 	if(prob(30))
 		set_icon_state("crystal2")

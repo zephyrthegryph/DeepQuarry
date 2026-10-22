@@ -13,8 +13,6 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
-	keeps_if(PROC_REF(has_plantname), warn = "Plantname not provided and the produce requires it")
-	keeps_if(PROC_REF(plant_is_known), warn = "Plant name does not exist and the produce requires it")
 	setup(PROC_REF(snacks_grown_setup))
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
@@ -26,19 +24,22 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
-/// Produce must name its plant.
-/obj/item/reagent_containers/food/snacks/grown/proc/has_plantname()
-	return !!plantname
+// The plant is named by a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
+/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
+	. = ..()
+	if(!plantname)
+		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
+		return INITIALIZE_HINT_QDEL
 
-/// The named plant must exist in the plant registry.
-/obj/item/reagent_containers/food/snacks/grown/proc/plant_is_known()
-	return !!SSplants.seeds[plantname]
+	proto_set(src, nameof(seed_static), SSplants.seeds[plantname])
+
+	if(!seed())
+		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
+		return INITIALIZE_HINT_QDEL
 
 /obj/item/reagent_containers/food/snacks/grown/proc/snacks_grown_setup()
 	if(!dried_type)
 		dried_type = type
-
-	proto_set(src, nameof(seed_static), SSplants.seeds[plantname])
 
 	name = "[seed().seed_name]"
 	set_trash(seed().get_trash_type())
@@ -411,7 +412,6 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	return I
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
-	keeps_if(PROC_REF(has_slice_seed))
 	setup(PROC_REF(snacks_fruit_slice_setup))
 	param(nameof(slice_seed), pos = 1)
 
@@ -421,9 +421,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/rind_colour
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/flesh_colour
 
-/// A slice is cut from a fruit's seed.
-/obj/item/reagent_containers/food/snacks/fruit_slice/proc/has_slice_seed()
-	return istype(slice_seed, /datum/seed)
+// The seed is a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
+/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
+	. = ..()
+	if(!istype(slice_seed))
+		return INITIALIZE_HINT_QDEL
 
 /obj/item/reagent_containers/food/snacks/fruit_slice/proc/snacks_fruit_slice_setup()
 	// Need to go through and make a general image caching controller. Todo.
