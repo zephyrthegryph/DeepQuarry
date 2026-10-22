@@ -71,12 +71,12 @@
 
 // These are used on individual outposts as backup should power line be cut, or engineering outpost lost power.
 // 1M Charge, 150K I/O
-/obj/machinery/power/smes/buildable/outpost_substation/starting_parts(datum/act/A)
+/obj/machinery/power/smes/buildable/outpost_substation/starting_parts(current, mapload)
 	return ..() + /obj/item/smes_coil/weak
 
 // This one is pre-installed on engineering shuttle. Allows rapid charging/discharging for easier transport of power to outpost
 // 11M Charge, 2.5M I/O
-/obj/machinery/power/smes/buildable/power_shuttle/starting_parts(datum/act/A)
+/obj/machinery/power/smes/buildable/power_shuttle/starting_parts(current, mapload)
 	return ..() + list(/obj/item/smes_coil/super_io, /obj/item/smes_coil/super_io, /obj/item/smes_coil)
 
 // Pre-installed and pre-charged SMES hidden from the station, for use in submaps: remote control off and input on from the start.
@@ -98,8 +98,6 @@
 	var/max_coils = 6
 	/// The coils installed (a mapper sets it to place that many standard coils).
 	var/cur_coils = 1
-	/// The map placed the unit: it starts with cur_coils standard coils.
-	var/tmp/placed_by_map = FALSE
 	/// The failsafes: off, modifications can be done without discharging the unit, at risk of critical failure (the wire cuts it).
 	var/safeties_enabled = 1
 	/// A critical failure has occured and an explosion is imminent (an admin may clear it to stop the countdown).
@@ -143,15 +141,10 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = not(nameof(grounding)))
 
 /// What a unit is made with: thirty lengths of cable, and, placed by a map, its standard coils (a unit built from a frame gets the frame's parts).
-/obj/machinery/power/smes/buildable/proc/starting_parts(datum/act/A)
+/obj/machinery/power/smes/buildable/proc/starting_parts(current, mapload)
 	. = list(new /obj/item/stack/cable_coil(null, 30))
-	if(placed_by_map)
+	if(mapload)
 		. += list(/obj/item/smes_coil = cur_coils)
-
-// ALLOW(init/INSTANCE_STATE): whether the map placed the unit (its standard coils come with it) is set before the parent makes its parts; the capacity and I/O caps are the sums of the coils it starts with
-/obj/machinery/power/smes/buildable/Initialize(mapload)
-	placed_by_map = mapload
-	return ..()
 
 /// The coils' sums, after the parent's setup hook has wired the unit (the order Initialize() had: terminals and network first, then the coils).
 /obj/machinery/power/smes/buildable/proc/sum_coils(mapload)

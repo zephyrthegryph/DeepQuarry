@@ -69,7 +69,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	setup(PROC_REF(configure_initial_fabricator))
 	machine_basics(repair = NONE, frame = board_machine())
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
-	owns_one(nameof(rmat), /datum/remote_materials)
+	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_remote_materials))
 	owns_one(nameof(stored_part), /obj/item, on_destroy = ON_DESTROY_SPILL)
 	panel()
 	extend("panel.open", wait(0))
@@ -88,9 +88,11 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	op("build_queue", ui_act(), sets(nameof(process_queue), TRUE))
 	op("stop_queue", ui_act(), sets(nameof(process_queue), FALSE))
 
+/// Its link to the ore silo (owns_one(starts =)): only a machine the map places links to the silo.
+/obj/machinery/mecha_part_fabricator_tg/proc/make_remote_materials(current, mapload)
+	return new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert)))
+
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	// ALLOW(decl): mapload is a constructor argument of its store: only a machine the map places links to the ore silo
-	rel_set(src, nameof(rmat), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert))))
 	available_designs = list()
 	illegal_local_designs = list()
 	. = ..()

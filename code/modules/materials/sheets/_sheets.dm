@@ -23,6 +23,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
+	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(stack_material_setup))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5.0))
@@ -31,9 +32,8 @@ CAPABILITIES(/obj/item/stack/material)
 	op("material_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Material self"), then(PROC_REF(material_self)))
 	op("material_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(material_interaction_item)))
 
-// The material is named by a constructor param (default_type), which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
-/obj/item/stack/material/Initialize(mapload)
-	. = ..()
+// The material is named by a constructor param (default_type), which keeps_if() cannot read (it is asked before the params apply), so this is a hint-returning hook: a stack of a material that does not exist is discarded.
+/obj/item/stack/material/proc/find_material(mapload)
 	if(!default_type)
 		set_default_type(MAT_STEEL)
 	set_material(get_material_by_name("[default_type]"))
