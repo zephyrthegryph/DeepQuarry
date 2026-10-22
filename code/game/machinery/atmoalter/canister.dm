@@ -54,6 +54,7 @@ MSG_DEF(canister/deconstructed, "You deconstruct %T%.", "%U% deconstructs %T%.")
 MSG_DEF(canister/jetpack, "You pulse-pressurize your jetpack from the tank.", "%U% pulse-pressurizes a jetpack from %T%.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	setup(PROC_REF(fill_preset))
 	climb()
 	gas_watch(air = nameof(air_contents), changed = PROC_REF(contents_changed))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(canister_step)), when = nameof(working))
@@ -172,9 +173,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	start_pressure = 9 * 4000 * R_IDEAL_GAS_EQUATION * T20C / 1000
 	empties_into_room = TRUE
 
-/obj/machinery/portable_atmospherics/canister/Initialize(mapload) // ALLOW(init/INSTANCE_STATE): its gas is made by the base's init; the preset fills it, a per-instance mixture
-	. = ..()
-	fill_preset()
 
 /// Its preset gas (`starts_with`, chilled to `chilled_to`), emptied into the room when it is a room filler.
 /obj/machinery/portable_atmospherics/canister/proc/fill_preset()

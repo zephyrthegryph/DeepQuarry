@@ -159,6 +159,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 
 CAPABILITIES(/obj/machinery/gear_dispenser)
+	setup(PROC_REF(make_gear_entries))
 	setup(PROC_REF(register_distribution_bucket))
 	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
 	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
@@ -169,8 +170,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	to_chat(A.actor, span_warning("Your moral standards prevent you from emagging this machine!"))
 	return OP_DECLINE // Letting people emag this one would be bad times
 
-/obj/machinery/gear_dispenser/Initialize(mapload)
-	. = ..()
+/obj/machinery/gear_dispenser/proc/make_gear_entries()
 	var/list/real_gear_list = list()
 	for(var/gear in dispenses)
 		var/datum/gear_disp/S = new gear

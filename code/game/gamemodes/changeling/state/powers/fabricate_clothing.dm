@@ -249,13 +249,13 @@ CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
 	access = null
 	canremove = FALSE
 
-/obj/item/card/id/syndicate/changeling/Initialize(mapload)
-	. = ..()
+/obj/item/card/id/syndicate/changeling/proc/register_to_carrier()
 	if(ismob(loc))
 		rel_set(src, nameof(registered_user), loc)
-	access = null
+	set_access(null)
 
 CAPABILITIES(/obj/item/card/id/syndicate/changeling)
+	setup(PROC_REF(register_to_carrier))
 	op("changeling_syndicate_shred_verb", menu(), label("Shred ID Card"), needs(carried()), then(PROC_REF(changeling_syndicate_shred_verb)))
 	click_on(PROC_REF(click_input))
 

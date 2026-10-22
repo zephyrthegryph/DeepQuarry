@@ -22,6 +22,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	after_init(0, then(PROC_REF(describe_mapped_node)))
 	setup(PROC_REF(start_node_audio))
 	default_parts()
 	configure(uses_power(idle = 2500))
@@ -36,12 +37,9 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	interface("ExonetNode")
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
-// Proc: New()
-// Parameters: None
-// Description: Adds components to the machine for deconstruction.
-/obj/machinery/exonet_node/Initialize(mapload)
-	. = ..()
-	if(mapload)
+/// A mapped node describes the section of the Exonet it connects (once the map is loaded).
+/obj/machinery/exonet_node/proc/describe_mapped_node(datum/act/timer/A)
+	if(A.mapload)
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
 

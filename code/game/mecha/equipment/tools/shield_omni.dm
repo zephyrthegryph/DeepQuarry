@@ -73,10 +73,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 
 // The projector is part of the exosuit's omni shield: without the mech it has nothing to draw power from, so it goes with it.
 CAPABILITIES(/obj/item/shield_projector/rectangle/mecha)
+	setup(PROC_REF(bind_to_mech))
 	ref_one(nameof(my_mech), on_other_deleted = OTHER_DELETE_ME)
 
-/obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
-	. = ..()
+/obj/item/shield_projector/rectangle/mecha/proc/bind_to_mech()
 	rel_set(src, nameof(my_mech), loc)
 	observe(my_mech(), /datum/notice/movable_attempted_move, src, then(TYPE_PROC_REF(/obj/item/shield_projector, update_shield_positions)))
 	dq_add_recursive_move(my_mech())

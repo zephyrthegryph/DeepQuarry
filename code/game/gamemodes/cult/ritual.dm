@@ -63,8 +63,7 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 // join hide technology - stun rune. Rune color: bright pink.
 REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 
-/obj/effect/rune/Initialize(mapload)
-	. = ..()
+/obj/effect/rune/proc/make_blood_image()
 	blood_image = image(loc = src)
 	blood_image.override = 1
 
@@ -82,6 +81,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
 CAPABILITIES(/obj/effect/rune)
+	setup(PROC_REF(make_blood_image))
 	after_init(0, then(PROC_REF(show_to_ais))) // the AIs see the blood image once Initialize() returns (relations proposal D11)
 	ref_one(nameof(manifest_user))
 	ref_one(nameof(manifest_dummy))
@@ -300,8 +300,7 @@ CAPABILITIES(/obj/effect/rune)
 				</html>
 				"}
 
-/obj/item/book/tome/Initialize(mapload)
-	. = ..()
+/obj/item/book/tome/proc/learn_cultwords()
 	if(!GLOB.cultwords["travel"])
 		runerandom()
 	for(var/V in GLOB.cultwords)
@@ -328,6 +327,7 @@ CAPABILITIES(/obj/effect/rune)
 
 
 CAPABILITIES(/obj/item/book/tome)
+	setup(PROC_REF(learn_cultwords))
 	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
 	// The five seconds of drawing a rune (begin_drawing).
 	op("scribe", ai(), takes("english", "chosen_rune", "destination"), wait(5 SECONDS), then(PROC_REF(rune_drawn)))
