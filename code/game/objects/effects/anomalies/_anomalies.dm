@@ -27,6 +27,7 @@
 
 CAPABILITIES(/obj/effect/anomaly)
 	setup(PROC_REF(start_initial_countdown))
+	setup(PROC_REF(configure_core))
 	configure(light_glow(range = 3))
 	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
@@ -46,7 +47,6 @@ CAPABILITIES(/obj/effect/anomaly)
 	look.watch(stats)
 	return stats?.stability
 
-// ALLOW(init/INSTANCE_STATE): an anomaly needs an area, makes its core with a random frequency and code, and counts down its lifespan
 /obj/effect/anomaly/Initialize(mapload)
 	. = ..()
 
@@ -55,6 +55,8 @@ CAPABILITIES(/obj/effect/anomaly)
 	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
 
+/// The core gets a random frequency and code and remembers the anomaly type (setup hook).
+/obj/effect/anomaly/proc/configure_core()
 	if(anomaly_core)
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
 		anomaly_core.code = rand(1, 100)

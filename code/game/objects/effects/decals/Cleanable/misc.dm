@@ -184,14 +184,14 @@ CAPABILITIES(/obj/effect/decal/cleanable/vomit/old)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/old)
 	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
+	setup(PROC_REF(age_blood))
 
 /// Old blood often carries a random virus (owns_many(starts =)).
 /obj/effect/decal/cleanable/blood/old/proc/make_old_virus(current)
 	if(prob(75))
 		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
 
-/obj/effect/decal/cleanable/blood/old/Initialize(mapload)
-	. = ..()
+/obj/effect/decal/cleanable/blood/old/proc/age_blood()
 	set_basecolor(get_random_colour(rand(0, 1)))
 	dry()
 

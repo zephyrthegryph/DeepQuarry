@@ -502,9 +502,8 @@ CAPABILITIES(/obj/item/mail_scanner)
 
 // JUNK MAIL STUFF
 
-/obj/item/mail/junkmail/Initialize(mapload)
-	. = ..()
-	junk_mail()
+CAPABILITIES(/obj/item/mail/junkmail)
+	setup(PROC_REF(junk_mail))
 
 /obj/item/mail/proc/junk_mail()
 

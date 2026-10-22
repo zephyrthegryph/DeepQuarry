@@ -12,6 +12,7 @@
 
 
 CAPABILITIES(/obj/structure/drop_pod)
+	setup(PROC_REF(load_and_fall))
 	owns_one(nameof(air), /datum/gas_mixture/pod_air, starts = /datum/gas_mixture/pod_air, starts_args = NO_LOC)
 	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req(PROC_REF(is_finished))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
@@ -25,9 +26,8 @@ CAPABILITIES(/obj/structure/drop_pod)
 /obj/structure/drop_pod/var/tmp/atom/movable/cargo_at_make
 /obj/structure/drop_pod/var/auto_open = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a pod with cargo falls, and every pod makes its air
-/obj/structure/drop_pod/Initialize(mapload)
-	. = ..()
+/// Setup: a pod with cargo falls.
+/obj/structure/drop_pod/proc/load_and_fall()
 	if(cargo_at_make)
 		cargo_at_make.forceMove(src) // helo
 		podfall(auto_open)

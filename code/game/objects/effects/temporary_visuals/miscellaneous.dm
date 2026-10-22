@@ -5,15 +5,15 @@
 CAPABILITIES(/obj/effect/temp_visual/decoy)
 	param(nameof(mimiced_atom), pos = 1, keep = FALSE)
 	param(nameof(customappearance), pos = 2, keep = FALSE)
+	setup(PROC_REF(copy_mimicked_look))
 
 /// What the decoy mimics, or the look it is given (its constructor params, dropped after init).
 /obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
 /obj/effect/temp_visual/decoy/var/tmp/customappearance
 
-// ALLOW(init/INSTANCE_STATE): a decoy takes the look of what it mimics, after its parents' random facing
-/obj/effect/temp_visual/decoy/Initialize(mapload)
-	. = ..()
-	alpha = initial(alpha)
+/// A decoy takes the look of what it mimics, after its parents' random facing (setup hook).
+/obj/effect/temp_visual/decoy/proc/copy_mimicked_look()
+	set_alpha(initial(alpha))
 	if(mimiced_atom)
 		name = mimiced_atom.name
 		appearance = mimiced_atom.appearance
@@ -137,13 +137,15 @@ CAPABILITIES(/obj/effect/temp_visual/heal)
 	var/max_alpha = 255
 	var/amount_to_scale = 2
 
-/obj/effect/temp_visual/circle_wave/Initialize(mapload)
+CAPABILITIES(/obj/effect/temp_visual/circle_wave)
+	setup(PROC_REF(start_wave))
+
+/obj/effect/temp_visual/circle_wave/proc/start_wave()
 	transform = matrix().Scale(0.1)
 	animate(src, transform = matrix().Scale(amount_to_scale), time = duration, flags = ANIMATION_PARALLEL)
 	animate(src, alpha = max_alpha, time = duration * 0.6, flags = ANIMATION_PARALLEL)
 	animate(alpha = 0, time = duration * 0.4)
 	apply_wibbly_filters(src)
-	return ..()
 
 /obj/effect/temp_visual/circle_wave/bioscrambler
 	color = COLOR_LIME

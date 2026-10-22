@@ -25,9 +25,8 @@
 /// The mob turned to stone (its constructor param, dropped after init).
 /obj/structure/closet/statue/var/tmp/mob/living/statue_of
 
-// ALLOW(init/INSTANCE_STATE): a statue holds the mob it petrifies, shielded from harm, until it releases them
-/obj/structure/closet/statue/Initialize(mapload)
-	. = ..()
+/// Setup: a statue holds the mob it petrifies, shielded from harm, until it releases them.
+/obj/structure/closet/statue/proc/petrify()
 	var/mob/living/L = statue_of
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
 		if(L?.buckled_to())
@@ -36,20 +35,20 @@
 			L.set_anchored(FALSE)
 		L.forceMove(src)
 		L.set_sdisabilities(L.sdisabilities | MUTE)
-		max_integrity = L.get_endurance() + 100
+		set_max_integrity(L.get_endurance() + 100)
 		original_int = L.vitality() * L.get_endurance() + 100
 		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
 		observe(L, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
-				statue_shape = "human_female"
+				set_statue_shape("human_female")
 		else if(L.isMonkey())
 			name = "statue of a monkey"
-			statue_shape = "monkey"
+			set_statue_shape("monkey")
 		else if(iscorgi(L))
 			name = "statue of a corgi"
-			statue_shape = "corgi"
+			set_statue_shape("corgi")
 			desc = "If it takes forever, I will wait for you..."
 
 
@@ -121,6 +120,7 @@
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	setup(PROC_REF(petrify))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
 	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
