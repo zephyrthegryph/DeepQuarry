@@ -72,13 +72,13 @@ CAPABILITIES(/obj/effect/decal/cleanable/greenglow)
 
 CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	param(nameof(dirt_level), pos = 2)
+	setup(PROC_REF(settle_on_tile), mapload = TRUE)
 
 /// How dirty the tile becomes (its constructor param).
 /obj/effect/decal/cleanable/dirt/var/dirt_level
 
-// ALLOW(init/INSTANCE_STATE): dirt sets its tile's dirt level and merges with the dirt already there
-/obj/effect/decal/cleanable/dirt/Initialize(mapload)
-	.=..()
+/// Dirt sets its tile's dirt level and merges with the dirt already there (setup hook): QDEL when another dirt took its place.
+/obj/effect/decal/cleanable/dirt/proc/settle_on_tile(mapload)
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	var/turf/simulated/our_turf = src.loc
@@ -101,7 +101,8 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 			alreadythere.set_alpha(calcalpha) //don't need to constantly recalc for all of them in it because it'll just max if a non-persistent dirt overlay gets added, and then the new dirt overlay will be deleted
 		if (alreadyfound)
 			return INITIALIZE_HINT_QDEL
-		alpha = calcalpha
+		set_alpha(calcalpha)
+	return INITIALIZE_HINT_NORMAL
 
 /obj/effect/decal/cleanable/flour
 	name = "flour"
