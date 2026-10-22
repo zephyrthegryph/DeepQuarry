@@ -228,7 +228,7 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld2)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))
 
 CAPABILITIES(/obj/item/clothing/accessory/ring/material)
-	param(nameof(default_material), pos = 1)
+	param(nameof(default_material), pos = 1, overrides = TRUE)
 	derives(nameof(default_material), PROC_REF(forced_material))
 	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(show_material_identity))

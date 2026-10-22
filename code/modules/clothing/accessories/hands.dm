@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	icon_state = "wristband_collection6"
 
 CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
-	param(nameof(default_material), pos = 1)
+	param(nameof(default_material), pos = 1, overrides = TRUE)
 	derives(nameof(default_material), PROC_REF(forced_material))
 	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(show_material_identity))
