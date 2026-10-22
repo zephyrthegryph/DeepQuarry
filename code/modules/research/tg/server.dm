@@ -18,11 +18,11 @@
 	var/research_disabled = FALSE
 
 CAPABILITIES(/obj/machinery/rnd/server)
+	setup(PROC_REF(rnd_server_setup))
 	emp_disable(60 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
-/obj/machinery/rnd/server/Initialize(mapload)
-	. = ..()
+/obj/machinery/rnd/server/proc/rnd_server_setup()
 	//servers handle techwebs differently as we are expected to be there to connect
 	//every other machinery on-station.
 	if(!stored_research)

@@ -295,16 +295,15 @@ CAPABILITIES(/datum/material/processed_alloy)
 	var/export_value_per_sheet = 0
 
 CAPABILITIES(/obj/item/stack/material/processed_alloy)
+	setup(PROC_REF(material_processed_alloy_setup))
 	owns_one(nameof(batch_state), /datum/material_batch)
 	every(2 SECONDS, then(PROC_REF(processed_alloy_step)), when = nameof(hot))
 	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
 	param(nameof(default_type), pos = 2)
 
-// ALLOW(init/INSTANCE_STATE): a processed alloy stack takes its alloy's colour, value and batch
-/obj/item/stack/material/processed_alloy/Initialize(mapload)
-	. = ..()
+/obj/item/stack/material/processed_alloy/proc/material_processed_alloy_setup()
 	if(istype(material, /datum/material/processed_alloy))
-		color = material.icon_colour
+		set_color(material.icon_colour)
 		export_value_per_sheet = max(material.supply_conversion_value, 0)
 		set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 		var/datum/material/processed_alloy/processed = material

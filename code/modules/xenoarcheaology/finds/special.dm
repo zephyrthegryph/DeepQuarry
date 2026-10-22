@@ -157,12 +157,11 @@ CAPABILITIES(/obj/item/vampiric)
 	var/loc_last_process
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
+	setup(PROC_REF(splatter_animated_setup))
 	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
 	ref_one(nameof(target_turf))
 
-// ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
-/obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload)
-	. = ..()
+/obj/effect/decal/cleanable/blood/splatter/animated/proc/splatter_animated_setup()
 	loc_last_process = src.loc
 
 /// Crawls toward its target turf every 2 s (every() gated on target_turf); arrived, it does nothing.

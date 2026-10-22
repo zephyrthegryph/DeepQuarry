@@ -21,6 +21,7 @@
 		)
 
 CAPABILITIES(/obj/item/gun/energy/laser)
+	setup(PROC_REF(energy_laser_setup))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -434,14 +435,13 @@ CAPABILITIES(/obj/item/gun/energy/zip)
 		is_picked_up = FALSE
 	update_transform()
 
-/obj/item/gun/energy/laser/Initialize(mapload)
-	. = ..()
+/obj/item/gun/energy/laser/proc/energy_laser_setup()
 	if((!(type == /obj/item/gun/energy/laser)) && !is64x32_override)
 		is64x32 = FALSE
 		if(icon_expected_width == 64)
-			icon_expected_width = 32
+			set_icon_expected_width(32)
 		if(icon == 'icons/obj/64x32guns_ch.dmi')
-			icon = 'icons/obj/gun.dmi'
+			set_icon('icons/obj/gun.dmi')
 	if(is64x32)
 		update_transform()
 

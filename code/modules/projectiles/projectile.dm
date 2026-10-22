@@ -159,6 +159,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 CAPABILITIES(/obj/item/projectile)
+	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
@@ -172,9 +173,7 @@ CAPABILITIES(/obj/item/projectile)
 	ref_one(nameof(original))
 	ref_one(nameof(starting))
 
-// ALLOW(init/INSTANCE_STATE): binds to the casing it is made inside
-/obj/item/projectile/Initialize(mapload)
-	. = ..()
+/obj/item/projectile/proc/item_projectile_setup()
 	if(istype(loc, /obj/item/ammo_casing))
 		rel_set(src, nameof(my_case), loc)
 

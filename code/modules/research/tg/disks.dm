@@ -10,8 +10,7 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	/// The disk's own scratch web (a private copy it owns), or a registered round web (the debug disk).
 	var/tmp/datum/techweb/stored_research_static
 
-/obj/item/disk/tech_disk/Initialize(mapload)
-	. = ..()
+/obj/item/disk/tech_disk/proc/disk_tech_disk_setup()
 	if(!stored_research())
 		proto_set(src, nameof(stored_research_static), new /datum/techweb/disk)
 
@@ -53,4 +52,5 @@ CAPABILITIES(/obj/item/disk/design_disk)
 
 CAPABILITIES(/obj/item/disk/tech_disk)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	setup(PROC_REF(disk_tech_disk_setup))
 	owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
