@@ -5,11 +5,11 @@
 	var/static/list/matches = list("Blue pen" = /obj/item/pen/blue, "Red pen" = /obj/item/pen/red, "Power cell" = /obj/item/cell)
 
 /datum/interim_type_picker_actor/proc/choose(mob/user)
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(choose), args)
 	runs++
-	result = pick_closest_path(FALSE, matches, "interim_type", user)
-	return result
+	return ask_sequence_begin(src, /datum/ask_sequence/picker/type_pick, user, null, null, PROC_REF(picked), null, null, list("matches" = matches))
+
+/datum/interim_type_picker_actor/proc/picked(datum/ask_sequence/picker/type_pick/asked)
+	result = asked.get("result")
 
 /datum/unit_test/om/interim_type_picker_actor/run_om(list/made)
 	test_prompts_reset()
@@ -20,7 +20,7 @@
 	var/datum/prompt/text/filter = GLOB.test_prompts[1]
 	made += filter
 	TEST_ASSERT_EQUAL(filter.answerer, actor, "the actual filter prompt belongs to the supplied actor")
-	TEST_ASSERT_NULL(test_prompt_answer(filter, "pen"), "the real filter answer resumes the actual picker")
+	TEST_ASSERT_NULL(test_prompt_answer(filter, "pen"), "the real filter answer goes on in the actual picker")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "two actual matching types require a choice prompt")
 	var/datum/prompt/choice/choice = GLOB.test_prompts[2]
 	made += choice
@@ -28,9 +28,9 @@
 	TEST_ASSERT("Blue pen" in choice.choices, "the actual filtered choices retain the first matching type")
 	TEST_ASSERT("Red pen" in choice.choices, "the actual filtered choices retain the second matching type")
 	TEST_ASSERT(!("Power cell" in choice.choices), "the actual filter excludes the nonmatching type")
-	TEST_ASSERT_NULL(test_prompt_answer(choice, "Red pen"), "the real type choice resumes the actual helper")
+	TEST_ASSERT_NULL(test_prompt_answer(choice, "Red pen"), "the real type choice goes on in the actual picker")
 	TEST_ASSERT_EQUAL(picker.result, /obj/item/pen/red, "the actual helper returns the selected concrete type path")
-	TEST_ASSERT_EQUAL(picker.runs, 3, "the real flow executes initially and after both actual answers")
+	TEST_ASSERT_EQUAL(picker.runs, 1, "the real picker is started once and goes on by both actual answers")
 
 /datum/unit_test/om/interim_type_picker_single_match/run_om(list/made)
 	test_prompts_reset()
@@ -41,7 +41,7 @@
 	var/datum/prompt/text/filter = GLOB.test_prompts[1]
 	made += filter
 	TEST_ASSERT_EQUAL(filter.answerer, actor, "the single-match filter uses its explicit actor")
-	TEST_ASSERT_NULL(test_prompt_answer(filter, "blue"), "the actual single-match filter answer resumes selection")
+	TEST_ASSERT_NULL(test_prompt_answer(filter, "blue"), "the actual single-match filter answer goes on to the selection")
 	TEST_ASSERT_EQUAL(picker.result, /obj/item/pen/blue, "the actual helper returns its sole matching concrete type")
-	TEST_ASSERT_EQUAL(picker.runs, 2, "a sole match finishes on the first real filter answer")
+	TEST_ASSERT_EQUAL(picker.runs, 1, "a sole match finishes on the first real filter answer")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "a sole matching type creates no redundant choice prompt")

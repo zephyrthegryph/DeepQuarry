@@ -4,23 +4,9 @@
 /client/proc/vv_topic_basic_edit(mob/user, href_target, href_targetvar)
 	var/datum/target = href_target
 	var/target_var = href_targetvar
-	if(!target_var || !modify_variables(target, target_var, 1))
+	if(!target_var)
 		return
-	switch(target_var)
-		if("name")
-			vv_update_display(target, "name", "[target]")
-		if("dir")
-			var/atom/A = target
-			if(istype(A))
-				vv_update_display(target, "dir", dir2text(A.dir) || A.dir)
-		if("ckey")
-			var/mob/living/L = target
-			if(istype(L))
-				vv_update_display(target, "ckey", L.ckey || "No ckey")
-		if("real_name")
-			var/mob/living/L = target
-			if(istype(L))
-				vv_update_display(target, "real_name", L.real_name || "No real name")
+	modify_variables(target, target_var, 1, TRUE)
 	return TRUE
 
 /client/proc/vv_topic_basic_change(mob/user, href_target, href_targetvar)
@@ -37,12 +23,18 @@
 
 /client/proc/vv_topic_expose(mob/user, href_target)
 	var/datum/target = href_target
-	var/value = vv_get_value(VV_CLIENT, key = "expose")
+	ask_admin(/datum/ask_sequence/admin/vv_value, target, null, PROC_REF(vv_expose_picked), list("pick_params" = list("class" = VV_CLIENT)))
+	return TRUE
+
+/client/proc/vv_expose_picked(datum/ask_sequence/admin/vv_value/asked)
+	var/mob/user = asked.actor()
+	var/list/value = asked.get("picked")
 	if (value["class"] != VV_CLIENT)
 		return
 	var/client/C = value["value"]
 	if (!C)
 		return
+	var/datum/target = asked.subject()
 	if(!target)
 		to_chat(user, span_warning("The object you tried to expose to [C] no longer exists (nulled or hard-deled)"), confidential = TRUE)
 		return
@@ -50,13 +42,10 @@
 	log_admin("Admin [key_name(user)] Showed [key_name(C)] a VV window of a [target]")
 	to_chat(C, "[holder.fakekey ? "an Administrator" : "[key]"] has granted you access to view a View Variables window", confidential = TRUE)
 	C.debug_variables(target, user)
-	return TRUE
 
 /client/proc/vv_topic_delete(mob/user, href_target)
 	var/datum/target = href_target
-	admin_delete(target, user)
-	if (isturf(target)) // show the turf that took its place
-		debug_variables(target)
+	admin_delete(target, user, TRUE)
 	return TRUE
 
 /client/proc/vv_topic_mark(mob/user, href_target)
@@ -70,10 +59,18 @@
 /client/proc/vv_topic_add_behaviour(mob/user, href_target)
 	var/datum/target = href_target
 	var/list/names = sortList(subtypesof(/datum/capability), GLOBAL_PROC_REF(cmp_typepaths_asc))
-	var/result = flow_ask(mob, "behaviour:add", /datum/prompt/choice, question = "Choose a capability to grant", title = "Grant Capability", choices = names)
+	ask_admin(/datum/ask_sequence/admin, target, list(
+		question_step("capability", /datum/prompt/choice, question = "Choose a capability to grant", title = "Grant Capability", choices = names)),
+		PROC_REF(vv_capability_chosen))
+	return TRUE
+
+/client/proc/vv_capability_chosen(datum/ask_sequence/admin/asked)
+	var/mob/user = asked.actor()
+	var/result = asked.get("capability")
+	var/datum/target = asked.subject()
 	if(isnull(result) || !user)
 		return
-	if(QDELETED(target))
+	if(!target || QDELETED(target))
 		to_chat(user, "That thing doesn't exist anymore!", confidential = TRUE)
 		return
 	if(!grant(target, result, SRC_VV))
@@ -81,13 +78,17 @@
 		return
 	log_admin("[key_name(user)] has granted capability [result] to [key_name(target)].")
 	message_admins(span_notice("[key_name_admin(user)] has granted capability [result] to [key_name_admin(target)]."))
-	return TRUE
 
 /client/proc/vv_topic_remove_behaviour(mob/user, href_target)
 	return vv_remove_behaviour(user, href_target, FALSE)
 
 /client/proc/vv_topic_mass_remove_behaviour(mob/user, href_target)
 	return vv_remove_behaviour(user, href_target, TRUE)
+
+/// Revoking a capability granted through VV, from one datum or (`mass`) from every one of its type.
+/datum/ask_sequence/admin/vv_revoke
+	var/include_subtypes = FALSE
+	var/mass = FALSE
 
 /client/proc/vv_remove_behaviour(mob/user, datum/target, mass_remove)
 	var/list/names = list()
@@ -97,24 +98,42 @@
 	if(!length(names))
 		to_chat(user, "[target] has no capabilities granted through VV.")
 		return
-	var/path = flow_ask(mob, "behaviour:remove", /datum/prompt/choice, question = "Choose a capability to revoke", title = "Revoke Capability", choices = names)
+	var/list/steps = list(question_step("capability", /datum/prompt/choice, question = "Choose a capability to revoke", title = "Revoke Capability", choices = names))
+	if(mass_remove)
+		steps += TYPE_PROC_REF(/client, vv_revoke_ask_subtypes)
+		steps += TYPE_PROC_REF(/client, vv_revoke_ask_mass)
+	ask_admin(/datum/ask_sequence/admin/vv_revoke, target, steps, PROC_REF(vv_capability_revoked), list("mass" = mass_remove))
+	return TRUE
+
+/client/proc/vv_revoke_ask_subtypes(datum/ask_sequence/admin/vv_revoke/asked)
+	var/datum/target = asked.subject()
+	if(!target || QDELETED(target))
+		return ASK_STOP
+	return asked.ask_child(/datum/ask_sequence/picker/subtype_pick, "include_subtypes", list("target_type" = target.type))
+
+/client/proc/vv_revoke_ask_mass(datum/ask_sequence/admin/vv_revoke/asked)
+	var/datum/target = asked.subject()
+	if(!target || QDELETED(target))
+		return ASK_STOP
+	return question_step("mass_confirm", /datum/prompt/choice, question = "Are you sure you want to mass-revoke [asked.get("capability")] on [target.type]?", title = "Mass Revoke Confirmation", choices = list("Yes", "No"), buttons = TRUE)
+
+/client/proc/vv_capability_revoked(datum/ask_sequence/admin/vv_revoke/asked)
+	var/mob/user = asked.actor()
+	var/path = asked.get("capability")
+	var/datum/target = asked.subject()
 	if(isnull(path) || !user)
 		return
-	if(QDELETED(target))
+	if(!target || QDELETED(target))
 		to_chat(user, "That thing doesn't exist anymore!")
 		return
 	var/list/targets_to_remove_from = list(target)
-	if(mass_remove)
-		var/method = vv_subtype_prompt(target.type, "behaviour")
-		if(isnull(method))
+	if(asked.mass)
+		if(asked.get("mass_confirm") != "Yes")
 			return
-		if(flow_ask(mob, "behaviour:mass", /datum/prompt/choice, question = "Are you sure you want to mass-revoke [path] on [target.type]?", title = "Mass Revoke Confirmation", choices = list("Yes", "No"), buttons = TRUE) != "Yes")
-			return
-		targets_to_remove_from = get_all_of_type(target.type, method)
+		targets_to_remove_from = get_all_of_type(target.type, asked.include_subtypes)
 	for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
 		revoke(target_to_remove_from, path, SRC_VV)
-	message_admins(span_notice("[key_name_admin(user)] has [mass_remove ? "mass " : ""]revoked capability [path] from [mass_remove ? target.type : key_name_admin(target)]."))
-	return TRUE
+	message_admins(span_notice("[key_name_admin(user)] has [asked.mass ? "mass " : ""]revoked capability [path] from [asked.mass ? target.type : key_name_admin(target)]."))
 
 /client/proc/vv_topic_call_proc(mob/user, href_target)
 	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/call_proc_datum, href_target)

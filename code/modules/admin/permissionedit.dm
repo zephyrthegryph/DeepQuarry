@@ -161,29 +161,21 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	//if an admin exists without a datum they won't be caught by the above
 	var/list/permission_admin_in_db_rows
-	if(native_state)
-		native_state["sql_cursor"]++
-		var/io_slot = native_state["sql_cursor"]
-		var/permission_query = "SELECT 1 FROM [format_table_name("admin")] WHERE ckey = :ckey"
-		if(!native_state["io_done:[io_slot]"])
-			native_state["pending"] = TRUE
-			native_state["sql_actor_ckey"] = user.ckey
-			open_request(src, /datum/io/sql/permission_outer_admin_exists, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = permission_query, ckey = .)
-			return
-		permission_admin_in_db_rows = permission_outer_cached_rows(native_state, io_slot)
-		if(native_state["io_error:[io_slot]"])
-			var/sql_error = native_state["io_error:[io_slot]"]
-			var/list/sql_arguments = list("ckey" = .)
-			log_sql("[sql_error] | Query used: [permission_query] | Arguments: [json_encode(sql_arguments)]")
-			to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
-			permission_admin_in_db_rows = null
-	else
-		var/list/admin_in_db_rows = flow_select(
-			"SELECT 1 FROM [format_table_name("admin")] WHERE ckey = :ckey",
-			list("ckey" = .),
-			warn = TRUE
-		)
-		permission_admin_in_db_rows = admin_in_db_rows
+	native_state["sql_cursor"]++
+	var/io_slot = native_state["sql_cursor"]
+	var/permission_query = "SELECT 1 FROM [format_table_name("admin")] WHERE ckey = :ckey"
+	if(!native_state["io_done:[io_slot]"])
+		native_state["pending"] = TRUE
+		native_state["sql_actor_ckey"] = user.ckey
+		open_request(src, /datum/io/sql/permission_outer_admin_exists, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = permission_query, ckey = .)
+		return
+	permission_admin_in_db_rows = permission_outer_cached_rows(native_state, io_slot)
+	if(native_state["io_error:[io_slot]"])
+		var/sql_error = native_state["io_error:[io_slot]"]
+		var/list/sql_arguments = list("ckey" = .)
+		log_sql("[sql_error] | Query used: [permission_query] | Arguments: [json_encode(sql_arguments)]")
+		to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
+		permission_admin_in_db_rows = null
 	if(isnull(permission_admin_in_db_rows))
 		return FALSE
 	if(length(permission_admin_in_db_rows))
@@ -197,24 +189,18 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.remove_admin"))
 		return
-	if(!native_state && !GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(remove_admin), args)
 	if(use_db && !admin_require(user.client, R_DBRANKS, "permissionedit"))
 		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	if(native_state)
-		var/remove_answer = native_state["remove_admin"]
-		if(isnull(remove_answer))
-			native_state["pending"] = TRUE
-			open_request(src, /datum/prompt/choice/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "remove_admin", question = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel"), buttons = TRUE)
-			return
-		if(remove_answer != "Do it")
-			return
-	else
-		if(flow_ask(user, "remove_admin", /datum/prompt/choice, question = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel"), buttons = TRUE) != "Do it")
-			return
+	var/remove_answer = native_state["remove_admin"]
+	if(isnull(remove_answer))
+		native_state["pending"] = TRUE
+		open_request(src, /datum/prompt/choice/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "remove_admin", question = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel"), buttons = TRUE)
+		return
+	if(remove_answer != "Do it")
+		return
 	if(!(admin_ckey in (GLOB.admin_datums + GLOB.deadmins)) && !use_db)
 		return
 	GLOB.admin_datums -= admin_ckey
@@ -275,7 +261,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 #define RANK_DONE ":) I'm Done"
 
-/// Asks (flow_ask()) which ranks an admin gets, one pick per question, until RANK_DONE.
+/// Asks which ranks an admin gets, one pick per question, until RANK_DONE.
 /// Returns list("names" = picked rank names, "custom" = new custom rank names), or null while
 /// unanswered or cancelled. Creates nothing: change_admin_rank() makes the custom ranks.
 /datum/admins/proc/pick_admin_ranks(use_db, datum/admins/target_holder, legacy_only, mob/user, list/native_state)
@@ -311,17 +297,12 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			if (!(rank_name in display_rank_names))
 				display_rank_names += rank_name
 
-		// Each pick is its own question: the flow replays the earlier picks from their answers.
-		var/rank_answer
-		if(native_state)
-			rank_answer = native_state["rank:[step]"]
-			if(isnull(rank_answer))
-				native_state["pending"] = TRUE
-				open_request(src, /datum/prompt/choice/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "rank:[step]", question = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
-				return
-		else
-			var/next_rank = flow_ask(user, "rank:[step]", /datum/prompt/choice, question = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
-			rank_answer = next_rank
+		// Each pick is its own question: the replay keeps the earlier picks from their answers.
+		var/rank_answer = native_state["rank:[step]"]
+		if(isnull(rank_answer))
+			native_state["pending"] = TRUE
+			open_request(src, /datum/prompt/choice/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "rank:[step]", question = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
+			return
 
 		if (isnull(rank_answer) || !(rank_answer in display_rank_names))
 			return null
@@ -339,16 +320,11 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			continue
 
 		if (rank_answer == "*New Rank*")
-			var/picked_name
-			if(native_state)
-				picked_name = native_state["new_rank:[step]"]
-				if(isnull(picked_name))
-					native_state["pending"] = TRUE
-					open_request(src, /datum/prompt/text/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "new_rank:[step]", question = "Please input a new rank", title = "New custom rank")
-					return
-			else
-				var/new_rank_name = flow_ask(user, "new_rank:[step]", /datum/prompt/text, question = "Please input a new rank", title = "New custom rank")
-				picked_name = new_rank_name
+			var/picked_name = native_state["new_rank:[step]"]
+			if(isnull(picked_name))
+				native_state["pending"] = TRUE
+				open_request(src, /datum/prompt/text/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "new_rank:[step]", question = "Please input a new rank", title = "New custom rank")
+				return
 			if (!picked_name)
 				return null
 			if(!isnull(rank_names[picked_name]) || (picked_name in new_rank_names))
@@ -361,15 +337,12 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	return list("names" = new_rank_names, "custom" = custom_names)
 
-/// Sets an admin's ranks. `picked` is pick_admin_ranks()'s answer when the caller asked already;
-/// otherwise this runs as a prompt flow and asks.
+/// Sets an admin's ranks. `picked` is pick_admin_ranks()'s answer when the caller asked already; otherwise this asks.
 /datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked, mob/user, list/native_state)
 	if(!permission_actor_valid(user))
 		return
 	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.change_admin_rank"))
 		return
-	if(!native_state && !picked && !GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(change_admin_rank), args)
 	if(use_db && !admin_require(user.client, R_DBRANKS, "permissionedit"))
 		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
@@ -387,35 +360,27 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(use_db)
 		rank_type = RANK_SOURCE_DB
 
-	// Reads first (each is a flow re-run); nothing changes until they are all answered.
+	// Reads first (each is a replay); nothing changes until they are all answered.
 	var/old_rank
 	var/list/custom_names_in_db = list()
 	if(use_db)
 		//if a player was tempminned before having a permanent change made to their rank they won't yet be in the db
 		var/list/permission_admin_in_db_rows
-		if(native_state)
-			native_state["sql_cursor"]++
-			var/io_slot = native_state["sql_cursor"]
-			var/permission_query = "SELECT `rank` FROM [format_table_name("admin")] WHERE ckey = :admin_ckey"
-			if(!native_state["io_done:[io_slot]"])
-				native_state["pending"] = TRUE
-				native_state["sql_actor_ckey"] = user.ckey
-				open_request(src, /datum/io/sql/permission_outer_previous_rank, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = permission_query, admin_ckey = admin_ckey)
-				return
-			permission_admin_in_db_rows = permission_outer_cached_rows(native_state, io_slot)
-			if(native_state["io_error:[io_slot]"])
-				var/sql_error = native_state["io_error:[io_slot]"]
-				var/list/sql_arguments = list("admin_ckey" = admin_ckey)
-				log_sql("[sql_error] | Query used: [permission_query] | Arguments: [json_encode(sql_arguments)]")
-				to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
-				permission_admin_in_db_rows = null
-		else
-			var/list/admin_in_db_rows = flow_select(
-				"SELECT `rank` FROM [format_table_name("admin")] WHERE ckey = :admin_ckey",
-				list("admin_ckey" = admin_ckey),
-				warn = TRUE
-			)
-			permission_admin_in_db_rows = admin_in_db_rows
+		native_state["sql_cursor"]++
+		var/io_slot = native_state["sql_cursor"]
+		var/permission_query = "SELECT `rank` FROM [format_table_name("admin")] WHERE ckey = :admin_ckey"
+		if(!native_state["io_done:[io_slot]"])
+			native_state["pending"] = TRUE
+			native_state["sql_actor_ckey"] = user.ckey
+			open_request(src, /datum/io/sql/permission_outer_previous_rank, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = permission_query, admin_ckey = admin_ckey)
+			return
+		permission_admin_in_db_rows = permission_outer_cached_rows(native_state, io_slot)
+		if(native_state["io_error:[io_slot]"])
+			var/sql_error = native_state["io_error:[io_slot]"]
+			var/list/sql_arguments = list("admin_ckey" = admin_ckey)
+			log_sql("[sql_error] | Query used: [permission_query] | Arguments: [json_encode(sql_arguments)]")
+			to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
+			permission_admin_in_db_rows = null
 		if(isnull(permission_admin_in_db_rows))
 			return
 		if(length(permission_admin_in_db_rows))
@@ -424,29 +389,21 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		for(var/new_rank_name in picked["custom"])
 			//similarly if a temp rank is created it won't be in the db if someone is permanently changed to it
 			var/list/permission_rank_in_db_rows
-			if(native_state)
-				native_state["sql_cursor"]++
-				var/io_slot = native_state["sql_cursor"]
-				var/permission_query = "SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank"
-				if(!native_state["io_done:[io_slot]"])
-					native_state["pending"] = TRUE
-					native_state["sql_actor_ckey"] = user.ckey
-					open_request(src, /datum/io/sql/permission_outer_custom_rank_exists, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = permission_query, new_rank = new_rank_name)
-					return
-				permission_rank_in_db_rows = permission_outer_cached_rows(native_state, io_slot)
-				if(native_state["io_error:[io_slot]"])
-					var/sql_error = native_state["io_error:[io_slot]"]
-					var/list/sql_arguments = list("new_rank" = new_rank_name)
-					log_sql("[sql_error] | Query used: [permission_query] | Arguments: [json_encode(sql_arguments)]")
-					to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
-					permission_rank_in_db_rows = null
-			else
-				var/list/rank_in_db_rows = flow_select(
-					"SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank",
-					list("new_rank" = new_rank_name),
-					warn = TRUE
-				)
-				permission_rank_in_db_rows = rank_in_db_rows
+			native_state["sql_cursor"]++
+			var/rank_io_slot = native_state["sql_cursor"]
+			var/rank_query = "SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank"
+			if(!native_state["io_done:[rank_io_slot]"])
+				native_state["pending"] = TRUE
+				native_state["sql_actor_ckey"] = user.ckey
+				open_request(src, /datum/io/sql/permission_outer_custom_rank_exists, PROC_REF(permission_outer_sql_ended), answerer = user, captured = native_state.Copy(), query = rank_query, new_rank = new_rank_name)
+				return
+			permission_rank_in_db_rows = permission_outer_cached_rows(native_state, rank_io_slot)
+			if(native_state["io_error:[rank_io_slot]"])
+				var/rank_sql_error = native_state["io_error:[rank_io_slot]"]
+				var/list/rank_sql_arguments = list("new_rank" = new_rank_name)
+				log_sql("[rank_sql_error] | Query used: [rank_query] | Arguments: [json_encode(rank_sql_arguments)]")
+				to_chat(user, span_danger("A SQL error occurred during this operation, check the server logs."))
+				permission_rank_in_db_rows = null
 			if(isnull(permission_rank_in_db_rows))
 				return
 			if(length(permission_rank_in_db_rows))
@@ -540,17 +497,10 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	var/selected_flags
-	if(native_state)
-		selected_flags = native_state["admin_flags"]
-		if(isnull(selected_flags))
-			native_state["pending"] = TRUE
-			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "admin_flags", title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
-			return
-	else
-		var/new_flags = flow_ask(user, "admin_flags", /datum/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
-		selected_flags = new_flags
+	var/selected_flags = native_state["admin_flags"]
 	if(isnull(selected_flags))
+		native_state["pending"] = TRUE
+		open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "admin_flags", title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
 		return
 
 	admin_holder.disassociate()
@@ -648,7 +598,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		to_chat(user, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
 		return
 	if(use_db)
-		// Shit check for conflicts, before anything is made (a read: the flow re-runs on its answer)
+		// Shit check for conflicts, before anything is made (a read: the replay continues on its answer)
 		if(!replay_state["sql_done"])
 			replay_state["sql_actor_ckey"] = user.ckey
 			open_request(src, /datum/io/sql/permission_rank_exists, PROC_REF(permission_rank_sql_ended), answerer = user, captured = replay_state.Copy(), query = "SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank", new_rank = new_rank_name)
@@ -799,8 +749,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "admin_rank" = admin_rank))
 
 /// Changes the flags on either a DB or local rank
-/// Edits one of the rank's flag sets per use (a prompt flow: both questions are asked, and every
-/// check re-run, before anything changes).
+/// Edits one of the rank's flag sets per use (both questions are asked, and every check re-run, before anything changes).
 
 /datum/admins/proc/change_rank(admin_rank, mob/user, list/replay_state)
 	if(!permission_actor_valid(user))
@@ -907,7 +856,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		working_exclude_rights = target_rank.exclude_rights
 		working_can_edit_rights = target_rank.can_edit_rights
 
-	// One edit per use: the flow re-runs this proc for each answer, so a loop would replay edits.
+	// One edit per use: the replay runs this proc for each answer, so a loop would replay edits.
 	for(var/pass in 1 to 1)
 		var/what_to_edit = replay_state["what"]
 		if(isnull(what_to_edit))

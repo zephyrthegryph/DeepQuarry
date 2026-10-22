@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The admin tools that asked their questions by re-running themselves (View Variables, Advanced ProcCall, Admin teleport, the body editor, the icon and type pickers) ask them as question sequences; flow_ask is gone"
