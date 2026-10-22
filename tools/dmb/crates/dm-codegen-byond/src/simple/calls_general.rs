@@ -37,6 +37,37 @@ impl Compiler<'_> {
             );
             return Ok(());
         }
+        if name == "rgb2num" && !named_arguments && arglist_argument.is_none() {
+            // DreamMaker folds `rgb2num("#rrggbb[aa]")` (also the short `#rgb[a]` spelling) to the list of components.
+            if let [arg] = args {
+                if let Some(components) = constant_color_text(arg).and_then(|bytes| hex_color_components(&bytes)) {
+                    for component in &components {
+                        self.emit(opcode::PUSH_INT, vec![Word::Immediate(*component)]);
+                    }
+                    self.emit(opcode::NEW_LIST, vec![Word::Immediate(components.len() as u32)]);
+                    return Ok(());
+                }
+            }
+        }
+        if name == "rgb" && !named_arguments && arglist_argument.is_none() && (args.len() == 3 || args.len() == 4) {
+            // DreamMaker folds rgb() of constant components to its text: each component truncated to a whole number
+            // and clamped to 0..255, `#rrggbb` for three and `#rrggbbaa` for four.
+            let folded: Option<Vec<f32>> = args.iter().map(fold_number).collect();
+            if let Some(components) = folded {
+                if components.iter().all(|c| c.is_finite()) {
+                    let mut text = String::from("#");
+                    for component in components {
+                        text.push_str(&format!("{:02x}", component.clamp(0.0, 255.0) as u32));
+                    }
+                    self.intern_string(&text);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&text)))],
+                    );
+                    return Ok(());
+                }
+            }
+        }
         if name == "rgb" && args.len() == 4 {
             if let ExprKind::Binary { op, lhs, rhs } = &args[3].kind {
                 if op == "=" && matches!(&lhs.kind, ExprKind::Ident(key) if key == "space") {
@@ -101,7 +132,12 @@ impl Compiler<'_> {
             for arg in args {
                 self.expression(arg, statement)?;
             }
-            self.emit(0x2f, vec![Word::Immediate(args.len() as u32)]);
+            if args.is_empty() {
+                // `.()` has its own opcode (CallSelf, 0x2e) that passes the caller's arguments on.
+                self.emit(0x2e, vec![]);
+            } else {
+                self.emit(0x2f, vec![Word::Immediate(args.len() as u32)]);
+            }
             return Ok(());
         }
         if name == "rand" {
@@ -580,5 +616,46 @@ impl Compiler<'_> {
             );
         }
         Ok(())
+    }
+}
+
+/// The components of a `#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa` color text; None for any other text.
+fn hex_color_components(text: &[u8]) -> Option<Vec<u32>> {
+    let digits = text.strip_prefix(b"#")?;
+    if !matches!(digits.len(), 3 | 4 | 6 | 8) || !digits.iter().all(u8::is_ascii_hexdigit) {
+        return None;
+    }
+    let value = |digit: u8| (digit as char).to_digit(16);
+    let step = if digits.len() <= 4 { 1 } else { 2 };
+    digits
+        .chunks(step)
+        .map(|chunk| {
+            let high = value(chunk[0])?;
+            let low = if step == 1 { high } else { value(chunk[1])? };
+            Some(high * 16 + low)
+        })
+        .collect()
+}
+
+/// The text of a constant color argument: a plain text literal, or `rgb()` of constant components (which folds to text).
+fn constant_color_text(arg: &Expr) -> Option<Vec<u8>> {
+    match &arg.kind {
+        ExprKind::Group(inner) => constant_color_text(inner),
+        ExprKind::Literal(raw) => decode_constant_string_literal(raw).ok().flatten(),
+        ExprKind::Call { callee, args }
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "rgb") && (args.len() == 3 || args.len() == 4) =>
+        {
+            let components: Option<Vec<f32>> = args.iter().map(fold_number).collect();
+            let components = components?;
+            if !components.iter().all(|c| c.is_finite()) {
+                return None;
+            }
+            let mut text = String::from("#");
+            for component in components {
+                text.push_str(&format!("{:02x}", component.clamp(0.0, 255.0) as u32));
+            }
+            Some(text.into_bytes())
+        }
+        _ => None,
     }
 }

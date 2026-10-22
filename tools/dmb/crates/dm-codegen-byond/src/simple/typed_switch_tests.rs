@@ -178,14 +178,21 @@ fn range_null_string_table_matches_authenticated_native_fixture() {
 }
 
 #[test]
-fn overlapping_range_and_exact_case_preserve_authored_fallback() {
+fn overlapping_range_and_exact_case_are_tabled_as_authored() {
+    // DreamMaker (dm.exe 516.1687) emits `SwitchRange {1..3 => case 2; 2 => case 1}` for this source: ranges first,
+    // then exact values, each in source order.
     let ast = dm_syntax::parse(
-        "/proc/test(x)\n  switch(x)\n    if(2)\n      return 1\n    if(1 to 3)\n      return 2\n",
+        "/proc/test(x)
+  switch(x)
+    if(2)
+      return 1
+    if(1 to 3)
+      return 2
+",
     );
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
-    assert_eq!(compiled.local_count, 1);
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-    assert!(!byond_dmb::bytecode::decode(&linked.words)
+    assert!(byond_dmb::bytecode::decode(&linked.words)
         .unwrap()
         .iter()
         .any(|ins| ins.opcode == 0x7a));

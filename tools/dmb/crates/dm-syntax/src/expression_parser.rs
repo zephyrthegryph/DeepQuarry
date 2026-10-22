@@ -336,7 +336,7 @@ impl ExprParser {
                 };
                 continue;
             }
-            if min_bp <= 2 && self.take_text("?").is_some() {
+            if min_bp <= 3 && self.take_text("?").is_some() {
                 self.ternary_then_depth += 1;
                 let then_value = self.expression(0);
                 self.ternary_then_depth -= 1;
@@ -680,21 +680,26 @@ impl ExprParser {
             ("&&=", 1, 1),
             ("||", 3, 4),
             ("&&", 5, 6),
-            ("in", 7, 8),
-            ("to", 8, 9),
-            ("==", 7, 8),
-            ("!=", 7, 8),
-            ("~=", 7, 8),
-            ("~!", 7, 8),
-            ("<=", 9, 10),
-            (">=", 9, 10),
-            ("<", 9, 10),
-            (">", 9, 10),
-            ("|", 11, 12),
-            ("^", 13, 14),
-            ("&", 15, 16),
-            ("<<", 17, 18),
-            (">>", 17, 18),
+            // DreamMaker binds the bit operators looser than comparison and shifts looser than relational operators
+            // (`a == b | c` is `(a == b) | c`, `a << b < c` is `a << (b < c)`), measured against dm.exe.
+            ("|", 7, 8),
+            ("^", 9, 10),
+            ("&", 11, 12),
+            // `in` is the loosest operator of all, below `?:`: `a in b ? c : d` is `a in (b ? c : d)` and
+            // `a || b in c` is `(a || b) in c` (dm.exe 516.1687).
+            ("in", 2, 3),
+            ("==", 13, 14),
+            ("!=", 13, 14),
+            ("<>", 13, 14),
+            ("~=", 13, 14),
+            ("~!", 13, 14),
+            ("to", 14, 15),
+            ("<<", 15, 16),
+            (">>", 15, 16),
+            ("<=", 17, 18),
+            (">=", 17, 18),
+            ("<", 17, 18),
+            (">", 17, 18),
             ("+", 19, 20),
             ("-", 19, 20),
             ("*", 21, 22),
@@ -724,6 +729,12 @@ impl ExprParser {
                 if assembled == *op && best.as_ref().is_none_or(|b| op.len() > b.0.len()) {
                     best = Some(((*op).into(), width, *l, *r));
                 }
+            }
+        }
+        // `<>` is DreamMaker's spelling of `!=`.
+        if let Some(found) = best.as_mut() {
+            if found.0 == "<>" {
+                found.0 = "!=".into();
             }
         }
         best

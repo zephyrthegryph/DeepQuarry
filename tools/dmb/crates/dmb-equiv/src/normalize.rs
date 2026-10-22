@@ -329,18 +329,23 @@ fn fold_static_reads(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<
         if lines[i + 1] != "SetVar cache" || tg.contains(&(i + 1)) || tg.contains(&(i + 2)) {
             continue;
         }
-        let Some(field) = lines[i + 2]
-            .strip_prefix("GetVar initial(src->.")
-            .and_then(|r| r.strip_suffix(')'))
-        else {
-            continue;
-        };
         let Some(path) = ["PushVal mobpath ", "PushVal path"].iter().find_map(|p| {
             let rest = lines[i].strip_prefix(p)?;
             // `path9 /obj/x` carries a tag number before the path.
             let rest = if p.ends_with("path") { rest.split_once(' ')?.1 } else { rest };
             rest.starts_with('/').then(|| rest.to_string())
         }) else {
+            continue;
+        };
+        // The register holds that very constant (`canon::cache_states_full` labels it with the pushed value), so the
+        // read renders as `initial(<value>->.field)`.
+        let label = &lines[i]["PushVal ".len()..];
+        let Some(field) = lines[i + 2]
+            .strip_prefix("GetVar initial(")
+            .and_then(|r| r.strip_suffix(')'))
+            .and_then(|r| r.strip_prefix(label))
+            .and_then(|r| r.strip_prefix("->."))
+        else {
             continue;
         };
         if let Some(value) = default(&path, field) {
@@ -408,9 +413,380 @@ pub fn sorted_pure_initializer(lines: &[String]) -> Option<Vec<String>> {
     Some(out)
 }
 
+/// `GetFlag; Test` leaves the stack and the comparison flag as they were: `GetFlag` pushes the flag as 0 or 1 and
+/// `Test` pops that value and sets the flag to its truthiness, which is the flag again (FORMAT.md: a conditional reads
+/// the flag directly after the comparison that set it; DreamMaker emits `IsIn; Jz` where native emits
+/// `IsIn; GetFlag; Test; Jz`). Applies only when `Test` is not a branch target, so no other path reaches it with a value.
+fn drop_flag_roundtrip(lines: Vec<String>) -> Vec<String> {
+    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
+    let mut drop = vec![false; lines.len()];
+    for i in 0..lines.len().saturating_sub(1) {
+        if lines[i] == "GetFlag" && lines[i + 1] == "Test" && !tg.contains(&(i + 1)) && !drop[i] {
+            drop[i] = true;
+            drop[i + 1] = true;
+        }
+    }
+    if drop.iter().any(|d| *d) {
+        remove(&lines, &drop)
+    } else {
+        lines
+    }
+}
+
+/// `GetVar X` reads variables only: a proc operand would call it. The canonical receiver text of a Cache that holds a
+/// call result, `(Call ...)->.f`, names that earlier call and runs nothing, so parenthesised labels are skipped.
+fn is_pure_read(line: &str) -> bool {
+    let mut depth = 0usize;
+    let mut outside = String::new();
+    for c in line.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth = depth.saturating_sub(1),
+            _ if depth == 0 => outside.push(c),
+            _ => {}
+        }
+    }
+    !outside.contains("dproc:") && !outside.contains("dverb:")
+}
+
+/// Instructions that only move the receiver Cache register. `canon::cache_states_full` carries the register through
+/// them as a symbolic label that every reader (a bare field or proc operand, `GetVar cache`) renders, so the
+/// instructions themselves have no other effect and a difference in how often a compiler saves, restores or reloads
+/// the register is not a difference in behaviour:
+/// * `PushCache` / `PopCache` save and restore the register on a stack of its own (balanced on every path, else
+///   `canon` leaves a `?` on them and they stay);
+/// * `GetVar X; SetVar cache` with a pure read `X` (no call) loads the register with the value of `X`: Dream Maker
+///   reloads `src` this way where native names `src` in each operand.
+fn drop_cache_register_ops(lines: Vec<String>) -> Vec<String> {
+    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
+    let mut drop = vec![false; lines.len()];
+    for i in 0..lines.len() {
+        if lines[i] == "PushCache" || lines[i] == "PopCache" {
+            drop[i] = true;
+        } else if i + 1 < lines.len()
+            && lines[i].starts_with("GetVar ")
+            && is_pure_read(&lines[i])
+            && !lines[i].starts_with("GetVar cache")
+            && lines[i + 1] == "SetVar cache"
+            && !tg.contains(&(i + 1))
+        {
+            drop[i] = true;
+            drop[i + 1] = true;
+        }
+    }
+    if drop.iter().any(|d| *d) {
+        remove(&lines, &drop)
+    } else {
+        lines
+    }
+}
+
+fn retarget(line: &str, to: usize) -> String {
+    match label_spans(line).first() {
+        Some(&(s, e, _)) => format!("{}L{to}{}", &line[..s], &line[e..]),
+        None => line.to_string(),
+    }
+}
+
+/// A jump that lands on another jump that is certain to be taken continues to the final destination; compilers differ
+/// in how far they route a chain of short-circuit or null-guard exits (DreamMaker sends every exit of `a || b || c`
+/// to the end, native to the next test). The target is certain to jump again when it reads the state the first jump
+/// leaves unchanged:
+/// * any jump onto an unconditional `Jmp` (it reads nothing);
+/// * `Jz`/`Jnz` onto the same instruction (the flag is unchanged);
+/// * `JmpOr` onto `JmpOr`, `JmpAnd` onto `JmpAnd` (the value stays on top and is still true, or false);
+/// * `SetCacheJmpIfNull` onto `SetCacheJmpIfNull` or `SetCachePopJmpIfNull` (the value is the null it just left; the
+///   second guard's cache write is the same null write, and its pop-or-not is the only difference, kept by naming the
+///   target's own instruction kind) and onto a bare `Pop` (a pop-guard jumping past it).
+fn thread_jumps(lines: Vec<String>) -> Vec<String> {
+    let mut lines = lines;
+    // Every destination of every instruction (case tables and loop jumps included) that is an unconditional `Jmp`
+    // continues to that jump's destination: running the `Jmp` reads and changes nothing but the program counter.
+    for i in 0..lines.len() {
+        let spans = label_spans(&lines[i]);
+        if spans.is_empty() {
+            continue;
+        }
+        let mut text = String::new();
+        let mut last = 0;
+        for (s, e, n) in spans {
+            text.push_str(&lines[i][last..s]);
+            let mut dest = n;
+            for _ in 0..16 {
+                match lines.get(dest).map(|l| (op(l), targets(l))) {
+                    Some(("Jmp", t)) if t.len() == 1 && t[0] != dest => dest = t[0],
+                    _ => break,
+                }
+            }
+            text.push('L');
+            text.push_str(&dest.to_string());
+            last = e;
+        }
+        text.push_str(&lines[i][last..]);
+        lines[i] = text;
+    }
+    for i in 0..lines.len() {
+        for _ in 0..16 {
+            let o = op(&lines[i]).to_string();
+            let tl = targets(&lines[i]);
+            let [t] = tl.as_slice() else { break };
+            if *t >= lines.len() || *t == i || !matches!(o.as_str(), "Jmp" | "Jz" | "Jnz" | "JmpOr" | "JmpAnd" | "SetCacheJmpIfNull" | "SetCachePopJmpIfNull") {
+                break;
+            }
+            let target = lines[*t].clone();
+            let to = op(&target).to_string();
+            let tt = targets(&target);
+            let next = match (o.as_str(), to.as_str()) {
+                (_, "Jmp") if tt.len() == 1 => Some((lines[i].clone(), tt[0])),
+                ("Jz", "Jz") | ("Jnz", "Jnz") | ("JmpOr", "JmpOr") | ("JmpAnd", "JmpAnd") | ("SetCacheJmpIfNull", "SetCacheJmpIfNull")
+                    if tt.len() == 1 =>
+                {
+                    Some((lines[i].clone(), tt[0]))
+                }
+                ("SetCacheJmpIfNull", "SetCachePopJmpIfNull") if tt.len() == 1 => {
+                    Some((lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1), tt[0]))
+                }
+                ("SetCacheJmpIfNull", "Pop") if *t + 1 < lines.len() => {
+                    Some((lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1), *t + 1))
+                }
+                _ => None,
+            };
+            let Some((line, dest)) = next else { break };
+            lines[i] = retarget(&line, dest);
+        }
+    }
+    lines
+}
+
+/// `End` returns the proc's `.` value, so `GetVar .; Ret` is `End`: Dream Maker ends `. = 1` with `PushVal 1; SetVar .;
+/// End`, which would return null if `End` did not read `.`.
+fn fold_return_dot(lines: Vec<String>) -> Vec<String> {
+    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
+    let mut lines = lines;
+    let mut i = 0;
+    while i + 1 < lines.len() {
+        if lines[i] == "GetVar ." && lines[i + 1] == "Ret" && !tg.contains(&(i + 1)) {
+            lines[i] = "End".into();
+            let mut drop = vec![false; lines.len()];
+            drop[i + 1] = true;
+            // `Ret` stood at i + 1; targets at i + 1 are excluded above, so only later labels renumber.
+            lines = remove(&lines, &drop);
+            return fold_return_dot(lines);
+        }
+        i += 1;
+    }
+    lines
+}
+
+/// Splits `{k=>L1;k=>L2;else=>L3}` into its entries, honouring quoted keys. None when the text is not that shape.
+fn split_cases(line: &str) -> Option<(&str, Vec<(String, String)>)> {
+    let open = line.find('{')?;
+    let body = line[open + 1..].strip_suffix('}')?;
+    let mut entries = Vec::new();
+    let (mut key, mut cur) = (String::new(), String::new());
+    let (mut quoted, mut in_label) = (false, false);
+    let chars: Vec<char> = body.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if in_label {
+            if c == ';' {
+                entries.push((std::mem::take(&mut key), std::mem::take(&mut cur)));
+                in_label = false;
+            } else {
+                cur.push(c);
+            }
+        } else if quoted {
+            cur.push(c);
+            if c == '\\' && i + 1 < chars.len() {
+                i += 1;
+                cur.push(chars[i]);
+            } else if c == '"' {
+                quoted = false;
+            }
+        } else if c == '"' {
+            quoted = true;
+            cur.push(c);
+        } else if c == '=' && chars.get(i + 1) == Some(&'>') {
+            key = std::mem::take(&mut cur);
+            in_label = true;
+            i += 1;
+        } else {
+            cur.push(c);
+        }
+        i += 1;
+    }
+    if in_label && key == "else" {
+        entries.push((key, cur));
+        cur = String::new();
+    }
+    if quoted || !cur.is_empty() || entries.last().map(|e| e.0.as_str()) != Some("else") {
+        return None;
+    }
+    Some((&line[..open], entries))
+}
+
+/// A `Switch` over distinct constant keys selects the one case equal to the selector, so the order its entries are
+/// written in cannot matter (DreamMaker lists the cases of a text switch in another order than native). Entries are
+/// sorted by key; `else` stays last. A switch with a repeated key, or with ranges (`SwitchRange`), is left alone.
+fn sort_switch_cases(lines: Vec<String>) -> Vec<String> {
+    lines
+        .into_iter()
+        .map(|line| {
+            if op(&line) != "Switch" {
+                return line;
+            }
+            let Some((head, mut entries)) = split_cases(&line) else {
+                return line;
+            };
+            let default = entries.pop().unwrap();
+            let mut keys: Vec<&String> = entries.iter().map(|e| &e.0).collect();
+            keys.sort();
+            if keys.windows(2).any(|w| w[0] == w[1]) {
+                return line;
+            }
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            entries.push(default);
+            let body: Vec<String> = entries.iter().map(|(k, l)| format!("{k}=>{l}")).collect();
+            format!("{head}{{{}}}", body.join(";"))
+        })
+        .collect()
+}
+
+/// `PushCacheKey; E...; PopCacheKey` saves the list-index key/index registers around `E` and puts them back. When no
+/// instruction of `E` reads or writes either register (no line mentions `cache-key` or `cache-index`), `E` is straight
+/// code (no jump or jump target between the pair), and a call or constructor in it runs in a frame of its own (the
+/// registers belong to the frame), the registers are the same after the pair as before it: the pair does nothing.
+fn drop_idle_cache_key_saves(lines: Vec<String>) -> Vec<String> {
+    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
+    let mut drop = vec![false; lines.len()];
+    let mut i = 0;
+    while i < lines.len() {
+        if lines[i] == "PushCacheKey" {
+            let mut j = i + 1;
+            let mut idle = true;
+            while j < lines.len() && lines[j] != "PopCacheKey" {
+                let l = &lines[j];
+                if !targets(l).is_empty()
+                    || tg.contains(&j)
+                    || l.contains("cache-key")
+                    || l.contains("cache-index")
+                    || l.starts_with("PushCacheKey")
+                    || matches!(op(l), "Ret" | "End")
+                {
+                    idle = false;
+                    break;
+                }
+                j += 1;
+            }
+            if idle && j < lines.len() && !tg.contains(&j) && !tg.contains(&i) {
+                drop[i] = true;
+                drop[j] = true;
+                i = j;
+            }
+        }
+        i += 1;
+    }
+    if drop.iter().any(|d| *d) {
+        remove(&lines, &drop)
+    } else {
+        lines
+    }
+}
+
+/// A body made only of independent initializer statements (`E...; SetVar global:g`, then `End`) that both sides run in
+/// another order. None unless the two bodies hold exactly the same statements. The statements are reported rather than
+/// compared as a set because they are not free to move: those that run code (`New`, calls, reads of other globals) can
+/// observe each other's effects, so the order is DreamMaker's (ascending variable id, which is the order in which a
+/// name first appears in the compiled procedures) and the difference stays visible.
+pub fn initializer_order_difference(a: &[String], b: &[String]) -> Option<String> {
+    fn statements(lines: &[String]) -> Option<Vec<Vec<String>>> {
+        let (last, body) = lines.split_last()?;
+        if last != "End" {
+            return None;
+        }
+        let mut out = Vec::new();
+        let mut current = Vec::new();
+        for line in body {
+            if !targets(line).is_empty() {
+                return None;
+            }
+            current.push(line.clone());
+            if line.starts_with("SetVar ") {
+                out.push(std::mem::take(&mut current));
+            }
+        }
+        current.is_empty().then_some(out)
+    }
+    let (sa, sb) = (statements(a)?, statements(b)?);
+    if sa.len() != sb.len() || sa.len() < 2 {
+        return None;
+    }
+    let mut position: std::collections::HashMap<&Vec<String>, Vec<usize>> = std::collections::HashMap::new();
+    for (i, statement) in sa.iter().enumerate() {
+        position.entry(statement).or_default().push(i);
+    }
+    let mut order = Vec::with_capacity(sb.len());
+    for statement in &sb {
+        let slots = position.get_mut(statement)?;
+        if slots.is_empty() {
+            return None;
+        }
+        order.push(slots.remove(0));
+    }
+    // Statements outside the longest run that keeps its order are the ones that moved.
+    let longest_increasing = |values: &[usize]| {
+        let mut tails: Vec<usize> = Vec::new();
+        for &value in values {
+            let at = tails.partition_point(|&t| t < value);
+            if at == tails.len() {
+                tails.push(value);
+            } else {
+                tails[at] = value;
+            }
+        }
+        tails.len()
+    };
+    let runs_code = |statement: &Vec<String>| {
+        statement.iter().any(|l| {
+            matches!(op(l), "New" | "Call" | "CallGlob" | "CallStatement" | "CallGlobalArgList" | "RegexNew" | "NewArgList")
+                || l.starts_with("GetVar global:")
+        })
+    };
+    let code_order: Vec<usize> = order.iter().copied().filter(|&i| runs_code(&sa[i])).collect();
+    let moved = order.len() - longest_increasing(&order);
+    if moved == 0 {
+        return None;
+    }
+    Some(format!(
+        "{} of {} initializer statements run in another order; {} of the {} that run code (constructors, calls, reads of globals) run in another order relative to each other",
+        moved,
+        order.len(),
+        code_order.len() - longest_increasing(&code_order),
+        code_order.len(),
+    ))
+}
+
 pub fn normalize(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<String>) -> Vec<String> {
-    let lines = fold_static_reads(lines, default);
-    drop_first_null_stores(merge_literals(drop_jump_to_next(drop_unreachable(lines))))
+    let mut lines = fold_static_reads(lines, default);
+    // Each pass can expose another (a folded short-circuit leaves dead code, a dropped jump exposes a literal pair).
+    for _ in 0..8 {
+        let before = lines.clone();
+        lines = fold_return_dot(lines);
+        lines = drop_flag_roundtrip(lines);
+        lines = drop_cache_register_ops(lines);
+        lines = drop_idle_cache_key_saves(lines);
+        lines = thread_jumps(lines);
+        lines = drop_unreachable(lines);
+        lines = sort_switch_cases(lines);
+        lines = drop_jump_to_next(lines);
+        lines = merge_literals(lines);
+        lines = drop_first_null_stores(lines);
+        if lines == before {
+            break;
+        }
+    }
+    lines
 }
 
 #[cfg(test)]
@@ -424,9 +800,9 @@ mod tests {
     #[test]
     fn static_field_read_is_the_default_constant() {
         let table = |p: &str, f: &str| (p == "/obj/x" && f == "y").then(|| "\"font\"".to_string());
-        let nat = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(src->.y)", "Ret"]);
+        let nat = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.y)", "Ret"]);
         assert_eq!(normalize(nat, &table), v(&["PushVal \"font\"", "Ret"]));
-        let other = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(src->.z)", "Ret"]);
+        let other = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.z)", "Ret"]);
         assert_eq!(normalize(other.clone(), &table), other);
     }
 
@@ -476,6 +852,75 @@ mod tests {
             "Add", "PushVal \"c\"", "Add", "Ret",
         ]);
         assert_eq!(normalize(dm, &none), normalize(nat, &none));
+    }
+
+    #[test]
+    fn flag_roundtrip_before_a_conditional_is_dropped() {
+        let nat = v(&["GetVar arg0", "IsIn 5", "GetFlag", "Test", "Jz L6", "End", "End"]);
+        assert_eq!(normalize(nat, &none), v(&["GetVar arg0", "IsIn 5", "Jz L4", "End", "End"]));
+        // A jump to the Test arrives with a value of its own: keep it.
+        let kept = v(&["Jz L2", "GetFlag", "Test", "Jz L5", "End", "End"]);
+        assert_eq!(normalize(kept.clone(), &none), kept);
+    }
+
+    #[test]
+    fn get_dot_return_is_end() {
+        let nat = v(&["PushVal 1.0", "SetVar .", "GetVar .", "Ret"]);
+        assert_eq!(normalize(nat, &none), v(&["PushVal 1.0", "SetVar .", "End"]));
+    }
+
+    #[test]
+    fn cache_save_restore_and_register_reloads_are_dropped() {
+        let dm = v(&["GetVar usr", "SetCacheJmpIfNull L7", "PushCache", "GetVar src", "SetVar cache", "PopCache", "Pop", "End"]);
+        assert_eq!(
+            normalize(dm, &none),
+            v(&["GetVar usr", "SetCacheJmpIfNull L3", "Pop", "End"])
+        );
+        // An unbalanced save stack is marked by canon and stays.
+        let marked = v(&["PushCache?", "End"]);
+        assert_eq!(normalize(marked.clone(), &none), marked);
+    }
+
+    #[test]
+    fn jumps_thread_through_jumps_that_must_be_taken() {
+        // JmpOr onto JmpOr, a case table onto a Jmp, a null guard onto a pop-guard.
+        let a = v(&["JmpOr L2", "End", "JmpOr L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(a)[0], "JmpOr L4");
+        let b = v(&["Switch {1.0=>L2;else=>L3}", "End", "Jmp L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(b)[0], "Switch {1.0=>L4;else=>L3}");
+        let c = v(&["SetCacheJmpIfNull L2", "End", "SetCachePopJmpIfNull L4", "End", "End"]);
+        assert_eq!(thread_jumps(c)[0], "SetCachePopJmpIfNull L4");
+        // A conditional jump onto a different kind of test is not threaded.
+        let d = v(&["Jz L2", "End", "JmpOr L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(d.clone()), d);
+    }
+
+    #[test]
+    fn switch_entries_with_distinct_keys_compare_in_any_order() {
+        let a = v(&["Switch {\"b\"=>L1;\"a\"=>L2;else=>L3}", "End", "End", "End"]);
+        let b = v(&["Switch {\"a\"=>L2;\"b\"=>L1;else=>L3}", "End", "End", "End"]);
+        assert_eq!(normalize(a, &none), normalize(b, &none));
+        let dup = v(&["Switch {1.0=>L1;1.0=>L2;else=>L3}", "End", "End", "End"]);
+        assert_eq!(normalize(dup.clone(), &none), dup);
+    }
+
+    #[test]
+    fn idle_cache_key_saves_are_dropped_and_busy_ones_stay() {
+        let idle = v(&["PushCacheKey", "PushVal 8.0", "New 1", "PopCacheKey", "End"]);
+        assert_eq!(normalize(idle, &none), v(&["PushVal 8.0", "New 1", "End"]));
+        let busy = v(&["PushCacheKey", "GetVar cache-index", "PopCacheKey", "End"]);
+        assert_eq!(normalize(busy.clone(), &none), busy);
+    }
+
+    #[test]
+    fn initializer_order_is_reported_not_hidden() {
+        let a = v(&["PushVal 1.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
+        let b = v(&["New 0", "SetVar global:b", "PushVal 1.0", "SetVar global:a", "End"]);
+        assert!(initializer_order_difference(&a, &b).unwrap().contains("1 of 2"));
+        assert_eq!(initializer_order_difference(&a, &a), None);
+        // Different statements are a different program, not an order difference.
+        let c = v(&["PushVal 2.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
+        assert_eq!(initializer_order_difference(&a, &c), None);
     }
 
     #[test]

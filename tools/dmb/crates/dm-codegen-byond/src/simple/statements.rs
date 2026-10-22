@@ -577,6 +577,14 @@ impl Compiler<'_> {
         expr: &Expr,
         statement: &str,
     ) -> Result<(), LowerError> {
+        // A statement that only names a variable (`x`, `a.b`, `src`) does nothing: DreamMaker emits no code for it (the
+        // expression is still checked, so an undefined name is still an error).
+        if super::assignments::is_reference_chain(expr) {
+            let previous = self.discarded_call_root.replace(expr);
+            let lowered = self.lower_dead(|compiler| compiler.expression(expr, statement));
+            self.discarded_call_root = previous;
+            return lowered;
+        }
         let previous = self.discarded_call_root.replace(expr);
         let result = self.expression(expr, statement);
         self.discarded_call_root = previous;
@@ -699,6 +707,11 @@ impl Compiler<'_> {
             }
         }
         self.expression(rhs, statement)?;
+        // `target << "text [x]"` is one OutputFormat (0x04, the operands of Format 0x02) in DreamMaker, not Format then Output.
+        if let Some(CodeItem::Instruction(Instruction { opcode: format @ 0x02, .. })) = self.result.code.items.last_mut() {
+            *format = 0x04;
+            return Ok(true);
+        }
         self.emit(0x03, vec![]);
         Ok(true)
     }

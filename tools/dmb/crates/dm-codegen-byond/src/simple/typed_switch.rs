@@ -1,7 +1,5 @@
 //! Native constant switch tables; dynamic forms keep the existing fallback.
 use super::*;
-#[path = "typed_switch_overlap.rs"]
-mod overlap;
 
 // Pure bounded bitwise constants use DM's 24-bit numeric domain. Broader
 // expressions retain the runtime fallback; no resolver calls occur in preflight.
@@ -32,6 +30,12 @@ fn eligible(expr: &Expr) -> bool {
     }
     match &expr.kind {
         ExprKind::Group(inner) => eligible(inner),
+        // `"name" || src.name` (NAMEOF) folds to the constant text, as in DreamMaker.
+        ExprKind::Binary { op, lhs, .. } if op == "||" && super::expression::constant_text_truth(lhs) == Some(true) => eligible(lhs),
+        // `nameof(x)` is the text of its argument.
+        ExprKind::Call { callee, args } => {
+            args.len() == 1 && matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof")
+        }
         ExprKind::TypePath(_) => true,
         ExprKind::Literal(raw) if raw == "null" || raw == "TRUE" || raw == "FALSE" => true,
         ExprKind::Literal(raw) if !raw.starts_with("@'") => {
@@ -100,9 +104,27 @@ impl Compiler<'_> {
         else_branch: &[Statement],
         text: &str,
     ) -> Result<bool, LowerError> {
+        // `const` variables in a case label are their values.
+        let alternatives: Vec<Vec<SwitchAlternative>> = cases
+            .iter()
+            .map(|case| {
+                case.alternatives
+                    .iter()
+                    .map(|alternative| match alternative {
+                        SwitchAlternative::Exact(value) => SwitchAlternative::Exact(
+                            self.constant_context_expression(value).unwrap_or_else(|| value.clone()),
+                        ),
+                        SwitchAlternative::Range(low, high) => SwitchAlternative::Range(
+                            self.constant_context_expression(low).unwrap_or_else(|| low.clone()),
+                            self.constant_context_expression(high).unwrap_or_else(|| high.clone()),
+                        ),
+                    })
+                    .collect()
+            })
+            .collect();
         if cases.is_empty()
-            || !cases.iter().all(|case| {
-                case.alternatives.iter().all(|alt| match alt {
+            || !alternatives.iter().all(|case| {
+                case.iter().all(|alt| match alt {
                     SwitchAlternative::Exact(value) => eligible(value),
                     SwitchAlternative::Range(low, high) => {
                         switch_number(low).is_some() && switch_number(high).is_some()
@@ -112,39 +134,27 @@ impl Compiler<'_> {
         {
             return Ok(false);
         }
-        // The existing native corpus proves disjoint ranges and exact cases.
-        // Preserve the old path where regrouping could change authored priority.
-        let mut numeric_exact = Vec::new();
-        let mut numeric_ranges = Vec::new();
-        for case in cases {
-            for alternative in &case.alternatives {
-                match alternative {
-                    SwitchAlternative::Exact(value) => {
-                        if let Some(number) = switch_number(value) {
-                            numeric_exact.push(number);
-                        }
-                    }
-                    SwitchAlternative::Range(low, high) => {
-                        let (low, high) =
-                            (switch_number(low).unwrap(), switch_number(high).unwrap());
-                        if !low.is_finite() || !high.is_finite() || low > high {
-                            return Ok(false);
-                        }
-                        numeric_ranges.push((low, high));
+        // Overlapping ranges and exact cases are tabled as authored: DreamMaker lists every range in source order,
+        // then every exact value in source order, whatever they cover (measured against dm.exe: `if(25 to 27)` then
+        // `if(26)` and the reverse order both give `SwitchRange {25..27, 26}` in that table order).
+        for case in &alternatives {
+            for alternative in case {
+                if let SwitchAlternative::Range(low, high) = alternative {
+                    let (low, high) = (switch_number(low).unwrap(), switch_number(high).unwrap());
+                    if low > high {
+                        return Ok(false);
                     }
                 }
             }
-        }
-        if overlap::overlaps(&numeric_exact, &numeric_ranges) {
-            return Ok(false);
         }
         let end = self.label();
         let default = self.label();
         let labels: Vec<_> = cases.iter().map(|_| self.label()).collect();
         let mut exact = Vec::new();
         let mut ranges = Vec::new();
-        for (case, label) in cases.iter().zip(&labels) {
-            for alternative in &case.alternatives {
+        for (case, label) in alternatives.iter().zip(&labels) {
+            // DreamMaker tables the alternatives of one case last to first (`if(1, 2, 3)` is 3, 2, 1).
+            for alternative in case.iter().rev() {
                 match alternative {
                     SwitchAlternative::Exact(value) => {
                         exact.push((self.switch_value(value, text)?, *label));

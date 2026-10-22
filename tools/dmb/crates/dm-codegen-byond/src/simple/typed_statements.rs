@@ -66,6 +66,20 @@ impl Compiler<'_> {
                     }
                 }
             }
+            self.assoc_exempt_root = match &statement.kind {
+                StatementKind::Assign { value, .. } => Some(value as *const Expr),
+                StatementKind::Var { value: Some(value), .. } => Some(value as *const Expr),
+                StatementKind::If { condition, .. }
+                | StatementKind::While { condition, .. }
+                | StatementKind::DoWhile { condition, .. } => Some(condition as *const Expr),
+                StatementKind::Switch { selector, .. } => Some(selector as *const Expr),
+                StatementKind::Spawn { delay: Some(delay), .. } => Some(delay as *const Expr),
+                StatementKind::Expression(value) | StatementKind::Call(value) => match &value.kind {
+                    ExprKind::Binary { op, rhs, .. } if op == "<<" => Some(rhs.as_ref() as *const Expr),
+                    _ => Some(value as *const Expr),
+                },
+                _ => None,
+            };
             match &statement.kind {
                 StatementKind::Set { .. } => {
                     return Err(error(
@@ -113,6 +127,9 @@ impl Compiler<'_> {
                     let prior_iterator_depth = self
                         .label_iterator_depths
                         .insert(name.clone(), target_iterator_depth);
+                    let prior_break_depth = self
+                        .label_break_iterator_depths
+                        .insert(name.clone(), self.iterator_depth);
                     self.typed_statements(body)?;
                     if let Some(prior) = prior_break {
                         self.label_breaks.insert(name.clone(), prior);
@@ -128,6 +145,11 @@ impl Compiler<'_> {
                         self.label_iterator_depths.insert(name.clone(), prior);
                     } else {
                         self.label_iterator_depths.remove(name);
+                    }
+                    if let Some(prior) = prior_break_depth {
+                        self.label_break_iterator_depths.insert(name.clone(), prior);
+                    } else {
+                        self.label_break_iterator_depths.remove(name);
                     }
                     self.result.code.items.push(CodeItem::Label(end));
                 }
@@ -286,7 +308,7 @@ impl Compiler<'_> {
                 }
                 StatementKind::While { condition, body } => 'lowered: {
                     // A constant condition: `while(0)` vanishes and `while(1)` loops without a test (DreamMaker 516.1687).
-                    let constant = fold_number(condition).map(|value| value != 0.0);
+                    let constant = super::expression::constant_truth(condition);
                     if constant == Some(false) {
                         // Still checked (diagnostics, source features), but nothing is emitted.
                         self.lower_dead(|compiler| compiler.typed_statements(body))?;
@@ -320,10 +342,10 @@ impl Compiler<'_> {
                     self.breaks.pop();
                     result?;
                     self.result.code.items.push(CodeItem::Label(continue_label));
-                    match fold_number(condition) {
+                    match super::expression::constant_truth(condition) {
                         // `do ... while(0)` runs once without a test; `while(1)` loops back unconditionally.
-                        Some(value) if value == 0.0 => {}
-                        Some(_) => self.emit(opcode::JMP_LOOP, vec![Word::Branch(start)]),
+                        Some(false) => {}
+                        Some(true) => self.emit(opcode::JMP_LOOP, vec![Word::Branch(start)]),
                         None => {
                             self.condition(condition, &statement.raw_header)?;
                             self.emit(0xf9, vec![Word::Branch(start)]);
@@ -373,23 +395,31 @@ impl Compiler<'_> {
                         opcode::SET_VAR,
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
+                    // `for(var/T/x)` is `for(var/T/x in world)` for the atom types (the pre-filter of the declared type and the
+                    // type test, as in the `in` form) and iterates the instances of the type itself for every other type.
+                    let world_mask = iterator_mask(type_name);
                     self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::World)]);
                     if self.seen_classes.insert(SymbolId::of(&path)) {
                         self.result.class_paths.push(SymbolId::of(&path));
                     }
-                    self.emit(
-                        opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::ClassPath {
-                            path: SymbolId::of(&path),
-                            tag,
-                        })],
-                    );
+                    if world_mask == 0 {
+                        self.emit(
+                            opcode::PUSH_VAL,
+                            vec![Word::Value(ValueWord::ClassPath {
+                                path: SymbolId::of(&path),
+                                tag,
+                            })],
+                        );
+                    }
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
                     }
                     self.emit(
                         opcode::ITER_LOAD,
-                        vec![Word::Immediate(5), Word::Immediate(0x4000)],
+                        vec![
+                            Word::Immediate(5),
+                            Word::Immediate(if world_mask == 0 { 0x4000 } else { world_mask }),
+                        ],
                     );
                     let start = self.label();
                     let end = self.label();
@@ -400,6 +430,22 @@ impl Compiler<'_> {
                         vec![Word::Variable(VariableWord::Local(slot))],
                     );
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
+                    if world_mask != 0 && (type_name == "obj" || type_name == "atom" || type_name.contains('/')) {
+                        self.emit(
+                            opcode::GET_VAR,
+                            vec![Word::Variable(VariableWord::Local(slot))],
+                        );
+                        self.emit(
+                            opcode::PUSH_VAL,
+                            vec![Word::Value(ValueWord::ClassPath {
+                                path: SymbolId::of(&path),
+                                tag,
+                            })],
+                        );
+                        self.emit(0x7d, vec![]);
+                        self.emit(opcode::TEST, vec![]);
+                        self.emit(0xfa, vec![Word::Branch(start)]);
+                    }
                     self.iterator_depth += 1;
                     self.loops.push((start, end));
                     self.breaks.push(end);
@@ -441,15 +487,30 @@ impl Compiler<'_> {
                         } else {
                             (binding.trim(), None)
                         };
-                    let mask = explicit_mask.unwrap_or_else(|| {
-                        let path = binding.strip_prefix("var/").unwrap_or(binding);
-                        match path.split('/').next().unwrap_or("") {
-                            "mob" => 1,
-                            "obj" => 2,
-                            "turf" => 32,
-                            _ => 0,
+                    // The type the loop variable is declared with: in the `var/type/name` header, or the declared type of the
+                    // existing variable the loop assigns (a typed argument, local, field or global). DreamMaker skips elements
+                    // of other types for both.
+                    let declared_type: Option<String> = match binding.strip_prefix("var/") {
+                        Some(raw) => raw.rsplit_once('/').map(|(path, _)| path.to_string()),
+                        None => {
+                            let parsed = dm_syntax::parse_expression(binding);
+                            match parsed.expr.as_ref().map(|variable| &variable.kind) {
+                                Some(ExprKind::Ident(name)) if parsed.diagnostics.is_empty() => {
+                                    self.declared_variable_type(name)
+                                }
+                                Some(ExprKind::Member { object, selector, via_colon: false })
+                                    if parsed.diagnostics.is_empty()
+                                        && matches!(&object.kind, ExprKind::Ident(base) if base == "src") =>
+                                {
+                                    self.declared_variable_type(selector)
+                                }
+                                _ => None,
+                            }
                         }
-                    });
+                    };
+                    // The pre-filter DreamMaker derives from the declared type: the category bits of `as` (mob 1, obj 2,
+                    // turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj.
+                    let mask = explicit_mask.unwrap_or_else(|| iterator_mask(declared_type.as_deref().unwrap_or("")));
                     let binding_variable = if let Some(name) = local_name(binding) {
                         self.check_local_declaration(
                             name,
@@ -481,12 +542,35 @@ impl Compiler<'_> {
                     };
                     self.ensure_writable(&binding_variable, &statement.raw_header)?;
                     self.expression(iterable, &statement.raw_header)?;
+                    // DreamMaker folds the list-producing built-in of `for(var/x in range(...))` into the iterator
+                    // instruction (`IterLoad 13, mask` rather than `Range`, `IterLoad 5, mask`). The built-in's opcode is
+                    // the last instruction only when the iterable is a direct call.
+                    let mut load_mode = 5;
+                    if let Some(CodeItem::Instruction(Instruction { opcode: producer, operands })) = self.result.code.items.last() {
+                        let fused = match (*producer, operands.as_slice()) {
+                            (0x1f, []) => Some(6),
+                            (0x1b, []) => Some(7),
+                            (0x1c, []) => Some(8),
+                            (0x59, [Word::Immediate(0xae)]) => Some(13),
+                            (0xad, [Word::Immediate(0xae)]) => Some(14),
+                            (0xe5, []) => Some(15),
+                            (0xe6, []) => Some(16),
+                            (0xe7, []) => Some(17),
+                            (0xe8, []) => Some(18),
+                            (0x170, []) => Some(19),
+                            _ => None,
+                        };
+                        if let Some(mode) = fused {
+                            self.result.code.items.pop();
+                            load_mode = mode;
+                        }
+                    }
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
                     }
                     self.emit(
                         opcode::ITER_LOAD,
-                        vec![Word::Immediate(5), Word::Immediate(mask)],
+                        vec![Word::Immediate(load_mode), Word::Immediate(mask)],
                     );
                     let start = self.label();
                     let end = self.label();
@@ -499,15 +583,11 @@ impl Compiler<'_> {
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     if mask == 0
                         || (explicit_mask.is_none()
-                            && binding
-                                .strip_prefix("var/")
-                                .and_then(|raw| raw.rsplit_once('/'))
-                                .is_some_and(|(path, _)| path == "obj" || path.contains('/')))
+                            && declared_type
+                                .as_deref()
+                                .is_some_and(|path| path == "obj" || path == "atom" || path.contains('/')))
                     {
-                        if let Some((type_name, _)) = binding
-                            .strip_prefix("var/")
-                            .and_then(|raw| raw.rsplit_once('/'))
-                        {
+                        if let Some(type_name) = declared_type.as_deref() {
                             let path = runtime_declaration_path(type_name);
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(&statement.raw_header, "unsupported iterator type")
@@ -908,7 +988,7 @@ impl Compiler<'_> {
                         .get(&target)
                         .is_some_and(|depth| self.try_depth > *depth);
                     let target_iterator_depth =
-                        *self.label_iterator_depths.get(name).ok_or_else(|| {
+                        *self.label_break_iterator_depths.get(name).ok_or_else(|| {
                             error(
                                 &statement.raw_header,
                                 "break label iterator depth is unknown",
@@ -986,8 +1066,10 @@ impl Compiler<'_> {
                     else_branch,
                 } => 'lowered: {
                     // A constant condition keeps only the branch it selects, with no test (DreamMaker 516.1687).
-                    if let Some(value) = fold_number(condition) {
-                        if value != 0.0 {
+                    if let Some(value) = super::expression::constant_truth(condition)
+                        .or_else(|| self.const_reference_truth(condition))
+                    {
+                        if value {
                             self.typed_statements(then_branch)?;
                             self.lower_dead(|compiler| compiler.typed_statements(else_branch))?;
                         } else {
@@ -1025,5 +1107,21 @@ impl Compiler<'_> {
             }
         }
         Ok(())
+    }
+}
+
+/// The pre-filter DreamMaker derives from the declared type of a loop variable: the category bits of `as` (mob 1, obj 2,
+/// turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj. 0 for every other type.
+fn iterator_mask(path: &str) -> u32 {
+    match path {
+        "atom" => 291,
+        p if p == "atom/movable" || p.starts_with("atom/movable/") => 3,
+        _ => match path.split('/').next().unwrap_or("") {
+            "mob" => 1,
+            "obj" => 2,
+            "turf" => 32,
+            "area" => 256,
+            _ => 0,
+        },
     }
 }
