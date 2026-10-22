@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Merge gates get their own sized wall-clock cap for focused runs; the shared compile root skips .lk lock files and retries busy copies"
