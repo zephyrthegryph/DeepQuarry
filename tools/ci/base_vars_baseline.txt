@@ -193,7 +193,6 @@ base_var	code/game/skincmd.dm	@/mob::skincmds
 base_var	code/modules/admin/admin_attack_log.dm	@/atom::lastattacker
 base_var	code/modules/belly_overlay/belly_overlay_tgui.dm	@/mob::belly_overlay_tgui
 base_var	code/modules/body/body.dm	@/mob/living::body
-base_var	code/modules/body/body.dm	@/mob/living::body_type
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_timers
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_serial
 base_var	code/modules/body/body_effects.dm	@/mob/living::body_effect_origins

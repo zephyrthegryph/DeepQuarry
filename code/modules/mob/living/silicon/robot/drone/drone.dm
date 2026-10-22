@@ -103,9 +103,6 @@ CAPABILITIES(/mob/living/silicon/robot/drone/construction)
 CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 	configure(mob_movement(pull_mobs = MOB_PULL_SAME))
 
-/mob/living/silicon/robot/drone/Initialize(mapload)
-	. = ..(mapload, FALSE)
-
 /// Its language and final name follow the complete robot parent setup.
 /mob/living/silicon/robot/drone/proc/prepare_drone_languages()
 	remove_language(LANGUAGE_ROBOT_TALK)

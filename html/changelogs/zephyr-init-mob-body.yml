@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved Initialize() lines of mob, body, vore and fluff types into setup() hooks and type defaults"
