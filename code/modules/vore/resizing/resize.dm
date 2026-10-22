@@ -124,12 +124,12 @@
  * remains a plain imperative setter, not a factor consumer.
  *
  * Arguments:
- * * new_size - CHANGE_ME.
- * * animate - CHANGE_ME. Default: TRUE
- * * uncapped - CHANGE_ME. Default: FALSE
- * * ignore_prefs - CHANGE_ME. Default: FALSE
- * * aura_animation - CHANGE_ME. Default: TRUE
- * * allow_stripping - CHANGE_ME.  Default: FALSE
+ * * new_size - Not documented yet.
+ * * animate - Not documented yet. Default: TRUE
+ * * uncapped - Not documented yet. Default: FALSE
+ * * ignore_prefs - Not documented yet. Default: FALSE
+ * * aura_animation - Not documented yet. Default: TRUE
+ * * allow_stripping - Not documented yet.  Default: FALSE
  */
 /mob/living/proc/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
 	if(!uncapped)

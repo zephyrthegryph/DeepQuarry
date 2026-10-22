@@ -8,7 +8,7 @@ These are estimates from site and file counts, not measurements.
 
 ## Verdict
 
-- Every hard-banned legacy form is at zero. `legacy_form_counts.sh` reports one non-zero row: `CHANGE_` (10 sites, 2 files). The doc §17
+- Every hard-banned legacy form is at zero, and `legacy_form_counts.sh` reports no non-zero row (its `CHANGE_` hits were an overmap macro and a doc-comment placeholder, now renamed). The doc §17
   replacements for the banned forms have landed and their callers are converted; what is left is **sites of forms whose replacement has
   landed but whose callers are not all converted** (init, base vars, stored refs, native ref writes, a slice of ref text).
 - `system_boundary` is now empty (5 -> 0): see the next section.
@@ -48,8 +48,9 @@ Kind: **M** migration form (doc §17/§19) or **Q** code-quality ratchet. "Lande
 | `op_order` | 1 ceiling = 15 `relative_priority` | ceilings only | Hand-written `priority(above(...))`/`below(...)` | Q | `click_order()` on the bundle that owns both ops | yes | One lane. |
 | `system_boundary` | 0 | 0 | See above | M (§2) | `api.dm` procs | yes | Done. |
 
-Open forms with no ratchet (AGENTS.md §3b): `flow_ask`/`prompt_flow()` prompts (7 old-tree files) -> `asks()`; `CHANGE_` outside the engine
-(10 sites, 2 files).
+Open forms with no ratchet (AGENTS.md §3b): none. No `flow_ask` question remains (the macro is deleted and banned); the `prompt_flow()` hits in the
+old tree are the kept DB re-run machinery (`code/datums/prompts/reruns.dm`, DB bans, polls, `log_client_to_db`, TGS commands), not prompts. `CHANGE_` outside the
+engine is at zero.
 
 Total of the baseline-row ratchets: **2,348 rows** (557 + 542 + 526 + 508 + 107 + 104 + 4)
 plus 123 escape-hatch ceiling units. The wave estimates above sum to about 30-35 waves, dominated by `base_vars`, `init`, `untyped` and
