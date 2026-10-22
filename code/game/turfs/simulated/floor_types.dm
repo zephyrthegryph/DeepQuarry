@@ -220,9 +220,12 @@ CAPABILITIES(/turf/simulated/shuttle)
 	block_tele = TRUE
 
 CAPABILITIES(/turf/simulated/shuttle/floor/alien)
-	setup(PROC_REF(update_light))
+	setup(PROC_REF(light_alien_pod))
 	configure(light_glow(range = 3, power = 0.6, color = "#66ffff"))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/turf/simulated/shuttle/floor/alien/proc/light_alien_pod()
+	update_light()
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /turf/simulated/shuttle/floor/alien/proc/roll_look(datum/roller/R)
