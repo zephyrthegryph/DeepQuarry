@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Material rings and bracelets check their material in Initialize again so a material passed as a constructor argument is honoured"
