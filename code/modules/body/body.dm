@@ -48,7 +48,13 @@
 	if(!body)
 		return
 	body.reagent_change_pending = TRUE
-	body.invalidate(BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS)
+	var/domains = BODY_DIRTY_TREATMENT | BODY_DIRTY_CHEMS
+	var/already_dirty = (body.dirty & domains) == domains
+	body.invalidate(domains)
+	// invalidate() wakes the owner only for a newly dirtied domain. These two are consumed lazily by whatever reads them (a mob nothing reads for
+	// may carry them for good), and a reagent change still wakes the life steps that metabolise, feed and age the doses.
+	if(already_dirty)
+		PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 	// The factors follow a reagent the moment its holder changes: the volumes are read and the dose records follow now.
 	body.settle_reagent_factors()
 

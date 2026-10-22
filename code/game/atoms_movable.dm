@@ -532,6 +532,9 @@
 /atom/movable/proc/loc_changed(atom/old_loc)
 	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
 		own_field_changed(src, nameof(loc))
+	// A draw that reads `loc` (a syringe drawn upright in a case) redraws: the plan names it, and no reaction or stat has to read it for the look to follow the move.
+	if(plan_bits(src, nameof(loc)) & PLAN_DRAW)
+		tracked_changed(src, nameof(loc))
 	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
 	hop_moved(src, old_loc)
 

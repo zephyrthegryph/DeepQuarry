@@ -8,17 +8,17 @@
  * All this does is ensure that the mob releases the machine when they leave it.
  */
 /datum/using_machine_shim
-	var/obj/machinery/linked_machine
+	var/obj/linked_machine
 	/// The mob using the machine.
 	var/mob/owner
 
 CAPABILITIES(/datum/using_machine_shim)
-	ref_one(nameof(linked_machine), /obj/machinery)
+	ref_one(nameof(linked_machine), /obj) // any object a mob set_machine()s: a spellbook is an item
 	ref_one(nameof(owner), /mob)
 
 /mob/var/datum/using_machine_shim/machine_shim
 
-/datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
+/datum/using_machine_shim/New(mob/new_owner, obj/machine)
 	..()
 	rel_set(src, nameof(owner), new_owner)
 	rel_set(owner, nameof(owner.machine_shim), src)
@@ -39,7 +39,7 @@ CAPABILITIES(/datum/using_machine_shim)
 // the machine is free again and the operator's perspective and trait reset.
 /datum/using_machine_shim/lifecycle_prerelease()
 	..()
-	var/obj/machinery/machine = linked_machine()
+	var/obj/machine = linked_machine()
 	if(machine)
 		machine.set_in_use(FALSE)
 	if(owner)
@@ -128,5 +128,5 @@ CAPABILITIES(/datum/using_machine_shim)
 	return owner
 
 /// The machine being used (a relation view).
-/datum/using_machine_shim/proc/linked_machine() as /obj/machinery
+/datum/using_machine_shim/proc/linked_machine() as /obj
 	return linked_machine

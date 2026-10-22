@@ -16,7 +16,12 @@
 		TEST_ASSERT_EQUAL(cable.d1, expected_amount == 1 ? 0 : NORTH, "The stub and straight fixtures must parse distinct cable orientations")
 		var/old_handle = ref_token(cable)
 		var/list/before = turf_contents_of_type(T, /obj/item/stack/cable_coil/heavyduty)
-		cable.welder_act_tool_done(actor, T)
+		var/datum/act/op/A = take(/datum/act/op)
+		A.actor = actor
+		A.holder = cable
+		A.target = cable
+		cable.welder_act_tool_done(A)
+		A.release()
 		// Register the actual material product before assertions can end the test.
 		own_turf_contents(T)
 		TEST_ASSERT(QDELETED(cable), "A completed cut must destroy its original floor cable")

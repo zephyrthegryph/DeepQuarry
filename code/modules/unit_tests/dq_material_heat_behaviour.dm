@@ -101,7 +101,7 @@
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
 	var/datum/material_service/service = material_service_of(cell) || cell.enable_material_service()
 	TEST_ASSERT_NOTNULL(service, "the cell has no material service")
-	cell.charge = 0
+	cell.set_charge(0)
 	service.add_heat((500 - material_service_temperature(service)) * service.thermal_mass())
 	material_heat_elapse(service, 30)
 	log_test("thermoelectric cell: charge [round(cell.charge, 0.01)] after 30 s from 500 K, assembly at [round(material_service_temperature(service), 0.1)] K")

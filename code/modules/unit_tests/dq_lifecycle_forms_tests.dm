@@ -431,8 +431,10 @@ CAPABILITIES(/obj/item/dq_forms_order_holder)
 /datum/unit_test/dq_forms_starts_after/Run()
 	var/obj/item/dq_forms_order_holder/H = allocate(/obj/item/dq_forms_order_holder, dq_containment_floor())
 	var/list/order = own_table_of(H).start_vars
-	TEST_ASSERT_EQUAL(order.Find(nameof(H.first)), 1, "the dependency builds first")
-	TEST_ASSERT_EQUAL(order.Find(nameof(H.second)), 2, "then the occupant that names it")
+	// /obj/item starts occupants of its own (its identity): only the order of the two this type declares is pinned.
+	TEST_ASSERT(order.Find(nameof(H.first)), "the dependency is a starting occupant")
+	TEST_ASSERT(order.Find(nameof(H.second)), "so is the occupant that names it")
+	TEST_ASSERT(order.Find(nameof(H.first)) < order.Find(nameof(H.second)), "the dependency builds first, then the occupant that names it (order [json_encode(order)])")
 	TEST_ASSERT_NOTNULL(H.second, "both are built")
 
 /// spawns_many(): one child per offset, owned, naming its parent, configured by each(); finds(): the adjacent thing after init.

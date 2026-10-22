@@ -320,15 +320,19 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 /datum/unit_test/dq_om_events_on_lanes
 
 /datum/unit_test/dq_om_events_on_lanes/Run()
+	test_driver_begin()
 	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Lane test", /datum/event/nothing, 0, add_to_queue = FALSE)
 	var/datum/event/E = new /datum/event/nothing(EM)
 	TEST_ASSERT(isnull(E.periodic_pipe), "a new event steps from its every(), not from a legacy lane")
 	E.kill()
+	test_time(3 SECONDS) // the event_active gate fell: the every() parks at its next interval
 	TEST_ASSERT(!every_running(E), "a killed event kept its every()")
+	TEST_ASSERT(length(E.rx?.every_parked), "a killed event's every() is parked")
 	own_remove(SSevents, nameof(/datum/system/events::finished_events), E) // the service owns finished events
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]
 		TEST_ASSERT(EC.clock_running, "event container [i] is not keeping its clock")
+	test_driver_end()
 
 /// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.
 /datum/unit_test/dq_om_shuttles_on_lanes

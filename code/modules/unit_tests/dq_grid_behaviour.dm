@@ -41,6 +41,16 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 
 /// An APC on the test map with a cell, a terminal and an area that needs power, cut off from the rest of the net and set to run its three
 /// channels on automatic with a known cell.
+/// Puts the shared test APC back on the grid with a full cell after dq_grid_isolated_apc() cut it off (a deferred cleanup).
+/proc/dq_grid_restore_apc(obj/machinery/power/apc/A)
+	if(QDELETED(A))
+		return
+	A.connect_to_network()
+	A.set_chargemode(TRUE)
+	A.set_cell_charge(A.cell.maxcharge)
+	A.apply_area_power()
+	refresh_flush()
+
 /proc/dq_grid_isolated_apc(charge_fraction)
 	var/obj/machinery/power/apc/A = dq_power_test_apc()
 	if(!A)
@@ -55,7 +65,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
-	A.cell.charge = A.cell.maxcharge * charge_fraction
+	A.cell.set_charge(A.cell.maxcharge * charge_fraction)
 	A.seat_cell_charge(TRUE)
 	A.apply_area_power()
 	refresh_flush()
@@ -182,6 +192,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 
 /datum/unit_test/dq_grid_oneoff_draw_is_paid_once/Run()
 	var/obj/machinery/power/apc/apc = dq_grid_isolated_apc(0.5)
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_grid_restore_apc), apc)
 	TEST_ASSERT_NOTNULL(apc, "the test map has no working APC")
 	if(!apc)
 		return
@@ -191,7 +202,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	A.use_power_oneoff(40000, EQUIP)
 	TEST_ASSERT(A.usage(EQUIP, FALSE) >= 40000, "a one-off draw is on the area until the step")
 	dq_power_test_step()
-	TEST_ASSERT(apc.cell.charge < charge, "the cell paid a one-off the grid could not ([apc.cell.charge] of [charge])")
+	TEST_ASSERT(apc.cell.charge < charge, "the cell paid a one-off the grid could not ([apc.cell.charge] of [charge]; native charge [apc.get_charge()], APC region [apc.power_region])")
 	var/after_paid = apc.cell.charge
 	dq_power_test_step()
 	TEST_ASSERT_EQUAL(A.usage(EQUIP, FALSE), 0, "the one-off is gone after the step")
@@ -203,6 +214,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 
 /datum/unit_test/dq_grid_channels_shed_in_order/Run()
 	var/obj/machinery/power/apc/apc = dq_grid_isolated_apc(0.12)
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_grid_restore_apc), apc)
 	TEST_ASSERT_NOTNULL(apc, "the test map has no working APC")
 	if(!apc)
 		return
@@ -328,7 +340,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	term.connect_to_network()
 	term.set_power_supply(0)
 	apc.set_operating(TRUE)
-	apc.cell.charge = apc.cell.maxcharge * 0.8
+	apc.cell.set_charge(apc.cell.maxcharge * 0.8)
 	apc.seat_cell_charge(TRUE)
 	dq_power_test_step()
 	var/charge = apc.cell.charge

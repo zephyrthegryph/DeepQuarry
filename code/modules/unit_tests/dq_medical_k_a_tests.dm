@@ -131,7 +131,7 @@
 	TEST_ASSERT(diona.mood_immune, "diona shrug off induced moods")
 	var/datum/trait/neutral/bloodsucker/T = new
 	TEST_ASSERT_EQUAL(T.var_changes["hunger_alert_style"], HUNGER_ALERT_VAMPIRE, "obligate bloodsuckers use the vampire hunger alerts")
-	qdel(T)
+	qdel(T, force = TRUE) // a trait is a shared prototype: only a forced delete removes it
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_EQUAL(H.hunger_alert_style(), HUNGER_ALERT_ORGANIC, "a plain human uses the organic hunger alerts")
 

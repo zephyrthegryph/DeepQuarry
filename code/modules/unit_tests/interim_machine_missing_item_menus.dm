@@ -20,7 +20,9 @@
 	var/obj/machinery/recharge_station/C = mach(/obj/machinery/recharge_station, tile(3, 2))
 	missing_item_row(H, C, "recharge_station_part_replacement", "needs a rapid part exchange device")
 	missing_item_row(H, C, "recharge_station_insert_grab", "needs a grab")
-	missing_item_row(H, C, "recharge_station_drag_insert", "needs a mob")
+	// The drag insert is reached only by dragging a mob onto the station: a menu pick has no dragged thing, so the Menu does not list it.
+	for(var/list/row as anything in op_menu(H, C, null))
+		TEST_ASSERT(row["key"] != "recharge_station_drag_insert", "the drag-only recharge_station_drag_insert op is not a menu line")
 	var/obj/item/storage/part_replacer/R = allocate(/obj/item/storage/part_replacer, tile(2, 2))
 	TEST_ASSERT(H.put_in_active_hand(R), "the actor holds a real rapid part exchange device")
 	var/list/row = item_menu_row(H, C, R, "recharge_station_part_replacement")
