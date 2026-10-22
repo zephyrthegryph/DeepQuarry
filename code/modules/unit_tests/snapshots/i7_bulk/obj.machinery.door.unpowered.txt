@@ -3,22 +3,18 @@
 @obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.door human|/obj/item/tool/screwdriver
-human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Open
 @obj.machinery.door human|/obj/item/tool/wrench
 @obj.machinery.door human|/obj/item/tool/wirecutters
 @obj.machinery.door human|/obj/item/multitool
-human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Open
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Open
 @obj.machinery.door human|/obj/item/stack/cable_coil
 @obj.machinery.door human|/obj/item/stack/material/steel
 @obj.machinery.door human|/obj/item/card/id
 @obj.machinery.door human|/obj/item
-@obj.machinery.door human|/obj/item/stack/material/plasteel
+@obj human|/obj/item/stack/material/plasteel
 -menu: Hammer on the door
 -menu: Hold the door open
 -menu: Ring the bell
