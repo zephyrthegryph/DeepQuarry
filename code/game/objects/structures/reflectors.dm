@@ -346,7 +346,9 @@ CAPABILITIES(/transformation/stack/steel__reflector_frame)
 /obj/machinery/portable_atmospherics/canister
 	var/dont_burst = FALSE
 
-/obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/portable_atmospherics/canister/phoron/cold)
+	setup(PROC_REF(chill_contents))
+
+/obj/machinery/portable_atmospherics/canister/phoron/cold/proc/chill_contents()
 	heat_set(src.air_contents, 2.72)
 

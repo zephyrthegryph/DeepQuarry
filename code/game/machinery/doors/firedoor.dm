@@ -67,14 +67,15 @@
 	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
 
 
-/obj/machinery/door/firedoor/Initialize(mapload)
-	. = ..()
-	//Delete ourselves if we find extra mapped in firedoors
+/// Extra firedoors mapped onto one tile are discarded (keeps_if()).
+/obj/machinery/door/firedoor/proc/no_duplicate_firedoor()
 	for(var/obj/machinery/door/firedoor/F in contents_of(loc))
 		if(F != src)
 			log_mapping("Duplicate firedoors at [x],[y],[z]")
-			return INITIALIZE_HINT_QDEL
+			return FALSE
+	return TRUE
 
+/obj/machinery/door/firedoor/proc/join_area_door_lists()
 	var/area/A = get_area(src)
 	ASSERT(istype(A))
 
@@ -168,6 +169,8 @@ MSG_DEF_SELF(firedoor/need_wield, "You need to be wielding that to do that.")
 MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor)
+	keeps_if(PROC_REF(no_duplicate_firedoor))
+	setup(PROC_REF(join_area_door_lists))
 	ref_many(nameof(areas_added), /area)
 	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))

@@ -24,6 +24,7 @@ MSG_DEF_SELF(meter/no_pipe, "There is no pipe here to watch.")
 MSG_DEF_SELF(meter/panel_shut, "Its maintenance panel is shut.")
 
 CAPABILITIES(/obj/machinery/meter)
+	setup(PROC_REF(aim_at_pipe))
 	configure(uses_power(channel = ENVIRON, idle = 15))
 	gas_watch(air = nameof(watched_air), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_PRESSURE)
 	on_change(nameof(needle), ANY, then(PROC_REF(needle_moved)))
@@ -39,8 +40,7 @@ CAPABILITIES(/obj/machinery/meter)
 	ref_one(nameof(target))
 	ref_many(nameof(pipes_on_turf))
 
-/obj/machinery/meter/Initialize(mapload)
-	. = ..()
+/obj/machinery/meter/proc/aim_at_pipe()
 	set_target(target_ref() || select_target())
 
 /// Points the meter at `new_target`. The meter owns its lifetime watch on a

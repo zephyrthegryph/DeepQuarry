@@ -25,8 +25,7 @@
 	var/watercolor = null
 
 
-/turf/simulated/floor/water/Initialize(mapload)
-	. = ..()
+/turf/simulated/floor/water/proc/start_fish()
 	handle_fish()
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
@@ -48,6 +47,7 @@
 	return "water_shallow"
 
 CAPABILITIES(/turf/simulated/floor/water)
+	setup(PROC_REF(start_fish))
 	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), priority(OP_PRIORITY_PART + 1), claims(), starts(PROC_REF(fishing_cast)), wait(PROC_REF(fishing_wait_time)), on_interrupt(PROC_REF(fishing_ended)), then(PROC_REF(fishing_done)))
 	op("water_fill", item(/obj/item), label("Fill"), then(PROC_REF(water_fill)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(explosive_fishing)))

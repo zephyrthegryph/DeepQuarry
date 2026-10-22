@@ -53,8 +53,9 @@ TYPE_TABLE(/obj/mecha/combat/durand, mecha_starting_components, list( \
 	max_integrity = 250 // just slightly worse
 	desc = "An aging combat exosuit utilized by many corporations. Originally developed to combat hostile alien lifeforms. This one is particularly worn looking and likely isn't as sturdy."
 
-// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
-/obj/mecha/combat/durand/old/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/mecha/combat/durand/old)
+	setup(PROC_REF(wear_out))
+
+/obj/mecha/combat/durand/old/proc/wear_out()
 	update_integrity(25)
 	cell.set_charge(rand(0, (cell.charge/2)))

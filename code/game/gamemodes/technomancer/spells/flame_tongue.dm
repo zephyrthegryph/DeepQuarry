@@ -15,11 +15,11 @@
 	var/obj/item/weldingtool/spell/welder = null
 
 CAPABILITIES(/obj/item/spell/flame_tongue)
+	setup(PROC_REF(ignite_welder))
 	owns_one(nameof(welder), starts = /obj/item/weldingtool/spell)
 	look_glow(GLOW(3, 2, "#FF6A00"))
 
-/obj/item/spell/flame_tongue/Initialize(mapload)
-	. = ..()
+/obj/item/spell/flame_tongue/proc/ignite_welder()
 	visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
 	welder.setWelding(1)
 

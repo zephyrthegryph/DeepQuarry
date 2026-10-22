@@ -130,14 +130,13 @@ CAPABILITIES(/turf/simulated/shuttle/wall/alien)
 
 
 CAPABILITIES(/turf/simulated/shuttle/wall)
+	setup(PROC_REF(finish_shuttle_wall))
 	derives(nameof(icon_state), PROC_REF(initial_shuttle_wall_state))
 
 /turf/simulated/shuttle/wall/proc/initial_shuttle_wall_state(target)
 	return join_group ? icon_state : base_state
 
-/turf/simulated/shuttle/wall/Initialize(mapload)
-	. = ..()
-
+/turf/simulated/shuttle/wall/proc/finish_shuttle_wall()
 	//To allow mappers to rename shuttle walls to like "redfloor interior" or whatever for ease of use.
 	name = true_name
 
