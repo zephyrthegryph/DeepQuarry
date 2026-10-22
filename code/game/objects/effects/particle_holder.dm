@@ -19,17 +19,19 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
+	setup(PROC_REF(attach_to_parent))
 
 /// The particles a holder shows (its constructor param).
 /obj/effect/abstract/particle_holder/var/particle_path = /particles/smoke
 
-// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
 /obj/effect/abstract/particle_holder/Initialize(mapload)
 	. = ..()
 	if(!loc)
 		stack_trace("particle holder was created with no loc!")
 		return INITIALIZE_HINT_QDEL
 
+/// The holder leaves the map for its parent's vis_contents and makes its particles (setup hook; not run for a discarded holder).
+/obj/effect/abstract/particle_holder/proc/attach_to_parent()
 	if(loc.plane == TURF_PLANE)
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 

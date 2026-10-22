@@ -1,28 +1,32 @@
-// ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
-/obj/effect/step_trigger/teleporter/roguemine_loop/north/Initialize(mapload)
-	. = ..()
+/obj/effect/step_trigger/teleporter/roguemine_loop/north/proc/set_loop_target()
 	teleport_x = x
-	teleport_z = z
+	set_teleport_z(z)
 
-// ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
-/obj/effect/step_trigger/teleporter/roguemine_loop/south/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/step_trigger/teleporter/roguemine_loop/north)
+	setup(PROC_REF(set_loop_target))
+
+/obj/effect/step_trigger/teleporter/roguemine_loop/south/proc/set_loop_target()
 	teleport_x = x
 	teleport_y = world.maxy - 16
-	teleport_z = z
+	set_teleport_z(z)
 
-// ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
-/obj/effect/step_trigger/teleporter/roguemine_loop/west/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/step_trigger/teleporter/roguemine_loop/south)
+	setup(PROC_REF(set_loop_target))
+
+/obj/effect/step_trigger/teleporter/roguemine_loop/west/proc/set_loop_target()
 	teleport_x = world.maxx - 16
 	teleport_y = y
-	teleport_z = z
+	set_teleport_z(z)
 
-// ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
-/obj/effect/step_trigger/teleporter/roguemine_loop/east/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/step_trigger/teleporter/roguemine_loop/west)
+	setup(PROC_REF(set_loop_target))
+
+/obj/effect/step_trigger/teleporter/roguemine_loop/east/proc/set_loop_target()
 	teleport_y = y
-	teleport_z = z
+	set_teleport_z(z)
+
+CAPABILITIES(/obj/effect/step_trigger/teleporter/roguemine_loop/east)
+	setup(PROC_REF(set_loop_target))
 
 //Sure, I could probably do this with math. But I'm tired.
 /*

@@ -39,16 +39,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 CAPABILITIES(/obj/effect/map_effect/beam_point)
 	every(PROC_REF(beam_delay), then(PROC_REF(handle_beam_timer)), when = all_of(nameof(use_timer), STAT_RELEVANCE))
 	ref_many(nameof(my_beams))
+	setup(PROC_REF(start_beams))
 
 /// The deciseconds to the next beam change.
 /obj/effect/map_effect/beam_point/proc/beam_delay(datum/act/A)
 	return next_beam_delay
 
-/obj/effect/map_effect/beam_point/Initialize(mapload)
+/obj/effect/map_effect/beam_point/proc/start_beams()
 	if(make_beams_on_init)
 		create_beams()
 	next_beam_delay = initial_delay
-	return ..()
 
 // its beams go with it.
 /obj/effect/map_effect/beam_point/on_destroy(force)

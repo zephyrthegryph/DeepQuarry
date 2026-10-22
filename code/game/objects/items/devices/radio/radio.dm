@@ -59,10 +59,9 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 SETTER(/obj/item/radio, frequency)
 
-/obj/item/radio/Initialize(mapload)
-	. = ..()
+/obj/item/radio/proc/sanitize_start_frequency()
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
-		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+		set_frequency(sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
 /// The internal channels it starts with (derives(), at init): frequency text -> the access each needs (a subtype answers its own set).
 /obj/item/radio/proc/starting_channels()
@@ -151,6 +150,7 @@ SETTER(/obj/item/radio, frequency)
 /obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
 CAPABILITIES(/obj/item/radio)
+	setup(PROC_REF(sanitize_start_frequency))
 	configure(item_worn(slots = SLOT_BELT))
 	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
 	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)
@@ -902,10 +902,6 @@ CAPABILITIES(/obj/item/radio/borg)
 
 /obj/item/radio/intercom/forceMove(atom/destination, direction, movetime)
 	. = ..(destination, direction, movetime)
-	update_broadcast_tiles()
-
-/obj/item/radio/intercom/Initialize(mapload)
-	. = ..()
 	update_broadcast_tiles()
 
 /obj/item/radio/intercom/can_broadcast_to()

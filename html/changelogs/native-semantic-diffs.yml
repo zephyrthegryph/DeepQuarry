@@ -1,0 +1,4 @@
+author: "native-semantic-diffs"
+delete-after: true
+changes:
+  - code_imp: "dmb-equiv no longer counts proven-equivalent encoding differences; native resets a bare local after a backward goto"

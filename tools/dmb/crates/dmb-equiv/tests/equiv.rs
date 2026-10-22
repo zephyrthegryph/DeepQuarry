@@ -141,12 +141,12 @@ fn one_opcode_is_reported_with_its_statement() {
     let diff = &r.categories["proc.bytecode"].examples[0];
     assert_eq!(diff.path, "/proc/dump");
     assert!(
-        diff.detail.starts_with("bytecode differs at stmt 15 "),
+        diff.detail.starts_with("bytecode differs at stmt 13 "),
         "{}",
         diff.detail
     );
     assert!(
-        diff.detail.contains("`JmpLoop L9` vs `Jmp L9`"),
+        diff.detail.contains("`JmpLoop L7` vs `Jmp L7`"),
         "{}",
         diff.detail
     );

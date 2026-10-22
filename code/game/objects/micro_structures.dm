@@ -23,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 
 CAPABILITIES(/obj/structure/micro_tunnel)
+	setup(PROC_REF(setup_offset))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole
 	op("use", inputs(hand(), remote()), label("Use"), when(PROC_REF(actor_outside)), needs(req_adjacent()),
@@ -54,8 +55,8 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	var/area/our_area = get_area(src)
 	return "[our_area?.name] [name]"
 
-/obj/structure/micro_tunnel/Initialize(mapload)
-	. = ..()
+/// Setup: a tunnel with no pixel offset of its own is placed on its wall by its dir.
+/obj/structure/micro_tunnel/proc/setup_offset()
 	if(pixel_x || pixel_y)
 		return
 	offset_tunnel()

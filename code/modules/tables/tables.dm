@@ -72,6 +72,7 @@ MSG_DEF(table/uncarpeted, "You remove the carpet from %T%.", "%U% removes the ca
 MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some damage to %T%.")
 
 CAPABILITIES(/obj/structure/table)
+	setup(PROC_REF(finish_building))
 	smoothing()
 	table_frame()
 	climb(landing = PROC_REF(flipped_landing))
@@ -262,8 +263,7 @@ CAPABILITIES(/obj/structure/table)
 	break_to_parts()
 	return ..()
 
-/obj/structure/table/Initialize(mapload)
-	. = ..()
+/obj/structure/table/proc/finish_building()
 
 	// A preset starts built with its layers.
 	if(plating_id)
@@ -278,8 +278,8 @@ CAPABILITIES(/obj/structure/table)
 			return
 
 	// reset color/alpha, since they're set for nice map previews
-	color = "#ffffff"
-	alpha = 255
+	set_color("#ffffff")
+	set_alpha(255)
 	update_connections()
 	update_desc()
 	update_material()

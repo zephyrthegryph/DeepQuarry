@@ -3,8 +3,7 @@
 	var/obj/machinery/camera/motioncamera
 
 
-/area/ai_monitored/Initialize(mapload)
-	. = ..()
+/area/ai_monitored/proc/link_motion_camera()
 	// locate and store the motioncamera
 	for (var/obj/machinery/camera/M in area_contents_of_type(src, /obj/machinery/camera))
 		if(M.isMotion())
@@ -26,4 +25,5 @@
 	return motioncamera
 
 CAPABILITIES(/area/ai_monitored)
+	setup(PROC_REF(link_motion_camera))
 	ref_one(nameof(motioncamera))

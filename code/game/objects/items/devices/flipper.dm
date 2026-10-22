@@ -9,13 +9,13 @@
 CAPABILITIES(/obj/item/paicard/flipper)
 	ref_one(nameof(pai), /mob/living/silicon/pai, starts = PROC_REF(start_flipper_pai), early = TRUE)
 	derives(nameof(desc), PROC_REF(named_desc))
+	setup(PROC_REF(start_emotion))
 
 /// Its blurb names it (derives(), at init).
 /obj/item/paicard/flipper/proc/named_desc()
 	return "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 
-/obj/item/paicard/flipper/Initialize(mapload)
-	. = ..()
+/obj/item/paicard/flipper/proc/start_emotion()
 	setEmotion(4)
 
 /// Preserve the original pre-passenger emag attempt (which declines while pai is null).

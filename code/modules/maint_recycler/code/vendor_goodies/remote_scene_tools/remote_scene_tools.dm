@@ -175,8 +175,7 @@ why aren't these accessories?
 	var/secondary = /obj/item/remote_scene_tool
 	description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"
 
-/obj/item/storage/box/remote_scene_tools/Initialize(mapload)
-	. = ..()
+/obj/item/storage/box/remote_scene_tools/proc/fill_with_tools()
 	//set the contents to be a few remote scene tools
 	var/obj/item/remote_scene_tool/RST = new primary(loc = src)
 	var/obj/item/remote_scene_tool/RST2 = new secondary(loc = src)
@@ -230,4 +229,5 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 	return worn_mob
 
 CAPABILITIES(/obj/item/storage/box/remote_scene_tools)
+	setup(PROC_REF(fill_with_tools))
 	setup(TYPE_PROC_REF(/obj/item/storage, calibrate_size))

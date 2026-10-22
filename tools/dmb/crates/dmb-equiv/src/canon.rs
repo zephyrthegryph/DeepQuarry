@@ -32,6 +32,15 @@ pub struct Code {
     pub decode_error: Option<String>,
 }
 
+/// The inline text of an unnamed initializer body: short bodies, and longer ones made only of independent stores
+/// (whose order is unobservable, see `normalize::sorted_pure_initializer`).
+fn inline_body(code: &[String]) -> Option<String> {
+    if code.len() <= 24 {
+        return Some(constant_assignments(code).unwrap_or_else(|| code.join("; ")));
+    }
+    crate::normalize::sorted_pure_initializer(code).map(|lines| lines.join("; "))
+}
+
 pub(crate) fn esc(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len() + 2);
     for &b in bytes {
@@ -94,10 +103,54 @@ impl<'a> Ctx<'a> {
         ctx
     }
 
+    /// The initial value `/T::field` reads, rendered as a `PushVal` operand: the nearest override in `T`'s ancestry,
+    /// else the declaration's default. `None` when the field is not found or its value is built by an initializer.
+    pub fn static_default(&self, path: &str, field: &str) -> Option<String> {
+        let dmb = self.dmb;
+        let mut ci = dmb
+            .classes
+            .iter()
+            .position(|c| self.t(c.path_string_id()) == path)?;
+        let is_field = |v: u32| {
+            dmb.variables
+                .get(v as usize)
+                .is_some_and(|var| var.name != NONE && self.t(var.name) == field)
+        };
+        for _ in 0..64 {
+            if let Some(over) = dmb
+                .class_initial_values(ci)
+                .and_then(|l| l.into_iter().find(|iv| is_field(iv.variable_id)))
+            {
+                let text = self.value(&over.value);
+                return (!text.contains("hidden")).then_some(text);
+            }
+            if let Some((v, _)) = dmb
+                .class_variable_declarations(ci)
+                .and_then(|l| l.into_iter().find(|(v, _)| is_field(*v)))
+            {
+                let var = dmb.variables.get(v as usize)?;
+                if var.kind == 62 {
+                    return None;
+                }
+                let text = self.tagged(var.kind, var.value, None);
+                return (!text.contains("hidden")).then_some(text);
+            }
+            let parent = dmb.classes[ci].parent_class_id();
+            if parent == NONE || parent as usize >= dmb.classes.len() {
+                return None;
+            }
+            ci = parent as usize;
+        }
+        None
+    }
+
     pub fn string_bytes(&self, id: u32) -> Option<&[u8]> {
         if id == NONE {
             return None;
         }
+        // DreamMaker numbers strings through 0xffcd..=0xfff1, the range its operand words reserve, and writes such a
+        // field name as `0x1000_0000 | id` (`initial(a_drain)` with a_drain = 65513). Native never assigns those slots.
+        let id = if id & 0xf000_0000 == 0x1000_0000 { id & 0x0fff_ffff } else { id };
         self.dmb.string(id)
     }
     /// Quoted string text, `null` for NONE.
@@ -107,7 +160,7 @@ impl<'a> Ctx<'a> {
         }
         match self.dmb.string(id) {
             Some(b) => format!("\"{}\"", esc(b)),
-            None => format!("<bad-string>"),
+            None => format!("<bad-string {id}>"),
         }
     }
     /// Unquoted text (names, paths).
@@ -115,7 +168,7 @@ impl<'a> Ctx<'a> {
         match self.string_bytes(id) {
             Some(b) => esc(b),
             None if id == NONE => "null".into(),
-            None => "<bad-string>".into(),
+            None => format!("<bad-string {id}>"),
         }
     }
     pub fn ty(&self, class: u32) -> String {
@@ -540,6 +593,28 @@ impl<'a> Ctx<'a> {
     /// assignments. Render short unnamed bodies inline into the instance, so a
     /// difference shows where the instance is used instead of as an unrelated
     /// anonymous procedure. Their debug lines are not compared.
+    /// The `<inline-init>` key a short unnamed body gets when it is rendered inline, whether or not an instance uses
+    /// it: a class initializer and an instance initializer with the same statements are the same body to the
+    /// program, though DreamMaker shares one procedure between them and native keeps two.
+    pub fn inline_key(&self, p: u32) -> Option<String> {
+        if let Some(body) = self.inline_inits.get(&p) {
+            return Some(format!("<inline-init {:016x}>", xxh3_64(body.as_bytes())));
+        }
+        let pr = self.dmb.procs.get(p as usize)?;
+        if pr.strings[0] != NONE {
+            return None;
+        }
+        let words = self.dmb.proc_code_words(p as usize)?;
+        let code: Vec<String> = render_code_lines(self, words)
+            .ok()?
+            .into_iter()
+            .filter(|(d, _)| !d)
+            .map(|(_, l)| l)
+            .collect();
+        let body = inline_body(&code)?;
+        Some(format!("<inline-init {:016x}>", xxh3_64(body.as_bytes())))
+    }
+
     fn inline_instance_initializers(&mut self) {
         let dmb = self.dmb;
         let mut out = HashMap::new();
@@ -565,11 +640,8 @@ impl<'a> Ctx<'a> {
                 .filter(|(d, _)| !d)
                 .map(|(_, l)| l)
                 .collect();
-            if code.len() <= 24 {
-                out.insert(
-                    p,
-                    constant_assignments(&code).unwrap_or_else(|| code.join("; ")),
-                );
+            if let Some(body) = inline_body(&code) {
+                out.insert(p, body);
             }
         }
         for (&p, body) in &out {
@@ -1265,7 +1337,8 @@ pub(crate) fn class_fields(ctx: &Ctx<'_>, ci: usize) -> Vec<Field> {
     push(
         "type_meta",
         "initializer".into(),
-        ctx.proc_key(c.initializer_proc_id()),
+        ctx.inline_key(c.initializer_proc_id())
+            .unwrap_or_else(|| ctx.proc_key(c.initializer_proc_id())),
     );
     // Declarations: the loader re-sorts declaration pairs by name (FORMAT.md),
     // so wire order is not observable; key by name.

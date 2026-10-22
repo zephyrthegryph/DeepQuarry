@@ -300,9 +300,11 @@ MATERIAL_MIX(/obj/item/stock_parts/capacitor, list(MAT_STEEL = 50,MAT_GLASS = 50
 /// Stored charge; read by its holder's derived fields as "capacitor.charge" (magnetic guns).
 /obj/item/stock_parts/capacitor/var/charge = 0
 
-/obj/item/stock_parts/capacitor/Initialize(mapload)
-	. = ..()
+/obj/item/stock_parts/capacitor/proc/scale_max_charge()
 	max_charge *= rating
+
+CAPABILITIES(/obj/item/stock_parts/capacitor)
+	setup(PROC_REF(scale_max_charge))
 
 /obj/item/stock_parts/capacitor/proc/charge(amount)
 	set_charge(min(charge + amount, max_charge))
