@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Buildable SMES sums its coils after wiring, as before the setup hook conversion"

@@ -775,8 +775,6 @@ init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::I
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::P.load_persistent
 init_lines	code/modules/power/lighting.dm	@/obj/machinery/light/flamp::Initialize::layer
 init_lines	code/modules/power/smes_construction.dm	@/obj/machinery/power/smes/buildable::Initialize::placed_by_map
-init_lines	code/modules/power/smes_construction.dm	@/obj/machinery/power/smes/buildable::Initialize::if
-init_lines	code/modules/power/smes_construction.dm	@/obj/machinery/power/smes/buildable::Initialize::recalc_coils
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo_type
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo
