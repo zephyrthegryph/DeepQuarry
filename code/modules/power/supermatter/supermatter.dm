@@ -133,12 +133,13 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	op("touch", hand(), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
 	op("touch_item", item(/obj/item), label("Touch"), ungated(), wait(0), then(PROC_REF(touched_with)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	setup(PROC_REF(take_id_and_station))
 
-/obj/machinery/power/supermatter/Initialize(mapload)
-	uid = gl_uid++
+/// Takes its id, and counts as a station crystal on a station level.
+/obj/machinery/power/supermatter/proc/take_id_and_station()
+	set_uid(gl_uid++)
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
-	return ..()
 
 
 /// Its hum: the calm loop, playing from the start.

@@ -246,14 +246,6 @@ CAPABILITIES(/obj/item/clothing/mask/gas/owl_mask)
 	configure(item_worn(covers = HEAD|FACE|EYES))
 
 
-/* ChompRemoval: Oops that's a glogged implementation (intentional). Im going to properly implement obj/clothing/mask/gas/clear instead.
-// Our clear gas masks don't hide faces, but changing the var on mask/gas would require un-chaging it on all children. This is nicer.
-/obj/item/clothing/mask/gas/Initialize(mapload)
-	. = ..()
-	if(type == /obj/item/clothing/mask/gas)
-		set_flags_inv(worn_of(src).hides & (~HIDEFACE))
-*/
-
 // Since we changed the gas mask sprite, if we want the old one for some reason use this.
 /obj/item/clothing/mask/gas/wwii
 	icon = 'icons/inventory/face/item.dmi'

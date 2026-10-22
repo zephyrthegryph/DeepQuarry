@@ -28,11 +28,10 @@
 
 	var/chained = 0//Adminbus chain-grab
 
-// ALLOW(init/INSTANCE_STATE): a singularity tells the admins it exists and finds an active beacon to pull toward
-/obj/singularity/Initialize(mapload)
+/// Tells the admins it exists and finds an active beacon to pull toward.
+/obj/singularity/proc/announce_and_find_beacon()
 	//CARN: admin-alert for chuckle-fuckery.
 	admin_investigate_setup()
-	. = ..()
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
@@ -53,6 +52,7 @@ CAPABILITIES(/obj/singularity)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
 	param(nameof(energy), pos = 1, default = 50)
 	ref_one(nameof(target))
+	setup(PROC_REF(announce_and_find_beacon))
 
 /// Whether it is a singularity of its own (an energy ball's orbiting miniballs are not).
 /obj/singularity/proc/counts_as_singularity(datum/act/A)

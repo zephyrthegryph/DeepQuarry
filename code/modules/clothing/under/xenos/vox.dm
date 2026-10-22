@@ -29,8 +29,11 @@ CAPABILITIES(/obj/item/clothing/under/vox/vox_casual)
 
 	slots = 3
 
-/obj/item/clothing/accessory/storage/vox/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/accessory/storage/vox)
+	setup(PROC_REF(size_storage))
+
+/// Sizes the mesh's storage for its pockets.
+/obj/item/clothing/accessory/storage/vox/proc/size_storage()
 	hold.max_storage_space = slots * ITEMSIZE_COST_NORMAL
 	hold.restrict_hold(null, ITEMSIZE_NORMAL)
 

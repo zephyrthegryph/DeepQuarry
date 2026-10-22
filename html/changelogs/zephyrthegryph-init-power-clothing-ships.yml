@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved Initialize() setup in power, clothing, overmap and shuttle landmark code into declared setup() and keeps_if() hooks"

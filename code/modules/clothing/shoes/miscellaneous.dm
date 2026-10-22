@@ -125,6 +125,7 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
 
 CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
 	fits_anyone()
+	setup(PROC_REF(squeak_comically))
 
 	configure(item_combat(force = 0))
 
@@ -250,9 +251,11 @@ CAPABILITIES(/obj/item/clothing/shoes/footwraps)
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_boots"
 
-// ALLOW(init/INSTANCE_STATE): its name and sprite follow the boot colour it was given
-/obj/item/clothing/shoes/boots/ranger/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/shoes/boots/ranger)
+	setup(PROC_REF(name_by_colour))
+
+/// Its name follows the boot colour it was given.
+/obj/item/clothing/shoes/boots/ranger/proc/name_by_colour()
 	if(icon_state == "ranger_boots")
 		name = "[bootcolor] ranger boots"
 
@@ -418,14 +421,15 @@ CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
 	fits_anyone()
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
+	setup(PROC_REF(squeak_mechanically))
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list(SFX_MECHSTEP=1))
 
 
 
-/obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
-	.=..()
+/// Squeaks with the sounds its type declares.
+/obj/item/clothing/shoes/mech_shoes/proc/squeak_mechanically()
 	make_squeaky(TYPE_TABLE_GET(src, mech_shoes_squeak_sounds), 15*step_volume_mod)
 
 /obj/item/clothing/shoes/mech_shoes/light
@@ -459,8 +463,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 /obj/item/clothing/shoes/clown_shoes
 	var/static/list/squeak_sound = list(SFX_CLOWNSTEP=1)
 
-/obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
-	.=..()
+/// Squeaks with the clown step sound.
+/obj/item/clothing/shoes/clown_shoes/proc/squeak_comically()
 	make_squeaky(squeak_sound, 20*step_volume_mod)
 
 /obj/item/clothing/shoes/dry_galoshes

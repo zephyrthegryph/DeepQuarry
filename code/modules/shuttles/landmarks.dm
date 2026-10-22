@@ -29,9 +29,8 @@
 	//does it use docking codes?
 	var/use_docking_codes = TRUE
 
-/obj/effect/shuttle_landmark/Initialize(mapload)
-	. = ..()
-
+/// Works out the area and turf it lands on and registers under its tag.
+/obj/effect/shuttle_landmark/proc/register_landing()
 	// Even if this flag is set, hardcoded values take precedence.
 	if(flags & SLANDMARK_FLAG_AUTOSET)
 		if(ispath(base_area))
@@ -43,12 +42,13 @@
 			landing_area = get_area(src)
 		var/turf/T = get_turf(src)
 		if(T && !base_turf)
-			base_turf = T.type
+			set_base_turf(T.type)
 	else
 		landing_area = isarea(base_area) ? base_area : locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
 CAPABILITIES(/obj/effect/shuttle_landmark)
+	setup(PROC_REF(register_landing))
 	after_init(0, then(PROC_REF(find_docking_controller)))
 	ref_one(nameof(docking_controller))
 

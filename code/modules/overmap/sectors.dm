@@ -55,6 +55,7 @@
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
 CAPABILITIES(/obj/effect/overmap/visitable)
+	setup(PROC_REF(register_sector))
 	hover(PROC_REF(sector_hovered))
 	rolls(nameof(docking_codes), PROC_REF(roll_docking_codes))
 	ref_many(nameof(generic_waypoints))
@@ -62,11 +63,8 @@ CAPABILITIES(/obj/effect/overmap/visitable)
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
-/obj/effect/overmap/visitable/Initialize(mapload)
-	. = ..()
-	if(. == INITIALIZE_HINT_QDEL)
-		return
-
+/// Finds and registers its z-levels, joins the shuttle system's queue and shows itself as known or unknown.
+/obj/effect/overmap/visitable/proc/register_sector()
 	find_z_levels() // This populates map_z and assigns z levels to the ship.
 	register_z_levels() // This makes external calls to update global z level information.
 
@@ -83,7 +81,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	SSshuttles.process_init_queues()
 
 	if(known)
-		plane = PLANE_LIGHTING_ABOVE
+		set_plane(PLANE_LIGHTING_ABOVE)
 		for(var/obj/machinery/computer/ship/helm/H in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			H.get_known_sectors()
 	else
@@ -92,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		real_name = name
 		name = unknown_name
 		set_icon_state(unknown_state)
-		color = null
+		set_color(null)
 		real_desc = desc
 		desc = "Scan this to find out more information."
 	//at the moment only used for the OM location renamer. Initializing here in case we want shuttles incl as well in future. Also proc definition convenience.
