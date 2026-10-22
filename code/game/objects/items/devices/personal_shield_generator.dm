@@ -35,6 +35,7 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	setup(PROC_REF(make_active_weapon))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
@@ -60,14 +61,13 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
 
-/obj/item/personal_shield_generator/Initialize(mapload)
-	. = ..()
+/obj/item/personal_shield_generator/proc/make_active_weapon()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			rel_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(src, nameof(active_weapon), new active_weapon(src, src))
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 		else
-			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src))
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 
 /// If the shield gen is active; it drains power while it is.
@@ -385,9 +385,7 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 	var/wielded = 0
 	var/cooldown = 0
 
-// ALLOW(init/INSTANCE_STATE): the generator's gun draws from its generator's cell, in place of the one its parents made
-/obj/item/gun/energy/gun/generator/Initialize(mapload)
-	. = ..()
+/obj/item/gun/energy/gun/generator/proc/link_generator_cell()
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
@@ -605,6 +603,7 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
 CAPABILITIES(/obj/item/gun/energy/gun/generator)
+	setup(PROC_REF(link_generator_cell))
 	ref_one(nameof(power_supply))
 	param(nameof(linked_generator), pos = 1)
 	ref_one(nameof(linked_generator), /obj/item/personal_shield_generator)

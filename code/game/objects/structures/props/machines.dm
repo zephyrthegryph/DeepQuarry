@@ -629,16 +629,18 @@
 	look.overlay("nt_pod_under", when = pod_sealed)
 	look.overlay("nt_pod_panel", when = panel_shown)
 
-/obj/structure/prop/machine/nt_pod/Initialize(mapload)
-	. = ..()
+/// Setup: the pod's three overlay layers.
+/obj/structure/prop/machine/nt_pod/proc/make_overlays()
 	rel_set(src, nameof(outside), add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(door), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(fluid), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 
-	// Gather up our friends
-	if(mapload)
-		var/atom/movable/AM = locate_within(loc, /atom/movable)
-		AM?.forceMove(src)
+/// A mapped pod gathers up what the map put on its tile (once the map load has closed).
+/obj/structure/prop/machine/nt_pod/proc/gather_friends(datum/act/timer/A)
+	if(!A.mapload)
+		return
+	var/atom/movable/AM = locate_within(loc, /atom/movable)
+	AM?.forceMove(src)
 
 /obj/structure/prop/machine/nt_pod/Entered(atom/movable/mover)
 	abduct(mover)
@@ -673,6 +675,8 @@
 	AM.set_pixel_y(contents_original_pixel_y)
 
 CAPABILITIES(/obj/structure/prop/machine/nt_pod)
+	setup(PROC_REF(make_overlays))
+	after_init(0, then(PROC_REF(gather_friends)))
 	after_init(0, then(PROC_REF(add_alpha_mask))) // its alpha mask is shown once Initialize() returns (relations proposal D11)
 	ref_one(nameof(outside))
 	ref_one(nameof(door))

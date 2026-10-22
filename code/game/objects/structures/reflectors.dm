@@ -32,8 +32,8 @@
 	if(deflector_icon_state)
 		look.overlay(look_overlay_image(icon, deflector_icon_state, transform = ((rotation_angle != -1) ? turn(matrix(), rotation_angle) : null)))
 
-/obj/structure/reflector/Initialize(mapload)
-	. = ..()
+/// Setup: the reflector takes its mapped angle, or its facing.
+/obj/structure/reflector/proc/set_initial_angle()
 	if(rotation_angle == -1)
 		setAngle(dir2angle(dir))
 	else
@@ -119,6 +119,7 @@
 	return admin ? (resistance_flags | BOMB_PROOF) : resistance_flags
 
 CAPABILITIES(/obj/structure/reflector)
+	setup(PROC_REF(set_initial_angle))
 	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
 	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
@@ -346,7 +347,10 @@ CAPABILITIES(/transformation/stack/steel__reflector_frame)
 /obj/machinery/portable_atmospherics/canister
 	var/dont_burst = FALSE
 
-/obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/portable_atmospherics/canister/phoron/cold)
+	setup(PROC_REF(chill_contents))
+
+/// Setup: the canister's gas starts at 2.72 K.
+/obj/machinery/portable_atmospherics/canister/phoron/cold/proc/chill_contents()
 	heat_set(src.air_contents, 2.72)
 

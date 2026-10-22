@@ -33,9 +33,8 @@
 /obj/structure/windoor_assembly/var/start_dir = NORTH
 /obj/structure/windoor_assembly/var/constructed = FALSE
 
-// ALLOW(init/INSTANCE_STATE): an assembly faces a cardinal way, starts loose when built, and updates its tiles
-/obj/structure/windoor_assembly/Initialize(mapload)
-	. = ..()
+/// Setup: an assembly faces a cardinal way and starts loose when built.
+/obj/structure/windoor_assembly/proc/face_start_dir()
 	if(constructed)
 		set_anchored(FALSE)
 	switch(start_dir)
@@ -43,6 +42,7 @@
 			set_dir(start_dir)
 		else //If the user is facing northeast. northwest, southeast, southwest or north, default to north
 			set_dir(NORTH)
+
 /obj/structure/windoor_assembly/proc/prepare_assembly_controls()
 	update_state()
 
@@ -88,6 +88,7 @@ MSG_DEF_SELF(windoor_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock electronics.")
 
 CAPABILITIES(/obj/structure/windoor_assembly)
+	setup(PROC_REF(face_start_dir))
 	setup(PROC_REF(prepare_assembly_controls))
 	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),

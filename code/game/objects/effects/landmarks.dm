@@ -15,6 +15,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
+	setup(PROC_REF(simulate_latejoin))
 	setup(PROC_REF(record_named_coordinate))
 	setup(PROC_REF(record_special_coordinates))
 	membership(joins = REGISTRY_LANDMARKS)
@@ -90,13 +91,10 @@ CAPABILITIES(/obj/effect/landmark)
 /obj/effect/landmark/proc/is_latejoin_landmark(datum/act/A)
 	return name == "JoinLate"
 
-/obj/effect/landmark/Initialize(mapload)
-	. = ..()
-
-	switch(name)
-		if("JoinLate") // Bit difference, since we need the spawn point to move.
-			simulated = TRUE
-			// always use this list with get_turf
+/// The latejoin landmark is simulated, since its spawn point has to move (setup hook; always use the registry with get_turf).
+/obj/effect/landmark/proc/simulate_latejoin()
+	if(name == "JoinLate")
+		simulated = TRUE
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)

@@ -17,8 +17,10 @@
 	///Do we spawn misleading decoys?
 	var/spawn_decoys = TRUE
 
-/obj/effect/anomaly/hallucination/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/anomaly/hallucination)
+	setup(PROC_REF(start_hallucination))
+
+/obj/effect/anomaly/hallucination/proc/start_hallucination()
 	apply_wibbly_filters(src)
 	generate_decoys()
 

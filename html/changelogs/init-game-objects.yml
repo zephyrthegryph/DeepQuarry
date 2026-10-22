@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved imperative Initialize() work in game/objects into declared setup() and after_init() hooks"

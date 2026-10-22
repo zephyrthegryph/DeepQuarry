@@ -1247,9 +1247,9 @@ CAPABILITIES(/obj/structure/toilet/item)
 	var/mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
 	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
-/obj/structure/biowaste_tank/Initialize(mapload)
+/// Setup: the tank connects to the crusher and wakes its muffin monster.
+/obj/structure/biowaste_tank/proc/connect_tank()
 	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
-	. = ..()
 	muffinmonster().name = "Activate Muffin Monster"
 	muffinmonster().init_vore(TRUE)
 
@@ -1325,6 +1325,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 	return OP_OK
 
 CAPABILITIES(/obj/structure/biowaste_tank)
+	setup(PROC_REF(connect_tank))
 	ref_one(nameof(crusher))
 	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)

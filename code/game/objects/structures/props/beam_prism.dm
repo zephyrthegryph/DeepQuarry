@@ -24,12 +24,13 @@
 
 	interaction_message = span_notice("The prismatic turret seems to be able to rotate.")
 
-/obj/structure/prop/prism/Initialize(mapload)
-	. = ..()
+/// Setup: a prism mapped with a bearing starts turned to it.
+/obj/structure/prop/prism/proc/turn_to_bearing()
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
 CAPABILITIES(/obj/structure/prop/prism)
+	setup(PROC_REF(turn_to_bearing))
 	links(/obj/structure/prop/prism::remote_dial, /obj/structure/prop/prismcontrol::my_turrets, b_many = TRUE)
 	// the old attack_hand: a yes/no, then a bearing (free rotation) or a compass point, then the prism turns
 	op("rotate", hand(), label("Rotate"), needs(req_is(nameof(rotation_lock), FALSE, because = MSG(prism/locked)), req_is(nameof(external_control_lock), FALSE, because = MSG(prism/external))),

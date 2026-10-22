@@ -157,13 +157,14 @@ TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest, mob_spawner_types, list( \
 
 CAPABILITIES(/obj/structure/mob_spawner/mouse_nest)
 	rolls(nameof(icon_state), PROC_REF(roll_look))
+	setup(PROC_REF(start_nest_cooldown))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/mob_spawner/mouse_nest/proc/roll_look(datum/roller/R)
 	return R.choose(list("pile1", "pile2", "pilechair", "piletable", "pilevending", "brtrashpile", "microwavepile", "rackpile", "boxfort", "trashbag", "brokecomp"))
 
-/obj/structure/mob_spawner/mouse_nest/Initialize(mapload)
-	. = ..()
+/// Setup: a nest's first spawn waits up to one delay.
+/obj/structure/mob_spawner/mouse_nest/proc/start_nest_cooldown()
 	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
 
 /obj/structure/mob_spawner/mouse_nest/do_spawn(mob_path)

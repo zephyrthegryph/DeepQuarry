@@ -12,11 +12,11 @@
 CAPABILITIES(/obj/item/trash)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(age), pos = 1)
+	after_init(0, then(PROC_REF(track_persistence)))
 
-// ALLOW(init/INSTANCE_STATE): trash not loaded with the map is tracked for persistence
-/obj/item/trash/Initialize(mapload)
-	. = ..()
-	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
+/// Trash not loaded with the map is tracked for persistence.
+/obj/item/trash/proc/track_persistence(datum/act/A)
+	if(!A.mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
 // persistent trash forgets this item.

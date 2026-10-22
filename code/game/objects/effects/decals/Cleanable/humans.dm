@@ -53,8 +53,9 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		return INITIALIZE_HINT_QDEL
 	if(!mapload)
 		dry_delay = DRYING_TIME * (amount+1) // fresh blood dries (after_init()); mapped blood is dry already
-	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
-		return
+
+/// Plain blood joins the blood already on its tile (setup hook; not run for a discarded instance).
+/obj/effect/decal/cleanable/blood/proc/merge_with_tile()
 	if(src.type == /obj/effect/decal/cleanable/blood)
 		if(src.loc && isturf(src.loc))
 			for(var/obj/effect/decal/cleanable/blood/B in src.loc)
@@ -137,6 +138,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	set_amount(0)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	setup(PROC_REF(merge_with_tile))
 	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
 	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))
 

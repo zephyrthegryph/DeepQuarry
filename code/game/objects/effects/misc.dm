@@ -31,8 +31,11 @@ CAPABILITIES(/obj/effect/temporary_effect)
 	pixel_x = -32
 	pixel_y = -32
 
-/obj/effect/temporary_effect/cleave_attack/Initialize(mapload) // Makes the slash fade smoothly. When completely transparent it should qdel itself.
-	. = ..()
+CAPABILITIES(/obj/effect/temporary_effect/cleave_attack)
+	setup(PROC_REF(fade_out))
+
+/// Makes the slash fade smoothly. When completely transparent it should qdel itself.
+/obj/effect/temporary_effect/cleave_attack/proc/fade_out()
 	animate(src, alpha = 0, time = time_to_die - 1)
 
 /obj/effect/temporary_effect/shuttle_landing
@@ -61,10 +64,10 @@ CAPABILITIES(/obj/effect/temporary_effect)
 
 CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	rolls(nameof(icon_state), PROC_REF(roll_variant))
+	setup(PROC_REF(fade_out))
 
-/obj/effect/temporary_effect/lightning_strike/Initialize(mapload)
+/obj/effect/temporary_effect/lightning_strike/proc/fade_out()
 	animate(src, alpha = 0, time = time_to_die - 1)
-	. = ..()
 
 /obj/effect/dummy/lighting_obj
 	name = "lighting fx obj"

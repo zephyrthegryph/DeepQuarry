@@ -125,8 +125,10 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	. = ..()
 	GLOB.fx_live_sparks++
 
-/obj/effect/effect/sparks/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/effect/sparks)
+	setup(PROC_REF(spark_start))
+
+/obj/effect/effect/sparks/proc/spark_start()
 	play_sfx(src, SFX_SPARKS, 2)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
