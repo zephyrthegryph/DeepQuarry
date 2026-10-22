@@ -74,6 +74,27 @@ Equalities applied (each is a proven runtime identity, not a tolerance):
 Not compared: unreferenced strings, lists, instances and procs; deleted RSC
 slots, timestamps and spare capacity; table sizes.
 
+## Encoding rules (`src/normalize.rs`)
+
+Applied to the rendered instructions of both sides before a `proc.bytecode` difference is reported, and to type
+initializers (`type.initializer_body`). Each removes a difference whose runtime effect is identical; branch targets are
+renumbered after every removal. Found by reading the 2026-10-21 `a6ce3d8f16` residue (35 literal, 214 value, 67 anonymous).
+
+| Rule | DreamMaker | Native | Why the same |
+| --- | --- | --- | --- |
+| Adjacent string literals | `"A"`, `"B"`, E..., `Add` (right-nested `A + (B + ...)`), also across a ternary operand and calls | `"AB"`, E... | `+` over strings is associative when A and B are string constants; E never consumes B except as an `Add` left operand (stack depth tracked) |
+| Null store of a bare declaration | `PushVal null; SetVar localK` for every `var` | omitted outside loops (`typed_statements.rs`) | locals start null; the store is dead when the same straight-line code stores `localK` first, or when it is outside every backward jump with no earlier use. A declaration inside a loop or after a visible label (backward `goto`) keeps its store: native now emits it there too |
+| Unreachable code | none | `Jmp` after `Ret`/`End`/`Jmp` | nothing branches to it |
+| Jump to the next instruction | none | `Jmp L(i+1)` | does nothing |
+| `/T::field` | `PushVal <default>` (folded) | `PushVal /T; SetVar cache; GetVar initial(src->.field)` | `initial()` is the default: checked against the class tables (nearest override, else the declaration default) |
+| String operand `0x1000_0000 + id` | field names whose string id lies in 0xffcd..0xfff1 (the reserved operand words) | never allocates those ids | decoded as the plain id |
+| Type initializer | procedure shared by the class and its map instances (keyed inline when short) | a separate one | compared by body; pure stores (`PushVal`/`New*`/`EmptyList`/`New` into distinct `src` fields) sort by field, constructing stores keep their order |
+
+The remaining `proc.bytecode` differences are the benign shapes in `doc/rewrite/native_compiler_issues.md` item 5 (`Jz` vs
+`GetFlag`, receiver caching, iterator forms, ...). One site is not explained by a rule: `/mob/death` stores a constant
+through `a?.b?.c = const`; native pushes the constant before the guards, DreamMaker after (both leave the same values;
+the stack balance of the null path is not proven).
+
 ## Orders kept (runtime-observable) and dropped
 
 Evidence comes from `tests/fixtures/order_probe.dme` (and a second probe for

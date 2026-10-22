@@ -58,15 +58,14 @@ this branch. Items marked OPEN are not.
    - Benign naming: `type.type_meta` 96 (per-type `<init>` anonymous procs hash-named differently), `proc.extra` 76 and `proc.missing` 67
      anonymous procs by hash (`<anon ...>`, `<init>` sharing; the 9 net extra are native-only), `map_objects` 6 (the `vent_pump`
      var-set `<anon>` names), `proc.proc_locals` 87 (native keeps one more local, e.g. `/atom/vv_edit_var`, `/client/verb/who`).
-   - Possibly semantic, needs a read of source: (a) 35 procs where native pushes `"<span class='infoplain'><span class='bold'>%U%</span>"`
-     as one literal and DreamMaker `"<span class='infoplain'>"`, e.g. `/datum/form/proc/announce_enter`,
-     `/mob/living/carbon/human/proc/lleill_change_shape`, `/mob/living/carbon/human/proc/lleill_alchemy_done` (probably literal merging
-     of an adjacent `<span ...>` chunk, but the text differs); (b) 214 `PushVal null` vs `PushVal 1.0` / `GetVar` / `SetVar`
-     (the stack is the same shape but the value differs), e.g. `/atom/proc/auto_turn` stmt 2,
-     `/atom/movable/screen/movable/ability_master/proc/open_ability_master` stmt 43; (c) the 67 DreamMaker-only anonymous procs: the
-     checker names them by hash only, so which source construct they are was not traced (the 2026-10-14 pass found 6).
-     Receiver caching (`Call local2->dproc:biology` vs a cached `PushCache`/`Call dproc:biology`, e.g.
-     `/datum/ai_behavior/leech_infest/evaluate`) was read and is equivalent.
+   - Possibly semantic groups, read 2026-10-21 (tools/dmb-equiv `src/normalize.rs`, `EQUIVALENCE.md` "Encoding rules"): (a) the 35
+     `infoplain`/`bold` literals are `A + (B + ...)` against `AB + ...`, the same text; (b) the 214 `PushVal null` sites are
+     DreamMaker's dead null store for every `var` (native omits it outside loops), a dead `Jmp` after `Ret`, `/T::field` folded to its
+     default against a runtime `initial()`, and DreamMaker's `0x1000_0000|id` field-name operands; one real gap fixed: a bare `var/x`
+     after a backward `goto` now stores null again; one site unexplained (`/mob/death`, `a?.b?.c = const` pushes the constant before
+     the guards); (c) the anonymous procs are type initializers (DreamMaker shares the class and map-instance procedure, store order
+     differs): now compared by body under the type. Same-tree counts: `proc.bytecode` 4,779, `proc.extra`/`proc.missing`/
+     `type.type_meta`/`map_objects` 0. New finding: `/obj/item/book/tome` `tomedat` keeps `\r\n` from a CRLF source file in a multi-line string, DreamMaker has `\n` (`type.type_var_default` 1).
    Repro: `build.sh dm` and `DQ_COMPILER=dreammaker build.sh dm` (delete `deepquarry.dmb/.rsc` between), then `dmb-equiv A.dmb B.dmb
    [--ignore-debug] [--max-examples N]`. Kept at `E:/dq-cache/dmb-equiv-20261021/` (dm.dmb, native.dmb, equiv*.log).
 6. **dmbc daemon memory (high).** The daemon sits at 9.7-10.6 GB working set after one build (`dmbd` soft private limit 8 GB, hard
