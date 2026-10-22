@@ -26,6 +26,7 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	setup(PROC_REF(note_impact_area), mapload = TRUE)
 	setup(PROC_REF(start_initial_countdown))
 	setup(PROC_REF(configure_core))
 	configure(light_glow(range = 3))
@@ -47,9 +48,8 @@ CAPABILITIES(/obj/effect/anomaly)
 	look.watch(stats)
 	return stats?.stability
 
-/obj/effect/anomaly/Initialize(mapload)
-	. = ..()
-
+/// The anomaly remembers the area it appeared in; one with none is deleted (the first setup hook).
+/obj/effect/anomaly/proc/note_impact_area(mapload)
 	impact_area = get_area(src)
 
 	if(!impact_area())

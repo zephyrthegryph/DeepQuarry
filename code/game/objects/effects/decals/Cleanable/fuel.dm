@@ -12,14 +12,18 @@
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 	param(nameof(amount), pos = 1, overrides = TRUE)
 	param(nameof(quiet_spill), pos = 2)
+	keeps_if(PROC_REF(on_turf))
+	setup(PROC_REF(spill), mapload = TRUE)
 
 /// A spill that tells no admins (its constructor param).
 /obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
 
-// ALLOW(init/INSTANCE_STATE): spilled fuel joins the fuel already on its tile, or spreads
-/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload)
-	if(!isturf(loc))
-		return INITIALIZE_HINT_QDEL
+/// Fuel only lies on a turf (keeps_if()).
+/obj/effect/decal/cleanable/liquid_fuel/proc/on_turf()
+	return isturf(loc)
+
+/// Spilled fuel tells the admins unless quiet, joins the fuel already on its tile, or spreads (setup hook).
+/obj/effect/decal/cleanable/liquid_fuel/proc/spill(mapload)
 	if(!quiet_spill)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
@@ -33,7 +37,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 			has_spread = 1
 			break
 
-	. = ..()
 	if(!has_spread)
 		Spread()
 

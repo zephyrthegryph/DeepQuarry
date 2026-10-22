@@ -242,9 +242,8 @@
 
 TRACKED(/obj/sc_away_spawner, spawning)
 
-/obj/sc_away_spawner/Initialize(mapload)
-	. = ..()
-
+/// A spawner with no mobs to pick from is deleted; the rest start rolling (setup hook).
+/obj/sc_away_spawner/proc/start_rolling(mapload)
 	if(!LAZYLEN(mobs_to_pick_from))
 		log_mapping("Mob spawner at [x],[y],[z] ([get_area(src)]) had no mobs_to_pick_from set on it!")
 		flags |= ATOM_INITIALIZED
@@ -252,6 +251,7 @@ TRACKED(/obj/sc_away_spawner, spawning)
 	set_spawning(TRUE)
 
 CAPABILITIES(/obj/sc_away_spawner)
+	setup(PROC_REF(start_rolling), mapload = TRUE)
 	every(2 SECONDS, then(PROC_REF(spawner_step)), when = nameof(spawning))
 
 /// Every 2 s while it has mobs left to roll: waits out a living mob and a watching player, then rolls a spawn.
