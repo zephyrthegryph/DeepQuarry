@@ -1,5 +1,7 @@
 import { failedCompileOutcome, observedCompileOutcome, type CompileOutcome } from './compile_outcome';
 /** One build entry point for BYOND, native compilation and isolated shadow checks. */
+import { retryWhileAdmissionExpired } from './admission_retry';
+import { slotsStatus } from './machine_slots';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -262,10 +264,10 @@ export function droppedDaemonPipe(output: string): boolean {
   return /The pipe has been ended|os error 109|os error 232|broken pipe|connection reset by peer/i.test(output);
 }
 async function nativeCompileRetryingDroppedPipe<T extends { code: number | null; signal?: string | null; combined: string }>(run: () => Promise<T>): Promise<T> {
-  const first = await run();
+  const first = await retryWhileAdmissionExpired(run, { holders: () => `Compile slot: ${slotsStatus(['dm_compile']).replace(/\s+/g, ' ').trim()}` });
   if (first.code === 0 || first.signal || !droppedDaemonPipe(first.combined)) return first;
   Juke.logger.warn('Native compile: the compiler daemon dropped the connection mid-build (it died or was stopped); retrying once against a fresh daemon.');
-  return await run();
+  return await retryWhileAdmissionExpired(run);
 }
 export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker, invocation?: CompilerInvocation) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>, capturedInvocation?: CompilerInvocation): Promise<CompiledOutput> {
   const mode = compilerMode();
