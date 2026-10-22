@@ -14,9 +14,11 @@
 	w_class = ITEMSIZE_SMALL
 	var/prefix
 
-/obj/item/reagent_containers/food/snacks/variable/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/variable/proc/size_holder()
 	reagents.maximum_volume = size*8 + 10 // the holder is declared on reagent_containers
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/variable)
+	setup(PROC_REF(size_holder))
 
 /// The size of a cooked food follows how much of it there is: a thing of `size` units is its normal size, a third root of the ratio scales it.
 /obj/item/reagent_containers/food/snacks/variable/proc/scale_for(volume)

@@ -319,8 +319,7 @@
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 
 
-/obj/item/clothing/shoes/none/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/shoes/none/proc/vanish()
 	if(istype(loc, /mob)) // are we in a mob?
 		var/mob/m = loc
 		m.drop_from_inventory(src, get_turf(m))
@@ -335,4 +334,5 @@
 
 
 CAPABILITIES(/obj/item/clothing/shoes/none)
+	setup(PROC_REF(vanish))
 	fits_anyone()

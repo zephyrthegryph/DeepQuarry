@@ -228,13 +228,13 @@ CAPABILITIES(/obj/item/ice_pick)
 	var/base_state
 
 CAPABILITIES(/obj/item/stack/flag)
+	setup(PROC_REF(remember_base_state))
 	without("ui_open")
 	op("flag_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(flag_interaction_item)))
 	op("flag_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Knock down"), then(PROC_REF(flag_hand)))
 	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req(PROC_REF(can_plant_holds))), then(PROC_REF(flag_self)))
 
-/obj/item/stack/flag/Initialize(mapload)
-	. = ..()
+/obj/item/stack/flag/proc/remember_base_state()
 	base_state = icon_state
 
 /obj/item/stack/flag/blue

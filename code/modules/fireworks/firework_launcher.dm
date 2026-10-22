@@ -13,10 +13,7 @@
 	EXPIRY_DECLARE(last_launch)
 	var/launch_cooldown = 5 MINUTES
 
-// ALLOW(init/INSTANCE_STATE): takes its built parts and stamps its cooldown so a rebuild cannot skip it
-/obj/machinery/firework_launcher/Initialize(mapload)
-	. = ..()
-
+/obj/machinery/firework_launcher/proc/stamp_launch_cooldown()
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
 
 /obj/machinery/firework_launcher/RefreshParts()
@@ -32,6 +29,7 @@
 	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 CAPABILITIES(/obj/machinery/firework_launcher)
+	setup(PROC_REF(stamp_launch_cooldown))
 	ref_one(nameof(loaded_star), /obj/item/firework_star)
 	default_parts()
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

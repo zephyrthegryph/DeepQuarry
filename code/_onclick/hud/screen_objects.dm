@@ -774,11 +774,10 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	var/atom/movable/screen/movable/mapper_holder/parent
 
 CAPABILITIES(/atom/movable/screen/mapper)
+	setup(PROC_REF(link_parent))
 	ref_one(nameof(parent))
 
-// ALLOW(init/INSTANCE_STATE): its parent is the atom it is created inside
-/atom/movable/screen/mapper/Initialize(mapload)
-	. = ..()
+/atom/movable/screen/mapper/proc/link_parent()
 	rel_set(src, nameof(parent), loc)
 
 // Holds the actual map image

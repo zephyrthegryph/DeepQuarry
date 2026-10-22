@@ -96,12 +96,11 @@
 	anchored = TRUE
 	var/tmp/turf/last_valid_turf
 
-// ALLOW(init/INSTANCE_STATE): remembers the turf it started on
-/obj/effect/dummy/spell_jaunt/Initialize(mapload)
-	. = ..()
+/obj/effect/dummy/spell_jaunt/proc/remember_turf()
 	rel_set(src, nameof(last_valid_turf), get_turf(loc))
 
 CAPABILITIES(/obj/effect/dummy/spell_jaunt)
+	setup(PROC_REF(remember_turf))
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 	extend(/datum/act/hit/projectile, instead())
 	ref_one(nameof(last_valid_turf))

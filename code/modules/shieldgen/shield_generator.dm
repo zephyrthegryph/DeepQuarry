@@ -50,6 +50,7 @@ STAT(/obj/machinery/power/shield_generator, ai_control_disabled, ANY)
 
 // Segments currently down and regenerating (they leave the list when they die).
 CAPABILITIES(/obj/machinery/power/shield_generator)
+	setup(PROC_REF(load_shield_modes))
 	default_parts()
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(damaged_segments))
@@ -121,8 +122,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		look.state("generator0")
 		look.glow(GLOW_OFF)
 
-/obj/machinery/power/shield_generator/Initialize(mapload)
-	. = ..()
+/obj/machinery/power/shield_generator/proc/load_shield_modes()
 
 	rel_take_all(src, nameof(mode_list))
 	for(var/st in subtypesof(/datum/shield_mode))

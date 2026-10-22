@@ -21,6 +21,7 @@
 	var/tmp/client/controller	//Whoever is set to be controlling the blob. Used when the blob is created.
 
 CAPABILITIES(/obj/structure/blob/core)
+	setup(PROC_REF(roll_blob_type))
 	after_init(0, then(PROC_REF(make_overmind_after_init)))
 	every(2 SECONDS, then(PROC_REF(core_step)))
 	owns_one(nameof(Q), /datum/ghost_query)
@@ -114,10 +115,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 /// A core placed by its player rather than spawned (its constructor param).
 /obj/structure/blob/core/var/placed_at_make = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a core shows itself at once, and a placed core or one with an overmind makes none of its own
-/obj/structure/blob/core/Initialize(mapload)
-	. = ..()
-
+/obj/structure/blob/core/proc/roll_blob_type()
 	if(placed_at_make || overmind)
 		make_overmind = FALSE
 	// The blob type is rolled here, in the init that made the core, not later when its overmind is made after init: a roll

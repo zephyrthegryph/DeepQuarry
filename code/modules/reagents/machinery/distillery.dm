@@ -48,6 +48,7 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
+	setup(PROC_REF(remember_base_state))
 	started_work(step = PROC_REF(work_step), starts = TRUE, wakes_on = list(nameof(on), STAT_OPERABLE), unpowered = TRUE)
 	op("distillery_toggle_power", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
 	op("distillery_toggle_mixing", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
@@ -63,11 +64,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	owns_one(nameof(OutputBeaker), /obj/item/reagent_containers/glass)
 
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/Initialize(mapload)
-	. = ..()
-
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/remember_base_state()
 	if(!base_state)
-		base_state = icon_state
+		set_base_state(icon_state)
 
 
 

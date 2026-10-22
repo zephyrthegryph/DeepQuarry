@@ -185,8 +185,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 /obj/item/assembly_holder/timer_igniter
 	name = "timer-igniter assembly"
 
-/obj/item/assembly_holder/timer_igniter/Initialize(mapload)
-	. = ..()
+/obj/item/assembly_holder/timer_igniter/proc/assemble_parts()
 
 	var/obj/item/assembly/igniter/ign = new(src)
 	ign.set_secured(TRUE)
@@ -204,6 +203,9 @@ CAPABILITIES(/obj/item/assembly_holder)
 
 	if(loc)
 		grant(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
+
+CAPABILITIES(/obj/item/assembly_holder/timer_igniter)
+	setup(PROC_REF(assemble_parts))
 
 /obj/item/assembly_holder/timer_igniter/detached()
 	if(loc)
