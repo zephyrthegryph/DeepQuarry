@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved the door, mecha, storage accessory, card and open-space init tails into setup() hooks"
