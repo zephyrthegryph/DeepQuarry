@@ -3484,7 +3484,9 @@ export const TguiTarget = new Juke.Target({
 });
 
 export const TguiTscTarget = new Juke.Target({
-  dependsOn: [BunTarget],
+  // tsc and biome read tgui/packages/tgui/interfaces/generated/ (analyze gen output); gen rewrites it
+  // in the same lint run, so wait for it instead of racing it.
+  dependsOn: [BunTarget, GenTarget],
   executes: () => bun('tgui:tsc'),
 });
 
@@ -3495,7 +3497,7 @@ export const TguiTestTarget = new Juke.Target({
 });
 
 export const BiomeCheckTarget = new Juke.Target({
-  dependsOn: [BunTarget, BiomeInstallTarget],
+  dependsOn: [BunTarget, BiomeInstallTarget, GenTarget],
   executes: () => bunRoot('tgui:lint'),
 });
 
