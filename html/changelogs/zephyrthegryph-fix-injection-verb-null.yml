@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Cancelling the injection verb prompt with no text again leaves you without a means of injecting instead of silently biting"
