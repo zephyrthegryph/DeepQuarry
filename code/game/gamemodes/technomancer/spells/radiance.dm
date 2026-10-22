@@ -22,11 +22,11 @@
 	toggled = 1
 
 CAPABILITIES(/obj/item/spell/radiance)
-	setup(PROC_REF(announce_casting))
 	every(2 SECONDS, then(PROC_REF(radiance_step)))
 	look_glow(GLOW(7, 4, "#D9D900"))
 
-/obj/item/spell/radiance/proc/announce_casting()
+/obj/item/spell/radiance/Initialize(mapload)
+	. = ..()
 	log_and_message_admins("has casted [src].")
 
 // admins are told the maintained spell stopped.
