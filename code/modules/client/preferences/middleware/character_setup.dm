@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 		else if(playing_as_robot)
 			if((cat in GLOB.dq_robot_mode_hidden_categories) || (grp in GLOB.dq_robot_mode_hidden_groups) || GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
 				continue
-		else if(grp in GLOB.dq_human_mode_hidden_groups || GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
+		else if((grp in GLOB.dq_human_mode_hidden_groups) || GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
 			continue
 		categories[cat] = TRUE
 
@@ -163,10 +163,10 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 			continue
 		if(editor.key != "species_picker")
 			if(playing_as_pai)
-				if(editor.category in GLOB.dq_pai_mode_hidden_categories || (editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups)))
+				if((editor.category in GLOB.dq_pai_mode_hidden_categories) || (editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups)))
 					continue
 			else if(playing_as_robot)
-				if(editor.category in GLOB.dq_robot_mode_hidden_categories || (editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups)))
+				if((editor.category in GLOB.dq_robot_mode_hidden_categories) || (editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups)))
 					continue
 			else if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
 				continue

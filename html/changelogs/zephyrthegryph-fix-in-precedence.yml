@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Character setup now hides preference keys that are hidden for human mode, and the pAI and robot editor categories hide as intended (an `in` binding bug dropped the second half of those conditions)"
+  - bugfix: "Generated-station department airlocks face east or west when their outward side is east or west (an `in` binding bug always set direction 0)"
+  - bugfix: "Generated-station utility fixture conflicts are now actually detected (the wall-fixture and floor-atmos flags held the id instead of a boolean)"
+  - code_imp: "New in_precedence lint bans an `in` expression sharing a parenthesis level with another operator; existing latent sites parenthesized"
