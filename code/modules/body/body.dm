@@ -22,13 +22,8 @@
 	/// mobs, bots). Humanoids resolve biology per organ instead.
 	var/biology = BIOLOGY_ORGANIC
 
-/mob/living/Initialize(mapload)
-	// A human builds its body in set_species(), before this, so its organs
-	// have part slots to attach into.
-	if(!body)
-		rel_set(src, nameof(body), new body_type(src))
-	return ..()
-
+// A human builds its body in set_species(), before init, so its organs have part slots to attach into; the body it already has is kept
+// (owns_one(nameof(body), starts = nameof(body_type)) in code/modules/combat_ai/integration/mob_living.dm).
 
 /// Systemic biology (BIOLOGY_* flags). Non-living mobs have no body: organic.
 /mob/proc/biology()

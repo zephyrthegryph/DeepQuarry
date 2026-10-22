@@ -18,8 +18,8 @@
 	. = ..()
 	updateVisibility(src)
 
-/turf/simulated/Initialize(mapload)
-	. = ..()
+/// Its setup hook (setup() in the turf's CAPABILITIES): freelook nets see the turf come.
+/turf/simulated/proc/announce_to_freelook()
 	updateVisibility(src)
 
 // STRUCTURES

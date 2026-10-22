@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	setup(PROC_REF(prime_hud_list))
 	ref_one(nameof(own_identity))
 	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
@@ -61,7 +62,7 @@ CAPABILITIES(/mob/living)
 	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
 	spontaneous_vore()
 	owns_one(nameof(aiming), /obj/aiming_overlay)
-	owns_one(nameof(body), /datum/body)
+	owns_one(nameof(body), /datum/body, starts = nameof(body_type))
 	owns_one(nameof(changeling_state), /datum/changeling)
 	owns_one(nameof(character_setup_button), /datum/character_setup_button)
 	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))

@@ -1,5 +1,5 @@
-/mob/living/carbon/Initialize(mapload)
-	. = ..()
+/// Its setup hook (setup() in the carbon's CAPABILITIES).
+/mob/living/carbon/proc/alias_bloodstream()
 	// The bloodstream is the carbon's owned `reagents` (its reagents() in CAPABILITIES); `bloodstr` is a relation alias of it.
 	rel_set(src, nameof(bloodstr), reagents)
 

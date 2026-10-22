@@ -46,12 +46,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
 
-/mob/Initialize(mapload)
+/// Its setup hook (setup() in /mob's CAPABILITIES): the world hears of the new mob once its Initialize() chain is done.
+/mob/proc/mob_created()
 	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
-	lastarea = get_area(src)
+	set_lastarea(get_area(src))
 	set_focus(src) // Key Handling
-	. = ..()
-	// after ..(): a rolled size_multiplier or icon scale (rolls()) is in place by then
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")

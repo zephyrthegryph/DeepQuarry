@@ -866,10 +866,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/hos/fluff/lethe)
 	storage_slots = 9
 
 CAPABILITIES(/obj/item/storage/belt/utility/fluff/vulpine)
+	setup(PROC_REF(stock_tools))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
-/obj/item/storage/belt/utility/fluff/vulpine/Initialize(mapload)
-	. = ..()
+/// Its tool kit (setup()).
+/obj/item/storage/belt/utility/fluff/vulpine/proc/stock_tools()
 	new /obj/item/tool/screwdriver(src)
 	new /obj/item/tool/wrench(src)
 	new /obj/item/weldingtool(src)

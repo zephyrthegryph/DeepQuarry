@@ -193,6 +193,7 @@
 // A limb in hand: what is stuck in it (or in the limbs attached to it) is pulled out first, one thing a use, in any stance, before it
 // can be bitten. A limb on the table: the old bench surgery, one tool per stage.
 CAPABILITIES(/obj/item/organ/external)
+	setup(PROC_REF(external_setup))
 	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
@@ -434,8 +435,8 @@ CAPABILITIES(/obj/item/organ/external)
 /obj/item/organ/external/update_health()
 	recalc_integrity()
 
-/obj/item/organ/external/Initialize(mapload)
-	. = ..(mapload, 0)
+/// Setup after the Initialize() chain: takes the colour of the human it was placed on.
+/obj/item/organ/external/proc/external_setup()
 	if(istype(owner))
 		sync_colour_to_human(owner)
 

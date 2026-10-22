@@ -50,16 +50,11 @@ CAPABILITIES(/mob/living/carbon/human/ai_controlled)
 	wears(nameof(to_wear_l_hand), SLOT_ID_HAND_L)
 	wears(nameof(to_wear_r_hand), SLOT_ID_HAND_R)
 	wears(nameof(to_wear_id_type), SLOT_ID_ID, each = PROC_REF(fit_id_card))
+	// its genders are picked before the human init names it after its gender
+	rolls(nameof(gender), pick_one(list(MALE, FEMALE, PLURAL, NEUTER)), when = nameof(generate_gender))
+	rolls(nameof(identifying_gender), pick_one(list(MALE, FEMALE, PLURAL, NEUTER)), when = nameof(generate_id_gender))
 
 TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
-
-// Its genders are picked before the human init names it after its gender
-/mob/living/carbon/human/ai_controlled/Initialize(mapload)
-	if(generate_gender)
-		gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-	if(generate_id_gender)
-		identifying_gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-	return ..()
 
 /// Its ID card carries its name and its job's access (wears(each =)).
 /mob/living/carbon/human/ai_controlled/proc/fit_id_card(obj/item/card/id/W)

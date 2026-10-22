@@ -5,10 +5,7 @@
 	organ_tag = O_CELL
 	parent_organ = BP_TORSO
 	vital = TRUE
-
-/obj/item/organ/internal/cell/Initialize(mapload)
-	robotize()
-	. = ..()
+	robotic = ORGAN_ROBOT
 
 /obj/item/organ/internal/cell/replaced()
 	..()

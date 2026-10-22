@@ -21,9 +21,8 @@ CAPABILITIES(/obj/item/card/robot)
 /obj/item/card/id/science/roboticist/dummy_cyborg
 	access = list(ACCESS_ROBOTICS)
 
-/obj/item/card/id/syndicate/dummy_cyborg/Initialize(mapload)
-	. = ..()
-	access |= ACCESS_ROBOTICS
+/obj/item/card/id/syndicate/dummy_cyborg/starting_access()
+	return ..() | ACCESS_ROBOTICS
 
 //A harvest item for serviceborgs.
 /obj/item/robot_harvester
