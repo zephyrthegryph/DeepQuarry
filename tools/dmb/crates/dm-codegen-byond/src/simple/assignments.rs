@@ -157,6 +157,29 @@ impl Compiler<'_> {
         }
         if op == "=" {
             if let ExprKind::Index { object, index } = &target.kind {
+                // `a?.f()[i] = v`: DreamMaker tests the receiver first, so `v` is not evaluated for a null receiver.
+                if let ExprKind::Call { callee, args } = &super::expression::peel_groups(object).kind {
+                    if let (true, ExprKind::SafeMember { object: receiver, selector, via_colon: false }) =
+                        (args.is_empty(), &callee.kind)
+                    {
+                        let proc_selector = self.safe_member_call_selector(receiver, selector, statement)?;
+                        self.record_call_selection(callee, selector, &proc_selector, true);
+                        self.expression(receiver, statement)?;
+                        let end = self.label();
+                        self.emit(318, vec![Word::Branch(end)]);
+                        self.emit(opcode::PUSH_CACHE, vec![]);
+                        self.expression(value, statement)?;
+                        self.emit(
+                            opcode::CALL,
+                            vec![Word::Variable(proc_selector), Word::Immediate(0)],
+                        );
+                        self.expression(index, statement)?;
+                        self.emit(opcode::LIST_SET, vec![]);
+                        self.emit(opcode::POP_CACHE, vec![]);
+                        self.result.code.items.push(CodeItem::Label(end));
+                        return Ok(());
+                    }
+                }
                 self.expression(value, statement)?;
                 self.expression(object, statement)?;
                 self.expression(index, statement)?;

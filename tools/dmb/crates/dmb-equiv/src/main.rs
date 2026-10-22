@@ -21,6 +21,22 @@ fn main() -> ExitCode {
         Some("dump-proc") => dump_proc(&args[1..]),
         Some("word-report") => word_report(&args[1..]),
         Some("no-debug-ops") => no_debug_ops(&args[1..]),
+        Some("global-order") => global_order(&args[1..]),
+        Some("dump-vars") => {
+            let Some(path) = args.get(1) else {
+                return fail("dump-vars FILE.dmb");
+            };
+            match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+                Ok(d) => {
+                    let ctx = Ctx::new(&d, None);
+                    for id in 0..d.variables.len() {
+                        println!("{id}	{}", ctx.var_name(id as u32));
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => fail(e),
+            }
+        }
         Some("dump-types") => {
             let Some(path) = args.get(1) else {
                 return fail("dump-types FILE.dmb");
@@ -340,4 +356,36 @@ debug_instructions	{ops}");
     } else {
         ExitCode::from(1)
     }
+}
+
+/// `global-order FILE.dmb`: the variable IDs `<global-init>` stores to, in code order, with each variable's name
+/// (shows whether initialization follows the variable table).
+fn global_order(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        return fail("global-order FILE.dmb");
+    };
+    let dmb = match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+        Ok(d) => d,
+        Err(e) => return fail(e),
+    };
+    let ctx = Ctx::new(&dmb, None);
+    let Some(p) = ctx.proc_keys.iter().position(|k| k == "<global-init>") else {
+        return fail("no <global-init>");
+    };
+    let Some(words) = dmb.proc_code_words(p) else {
+        return fail("no code");
+    };
+    let Ok(ins) = byond_dmb::bytecode::decode(words) else {
+        return fail("decode error");
+    };
+    for i in ins.iter().filter(|i| i.name == "SetVar") {
+        if let Ok(ops) = i.typed_operands() {
+            for op in ops {
+                if let byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(id)) = op {
+                    println!("{id}	{}", ctx.var_name(id));
+                }
+            }
+        }
+    }
+    ExitCode::SUCCESS
 }

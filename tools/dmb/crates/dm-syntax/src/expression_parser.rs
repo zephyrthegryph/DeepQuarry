@@ -336,7 +336,7 @@ impl ExprParser {
                 };
                 continue;
             }
-            if min_bp <= 2 && self.take_text("?").is_some() {
+            if min_bp <= 3 && self.take_text("?").is_some() {
                 self.ternary_then_depth += 1;
                 let then_value = self.expression(0);
                 self.ternary_then_depth -= 1;
@@ -685,7 +685,9 @@ impl ExprParser {
             ("|", 7, 8),
             ("^", 9, 10),
             ("&", 11, 12),
-            ("in", 13, 14),
+            // `in` is the loosest operator of all, below `?:`: `a in b ? c : d` is `a in (b ? c : d)` and
+            // `a || b in c` is `(a || b) in c` (dm.exe 516.1687).
+            ("in", 2, 3),
             ("==", 13, 14),
             ("!=", 13, 14),
             ("<>", 13, 14),

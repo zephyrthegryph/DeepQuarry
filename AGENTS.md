@@ -213,7 +213,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   current). `DQ_COMPILER=dreammaker` (alias `byond`) is the other compiler. A native compiler failure fails the build: the automatic
   DreamMaker fallback on a native internal error is opt-in (`DQ_COMPILER_FALLBACK=1`), so no gate passes on DreamMaker's output by accident. And `DQ_COMPILER=shadow` compares the two. **CI's production compile check
   (`tools/ci/compile_and_run.sh`, the benchmark workflow) stays on DreamMaker as the cross-check** until the two are proven equivalent;
-  a local green native build is not a substitute for it. Without cargo or a `dmbc` binary the default falls back to DreamMaker. See
+  a local green native build is not a substitute for it. `bash tools/ci/dm_equiv.sh` compiles the production dme both ways and runs
+  `dmb-equiv` (every difference listed): 2026-10-22 it reports one, the order the global initializers run in (DreamMaker: ascending
+  variable id; native: another order, `doc/rewrite/native_compiler_issues.md`), so CI stays on DreamMaker until that is settled. Without cargo or a `dmbc` binary the default falls back to DreamMaker. See
   `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
 - **One dmbc daemon per worktree.** Native compiles default `DMB_DAEMON_NAMESPACE` to `wt-<hash of the checkout root>`
   (`tools/build/lib/dmbc_daemons.ts`), so concurrent worktrees keep their own patch bases and a different compiler build in another

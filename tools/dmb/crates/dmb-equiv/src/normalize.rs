@@ -694,6 +694,79 @@ fn drop_idle_cache_key_saves(lines: Vec<String>) -> Vec<String> {
     }
 }
 
+/// A body made only of independent initializer statements (`E...; SetVar global:g`, then `End`) that both sides run in
+/// another order. None unless the two bodies hold exactly the same statements. The statements are reported rather than
+/// compared as a set because they are not free to move: those that run code (`New`, calls, reads of other globals) can
+/// observe each other's effects, so the order is DreamMaker's (ascending variable id, which is the order in which a
+/// name first appears in the compiled procedures) and the difference stays visible.
+pub fn initializer_order_difference(a: &[String], b: &[String]) -> Option<String> {
+    fn statements(lines: &[String]) -> Option<Vec<Vec<String>>> {
+        let (last, body) = lines.split_last()?;
+        if last != "End" {
+            return None;
+        }
+        let mut out = Vec::new();
+        let mut current = Vec::new();
+        for line in body {
+            if !targets(line).is_empty() {
+                return None;
+            }
+            current.push(line.clone());
+            if line.starts_with("SetVar ") {
+                out.push(std::mem::take(&mut current));
+            }
+        }
+        current.is_empty().then_some(out)
+    }
+    let (sa, sb) = (statements(a)?, statements(b)?);
+    if sa.len() != sb.len() || sa.len() < 2 {
+        return None;
+    }
+    let mut position: std::collections::HashMap<&Vec<String>, Vec<usize>> = std::collections::HashMap::new();
+    for (i, statement) in sa.iter().enumerate() {
+        position.entry(statement).or_default().push(i);
+    }
+    let mut order = Vec::with_capacity(sb.len());
+    for statement in &sb {
+        let slots = position.get_mut(statement)?;
+        if slots.is_empty() {
+            return None;
+        }
+        order.push(slots.remove(0));
+    }
+    // Statements outside the longest run that keeps its order are the ones that moved.
+    let longest_increasing = |values: &[usize]| {
+        let mut tails: Vec<usize> = Vec::new();
+        for &value in values {
+            let at = tails.partition_point(|&t| t < value);
+            if at == tails.len() {
+                tails.push(value);
+            } else {
+                tails[at] = value;
+            }
+        }
+        tails.len()
+    };
+    let runs_code = |statement: &Vec<String>| {
+        statement.iter().any(|l| {
+            matches!(op(l), "New" | "Call" | "CallGlob" | "CallStatement" | "CallGlobalArgList" | "RegexNew" | "NewArgList")
+                || l.starts_with("GetVar global:")
+        })
+    };
+    let code_order: Vec<usize> = order.iter().copied().filter(|&i| runs_code(&sa[i])).collect();
+    let moved = order.len() - longest_increasing(&order);
+    if moved == 0 {
+        return None;
+    }
+    Some(format!(
+        "{} of {} initializer statements run in another order; {} of the {} that run code (constructors, calls, reads of globals) run in another order relative to each other",
+        moved,
+        order.len(),
+        code_order.len() - longest_increasing(&code_order),
+        code_order.len(),
+    ))
+}
+
 pub fn normalize(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<String>) -> Vec<String> {
     let mut lines = fold_static_reads(lines, default);
     // Each pass can expose another (a folded short-circuit leaves dead code, a dropped jump exposes a literal pair).
@@ -727,9 +800,9 @@ mod tests {
     #[test]
     fn static_field_read_is_the_default_constant() {
         let table = |p: &str, f: &str| (p == "/obj/x" && f == "y").then(|| "\"font\"".to_string());
-        let nat = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(src->.y)", "Ret"]);
+        let nat = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.y)", "Ret"]);
         assert_eq!(normalize(nat, &table), v(&["PushVal \"font\"", "Ret"]));
-        let other = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(src->.z)", "Ret"]);
+        let other = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.z)", "Ret"]);
         assert_eq!(normalize(other.clone(), &table), other);
     }
 
@@ -786,8 +859,68 @@ mod tests {
         let nat = v(&["GetVar arg0", "IsIn 5", "GetFlag", "Test", "Jz L6", "End", "End"]);
         assert_eq!(normalize(nat, &none), v(&["GetVar arg0", "IsIn 5", "Jz L4", "End", "End"]));
         // A jump to the Test arrives with a value of its own: keep it.
-        let kept = v(&["Jz L3", "GetFlag", "Test", "Jz L5", "End", "End"]);
+        let kept = v(&["Jz L2", "GetFlag", "Test", "Jz L5", "End", "End"]);
         assert_eq!(normalize(kept.clone(), &none), kept);
+    }
+
+    #[test]
+    fn get_dot_return_is_end() {
+        let nat = v(&["PushVal 1.0", "SetVar .", "GetVar .", "Ret"]);
+        assert_eq!(normalize(nat, &none), v(&["PushVal 1.0", "SetVar .", "End"]));
+    }
+
+    #[test]
+    fn cache_save_restore_and_register_reloads_are_dropped() {
+        let dm = v(&["GetVar usr", "SetCacheJmpIfNull L7", "PushCache", "GetVar src", "SetVar cache", "PopCache", "Pop", "End"]);
+        assert_eq!(
+            normalize(dm, &none),
+            v(&["GetVar usr", "SetCacheJmpIfNull L3", "Pop", "End"])
+        );
+        // An unbalanced save stack is marked by canon and stays.
+        let marked = v(&["PushCache?", "End"]);
+        assert_eq!(normalize(marked.clone(), &none), marked);
+    }
+
+    #[test]
+    fn jumps_thread_through_jumps_that_must_be_taken() {
+        // JmpOr onto JmpOr, a case table onto a Jmp, a null guard onto a pop-guard.
+        let a = v(&["JmpOr L2", "End", "JmpOr L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(a)[0], "JmpOr L4");
+        let b = v(&["Switch {1.0=>L2;else=>L3}", "End", "Jmp L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(b)[0], "Switch {1.0=>L4;else=>L3}");
+        let c = v(&["SetCacheJmpIfNull L2", "End", "SetCachePopJmpIfNull L4", "End", "End"]);
+        assert_eq!(thread_jumps(c)[0], "SetCachePopJmpIfNull L4");
+        // A conditional jump onto a different kind of test is not threaded.
+        let d = v(&["Jz L2", "End", "JmpOr L4", "End", "Ret"]);
+        assert_eq!(thread_jumps(d.clone()), d);
+    }
+
+    #[test]
+    fn switch_entries_with_distinct_keys_compare_in_any_order() {
+        let a = v(&["Switch {\"b\"=>L1;\"a\"=>L2;else=>L3}", "End", "End", "End"]);
+        let b = v(&["Switch {\"a\"=>L2;\"b\"=>L1;else=>L3}", "End", "End", "End"]);
+        assert_eq!(normalize(a, &none), normalize(b, &none));
+        let dup = v(&["Switch {1.0=>L1;1.0=>L2;else=>L3}", "End", "End", "End"]);
+        assert_eq!(normalize(dup.clone(), &none), dup);
+    }
+
+    #[test]
+    fn idle_cache_key_saves_are_dropped_and_busy_ones_stay() {
+        let idle = v(&["PushCacheKey", "PushVal 8.0", "New 1", "PopCacheKey", "End"]);
+        assert_eq!(normalize(idle, &none), v(&["PushVal 8.0", "New 1", "End"]));
+        let busy = v(&["PushCacheKey", "GetVar cache-index", "PopCacheKey", "End"]);
+        assert_eq!(normalize(busy.clone(), &none), busy);
+    }
+
+    #[test]
+    fn initializer_order_is_reported_not_hidden() {
+        let a = v(&["PushVal 1.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
+        let b = v(&["New 0", "SetVar global:b", "PushVal 1.0", "SetVar global:a", "End"]);
+        assert!(initializer_order_difference(&a, &b).unwrap().contains("1 of 2"));
+        assert_eq!(initializer_order_difference(&a, &a), None);
+        // Different statements are a different program, not an order difference.
+        let c = v(&["PushVal 2.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
+        assert_eq!(initializer_order_difference(&a, &c), None);
     }
 
     #[test]

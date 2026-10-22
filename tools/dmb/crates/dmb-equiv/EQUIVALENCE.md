@@ -11,6 +11,8 @@ dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all
 dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables safe|all|classes,procs,strings,...] [--keep-strings K]
 dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING      # canonical listing of matching procs
 dmb-equiv dump-strings FILE.dmb
+dmb-equiv dump-vars FILE.dmb                    # variable table: id, name
+dmb-equiv global-order FILE.dmb                 # variable ids <global-init> stores to, in code order
 ```
 
 Exit 0 = equivalent, 1 = different, 2 = usage/decode error. The text report
@@ -90,10 +92,41 @@ renumbered after every removal. Found by reading the 2026-10-21 `a6ce3d8f16` res
 | String operand `0x1000_0000 + id` | field names whose string id lies in 0xffcd..0xfff1 (the reserved operand words) | never allocates those ids | decoded as the plain id |
 | Type initializer | procedure shared by the class and its map instances (keyed inline when short) | a separate one | compared by body; pure stores (`PushVal`/`New*`/`EmptyList`/`New` into distinct `src` fields) sort by field, constructing stores keep their order |
 
-The remaining `proc.bytecode` differences are the benign shapes in `doc/rewrite/native_compiler_issues.md` item 5 (`Jz` vs
-`GetFlag`, receiver caching, iterator forms, ...). One site is not explained by a rule: `/mob/death` stores a constant
-through `a?.b?.c = const`; native pushes the constant before the guards, DreamMaker after (both leave the same values;
-the stack balance of the null path is not proven).
+### Cache register model (`canon::cache_states_full`)
+
+The receiver Cache register is modelled as a label per instruction: the canonical text of the object it holds, or unknown
+when paths disagree. Writers: `SetVar cache` (the label of the value on top of the stack: a `GetVar`'s text, a call's text
+`(Call ...)`, a pushed constant), `SetCacheJmpIfNull`/`SetCachePopJmpIfNull` (the value on the fall-through edge, null on the
+jump edge), the receiver chain of a variable operand, and `PopCache`, which restores what `PushCache` saved on a separate
+save stack. Readers render the label: bare field/proc operands and `GetVar cache`. Assumptions, each visible in DreamMaker's
+own output: the register and its save stack are frame-local (a call or `New` does not touch the caller's); the registers are
+read only by the operands above; a label names the object by the expression that produced it, so two encodings are equal when
+they read the same labelled receivers (the compilers place the reads adjacent to the write).
+
+### Encoding rules added 2026-10-22 (`src/normalize.rs`; all run to a fixpoint)
+
+| Rule | Why the same |
+| --- | --- |
+| `GetFlag; Test` is dropped | `GetFlag` pushes the flag, `Test` pops it into the flag: no change (FORMAT.md; `IsIn; Jz`) |
+| `PushCache`/`PopCache` and `GetVar X; SetVar cache` (pure `X`) are dropped | the register effect is in the labels; a `?` mark (unbalanced save stack on some path) keeps them |
+| `PushCacheKey ... PopCacheKey` with no use of `cache-key`/`cache-index` and no jump between | registers unchanged across the pair |
+| a jump onto a `Jmp` (any jump, case tables too), `Jz`/`Jnz` onto the same, `JmpOr` onto `JmpOr`, `JmpAnd` onto `JmpAnd`, `SetCacheJmpIfNull` onto either null guard or a `Pop` | the target certainly jumps again; the pop-or-not difference is carried by naming the target's kind |
+| `GetVar .; Ret` is `End` | `End` returns `.` (`PushVal 1; SetVar .; End` is DreamMaker's `. = 1`) |
+| `Switch` entries with distinct keys are sorted | exactly one case matches |
+| `<global-init>` with the same statements in another order | **not hidden**: reported as `proc.global_init_order` (below) |
+
+What is not a rule: the shapes that are not provably the same (fused range iterators, `Square`, reassociated text sums, constant
+folds, safe-call evaluation order, `pick` thresholds, loop type masks, shared variables behind call receivers) were made
+byte-identical in the native compiler instead (`dreammaker_shapes` tests in `dm-codegen-byond`, each measured against `dm.exe`).
+
+### Native vs DreamMaker, production dme (2026-10-22)
+
+`--ignore-debug --ignore-order`: 4,854 differences at the start of the lane (4,767 `proc.bytecode`, 87 `proc.proc_locals`),
+1 now. The one left is `proc.global_init_order`: DreamMaker runs the 1,409 global initializers in ascending variable-table
+id (the order in which each name first appears in the compiled procedures); native runs them in another order (894 statements
+moved; 150 of the 443 that run code, constructors and calls, run in another order relative to each other). Initializers
+that run code can observe each other, so the checker reports this instead of folding it into the order ruling. Matching
+DreamMaker needs its variable numbering; making the order irrelevant needs a dependency analysis of every constructor.
 
 ## Orders kept (runtime-observable) and dropped
 

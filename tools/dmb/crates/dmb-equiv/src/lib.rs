@@ -900,6 +900,9 @@ fn compare_code(
         if na == nb {
             return None;
         }
+        if let Some(detail) = normalize::initializer_order_difference(&na, &nb) {
+            return Some(("proc.global_init_order", detail, String::new()));
+        }
         let first = ca
             .instructions
             .iter()

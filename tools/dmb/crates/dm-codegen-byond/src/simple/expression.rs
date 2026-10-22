@@ -69,6 +69,23 @@ impl Compiler<'_> {
                 }
             }
         }
+        // The left operand of `*`, `|`, `&` and `^` that names a `const` variable is its value, even when the other
+        // operand is not constant (`MC * x` is `6 * x`, `x * MC` reads the variable).
+        if let ExprKind::Binary { op, lhs, rhs } = &expr.kind {
+            if matches!(op.as_str(), "*" | "|" | "&" | "^") {
+                if let Some(value) = self.const_reference_literal(lhs) {
+                    let folded = Expr {
+                        kind: ExprKind::Binary {
+                            op: op.clone(),
+                            lhs: Box::new(value),
+                            rhs: rhs.clone(),
+                        },
+                        span: expr.span,
+                    };
+                    return self.expression(&folded, statement);
+                }
+            }
+        }
         if let ExprKind::Binary { op, .. } = &expr.kind {
             if is_associative_operator(op) && self.assoc_off_op.as_deref() != Some(op.as_str()) {
                 let mut changed = false;
@@ -85,7 +102,7 @@ impl Compiler<'_> {
                 then_value,
                 else_value,
             } => {
-                if let Some(condition) = constant_truth(condition) {
+                if let Some(condition) = constant_truth(condition).or_else(|| self.const_reference_truth(condition)) {
                     let (kept, dead) = if condition { (then_value, else_value) } else { (else_value, then_value) };
                     self.lower_dead(|compiler| compiler.expression(dead, statement))?;
                     return self.expression(kept, statement);
@@ -543,6 +560,13 @@ impl Compiler<'_> {
                     if let Some(default) = self.static_list_default(path, selector) {
                         return self.expression(&default, statement);
                     }
+                    // `Type::name` of a `const` variable reads the variable (DreamMaker does not take `initial()` of it).
+                    if let Ok(Some(symbol)) = self.member_global(path, selector) {
+                        if self.is_constant_variable(symbol) {
+                            self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Global(symbol))]);
+                            return Ok(());
+                        }
+                    }
                 }
                 self.record_property_selection(
                     expr,
@@ -887,11 +911,17 @@ impl Compiler<'_> {
         while let ExprKind::Group(inner) = &left.kind {
             left = inner;
         }
+        // A sub-product of `const` variables is a constant; a `const` variable on the left of a product is its value.
+        let folded = self.substitute_constants(left).filter(|substituted| fold_number(substituted).is_some());
         match &left.kind {
+            _ if folded.is_some() => self.expression(folded.as_ref().unwrap(), statement)?,
             ExprKind::Binary { op, lhs: l2, rhs: r2 } if op == "*" && fold_number(left).is_none() => {
                 self.multiplication(l2, r2, false, statement)?
             }
-            _ => self.expression(lhs, statement)?,
+            _ => match self.const_reference_literal(left) {
+                Some(value) => self.expression(&value, statement)?,
+                None => self.expression(lhs, statement)?,
+            },
         }
         self.expression(rhs, statement)?;
         self.emit(opcode::MUL, vec![]);
@@ -960,7 +990,7 @@ fn is_associative_operator(op: &str) -> bool {
     matches!(op, "+" | "*" | "|" | "&" | "^")
 }
 
-fn peel_groups(expr: &Expr) -> &Expr {
+pub(super) fn peel_groups(expr: &Expr) -> &Expr {
     let mut expr = expr;
     while let ExprKind::Group(inner) = &expr.kind {
         expr = inner;
@@ -1009,6 +1039,13 @@ pub(super) fn constant_truth(expr: &Expr) -> Option<bool> {
     let expr = peel_groups(expr);
     match &expr.kind {
         ExprKind::Literal(raw) if raw == "null" => Some(false),
+        // A `list(...)` of constants is an object, so it is true (`list(EAST, WEST) ? a : b` is `a`).
+        ExprKind::Call { callee, args }
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "list")
+                && args.iter().all(|arg| fold_number(arg).is_some() || constant_text_truth(arg).is_some()) =>
+        {
+            Some(true)
+        }
         ExprKind::Literal(_) => constant_text_truth(expr),
         ExprKind::Unary { op, value } if op == "!" => constant_truth(value).map(|truth| !truth),
         ExprKind::Binary { op, lhs, rhs } if op == "||" => match constant_truth(lhs)? {
@@ -1057,7 +1094,7 @@ impl Compiler<'_> {
                 self.lower_dead(|compiler| compiler.expression(operand, statement))?;
                 continue;
             }
-            match constant_truth(operand) {
+            match constant_truth(operand).or_else(|| self.const_reference_truth(operand)) {
                 Some(truth) if truth == (op == "&&") && index != last => {
                     self.lower_dead(|compiler| compiler.expression(operand, statement))?;
                 }

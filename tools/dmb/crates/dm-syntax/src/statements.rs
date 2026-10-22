@@ -699,7 +699,19 @@ fn parse_var_header(
     let value = if let Some(at) = assignment {
         let source = header[at + 1..].trim();
         let offset = item.header_span.start + item.header.find(source).unwrap_or(at + 1);
-        Some(parse_expr(source, offset, diagnostics)?)
+        let parsed = parse_expr(source, offset, diagnostics)?;
+        // `in` binds looser than `=` in DreamMaker, so `var/x = a in L` is `(var/x = a) in L`: the local gets `a`, and a
+        // membership test whose result nobody reads (and that has no effect) is dropped.
+        match parsed.kind {
+            ExprKind::Binary { op, lhs, rhs }
+                if op == "in"
+                    && matches!(&rhs.kind, ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list"))
+                    && is_effect_free(&rhs) =>
+            {
+                Some(*lhs)
+            }
+            kind => Some(Expr { kind, ..parsed }),
+        }
     } else {
         None
     };
@@ -787,4 +799,23 @@ use statement_controls::*;
 #[cfg(test)]
 mod tests {
     include!("statements_tests_1.rs");
+}
+
+/// An expression that only names and builds values: evaluating it changes nothing.
+fn is_effect_free(expr: &Expr) -> bool {
+    match &expr.kind {
+        ExprKind::Ident(_) | ExprKind::Literal(_) | ExprKind::TypePath(_) => true,
+        ExprKind::Group(inner) => is_effect_free(inner),
+        ExprKind::Member { object, via_colon: false, .. } => is_effect_free(object),
+        ExprKind::Unary { op, value } => matches!(op.as_str(), "-" | "!" | "~") && is_effect_free(value),
+        ExprKind::Binary { op, lhs, rhs } => {
+            matches!(op.as_str(), "+" | "-" | "*" | "/" | "%" | "|" | "&" | "^" | "==" | "!=" | "<" | ">" | "<=" | ">=")
+                && is_effect_free(lhs)
+                && is_effect_free(rhs)
+        }
+        ExprKind::Call { callee, args } => {
+            matches!(&callee.kind, ExprKind::Ident(name) if name == "list") && args.iter().all(is_effect_free)
+        }
+        _ => false,
+    }
 }

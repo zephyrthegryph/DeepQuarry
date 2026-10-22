@@ -1066,7 +1066,9 @@ impl Compiler<'_> {
                     else_branch,
                 } => 'lowered: {
                     // A constant condition keeps only the branch it selects, with no test (DreamMaker 516.1687).
-                    if let Some(value) = super::expression::constant_truth(condition) {
+                    if let Some(value) = super::expression::constant_truth(condition)
+                        .or_else(|| self.const_reference_truth(condition))
+                    {
                         if value {
                             self.typed_statements(then_branch)?;
                             self.lower_dead(|compiler| compiler.typed_statements(else_branch))?;

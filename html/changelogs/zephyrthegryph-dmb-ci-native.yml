@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The native compiler matches DreamMaker on production: dmb-equiv explains 4,766 of 4,767 bytecode-shape differences (one global initializer order remains) and lists every difference"
+  - bugfix: "Native compiler: type-unsafe loops over existing typed variables, iterators leaked by labelled break, shared variables behind call receivers, pick() thresholds, operator precedence of bit operations, shifts and in, and several constant folds now follow DreamMaker"

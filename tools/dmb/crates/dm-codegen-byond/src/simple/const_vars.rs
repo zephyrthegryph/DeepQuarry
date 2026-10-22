@@ -43,6 +43,11 @@ impl Compiler<'_> {
         (!text.is_empty()).then(|| text.to_string())
     }
 
+    /// Whether the shared-storage variable is a `const` with a scalar value.
+    pub(super) fn is_constant_variable(&self, symbol: SymRef) -> bool {
+        self.const_literal(symbol, dm_syntax::Span::default()).is_some()
+    }
+
     /// `Type::name` for a variable whose default is a list: DreamMaker builds that list from the default expression where it
     /// is written (`NewList`, `NewAssocList`) instead of reading `initial()`, which answers null for a list variable.
     pub(super) fn static_list_default(&self, path: &str, name: &str) -> Option<Expr> {
@@ -77,6 +82,12 @@ impl Compiler<'_> {
             let slot = slots.get(&symbol)?;
             (slot.owner, slot.name)
         };
+        self.constant_literal_of(owner, name, span)
+    }
+
+    /// The literal for the scalar constant `owner`'s variable `name` holds, if it is a `const`.
+    fn constant_literal_of(&self, owner: dm_ir::SymbolId, name: dm_ir::SymbolId, span: dm_syntax::Span) -> Option<Expr> {
+        let lookup = self.lookup?;
         let answer = lookup.resolver.resolve(ResolveQuery::Constant { owner, name });
         let value = match answer {
             ResolvedMeaning::Value(value) => value,
@@ -122,11 +133,19 @@ impl Compiler<'_> {
     fn const_reference(&self, expr: &Expr) -> Option<Expr> {
         match &expr.kind {
             ExprKind::Ident(name) => {
-                let meaning = self.variable_meaning(name, "").ok()?;
-                match meaning {
-                    dm_ir::SelectedMeaning::SharedStorage(symbol) => self.const_literal(symbol, expr.span),
-                    _ => None,
+                // Asked by name, without selecting the variable: a read of a variable that is not a constant must not
+                // allocate its storage ahead of the lowering that reads it (global initializers follow that order).
+                if self.local_slots.contains_key(name.as_str())
+                    || self.bindings.parameters.iter().any(|formal| formal == name)
+                {
+                    return None;
                 }
+                let lookup = self.lookup?;
+                if matches!(lookup.procedure_static(self.bindings.procedure_identity, name), Ok(Some(_))) {
+                    return None;
+                }
+                let owner = self.bindings.current_type_path.as_deref().unwrap_or("/");
+                self.constant_literal_of(dm_ir::SymbolId::of(owner), dm_ir::SymbolId::of(name), expr.span)
             }
             ExprKind::Group(inner) => self.const_reference(inner),
             ExprKind::Member {
@@ -135,11 +154,21 @@ impl Compiler<'_> {
                 via_colon: false,
             } if matches!(&object.kind, ExprKind::Ident(_) | ExprKind::Member { .. }) => {
                 let owner = self.inferred_expression_type(object).ok()??;
-                let symbol = self.member_global(&owner, selector).ok()??;
-                self.const_literal(symbol, expr.span)
+                self.constant_literal_of(dm_ir::SymbolId::of(&owner), dm_ir::SymbolId::of(selector), expr.span)
             }
             _ => None,
         }
+    }
+
+    /// The literal a bare reference to a `const` variable stands for.
+    pub(super) fn const_reference_literal(&self, expr: &Expr) -> Option<Expr> {
+        self.const_reference(expr)
+    }
+
+    /// The truth value of a bare reference to a `const` variable.
+    pub(super) fn const_reference_truth(&self, expr: &Expr) -> Option<bool> {
+        let literal = self.const_reference(expr)?;
+        super::expression::constant_truth(&literal)
     }
 
     /// `expr` with the `const` variables inside its operators replaced by their values, or None when there are none.

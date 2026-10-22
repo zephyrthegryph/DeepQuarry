@@ -310,3 +310,51 @@ and `typesof(/world)` is `not a prototype` (`source_checks.rs::typesof_errors`; 
 **To do when the engine catalog allows it:** `typesof(/T/proc)` is not rejected for a type that declares no procs of its own (DreamMaker:
 `undefined type path`), because the engine's built-in procs are not in the semantic catalog and a user type may inherit them. Add the check
 beside `typesof_errors` once built-in procs are catalogued.
+
+## Status 2026-10-22 (tools/dmb-ci-native: every difference against DreamMaker)
+
+**Result.** `dmb-equiv --ignore-debug --ignore-order --all` over the production dme, same source, DreamMaker against native: 4,854
+differences at the start of the lane (4,767 `proc.bytecode`, 87 `proc.proc_locals`; `--ignore-order` leaves the proc, type and variable
+table numbering out of the count, per the 2026-10-21 ruling), **1 now**. CI is **not** switched: the one difference is real (below).
+`bash tools/ci/dm_equiv.sh` reproduces the comparison; the checker (`--all`, `--context N`) lists every difference with the instructions
+around the first one.
+
+| Step | Differences left | What explained them |
+|---|---:|---|
+| start | 4,854 | |
+| `GetFlag; Test` before a jump | 3,647 | checker rule (identity) |
+| receiver Cache model, `PushCache`/`PopCache`, `SetVar cache` | 2,249 | checker: the register is a label per instruction, so saves and reloads carry no behaviour |
+| jump threading (`JmpOr` onto `JmpOr`, case tables onto `Jmp`, null guards) | 1,838 | checker rule |
+| `GetVar .; Ret` is `End`, switch entries sorted, `Call` receivers labelled | 1,579 | checker rules |
+| fused range/view iterators, loop type masks, `OutputFormat` | 906 | native made byte-identical |
+| `pick` thresholds, `NewImage`, `Square`, `rgb()`, `NAMEOF` case labels, overlapping/infinite `SwitchRange`, text-sum reassociation | 100 | native made byte-identical (each measured against `dm.exe`, 420 + 500 random expressions in two fuzz runs) |
+| labelled `break`, shared variables behind call receivers, loops over typed variables, `in`/bit precedence, `const` operands, list defaults | 1 | native fixed |
+
+**Genuine behaviour differences found and fixed in native** (`tools/dmb/crates/dm-codegen-byond`, `dm-syntax`):
+- A loop over an existing typed variable (`for(stored_sample in contents_of(can))` with `var/obj/item/research_sample/stored_sample`) assigned
+  every element: DreamMaker filters to the declared type (`IterLoad` mask plus `IsType`). Native now does the same for arguments, locals and fields.
+- A labelled `break` out of nested iterator loops left the labelled loop's own iterator on the iterator stack.
+- `x.global_var` behind a call receiver (`nif().big_icon`) dropped the receiver call; writes through one stored an instance field instead of the shared variable.
+- `pick()` thresholds: DreamMaker accumulates `floor(weight * 65535 / total)` per choice (four equal choices: 16383, 32766, 49149); native floored the cumulative share (32767, 49151).
+- Operator precedence: `a == b | c` is `(a == b) | c`, `a << b < c` is `a << (b < c)`, and `in` is the loosest operator (`x in list(A, B) ? A : B` is `x in (list(A, B) ? A : B)`; `var/y = x in list(...)` is `(var/y = x) in list(...)`). `<>` is `!=`. Source with those forms keeps
+  DreamMaker's meaning: `airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)` tests membership in `EAST`, and `var/new_is_wall_fixture = utility_id in list(...)` stores `utility_id`.
+  (Both are bugs in the game code that DreamMaker compiles as written; parenthesize them.)
+- `a?.f()[i] = v` evaluated `v` before testing the receiver for null.
+- `/T::list_var` read `initial()`, which is null for a list variable; DreamMaker builds the default list where it is written.
+- A lone carriage return inside an interpolated text literal was kept; DreamMaker drops it.
+- Switch tables: overlapping range and value cases and infinite bounds fell back to a compare chain; text `nameof()` labels did too. Alternatives of one case are tabled last to first.
+- Constant folds DreamMaker does and native did not: `"text" || x`, `!"text"`, `list(...) ? a : b`, `&&`/`||` chains (a constant that cannot decide the result is dropped, one that decides it ends the chain), `const` variables as the left operand of `* | & ^`, `rgb()`/`rgb2num()` of constants. Bare statements that only name a variable emit nothing.
+
+**Open: global initializer order (`proc.global_init_order`).** DreamMaker runs the 1,409 global initializers in ascending variable id
+(the order in which a name first appears in the compiled procedures); native runs them in another order (894 statements move, and 150 of
+the 443 that run code, `New` and calls, run in another order relative to each other). Initializers that run code can observe each
+other, so `dmb-equiv` reports this rather than counting it as table numbering. To close it: either give native DreamMaker's variable
+numbering for globals (their ids follow first appearance of the name among procedure parameters, locals and statics, then declarations),
+or prove the constructors independent. `dmb-equiv global-order FILE.dmb` prints the order of each side.
+
+**Not done, found by the fuzz runs, absent from the tree:** `d?.f()[i] op= v` (DreamMaker tests the receiver first for compound stores too) and `d?.f()[i]++`
+(pop-guard form) keep native's order; `rgb2num("red")` (named colors) is not folded; `1 / "text"` is folded by DreamMaker to `1`.
+Plain `Type::const_var` reads the variable; `const_var` as a right operand stays a variable read, as in DreamMaker.
+
+**Tests.** `cargo test -p dmb-equiv -p dm-syntax -p dm-codegen-byond -p dmbc` pass (dmbc lib 1,061; the 11 `control_flow` failures noted under
+2026-10-14 pass on this tree); `dm-codegen-byond::simple::tests::dreammaker_shapes` pins the shapes above; the diagnostics corpus matches 131/131.
