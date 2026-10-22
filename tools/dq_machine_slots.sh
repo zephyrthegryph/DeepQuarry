@@ -170,6 +170,13 @@ _slots_dead() { # file
 	return 1
 }
 
+# A focused run (tools/dq_focused_test.sh) sets DQ_WORLD_REGISTRY: the first slot it holds starts the clock of its wall-clock cap
+# (time queued for a slot is not run time). tools/dq_run_guard.js reads the file's mtime.
+_slots_mark_running() {
+	[ -n "${DQ_WORLD_REGISTRY:-}" ] || return 0
+	[ -f "$DQ_WORLD_REGISTRY/.running" ] || { mkdir -p "$DQ_WORLD_REGISTRY" && date +%s >"$DQ_WORLD_REGISTRY/.running"; } 2>/dev/null || true
+}
+
 SLOTS_SELF="${BASH_SOURCE[0]}"
 SLOTS_HELD=""        # the slot directory this shell holds
 SLOTS_HELD_CLASS=""
@@ -247,6 +254,7 @@ _slots_acquire() {
 			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
+					_slots_mark_running
 					SLOTS_HELD="$d/slot.$i"
 					SLOTS_HELD_CLASS="$cls"
 					SLOTS_T_GOT="$(date +%s)"
@@ -392,6 +400,7 @@ _slots_group_acquire() {
 			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
+					_slots_mark_running
 					dirs+=("$d/slot.$i")
 					owners+=("$d/slot.$i/owner")
 					have=$((have + 1))

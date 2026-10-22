@@ -199,6 +199,17 @@ export type HeldSlot = {
   release: () => void;
 };
 
+/** A focused run (tools/dq_focused_test.sh) sets DQ_WORLD_REGISTRY: the first slot it holds starts the clock of its wall-clock cap
+ * (time queued for a slot is not run time). tools/dq_run_guard.js reads the file's mtime. */
+function markRunning(): void {
+  const dir = process.env.DQ_WORLD_REGISTRY;
+  if (!dir) return;
+  try {
+    const f = path.join(dir, '.running');
+    if (!fs.existsSync(f)) { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(f, `${Math.floor(Date.now() / 1000)}\n`); }
+  } catch { /* best effort */ }
+}
+
 const held = new Set<HeldSlot>();
 let exitHooked = false;
 
@@ -296,6 +307,7 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
         const owner = path.join(sd, 'owner');
         const started = Math.floor(Date.now() / 1000);
         fs.writeFileSync(owner, `${identity}started=${started}\npriority=${prio}\n`);
+        markRunning();
         fs.rmSync(queueFile, { force: true });
         const beat = setInterval(() => {
           try {
