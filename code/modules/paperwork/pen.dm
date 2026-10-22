@@ -382,8 +382,7 @@ CAPABILITIES(/obj/item/pen/chameleon)
 	can_click = FALSE
 	special_handling = TRUE
 
-/obj/item/pen/crayon/Initialize(mapload)
-	. = ..()
+/obj/item/pen/crayon/proc/prefix_colour_name()
 	name = "[colourName] [name]"
 
 /obj/item/pen/crayon/marker

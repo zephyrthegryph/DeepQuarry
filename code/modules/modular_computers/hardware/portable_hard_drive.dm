@@ -32,8 +32,10 @@
 /obj/item/computer_hardware/hard_drive/portable/is_critical_slot()
 	return FALSE
 
-/obj/item/computer_hardware/hard_drive/portable/Initialize(mapload)
-	. = ..()
+/obj/item/computer_hardware/hard_drive/portable/proc/reset_files()
 	stored_files = list()
 	recalculate_size()
+
+CAPABILITIES(/obj/item/computer_hardware/hard_drive/portable)
+	setup(PROC_REF(reset_files))
 

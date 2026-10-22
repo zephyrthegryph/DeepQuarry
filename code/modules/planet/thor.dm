@@ -763,10 +763,12 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 	name = "deep ocean"
 	alpha = 0
 
-/obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
-	. = ..()
+/obj/machinery/power/smes/buildable/offmap_spawn/empty/proc/power_up_empty()
 	set_stored_charge(0)
 	set_RCon(TRUE)
 	set_input_level(input_level_max)
 	set_output_level(output_level_max)
 	set_input_attempt(TRUE)
+
+CAPABILITIES(/obj/machinery/power/smes/buildable/offmap_spawn/empty)
+	setup(PROC_REF(power_up_empty))

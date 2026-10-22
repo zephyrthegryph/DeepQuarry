@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - refactor: "Moved Initialize() setup of crayons, tables, blobs, maint recycler, shield generators and other misc types into declared setup hooks"

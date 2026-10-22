@@ -10,8 +10,10 @@
 	desc = "If you are seeing this in-game: Yell at whoever made this mistake."
 
 ///We REALLY do not want un-addressed merge conflicts in maps for an inexhaustible list of reasons. This should help ensure that this will not be missed in case linters fail to catch it for any reason what-so-ever.
-/obj/merge_conflict_marker/Initialize(mapload)
-	. = ..()
+/obj/merge_conflict_marker/proc/shout_conflict()
 	var/msg = "HEY, LISTEN!!! Merge Conflict Marker detected at [COORD(src)]! Please manually address all potential merge conflicts!!!"
 	to_chat(world, span_warning("[msg]"))
 	CRASH(msg)
+
+CAPABILITIES(/obj/merge_conflict_marker)
+	setup(PROC_REF(shout_conflict))
