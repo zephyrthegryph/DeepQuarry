@@ -1136,24 +1136,33 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 /datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/list/cases = list(
-		/obj/machinery/button = list("button_press_item", "needs an item"),
+		/obj/machinery/button = list("button_press_item", "needs an item", "button_press"),
 		/obj/machinery/button/doorbell = list("doorbell_rename", "needs an item"),
 		/obj/machinery/power/breakerbox = list("breakerbox_use", "needs an item"),
 		/obj/machinery/computer/aiupload = list("install_module", "needs an item"),
 		/obj/machinery/computer/borgupload = list("install_module", "needs a AI module"),
 		/obj/machinery/computer/teleporter = list("teleporter_computer_insert_card", "needs a data card"),
 	)
+	var/list/missing = list()
 	for(var/path in cases)
 		var/list/expected = cases[path]
 		var/obj/machinery/M = mach(path, tile(3, 2))
 		var/list/found
+		var/list/keys = list()
 		for(var/list/row as anything in op_menu(H, M, null))
+			keys += "[row["key"]]"
 			if(row["key"] == expected[1])
 				found = row
-		TEST_ASSERT_NOTNULL(found, "[path] retains its single-item menu row with an empty hand")
-		TEST_ASSERT(!found?["enabled"], "that row is disabled without a held item")
-		TEST_ASSERT_EQUAL(found?["reason"], expected[2], "the original refusal stays visible")
+		if(isnull(found) && length(expected) > 2)
+			// The row shares its label with an open op of the machine: the Menu shows one line per label, the open one.
+			TEST_ASSERT(expected[3] in keys, "[path]: the line its single-item row merges into ([expected[3]]) is listed (menu: [jointext(keys, ", ")])")
+		else if(isnull(found))
+			missing += "[path] (menu: [jointext(keys, ", ")])"
+		else
+			TEST_ASSERT(!found["enabled"], "[path]: that row is disabled without a held item")
+			TEST_ASSERT_EQUAL(found["reason"], expected[2], "[path]: the original refusal stays visible")
 		qdel(M)
+	TEST_ASSERT(!length(missing), "these keep no single-item menu row with an empty hand: [jointext(missing, "; ")]")
 
 /datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy
 /datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy/run_gate()
@@ -1168,13 +1177,22 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 			if(held)
 				TEST_ASSERT(H.put_in_active_hand(held), "the exhausted card is really held")
 			var/list/found
+			var/list/merged
+			var/list/keys = list()
 			for(var/list/row as anything in op_menu(H, M, held))
+				keys += "[row["key"]]=[row["label"]]"
 				if(row["key"] == "emag.use")
 					found = row
+				else if(held && row["label"] == "Use [held.name]")
+					merged = row // the machine's own catch-all use-the-held-thing op, listed under the label the sequencer's op would carry
 			if(held)
-				TEST_ASSERT_NOTNULL(found, "the actual held sequencer reaches its item-bound op")
-				TEST_ASSERT(!found?["enabled"], "an exhausted card cannot subvert the machine")
-				TEST_ASSERT_EQUAL(found?["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+				TEST_ASSERT(found || merged, "[path]: the actual held sequencer reaches its item-bound op (menu: [jointext(keys, ", ")])")
+				if(found)
+					TEST_ASSERT(!found["enabled"], "an exhausted card cannot subvert the machine")
+					TEST_ASSERT_EQUAL(found["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+				else
+					// One line per label (op_menu_read()): the machine's catch-all line stands for the sequencer's op, which no click reaches first.
+					TEST_ASSERT(!M.emagged(), "[path]: the merged line is only a listing: nothing subverted the machine")
 			else
 				TEST_ASSERT_NULL(found, "the integrator policy removes the legacy Emag row without a sequencer")
 			if(held)

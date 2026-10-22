@@ -23,24 +23,30 @@
 	TEST_ASSERT_NULL(victim.omen_roll_override(null, TRUE, 6), "without an omen nothing overrides a roll")
 	TEST_ASSERT(!victim.omen_blocks_catch(thrown, 1), "without an omen nothing fumbles a catch")
 
-/// enable_footsteps() grants the footstep capability, and a step counts on the moved notice.
+/// A mob declares footstep() itself (simple_mob, carbon, silicon): a step counts on the moved notice, enable_footsteps() tunes the sounds and
+/// grants it again under its own source, and disable_footsteps() ends only that grant (the type's own declaration stays).
 /datum/unit_test/dq_retired_footstep_counts_steps
 
 /datum/unit_test/dq_retired_footstep_counts_steps/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/next = locate(start.x + 1, start.y, start.z)
 	var/mob/living/simple_mob/animal/passive/mouse/walker = allocate(/mob/living/simple_mob/animal/passive/mouse, start)
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "a mouse declares the footstep capability itself")
 	walker.enable_footsteps(FOOTSTEP_MOB_CLAW, 1, -6)
-	TEST_ASSERT(granted(walker, /datum/capability/footstep), "enable_footsteps() grants the footstep capability")
+	TEST_ASSERT_EQUAL(walker.footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
+	TEST_ASSERT_EQUAL(walker.footstep_e_range, -6, "and their range")
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
 	walker.footstep_steps = 0
 	walker.forceMove(next)
 	walker.forceMove(start)
 	TEST_ASSERT(walker.footstep_steps > 0, "each move is a step (counted [walker.footstep_steps])")
 	walker.disable_footsteps()
-	TEST_ASSERT(!granted(walker, /datum/capability/footstep), "disable_footsteps() revokes it")
-	var/before = walker.footstep_steps
-	walker.forceMove(next)
-	TEST_ASSERT_EQUAL(walker.footstep_steps, before, "no steps are counted once disabled")
+	var/own_grants = 0
+	for(var/datum/activation/A as anything in walker.rx?.activations)
+		if(!A.dead && A.def.cap_id == CAP_FOOTSTEP && A.source == walker)
+			own_grants++
+	TEST_ASSERT_EQUAL(own_grants, 0, "disable_footsteps() ends the grant enable_footsteps() made")
+	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the type's own declaration stays")
 
 /// Two swarmers on one turf pair up and offset; one leaving unpairs both.
 /datum/unit_test/dq_retired_swarming_pairs_on_a_turf

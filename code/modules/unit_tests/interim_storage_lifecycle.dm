@@ -25,7 +25,7 @@
 	TEST_ASSERT_EQUAL(candidate.loc, T, "removal returns the candidate to the floor")
 	TEST_ASSERT_EQUAL(box.slot_used(), 0, "removing the last item releases all used capacity")
 
-/// Legacy storage deletes what remains inside it, while removed items survive the container.
+/// A forced delete of a storage deletes what remains inside it, while removed items survive the container.
 /datum/unit_test/interim_storage_destroy_contents/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/storage/backpack/pack = allocate(/obj/item/storage/backpack, T)
@@ -37,9 +37,24 @@
 	TEST_ASSERT(pack.insert_item(removed), "the backpack holds an item to remove")
 	TEST_ASSERT(pack.remove_from_storage(removed, T), "the removed item leaves the backpack")
 	TEST_ASSERT_EQUAL(removed.loc, T, "the removed item reaches the floor before deletion")
-	qdel(pack)
+	qdel(pack, force = TRUE)
 	TEST_ASSERT(QDELETED(pack), "the backpack is deleted")
-	TEST_ASSERT(QDELETED(box), "legacy storage deletes its contained box")
+	TEST_ASSERT(QDELETED(box), "a forced delete takes its contained box")
 	TEST_ASSERT(QDELETED(kept), "nested storage deletion reaches its contained item")
 	TEST_ASSERT(!QDELETED(removed), "a previously removed item survives storage deletion")
 	TEST_ASSERT_EQUAL(removed.loc, T, "storage deletion leaves the removed item's placement unchanged")
+
+/// A delete in play spills what remains inside a storage onto its floor (admission.md D10), nested storage keeping its own contents.
+/datum/unit_test/interim_storage_destroy_spills/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/storage/backpack/pack = allocate(/obj/item/storage/backpack, T)
+	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, T)
+	var/obj/item/pen/kept = allocate(/obj/item/pen, T)
+	TEST_ASSERT(box.insert_item(kept), "the inner box holds an item")
+	TEST_ASSERT(pack.insert_item(box), "the backpack holds the inner box")
+	qdel(pack)
+	TEST_ASSERT(QDELETED(pack), "the backpack is deleted")
+	TEST_ASSERT(!QDELETED(box), "the contained box spills instead of being deleted")
+	TEST_ASSERT_EQUAL(box.loc, T, "the spilled box lands where the backpack stood")
+	TEST_ASSERT(!QDELETED(kept), "what the box holds survives")
+	TEST_ASSERT_EQUAL(kept.loc, box, "and stays in the box")

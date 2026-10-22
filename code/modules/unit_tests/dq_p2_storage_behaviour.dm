@@ -628,7 +628,26 @@
 	sb_settle()
 	TEST_ASSERT(!H.s_active, "the viewer has nothing open any more")
 
-/// Deleting a storage deletes what is inside it (the slot's drop policy), nested storage included.
+/// Deleting a storage in play spills what is inside it where it stood (the slot's drop policy, admission.md D10), nested storage included.
+/datum/unit_test/dq_p2_storage/qdel_spills_the_contents
+/datum/unit_test/dq_p2_storage/qdel_spills_the_contents/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/list/made = sb_loaded_box(H)
+	var/obj/item/storage/box/B = made[1]
+	var/list/things = made[2]
+	var/obj/item/bottle = made[3]
+	var/obj/item/pill = made[4]
+	var/turf/T = get_turf(B)
+	qdel(B)
+	sb_settle()
+	TEST_ASSERT(QDELETED(B), "the box is gone")
+	for(var/obj/item/I as anything in things)
+		TEST_ASSERT(!QDELETED(I), "contents survive the box")
+		TEST_ASSERT_EQUAL(get_turf(I), T, "and land where it stood")
+	TEST_ASSERT(!QDELETED(bottle) && get_turf(bottle) == T, "a nested bottle lands too")
+	TEST_ASSERT_EQUAL(pill.loc, bottle, "with what is in it")
+
+/// A forced delete (cleanup, admin delete) deletes what is inside a storage, nested storage included.
 /datum/unit_test/dq_p2_storage/qdel_deletes_the_contents
 /datum/unit_test/dq_p2_storage/qdel_deletes_the_contents/run_gate()
 	var/mob/living/carbon/human/H = sb_actor()
@@ -637,7 +656,7 @@
 	var/list/things = made[2]
 	var/obj/item/bottle = made[3]
 	var/obj/item/pill = made[4]
-	qdel(B)
+	qdel(B, force = TRUE)
 	sb_settle()
 	for(var/obj/item/I as anything in things)
 		TEST_ASSERT(QDELETED(I), "contents go with the box")
@@ -663,18 +682,20 @@
 	TEST_ASSERT_EQUAL(pill.loc, bottle, "with what is in it")
 	TEST_ASSERT(!H.s_active, "and the window is closed")
 
-/// Smashing a storage (not disassembled) follows the slot's drop policy, like deleting it.
+/// Smashing a storage (not disassembled) follows the slot's drop policy, like deleting it: what is inside spills where it stood.
 /datum/unit_test/dq_p2_storage/smashing_a_storage_follows_its_drop_policy
 /datum/unit_test/dq_p2_storage/smashing_a_storage_follows_its_drop_policy/run_gate()
 	var/mob/living/carbon/human/H = sb_actor()
 	var/list/made = sb_loaded_box(H)
 	var/obj/item/storage/box/B = made[1]
 	var/list/things = made[2]
+	var/turf/T = get_turf(B)
 	B.deconstruct(FALSE)
 	sb_settle()
 	TEST_ASSERT(QDELETED(B), "the box is gone")
 	for(var/obj/item/I as anything in things)
-		TEST_ASSERT(QDELETED(I), "contents go with a smashed box")
+		TEST_ASSERT(!QDELETED(I), "contents survive a smashed box")
+		TEST_ASSERT_EQUAL(get_turf(I), T, "and land where it stood")
 
 /datum/unit_test/dq_p2_storage/spill_drops_everything
 /datum/unit_test/dq_p2_storage/spill_drops_everything/run_gate()

@@ -41,7 +41,7 @@
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
 	refusal.set_block_remove(TRUE)
-	TEST_ASSERT(!test_op_handler(carried, "can_unfold", user), "the requirement rejects real source release refusal")
+	TEST_ASSERT_NOTNULL(test_op_handler(carried, "can_unfold", user), "the requirement rejects real source release refusal with its reason")
 	test_op_handler(carried, "picnic_blankets_carried_fold_out_effect", user)
 	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(carried), "refusal preserves the original folded blanket")

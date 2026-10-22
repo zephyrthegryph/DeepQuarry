@@ -28,7 +28,7 @@
 /datum/unit_test/dq_rig_power_ledger_all_rigs/Run()
 	var/obj/item/rig/light/R = allocate(/obj/item/rig/light)
 	TEST_ASSERT_NOTNULL(R.cell, "a light rig should come with a cell")
-	R.cell.charge = R.cell.maxcharge / 2
+	R.cell.set_charge(R.cell.maxcharge / 2)
 	var/before = R.cell.charge
 	TEST_ASSERT(R.draw_power(ROBOT_CELL_JOULES(50), src), "a half cell should cover a small draw")
 	TEST_ASSERT(R.cell.charge < before, "the draw should come out of the cell")

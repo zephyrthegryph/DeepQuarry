@@ -91,6 +91,10 @@
 #define SREAD_KIND_VAR 0
 #define SREAD_KIND_ACCESSOR 1
 #define SREAD_KIND_SYSTEM 3
+/// The pseudo-key a lookup read publishes under (lookup_reads.dm; the generator names it lookup_read_<hash>): no var, so no plan or generated var set lists it.
+#define LOOKUP_READ_KEY_PREFIX "lookup_read_"
+/// TRUE for a key a lookup read publishes under.
+#define IS_LOOKUP_READ_KEY(key) (findtext(key, LOOKUP_READ_KEY_PREFIX) == 1)
 
 /// What the next marked evaluation is expected to cost, for the budget check before it runs: a fixed charge in test builds (TEST_EVAL_COST), an estimate in
 /// microseconds otherwise.

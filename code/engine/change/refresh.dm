@@ -72,7 +72,7 @@
 		return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
-	if(var_name && GLOB.stat_input_keys?[var_name] && var_name != GLOB.stat_writing)
+	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 		stat_inputs_changed(E, var_name)
 	// OM observers only: entity_raise_change()'s own refresh hook would mark every output, undoing the mask below.
 	if(E.om_listen & channel)
