@@ -7,106 +7,103 @@ GLOBAL_PROTECT(VVckey_edit)
 GLOBAL_LIST_INIT(VVpixelmovement, list("bound_x", "bound_y", "step_x", "step_y", "step_size", "bound_height", "bound_width", "bounds")) //No editing ever.
 GLOBAL_PROTECT(VVpixelmovement)
 
-/// The vars named in [] in `new_var` to substitute: a list (empty for none), or null while the
-/// flow asks whether to (flow_ask()).
-/client/proc/vv_parse_text(O, new_var, key = "parse")
-	. = list()
-	if(O && findtext(new_var,"\["))
-		var/process_vars = flow_ask(mob, "[key]:parse", /datum/prompt/choice, question = "\[] detected in string, process as variables?", title = "Process Variables?", choices = list("Yes","No"), buttons = TRUE)
-		if(isnull(process_vars))
-			return null
-		if(process_vars == "Yes")
-			. = string2listofvars(new_var, O)
+/// One View Variables value asked on its own: `pick_params` are the value picker's settings (its vars, by name). The answer is get("picked").
+/datum/ask_sequence/admin/vv_value
+	var/list/pick_params
 
-/// TRUE to include subtypes, FALSE for the strict type, null when cancelled or still asking.
-/client/proc/vv_subtype_prompt(type, key = "subtypes")
-	if (!ispath(type))
-		return
-	var/list/subtypes = subtypesof(type)
-	if (!subtypes || !subtypes.len)
-		return FALSE
-	if (subtypes?.len)
-		switch(flow_ask(mob, "[key]:subtypes", /datum/prompt/choice, question = "Strict object type detection?", title = "Type detection", choices = list("Strictly this type","This type and subtypes", "Cancel"), buttons = TRUE))
-			if("Strictly this type")
-				return FALSE
-			if("This type and subtypes")
-				return TRUE
-			else
-				return
+/datum/ask_sequence/admin/vv_value/initial_steps()
+	return list(TYPE_PROC_REF(/client, vv_value_ask))
 
-/client/proc/vv_reference_list(type, subtypes)
-	. = list()
-	var/list/types = list(type)
-	if (subtypes)
-		types = typesof(type)
+/client/proc/vv_value_ask(datum/ask_sequence/admin/vv_value/asked)
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", asked.pick_params)
 
-	var/list/fancytypes = make_types_fancy(types)
+/// The direction a number reads as, said to the admin ("If a direction, direction is: ...").
+/client/proc/vv_say_direction(value)
+	var/dir_text = ""
+	if(value > 0 && value < 16)
+		if(value & 1)
+			dir_text += "NORTH"
+		if(value & 2)
+			dir_text += "SOUTH"
+		if(value & 4)
+			dir_text += "EAST"
+		if(value & 8)
+			dir_text += "WEST"
 
-	for(var/fancytype in fancytypes) //swap the assoication
-		types[fancytypes[fancytype]] = fancytype
+	if(dir_text)
+		to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
 
-	var/things = get_all_of_type(type, subtypes)
+// ---------------------------------------------------------------- adding to a list
 
-	var/i = 0
-	for(var/thing in things)
-		var/datum/D = thing
-		i++
-		//try one of 3 methods to shorten the type text:
-		// fancy type,
-		// fancy type with the base type removed from the begaining,
-		// the type with the base type removed from the begaining
-		var/fancytype = types[D.type]
-		if (findtext(fancytype, types[type]))
-			fancytype = copytext(fancytype, length(types[type]) + 1)
-		var/shorttype = copytext("[D.type]", length("[type]") + 1)
-		if (length_char(shorttype) > length_char(fancytype))
-			shorttype = fancytype
-		if (!length(shorttype))
-			shorttype = "/"
+/// View Variables adding an entry to a list. `target_list` is the list, `objectvar` the var of the subject that holds it (null subject: a loose list).
+/datum/ask_sequence/admin/vv_list_add
+	var/list/target_list
+	var/original_name
+	var/objectvar
+	var/has_object = FALSE
+	var/associate
 
-		.["[D]([shorttype])[REF(D)]#[i]"] = D
+/datum/ask_sequence/admin/vv_list_add/initial_steps()
+	return list(
+		TYPE_PROC_REF(/client, vv_add_pick),
+		TYPE_PROC_REF(/client, vv_add_parse),
+		question_step("associate", /datum/prompt/choice, question = "Would you like to associate a value with the list entry?", choices = list("Yes","No"), buttons = TRUE),
+		TYPE_PROC_REF(/client, vv_add_assoc_pick),
+		TYPE_PROC_REF(/client, vv_add_assoc_parse))
 
-/// The associated value, wrapped as list("value" = ...), or null when cancelled or still asking.
-/client/proc/mod_list_add_ass(atom/O, key = "assoc") //hehe
-	var/list/L = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = key)
-	var/class = L["class"]
-	if (!class)
-		return
-	var/var_value = L["value"]
+/client/proc/mod_list_add(list/L, atom/O, original_name, objectvar)
+	ask_admin(/datum/ask_sequence/admin/vv_list_add, O, null, PROC_REF(vv_add_apply), list("target_list" = L, "original_name" = original_name, "objectvar" = objectvar, "has_object" = !isnull(O)))
 
+/client/proc/vv_add_pick(datum/ask_sequence/admin/vv_list_add/asked)
+	if(asked.has_object && !asked.subject())
+		return ASK_STOP
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("restricted_classes" = list(VV_RESTORE_DEFAULT)))
+
+/client/proc/vv_add_parse(datum/ask_sequence/admin/vv_list_add/asked)
+	var/list/picked = asked.get("picked")
+	var/class = picked["class"]
+	if(!class)
+		return ASK_STOP
 	if(class == VV_TEXT || class == VV_MESSAGE)
-		var/list/varsvars = vv_parse_text(O, var_value, key)
-		if(isnull(varsvars))
-			return
-		for(var/V in varsvars)
-			var_value = replacetext(var_value,"\[[V]]","[O.vars[V]]")
+		return asked.ask_child(/datum/ask_sequence/picker/parse_vars, "parsed", list("source_w" = rerun_wrap(asked.subject()), "source_text" = picked["value"]))
+	return null
 
-	return list("value" = var_value)
+/client/proc/vv_add_assoc_pick(datum/ask_sequence/admin/vv_list_add/asked)
+	if(asked.get("associate") != "Yes")
+		return null
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "assoc_picked", list("restricted_classes" = list(VV_RESTORE_DEFAULT)))
 
-/client/proc/mod_list_add(list/L, atom/O, original_name, objectvar, key = "add")
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(mod_list_add), args)
-	var/list/LL = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:value")
-	var/class = LL["class"]
-	if (!class)
-		return
-	var/var_value = LL["value"]
-
+/client/proc/vv_add_assoc_parse(datum/ask_sequence/admin/vv_list_add/asked)
+	if(asked.get("associate") != "Yes")
+		return null
+	var/list/picked = asked.get("assoc_picked")
+	var/class = picked["class"]
+	if(!class)
+		return ASK_STOP
 	if(class == VV_TEXT || class == VV_MESSAGE)
-		var/list/varsvars = vv_parse_text(O, var_value, key)
-		if(isnull(varsvars))
-			return
-		for(var/V in varsvars)
-			var_value = replacetext(var_value,"\[[V]]","[O.vars[V]]")
+		return asked.ask_child(/datum/ask_sequence/picker/parse_vars, "assoc_parsed", list("source_w" = rerun_wrap(asked.subject()), "source_text" = picked["value"]))
+	return null
 
-	var/associate = flow_ask(mob, "[key]:associate", /datum/prompt/choice, question = "Would you like to associate a value with the list entry?", choices = list("Yes","No"), buttons = TRUE)
-	if(isnull(associate))
+/client/proc/vv_add_apply(datum/ask_sequence/admin/vv_list_add/asked)
+	var/atom/O = asked.subject()
+	if(asked.has_object && !O)
 		return
+	var/list/L = asked.target_list
+	var/original_name = asked.original_name
+	var/objectvar = asked.objectvar
+	var/list/picked = asked.get("picked")
+	var/class = picked["class"]
+	var/var_value = picked["value"]
+	if(class == VV_TEXT || class == VV_MESSAGE)
+		var_value = vv_substitute_vars(var_value, asked.get("parsed"), O)
+
 	var/list/assoc
-	if(associate == "Yes")
-		assoc = mod_list_add_ass(O, "[key]:assoc") //hehe
-		if(!assoc)
-			return
+	if(asked.get("associate") == "Yes")
+		var/list/assoc_picked = asked.get("assoc_picked")
+		var/assoc_value = assoc_picked["value"]
+		if(assoc_picked["class"] == VV_TEXT || assoc_picked["class"] == VV_MESSAGE)
+			assoc_value = vv_substitute_vars(assoc_value, asked.get("assoc_parsed"), O)
+		assoc = list("value" = assoc_value)
 
 	if (O)
 		L = L.Copy()
@@ -122,20 +119,60 @@ GLOBAL_PROTECT(VVpixelmovement)
 	log_admin("[key_name(src)] modified [original_name]'s [objectvar]: ADDED=[var_value]")
 	message_admins("[key_name_admin(src)] modified [original_name]'s [objectvar]: ADDED=[var_value]")
 
-/client/proc/mod_list(list/L, atom/O, original_name, objectvar, index, autodetect_class = FALSE, key = "list")
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(mod_list), args)
+// ---------------------------------------------------------------- editing a list
+
+/// View Variables editing one entry of a list (or choosing the entry first). `target_list` is the list, `objectvar` the var of the subject that holds it (null subject: a loose
+/// list), `index` the entry when it is known.
+/datum/ask_sequence/admin/vv_list
+	var/list/target_list
+	var/original_name
+	var/objectvar
+	var/has_object = FALSE
+	var/index
+	var/autodetect_class = FALSE
+	var/list/names
+	var/long
+	var/entry
+	var/which
+	var/assoc = 0
+	var/assoc_key
+	var/old_assoc_value
+	var/original_var
+
+/datum/ask_sequence/admin/vv_list/initial_steps()
+	return list(
+		TYPE_PROC_REF(/client, vv_list_ask_long),
+		TYPE_PROC_REF(/client, vv_list_read_long),
+		TYPE_PROC_REF(/client, vv_list_ask_entry),
+		TYPE_PROC_REF(/client, vv_list_read_entry),
+		question_step("which", /datum/prompt/choice, question = "Do you want to edit the key or its assigned value?", title = "Associated List", choices = list("Key", "Assigned Value", "Cancel"), buttons = TRUE),
+		TYPE_PROC_REF(/client, vv_list_prepare),
+		TYPE_PROC_REF(/client, vv_list_parse))
+
+/client/proc/mod_list(list/L, atom/O, original_name, objectvar, index, autodetect_class = FALSE)
 	if(!admin_require(src, R_VAREDIT, "mod_list", TRUE))
 		return
 	if(!istype(L, /list))
 		to_chat(src, "Not a List.", confidential = TRUE)
 		return
+	ask_admin(/datum/ask_sequence/admin/vv_list, O, null, PROC_REF(vv_list_apply), list("target_list" = L, "original_name" = original_name, "objectvar" = objectvar, "has_object" = !isnull(O), "index" = index, "autodetect_class" = autodetect_class))
 
-	if(L.len > 1000)
-		var/confirm = flow_ask(mob, "[key]:long", /datum/prompt/choice, question = "The list you're trying to edit is very long, continuing may crash the server.", title = "Warning", choices = list("Continue", "Abort"), buttons = TRUE)
-		if(confirm != "Continue")
-			return
+/client/proc/vv_list_ask_long(datum/ask_sequence/admin/vv_list/asked)
+	if(asked.has_object && !asked.subject())
+		return ASK_STOP
+	if(!admin_require(src, R_VAREDIT, "mod_list", TRUE))
+		return ASK_STOP
+	if(length(asked.target_list) > 1000)
+		return question_step("long", /datum/prompt/choice, question = "The list you're trying to edit is very long, continuing may crash the server.", title = "Warning", choices = list("Continue", "Abort"), buttons = TRUE)
+	return null
 
+/client/proc/vv_list_read_long(datum/ask_sequence/admin/vv_list/asked)
+	if(length(asked.target_list) > 1000 && asked.long != "Continue")
+		return ASK_STOP
+	return null
+
+/// The entries of the list by name, for picking one.
+/client/proc/vv_list_entry_names(list/L)
 	var/is_normal_list = IS_NORMAL_LIST(L)
 	var/list/names = list()
 	for (var/i in 1 to L.len)
@@ -146,57 +183,75 @@ GLOBAL_PROTECT(VVpixelmovement)
 		if (value == null)
 			value = "null"
 		names["#[i] [entry_key] = [value]"] = i
-	if (!index)
-		var/variable = flow_ask(mob, "[key]:var", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names + "(ADD VAR)" + "(CLEAR NULLS)" + "(CLEAR DUPES)" + "(SHUFFLE)")
+	return names
 
-		if(variable == null)
-			return
+/client/proc/vv_list_ask_entry(datum/ask_sequence/admin/vv_list/asked)
+	if(asked.index)
+		return null
+	asked.names = vv_list_entry_names(asked.target_list)
+	return question_step("entry", /datum/prompt/choice, question = "Which var?", title = "Var", choices = asked.names + "(ADD VAR)" + "(CLEAR NULLS)" + "(CLEAR DUPES)" + "(SHUFFLE)")
+
+/// The entry picked, or one of the whole-list actions (done at once; they end the questions).
+/client/proc/vv_list_read_entry(datum/ask_sequence/admin/vv_list/asked)
+	if(!asked.index)
+		var/atom/O = asked.subject()
+		var/list/L = asked.target_list
+		var/original_name = asked.original_name
+		var/objectvar = asked.objectvar
+		var/variable = asked.entry
 
 		if(variable == "(ADD VAR)")
-			mod_list_add(L, O, original_name, objectvar, "[key]:add")
-			return
+			mod_list_add(L, O, original_name, objectvar)
+			return ASK_STOP
 
 		if(variable == "(CLEAR NULLS)")
 			L = L.Copy()
 			list_clear_nulls(L)
 			if (!O.vv_edit_var(objectvar, L))
 				to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
-				return
+				return ASK_STOP
 			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: CLEAR NULLS")
 			log_admin("[key_name(src)] modified [original_name]'s [objectvar]: CLEAR NULLS")
 			message_admins("[key_name_admin(src)] modified [original_name]'s list [objectvar]: CLEAR NULLS")
-			return
+			return ASK_STOP
 
 		if(variable == "(CLEAR DUPES)")
 			L = uniqueList(L)
 			if (!O.vv_edit_var(objectvar, L))
 				to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
-				return
+				return ASK_STOP
 			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: CLEAR DUPES")
 			log_admin("[key_name(src)] modified [original_name]'s [objectvar]: CLEAR DUPES")
 			message_admins("[key_name_admin(src)] modified [original_name]'s list [objectvar]: CLEAR DUPES")
-			return
+			return ASK_STOP
 
 		if(variable == "(SHUFFLE)")
 			L = shuffle(L)
 			if (!O.vv_edit_var(objectvar, L))
 				to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
-				return
+				return ASK_STOP
 			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: SHUFFLE")
 			log_admin("[key_name(src)] modified [original_name]'s [objectvar]: SHUFFLE")
 			message_admins("[key_name_admin(src)] modified [original_name]'s list [objectvar]: SHUFFLE")
-			return
+			return ASK_STOP
 
-		index = names[variable]
+		asked.index = asked.names[variable]
 
-	var/assoc_key
-	if (index == null)
-		return
+	if (asked.index == null)
+		return ASK_STOP
+	return null
+
+/// The entry and which part of it are known: says what it holds and asks for the new value.
+/client/proc/vv_list_prepare(datum/ask_sequence/admin/vv_list/asked)
+	if (isnull(asked.which) || asked.which == "Cancel")
+		return ASK_STOP
+	var/list/L = asked.target_list
+	var/index = asked.index
+	var/is_normal_list = IS_NORMAL_LIST(L)
+	var/objectvar = asked.objectvar
 	var/assoc = 0
-	var/prompt = flow_ask(mob, "[key]:which", /datum/prompt/choice, question = "Do you want to edit the key or its assigned value?", title = "Associated List", choices = list("Key", "Assigned Value", "Cancel"), buttons = TRUE)
-	if (isnull(prompt) || prompt == "Cancel")
-		return
-	if (prompt == "Assigned Value")
+	var/assoc_key
+	if (asked.which == "Assigned Value")
 		assoc = 1
 		assoc_key = L[index]
 	var/default
@@ -221,42 +276,55 @@ GLOBAL_PROTECT(VVpixelmovement)
 	to_chat(src, "Variable contains: [variable]", confidential = TRUE)
 
 	if(default == VV_NUM)
-		var/dir_text = ""
-		var/tdir = variable
-		if(tdir > 0 && tdir < 16)
-			if(tdir & 1)
-				dir_text += "NORTH"
-			if(tdir & 2)
-				dir_text += "SOUTH"
-			if(tdir & 4)
-				dir_text += "EAST"
-			if(tdir & 8)
-				dir_text += "WEST"
+		vv_say_direction(variable)
 
-		if(dir_text)
-			to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
+	asked.assoc = assoc
+	asked.assoc_key = assoc_key
+	asked.old_assoc_value = old_assoc_value
+	asked.original_var = variable
 
-	var/original_var = variable
+	if(asked.autodetect_class)
+		if (default == VV_TEXT)
+			default = VV_MESSAGE
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("default_class" = default, "current_value" = variable, "restricted_classes" = list(VV_RESTORE_DEFAULT), "extra_classes" = list(VV_LIST, "DELETE FROM LIST")))
+
+/client/proc/vv_list_parse(datum/ask_sequence/admin/vv_list/asked)
+	var/list/picked = asked.get("picked")
+	var/class = picked["class"]
+	if (!class)
+		return ASK_STOP
+	if(class == VV_MESSAGE)
+		class = VV_TEXT
+	if(class == VV_TEXT)
+		return asked.ask_child(/datum/ask_sequence/picker/parse_vars, "parsed", list("source_w" = rerun_wrap(asked.subject()), "source_text" = picked["value"]))
+	return null
+
+/client/proc/vv_list_apply(datum/ask_sequence/admin/vv_list/asked)
+	var/atom/O = asked.subject()
+	if(asked.has_object && !O)
+		return
+	var/list/L = asked.target_list
+	var/index = asked.index
+	var/objectvar = asked.objectvar
+	var/original_name = asked.original_name
+	var/assoc = asked.assoc
+	var/assoc_key = asked.assoc_key
+	var/old_assoc_value = asked.old_assoc_value
+	var/original_var = asked.original_var
+	var/is_normal_list = IS_NORMAL_LIST(L)
+	var/list/picked = asked.get("picked")
+	var/class = picked["class"]
+	var/new_var = picked["value"]
 
 	if (O)
 		L = L.Copy()
-	var/class
-	if(autodetect_class)
-		if (default == VV_TEXT)
-			default = VV_MESSAGE
-		class = default
-	var/list/LL = vv_get_value(default_class = default, current_value = original_var, restricted_classes = list(VV_RESTORE_DEFAULT), extra_classes = list(VV_LIST, "DELETE FROM LIST"), key = "[key]:value")
-	class = LL["class"]
-	if (!class)
-		return
-	var/new_var = LL["value"]
 
 	if(class == VV_MESSAGE)
 		class = VV_TEXT
 
 	switch(class) //Spits a runtime error if you try to modify an entry in the contents list. Dunno how to fix it, yet.
 		if(VV_LIST)
-			mod_list(variable, O, original_name, objectvar, key = "[key]>")
+			mod_list(asked.original_var, O, original_name, objectvar)
 			return
 
 		if("DELETE FROM LIST")
@@ -271,11 +339,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 			return
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(O, new_var, key)
-			if(isnull(varsvars))
-				return
-			for(var/V in varsvars)
-				new_var = replacetext(new_var,"\[[V]]","[O.vars[V]]")
+			new_var = vv_substitute_vars(new_var, asked.get("parsed"), O)
 
 	if(is_normal_list)
 		if(assoc)
@@ -304,15 +368,26 @@ GLOBAL_PROTECT(VVpixelmovement)
 			return FALSE
 	return TRUE
 
-/client/proc/modify_variables(atom/O, param_var_name = null, autodetect_class = 0)
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(modify_variables), args)
+// ---------------------------------------------------------------- editing a variable
+
+/// View Variables editing one variable of a datum (the subject). `variable` is the var when the starter named it. `edit_displays`: the open View Variables window's name,
+/// dir, ckey and real_name rows are refreshed after the edit.
+/datum/ask_sequence/admin/vv_edit
+	var/variable
+	var/autodetect_class = 0
+	var/edit_displays = FALSE
+
+/datum/ask_sequence/admin/vv_edit/initial_steps()
+	return list(
+		TYPE_PROC_REF(/client, vv_edit_ask_var),
+		TYPE_PROC_REF(/client, vv_edit_pick),
+		TYPE_PROC_REF(/client, vv_edit_parse))
+
+/client/proc/modify_variables(atom/O, param_var_name = null, autodetect_class = 0, edit_displays = FALSE)
 	if(!admin_require(src, R_VAREDIT, "modify_variables", TRUE))
 		return
 
-	var/class
 	var/variable
-	var/var_value
 
 	if(param_var_name)
 		if(!(param_var_name in O.vars))
@@ -322,23 +397,34 @@ GLOBAL_PROTECT(VVpixelmovement)
 			return
 		variable = param_var_name
 
-	else
-		var/list/names = list()
-		for (var/V in O.vars)
-			names += V
+	ask_admin(/datum/ask_sequence/admin/vv_edit, O, null, PROC_REF(vv_edit_apply), list("variable" = variable, "autodetect_class" = autodetect_class, "edit_displays" = edit_displays))
 
-		names = sortList(names)
+/client/proc/vv_edit_ask_var(datum/ask_sequence/admin/vv_edit/asked)
+	var/datum/O = asked.subject()
+	if(!O || !admin_require(src, R_VAREDIT, "modify_variables", TRUE))
+		return ASK_STOP
+	if(asked.variable)
+		return null
+	var/list/names = list()
+	for (var/V in O.vars)
+		names += V
 
-		variable = flow_ask(mob, "edit:var", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names)
-		if(!variable)
-			return
+	names = sortList(names)
+
+	return question_step("variable", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names)
+
+/client/proc/vv_edit_pick(datum/ask_sequence/admin/vv_edit/asked)
+	var/datum/O = asked.subject()
+	var/variable = asked.variable
+	if(!O || !variable)
+		return ASK_STOP
 
 	if(!O.can_vv_get(variable))
-		return
+		return ASK_STOP
 
-	var_value = O.vars[variable]
+	var/var_value = O.vars[variable]
 	if(!vv_varname_lockcheck(variable))
-		return
+		return ASK_STOP
 
 	var/default = vv_get_class(variable, var_value)
 
@@ -350,28 +436,32 @@ GLOBAL_PROTECT(VVpixelmovement)
 	to_chat(src, "Variable contains: [var_value]", confidential = TRUE)
 
 	if(default == VV_NUM)
-		var/dir_text = ""
-		if(var_value > 0 && var_value < 16)
-			if(var_value & 1)
-				dir_text += "NORTH"
-			if(var_value & 2)
-				dir_text += "SOUTH"
-			if(var_value & 4)
-				dir_text += "EAST"
-			if(var_value & 8)
-				dir_text += "WEST"
+		vv_say_direction(var_value)
 
-		if(dir_text)
-			to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
-
-	if(autodetect_class && default != VV_NULL)
+	var/class
+	if(asked.autodetect_class && default != VV_NULL)
 		if (default == VV_TEXT)
 			default = VV_MESSAGE
 		class = default
 
-	var/list/value = vv_get_value(class, default, var_value, extra_classes = list(VV_LIST), var_name = variable, key = "edit:value")
-	class = value["class"]
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("class" = class, "default_class" = default, "current_value" = var_value, "extra_classes" = list(VV_LIST), "var_name" = variable))
 
+/client/proc/vv_edit_parse(datum/ask_sequence/admin/vv_edit/asked)
+	var/list/picked = asked.get("picked")
+	if (!picked["class"])
+		return ASK_STOP
+	if(picked["class"] == VV_MESSAGE || picked["class"] == VV_TEXT)
+		return asked.ask_child(/datum/ask_sequence/picker/parse_vars, "parsed", list("source_w" = rerun_wrap(asked.subject()), "source_text" = picked["value"]))
+	return null
+
+/client/proc/vv_edit_apply(datum/ask_sequence/admin/vv_edit/asked)
+	var/atom/O = asked.subject()
+	if(!O || !admin_require(src, R_VAREDIT, "modify_variables", TRUE))
+		return
+	var/variable = asked.variable
+	var/var_value = O.vars[variable]
+	var/list/value = asked.get("picked")
+	var/class = value["class"]
 	if (!class)
 		return
 	var/var_new = value["value"]
@@ -384,21 +474,17 @@ GLOBAL_PROTECT(VVpixelmovement)
 	switch(class)
 		if(VV_LIST)
 			if(!islist(var_value))
-				mod_list(list(), O, original_name, variable, key = "edit:newlist")
+				mod_list(list(), O, original_name, variable)
 				return
 
-			mod_list(var_value, O, original_name, variable, key = "edit:list")
+			mod_list(var_value, O, original_name, variable)
 			return
 
 		if(VV_RESTORE_DEFAULT)
 			var_new = initial(O.vars[variable])
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(O, var_new, "edit")
-			if(isnull(varsvars))
-				return
-			for(var/V in varsvars)
-				var_new = replacetext(var_new,"\[[V]]","[O.vars[V]]")
+			var_new = vv_substitute_vars(var_new, asked.get("parsed"), O)
 
 	if (O.vv_edit_var(variable, var_new) == FALSE)
 		to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
@@ -409,7 +495,26 @@ GLOBAL_PROTECT(VVpixelmovement)
 	var/msg = "[key_name_admin(src)] modified [original_name]'s [variable] from [var_value] to [var_new]"
 	message_admins(msg)
 	admin_ticket_log(O, msg)
-	return TRUE
+	if(asked.edit_displays)
+		vv_edit_displays(O, variable)
+
+/// The View Variables rows an edit of `target_var` changes the text of.
+/client/proc/vv_edit_displays(datum/target, target_var)
+	switch(target_var)
+		if("name")
+			vv_update_display(target, "name", "[target]")
+		if("dir")
+			var/atom/A = target
+			if(istype(A))
+				vv_update_display(target, "dir", dir2text(A.dir) || A.dir)
+		if("ckey")
+			var/mob/living/L = target
+			if(istype(L))
+				vv_update_display(target, "ckey", L.ckey || "No ckey")
+		if("real_name")
+			var/mob/living/L = target
+			if(istype(L))
+				vv_update_display(target, "real_name", L.real_name || "No real name")
 
 /// VV edit of a trait field (`@kind.field`): asks the new value and writes the holder's own copy with set_trait(), so the trait's key is
 /// published and its readers follow.
@@ -417,9 +522,26 @@ GLOBAL_PROTECT(VVpixelmovement)
 	var/list/trait_field = type_trait_field_named(O, field_name)
 	if(!trait_field)
 		return
+	ask_admin(/datum/ask_sequence/admin/vv_edit, O, list(TYPE_PROC_REF(/client, vv_trait_pick)), PROC_REF(vv_trait_apply), list("variable" = field_name))
+
+/client/proc/vv_trait_pick(datum/ask_sequence/admin/vv_edit/asked)
+	var/datum/O = asked.subject()
+	var/field_name = asked.variable
+	var/list/trait_field = O ? type_trait_field_named(O, field_name) : null
+	if(!trait_field)
+		return ASK_STOP
 	var/old_value = type_trait_of(O, trait_field[1]).vars[trait_field[2]]
 	var/default = vv_get_class(field_name, old_value)
-	var/list/value = vv_get_value(default_class = default, current_value = old_value, var_name = field_name, key = "edit:trait")
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("default_class" = default, "current_value" = old_value, "var_name" = field_name))
+
+/client/proc/vv_trait_apply(datum/ask_sequence/admin/vv_edit/asked)
+	var/datum/O = asked.subject()
+	var/field_name = asked.variable
+	var/list/trait_field = O ? type_trait_field_named(O, field_name) : null
+	if(!trait_field)
+		return
+	var/old_value = type_trait_of(O, trait_field[1]).vars[trait_field[2]]
+	var/list/value = asked.get("picked")
 	if(!value["class"])
 		return
 	var/new_value = value["value"]
@@ -432,4 +554,3 @@ GLOBAL_PROTECT(VVpixelmovement)
 	var/msg = "[key_name_admin(src)] modified [O]'s [field_name] from [old_value] to [new_value]"
 	message_admins(msg)
 	admin_ticket_log(O, msg)
-	return TRUE

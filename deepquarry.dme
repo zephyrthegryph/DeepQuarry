@@ -2268,6 +2268,7 @@
 #include "code\modules\admin\view_variables\modify_variables.dm"
 #include "code\modules\admin\view_variables\nobody_wants_to_learn_matrix_math.dm"
 #include "code\modules\admin\view_variables\particle_editor.dm"
+#include "code\modules\admin\view_variables\pickers.dm"
 #include "code\modules\admin\view_variables\reference_tracking.dm"
 #include "code\modules\admin\view_variables\tag_datum.dm"
 #include "code\modules\admin\view_variables\topic.dm"

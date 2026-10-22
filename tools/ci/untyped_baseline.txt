@@ -105,7 +105,6 @@ call	code/datums/mind.dm	@/datum/mind::vantag_preference
 call	code/datums/mind.dm	@/datum/mind::directory_gendertag
 call	code/datums/mind.dm	@/datum/mind::directory_sexualitytag
 call	code/datums/native/system.dm	@/datum/system/native::current_dt
-call	code/datums/prompts/reruns.dm	@/datum/prompt_rerun::actor_w
 call	code/datums/prompts/sequence.dm	@/datum/ask_sequence::answerer_w
 call	code/datums/repositories/repository.dm	@/datum/cache_entry::timestamp
 call	code/datums/status_effects/_status_effect.dm	@/datum/status_effect::duration

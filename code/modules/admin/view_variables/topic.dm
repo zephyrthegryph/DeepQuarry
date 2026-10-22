@@ -4,10 +4,8 @@
 // that calls the /client proc of the same name, which takes the link's values as typed parameters.
 
 /// Every `_src_=vars` href, and server-side callers opening VV (`trusted`: a tgui panel's own
-/// act, which carries no href token). Its questions re-run it (prompt_flow(), prompt_helpers.dm).
+/// act, which carries no href token).
 /client/proc/vv_topic(list/href_list, trusted = FALSE)
-	if(!GLOB.prompt_flow)
-		return prompt_flow(src, PROC_REF(vv_topic), args)
 	if(!href_list || !check_rights_for(src, R_VAREDIT))
 		return
 	if(!trusted && !holder.CheckAdminHref(null, href_list, mob))
@@ -136,17 +134,18 @@
 	var/mob/living/L = href_mobtodamage
 	if(!L?.body)
 		return
-	var/log_msg = L.vv_adjust_body(src, href_adjustbody)
-	if(!log_msg)
-		return
+	L.vv_adjust_body(src, href_adjustbody)
+	return TRUE
+
+/// The body editor did something to `L` (`log_msg` says what): the admins are told and the open View Variables window follows.
+/client/proc/vv_body_adjusted(mob/living/L, log_msg)
 	if(QDELETED(L))
-		to_chat(user, "Mob doesn't exist anymore", confidential = TRUE)
+		to_chat(mob, "Mob doesn't exist anymore", confidential = TRUE)
 		return
-	log_msg = "[key_name(user)] [log_msg] on [key_name(L)]"
+	log_msg = "[key_name(mob)] [log_msg] on [key_name(L)]"
 	message_admins("[log_msg] ([ADMIN_LOOKUPFLW(L)])")
 	log_admin(log_msg)
 	admin_ticket_log(L, "<font color='blue'>[log_msg]</font>")
 	vv_update_display(L, "vitality", "[round(L.vitality() * 100)]%")
 	vv_update_display(L, "afflictions", "[LAZYLEN(L.body?.afflictions)]")
 	vv_update_display(L, "oxygen_debt", "[round(L.oxygen_debt(), 0.1)]")
-	return TRUE

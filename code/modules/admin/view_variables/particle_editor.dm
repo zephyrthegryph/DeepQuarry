@@ -174,23 +174,9 @@ CAPABILITIES(/datum/particle_editor)
 				var_value[3] = var_value[1]
 			var_value = generator(arglist(var_value))
 		if(P_DATA_ICON_ADD)
-			if(!GLOB.prompt_flow) // the icon questions re-run this action
-				return prompt_flow(src, PROC_REF(tgui_act), args)
-			var_value = pick_and_customize_icon(user, pick_only=TRUE)
-			if(!var_value)
-				return FALSE
-			var/list/new_values = list()
-			new_values += var_value
-			new_values[var_value] = 1
-			if(isicon(owner.icon))
-				new_values[owner.icon] = 1
-				owner.icon = new_values
-			else if(islist(owner.icon))
-				owner.icon[var_value] = 1
-			else
-				owner.icon = new_values
-			target().particles.datum_flags |= DF_VAR_EDITED
-			return TRUE
+			// the icon questions are a sequence of their own (the icon is added when they are answered)
+			ask_sequence_begin(src, /datum/ask_sequence/picker/icon_pick, user, null, null, PROC_REF(icon_added), null, null, list("pick_only" = TRUE))
+			return FALSE
 		if(P_DATA_ICON_REMOVE)
 			for(var/file in owner.icon)
 				if("[file]" == var_value)
@@ -221,6 +207,25 @@ CAPABILITIES(/datum/particle_editor)
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/particle_editor/proc/target() as /atom/movable
 	return target
+
+/// The icon questions of an "add icon" edit are answered.
+/datum/particle_editor/proc/icon_added(datum/ask_sequence/picker/icon_pick/asked)
+	var/var_value = asked.get("result")
+	if(!var_value || !target())
+		return
+	var/particles/owner = target().particles
+	var/list/new_values = list()
+	new_values += var_value
+	new_values[var_value] = 1
+	if(isicon(owner.icon))
+		new_values[owner.icon] = 1
+		owner.icon = new_values
+	else if(islist(owner.icon))
+		owner.icon[var_value] = 1
+	else
+		owner.icon = new_values
+	target().particles.datum_flags |= DF_VAR_EDITED
+	SStgui.update_uis(src)
 
 /datum/particle_editor/proc/apply_particle_type(new_type)
 	target().particles = new new_type
