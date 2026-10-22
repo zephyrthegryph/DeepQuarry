@@ -53,3 +53,6 @@ code/modules/unit_tests/_unit_tests.dm merge=union
 ## Shrink-only ratchet baselines: both sides only drop rows / lower ceilings, so merge to the intersection (tools/ci/baseline_merge_driver.sh;
 ## the driver is supplied by tools/dq_git_safe.sh, which every merge tool sources; `git merge` by hand: git config merge.dq-baseline.driver "bash tools/ci/baseline_merge_driver.sh %O %A %B %P").
 tools/ci/*_baseline.txt merge=dq-baseline
+
+# Diagnostics corpus case whose bytes are the point: a backslash before CRLF inside a string.
+tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf.dm -text
