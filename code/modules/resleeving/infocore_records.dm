@@ -4,7 +4,6 @@
 ////////////////////////////////
 
 /mob/living/carbon/human/var/resleeve_lock
-/mob/living/carbon/human/var/changeling_locked
 /mob/living/carbon/human/var/original_player
 
 /////// Mind-backup record ///////

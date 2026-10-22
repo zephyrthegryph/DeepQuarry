@@ -183,7 +183,7 @@ CAPABILITIES(/obj/spellbutton)
 	if(core)
 		var/charge_status = "[core.energy]/[core.max_energy] ([round( (core.energy / core.max_energy) * 100)]%) \
 		([round(core.energy_delta)]/s)"
-		var/instability_delta = instability - last_instability
+		var/instability_delta = instability - sparse_get_or(src, last_instability, 0)
 		var/instability_status = "[src.instability] ([round(instability_delta, 0.1)]/s)"
 		. += "Core charge: [charge_status]"
 		. += "User instability: [instability_status]"

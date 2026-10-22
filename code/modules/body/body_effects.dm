@@ -124,7 +124,6 @@
 	/// names a `body_effect` timer slot (body_effect_after()); the slot owns the timer. Lazy.
 	var/list/body_effect_timers
 	/// Next timed-stack serial (names only, never a timer id).
-	var/tmp/body_effect_serial = 0
 	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
 	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
@@ -222,7 +221,9 @@
 
 /// A new timed stack of `path`: its name, scheduled to expire after `duration`.
 /mob/living/proc/body_effect_new_stack(datum/body_effect/def, path, duration)
-	var/name = "[path]#[++body_effect_serial]"
+	var/serial = sparse_get_or(src, body_effect_serial, 0) + 1
+	sparse_set(src, body_effect_serial, serial)
+	var/name = "[path]#[serial]"
 	body_effect_after(def, name, duration, PROC_REF(body_effect_expired), path)
 	return name
 

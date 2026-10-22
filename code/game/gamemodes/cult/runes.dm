@@ -272,13 +272,13 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	act_message(user, null, MSG_SELF(span_danger("The blood starts flowing from the rune and into your frail mortal body. You feel... empowered.")), \
 		MSG_OTHERS(span_danger("Blood flows from the rune into %U%!")), \
 		MSG_BLIND(span_warning("You hear a liquid flowing.")))
-	if(user.bhunger)
-		user.bhunger = max(user.bhunger-2*drain,0)
+	if(sparse_get_or(user, bhunger, 0))
+		sparse_set(user, bhunger, max(sparse_get_or(user, bhunger, 0)-2*drain,0))
 	if(drain>=50)
 		act_message(user, null, MSG_SELF(span_danger("...but it wasn't nearly enough. You crave, crave for more. The hunger consumes you from within.")), \
 			MSG_OTHERS(span_danger("%U%'s eyes give off eerie red glow!")), \
 			MSG_BLIND(span_warning("You hear a heartbeat.")))
-		user.bhunger += drain
+		sparse_set(user, bhunger, sparse_get_or(user, bhunger, 0) + (drain))
 		after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
 		return
 	user.mend(TREAT_TISSUE_REPAIR, drain%5)
@@ -288,10 +288,10 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /// Blood hunger bites every 5 seconds until it is gone.
 /proc/cult_blood_hunger(mob/living/user)
-	if(user.bhunger <= 0)
+	if(sparse_get_or(user, bhunger, 0) <= 0)
 		return
 	user.injure(INJURY_BLUNT, 3)
-	user.bhunger--
+	sparse_set(user, bhunger, sparse_get_or(user, bhunger, 0) - 1)
 	after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
 
 /// Drained blood mends 5 at a time, 0.2 seconds apart.
@@ -460,7 +460,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			MSG_OTHERS(span_warning("%U%'s eyes glow blue as [L.p_they()] freeze[L.p_s()] in place, absolutely motionless.")), \
 			MSG_BLIND(span_warning("You hear only complete silence for a moment.")))
 		announce_ghost_joinleave(user.ghostize(1), 1, "You feel that they had to use some [pick("dark", "black", "blood", "forgotten", "forbidden")] magic to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place!")
-		L.ajourn = 1
+		sparse_set(L, ajourn, 1)
 		cult_ajourney_tick(L)
 		return
 	return fizzle(user)
@@ -468,7 +468,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /// The body left behind on an astral journey hurts every 10 seconds until its owner returns.
 /proc/cult_ajourney_tick(mob/living/carbon/human/L)
 	if(L.key)
-		L.ajourn=0
+		sparse_set(L, ajourn, 0)
 		return
 	L.injure(INJURY_BLUNT, 3)
 	after(L, 10 SECONDS, GLOBAL_PROC_REF(cult_ajourney_tick), with = list(L))

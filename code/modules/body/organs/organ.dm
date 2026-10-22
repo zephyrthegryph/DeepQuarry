@@ -158,7 +158,7 @@
 	saturate_damage()
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
-		owner.can_defib = FALSE
+		sparse_set(owner, can_defib, FALSE)
 		owner.death()
 	loose_refresh()
 

@@ -10,7 +10,7 @@
 	bystander.set_m_intent(I_RUN)
 	km_synthetic_click(actor, button)
 	TEST_ASSERT_EQUAL(actor.m_intent, I_WALK, "the actual native screen click acts on its supplied actor")
-	TEST_ASSERT_EQUAL(actor.m_int, "14,14", "the native click updates the actor's actual movement selection state")
+	TEST_ASSERT_EQUAL(sparse_get(actor, m_int), "14,14", "the native click updates the actor's actual movement selection state")
 	TEST_ASSERT_EQUAL(bystander.m_intent, I_RUN, "the native screen click leaves a separate mob's intent unchanged")
 	button.name = I_RUN
 	TEST_ASSERT_EQUAL(button.click_with_actor(actor, null, null, null), 1, "the actor-based path preserves the named control return value")
@@ -18,7 +18,7 @@
 	button.name = "face"
 	button.click_with_actor(actor, null, null, null)
 	TEST_ASSERT_EQUAL(actor.m_intent, "face", "the actual actor-based control selects facing")
-	TEST_ASSERT_EQUAL(actor.m_int, "15,14", "the actual facing control updates its selection state")
+	TEST_ASSERT_EQUAL(sparse_get(actor, m_int), "15,14", "the actual facing control updates its selection state")
 	TEST_ASSERT_EQUAL(button.click_with_actor(null, null, null, null), 1, "an absent actor retains the native null-actor return")
 	TEST_ASSERT_EQUAL(actor.m_intent, "face", "an absent actor cannot change another mob's intent")
 

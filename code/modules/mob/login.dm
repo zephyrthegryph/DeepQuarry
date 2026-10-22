@@ -68,7 +68,7 @@
 	hud.vis_enabled = list()
 	client_screen_add(client, plane_holder.plane_masters)
 	if(GLOB.global_vantag_hud)
-		vantag_hud = TRUE
+		sparse_set(src, vantag_hud, TRUE)
 	recalculate_vis()
 
 	// AO support

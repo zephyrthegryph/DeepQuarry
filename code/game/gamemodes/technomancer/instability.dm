@@ -9,7 +9,6 @@
 
 
 /mob/living
-	var/last_instability = 0 // Used to calculate instability delta.
 	EXPIRY_DECLARE(last_instability_event) // most recent world.time that something bad happened due to instability.
 
 // Proc: adjust_instability()
@@ -61,7 +60,7 @@
 
 /mob/living/proc/life_instability(datum/seq_frame/life/F)
 	src.set_instability(between(0, round(src.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200))
-	src.last_instability = src.instability
+	sparse_set(src, last_instability, src.instability)
 
 	//This should cushon against really bad luck.
 	if(src.instability && ELAPSED(src, last_instability_event, CLOCK_WORLD) > 5 SECONDS && prob(50))

@@ -365,17 +365,17 @@
 /datum/unit_test/dq_life_alive_fact_skips_stages/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	var/cycle_before = H.breath_cycle
+	var/cycle_before = sparse_get_or(H, breath_cycle, 0)
 	seq_run_frame_now(H, LIFE_SEQ)
-	TEST_ASSERT_NOTEQUAL(H.breath_cycle, cycle_before, "a living human's breathing step should advance its breath cadence")
+	TEST_ASSERT_NOTEQUAL(sparse_get_or(H, breath_cycle, 0), cycle_before, "a living human's breathing step should advance its breath cadence")
 
 	H.death()
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "the human should be dead for the condition check")
 	seq_wake(H, LIFE_SEQ)
-	cycle_before = H.breath_cycle
+	cycle_before = sparse_get_or(H, breath_cycle, 0)
 	var/life_tick_before = H.life_tick
 	seq_run_frame_now(H, LIFE_SEQ)
-	TEST_ASSERT_EQUAL(H.breath_cycle, cycle_before, "a dead human must not run the alive-only breathing step")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, breath_cycle, 0), cycle_before, "a dead human must not run the alive-only breathing step")
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before + 1, "a dead human still runs the rest of its frame")
 	TEST_ASSERT(life_test_asleep(H, "life_breathing"), "a step a condition with reads (death) skips sleeps")
 
@@ -388,11 +388,11 @@
 	var/datum/seq_state/S = life_test_state(H)
 	seq_wake(H, LIFE_SEQ)
 	var/life_tick_before = H.life_tick
-	var/cycle_before = H.breath_cycle
+	var/cycle_before = sparse_get_or(H, breath_cycle, 0)
 	H.set_transforming(TRUE)
 	seq_run_frame_now(H, LIFE_SEQ)
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before, "a transforming human must not tick")
-	TEST_ASSERT_EQUAL(H.breath_cycle, cycle_before, "a transforming human must not breathe")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, breath_cycle, 0), cycle_before, "a transforming human must not breathe")
 	TEST_ASSERT(!S.asleep, "an aborted frame puts nothing to sleep")
 	H.set_transforming(FALSE)
 	life_test_place(H)
@@ -1166,7 +1166,7 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.germ_level = 0
-	H.germs_rolled_at = clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE
+	sparse_set(H, germs_rolled_at, clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE)
 	H.life_germs()
 	TEST_ASSERT(H.germ_level >= 5 && H.germ_level <= 7, "20 cycles at 30% should give 6 germs, gave [H.germ_level]")
 	var/datum/stasis_source = new

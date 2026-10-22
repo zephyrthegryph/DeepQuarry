@@ -21,7 +21,6 @@
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
 
-	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
@@ -133,7 +132,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 /mob/living/update_misc_tabs()
 	..()
-	if(get_rig_stats)
+	if(sparse_get_or(src, get_rig_stats, 0))
 		var/obj/item/rig/rig = get_rig()
 		if(rig)
 			RigPanel(rig)
@@ -2223,7 +2222,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set name = "Toggle Reagent Processing"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle reagent processing as synth."
-	synth_reag_processing = !synth_reag_processing
+	sparse_set(src, synth_reag_processing, !sparse_get_or(src, synth_reag_processing, TRUE))
 
 //Formally used from a paper, gave this to everyone.
 /mob/living/carbon/human/verb/create_area()

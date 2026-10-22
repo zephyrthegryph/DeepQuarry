@@ -19,13 +19,13 @@
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)
 	if(isliving(Obj))
 		var/mob/living/L = Obj
-		L.ventcrawl_layer = layer
+		sparse_set(L, ventcrawl_layer, layer)
 	. = ..()
 
 /obj/machinery/atmospherics/relaymove(mob/living/user, direction)
 	if(user.loc != src || !(direction & initialize_directions) || !IS_CARDINAL(direction)) //can't go in a way we aren't connecting to
 		return
-	ventcrawl_to(user,findConnecting(direction, user.ventcrawl_layer),direction)
+	ventcrawl_to(user,findConnecting(direction, sparse_get_or(user, ventcrawl_layer, 3)),direction)
 
 /obj/machinery/atmospherics/proc/ventcrawl_to(mob/living/user, obj/machinery/atmospherics/target_move, direction)
 	if(target_move)

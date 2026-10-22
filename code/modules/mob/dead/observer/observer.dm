@@ -284,7 +284,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(GLOB.prevent_respawns.Find(mind.name))
 		to_chat(src, span_warning("You already quit this round as this character, sorry!"))
 		return
-	if(mind.current.ajourn && mind.current.stat != DEAD) //check if the corpse is astral-journeying (it's client ghosted using a cultist rune).
+	if(sparse_get_or(mind.current, ajourn, 0) && mind.current.stat != DEAD) //check if the corpse is astral-journeying (it's client ghosted using a cultist rune).
 		var/found_rune
 		for(var/obj/effect/rune/R in mind.current.loc)   //whilst corpse is alive, we can only reenter the body if it's on the rune
 			if(R && R.word1 == GLOB.cultwords["hell"] && R.word2 == GLOB.cultwords["travel"] && R.word3 == GLOB.cultwords["self"]) // Found an astral journey rune.
@@ -293,7 +293,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		if(!found_rune)
 			to_chat(src, span_warning("The astral cord that ties your body and your spirit has been severed. You are likely to wander the realm beyond until your body is finally dead and thus reunited with you."))
 			return
-	mind.current.ajourn=0
+	sparse_set(mind.current, ajourn, 0)
 	bind_player(mind.current, key)
 	rel_clear(mind.current, nameof(/mob::teleop))
 	if(istype(mind.current.loc, /obj/structure/morgue))
