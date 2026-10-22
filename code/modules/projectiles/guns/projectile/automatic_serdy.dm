@@ -1422,11 +1422,11 @@ CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
 	var/is_picked_up = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
+	setup(PROC_REF(shotgun_pump_setup))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
-/obj/item/gun/projectile/shotgun/pump/Initialize(mapload)
-	. = ..()
+/obj/item/gun/projectile/shotgun/pump/proc/shotgun_pump_setup()
 	if(is64x32)
 		update_transform()
 

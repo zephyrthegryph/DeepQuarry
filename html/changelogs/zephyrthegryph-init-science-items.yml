@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved Initialize() bodies in hydroponics, projectiles, PDA, materials, research, recycling, xenoarchaeology and atmospherics into declared setup() and keeps_if() hooks"

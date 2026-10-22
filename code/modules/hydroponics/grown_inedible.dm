@@ -10,16 +10,14 @@
 
 
 CAPABILITIES(/obj/item/grown)
+	setup(PROC_REF(item_grown_setup))
 	reagents(50, contents_from = PROC_REF(seed_contents))
 	param(nameof(planttype_at_make), pos = 1)
 
 /// The plant an inedible harvest is made from (its constructor param).
 /obj/item/grown/var/planttype_at_make
 
-// ALLOW(init/INSTANCE_STATE): an inedible harvest made from a plant takes its potency and chemicals
-/obj/item/grown/Initialize(mapload)
-	. = ..()
-
+/obj/item/grown/proc/item_grown_setup()
 	//Handle some post-spawn var stuff.
 	if(planttype_at_make)
 		plantname = planttype_at_make

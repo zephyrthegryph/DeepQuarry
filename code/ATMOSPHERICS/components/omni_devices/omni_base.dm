@@ -29,14 +29,14 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/omni)
+	setup(PROC_REF(make_ports))
 	owns_many(nameof(ports), /datum/omni_port)
 	pipe_device_switch()
 	pipe_device_unwrench()
 
 
-/obj/machinery/atmospherics/omni/Initialize(mapload)
-	. = ..()
-
+/// Makes the four ports from the tag_* vars and the connection directions they open.
+/obj/machinery/atmospherics/omni/proc/make_ports()
 	for(var/d in GLOB.cardinal)
 		var/datum/omni_port/new_port = new(src, d)
 		switch(d)

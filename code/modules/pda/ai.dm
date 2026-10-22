@@ -55,11 +55,12 @@ CAPABILITIES(/obj/item/pda/ai)
 	ttone = "assist"
 	var/our_owner = null // Ref to a pAI
 
-// ALLOW(init/INSTANCE_STATE): our_owner taken from where this instance is placed
-/obj/item/pda/ai/pai/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/pda/ai/pai)
+	setup(PROC_REF(ai_pai_setup))
+
+/obj/item/pda/ai/pai/proc/ai_pai_setup()
 	if(ispAI(loc))
-		our_owner = REF(loc)
+		set_our_owner(REF(loc))
 
 /obj/item/pda/ai/pai/tgui_status(mob/living/silicon/pai/user, datum/tgui_state/state)
 	if(!istype(user) || REF(user) != our_owner) // Only allow our pAI to interface with us

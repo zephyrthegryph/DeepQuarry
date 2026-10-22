@@ -20,16 +20,19 @@
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
 /obj/aiming_overlay/var/obj/item/aiming_with
 CAPABILITIES(/obj/aiming_overlay)
+	keeps_if(PROC_REF(placed_on_mob))
+	setup(PROC_REF(obj_aiming_overlay_setup))
 	links(/obj/aiming_overlay::aiming_at, /mob/living::aimed, b_many = TRUE)
 	ref_one(nameof(aiming_with))
 	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
 	ref_one(nameof(owner))
 
-/obj/aiming_overlay/Initialize(mapload)
-	. = ..()
+/// An aiming overlay is made inside the mob that aims.
+/obj/aiming_overlay/proc/placed_on_mob()
+	return istype(loc, /mob)
+
+/obj/aiming_overlay/proc/obj_aiming_overlay_setup()
 	rel_set(src, nameof(owner), loc)
-	if(!istype(owner(), /mob))
-		return INITIALIZE_HINT_QDEL
 	moveToNullspace()
 
 /obj/aiming_overlay/proc/toggle_permission(perm)

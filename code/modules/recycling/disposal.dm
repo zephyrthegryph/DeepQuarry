@@ -21,10 +21,8 @@
 	var/subtype = 0
 
 // new pipe, set the icon_state as on map
-// ALLOW(init/INSTANCE_STATE): remembers the sprite it was placed with as its base
-/obj/structure/disposalpipe/Initialize(mapload)
-	. = ..()
-	base_icon_state = icon_state
+/obj/structure/disposalpipe/proc/structure_disposalpipe_setup()
+	set_base_icon_state(icon_state)
 
 // returns the direction of the next pipe object, given the entrance dir
 // by default, returns the bitmask of remaining directions
@@ -179,6 +177,7 @@
 CAPABILITIES(/obj/structure/disposalpipe)
 	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 
+	setup(PROC_REF(structure_disposalpipe_setup))
 /// Only a pipe under bare plating is sliced (a T-scanner shows the hidden ones; they are not reached).
 /obj/structure/disposalpipe/proc/on_bare_plating(datum/act/op/A)
 	var/turf/T = get_turf(src)
