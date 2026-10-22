@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed material rings and bracelets: a type's forced material wins over a passed one again"
