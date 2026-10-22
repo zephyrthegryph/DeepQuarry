@@ -318,34 +318,6 @@ init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initiali
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core
 init_lines	code/modules/body/body.dm	@/mob/living::Initialize::if
 init_lines	code/modules/body/body.dm	@/mob/living::Initialize::rel_set
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::born_in
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::place_in_body
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::max_damage
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::C
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::data.setup_from_species
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::data.setup_from_dna
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::data.setup_from_species
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::else
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::log_runtime
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::H
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::add_blooddna_organ
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::else
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::data.setup_from_species
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::handle_organ_mod_special
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::switch
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::robotize
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::if
-init_lines	code/modules/body/organs/organ.dm	@/obj/item/organ::Initialize::mechassist
-init_lines	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::Initialize::.
-init_lines	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::Initialize::if
-init_lines	code/modules/body/organs/organ_external.dm	@/obj/item/organ/external::Initialize::sync_colour_to_human
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::limb
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::body_part
@@ -355,12 +327,6 @@ init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stu
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::max_damage
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::robotize
-init_lines	code/modules/body/organs/subtypes/machine.dm	@/obj/item/organ/internal/cell::Initialize::robotize
-init_lines	code/modules/body/organs/subtypes/slime.dm	@/obj/item/organ/internal/regennetwork::Initialize::if
-init_lines	code/modules/body/organs/subtypes/slime.dm	@/obj/item/organ/internal/regennetwork::Initialize::H
-init_lines	code/modules/body/organs/subtypes/slime.dm	@/obj/item/organ/internal/regennetwork::Initialize::color
-init_lines	code/modules/body/organs/subtypes/standard.dm	@/obj/item/organ/external/head::Initialize::if
-init_lines	code/modules/body/organs/subtypes/standard.dm	@/obj/item/organ/external/head::Initialize::cannot_gib
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::default_material
@@ -476,7 +442,6 @@ init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initializ
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::if
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::ore_reagent
 init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::layer
-init_lines	code/modules/mob/dead/corpse.dm	@/obj/effect/landmark/mobcorpse::Initialize::createCorpse
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::appearance
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::invisibility
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::layer
@@ -513,9 +478,7 @@ init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initi
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::real_name
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
-init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::rel_set
 init_lines	code/modules/mob/freelook/update_triggers.dm	@/turf/simulated::Initialize::updateVisibility
-init_lines	code/modules/mob/living/carbon/carbon.dm	@/mob/living/carbon::Initialize::rel_set
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::gender
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::if
@@ -525,20 +488,6 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/hum
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::else
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::if
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::dna.ready_dna
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::dna.real_name
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::sync_dna_traits
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::sync_organ_dna
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::initialize_vessel
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::animal
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::img
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::img.override
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::add_alt_appearance
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::if
-init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species.produceCopy
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::icon
-init_lines	code/modules/mob/living/carbon/human/human_species.dm	@/mob/living/carbon/human/dummy/mannequin/autoequip::Initialize::icon_state
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::if
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::rel_clear
 init_lines	code/modules/mob/living/living.dm	@/mob/living::Initialize::hud_list
@@ -551,31 +500,6 @@ init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Ini
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::host
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::expr
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	@/mob/living/silicon/ai::Initialize::on_mob_init
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::if
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::else
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::new_card
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::if
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::if
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::if
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	@/mob/living/silicon/pai::Initialize::internal_set_chassis
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	@/obj/item/reagent_containers/glass/beaker/large/borg::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	@/obj/item/reagent_containers/glass/beaker/large/borg::Initialize::observe
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::if
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::destructive_events
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::config_mode
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::allowed_experiments
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::config_flags
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::experiment_events
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	@/obj/item/dogborg/sleeper::Initialize::expr
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	@/mob/living/silicon/robot/drone::Initialize::.
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::ident
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::updatename
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_radio
@@ -587,14 +511,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/r
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_cell
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::grant
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::add_robot_verbs
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::setup_hud_images
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::resolve_sprite_datum
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::recompute_power_demand
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	@/mob/living/silicon/robot::Initialize::update_senses
-init_lines	code/modules/mob/living/silicon/robot/robot_items.dm	@/obj/item/card/id/syndicate/dummy_cyborg::Initialize::access
-init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	@/obj/effect/landmark/free_ai_shell::Initialize::if
-init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	@/obj/effect/landmark/free_ai_shell::Initialize::expr
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::if
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::for
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::new_pocket
@@ -609,10 +525,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/ite
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::return
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::observe
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/gripper::Initialize::observe
-init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/reagent_containers/glass/bucket/cyborg::Initialize::rel_set
-init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	@/obj/item/reagent_containers/glass/bucket/cyborg::Initialize::observe
-init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	@/obj/effect/landmark/robot_platform::Initialize::if
-init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	@/obj/effect/landmark/robot_platform::Initialize::expr
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::update_mood
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::glow_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	@/mob/living/simple_mob/slime::Initialize::refresh_glow
@@ -758,31 +670,9 @@ init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initiali
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
 init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::return
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
-init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::if
-init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::rel_set
-init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::rel_add
-init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_reschedule
-init_lines	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::Initialize::if
-init_lines	code/modules/vore/eating/soulcatcher.dm	@/obj/soulgem::Initialize::rel_set
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_clothes.dm	@/obj/item/storage/belt/utility/fluff/vulpine::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::open_state
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::if
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/storage/fancy/fluff/charlotte::Initialize::closed_state
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.max_storage_space
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::holds
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::hold.restrict_hold
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::expr
-init_lines	code/modules/vore/fluffstuff/custom_items.dm	@/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette::Initialize::expr
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::make_artifact_master
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
@@ -825,8 +715,6 @@ world_reads	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler
 world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = src
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species[SPECIES_HUMAN])
-world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species["Human"])
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
 world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.cameranet.addCamera(src)
 world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locations |= get_turf(src)
@@ -836,7 +724,6 @@ world_reads	code/modules/mining/mine_turfs.dm	dir = pick(GLOB.alldirs)
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
-world_reads	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(visualnet), GLOB.ghostnet)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
 world_reads	code/modules/shieldgen/shield_gen.dm	for(var/obj/machinery/shield_capacitor/cap in range(1, src))

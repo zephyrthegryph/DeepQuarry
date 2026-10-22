@@ -41,9 +41,8 @@
 	var/corpsesensormode = 0
 	delete_me = TRUE
 
-/obj/effect/landmark/mobcorpse/Initialize(mapload)
-	createCorpse()
-	. = ..()
+CAPABILITIES(/obj/effect/landmark/mobcorpse)
+	setup(PROC_REF(createCorpse))
 
 /obj/effect/landmark/mobcorpse/proc/createCorpse() //Creates a mob and checks for gear in each slot before attempting to equip it.
 	var/mob/living/carbon/human/M = new /mob/living/carbon/human (src.loc)

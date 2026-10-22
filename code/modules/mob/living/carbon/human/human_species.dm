@@ -23,14 +23,9 @@
 
 
 /mob/living/carbon/human/dummy/mannequin/autoequip
-	icon = 'icons/mob/human_races/r_human.dmi'
-	icon_state = "preview"
-	var/autorotate = TRUE
-
-/mob/living/carbon/human/dummy/mannequin/autoequip/Initialize(mapload)
 	icon = null
-	icon_state = "" // ALLOW(decl): clears the inherited icon before parent init
-	. = ..()
+	icon_state = ""
+	var/autorotate = TRUE
 
 
 /// Dress only after the inherited empty-mannequin setup has cleared its inventory.

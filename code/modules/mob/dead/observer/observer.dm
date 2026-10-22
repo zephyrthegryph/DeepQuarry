@@ -111,7 +111,10 @@ CAPABILITIES(/mob/observer)
 	set_real_name(name)
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
-	. = ..()
+	return ..()
+
+/// Its setup hook (setup() in the ghost's CAPABILITIES): it joins the ghost visibility net.
+/mob/observer/dead/proc/join_ghostnet()
 	rel_set(src, nameof(visualnet), GLOB.ghostnet)
 
 /mob/observer/dead/proc/checkStatic()

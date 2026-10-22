@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	setup(PROC_REF(finish_human_init))
 	owns_one(nameof(wearing_rig), on_destroy = ON_DESTROY_CONTAINED)
 	ref_one(nameof(default_attack), /datum/unarmed_attack)
 	links(/mob/living/carbon/human::vr_holder, /mob/living/carbon/human::vr_link)
@@ -115,6 +116,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	setup(PROC_REF(finish_robot_setup))
 	ref_one(nameof(inv1), /atom/movable/screen)
 	ref_one(nameof(inv2), /atom/movable/screen)
 	ref_one(nameof(inv3), /atom/movable/screen)

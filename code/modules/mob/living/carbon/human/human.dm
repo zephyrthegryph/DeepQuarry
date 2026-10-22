@@ -48,7 +48,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 /// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
 
-// ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
+// ALLOW(init/INSTANCE_STATE): a human sets its species before its parents' init build the body and the name
 /mob/living/carbon/human/Initialize(mapload)
 	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
@@ -57,8 +57,10 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		else
 			set_species()
 
-	. = ..()
+	return ..()
 
+/// Its setup hook (setup() in the human's CAPABILITIES): its DNA, blood and alternate look, once its parents' init is done.
+/mob/living/carbon/human/proc/finish_human_init()
 	if(dna)
 		dna.ready_dna(src)
 		dna.real_name = real_name
@@ -1449,7 +1451,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	// On the first set_species() (before /mob/living/Initialize()) the body is
 	// built here: organs attach into the plan's part slots as they are made.
 	if(!keep_organs)
-		body_type = species.body_plan
+		set_body_type(species.body_plan)
 	if(!body)
 		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)

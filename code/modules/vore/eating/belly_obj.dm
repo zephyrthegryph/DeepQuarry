@@ -281,6 +281,7 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	setup(PROC_REF(bind_to_owner))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
 	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
@@ -296,11 +297,13 @@ CAPABILITIES(/obj/belly)
 	ref_one(nameof(ownegg))
 	ref_one(nameof(owner))
 
-// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
+// ALLOW(init/INSTANCE_STATE): the shared list vars must be swapped in before the parent initializer reads them
 /obj/belly/Initialize(mapload)
 	belly_share_lists() // before anything reads the list vars
-	. = ..()
-	//If not, we're probably just in a prefs list or something.
+	return ..()
+
+/// A belly made inside a mob binds to it (setup()); made anywhere else it is probably just in a prefs list.
+/obj/belly/proc/bind_to_owner()
 	if(ismob(loc))
 		rel_set(src, nameof(owner), loc)
 		rel_add(owner, nameof(owner.vore_organs), src)

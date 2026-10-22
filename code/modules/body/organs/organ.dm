@@ -69,8 +69,8 @@
 	return
 
 
-/obj/item/organ/Initialize(mapload)
-	. = ..()
+/// Setup after the Initialize() chain: takes its place in the body it was born in, takes its species and DNA data, and becomes prosthetic when its type says so.
+/obj/item/organ/proc/organ_setup()
 	if(isliving(loc))
 		var/mob/living/born_in = loc
 		// Born inside a mob: take our place in its body (sets `owner`).
@@ -573,6 +573,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	setup(PROC_REF(organ_setup))
 	ref_one(nameof(owner), /mob/living)
 	owns_one(nameof(data), /datum/organ_data, starts = /datum/organ_data)
 	derives(nameof(w_class), PROC_REF(birth_size))

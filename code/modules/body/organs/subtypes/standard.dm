@@ -293,10 +293,10 @@ CAPABILITIES(/obj/item/organ/external/hand)
 	var/eye_icon_override = FALSE		// if true, we dont reset our icon back to default
 	var/eyes_over_markings = FALSE
 
-/obj/item/organ/external/head/Initialize(mapload)
+/// Setup before the head is first used: a server that allows head gibbing lets it gib.
+/obj/item/organ/external/head/proc/head_setup()
 	if(CONFIG_GET(flag/allow_headgibs))
 		cannot_gib = FALSE
-	return ..()
 
 /obj/item/organ/external/head/robotize(company, skip_prosthetics, keep_organs)
 	. = ..(company, skip_prosthetics, 1)
@@ -345,6 +345,7 @@ CAPABILITIES(/obj/item/organ/external/hand)
 
 // A plushie or another head held to a head kisses it.
 CAPABILITIES(/obj/item/organ/external/head)
+	setup(PROC_REF(head_setup))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 7))
 	configure(item_combat(force = 3))

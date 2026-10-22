@@ -8,10 +8,13 @@
 	delete_me = TRUE
 	var/platform_type
 
-/obj/effect/landmark/robot_platform/Initialize(mapload)
+CAPABILITIES(/obj/effect/landmark/robot_platform)
+	setup(PROC_REF(spawn_platform))
+
+/// The platform it marks (setup()).
+/obj/effect/landmark/robot_platform/proc/spawn_platform()
 	if(platform_type)
 		new platform_type(get_turf(src))
-	return ..()
 
 /mob/living/silicon/robot/platform
 	name = "support platform"
