@@ -1,7 +1,7 @@
 /// Gradual charging runs its first real step immediately, clamps capacity and stops once its declared countdown is exhausted.
 /datum/unit_test/interim_cell_gradual_charge_steps/Run()
 	var/obj/item/cell/cell = allocate(/obj/item/cell, run_loc_floor_bottom_left)
-	cell.charge = cell.maxcharge - 250
+	cell.set_charge(cell.maxcharge - 250)
 	cell.gradual_charge(0, 2, FALSE, null)
 	TEST_ASSERT_EQUAL(cell.charge, cell.maxcharge - 250, "zero requested steps cannot charge the actual cell")
 	TEST_ASSERT_EQUAL(cell.gradual_charge_left, 0, "zero requested steps cannot start the countdown")
@@ -23,7 +23,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
-	cell.charge = 0
+	cell.set_charge(0)
 	TEST_ASSERT(user.put_in_active_hand(cell), "the actual actor holds the actual cell")
 	cell.gradual_charge(3, 0.5, FALSE, user)
 	TEST_ASSERT_EQUAL(cell.charge, 50, "actor-bound charging immediately delivers its first fifty charge")

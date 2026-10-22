@@ -508,9 +508,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		terminal.expire(0) // the terminal goes with the APC it serves
 	..()
 
-/// The APC is not a network node: its terminal is.
+/// The APC's own entity is its network node, placed at the terminal's cell (connect_to_network()), and its terminal is a node too: leaving
+/// the network unbinds both, so the APC runs on its cell alone until connect_to_network() joins it again.
 /obj/machinery/power/apc/disconnect_from_network()
-	return FALSE
+	terminal?.disconnect_from_network()
+	return ..()
 
 /// A placed APC (its terminal made by init()) joins the grid as its own node at the terminal's cell once its entity is bound, which also
 /// seats its cell's charge in the power domain (connect_to_network()). Nothing else connects a mapped APC: without this its node never

@@ -1,0 +1,10 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Disconnecting an APC from the network now unbinds the APC itself, so it runs on its cell alone"
+  - bugfix: "An item whose look reads where it is (a syringe in its case) redraws when it is moved out"
+  - bugfix: "Lookup reads (a power grid's supply) redraw and recompute the looks and stats that read them"
+  - bugfix: "A reagent added to a mob wakes its life steps even when nothing has read its treatment snapshot"
+  - bugfix: "Gravity generators find every area on their levels; an electric chair kit can be attached again; Revelation destroys the hardware"
+  - bugfix: "SMES charge is set exactly, and a hover on an item is handled once"
+  - code_imp: "Tests follow the storage spill policy, refusal reasons, drain points and act generations"

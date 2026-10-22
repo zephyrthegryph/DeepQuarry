@@ -3234,8 +3234,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	P.set_target_pressure(5 * ONE_ATMOSPHERE)
 	// Make sure the power gate doesn't short-circuit the test.
 	if(P.cell)
-		P.cell.charge = P.cell.maxcharge
-
+		P.cell.set_charge(P.cell.maxcharge)
 	var/before = turf_air.get_moles(/datum/gas/nitrogen)
 	P.pump_step()
 	var/after = turf_air.get_moles(/datum/gas/nitrogen)
@@ -3270,8 +3269,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	S.set_on(TRUE)
 	if(S.cell)
-		S.cell.charge = S.cell.maxcharge
-
+		S.cell.set_charge(S.cell.maxcharge)
 	var/floor_plasma_before = turf_air.get_moles(/datum/gas/plasma)
 	var/tank_plasma_before = S.air_contents.get_moles(/datum/gas/plasma)
 	S.scrubber_step()
@@ -4805,7 +4803,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/floodlight/floodlight = new(T)
 	floodlight.set_on(0)
 	TEST_ASSERT(!test_work_allowed(floodlight), "switched-off floodlight may still step")
-	floodlight.cell.charge = floodlight.cell.maxcharge
+	floodlight.cell.set_charge(floodlight.cell.maxcharge)
 	work_stop(floodlight)
 	TEST_ASSERT(floodlight.turn_on(), "charged floodlight refused to turn on")
 	TEST_ASSERT(test_work_allowed(floodlight), "turning on a floodlight did not wake it")

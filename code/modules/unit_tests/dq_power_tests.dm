@@ -149,7 +149,7 @@
 	A.set_equipment(POWERCHAN_ON_AUTO)
 	A.set_lighting(POWERCHAN_ON_AUTO)
 	A.set_environ(POWERCHAN_ON_AUTO)
-	A.cell.charge = A.cell.maxcharge * 0.001
+	A.cell.set_charge(A.cell.maxcharge * 0.001)
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
@@ -186,7 +186,7 @@
 
 	T.set_power_supply(0)
 	dq_area_load(get_turf(A), -2000, EQUIP)
-	A.cell.charge = old_charge
+	A.cell.set_charge(old_charge)
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.apply_area_power()
 	refresh_flush()
@@ -218,7 +218,7 @@
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
-	A.cell.charge = A.cell.maxcharge
+	A.cell.set_charge(A.cell.maxcharge)
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	A.apply_area_power()
 	refresh_flush()

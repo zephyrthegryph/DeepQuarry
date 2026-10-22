@@ -45,7 +45,8 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 
 /obj/machinery/ntnet_relay/draw(datum/look/look)
 	..()
-	if(operable())
+	// enabled and dos_failure are read here as well as in operable(): the draw plan follows what the draw itself names
+	if(enabled && !dos_failure && operable())
 		look.state(initial(icon_state))
 	else
 		look.state("[initial(icon_state)]_off")

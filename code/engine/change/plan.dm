@@ -204,6 +204,10 @@ DECLARE_SHARED_CACHE(change_plan_spares, GLOBAL_PROC_REF(plan_spares_build), SC_
 /proc/plan_spares_draw(datum/E, var_name)
 	if(!isatom(E) || ismob(E))
 		return FALSE
+	// A lookup read (lookup_reads.dm) publishes under its own pseudo-key: it is no var, so no plan names it, and it exists only because an
+	// output of the holder reads the looked-up field (the generated drawn_from / ui_from rows), so its publication always redraws.
+	if(IS_LOOKUP_READ_KEY(var_name))
+		return FALSE
 	// The answer depends on the type and on the activations the holder carries (they bring look layers): both are in the key.
 	var/key = "[E.type]|[var_name]"
 	var/list/activations = E.rx?.activations

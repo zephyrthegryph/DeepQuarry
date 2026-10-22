@@ -1,11 +1,19 @@
 /// Observation chains the real wearer shoe redraw implementation.
 /mob/living/carbon/human/interim_shoe_appearance_holder
-	var/shoe_redraws = 0
+
+/// Draws counted per holder (ref text -> count). Kept outside the holder so an output counting itself writes no state it reads.
+GLOBAL_LIST_EMPTY(interim_shoe_redraws)
 
 /// The wearer's look is one draw: a redraw of it is a redraw of its shoes.
 /mob/living/carbon/human/interim_shoe_appearance_holder/draw(datum/look/look)
-	set_shoe_redraws(shoe_redraws + 1)
+	GLOB.interim_shoe_redraws[REF(src)]++
 	..()
+
+/mob/living/carbon/human/interim_shoe_appearance_holder/proc/shoe_redraws()
+	return GLOB.interim_shoe_redraws[REF(src)] || 0
+
+/mob/living/carbon/human/interim_shoe_appearance_holder/proc/reset_shoe_redraws()
+	GLOB.interim_shoe_redraws[REF(src)] = 0
 
 /obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance
 	var/list/observed_overlays
@@ -27,15 +35,15 @@
 	var/obj/item/material/knife/tacknife/knife = allocate(/obj/item/material/knife/tacknife, T)
 	TEST_ASSERT(wearer.put_in_active_hand(knife), "the actual wearer holds a compatible boot knife")
 	refresh_flush() // the humans' own first draws run before the counters start
-	wearer.set_shoe_redraws(0)
-	bystander.set_shoe_redraws(0)
+	wearer.reset_shoe_redraws()
+	bystander.reset_shoe_redraws()
 	test_op_handler(boots, "shoes_stuff_item", wearer, knife)
 	TEST_ASSERT_EQUAL(boots.holding, knife, "the real insertion stores the exact supplied knife in the boots")
 	TEST_ASSERT_EQUAL(knife.loc, boots, "real insertion moves the knife into the boot contents")
 	TEST_ASSERT_NULL(wearer.get_active_hand(), "real insertion releases the knife's original hand")
 	boots.observe_look()
-	TEST_ASSERT(wearer.shoe_redraws > 0, "actual boot appearance generation redraws the real wearer's shoe layer")
-	TEST_ASSERT_EQUAL(bystander.shoe_redraws, 0, "actual appearance generation does not redraw the unrelated ambient caller")
+	TEST_ASSERT(wearer.shoe_redraws() > 0, "actual boot appearance generation redraws the real wearer's shoe layer")
+	TEST_ASSERT_EQUAL(bystander.shoe_redraws(), 0, "actual appearance generation does not redraw the unrelated ambient caller")
 	TEST_ASSERT("jackboots_knife" in boots.observed_overlays, "the actual appearance retains its inserted knife overlay")
 	TEST_ASSERT_EQUAL(wearer.get_equipped_item(SLOT_ID_SHOES), boots, "appearance generation preserves actual equipped boot ownership")
 	boots.draw_knife(wearer)
@@ -45,7 +53,7 @@
 	TEST_ASSERT(!("jackboots_knife" in boots.observed_overlays), "actual knife removal clears the appearance overlay")
 	TEST_ASSERT(wearer.unEquip(boots), "the actual wearer releases the boots to the floor")
 	refresh_flush() // the release's own redraw runs before the counters are zeroed
-	wearer.set_shoe_redraws(0)
+	wearer.reset_shoe_redraws()
 	boots.observe_look()
-	TEST_ASSERT_EQUAL(wearer.shoe_redraws, 0, "floor boot appearance does not redraw the former wearer")
-	TEST_ASSERT_EQUAL(bystander.shoe_redraws, 0, "floor boot appearance does not redraw the unrelated caller")
+	TEST_ASSERT_EQUAL(wearer.shoe_redraws(), 0, "floor boot appearance does not redraw the former wearer")
+	TEST_ASSERT_EQUAL(bystander.shoe_redraws(), 0, "floor boot appearance does not redraw the unrelated caller")

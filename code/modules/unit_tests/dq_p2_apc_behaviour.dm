@@ -420,7 +420,7 @@
 /datum/unit_test/dq_p2_apc/flat_cell_lets_the_cover_open/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	A.cell.charge = A.cell.maxcharge * (CELL_BAY_LOW_PERCENT - 5) / 100
+	A.cell.set_charge(A.cell.maxcharge * (CELL_BAY_LOW_PERCENT - 5) / 100)
 	TEST_ASSERT(A.coverlocked, "the cover lock is on")
 	touch(H, A, tool(/obj/item/tool/crowbar))
 	TEST_ASSERT(p2_apc_cover_open(A), "a nearly flat cell lets the cover go")
@@ -1037,7 +1037,7 @@
 	A.set_lighting(POWERCHAN_ON_AUTO)
 	A.set_environ(POWERCHAN_ON_AUTO)
 	p2_apc_load(A, 2000)
-	A.cell.charge = A.cell.maxcharge * 0.001
+	A.cell.set_charge(A.cell.maxcharge * 0.001)
 	p2_apc_resync(A)
 	var/drained = FALSE
 	for(var/i in 1 to 20)
@@ -1062,7 +1062,7 @@
 	TEST_ASSERT_EQUAL(A.main_status, APC_EXTERNAL_POWER_GOOD, "external power reads good")
 	Tm.set_power_supply(0)
 	p2_apc_load(A, -2000)
-	A.cell.charge = A.cell.maxcharge
+	A.cell.set_charge(A.cell.maxcharge)
 	p2_apc_resync(A)
 
 /// A shorted APC gives its area no power once the power domain has run a step; mending the wires gives it back.
@@ -1112,7 +1112,7 @@
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
-	A.cell.charge = A.cell.maxcharge * 0.5
+	A.cell.set_charge(A.cell.maxcharge * 0.5)
 	p2_apc_resync(A)
 	unlock(H, A)
 	press(H, A, "charge", list())

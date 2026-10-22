@@ -1,5 +1,6 @@
 /// A pinned target's destruction must restore its real stake's blocking behavior.
 /datum/unit_test/interim_target_stake_deletion/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/target_stake/stake = allocate(/obj/structure/target_stake, T)
@@ -8,11 +9,13 @@
 	TEST_ASSERT(test_op_handler(stake, "interaction_item", actor, target), "The stake's real insertion interaction must accept the target")
 	TEST_ASSERT_EQUAL(stake.pinned_target, target, "The stake must record its actual pinned target")
 	TEST_ASSERT(!stake.density && target.density, "A pinned target must replace the stake's blocking surface")
+	test_drain() // a frame passes with the target pinned: the stake's on_change edge (a target arrived) is seen, so the deletion below is an edge of its own
 	qdel(target)
 	TEST_ASSERT_NULL(stake.pinned_target, "Deleting the target must clear the stake's relation")
-	rx_drain() // Deliver the stake's real relation-change reaction.
+	test_drain() // Deliver the stake's real relation-change reaction (its on_change hook runs at a kernel drain).
 	TEST_ASSERT(stake.density, "Deleting the pinned target must restore the stake's blocking surface")
 	TEST_ASSERT(!QDELETED(stake), "Target deletion must preserve its stake")
+	test_driver_end()
 
 /// Destruction must release a real trapped ghost before declared views disappear.
 /datum/unit_test/interim_ghost_trap_deletion/Run()

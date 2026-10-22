@@ -21,7 +21,7 @@
 	G.update_list()
 	G.update_areas()
 	TEST_ASSERT(T.z in G.levels, "production level discovery includes the generator floor")
-	TEST_ASSERT(get_area(T) in G.areas, "production area discovery includes the test area")
+	TEST_ASSERT(get_area(T) in G.areas, "production area discovery includes the test area (area [get_area(T)] z [get_area(T).z], levels [json_encode(G.levels)], [length(G.areas)] areas found)")
 	G.set_gravity_state(TRUE)
 	TEST_ASSERT(get_area(T).has_gravity, "the real generator initially supplies gravity")
 	return G
