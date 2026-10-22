@@ -1344,7 +1344,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	sparse_set(src, trait_injection_verb, A.answer.value)
+	sparse_set(src, trait_injection_verb, A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
 	to_chat(src, span_notice("You will [sparse_get_or(src, trait_injection_verb, "bite")] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)

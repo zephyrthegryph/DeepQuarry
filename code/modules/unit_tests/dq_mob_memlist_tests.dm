@@ -58,3 +58,17 @@
 	// of the same type must reference the exact same list object.
 	var/mob/living/silicon/robot/R2 = allocate(/mob/living/silicon/robot, T)
 	TEST_ASSERT_EQUAL(R.req_access, R2.req_access, "same-type robots share one req_access list")
+
+/// The injection verb: a text answer is used, and an answer with no text leaves "no means" (which injection_started refuses), not the default "bite".
+/datum/unit_test/dq_injection_verb_answers
+
+/datum/unit_test/dq_injection_verb_answers/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT_EQUAL(sparse_get_or(H, trait_injection_verb, "bite"), "bite", "a fresh creature bites")
+	open_request(H, /datum/prompt/text, TYPE_PROC_REF(/mob/living, injection_verb_chosen), answerer = H, timeout = 0, question = "verb?", title = "verb")
+	request_answer(H, "sting")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, trait_injection_verb, "bite"), "sting", "a text answer is used")
+	open_request(H, /datum/prompt/text, TYPE_PROC_REF(/mob/living, injection_verb_chosen), answerer = H, timeout = 0, question = "verb?", title = "verb")
+	request_answer(H, null)
+	TEST_ASSERT(!sparse_get_or(H, trait_injection_verb, "bite"), "an answer with no text leaves no means, so the injection is refused")
