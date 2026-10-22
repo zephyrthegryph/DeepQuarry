@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/clothing/accessory/storage)
 /obj/item/clothing/accessory/storage/proc/size_accessory_storage()
 	hold.max_storage_space = slots * 2
 	if (!hide_on_roll)
-		set_on_rolled_at("down", icon_state)
+		on_rolled["down"] = icon_state
 
 
 /// Old attack_hand: open the storage when attached, else handle it as a storage item.

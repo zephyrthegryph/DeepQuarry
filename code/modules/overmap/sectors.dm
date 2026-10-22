@@ -81,7 +81,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	SSshuttles.process_init_queues()
 
 	if(known)
-		set_plane(PLANE_LIGHTING_ABOVE)
+		plane = PLANE_LIGHTING_ABOVE
 		for(var/obj/machinery/computer/ship/helm/H in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			H.get_known_sectors()
 	else
@@ -89,8 +89,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		real_appearance.override = TRUE
 		real_name = name
 		name = unknown_name
-		set_icon_state(unknown_state)
-		set_color(null)
+		icon_state = unknown_state
+		color = null
 		real_desc = desc
 		desc = "Scan this to find out more information."
 	//at the moment only used for the OM location renamer. Initializing here in case we want shuttles incl as well in future. Also proc definition convenience.

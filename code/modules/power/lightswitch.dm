@@ -68,9 +68,9 @@ CAPABILITIES(/obj/structure/construction)
 /// A wall frame sits on its wall, offset by its facing.
 /obj/structure/construction/proc/sit_on_wall()
 	if(x_offset)
-		set_pixel_x((dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset))
+		pixel_x = (dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset)
 	if(y_offset)
-		set_pixel_y((dir & 3) ? (dir == NORTH ? -y_offset : y_offset) : 0)
+		pixel_y = (dir & 3) ? (dir == NORTH ? -y_offset : y_offset) : 0
 	update_state()
 
 CAPABILITIES(/obj/structure/construction/lightswitch)

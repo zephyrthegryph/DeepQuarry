@@ -116,10 +116,10 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 			charge_dat.product_type = charge[3]
 			charge_dat.set_charges(charge[4])
 
-			if(!charge_selected) set_charge_selected(charge_dat.short_name)
+			if(!charge_selected) charge_selected = charge_dat.short_name
 			processed_charges[charge_dat.short_name] = charge_dat
 
-		set_charges(processed_charges)
+		charges = processed_charges
 
 
 

@@ -54,7 +54,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 
 /// Rounds its speed limits to the move resolution.
 /obj/effect/overmap/visitable/ship/proc/round_speed_limits()
-	set_min_speed(round(min_speed, SHIP_MOVE_RESOLUTION))
+	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
 
 /obj/effect/overmap/visitable/ship/proc/prepare_ship_vector_and_flight()
