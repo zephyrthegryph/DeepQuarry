@@ -45,6 +45,6 @@
 -click: Click: Collect
 +3 menu: Use
 +4 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 keys: collect_item, drag_buckle, flip, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, use_wirecutter

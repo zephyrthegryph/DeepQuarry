@@ -65,11 +65,11 @@ human|/obj/item menu: Eject Beaker
 human|/obj/item menu: Printer menu
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Flesh printer interaction item
-@obj human|/obj/item/reagent_containers/glass
--menu: Clonepod interaction hand
--menu: Eject Beakers
--menu: Eject Cloner
-+0 menu: Climb
-+1 menu: Eject Beaker
-+3 menu: Printer menu
+human|/obj/item/reagent_containers/glass menu: Climb
+human|/obj/item/reagent_containers/glass menu: Eject Beaker
+human|/obj/item/reagent_containers/glass menu: Load container
+human|/obj/item/reagent_containers/glass menu: Printer menu
+human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
+human|/obj/item/reagent_containers/glass menu: Use  
+human|/obj/item/reagent_containers/glass click: Click: Load container
 keys: climb.climb, climb.climb_menu, drag_buckle, flesh_printer_interaction_item, load_container, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, printer_eject, printer_item, printer_menu, robot_remote_blocked, silicon_hand

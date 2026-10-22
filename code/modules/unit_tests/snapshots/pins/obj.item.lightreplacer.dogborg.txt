@@ -28,10 +28,5 @@ human|/obj/item/stack/material/cyborg/glass menu: Add glass
 human|/obj/item/stack/material/cyborg/glass menu: Move To Top
 human|/obj/item/stack/material/cyborg/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/cyborg/glass click: Click: Add glass
-@obj human|/obj/item/light
--menu: Insert bulb (refused: There is a bulb in it already.)
--click: Click: Insert bulb
-+0 menu: Add light
-+2 menu: Shatter
-+4 click: Click: Add light
+@obj.item human|/obj/item/light
 keys: add_glass, add_light, choose, collect_item, colour, drag_buckle, emag.subvert, emag.use, fabricate, fill_from_box, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_colour, pick_up_item, replace, toggle_digestable

@@ -3,11 +3,8 @@ ghost|none click: nothing
 human|/obj/item menu: Press
 human|/obj/item menu: Toggle
 human|/obj/item click: Click: Toggle
-human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Press
 human|/obj/item/card/emag menu: Toggle
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use (refused: It has no lock to subvert.)
 human|/obj/item/card/emag click: Click: Use
 human|/obj/item/card/id menu: Press

@@ -42,8 +42,6 @@ human|/obj/item/stack/material menu: Load material
 human|/obj/item/stack/material menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/stack/material click: Click: Load material
 @obj human|/obj/item/ore/coal
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Eject contents (refused: the furnace is empty)
 human|/obj/item/tank menu: Transfer gas
 human|/obj/item/tank menu: Use (refused: the furnace is empty; load material sheets before firing it)

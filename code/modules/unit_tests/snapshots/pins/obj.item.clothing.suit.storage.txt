@@ -51,7 +51,7 @@
 @obj.item.clothing human|/obj/item/storage
 +3 menu: Suit pockets hand
 +4 menu: Suit pockets item
-@obj human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +2 menu: Suit pockets hand
 +3 menu: Suit pockets item

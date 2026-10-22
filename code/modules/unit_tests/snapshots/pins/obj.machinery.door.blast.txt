@@ -4,27 +4,35 @@
 @obj.machinery robot|none
 @obj.machinery ai|none
 @obj ghost|none
-human|/obj/item/tool/screwdriver menu: Open (refused: Access denied.)
-human|/obj/item/tool/screwdriver click: Click: Open
+@obj.machinery.door human|/obj/item/tool/screwdriver
+-menu: Open
++0 menu: Open (refused: Access denied.)
 human|/obj/item/tool/crowbar menu: Open (refused: Access denied.)
 human|/obj/item/tool/crowbar menu: Use crowbar (refused: Its motors resist your effort.)
 human|/obj/item/tool/crowbar click: Click: Pry
-human|/obj/item/tool/wrench menu: Open (refused: Access denied.)
-human|/obj/item/tool/wrench click: Click: Open
-human|/obj/item/tool/wirecutters menu: Open (refused: Access denied.)
-human|/obj/item/tool/wirecutters click: Click: Open
-human|/obj/item/multitool menu: Open (refused: Access denied.)
-human|/obj/item/multitool click: Click: Open
+@obj.machinery.door human|/obj/item/tool/wrench
+-menu: Open
++0 menu: Open (refused: Access denied.)
+@obj.machinery.door human|/obj/item/tool/wirecutters
+-menu: Open
++0 menu: Open (refused: Access denied.)
+@obj.machinery.door human|/obj/item/multitool
+-menu: Open
++0 menu: Open (refused: Access denied.)
 human|/obj/item/weldingtool menu: Open (refused: Access denied.)
 human|/obj/item/weldingtool click: Click: Open
-human|/obj/item/stack/cable_coil menu: Open (refused: Access denied.)
-human|/obj/item/stack/cable_coil click: Click: Open
-human|/obj/item/stack/material/steel menu: Open (refused: Access denied.)
-human|/obj/item/stack/material/steel click: Click: Open
-human|/obj/item/card/id menu: Open (refused: Access denied.)
-human|/obj/item/card/id click: Click: Open
-human|/obj/item menu: Open (refused: Access denied.)
-human|/obj/item click: Click: Open
+@obj.machinery.door human|/obj/item/stack/cable_coil
+-menu: Open
++0 menu: Open (refused: Access denied.)
+@obj.machinery.door human|/obj/item/stack/material/steel
+-menu: Open
++0 menu: Open (refused: Access denied.)
+@obj.machinery.door human|/obj/item/card/id
+-menu: Open
++0 menu: Open (refused: Access denied.)
+@obj.machinery.door human|/obj/item
+-menu: Open
++0 menu: Open (refused: Access denied.)
 human|/obj/item/card/emag menu: Open (refused: Access denied.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use

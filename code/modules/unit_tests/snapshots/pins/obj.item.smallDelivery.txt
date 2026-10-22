@@ -49,7 +49,7 @@
 +4 click: Click: Item
 @obj human|/obj/item/destTagger
 +3 menu: Use destination tagger
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +0 menu: Label

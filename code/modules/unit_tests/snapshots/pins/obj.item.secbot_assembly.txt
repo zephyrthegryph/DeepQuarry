@@ -16,7 +16,7 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 @obj human|/obj/item/assembly/prox_sensor
 human|/obj/item/robot_parts/l_arm menu: Move To Top
 human|/obj/item/robot_parts/l_arm menu: Toggle Digestable (refused: You can't do that.)

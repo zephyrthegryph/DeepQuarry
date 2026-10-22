@@ -31,9 +31,7 @@ human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id click: Click: Toggle
 human|/obj/item menu: Open controls
 human|/obj/item click: Click: Open controls
-human|/obj/item/pda menu: Open controls
-human|/obj/item/pda menu: Toggle (refused: Access denied.)
-human|/obj/item/pda click: Click: Toggle
+@obj human|/obj/item/pda
 @obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use cryptographic sequencer

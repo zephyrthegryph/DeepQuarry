@@ -7,46 +7,56 @@ robot|none click: nothing
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item/tool/screwdriver
+@obj.structure.bed human|/obj/item/tool/screwdriver
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item/tool/crowbar
+@obj.structure.bed human|/obj/item/tool/crowbar
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item/tool/wrench
+@obj.structure.bed human|/obj/item/tool/wrench
+-menu: Melt
 -click: Click: Use
 +0 menu: Dismantle
 +2 menu: Tear down
 +3 menu: Turn Around (refused: It is fastened to the floor!)
 +5 click: Click: Dismantle
-@obj.structure human|/obj/item/tool/wirecutters
+@obj.structure.bed human|/obj/item/tool/wirecutters
+-menu: Melt
 -click: Click: Use
 +1 menu: Remove padding (refused: It has no padding to remove.)
 +2 menu: Tear down
 +3 menu: Turn Around (refused: It is fastened to the floor!)
 +5 click: Click: Remove padding
-@obj.structure human|/obj/item/multitool
+@obj.structure.bed human|/obj/item/multitool
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item/weldingtool
+@obj.structure.bed human|/obj/item/weldingtool
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item/stack/cable_coil
+@obj.structure.bed human|/obj/item/stack/cable_coil
+-menu: Melt
 -click: Click: Use
 +1 menu: Pad (refused: You cannot pad that with that.)
 +2 menu: Tear down
 +3 menu: Turn Around (refused: It is fastened to the floor!)
 +5 click: Click: Pad
-@obj.structure human|/obj/item/stack/material/steel
+@obj.structure.bed human|/obj/item/stack/material/steel
+-menu: Melt
 -click: Click: Use
 +1 menu: Pad (refused: You cannot pad that with that.)
 +2 menu: Tear down
 +3 menu: Turn Around (refused: It is fastened to the floor!)
 +5 click: Click: Pad
-@obj.structure human|/obj/item/card/id
+@obj.structure.bed human|/obj/item/card/id
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure human|/obj/item
+@obj.structure.bed human|/obj/item
+-menu: Melt
 +1 menu: Tear down
 +2 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure human|/obj/item/stack

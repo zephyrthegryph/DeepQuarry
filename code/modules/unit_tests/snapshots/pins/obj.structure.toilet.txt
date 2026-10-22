@@ -45,9 +45,5 @@ ai|none click: Click: Use
 +0 menu: Flush
 +3 menu: Yank the flush lever
 @obj.structure human|/obj/item/bluespace_crystal
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stock_parts/matter_bin
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, flush, flush_yank, insert_crystal, item, item_cyborg, melee_hit, replace_bin, silicon_use, swirlie, use, use_crowbar, use_wrench

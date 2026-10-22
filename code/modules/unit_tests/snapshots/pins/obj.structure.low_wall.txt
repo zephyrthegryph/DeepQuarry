@@ -29,17 +29,7 @@
 @obj.structure human|/obj/item
 +0 menu: Climb
 @obj human|/obj/item/stack/rods
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 +0 menu: Climb
 @obj human|/obj/item/stack/material/glass
--menu: Move To Top
--menu: Place on wall
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 @obj human|/obj/item/stack/material/cyborg/glass
--menu: Move To Top
--menu: Place on wall
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 keys: build_grille, build_window, build_window_cyborg, climb.climb, climb.climb_menu, drag_buckle, melee_hit, place, place_drag, use_wrench

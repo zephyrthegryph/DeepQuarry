@@ -17,9 +17,8 @@ human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use item
 human|/obj/item/tool/screwdriver menu: Climb
-human|/obj/item/tool/screwdriver menu: Disconnect
 human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/screwdriver click: Click: Use item
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Use wirecutters
 human|/obj/item/tool/wirecutters click: Click: Use item

@@ -50,7 +50,7 @@
 -click: Click: Collect
 +3 menu: Use
 +4 click: Click: Use
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +2 menu: Use

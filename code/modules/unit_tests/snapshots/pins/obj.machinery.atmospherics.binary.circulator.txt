@@ -3,8 +3,8 @@ human|none menu: Rotate Counter Clockwise
 human|none menu: Turn Around
 human|none click: nothing
 @obj.machinery.atmospherics.binary robot|none
--menu: Ui open
--click: Click: Ui open
+-menu: Open controls
+-click: Click: Open controls
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
@@ -60,9 +60,9 @@ human|/obj/item/stack/material menu: Rotate Clockwise
 human|/obj/item/stack/material menu: Rotate Counter Clockwise
 human|/obj/item/stack/material menu: Turn Around
 human|/obj/item/stack/material click: nothing
-human|/obj/item/pipe_painter menu: Painter
-human|/obj/item/pipe_painter menu: Rotate Clockwise
-human|/obj/item/pipe_painter menu: Rotate Counter Clockwise
-human|/obj/item/pipe_painter menu: Turn Around
-human|/obj/item/pipe_painter click: Click: Painter
+@obj.machinery.atmospherics.binary human|/obj/item/pipe_painter
+-menu: Open controls
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
 keys: anchor, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand

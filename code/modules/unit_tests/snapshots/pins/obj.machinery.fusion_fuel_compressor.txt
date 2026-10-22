@@ -14,7 +14,7 @@ human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/stack/material/steel menu: Compress into fuel rod
 human|/obj/item/stack/material/steel click: Click: Compress into fuel rod
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 human|/obj/item/stack/material menu: Compress into fuel rod
 human|/obj/item/stack/material click: Click: Compress into fuel rod

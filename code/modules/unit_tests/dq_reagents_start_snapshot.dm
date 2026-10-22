@@ -75,6 +75,7 @@
 		var/list/rows = list()
 		for(var/type in typesof(root))
 			rand_seed(1) // a type that rolls its contents (random vials, old food, flavoured gum) rolls the same way whatever ran before it
+			rolls_fix_seed(1) // rolls() streams hash the round seed and the creation serial, which earlier tests advance: fixed here, a row does not depend on what ran first
 			var/atom/A
 			try
 				if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))

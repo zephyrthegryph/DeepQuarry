@@ -96,7 +96,7 @@
 +5 menu: Take round
 +7 menu: Use
 +8 click: Click: Load
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +0 menu: Combine

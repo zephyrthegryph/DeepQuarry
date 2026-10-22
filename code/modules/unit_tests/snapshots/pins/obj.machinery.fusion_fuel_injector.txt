@@ -58,7 +58,7 @@ human|/obj/item/multitool click: Click: Set ident tag
 +0 menu: Rotate Clockwise
 +1 menu: Rotate Counter Clockwise
 +2 menu: Turn Around
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Rotate Clockwise
 +1 menu: Rotate Counter Clockwise
 +2 menu: Turn Around
@@ -67,9 +67,5 @@ human|/obj/item/multitool click: Click: Set ident tag
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
 @obj human|/obj/item/fuel_assembly
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/fuel_assembly/blitz
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, insert, insert_blitz, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_id, silicon_hand, take, use_crowbar, use_screwdriver, use_wrench

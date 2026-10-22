@@ -43,7 +43,12 @@
 	href[action] = "1"
 	result = op_topic_href(actor, jukebox, href, namespace = VV_TOPIC)
 
+/// A SYSTEM_DEF constructor points its SS global at whatever it builds, and the probe is a subtype: the running owner is put back after the test.
+/datum/unit_test/om/interim_media_track_actor_refusal/proc/restore_media_tracks_owner(datum/system/media_tracks/owner)
+	SSmedia_tracks = owner
+
 /datum/unit_test/om/interim_media_track_actor_refusal/run_om(list/made)
+	defer_cleanup(src, PROC_REF(restore_media_tracks_owner), SSmedia_tracks)
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)

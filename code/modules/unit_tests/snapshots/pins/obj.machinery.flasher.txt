@@ -18,5 +18,5 @@ human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 @obj.machinery human|/obj/item/stack/cable_coil
 @obj.machinery human|/obj/item/stack/material/steel
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 keys: drag_buckle, flasher_silicon_trigger, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wirecutter

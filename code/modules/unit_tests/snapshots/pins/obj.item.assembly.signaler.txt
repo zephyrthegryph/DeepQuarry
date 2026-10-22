@@ -32,7 +32,6 @@
 +3 menu: Transfer
 +5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/stack/cable_coil
--menu: Make Cable Restraints (refused: You can't do that.)
 -click: Click: Use
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 +3 menu: Transfer
@@ -43,7 +42,6 @@
 +3 menu: Transfer
 +5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/card/id
--menu: Read ID Card (refused: You can't do that.)
 -click: Click: Use
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 +3 menu: Transfer

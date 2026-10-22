@@ -16,7 +16,7 @@ human|/obj/item/tool/wrench click: Click: Use wrench
 @obj.machinery human|/obj/item/stack/cable_coil
 @obj.machinery human|/obj/item/stack/material/steel
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 human|/obj/item/honey_frame menu: Load frame (refused: The beehive frame is empty, put it into a beehive)
 human|/obj/item/honey_frame click: Click: Load frame
 human|/obj/item/reagent_containers/glass menu: Collect honey (refused: there is no honey in it)

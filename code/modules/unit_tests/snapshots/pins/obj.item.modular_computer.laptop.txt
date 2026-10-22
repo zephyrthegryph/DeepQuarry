@@ -103,7 +103,7 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use cryptographic sequencer
 human|/obj/item/card/emag click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Use
 -click: Click: Use
 +1 menu: Forced Shutdown

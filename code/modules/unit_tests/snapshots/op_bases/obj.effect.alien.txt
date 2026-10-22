@@ -1,3 +1,7 @@
+human|/obj/item menu: Hit
+human|/obj/item menu: Tear up
+human|/obj/item menu: Touch weeds
+human|/obj/item click: Click: Touch weeds
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Tear up
 human|/obj/item/card/id menu: Touch weeds

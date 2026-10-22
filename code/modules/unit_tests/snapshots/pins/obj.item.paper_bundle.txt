@@ -72,7 +72,7 @@
 +3 menu: Rename bundle (refused: You can't do that.)
 +5 menu: Use
 +6 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Loose bundle (refused: You can't do that.)
 +2 menu: Rename bundle (refused: You can't do that.)

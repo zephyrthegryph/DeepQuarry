@@ -4,17 +4,13 @@
 @obj ghost|none
 @obj.machinery.door human|/obj/item/tool/screwdriver
 human|/obj/item/tool/crowbar menu: Crowbar shut
-human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Crowbar shut
 @obj.machinery.door human|/obj/item/tool/wrench
 @obj.machinery.door human|/obj/item/tool/wirecutters
 @obj.machinery.door human|/obj/item/multitool
-human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Open
 human|/obj/item/weldingtool menu: Repair (refused: It's already in good condition.)
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Repair
 @obj.machinery.door human|/obj/item/stack/cable_coil
 @obj.machinery.door human|/obj/item/stack/material/steel

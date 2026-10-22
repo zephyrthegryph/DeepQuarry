@@ -61,7 +61,7 @@
 +1 menu: Handle
 +4 menu: Use
 +5 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Handle
 @obj human|/obj/item/cell
@@ -70,7 +70,7 @@
 +1 menu: Insert the cell
 +4 menu: Use
 +5 click: Click: Insert the cell
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +0 menu: Handle

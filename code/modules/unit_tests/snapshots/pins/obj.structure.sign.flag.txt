@@ -36,6 +36,4 @@ human|/obj/item menu: Hit
 human|/obj/item menu: Rip down
 human|/obj/item click: Click: Rip down
 @obj human|/obj/item/flame/lighter
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: burn, drag_buckle, melee_hit, rip, use_screwdriver

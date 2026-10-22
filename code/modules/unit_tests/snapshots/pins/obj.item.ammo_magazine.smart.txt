@@ -86,7 +86,7 @@
 +5 menu: Use
 +6 menu: Use storage
 +7 click: Click: Load
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +0 menu: Clear Ammo Data (refused: You can't do that.)

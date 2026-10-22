@@ -27,6 +27,4 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Hit
 human|/obj/item click: nothing
 @obj human|/obj/item/stack/tile/floor
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, melee_hit, plate, silicon_hand, slice, slice_keep, use_crowbar

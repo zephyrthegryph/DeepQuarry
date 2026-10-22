@@ -73,7 +73,7 @@
 +4 menu: Toggle Spatial Rearrangement (refused: You can't do that.)
 +5 menu: Use
 +6 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Change Fire Mode (refused: You can't do that.)
 +3 menu: Toggle Spatial Rearrangement (refused: You can't do that.)

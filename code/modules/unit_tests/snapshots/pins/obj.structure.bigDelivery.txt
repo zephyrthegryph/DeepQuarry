@@ -51,8 +51,9 @@ robot|none click: Click: Use
 +0 menu: Hit
 +2 menu: Use
 +3 menu: Use destination tagger
-@obj.structure human|/obj/item/pen
--menu: Toggle Open
-+2 menu: Use
+@obj human|/obj/item/pen
+-click: Click: Use
++1 menu: Label
 +3 menu: Use pen
++4 click: Click: Label
 keys: drag_buckle, hand, item, label, melee_hit, robot_unwrap, tag

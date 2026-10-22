@@ -45,7 +45,8 @@ human|/obj/item click: Click: Open controls
 human|/obj/item/stack/material menu: Move Inside (refused: There is nobody to put in.)
 human|/obj/item/stack/material menu: Open controls
 human|/obj/item/stack/material click: Click: Open controls
-@obj.machinery.atmospherics.unary human|/obj/item/pipe_painter
+@obj human|/obj/item/pipe_painter
+-menu: Toggle
 +0 menu: Move Inside (refused: There is nobody to put in.)
 +1 menu: Open controls
 human|/obj/item/reagent_containers/glass menu: Insert

@@ -77,6 +77,8 @@
   while_slotted (slot=e1_slot, on=2, /datum/capability/e1_beacon)
     contributes "armed_glow" (stat=light_range, value=4) when(e1_armed)
   op "toggle" ()
+  ref_many (var=e1_notes, on_other_deleted=1)
+  ref_many (var=e1_tags, on_other_deleted=1)
   extend (target=toggle, part)"}
 
 /datum/unit_test/dq_e1/table_golden

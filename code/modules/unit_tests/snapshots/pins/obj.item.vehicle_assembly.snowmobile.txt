@@ -20,5 +20,5 @@
 @obj human|/obj/item/stock_parts/spring
 @obj human|/obj/item/cell
 @obj human|/obj/item/stock_parts/motor
-@obj human|/obj/item/stack/material/plasteel
+@obj.item human|/obj/item/stack/material/plasteel
 keys: collect_item, construction.build:snowmobile_controlled, construction.build:snowmobile_finished, construction.build:snowmobile_finished.screwdriver, construction.build:snowmobile_lit, construction.build:snowmobile_motored, construction.build:snowmobile_powered, construction.build:snowmobile_reinforced, construction.build:snowmobile_tracked, construction.build:snowmobile_wired, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

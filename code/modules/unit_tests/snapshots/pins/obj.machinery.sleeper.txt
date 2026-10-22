@@ -31,7 +31,7 @@ human|/obj/item/tool/crowbar click: Click: Deconstruct
 +0 menu: Move Inside (refused: There is nobody to put in.)
 @obj.machinery human|/obj/item/card/id
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Move Inside (refused: There is nobody to put in.)
 human|/obj/item/reagent_containers/glass menu: Insert (refused: There is already something in there.)
 human|/obj/item/reagent_containers/glass menu: Move Inside (refused: There is nobody to put in.)

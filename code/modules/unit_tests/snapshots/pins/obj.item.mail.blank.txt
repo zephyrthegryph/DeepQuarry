@@ -60,7 +60,7 @@
 @obj human|/obj/item/destTagger
 +1 menu: Put inside
 +3 menu: Take out
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +0 menu: Address

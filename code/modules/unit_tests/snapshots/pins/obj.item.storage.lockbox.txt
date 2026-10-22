@@ -25,5 +25,7 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 @obj human|/obj/item/melee/energy/blade
++0 menu: Move To Top
 +2 menu: Put in
++4 menu: Toggle Digestable (refused: You can't do that.)
 keys: collect_item, drag_buckle, emag.subvert, emag.use, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lock.toggle, locked_click, move_to_top, pick_up_item, slice, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

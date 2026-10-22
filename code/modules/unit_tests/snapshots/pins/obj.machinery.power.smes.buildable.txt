@@ -6,8 +6,9 @@
 @obj.machinery.power.smes human|/obj/item/tool/crowbar
 @obj.machinery.power.smes human|/obj/item/tool/wrench
 @obj.machinery.power.smes human|/obj/item/tool/wirecutters
-human|/obj/item/multitool menu: Open controls
-human|/obj/item/multitool click: Click: Rcon tag
+@obj.machinery.power.smes human|/obj/item/multitool
+-click: Click: Open controls
++1 click: Click: Rcon tag
 @obj.machinery.power.smes human|/obj/item/weldingtool
 @obj.machinery.power.smes human|/obj/item/stack/cable_coil
 @obj.machinery.power.smes human|/obj/item/stack/material/steel

@@ -1,8 +1,3 @@
-human|/obj/item/pipe_painter menu: Painter
-human|/obj/item/pipe_painter click: Click: Painter
-human|/obj/item/stack/material click: nothing
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/tool/wrench menu: Unwrench
-human|/obj/item/tool/wrench click: Click: Unwrench
-human|/obj/item/weldingtool menu: Weld shut
-human|/obj/item/weldingtool click: Click: Weld shut
+human|/obj/item/multitool menu: Configure
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool click: Click: Configure

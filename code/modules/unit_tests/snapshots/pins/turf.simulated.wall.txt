@@ -41,9 +41,10 @@
 -menu: Dig
 -click: Click: Dig
 +2 click: Click: Wall item
-human|/obj/item/shovel menu: Touch
-human|/obj/item/shovel menu: Use shovel
-human|/obj/item/shovel click: Click: Wall item
+@turf human|/obj/item/shovel
+-menu: Dig
+-click: Click: Dig
++2 click: Click: Wall item
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig

@@ -105,8 +105,11 @@
 	var/choice = Z.get_zone_at(16, 16)
 	TEST_ASSERT_NOTNULL(choice, "The fixture uses a real nonempty doll region")
 	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), Z, actor, INPUT_HOVER, "icon-x=16;icon-y=16", null, TRUE)
+	// the generated MouseEntered override runs the native chain after the handler and then ends the fall-through mark; a direct dispatch does that itself
+	input_fell(Z)
 	TEST_ASSERT_EQUAL(Z.hovering_choice, choice, "Declared hover uses its human actor even under an unrelated ghost context")
 	with_actor(ambient, GLOBAL_PROC, GLOBAL_PROC_REF(input_dispatch), Z, actor, INPUT_HOVER, "", null, FALSE)
+	input_fell(Z)
 	TEST_ASSERT_NULL(Z.hovering_choice, "The same explicit actor clears the real hover on exit")
 
 /datum/unit_test/dq_d6_actor_inputs/proc/current_actor_for_test()

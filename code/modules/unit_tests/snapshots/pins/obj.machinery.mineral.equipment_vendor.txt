@@ -16,9 +16,7 @@ human|/obj/item/tool/crowbar click: Click: Use crowbar
 @obj.machinery human|/obj/item/stack/material/steel
 human|/obj/item/card/id menu: Insert ID
 human|/obj/item/card/id click: Click: Insert ID
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 @obj human|/obj/item/mining_voucher
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, insert_id, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, purchase, robot_remote_blocked, silicon_hand, use_crowbar, use_screwdriver, voucher

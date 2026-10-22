@@ -14,7 +14,7 @@ human|/obj/item/tool/wrench click: Click: Secure
 @obj.machinery human|/obj/item/stack/cable_coil
 @obj.machinery human|/obj/item/stack/material/steel
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 human|/obj/item/anomaly_scanner menu: Attach anomaly
 human|/obj/item/anomaly_scanner click: Click: Attach anomaly

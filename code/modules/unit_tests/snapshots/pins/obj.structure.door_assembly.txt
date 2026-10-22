@@ -26,32 +26,16 @@ human|/obj/item/card/id click: nothing
 human|/obj/item menu: Hit
 human|/obj/item click: nothing
 @obj human|/obj/item/airlock_electronics
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pen menu: Hit
 human|/obj/item/pen menu: Rename
 human|/obj/item/pen click: Click: Rename
 @obj human|/obj/item/stack/material/glass/reinforced
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/gold
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/silver
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/diamond
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/uranium
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/phoron
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/stack/material/sandstone
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Hit
 human|/obj/item/stack/material menu: Install plating
 human|/obj/item/stack/material click: Click: Install plating

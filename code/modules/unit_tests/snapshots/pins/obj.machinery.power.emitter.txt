@@ -64,24 +64,12 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: Click: Toggle
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Climb
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
 @obj.machinery.power human|/obj/item/pda
--menu: Move To Top
--menu: Remove cartridge (refused: You can't do that.)
--menu: Remove id (refused: You can't do that.)
--menu: Remove pen (refused: You can't do that.)
--menu: Reset PDA (refused: You can't do that.)
--menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.power human|/obj/item/card/emag
-+0 menu: Climb
-+1 menu: Rotate Clockwise
-+2 menu: Rotate Counter Clockwise
-+3 menu: Turn Around
 @obj human|/obj/item/anomaly_scanner
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, toggle

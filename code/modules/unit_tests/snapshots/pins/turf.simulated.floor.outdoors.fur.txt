@@ -104,15 +104,16 @@
 +4 menu: Pet
 +5 menu: Pet Fur
 +8 click: Click: Nothing
-human|/obj/item/shovel menu: Draw graffiti
-human|/obj/item/shovel menu: Emote Beyond
-human|/obj/item/shovel menu: Hit the floor
-human|/obj/item/shovel menu: Nothing
-human|/obj/item/shovel menu: Pet
-human|/obj/item/shovel menu: Pet Fur
-human|/obj/item/shovel menu: Touch
-human|/obj/item/shovel menu: Use shovel
-human|/obj/item/shovel click: Click: Nothing
+@turf human|/obj/item/shovel
+-menu: Dig
+-click: Click: Dig
++0 menu: Draw graffiti
++1 menu: Emote Beyond
++2 menu: Hit the floor
++3 menu: Nothing
++4 menu: Pet
++5 menu: Pet Fur
++8 click: Click: Nothing
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig

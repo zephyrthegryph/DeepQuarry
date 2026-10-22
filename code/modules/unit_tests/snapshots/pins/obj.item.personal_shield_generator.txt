@@ -93,7 +93,7 @@
 +5 menu: Toggle Shield (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 +3 menu: Toggle Gun (refused: You can't do that.)
 +4 menu: Toggle Shield (refused: You can't do that.)
 keys: alt, collect_item, destroy_cell, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, weapon_toggle_effect
