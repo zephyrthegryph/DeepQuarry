@@ -451,12 +451,12 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 
 CAPABILITIES(/mob/observer/eye/ar_soul)
 	param(nameof(parent_human), pos = 1)
+	setup(PROC_REF(setup_ar_soul), mapload = TRUE)
 	after_init(0, then(PROC_REF(dress_as_owner)))
 	ref_one(nameof(parent_human))
 
-// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob and follows its owner's body
-/mob/observer/eye/ar_soul/Initialize(mapload)
-	. = ..()
+/// An AR soul looks through its brain mob and follows its owner's body (setup(), mapload = TRUE): INITIALIZE_HINT_QDEL when no brain mob with a client holds it.
+/mob/observer/eye/ar_soul/proc/setup_ar_soul(mapload)
 	var/mob/brainmob = loc
 	if(!istype(brainmob) || !brainmob.client)
 		return INITIALIZE_HINT_QDEL
@@ -470,6 +470,7 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 	forceMove(get_turf(parent_human()))
 	dq_add_recursive_move(parent_human())
 	global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
+	return INITIALIZE_HINT_NORMAL
 
 /// Time to play dressup: the soul wears its brain mob's character as a hologram.
 /mob/observer/eye/ar_soul/proc/dress_as_owner(datum/act/A)

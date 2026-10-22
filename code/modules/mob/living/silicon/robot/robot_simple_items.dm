@@ -639,6 +639,7 @@ MSG_DEF_SELF(robot/synth_installed, "That synthesizer is already installed.")
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	setup(PROC_REF(setup_pockets), mapload = TRUE) // its pockets and its robot; a gripper in neither a module nor a robot is discarded
 	holder_takes(req_type(list(BASIC_GRIPPER), because = MSG(slot/doesnt_take)))
 	ref_one(nameof(shown_item), /obj/item)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
@@ -681,9 +682,8 @@ CAPABILITIES(/obj/item/gripper)
 CAPABILITIES(/obj/item/storage/internal/gripper)
 	configure(storage(max_size = ITEMSIZE_HUGE))
 
-/obj/item/gripper/Initialize(mapload)
-	. = ..()
-
+/// The gripper's pockets and the robot it belongs to (setup(), mapload = TRUE): INITIALIZE_HINT_QDEL when it is in neither a module nor a robot.
+/obj/item/gripper/proc/setup_pockets(mapload)
 	if(total_pockets)
 		for(var/i = 1, i <= total_pockets, i++)
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
@@ -698,6 +698,7 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 		return INITIALIZE_HINT_QDEL
 	observe(our_robot, /datum/notice/do_after_began, src, then(PROC_REF(begin_using)))
 	observe(our_robot, /datum/notice/do_after_ended, src, then(PROC_REF(end_using)))
+	return INITIALIZE_HINT_NORMAL
 
 // The selected pocket is one of `pockets`, and the robot owns the gripper.
 
