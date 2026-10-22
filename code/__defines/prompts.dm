@@ -1,10 +1,5 @@
-// Re-run prompts: the legacy procs that ask before they act (code/datums/prompts/reruns.dm).
+// Prompt flows (code/datums/prompts/reruns.dm) and question sequences (code/datums/prompts/sequence.dm).
 
-// ---- re-run prompts (code/datums/prompts/reruns.dm): the first call asks and returns null; the answer re-runs the caller, where
-// the same call returns the answer. `prompt` is a /datum/prompt kind; the named arguments are its fields (open_request()'s), plus
-// cancel_answer. ----
-/// Deep inside a prompt_flow().
-#define flow_ask(user, key, prompt, fields...) prompt_flow_ask(user, key, prompt, list(fields))
 /// Thrown by flow_io_answer() to unwind a prompt flow whose query is in flight; prompt_flow() catches it.
 #define PROMPT_FLOW_PENDING "prompt_flow_pending"
 
@@ -15,3 +10,7 @@
 #define start_ask_sequence(sequence, answerer, subject, steps, on_done, params...) ask_sequence_begin(src, sequence, answerer, subject, steps, on_done, null, null, list(params))
 /// Returned by a sequence's step proc: the sequence ends there.
 #define ASK_STOP "ask_stop"
+/// Returned by a sequence's step proc that started a child sequence (ask_child()): the sequence waits until the child finishes.
+#define ASK_WAIT "ask_wait"
+/// Returned by a sequence's step proc: the sequence ends successfully there (on_done runs).
+#define ASK_FINISH "ask_finish"

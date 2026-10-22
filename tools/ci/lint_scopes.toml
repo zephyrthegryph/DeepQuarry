@@ -1095,6 +1095,7 @@ banned = [
   "verb_rerun_ask = ask_steps(client, /datum/ask_sequence/admin_verb, list(question_step(...)), PROC_REF(done)) in the ADMIN_VERB body",
   "client_ask = open_request(src, /datum/prompt/x, PROC_REF(entered), answerer = mob, ...) in the client proc, the answer handled in the handler",
   "cast_ask = target_questions(user) returning question_step() specs on the spell, the answers read in targets_from_answers(user, asked)",
+  "flow_ask = a question sequence (code/datums/prompts/sequence.dm): ask_admin(/datum/ask_sequence/admin/x, subject, steps, PROC_REF(done)) with question_step() specs, or ask_child() for a shared picker; an op asks with asks() steps",
   "rerun_ask_on = asks(/datum/prompt/kind, fields = list(...), step = \"name\", answerer = PROC_REF(x)) on the op",
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",

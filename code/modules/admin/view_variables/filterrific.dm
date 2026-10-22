@@ -79,16 +79,16 @@ CAPABILITIES(/datum/filter_editor)
 	return apply_filter_colour(name, A.step_value("color"))
 
 /datum/filter_editor/proc/ui_act_modify_icon_value(datum/act/op/A, name)
-	// the icon questions are a flow of their own (pick_and_customize_icon() parks on each)
-	prompt_flow(src, PROC_REF(modify_icon_flow), list(A.actor, name))
+	// the icon questions are a sequence of their own (the filter is changed when they are answered)
+	ask_sequence_begin(src, /datum/ask_sequence/picker/icon_pick, A.actor, null, null, PROC_REF(icon_value_picked), null, null, list("kept" = list("name" = name)))
 	return TRUE
 
-/datum/filter_editor/proc/modify_icon_flow(mob/user, name)
-	var/icon/new_icon = pick_and_customize_icon(user)
-	if(new_icon)
-		target().filter_data[name]["icon"] = new_icon
+/datum/filter_editor/proc/icon_value_picked(datum/ask_sequence/picker/icon_pick/asked)
+	var/icon/new_icon = asked.get("result")
+	if(new_icon && target())
+		target().filter_data[asked.kept["name"]]["icon"] = new_icon
 		target().update_filters()
-		. = TRUE
+		SStgui.update_uis(src)
 
 /datum/filter_editor/proc/ui_act_mass_apply(datum/act/op/A, path)
 	var/mob/user = A.actor

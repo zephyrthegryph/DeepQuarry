@@ -811,6 +811,7 @@
 #include "interim_beaker_lid_transfer.dm"
 #include "interim_remote_button_emag.dm"
 #include "interim_type_picker_actor.dm"
+#include "dq_flow_ask_sequences.dm"
 #include "interim_cleanup_validation.dm"
 #include "interim_sheet_sign_consumption.dm"
 #include "interim_water_tank_refill.dm"
