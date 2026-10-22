@@ -1176,8 +1176,8 @@ CAPABILITIES(/datum/character_setup_button)
 	if(reopen)
 		ooc_notes_window(user)
 
-/// Its setup hook (setup() in /mob/living's CAPABILITIES).
-/mob/living/proc/prime_hud_list()
+/mob/living/Initialize(mapload)
+	. = ..()
 	// Brain creation is handled by the combat AI integration's
 	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.

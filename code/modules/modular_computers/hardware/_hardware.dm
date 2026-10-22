@@ -25,6 +25,7 @@
 	var/external_slot
 
 CAPABILITIES(/obj/item/computer_hardware)
+	setup(PROC_REF(link_holder))
 	derives(nameof(w_class), PROC_REF(initial_hardware_size))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	ref_one(nameof(holder2))
@@ -81,8 +82,7 @@ CAPABILITIES(/obj/item/computer_hardware)
 	var/missing = get_integrity_damage()
 	to_chat(user, "Hardware Integrity Test... (Corruption: [missing]/[max_integrity]) [hardware_failed() ? "FAIL" : missing > damage_malfunction ? "WARN" : "PASS"]")
 
-/obj/item/computer_hardware/Initialize(mapload)
-	. = ..()
+/obj/item/computer_hardware/proc/link_holder()
 	if(istype(loc, /obj/item/modular_computer))
 		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 

@@ -16,13 +16,13 @@
 	var/list/food_layers
 
 
-/obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/food/snacks/customizable/proc/build_filling()
 	filling = image(icon,,"[initial(icon_state)]_filling")
 	updateName()
 
 // A food put in it is one more ingredient, up to a limit; a custom food cannot be put in another.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable)
+	setup(PROC_REF(build_filling))
 	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 3)))
 	op("add", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add it"),
 		needs(req(PROC_REF(has_room_for)), req(PROC_REF(not_custom_itself))), then(PROC_REF(ingredient_added)))

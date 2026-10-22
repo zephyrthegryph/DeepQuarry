@@ -90,7 +90,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
-	setup(PROC_REF(setup_mood_glow))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
 	configure(mob_movement(makes_dirt = FALSE))
@@ -99,11 +98,11 @@ CAPABILITIES(/mob/living/simple_mob/slime)
 	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))
 	op("slime_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat off"), then(PROC_REF(slime_interaction_hand)))
 
-/// The mood and the glow of the slime's colour, once it exists (setup()).
-/mob/living/simple_mob/slime/proc/setup_mood_glow()
+/mob/living/simple_mob/slime/Initialize(mapload)
 	update_mood()
 	set_glow_color(color)
 	refresh_glow()
+	return ..()
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \

@@ -103,11 +103,10 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 	var/emagged = FALSE
 
 CAPABILITIES(/mob/living/silicon/pai/infomorph)
+	setup(PROC_REF(set_up_pda))
 	param(nameof(name), pos = 1, default = "Unknown", overrides = TRUE)
 
-// ALLOW(init/INSTANCE_STATE): an infomorph names its PDA after itself and speaks Galactic Common
-/mob/living/silicon/pai/infomorph/Initialize(mapload)
-	. = ..()
+/mob/living/silicon/pai/infomorph/proc/set_up_pda()
 
 	//PDA
 	pda.ownjob = "Sleevecard"

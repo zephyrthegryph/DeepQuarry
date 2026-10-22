@@ -14,6 +14,7 @@
 	var/read_only = FALSE
 
 CAPABILITIES(/obj/item/computer_hardware/hard_drive)
+	setup(PROC_REF(install_programs))
 	owns_many(nameof(stored_files))
 
 /obj/item/computer_hardware/hard_drive/advanced
@@ -181,6 +182,5 @@ CAPABILITIES(/obj/item/computer_hardware/hard_drive)
 		if(F.uid == uid)
 			return F
 
-/obj/item/computer_hardware/hard_drive/Initialize(mapload)
-	. = ..()
+/obj/item/computer_hardware/hard_drive/proc/install_programs()
 	install_default_programs()

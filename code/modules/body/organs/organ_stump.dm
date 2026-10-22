@@ -7,7 +7,6 @@ CAPABILITY_TYPE(stump_identity, CAP_STUMP_IDENTITY, /datum/capability/stump_iden
 
 CAPABILITIES(/obj/item/organ/external/stump)
 	stump_identity()
-	setup(PROC_REF(stump_setup))
 	ref_one(nameof(stump_of), /obj/item/organ/external)
 	param(nameof(stump_of), pos = 2, keep = FALSE)
 	// A stump is the place a limb was on a body: once it has joined one, it lives while it is attached (removed, it ends).
@@ -32,13 +31,15 @@ CAPABILITIES(/obj/item/organ/external/stump)
 	if(istype(limb))
 		stump.set_organ_tag(limb.organ_tag)
 		stump.set_parent_organ(limb.parent_organ)
-		stump.body_part = limb.body_part
-		stump.amputation_point = limb.amputation_point
-		stump.joint = limb.joint
 
-/// Setup after the Initialize() chain: the stump takes the damage of the limb it replaces, robotic when both are.
-/obj/item/organ/external/stump/proc/stump_setup()
+// ALLOW(init/INSTANCE_STATE): a stump takes the place, joint and damage of the limb it replaces, robotic when both are
+/obj/item/organ/external/stump/Initialize(mapload)
 	var/obj/item/organ/external/limb = stump_of
+	if(istype(limb))
+		body_part = limb.body_part
+		amputation_point = limb.amputation_point
+		joint = limb.joint
+	. = ..()
 	if(istype(limb))
 		set_max_damage(limb.max_damage)
 		if((limb.is_robotic()) && (!parent || (parent.is_robotic())))

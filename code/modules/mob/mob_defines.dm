@@ -214,7 +214,6 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
-	setup(PROC_REF(mob_created))
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)

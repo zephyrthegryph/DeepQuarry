@@ -8,15 +8,11 @@
 	storage_slots = 7
 	var/list/has_items
 
-CAPABILITIES(/obj/item/storage/box/fluff)
-	setup(PROC_REF(fill_fluff_box))
-
-/// The kit holds exactly its has_items; the storage grows to fit them (setup()).
-/obj/item/storage/box/fluff/proc/fill_fluff_box()
+/obj/item/storage/box/fluff/Initialize(mapload)
 	storage_slots = length(has_items)
 	for(var/P in has_items)
 		new P(src)
-	calibrate_size()
+	. = ..()
 // END - DO NOT EDIT PROTOTYPE
 
 
