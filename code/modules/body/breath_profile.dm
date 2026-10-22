@@ -131,7 +131,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 /mob/living
 	/// 0..1: how much of the photosynthesis gas (CO2) the last skin breath carried. Boosts the
 	/// photosynthesis trait's gains (/datum/trait_state/photosynth boosted_* vars).
-	var/tmp/photosynthesis_boost = 0
 
 /// Breathes through the skin: takes CO2 in, gives oxygen out, either gas keeps the tissue
 /// alive. No lungs, so no smoke masks, no lung rupture and no breath sounds.
@@ -173,7 +172,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 	var/breath_total = breath ? xgm_total_moles(breath) : 0
 	if(!breath_total)
 		H.failed_last_breath = 1
-		H.photosynthesis_boost = 0
+		sparse_set(H, photosynthesis_boost, 0)
 		H.body?.set_breath_quality(0)
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 		return
@@ -210,7 +209,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 		H.throw_alert("co2", /atom/movable/screen/alert/too_much_co2/plant)
 	else
 		H.clear_alert("co2")
-	H.photosynthesis_boost = (inhaling && min_pressure > 0) ? clamp(inhale_pp, 0, min_pressure) / min_pressure : 0
+	sparse_set(H, photosynthesis_boost, (inhaling && min_pressure > 0) ? clamp(inhale_pp, 0, min_pressure) / min_pressure : 0)
 
 	H.breathe_poison(breath, S.poison_type, breath_total, breath_pressure)
 	H.breathe_sleeping_gas(breath, breath_total, breath_pressure)

@@ -121,9 +121,9 @@
 	//Determining vore attempt privacy
 	var/success_msg = "ERROR: Vore message couldn't be created. Notify a dev. (sc)"
 
-	if(prey.is_slipping)
+	if(sparse_get_or(prey, is_slipping, FALSE))
 		success_msg = span_vwarning("[prey] suddenly slides into [pred]'s [lowertext(belly.name)]!")
-	else if(pred.is_slipping)
+	else if(sparse_get_or(pred, is_slipping, FALSE))
 		success_msg = span_vwarning("[prey] suddenly slips inside of [pred]'s [lowertext(belly.name)] as [pred] slides into them!")
 	else if(user == pred) //Feeding someone to yourself
 		success_msg = span_vwarning("[pred] manages to [lowertext(belly.vore_verb)] [prey] into their [lowertext(belly.name)]!")
@@ -140,9 +140,9 @@
 	//Determining vore attempt privacy
 	var/attempt_msg = "ERROR: Vore message couldn't be created. Notify a dev. (sc)"
 
-	if(prey.is_slipping)
+	if(sparse_get_or(prey, is_slipping, FALSE))
 		attempt_msg = span_vwarning("It seems like [prey] is about to slide into [pred]'s [lowertext(belly.name)]!")
-	else if(pred.is_slipping)
+	else if(sparse_get_or(pred, is_slipping, FALSE))
 		attempt_msg = span_vwarning("It seems like [prey] is gonna end up inside [pred]'s [lowertext(belly.name)] as [pred] comes sliding over!")
 	else if(user == pred) //Feeding someone to yourself
 		attempt_msg = span_vwarning("[pred] is attempting to [lowertext(belly.vore_verb)] [prey] into their [lowertext(belly.name)]!")
@@ -157,7 +157,7 @@
  */
 /proc/get_vore_message_range(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	var/message_range = world.view
-	if(!pred.is_slipping && !prey.is_slipping) //We only care about privacy preference if it's NOT a spontaneous vore.
+	if(!sparse_get_or(pred, is_slipping, FALSE) && !sparse_get_or(prey, is_slipping, FALSE)) //We only care about privacy preference if it's NOT a spontaneous vore.
 		switch(belly.eating_privacy_local) //if("loud") case not added, as it would not modify message_range
 			if("default")
 				if(pred.vore_prefs.eating_privacy_global)

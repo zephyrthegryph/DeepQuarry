@@ -487,7 +487,7 @@ emp_act
 	if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
 		handle_suit_punctures(kind, amount, zone)
 		if(injury_is_located(kind))
-			damageoverlaytemp = 20
+			sparse_set(src, damageoverlaytemp, 20)
 		// A corpse burned past 3.5x its species health is husked.
 		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
 			ChangeToHusk()

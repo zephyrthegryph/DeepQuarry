@@ -592,8 +592,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Show/Hide Nutrition Levels"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Allow other player to see your current nutrition level or not."
-	nutrition_hidden = !nutrition_hidden
-	to_chat(src, "Players will [nutrition_hidden ? "no longer" : "now"] see your nutrition levels.")
+	sparse_set(src, nutrition_hidden, !sparse_get_or(src, nutrition_hidden, FALSE))
+	to_chat(src, "Players will [sparse_get_or(src, nutrition_hidden, FALSE) ? "no longer" : "now"] see your nutrition levels.")
 
 /mob/living/carbon/human/proc/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"

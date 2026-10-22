@@ -68,7 +68,7 @@
 		return
 	if(light <= 0)
 		return
-	var/boost = owner.photosynthesis_boost
+	var/boost = sparse_get_or(owner, photosynthesis_boost, 0)
 	feed(light, boost)
 	if(shock_relief_per_light && iscarbon(owner))
 		var/mob/living/carbon/C = owner

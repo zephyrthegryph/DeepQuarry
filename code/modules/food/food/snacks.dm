@@ -4775,7 +4775,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 
 /mob/living
 	var/composition_reagent
-	var/composition_reagent_quantity
 
 ///mob/living/simple_mob/adultslime	//The literal only thing in the game that uses this is commented out, so I comment out this too
 

@@ -5335,6 +5335,7 @@
 #include "code\datums\sparse_vars\chat_color_cache.dm"
 #include "code\datums\sparse_vars\forensics.dm"
 #include "code\datums\sparse_vars\movable_misc.dm"
+#include "code\datums\sparse_vars\mob_state.dm"
 #include "code\modules\mob\living\silicon\robot\cyborg_spawn.dm"
 #include "code\datums\sparse_vars\observer_events.dm"
 #include "code\datums\sparse_vars\update_on_z.dm"

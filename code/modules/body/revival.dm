@@ -36,7 +36,7 @@
 				return "brain decayed"
 	if(HUSK in mutations)
 		return "husked"
-	if(!can_defib)
+	if(!sparse_get_or(src, can_defib, 1))
 		return "brain stem"
 	var/bad_vital_organ = check_vital_organs()
 	if(bad_vital_organ)
@@ -86,7 +86,7 @@
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
 	set_status_flags(status_flags & ~DISFIGURED)
-	can_defib = TRUE
+	sparse_set(src, can_defib, TRUE)
 
 /// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
 /// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.

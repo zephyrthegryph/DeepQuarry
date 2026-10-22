@@ -6,7 +6,6 @@
 	// Hair, eye, skin and synth colours, styles, skin tone, digitigrade and lips: the looks profile record
 	// (/datum/record/appearance, profile_records.dm).
 
-	var/damage_multiplier = 1 //multiplies melee combat damage
 
 
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
@@ -81,9 +80,7 @@
 
 
 /mob/living/carbon/human
-	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
 	var/speech_sound_enabled = TRUE
-	var/nutrition_hidden = FALSE
 
 /mob/living/carbon/human/ai_controlled
 	low_priority = TRUE

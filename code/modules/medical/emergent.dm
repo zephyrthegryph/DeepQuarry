@@ -15,20 +15,17 @@
 // lands in owner.body.
 
 /mob/living/carbon/human
-	var/dq_last_neural_load
-	var/dq_last_radiation
-	var/dq_last_bodytemperature
 
 /// Scalar metrics include environmental values that can be authored outside a
 /// setter. Comparing this small fixed signature is cheaper and safer than
 /// walking every condition/cause when nothing changed.
 /mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
 	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
-	if(current_neural == dq_last_neural_load && radiation == dq_last_radiation && body_temperature() == dq_last_bodytemperature)
+	if(current_neural == sparse_get(src, dq_last_neural_load) && radiation == sparse_get(src, dq_last_radiation) && body_temperature() == sparse_get(src, dq_last_bodytemperature))
 		return
-	dq_last_neural_load = current_neural
-	dq_last_radiation = radiation
-	dq_last_bodytemperature = body_temperature()
+	sparse_set(src, dq_last_neural_load, current_neural)
+	sparse_set(src, dq_last_radiation, radiation)
+	sparse_set(src, dq_last_bodytemperature, body_temperature())
 	body?.invalidate(BODY_DIRTY_METRICS)
 
 /// Run the trigger domains the body has invalidated since last time.

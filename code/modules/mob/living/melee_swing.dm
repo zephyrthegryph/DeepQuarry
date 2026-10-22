@@ -54,13 +54,12 @@
 /mob/living/var/melee_swing_resolving = FALSE
 /// Monotonic swing id. The stuck-flag safety timer only clears the swing it was armed for,
 /// so a timer left over from a finished swing can never clobber a newer one.
-/mob/living/var/melee_swing_serial = 0
 
 /// Safety net for is_swinging: fires MELEE_SWING_STUCK_GRACE after the windup should have
 /// resolved. If the flag is still up for the same swing, something between the set and the
 /// clear runtimed — release it (and the resolving flag) rather than wedging the mob forever.
 /mob/living/proc/clear_stuck_swing(serial)
-	if(!is_swinging || serial != melee_swing_serial)
+	if(!is_swinging || serial != sparse_get_or(src, melee_swing_serial, 0))
 		return FALSE
 	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
 	is_swinging = FALSE
@@ -121,7 +120,8 @@
 	// if it runtimes.
 	is_swinging = TRUE
 	melee_swing_resolving = FALSE
-	var/serial = ++melee_swing_serial
+	var/serial = sparse_get_or(src, melee_swing_serial, 0) + 1
+	sparse_set(src, melee_swing_serial, serial)
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
 	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 

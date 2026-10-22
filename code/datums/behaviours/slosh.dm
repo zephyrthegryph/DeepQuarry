@@ -13,11 +13,8 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 
 /mob/living
 	/// Steps counted by the slosh behaviour.
-	var/slosh_steps = 0
 	/// Cached slosh footstep volume (0: silent).
-	var/slosh_volume = 0
 	/// Cached slosh footstep chance.
-	var/slosh_chance = 0
 
 /datum/capability/slosh/proc/slosh_step(datum/act/A)
 	var/mob/living/source = A.holder
@@ -28,18 +25,24 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 /datum/capability/slosh/proc/slosh_moved(mob/living/source)
 	if(ishuman(source))
 		var/mob/living/carbon/human/source_human = source
-		if(source_human.m_intent == I_WALK && source.slosh_steps++ % 20 == 0)
+		if(source_human.m_intent == I_WALK && slosh_step_count(source) % 20 == 0)
 			return
-		if(source_human.m_intent == I_RUN && source.slosh_steps++ % 2 != 0)
+		if(source_human.m_intent == I_RUN && slosh_step_count(source) % 2 != 0)
 			return
 		choose_vorefootstep(source)
 	if(issilicon(source))
-		if(source.slosh_steps++ % 2)
+		if(slosh_step_count(source) % 2)
 			choose_vorefootstep(source)
 
 
+/// The steps `source` had taken before this one; counts this one (the old `slosh_steps++`).
+/datum/capability/slosh/proc/slosh_step_count(mob/living/source)
+	var/steps = sparse_get_or(source, slosh_steps, 0)
+	sparse_set(source, slosh_steps, steps + 1)
+	return steps
+
 /datum/capability/slosh/proc/choose_vorefootstep(mob/living/source)
-	if(source.slosh_steps++ >= 5)
+	if(slosh_step_count(source) >= 5)
 
 		var/highest_vol = 0
 
@@ -50,37 +53,37 @@ CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
 				highest_vol = total_volume
 
 		if(highest_vol < 20)
-			source.slosh_volume = 0
-			source.slosh_chance = 0
+			sparse_set(source, slosh_volume, 0)
+			sparse_set(source, slosh_chance, 0)
 		else
-			source.slosh_volume = 20 + highest_vol * 4/5
-			source.slosh_chance = highest_vol/4
+			sparse_set(source, slosh_volume, 20 + highest_vol * 4/5)
+			sparse_set(source, slosh_chance, highest_vol/4)
 
-		source.slosh_steps = 0
+		sparse_set(source, slosh_steps, 0)
 
-		if(!source.slosh_volume || !source.slosh_chance)
+		if(!sparse_get_or(source, slosh_volume, 0) || !sparse_get_or(source, slosh_chance, 0))
 			return
 
-		if(prob(source.slosh_chance))
+		if(prob(sparse_get_or(source, slosh_chance, 0)))
 			handle_vorefootstep(source)
 
 /datum/capability/slosh/proc/handle_vorefootstep(mob/living/source)
-	if(!CONFIG_GET(number/vorefootstep_volume) || !source.slosh_volume)
+	if(!CONFIG_GET(number/vorefootstep_volume) || !sparse_get_or(source, slosh_volume, 0))
 		return
 
 	var/S = pick(GLOB.slosh)
 	if(!S) return
-	var/volume = CONFIG_GET(number/vorefootstep_volume) * (source.slosh_volume/100)
+	var/volume = CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100)
 
 	if(ishuman(source))
 		var/mob/living/carbon/human/human_source = source
 
 		if(!human_source.get_equipped_item(SLOT_ID_SHOES) || human_source.m_intent == I_WALK)
-			volume = CONFIG_GET(number/vorefootstep_volume) * (source.slosh_volume/100) * 0.75
+			volume = CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100) * 0.75
 		else if(human_source.get_equipped_item(SLOT_ID_SHOES))
 			var/obj/item/clothing/shoes/feet = human_source.get_equipped_item(SLOT_ID_SHOES)
 			if(istype(feet))
-				volume = feet.step_volume_mod * CONFIG_GET(number/vorefootstep_volume) * (source.slosh_volume/100) * 0.75
+				volume = feet.step_volume_mod * CONFIG_GET(number/vorefootstep_volume) * (sparse_get_or(source, slosh_volume, 0)/100) * 0.75
 		if(!human_source.has_organ(BP_L_FOOT) && !human_source.has_organ(BP_R_FOOT))
 			return
 
