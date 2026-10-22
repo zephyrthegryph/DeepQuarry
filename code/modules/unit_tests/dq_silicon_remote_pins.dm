@@ -2,6 +2,7 @@
 // entry-point migration. Metadata keys are covered by the ordinary conversion
 // pins; these rows compare the actual menu/refusal and plain-click result.
 /datum/unit_test/dq_conversion_pin/silicon_remote
+	tier = TEST_TIER_NORMAL
 
 /datum/unit_test/dq_conversion_pin/silicon_remote/snapshot_name()
 	return "silicon_remote"

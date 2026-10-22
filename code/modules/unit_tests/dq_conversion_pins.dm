@@ -23,7 +23,10 @@
  */
 #define DQ_PIN_DIR "code/modules/unit_tests/snapshots/pins/"
 
+/// The whole-type sweep: every recorded pin (about 1,400 types, minutes per world), so it is an exhaustive-tier test. The tests parented to it capture
+/// their own directories and stay in the normal tier; the normal tier's share of this sweep is dq_conversion_pin/representative.
 /datum/unit_test/dq_conversion_pin
+	tier = TEST_TIER_EXHAUSTIVE
 	var/list/capture_gravity_before
 	/// Optional subtree selection for focused conversions; the default captures every recorded type.
 	var/list/capture_roots
@@ -54,6 +57,12 @@
 		/obj/item/stack/material/steel,
 		/obj/item/card/id,
 	)
+
+/// Normal tier: the same capture over a fixed handful of recorded type trees (a machine, a button, a melee item), so a merge still catches a
+/// broken capture or an obviously changed menu; the full sweep runs with --tier=all.
+/datum/unit_test/dq_conversion_pin/representative
+	tier = TEST_TIER_NORMAL
+	capture_roots = list(/obj/machinery/sparker, /obj/machinery/button/ignition, /obj/item/melee/shock_maul)
 
 /datum/unit_test/dq_conversion_pin/proc/snapshot_name()
 	return "pins"

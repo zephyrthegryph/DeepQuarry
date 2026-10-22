@@ -2,6 +2,7 @@
 // Keeping this directory separate makes the focused check independent of other lanes.
 /datum/unit_test/dq_machinery_timed_conversion_pin
 	parent_type = /datum/unit_test/dq_conversion_pin
+	tier = TEST_TIER_NORMAL
 
 /datum/unit_test/dq_machinery_timed_conversion_pin/snapshot_directory()
 	return "code/modules/unit_tests/snapshots/machinery_timed_1008/"
