@@ -84,6 +84,7 @@
 	turf_resource_types = TURF_HAS_MINERALS
 
 CAPABILITIES(/turf/simulated/mineral)
+	setup(PROC_REF(roll_ore_and_detail))
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
@@ -159,9 +160,8 @@ CAPABILITIES(/turf/simulated/mineral)
 		if(SSair)
 			SSair.mark_for_update(src)
 
-// ALLOW(init/INSTANCE_STATE): rolls its ore and its rock detail per tile
-/turf/simulated/mineral/Initialize(mapload)
-	. = ..()
+/// Rolls its ore and its rock detail per tile.
+/turf/simulated/mineral/proc/roll_ore_and_detail()
 	if(pregen_substrate)
 		// Blank generator substrate (expedition_blank.dmm): the cave carver
 		// re-rolls ore, repaints icons and re-details every touched cell right
@@ -175,7 +175,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	if(prob(20))
 		set_overlay_detail("asteroid[rand(0,9)]")
 	if(random_icon)
-		dir = pick(GLOB.alldirs)
+		set_dir(pick(GLOB.alldirs))
 
 /// Rock made during the round spreads its ore too, unless it is the generator's blank substrate (the carver owns that).
 /turf/simulated/mineral/runtime_after_init()

@@ -38,6 +38,7 @@
 	flags = REMOTEVIEW_ON_ENTER
 
 CAPABILITIES(/obj/machinery/disposal)
+	setup(PROC_REF(join_network), mapload = TRUE)
 	on_notice(/datum/notice/disposal_receive, then(PROC_REF(on_disposal_receive)))
 	configure(uses_power(active = 2200, idle = 100))
 	silicon_ui()
@@ -92,10 +93,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	consumed(make_from, src)
 	set_mode(DISPOSALMODE_OFF)
 
-// ALLOW(init/INSTANCE_STATE): a bin joins its trunk and the disposal network, and a mapped one primes its reservoir from the room
-/obj/machinery/disposal/Initialize(mapload)
-	. = ..()
-
+/// A bin joins its trunk and the disposal network, and a mapped one primes its reservoir from the room.
+/obj/machinery/disposal/proc/join_network(mapload)
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
 	add_disposal_connection()

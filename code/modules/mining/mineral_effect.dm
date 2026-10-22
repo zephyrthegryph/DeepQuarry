@@ -9,9 +9,11 @@
 	var/image/scanner_image
 	var/ore_reagent	// Reagent from pumping water near this ore.
 
-// ALLOW(init/INSTANCE_STATE): takes its name and sprite from the ore of the rock it sits in
-/obj/effect/mineral/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/mineral)
+	setup(PROC_REF(take_ore), mapload = TRUE)
+
+/// Takes its name and sprite from the ore of the rock it sits in; one not in a rock with ore is discarded.
+/obj/effect/mineral/proc/take_ore(mapload)
 	var/turf/simulated/mineral/min_turf = loc
 	if(!istype(min_turf))
 		return INITIALIZE_HINT_QDEL
@@ -19,10 +21,10 @@
 	if(!M)
 		return INITIALIZE_HINT_QDEL
 	name = "[M.display_name] deposit"
-	ore_key = M.name
+	set_ore_key(M.name)
 	if(M.reagent)
 		ore_reagent = M.reagent
-	layer = min_turf.layer+0.1
+	set_layer(min_turf.layer+0.1)
 
 /obj/effect/mineral/proc/get_scan_overlay()
 	if(!scanner_image)

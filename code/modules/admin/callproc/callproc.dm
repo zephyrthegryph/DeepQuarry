@@ -24,8 +24,11 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	callers -= caller_name
 	name = "[initial(name)] ([callers.Join(") (")])"
 
-/mob/proccall_handler/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/proccall_handler)
+	setup(PROC_REF(become_handler), mapload = TRUE)
+
+/// The first one made is the handler; a second one is discarded.
+/mob/proccall_handler/proc/become_handler(mapload)
 	if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
 		return INITIALIZE_HINT_QDEL
 	GLOB.AdminProcCallHandler = src

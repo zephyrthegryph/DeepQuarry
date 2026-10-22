@@ -31,9 +31,13 @@ PROC_SUMMARY(/proc/fancy_shuttle_helper)
 	var/icon/split_icon
 	var/fancy_shuttle_tag
 
-INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
-/obj/effect/fancy_shuttle/Initialize(mapload) // has to be very early so others can grab it
-	. = ..()
+INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle) // initializes at once so the walls can grab what it registers
+
+CAPABILITIES(/obj/effect/fancy_shuttle)
+	setup(PROC_REF(register_helper), mapload = TRUE)
+
+/// A helper with no tag is deleted; the rest register their icon for the walls and windows of their tag (setup hook).
+/obj/effect/fancy_shuttle/proc/register_helper(mapload)
 	if(!fancy_shuttle_tag)
 		log_mapping("## ERROR Fancy shuttle with no tag at [x],[y],[z]! Type is: [type]")
 		return INITIALIZE_HINT_QDEL

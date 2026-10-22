@@ -176,35 +176,9 @@ init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::smoke_system.attach
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::add_cell
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::mecha_log_message
 init_lines	code/game/mecha/mecha.dm	@/obj/mecha::Initialize::loc.Entered
-init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::impact_area
-init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::if
-init_lines	code/game/objects/effects/anomalies/_anomalies.dm	@/obj/effect/anomaly::Initialize::return
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::return
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::message_admins
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::log_game
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::for
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.set_amount
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.Spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::expr
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::Spread
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T.hotspot_expose
-init_lines	code/game/objects/effects/decals/Cleanable/humans.dm	@/obj/effect/decal/cleanable/blood::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/humans.dm	@/obj/effect/decal/cleanable/blood::Initialize::return
-init_lines	code/game/objects/effects/decals/Cleanable/humans.dm	@/obj/effect/decal/cleanable/blood::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/humans.dm	@/obj/effect/decal/cleanable/blood::Initialize::dry_delay
-init_lines	code/game/objects/effects/decals/cleanable.dm	@/obj/effect/decal/cleanable::Initialize::if
-init_lines	code/game/objects/effects/decals/cleanable.dm	@/obj/effect/decal/cleanable::Initialize::SSpersistence.track_value
-init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::if
-init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::stack_trace
-init_lines	code/game/objects/effects/particle_holder.dm	@/obj/effect/abstract/particle_holder::Initialize::return
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::tool_qualities
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::for
 init_lines	code/game/objects/items.dm	@/obj/item::Initialize::add_item_action
@@ -241,19 +215,6 @@ init_lines	code/game/objects/items/stacks/stack.dm	@/obj/item/stack::Initialize:
 init_lines	code/game/objects/items/weapons/id cards/cards.dm	@/obj/item/card::Initialize::reset_icon
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::if
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	@/obj/item/clothing::Initialize::material
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::material
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::if
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::return
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::new_matter
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::for
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::if
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::new_matter[material_type]
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::if
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::bulk_material
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::else
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::material_mix
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::if
-init_lines	code/game/objects/items/weapons/material/material_weapons.dm	@/obj/item/material::Initialize::flags
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::make_tethered
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::medigun
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	@/obj/item/medigun_backpack::Initialize::rel_set
@@ -268,36 +229,8 @@ init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::starts_with
 init_lines	code/game/objects/items/weapons/storage/storage.dm	@/obj/item/storage::Initialize::calibrate_size
 init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance_setup
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::if
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::return
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::for
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::if
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::if
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::C.delete_me
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::else
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::consume
-init_lines	code/game/objects/structures/catwalk.dm	@/obj/structure/catwalk::Initialize::update_connections
 init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence::Initialize::update_cut_status
 init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence/door::Initialize::update_door_status
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::return
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::for
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::return
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::update_overlays_now
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::updateOverlays
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::for
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::L
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::if
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::L
-init_lines	code/game/objects/structures/lattice.dm	@/obj/structure/lattice::Initialize::L.updateOverlays
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::rel_set
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::rel_set
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::rel_set
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::if
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::AM
-init_lines	code/game/objects/structures/props/machines.dm	@/obj/structure/prop/machine/nt_pod::Initialize::expr
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::rel_set
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::muffinmonster
@@ -338,11 +271,6 @@ init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::holy
 init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::levelupdate
 init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::if
 init_lines	code/game/turfs/simulated.dm	@/turf/simulated::Initialize::SSplanets.addTurf
-init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::if
-init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::log_mapping
-init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::return
-init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::split_icon
-init_lines	code/game/turfs/simulated/fancy_shuttles.dm	@/obj/effect/fancy_shuttle::Initialize::GLOB.fancy_shuttles[fancy_shuttle_tag]
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::floortype
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::if
 init_lines	code/game/turfs/simulated/floor.dm	@/turf/simulated/floor::Initialize::install_flooring
@@ -367,9 +295,6 @@ init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/ou
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
-init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::if
-init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::return
-init_lines	code/modules/admin/callproc/callproc.dm	@/mob/proccall_handler::Initialize::GLOB.AdminProcCallHandler
 init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::preload
 init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::if
 init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::for
@@ -399,18 +324,6 @@ init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stu
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::max_damage
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::robotize
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::default_material
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::material
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
-init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::return
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::forced_material
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::default_material
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::material
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
-init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::return
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::hold.max_storage_space
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::if
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::expr
@@ -419,23 +332,8 @@ init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initia
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::initialize_ai_brain
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::if
 init_lines	code/modules/emotes/emote_define.dm	@/datum/decl/emote::Initialize::LAZYSET
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::if
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::log_runtime
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::return
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::proto_set
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::if
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::log_runtime
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::Initialize::return
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::if
-init_lines	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::Initialize::return
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::proto_set
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::seed_type
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::newseed
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::if
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::newseed
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::proto_set
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::if
-init_lines	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::Initialize::return
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::if
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::calculate_samples
 init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/under/circuitry::Initialize::setup_integrated_circuit
@@ -472,7 +370,6 @@ init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/int
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::expr
 init_lines	code/modules/integrated_electronics/subtypes/memory.dm	@/obj/item/integrated_circuit/memory::Initialize::complexity
 init_lines	code/modules/lore_codex/codex.dm	@/obj/item/book/codex::Initialize::rel_set
-init_lines	code/modules/maint_recycler/code/util.dm	@/obj/effect/recycler_vendor_beacon::Initialize::GLOB.recycler_vendor_locations
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::if
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::_material_name
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::expr
@@ -486,34 +383,6 @@ init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/st
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::expr
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::default_type
 init_lines	code/modules/materials/engineering/exotic_feedstocks.dm	@/obj/item/stack/material/exotic_feedstock/random::Initialize::return
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::if
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::default_type
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::material
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::if
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::stack_trace
-init_lines	code/modules/materials/sheets/_sheets.dm	@/obj/item/stack/material::Initialize::return
-init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::if
-init_lines	code/modules/mining/machine_silo.dm	@/obj/machinery/ore_silo::Initialize::GLOB.ore_silo_default
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::make_ore
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::else if
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::make_ore
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::overlay_detail
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::if
-init_lines	code/modules/mining/mine_turfs.dm	@/turf/simulated/mineral::Initialize::dir
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::min_turf
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::if
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::return
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::M
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::if
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::return
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::name
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::ore_key
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::if
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::ore_reagent
-init_lines	code/modules/mining/mineral_effect.dm	@/obj/effect/mineral::Initialize::layer
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::appearance
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::invisibility
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::layer
@@ -657,16 +526,6 @@ init_lines	code/modules/overmap/spacetravel.dm	@/obj/effect/overmap/visitable/se
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::for
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::if
 init_lines	code/modules/paperwork/filingcabinet.dm	@/obj/structure/filingcabinet::Initialize::I.forceMove
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::if
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::was_maploaded
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::if
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::desc
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::if
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::info
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::info
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::info
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::update_space
-init_lines	code/modules/paperwork/paper.dm	@/obj/item/paper::Initialize::updateinfolinks
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::tokens
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::for
@@ -686,28 +545,12 @@ init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::I
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::for
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::P.load_persistent
 init_lines	code/modules/power/lighting.dm	@/obj/machinery/light/flamp::Initialize::layer
-init_lines	code/modules/power/smes_construction.dm	@/obj/machinery/power/smes/buildable::Initialize::placed_by_map
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo_type
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::caliber
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::trunk
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::add_disposal_connection
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::face
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::if
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::PUBLISH_LEGACY
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::if
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::environment
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::environment_pressure
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::environment_volume
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::if
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::fill_ratio
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::air_contents.copy_from_ratio
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::air_contents.set_volume
-init_lines	code/modules/recycling/disposal_machines.dm	@/obj/machinery/disposal::Initialize::mode
 init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle
 init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk/debug::Initialize::proto_set
-init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::rel_set
 init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs
 init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::destructive_events
 init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
@@ -718,7 +561,6 @@ init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/mach
 init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::config_flags
 init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::experiment_events
 init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
-init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::rel_set
 init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs
 init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
@@ -737,10 +579,6 @@ init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Init
 init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::rel_set
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::original_name
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
-init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
-init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::rel_set
-init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::if
-init_lines	code/modules/spells/spells.dm	@/obj/item/spell/unrestricted::Initialize::return
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
@@ -778,32 +616,15 @@ init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/ar
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
 init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::artifact_master.do_large_randomization
 init_lines	code/modules/xenoarcheaology/finds/misc.dm	@/obj/machinery/crystal::Initialize::randomize_color
-init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::if
-init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::log_mapping
-init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::flags
-init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::return
-init_lines	maps/common/common_things.dm	@/obj/sc_away_spawner::Initialize::spawning
-init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::if
-init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::WARNING
-init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::delete_me
-init_lines	maps/submaps/engine_submaps/engine.dm	@/obj/effect/landmark/engine_loader::Initialize::SSmapping.engine_loader
-world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
-world_reads	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
 world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
-world_reads	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
-world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = src
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
 world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.cameranet.addCamera(src)
-world_reads	code/modules/maint_recycler/code/util.dm	GLOB.recycler_vendor_locations |= get_turf(src)
-world_reads	code/modules/mining/machine_silo.dm	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
-world_reads	code/modules/mining/machine_silo.dm	GLOB.ore_silo_default = src
-world_reads	code/modules/mining/mine_turfs.dm	dir = pick(GLOB.alldirs)
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))

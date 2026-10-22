@@ -20,8 +20,8 @@
 	max_integrity = 100
 	var/delete_me = FALSE
 
-/obj/structure/catwalk/Initialize(mapload)
-	. = ..()
+/// A catwalk marked by a later-initializing twin is deleted; otherwise it absorbs the older catwalks on its tile and connects.
+/obj/structure/catwalk/proc/settle_on_tile(mapload)
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	for(var/obj/structure/catwalk/C in get_turf(src))
@@ -91,6 +91,7 @@
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 
 CAPABILITIES(/obj/structure/catwalk)
+	setup(PROC_REF(settle_on_tile), mapload = TRUE)
 	silicon_hand(adjacent = TRUE)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))

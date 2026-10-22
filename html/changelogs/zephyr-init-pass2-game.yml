@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Catwalks, lattices, fuel and blood decals, material weapons, anomalies, particle holders, away spawners, the engine loader, NT pods and fancy shuttle helpers set up through setup(..., mapload = TRUE) hooks"

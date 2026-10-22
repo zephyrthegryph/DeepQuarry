@@ -48,6 +48,9 @@ CAPABILITIES(/obj/effect/recycler_beacon)
 	density = 0
 	anchored = 1
 
-/obj/effect/recycler_vendor_beacon/Initialize(mapload)
+CAPABILITIES(/obj/effect/recycler_vendor_beacon)
+	setup(PROC_REF(register_location))
+
+/// The vendor may be placed on this beacon's turf.
+/obj/effect/recycler_vendor_beacon/proc/register_location()
 	GLOB.recycler_vendor_locations |= get_turf(src)
-	. = ..()
