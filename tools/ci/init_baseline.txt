@@ -469,6 +469,7 @@ init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persisten
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::ProcessAndApplyTokens
 init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::if
 init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::SSpersistence.track_value
+init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::load_database
 init_lines	code/modules/power/lighting.dm	@/obj/machinery/light/flamp::Initialize::layer
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo_type
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc
@@ -556,4 +557,3 @@ world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GL
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
 world_reads	code/modules/shieldgen/shield_gen.dm	for(var/obj/machinery/shield_capacitor/cap in range(1, src))
-init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::load_database
