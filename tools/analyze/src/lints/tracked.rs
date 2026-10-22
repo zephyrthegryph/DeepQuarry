@@ -250,12 +250,38 @@ fn tracked_from_text_with(f: &SourceFile, tracked: &mut Tracked, stats: bool) {
     }
 }
 
+/// `(owner type, x)` for every `setup(PROC_REF(x))` in a `CAPABILITIES(T)` block: InitAtom() runs them as soon as the instance's Initialize() chain
+/// returns, before after_init() and before any other code can reach the instance, so the writes of the proc `x` resolved on T (or a subtype of T)
+/// to the instance's own vars are construction (PRE_LIVE). A same-named proc on an unrelated type is not.
+fn setup_hook_names(files: Vec<&SourceFile>) -> BTreeSet<(String, String)> {
+    let mut out = BTreeSet::new();
+    for f in files {
+        if !f.text().contains("setup(") {
+            continue;
+        }
+        let mut owner: Option<String> = None;
+        for line in f.clean().text.split('\n') {
+            if let Some(m) = pat!(r"^CAPABILITIES\(\s*(/[\w/]+)\s*\)").captures(line) {
+                owner = Some(normalize_type(m.s(1)));
+            } else if !line.starts_with(|c: char| c == '\t' || c == ' ') && !line.trim().is_empty() {
+                owner = None;
+            }
+            if let (Some(o), Some(m)) = (&owner, pat!(r"\bsetup\(\s*PROC_REF\((\w+)\)").captures(line)) {
+                out.insert((o.clone(), m.s(1).to_string()));
+            }
+        }
+    }
+    out
+}
+
 /// The patterns built from the tracked names (`scan`).
 struct Pats {
     /// does the raw text mention any tracked name at all (`any(v in raw for v in tracked)`)
     any: Pat,
     bare: Pat,
     dotted: Pat,
+    /// names of procs some `setup(PROC_REF(x))` entry runs: construction, like `Initialize()` (see PRE_LIVE)
+    setup: BTreeSet<(String, String)>,
 }
 
 fn build_pats(tracked: &Tracked) -> Option<Pats> {
@@ -273,6 +299,7 @@ fn build_pats(tracked: &Tracked) -> Option<Pats> {
             ops = OPS
         )),
         dotted: Pat::new(&format!(r"(?<![\w.])(\w+)\.({names})\s*{ops}|(?:\+\+|--)\s*(\w+)\.({names})\b", names = names, ops = OPS)),
+        setup: BTreeSet::new(),
     })
 }
 
@@ -644,7 +671,7 @@ fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&List
     for p in parse_procs(f.clean()) {
         let owner = if p.owner != "/" { normalize_type(p.owner) } else { "/".to_string() };
         // Construction of the instance (see PRE_LIVE): its own tracked vars are written plainly there.
-        let pre_live = PRE_LIVE.contains(&p.name);
+        let pre_live = PRE_LIVE.contains(&p.name) || pats.setup.iter().any(|(t, n)| n == p.name && is_subtype(&owner, t));
         let mut is_setter_of: Option<String> = None;
         if let Some(var) = p.name.strip_prefix("set_") {
             if tracked_type_of(tracked, var, &owner).map(|b| !b.is_empty()).unwrap_or(false) {
@@ -789,12 +816,13 @@ pub fn tracked_lists(cx: &Cx) -> Tracked {
 
 /// The scan both `check` and `fix` run: every hit of every judged file, cached while the tracked index is unchanged.
 pub fn collect<'a>(cx: &Cx<'a>, tracked: &Tracked, tests: bool) -> Option<Collected<'a>> {
-    let pats = build_pats(tracked)?;
+    let mut pats = build_pats(tracked)?;
+    pats.setup = setup_hook_names(cx.all_files());
     let lists = tracked_lists(cx);
     let lpats = build_list_pats(&lists);
     let files: Vec<&SourceFile> = if tests { cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect() } else { cx.files() };
     let semantic = cx.sem();
-    let key = incr::ctx_key(&(tracked, &lists));
+    let key = incr::ctx_key(&(tracked, &lists, &pats.setup));
     let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-3" } else { "tracked-judge-3" }, key, &files, |f| {
         let mut sink = Sink::new();
         sink.cur = f.rel.clone();
@@ -1409,10 +1437,29 @@ mod setter_fix_tests {
     }
 
     #[test]
+    fn setup_hook_construction_is_owner_typed() {
+        let hits = |proc_owner: &str| {
+            let source = format!("{DECL}CAPABILITIES(/obj/box)\n\tsetup(PROC_REF(draw_it))\n\n{proc_owner}/proc/draw_it()\n\tplain = 5\n");
+            let f = SourceFile::from_text("code/fixture.dm", &source);
+            let mut tracked = Tracked::new();
+            tracked.insert("plain".into(), BTreeSet::from(["/obj/box".into(), "/obj/other".into()]));
+            let mut pats = build_pats(&tracked).unwrap();
+            pats.setup = setup_hook_names(vec![&f]);
+            scan_one(&tracked, &pats, &Tracked::new(), None, &f, &mut Sink::new(), &BTreeSet::new()).0.len()
+        };
+        assert_eq!(hits("/obj/box"), 0);
+        assert_eq!(hits("/obj/box/sub"), 0);
+        assert_eq!(hits("/obj/other"), 1);
+    }
+
+    #[test]
     fn construction_writes_its_own_vars_plainly() {
         assert_eq!(run("/obj/box/Initialize(mapload)", "\t. = ..()\n\tplain = 5\n\tsrc.plain += 1\n\tLAZYADD(items, 1)").0, None);
         assert_eq!(run("/obj/box/New(loc)", "\tplain = 5").0, None);
         // another object's var, and a proc that runs once the holder is live, are judged as anywhere else
+        let hooks = setup_hook_names(vec![&SourceFile::from_text("a.dm", "CAPABILITIES(/obj/box)\n\tsetup(PROC_REF(draw_it))\n")]);
+        assert_eq!(hooks.iter().cloned().collect::<Vec<_>>(), vec![("/obj/box".to_string(), "draw_it".to_string())]);
+        // the hook's own type and its subtypes construct; a same-named proc on an unrelated type is judged as anywhere else
         assert!(run("/obj/box/Initialize(mapload, obj/box/B)", "\tB.plain = 5").0.is_some());
         assert!(run("/obj/box/proc/after_setup()", "\tplain = 5").0.is_some());
         // a part the instance walks while it is built is construction too

@@ -117,7 +117,7 @@
 	return entry_make("pick_one", null, list("weights" = weighted))
 
 /// Resolves a starts spec entry for holder D into a type path (or a list of paths) and the constructor arguments.
-/proc/starts_resolve(datum/D, datum/entry/spec)
+/proc/starts_resolve(datum/D, datum/entry/spec, mapload = FALSE)
 	var/value = spec
 	var/list/ctor_args = null
 	if(spec.kind == "starts") // owns_one()/owns_many() wrap the spec with its starts_args; a legacy owns(starts = when()/pick_one()) passes it bare
@@ -131,7 +131,7 @@
 			if(ENTRY_WHEN)
 				value = starts_when(D, inner)
 	if(istext(value))
-		value = (value in D.vars) ? D.vars[value] : call(D, value)(null)
+		value = (value in D.vars) ? D.vars[value] : call(D, value)(null, mapload) // a PROC_REF start takes (current, mapload), as in the text form of own_init_starts()
 	return list(value, ctor_args)
 
 /**

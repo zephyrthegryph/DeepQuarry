@@ -1252,7 +1252,7 @@ CAPABILITIES(/obj/item/light)
 	refresh_light(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
-		set_layer(ABOVE_MOB_LAYER)
+		layer = ABOVE_MOB_LAYER
 
 // Wall tube lights
 /obj/item/light/tube

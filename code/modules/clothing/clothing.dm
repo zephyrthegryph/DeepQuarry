@@ -1122,14 +1122,14 @@ CAPABILITIES(/obj/item/clothing/under)
 /// Takes the sensor setting its wearer prefers and checks its rolled sprite.
 /obj/item/clothing/under/proc/configure_worn_state()
 	if(worn_state)
-		set_item_state_slots_at(slot_w_uniform_str, worn_state)
+		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 	else
 		worn_state = icon_state
 
 	//autodetect rollability
 	if(rolled_down < 0)
 		if((icon_exists(icon, "[worn_state]_d") || icon_exists(rolled_down_icon, worn_state) || icon_exists(icon_override, "[worn_state]_d")))
-			set_rolled_down(0)
+			rolled_down = 0
 
 	if(!ishuman(loc))
 		return
@@ -1137,13 +1137,13 @@ CAPABILITIES(/obj/item/clothing/under)
 	var/mob/living/carbon/human/H = loc
 	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
 	switch(sensorpref)
-		if(1) set_sensor_mode(SUIT_SENSOR_OFF)			//Sensors off
-		if(2) set_sensor_mode(SUIT_SENSOR_BINARY)		//Sensors on binary
-		if(3) set_sensor_mode(SUIT_SENSOR_VITAL)		//Sensors display vitals
-		if(4) set_sensor_mode(SUIT_SENSOR_TRACKING)	//Sensors display vitals and enables tracking
-		if(5) set_sensor_mode(pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING))	//Select a random setting
+		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
+		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary
+		if(3) sensor_mode = SUIT_SENSOR_VITAL		//Sensors display vitals
+		if(4) sensor_mode = SUIT_SENSOR_TRACKING	//Sensors display vitals and enables tracking
+		if(5) sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)	//Select a random setting
 		else
-			set_sensor_mode(pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING))
+			sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)
 			log_runtime("Invalid switch for suit sensors, defaulting to random. [sensorpref] chosen")
 
 /obj/item/clothing/under/proc/update_rolldown_status()

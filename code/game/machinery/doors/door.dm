@@ -61,6 +61,7 @@ MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
 CAPABILITIES(/obj/machinery/door)
+	setup(PROC_REF(settle_door_state))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	machine_basics(null, repair = NONE, frame = NONE)
 	doors()
@@ -94,9 +95,8 @@ CAPABILITIES(/obj/machinery/door)
 	user.do_attack_animation(src)
 	return OP_OK
 
-// ALLOW(init/INSTANCE_STATE): a door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is
-/obj/machinery/door/Initialize(mapload)
-	. = ..()
+/// A door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is.
+/obj/machinery/door/proc/settle_door_state()
 	apply_rad_shield_material()
 	if(density)
 		layer = closed_layer

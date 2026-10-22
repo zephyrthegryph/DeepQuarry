@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Deleting a turf in View Variables opens the replacement turf's window as the confirmation is asked again, even if the confirmation is cancelled"
