@@ -28,28 +28,27 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
-/obj/machinery/atmospherics/omni/mixer/Initialize(mapload)
-	. = ..()
-
+/// A mapper-set mixer takes its ports' concentrations from the tag_*_con vars.
+/obj/machinery/atmospherics/omni/mixer/proc/apply_mapper_concentrations()
 	if(mapper_set())
 		var/con = 0
 		for(var/datum/omni_port/P in ports)
 			switch(P.dir)
 				if(NORTH)
 					if(tag_north_con && tag_north == 1)
-						P.concentration = tag_north_con
+						P.set_concentration(tag_north_con)
 						con += max(0, tag_north_con)
 				if(SOUTH)
 					if(tag_south_con && tag_south == 1)
-						P.concentration = tag_south_con
+						P.set_concentration(tag_south_con)
 						con += max(0, tag_south_con)
 				if(EAST)
 					if(tag_east_con && tag_east == 1)
-						P.concentration = tag_east_con
+						P.set_concentration(tag_east_con)
 						con += max(0, tag_east_con)
 				if(WEST)
 					if(tag_west_con && tag_west == 1)
-						P.concentration = tag_west_con
+						P.set_concentration(tag_west_con)
 						con += max(0, tag_west_con)
 
 
@@ -127,6 +126,7 @@
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
 CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
+	setup(PROC_REF(apply_mapper_concentrations))
 	configure(uses_power(idle = 150))
 	ref_one(nameof(output))
 	ref_many(nameof(inputs))

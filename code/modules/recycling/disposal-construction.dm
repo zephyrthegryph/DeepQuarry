@@ -18,6 +18,7 @@
 	var/base_state = "pipe-s"
 
 CAPABILITIES(/obj/structure/disposalconstruct)
+	setup(PROC_REF(structure_disposalconstruct_setup))
 	rotatable()
 	param(nameof(ptype), pos = 1)
 	param(nameof(dir), pos = 2)
@@ -33,21 +34,19 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 /obj/structure/disposalconstruct/var/flipped_at_make = FALSE
 /obj/structure/disposalconstruct/var/subtype_at_make = 0
 
-// ALLOW(init/INSTANCE_STATE): a pipe part normalises a bent straight into a corner, its facing to a cardinal, and its density and sort type to its kind
-/obj/structure/disposalconstruct/Initialize(mapload)
-	. = ..()
+/obj/structure/disposalconstruct/proc/structure_disposalconstruct_setup()
 	// Disposals handle "bent"/"corner" strangely, handle this specially.
 	if(ptype == DISPOSAL_PIPE_STRAIGHT && (dir in GLOB.cornerdirs))
-		ptype = DISPOSAL_PIPE_CORNER
+		set_ptype(DISPOSAL_PIPE_CORNER)
 	switch(dir)
 		if(NORTHWEST)
-			dir = WEST
+			set_dir(WEST)
 		if(NORTHEAST)
-			dir = NORTH
+			set_dir(NORTH)
 		if(SOUTHWEST)
-			dir = SOUTH
+			set_dir(SOUTH)
 		if(SOUTHEAST)
-			dir = EAST
+			set_dir(EAST)
 
 	switch(ptype)
 		if(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE)

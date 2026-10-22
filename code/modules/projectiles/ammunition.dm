@@ -166,6 +166,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 
 
 CAPABILITIES(/obj/item/ammo_magazine)
+	setup(PROC_REF(item_ammo_magazine_setup))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	owns_many(nameof(stored_ammo), starts = PROC_REF(make_stored_ammo))
@@ -180,9 +181,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 /// The construction material a lathe forged the magazine from (its constructor param), or null.
 /obj/item/ammo_magazine/var/forge_material
 
-// ALLOW(init/INSTANCE_STATE): a magazine fills with its rounds (a latent count while it lies on a turf) and stamps them with the material it was forged from
-/obj/item/ammo_magazine/Initialize(mapload)
-	. = ..()
+/obj/item/ammo_magazine/proc/item_ammo_magazine_setup()
 	if(multiple_sprites)
 		initialize_magazine_icondata(src)
 

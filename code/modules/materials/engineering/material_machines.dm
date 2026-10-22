@@ -61,6 +61,7 @@
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
 
 CAPABILITIES(/obj/machinery/material_furnace)
+	setup(PROC_REF(machinery_material_furnace_setup))
 	configure(uses_power(idle = 20, active = 5000))
 	ref_one(nameof(output_stock), /obj/item/stack/material/processed_alloy)
 	reagents(120)
@@ -76,9 +77,7 @@ CAPABILITIES(/obj/machinery/material_furnace)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 
-// ALLOW(init/INSTANCE_STATE): copies the build turf's air into this instance's chamber
-/obj/machinery/material_furnace/Initialize(mapload)
-	. = ..()
+/obj/machinery/material_furnace/proc/machinery_material_furnace_setup()
 	var/turf/furnace_turf = get_turf(src)
 	var/datum/gas_mixture/environment = furnace_turf?.return_air()
 	if(environment)

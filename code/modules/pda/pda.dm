@@ -74,6 +74,7 @@
 	look.overlay("light-o", when = flashlight_lit)
 
 CAPABILITIES(/obj/item/pda)
+	setup(PROC_REF(item_pda_setup))
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	setup(PROC_REF(configure_wrist_slots))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
@@ -179,8 +180,7 @@ CAPABILITIES(/obj/item/pda)
 
 REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
-/obj/item/pda/Initialize(mapload)
-	. = ..()
+/obj/item/pda/proc/item_pda_setup()
 	update_programs()
 	cartridge?.update_programs(src) // declared child from default_cartridge
 	new /obj/item/pen(src)
@@ -193,39 +193,39 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 	switch(pdachoice)
 		if(1)
-			icon = 'icons/obj/pda_vr.dmi'
+			set_icon('icons/obj/pda_vr.dmi')
 			model_name = "Thinktronic 5230 Personal Data Assistant"
 		if(2)
-			icon = 'icons/obj/pda_slim.dmi'
+			set_icon('icons/obj/pda_slim.dmi')
 			model_name = "Ward-Takahashi SlimFit™ Personal Data Assistant"
 		if(3)
-			icon = 'icons/obj/pda_old.dmi'
+			set_icon('icons/obj/pda_old.dmi')
 			model_name = "Thinktronic 5120 Personal Data Assistant"
 		if(4)
-			icon = 'icons/obj/pda_rugged.dmi'
+			set_icon('icons/obj/pda_rugged.dmi')
 			model_name = "Hephaestus WARDEN Personal Data Assistant"
 		if(5)
-			icon = 'icons/obj/pda_holo.dmi'
+			set_icon('icons/obj/pda_holo.dmi')
 			model_name = "LunaCorp Holo-PDAssistant"
 		if(6)
-			icon = 'icons/obj/pda_wrist.dmi'
-			item_state = icon_state
-			item_icons = list(
+			set_icon('icons/obj/pda_wrist.dmi')
+			set_item_state(icon_state)
+			set_item_icons(list(
 				slot_belt_str = 'icons/mob/pda_wrist.dmi',
 				slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
-			)
+			))
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
 		if(7)
-			icon = 'icons/obj/pda_slider.dmi'
+			set_icon('icons/obj/pda_slider.dmi')
 			model_name = "Slider® Personal Data Assistant"
 		if(8)
-			icon = 'icons/obj/pda_vintage.dmi'
+			set_icon('icons/obj/pda_vintage.dmi')
 			model_name = "\[ERR:INVALID_MANUFACTURER_ID\] Personal Data Assistant"
 			desc = "A vintage communication device. This device has been refitted for compatibility with modern messaging systems, ROM cartridges and ID cards. Despite its heavy modifications it does not feature voice communication."
 
 		else
-			icon = 'icons/obj/pda_old.dmi'
+			set_icon('icons/obj/pda_old.dmi')
 			log_runtime("Invalid switch for PDA, defaulting to old PDA icons. [pdachoice] chosen.")
 	start_program(find_program(/datum/data/pda/app/main_menu))
 

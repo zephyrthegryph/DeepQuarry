@@ -23,6 +23,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
+	setup(PROC_REF(stack_material_setup))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
@@ -30,24 +31,24 @@ CAPABILITIES(/obj/item/stack/material)
 	op("material_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Material self"), then(PROC_REF(material_self)))
 	op("material_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(material_interaction_item)))
 
-// ALLOW(init/INSTANCE_STATE): a sheet stack takes its material's recipes, stack type, colour and conductivity
+// The material is named by a constructor param (default_type), which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
 /obj/item/stack/material/Initialize(mapload)
 	. = ..()
-
-	randpixel_xy()
-
 	if(!default_type)
-		default_type = MAT_STEEL
-	material = get_material_by_name("[default_type]")
+		set_default_type(MAT_STEEL)
+	set_material(get_material_by_name("[default_type]"))
 	if(!material)
 		stack_trace("Material of type: [default_type] does not exist.")
 		return INITIALIZE_HINT_QDEL
 
-	recipes = material.get_recipes()
-	stacktype = material.stack_type
+/obj/item/stack/material/proc/stack_material_setup()
+	randpixel_xy()
+
+	set_recipes(material.get_recipes())
+	set_stacktype(material.stack_type)
 
 	if(apply_colour)
-		color = material.icon_colour
+		set_color(material.icon_colour)
 
 	if(!material.conductive)
 		flags |= NOCONDUCT

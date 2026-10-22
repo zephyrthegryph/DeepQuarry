@@ -34,8 +34,7 @@
 /// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
 /obj/item/gun/energy/var/tmp/recharge_due = TRUE
 
-/obj/item/gun/energy/Initialize(mapload)
-	. = ..()
+/obj/item/gun/energy/proc/gun_energy_setup()
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
 		power_supply.set_charge(charge_cost*rand(0,power_supply.maxcharge/charge_cost))
@@ -171,6 +170,7 @@ MSG_DEF(energy_gun/cell_loaded, span_notice("You insert %I% into %T%."), "%U% in
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
 	ref_one(nameof(power_supply), starts = PROC_REF(start_power_supply))
+	setup(PROC_REF(gun_energy_setup))
 	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = all_of(nameof(self_recharge), nameof(recharge_due)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("load_cell", item(/obj/item/cell), priority(OP_PRIORITY_PART), label("Insert cell"), starts(PROC_REF(cell_load_started)), begins(MSG(energy_gun/cell_loading)), wait(PROC_REF(cell_load_time)), then(PROC_REF(cell_load_done)))

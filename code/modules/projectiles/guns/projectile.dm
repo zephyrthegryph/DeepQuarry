@@ -39,6 +39,7 @@
 	var/special_weapon_handling = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile)
+	setup(PROC_REF(gun_projectile_setup))
 	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
 	ref_one(nameof(chambered))
 	owns_many(nameof(loaded), starts = PROC_REF(make_loaded))
@@ -57,9 +58,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 /// Whether the gun starts loaded (its constructor param).
 /obj/item/gun/projectile/var/starts_loaded = TRUE
 
-// ALLOW(init/INSTANCE_STATE): a projectile gun loads its starting rounds or magazine (some randomly short) and takes its transform
-/obj/item/gun/projectile/Initialize(mapload)
-	. = ..()
+/obj/item/gun/projectile/proc/gun_projectile_setup()
 	if(starts_loaded)
 		if(ammo_magazine && (load_method & MAGAZINE))
 			allowed_magazines += /obj/item/ammo_magazine/smart
