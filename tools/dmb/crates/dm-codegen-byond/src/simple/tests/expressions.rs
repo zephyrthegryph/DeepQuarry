@@ -273,6 +273,44 @@ fn augmented_assignments_decode_without_stack_pop() {
         .any(|instruction| instruction.opcode == opcode::AUG_BAND));
 }
 
+/// A `var/x` with no initializer stores null when it runs again: through a loop, and through a backward `goto` to a
+/// label (DreamMaker emits the store for every declaration; native only where a second pass can happen).
+#[test]
+fn bare_declaration_resets_on_a_goto_loop() {
+    let null_stores = |source: &str| {
+        let ast = dm_syntax::parse(source);
+        let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
+        let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
+        let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
+        // `PushVal null; SetVar local`: a null value is tag 0.
+        decoded
+            .windows(2)
+            .filter(|pair| {
+                pair[0].opcode == opcode::PUSH_VAL
+                    && pair[0].operands.first().is_some_and(|tag| tag & 0xff == 0)
+                    && pair[1].opcode == opcode::SET_VAR
+            })
+            .count()
+    };
+    let straight = "/proc/test()
+  var/x
+  x = 1
+  return x
+";
+    let goto_loop = "/proc/test()
+  var/n = 0
+  again:
+  var/x
+  x += 1
+  n += 1
+  if(n < 3)
+    goto again
+  return x
+";
+    assert_eq!(null_stores(straight), 0, "no second pass, no store");
+    assert_eq!(null_stores(goto_loop), 1, "the bare declaration stores null again on the goto");
+}
+
 /// Constants measured on DreamMaker 516.1687 (a grid of 196 operand pairs per operator, compiled with `dm.exe` and read back
 /// with `dmb-equiv dump-proc`; the unit-test world repeats the whole grid at runtime: `dq_compiler_behaviour`).
 #[test]

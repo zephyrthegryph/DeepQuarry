@@ -274,7 +274,9 @@ impl Compiler<'_> {
                             opcode::SET_VAR,
                             vec![Word::Variable(VariableWord::Local(slot))],
                         );
-                    } else if !self.loops.is_empty() {
+                    } else if !self.loops.is_empty() || !self.user_labels.is_empty() {
+                        // A declaration with no initializer stores null each time it runs: locals start null, so
+                        // only a second pass (a loop, or a backward goto to a visible label) can observe the store.
                         self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                         self.emit(
                             opcode::SET_VAR,
