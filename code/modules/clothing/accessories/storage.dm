@@ -13,16 +13,16 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/storage)
+	setup(PROC_REF(size_accessory_storage))
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 	op("storage_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory hand"), then(PROC_REF(storage_accessory_hand)))
 	op("storage_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Storage accessory item"), then(PROC_REF(storage_accessory_item)))
 	op("storage_accessory_empty_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(storage_accessory_empty_self)))
 
-/obj/item/clothing/accessory/storage/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/storage/proc/size_accessory_storage()
 	hold.max_storage_space = slots * 2
 	if (!hide_on_roll)
-		on_rolled["down"] = icon_state
+		set_on_rolled_at("down", icon_state)
 
 
 /// Old attack_hand: open the storage when attached, else handle it as a storage item.
