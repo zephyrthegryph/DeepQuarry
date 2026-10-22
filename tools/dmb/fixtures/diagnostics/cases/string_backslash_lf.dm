@@ -1,3 +1,4 @@
 /proc/backslash_lf()
-	var/text = "ab\n		cd"
+	var/text = "ab\
+		cd"
 	return text

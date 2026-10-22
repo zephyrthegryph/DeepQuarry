@@ -1,0 +1,3 @@
+string_backslash_r_escape.dm:2:error: unterminated text (expecting ")
+string_backslash_r_escape.dm:3:error: unterminated text (expecting ")
+string_backslash_r_escape.dmb - 2 errors, 0 warnings

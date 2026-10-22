@@ -605,10 +605,16 @@ fn scan_text(bytes: &[u8], start: usize) -> (usize, Option<usize>) {
     while at < bytes.len() {
         match bytes[at] {
             b'\\' => {
-                // Only a backslash directly before LF continues the literal; before CR LF it does not (pinned 516.1681).
+                // A backslash directly before LF or CR LF continues the literal (pinned 516.1687; the corpus case
+                // string_backslash_crlf has real CR LF bytes). A backslash before the letter `r` is an escape and the break ends it.
                 let next = at + 1;
-                if bytes.get(next) == Some(&b'\n') {
-                    at = next + 1;
+                let line_end = match (bytes.get(next), bytes.get(next + 1)) {
+                    (Some(b'\n'), _) => Some(next),
+                    (Some(b'\r'), Some(b'\n')) => Some(next + 1),
+                    _ => None,
+                };
+                if let Some(line_end) = line_end {
+                    at = line_end + 1;
                     while bytes.get(at).is_some_and(|byte| matches!(byte, b' ' | b'\t' | b'\r' | b'\n')) {
                         at += 1;
                     }
@@ -646,7 +652,7 @@ fn scan_text(bytes: &[u8], start: usize) -> (usize, Option<usize>) {
 
 /// Offsets of every unterminated literal one lexer token causes. DreamMaker ends the literal at the break and lexes the next line
 /// afresh, so a leftover `"` on a following line (the old literal's closing quote) opens a literal of its own that the line never
-/// closes: one more error at that quote (pinned 516.1681, fixtures/diagnostics/cases/string_backslash_crlf).
+/// closes: one more error at that quote (pinned 516.1681, fixtures/diagnostics/cases/string_backslash_r_escape).
 fn literal_break_errors(text: &str, start: usize, end: usize, token: &str) -> Vec<usize> {
     let Some(at) = unterminated_break(token) else {
         return Vec::new();
@@ -1127,8 +1133,9 @@ mod tests {
         assert!(!unterminated_plain_text("{\"one\ntwo\"}"));
         // The continuation skips the whitespace after it, blank lines included; a later bare break still ends the literal.
         assert!(!unterminated_plain_text("\"one\\\n\n   two\""));
-        assert!(unterminated_plain_text("\"one\\\r\n  two\""));
-        assert_eq!(super::unterminated_break("\"ab\\\r\ncd\""), Some(5));
+        assert!(!unterminated_plain_text("\"one\\\r\n  two\""));
+        assert!(unterminated_plain_text("\"one\\r\n  two\""));
+        assert_eq!(super::unterminated_break("\"ab\\r\ncd\""), Some(5));
         assert!(unterminated_plain_text("\"one\\\n   two\n  three\""));
         assert_eq!(super::unterminated_break("\"ab\ncd\""), Some(3));
         // Breaks inside an embedded [expression] are code, nested literals included.
@@ -1138,9 +1145,20 @@ mod tests {
     }
 
     #[test]
+    fn backslash_before_cr_lf_continues_a_literal() {
+        // Pinned 516.1687: fixtures/diagnostics/cases/string_backslash_crlf (real CR LF bytes) and string_backslash_r_escape.
+        let crlf = "\"ab\\\r\n\t\tcd\"";
+        let lf = "\"ab\\\n\t\tcd\"";
+        let escape_r = "\"ab\\r\n\t\tcd\"";
+        assert!(!unterminated_plain_text(crlf));
+        assert!(!unterminated_plain_text(lf));
+        assert!(unterminated_plain_text(escape_r));
+    }
+
+    #[test]
     fn leftover_quote_after_a_break_opens_another_unterminated_literal() {
-        // Pinned 516.1681: errors at lines 2 and 3 for `"ab\<CR><LF>\t\tcd"`, and for a bare break.
-        for text in ["x\n\"ab\\\r\n\t\tcd\"\n", "x\n\"ab\n\t\tcd\"\n"] {
+        // Pinned 516.1681: errors at lines 2 and 3 for `"ab\r<LF>\t\tcd"` (escape letter r), and for a bare break.
+        for text in ["x\n\"ab\\r\n\t\tcd\"\n", "x\n\"ab\n\t\tcd\"\n"] {
             let start = text.find('"').unwrap();
             let end = text.rfind('"').unwrap() + 1;
             let found = super::literal_break_errors(text, start, end, &text[start..end]);

@@ -56,3 +56,4 @@ tools/ci/*_baseline.txt merge=dq-baseline
 
 # Diagnostics corpus case whose bytes are the point: a backslash before CRLF inside a string.
 tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf.dm -text
+tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf_block.dm -text
