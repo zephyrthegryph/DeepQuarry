@@ -26,14 +26,15 @@
 	target.last_power_usage = 0
 	fx_sparks(target.loc, 10)
 
+	// The hardware is destroyed, not left loose in the chassis (its slots keep their contents on a chassis teardown: ON_DESTROY_CONTAINED).
 	if(target.hard_drive)
-		rel_clear(target, nameof(target.hard_drive))
+		rel_clear(target, nameof(target.hard_drive), ON_DESTROY_DELETE)
 
 	if(target.battery_module && prob(25))
-		rel_clear(target, nameof(target.battery_module))
+		rel_clear(target, nameof(target.battery_module), ON_DESTROY_DELETE)
 
 	if(target.tesla_link && prob(50))
-		rel_clear(target, nameof(target.tesla_link))
+		rel_clear(target, nameof(target.tesla_link), ON_DESTROY_DELETE)
 
 CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_arm", ui_act(), then(PROC_REF(ui_act_prg_arm)))

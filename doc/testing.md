@@ -215,7 +215,11 @@ shell dies (a stopped task leaves no orphaned world). The cap counts RUN time: i
 machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), and a run with no slot after `DQ_FOCUSED_QUEUE_MAX_SEC`
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
-instead of failing (`tools/ci/test_admission_retry.sh`). `tools/ci/test_focused_caps.sh` tests all three against a fake world.
+instead of failing (`tools/ci/test_admission_retry.sh`).
+The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (25 minutes plus 1 per test, ceiling 60;
+`gate_cap_minutes`), which replaces the agent cap and its 30 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
+The exhaustive refusal is unchanged under it. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
+(held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests all three against a fake world.
 
 The exhaustive tier holds the tests that check every subtype of a root, or
 every cell of a large matrix:

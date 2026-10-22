@@ -31,7 +31,7 @@
 		TEST_ASSERT(user.put_in_inactive_hand(ingredient), "the actual construction ingredient occupies the inactive hand")
 		add_trait(ingredient, TRAIT_NODROP, "interim_tvassembly_devices")
 		TEST_ASSERT(ingredient.loc.release_refusal(ingredient, user), "the actual sticky device refuses release")
-		TEST_ASSERT(!test_op_handler(assembly, "can_insert_device", user, ingredient), "the step requirement rejects the actual sticky ingredient")
+		TEST_ASSERT_NOTNULL(test_op_handler(assembly, "can_insert_device", user, ingredient), "the step requirement rejects the actual sticky ingredient with its reason")
 		test_op_handler(assembly, "interaction_item", user, ingredient)
 		TEST_ASSERT(!QDELETED(ingredient), "refusal preserves the actual device")
 		TEST_ASSERT_EQUAL(assembly.buildstep, step - 1, "refusal preserves the actual construction step")

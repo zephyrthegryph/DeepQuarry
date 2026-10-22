@@ -92,6 +92,8 @@ GLOBAL_REAL_VAR(list/input_falling)
 			if(reply == INPUT_FALLTHROUGH) // the native override goes on to ..(): a parent's generated override must not run it again
 				input_falling = list(ref_token(holder), input)
 				return FALSE
+			if(input == INPUT_HOVER) // a hover's override always goes on to ..() (the native hover tracking): the parent's override must not run this entry again
+				input_falling = list(ref_token(holder), input)
 			return TRUE
 		if(istext(handler))
 			perform_op(actor, holder, handler, null, ORIGIN_CLICK)

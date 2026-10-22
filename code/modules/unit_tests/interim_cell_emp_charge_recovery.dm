@@ -8,7 +8,7 @@
 	var/integrity_before = cell.get_integrity()
 	var/resistance = cell.material_emp_resistance
 	TEST_ASSERT(resistance >= 0 && resistance < 100, "the actual material-built cell has a finite EMP loss rather than total immunity")
-	cell.charge = capacity_before / 2
+	cell.set_charge(capacity_before / 2)
 	var/charge_before = cell.charge
 	cell.emp_act(EMP_MEDIUM)
 	var/expected_loss = charge_before * (1 - resistance / 100) / EMP_MEDIUM

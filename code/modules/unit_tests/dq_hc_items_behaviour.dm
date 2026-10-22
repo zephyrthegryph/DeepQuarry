@@ -299,7 +299,7 @@
 	settle()
 	TEST_ASSERT(QDELETED(B), "the package is used up")
 	TEST_ASSERT(H.get_active_hand(), "what was inside is in the hand that held the package")
-	qdel(H.get_active_hand())
+	qdel(H.get_active_hand(), force = TRUE) // cleanup: a plain delete would spill what the unwrapped box holds
 
 /// The package subtype unwraps through its own op alone: it drops the parent's `unwrap` (both answered the hand at one tier: op_clash).
 /datum/unit_test/dq_hc_items/contraband_package_unwraps_once
@@ -312,7 +312,7 @@
 	settle()
 	TEST_ASSERT(QDELETED(B), "the package is used up")
 	TEST_ASSERT(H.get_active_hand(), "what was inside is in the hand that held the package")
-	qdel(H.get_active_hand())
+	qdel(H.get_active_hand(), force = TRUE) // cleanup: a plain delete would spill what the unwrapped box holds
 
 /datum/unit_test/dq_hc_items/telecrystal_use_without_mind_keeps_stack
 

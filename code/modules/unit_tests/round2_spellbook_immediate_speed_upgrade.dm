@@ -25,7 +25,7 @@
 	TEST_ASSERT(original_uses > spell.level_max[Sp_SPEED], "Actual book budget permits all real speed levels and a final refund attempt")
 	for(var/rank in 1 to spell.level_max[Sp_SPEED])
 		input_submit(new /datum/input_event/ui_act(user, editor, "choose", list("id" = "magicmissile"), editor.state()))
-		TEST_ASSERT_EQUAL(spell.spell_levels[Sp_SPEED], rank, "Actual public choice increases the learned spell's real speed level exactly once")
+		TEST_ASSERT_EQUAL(spell.spell_levels[Sp_SPEED], rank, "Actual public choice increases the learned spell's real speed level exactly once (book temp: [book.temp], uses [book.uses] of [original_uses], loc [book.loc], stat [user.stat], mind [user.mind?.special_role])")
 		TEST_ASSERT_EQUAL(spell.spell_levels[Sp_POWER], 0, "Speed-only choice leaves actual power level unchanged")
 		TEST_ASSERT_EQUAL(book.uses, original_uses - rank, "Each actual upgrade spends exactly one book use")
 		TEST_ASSERT_NULL(SSrequests.open_for(user), "Actual speed-only choice completes without opening a legacy or native prompt")
