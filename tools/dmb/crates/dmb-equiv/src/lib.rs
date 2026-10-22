@@ -4,6 +4,7 @@
 //! equal: table IDs and table order are erased except for the orders that
 //! `ORDER_POLICY` documents as observable at runtime. See EQUIVALENCE.md.
 pub mod canon;
+pub mod normalize;
 pub mod permute;
 
 use byond_dmb::dmb::Dmb;
@@ -184,6 +185,13 @@ impl<'a> Canon<'a> {
         orders.insert("type_table".into(), type_order);
 
         // Procedures.
+        let class_inits: std::collections::HashSet<usize> = dmb
+            .classes
+            .iter()
+            .map(|c| c.initializer_proc_id())
+            .filter(|&p| p != NONE && ctx.inline_key(p).is_some())
+            .map(|p| p as usize)
+            .collect();
         let mut proc_order = Vec::new();
         let mut proc_ids = Vec::new();
         for p in 0..dmb.procs.len() {
@@ -201,6 +209,11 @@ impl<'a> Canon<'a> {
             }
             // Short instance initializers are compared inline at their uses.
             if key.starts_with("<inline-init ") {
+                continue;
+            }
+            // So are class initializers that inline (the type record carries their body's key): DreamMaker shares
+            // one procedure between a class and its map instances, native may keep a separate one.
+            if class_inits.contains(&p) {
                 continue;
             }
             proc_ids.push(p);
@@ -870,6 +883,14 @@ fn compare_code(
                 .collect::<Vec<_>>()
         };
         let (na, nb) = (nd(&la), nd(&lb));
+        // Encoding differences with the same runtime effect (normalize.rs) are not differences.
+        let (na, nb) = (
+            normalize::normalize(na, &|p, f| a.0.static_default(p, f)),
+            normalize::normalize(nb, &|p, f| b.0.static_default(p, f)),
+        );
+        if na == nb {
+            return None;
+        }
         let first = ca
             .instructions
             .iter()
@@ -971,8 +992,100 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
         max_examples: opts.max_examples,
         ..Default::default()
     };
+    // A type's initializer is an anonymous body keyed by a hash of its content, so a changed body would show as an
+    // unrelated pair of proc.missing/proc.extra entries. Compare the two bodies as the type's own, and report a
+    // difference under the type (type.initializer_body) instead of as two nameless procedures.
+    let mut anon_done: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut init_done: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // The class initializer of `key` in `c`: its procedure key and its non-debug canonical lines.
+    let class_index = |c: &Canon<'_>| -> HashMap<String, usize> {
+        c.ctx
+            .dmb
+            .classes
+            .iter()
+            .enumerate()
+            .map(|(i, k)| (c.ctx.t(k.path_string_id()), i))
+            .collect()
+    };
+    let (index_a, index_b) = (class_index(a), class_index(b));
+    let initializer = |c: &Canon<'_>, index: &HashMap<String, usize>, key: &String| -> Option<(String, Vec<String>)> {
+        let dmb = c.ctx.dmb;
+        let class = dmb.classes.get(*index.get(key)?)?;
+        let p = class.initializer_proc_id();
+        let pr = dmb.procs.get(p as usize)?;
+        if p == NONE || pr.strings[0] != NONE {
+            return None;
+        }
+        let lines = canon::render_code_lines(&c.ctx, dmb.proc_code_words(p as usize)?)
+            .ok()?
+            .into_iter()
+            .filter(|l| !l.0)
+            .map(|l| l.1)
+            .collect();
+        Some((c.ctx.proc_key(p), lines))
+    };
+    for (kind, key) in a.records.keys() {
+        if *kind != "type" {
+            continue;
+        }
+        let (Some((ka, la)), Some((kb, lb))) = (initializer(a, &index_a, key), initializer(b, &index_b, key)) else {
+            continue;
+        };
+        if la == lb {
+            continue;
+        }
+        init_done.insert(key.clone());
+        anon_done.insert(ka);
+        anon_done.insert(kb);
+        let (na, nb) = (
+            normalize::normalize(la.clone(), &|p, f| a.ctx.static_default(p, f)),
+            normalize::normalize(lb.clone(), &|p, f| b.ctx.static_default(p, f)),
+        );
+        if na == nb {
+            continue;
+        }
+        if let (Some(x), Some(y)) = (
+            normalize::sorted_pure_initializer(&na),
+            normalize::sorted_pure_initializer(&nb),
+        ) {
+            if x == y {
+                continue;
+            }
+        }
+        let i = (0..na.len().max(nb.len()))
+            .find(|&k| na.get(k) != nb.get(k))
+            .unwrap_or(0);
+        let at = |v: &[String]| v.get(i).cloned().unwrap_or_else(|| "<end>".into());
+        report.add(
+            "type.initializer_body",
+            key,
+            format!(
+                "bytecode differs at stmt {i} of {}/{}: `{}` vs `{}`",
+                na.len(),
+                nb.len(),
+                clip(&at(&na)),
+                clip(&at(&nb))
+            ),
+        );
+    }
+    let without_initializer = |fs: &[Field], key: &String, done: &std::collections::HashSet<String>| -> Vec<Field> {
+        fs.iter()
+            .filter(|f| !(f.label == "initializer" && done.contains(key)))
+            .cloned()
+            .collect()
+    };
     for ((kind, key), fa) in &a.records {
+        if *kind == "proc" && anon_done.contains(key) {
+            continue;
+        }
         match b.records.get(&(*kind, key.clone())) {
+            Some(fb) if *kind == "type" && init_done.contains(key) => compare_fields(
+                &mut report,
+                kind,
+                key,
+                &without_initializer(fa, key, &init_done),
+                &without_initializer(fb, key, &init_done),
+            ),
             Some(fb) if opts.ignore_debug && *kind == "header" => {
                 // Debug markers (DbgFile/DbgLine) are ignored in code, so the header bit announcing them is too.
                 let mask = |fields: &[Field]| -> Vec<Field> {
@@ -995,6 +1108,9 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
         }
     }
     for (kind, key) in b.records.keys() {
+        if *kind == "proc" && anon_done.contains(key) {
+            continue;
+        }
         if !a.records.contains_key(&(*kind, key.clone())) {
             report.add(format!("{kind}.extra"), key, "present in B only");
         }
