@@ -1,5 +1,5 @@
-/// Asks for a confirmation, then deletes `D`. `view_turf`: a deleted turf's replacement is opened in View Variables afterwards.
-/client/proc/admin_delete(datum/D, mob/actor, view_turf = FALSE)
+/// Asks for a confirmation, then deletes `D` once it is answered Yes.
+/client/proc/admin_delete(datum/D, mob/actor)
 	var/atom/A = D
 	var/coords = ""
 	var/jmp_coords = ""
@@ -15,7 +15,7 @@
 
 	ask_admin(/datum/ask_sequence/admin, D, list(
 		question_step("confirm", /datum/prompt/choice, question = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No"), buttons = TRUE)),
-		PROC_REF(admin_delete_answered), null, list("coords" = coords, "jmp_coords" = jmp_coords, "view_turf" = view_turf))
+		PROC_REF(admin_delete_answered), null, list("coords" = coords, "jmp_coords" = jmp_coords))
 
 /client/proc/admin_delete_answered(datum/ask_sequence/admin/asked)
 	var/datum/D = asked.subject()
@@ -34,5 +34,3 @@
 			spent(D, actor)
 			if(!QDELETED(D))
 				vv_update_display(D, "deleted", "")
-	if(asked.kept["view_turf"] && isturf(D)) // show the turf that took its place
-		debug_variables(D)
