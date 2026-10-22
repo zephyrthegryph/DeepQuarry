@@ -62,8 +62,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/openspace_backdrop)
 	can_start_dirty = FALSE
 
 
-/turf/simulated/open/Initialize(mapload)
-	. = ..()
+/turf/simulated/open/proc/assert_has_below()
 	ASSERT(HasBelow(z))
 
 /turf/simulated/open/runtime_after_init()
@@ -110,6 +109,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/openspace_backdrop)
 
 // Straight copy from space.
 CAPABILITIES(/turf/simulated/open)
+	setup(PROC_REF(assert_has_below))
 	op("open_space_build", item(/obj/item), label("Build"), then(PROC_REF(open_space_build)))
 
 /// Old attackby, a straight copy from space: rods build a lattice, tiles plate it, cable is laid.
