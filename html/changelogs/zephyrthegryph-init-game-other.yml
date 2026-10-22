@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved the Initialize() work of machinery, mecha, turfs and gamemode types into setup(), keeps_if() and after_init() declarations"

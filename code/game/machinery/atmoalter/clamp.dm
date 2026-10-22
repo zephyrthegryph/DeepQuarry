@@ -13,14 +13,12 @@
 	var/datum/pipe_network/network_node1
 	var/datum/pipe_network/network_node2
 
-// ALLOW(init/INSTANCE_STATE): a clamp grips the pipe it was put on, or the one under it, and splits its network
-/obj/machinery/clamp/Initialize(mapload)
-	. = ..()
+/obj/machinery/clamp/proc/attach_to_pipe()
 	if(!istype(target_ref(), /obj/machinery/atmospherics/pipe/simple))
 		rel_set(src, nameof(target), locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
 	if(target_ref())
 		update_networks()
-		dir = target_ref().dir
+		set_dir(target_ref().dir)
 
 
 MSG_DEF_SELF(clamp/switched, "You switch the clamp.")
@@ -28,6 +26,7 @@ MSG_DEF_SELF(clamp/active, "You can't remove it while it's active!")
 MSG_DEF(clamp/removed, "You have removed %T%.", "%U% removes %T%.")
 
 CAPABILITIES(/obj/machinery/clamp)
+	setup(PROC_REF(attach_to_pipe))
 	ref_one(nameof(target))
 	ref_one(nameof(network_node1))
 	ref_one(nameof(network_node2))

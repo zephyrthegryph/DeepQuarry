@@ -59,14 +59,14 @@
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)
 	// catalogue_delay encoded in GLOB.dq_catalogue_delay_by_type
 
-// ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
-/turf/simulated/floor/outdoors/grass/sif/Initialize(mapload)
+/turf/simulated/floor/outdoors/grass/sif/proc/grow_tree()
 	if(tree_chance && prob(tree_chance) && !check_density())
 		new /obj/structure/flora/tree/sif(src)
-	. = ..()
 
-// ALLOW(init/INSTANCE_STATE): rolls the grass and animals that start on this tile
-/turf/simulated/floor/outdoors/grass/Initialize(mapload)
+CAPABILITIES(/turf/simulated/floor/outdoors/grass)
+	setup(PROC_REF(scatter_grass_and_animals))
+
+/turf/simulated/floor/outdoors/grass/proc/scatter_grass_and_animals()
 	if(grass && grass_chance && prob(grass_chance) && !check_density())
 		var/grass_type = pickweight(GLOB.grass_grass[grass])
 		if(grass_type) // runtime
@@ -76,8 +76,6 @@
 		var/animal_type = pickweight(GLOB.grass_animals[animals])
 		if(animal_type) // runtime
 			new animal_type(src)
-
-	. = ..()
 
 
 /turf/simulated/floor/outdoors/grass/sif/forest
@@ -94,16 +92,17 @@
 /turf/simulated/floor/outdoors/rocks/sif
 	var/animal_chance = 0.3 //Should spawn around... 0-7 per round? Tweak as needed.
 
-// ALLOW(init/INSTANCE_STATE): rolls whether a slug starts on this tile
-/turf/simulated/floor/outdoors/rocks/sif/Initialize(mapload)
+CAPABILITIES(/turf/simulated/floor/outdoors/rocks/sif)
+	setup(PROC_REF(spawn_slug))
+
+/turf/simulated/floor/outdoors/rocks/sif/proc/spawn_slug()
 	if(animal_chance && prob(animal_chance) && !check_density())
 		new /mob/living/simple_mob/vore/slug(src)
-
-	. = ..()
 // end
 
 // Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.
 CAPABILITIES(/turf/simulated/floor/outdoors/grass/sif)
+	setup(PROC_REF(grow_tree))
 	op("sif_grass_plate", item(/obj/item), label("Plate"), then(PROC_REF(sif_grass_plate)))
 
 /// Old attackby: floor tiles plate the grass.

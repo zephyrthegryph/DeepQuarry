@@ -7,14 +7,15 @@
 	var/child_names_txt
 	var/list/child_names
 
-// ALLOW(init/INSTANCE_STATE): splits the map-edited child names and tags into its lookup
-/obj/machinery/embedded_controller/radio/docking_port_multi/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
+	setup(PROC_REF(split_child_names))
+
+/obj/machinery/embedded_controller/radio/docking_port_multi/proc/split_child_names()
 	var/list/names = splittext(child_names_txt, ";")
 	var/list/tags = splittext(child_tags_txt, ";")
 	if (names.len == tags.len)
 		for (var/i = 1; i <= tags.len; i++)
-			LAZYSET(child_names, tags[i], names[i])
+			set_child_names_at(tags[i], names[i])
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/docking_port_multi/ui_data(datum/act/eval/A)

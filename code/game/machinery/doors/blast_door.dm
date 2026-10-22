@@ -40,8 +40,7 @@
 	//turning this off prevents awkward zone geometry in places like medbay lobby, for example.
 	block_air_zones = 0
 
-/obj/machinery/door/blast/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/blast/proc/set_blast_material()
 	implicit_material = get_material_by_name(MAT_PLASTEEL)
 	set_rad_insulation(density ? closed_rad_insulation() : RAD_NO_INSULATION)
 
@@ -77,6 +76,7 @@ MSG_DEF(blast_door/repaired, "You have repaired %T%.", "%U% repairs %T%.")
 MSG_DEF(blast_door/emagged, "You subvert %T%'s motors with %I%.", "")
 
 CAPABILITIES(/obj/machinery/door/blast)
+	setup(PROC_REF(set_blast_material))
 	without(CAP_EMAG)
 	without("reinforce")
 	without("weld_plasteel")

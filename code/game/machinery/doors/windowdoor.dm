@@ -16,11 +16,10 @@
 	can_atmos_pass = ATMOS_PASS_PROC
 	air_properties_vary_with_direction = 1
 
-/obj/machinery/door/window/Initialize(mapload)
-	. = ..()
+/obj/machinery/door/window/proc/settle_window()
 	update_nearby_tiles()
 	if(LAZYLEN(req_access))
-		base_state = icon_state
+		set_base_state(icon_state)
 
 /// The look: its base state ("left", "right", ...), with "open" after it while it stands open.
 /obj/machinery/door/window/draw(datum/look/look)
@@ -164,6 +163,7 @@ MSG_DEF_SELF(windoor/good_condition, "It's already in good condition.")
 MSG_DEF(windoor/repaired, "You repair %T%.", "%U% repairs %T%.")
 
 CAPABILITIES(/obj/machinery/door/window)
+	setup(PROC_REF(settle_window))
 	without("reinforce")
 	without("weld_plasteel")
 	without("unreinforce")

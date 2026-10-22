@@ -8,6 +8,7 @@
 
 
 CAPABILITIES(/obj/item/spell/aura)
+	setup(PROC_REF(announce_casting))
 	every(2 SECONDS, then(PROC_REF(aura_step)))
 	look_glow(PROC_REF(aura_glow))
 
@@ -15,8 +16,7 @@ CAPABILITIES(/obj/item/spell/aura)
 /obj/item/spell/aura/proc/aura_glow(datum/act/A)
 	return GLOW(calculate_spell_power(7), calculate_spell_power(4), glow_color)
 
-/obj/item/spell/aura/Initialize(mapload)
-	. = ..()
+/obj/item/spell/aura/proc/announce_casting()
 	log_and_message_admins("has started casting [src].")
 
 // admins are told the maintained spell stopped.
