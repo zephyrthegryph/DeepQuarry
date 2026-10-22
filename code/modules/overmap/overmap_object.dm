@@ -35,12 +35,15 @@ CAPABILITIES(/obj/effect/overmap)
 	owns_one(nameof(cam_background), /atom/movable/screen/background, starts = when(nameof(render_map), /atom/movable/screen/background), starts_args = NO_LOC)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view, starts = when(nameof(render_map), /atom/movable/screen/map_view), starts_args = NO_LOC)
 	owns_many(nameof(cam_plane_masters))
+	keeps_if(PROC_REF(overmap_in_use))
+	setup(PROC_REF(prepare_render_map))
 
-/obj/effect/overmap/Initialize(mapload)
-	. = ..()
-	if(!using_map.use_overmap)
-		return INITIALIZE_HINT_QDEL
+/// Kept only when the map has an overmap (keeps_if()).
+/obj/effect/overmap/proc/overmap_in_use()
+	return using_map.use_overmap
 
+/// Names the screen its map objects render to and sets them up.
+/obj/effect/overmap/proc/prepare_render_map()
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
 		cam_screen.name = "screen"

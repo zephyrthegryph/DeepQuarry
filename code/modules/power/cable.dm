@@ -202,9 +202,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
-/obj/structure/cable/Initialize(mapload)
-	. = ..()
-
+/// Takes its ends from its icon state, hides under a floor, and joins its power region.
+/obj/structure/cable/proc/take_ends_from_icon()
 	// ensure d1 & d2 reflect the icon_state for entering and exiting cable
 
 	var/dash = findtext(icon_state, "-")
@@ -294,6 +293,7 @@ CAPABILITIES(/obj/structure/cable)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 	ref_one(nameof(breaker_box))
+	setup(PROC_REF(take_ends_from_icon))
 
 /// Old attackby.
 /obj/structure/cable/proc/interaction_item(datum/act/op/A)
@@ -472,9 +472,8 @@ CAPABILITIES(/obj/structure/cable)
 /obj/item/stack/cable_coil
 	amount_at_make = MAXCOIL
 
-// ALLOW(init/INSTANCE_STATE): a coil takes its blueprint's effects and its engineered material's name
-/obj/item/stack/cable_coil/Initialize(mapload)
-	. = ..()
+/// A coil takes its blueprint's effects and its engineered material's name.
+/obj/item/stack/cable_coil/proc/take_blueprint_and_material()
 	apply_blueprint_effects()
 	material_engineered_id_set(src, material_id)
 	update_wclass()
@@ -586,6 +585,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 	param(nameof(color), pos = 2)
 	param(nameof(material_id), pos = 3)
+	setup(PROC_REF(take_blueprint_and_material))
 	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = not(nameof(color)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
@@ -898,8 +898,8 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 	throw_range = 5
 	stacktype = null
 
-/obj/item/stack/cable_coil/alien/Initialize(mapload)		//There has to be a better way to do this.
-	. = ..()
+/// An alien coil works out its embed chance from its own force (from /obj/item, it does not do what the normal coil does).
+/obj/item/stack/cable_coil/alien/proc/work_out_embed_chance()
 	if(embed_chance == -1)		//From /obj/item, don't want to do what the normal cable_coil does
 		if(combat_of(src).sharp)
 			embed_chance = combat_of(src).force/w_class
@@ -930,6 +930,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	setup(PROC_REF(work_out_embed_chance))
 	configure(item_tooling(speed = 0.25))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 10))

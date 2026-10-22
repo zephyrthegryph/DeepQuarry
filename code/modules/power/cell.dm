@@ -72,15 +72,16 @@ CAPABILITIES(/obj/item/cell)
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = all_of(nameof(self_recharge), nameof(recharging)))
 	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
 	ref_one(nameof(gradual_user))
+	setup(PROC_REF(start_up))
 
-/obj/item/cell/Initialize(mapload)
-	. = ..()
+/// Takes its blueprint's effects, starts its material service and gets its id.
+/obj/item/cell/proc/start_up()
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
 	enable_material_service()
-	c_uid = cell_uid++
+	set_c_uid(cell_uid++)
 
 /obj/item/cell/get_cell()
 	return src
