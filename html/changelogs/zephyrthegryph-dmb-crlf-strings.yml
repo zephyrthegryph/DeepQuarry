@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler drops carriage returns from string literals like DreamMaker, and pushes the value of a?.b = const after the null guard"

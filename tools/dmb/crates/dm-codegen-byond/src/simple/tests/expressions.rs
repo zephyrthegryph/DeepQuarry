@@ -455,3 +455,21 @@ fn authored_null_is_a_variable_read_and_an_omitted_argument_is_a_pushed_null() {
         );
     }
 }
+
+#[test]
+fn string_literals_drop_carriage_returns_like_dreammaker() {
+    // dm.exe 516.1681: a multi-line `{"..."}` in a CRLF file holds `\n`, and a lone CR is dropped.
+    for (raw, expected) in [
+        ("{\"AAA\r\nBBB\r\nCCC\"}", "AAA\nBBB\nCCC"),
+        ("{\"XQ\rYQ\rZQ\"}", "XQYQZQ"),
+        ("\"LQ\rMQ\"", "LQMQ"),
+        ("@{\"XQ\r\nYQ\rZQ\"}", "XQ\nYQZQ"),
+        ("@\"LQ\rMQ\"", "LQMQ"),
+    ] {
+        assert_eq!(
+            decode_constant_string_literal(raw).unwrap().unwrap(),
+            expected.as_bytes(),
+            "{raw:?}"
+        );
+    }
+}

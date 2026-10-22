@@ -89,7 +89,7 @@ impl Compiler<'_> {
             null.kind = ExprKind::Literal("null".into());
             // Not authored: a zero-width span makes the shared expression producer push a null value, as DreamMaker does.
             null.span = dm_syntax::Span::new(selected.span.start, selected.span.start);
-            self.assign_expr(selected, "=", &null, statement)?;
+            self.assign_expr_ordered(selected, "=", &null, statement, true)?;
         }
         self.emit(0x0c, vec![]);
         if ends_body {
