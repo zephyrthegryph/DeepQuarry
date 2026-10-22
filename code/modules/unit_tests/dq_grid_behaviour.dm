@@ -343,9 +343,6 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	apc.cell.set_charge(apc.cell.maxcharge * 0.8)
 	apc.seat_cell_charge(TRUE)
 	dq_power_test_step()
-	var/before_step = apc.cell.charge
-	dq_power_test_step()
-	var/gain = apc.cell.charge - before_step // a long-running world has live generation on this net (the APC's cell gains this much each step); a dry freshly booted one gains none
 	var/charge = apc.cell.charge
 	var/obj/item/powersink/sink = allocate(/obj/item/powersink, get_turf(apc))
 	sink.attached = locate(/obj/structure/cable) in get_turf(term)
@@ -359,7 +356,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	TEST_ASSERT(apc.cell.charge < charge, "the sink drew down the cell ([apc.cell.charge] of [charge])")
 	var/drained = apc.cell.charge
 	dq_power_test_step()
-	TEST_ASSERT(apc.cell.charge <= drained + gain + 1, "the next power step does not hand the drained charge back (only the net's own gain of [gain]: [apc.cell.charge] after [drained], was [charge])")
+	TEST_ASSERT(apc.cell.charge <= drained + 1, "the next power step does not hand the drained charge back ([apc.cell.charge] after [drained], was [charge])")
 
 /// A SMES charges from its input terminal's net and pays an APC's load on its output side after the supply is gone.
 /datum/unit_test/dq_p2_smes/grid_charges_and_discharges
