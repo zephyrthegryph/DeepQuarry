@@ -37,9 +37,16 @@
 # Every run fails when the world logged a runtime or a warning before its first test (the boot gate,
 # doc/rewrite/boot_gate.md); the build prints "BOOT GATE" with the first warnings when it trips.
 #
-# A named test runs whatever its tier: an exhaustive sweep (tier =
-# TEST_TIER_EXHAUSTIVE, normally only in CI via dm-test --tier=all) runs here
-# by name like any other test.
+# An exhaustive-tier test (tier = TEST_TIER_EXHAUSTIVE, normally only in CI via dm-test --tier=all) is refused here unless
+# --allow-exhaustive is passed (see "Caps" above).
+#
+# Caps (the user's ruling: a lane never starts a long run). A test whose tier is exhaustive, or that has exhaustive subtypes, is
+# REFUSED unless --allow-exhaustive is passed; the message names its /representative when there is one. The whole run has a hard
+# wall-clock cap: DQ_FOCUSED_MAX_MIN minutes of RUN time (the clock starts when the run first holds a machine slot; queueing behind other
+# lanes' compiles is reported as "queued N min" and not counted; a run that gets no slot in DQ_FOCUSED_QUEUE_MAX_SEC, default 5400, is
+# stopped. Do not wrap this tool in `timeout`: the built-in cap replaces it) (default 20; above 30 it is clamped to 30 unless --allow-exhaustive). tools/dq_run_guard.js
+# watches the run: at the cap it kills the run's DreamDaemon worlds (and the runner that would start more; worlds register in
+# $DQ_WORLD_REGISTRY) and reaps their machine slots, and it does the same the moment this shell dies or is killed, so a stopped task leaves no orphaned worlds.
 #
 # A name without a leading slash gets /datum/unit_test/ prepended. A name
 # containing * ? or [ is matched against every /datum/unit_test type defined
@@ -251,6 +258,7 @@ focus_on_exit() {
 	exit "$rc"
 }
 trap focus_on_exit EXIT
+find data/focused-runs -maxdepth 1 \( -name 'cap.*.marker' -o -name 'guard.*.log' \) -mtime +2 -delete 2>/dev/null || true
 trap 'exit 130' INT TERM
 
 usage() {
@@ -322,6 +330,7 @@ report_unknown() { # arg what
 }
 
 bad_names=0
+allow_exhaustive=0
 args=()
 tests=()
 repeat=1
@@ -338,6 +347,7 @@ for arg in "$@"; do
 			[[ "$repeat" =~ ^[1-9][0-9]*$ ]] || { echo "--repeat needs a positive integer, got '$repeat'" >&2; exit 2; }
 			;;
 		--list) list_only=1 ;;
+		--allow-exhaustive) allow_exhaustive=1 ;;
 		--split-slow) split_mode=on ;;
 		--sweep-shards=*)
 			sweep_shards="${arg#--sweep-shards=}"
@@ -391,6 +401,76 @@ if [ "$list_only" -eq 1 ]; then
 ' "${tests[@]}"
 	exit 0
 fi
+
+# ---- exhaustive tests are refused ---------------------------------------------------------------------------------------------
+# tier_refusals: for every selected test whose effective tier is exhaustive (or that has an exhaustive subtype), one line naming it and
+# its /representative when one exists. Reads the tiers from the compiled files (tools/dq_test_tiers.sh).
+tier_refusals() {
+	local table t line anc rep
+	table="$(included_files | tr '\n' '\0' | xargs -0 cat 2>/dev/null | bash tools/dq_test_tiers.sh)"
+	for t in "${tests[@]}"; do
+		line="$(awk -F'	' -v t="$t" '$2 == "EXHAUSTIVE" && ($1 == t || index($1, t "/") == 1) { print $1; exit }' <<<"$table")"
+		[ -n "$line" ] || continue
+		rep=""
+		anc="$t"
+		while [ -n "$anc" ]; do
+			if grep -qxF -- "$anc/representative" <<<"$all_types"; then rep="$anc/representative"; break; fi
+			case "$anc" in */*) anc="${anc%/*}" ;; *) anc="" ;; esac
+		done
+		if [ -n "$rep" ]; then
+			echo "  $t is an exhaustive-tier sweep ($([ "$line" = "$t" ] && echo "TEST_TIER_EXHAUSTIVE" || echo "its subtype $line is TEST_TIER_EXHAUSTIVE")); its normal-tier version is: bash tools/dq_focused_test.sh $rep"
+		else
+			echo "  $t is an exhaustive-tier sweep ($([ "$line" = "$t" ] && echo "TEST_TIER_EXHAUSTIVE" || echo "its subtype $line is TEST_TIER_EXHAUSTIVE")) and has no /representative"
+		fi
+	done
+}
+if [ "$allow_exhaustive" -eq 0 ]; then
+	[ -n "$all_types" ] || all_types="$(test_types)"
+	refused="$(tier_refusals)"
+	if [ -n "$refused" ]; then
+		{
+			echo "dq_focused_test: REFUSED: exhaustive-tier tests are whole-type sweeps that run for hours; a lane never starts one."
+			echo "$refused"
+			echo "  Nothing was compiled or started. A person who really wants the sweep passes --allow-exhaustive (and DQ_FOCUSED_MAX_MIN above 30 for a cap past half an hour)."
+		} >&2
+		exit 3
+	fi
+fi
+
+# ---- the wall-clock cap -------------------------------------------------------------------------------------------------------
+# focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 20; clamped to 30 without --allow-exhaustive).
+focused_cap_minutes() {
+	local cap="${DQ_FOCUSED_MAX_MIN:-20}"
+	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 20" >&2; cap=20 ;; esac
+	if [ "$cap" -gt 30 ] && [ "${1:-0}" -eq 0 ]; then
+		echo "dq_focused_test: DQ_FOCUSED_MAX_MIN=$cap is above 30 and --allow-exhaustive was not passed; using 30" >&2
+		cap=30
+	fi
+	echo "$cap"
+}
+CAP_MIN="$(focused_cap_minutes "$allow_exhaustive")"
+CAP_MARKER="data/focused-runs/cap.$$.marker"
+GUARD_LOG="data/focused-runs/guard.$$.log"
+mkdir -p data/focused-runs
+rm -f "$CAP_MARKER"
+# The guard outlives this shell by a poll or two on purpose: if this shell dies or is killed it kills the run's worlds and reaps their slots.
+start_run_guard() {
+	local root
+	root="$$"
+	[ -r "/proc/$$/winpid" ] && root="$(cat "/proc/$$/winpid")"
+	command -v node >/dev/null 2>&1 || { echo "dq_focused_test: node not found; the wall-clock cap and orphan guard are off" >&2; return 0; }
+	local cap_sec=$(( CAP_MIN * 60 ))
+	# DQ_FOCUSED_MAX_SEC is for tools/ci/test_focused_caps.sh: it can only lower the cap, never raise it.
+	case "${DQ_FOCUSED_MAX_SEC:-}" in '' | *[!0-9]* | 0) ;; *) [ "$DQ_FOCUSED_MAX_SEC" -lt "$cap_sec" ] && cap_sec="$DQ_FOCUSED_MAX_SEC" ;; esac
+	WORLD_REGISTRY="$PWD/data/focused-runs/worlds.$$"
+	command -v cygpath >/dev/null 2>&1 && WORLD_REGISTRY="$(cygpath -m "$WORLD_REGISTRY")"
+	mkdir -p "$WORLD_REGISTRY"
+	export DQ_WORLD_REGISTRY="$WORLD_REGISTRY"
+	nohup node tools/dq_run_guard.js --root "$root" --cap-s "$cap_sec" --queue-max-s "${DQ_FOCUSED_QUEUE_MAX_SEC:-5400}" --registry "$WORLD_REGISTRY" --marker "$CAP_MARKER" --poll-ms "${DQ_FOCUSED_GUARD_POLL_MS:-3000}" --on-kill "bash tools/dq_machine_slots.sh reap" >"$GUARD_LOG" 2>&1 </dev/null &
+	disown $! 2>/dev/null || true
+	echo "dq_focused_test: hard cap $CAP_MIN min for the whole run (DQ_FOCUSED_MAX_MIN); worlds die with this shell (guard log $GUARD_LOG)"
+}
+start_run_guard
 
 
 # Slow tests that go to a second world under --split-slow (and by default when the selection also holds other tests).
@@ -501,6 +581,14 @@ pin_factor_after_run() {
 
 print_result() {
 	pin_factor_after_run
+	if [ -f "${WORLD_REGISTRY:-/nonexistent}/.running" ]; then
+		local ran_at
+		ran_at="$(tr -cd '0-9' <"$WORLD_REGISTRY/.running")"
+		[ -n "$ran_at" ] && echo "FOCUSED RUN TIME: queued $(( (ran_at - FOCUS_STARTED_EPOCH) / 60 )) min ($(( (ran_at - FOCUS_STARTED_EPOCH) )) s) for its compile/test slots (the 'Held by' lines above name the holders), then ran $(( ($(date +%s) - ran_at) / 60 )) min of the $CAP_MIN min cap"
+	fi
+	if [ -f "$CAP_MARKER" ]; then
+		echo "FOCUSED RUN CAPPED: the $CAP_MIN minute wall-clock cap was hit; the run's worlds were killed (guard log $GUARD_LOG). Name fewer or shorter tests."
+	fi
 	local log="$1" rc="$2" json="${3:-}" line passed failed skipped note="" tail_note="" st=passed
 	line="$(grep -h 'Unit-test summary: [0-9]* passed' "$log" 2>/dev/null | tail -n 1 || true)"
 	if [ -z "$json" ]; then

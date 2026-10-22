@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Focused test runs refuse exhaustive-tier tests without --allow-exhaustive, have a hard wall-clock cap (DQ_FOCUSED_MAX_MIN, default 20), and kill their DreamDaemon worlds and free their slots when the run ends, is capped or its shell dies"
