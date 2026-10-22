@@ -177,8 +177,11 @@
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
 
-/obj/item/cell/emergency_light/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/cell/emergency_light)
+	setup(PROC_REF(drain_if_area_depowered))
+
+/// A cell in a naturally depowered area starts with no power.
+/obj/item/cell/emergency_light/proc/drain_if_area_depowered()
 	var/area/A = get_area(src)
 	if(!A.lightswitch || !glow_of(A).power)
 		set_charge(0) //For naturally depowered areas, we start with no power

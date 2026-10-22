@@ -116,6 +116,7 @@ CAPABILITIES(/obj/machinery/light)
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
 	param(nameof(construct_at_make), pos = 1, keep = FALSE, overrides = TRUE)
+	setup(PROC_REF(start_up_fixture))
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)
@@ -1004,6 +1005,7 @@ CAPABILITIES(/obj/item/light)
 	op("shatter", at_target(), hostile(), when(not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
 	on_change(nameof(status), ANY, then(PROC_REF(status_changed)))
 	param(nameof(fixture_at_make), pos = 1, keep = FALSE)
+	setup(PROC_REF(take_fixture_state))
 
 /// The picture of a light shows its state.
 /obj/item/light/draw(datum/look/look)
@@ -1029,9 +1031,8 @@ CAPABILITIES(/obj/item/light)
 /// The fixture the bulb was taken from (its constructor param, dropped after init).
 /obj/item/light/var/tmp/obj/machinery/light/fixture_at_make
 
-// ALLOW(init/INSTANCE_STATE): a bulb taken out of a fixture keeps its state, rigging and brightness
-/obj/item/light/Initialize(mapload)
-	. = ..()
+/// A bulb taken out of a fixture keeps its state, rigging and brightness.
+/obj/item/light/proc/take_fixture_state()
 	var/obj/machinery/light/fixture = fixture_at_make
 	if(fixture)
 		set_status(fixture.status)
@@ -1209,10 +1210,13 @@ CAPABILITIES(/obj/item/light)
 	layer = BELOW_MOB_LAYER
 
 // ition, to override the New() proc further below, since this is a lamp.
-// ALLOW(init/INSTANCE_STATE): a floor lamp built from a frame starts without a cell or shade; a mapped one may get an emergency cell
+// ALLOW(init/INSTANCE_STATE): a floor lamp starts at its type's layer whatever the map set, before the light's own facing rule may raise it
 /obj/machinery/light/flamp/Initialize(mapload)
 	layer = initial(layer)
-	. = ..()
+	return ..()
+
+/// A floor lamp built from a frame starts without a cell or shade; a mapped one may get an emergency cell.
+/obj/machinery/light/flamp/proc/start_up_lamp()
 	if(construct_at_make)
 		start_with_cell = FALSE
 		set_lamp_shade(0)
@@ -1224,10 +1228,8 @@ CAPABILITIES(/obj/item/light)
 /obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
 
 // create a new lighting fixture
-// ALLOW(init/INSTANCE_STATE): a light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up
-/obj/machinery/light/Initialize(mapload)
-	. = ..()
-
+/// A light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up.
+/obj/machinery/light/proc/start_up_fixture()
 	if(start_with_cell && !no_emergency)
 		declare_emergency_cell()
 	var/obj/machinery/light_construct/construct = construct_at_make
@@ -1250,7 +1252,7 @@ CAPABILITIES(/obj/item/light)
 	refresh_light(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
-		layer = ABOVE_MOB_LAYER
+		set_layer(ABOVE_MOB_LAYER)
 
 // Wall tube lights
 /obj/item/light/tube
@@ -1406,6 +1408,7 @@ CAPABILITIES(/obj/machinery/light/small/torch)
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
 /// it too (it has no emergency lighting of its own to toggle).
 CAPABILITIES(/obj/machinery/light/flamp)
+	setup(PROC_REF(start_up_lamp))
 	click_order(BIND_HAND, "toggle", "remove")
 	click_order(TOOL_SCREWDRIVER, "remove_shade", "open_casing")
 	anchor()
