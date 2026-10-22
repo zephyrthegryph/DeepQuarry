@@ -19,12 +19,6 @@
 
 /proc/generate_gas_overlays(old_offset, new_offset, datum/gas/gas_type)
 	var/list/to_return = list()
-	// pass the gas's primary_color through to the overlay so it can
-	// tint a generic smoke icon. /tg/'s atmospherics.dmi (with per-gas
-	// icon_states "plasma", "tritium", etc.) isn't shipped on this fork;
-	// chemsmoke.dmi gives us a colorable cloud-shaped overlay that works for
-	// every gas without needing per-gas-type icon assets.
-	var/tint = initial(gas_type.primary_color) || "#ffffff"
 	for(var/i in old_offset to new_offset)
 		var/fill = list()
 		to_return += list(fill)

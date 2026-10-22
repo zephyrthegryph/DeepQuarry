@@ -400,13 +400,13 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot).
 /obj/machinery/porta_turret/proc/scan(datum/act/timer/A)
-	var/shot_targets = FALSE
 	if(!last_fired) // We cannot fire anyway until our cooldown ends.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
 		for(var/mob/M in scan_candidates())
 			assess_and_assign(M, targets, secondarytargets)
-		shot_targets = tryToShootAt(targets) || tryToShootAt(secondarytargets)
+		if(!tryToShootAt(targets))
+			tryToShootAt(secondarytargets)
 
 /// Nothing was left to shoot for `timeout` frames: the cover goes down.
 /obj/machinery/porta_turret/proc/stand_down()

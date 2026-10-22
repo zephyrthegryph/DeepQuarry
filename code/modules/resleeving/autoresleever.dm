@@ -138,7 +138,6 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	//For logging later
 	var/player_key = ghost_client.key
 	var/picked_ckey = ghost_client.ckey
-	var/picked_slot = ghost_client.prefs.default_slot
 
 	var/spawnloc = get_turf(src)
 	//Did we actually get a loc to spawn them?

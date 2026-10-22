@@ -429,7 +429,6 @@
 /datum/unit_test/dq_medpod/cryo_exit_south/run_pods()
 	var/turf/here = floor_at(1, 0)
 	var/turf/restore = wall_south_of(here)
-	var/turf/south = get_step(here, SOUTH)
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = cryo_cell(here)
 	var/mob/living/carbon/human/H = person(floor_at(0, 0))
 	var/mob/living/carbon/human/P = patient(floor_at(1, 1))

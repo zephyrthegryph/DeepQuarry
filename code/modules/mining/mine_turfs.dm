@@ -332,7 +332,6 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 	var/obj/item/W = A.held
 	if(!density)
 		var/valid_tool = 0
-		var/digspeed = 40
 
 		if(istype(W, /obj/item/shovel))
 			var/obj/item/shovel/S = W
@@ -340,13 +339,11 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 				shovel_dig_grave(user, S)
 				return OP_PASS
 			valid_tool = 1
-			digspeed = S.digspeed
 
 		if(istype(W, /obj/item/pickaxe))
 			var/obj/item/pickaxe/P = W
 			if(P.sand_dig)
 				valid_tool = 1
-				digspeed = P.digspeed
 
 		if(valid_tool)
 			if (sand_dug)

@@ -71,8 +71,7 @@ CAPABILITIES(/turf/simulated/floor/holofloor)
 
 /// The dust of the skybox over this tile: one of its cached pieces, picked by where the tile is.
 /turf/simulated/floor/holofloor/space/proc/space_dust()
-	var/datum/system/skybox/sky = SSskybox.ready()
-	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+	return SSskybox.ready().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'

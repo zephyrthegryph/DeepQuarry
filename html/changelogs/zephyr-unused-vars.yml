@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Removed every unused_var warning; fixed two test assertions that compared nutrition against the wrong value"
+  - bugfix: "The engineered disease archive entry no longer keeps a spread watch it never uses"
