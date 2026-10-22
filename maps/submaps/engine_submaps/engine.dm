@@ -13,7 +13,7 @@ CAPABILITIES(/obj/effect/landmark/engine_loader)
 	if(mapping_engine_loader())
 		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
 		delete_me = TRUE
-	SSmapping.engine_loader = src
+	SSmapping.set_engine_loader(src)
 
 /obj/effect/landmark/engine_loader/proc/get_turfs_to_clean()
 	. = list()

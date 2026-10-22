@@ -1,6 +1,7 @@
 // The flight operations system's API (code/modules/flight_operations/flight_controller.dm declares the system).
 //
-//   SSflight.register_vessel(ship) / vessel_for_ship(ship)          vessels
+//   SSflight.register_vessel(ship) / unregister_vessel(ship, id) / vessel_for_ship(ship)   vessels
+//   SSflight.destination_by_id(id) / index_destination_target(destination)                    destination lookups
 //   SSflight.register_expedition(site) / unregister_destination(id) / destination_for_target(target)   destinations
 //   SSflight.reserve_arrival_port(...) / port_for_landmark(landmark)    ports
 //   SSflight.create_plan(vessel, destination)                       a flight plan
@@ -8,7 +9,7 @@
 /datum/system/flight/proc/register_vessel(obj/effect/overmap/visitable/ship/ship)
 	if(!ship || QDELETED(ship))
 		return null
-	var/existing_id = vessel_by_ship[REF(ship)]
+	var/existing_id = ship.flight_vessel_id
 	if(existing_id)
 		var/datum/flight_vessel/existing = vessels?[existing_id]
 		if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
@@ -27,8 +28,6 @@
 		rel_set(vessel, nameof(vessel.shuttle), shuttles_shuttles()[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 	rel_add(src, nameof(vessels), vessel, vessel.id)
-	var/ship_ref = REF(ship) // lookup keyed by ref string: plain data
-	vessel_by_ship[ship_ref] = vessel.id
 	ship.flight_vessel_id = vessel.id
 	register_destination(ship)
 	var/obj/effect/overmap/visitable/physical_target
@@ -47,7 +46,7 @@
 	return vessel
 
 /datum/system/flight/proc/vessel_for_ship(obj/effect/overmap/visitable/ship/ship)
-	var/id = ship?.flight_vessel_id || vessel_by_ship[REF(ship)]
+	var/id = ship?.flight_vessel_id
 	return vessels?[id]
 
 /datum/system/flight/proc/register_expedition(datum/expedition_site/site)
@@ -69,8 +68,7 @@
 	destination.surface_latitude = rand(-75, 75)
 	destination.surface_longitude = rand(-180, 180)
 	rel_add(src, nameof(destinations), destination, destination.id)
-	if(destination.target())
-		destination_by_target[REF(destination.target())] = destination.id
+	index_destination_target(destination)
 	site.flight_destination_id = destination.id
 	return destination
 
@@ -120,3 +118,19 @@
 	rel_set(vessel, nameof(vessel.active_plan), plan) // the vessel owns its active plan; plans is the service's id lookup
 	rel_add(src, nameof(plans), plan, plan.id)
 	return plan
+
+/// Drops a ship's flight vessel (the ship is leaving the world).
+/datum/system/flight/proc/unregister_vessel(obj/effect/overmap/visitable/ship/ship, vessel_id)
+	var/datum/flight_vessel/vessel = own_take_member(src, nameof(vessels), vessel_id)
+	if(vessel)
+		ship.flight_vessel_id = null
+		spent(vessel)
+
+/datum/system/flight/proc/destination_by_id(id)
+	RETURN_TYPE(/datum/flight_destination)
+	return destinations?[id]
+
+/// Makes a destination the one found for its overmap target.
+/datum/system/flight/proc/index_destination_target(datum/flight_destination/destination)
+	if(destination.target())
+		destination_by_target[REF(destination.target())] = destination.id

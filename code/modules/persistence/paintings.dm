@@ -8,15 +8,19 @@
 
 /datum/persistent/paintings/Initialize()
 	. = ..()
+	load_database()
+
+/// Reads the painting database from disk into the persistence system and loads the frames from it.
+/datum/persistent/paintings/proc/load_database()
 	if(fexists(filename))
-		SSpersistence.all_paintings = json_decode(file2text(filename))
+		SSpersistence.load_paintings(json_decode(file2text(filename)))
 		var/list/tokens = persistence_all_paintings()
 		for(var/list/token in tokens)
 			token["age"]++ // Increment age!
 			if(!CheckTokenSanity(token))
 				tokens -= token
 
-	SSpersistence.unpicked_paintings = SSpersistence.all_paintings.Copy()
+	SSpersistence.reset_unpicked_paintings()
 
 	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.load_persistent()

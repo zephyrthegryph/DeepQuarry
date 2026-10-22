@@ -77,8 +77,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	testing("Located sector \"[name]\" at [start_x],[start_y], containing Z [english_list(map_z)]")
 	#endif
 
-	LAZYADD(SSshuttles.sectors_to_initialize, src) //Queued for further init. Will populate the waypoint lists; waypoints not spawned yet will be added in as they spawn.
-	SSshuttles.process_init_queues()
+	SSshuttles.queue_sector_init(src) //Queued for further init. Will populate the waypoint lists; waypoints not spawned yet will be added in as they spawn.
 
 	if(known)
 		plane = PLANE_LIGHTING_ABOVE
