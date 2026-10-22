@@ -255,10 +255,22 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         files: &files,
         by_path: &by_path,
     };
+    let mut text_expression_files = std::collections::HashSet::new();
     let mut diagnostics: Vec<_> = expanded
         .diagnostics
         .iter()
-        .map(|diagnostic| Diagnostic {
+        .flat_map(|diagnostic| {
+            if diagnostic.kind == dm_preprocess::DiagnosticKind::Macro
+                && diagnostic.message.starts_with("unterminated text expression")
+            {
+                // The expression runs to the end of the file, so only the first one is read.
+                return if text_expression_files.insert(diagnostic.path.clone()) {
+                    text_expression_diagnostics(&mapping, diagnostic)
+                } else {
+                    Vec::new()
+                };
+            }
+            vec![Diagnostic {
             kind: match diagnostic.kind {
                 dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
                 dm_preprocess::DiagnosticKind::Io
@@ -276,6 +288,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 diagnostic.message.clone()
             },
             location: mapping.line(&diagnostic.path, diagnostic.line),
+            }]
         })
         .collect();
     // Chunk the joined encounter stream at grammar-safe top-level boundaries,
@@ -324,6 +337,13 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 stage: DiagnosticStage::Syntax,
                 message: diagnostic.message,
                 location: mapping.output(offset + diagnostic.span.start),
+            })
+            // The preprocessor already reported an unterminated text expression, which consumes the rest of its file.
+            .filter(|diagnostic| {
+                !(diagnostic.message.starts_with("unterminated text expression")
+                    && diagnostic.location.as_ref().is_some_and(|location| {
+                        text_expression_files.contains(location.path.as_path())
+                    }))
             }),
     );
     let syntax = Arc::new(syntax);
@@ -592,4 +612,58 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         bodies,
         emission_order: emission_order.into(),
     })
+}
+
+/// A `"text [expression"` that never closes its `[`: DreamMaker reads the rest of the file as the expression, so the error
+/// lands on the line after the including directive. An indented line also leaves its `{` block open at the end of the file,
+/// which adds `end of file: expected }` there and `location of top-most unmatched {` at the first line of the outermost
+/// open block (pinned 516.1681, fixtures/diagnostics/cases/string_embed_unterminated).
+fn text_expression_diagnostics(
+    mapping: &Mapping<'_>,
+    diagnostic: &dm_preprocess::Diagnostic,
+) -> Vec<Diagnostic> {
+    let in_file = mapping.line(&diagnostic.path, diagnostic.line);
+    let at_end = in_file.as_ref().and_then(|location| {
+        let parent = mapping.plan.occurrences[location.include_occurrence].parent?;
+        let mut end = location.clone();
+        end.semantic_path = mapping.plan.occurrences[parent].semantic_path.clone();
+        end.line = mapping.plan.occurrences[location.include_occurrence].directive_line + 1;
+        Some(end)
+    });
+    let at_end = at_end.or_else(|| in_file.clone());
+    let make = |message: &str, location: Option<SourceLocation>| Diagnostic {
+        kind: DiagnosticKind::SourceError,
+        stage: DiagnosticStage::Preprocess,
+        message: message.into(),
+        location,
+    };
+    let mut found = vec![make(&diagnostic.message, at_end.clone())];
+    // The first indented code line after the last unindented one, up to the literal's line.
+    let text = mapping
+        .by_path
+        .get(&diagnostic.path)
+        .map(|file| mapping.files[file.index()].text.as_str().to_owned())
+        .unwrap_or_default();
+    let mut header = false;
+    let mut block = None;
+    for (index, line) in text.lines().enumerate().take(diagnostic.line) {
+        let code = line.trim_start_matches([' ', '\t']);
+        if code.trim().is_empty() || code.starts_with("//") {
+            continue;
+        }
+        if code.len() == line.len() {
+            header = true;
+            block = None;
+        } else if header && block.is_none() {
+            block = Some(index + 1);
+        }
+    }
+    if let Some(block) = block {
+        found.push(make("end of file: expected }", at_end));
+        found.push(make(
+            "location of top-most unmatched {",
+            mapping.line(&diagnostic.path, block),
+        ));
+    }
+    found
 }
