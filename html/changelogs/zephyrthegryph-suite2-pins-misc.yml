@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed material bracelets and rings ignoring their fixed material when a caller passed another one"
+  - bugfix: "Graffiti no longer removes entries from the shared icon state cache when rolling its look"
+  - code_imp: "Test fixes: zone hover input fall-through, media_tracks owner restore, e1 golden, resolver reader z placement, reagents_start rolls seed"

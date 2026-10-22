@@ -63,9 +63,9 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forc
 /obj/item/clothing/accessory/bracelet/material/proc/forced_material()
 	return TYPE_TABLE_GET(src, bracelet_forced_material) || default_material
 
-/// A material bracelet is made of its material (steel when it names none); one with no such material is discarded.
+/// A material bracelet is made of its type's fixed material when it has one (a caller's choice never overrides it), else the passed one (steel when none); one with no such material is discarded.
 /obj/item/clothing/accessory/bracelet/material/proc/find_material(mapload)
-	material = get_material_by_name(default_material || MAT_STEEL)
+	material = get_material_by_name(TYPE_TABLE_GET(src, bracelet_forced_material) || default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
 

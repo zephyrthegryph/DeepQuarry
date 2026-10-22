@@ -347,6 +347,36 @@
 	var/report = dq_loot_pin_compare("resolver_table", rows)
 	TEST_ASSERT(isnull(report), report)
 
+/// The level the resolver reader rows were recorded on.
+#define DQ_RESOLVER_PIN_REFERENCE_Z 6
+
+/// a * b mod LOOT_HASH_MOD for a, b below it. BYOND numbers are 32-bit floats (exact to 2^24), so the product is built by doubling and adding.
+/proc/dq_loot_pin_mulmod(a, b)
+	var/result = 0
+	var/addend = a % LOOT_HASH_MOD
+	var/bits = b % LOOT_HASH_MOD
+	while(bits > 0)
+		if(bits % 2)
+			result = (result + addend) % LOOT_HASH_MOD
+		addend = (addend * 2) % LOOT_HASH_MOD
+		bits = round(bits / 2)
+	return result
+
+/// A seed that makes a roll on level `z` hash as `seed` does on level `reference_z`. loot_rng_at hashes ((((seed * 31 + x) * 31 + y) * 31 + z) * 31 + type)
+/// mod LOOT_HASH_MOD, which is linear in seed and z, and LOOT_HASH_MOD is prime: seed + (reference_z - z) / 31^3 keeps the sum.
+/proc/dq_loot_pin_seed_for_z(seed, z, reference_z)
+	var/inverse = 1 // 31^(p - 2) mod p is the inverse of 31 (Fermat), by squaring
+	var/base = 31
+	var/power = LOOT_HASH_MOD - 2
+	while(power > 0)
+		if(power % 2)
+			inverse = dq_loot_pin_mulmod(inverse, base)
+		base = dq_loot_pin_mulmod(base, base)
+		power = round(power / 2)
+	var/inverse_cubed = dq_loot_pin_mulmod(dq_loot_pin_mulmod(inverse, inverse), inverse)
+	var/shift = dq_loot_pin_mulmod(((reference_z - z) % LOOT_HASH_MOD + LOOT_HASH_MOD) % LOOT_HASH_MOD, inverse_cubed)
+	return (seed + shift) % LOOT_HASH_MOD
+
 /// A fixture template holding the resolver types (resolver_fixture.dmm; the tile of each is resolver_fixture_tiles.txt), loaded through the map
 /// reader on a z-level of its own: what is left on and around each tile, and what the resolvers registered. Not in the fixture: the stairs spawner
 /// (it needs a level above) and the turbolift holder (it needs a list var edit); the table pin above covers them.
@@ -359,6 +389,9 @@
 	GLOB.loot_roll_serial = 0 // a roll made after the world's own map load also depends on how many rolls came before it: start the count at zero
 	rand_seed(dq_test_seed_for("resolver reader pin")) // gibs and the like draw from the world's generator: whatever ran before must not matter
 	var/z = world.increment_max_z()
+	// A map-time roll hashes the z-level (loot_rng_at), and how many levels earlier tests added changes which one this is: shift the seed so the fixture rolls as it does on the level the rows were recorded on.
+	GLOB.loot_seed = dq_loot_pin_seed_for_z(GLOB.loot_seed, z, DQ_RESOLVER_PIN_REFERENCE_Z)
+	log_test("resolver reader pin: fixture on z [z], recorded on z [DQ_RESOLVER_PIN_REFERENCE_Z]")
 	var/datum/map_template/template = new("[DQ_LOOT_PIN_DIR]resolver_fixture.dmm")
 	TEST_ASSERT(template.load(locate(1, 1, z)), "the fixture loads")
 	var/list/rows = list()
