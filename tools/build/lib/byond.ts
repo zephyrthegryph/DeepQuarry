@@ -428,6 +428,28 @@ export function checkVerdigrisAbi(root = '.'): void {
   throw new Juke.ExitCode(1);
 }
 
+/**
+ * A focused run (tools/dq_focused_test.sh) sets DQ_WORLD_REGISTRY: a directory where every DreamDaemon it starts, and this runner, is
+ * recorded as a file named for the pid (content: the image name). tools/dq_run_guard.js kills what is listed there at the run's
+ * wall-clock cap and when the run's shell dies, so a stopped task leaves no world behind. Returns the function that removes the entries.
+ */
+function registerWorldProcess(pid: number | undefined, imageName: string): () => void {
+  const dir = process.env.DQ_WORLD_REGISTRY;
+  if (!dir || !pid) return () => {};
+  const files = [path.join(dir, String(pid)), path.join(dir, String(process.pid))];
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(files[0], imageName);
+    fs.writeFileSync(files[1], path.basename(process.execPath));
+  } catch {
+    return () => {}; // best effort: the run just loses the guard's help
+  }
+  return () => {
+    try { fs.rmSync(files[0], { force: true }); } catch { /* best effort */ }
+    // The runner stays registered while it may start another world; the run's shell cleans the directory.
+  };
+}
+
 /** Force-kill a process tree cross-platform. */
 function killProcessTree(pid: number): void {
   if (process.platform === 'win32') {
@@ -493,6 +515,7 @@ function runDreamDaemonWithWatchdog(
     if (child.pid && options.onSpawn) {
       options.onSpawn(child.pid);
     }
+    const unregisterWorld = registerWorldProcess(child.pid, path.basename(exe));
     // A test world runs at idle priority: the machine is also the user's desktop, and a world only needs the CPU nothing else wants.
     // DQ_PRIORITY=normal keeps the old behaviour.
     if (child.pid && process.env.DQ_PRIORITY !== 'normal') {
@@ -514,6 +537,7 @@ function runDreamDaemonWithWatchdog(
       }
       settled = true;
       hardTimeout = isHardTimeout;
+      unregisterWorld();
       clearInterval(poll);
       clearTimeout(hardTimer);
       if (graceTimer) {

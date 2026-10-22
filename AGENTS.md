@@ -312,7 +312,12 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   Use `tools/dq_focused_test.sh` for every run. The full suite runs only at integration or when the
   user asks: `tools/build/build.sh dm-test` (normal tier, sharded; `--shards=1` for one world). CI and nightly add the exhaustive tier
   (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
-  `.../representative`.
+  `.../representative`; `dq_focused_test.sh` refuses an exhaustive test (or one with exhaustive subtypes) unless `--allow-exhaustive`,
+  and names the `/representative` to run instead.
+- **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 20, clamped to 30 without `--allow-exhaustive`);
+  at the cap, or when the run's shell dies or is killed, `tools/dq_run_guard.js` kills the run's own DreamDaemon worlds and frees
+  their test-world slots. The cap counts run time, not time queued for a slot (reported as "queued N min"): never wrap the tool in
+  `timeout`. A native compile refused with exit 75 (daemon capacity) queues again up to 30 min instead of failing. Never start a long run; test: `bash tools/ci/test_focused_caps.sh`.
 - Lint: `tools/build/build.sh lint`. TGUI tests: `tools/build/build.sh tgui-test`. Rust:
   `cd verdigris && cargo test --package verdigris`.
 - Flaky or caused by me: `tools/build/build.sh test-repeat --runs=5`, `test-baseline`.
