@@ -110,6 +110,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	setup(PROC_REF(init_hatch))
 	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 300, active = 300))
@@ -130,8 +131,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_recycler/Initialize(mapload)
-	. = ..()
+/obj/machinery/maint_recycler/proc/init_hatch()
 	//init hatch
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"

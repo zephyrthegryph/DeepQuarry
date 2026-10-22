@@ -16,19 +16,7 @@ SYSTEM_DEF(character_setup)
 CAPABILITIES(/datum/system/character_setup)
 	owns_many(nameof(preview_polls))
 	ref_many(nameof(save_queue))
-/*
-// ALLOW(init/FRAMEWORK): the character setup system drains its queued setups at boot
-/datum/system/character_setup/Initialize()
-	while(length(prefs_awaiting_setup))
-		var/datum/preferences/prefs = prefs_awaiting_setup[length(prefs_awaiting_setup)]
-		prefs_awaiting_setup.len--
-		prefs.setup()
-	while(length(newplayers_requiring_init))
-		var/mob/new_player/new_player = newplayers_requiring_init[length(newplayers_requiring_init)]
-		newplayers_requiring_init.len--
-		new_player.deferred_login()
-	. = ..()
-*/	//Might be useful if we ever switch to Bay prefs.
+
 /datum/system/character_setup/reactions()
 	. = ..()
 	. += every(1 SECOND, PROC_REF(save_queued), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
