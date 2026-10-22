@@ -49,17 +49,19 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil)
 	icon_state = "blank"
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+	keeps_if(PROC_REF(not_on_open_turf))
+	setup(PROC_REF(soil_invisible_setup))
 	param(nameof(seed_at_make), pos = 1, overrides = TRUE)
 	rolls(nameof(pixel_y), range_of(-5, 5))
 
 /// The seed the soil grows (its constructor param).
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/var/datum/seed/seed_at_make
 
-// ALLOW(init/INSTANCE_STATE): a vine's invisible soil starts its plant alive and healthy
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload)
-	. = ..()
-	if(isopenturf(loc))
-		return INITIALIZE_HINT_QDEL
+/// Invisible soil is not made on open turf.
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/proc/not_on_open_turf()
+	return !isopenturf(loc)
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/proc/soil_invisible_setup()
 	proto_set(src, nameof(seed), seed_shareable(seed_at_make))
 	set_dead(0)
 	set_age(1)

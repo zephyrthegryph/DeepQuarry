@@ -281,12 +281,15 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	//Only one can exist in the world!
 
 CAPABILITIES(/obj/machinery/blackbox_recorder)
+	keeps_if(PROC_REF(only_blackbox))
+	setup(PROC_REF(machinery_blackbox_recorder_setup))
 	configure(uses_power(idle = 10, active = 100))
 	owns_many(nameof(feedback), /datum/feedback_variable)
-/obj/machinery/blackbox_recorder/Initialize(mapload)
-	. = ..()
-	if(istype(GLOB.blackbox, /obj/machinery/blackbox_recorder))
-		return INITIALIZE_HINT_QDEL
+/// Only one can exist in the world.
+/obj/machinery/blackbox_recorder/proc/only_blackbox()
+	return !istype(GLOB.blackbox, /obj/machinery/blackbox_recorder)
+
+/obj/machinery/blackbox_recorder/proc/machinery_blackbox_recorder_setup()
 	GLOB.blackbox = src
 
 // The blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback

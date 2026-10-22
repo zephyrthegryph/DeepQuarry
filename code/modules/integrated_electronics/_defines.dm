@@ -75,6 +75,7 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 									// Used as a global var, (Do not set manually in children).
 
 CAPABILITIES(/obj/item/integrated_circuit)
+	setup(PROC_REF(item_integrated_circuit_setup))
 	ref_one(nameof(assembly), /obj/item/electronic_assembly)
 	owns_many(nameof(inputs))
 	owns_many(nameof(outputs))

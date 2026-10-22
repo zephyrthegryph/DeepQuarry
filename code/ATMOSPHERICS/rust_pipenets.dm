@@ -80,6 +80,7 @@ CAPABILITIES(/datum/pipe_port)
 	var/list/rust_flow_entities
 
 CAPABILITIES(/obj/machinery/atmospherics)
+	setup(PROC_REF(settle_pipe_color))
 	configure(uses_power(idle = 0, active = 0, channel = ENVIRON))
 	blast_contents() // a ventcrawler in the pipes takes the full blast
 	ref_one(nameof(node1))

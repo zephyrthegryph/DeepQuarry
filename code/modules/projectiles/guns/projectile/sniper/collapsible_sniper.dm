@@ -45,24 +45,30 @@ MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barr
 	name = "AM rifle barrel"
 	icon_state = "heavysniper-barrel"
 
-/obj/item/sniper_rifle_part/barrel/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/sniper_rifle_part/barrel)
+	setup(PROC_REF(sniper_rifle_part_barrel_setup))
+
+/obj/item/sniper_rifle_part/barrel/proc/sniper_rifle_part_barrel_setup()
 	rel_set(src, nameof(barrel), src)
 
 /obj/item/sniper_rifle_part/stock
 	name = "AM rifle stock"
 	icon_state = "heavysniper-stock"
 
-/obj/item/sniper_rifle_part/stock/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/sniper_rifle_part/stock)
+	setup(PROC_REF(sniper_rifle_part_stock_setup))
+
+/obj/item/sniper_rifle_part/stock/proc/sniper_rifle_part_stock_setup()
 	rel_set(src, nameof(stock), src)
 
 /obj/item/sniper_rifle_part/trigger_group
 	name = "AM rifle trigger assembly"
 	icon_state = "heavysniper-trig"
 
-/obj/item/sniper_rifle_part/trigger_group/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/sniper_rifle_part/trigger_group)
+	setup(PROC_REF(sniper_rifle_part_trigger_group_setup))
+
+/obj/item/sniper_rifle_part/trigger_group/proc/sniper_rifle_part_trigger_group_setup()
 	rel_set(src, nameof(trigger_group), src)
 
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")

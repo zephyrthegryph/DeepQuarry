@@ -23,6 +23,7 @@
 	var/empty_sound = SFX_MACHINES_TWOBEEP
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun)
+	setup(PROC_REF(magnetic_railgun_setup))
 	configure(item_worn(slots = SLOT_BELT))
 
 // Not going to check type repeatedly, if you code or varedit
@@ -271,14 +272,13 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/sif)
 	is_picked_up = FALSE
 	update_transform()
 
-/obj/item/gun/magnetic/railgun/Initialize(mapload)
-	. = ..()
+/obj/item/gun/magnetic/railgun/proc/magnetic_railgun_setup()
 	if((!(type == /obj/item/gun/magnetic/railgun)) && !is64x32_override)
 		is64x32 = FALSE
 		if(icon_expected_width == 64)
-			icon_expected_width = 32
+			set_icon_expected_width(32)
 		if(icon == 'icons/obj/64x32guns_ch.dmi')
-			icon = 'icons/obj/railgun.dmi'
+			set_icon('icons/obj/railgun.dmi')
 	if(is64x32)
 		update_transform()
 
