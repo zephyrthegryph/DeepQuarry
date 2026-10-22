@@ -29,6 +29,15 @@
 	/// Fields every step's request also gets (rights, ask_flags, usable_state: the re-checks of the whole sequence).
 	var/list/common_fields
 	var/done = FALSE
+	/// TRUE when the step procs are procs of the sequence itself (called without the sequence argument): a self-contained set of questions.
+	var/self_owned = FALSE
+	/// TRUE when the owner's procs run with the answerer as usr (admin tools whose code still reads usr).
+	var/as_actor = FALSE
+	/// The sequence waiting for this one (wrapped), and the key this one's `result` is stored under in it.
+	var/parent_w
+	var/result_key
+	/// The caller's own state for its on_done (a list the sequence never reads).
+	var/list/kept
 
 CAPABILITIES(/datum/ask_sequence)
 	ref_one(nameof(owner))
@@ -66,13 +75,29 @@ CAPABILITIES(/datum/ask_sequence)
 		base_vars = plain.vars.Copy()
 	return istext(key) && (key in vars) && !(key in base_vars)
 
+/// The steps a sequence type asks when its starter names none (a self-contained set of questions).
+/datum/ask_sequence/proc/initial_steps()
+	return null
+
 /datum/ask_sequence/proc/call_owner(proc_ref, ...)
-	var/list/call_args = list(src) + args.Copy(2)
-	if(copytext("[proc_ref]", 1, 7) == "/proc/")
-		return call(proc_ref)(arglist(call_args))
-	if(!owner || QDELETED(owner))
+	return call_on_owner(FALSE, proc_ref, args.Copy(2))
+
+/// Calls a step proc: on the sequence itself when it is self_owned, else like call_owner().
+/datum/ask_sequence/proc/call_step(proc_ref)
+	return call_on_owner(self_owned, proc_ref, list())
+
+/datum/ask_sequence/proc/call_on_owner(on_self, proc_ref, list/rest)
+	var/list/call_args = on_self ? rest : list(src) + rest
+	var/global_proc = copytext("[proc_ref]", 1, 7) == "/proc/"
+	var/datum/target = on_self ? src : owner
+	if(!global_proc && (!target || QDELETED(target)))
 		return null
-	return call(owner, proc_ref)(arglist(call_args))
+	var/mob/who = as_actor ? actor() : null
+	if(who)
+		return with_actor(arglist(list(who, global_proc ? GLOBAL_PROC : target, proc_ref) + call_args))
+	if(global_proc)
+		return call(proc_ref)(arglist(call_args))
+	return call(target, proc_ref)(arglist(call_args))
 
 /// Asks the next step, or runs on_done after the last.
 /datum/ask_sequence/proc/next_step()
@@ -87,12 +112,16 @@ CAPABILITIES(/datum/ask_sequence)
 		if(isnull(step))
 			continue
 		if(!islist(step))
-			var/result = call_owner(step)
-			if(result == ASK_STOP)
+			var/asked = call_step(step)
+			if(asked == ASK_STOP)
 				return stop("stopped")
-			if(isnull(result))
+			if(asked == ASK_WAIT) // a child sequence answers; it calls resume()
+				return
+			if(asked == ASK_FINISH)
+				return finish()
+			if(isnull(asked))
 				continue
-			step = result
+			step = asked
 		open_step = step
 		var/list/fields = (common_fields ? common_fields.Copy() : list()) + step["fields"]
 		if(isnull(fields["timeout"]))
@@ -104,9 +133,54 @@ CAPABILITIES(/datum/ask_sequence)
 		if(!request_open(src, step["type"], TYPE_PROC_REF(/datum/ask_sequence, step_answered), fields))
 			stop("not asked")
 		return
+	finish()
+
+/// Ends the sequence successfully: on_done runs on the owner, then the sequence waiting for this one goes on.
+/datum/ask_sequence/proc/finish()
+	if(done)
+		return
 	done = TRUE
 	if(on_done)
 		call_owner(on_done)
+	deliver(TRUE)
+
+/// Goes on to the next step (a step that returned ASK_WAIT, once its child sequence is answered).
+/datum/ask_sequence/proc/resume()
+	if(done)
+		return
+	next_step()
+
+/// Puts `more` (steps) right after the step open now.
+/datum/ask_sequence/proc/add_steps(list/more)
+	steps = steps.Copy(1, step_index + 1) + more + steps.Copy(step_index + 1)
+
+/// A step proc's way to ask a whole other set of questions of the same answerer: starts `child_type` (it asks its initial_steps()), and the child's `result` lands under `key` here
+/// when it finishes; a child that stops stops this sequence. Returns ASK_WAIT: the step returns it.
+/datum/ask_sequence/proc/ask_child(child_type, key, list/params)
+	var/list/child_params = params ? params.Copy() : list()
+	child_params["parent_w"] = rerun_wrap(src)
+	child_params["result_key"] = key
+	var/started = ask_sequence_begin(owner, child_type, actor(), subject(), null, null, null, common_fields, child_params)
+	if(istext(started))
+		stop(started)
+	return ASK_WAIT
+
+/// What this sequence hands the sequence waiting for it (kept as the answer "result", read with get("result")).
+/datum/ask_sequence/proc/set_result(value)
+	put("result", value)
+
+/// Hands the end of this sequence to the one waiting for it.
+/datum/ask_sequence/proc/deliver(ok, reason)
+	if(isnull(parent_w))
+		return
+	var/datum/ask_sequence/waiting = rerun_unwrap(parent_w)
+	parent_w = null
+	if(!istype(waiting))
+		return
+	if(!ok)
+		return waiting.stop(reason)
+	waiting.put(result_key, get("result"))
+	waiting.resume()
 
 /datum/ask_sequence/proc/step_answered(datum/act/request/A)
 	if(done)
@@ -130,6 +204,7 @@ CAPABILITIES(/datum/ask_sequence)
 	done = TRUE
 	if(on_stop)
 		call_owner(on_stop, reason)
+	deliver(FALSE, reason)
 
 /// ask_sequence()'s body. `owner` is the caller's src. Returns the sequence, or a text reason it didn't start.
 /proc/ask_sequence_begin(datum/owner, sequence, mob/answerer, datum/subject, list/steps, on_done, on_stop, list/common_fields, list/params)
@@ -146,7 +221,7 @@ CAPABILITIES(/datum/ask_sequence)
 			CRASH("ask_sequence: [S.type] has no var [key]")
 		S.vars[key] = params[key] // ALLOW(api): ask_sequence() named arguments set the sequence's own state
 	rel_set(S, nameof(S.owner), owner)
-	S.steps = steps
+	S.steps = steps || S.initial_steps()
 	S.on_done = on_done
 	S.on_stop = on_stop
 	S.common_fields = common_fields

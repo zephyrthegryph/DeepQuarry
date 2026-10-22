@@ -1,62 +1,89 @@
+/// View Variables editing one variable of every instance of the subject's type. `include_subtypes` is the answer of the subtype question.
+/datum/ask_sequence/admin/vv_mass
+	var/var_name
+	var/include_subtypes = FALSE
+	var/variable
+	var/sure
+	var/gliding
+
+/datum/ask_sequence/admin/vv_mass/initial_steps()
+	return list(
+		question_step("sure", /datum/prompt/choice, question = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", title = "Slow down, chief!", choices = list("Yes", "No"), timeout = 60 SECONDS, buttons = TRUE),
+		TYPE_PROC_REF(/client, mass_gate),
+		TYPE_PROC_REF(/client, mass_ask_subtypes),
+		TYPE_PROC_REF(/client, mass_ask_var),
+		TYPE_PROC_REF(/client, mass_check_var),
+		TYPE_PROC_REF(/client, mass_check_gliding),
+		TYPE_PROC_REF(/client, mass_ask_value),
+		TYPE_PROC_REF(/client, mass_ask_parse),
+		TYPE_PROC_REF(/client, mass_ask_unique),
+		TYPE_PROC_REF(/client, mass_ask_many))
+
 /client/proc/cmd_mass_modify_object_variables(datum/target, var_name)
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(cmd_mass_modify_object_variables), args)
-	if(flow_ask(mob, "mass:sure", /datum/prompt/choice, question = "Are you sure you'd like to mass-modify every instance of the [var_name] variable? This can break everything if you do not know what you are doing.", title = "Slow down, chief!", choices = list("Yes", "No"), timeout = 60 SECONDS, buttons = TRUE) != "Yes")
-		return
+	ask_admin(/datum/ask_sequence/admin/vv_mass, target, null, PROC_REF(mass_apply), list("var_name" = var_name))
 
+/client/proc/mass_gate(datum/ask_sequence/admin/vv_mass/asked)
+	if(asked.sure != "Yes")
+		return ASK_STOP
 	if(!admin_require(src, R_VAREDIT, "cmd_mass_modify_object_variables", TRUE))
-		return
+		return ASK_STOP
+	return null
 
-	/// if false get only the strict type, get all subtypes too otherwise
-	var/strict_type = FALSE
+/// Whether the edit reaches the subtypes too (asked when the type has any).
+/client/proc/mass_ask_subtypes(datum/ask_sequence/admin/vv_mass/asked)
+	var/datum/target = asked.subject()
 	if(target?.type)
-		strict_type = vv_subtype_prompt(target.type, "mass")
-		if(isnull(strict_type))
-			return
+		return asked.ask_child(/datum/ask_sequence/picker/subtype_pick, "include_subtypes", list("target_type" = target.type))
+	return null
 
-	massmodify_variables(target, var_name, strict_type)
-	feedback_add_details("admin_verb","MVV") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
-/client/proc/massmodify_variables(datum/target, var_name = "", strict_type = FALSE)
+/client/proc/mass_ask_var(datum/ask_sequence/admin/vv_mass/asked)
 	if(!admin_require(src, R_VAREDIT, "massmodify_variables", TRUE))
-		return
+		return ASK_STOP
+	var/datum/target = asked.subject()
 	if(!istype(target))
-		return
+		return ASK_STOP
+	if(asked.var_name)
+		asked.variable = asked.var_name
+		return null
+	var/list/names = list()
+	for (var/V in target.vars)
+		names += V
 
-	var/variable = ""
-	if(!var_name)
-		var/list/names = list()
-		for (var/V in target.vars)
-			names += V
+	names = sortList(names)
 
-		names = sortList(names)
+	return question_step("variable", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names)
 
-		variable = flow_ask(mob, "mass:var", /datum/prompt/choice, question = "Which var?", title = "Var", choices = names)
-	else
-		variable = var_name
-
+/client/proc/mass_check_var(datum/ask_sequence/admin/vv_mass/asked)
+	var/datum/target = asked.subject()
+	var/variable = asked.variable
 	if(!variable || !target.can_vv_get(variable))
-		return
-	var/default
-	var/var_value = target.vars[variable]
+		return ASK_STOP
 
 	if(variable in GLOB.VVckey_edit)
 		to_chat(src, "It's forbidden to mass-modify ckeys. It'll crash everyone's client you dummy.", confidential = TRUE)
-		return
+		return ASK_STOP
 	if(variable in GLOB.VVlocked)
 		if(!admin_require(src, R_DEBUG, "massmodify_variables", TRUE))
-			return
+			return ASK_STOP
 	if(variable in GLOB.VVicon_edit_lock)
 		if(!admin_require(src, R_FUN|R_DEBUG, "massmodify_variables", TRUE))
-			return
+			return ASK_STOP
 	if(variable in GLOB.VVpixelmovement)
 		if(!admin_require(src, R_DEBUG, "massmodify_variables", TRUE))
-			return
-		var/prompt = flow_ask(mob, "mass:gliding", /datum/prompt/choice, question = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", title = "DANGER", choices = list("ABORT ", "Continue", " ABORT"), buttons = TRUE)
-		if (prompt != "Continue")
-			return
+			return ASK_STOP
+		return question_step("gliding", /datum/prompt/choice, question = "Editing this var may irreparably break tile gliding for the rest of the round. THIS CAN'T BE UNDONE", title = "DANGER", choices = list("ABORT ", "Continue", " ABORT"), buttons = TRUE)
+	return null
 
-	default = vv_get_class(variable, var_value)
+/client/proc/mass_check_gliding(datum/ask_sequence/admin/vv_mass/asked)
+	if((asked.variable in GLOB.VVpixelmovement) && asked.gliding != "Continue")
+		return ASK_STOP
+	return null
+
+/client/proc/mass_ask_value(datum/ask_sequence/admin/vv_mass/asked)
+	var/datum/target = asked.subject()
+	var/variable = asked.variable
+	var/var_value = target.vars[variable]
+	var/default = vv_get_class(variable, var_value)
 
 	if(isnull(default))
 		to_chat(src, "Unable to determine variable type.", confidential = TRUE)
@@ -66,32 +93,57 @@
 	to_chat(src, "Variable contains: [var_value]", confidential = TRUE)
 
 	if(default == VV_NUM)
-		var/dir_text = ""
-		if(var_value > 0 && var_value < 16)
-			if(var_value & 1)
-				dir_text += "NORTH"
-			if(var_value & 2)
-				dir_text += "SOUTH"
-			if(var_value & 4)
-				dir_text += "EAST"
-			if(var_value & 8)
-				dir_text += "WEST"
+		vv_say_direction(var_value)
 
-		if(dir_text)
-			to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
+	return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("default_class" = default))
 
-	var/value = vv_get_value(default_class = default, key = "mass:value")
-	var/new_value = value["value"]
+/// The kind of the new value, as the edit below treats it (null: nothing to apply).
+/client/proc/mass_class(datum/ask_sequence/admin/vv_mass/asked)
+	var/list/value = asked.get("picked")
 	var/class = value["class"]
-
+	var/new_value = value["value"]
 	if(!class || (new_value == null && class != VV_NULL))
-		return
+		return null
 
 	if (class == VV_MESSAGE)
 		class = VV_TEXT
 
 	if (value["type"])
 		class = VV_NEW_TYPE
+	return class
+
+/client/proc/mass_ask_parse(datum/ask_sequence/admin/vv_mass/asked)
+	var/class = mass_class(asked)
+	if(!class)
+		return ASK_STOP
+	if(class == VV_TEXT)
+		var/list/value = asked.get("picked")
+		return asked.ask_child(/datum/ask_sequence/picker/parse_vars, "parsed", list("source_w" = rerun_wrap(asked.subject()), "source_text" = value["value"]))
+	return null
+
+/client/proc/mass_ask_unique(datum/ask_sequence/admin/vv_mass/asked)
+	if(mass_class(asked) == VV_TEXT && length(asked.get("parsed")))
+		return question_step("unique", /datum/prompt/choice, question = "Process vars unique to each instance, or same for all?", title = "Variable Association", choices = list("Unique", "Same"), buttons = TRUE)
+	return null
+
+/client/proc/mass_ask_many(datum/ask_sequence/admin/vv_mass/asked)
+	if(mass_class(asked) == VV_NEW_TYPE)
+		var/list/value = asked.get("picked")
+		return question_step("many", /datum/prompt/choice, question = "Create only one [value["type"]] and assign each or a new one for each thing", title = "How Many", choices = list("One", "Many", "Cancel"), buttons = TRUE)
+	return null
+
+/client/proc/mass_apply(datum/ask_sequence/admin/vv_mass/asked)
+	var/datum/target = asked.subject()
+	if(!istype(target) || !admin_require(src, R_VAREDIT, "massmodify_variables", TRUE))
+		return
+	feedback_add_details("admin_verb","MVV") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	var/variable = asked.variable
+	var/strict_type = asked.include_subtypes
+	var/list/value = asked.get("picked")
+	var/new_value = value["value"]
+	var/class = mass_class(asked)
+	if(!class)
+		return
 
 	var/original_name = "[target]"
 
@@ -114,21 +166,18 @@
 				CHECK_TICK
 
 		if(VV_TEXT)
-			var/list/varsvars = vv_parse_text(target, new_value, "mass")
-			if(isnull(varsvars))
-				return
+			var/list/varsvars = asked.get("parsed")
 			var/pre_processing = new_value
 			var/unique
 			if (varsvars?.len)
-				unique = flow_ask(mob, "mass:unique", /datum/prompt/choice, question = "Process vars unique to each instance, or same for all?", title = "Variable Association", choices = list("Unique", "Same"), buttons = TRUE)
+				unique = asked.get("unique")
 				if(isnull(unique))
 					return
 				if(unique == "Unique")
 					unique = TRUE
 				else
 					unique = FALSE
-					for(var/V in varsvars)
-						new_value = replacetext(new_value,"\[[V]]","[target.vars[V]]")
+					new_value = vv_substitute_vars(new_value, varsvars, target)
 
 			to_chat(src, "Finding items...", confidential = TRUE)
 			var/list/items = get_all_of_type(target.type, strict_type)
@@ -138,9 +187,7 @@
 					continue
 				var/datum/D = thing
 				if(unique)
-					new_value = pre_processing
-					for(var/V in varsvars)
-						new_value = replacetext(new_value,"\[[V]]","[D.vars[V]]")
+					new_value = vv_substitute_vars(pre_processing, varsvars, D)
 
 				if (D.vv_edit_var(variable, new_value) != FALSE)
 					accepted++
@@ -149,7 +196,7 @@
 				CHECK_TICK
 
 		if (VV_NEW_TYPE)
-			var/many = flow_ask(mob, "mass:many", /datum/prompt/choice, question = "Create only one [value["type"]] and assign each or a new one for each thing", title = "How Many", choices = list("One", "Many", "Cancel"), buttons = TRUE)
+			var/many = asked.get("many")
 			if (isnull(many) || many == "Cancel")
 				return
 			if (many == "Many")

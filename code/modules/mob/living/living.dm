@@ -986,51 +986,121 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 		<br>"} + span_small("VITALITY: <span id='vitality'>[round(vitality() * 100)]%</span> 			AFFLICTIONS: <span id='afflictions'>[LAZYLEN(body?.afflictions)]</span> 			OXYGEN DEBT: <span id='oxygen_debt'>[round(oxygen_debt(), 0.1)]</span>") + {"
 		<br>"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=injure'>Injure</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=mend'>Mend</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=afflict'>Add affliction</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=cure'>Remove affliction</a> 			<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustBody=oxygen'>Oxygen debt</a>")
 
-/// The VV body editor: injure with a chosen kind, mend with a chosen tag, add
-/// or remove an affliction, or set oxygen debt. Returns the log line (what was
-/// done), or null when cancelled or still asking. Runs inside vv_topic()'s
-/// prompt flow: each flow_ask() answer re-runs the topic, which re-locates this
-/// mob, so every check below is made again before anything changes.
+/// The questions of the VV body editor, owned by the mob it works on: the answers are read back with get(key).
+/datum/ask_sequence/admin/body_adjust
+	var/action
+
+/// The VV body editor: injure with a chosen kind, mend with a chosen tag, add or remove an affliction, or set oxygen debt. Asks what the action needs and applies it when
+/// the questions are answered; every check is made again then, as the mob may be gone.
 /mob/living/proc/vv_adjust_body(client/C, action)
+	var/list/steps
 	switch(action)
 		if("injure")
-			var/list/kinds = list()
-			for(var/kind in 1 to INJURY_KIND_COUNT)
-				kinds[injury_kind_name(kind)] = kind
-			var/choice = flow_ask(C.mob, "body_injure_kind", /datum/prompt/choice, question = "Injury kind", title = "Injure [src]", choices = kinds)
-			if(!choice || QDELETED(src))
-				return null
-			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/prompt/number, question = "How much [choice]?", title = "Injure [src]", default = 10, min_value = 0, round_entry = FALSE)
-			if(!amount || QDELETED(src))
-				return null
-			var/static/list/zones = list("whole body") + BP_ALL
-			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/prompt/choice, question = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
+			steps = list(PROC_REF(body_ask_injure_kind), PROC_REF(body_ask_injure_amount), PROC_REF(body_ask_injure_zone))
+		if("mend")
+			steps = list(PROC_REF(body_ask_mend_tag), PROC_REF(body_ask_mend_amount))
+		if("afflict")
+			steps = list(PROC_REF(body_ask_afflict_type), PROC_REF(body_ask_afflict_severity))
+		if("cure")
+			steps = list(PROC_REF(body_ask_cure))
+		if("oxygen")
+			steps = list(question_step("amount", /datum/prompt/number, question = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min_value = -INFINITY, round_entry = FALSE))
+		else
+			return
+	ask_sequence_begin(src, /datum/ask_sequence/admin/body_adjust, C.mob, null, steps, PROC_REF(body_adjust_answered), null, null, list("action" = action))
+
+/mob/living/proc/body_ask_injure_kind(datum/ask_sequence/admin/body_adjust/asked)
+	var/list/kinds = list()
+	for(var/kind in 1 to INJURY_KIND_COUNT)
+		kinds[injury_kind_name(kind)] = kind
+	asked.put("kinds", kinds)
+	return question_step("kind", /datum/prompt/choice, question = "Injury kind", title = "Injure [src]", choices = kinds)
+
+/mob/living/proc/body_ask_injure_amount(datum/ask_sequence/admin/body_adjust/asked)
+	var/choice = asked.get("kind")
+	if(!choice || QDELETED(src))
+		return ASK_STOP
+	return question_step("amount", /datum/prompt/number, question = "How much [choice]?", title = "Injure [src]", default = 10, min_value = 0, round_entry = FALSE)
+
+/mob/living/proc/body_ask_injure_zone(datum/ask_sequence/admin/body_adjust/asked)
+	if(!asked.get("amount") || QDELETED(src))
+		return ASK_STOP
+	var/static/list/zones = list("whole body") + BP_ALL
+	return question_step("zone", /datum/prompt/choice, question = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
+
+/mob/living/proc/body_ask_mend_tag(datum/ask_sequence/admin/body_adjust/asked)
+	var/list/names = GLOB.dq_treatment_tag_names
+	var/list/tags = list()
+	for(var/tag in names)
+		tags[names[tag]] = tag
+	asked.put("tags", tags)
+	return question_step("tag", /datum/prompt/choice, question = "Treatment tag", title = "Mend [src]", choices = tags)
+
+/mob/living/proc/body_ask_mend_amount(datum/ask_sequence/admin/body_adjust/asked)
+	var/choice = asked.get("tag")
+	if(!choice || QDELETED(src))
+		return ASK_STOP
+	return question_step("amount", /datum/prompt/number, question = "How much [choice]?", title = "Mend [src]", default = 10, min_value = 0, round_entry = FALSE)
+
+/mob/living/proc/body_ask_afflict_type(datum/ask_sequence/admin/body_adjust/asked)
+	var/list/affliction_types = list()
+	for(var/path in subtypesof(/datum/affliction))
+		affliction_types["[path]"] = path
+	asked.put("affliction_types", affliction_types)
+	return question_step("affliction", /datum/prompt/choice, question = "Affliction", title = "Afflict [src]", choices = affliction_types)
+
+/mob/living/proc/body_ask_afflict_severity(datum/ask_sequence/admin/body_adjust/asked)
+	var/list/affliction_types = asked.get("affliction_types")
+	var/affliction_type = affliction_types[asked.get("affliction")]
+	if(!affliction_type || QDELETED(src) || !body)
+		return ASK_STOP
+	return question_step("severity", /datum/prompt/number, question = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_entry = FALSE)
+
+/mob/living/proc/body_ask_cure(datum/ask_sequence/admin/body_adjust/asked)
+	var/client/C = asked.actor()?.client
+	var/list/choices = list()
+	for(var/datum/affliction/A as anything in body.afflictions)
+		choices["[A.name][A.location ? " ([A.location.name])" : ""] - severity [round(A.severity, 0.1)] [REF(A)]"] = A
+	if(!length(choices))
+		to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
+		return ASK_STOP
+	asked.put("choices", choices)
+	return question_step("cure", /datum/prompt/choice, question = "Remove which affliction?", title = "Cure [src]", choices = choices)
+
+/// The questions are answered: does the action and tells the admin's client what was done.
+/mob/living/proc/body_adjust_answered(datum/ask_sequence/admin/body_adjust/asked)
+	var/client/C = asked.actor()?.client
+	if(!C)
+		return
+	var/log_msg = body_adjust_apply(C, asked)
+	if(!log_msg)
+		return
+	C.vv_body_adjusted(src, log_msg)
+
+/// Applies the answers. Returns the log line (what was done), or null when nothing was.
+/mob/living/proc/body_adjust_apply(client/C, datum/ask_sequence/admin/body_adjust/asked)
+	switch(asked.action)
+		if("injure")
+			var/list/kinds = asked.get("kinds")
+			var/choice = asked.get("kind")
+			var/amount = asked.get("amount")
+			var/zone = asked.get("zone")
 			if(!zone || QDELETED(src))
 				return null
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
 			return "injured ([choice], [amount] requested, [round(dealt, 0.1)] dealt[zone == "whole body" ? "" : " at [zone]"])"
 		if("mend")
-			var/list/names = GLOB.dq_treatment_tag_names
-			var/list/tags = list()
-			for(var/tag in names)
-				tags[names[tag]] = tag
-			var/choice = flow_ask(C.mob, "body_mend_tag", /datum/prompt/choice, question = "Treatment tag", title = "Mend [src]", choices = tags)
-			if(!choice || QDELETED(src))
-				return null
-			var/amount = flow_ask(C.mob, "body_mend_amount", /datum/prompt/number, question = "How much [choice]?", title = "Mend [src]", default = 10, min_value = 0, round_entry = FALSE)
+			var/list/tags = asked.get("tags")
+			var/choice = asked.get("tag")
+			var/amount = asked.get("amount")
 			if(!amount || QDELETED(src))
 				return null
 			var/treated = mend(tags[choice], amount)
 			return "mended ([choice], [amount] requested, [round(treated, 0.1)] treated)"
 		if("afflict")
-			var/list/affliction_types = list()
-			for(var/path in subtypesof(/datum/affliction))
-				affliction_types["[path]"] = path
-			var/affliction_name = flow_ask(C.mob, "body_afflict_type", /datum/prompt/choice, question = "Affliction", title = "Afflict [src]", choices = affliction_types)
-			var/affliction_type = affliction_types[affliction_name]
-			if(!affliction_type || QDELETED(src) || !body)
-				return null
-			var/severity = flow_ask(C.mob, "body_afflict_severity", /datum/prompt/number, question = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_entry = FALSE)
+			var/list/affliction_types = asked.get("affliction_types")
+			var/affliction_type = affliction_types[asked.get("affliction")]
+			var/severity = asked.get("severity")
 			if(isnull(severity) || QDELETED(src) || !body)
 				return null
 			var/datum/affliction/A = body.afflict(affliction_type, null, severity)
@@ -1039,21 +1109,15 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 				return null
 			return "added affliction [affliction_type] (severity [round(A.severity, 0.1)])"
 		if("cure")
-			var/list/choices = list()
-			for(var/datum/affliction/A as anything in body.afflictions)
-				choices["[A.name][A.location ? " ([A.location.name])" : ""] - severity [round(A.severity, 0.1)] [REF(A)]"] = A
-			if(!length(choices))
-				to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
-				return null
-			var/choice = flow_ask(C.mob, "body_cure", /datum/prompt/choice, question = "Remove which affliction?", title = "Cure [src]", choices = choices)
-			var/datum/affliction/A = choices[choice]
+			var/list/choices = asked.get("choices")
+			var/datum/affliction/A = choices[asked.get("cure")]
 			if(!A || QDELETED(src) || A.owner != src)
 				return null
 			var/removed = "[A.type]"
 			A.cure()
 			return "removed affliction [removed]"
 		if("oxygen")
-			var/amount = flow_ask(C.mob, "body_oxygen", /datum/prompt/number, question = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min_value = -INFINITY, round_entry = FALSE)
+			var/amount = asked.get("amount")
 			if(!amount || QDELETED(src))
 				return null
 			if(amount > 0)

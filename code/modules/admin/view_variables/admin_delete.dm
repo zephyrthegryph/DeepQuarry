@@ -1,6 +1,5 @@
+/// Asks for a confirmation, then deletes `D` once it is answered Yes.
 /client/proc/admin_delete(datum/D, mob/actor)
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(admin_delete), args)
 	var/atom/A = D
 	var/coords = ""
 	var/jmp_coords = ""
@@ -14,9 +13,18 @@
 		else
 			jmp_coords = coords = "in nullspace"
 
-	if (flow_ask(mob, "delete", /datum/prompt/choice, question = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No"), buttons = TRUE) == "Yes")
-		log_admin("[key_name(actor)] deleted [D] [coords]")
-		message_admins("[key_name_admin(actor)] deleted [D] [jmp_coords]")
+	ask_admin(/datum/ask_sequence/admin, D, list(
+		question_step("confirm", /datum/prompt/choice, question = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No"), buttons = TRUE)),
+		PROC_REF(admin_delete_answered), null, list("coords" = coords, "jmp_coords" = jmp_coords))
+
+/client/proc/admin_delete_answered(datum/ask_sequence/admin/asked)
+	var/datum/D = asked.subject()
+	if(!D)
+		return
+	var/mob/actor = asked.actor()
+	if(asked.get("confirm") == "Yes")
+		log_admin("[key_name(actor)] deleted [D] [asked.kept["coords"]]")
+		message_admins("[key_name_admin(actor)] deleted [D] [asked.kept["jmp_coords"]]")
 		feedback_add_details("admin_verb","ADEL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 		if(isturf(D))
 			var/turf/T = D

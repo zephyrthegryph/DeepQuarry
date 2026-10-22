@@ -617,62 +617,6 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 
 	return FALSE
 
-/// Asks the user for an icon (either from file or as a path) and offers to customize it if possible
-/// (e.g. setting icon_state). Runs inside a prompt flow (flow_ask()): null until answered.
-/proc/pick_and_customize_icon(mob/user, pick_only=FALSE, key = "icon")
-	var/icon/icon_result = null
-	if(!user)
-		return null
-
-	var/icon_from_file = flow_ask(user, "[key]:from_file", /datum/prompt/choice, question = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"), buttons = TRUE)
-	if(isnull(icon_from_file))
-		return null
-	if(icon_from_file == "Yes")
-		icon_result = input(user, "Pick icon:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
-		if(!icon_result)
-			return null
-	else if(icon_from_file == "No")
-		var/new_icon = flow_ask(user, "[key]:path", /datum/prompt/text, question = "Pick icon path", title = "icon path")
-		if(isnull(new_icon))
-			return null
-		var/regex/regex = regex(@"^.+icons/")
-		new_icon = regex.Replace(replacetext(new_icon, @"\", "/"), "icons/")
-		icon_result = fcopy_rsc(new_icon)
-		if(!icon_result)
-			to_chat(user, span_warning("'[new_icon]' is an invalid icon path!"))
-			return null
-
-	var/dmi_path = get_icon_dmi_path(icon_result)
-	if(!dmi_path || pick_only)
-		return icon_result
-
-	var/custom = flow_ask(user, "[key]:custom", /datum/prompt/choice, question = "Do you wish to specify any arguments for the icon?", title = "Customize Icon", choices = list("Yes", "No"), buttons = TRUE)
-	if(isnull(custom))
-		return null
-	if(custom == "Yes")
-		var/new_icon_state = flow_ask(user, "[key]:state", /datum/prompt/text, question = "Pick icon_state", title = "icon_state")
-		if(isnull(new_icon_state))
-			return null
-		var/new_icon_dir = flow_ask(user, "[key]:dir", /datum/prompt/choice, question = "Pick icon dir", title = "dir", choices = list("North", "East", "South", "West"), default = "South")
-		if(isnull(new_icon_dir))
-			return null
-		var/new_icon_frame = flow_ask(user, "[key]:frame", /datum/prompt/number, question = "Pick icon frame", title = "frame")
-		if(isnull(new_icon_frame))
-			return null
-		var/new_icon_moving = flow_ask(user, "[key]:moving", /datum/prompt/choice, question = "Pick icon moving", title = "moving", choices = list("Both", "Movement only", "Non-Movement Only"), default = "Both")
-		switch(new_icon_moving)
-			if("Both")
-				new_icon_moving = null
-			if("Movement only")
-				new_icon_moving = 1
-			if("Non-Movement Only")
-				new_icon_moving = 0
-			else
-				return null
-		icon_result = new(dmi_path, new_icon_state, text2dir(new_icon_dir), new_icon_frame, new_icon_moving)
-
-	return icon_result
-
 /**
  * generate an asset for the given icon or the icon of the given appearance for [thing], and send it to any clients in target.
  * Arguments:

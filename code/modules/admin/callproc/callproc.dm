@@ -89,63 +89,100 @@ CAPABILITIES(/mob/proccall_handler)
 ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any datum in the server.", ADMIN_CATEGORY_DEBUG_GAME)
 	user.callproc_blocking()
 
-/// Asks for a target, proc and arguments, then calls it. Inside a prompt flow; `key` keeps its
-/// answers apart when it runs inside another flow (View Variables' "proc call" value).
-/client/proc/callproc_blocking(list/get_retval, key = "call")
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(callproc_blocking), args)
+/// Asks for a target, proc and arguments, then calls it.
+/client/proc/callproc_blocking()
 	if(!admin_require(src, R_DEBUG, "callproc.blocking"))
 		return
+	ask_admin(/datum/ask_sequence/admin/callproc, null)
 
-	var/datum/target
+/// A proc call asked for: the target (or none), the proc and the arguments. `want_result`: the call's return value is the sequence's result (View Variables'
+/// "proc call" value).
+/datum/ask_sequence/admin/callproc
+	var/want_result = FALSE
 	var/targetselected = FALSE
-	var/returnval
+	var/procname
+	var/procpath
+	var/proctype
 
-	switch(flow_ask(mob, "[key]:owned", /datum/prompt/choice, question = "Proc owned by something?", choices = list("Yes","No"), buttons = TRUE))
+/datum/ask_sequence/admin/callproc/initial_steps()
+	return list(
+		question_step("owned", /datum/prompt/choice, question = "Proc owned by something?", choices = list("Yes","No"), buttons = TRUE),
+		TYPE_PROC_REF(/client, callproc_ask_target),
+		TYPE_PROC_REF(/client, callproc_read_target),
+		question_step("path_text", /datum/prompt/text, question = "Proc path, eg: /proc/fake_blood", title = "Path:"),
+		TYPE_PROC_REF(/client, callproc_check_path),
+		TYPE_PROC_REF(/client, callproc_ask_args),
+		TYPE_PROC_REF(/client, callproc_run))
+
+/client/proc/callproc_ask_target(datum/ask_sequence/admin/callproc/asked)
+	switch(asked.get("owned"))
 		if("Yes")
-			targetselected = TRUE
-			var/list/value = vv_get_value(default_class = VV_ATOM_REFERENCE, classes = list(VV_ATOM_REFERENCE, VV_DATUM_REFERENCE, VV_MOB_REFERENCE, VV_CLIENT, VV_MARKED_DATUM, VV_TEXT_LOCATE, VV_PROCCALL_RETVAL), key = "[key]:target")
-			if (!value["class"] || !value["value"])
-				return
-			target = value["value"]
-			if(!istype(target))
-				to_chat(src, span_danger("Invalid target."), confidential = TRUE)
-				return
+			return asked.ask_child(/datum/ask_sequence/picker/vv_pick, "target_pick", list("default_class" = VV_ATOM_REFERENCE, "classes" = list(VV_ATOM_REFERENCE, VV_DATUM_REFERENCE, VV_MOB_REFERENCE, VV_CLIENT, VV_MARKED_DATUM, VV_TEXT_LOCATE, VV_PROCCALL_RETVAL)))
 		if("No")
-			target = null
-			targetselected = FALSE
-		else
-			return
+			return null
+	return ASK_STOP
 
-	var/procpath = flow_ask(mob, "[key]:path", /datum/prompt/text, question = "Proc path, eg: /proc/fake_blood", title = "Path:")
+/client/proc/callproc_read_target(datum/ask_sequence/admin/callproc/asked)
+	if(asked.get("owned") != "Yes")
+		return null
+	var/list/value = asked.get("target_pick")
+	if (!value["class"] || !value["value"])
+		return ASK_STOP
+	var/datum/target = value["value"]
+	if(!istype(target))
+		to_chat(src, span_danger("Invalid target."), confidential = TRUE)
+		return ASK_STOP
+	asked.targetselected = TRUE
+	asked.put("target_w", rerun_wrap(target))
+	return null
+
+/client/proc/callproc_check_path(datum/ask_sequence/admin/callproc/asked)
+	var/procpath = asked.get("path_text")
 	if(!procpath)
-		return
+		return ASK_STOP
 
 	//strip away everything but the proc name
 	var/list/proclist = splittext(procpath, "/")
 	if (!length(proclist))
-		return
+		return ASK_STOP
 
 	var/procname = proclist[proclist.len]
 	var/proctype = ("verb" in proclist) ? "verb" :"proc"
 
-	if(targetselected)
-		if(!hascall(target, procname))
-			to_chat(src, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
-			return
+	if(asked.targetselected)
+		var/datum/target = rerun_unwrap(asked.get("target_w"))
+		if(!target || !hascall(target, procname))
+			to_chat(src, span_warning("Error: callproc(): type [target?.type] has no [proctype] named [procpath]."), confidential = TRUE)
+			return ASK_STOP
 	else
 		procpath = "/[proctype]/[procname]"
 		if(!text2path(procpath))
 			to_chat(src, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
-			return
+			return ASK_STOP
+	asked.procname = procname
+	asked.procpath = procpath
+	asked.proctype = proctype
+	return null
 
-	var/list/lst = get_callproc_args("[key]:args")
+/client/proc/callproc_ask_args(datum/ask_sequence/admin/callproc/asked)
+	return asked.ask_child(/datum/ask_sequence/picker/proc_args, "call_args")
+
+/// The last step: the proc is called.
+/client/proc/callproc_run(datum/ask_sequence/admin/callproc/asked)
+	if(!admin_require(src, R_DEBUG, "callproc.blocking"))
+		return
+	var/list/lst = asked.get("call_args")
 	if(!lst)
 		return
+	var/procname = asked.procname
+	var/procpath = asked.procpath
+	var/proctype = asked.proctype
+	var/returnval
 
-	if(targetselected)
-		// The tgui prompts above sleep; the target may have been qdel'd or had its
-		// type swapped out from under us. Re-validate before calling into it.
+	if(asked.targetselected)
+		// The target may have been qdel'd or had its type swapped out from under us while the questions were open.
+		// Re-validate before calling into it.
+		var/datum/target = rerun_unwrap(asked.get("target_w"))
 		if(!target || QDELETED(target) || !istype(target) || !is_valid_src(target))
 			to_chat(src, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
 			return
@@ -163,11 +200,56 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		message_admins("[key_name(src)] called [procname]() with [lst.len ? "the arguments [list2params(lst)]":"no arguments"].") //Proccall announce removed.
 		returnval = WrapAdminProcCall(GLOBAL_PROC, procname, lst) // Pass the lst as an argument list to the proc
 	feedback_add_details("admin_verb","APC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	if(get_retval)
-		get_retval += returnval
-	. = get_callproc_returnval(returnval, procname)
-	if(.)
-		to_chat(src, ., confidential = TRUE)
+	if(asked.want_result)
+		asked.set_result(returnval)
+	var/shown = get_callproc_returnval(returnval, procname)
+	if(shown)
+		to_chat(src, shown, confidential = TRUE)
+	return null
+
+/// The arguments of a proc call: a count, then for each a name (blank for positional) and a value. The result is the argument list.
+/datum/ask_sequence/picker/proc_args
+	var/argnum
+	var/named_arg
+	var/arg_index = 0
+	var/list/named_args
+	var/list/arg_list
+	var/list/picked
+
+/datum/ask_sequence/picker/proc_args/initial_steps()
+	return list(
+		question_step("argnum", /datum/prompt/number, question = "Number of arguments", title = "Number:", default = 0),
+		PROC_REF(begin_args))
+
+/datum/ask_sequence/picker/proc_args/proc/begin_args()
+	arg_list = list()
+	named_args = list()
+	return queue_next_arg()
+
+/datum/ask_sequence/picker/proc_args/proc/queue_next_arg()
+	if(arg_index >= argnum)
+		if(LAZYLEN(named_args))
+			arg_list += named_args
+		set_result(arg_list)
+		return ASK_FINISH
+	arg_index++
+	add_steps(list(
+		question_step("named_arg", /datum/prompt/text, question = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument"),
+		PROC_REF(ask_arg_value),
+		PROC_REF(take_arg)))
+	return null
+
+/datum/ask_sequence/picker/proc_args/proc/ask_arg_value()
+	return ask_child(/datum/ask_sequence/picker/vv_pick, "picked", list("restricted_classes" = list(VV_RESTORE_DEFAULT)))
+
+/datum/ask_sequence/picker/proc_args/proc/take_arg()
+	if(!picked["class"])
+		return ASK_STOP
+	if(named_arg)
+		named_args[named_arg] = picked["value"]
+	else
+		arg_list += LIST_VALUE_WRAP_LISTS(picked["value"])
+	return queue_next_arg()
 
 GLOBAL_VAR(AdminProcCaller)
 GLOBAL_PROTECT(AdminProcCaller)
@@ -236,17 +318,37 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 	user.callproc_datum(thing)
 
 /client/proc/callproc_datum(datum/thing)
-	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
-		return prompt_flow(src, PROC_REF(callproc_datum), args)
 	if(!admin_require(src, R_DEBUG, "callproc.datum"))
 		return
-	var/procname = flow_ask(mob, "datumcall:name", /datum/prompt/text, question = "Proc name, eg: fake_blood", title = "Proc:")
-	if(!procname)
-		return
+	ask_admin(/datum/ask_sequence/admin/callproc/on_datum, thing)
+
+/// A proc call on one datum: the proc name, then the arguments.
+/datum/ask_sequence/admin/callproc/on_datum
+
+/datum/ask_sequence/admin/callproc/on_datum/initial_steps()
+	return list(
+		question_step("proc_name", /datum/prompt/text, question = "Proc name, eg: fake_blood", title = "Proc:"),
+		TYPE_PROC_REF(/client, callproc_datum_check),
+		TYPE_PROC_REF(/client, callproc_ask_args),
+		TYPE_PROC_REF(/client, callproc_datum_run))
+
+/client/proc/callproc_datum_check(datum/ask_sequence/admin/callproc/on_datum/asked)
+	var/datum/thing = asked.subject()
+	var/procname = asked.get("proc_name")
+	if(!procname || !thing)
+		return ASK_STOP
 	if(!hascall(thing, procname))
 		to_chat(src, span_red("Error: callproc_datum(): type [thing.type] has no proc named [procname]."), confidential = TRUE)
+		return ASK_STOP
+	asked.procname = procname
+	return null
+
+/client/proc/callproc_datum_run(datum/ask_sequence/admin/callproc/on_datum/asked)
+	if(!admin_require(src, R_DEBUG, "callproc.datum"))
 		return
-	var/list/lst = get_callproc_args("datumcall:args")
+	var/datum/thing = asked.subject()
+	var/procname = asked.procname
+	var/list/lst = asked.get("call_args")
 	if(!lst)
 		return
 
@@ -260,31 +362,10 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 	feedback_add_details("admin_verb","TPC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 	var/returnval = WrapAdminProcCall(thing, procname, lst) // Pass the lst as an argument list to the proc
-	. = get_callproc_returnval(returnval,procname)
-	if(.)
-		to_chat(src, ., confidential = TRUE)
-
-/// The arguments for a proc call, asked inside a prompt flow: null until all are given.
-/client/proc/get_callproc_args(key = "args")
-	var/argnum = flow_ask(mob, "[key]:count", /datum/prompt/number, question = "Number of arguments", title = "Number:", default = 0)
-	if(isnull(argnum))
-		return
-
-	. = list()
-	var/list/named_args = list()
-	for(var/i in 1 to argnum)
-		var/named_arg = flow_ask(mob, "[key]:[i]:name", /datum/prompt/text, question = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument")
-		if(isnull(named_arg))
-			return null
-		var/value = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:[i]")
-		if (!value["class"])
-			return null
-		if(named_arg)
-			named_args[named_arg] = value["value"]
-		else
-			. += LIST_VALUE_WRAP_LISTS(value["value"])
-	if(LAZYLEN(named_args))
-		. += named_args
+	var/shown = get_callproc_returnval(returnval, procname)
+	if(shown)
+		to_chat(src, shown, confidential = TRUE)
+	return null
 
 /client/proc/get_callproc_returnval(returnval,procname)
 	. = ""
