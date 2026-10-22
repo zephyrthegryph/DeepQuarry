@@ -30,9 +30,8 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 /obj/item/material/proc/forced_material()
 	return TYPE_TABLE_GET(src, weapon_forced_material) || default_material
 
-// ALLOW(init/INSTANCE_STATE): a material weapon is made of its material (or the type's forced one), scaled by its force divisor
-/obj/item/material/Initialize(mapload)
-	. = ..()
+/// A material weapon is made of its material (or the type's forced one), scaled by its force divisor; with none it is deleted (setup hook).
+/obj/item/material/proc/make_from_material(mapload)
 	set_material(default_material)
 	if(!material)
 		return INITIALIZE_HINT_QDEL
@@ -94,6 +93,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
+	setup(PROC_REF(make_from_material), mapload = TRUE)
 	configure(item_combat(sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))

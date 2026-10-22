@@ -47,12 +47,12 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_amount(0)
 
-/obj/effect/decal/cleanable/blood/Initialize(mapload)
-	. = ..()
+/// Blood another pool already marked is deleted; fresh blood gets its drying delay (setup hook, before merge_with_tile).
+/obj/effect/decal/cleanable/blood/proc/settle_pool(mapload)
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	if(!mapload)
-		dry_delay = DRYING_TIME * (amount+1) // fresh blood dries (after_init()); mapped blood is dry already
+		set_dry_delay(DRYING_TIME * (amount+1)) // fresh blood dries (after_init()); mapped blood is dry already
 
 /// Plain blood joins the blood already on its tile (setup hook; not run for a discarded instance).
 /obj/effect/decal/cleanable/blood/proc/merge_with_tile()
@@ -138,6 +138,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	set_amount(0)
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	setup(PROC_REF(settle_pool), mapload = TRUE)
 	setup(PROC_REF(merge_with_tile))
 	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
 	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))

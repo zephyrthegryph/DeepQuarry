@@ -629,8 +629,8 @@
 	look.overlay("nt_pod_under", when = pod_sealed)
 	look.overlay("nt_pod_panel", when = panel_shown)
 
-/obj/structure/prop/machine/nt_pod/Initialize(mapload)
-	. = ..()
+/// The pod's visual layers; a mapped pod takes in what stands on its tile (setup hook).
+/obj/structure/prop/machine/nt_pod/proc/make_layers(mapload)
 	rel_set(src, nameof(outside), add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(door), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 	rel_set(src, nameof(fluid), add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
@@ -673,6 +673,7 @@
 	AM.set_pixel_y(contents_original_pixel_y)
 
 CAPABILITIES(/obj/structure/prop/machine/nt_pod)
+	setup(PROC_REF(make_layers), mapload = TRUE)
 	after_init(0, then(PROC_REF(add_alpha_mask))) // its alpha mask is shown once Initialize() returns (relations proposal D11)
 	ref_one(nameof(outside))
 	ref_one(nameof(door))
