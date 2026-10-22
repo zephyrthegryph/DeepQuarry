@@ -56,7 +56,7 @@ CAPABILITIES(/turf/unsimulated/map)
 /turf/unsimulated/map/proc/name_and_number_from_coordinates()
 	name = "[x]-[y]"
 	var/list/numbers = list()
-	set_coord_marks(list())
+	coord_marks = list()
 
 	if(x == 1 || x == using_map.overmap_size)
 		numbers += list("[round(y/10)]","[round(y%10)]")

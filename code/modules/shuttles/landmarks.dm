@@ -42,7 +42,7 @@
 			landing_area = get_area(src)
 		var/turf/T = get_turf(src)
 		if(T && !base_turf)
-			set_base_turf(T.type)
+			base_turf = T.type
 	else
 		landing_area = isarea(base_area) ? base_area : locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
