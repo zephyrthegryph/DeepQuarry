@@ -59,6 +59,14 @@ impl Compiler<'_> {
             }
             return Ok(());
         }
+        // A `const` variable inside an operator expression that folds is its value (a bare read stays a variable read).
+        if matches!(&expr.kind, ExprKind::Binary { .. } | ExprKind::Unary { .. }) {
+            if let Some(substituted) = self.substitute_constants(expr) {
+                if fold_number(&substituted).is_some() || fold_literal_string_expression(&substituted).is_some() {
+                    return self.expression(&substituted, statement);
+                }
+            }
+        }
         if let ExprKind::Binary { op, .. } = &expr.kind {
             if is_associative_operator(op) && self.assoc_off_op.as_deref() != Some(op.as_str()) {
                 let mut changed = false;

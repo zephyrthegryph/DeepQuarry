@@ -127,6 +127,9 @@ impl Compiler<'_> {
                     let prior_iterator_depth = self
                         .label_iterator_depths
                         .insert(name.clone(), target_iterator_depth);
+                    let prior_break_depth = self
+                        .label_break_iterator_depths
+                        .insert(name.clone(), self.iterator_depth);
                     self.typed_statements(body)?;
                     if let Some(prior) = prior_break {
                         self.label_breaks.insert(name.clone(), prior);
@@ -142,6 +145,11 @@ impl Compiler<'_> {
                         self.label_iterator_depths.insert(name.clone(), prior);
                     } else {
                         self.label_iterator_depths.remove(name);
+                    }
+                    if let Some(prior) = prior_break_depth {
+                        self.label_break_iterator_depths.insert(name.clone(), prior);
+                    } else {
+                        self.label_break_iterator_depths.remove(name);
                     }
                     self.result.code.items.push(CodeItem::Label(end));
                 }
@@ -455,11 +463,31 @@ impl Compiler<'_> {
                         } else {
                             (binding.trim(), None)
                         };
+                    // The type the loop variable is declared with: in the `var/type/name` header, or the declared type of the
+                    // existing variable the loop assigns (a typed argument, local, field or global). DreamMaker skips elements
+                    // of other types for both.
+                    let declared_type: Option<String> = match binding.strip_prefix("var/") {
+                        Some(raw) => raw.rsplit_once('/').map(|(path, _)| path.to_string()),
+                        None => {
+                            let parsed = dm_syntax::parse_expression(binding);
+                            match parsed.expr.as_ref().map(|variable| &variable.kind) {
+                                Some(ExprKind::Ident(name)) if parsed.diagnostics.is_empty() => {
+                                    self.declared_variable_type(name)
+                                }
+                                Some(ExprKind::Member { object, selector, via_colon: false })
+                                    if parsed.diagnostics.is_empty()
+                                        && matches!(&object.kind, ExprKind::Ident(base) if base == "src") =>
+                                {
+                                    self.declared_variable_type(selector)
+                                }
+                                _ => None,
+                            }
+                        }
+                    };
                     // The pre-filter DreamMaker derives from the declared type: the category bits of `as` (mob 1, obj 2,
                     // turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj.
                     let mask = explicit_mask.unwrap_or_else(|| {
-                        let path = binding.strip_prefix("var/").unwrap_or(binding);
-                        let path = path.rsplit_once('/').map_or("", |(declared, _)| declared);
+                        let path = declared_type.as_deref().unwrap_or("");
                         match path {
                             "atom" => 291,
                             p if p == "atom/movable" || p.starts_with("atom/movable/") => 3,
@@ -544,15 +572,11 @@ impl Compiler<'_> {
                     self.emit(opcode::JZ, vec![Word::Branch(end)]);
                     if mask == 0
                         || (explicit_mask.is_none()
-                            && binding
-                                .strip_prefix("var/")
-                                .and_then(|raw| raw.rsplit_once('/'))
-                                .is_some_and(|(path, _)| path == "obj" || path == "atom" || path.contains('/')))
+                            && declared_type
+                                .as_deref()
+                                .is_some_and(|path| path == "obj" || path == "atom" || path.contains('/')))
                     {
-                        if let Some((type_name, _)) = binding
-                            .strip_prefix("var/")
-                            .and_then(|raw| raw.rsplit_once('/'))
-                        {
+                        if let Some(type_name) = declared_type.as_deref() {
                             let path = runtime_declaration_path(type_name);
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(&statement.raw_header, "unsupported iterator type")
@@ -953,7 +977,7 @@ impl Compiler<'_> {
                         .get(&target)
                         .is_some_and(|depth| self.try_depth > *depth);
                     let target_iterator_depth =
-                        *self.label_iterator_depths.get(name).ok_or_else(|| {
+                        *self.label_break_iterator_depths.get(name).ok_or_else(|| {
                             error(
                                 &statement.raw_header,
                                 "break label iterator depth is unknown",

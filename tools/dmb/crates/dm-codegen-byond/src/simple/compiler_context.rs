@@ -35,6 +35,7 @@ pub(super) fn compiler_context<'a>(
         label_breaks: HashMap::new(),
         label_loop_depths: HashMap::new(),
         label_iterator_depths: HashMap::new(),
+        label_break_iterator_depths: HashMap::new(),
         try_depth: 0,
         loops: Vec::new(),
         breaks: Vec::new(),

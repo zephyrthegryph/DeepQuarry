@@ -480,6 +480,7 @@ impl Compiler<'_> {
         let saved_breaks = self.label_breaks.clone();
         let saved_depths = self.label_loop_depths.clone();
         let saved_iterator_depths = self.label_iterator_depths.clone();
+        let saved_break_iterator_depths = self.label_break_iterator_depths.clone();
         let result = self
             .prepare_user_labels(statements, self.try_depth)
             .and_then(|()| self.typed_statements_inner(statements))
@@ -494,6 +495,7 @@ impl Compiler<'_> {
         self.label_breaks = saved_breaks;
         self.label_loop_depths = saved_depths;
         self.label_iterator_depths = saved_iterator_depths;
+        self.label_break_iterator_depths = saved_break_iterator_depths;
         result
     }
 }

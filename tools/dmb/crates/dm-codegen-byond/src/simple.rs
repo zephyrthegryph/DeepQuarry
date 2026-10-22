@@ -910,6 +910,8 @@ struct Compiler<'a> {
     label_breaks: HashMap<String, LabelId>,
     label_loop_depths: HashMap<String, usize>,
     label_iterator_depths: HashMap<String, usize>,
+    /// Per active label: the number of iterators open outside the labelled statement (`break label` pops down to it).
+    label_break_iterator_depths: HashMap<String, usize>,
     try_depth: usize,
     /// (continue target, break target) for nested loops.
     loops: Vec<(LabelId, LabelId)>,
@@ -946,6 +948,8 @@ mod calls_dispatch;
 mod calls_general;
 #[path = "simple/calls_intrinsics.rs"]
 mod calls_intrinsics;
+#[path = "simple/const_vars.rs"]
+mod const_vars;
 #[path = "simple/emission.rs"]
 mod emission;
 #[path = "simple/expression.rs"]

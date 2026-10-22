@@ -653,6 +653,47 @@ fn sort_switch_cases(lines: Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// `PushCacheKey; E...; PopCacheKey` saves the list-index key/index registers around `E` and puts them back. When no
+/// instruction of `E` reads or writes either register (no line mentions `cache-key` or `cache-index`), `E` is straight
+/// code (no jump or jump target between the pair), and a call or constructor in it runs in a frame of its own (the
+/// registers belong to the frame), the registers are the same after the pair as before it: the pair does nothing.
+fn drop_idle_cache_key_saves(lines: Vec<String>) -> Vec<String> {
+    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
+    let mut drop = vec![false; lines.len()];
+    let mut i = 0;
+    while i < lines.len() {
+        if lines[i] == "PushCacheKey" {
+            let mut j = i + 1;
+            let mut idle = true;
+            while j < lines.len() && lines[j] != "PopCacheKey" {
+                let l = &lines[j];
+                if !targets(l).is_empty()
+                    || tg.contains(&j)
+                    || l.contains("cache-key")
+                    || l.contains("cache-index")
+                    || l.starts_with("PushCacheKey")
+                    || matches!(op(l), "Ret" | "End")
+                {
+                    idle = false;
+                    break;
+                }
+                j += 1;
+            }
+            if idle && j < lines.len() && !tg.contains(&j) && !tg.contains(&i) {
+                drop[i] = true;
+                drop[j] = true;
+                i = j;
+            }
+        }
+        i += 1;
+    }
+    if drop.iter().any(|d| *d) {
+        remove(&lines, &drop)
+    } else {
+        lines
+    }
+}
+
 pub fn normalize(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<String>) -> Vec<String> {
     let mut lines = fold_static_reads(lines, default);
     // Each pass can expose another (a folded short-circuit leaves dead code, a dropped jump exposes a literal pair).
@@ -661,6 +702,7 @@ pub fn normalize(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<Stri
         lines = fold_return_dot(lines);
         lines = drop_flag_roundtrip(lines);
         lines = drop_cache_register_ops(lines);
+        lines = drop_idle_cache_key_saves(lines);
         lines = thread_jumps(lines);
         lines = drop_unreachable(lines);
         lines = sort_switch_cases(lines);

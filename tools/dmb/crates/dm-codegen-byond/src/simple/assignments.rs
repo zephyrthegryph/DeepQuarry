@@ -164,18 +164,23 @@ impl Compiler<'_> {
                 return Ok(());
             }
             if let ExprKind::Member {
-                object, selector, ..
+                object,
+                selector,
+                via_colon,
             } = &target.kind
             {
                 if self.variable_expr(target, statement).is_err() {
                     self.expression(value, statement)?;
                     self.expression(object, statement)?;
                     self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                    self.intern_string(selector);
-                    self.emit(
-                        opcode::SET_VAR,
-                        vec![Word::Variable(VariableWord::Field(SymbolId::of(selector)))],
-                    );
+                    let variable = match self.fallback_member_global(object, selector, *via_colon)? {
+                        Some(symbol) => VariableWord::Global(symbol),
+                        None => {
+                            self.intern_string(selector);
+                            VariableWord::Field(SymbolId::of(selector))
+                        }
+                    };
+                    self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
                     return Ok(());
                 }
             }
@@ -214,15 +219,22 @@ impl Compiler<'_> {
             Ok(variable) => variable,
             Err(_) => {
                 let ExprKind::Member {
-                    object, selector, ..
+                    object,
+                    selector,
+                    via_colon,
                 } = &target.kind
                 else {
                     return Err(error(statement, "unsupported assignment target"));
                 };
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                self.intern_string(selector);
-                VariableWord::Field(SymbolId::of(selector))
+                match self.fallback_member_global(object, selector, *via_colon)? {
+                    Some(symbol) => VariableWord::Global(symbol),
+                    None => {
+                        self.intern_string(selector);
+                        VariableWord::Field(SymbolId::of(selector))
+                    }
+                }
             }
         };
         self.ensure_writable(&variable, statement)?;
@@ -304,7 +316,9 @@ impl Compiler<'_> {
                         &format!("unresolved global variable: {selector}"),
                     ));
                 }
-                if let Some(owner) = if *via_colon {
+                // A shared variable needs no receiver, but a receiver that runs code (a call) is still evaluated, as
+                // DreamMaker does (`Call ...; SetVar cache; GetVar global:x`): that path leaves here as an error.
+                if let Some(owner) = if *via_colon || !is_reference_chain(object) {
                     None
                 } else {
                     self.inferred_expression_type(object)?
@@ -780,4 +794,15 @@ fn path_like_target(statement: &str) -> bool {
         && target
             .split('/')
             .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+}
+
+/// A receiver that only names things (identifiers and member reads, possibly parenthesised): evaluating it has no effect,
+/// so a shared (`global`) variable behind it can be read or written without evaluating it.
+fn is_reference_chain(expr: &Expr) -> bool {
+    match &expr.kind {
+        ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => true,
+        ExprKind::Group(inner) => is_reference_chain(inner),
+        ExprKind::Member { object, .. } => is_reference_chain(object),
+        _ => false,
+    }
 }

@@ -32,6 +32,10 @@ fn eligible(expr: &Expr) -> bool {
         ExprKind::Group(inner) => eligible(inner),
         // `"name" || src.name` (NAMEOF) folds to the constant text, as in DreamMaker.
         ExprKind::Binary { op, lhs, .. } if op == "||" && super::expression::constant_text_truth(lhs) == Some(true) => eligible(lhs),
+        // `nameof(x)` is the text of its argument.
+        ExprKind::Call { callee, args } => {
+            args.len() == 1 && matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof")
+        }
         ExprKind::TypePath(_) => true,
         ExprKind::Literal(raw) if raw == "null" || raw == "TRUE" || raw == "FALSE" => true,
         ExprKind::Literal(raw) if !raw.starts_with("@'") => {
@@ -100,9 +104,27 @@ impl Compiler<'_> {
         else_branch: &[Statement],
         text: &str,
     ) -> Result<bool, LowerError> {
+        // `const` variables in a case label are their values.
+        let alternatives: Vec<Vec<SwitchAlternative>> = cases
+            .iter()
+            .map(|case| {
+                case.alternatives
+                    .iter()
+                    .map(|alternative| match alternative {
+                        SwitchAlternative::Exact(value) => SwitchAlternative::Exact(
+                            self.constant_context_expression(value).unwrap_or_else(|| value.clone()),
+                        ),
+                        SwitchAlternative::Range(low, high) => SwitchAlternative::Range(
+                            self.constant_context_expression(low).unwrap_or_else(|| low.clone()),
+                            self.constant_context_expression(high).unwrap_or_else(|| high.clone()),
+                        ),
+                    })
+                    .collect()
+            })
+            .collect();
         if cases.is_empty()
-            || !cases.iter().all(|case| {
-                case.alternatives.iter().all(|alt| match alt {
+            || !alternatives.iter().all(|case| {
+                case.iter().all(|alt| match alt {
                     SwitchAlternative::Exact(value) => eligible(value),
                     SwitchAlternative::Range(low, high) => {
                         switch_number(low).is_some() && switch_number(high).is_some()
@@ -115,8 +137,8 @@ impl Compiler<'_> {
         // Overlapping ranges and exact cases are tabled as authored: DreamMaker lists every range in source order,
         // then every exact value in source order, whatever they cover (measured against dm.exe: `if(25 to 27)` then
         // `if(26)` and the reverse order both give `SwitchRange {25..27, 26}` in that table order).
-        for case in cases {
-            for alternative in &case.alternatives {
+        for case in &alternatives {
+            for alternative in case {
                 if let SwitchAlternative::Range(low, high) = alternative {
                     let (low, high) = (switch_number(low).unwrap(), switch_number(high).unwrap());
                     if low > high {
@@ -130,8 +152,8 @@ impl Compiler<'_> {
         let labels: Vec<_> = cases.iter().map(|_| self.label()).collect();
         let mut exact = Vec::new();
         let mut ranges = Vec::new();
-        for (case, label) in cases.iter().zip(&labels) {
-            for alternative in &case.alternatives {
+        for (case, label) in alternatives.iter().zip(&labels) {
+            for alternative in case {
                 match alternative {
                     SwitchAlternative::Exact(value) => {
                         exact.push((self.switch_value(value, text)?, *label));
