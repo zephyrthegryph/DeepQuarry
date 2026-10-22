@@ -185,6 +185,7 @@
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	setup(PROC_REF(assemble_mecha))
 	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
 	op("climb_in", ai(), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(climb_in_interrupted)), then(PROC_REF(climb_in_done)))
 	op("mmi_install", ai(), takes("mmi"), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(mmi_install_interrupted)), then(PROC_REF(mmi_install_done)))
@@ -319,9 +320,8 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 // Actions and effect systems: declared children (new type(src)); an action's target is the mecha.
 
 
-/obj/mecha/Initialize(mapload)
-	. = ..()
-
+/// Fits the starting components and equipment, the cabin, radio, tank and cell once the mecha's init chain has returned.
+/obj/mecha/proc/assemble_mecha()
 	for(var/path in TYPE_TABLE_GET(src, mecha_starting_components))
 		var/obj/item/mecha_parts/component/C = new path(src)
 		C.attach(src)
@@ -334,7 +334,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 	update_transform()
 
-	icon_state += "-open"
+	set_icon_state("[icon_state]-open")
 	add_radio()
 	add_cabin()
 	add_airtank() // without an internal tank the port/airtank Menu entries are not offered (pred_mecha_has_airtank)
