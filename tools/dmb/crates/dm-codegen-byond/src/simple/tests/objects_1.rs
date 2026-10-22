@@ -819,3 +819,29 @@ fn associative_list_constructor_matches_native() {
         );
     }
 }
+
+#[test]
+fn safe_member_assignment_of_a_constant_pushes_it_after_every_guard() {
+    // DreamMaker pushes the value after the null guards (`a?.b?.c = 5`: GetVar, guard, PushCache, ..., PushVal, PopCache,
+    // SetVar). A constant pushed before them would stay on the stack when the receiver is null.
+    for source in ["a?.value = 5", "a?.inner?.value = 5", "a?.inner?.value = null", "a?[1] = \"s\""] {
+        let ast = dm_syntax::parse(&format!("/proc/test(a)\n    {source}\n"));
+        assert!(ast.diagnostics.is_empty(), "{source}: {:?}", ast.diagnostics);
+        let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["a".into()]).unwrap();
+        let mut ledger = Ledger::default();
+        ledger
+            .assign(
+                Table::String,
+                compiled.strings.iter().map(|payload| SymRef::String(payload.id)),
+            )
+            .unwrap();
+        let linked = link_proc(&compiled.code, &ledger).unwrap();
+        let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
+        let opcodes: Vec<_> = decoded.iter().map(|instruction| instruction.opcode).collect();
+        let last_guard = opcodes.iter().rposition(|op| matches!(*op, 317 | 318)).unwrap();
+        // The receiver is read first and the constant sits between PushCache and PopCache, after the guards.
+        assert_eq!(opcodes[0], opcode::GET_VAR, "{source}: {opcodes:?}");
+        let push_cache = opcodes.iter().position(|op| *op == opcode::PUSH_CACHE).unwrap();
+        assert!(push_cache > last_guard, "{source}: {opcodes:?}");
+    }
+}
