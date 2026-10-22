@@ -4,12 +4,16 @@
 	var/clean_turfs // A list of lists, where each list is (x, )
 
 INITIALIZE_IMMEDIATE(/obj/effect/landmark/engine_loader)
-/obj/effect/landmark/engine_loader/Initialize(mapload)
+
+CAPABILITIES(/obj/effect/landmark/engine_loader)
+	setup(PROC_REF(register_loader))
+
+/// The mapping system's engine loader is the last one placed; an earlier one is flagged a duplicate (setup hook).
+/obj/effect/landmark/engine_loader/proc/register_loader()
 	if(mapping_engine_loader())
 		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
 		delete_me = TRUE
 	SSmapping.engine_loader = src
-	return ..()
 
 /obj/effect/landmark/engine_loader/proc/get_turfs_to_clean()
 	. = list()

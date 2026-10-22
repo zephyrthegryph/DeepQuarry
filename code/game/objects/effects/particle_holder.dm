@@ -19,13 +19,14 @@ CAPABILITIES(/obj/effect/abstract/particle_holder)
 	ref_one(nameof(parent))
 	param(nameof(particle_path), pos = 1)
 	param(nameof(particle_flags), pos = 2)
+	setup(PROC_REF(require_loc), mapload = TRUE)
 	setup(PROC_REF(attach_to_parent))
 
 /// The particles a holder shows (its constructor param).
 /obj/effect/abstract/particle_holder/var/particle_path = /particles/smoke
 
-/obj/effect/abstract/particle_holder/Initialize(mapload)
-	. = ..()
+/// A holder made with no loc is deleted (the first setup hook).
+/obj/effect/abstract/particle_holder/proc/require_loc(mapload)
 	if(!loc)
 		stack_trace("particle holder was created with no loc!")
 		return INITIALIZE_HINT_QDEL
