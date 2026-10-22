@@ -89,8 +89,8 @@ SETTER(/atom, rad_insulation)
 	if(rad_shield_material)
 		set_rad_insulation(material_rad_insulation(rad_shield_material, rad_shield_thickness_mm, rad_insulation))
 
-/turf/simulated/Initialize(mapload)
-	. = ..()
+/// A simulated turf that stops radiation tells the pulses so once it is made.
+/turf/simulated/proc/rad_shielding_start()
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(src)
 

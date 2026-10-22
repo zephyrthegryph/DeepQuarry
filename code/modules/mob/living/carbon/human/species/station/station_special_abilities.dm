@@ -264,9 +264,9 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1))) //Just keep draining them.
 			T.set_nutrition(nutrition_of(T)*0.9)
 			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(nutrition_of(T) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(T) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			C.set_nutrition((nutrition_of(C) + nutrition_of(T)))
@@ -356,12 +356,12 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 				to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
 				add_attack_logs(src,T,"Succubus drained (almost lethal)")
 				return 0
-			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
+			if(sparse_get_or(src, drain_finalized, 0) == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 			set_nutrition((nutrition_of(src) + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition_of(src).
 		if(99)
-			if(drain_finalized != 1)
+			if(sparse_get_or(src, drain_finalized, 0) != 1)
 				stage = 51
 		if(100) //They shouldn't  survive long enough to get here, but just in case.
 			if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
@@ -423,9 +423,9 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1))) //Just keep draining them.
 			C.set_nutrition(nutrition_of(C)*0.9)
 			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-			if(nutrition_of(C) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(C) < 100 && stage < 99 && sparse_get_or(C, drain_finalized, 0) == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
-			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
+			if(sparse_get_or(C, drain_finalized, 0) != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
 			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
@@ -444,8 +444,8 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
 	var/mob/living/carbon/human/C = src
-	C.drain_finalized = !C.drain_finalized
-	to_chat(C, span_notice("You will [C.drain_finalized?"now":"not"] finalize draining/feeding."))
+	sparse_set(C, drain_finalized, !sparse_get_or(C, drain_finalized, 0))
+	to_chat(C, span_notice("You will [sparse_get_or(C, drain_finalized, 0)?"now":"not"] finalize draining/feeding."))
 
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
@@ -1344,8 +1344,8 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 /mob/living/proc/injection_verb_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	trait_injection_verb = A.answer.value
-	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
+	sparse_set(src, trait_injection_verb, A.answer.value || "") // an unusable answer is stored as "" so injection_started still refuses with no means; null would clear the slot and read back "bite"
+	to_chat(src, span_notice("You will [sparse_get_or(src, trait_injection_verb, "bite")] your targets."))
 
 /mob/living/proc/injection_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1358,7 +1358,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max_value = 5, min_value = 0)
 		return
 	if(choice == "Change verb")
-		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_len = 60) //Whoaa there cowboy don't put a novel in there.
+		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = sparse_get_or(src, trait_injection_verb, "bite"), max_len = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>
@@ -1437,9 +1437,9 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 		return /datum/msg/injection/kind
 	if(!trait_injection_selected)
 		return /datum/msg/injection/reagent
-	if(!trait_injection_verb)
+	if(!sparse_get_or(src, trait_injection_verb, "bite"))
 		return /datum/msg/injection/means
-	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
+	act_message(src, target, others = span_warning("%U% is preparing to [sparse_get_or(src, trait_injection_verb, "bite")] %T%!"))
 
 /mob/living/proc/injection_living_done(datum/act/op/A)
 	var/mob/living/target = A.answer_target()
@@ -1449,7 +1449,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
 	if(target.reagents && (trait_injection_amount > 0) && !synth)
 		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
-	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
+	var/ourmsg = "[src] manages to [sparse_get_or(src, trait_injection_verb, "bite")] [target] "
 	switch(hud_used?.zone_sel?.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"

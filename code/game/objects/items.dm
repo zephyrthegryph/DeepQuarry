@@ -101,14 +101,17 @@
 	var/gurgled_color
 
 
-/obj/item/Initialize(mapload)
-	. = ..()
-	// Read-only per-type tables: share identical ones (writers assign a new list).
+/// Read-only per-type tables: share identical ones (writers assign a new list).
+/obj/item/proc/share_tool_qualities()
 	tool_qualities = intern_list(tool_qualities)
 
+/// The actions a type declares (actions_types) are made for the item.
+/obj/item/proc/make_declared_actions()
 	for(var/path in actions_types)
 		add_item_action(path)
 
+/// An item left on the default embed chance (-1) takes it from its weight and edge.
+/obj/item/proc/roll_embed_chance()
 	if(embed_chance < 0)
 		if(combat_of(src).sharp)
 			embed_chance = max(5, round(combat_of(src).force/w_class))

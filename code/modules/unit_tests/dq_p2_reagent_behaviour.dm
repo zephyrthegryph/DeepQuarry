@@ -52,7 +52,7 @@
 
 /// The mob's venom was expressed long ago (its cooldown has run out).
 /proc/rc_milk_cooldown_over(mob/living/L)
-	L.venom_milking_cd = 0
+	cooldown_reset(L, venom_milking_cd)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fixtures

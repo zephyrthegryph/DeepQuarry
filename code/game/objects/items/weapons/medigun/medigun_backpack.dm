@@ -39,6 +39,7 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
+	setup(PROC_REF(link_medigun))
 	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
 	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = all_of(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
 	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
@@ -290,8 +291,10 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 
 /obj/item/medigun_backpack/Initialize(mapload)
 	make_tethered(medigun_path)
-	. = ..()
+	return ..()
 
+/// The backpack links its gun to itself and sets the gun up for a one-handed pack once it is made.
+/obj/item/medigun_backpack/proc/link_medigun()
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
 	rel_set(medigun, nameof(medigun.medigun_base_unit), src)
 

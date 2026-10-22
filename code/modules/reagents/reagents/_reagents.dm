@@ -241,7 +241,7 @@
 /datum/reagent/proc/metabolizes_in(mob/living/carbon/M)
 	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return FALSE
-	if(HAS_SYNTHETIC_BIOLOGY(M) && (!M.synth_reag_processing || !affects_robots))
+	if(HAS_SYNTHETIC_BIOLOGY(M) && (!sparse_get_or(M, synth_reag_processing, TRUE) || !affects_robots))
 		return FALSE
 	return TRUE
 

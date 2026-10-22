@@ -1,0 +1,63 @@
+// Rare and scratch per-instance state of mobs: sparse slots (code/engine/declare/sparse_slots.dm), nothing on /mob until one is set.
+// The default each slot reads as is the one the var it replaced was declared with (sparse_get_or(M, slot, default)); a write of null clears it.
+// Read and write them through sparse_get() / sparse_get_or() / sparse_set(), never through a var of the same name.
+
+// /mob
+sparse(/mob, last_emote_summary, type = text)
+sparse(/mob, name_archive, type = text)
+sparse(/mob, floatiness, type = num)
+sparse(/mob, damageoverlaytemp, type = num)
+sparse(/mob, bhunger, type = num)
+sparse(/mob, ajourn, type = num)
+sparse(/mob, is_slipping, type = bool)
+sparse(/mob, skip_buckled_move_redirect, type = bool)
+sparse(/mob, get_rig_stats, type = num)
+sparse(/mob, m_int, type = text)
+sparse(/mob, vantag_hud, type = num)
+sparse(/mob, narsimage, type = /image)
+sparse(/mob, narglow, type = /image)
+sparse(/mob, riftimage, type = /image)
+
+// /mob/living
+sparse(/mob/living, adminbus_eat_minerals, type = bool)
+sparse(/mob/living, body_effect_serial, type = num)
+sparse(/mob/living, last_instability, type = num)
+sparse(/mob/living, melee_swing_serial, type = num)
+sparse(/mob/living, ventcrawl_layer, type = num)
+sparse(/mob/living, churn_count, type = num)
+sparse(/mob/living, skin_reagent, type = text)
+sparse(/mob/living, tf_form_holds_key, type = bool)
+sparse(/mob/living, composition_reagent_quantity, type = num)
+sparse(/mob/living, disability_death_time, type = num)
+sparse(/mob/living, disability_gut_pressure, type = num)
+sparse(/mob/living, slosh_chance, type = num)
+sparse(/mob/living, slosh_steps, type = num)
+sparse(/mob/living, slosh_volume, type = num)
+sparse(/mob/living, footstep_vary, type = bool)
+sparse(/mob/living, footstep_steps, type = num)
+sparse(/mob/living, mute_entry, type = bool)
+sparse(/mob/living, trash_catching, type = bool)
+sparse(/mob/living, trait_injection_verb, type = text)
+sparse(/mob/living, digestion_in_progress, type = bool)
+sparse(/mob/living, photosynthesis_boost, type = num)
+sparse(/mob/living, drain_finalized, type = num)
+sparse(/mob/living, holder_default, type = text)
+
+// /mob/living/carbon
+sparse(/mob/living/carbon, last_taste_text, type = text)
+sparse(/mob/living/carbon, germs_rolled_at, type = num)
+sparse(/mob/living/carbon, synth_reag_processing, type = bool)
+sparse(/mob/living/carbon, breath_cycle, type = num)
+
+// /mob/living/carbon/human
+sparse(/mob/living/carbon/human, nutrition_drained_at, type = num)
+sparse(/mob/living/carbon/human, dq_last_neural_load, type = num)
+sparse(/mob/living/carbon/human, dq_last_radiation, type = num)
+sparse(/mob/living/carbon/human, dq_last_bodytemperature, type = num)
+sparse(/mob/living/carbon/human, nutrition_hidden, type = bool)
+sparse(/mob/living/carbon/human, chemical_darksight, type = num)
+sparse(/mob/living/carbon/human, environment_steady, type = bool)
+sparse(/mob/living/carbon/human, gender_change_cooldown, type = num)
+sparse(/mob/living/carbon/human, changeling_locked, type = bool)
+sparse(/mob/living/carbon/human, can_defib, type = num)
+sparse(/mob/living/carbon/human, damage_multiplier, type = num)

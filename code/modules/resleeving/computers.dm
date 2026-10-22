@@ -500,7 +500,7 @@
 		return "Error: Resleeving pod is not occupied."
 	if(occupant.resleeve_lock && active_mr.ckey != occupant.resleeve_lock) //OOC body lock thing.
 		return "Error: Mind incompatible with body."
-	if(occupant.changeling_locked && !is_changeling(active_mr.mind_ref))
+	if(sparse_get(occupant, changeling_locked) && !is_changeling(active_mr.mind_ref))
 		return "Error: Mind incompatible with body"
 	return null
 

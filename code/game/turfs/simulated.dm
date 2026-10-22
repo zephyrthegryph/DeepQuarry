@@ -52,8 +52,8 @@
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
 // ChangeTurf() leaves nothing behind for the new turf (the old one's verbs go with its type).
 
-/turf/simulated/Initialize(mapload)
-	. = ..()
+/// A simulated turf is holy in the chapel, settles what lies under it and joins its planet's weather once it is made.
+/turf/simulated/proc/simulated_start()
 	if(istype(loc, /area/chapel))
 		holy = 1
 	levelupdate()

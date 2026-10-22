@@ -376,6 +376,9 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	setup(PROC_REF(share_tool_qualities))
+	setup(PROC_REF(make_declared_actions))
+	setup(PROC_REF(roll_embed_chance))
 	hover(PROC_REF(item_hovered))
 	// The thing this one is attached to (an assembly's valve, a gun's attachment, an electric chair's kit): a sparse link, not a var on /obj/item (item_master()).
 	links(LINK_END(/obj/item, LK_ITEM_MASTER), LINK_END(/obj, LK_ITEM_ATTACHED), sparse = TRUE, b_many = TRUE)

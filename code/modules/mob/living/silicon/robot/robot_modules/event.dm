@@ -48,7 +48,7 @@
 /obj/item/robot_module/robot/malf/lost/handle_special_unlocks(mob/living/silicon/robot/owner_robot)
 	if(!owner_robot.emag_items)
 		owner_robot.scramble_hardware(20)
-	if (owner_robot.churn_count == 5)
+	if (sparse_get_or(owner_robot, churn_count, 0) == 5)
 		rel_add(src, nameof(emag), new /obj/item/self_repair_system/advanced(src))
 		owner_robot.hud_used.update_robot_modules_display()
 
@@ -168,6 +168,6 @@
 /obj/item/robot_module/robot/malf/gravekeeper/handle_special_unlocks(mob/living/silicon/robot/owner_robot)
 	if(!owner_robot.emag_items)
 		owner_robot.scramble_hardware(10)
-	if (owner_robot.churn_count == 5)
+	if (sparse_get_or(owner_robot, churn_count, 0) == 5)
 		rel_add(src, nameof(emag), new /obj/item/self_repair_system/advanced(src))
 		owner_robot.hud_used.update_robot_modules_display()

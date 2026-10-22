@@ -2,7 +2,6 @@
 
 /// Life cycles since this mob's last scheduled breath. Breathing runs on the
 /// mob's own cadence, independent of how often the atmos subsystem fires.
-/mob/living/carbon/var/breath_cycle = 0
 
 /// A scheduled breath is taken every this many Life cycles.
 #define BREATH_CYCLE_PERIOD 4
@@ -13,9 +12,9 @@
 // sleeping breather take one breath per BREATH_CYCLE_PERIOD wakes (every two minutes), so a room
 // filling with phoron, N2O or CO2 went unnoticed.
 /mob/living/carbon/life_breathing(datum/seq_frame/life/F)
-	src.breath_cycle = (src.breath_cycle + 1) % BREATH_CYCLE_PERIOD
+	sparse_set(src, breath_cycle, (sparse_get_or(src, breath_cycle, 0) + 1) % BREATH_CYCLE_PERIOD)
 	var/datum/physiology/P = src.body?.physiology
-	var/breath_due = !src.breath_cycle || (P && ELAPSED_SINCE(src, P.last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
+	var/breath_due = !sparse_get_or(src, breath_cycle, 0) || (P && ELAPSED_SINCE(src, P.last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
 	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
 	if(breath_due || P?.air_stale || P?.breath_hazard || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
 		if(P)

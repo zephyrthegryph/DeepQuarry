@@ -732,7 +732,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		if(DC.allowed(user) || BR.ckey == user.ckey)
 			BD.load_record_to_body(BR)
 			owner().resleeve_lock = BR.locked
-			owner().changeling_locked = BR.changeling_locked
+			sparse_set(owner(), changeling_locked, BR.changeling_locked)
 			DC.set_selected_record(TRUE)
 	return TRUE
 
@@ -779,7 +779,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return FALSE
 	if(!DC.disk)
 		return FALSE
-	if(owner().changeling_locked)
+	if(sparse_get(owner(), changeling_locked))
 		to_chat(user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
 	else if(owner().resleeve_lock)
 		open_request(src, /datum/prompt/yes_no, PROC_REF(record_permission_answered), valid = PROC_REF(request_usable), answerer = user, question = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", title = "Mind Compatability", timeout = 0)
@@ -802,7 +802,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	write_record(user, DC)
 
 /datum/tgui_module/appearance_changer/proc/write_record(mob/user, obj/machinery/computer/transhuman/designer/DC)
-	if(!owner().changeling_locked && (!owner().resleeve_lock && can_change(owner(), APPEARANCE_RACE)))
+	if(!sparse_get(owner(), changeling_locked) && (!owner().resleeve_lock && can_change(owner(), APPEARANCE_RACE)))
 		// Create it from the mob
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 		owner().update_dna()

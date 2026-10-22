@@ -14,7 +14,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 		message_admins("[key_name(user)] has possessed [O] ([O.type]) at an unknown location", 1)
 
 	if(!user.mob.control_object) //If you're not already possessing something...
-		user.mob.name_archive = user.mob.real_name
+		sparse_set(user.mob, name_archive, user.mob.real_name)
 
 	user.mob.forceMove(O)
 	user.mob.set_real_name(O.name)
@@ -24,8 +24,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 	feedback_add_details("admin_verb","PO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessing an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
-	if(user.mob.control_object && user.mob.name_archive) //if you have a name archived and if you are actually relassing an object
-		user.mob.set_real_name(user.mob.name_archive)
+	if(user.mob.control_object && sparse_get(user.mob, name_archive)) //if you have a name archived and if you are actually relassing an object
+		user.mob.set_real_name(sparse_get(user.mob, name_archive))
 		user.mob.name = user.mob.real_name
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user

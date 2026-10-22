@@ -15,7 +15,13 @@
 	for(var/i = 1 to number_of_pins)
 		inputs["input [i]"] = IC_PINTYPE_ANY // This is just a string since pins don't get built until ..() is called.
 		outputs["output [i]"] = IC_PINTYPE_ANY
-	. = ..()
+	return ..()
+
+CAPABILITIES(/obj/item/integrated_circuit/memory)
+	setup(PROC_REF(size_memory))
+
+/// A memory chip costs one unit of complexity per pin pair.
+/obj/item/integrated_circuit/memory/proc/size_memory()
 	complexity = number_of_pins
 
 /obj/item/integrated_circuit/memory/examine(mob/user)

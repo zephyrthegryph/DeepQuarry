@@ -1369,7 +1369,7 @@ ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Ev
 	if(GLOB.global_vantag_hud)
 		for(var/mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 			if(living_target.ckey)
-				living_target.vantag_hud = TRUE
+				sparse_set(living_target, vantag_hud, TRUE)
 				living_target.recalculate_vis()
 
 	to_chat(user, span_warning("Global Event HUD has been turned [GLOB.global_vantag_hud ? "on" : "off"]."))
@@ -1547,13 +1547,13 @@ ADMIN_VERB(cmd_admin_z_narrate, (R_ADMIN|R_MOD|R_EVENT), "Z Narrate", "Narrates 
 	feedback_add_details("admin_verb","GLNA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/Remove Event HUD", "Give a mob the event hud, which shows them other people's event preferences, or remove it from them.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	if(target.vantag_hud)
-		target.vantag_hud = FALSE
+	if(sparse_get_or(target, vantag_hud, 0))
+		sparse_set(target, vantag_hud, FALSE)
 		target.recalculate_vis()
 		to_chat(user, "You removed the event HUD from [key_name(target)].")
 		to_chat(target, "You no longer have the event HUD.")
 	else
-		target.vantag_hud = TRUE
+		sparse_set(target, vantag_hud, TRUE)
 		target.recalculate_vis()
 		to_chat(user, "You gave the event HUD to [key_name(target)].")
 		to_chat(target, "You now have the event HUD.  Icons will appear next to characters indicating if they prefer to be killed(red crosshairs), devoured(belly), or kidnapped(blue crosshairs) by event characters.")

@@ -15,7 +15,6 @@
 
 /mob/living/carbon/human
 	var/heartbeat = 0
-	var/chemical_darksight = 0
 	/// world.time of the next periodic full HUD refresh (hud refresh system).
 	EXPIRY_DECLARE(hud_full_refresh_at)
 
@@ -819,7 +818,6 @@
 
 /mob/living/carbon/human
 	/// TRUE when the last environment exchange found comfortable air (its idle rule).
-	var/environment_steady = FALSE
 
 /// Idle after an exchange that found comfortable air on a turf (the pressure inside the warning
 /// band, the air within 20 K of the body, the body inside its comfort band). Its air watch wakes it
@@ -834,7 +832,7 @@
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
 	))
-	if(!src.environment_steady || !src.air_watched() || src.alerts?["pressure"])
+	if(!sparse_get_or(src, environment_steady, FALSE) || !src.air_watched() || src.alerts?["pressure"])
 		return TRUE
 	if(LAZYLEN(src.species.env_traits) || is_type_in_typecache(src.species, active_environment_species))
 		return TRUE
@@ -845,7 +843,7 @@
 
 /// P2-F1: body vs environment, split into heat exchange, temperature harm and pressure harm.
 /mob/living/carbon/human/life_environment_exchange(datum/gas_mixture/environment)
-	src.environment_steady = FALSE
+	sparse_set(src, environment_steady, FALSE)
 	if(!environment)
 		return
 
@@ -865,7 +863,7 @@
 		var/loc_temp = life_environment_location_temperature(environment)
 		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.vore_prefs.allowtemp))
 			src.clear_alert("pressure")
-			src.environment_steady = TRUE
+			sparse_set(src, environment_steady, TRUE)
 			src.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 		life_environment_convect(loc_temp, environment)
@@ -1161,8 +1159,8 @@
 	// nutrition decrease, for the biological time since the last one (the stage idles between
 	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
 	var/bio_now = clock_now(src, CLOCK_BIO)
-	var/hunger_cycles = src.nutrition_drained_at ? clamp((bio_now - src.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
-	src.nutrition_drained_at = bio_now
+	var/hunger_cycles = sparse_get_or(src, nutrition_drained_at, 0) ? clamp((bio_now - sparse_get_or(src, nutrition_drained_at, 0)) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
+	sparse_set(src, nutrition_drained_at, bio_now)
 	if(nutrition_of(src) > 0 && src.stat != DEAD)
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
@@ -1185,12 +1183,12 @@
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
-	if(src.darksight && src.chemical_darksight == 0)
+	if(src.darksight && sparse_get_or(src, chemical_darksight, 0) == 0)
 		src.recalculate_vis()
-		src.chemical_darksight = 1
-	if(!src.darksight && src.chemical_darksight == 1)
+		sparse_set(src, chemical_darksight, 1)
+	if(!src.darksight && sparse_get_or(src, chemical_darksight, 0) == 1)
 		src.recalculate_vis()
-		src.chemical_darksight = 0
+		sparse_set(src, chemical_darksight, 0)
 
 	// TODO: stomach and bloodstream organ.
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
@@ -1198,16 +1196,12 @@
 
 	return
 
-/mob/living/carbon/human
-	/// Biological time (clock_now(CLOCK_BIO), ds) of the last nutrition drain.
-	var/nutrition_drained_at = 0
-
 /// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the
 /// body (MOB_KEY_HEALTH). Hunger is integrated over the idle time on the rewake.
 /mob/living/carbon/human/life_chemicals_due()
 	if(src.touching?.total_volume || src.ingested?.total_volume || src.bloodstr?.total_volume)
 		return TRUE
-	if(!src.darksight != !src.chemical_darksight)
+	if(!src.darksight != !sparse_get_or(src, chemical_darksight, 0))
 		return TRUE
 	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
@@ -1441,7 +1435,7 @@
 		return FALSE
 	if(!src.client)
 		return TRUE
-	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || src.damageoverlaytemp)
+	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || sparse_get_or(src, damageoverlaytemp, 0))
 		return FALSE
 	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.has_status(STAT_BLINDED))
 		return FALSE
@@ -1511,8 +1505,8 @@
 		src.clear_fullscreen("oxy")
 
 	//Fire and Brute damage overlay (BSSR)
-	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + src.damageoverlaytemp
-	src.damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
+	var/hurtdamage = src.injury_load(INJURY_CATEGORY_PHYSICAL) + src.injury_load(INJURY_CATEGORY_THERMAL) + sparse_get_or(src, damageoverlaytemp, 0)
+	sparse_set(src, damageoverlaytemp, 0) // We do this so we can detect if someone hits us or not.
 	if(hurtdamage)
 		src.overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, life_hud_overlay_band(hurtdamage, hurt_bands))
 	else

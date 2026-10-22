@@ -112,7 +112,7 @@
 
 	if(tf_form_of(src) == ourmob)
 		if(tf_form_mind_of(src))
-			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", tf_form_holds_key)
+			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", sparse_get_or(src, tf_form_holds_key, FALSE))
 			set_tf_form_mind(src, null)
 		set_tf_form(ourmob, src)
 		src.forceMove(ourmob)
@@ -176,7 +176,7 @@
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
 				set_tf_form_mind(new_mob, new_mob.mind)
-				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
+				sparse_set(new_mob, tf_form_holds_key, new_mob.key == new_mob.mind.key)
 		else
 			if(isliving(new_form))
 				new_mob = new_form
@@ -198,7 +198,7 @@
 			var/datum/mind/form_mind = tf_form_mind_of(new_mob)
 			move_player(src, new_mob, "transformed into [new_mob]", share = TRUE)
 			if(form_mind)
-				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", new_mob.tf_form_holds_key)
+				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", sparse_get_or(new_mob, tf_form_holds_key, FALSE))
 			//legacy ai_holder state transfer between original and TF'd mob
 			// no longer needed; modern brain spawns fresh on the new mob.
 			forceMove(new_mob)

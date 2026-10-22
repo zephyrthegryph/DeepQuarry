@@ -75,7 +75,7 @@
 		return FALSE
 	if(!pred.vore_prefs.slip_vore && !prey.vore_prefs.slip_vore)
 		return FALSE
-	if(!pred.is_slipping && !prey.is_slipping)
+	if(!sparse_get_or(pred, is_slipping, FALSE) && !sparse_get_or(prey, is_slipping, FALSE))
 		return FALSE
 	if(!cooldown_ready(prey, slip_protect))
 		return FALSE

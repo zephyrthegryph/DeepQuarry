@@ -30,6 +30,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	click_on(PROC_REF(click_input))
 	ref_one(nameof(bpinboard), /obj/effect/overlay/vis)
 	ref_one(nameof(the_camera), /obj/item/clothing/accessory/bodycam)
+	setup(PROC_REF(tune_bodycam_radio))
 
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 
@@ -38,8 +39,10 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 
-	. = ..()
+	return ..()
 
+/// The monitor's radio listens on the bodycam frequency once it is made.
+/obj/machinery/computer/security/telescreen/bodycamera/proc/tune_bodycam_radio()
 	bradio.listening = TRUE
 	bradio.broadcasting = FALSE
 	bradio.set_frequency(BDCM_FREQ)

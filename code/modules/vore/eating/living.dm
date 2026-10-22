@@ -10,27 +10,19 @@
 	var/no_vore = FALSE					// If the character/mob can vore.
 	var/restrict_vore_ventcrawl = FALSE // Self explanatory
 	var/absorbing_prey = 0 				// Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
-	var/drain_finalized = 0				// Determines if the succubus drain will be KO'd/absorbed. Can be toggled on at any time.
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 	var/stuffing_feeder = FALSE			// Can feed foods to others whole, like trash eater can eat them on their own.
 	var/adminbus_trash = FALSE			// For abusing trash eater for event shenanigans.
-	var/adminbus_eat_minerals = FALSE	// This creature subsists on a diet of pure adminium.
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/appendage_color = "#e03997" //Default pink. Used for the 'long_vore' trait.
 	var/appendage_alt_setting = FALSE	// Dictates if 'long_vore' user pulls prey to them or not. 1 = user thrown towards target.
-	var/digestion_in_progress = FALSE	// Gradual corpse gurgles
-	var/trash_catching = FALSE					//Toggle for trash throw vore
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
-	var/skin_reagent
 	var/trait_injection_selected = null			//What trait reagent you're injecting.
 	var/trait_injection_amount = 5				//How much you're injecting with traits.
-	var/trait_injection_verb = "bite"			//Which fluffy manner you're doing the injecting.
 
-	var/mute_entry = FALSE					//Toggleable vorgan entry logs.
 	var/parasitic = FALSE					//Digestion immunity and nutrition leeching variable
 	var/liquidbelly_visuals = TRUE			//Toggle for liquidbelly level visuals.
-	var/churn_count = 0						//Counter for digested livings
 
 	var/passtable_reset		// For crawling
 	var/passtable_crawl_checked = FALSE
@@ -571,9 +563,9 @@
 			act_message(src, tasted, MSG_SELF(span_warning("You try to lick %T%, but they deftly avoid your attempt.")), \
 				MSG_OTHERS(span_warning("%U% tries to lick %T%, but they dodge out of the way!")))
 			return
-		if(tasted.skin_reagent && ishuman(src) && (tasted != src))
+		if(sparse_get(tasted, skin_reagent) && ishuman(src) && (tasted != src))
 			var/mob/living/carbon/human/us_but_human = src
-			us_but_human.ingested.add_reagent(tasted.skin_reagent, 10)
+			us_but_human.ingested.add_reagent(sparse_get(tasted, skin_reagent), 10)
 
 		act_message(src, tasted, MSG_SELF(span_notice("You lick %T%. They taste rather like [tasted.get_taste_message()].")), \
 			MSG_OTHERS(span_vwarning("%U% licks %T%!")), \
@@ -1042,8 +1034,8 @@
 	set name = "Toggle Trash Catching"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater throw vore abilities."
-	trash_catching = !trash_catching
-	to_chat(src, span_vwarning("Trash catching [trash_catching ? "enabled" : "disabled"]."))
+	sparse_set(src, trash_catching, !sparse_get_or(src, trash_catching, FALSE))
+	to_chat(src, span_vwarning("Trash catching [sparse_get_or(src, trash_catching, FALSE) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/eat_minerals() //Actual eating abstracted so the user isn't given a prompt due to an argument in this verb.
 	set name = "Eat Minerals"
@@ -1092,7 +1084,7 @@
 /mob/living/proc/handle_eat_minerals(obj/item/snack, mob/living/user)
 	var/mob/living/feeder = user ? user : src //Whoever's doing the feeding - us or someone else.
 	var/mob/living/carbon/human/H = src
-	if(!(adminbus_eat_minerals || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
+	if(!(sparse_get_or(src, adminbus_eat_minerals, FALSE) || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
 		return
 
 	if(!vore_selected_of(src))
@@ -1858,8 +1850,8 @@
 	set name = "Mute Vorgan Entrance"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Mute the chatlog messages when something enters a vore belly."
-	mute_entry = !mute_entry
-	to_chat(src, span_vwarning("Entrance logs [mute_entry ? "disabled" : "enabled"]."))
+	sparse_set(src, mute_entry, !sparse_get_or(src, mute_entry, FALSE))
+	to_chat(src, span_vwarning("Entrance logs [sparse_get_or(src, mute_entry, FALSE) ? "disabled" : "enabled"]."))
 
 /mob/living/proc/restrict_trasheater()
 	set name = "Restrict Trash Eater"

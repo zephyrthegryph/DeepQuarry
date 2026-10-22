@@ -3,6 +3,9 @@
 	var/shandler_noinit = FALSE
 
 CAPABILITIES(/turf/simulated)
+	setup(PROC_REF(rad_shielding_start))
+	setup(PROC_REF(simulated_start))
+	setup(PROC_REF(freelook_visibility_start))
 	after_init(0, then(PROC_REF(turf_after_init)))
 	owns_one(nameof(shandler), /datum/sunlight_handler)
 	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))

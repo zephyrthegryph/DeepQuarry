@@ -65,7 +65,6 @@
 
 
 	/// Whether that mind's body held its key (a key move follows it).
-	var/tf_form_holds_key = FALSE
 
 
 	///a list of all status effects the mob has

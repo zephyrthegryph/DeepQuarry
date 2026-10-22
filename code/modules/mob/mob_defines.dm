@@ -36,7 +36,6 @@
 	Changing this around would probably require a good look-over the pre-existing code.
 	*/
 
-	var/damageoverlaytemp = 0
 
 	var/computer_id = null
 	var/list/logging
@@ -54,8 +53,6 @@
 	var/gen_record = ""
 	var/exploit_record = ""
 	var/blinded = null
-	var/bhunger = 0			//Carbon
-	var/ajourn = 0
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
@@ -76,7 +73,6 @@
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 	var/facing_dir = null   // Used for the ancient art of moonwalking.
 
-	var/name_archive //For admin things like possession
 
 	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
@@ -85,7 +81,6 @@
 	var/charges = 0.0
 
 	var/losebreath = 0.0//Carbon
-	var/m_int = null//Living
 	var/m_intent = I_RUN//Living
 	var/lastKnownIP = null
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
@@ -93,7 +88,6 @@
 	/// /mob/living/Move() doesn't redirect that step back into the buckled
 	/// object's own Move() -- BUCKLED()/BUCKLED_MOBS() (om.dm) are pure graph
 	/// reads now, with no field left to transiently null for the same effect.
-	var/tmp/skip_buckled_move_redirect = FALSE
 
 	var/seer = 0 //for cult//Carbon, probably Human
 
@@ -175,7 +169,6 @@
 
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
 
-	var/get_rig_stats = 0 //Moved from computer.dm
 
 	var/custom_speech_bubble = "default"
 
@@ -211,9 +204,9 @@
 	VAR_PRIVATE/is_motion_tracking = FALSE // Prevent multiple unsubs and resubs, also used to check if the vis layer is enabled, use has_motiontracking() to get externally.
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
-	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
+	cooldowns(next_emote, next_emote_refresh)
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
@@ -320,7 +313,6 @@ CAPABILITIES(/mob)
 
 
 /mob
-	var/vantag_hud = 0			// Do I have the HUD enabled?
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
