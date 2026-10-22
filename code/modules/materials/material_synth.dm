@@ -6,8 +6,10 @@
 	gender = NEUTER
 	MATERIAL_NONE // Don't shove it in the autholathe.
 
-/obj/item/stack/material/cyborg/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/stack/material/cyborg)
+	setup(PROC_REF(material_cyborg_setup))
+
+/obj/item/stack/material/cyborg/proc/material_cyborg_setup()
 	name = "[material.display_name] synthesiser"
 	desc = "A device that synthesises [material.display_name]."
 

@@ -371,10 +371,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
 		)
 
 // Uzi tilting
-/obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
-	. = ..()
-	if(is64x32)
-		update_transform()
 
 /obj/item/gun/projectile/automatic/mini_uzi/equipped(mob/living/user, slot)
 	. = ..()

@@ -13,6 +13,9 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	keeps_if(PROC_REF(has_plantname), warn = "Plantname not provided and the produce requires it")
+	keeps_if(PROC_REF(plant_is_known), warn = "Plant name does not exist and the produce requires it")
+	setup(PROC_REF(snacks_grown_setup))
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	param(nameof(plantname), pos = 1)
@@ -23,32 +26,29 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
-// ALLOW(init/INSTANCE_STATE): produce takes its seed's name, trash, look and chemicals
-/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
-	. = ..()
+/// Produce must name its plant.
+/obj/item/reagent_containers/food/snacks/grown/proc/has_plantname()
+	return !!plantname
 
+/// The named plant must exist in the plant registry.
+/obj/item/reagent_containers/food/snacks/grown/proc/plant_is_known()
+	return !!SSplants.seeds[plantname]
+
+/obj/item/reagent_containers/food/snacks/grown/proc/snacks_grown_setup()
 	if(!dried_type)
 		dried_type = type
 
-	if(!plantname)
-		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
-		return INITIALIZE_HINT_QDEL
-
 	proto_set(src, nameof(seed_static), SSplants.seeds[plantname])
 
-	if(!seed())
-		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
-		return INITIALIZE_HINT_QDEL
-
 	name = "[seed().seed_name]"
-	trash = seed().get_trash_type()
+	set_trash(seed().get_trash_type())
 
 	potency = seed().get_trait(TRAIT_POTENCY)
 
 	if(seed().chems)
 		update_desc()
 		if(reagents.total_volume > 0)
-			bitesize = 1+round(reagents.total_volume / 2, 1)
+			set_bitesize(1+round(reagents.total_volume / 2, 1))
 		if(seed().get_trait(TRAIT_STINGS))
 			set_force(1)
 
@@ -411,6 +411,8 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	return I
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
+	keeps_if(PROC_REF(has_slice_seed))
+	setup(PROC_REF(snacks_fruit_slice_setup))
 	param(nameof(slice_seed), pos = 1)
 
 /// The seed of the fruit the slice was cut from (its constructor param).
@@ -419,22 +421,22 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/rind_colour
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/flesh_colour
 
-// ALLOW(init/INSTANCE_STATE): a slice takes its fruit's name and colours
-/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
-	. = ..()
+/// A slice is cut from a fruit's seed.
+/obj/item/reagent_containers/food/snacks/fruit_slice/proc/has_slice_seed()
+	return istype(slice_seed, /datum/seed)
+
+/obj/item/reagent_containers/food/snacks/fruit_slice/proc/snacks_fruit_slice_setup()
 	// Need to go through and make a general image caching controller. Todo.
 	var/datum/seed/S = slice_seed
-	if(!istype(S))
-		return INITIALIZE_HINT_QDEL
 
 	name = "[S.seed_name] slice"
 	desc = "A slice of \a [S.seed_name]. Tasty, probably."
 	set_drop_sound(SFX_ITEMS_DROP_HERB)
 	set_pickup_sound(SFX_ITEMS_PICKUP_HERB)
 
-	rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
-	flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
-	if(!flesh_colour) flesh_colour = rind_colour
+	set_rind_colour(S.get_trait(TRAIT_PRODUCT_COLOUR))
+	set_flesh_colour(S.get_trait(TRAIT_FLESH_COLOUR))
+	if(!flesh_colour) set_flesh_colour(rind_colour)
 
 /// The rind and the flesh of the slice, in the colours of the fruit it was cut from.
 /obj/item/reagent_containers/food/snacks/fruit_slice/draw(datum/look/look)

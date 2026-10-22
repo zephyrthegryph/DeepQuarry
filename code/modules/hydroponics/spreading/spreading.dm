@@ -65,6 +65,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 
 CAPABILITIES(/obj/effect/plant)
+	keeps_if(PROC_REF(not_on_open_turf))
+	keeps_if(PROC_REF(plant_controller_exists), warn = "Plant controller does not exist and the plant requires it")
+	keeps_if(PROC_REF(has_a_seed), warn = "Plant has no seed to grow from")
+	setup(PROC_REF(effect_plant_setup))
 	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
@@ -93,33 +97,32 @@ CAPABILITIES(/obj/effect/plant)
 /// The seed a vine grows from (its constructor param), or null for the default seed.
 /obj/effect/plant/var/datum/seed/seed_at_make
 
-// ALLOW(init/INSTANCE_STATE): a vine takes its seed's traits, growth and spread
-/obj/effect/plant/Initialize(mapload)
-	. = ..()
-	if(isopenturf(loc))
-		return INITIALIZE_HINT_QDEL
+/// Vines do not grow on open turf.
+/obj/effect/plant/proc/not_on_open_turf()
+	return !isopenturf(loc)
 
+/obj/effect/plant/proc/plant_controller_exists()
+	return !!SSplants
+
+/// A plant grows from the seed it was made with, else the default seed.
+/obj/effect/plant/proc/has_a_seed()
+	return istype(seed_at_make, /datum/seed) || !!SSplants.seeds[DEFAULT_SEED]
+
+/obj/effect/plant/proc/effect_plant_setup()
 	if(!parent)
 		rel_set(src, nameof(parent), src)
-
-	if(!SSplants)
-		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
-		return INITIALIZE_HINT_QDEL
 
 	var/datum/seed/newseed = seed_at_make
 	if(!istype(newseed))
 		newseed = SSplants.seeds[DEFAULT_SEED]
 	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
-	if(!seed())
-		return INITIALIZE_HINT_QDEL
-
 	name = seed().display_name
 	max_health = round(seed().get_trait(TRAIT_ENDURANCE)/2)
 	if(seed().get_trait(TRAIT_SPREAD)==2)
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // Grabby
 		set_max_growth(VINE_GROWTH_STAGES)
 		set_growth_threshold(max_health/VINE_GROWTH_STAGES)
-		icon = 'icons/obj/hydroponics_vines.dmi'
+		set_icon('icons/obj/hydroponics_vines.dmi')
 		set_growth_type(2) // Vines by default.
 		if(seed().get_trait(TRAIT_CARNIVOROUS) >= 2)
 			set_growth_type(1) // WOOOORMS.
@@ -137,7 +140,7 @@ CAPABILITIES(/obj/effect/plant)
 
 	EXPIRY_SET(src, mature_time, seed().get_trait(TRAIT_MATURATION) + 15, CLOCK_WORLD) //prevent vines from maturing until at least a few seconds after they've been created.
 	spread_chance = seed().get_trait(TRAIT_POTENCY)
-	spread_distance = ((growth_type>0) ? round(spread_chance*0.6) : round(spread_chance*0.3))
+	set_spread_distance(((growth_type>0) ? round(spread_chance*0.6) : round(spread_chance*0.3)))
 
 // Plants will sometimes be spawned in the turf adjacent to the one they need to end up in, for the sake of correct dir/etc being set.
 /obj/effect/plant/proc/finish_spreading()
