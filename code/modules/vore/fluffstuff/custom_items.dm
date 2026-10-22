@@ -1327,6 +1327,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	storage_slots = 7
 	icon_type = "charlotte"
+	open_state = "charlotte0"
+	closed_state = "charlotte"
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
@@ -1336,13 +1338,6 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 		/obj/item/clothing/mask/smokable/cigarette,
 		/obj/item/flame/lighter,
 		/obj/item/trash/cigbutt)))
-
-/obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
 
 /obj/item/storage/fancy/fluff/charlotte/draw(datum/look/look)
 	. = ..()
@@ -1387,8 +1382,11 @@ CAPABILITIES(/obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinet
 	icon_state = "bottle3"
 	prefill = list(REAGENT_ID_BICARIDINE = 30, REAGENT_ID_NUTRIMENT = 30)
 
-/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette)
+	setup(PROC_REF(stock_loops))
+
+/// Its knife and vial loops, with a knife and a vial in them (setup()).
+/obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette/proc/stock_loops()
 	hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
 	var/static/list/holds = list(/obj/item/material/knife, /obj/item/reagent_containers/glass/bottle)
 	hold.restrict_hold(holds)

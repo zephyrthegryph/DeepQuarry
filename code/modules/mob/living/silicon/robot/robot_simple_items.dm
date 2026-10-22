@@ -839,10 +839,11 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 	var/last_robot_loc
 
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/cyborg)
+	setup(PROC_REF(bind_robot))
 	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
 
-/obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
-	. = ..()
+/// Binds the robot (or place) holding the module and watches for being moved out of it (setup()).
+/obj/item/reagent_containers/glass/bucket/cyborg/proc/bind_robot()
 	rel_set(src, nameof(R), loc.loc)
 	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 

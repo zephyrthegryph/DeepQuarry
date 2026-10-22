@@ -61,6 +61,7 @@ MSG_DEF_SELF(sleeper/occupied, "Your sleeper is already occupied.")
 MSG_DEF_SELF(sleeper/buckled, "%T% is buckled and can not be put into your sleeper.")
 
 CAPABILITIES(/obj/item/dogborg/sleeper)
+	setup(PROC_REF(setup_destructive_analysis))
 	ref_one(nameof(patient), /mob/living/carbon)
 	ref_one(nameof(hound), /mob/living/silicon/robot)
 	ref_one(nameof(metal), /datum/matter_synth/metal)
@@ -92,7 +93,8 @@ CAPABILITIES(/obj/item/dogborg/sleeper)
 //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
-/obj/item/dogborg/sleeper/Initialize(mapload)
+/// A sleeper with an analyzer gets the destructive-scan experiment handler (setup()).
+/obj/item/dogborg/sleeper/proc/setup_destructive_analysis()
 	if(analyzer) //Destructive analysis
 		var/static/list/destructive_events = list(
 			/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
@@ -103,7 +105,6 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 			experiment_events = destructive_events, \
 		)
-	. = ..()
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).

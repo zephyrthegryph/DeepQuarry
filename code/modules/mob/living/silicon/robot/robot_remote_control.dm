@@ -226,8 +226,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	icon_state = "x3"
 	delete_me = TRUE
 
-/obj/effect/landmark/free_ai_shell/Initialize(mapload)
+CAPABILITIES(/obj/effect/landmark/free_ai_shell)
+	setup(PROC_REF(spawn_shell))
+
+/// The free AI shell, when the config allows one (setup()).
+/obj/effect/landmark/free_ai_shell/proc/spawn_shell()
 	if(CONFIG_GET(flag/allow_ai_shells) && CONFIG_GET(flag/give_free_ai_shell))
 		new /mob/living/silicon/robot/ai_shell(get_turf(src))
-	return ..()
 

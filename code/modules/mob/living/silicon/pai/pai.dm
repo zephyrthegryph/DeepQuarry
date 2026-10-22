@@ -98,6 +98,7 @@
 	vore_capacity_ex = list("stomach" = 1)
 
 CAPABILITIES(/mob/living/silicon/pai)
+	setup(PROC_REF(setup_card))
 	ref_one(nameof(current), /obj/machinery/camera)
 	ref_one(nameof(card), /obj/item/paicard)
 	ref_one(nameof(radio), /obj/item/radio/borg/pai)
@@ -159,8 +160,8 @@ CAPABILITIES(/mob/living/silicon/pai)
 		M.toff = FALSE
 	return P
 
-/mob/living/silicon/pai/Initialize(mapload)
-	. = ..()
+/// Its card and the card's radio, and its chassis when a subtype overrides the default (setup()).
+/mob/living/silicon/pai/proc/setup_card()
 	if(istype(loc, /obj/item/paicard))
 		rel_set(src, nameof(card), loc)
 	else

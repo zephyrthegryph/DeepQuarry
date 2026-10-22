@@ -17,6 +17,7 @@
 	var/delete_message = "Delete Message"
 
 CAPABILITIES(/obj/soulgem)
+	setup(PROC_REF(bind_to_owner))
 	// a soulgem is an abstract container of minds
 	without("melee_hit")
 	owns_many(nameof(brainmobs))
@@ -41,9 +42,8 @@ CAPABILITIES(/obj/soulgem)
 		saved["linked_belly"] = saved["linked_belly_handle"]
 		saved -= "linked_belly_handle"
 
-// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
-/obj/soulgem/Initialize(mapload)
-	. = ..()
+/// A soulgem made inside a mob binds to it (setup()).
+/obj/soulgem/proc/bind_to_owner()
 	if(ismob(loc))
 		rel_set(src, nameof(owner), loc)
 

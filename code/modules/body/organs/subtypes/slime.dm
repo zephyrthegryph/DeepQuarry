@@ -90,11 +90,14 @@
 	COOLDOWN_DECLARE(strain_regen_cooldown_until)	// World time of the last increase in strain.
 	var/strain_regen_cooldown = 5 MINUTES
 
-/obj/item/organ/internal/regennetwork/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/organ/internal/regennetwork)
+	setup(PROC_REF(regen_colour_setup))
+
+/// Setup after the Initialize() chain: takes the blood colour of the human it was placed in.
+/obj/item/organ/internal/regennetwork/proc/regen_colour_setup()
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = H.species.get_blood_colour(H)
+		set_color(H.species.get_blood_colour(H))
 
 /obj/item/organ/internal/regennetwork/proc/get_strain_percent(cost)
 	adjust_strain(cost)

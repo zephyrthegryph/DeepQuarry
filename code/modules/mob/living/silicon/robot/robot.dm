@@ -157,6 +157,8 @@
 
 	. = ..()
 
+/// Its verbs, HUD images, sprite datum, power demand and senses, once its Initialize() chain has returned (setup()).
+/mob/living/silicon/robot/proc/finish_robot_setup()
 	add_robot_verbs()
 	setup_hud_images()
 	resolve_sprite_datum()
