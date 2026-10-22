@@ -29,10 +29,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
+	setup(PROC_REF(refit_teshari_sprites))
 
 
-/obj/item/clothing/head/helmet/space/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/head/helmet/space/proc/refit_teshari_sprites()
 	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
 
@@ -81,8 +81,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 
 
 
-/obj/item/clothing/suit/space/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/suit/space/proc/refit_teshari_sprites()
 	if(type == /obj/item/clothing/suit/space)
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/suit/mob_teshari.dmi')
 // end.

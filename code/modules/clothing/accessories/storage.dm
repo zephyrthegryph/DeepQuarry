@@ -103,8 +103,11 @@ CAPABILITIES(/obj/item/clothing/accessory/storage)
 	icon_state = "unathiharness2"
 	slots = 2
 
-/obj/item/clothing/accessory/storage/knifeharness/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/accessory/storage/knifeharness)
+	setup(PROC_REF(stock_knives))
+
+/// Sizes the harness's storage for two knives and loads it with them.
+/obj/item/clothing/accessory/storage/knifeharness/proc/stock_knives()
 	hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
 	var/static/list/knives = list(/obj/item/material/knife/machete/hatchet/unathiknife, /obj/item/material/knife, /obj/item/material/knife/plastic)
 	hold.restrict_hold(knives)

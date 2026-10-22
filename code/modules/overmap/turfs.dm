@@ -49,11 +49,14 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 	else
 		. = ..()
 
-// ALLOW(init/INSTANCE_STATE): names and numbers itself from its overmap coordinates
-/turf/unsimulated/map/Initialize(mapload)
+CAPABILITIES(/turf/unsimulated/map)
+	setup(PROC_REF(name_and_number_from_coordinates))
+
+/// Names and numbers itself from its overmap coordinates.
+/turf/unsimulated/map/proc/name_and_number_from_coordinates()
 	name = "[x]-[y]"
 	var/list/numbers = list()
-	coord_marks = list()
+	set_coord_marks(list())
 
 	if(x == 1 || x == using_map.overmap_size)
 		numbers += list("[round(y/10)]","[round(y%10)]")
@@ -75,8 +78,7 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 			px = 5*i - 2
 		if(x == using_map.overmap_size)
 			px = 5*i + 2
-		coord_marks += list(list(numbers[i], px, py))
-	. = ..()
+		add_coord_marks(list(list(numbers[i], px, py)))
 	make_z_transparent()
 
 /turf/unsimulated/map/Entered(atom/movable/O, atom/oldloc)

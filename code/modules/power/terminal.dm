@@ -15,8 +15,11 @@
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01
 
-/obj/machinery/power/terminal/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/power/terminal)
+	setup(PROC_REF(conceal_under_plating))
+
+/// Under a floor tile it is hidden.
+/obj/machinery/power/terminal/proc/conceal_under_plating()
 	var/turf/T = src.loc
 	if(level==1) hide(!T.is_plating())
 
