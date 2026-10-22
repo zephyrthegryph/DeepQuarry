@@ -96,7 +96,7 @@ Rules that hold under both old and new forms:
 - Don't override `Destroy()`; use `qdel()` and put consequences in `on_destroy(force)`. Never `del()`.
 - Prefer `Initialize(mapload, ...)`; always chain `..()` in lifecycle overrides. An `Initialize()` override sets per-instance
   state only and carries `// ALLOW(init/INSTANCE_STATE|CTOR_ARGS|FRAMEWORK): <reason>`; starting contents are `starts =`
-  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, work after the map load or a timer from init is
+  (`owns_one`/`owns_many`/`slot`), capability setup is `on_holder_init(A)`, an Initialize() tail that needs `mapload` or returns `INITIALIZE_HINT_QDEL` is `setup(PROC_REF(x), mapload = TRUE)` (`x(mapload)` returns the hint), work after the map load or a timer from init is
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Tracking is automatic: don't declare `TRACKED(...)` (hard-banned outside the generated file). Write a var that reactive code reads through its generated `set_v(...)`; the `tracked` lint (hard error) rejects a raw write and `analyze fix --apply` rewrites it. A setter with side effects is a hand-written `set_v()` plus `SETTER(T, v)`. Construction (`Initialize()`/`New()` writing the instance's own var) is not a change and stays raw.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists

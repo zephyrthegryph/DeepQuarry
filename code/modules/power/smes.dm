@@ -98,6 +98,7 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	setup(PROC_REF(wire_up), mapload = TRUE)
 	after_init(0, then(PROC_REF(mapped_after_init)))
 	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)
 	membership(joins = REGISTRY_SMES)
@@ -154,9 +155,8 @@ CAPABILITIES(/obj/machinery/power/smes)
 	adjust_stored_charge(-smes_amt)
 	return smes_amt / SMESRATE
 
-// ALLOW(init/INSTANCE_STATE): the input terminals laid beside the unit are linked before anything reads `terminals`, and a unit placed with none is unwired; its output node binds when it is wired
-/obj/machinery/power/smes/Initialize(mapload)
-	. = ..()
+/// The input terminals laid beside the unit are linked, and a unit placed with none is unwired; its output node binds when it is wired (setup hook).
+/obj/machinery/power/smes/proc/wire_up(mapload)
 	add_nearby_terminals()
 	if(needs_terminals() && !LAZYLEN(terminals))
 		set_unwired(TRUE)

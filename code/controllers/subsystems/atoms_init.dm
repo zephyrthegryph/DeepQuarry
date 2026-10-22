@@ -56,7 +56,9 @@
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
 	if(setup_pending?[A])
 		if(result == INITIALIZE_HINT_NORMAL)
-			setup_run(A)
+			// A setup(PROC_REF(x), mapload = TRUE) hook may return INITIALIZE_HINT_QDEL: handled below as an Initialize() return.
+			if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
+				result = INITIALIZE_HINT_QDEL
 		else
 			setup_pending -= A
 
