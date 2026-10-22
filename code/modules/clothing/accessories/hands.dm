@@ -68,7 +68,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forc
 
 /// Kept when its material (or steel) exists (keeps_if()).
 /obj/item/clothing/accessory/bracelet/material/proc/material_exists()
-	return istype(get_material_by_name(default_material || MAT_STEEL))
+	return istype(get_material_by_name(default_material || MAT_STEEL), /datum/material)
 
 /// Takes the material it is made of.
 /obj/item/clothing/accessory/bracelet/material/proc/take_material()
