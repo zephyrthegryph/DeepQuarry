@@ -13,6 +13,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	setup(PROC_REF(find_plant), mapload = TRUE)
 	setup(PROC_REF(snacks_grown_setup))
 	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
@@ -24,9 +25,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY, copy_on_write = TRUE)
 
-// The plant is named by a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
-/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
-	. = ..()
+/// The plant is named by a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this is a hint-returning hook: produce with no known plant is discarded.
+/obj/item/reagent_containers/food/snacks/grown/proc/find_plant(mapload)
 	if(!plantname)
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
 		return INITIALIZE_HINT_QDEL
@@ -412,6 +412,7 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	return I
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
+	setup(PROC_REF(check_slice_seed), mapload = TRUE)
 	setup(PROC_REF(snacks_fruit_slice_setup))
 	param(nameof(slice_seed), pos = 1)
 
@@ -421,9 +422,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/rind_colour
 /obj/item/reagent_containers/food/snacks/fruit_slice/var/flesh_colour
 
-// The seed is a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this stays a guard of its own.
-/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
-	. = ..()
+/// The seed is a constructor param, which keeps_if() cannot read (it is asked before the params apply), so this is a hint-returning hook: a slice with no seed is discarded.
+/obj/item/reagent_containers/food/snacks/fruit_slice/proc/check_slice_seed(mapload)
 	if(!istype(slice_seed))
 		return INITIALIZE_HINT_QDEL
 

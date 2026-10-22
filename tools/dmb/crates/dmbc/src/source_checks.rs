@@ -590,10 +590,8 @@ fn scan_text(bytes: &[u8], start: usize) -> (usize, Option<usize>) {
     while at < bytes.len() {
         match bytes[at] {
             b'\\' => {
-                let mut next = at + 1;
-                if bytes.get(next) == Some(&b'\r') {
-                    next += 1;
-                }
+                // Only a backslash directly before LF continues the literal; before CR LF it does not (pinned 516.1681).
+                let next = at + 1;
                 if bytes.get(next) == Some(&b'\n') {
                     at = next + 1;
                     while bytes.get(at).is_some_and(|byte| matches!(byte, b' ' | b'\t' | b'\r' | b'\n')) {
@@ -631,6 +629,37 @@ fn scan_text(bytes: &[u8], start: usize) -> (usize, Option<usize>) {
     (at, None)
 }
 
+/// Offsets of every unterminated literal one lexer token causes. DreamMaker ends the literal at the break and lexes the next line
+/// afresh, so a leftover `"` on a following line (the old literal's closing quote) opens a literal of its own that the line never
+/// closes: one more error at that quote (pinned 516.1681, fixtures/diagnostics/cases/string_backslash_crlf).
+fn literal_break_errors(text: &str, start: usize, end: usize, token: &str) -> Vec<usize> {
+    let Some(at) = unterminated_break(token) else {
+        return Vec::new();
+    };
+    let mut found = vec![start + at];
+    let mut line = start + at + 1;
+    while line < text.len() && line <= end {
+        let line_end = text[line..].find('\n').map_or(text.len(), |next| line + next);
+        let bytes = text[line..line_end].as_bytes();
+        let mut open = None;
+        let mut index = 0;
+        while index < bytes.len() {
+            match bytes[index] {
+                b'\\' => index += 1,
+                b'/' if bytes.get(index + 1) == Some(&b'/') => break,
+                b'"' => open = if open.is_some() { None } else { Some(line + index) },
+                _ => {}
+            }
+            index += 1;
+        }
+        if let Some(quote) = open {
+            found.push(quote);
+        }
+        line = line_end + 1;
+    }
+    found
+}
+
 /// Offsets of plain `"text"` literals that run over a line break in one source file, cached by content.
 fn unterminated_text_offsets(text: &str) -> Vec<usize> {
     static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<u128, Vec<usize>>>> =
@@ -645,7 +674,7 @@ fn unterminated_text_offsets(text: &str) -> Vec<usize> {
             .tokens
             .iter()
             .filter(|token| matches!(token.kind, TokenKind::String | TokenKind::Interpolation))
-            .filter_map(|token| unterminated_break(token.text(text)).map(|at| token.span.start + at))
+            .flat_map(|token| literal_break_errors(text, token.span.start, token.span.end, token.text(text)))
             .collect()
     } else {
         Vec::new()
@@ -730,6 +759,10 @@ fn screen_piece(text: &str) -> PieceScreen {
     for (index, token) in tokens.iter().enumerate() {
         match token.0 {
             TokenKind::String | TokenKind::Interpolation if token.1.starts_with('"') || token.1.starts_with("{\"") => {
+                if unterminated_plain_text(token.1) {
+                    // DreamMaker reports the unterminated literal and never reads its escapes.
+                    continue;
+                }
                 let quote = if token.1.starts_with('{') { 2 } else { 1 };
                 let body = &token.1[quote..token.1.len().saturating_sub(quote).max(quote)];
                 let mut at = 0;
@@ -1025,13 +1058,27 @@ mod tests {
         assert!(!unterminated_plain_text("{\"one\ntwo\"}"));
         // The continuation skips the whitespace after it, blank lines included; a later bare break still ends the literal.
         assert!(!unterminated_plain_text("\"one\\\n\n   two\""));
-        assert!(!unterminated_plain_text("\"one\\\r\n  two\""));
+        assert!(unterminated_plain_text("\"one\\\r\n  two\""));
+        assert_eq!(super::unterminated_break("\"ab\\\r\ncd\""), Some(5));
         assert!(unterminated_plain_text("\"one\\\n   two\n  three\""));
         assert_eq!(super::unterminated_break("\"ab\ncd\""), Some(3));
         // Breaks inside an embedded [expression] are code, nested literals included.
         assert!(!unterminated_plain_text("\"x [pick(\n\"a\",\n\"b\")] y\""));
         assert!(unterminated_plain_text("\"x [pick(\"a\nb\")] y\""));
         assert!(unterminated_plain_text("\"x [1]\ny\""));
+    }
+
+    #[test]
+    fn leftover_quote_after_a_break_opens_another_unterminated_literal() {
+        // Pinned 516.1681: errors at lines 2 and 3 for `"ab\<CR><LF>\t\tcd"`, and for a bare break.
+        for text in ["x\n\"ab\\\r\n\t\tcd\"\n", "x\n\"ab\n\t\tcd\"\n"] {
+            let start = text.find('"').unwrap();
+            let end = text.rfind('"').unwrap() + 1;
+            let found = super::literal_break_errors(text, start, end, &text[start..end]);
+            assert_eq!(found.len(), 2, "{text:?}");
+            assert_eq!(found[1], end - 1);
+        }
+        assert_eq!(super::literal_break_errors("\"a\\\nb\"\n", 0, 6, "\"a\\\nb\"").len(), 0);
     }
 
     #[test]

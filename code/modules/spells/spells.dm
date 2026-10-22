@@ -125,9 +125,10 @@
 CAPABILITIES(/obj/item/spell/unrestricted)
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
+	setup(PROC_REF(find_owner), mapload = TRUE)
 
-/obj/item/spell/unrestricted/Initialize(mapload)
-	. = ..()
+/// An unrestricted spell belongs to the living thing holding it; one with no owner is discarded.
+/obj/item/spell/unrestricted/proc/find_owner(mapload)
 	if(isliving(loc))
 		rel_set(src, nameof(owner), loc)
 	if(!owner_ref())

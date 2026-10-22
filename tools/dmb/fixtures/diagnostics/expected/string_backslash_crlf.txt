@@ -1,0 +1,3 @@
+string_backslash_crlf.dm:2:error: unterminated text (expecting ")
+string_backslash_crlf.dm:3:error: unterminated text (expecting ")
+string_backslash_crlf.dmb - 2 errors, 0 warnings

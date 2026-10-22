@@ -59,12 +59,12 @@ CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 
-// ALLOW(init/INSTANCE_STATE): a material bracelet is named and coloured for its material (or the type's forced one)
-/obj/item/clothing/accessory/bracelet/material/Initialize(mapload)
-	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
-	if(forced_material)
-		default_material = forced_material
-	. = ..()
+/// The material it is made of (derives(), at init, before the clothing Initialize() reads it): the type's forced one, else its default.
+/obj/item/clothing/accessory/bracelet/material/proc/forced_material()
+	return TYPE_TABLE_GET(src, bracelet_forced_material) || default_material
+
+/// A material bracelet is made of its material (steel when it names none); one with no such material is discarded.
+/obj/item/clothing/accessory/bracelet/material/proc/find_material(mapload)
 	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
@@ -144,4 +144,6 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	icon_state = "wristband_collection6"
 
 CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
+	derives(nameof(default_material), PROC_REF(forced_material))
+	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(show_material_identity))
