@@ -224,6 +224,7 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 		archiving_id = null
 		archiving_name = null
 		GLOB.archive_diseases[disease_id] = archived
+		every_hop_forget(archived) // the archive entry never has a host, so its spread lane never runs: it keeps no watch on the host relation for the rest of the round
 	else
 		var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[GetDiseaseID()]
 		var/actual_name = A.name

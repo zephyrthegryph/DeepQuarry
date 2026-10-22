@@ -542,13 +542,13 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/service = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
 	var/service_money_before = set_var(service, "money", service.money)
-	var/service_income_before = set_var(service, "monthly_income", service.monthly_income)
-	var/service_expenses_before = set_var(service, "monthly_expenses", service.monthly_expenses)
-	var/service_revenue_before = set_var(service, "total_revenue", service.total_revenue)
-	var/service_total_expenses_before = set_var(service, "total_expenses", service.total_expenses)
-	var/refunds_before = set_var(SSsupply, "currency_refunded", SSsupply.currency_refunded)
-	var/internal_refunds_before = set_var(SSsupply, "currency_internal_refunded", SSsupply.currency_internal_refunded)
-	var/invoice_counter_before = set_var(SSsupply, "service_invoice_counter", SSsupply.service_invoice_counter)
+	set_var(service, "monthly_income", service.monthly_income)
+	set_var(service, "monthly_expenses", service.monthly_expenses)
+	set_var(service, "total_revenue", service.total_revenue)
+	set_var(service, "total_expenses", service.total_expenses)
+	set_var(SSsupply, "currency_refunded", SSsupply.currency_refunded)
+	set_var(SSsupply, "currency_internal_refunded", SSsupply.currency_internal_refunded)
+	set_var(SSsupply, "service_invoice_counter", SSsupply.service_invoice_counter)
 	var/invoice_count_before = length(SSsupply.service_invoices)
 
 	var/datum/money_account/customer_account = new

@@ -300,7 +300,6 @@ CAPABILITIES(/obj/structure/window)
 
 /obj/structure/window/Move()
 	var/ini_dir = dir
-	var/turf/location = loc
 	update_nearby_tiles(need_rebuild=1)
 	. = ..()
 	set_dir(ini_dir)

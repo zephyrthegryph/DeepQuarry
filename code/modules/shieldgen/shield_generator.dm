@@ -554,7 +554,6 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return round(input_cap / 1000)
 
 /obj/machinery/power/shield_generator/proc/ui_act_begin_shutdown(datum/act/op/A)
-	var/mob/user = A.actor
 	if(running < SHIELD_RUNNING) // Discharging or off
 		return
 	var/alert = A.step_value("k504")
@@ -599,7 +598,6 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/ui_act_set_range(datum/act/op/A)
-	var/mob/user = A.actor
 	if(mode_changes_locked)
 		return TRUE
 	var/new_range = A.step_value("k550")
@@ -609,7 +607,6 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 	return TRUE
 
 /obj/machinery/power/shield_generator/proc/ui_act_set_input_cap(datum/act/op/A)
-	var/mob/user = A.actor
 	if(mode_changes_locked)
 		return TRUE
 	var/_answer_k557 = A.step_value("k557")

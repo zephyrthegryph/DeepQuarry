@@ -116,7 +116,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	return OP_OK
 
 /obj/machinery/atmospherics/unary/freezer/proc/ui_act_setgastemperature(datum/act/op/A, temp)
-	var/mob/user = A.actor
 	. = TRUE
 	var/amount = temp
 	if(amount > 0)
@@ -127,7 +126,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	reconsider()
 
 /obj/machinery/atmospherics/unary/freezer/proc/ui_act_setpower(datum/act/op/A, value)
-	var/mob/user = A.actor
 	. = TRUE
 	var/new_setting = between(0, value, 100)
 	set_power_level(new_setting)
