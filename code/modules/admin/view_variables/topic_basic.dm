@@ -45,7 +45,9 @@
 
 /client/proc/vv_topic_delete(mob/user, href_target)
 	var/datum/target = href_target
-	admin_delete(target, user, TRUE)
+	admin_delete(target, user)
+	if (isturf(target)) // the turf's window opens as the question does, answered or cancelled
+		debug_variables(target)
 	return TRUE
 
 /client/proc/vv_topic_mark(mob/user, href_target)
