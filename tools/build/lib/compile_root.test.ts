@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { copyBackOutputs, releaseCompileRoot, removeLink, rootKey, rootKeyFor, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
+import { copyBackOutputs, copyFileRetrying, releaseCompileRoot, removeLink, rootKey, rootKeyFor, sharedRootEnabled, syncCompileRoot, variantKey, withSharedCompileRoot } from './compile_root';
 
 const made: string[] = [];
 function temp(name: string): string {
@@ -125,4 +125,32 @@ test('a link is released even when the compile throws, and sharing does not appl
   expect(fs.readFileSync(path.join(wt, 'code/a.dm'), 'utf8')).toBe('A');
   expect(await withSharedCompileRoot(wt, path.join(wt, 'sub/other.dme'), () => true, async () => 1, undefined, env)).toBeUndefined();
   expect(await withSharedCompileRoot(wt, path.join(wt, 'deepquarry.dme'), () => true, async () => 1, undefined, { ...env, DQ_SHARED_ROOT: '0' })).toBeUndefined();
+});
+
+test('a lock file (*.lk) in the worktree is never copied into the root, and a stale one in the root is never deleted', () => {
+  const wt = worktree('lk', { 'deepquarry.dme': 'x', 'deepquarry.rsc.lk': 'held', 'code/a.dm': 'A' });
+  const root = temp('lk-root');
+  fs.writeFileSync(path.join(root, 'old.rsc.lk'), 'held by a world');
+  const report = syncCompileRoot(wt, root, path.join(wt, 'deepquarry.dme'));
+  expect(report.copied).toEqual(['deepquarry.dme']);
+  expect(fs.existsSync(path.join(root, 'deepquarry.rsc.lk'))).toBe(false);
+  expect(fs.existsSync(path.join(root, 'old.rsc.lk'))).toBe(true);
+  for (const entry of fs.readdirSync(root)) { const p = path.join(root, entry); if (fs.lstatSync(p).isSymbolicLink()) removeLink(p); }
+});
+
+test('a busy file is retried briefly, then fails with a clear message', () => {
+  const dir = temp('busy');
+  const from = path.join(dir, 'a'); const to = path.join(dir, 'b');
+  fs.writeFileSync(from, 'data');
+  let calls = 0;
+  const flaky = (a: string, b: string) => { if (++calls < 3) throw Object.assign(new Error('busy'), { code: 'EBUSY' }); fs.copyFileSync(a, b); };
+  copyFileRetrying(from, to, 5, 1, flaky);
+  expect(calls).toBe(3);
+  expect(fs.readFileSync(to, 'utf8')).toBe('data');
+  const always = () => { throw Object.assign(new Error('busy'), { code: 'EBUSY' }); };
+  expect(() => copyFileRetrying(from, path.join(dir, 'c'), 3, 1, always)).toThrow(/stayed busy.*3 attempts.*never delete lock files/);
+  const other = () => { throw Object.assign(new Error('nope'), { code: 'ENOENT' }); };
+  let n = 0;
+  expect(() => copyFileRetrying(from, path.join(dir, 'd'), 3, 1, (a, b) => { n++; other(); })).toThrow('nope');
+  expect(n).toBe(1);
 });

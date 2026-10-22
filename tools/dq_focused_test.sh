@@ -440,6 +440,20 @@ fi
 # ---- the wall-clock cap -------------------------------------------------------------------------------------------------------
 # focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 20; clamped to 30 without --allow-exhaustive).
 focused_cap_minutes() {
+	# The merge gates (tools/dq_gate_retry.sh) pass DQ_GATE_FOCUSED_MAX_MIN, sized to the gate's test count; it replaces the agent cap
+	# and its 30-minute clamp, and has its own firm ceiling of 60. It is for the gates only: ad-hoc runs use DQ_FOCUSED_MAX_MIN.
+	if [ -n "${DQ_GATE_FOCUSED_MAX_MIN:-}" ]; then
+		case "$DQ_GATE_FOCUSED_MAX_MIN" in
+			*[!0-9]* | 0) echo "dq_focused_test: DQ_GATE_FOCUSED_MAX_MIN='$DQ_GATE_FOCUSED_MAX_MIN' is not a positive integer; ignoring it" >&2 ;;
+			*)
+				local gcap="$DQ_GATE_FOCUSED_MAX_MIN"
+				[ "$gcap" -gt 60 ] && gcap=60
+				echo "dq_focused_test: gate cap $gcap min (DQ_GATE_FOCUSED_MAX_MIN, ceiling 60)" >&2
+				echo "$gcap"
+				return 0
+				;;
+		esac
+	fi
 	local cap="${DQ_FOCUSED_MAX_MIN:-20}"
 	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 20" >&2; cap=20 ;; esac
 	if [ "$cap" -gt 30 ] && [ "${1:-0}" -eq 0 ]; then

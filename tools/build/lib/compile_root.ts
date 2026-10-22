@@ -27,7 +27,8 @@ import { withSlot } from './machine_slots';
 /** Top-level directories that are never compiler inputs (build tooling, docs, other languages, build output). */
 const NOT_INPUTS = new Set(['node_modules', 'data', 'tools', 'bin', 'doc', 'guides', 'SQL', 'verdigris', 'dist']);
 /** Root-level files that are compiler output or noise, never copied into the root and never copied back over by mistake. */
-const OUTPUT_FILE = /\.(dmb|rsc|log|stackdump|compiler|tmp)$|-pair\.json$|\.dmb\./i;
+/** `*.lk` are lock files held by a running DreamDaemon/DreamMaker (`deepquarry.rsc.lk`): never copied, never deleted. */
+const OUTPUT_FILE = /\.(dmb|rsc|lk|log|stackdump|compiler|tmp)$|-pair\.json$|\.dmb\./i;
 
 export function sharedRootEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   return (env.DQ_SHARED_ROOT ?? '1') !== '0';
@@ -104,6 +105,30 @@ function sameContent(a: string, b: string): boolean {
   return hash(a) === hash(b);
 }
 
+const BUSY_CODES = new Set(['EBUSY', 'EPERM', 'EACCES']);
+/**
+ * Copy `from` to `to` through a temporary file, retrying briefly when the file is busy (a scanner or a running world holds it;
+ * EBUSY on Windows). After the attempts it fails with a message that names the file and says what to do. `attempts`/`delayMs`
+ * are parameters so tests can use fakes.
+ */
+export function copyFileRetrying(from: string, to: string, attempts = 6, delayMs = 500, copy: (a: string, b: string) => void = fs.copyFileSync, rename: (a: string, b: string) => void = fs.renameSync): void {
+  const temporary = `${to}.tmp-${process.pid}`;
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      copy(from, temporary);
+      rename(temporary, to);
+      return;
+    } catch (error) {
+      last = error;
+      try { fs.unlinkSync(temporary); } catch { /* none */ }
+      if (!BUSY_CODES.has((error as NodeJS.ErrnoException).code ?? '')) throw error;
+      if (i < attempts - 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delayMs);
+    }
+  }
+  throw new Error(`Compile root: ${to} stayed busy (${(last as NodeJS.ErrnoException).code}) after ${attempts} attempts; a running DreamDaemon/DreamMaker or a scanner holds it. Stop that process and rerun; never delete lock files by hand.`);
+}
+
 export type SyncReport = { linked: string[]; unlinked: string[]; copied: string[]; removed: string[] };
 
 /**
@@ -131,9 +156,7 @@ export function syncCompileRoot(worktree: string, root: string, manifest: string
     } else if (stat.isFile() && !OUTPUT_FILE.test(name)) {
       wanted.add(name);
       if (!sameContent(source, dest)) {
-        const temporary = `${dest}.tmp-${process.pid}`;
-        fs.copyFileSync(source, temporary);
-        fs.renameSync(temporary, dest);
+        copyFileRetrying(source, dest);
         report.copied.push(name);
       }
     }
@@ -177,9 +200,7 @@ export function copyBackOutputs(root: string, worktree: string, stem: string): s
     const from = path.join(root, `${stem}${suffix}`);
     const to = path.join(worktree, `${stem}${suffix}`);
     if (!exists(from)) continue;
-    const temporary = `${to}.tmp-${process.pid}`;
-    fs.copyFileSync(from, temporary);
-    fs.renameSync(temporary, to);
+    copyFileRetrying(from, to);
     copied.push(path.basename(to));
   }
   return copied;
