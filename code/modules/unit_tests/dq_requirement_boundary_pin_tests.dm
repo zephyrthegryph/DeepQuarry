@@ -226,9 +226,13 @@
 	A.oplan = P
 	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
 	A.release()
+	// A refusal is a message type (doc 9): compare the line it shows, on both sides, so a pin may name the type or the text.
 	if(ispath(actual, /datum/msg))
 		var/datum/msg/refusal_msg = actual
-		actual = initial(refusal_msg.self) // a refusal is a message type: compare the line it shows
+		actual = initial(refusal_msg.self)
+	if(ispath(expected, /datum/msg))
+		var/datum/msg/expected_msg = expected
+		expected = initial(expected_msg.self)
 	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
 
 /datum/unit_test/dq_requirement_fourth_boundary/tape/Run()
@@ -708,9 +712,13 @@
 	A.oplan = P
 	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
 	A.release()
+	// A refusal is a message type (doc 9): compare the line it shows, on both sides, so a pin may name the type or the text.
 	if(ispath(actual, /datum/msg))
 		var/datum/msg/refusal_msg = actual
-		actual = initial(refusal_msg.self) // a refusal is a message type: compare the line it shows
+		actual = initial(refusal_msg.self)
+	if(ispath(expected, /datum/msg))
+		var/datum/msg/expected_msg = expected
+		expected = initial(expected_msg.self)
 	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
 
 /datum/unit_test/dq_requirement_eighth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
