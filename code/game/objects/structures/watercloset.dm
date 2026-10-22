@@ -1249,7 +1249,10 @@ CAPABILITIES(/obj/structure/toilet/item)
 
 /obj/structure/biowaste_tank/Initialize(mapload)
 	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
-	. = ..()
+	return ..()
+
+/// The tank's monster is named for the console and gets its belly once the tank is made.
+/obj/structure/biowaste_tank/proc/prepare_muffinmonster()
 	muffinmonster().name = "Activate Muffin Monster"
 	muffinmonster().init_vore(TRUE)
 
@@ -1326,6 +1329,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 
 CAPABILITIES(/obj/structure/biowaste_tank)
 	ref_one(nameof(crusher))
+	setup(PROC_REF(prepare_muffinmonster))
 	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("eject", hand(), label("Use"),

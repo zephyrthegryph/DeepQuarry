@@ -164,11 +164,11 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	configure(uses_power(idle = 50, active = 1000))
 	without(CAP_CLIMB) // not climbable
 	huge_portable_controls()
+	setup(PROC_REF(number_huge_scrubber))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/Initialize(mapload)
-	. = ..(mapload, TRUE)
-
+/// A huge scrubber takes the next number and carries it in its name once it is made.
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/proc/number_huge_scrubber()
 	id = gid
 	gid++
 

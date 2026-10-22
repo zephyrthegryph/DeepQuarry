@@ -1,0 +1,4 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Initialize() tails of items, stacks, storage, clothing, simulated turfs, floors, machinery and a few circuits and gear become setup() hooks (init ratchet baseline shrinks by 105 lines)"

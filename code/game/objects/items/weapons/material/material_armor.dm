@@ -10,9 +10,8 @@
 	var/material_slowdown_modifier = 0
 	var/material_slowdown_multiplier = 0.5
 
-// ALLOW(init/INSTANCE_STATE): material clothing takes its material after its parents' init
-/obj/item/clothing/Initialize(mapload)
-	. = ..()
+/// Material clothing takes its material once its parents' init is done.
+/obj/item/clothing/proc/take_default_material()
 	if(default_material) // May still be null if a material was not specified as a default.
 		set_material(default_material)
 
