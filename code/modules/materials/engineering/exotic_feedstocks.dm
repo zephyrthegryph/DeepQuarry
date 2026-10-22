@@ -94,21 +94,21 @@
 	no_variants = TRUE
 	exotic_no_autolathe_reprint = TRUE
 
-// ALLOW(init/INSTANCE_STATE): the material and amount are random per sample, not a type fact
-/obj/item/stack/material/exotic_feedstock/random/Initialize(mapload, _amount, _material_name)
-	if(!_material_name)
-		_material_name = pick(
-			MAT_VOLTAIC_CRYSTAL,
-			MAT_THERMIC_CERAMIC,
-			MAT_KINETIC_CRYSTAL,
-			MAT_WARD_METAL,
-			MAT_SPORE_BIOMASS,
-			MAT_ETCHING_CERAMIC,
-			MAT_LUMEN_CRYSTAL,
-			MAT_RIFT_GLASS,
-		)
-	default_type = _material_name
-	return ..(mapload, _amount || rand(3, 6))
+CAPABILITIES(/obj/item/stack/material/exotic_feedstock/random)
+	param(nameof(default_type), pos = 2, default = PROC_REF(random_feedstock_material))
+
+/// The material a random sample is made of when its creator named none (the constructor's second argument).
+/obj/item/stack/material/exotic_feedstock/random/proc/random_feedstock_material()
+	return pick(
+		MAT_VOLTAIC_CRYSTAL,
+		MAT_THERMIC_CERAMIC,
+		MAT_KINETIC_CRYSTAL,
+		MAT_WARD_METAL,
+		MAT_SPORE_BIOMASS,
+		MAT_ETCHING_CERAMIC,
+		MAT_LUMEN_CRYSTAL,
+		MAT_RIFT_GLASS,
+	)
 
 /obj/item/stack/material/exotic_feedstock/examine(mob/user)
 	. = ..()

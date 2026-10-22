@@ -154,9 +154,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
 
 // Do not do power stuff in New/Initialize until after ..()
-// ALLOW(init/FRAMEWORK): the machinery base of the init chain reports its draw and joins its area's power
-/obj/machinery/Initialize(mapload)
-	. = ..()
+/// The machine reports its draw and joins its area's power once it is made.
+/obj/machinery/proc/machine_power_start()
 	// only add this if we init on a non-turf (and non-null)
 	if(!recursive_set && loc && !isturf(loc))
 		recursive_set = TRUE

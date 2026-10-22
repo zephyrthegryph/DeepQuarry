@@ -237,7 +237,7 @@
 				solution_module = candidate_module
 				break
 		var/list/machinery_roles = list("operations", "communications", "core", "satellite", "support", "robotics", "monitoring", "armory", "treatment", "surgery", "ward", "recovery", "power", "atmospherics", "workshop", "equipment", "maintenance", "cargo", "dispatch", "control", "security", "customs")
-		if(solution_module?.role in machinery_roles && !findtext(solution.definition_id, "-compact-"))
+		if((solution_module?.role in machinery_roles) && !findtext(solution.definition_id, "-compact-"))
 			TEST_ASSERT(machinery_count > 0, "Operational room [solution.module_id] contains no machinery")
 	var/list/furnished_departments = list()
 	for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))

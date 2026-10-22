@@ -70,7 +70,13 @@
 		outputs["output [i]"] = IC_PINTYPE_ANY
 	complexity = number_of_outputs
 
-	. = ..()
+	return ..()
+
+CAPABILITIES(/obj/item/integrated_circuit/transfer/demultiplexer)
+	setup(PROC_REF(describe_outputs))
+
+/// Once its pins are built the demultiplexer says how many outputs it has.
+/obj/item/integrated_circuit/transfer/demultiplexer/proc/describe_outputs()
 	desc += " It has [number_of_outputs] output pins."
 	extended_desc += " This demultiplexer has a range from 1 to [outputs.len]."
 
@@ -118,7 +124,13 @@
 		activators["output [i]"] = IC_PINTYPE_PULSE_OUT
 	complexity = number_of_outputs
 
-	. = ..()
+	return ..()
+
+CAPABILITIES(/obj/item/integrated_circuit/transfer/pulsedemultiplexer)
+	setup(PROC_REF(describe_pulse_outputs))
+
+/// Once its pins are built the pulse demultiplexer says how many outputs it has.
+/obj/item/integrated_circuit/transfer/pulsedemultiplexer/proc/describe_pulse_outputs()
 	desc += " It has [number_of_outputs] output pins."
 	extended_desc += " This pulse demultiplexer has a range from 1 to [activators.len - 1]."
 
