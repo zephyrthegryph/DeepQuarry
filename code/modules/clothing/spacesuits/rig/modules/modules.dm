@@ -57,6 +57,7 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 CAPABILITIES(/obj/item/rig_module)
 	ref_one(nameof(holder), /obj/item/rig)
+	setup(PROC_REF(prepare_module))
 	owns_many(nameof(stat_modules), starts = list(/atom/movable/stat_rig_module/activate, /atom/movable/stat_rig_module/deactivate, /atom/movable/stat_rig_module/engage, /atom/movable/stat_rig_module/select, /atom/movable/stat_rig_module/charge))
 	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
@@ -100,8 +101,8 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 		to_chat(A.actor, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
 	return OP_OK
 
-/obj/item/rig_module/Initialize(mapload)
-	. = ..()
+/// Shows the inactive overlay and turns the declared charge lists into charge datums.
+/obj/item/rig_module/proc/prepare_module()
 	if(suit_overlay_inactive)
 		set_suit_overlay(suit_overlay_inactive)
 
@@ -115,10 +116,10 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 			charge_dat.product_type = charge[3]
 			charge_dat.set_charges(charge[4])
 
-			if(!charge_selected) charge_selected = charge_dat.short_name
+			if(!charge_selected) set_charge_selected(charge_dat.short_name)
 			processed_charges[charge_dat.short_name] = charge_dat
 
-		charges = processed_charges
+		set_charges(processed_charges)
 
 
 
@@ -211,12 +212,17 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 	var/module_mode = ""
 	var/obj/item/rig_module/module
 
-// ALLOW(init/INSTANCE_STATE): binds to the rig module it is made inside
-/atom/movable/stat_rig_module/Initialize(mapload)
-	. = ..()
+/// A stat button is made inside the module it works (keeps_if()); without one it is discarded.
+/atom/movable/stat_rig_module/proc/made_in_module()
+	return istype(loc, /obj/item/rig_module)
+
+/// Binds to the rig module it is made inside.
+/atom/movable/stat_rig_module/proc/bind_module()
 	rel_set(src, nameof(module), loc)
-	if(!istype(module))
-		return INITIALIZE_HINT_QDEL
+
+/// Names itself from the module it is made inside; a button with a fixed name keeps it.
+/atom/movable/stat_rig_module/proc/name_from_module()
+	return
 
 /atom/movable/stat_rig_module/proc/AddHref(list/href_list)
 	return
@@ -226,6 +232,9 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 
 CAPABILITIES(/atom/movable/stat_rig_module)
 	ref_one(nameof(module), /obj/item/rig_module)
+	keeps_if(PROC_REF(made_in_module))
+	setup(PROC_REF(bind_module))
+	setup(PROC_REF(name_from_module))
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm): the stat-panel button runs
@@ -256,11 +265,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 /atom/movable/stat_rig_module/DblClick()
 	return Click()
 
-// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
-/atom/movable/stat_rig_module/activate/Initialize(mapload)
-	. = ..()
-	if(!istype(module))
-		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/activate/name_from_module()
 	name = module.activate_string
 	if(module.active_power_cost)
 		name += " ([module.active_power_cost*10]A)"
@@ -268,11 +273,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 /atom/movable/stat_rig_module/activate/CanUse()
 	return module.toggleable && !module.active
 
-// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
-/atom/movable/stat_rig_module/deactivate/Initialize(mapload)
-	. = ..()
-	if(!istype(module))
-		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/deactivate/name_from_module()
 	name = module.deactivate_string
 	// Show cost despite being 0, if it means changing from an active cost.
 	if(module.active_power_cost || module.passive_power_cost)
@@ -282,11 +283,7 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 /atom/movable/stat_rig_module/deactivate/CanUse()
 	return module.toggleable && module.active
 
-// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
-/atom/movable/stat_rig_module/engage/Initialize(mapload)
-	. = ..()
-	if(!istype(module))
-		return INITIALIZE_HINT_QDEL
+/atom/movable/stat_rig_module/engage/name_from_module()
 	name = module.engage_string
 	if(module.use_power_cost)
 		name += " ([module.use_power_cost*10]E)"

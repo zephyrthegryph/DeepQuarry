@@ -33,10 +33,11 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 	owns_many(nameof(breaches))
 	op("space_suit_patch_item", item(/obj/item/stack/material), then(PROC_REF(space_suit_patch_item)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	setup(PROC_REF(remember_base_name))
+	setup(PROC_REF(refit_teshari_sprites))
 
-// ALLOW(init/INSTANCE_STATE): remembers the name it was given, a map or loadout edit, before breaches rename it
-/obj/item/clothing/suit/space/Initialize(mapload)
-	. = ..()
+/// Remembers the name it was given, a map or loadout edit, before breaches rename it.
+/obj/item/clothing/suit/space/proc/remember_base_name()
 	base_name = "[name]"
 
 /datum/breach/proc/update_descriptor()

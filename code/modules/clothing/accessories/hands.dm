@@ -64,10 +64,16 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forc
 	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
 	if(forced_material)
 		default_material = forced_material
-	. = ..()
+	return ..()
+
+/// Kept when its material (or steel) exists (keeps_if()).
+/obj/item/clothing/accessory/bracelet/material/proc/material_exists()
+	return istype(get_material_by_name(default_material || MAT_STEEL))
+
+/// Takes the material it is made of.
+/obj/item/clothing/accessory/bracelet/material/proc/take_material()
 	material = get_material_by_name(default_material || MAT_STEEL)
-	if(!istype(material))
-		return INITIALIZE_HINT_QDEL
+
 /obj/item/clothing/accessory/bracelet/material/proc/show_material_identity()
 	name = "[material.display_name] bracelet"
 	desc = "A bracelet made from [material.display_name]."
@@ -143,4 +149,6 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	icon_state = "wristband_collection6"
 
 CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
+	keeps_if(PROC_REF(material_exists))
+	setup(PROC_REF(take_material))
 	setup(PROC_REF(show_material_identity))

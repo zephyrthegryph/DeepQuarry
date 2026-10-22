@@ -63,14 +63,14 @@ MSG_DEF_SELF(stage/lightswitch/finished, "It is finished.")
 
 CAPABILITIES(/obj/structure/construction)
 	param(nameof(dir), pos = 1)
+	setup(PROC_REF(sit_on_wall))
 
-// ALLOW(init/INSTANCE_STATE): a wall frame sits on its wall, offset by its facing
-/obj/structure/construction/Initialize(mapload)
-	. = ..()
+/// A wall frame sits on its wall, offset by its facing.
+/obj/structure/construction/proc/sit_on_wall()
 	if(x_offset)
-		pixel_x = (dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset)
+		set_pixel_x((dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset))
 	if(y_offset)
-		pixel_y = (dir & 3) ? (dir == NORTH ? -y_offset : y_offset) : 0
+		set_pixel_y((dir & 3) ? (dir == NORTH ? -y_offset : y_offset) : 0)
 	update_state()
 
 CAPABILITIES(/obj/structure/construction/lightswitch)

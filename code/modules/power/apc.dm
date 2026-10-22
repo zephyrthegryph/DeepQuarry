@@ -168,7 +168,8 @@ CAPABILITIES(/obj/machinery/power/apc)
 		emag_say = MSG(apc/emagged),
 		panel_needs_cover_closed = TRUE,
 		starts_locked = nameof(lock_at_start))
-	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(starting_cell), on_destroy = ON_DESTROY_SPILL)
+	setup(PROC_REF(start_as_frame_or_start_up))
 	space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics))
 	cell_bay(nameof(cell), at = SPACE_CELL, fits = size_is(ITEMSIZE_NORMAL))
 	powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
@@ -463,11 +464,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/var/build_dir
 /obj/machinery/power/apc/var/building = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a hand-built APC starts as a bare frame on its builder's wall; a mapped one starts up
-/obj/machinery/power/apc/Initialize(mapload)
-	if(building)
-		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)
-	. = ..()
+/// A frame built by hand starts without the cell its relation would make; a map-edited cell wins over the type's.
+/obj/machinery/power/apc/proc/starting_cell(current, mapload)
+	if(isdatum(current) || ispath(current))
+		return current
+	return building ? null : cell_type
+
+/// A hand-built APC starts as a bare frame on its builder's wall; a mapped one starts up.
+/obj/machinery/power/apc/proc/start_as_frame_or_start_up()
 	// The wall mount offsets it into the wall; a built APC faces its builder's way and starts at the bare frame.
 	if(building)
 		set_dir(build_dir)
@@ -648,7 +652,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 	terminal.set_dir(dir)
 
 /obj/machinery/power/apc/proc/init()
-	if(cell) // made at init by its relation (starts = nameof(cell_type))
+	if(cell) // made at init by its relation (starts = PROC_REF(starting_cell))
 		cell.set_charge(start_charge * cell.maxcharge / 100.0)
 
 	var/area/A = loc.loc

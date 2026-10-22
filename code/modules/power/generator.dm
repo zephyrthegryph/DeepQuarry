@@ -53,10 +53,11 @@ CAPABILITIES(/obj/machinery/power/generator)
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 	ref_one(nameof(circ1))
 	ref_one(nameof(circ2))
+	setup(PROC_REF(state_rating))
 
-/obj/machinery/power/generator/Initialize(mapload)
+/// Its description states the power it is rated for.
+/obj/machinery/power/generator/proc/state_rating()
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
-	. = ..()
 
 /// Connects its circulators, once they exist.
 /obj/machinery/power/generator/proc/connect_circulators(datum/act/timer/A)

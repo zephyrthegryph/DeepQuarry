@@ -29,8 +29,8 @@
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
 	var/mob/wearer	//Who the person currently wearing us is.
 
-/obj/item/clothing/Initialize(mapload)
-	. = ..()
+/// Attaches the accessories the type starts wearing (starting_accessories).
+/obj/item/clothing/proc/attach_starting_accessories()
 	if(starting_accessories)
 		for(var/T in starting_accessories)
 			var/obj/item/clothing/accessory/tie = new T(src)
@@ -619,6 +619,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
 	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
 	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds))), then(PROC_REF(shoes_draw_knife_verb)))
+	setup(PROC_REF(set_inside_emotes))
 
 /// Native requirement: return null or the component refusal.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
@@ -626,8 +627,8 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 
-/obj/item/clothing/shoes/Initialize(mapload)
-	. = ..()
+/// What a micro inside the shoes feels, naming the shoes.
+/obj/item/clothing/shoes/proc/set_inside_emotes()
 	inside_emotes = list(
 		span_red("You feel weightless for a moment as \the [name] moves upwards."),
 		span_red("\The [name] are a ride you've got no choice but to participate in as the wearer moves."),
@@ -902,13 +903,18 @@ CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
+	setup(PROC_REF(take_toggle_icon))
 
 
 
+/// The hood is made before the item's parent init reads its actions (the action buttons come from actions_types).
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()
+	return ..()
+
+/// The sprite name its hood toggle shows follows the type's own icon state.
+/obj/item/clothing/suit/proc/take_toggle_icon()
 	set_toggleicon("[initial(icon_state)]")
-	. = ..()
 
 
 /obj/item/clothing/suit/draw(datum/look/look)
@@ -1079,6 +1085,7 @@ CAPABILITIES(/obj/item/clothing/under)
 	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
 	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
 	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds))), then(PROC_REF(under_holster_verb)))
+	setup(PROC_REF(configure_worn_state))
 
 
 
@@ -1112,18 +1119,17 @@ CAPABILITIES(/obj/item/clothing/under)
 		return OP_OK
 	return OP_DECLINE
 
-// ALLOW(init/INSTANCE_STATE): takes the sensor setting its wearer prefers and checks its rolled sprite
-/obj/item/clothing/under/Initialize(mapload)
-	. = ..()
+/// Takes the sensor setting its wearer prefers and checks its rolled sprite.
+/obj/item/clothing/under/proc/configure_worn_state()
 	if(worn_state)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 	else
 		worn_state = icon_state
 
 	//autodetect rollability
 	if(rolled_down < 0)
 		if((icon_exists(icon, "[worn_state]_d") || icon_exists(rolled_down_icon, worn_state) || icon_exists(icon_override, "[worn_state]_d")))
-			rolled_down = 0
+			set_rolled_down(0)
 
 	if(!ishuman(loc))
 		return
@@ -1131,13 +1137,13 @@ CAPABILITIES(/obj/item/clothing/under)
 	var/mob/living/carbon/human/H = loc
 	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
 	switch(sensorpref)
-		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
-		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary
-		if(3) sensor_mode = SUIT_SENSOR_VITAL		//Sensors display vitals
-		if(4) sensor_mode = SUIT_SENSOR_TRACKING	//Sensors display vitals and enables tracking
-		if(5) sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)	//Select a random setting
+		if(1) set_sensor_mode(SUIT_SENSOR_OFF)			//Sensors off
+		if(2) set_sensor_mode(SUIT_SENSOR_BINARY)		//Sensors on binary
+		if(3) set_sensor_mode(SUIT_SENSOR_VITAL)		//Sensors display vitals
+		if(4) set_sensor_mode(SUIT_SENSOR_TRACKING)	//Sensors display vitals and enables tracking
+		if(5) set_sensor_mode(pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING))	//Select a random setting
 		else
-			sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)
+			set_sensor_mode(pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING))
 			log_runtime("Invalid switch for suit sensors, defaulting to random. [sensorpref] chosen")
 
 /obj/item/clothing/under/proc/update_rolldown_status()

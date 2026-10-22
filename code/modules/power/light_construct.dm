@@ -43,13 +43,13 @@ CAPABILITIES(/obj/machinery/light_construct)
 	examine_line(PROC_REF(examine_cell))
 	param(nameof(dir), pos = 1, overrides = TRUE)
 	param(nameof(fixture_at_make), pos = 4, keep = FALSE)
+	setup(PROC_REF(take_fixture_state))
 
 /// The fixture the frame was taken down from (its constructor param, dropped after init).
 /obj/machinery/light_construct/var/tmp/obj/machinery/light/fixture_at_make
 
-// ALLOW(init/INSTANCE_STATE): a frame taken down from a fixture keeps its facing and wiring
-/obj/machinery/light_construct/Initialize(mapload)
-	. = ..()
+/// A frame taken down from a fixture keeps its facing and wiring.
+/obj/machinery/light_construct/proc/take_fixture_state()
 	if(fixture_at_make)
 		var/obj/machinery/light/fixture = fixture_at_make
 		fixture_type = fixture.type
