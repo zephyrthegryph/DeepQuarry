@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 
-/// The material it is made of when none is passed (the param default): the type's forced one, else its default.
+/// The material it is made of (derives(), at init, before find_material reads it): the type's forced one, else its default.
 /obj/item/clothing/accessory/bracelet/material/proc/forced_material()
 	return TYPE_TABLE_GET(src, bracelet_forced_material) || default_material
 
@@ -144,6 +144,7 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	icon_state = "wristband_collection6"
 
 CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
-	param(nameof(default_material), pos = 1, default = PROC_REF(forced_material), overrides = TRUE)
+	param(nameof(default_material), pos = 1)
+	derives(nameof(default_material), PROC_REF(forced_material))
 	setup(PROC_REF(find_material), mapload = TRUE)
 	setup(PROC_REF(show_material_identity))
