@@ -126,6 +126,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 // Only the mind it was made for works the lock.
 CAPABILITIES(/obj/structure/closet/secure_closet/mind)
+	setup(PROC_REF(show_owner))
 	extend(CAP_LOCK, needs(req(PROC_REF(owner_present))))
 	extend("lock_with_item", needs(req(PROC_REF(owner_present))))
 	param(nameof(owner), pos = 1)
@@ -135,14 +136,13 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
 	return (allowed(A.actor)) ? null : MSG(lock/denied)
 
-// ALLOW(init/INSTANCE_STATE): an owned closet is named for its owner and shows their picture
-/obj/structure/closet/secure_closet/mind/Initialize(mapload)
-	. = ..()
+/// Setup: an owned closet is named for its owner and shows their picture.
+/obj/structure/closet/secure_closet/mind/proc/show_owner()
 	if(owner_ref())
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
-			owner_picture = image(I, pixel_x = (32 - I.Width()))
+			set_owner_picture(image(I, pixel_x = (32 - I.Width())))
 			spent(I)
 
 /obj/structure/closet/secure_closet/mind/closet_look(datum/look/look)

@@ -22,9 +22,9 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 	owns_one(nameof(theme), /datum/dimension_theme)
 	rolls(nameof(teleports_left), PROC_REF(roll_teleports))
 	ref_many(nameof(target_turfs))
+	setup(PROC_REF(start_pulsing))
 
-/obj/effect/anomaly/dimensional/Initialize(mapload)
-	. = ..()
+/obj/effect/anomaly/dimensional/proc/start_pulsing()
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
 

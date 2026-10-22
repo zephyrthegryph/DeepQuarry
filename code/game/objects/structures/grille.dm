@@ -241,8 +241,11 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	icon_state = "grille-b"
 	density = FALSE
 
-/obj/structure/grille/broken/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/grille/broken)
+	setup(PROC_REF(break_stub))
+
+/// Setup: a mapped broken grille starts as the passable stub.
+/obj/structure/grille/broken/proc/break_stub()
 	update_integrity(rand(1, 5)) //In the broken-but-not-cleared band (below integrity_failure).
 	atom_break() //Drop into the passable broken stub state.
 
