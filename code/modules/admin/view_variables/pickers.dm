@@ -100,7 +100,7 @@
 /// Asks for an icon (from a file or by path) and offers to customize it (icon_state, dir, frame, moving). `pick_only` skips the customizing. The result is the icon.
 /datum/ask_sequence/picker/icon_pick
 	var/pick_only = FALSE
-	var/from_file
+	var/source_choice
 	var/icon_path
 	var/custom
 	var/icon_state_name
@@ -110,20 +110,20 @@
 
 /datum/ask_sequence/picker/icon_pick/initial_steps()
 	return list(
-		question_step("from_file", /datum/prompt/choice, question = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"), buttons = TRUE),
+		question_step("source_choice", /datum/prompt/choice, question = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"), buttons = TRUE),
 		PROC_REF(ask_source),
 		PROC_REF(read_path),
 		PROC_REF(ask_custom),
 		PROC_REF(ask_details))
 
 /datum/ask_sequence/picker/icon_pick/proc/ask_source()
-	if(from_file == "Yes")
+	if(source_choice == "Yes")
 		var/icon/uploaded = input(actor(), "Pick icon:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
 		if(!uploaded)
 			return ASK_STOP
 		put("icon_result", uploaded)
 		return null
-	if(from_file == "No")
+	if(source_choice == "No")
 		return question_step("icon_path", /datum/prompt/text, question = "Pick icon path", title = "icon path")
 	return ASK_STOP
 
