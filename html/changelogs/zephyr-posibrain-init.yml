@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "MMI and posibrain brain interfaces adopt their MMI after the organ has been placed in its body again"
