@@ -17,8 +17,7 @@
 	var/datum/looping_sound/mob/on_fire/firesoundloop
 
 // say_list creation lives in code/modules/combat_ai/integration/mob_living.dm
-// (DM resolves duplicate /mob/living/Initialize overrides to the last-included,
-// silently dropping earlier ones).
+// (the duplicate /mob/living/Initialize definitions all run, chained by ..()).
 
 /datum/say_list
 	// ALLOW(instance_list): d: every say list defines its lines
