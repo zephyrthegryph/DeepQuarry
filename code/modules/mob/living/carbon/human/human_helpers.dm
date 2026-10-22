@@ -327,7 +327,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	var/list/markings = list()
 	var/list/priorities = list()
 	for(var/obj/item/organ/external/O in organs)
-		var/limb_tag = O.organ_tag
 		if(O.markings?.len)
 			for (var/marking in O.markings)
 				var/priority = num2text(O.markings[marking]["priority"])

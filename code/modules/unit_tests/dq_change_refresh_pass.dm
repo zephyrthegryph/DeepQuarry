@@ -4,7 +4,6 @@
 /datum/unit_test/dq_change_refresh_pass
 
 /datum/unit_test/dq_change_refresh_pass/Run()
-	var/turf/T = test_floor()
 	refresh_flush()
 	var/obj/cap_fixture/dx_core/A = allocate(/obj/cap_fixture/dx_core) // a type that derives something, so its refresh is wanted
 	var/obj/cap_fixture/dx_core/B = allocate(/obj/cap_fixture/dx_core)

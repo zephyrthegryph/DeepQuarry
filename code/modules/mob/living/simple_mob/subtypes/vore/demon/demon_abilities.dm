@@ -269,7 +269,6 @@
 /mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
 	var/size_select = A.answer.value
 	if(!size_select)
 		return

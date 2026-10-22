@@ -179,7 +179,6 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 
 /datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/atom/source = N.target
 	var/datum/notice/unittest_data/event = N
 	var/list/data = event.data_ || list()
 	switch(data[1])

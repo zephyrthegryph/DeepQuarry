@@ -97,7 +97,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, S
 /// What the others are shown when the slot job starts.
 /mob/living/carbon/human/proc/strip_slot_text(datum/act/op/A)
 	var/obj/item/held = A.held
-	var/mob/living/user = A.actor
 	if(isnull(held))
 		var/obj/item/target_slot = get_equipped_item(strip_op_slot(A))
 		return msg_text(null, span_danger("%U% is trying to remove %T%'s [target_slot?.name]!"))

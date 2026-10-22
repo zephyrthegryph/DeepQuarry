@@ -522,7 +522,6 @@
 	TEST_ASSERT(service.next_update <= first_due || !first_due, "Repeated gas publications must coalesce into one queued exposure, not push it back")
 	cell.forceMove(destination)
 	service.rebind()
-	var/list/ids = service.mixture_ids.Copy()
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
 	TEST_ASSERT(!after_pending(service, "material_service"), "Deleting an assembly must remove its queued exposure work")

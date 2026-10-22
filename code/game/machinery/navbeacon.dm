@@ -98,7 +98,6 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	return TRUE
 
 /obj/machinery/navbeacon/ui_data(datum/act/eval/A)
-	var/mob/user = A.actor
 
 	return list(
 		"siliconUser" = !!(A.authority & AUTH_REMOTE_ACCESS),

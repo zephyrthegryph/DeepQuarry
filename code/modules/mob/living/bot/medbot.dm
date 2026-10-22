@@ -258,7 +258,6 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/medbot/ui_data(datum/act/eval/A)
-	var/mob/user = A.actor
 	var/list/data = list()
 	data["on"] = on
 	data["open"] = open

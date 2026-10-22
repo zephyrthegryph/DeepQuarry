@@ -107,7 +107,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		return TRUE
 
 /obj/item/rms/proc/use_rms(atom/A, mob/living/user)
-	var/obj/product
 	if(!overcharge)
 		if(!can_afford(charge_cost))
 			to_chat(user, span_notice("There is not enough charge to use this mode."))

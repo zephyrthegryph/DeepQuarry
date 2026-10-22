@@ -107,7 +107,9 @@
 	if(one != 1)
 		TEST_FAIL("a datum one variable also holds counts [one] extra reference(s), not 1: the count is not exact")
 		return FALSE
-	held = null
+	if(QDELETED(held))
+		TEST_FAIL("the datum the variable holds was deleted while it was counted")
+		return FALSE
 	return TRUE
 
 /// Fails the test for every subject in the check queue that something besides the queue still references (and starts the reference finder

@@ -56,7 +56,6 @@
 /obj/item/grab/proc/inspect_bones_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = src?.grab_target()
 	var/mob/user = A.actor
-	var/target_zone = inspect_zone
 	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
 	if(!H || !E)
 		return
