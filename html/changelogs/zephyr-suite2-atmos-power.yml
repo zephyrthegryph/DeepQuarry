@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Turf-change callbacks without a payload, and SMES starting parts on map load, work again"

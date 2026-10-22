@@ -340,6 +340,7 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	term.connect_to_network()
 	term.set_power_supply(0)
 	apc.set_operating(TRUE)
+	apc.set_chargemode(FALSE) // the net around the terminal is live: the cell must not climb back by charging, only by a stale poll
 	apc.cell.set_charge(apc.cell.maxcharge * 0.8)
 	apc.seat_cell_charge(TRUE)
 	dq_power_test_step()
