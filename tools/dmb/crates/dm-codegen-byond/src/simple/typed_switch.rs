@@ -1,7 +1,5 @@
 //! Native constant switch tables; dynamic forms keep the existing fallback.
 use super::*;
-#[path = "typed_switch_overlap.rs"]
-mod overlap;
 
 // Pure bounded bitwise constants use DM's 24-bit numeric domain. Broader
 // expressions retain the runtime fallback; no resolver calls occur in preflight.
@@ -32,6 +30,8 @@ fn eligible(expr: &Expr) -> bool {
     }
     match &expr.kind {
         ExprKind::Group(inner) => eligible(inner),
+        // `"name" || src.name` (NAMEOF) folds to the constant text, as in DreamMaker.
+        ExprKind::Binary { op, lhs, .. } if op == "||" && super::expression::constant_text_truth(lhs) == Some(true) => eligible(lhs),
         ExprKind::TypePath(_) => true,
         ExprKind::Literal(raw) if raw == "null" || raw == "TRUE" || raw == "FALSE" => true,
         ExprKind::Literal(raw) if !raw.starts_with("@'") => {
@@ -112,31 +112,18 @@ impl Compiler<'_> {
         {
             return Ok(false);
         }
-        // The existing native corpus proves disjoint ranges and exact cases.
-        // Preserve the old path where regrouping could change authored priority.
-        let mut numeric_exact = Vec::new();
-        let mut numeric_ranges = Vec::new();
+        // Overlapping ranges and exact cases are tabled as authored: DreamMaker lists every range in source order,
+        // then every exact value in source order, whatever they cover (measured against dm.exe: `if(25 to 27)` then
+        // `if(26)` and the reverse order both give `SwitchRange {25..27, 26}` in that table order).
         for case in cases {
             for alternative in &case.alternatives {
-                match alternative {
-                    SwitchAlternative::Exact(value) => {
-                        if let Some(number) = switch_number(value) {
-                            numeric_exact.push(number);
-                        }
-                    }
-                    SwitchAlternative::Range(low, high) => {
-                        let (low, high) =
-                            (switch_number(low).unwrap(), switch_number(high).unwrap());
-                        if !low.is_finite() || !high.is_finite() || low > high {
-                            return Ok(false);
-                        }
-                        numeric_ranges.push((low, high));
+                if let SwitchAlternative::Range(low, high) = alternative {
+                    let (low, high) = (switch_number(low).unwrap(), switch_number(high).unwrap());
+                    if low > high {
+                        return Ok(false);
                     }
                 }
             }
-        }
-        if overlap::overlaps(&numeric_exact, &numeric_ranges) {
-            return Ok(false);
         }
         let end = self.label();
         let default = self.label();

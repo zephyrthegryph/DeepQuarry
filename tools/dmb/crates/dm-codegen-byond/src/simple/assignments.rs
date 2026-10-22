@@ -565,27 +565,28 @@ impl Compiler<'_> {
         if let ExprKind::Group(inner) = &expr.kind {
             return self.local_initializer(inner, declaration, statement);
         }
-        if let ExprKind::Binary { op, lhs, rhs } = &expr.kind {
+        if let ExprKind::Binary { op, .. } = &expr.kind {
             if op == "||" || op == "&&" {
-                if let Some(left) = fold_number(lhs) {
-                    if (op == "&&") == (left != 0.0) {
-                        self.lower_dead(|compiler| compiler.local_initializer(lhs, declaration, statement))?;
-                        return self.local_initializer(rhs, declaration, statement);
-                    }
-                    self.lower_dead(|compiler| compiler.local_initializer(rhs, declaration, statement))?;
-                    return self.local_initializer(lhs, declaration, statement);
+                let operands = self.short_circuit_operands(expr, op, statement)?;
+                let Some((first, tails)) = operands.split_first() else {
+                    return Err(error(statement, "empty short-circuit chain"));
+                };
+                self.local_initializer(first, declaration, statement)?;
+                if tails.is_empty() {
+                    return Ok(());
                 }
-                self.local_initializer(lhs, declaration, statement)?;
                 let end = self.label();
-                self.emit(
-                    if op == "||" {
-                        opcode::JMP_OR
-                    } else {
-                        opcode::JMP_AND
-                    },
-                    vec![Word::Branch(end)],
-                );
-                self.local_initializer(rhs, declaration, statement)?;
+                for next in tails {
+                    self.emit(
+                        if op == "||" {
+                            opcode::JMP_OR
+                        } else {
+                            opcode::JMP_AND
+                        },
+                        vec![Word::Branch(end)],
+                    );
+                    self.local_initializer(next, declaration, statement)?;
+                }
                 self.result.code.items.push(CodeItem::Label(end));
                 return Ok(());
             }
@@ -653,8 +654,8 @@ impl Compiler<'_> {
         } = &expr.kind
         {
             // A constant condition keeps one branch (DreamMaker 516.1687); the other is still checked.
-            if let Some(value) = fold_number(condition) {
-                let (kept, dead) = if value != 0.0 { (then_value, else_value) } else { (else_value, then_value) };
+            if let Some(value) = super::expression::constant_truth(condition) {
+                let (kept, dead) = if value { (then_value, else_value) } else { (else_value, then_value) };
                 self.lower_dead(|compiler| compiler.local_initializer(dead, declaration, statement))?;
                 return self.local_initializer(kept, declaration, statement);
             }

@@ -66,6 +66,20 @@ impl Compiler<'_> {
                     }
                 }
             }
+            self.assoc_exempt_root = match &statement.kind {
+                StatementKind::Assign { value, .. } => Some(value as *const Expr),
+                StatementKind::Var { value: Some(value), .. } => Some(value as *const Expr),
+                StatementKind::If { condition, .. }
+                | StatementKind::While { condition, .. }
+                | StatementKind::DoWhile { condition, .. } => Some(condition as *const Expr),
+                StatementKind::Switch { selector, .. } => Some(selector as *const Expr),
+                StatementKind::Spawn { delay: Some(delay), .. } => Some(delay as *const Expr),
+                StatementKind::Expression(value) | StatementKind::Call(value) => match &value.kind {
+                    ExprKind::Binary { op, rhs, .. } if op == "<<" => Some(rhs.as_ref() as *const Expr),
+                    _ => Some(value as *const Expr),
+                },
+                _ => None,
+            };
             match &statement.kind {
                 StatementKind::Set { .. } => {
                     return Err(error(
@@ -286,7 +300,7 @@ impl Compiler<'_> {
                 }
                 StatementKind::While { condition, body } => 'lowered: {
                     // A constant condition: `while(0)` vanishes and `while(1)` loops without a test (DreamMaker 516.1687).
-                    let constant = fold_number(condition).map(|value| value != 0.0);
+                    let constant = super::expression::constant_truth(condition);
                     if constant == Some(false) {
                         // Still checked (diagnostics, source features), but nothing is emitted.
                         self.lower_dead(|compiler| compiler.typed_statements(body))?;
@@ -320,10 +334,10 @@ impl Compiler<'_> {
                     self.breaks.pop();
                     result?;
                     self.result.code.items.push(CodeItem::Label(continue_label));
-                    match fold_number(condition) {
+                    match super::expression::constant_truth(condition) {
                         // `do ... while(0)` runs once without a test; `while(1)` loops back unconditionally.
-                        Some(value) if value == 0.0 => {}
-                        Some(_) => self.emit(opcode::JMP_LOOP, vec![Word::Branch(start)]),
+                        Some(false) => {}
+                        Some(true) => self.emit(opcode::JMP_LOOP, vec![Word::Branch(start)]),
                         None => {
                             self.condition(condition, &statement.raw_header)?;
                             self.emit(0xf9, vec![Word::Branch(start)]);
@@ -441,13 +455,21 @@ impl Compiler<'_> {
                         } else {
                             (binding.trim(), None)
                         };
+                    // The pre-filter DreamMaker derives from the declared type: the category bits of `as` (mob 1, obj 2,
+                    // turf 32, area 256); `atom` is all four and `atom/movable` is mob and obj.
                     let mask = explicit_mask.unwrap_or_else(|| {
                         let path = binding.strip_prefix("var/").unwrap_or(binding);
-                        match path.split('/').next().unwrap_or("") {
-                            "mob" => 1,
-                            "obj" => 2,
-                            "turf" => 32,
-                            _ => 0,
+                        let path = path.rsplit_once('/').map_or("", |(declared, _)| declared);
+                        match path {
+                            "atom" => 291,
+                            p if p == "atom/movable" || p.starts_with("atom/movable/") => 3,
+                            _ => match path.split('/').next().unwrap_or("") {
+                                "mob" => 1,
+                                "obj" => 2,
+                                "turf" => 32,
+                                "area" => 256,
+                                _ => 0,
+                            },
                         }
                     });
                     let binding_variable = if let Some(name) = local_name(binding) {
@@ -481,12 +503,35 @@ impl Compiler<'_> {
                     };
                     self.ensure_writable(&binding_variable, &statement.raw_header)?;
                     self.expression(iterable, &statement.raw_header)?;
+                    // DreamMaker folds the list-producing built-in of `for(var/x in range(...))` into the iterator
+                    // instruction (`IterLoad 13, mask` rather than `Range`, `IterLoad 5, mask`). The built-in's opcode is
+                    // the last instruction only when the iterable is a direct call.
+                    let mut load_mode = 5;
+                    if let Some(CodeItem::Instruction(Instruction { opcode: producer, operands })) = self.result.code.items.last() {
+                        let fused = match (*producer, operands.as_slice()) {
+                            (0x1f, []) => Some(6),
+                            (0x1b, []) => Some(7),
+                            (0x1c, []) => Some(8),
+                            (0x59, [Word::Immediate(0xae)]) => Some(13),
+                            (0xad, [Word::Immediate(0xae)]) => Some(14),
+                            (0xe5, []) => Some(15),
+                            (0xe6, []) => Some(16),
+                            (0xe7, []) => Some(17),
+                            (0xe8, []) => Some(18),
+                            (0x170, []) => Some(19),
+                            _ => None,
+                        };
+                        if let Some(mode) = fused {
+                            self.result.code.items.pop();
+                            load_mode = mode;
+                        }
+                    }
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
                     }
                     self.emit(
                         opcode::ITER_LOAD,
-                        vec![Word::Immediate(5), Word::Immediate(mask)],
+                        vec![Word::Immediate(load_mode), Word::Immediate(mask)],
                     );
                     let start = self.label();
                     let end = self.label();
@@ -502,7 +547,7 @@ impl Compiler<'_> {
                             && binding
                                 .strip_prefix("var/")
                                 .and_then(|raw| raw.rsplit_once('/'))
-                                .is_some_and(|(path, _)| path == "obj" || path.contains('/')))
+                                .is_some_and(|(path, _)| path == "obj" || path == "atom" || path.contains('/')))
                     {
                         if let Some((type_name, _)) = binding
                             .strip_prefix("var/")
@@ -986,8 +1031,8 @@ impl Compiler<'_> {
                     else_branch,
                 } => 'lowered: {
                     // A constant condition keeps only the branch it selects, with no test (DreamMaker 516.1687).
-                    if let Some(value) = fold_number(condition) {
-                        if value != 0.0 {
+                    if let Some(value) = super::expression::constant_truth(condition) {
+                        if value {
                             self.typed_statements(then_branch)?;
                             self.lower_dead(|compiler| compiler.typed_statements(else_branch))?;
                         } else {

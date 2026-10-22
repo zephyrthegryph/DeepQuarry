@@ -680,21 +680,24 @@ impl ExprParser {
             ("&&=", 1, 1),
             ("||", 3, 4),
             ("&&", 5, 6),
-            ("in", 7, 8),
-            ("to", 8, 9),
-            ("==", 7, 8),
-            ("!=", 7, 8),
-            ("~=", 7, 8),
-            ("~!", 7, 8),
-            ("<=", 9, 10),
-            (">=", 9, 10),
-            ("<", 9, 10),
-            (">", 9, 10),
-            ("|", 11, 12),
-            ("^", 13, 14),
-            ("&", 15, 16),
-            ("<<", 17, 18),
-            (">>", 17, 18),
+            // DreamMaker binds the bit operators looser than comparison and shifts looser than relational operators
+            // (`a == b | c` is `(a == b) | c`, `a << b < c` is `a << (b < c)`), measured against dm.exe.
+            ("|", 7, 8),
+            ("^", 9, 10),
+            ("&", 11, 12),
+            ("in", 13, 14),
+            ("==", 13, 14),
+            ("!=", 13, 14),
+            ("<>", 13, 14),
+            ("~=", 13, 14),
+            ("~!", 13, 14),
+            ("to", 14, 15),
+            ("<<", 15, 16),
+            (">>", 15, 16),
+            ("<=", 17, 18),
+            (">=", 17, 18),
+            ("<", 17, 18),
+            (">", 17, 18),
             ("+", 19, 20),
             ("-", 19, 20),
             ("*", 21, 22),
@@ -724,6 +727,12 @@ impl ExprParser {
                 if assembled == *op && best.as_ref().is_none_or(|b| op.len() > b.0.len()) {
                     best = Some(((*op).into(), width, *l, *r));
                 }
+            }
+        }
+        // `<>` is DreamMaker's spelling of `!=`.
+        if let Some(found) = best.as_mut() {
+            if found.0 == "<>" {
+                found.0 = "!=".into();
             }
         }
         best

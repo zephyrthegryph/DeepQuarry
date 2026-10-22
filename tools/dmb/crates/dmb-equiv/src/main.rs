@@ -1,4 +1,4 @@
-//! dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N]
+//! dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all]
 //!                       [--strict-order] [--ignore-debug] [--quiet]
 //! dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables all|classes,procs,...]
 //! dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING
@@ -66,7 +66,7 @@ fn main() -> ExitCode {
             }
         }
         Some("-h" | "--help") | None => {
-            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
+            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all] [--context N] [--ignore-order] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
             ExitCode::from(2)
         }
         _ => compare_cmd(&args),
@@ -97,6 +97,15 @@ fn compare_cmd(args: &[String]) -> ExitCode {
                 };
                 i += 1;
             }
+            "--ignore-order" => opts.ignore_order = true,
+            "--context" if i + 1 < args.len() => {
+                opts.context = match args[i + 1].parse() {
+                    Ok(n) => n,
+                    Err(_) => return fail("--context needs a number"),
+                };
+                i += 1;
+            }
+            "--all" => opts.max_examples = usize::MAX,
             "--strict-order" => opts.strict_order = true,
             "--ignore-debug" => opts.ignore_debug = true,
             "--quiet" => quiet = true,

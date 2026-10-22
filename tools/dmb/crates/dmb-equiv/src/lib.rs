@@ -53,6 +53,13 @@ pub struct Options {
     pub strict_order: bool,
     /// Ignore DbgFile/DbgLine streams.
     pub ignore_debug: bool,
+    /// Treat every table order as non-semantic (reported under `ordering`, not counted). The user ruled on 2026-10-21
+    /// that table numbering differences between DreamMaker and native output are not behavioural; the runtime dumps of
+    /// `typesof`, `vars` and proc lists were byte-identical (native_compiler_issues.md, 2026-10-21). Incremental-vs-fresh
+    /// checks leave this off: a retained build must still place a new member where a fresh build would.
+    pub ignore_order: bool,
+    /// Instructions of context shown on each side around the first bytecode difference (`--context N`).
+    pub context: usize,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -60,6 +67,8 @@ impl Default for Options {
             max_examples: 25,
             strict_order: false,
             ignore_debug: false,
+            ignore_order: false,
+            context: 0,
         }
     }
 }
@@ -908,7 +917,7 @@ fn compare_code(
             abstract_instruction(&at(&na, i)),
             abstract_instruction(&at(&nb, i))
         );
-        let detail = format!(
+        let mut detail = format!(
             "bytecode differs at stmt {i} of {}/{} ({}): `{}` vs `{}`",
             na.len(),
             nb.len(),
@@ -916,6 +925,15 @@ fn compare_code(
             clip(&at(&na, i)),
             clip(&at(&nb, i)),
         );
+        if opts.context > 0 {
+            let window = |v: &[String]| {
+                let (lo, hi) = (i.saturating_sub(opts.context), (i + opts.context + 1).min(v.len()));
+                v.get(lo..hi.max(lo)).unwrap_or(&[]).join(" ; ")
+            };
+            let _ = write!(detail, "
+      A: {}
+      B: {}", window(&na), window(&nb));
+        }
         return Some(("proc.bytecode", detail, sig));
     }
     let (da, db) = (canon::debug_entries(&la), canon::debug_entries(&lb));
@@ -1199,7 +1217,7 @@ pub fn compare_canon(a: &Canon<'_>, b: &Canon<'_>, opts: &Options) -> Report {
         if moved.is_empty() {
             continue;
         }
-        if opts.strict_order || order_is_semantic(name) {
+        if opts.strict_order || (order_is_semantic(name) && !opts.ignore_order) {
             for (element, detail) in moved {
                 report.add(format!("order.{name}"), element, detail);
             }

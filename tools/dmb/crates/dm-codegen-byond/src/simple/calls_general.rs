@@ -37,6 +37,25 @@ impl Compiler<'_> {
             );
             return Ok(());
         }
+        if name == "rgb" && !named_arguments && arglist_argument.is_none() && (args.len() == 3 || args.len() == 4) {
+            // DreamMaker folds rgb() of constant components to its text: each component truncated to a whole number
+            // and clamped to 0..255, `#rrggbb` for three and `#rrggbbaa` for four.
+            let folded: Option<Vec<f32>> = args.iter().map(fold_number).collect();
+            if let Some(components) = folded {
+                if components.iter().all(|c| c.is_finite()) {
+                    let mut text = String::from("#");
+                    for component in components {
+                        text.push_str(&format!("{:02x}", component.clamp(0.0, 255.0) as u32));
+                    }
+                    self.intern_string(&text);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&text)))],
+                    );
+                    return Ok(());
+                }
+            }
+        }
         if name == "rgb" && args.len() == 4 {
             if let ExprKind::Binary { op, lhs, rhs } = &args[3].kind {
                 if op == "=" && matches!(&lhs.kind, ExprKind::Ident(key) if key == "space") {

@@ -620,6 +620,21 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
                 .map(|number| number as f32)
         }
         ExprKind::Literal(value) => value.parse().ok(),
+        ExprKind::Unary { op, value } if op == "!" && fold_number(value).is_none() => {
+            // `!"text"`: DreamMaker folds the negation of a plain text literal.
+            let mut inner = value.as_ref();
+            while let ExprKind::Group(next) = &inner.kind {
+                inner = next;
+            }
+            let ExprKind::Literal(raw) = &inner.kind else {
+                return None;
+            };
+            if raw.starts_with("@'") {
+                return None;
+            }
+            let text = decode_constant_string_literal(raw).ok().flatten()?;
+            Some(if text.is_empty() { 1.0 } else { 0.0 })
+        }
         ExprKind::Unary { op, value } => {
             let a = fold_number(value)?;
             match op.as_str() {

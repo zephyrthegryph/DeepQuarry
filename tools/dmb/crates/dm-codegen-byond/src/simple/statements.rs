@@ -699,6 +699,11 @@ impl Compiler<'_> {
             }
         }
         self.expression(rhs, statement)?;
+        // `target << "text [x]"` is one OutputFormat (0x04, the operands of Format 0x02) in DreamMaker, not Format then Output.
+        if let Some(CodeItem::Instruction(Instruction { opcode: format @ 0x02, .. })) = self.result.code.items.last_mut() {
+            *format = 0x04;
+            return Ok(true);
+        }
         self.emit(0x03, vec![]);
         Ok(true)
     }

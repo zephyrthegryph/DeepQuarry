@@ -6,7 +6,7 @@ output (incremental builds may assign IDs stably, e.g. append) and the old
 structural comparator for native-vs-Dream Maker parity.
 
 ```
-dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N]
+dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all] [--context N] [--ignore-order]
                       [--strict-order] [--ignore-debug] [--quiet]
 dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables safe|all|classes,procs,strings,...] [--keep-strings K]
 dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING      # canonical listing of matching procs
@@ -15,7 +15,7 @@ dmb-equiv dump-strings FILE.dmb
 
 Exit 0 = equivalent, 1 = different, 2 = usage/decode error. The text report
 groups differences by category (`kind.family`) with readable paths; `--json`
-writes the same counts and examples. Library: `dmb_equiv::compare_bytes`,
+writes the same counts and examples. `--all` lists every unexplained difference (no example cap) in both outputs. `--ignore-order` moves every table order (class, proc, variable-name) from the count to the `ordering` note, for native-vs-DreamMaker runs (user ruling 2026-10-21; runtime dumps were identical). Retained-vs-fresh checks keep orders strict. Library: `dmb_equiv::compare_bytes`,
 `compare_dmbs`, `assert_equivalent_bytes` (used by dmbc's six-session tests).
 DeepQuarry (58 MB DMB + 224 MB RSC) compares in about 5-12 s.
 

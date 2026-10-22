@@ -890,6 +890,11 @@ struct Compiler<'a> {
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
     // Issued by nameof admission and the enclosing parsed return statement.
     nameof_return_context: bool,
+    /// The expression DreamMaker does not reassociate at its root: the value of an assignment or variable initializer, a
+    /// condition, a switch selector, the operand of `<<` (see `reassociate` in expression.rs).
+    assoc_exempt_root: Option<*const Expr>,
+    /// The operator of the exempt chain being lowered (see `expression` in expression.rs).
+    assoc_off_op: Option<String>,
     nameof_return_recovery: Option<NameofDiagnosticRecovery>,
     locals: Vec<String>,
     local_slots: dm_syntax::ScopeMap<u32>,
