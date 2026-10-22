@@ -26,8 +26,6 @@ human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 @obj human|/obj/item/quantum_pad_booster
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/storage/part_replacer
 -click: Click: Replace parts
 +1 menu: Use

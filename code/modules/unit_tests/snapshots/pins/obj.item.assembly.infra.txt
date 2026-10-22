@@ -46,7 +46,6 @@
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
 @obj.item.assembly human|/obj/item/stack/cable_coil
--menu: Make Cable Restraints (refused: You can't do that.)
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
@@ -55,7 +54,6 @@
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
 @obj.item.assembly human|/obj/item/card/id
--menu: Read ID Card (refused: You can't do that.)
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around

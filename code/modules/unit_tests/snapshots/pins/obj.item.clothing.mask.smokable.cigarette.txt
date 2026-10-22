@@ -44,7 +44,7 @@
 -click: Click: Collect
 +5 menu: Use storage
 +6 click: Click: Item applied
-@obj human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +4 menu: Use item
 +5 click: Click: Item applied

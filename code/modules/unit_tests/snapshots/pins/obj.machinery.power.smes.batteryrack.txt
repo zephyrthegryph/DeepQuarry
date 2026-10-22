@@ -6,15 +6,13 @@
 @obj.machinery.power.smes human|/obj/item/tool/crowbar
 @obj.machinery.power.smes human|/obj/item/tool/wrench
 @obj.machinery.power.smes human|/obj/item/tool/wirecutters
-human|/obj/item/multitool menu: Open controls
-human|/obj/item/multitool click: Click: Open controls
+@obj.machinery.power.smes human|/obj/item/multitool
 @obj.machinery.power.smes human|/obj/item/weldingtool
 @obj.machinery.power.smes human|/obj/item/stack/cable_coil
 @obj.machinery.power.smes human|/obj/item/stack/material/steel
 @obj.machinery.power.smes human|/obj/item/card/id
 @obj.machinery.power.smes human|/obj/item
-@obj human|/obj/item/storage/part_replacer
-+0 menu: Open controls
+@obj.machinery.power.smes human|/obj/item/storage/part_replacer
 human|/obj/item/cell menu: Insert cell
 human|/obj/item/cell menu: Open controls
 human|/obj/item/cell click: Click: Insert cell

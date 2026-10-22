@@ -44,10 +44,7 @@ human|/obj/item/seeds menu: Insert seeds
 human|/obj/item/seeds menu: Open controls
 human|/obj/item/seeds menu: Use
 human|/obj/item/seeds click: Click: Insert seeds
-human|/obj/item/storage/bag/plants menu: Empty seed bag
-human|/obj/item/storage/bag/plants menu: Open controls
-human|/obj/item/storage/bag/plants menu: Use
-human|/obj/item/storage/bag/plants click: Click: Empty seed bag
+@obj human|/obj/item/storage/bag/plants
 @obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use cryptographic sequencer

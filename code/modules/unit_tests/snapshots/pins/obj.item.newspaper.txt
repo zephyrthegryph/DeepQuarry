@@ -51,7 +51,7 @@
 +2 menu: Open controls
 @obj human|/obj/item/storage
 +2 menu: Open controls
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +1 menu: Open controls

@@ -61,7 +61,7 @@ human|/obj/item/tool/crowbar click: Click: Deconstruct
 +1 menu: Enter Recharger
 +2 menu: Put in recharger (refused: needs a grab)
 +3 menu: Replace parts (refused: needs a rapid part exchange device)
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Eject Recharger
 +1 menu: Enter Recharger
 +2 menu: Put in recharger (refused: needs a grab)

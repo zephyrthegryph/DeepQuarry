@@ -57,7 +57,7 @@
 +0 menu: Alternate use
 +4 menu: Use
 +5 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 human|/obj/item/card/emag menu: Alternate use
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)

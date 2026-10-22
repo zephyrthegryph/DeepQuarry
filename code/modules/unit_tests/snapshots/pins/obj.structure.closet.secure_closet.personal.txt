@@ -8,9 +8,9 @@ robot|none click: Click: Toggle Lock
 @obj.structure.closet ghost|none
 -menu: Toggle Open
 +0 menu: Reset Lock (refused: You need to unlock it first.)
-@obj.structure.closet human|/obj/item/tool/screwdriver
--menu: Toggle Open
-+1 menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/tool/screwdriver click: nothing
 @obj.structure.closet human|/obj/item/tool/crowbar
 -menu: Toggle Open
 +1 menu: Reset Lock (refused: You need to unlock it first.)

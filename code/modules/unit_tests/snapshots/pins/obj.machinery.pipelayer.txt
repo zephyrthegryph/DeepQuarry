@@ -19,7 +19,7 @@ human|/obj/item/tool/wrench click: Click: Choose pipe type
 human|/obj/item/stack/material/steel menu: Load metal
 human|/obj/item/stack/material/steel click: Click: Load metal
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 human|/obj/item/pipe menu: Recycle pipe
 human|/obj/item/pipe click: Click: Recycle pipe

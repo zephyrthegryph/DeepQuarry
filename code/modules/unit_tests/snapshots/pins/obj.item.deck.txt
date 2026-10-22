@@ -142,7 +142,7 @@
 +7 menu: Shuffle
 +9 menu: Use
 +10 menu: Use storage
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Alt
 +1 menu: Deal

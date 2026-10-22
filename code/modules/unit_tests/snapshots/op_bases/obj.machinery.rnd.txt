@@ -1,1 +1,38 @@
-human|none click: Click: Open
+human|/obj/item menu: Load
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/card/id menu: Load
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item/multitool menu: Load
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Pulse wires
+human|/obj/item/stack/cable_coil menu: Load
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Load
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/storage/part_replacer menu: Load
+human|/obj/item/storage/part_replacer menu: Open controls
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/tool/crowbar menu: Load
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Dismantle
+human|/obj/item/tool/screwdriver menu: Load
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/wirecutters menu: Load
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/tool/wrench menu: Load
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/weldingtool menu: Load
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|none menu: Open controls
+human|none click: Click: Open controls

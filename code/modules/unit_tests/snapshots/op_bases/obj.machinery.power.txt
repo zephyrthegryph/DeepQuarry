@@ -1,15 +1,15 @@
+human|/obj/item/assembly/signaler menu: Open controls
+human|/obj/item/assembly/signaler click: Click: Open controls
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Rotate Clockwise
+human|/obj/item/card/emag menu: Rotate Counter Clockwise
+human|/obj/item/card/emag menu: Turn Around
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 human|/obj/item/pda menu: Climb
-human|/obj/item/pda menu: Move To Top
-human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
-human|/obj/item/pda menu: Remove id (refused: You can't do that.)
-human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
-human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
 human|/obj/item/pda menu: Rotate Clockwise
 human|/obj/item/pda menu: Rotate Counter Clockwise
 human|/obj/item/pda menu: Toggle (refused: Access denied.)
-human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pda menu: Turn Around
 human|/obj/item/pda click: Click: Toggle
 human|/obj/item/stack/cable_coil menu: Lay cable

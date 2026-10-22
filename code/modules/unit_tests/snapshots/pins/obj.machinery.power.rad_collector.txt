@@ -25,12 +25,11 @@ human|/obj/item/tool/wrench click: Click: Toggle
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id click: Click: Toggle
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Climb
-human|/obj/item/pda menu: Climb
-human|/obj/item/pda menu: Toggle (refused: Access denied.)
-human|/obj/item/pda click: Click: Toggle
+@obj.machinery.power human|/obj/item/pda
+-menu: Rotate Clockwise
+-menu: Rotate Counter Clockwise
+-menu: Turn Around
 @obj human|/obj/item/tank/phoron
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, toggle

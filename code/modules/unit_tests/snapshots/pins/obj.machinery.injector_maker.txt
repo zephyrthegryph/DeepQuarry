@@ -27,11 +27,7 @@ human|/obj/item click: Click: Use
 human|/obj/item/reagent_containers menu: Use
 human|/obj/item/reagent_containers click: Click: Use
 @obj human|/obj/item/reagent_containers/hypospray/autoinjector/empty
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Add plastic
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Add plastic

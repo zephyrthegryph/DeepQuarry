@@ -50,10 +50,11 @@ ghost|none click: Click: Examine
 -click: Click: Dig
 +1 menu: Touch with
 +3 click: Click: Touch with
-human|/obj/item/shovel menu: Touch
-human|/obj/item/shovel menu: Touch with
-human|/obj/item/shovel menu: Use shovel
-human|/obj/item/shovel click: Click: Touch with
+@turf human|/obj/item/shovel
+-menu: Dig
+-click: Click: Dig
++1 menu: Touch with
++3 click: Click: Touch with
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig

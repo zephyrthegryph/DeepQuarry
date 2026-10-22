@@ -61,7 +61,7 @@
 +2 menu: Take cell
 +4 menu: Use
 +5 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +1 menu: Take cell
 @obj human|/obj/item/cell

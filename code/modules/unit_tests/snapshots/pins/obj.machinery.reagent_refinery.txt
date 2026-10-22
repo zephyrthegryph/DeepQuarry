@@ -62,7 +62,7 @@ human|/obj/item/tool/wrench click: Click: Secure
 +1 menu: Rotate Counter Clockwise
 +2 menu: Set transfer amount
 +3 menu: Turn Around
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Rotate Clockwise
 +1 menu: Rotate Counter Clockwise
 +2 menu: Set transfer amount

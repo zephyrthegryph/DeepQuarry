@@ -16,7 +16,7 @@ human|/obj/item/tool/wrench click: Click: Use wrench
 @obj.machinery human|/obj/item/stack/cable_coil
 @obj.machinery human|/obj/item/stack/material/steel
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper click: Click: Insert
 human|/obj/item/photo menu: Insert

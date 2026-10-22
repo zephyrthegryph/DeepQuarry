@@ -63,7 +63,7 @@
 +2 menu: HALT! (refused: You can't do that.)
 +4 menu: Select gas mask phrase (refused: You can't do that.)
 +5 menu: Select phrase
-@obj human|/obj/item
+@obj.item human|/obj/item
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase

@@ -89,7 +89,7 @@
 +2 menu: Fold into a plane
 +4 menu: Rename paper (refused: You can't do that.)
 +6 menu: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Create Area (refused: You can't do that.)
 +1 menu: Fold into a plane

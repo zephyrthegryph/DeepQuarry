@@ -38,18 +38,16 @@ human|/obj/item/card/id menu: Toggle (refused: Access denied.)
 human|/obj/item/card/id click: Click: Toggle
 human|/obj/item menu: Open controls
 human|/obj/item click: Click: Open controls
-human|/obj/item/module/power_control menu: Open controls
-human|/obj/item/module/power_control click: Click: Open controls
-human|/obj/item/frame/apc menu: Open controls
-human|/obj/item/frame/apc click: Click: Open controls
+@obj human|/obj/item/module/power_control
+@obj human|/obj/item/frame/apc
 human|/obj/item/pda menu: Open controls
 human|/obj/item/pda menu: Toggle (refused: Access denied.)
 human|/obj/item/pda click: Click: Toggle
-@obj.machinery.power human|/obj/item/card/emag
-+0 menu: Open controls
+human|/obj/item/card/emag menu: Open controls
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/cell menu: Open controls
 human|/obj/item/cell click: Click: Open controls
-human|/obj/item/assembly/signaler menu: Open controls
-human|/obj/item/assembly/signaler click: Click: Open controls
+@obj.machinery.power human|/obj/item/assembly/signaler
 wires: AI Control, ID Scan, Primary Power, Secondary Power
 keys: breaker, cable_place, cell_bay.cell.insert, cell_bay.cell.take, chargemode, construction.build:apc_board, construction.build:apc_secured, construction.build:apc_wired, construction.dismantle, construction.undo:apc_board, construction.undo:apc_secured, construction.undo:apc_wired, cover.open, cover.remove, cover.replace, coverlock, drag_buckle, emag.subvert, emag.use, emergency_lighting, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, nightshift, overload, panel.open, reboot, robot_remote_blocked, set_channel, silicon_hand, subversion_reset.use, ui_open, wires.cut, wires.open, wires.pulse, wires_signaler

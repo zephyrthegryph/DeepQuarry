@@ -29,6 +29,4 @@ human|/obj/item/card/id click: Click: Toggle PDA relay
 human|/obj/item menu: Toggle PDA relay
 human|/obj/item click: Click: Toggle PDA relay
 @obj human|/obj/item/circuitboard/message_monitor
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, toggle, upgrade

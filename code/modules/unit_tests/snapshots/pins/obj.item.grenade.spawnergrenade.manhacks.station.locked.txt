@@ -57,7 +57,7 @@
 +1 menu: Grenade interaction hand
 +4 menu: Use
 +5 click: Click: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Grenade interaction hand
 human|/obj/item/card/emag menu: Grenade interaction hand

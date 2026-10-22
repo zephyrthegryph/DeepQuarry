@@ -12,7 +12,6 @@
 human|/obj/item/stack/material/steel menu: Press coins
 human|/obj/item/stack/material/steel click: Click: Press coins
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
-human|/obj/item/stack/material menu: Press coins (refused: You can't make coins out of that.)
-human|/obj/item/stack/material click: Click: Press coins
+@obj human|/obj/item
+@obj.machinery.mineral human|/obj/item/stack/material
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, press, robot_remote_blocked, silicon_hand

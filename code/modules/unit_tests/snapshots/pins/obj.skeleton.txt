@@ -21,12 +21,10 @@ human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id click: nothing
-human|/obj/item menu: Hit
-human|/obj/item click: nothing
+@obj human|/obj/item
++0 menu: Hit
 human|/obj/item/fossil/bone menu: Hit
 human|/obj/item/fossil/bone menu: Use
 human|/obj/item/fossil/bone click: Click: Use
-human|/obj/item/pen menu: Hit
-human|/obj/item/pen menu: Use
-human|/obj/item/pen click: Click: Use
+@obj human|/obj/item/pen
 keys: drag_buckle, melee_hit, skeleton_bone, skeleton_plaque

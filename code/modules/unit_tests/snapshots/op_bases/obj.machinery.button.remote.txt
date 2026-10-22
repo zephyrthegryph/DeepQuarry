@@ -2,3 +2,11 @@ ai|none menu: Toggle
 ai|none menu: Use
 ai|none click: Click: Toggle
 ghost|none click: nothing
+human|/obj/item/card/emag menu: Press
+human|/obj/item/card/emag menu: Toggle
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/multitool menu: Press
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Toggle

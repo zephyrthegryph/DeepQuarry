@@ -1,8 +1,6 @@
 ai|none click: nothing
-human|/obj/item menu: Hit
-human|/obj/item menu: Tear up
-human|/obj/item menu: Touch weeds
-human|/obj/item click: Click: Touch weeds
+human|/obj/item menu: Disrupt
+human|/obj/item click: Click: Disrupt
 human|/obj/item/card/id click: nothing
 human|/obj/item/multitool click: nothing
 human|/obj/item/stack/cable_coil click: nothing

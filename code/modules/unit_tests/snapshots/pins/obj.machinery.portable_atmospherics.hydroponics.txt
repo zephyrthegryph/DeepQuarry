@@ -1,14 +1,16 @@
-@obj.machinery.portable_atmospherics human|none
--menu: Climb
-+0 menu: Remove Label
-+1 menu: Set Light
-+2 menu: Toggle lid
-+3 menu: Toggle Tray Lid
-@obj.machinery robot|none
-+1 menu: Remove Label
-+2 menu: Set Light
-+3 menu: Toggle lid
-+4 menu: Toggle Tray Lid
+human|none menu: Remove Label
+human|none menu: Set Light
+human|none menu: Toggle lid
+human|none menu: Toggle Tray Lid
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove Label
+robot|none menu: Set Light
+robot|none menu: Toggle lid
+robot|none menu: Toggle Tray Lid
+robot|none menu: Use
+robot|none click: Click: Use
 @obj.machinery ai|none
 ghost|none click: Click: Harvest
 human|/obj/item/tool/screwdriver menu: Remove Label

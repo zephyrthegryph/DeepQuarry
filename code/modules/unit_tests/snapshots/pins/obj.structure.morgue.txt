@@ -14,7 +14,5 @@ robot|none click: Click: Use
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-human|/obj/item/pen menu: Hit
-human|/obj/item/pen menu: Use
-human|/obj/item/pen click: Click: Use
+@obj human|/obj/item/pen
 keys: drag_buckle, item, label, melee_hit, silicon_hand, use

@@ -24,7 +24,7 @@ human|/obj/item/tool/wrench click: Click: Secure
 +0 menu: Climb
 @obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Climb
 @obj human|/obj/item/storage/part_replacer
 +0 menu: Climb

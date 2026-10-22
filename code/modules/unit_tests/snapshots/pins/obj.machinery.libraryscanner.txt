@@ -39,8 +39,4 @@ human|/obj/item menu: Open controls
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 @obj human|/obj/item/book
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open
-+1 menu: Open controls
 keys: clear, drag_buckle, eject, insert_book, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, scan, silicon_hand, ui_open

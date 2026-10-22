@@ -3,10 +3,7 @@
 @obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/screwdriver
--menu: Disconnect
--click: Click: Disconnect
 +1 menu: Scan ID
-+3 click: Click: Use item
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/crowbar
 +1 menu: Scan ID
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/wrench

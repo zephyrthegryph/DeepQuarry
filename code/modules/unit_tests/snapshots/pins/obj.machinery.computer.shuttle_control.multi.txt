@@ -3,6 +3,9 @@
 @obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/screwdriver
+-click: Click: Use item
++1 menu: Disconnect
++3 click: Click: Disconnect
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/crowbar
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/wrench
 @obj.machinery.computer.shuttle_control human|/obj/item/tool/wirecutters

@@ -7,18 +7,14 @@ robot|none click: Click: Toggle Lock
 @obj.structure.closet ghost|none
 -menu: Toggle Open
 +0 menu: Toggle Lock
-human|/obj/item/tool/screwdriver menu: Hit
-human|/obj/item/tool/screwdriver menu: Toggle Lock
-human|/obj/item/tool/screwdriver click: Click: Toggle Lock
+@obj.structure.closet human|/obj/item/tool/screwdriver
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Toggle Lock
 human|/obj/item/tool/crowbar click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/tool/wrench
 -menu: Toggle Open
 +2 menu: Toggle Lock
-human|/obj/item/tool/wirecutters menu: Hit
-human|/obj/item/tool/wirecutters menu: Toggle Lock
-human|/obj/item/tool/wirecutters click: Click: Toggle Lock
+@obj.structure.closet human|/obj/item/tool/wirecutters
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Toggle Lock
 human|/obj/item/multitool click: Click: Toggle Lock

@@ -23,12 +23,10 @@
 +0 menu: Climb
 @obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Climb
 human|/obj/item/paper menu: Bind
 human|/obj/item/paper menu: Climb
 human|/obj/item/paper click: Click: Bind
-human|/obj/item/paper_bundle menu: Bind
-human|/obj/item/paper_bundle menu: Climb
-human|/obj/item/paper_bundle click: Click: Bind
+@obj human|/obj/item/paper_bundle
 keys: bind, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

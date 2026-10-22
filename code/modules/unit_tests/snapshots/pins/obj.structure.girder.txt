@@ -22,6 +22,4 @@
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 @obj human|/obj/item/pickaxe/plasmacutter
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 keys: construct_wall_wait, disassemble, dislodge, drag_buckle, hulk_smash, item, melee_hit, reinforce_wait, remove_struts, secure, slice, toggle_reinforcing, unsecure_struts

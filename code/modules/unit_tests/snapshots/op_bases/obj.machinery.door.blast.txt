@@ -10,6 +10,10 @@ human|/obj/item/card/id menu: Open
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Strike
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Open
 human|/obj/item/stack/cable_coil menu: Strike
 human|/obj/item/stack/cable_coil menu: Use

@@ -1,11 +1,5 @@
-human|none menu: Climb
-human|none menu: Open controls
-human|none click: Click: Open controls
-@obj.machinery robot|none
--click: Click: Use
-+1 menu: Climb
-+2 menu: Open controls
-+4 click: Click: Open controls
+@obj.machinery.portable_atmospherics human|none
+@obj.machinery.portable_atmospherics robot|none
 @obj.machinery ai|none
 -click: Click: Use
 +0 menu: Open controls
@@ -31,12 +25,6 @@ human|/obj/item/stack/material/steel click: Click: Install pressure liner
 @obj.machinery.portable_atmospherics human|/obj/item/card/id
 @obj.machinery.portable_atmospherics human|/obj/item
 @obj human|/obj/item/tank
-human|/obj/item/stack/material menu: Climb
-human|/obj/item/stack/material menu: Install pressure liner (refused: You don't have enough for that.)
-human|/obj/item/stack/material menu: Open controls
-human|/obj/item/stack/material click: Click: Install pressure liner
-human|/obj/item/tank/jetpack menu: Climb
-human|/obj/item/tank/jetpack menu: Insert tank
-human|/obj/item/tank/jetpack menu: Open controls
-human|/obj/item/tank/jetpack click: Click: Insert tank
+@obj.machinery.portable_atmospherics human|/obj/item/stack/material
+@obj human|/obj/item/tank/jetpack
 keys: climb.climb, climb.climb_menu, drag_buckle, eject, liner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, pressure, refill_jetpack, relabel, robot_remote_blocked, silicon_hand, tank_bay.holding.insert, ui_open, valve, weld_apart

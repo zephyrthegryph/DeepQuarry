@@ -57,7 +57,7 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise (refused: It is fastened 
 human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/card/id menu: Use identification card
 human|/obj/item/card/id click: Click: Open with item
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
 +1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 +2 menu: Turn Around (refused: It is fastened to the floor!)

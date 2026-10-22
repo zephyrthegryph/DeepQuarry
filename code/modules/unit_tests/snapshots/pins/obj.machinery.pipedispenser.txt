@@ -30,10 +30,6 @@ human|/obj/item/card/id menu: Open controls
 human|/obj/item/card/id click: Click: Open controls
 human|/obj/item menu: Open controls
 human|/obj/item click: Click: Open controls
-human|/obj/item/pipe menu: Open controls
-human|/obj/item/pipe menu: Put back
-human|/obj/item/pipe click: Click: Put back
-human|/obj/item/pipe_meter menu: Open controls
-human|/obj/item/pipe_meter menu: Put back
-human|/obj/item/pipe_meter click: Click: Put back
+@obj human|/obj/item/pipe
+@obj human|/obj/item/pipe_meter
 keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, put_back, put_back_meter, p_layer, robot_remote_blocked, silicon_hand, ui_open

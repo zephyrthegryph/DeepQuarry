@@ -59,11 +59,12 @@
 +0 menu: Draw graffiti
 +1 menu: Hit the floor
 +4 click: Click: Floor item help
-human|/obj/item/shovel menu: Draw graffiti
-human|/obj/item/shovel menu: Hit the floor
-human|/obj/item/shovel menu: Touch
-human|/obj/item/shovel menu: Use shovel
-human|/obj/item/shovel click: Click: Floor item help
+@turf human|/obj/item/shovel
+-menu: Dig
+-click: Click: Dig
++0 menu: Draw graffiti
++1 menu: Hit the floor
++4 click: Click: Floor item help
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig

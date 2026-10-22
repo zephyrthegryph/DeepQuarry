@@ -5,11 +5,16 @@ human|/obj/item menu: Open controls
 human|/obj/item click: Click: Open controls
 human|/obj/item/card/id menu: Open controls
 human|/obj/item/card/id click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
 human|/obj/item/stack/cable_coil menu: Lay cable
 human|/obj/item/stack/cable_coil menu: Open controls
 human|/obj/item/stack/cable_coil click: Click: Add cable
 human|/obj/item/stack/material/steel menu: Open controls
 human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/storage/part_replacer menu: Open controls
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer click: Click: Replace parts
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Open controls
 human|/obj/item/tool/crowbar click: Click: Deconstruct

@@ -39,7 +39,7 @@ human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Empty bin (refused: it is empty)
 human|/obj/item/card/id menu: Shred
 human|/obj/item/card/id click: Click: Shred
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 +0 menu: Climb
 +1 menu: Empty bin (refused: it is empty)
 human|/obj/item/storage menu: Climb
@@ -51,19 +51,12 @@ human|/obj/item/storage click: Click: Empty into
 +1 menu: Empty bin (refused: it is empty)
 +2 menu: Empty into
 @obj human|/obj/item/photo
--menu: Move To Top
--menu: Rename photo (refused: You can't do that.)
--menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/shreddedp
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper menu: Climb
 human|/obj/item/paper menu: Empty bin (refused: it is empty)
 human|/obj/item/paper menu: Shred
 human|/obj/item/paper click: Click: Shred
 @obj human|/obj/item/newspaper
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper_bundle menu: Climb
 human|/obj/item/paper_bundle menu: Empty bin (refused: it is empty)
 human|/obj/item/paper_bundle menu: Shred

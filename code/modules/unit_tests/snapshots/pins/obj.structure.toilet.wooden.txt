@@ -69,16 +69,16 @@ human|/obj/item menu: Use item
 human|/obj/item menu: Wooden touch
 human|/obj/item menu: Yank the flush lever
 human|/obj/item click: Click: Wooden item
-human|/obj/item/bluespace_crystal menu: Flush
-human|/obj/item/bluespace_crystal menu: Hit
-human|/obj/item/bluespace_crystal menu: Use bluespace crystal
-human|/obj/item/bluespace_crystal menu: Wooden touch
-human|/obj/item/bluespace_crystal menu: Yank the flush lever
-human|/obj/item/bluespace_crystal click: Click: Wooden item
-human|/obj/item/stock_parts/matter_bin menu: Flush
-human|/obj/item/stock_parts/matter_bin menu: Hit
-human|/obj/item/stock_parts/matter_bin menu: Use matter bin
-human|/obj/item/stock_parts/matter_bin menu: Wooden touch
-human|/obj/item/stock_parts/matter_bin menu: Yank the flush lever
-human|/obj/item/stock_parts/matter_bin click: Click: Wooden item
+@obj.structure human|/obj/item/bluespace_crystal
+-menu: Use
+-click: Click: Use
++2 menu: Use bluespace crystal
++3 menu: Wooden touch
++5 click: Click: Wooden item
+@obj human|/obj/item/stock_parts/matter_bin
+-menu: Use
+-click: Click: Use
++2 menu: Use matter bin
++3 menu: Wooden touch
++5 click: Click: Wooden item
 keys: drag_buckle, flush, flush_yank, insert_crystal, melee_hit, replace_bin, silicon_use, swirlie, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_swirlie, wooden_touch

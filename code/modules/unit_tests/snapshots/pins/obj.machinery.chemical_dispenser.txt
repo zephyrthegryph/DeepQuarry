@@ -72,18 +72,7 @@ human|/obj/item menu: Rotate Counter Clockwise (refused: It is fastened to the f
 human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item click: Click: Open controls
 @obj human|/obj/item/reagent_containers/chem_disp_cartridge
--menu: Move To Top
--menu: Open or close the lid
--menu: Set Cartridge Label
--menu: Set transfer amount
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open
-+1 menu: Open controls
 @obj human|/obj/item/reagent_containers/chem_canister
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open
-+0 menu: Open controls
 human|/obj/item/reagent_containers menu: Open controls
 human|/obj/item/reagent_containers menu: Rotate Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)

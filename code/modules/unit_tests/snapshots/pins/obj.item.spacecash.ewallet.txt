@@ -55,7 +55,7 @@
 +1 menu: Interaction pass
 +4 menu: Use
 +5 click: Click: Interaction pass
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +0 menu: Interaction pass

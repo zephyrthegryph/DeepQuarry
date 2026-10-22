@@ -19,7 +19,7 @@
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +0 menu: Edit

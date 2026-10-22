@@ -38,8 +38,6 @@ human|/obj/item menu: Flip Windoor Assembly
 human|/obj/item menu: Hit
 human|/obj/item click: nothing
 @obj human|/obj/item/airlock_electronics
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
 +0 menu: Flip Windoor Assembly
 human|/obj/item/pen menu: Flip Windoor Assembly
 human|/obj/item/pen menu: Hit

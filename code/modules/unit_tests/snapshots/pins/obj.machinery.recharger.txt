@@ -14,6 +14,6 @@ human|/obj/item/tool/wrench click: Click: Toggle
 @obj.machinery human|/obj/item/stack/cable_coil
 @obj.machinery human|/obj/item/stack/material/steel
 @obj.machinery human|/obj/item/card/id
-@obj.machinery human|/obj/item
+@obj human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 keys: anchor.toggle, drag_buckle, insert, insert_drag, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, take

@@ -42,9 +42,9 @@
 +3 menu: Use
 @obj human|/obj/item/storage
 +3 menu: Use
-@obj human|/obj/item
+@obj.item human|/obj/item
 -menu: Alternate use
-@obj human|/obj/item/pen
+@obj.item human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename
 +2 menu: Use

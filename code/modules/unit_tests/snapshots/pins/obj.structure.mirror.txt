@@ -18,7 +18,6 @@ ai|none click: Click: Use
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-human|/obj/item/stack/material/glass menu: Hit
-human|/obj/item/stack/material/glass menu: Use
-human|/obj/item/stack/material/glass click: Click: Use
+@obj human|/obj/item/stack/material/glass
+-menu: Climb
 keys: add_glass, drag_buckle, item, melee_hit, remove_frame, silicon_use, use, use_wrench
