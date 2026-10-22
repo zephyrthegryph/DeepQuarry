@@ -206,9 +206,16 @@ world does the filtering: the runner passes `-params test-tier=<tier>` and
 (`tools/ci/compile_and_run.sh`) with `test-tier=all` (the `TEST_TIER`
 environment variable, default `all`).
 
-**A focused run ignores the tier.** `bash tools/dq_focused_test.sh
-dq_lifecycle_sandbox` runs the exhaustive sweep by name, as does
-`dm-test --focus=...`.
+**A focused run refuses the exhaustive tier.** `bash tools/dq_focused_test.sh
+dq_lifecycle_sandbox` (or any test with an exhaustive subtype) exits 3 without compiling and names the test's
+`/representative`; `--allow-exhaustive` runs the sweep anyway (`dm-test --focus=...` itself still runs whatever it is given).
+Every focused run also has a hard wall-clock cap, `DQ_FOCUSED_MAX_MIN` (default 20; clamped to 30 unless `--allow-exhaustive`):
+`tools/dq_run_guard.js` kills the run's DreamDaemon worlds and reaps their machine slots at the cap, and the moment the run's
+shell dies (a stopped task leaves no orphaned world). The cap counts RUN time: its clock starts when the run first holds a
+machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), and a run with no slot after `DQ_FOCUSED_QUEUE_MAX_SEC`
+(5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
+(exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
+instead of failing (`tools/ci/test_admission_retry.sh`). `tools/ci/test_focused_caps.sh` tests all three against a fake world.
 
 The exhaustive tier holds the tests that check every subtype of a root, or
 every cell of a large matrix:
