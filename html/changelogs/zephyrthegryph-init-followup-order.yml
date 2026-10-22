@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Restored the pre-sweep Initialize order for grass, sif grass, sif rocks and lava turfs, and the casting logs of technomancer aura, radiance, reflect and flame tongue spells"
