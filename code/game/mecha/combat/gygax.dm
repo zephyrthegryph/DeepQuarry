@@ -130,9 +130,10 @@ CAPABILITIES(/obj/mecha/combat/gygax/serenity)
 	max_integrity = 250 // just slightly worse
 	desc = "A lightweight, security exosuit. Popular among private and corporate security. This one is particularly worn looking and likely isn't as sturdy."
 
-// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
-/obj/mecha/combat/gygax/old/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/mecha/combat/gygax/old)
+	setup(PROC_REF(wear_out))
+
+/obj/mecha/combat/gygax/old/proc/wear_out()
 	update_integrity(25)
 	cell.set_charge(rand(0, (cell.charge/2)))
 

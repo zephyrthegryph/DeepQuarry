@@ -69,6 +69,7 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	return HEAT_TARGET_NONE
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	setup(PROC_REF(face_initialize_directions))
 	configure(uses_power(idle = 20, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
@@ -91,9 +92,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_actor_kind(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), not = TRUE, because = MSG(cryo_cell/cannot_release))),
 		then(PROC_REF(eject_from_window)), logs(LOG_GAME))
 
-// ALLOW(init/INSTANCE_STATE): its pipe connection follows the direction it was placed in
-/obj/machinery/atmospherics/unary/cryo_cell/Initialize(mapload)
-	. = ..()
+/obj/machinery/atmospherics/unary/cryo_cell/proc/face_initialize_directions()
 	initialize_directions = dir
 
 // ---- conditions ----

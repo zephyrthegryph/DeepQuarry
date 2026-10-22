@@ -87,9 +87,10 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 
 TYPE_TABLE(/obj/mecha/working/ripley/mining, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp))
 
-// ALLOW(init/INSTANCE_STATE): rolls a diamond drill one time in four and drops the tracking beacon
-/obj/mecha/working/ripley/mining/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/mecha/working/ripley/mining)
+	setup(PROC_REF(fit_drill))
+
+/obj/mecha/working/ripley/mining/proc/fit_drill()
 	//Attach drill
 	if(prob(25)) //Possible diamond drill... Feeling lucky?
 		var/obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill/D = new /obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill
@@ -126,9 +127,10 @@ TYPE_TABLE(/obj/mecha/working/ripley/mining, mecha_starting_equipment, list(/obj
 	max_integrity = 190 // just slightly worse
 	desc = "An old, dusty mining ripley."
 
-// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
-/obj/mecha/working/ripley/mining/old/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/mecha/working/ripley/mining/old)
+	setup(PROC_REF(wear_out))
+
+/obj/mecha/working/ripley/mining/old/proc/wear_out()
 	update_integrity(25)
 	cell.set_charge(rand(0, cell.charge))
 

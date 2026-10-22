@@ -21,6 +21,7 @@
 	start_pressure = 90 * ONE_ATMOSPHERE
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
+	setup(PROC_REF(fill_standard_air))
 	climb()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(pump_step)), when = nameof(on))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(pump_emp))))
@@ -38,10 +39,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 /obj/machinery/portable_atmospherics/powered/pump/starting_cell(datum/act/A)
 	return skip_cell ? null : /obj/item/cell/apc
 
-// ALLOW(init/INSTANCE_STATE): a pump fills with air, a per-instance mixture
-/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload)
-	. = ..()
-
+/obj/machinery/portable_atmospherics/powered/pump/proc/fill_standard_air()
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
 

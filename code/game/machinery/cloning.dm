@@ -510,8 +510,10 @@ MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
 	..()
 	look.state("pod_[appearance_state()]")
 
-/obj/machinery/clonepod/full/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/clonepod/full)
+	setup(PROC_REF(stock_biomass_bottles))
+
+/obj/machinery/clonepod/full/proc/stock_biomass_bottles()
 	for(var/i = 1 to container_limit)
 		track_biomass_container(new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
