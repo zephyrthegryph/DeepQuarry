@@ -238,9 +238,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	var/start_pos
 	var/flag_return_delay = 3 SECONDS	//how long you have to hold onto your team's flag before it returns home
 
-// ALLOW(init/INSTANCE_STATE): remembers where it was placed so it can return there
-/obj/item/laserdome_flag/Initialize(mapload)
-	. = ..()
+/obj/item/laserdome_flag/proc/remember_start_pos()
 	start_pos = src.loc	//save our starting location for later
 
 /obj/item/laserdome_flag/proc/flag_return_failed(datum/act/op/A)
@@ -259,6 +257,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
+	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
 	// The owning team channels a return with the flag in hand; moving, dropping it or being tagged drops it where they stand.
 	op("return_flag", ai(), wait(PROC_REF(flag_return_wait), keeps = HELD | STAY | ALIVE), on_interrupt(PROC_REF(flag_return_failed)), then(PROC_REF(flag_returned)))
@@ -393,12 +392,11 @@ CAPABILITIES(/obj/structure/flag_base)
 	w_class = ITEMSIZE_NO_CONTAINER
 	redgate_allowed = FALSE //you can't take the demonstration balls and go home either
 
-// ALLOW(init/INSTANCE_STATE): remembers where it was placed so it can return there
-/obj/item/laserdome_hyperball/Initialize(mapload)
-	. = ..()
+/obj/item/laserdome_hyperball/proc/remember_start_pos()
 	start_pos = src.loc	//save our starting location for later
 
 CAPABILITIES(/obj/item/laserdome_hyperball)
+	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
 
 /// Picking the ball up: the teams are told who has it.

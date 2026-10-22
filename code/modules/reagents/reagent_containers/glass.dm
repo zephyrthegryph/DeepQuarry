@@ -59,6 +59,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
+	setup(PROC_REF(remember_base_text))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	glass_handling()
 	glass_container()
@@ -67,9 +68,7 @@ MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
 MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
 
-// ALLOW(init/INSTANCE_STATE): remembers the name and description it was given, a map or loadout edit, for its label
-/obj/item/reagent_containers/glass/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/glass/proc/remember_base_text()
 	base_name = name
 	base_desc = desc
 
@@ -179,13 +178,13 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	var/rating = 1
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
+	setup(PROC_REF(describe_volume))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/reagent_containers/glass/beaker/get_rating()
 	return rating
 
-/obj/item/reagent_containers/glass/beaker/Initialize(mapload)
-	. = ..()
+/obj/item/reagent_containers/glass/beaker/proc/describe_volume()
 	desc += " Can hold up to [volume] units."
 
 /// The filling in the colour of what it holds, the lid while it is on, and a label.

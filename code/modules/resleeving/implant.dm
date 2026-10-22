@@ -57,14 +57,14 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	var/db_key // To give to the baby implants
 
 CAPABILITIES(/obj/item/backup_implanter)
+	setup(PROC_REF(load_implants))
 	owns_many(nameof(imps), /obj/item/implant/backup)
 	op("backup_implanter_interaction_eject", in_hand(), label("Eject implant"), then(PROC_REF(backup_implanter_interaction_eject)))
 	op("backup_implanter_interaction_load", item(/obj/item/implant/backup), label("Load implant"), then(PROC_REF(backup_implanter_interaction_load)))
 	op("implant", at_target(/mob/living/carbon), when(PROC_REF(implanter_loaded)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Implant"),
 		needs(req_adjacent()), begins(MSG(backup_implanter/implanting)), starts(PROC_REF(implanter_swing)), wait(PROC_REF(implant_time)), then(PROC_REF(backup_implant_done)))
 
-/obj/item/backup_implanter/Initialize(mapload)
-	. = ..()
+/obj/item/backup_implanter/proc/load_implants()
 	for(var/i = 1 to max_implants)
 		var/obj/item/implant/backup/imp = new(src, db_key)
 		rel_add(src, nameof(imps), imp)

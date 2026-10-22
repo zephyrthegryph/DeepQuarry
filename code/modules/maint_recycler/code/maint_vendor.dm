@@ -27,6 +27,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	setup(PROC_REF(init_products))
 	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)
 	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 10))
@@ -40,8 +41,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_vendor/Initialize(mapload)
-	. = ..()
+/obj/machinery/maint_vendor/proc/init_products()
 	for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
