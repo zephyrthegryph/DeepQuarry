@@ -44,25 +44,31 @@ this branch. Items marked OPEN are not.
 
 ## Open
 
-5. **Output not equivalent to DreamMaker's (high until triaged).** `dmb-equiv out-dm/deepquarry.dmb out-native/deepquarry.dmb`
-   (full production tree, logs `equiv.log`, `equiv-nodebug.log`): NOT EQUIVALENT, 218,558 differences, 144,843 with
-   `--ignore-debug`. Categories:
-   - Benign or order-only: `proc.debug_info` 73,715 (native always emits debug lines, DreamMaker emitted none here; this is also
-     why the native `.dmb` is 75.2 MB against 53.0 MB), `order.proc_table` 69,755, `order.type_table` 37,397,
-     `order.var_name_strings` 15,730 (the user's decision of 2026-10-14 treats ordering as non-semantic; the checker still counts
-     it, so `--strict-order` should not be the gate).
-   - Probably benign, needs a rule in the checker: bytecode where native does not constant-fold (`PushVal 1.0 PushVal 2.0 Bor` vs
-     `PushVal 3.0`, `GetVar null-ref` vs `PushVal null` 7,705, `Jz` vs `GetFlag` 1,120), 16,000 procs in `proc.bytecode`;
-     `proc.extra` 2,855 and `type.type_meta` 2,800 (per-type `<init>` procs where DreamMaker shares one); `map_objects` 91 (inline
-     var sets instead of a shared `<init>`); `type_appearance` 59 (`icon_state`/`name`/`text` `null` vs `""`);
-     `proc_locals` 86 (native keeps one more local, e.g. `/atom/vv_edit_var`); `proc_args` 50.
-   - Possibly real: `type.type_mob` 9 (`mob sight`: DreamMaker 164 vs native 128 on `/mob/living/simple_mob/mechanical/mecha/combat/
-     marauder*`, 132 vs 128 on `xeno_ch*`); `header.header` (native says `min compatibility v515 468`, DreamMaker `v516 516`, so a
-     native build admits clients DreamMaker's would refuse); `header.header_flags` (`0x21e0050d` vs `0x21e2050d`);
-     `proc.missing` 6 anonymous procs present only in DreamMaker's output.
-   Repro: build `build.sh dm` with and without `DQ_COMPILER=native` (delete `deepquarry.dmb/.rsc` between, see issue 8), copy both,
-   run `tools/dmb/target/release/dmb-equiv A.dmb B.dmb [--ignore-debug]`. The branch's earlier "dmb-equiv clean" claim was for a
-   smaller tree.
+5. **Output not equivalent to DreamMaker's (medium, was high).** Re-measured 2026-10-21 on origin/master `a6ce3d8f16`, production dme,
+   `dmb-equiv dm.dmb native.dmb` (DreamMaker 58.7 MB, native 67.9 MB; DreamMaker build 0 errors, 50 warnings): NOT EQUIVALENT,
+   **104,408 differences, identical with `--ignore-debug`** (the checker counts ordering in the total here; `proc.debug_info` no longer
+   differs). 2026-10-14 was 218,558 / 144,843 ignoring debug. Without ordering (97,600 of the total): **6,808**, against 15,091 after
+   the 2026-10-14 fixes. Categories:
+   - Ordering only (non-semantic per the 2026-10-14 decision): `order.proc_table` 79,249, `order.var_name_strings` 16,011,
+     `order.type_table` 2,340. The `header`, `header_flags`, `type_mob` (sight) and `type_appearance`/`proc_args` categories are gone.
+   - Benign, bytecode shape (`proc.bytecode` 6,476): `Jz` vs `GetFlag` 1,256; `End`/`GetVar`/`PushVal` vs `Jmp` (DreamMaker folds the
+     tail) about 850; `JmpOr`/`JmpAnd` target shifts 360; iterator forms (`IterLoad` vs `Range`/`View`/`ORange`/`Viewers`/`Hearers`)
+     about 700; `PushCache` vs `GetVar` receiver caching about 270; constant strings not folded (`"</span>"` vs `Add`) 96; `Square` vs
+     `PushVal 2.0` 22; `NewImage` vs `NewImageArgs 2` 39.
+   - Benign naming: `type.type_meta` 96 (per-type `<init>` anonymous procs hash-named differently), `proc.extra` 76 and `proc.missing` 67
+     anonymous procs by hash (`<anon ...>`, `<init>` sharing; the 9 net extra are native-only), `map_objects` 6 (the `vent_pump`
+     var-set `<anon>` names), `proc.proc_locals` 87 (native keeps one more local, e.g. `/atom/vv_edit_var`, `/client/verb/who`).
+   - Possibly semantic, needs a read of source: (a) 35 procs where native pushes `"<span class='infoplain'><span class='bold'>%U%</span>"`
+     as one literal and DreamMaker `"<span class='infoplain'>"`, e.g. `/datum/form/proc/announce_enter`,
+     `/mob/living/carbon/human/proc/lleill_change_shape`, `/mob/living/carbon/human/proc/lleill_alchemy_done` (probably literal merging
+     of an adjacent `<span ...>` chunk, but the text differs); (b) 214 `PushVal null` vs `PushVal 1.0` / `GetVar` / `SetVar`
+     (the stack is the same shape but the value differs), e.g. `/atom/proc/auto_turn` stmt 2,
+     `/atom/movable/screen/movable/ability_master/proc/open_ability_master` stmt 43; (c) the 67 DreamMaker-only anonymous procs: the
+     checker names them by hash only, so which source construct they are was not traced (the 2026-10-14 pass found 6).
+     Receiver caching (`Call local2->dproc:biology` vs a cached `PushCache`/`Call dproc:biology`, e.g.
+     `/datum/ai_behavior/leech_infest/evaluate`) was read and is equivalent.
+   Repro: `build.sh dm` and `DQ_COMPILER=dreammaker build.sh dm` (delete `deepquarry.dmb/.rsc` between), then `dmb-equiv A.dmb B.dmb
+   [--ignore-debug] [--max-examples N]`. Kept at `E:/dq-cache/dmb-equiv-20261021/` (dm.dmb, native.dmb, equiv*.log).
 6. **dmbc daemon memory (high).** The daemon sits at 9.7-10.6 GB working set after one build (`dmbd` soft private limit 8 GB, hard
    12 GB, `E:/dq-cache/dmb-daemon/lifecycle.log`), and `dmbc` peaked at 9.1-10.6 GB in every cold build. Two such daemons
    (e.g. a rebuilt binary) would not fit beside a normal lane load. The daemon exited by itself after roughly ten idle minutes
