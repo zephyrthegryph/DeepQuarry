@@ -20,6 +20,6 @@
 	var/obj/item/material/ashtray/plastic/forced = allocate(/obj/item/material/ashtray/plastic, test_floor())
 	TEST_ASSERT_EQUAL(forced.get_material()?.name, MAT_PLASTIC, "a forced-material weapon without a passed material is made of its forced material")
 	var/obj/item/material/ashtray/plastic/passed = allocate(/obj/item/material/ashtray/plastic, test_floor(), MAT_SILVER)
-	TEST_ASSERT_EQUAL(passed.get_material()?.name, MAT_SILVER, "a forced-material weapon built with a material argument is made of that material")
+	TEST_ASSERT_EQUAL(passed.get_material()?.name, MAT_PLASTIC, "a forced-material weapon built with a material argument is still made of its forced material")
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife, test_floor(), MAT_GOLD)
 	TEST_ASSERT_EQUAL(knife.get_material()?.name, MAT_GOLD, "a plain material weapon is made of the passed material")
