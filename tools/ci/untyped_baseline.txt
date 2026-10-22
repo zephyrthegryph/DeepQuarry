@@ -190,7 +190,6 @@ call	code/game/objects/effects/spawners/bombspawner.dm	@/datum/ttv_bomb_review::
 call	code/game/objects/items.dm	@/obj/item::slowdown
 call	code/game/objects/items.dm	@/obj/item::embed_chance
 call	code/game/objects/items/devices/radio/headset.dm	@/obj/item/radio/headset/event::tele_threshold
-call	code/game/objects/items/devices/radio/radio.dm	@/obj/item/radio::frequency
 call	code/game/objects/items/devices/radio/radio_service.dm	@/datum/signal::frequency
 call	code/game/objects/items/devices/uplink.dm	@/obj/item/uplink::next_offer_time
 call	code/game/objects/items/toys/toys.dm	@/obj/item/toy/acorn_branch::next_use
@@ -313,7 +312,6 @@ call	code/modules/flight_operations/flight_types.dm	@/datum/flight_vessel::id
 call	code/modules/flight_operations/flight_types.dm	@/datum/flight_plan::estimated_arrival_at
 call	code/modules/flight_operations/flight_types.dm	@/datum/flight_plan::departure_deadline
 call	code/modules/flight_operations/flight_types.dm	@/datum/flight_plan::terminal_cleanup_at
-call	code/modules/food/food/snacks.dm	@/obj/item/reagent_containers/food/snacks::trash
 call	code/modules/food/kitchen/cooking_machines/_appliance.dm	@/obj/machinery/appliance::food_color
 call	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	@/obj/item/reagent_containers/food/snacks/variable::scale
 call	code/modules/gamemaster/event2/event.dm	@/datum/event2/event::time_to_start
@@ -327,8 +325,6 @@ call	code/modules/heat/heat_mobs.dm	@/datum/body::surroundings_at
 call	code/modules/heat/watched.dm	@/datum/system/watched::watch_owner_ref
 call	code/modules/holodeck/HolodeckControl.dm	@/obj/machinery/computer/HolodeckControl::item_power_usage
 call	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/grown::potency
-call	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::rind_colour
-call	code/modules/hydroponics/grown.dm	@/obj/item/reagent_containers/food/snacks/fruit_slice::flesh_colour
 call	code/modules/hydroponics/grown_inedible.dm	@/obj/item/grown::potency
 call	code/modules/hydroponics/seed.dm	@/datum/seed::has_item_product
 call	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::spread_chance

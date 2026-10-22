@@ -111,6 +111,7 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
+	setup(PROC_REF(item_gun_setup))
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
@@ -156,8 +157,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
 
-/obj/item/gun/Initialize(mapload)
-	. = ..()
+/obj/item/gun/proc/item_gun_setup()
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
 

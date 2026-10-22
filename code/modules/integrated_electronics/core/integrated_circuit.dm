@@ -31,12 +31,10 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/any_examine(mob/user)
 	return
 
-// ALLOW(init/FRAMEWORK): the circuit base builds its pins from the defaults its type declares
-/obj/item/integrated_circuit/Initialize(mapload)
-	. = ..()
-	displayed_name = name
-	if(!size) size = w_class
-	if(size == -1) size = 0
+/obj/item/integrated_circuit/proc/item_integrated_circuit_setup()
+	set_displayed_name(name)
+	if(!size) set_size(w_class)
+	if(size == -1) set_size(0)
 	setup_io("inputs", /datum/integrated_io, inputs_default)
 	setup_io("outputs", /datum/integrated_io, outputs_default)
 	setup_io("activators", /datum/integrated_io/activate)

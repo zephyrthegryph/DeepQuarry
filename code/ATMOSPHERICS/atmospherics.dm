@@ -109,12 +109,11 @@ Pipelines + Other Objects -> Pipe network
 		var/datum/material/material = engineered_material()
 		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
-// ALLOW(init/INSTANCE_STATE): a pipe device takes its colour (or none it cannot show) and sets up its connection directions
-/obj/machinery/atmospherics/Initialize(mapload)
-	. = ..()
+/// A pipe device takes its colour (or none it cannot show) and sets up its connection directions.
+/obj/machinery/atmospherics/proc/settle_pipe_color()
 	if(!pipe_color)
 		set_pipe_color(color)
-	color = null
+	set_color(null)
 
 	if(!pipe_color_check(pipe_color))
 		set_pipe_color(null)

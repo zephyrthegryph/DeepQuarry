@@ -144,6 +144,7 @@ fi
 if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving the smoke set only" >&2; fi
 
 tested="$(git rev-parse HEAD)"
+evidence_alt=""
 echo "== lane-ready: gates on ${tested:0:10} (master ${master:0:10}): ${list[*]:-the smoke set}"
 gate_args=(--snapshot-output ${gate_extra[@]+"${gate_extra[@]}"})
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
@@ -158,6 +159,13 @@ if [ "$reuse_gates" -eq 0 ]; then
 	after="$(git rev-parse HEAD)"
 	if [ "$after" != "$tested" ]; then
 		echo "== lane-ready: the gates moved HEAD ${tested:0:10} -> ${after:0:10}; proof is read for the new HEAD"
+		# The gates run the tests on the commit they started from, then shrink ratchet baselines into the merge commit. When
+		# tools/ci/*_baseline.txt files are the whole difference, the run recorded against the old commit is evidence for the new one.
+		shrink_other="$(git diff --name-only "$tested" "$after" 2>/dev/null | grep -v -E '^tools/ci/[^/]*_baseline\.txt$' || true)"
+		if [ -z "$shrink_other" ] && ! git diff --quiet "$tested" "$after" 2>/dev/null; then
+			evidence_alt="$tested"
+			echo "== lane-ready: only tools/ci/*_baseline.txt differ between ${tested:0:10} (tested) and ${after:0:10}; test evidence for ${tested:0:10} is accepted for ${after:0:10}"
+		fi
 		tested="$after"
 	fi
 fi
@@ -212,14 +220,14 @@ new_failed="${new_failed:-${failed:-0}}"
 tests_json="$(sed -n 's/^tests_json=//p' "$ok_file")"
 MSYS2_ARG_CONV_EXCL='*' node -e '
 	const fs = require("fs");
-	const [file, passed, failed, newFailed, tested] = process.argv.slice(1);
+	const [file, passed, failed, newFailed, tested, alt] = process.argv.slice(1);
 	if (![passed, failed, newFailed].every(x => /^[0-9]+$/.test(x)) || Number(passed) < 1 || Number(newFailed) !== 0) process.exit(1);
 	let result;
 	try { result = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
 	// A run JSON names its commit abbreviated (10 hex digits, as in its file name): match it as a prefix of the tested sha.
 	const c = String(result.commit || "");
-	if (c.length < 10 || !tested.startsWith(c) || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
-' "$tests_json" "$passed" "$failed" "$new_failed" "$tested" || die "missing or inconsistent test evidence; nothing was stamped"
+	if (c.length < 10 || !(tested.startsWith(c) || (alt && alt.startsWith(c))) || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
+' "$tests_json" "$passed" "$failed" "$new_failed" "$tested" "$evidence_alt" || die "missing or inconsistent test evidence; nothing was stamped"
 mkdir -p data/lane-ready
 stamp_json="$(MSYS2_ARG_CONV_EXCL='*' node -e '
 	const fs = require("fs");
