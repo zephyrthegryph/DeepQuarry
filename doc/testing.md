@@ -561,8 +561,10 @@ Fresh worktrees should not pay cold build costs:
 
 The native compiler is the default (2026-10-15). It compiles with the in-tree Rust compiler (`tools/dmb`) through its
 resident daemon instead of DreamMaker. `DQ_COMPILER=dreammaker` (alias `byond`) selects DreamMaker; CI's production compile check
-(`tools/ci/compile_and_run.sh`) pins it as the cross-check until the two are proven equivalent (`dmb-equiv`, see
-`doc/rewrite/native_compiler_issues.md`). With neither cargo nor a built `dmbc` the default falls back to DreamMaker. The daemon retains parsed source and per-procedure
+(`tools/ci/compile_and_run.sh`) pins it as the cross-check until the two are proven equivalent. `bash tools/ci/dm_equiv.sh` is that
+proof: it compiles the production dme with both compilers and runs `dmb-equiv --all` over the pair (rules and evidence in
+`tools/dmb/crates/dmb-equiv/EQUIVALENCE.md`, status in `doc/rewrite/native_compiler_issues.md`; one difference left on 2026-10-22,
+the order global initializers run in). With neither cargo nor a built `dmbc` the default falls back to DreamMaker. The daemon retains parsed source and per-procedure
 results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
 first build is about two minutes.
 

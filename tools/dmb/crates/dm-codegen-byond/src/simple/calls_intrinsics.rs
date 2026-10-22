@@ -181,7 +181,13 @@ impl Compiler<'_> {
                 for arg in args {
                     self.expression(arg, statement)?;
                 }
-                self.emit(0xd4, vec![Word::Immediate(args.len() as u32)]);
+                if args.len() == 2 {
+                    // DreamMaker has a dedicated two-argument form (`NewImage`, 0x61, no operand); every other count
+                    // is `NewImageArgs n`.
+                    self.emit(0x61, vec![]);
+                } else {
+                    self.emit(0xd4, vec![Word::Immediate(args.len() as u32)]);
+                }
             }
             return Ok(true);
         }
@@ -279,12 +285,13 @@ impl Compiler<'_> {
                 }
                 self.emit(0xb1, words);
             } else {
-                let mut cumulative = 0.0;
+                // DreamMaker accumulates the whole-number share of each choice: threshold k is the sum of
+                // floor(weight_i * 65535 / total) for i <= k, not the floor of the cumulative share (four equal
+                // choices give 16383, 32766, 49149, not 16383, 32767, 49151).
+                let mut cumulative = 0u32;
                 for (_, weight, _, label) in choices.iter().take(choices.len() - 1) {
-                    cumulative += weight;
-                    words.push(Word::Immediate(
-                        ((cumulative / total) * 65535.0_f64).floor() as u32,
-                    ));
+                    cumulative += ((weight * 65535.0_f64) / total).floor() as u32;
+                    words.push(Word::Immediate(cumulative));
                     words.push(Word::Branch(*label));
                 }
                 words.push(Word::Branch(choices.last().unwrap().3));

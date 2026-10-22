@@ -1,4 +1,4 @@
-//! dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N]
+//! dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all]
 //!                       [--strict-order] [--ignore-debug] [--quiet]
 //! dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables all|classes,procs,...]
 //! dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING
@@ -21,6 +21,22 @@ fn main() -> ExitCode {
         Some("dump-proc") => dump_proc(&args[1..]),
         Some("word-report") => word_report(&args[1..]),
         Some("no-debug-ops") => no_debug_ops(&args[1..]),
+        Some("global-order") => global_order(&args[1..]),
+        Some("dump-vars") => {
+            let Some(path) = args.get(1) else {
+                return fail("dump-vars FILE.dmb");
+            };
+            match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+                Ok(d) => {
+                    let ctx = Ctx::new(&d, None);
+                    for id in 0..d.variables.len() {
+                        println!("{id}	{}", ctx.var_name(id as u32));
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => fail(e),
+            }
+        }
         Some("dump-types") => {
             let Some(path) = args.get(1) else {
                 return fail("dump-types FILE.dmb");
@@ -66,7 +82,7 @@ fn main() -> ExitCode {
             }
         }
         Some("-h" | "--help") | None => {
-            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
+            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all] [--context N] [--ignore-order] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
             ExitCode::from(2)
         }
         _ => compare_cmd(&args),
@@ -97,6 +113,15 @@ fn compare_cmd(args: &[String]) -> ExitCode {
                 };
                 i += 1;
             }
+            "--ignore-order" => opts.ignore_order = true,
+            "--context" if i + 1 < args.len() => {
+                opts.context = match args[i + 1].parse() {
+                    Ok(n) => n,
+                    Err(_) => return fail("--context needs a number"),
+                };
+                i += 1;
+            }
+            "--all" => opts.max_examples = usize::MAX,
             "--strict-order" => opts.strict_order = true,
             "--ignore-debug" => opts.ignore_debug = true,
             "--quiet" => quiet = true,
@@ -331,4 +356,36 @@ debug_instructions	{ops}");
     } else {
         ExitCode::from(1)
     }
+}
+
+/// `global-order FILE.dmb`: the variable IDs `<global-init>` stores to, in code order, with each variable's name
+/// (shows whether initialization follows the variable table).
+fn global_order(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        return fail("global-order FILE.dmb");
+    };
+    let dmb = match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
+        Ok(d) => d,
+        Err(e) => return fail(e),
+    };
+    let ctx = Ctx::new(&dmb, None);
+    let Some(p) = ctx.proc_keys.iter().position(|k| k == "<global-init>") else {
+        return fail("no <global-init>");
+    };
+    let Some(words) = dmb.proc_code_words(p) else {
+        return fail("no code");
+    };
+    let Ok(ins) = byond_dmb::bytecode::decode(words) else {
+        return fail("decode error");
+    };
+    for i in ins.iter().filter(|i| i.name == "SetVar") {
+        if let Ok(ops) = i.typed_operands() {
+            for op in ops {
+                if let byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(id)) = op {
+                    println!("{id}	{}", ctx.var_name(id));
+                }
+            }
+        }
+    }
+    ExitCode::SUCCESS
 }

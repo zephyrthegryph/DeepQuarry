@@ -943,6 +943,55 @@ fn no_fallthrough(op: u32) -> bool {
     matches!(op, 0x00 | 0x0f | 0x12 | 0xf8 | 0x78 | 0x79 | 0x7a | 0xb1)
 }
 
+/// What the top of the value stack is known to hold at a program point.
+#[derive(Clone, Debug, PartialEq)]
+enum Val {
+    Unknown,
+    /// Canonical text of the expression that produced the value.
+    Label(String),
+    Null,
+    /// The value is null or `Label`: a null-guard reached from its own null edge and from the fall-through.
+    MaybeNull(String),
+}
+
+fn merge_val(a: &Val, b: &Val) -> Val {
+    use Val::*;
+    match (a, b) {
+        (x, y) if x == y => x.clone(),
+        (Label(x), Null) | (Null, Label(x)) | (MaybeNull(x), Null) | (Null, MaybeNull(x)) => MaybeNull(x.clone()),
+        (Label(x), MaybeNull(y)) | (MaybeNull(y), Label(x)) if x == y => MaybeNull(x.clone()),
+        _ => Unknown,
+    }
+}
+
+/// The receiver Cache register, the Cache save stack (`PushCache`/`PopCache`) and the top-of-stack value at a point.
+#[derive(Clone, Debug, PartialEq)]
+struct CState {
+    cache: Option<String>,
+    /// Saved Cache values; None once paths disagree about the depth.
+    saved: Option<Vec<Option<String>>>,
+    val: Val,
+}
+
+impl CState {
+    fn merge(&self, other: &CState) -> CState {
+        CState {
+            cache: if self.cache == other.cache { self.cache.clone() } else { None },
+            saved: match (&self.saved, &other.saved) {
+                (Some(a), Some(b)) if a.len() == b.len() => Some(
+                    a.iter().zip(b).map(|(x, y)| if x == y { x.clone() } else { None }).collect(),
+                ),
+                _ => None,
+            },
+            val: merge_val(&self.val, &other.val),
+        }
+    }
+}
+
+fn is_set_cache(i: &Instruction) -> bool {
+    i.name == "SetVar" && matches!(i.typed_operands().as_deref(), Ok([Operand::Variable(Variable::Cache)]))
+}
+
 /// Symbolic content of the receiver Cache register before each instruction.
 ///
 /// A bare field or proc operand reads the Cache: Dream Maker omits the
@@ -952,53 +1001,141 @@ fn no_fallthrough(op: u32) -> bool {
 /// object it holds, or None when paths disagree (then operands stay bare).
 /// Two encodings therefore compare equal only when they read the same
 /// receiver expression on every path.
-pub(crate) fn cache_states(ctx: &Ctx<'_>, ins: &[Instruction]) -> Vec<Option<String>> {
+///
+/// The register is written by `SetVar cache` (the value on top of the stack), by `SetCacheJmpIfNull` and
+/// `SetCachePopJmpIfNull` (the value, or null on the jump edge), by the receiver chains of variable operands and by
+/// `PopCache`, which restores what `PushCache` saved on a separate save stack. The second result tells whether the
+/// save stack is balanced on every path (no pop of an empty stack, no disagreement at a join); only then are the
+/// pushes and pops a pure register save/restore whose effect the labels carry, and `normalize` drops them.
+pub(crate) fn cache_states_full(ctx: &Ctx<'_>, ins: &[Instruction]) -> (Vec<Option<String>>, bool) {
     let n = ins.len();
     let index: HashMap<usize, usize> = ins.iter().enumerate().map(|(k, i)| (i.offset, k)).collect();
-    let mut state: Vec<Option<Option<String>>> = vec![None; n];
+    let mut state: Vec<Option<CState>> = vec![None; n];
     if n == 0 {
-        return Vec::new();
+        return (Vec::new(), true);
     }
-    state[0] = Some(Some("src".into()));
+    let mut balanced = true;
+    state[0] = Some(CState {
+        cache: Some("src".into()),
+        saved: Some(Vec::new()),
+        val: Val::Unknown,
+    });
     let mut work = vec![0usize];
     let mut queued = vec![false; n];
     queued[0] = true;
+    let no_labels = HashMap::new();
     while let Some(k) = work.pop() {
         queued[k] = false;
-        let mut cache = state[k].clone().unwrap_or(None);
+        let mut st = state[k].clone().unwrap_or(CState {
+            cache: None,
+            saved: None,
+            val: Val::Unknown,
+        });
         let i = &ins[k];
+        // The state on the jump edge when it differs from the fall-through state.
+        let mut jump_edge: Option<CState> = None;
+        // A guard reached only with a null value always jumps; its fall-through is unreachable (and must not
+        // contribute a state, or an early visit with partial information would pin the labels below it).
+        let mut falls_through = true;
         if !is_debug(i.opcode) {
+            let before = st.cache.clone();
+            let mut produced = Val::Unknown;
             if let Ok(ops) = i.typed_operands() {
                 for op in &ops {
                     if let Operand::Variable(v) = op {
-                        cache = ctx.var_chain(v, &cache).1;
+                        let (text, next) = ctx.var_chain(v, &st.cache);
+                        if i.name == "GetVar" {
+                            produced = match v {
+                                Variable::Null => Val::Null,
+                                _ => Val::Label(text),
+                            };
+                        }
+                        st.cache = next;
                     }
                 }
             }
-            if matches!(i.opcode, 0x13d | 0x13e) {
-                cache = None;
+            match i.name {
+                "Call" | "CallGlob" => {
+                    let mut text = String::new();
+                    let mut c = before.clone();
+                    render_instruction(ctx, i, &no_labels, &mut c, &mut text);
+                    produced = Val::Label(format!("({text})"));
+                }
+                "PushVal" => {
+                    if let Ok([Operand::Value(v)]) = i.typed_operands().as_deref() {
+                        let text = ctx.value(v);
+                        produced = if text == "null" { Val::Null } else { Val::Label(text) };
+                    }
+                }
+                _ => {}
+            }
+            let carried = st.val.clone();
+            match i.opcode {
+                0x142 => match &mut st.saved {
+                    Some(stack) => stack.push(st.cache.clone()),
+                    None => balanced = false,
+                },
+                0x143 => match &mut st.saved {
+                    Some(stack) => match stack.pop() {
+                        Some(c) => st.cache = c,
+                        None => {
+                            balanced = false;
+                            st.cache = None;
+                        }
+                    },
+                    None => {
+                        balanced = false;
+                        st.cache = None;
+                    }
+                },
+                0x13d | 0x13e => {
+                    let mut edge = st.clone();
+                    edge.cache = Some("null".into());
+                    edge.val = Val::Null;
+                    jump_edge = Some(edge);
+                    falls_through = carried != Val::Null;
+                    st.cache = match carried {
+                        Val::Label(x) | Val::MaybeNull(x) => Some(x),
+                        _ => None,
+                    };
+                    produced = Val::Unknown;
+                }
+                _ if is_set_cache(i) => {
+                    st.cache = match carried {
+                        Val::Label(x) => Some(x),
+                        _ => None,
+                    };
+                }
+                _ => {}
+            }
+            st.val = produced;
+        }
+        let mut succ: Vec<(usize, CState)> = Vec::new();
+        if !no_fallthrough(i.opcode) && k + 1 < n && falls_through {
+            succ.push((k + 1, st.clone()));
+        }
+        if let Ok(targets) = i.branch_targets() {
+            for t in targets {
+                if let Some(&s) = index.get(&(t as usize)) {
+                    succ.push((s, jump_edge.clone().unwrap_or_else(|| st.clone())));
+                }
             }
         }
-        let mut succ: Vec<usize> = Vec::new();
-        if !no_fallthrough(i.opcode) && k + 1 < n {
-            succ.push(k + 1);
-        }
-        match i.branch_targets() {
-            Ok(targets) => succ.extend(
-                targets
-                    .iter()
-                    .filter_map(|t| index.get(&(*t as usize)).copied()),
-            ),
-            Err(_) => {}
-        }
-        for s in succ {
+        for (s, incoming) in succ {
             let merged = match &state[s] {
-                None => Some(cache.clone()),
-                Some(prev) if *prev == cache => continue,
-                Some(None) => continue,
-                Some(Some(_)) => Some(None),
+                None => incoming,
+                Some(prev) => {
+                    let m = prev.merge(&incoming);
+                    if m == *prev {
+                        continue;
+                    }
+                    if m.saved.is_none() {
+                        balanced = false;
+                    }
+                    m
+                }
             };
-            state[s] = merged;
+            state[s] = Some(merged);
             if !queued[s] {
                 queued[s] = true;
                 work.push(s);
@@ -1006,7 +1143,11 @@ pub(crate) fn cache_states(ctx: &Ctx<'_>, ins: &[Instruction]) -> Vec<Option<Str
         }
     }
     // Unreachable instructions keep an unknown Cache.
-    state.into_iter().map(|s| s.unwrap_or(None)).collect()
+    (state.into_iter().map(|s| s.and_then(|c| c.cache)).collect(), balanced)
+}
+
+pub(crate) fn cache_states(ctx: &Ctx<'_>, ins: &[Instruction]) -> Vec<Option<String>> {
+    cache_states_full(ctx, ins).0
 }
 
 /// Canonical debug stream: each DbgLine with its instruction ordinal and the
@@ -1091,7 +1232,13 @@ pub(crate) fn render_instruction(
             Operand::Value(v) => out.push_str(&ctx.value(v)),
             Operand::Variable(v) => {
                 let (text, next) = ctx.var_chain(v, cache);
-                out.push_str(&text);
+                // Reading the Cache register itself yields the object it holds.
+                match (v, ins.name, cache.as_ref()) {
+                    (Variable::Cache, "GetVar", Some(label)) => {
+                        let _ = write!(out, "cache={label}");
+                    }
+                    _ => out.push_str(&text),
+                }
                 *cache = next;
             }
             Operand::Switch { cases, default } => {
@@ -1158,13 +1305,17 @@ pub(crate) fn render_code_lines(
     let ins = bytecode::decode(words)
         .map_err(|e| format!("decode error at {}: {}", e.offset, e.reason))?;
     let map = labels(&ins, words.len());
-    let states = cache_states(ctx, &ins);
+    let (states, balanced) = cache_states_full(ctx, &ins);
     Ok(ins
         .iter()
         .zip(states)
         .map(|(i, mut cache)| {
             let mut s = String::new();
             render_instruction(ctx, i, &map, &mut cache, &mut s);
+            // An unbalanced save stack is not a pure register save/restore: keep the instructions visible.
+            if !balanced && matches!(i.opcode, 0x142 | 0x143) {
+                s.push('?');
+            }
             (is_debug(i.opcode), s)
         })
         .collect())
@@ -1209,10 +1360,13 @@ pub(crate) fn code_hashes(ctx: &Ctx<'_>, p: usize) -> Code {
     let mut buf = String::new();
     let mut debug = String::new();
     let mut file = String::from("DbgFile ?");
-    let states = cache_states(ctx, &ins);
+    let (states, balanced) = cache_states_full(ctx, &ins);
     for (i, mut cache) in ins.iter().zip(states) {
         buf.clear();
         render_instruction(ctx, i, &map, &mut cache, &mut buf);
+        if !balanced && matches!(i.opcode, 0x142 | 0x143) {
+            buf.push('?');
+        }
         if i.opcode == 0x84 {
             file.clone_from(&buf);
         } else if i.opcode == 0x85 {

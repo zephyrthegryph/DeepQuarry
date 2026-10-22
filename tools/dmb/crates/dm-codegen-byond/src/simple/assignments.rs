@@ -157,6 +157,29 @@ impl Compiler<'_> {
         }
         if op == "=" {
             if let ExprKind::Index { object, index } = &target.kind {
+                // `a?.f()[i] = v`: DreamMaker tests the receiver first, so `v` is not evaluated for a null receiver.
+                if let ExprKind::Call { callee, args } = &super::expression::peel_groups(object).kind {
+                    if let (true, ExprKind::SafeMember { object: receiver, selector, via_colon: false }) =
+                        (args.is_empty(), &callee.kind)
+                    {
+                        let proc_selector = self.safe_member_call_selector(receiver, selector, statement)?;
+                        self.record_call_selection(callee, selector, &proc_selector, true);
+                        self.expression(receiver, statement)?;
+                        let end = self.label();
+                        self.emit(318, vec![Word::Branch(end)]);
+                        self.emit(opcode::PUSH_CACHE, vec![]);
+                        self.expression(value, statement)?;
+                        self.emit(
+                            opcode::CALL,
+                            vec![Word::Variable(proc_selector), Word::Immediate(0)],
+                        );
+                        self.expression(index, statement)?;
+                        self.emit(opcode::LIST_SET, vec![]);
+                        self.emit(opcode::POP_CACHE, vec![]);
+                        self.result.code.items.push(CodeItem::Label(end));
+                        return Ok(());
+                    }
+                }
                 self.expression(value, statement)?;
                 self.expression(object, statement)?;
                 self.expression(index, statement)?;
@@ -164,18 +187,23 @@ impl Compiler<'_> {
                 return Ok(());
             }
             if let ExprKind::Member {
-                object, selector, ..
+                object,
+                selector,
+                via_colon,
             } = &target.kind
             {
                 if self.variable_expr(target, statement).is_err() {
                     self.expression(value, statement)?;
                     self.expression(object, statement)?;
                     self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                    self.intern_string(selector);
-                    self.emit(
-                        opcode::SET_VAR,
-                        vec![Word::Variable(VariableWord::Field(SymbolId::of(selector)))],
-                    );
+                    let variable = match self.fallback_member_global(object, selector, *via_colon)? {
+                        Some(symbol) => VariableWord::Global(symbol),
+                        None => {
+                            self.intern_string(selector);
+                            VariableWord::Field(SymbolId::of(selector))
+                        }
+                    };
+                    self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
                     return Ok(());
                 }
             }
@@ -214,15 +242,22 @@ impl Compiler<'_> {
             Ok(variable) => variable,
             Err(_) => {
                 let ExprKind::Member {
-                    object, selector, ..
+                    object,
+                    selector,
+                    via_colon,
                 } = &target.kind
                 else {
                     return Err(error(statement, "unsupported assignment target"));
                 };
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                self.intern_string(selector);
-                VariableWord::Field(SymbolId::of(selector))
+                match self.fallback_member_global(object, selector, *via_colon)? {
+                    Some(symbol) => VariableWord::Global(symbol),
+                    None => {
+                        self.intern_string(selector);
+                        VariableWord::Field(SymbolId::of(selector))
+                    }
+                }
             }
         };
         self.ensure_writable(&variable, statement)?;
@@ -304,7 +339,9 @@ impl Compiler<'_> {
                         &format!("unresolved global variable: {selector}"),
                     ));
                 }
-                if let Some(owner) = if *via_colon {
+                // A shared variable needs no receiver, but a receiver that runs code (a call) is still evaluated, as
+                // DreamMaker does (`Call ...; SetVar cache; GetVar global:x`): that path leaves here as an error.
+                if let Some(owner) = if *via_colon || !is_reference_chain(object) {
                     None
                 } else {
                     self.inferred_expression_type(object)?
@@ -565,27 +602,28 @@ impl Compiler<'_> {
         if let ExprKind::Group(inner) = &expr.kind {
             return self.local_initializer(inner, declaration, statement);
         }
-        if let ExprKind::Binary { op, lhs, rhs } = &expr.kind {
+        if let ExprKind::Binary { op, .. } = &expr.kind {
             if op == "||" || op == "&&" {
-                if let Some(left) = fold_number(lhs) {
-                    if (op == "&&") == (left != 0.0) {
-                        self.lower_dead(|compiler| compiler.local_initializer(lhs, declaration, statement))?;
-                        return self.local_initializer(rhs, declaration, statement);
-                    }
-                    self.lower_dead(|compiler| compiler.local_initializer(rhs, declaration, statement))?;
-                    return self.local_initializer(lhs, declaration, statement);
+                let operands = self.short_circuit_operands(expr, op, statement)?;
+                let Some((first, tails)) = operands.split_first() else {
+                    return Err(error(statement, "empty short-circuit chain"));
+                };
+                self.local_initializer(first, declaration, statement)?;
+                if tails.is_empty() {
+                    return Ok(());
                 }
-                self.local_initializer(lhs, declaration, statement)?;
                 let end = self.label();
-                self.emit(
-                    if op == "||" {
-                        opcode::JMP_OR
-                    } else {
-                        opcode::JMP_AND
-                    },
-                    vec![Word::Branch(end)],
-                );
-                self.local_initializer(rhs, declaration, statement)?;
+                for next in tails {
+                    self.emit(
+                        if op == "||" {
+                            opcode::JMP_OR
+                        } else {
+                            opcode::JMP_AND
+                        },
+                        vec![Word::Branch(end)],
+                    );
+                    self.local_initializer(next, declaration, statement)?;
+                }
                 self.result.code.items.push(CodeItem::Label(end));
                 return Ok(());
             }
@@ -653,8 +691,8 @@ impl Compiler<'_> {
         } = &expr.kind
         {
             // A constant condition keeps one branch (DreamMaker 516.1687); the other is still checked.
-            if let Some(value) = fold_number(condition) {
-                let (kept, dead) = if value != 0.0 { (then_value, else_value) } else { (else_value, then_value) };
+            if let Some(value) = super::expression::constant_truth(condition) {
+                let (kept, dead) = if value { (then_value, else_value) } else { (else_value, then_value) };
                 self.lower_dead(|compiler| compiler.local_initializer(dead, declaration, statement))?;
                 return self.local_initializer(kept, declaration, statement);
             }
@@ -779,4 +817,15 @@ fn path_like_target(statement: &str) -> bool {
         && target
             .split('/')
             .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+}
+
+/// A receiver that only names things (identifiers and member reads, possibly parenthesised): evaluating it has no effect,
+/// so a shared (`global`) variable behind it can be read or written without evaluating it.
+pub(super) fn is_reference_chain(expr: &Expr) -> bool {
+    match &expr.kind {
+        ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => true,
+        ExprKind::Group(inner) => is_reference_chain(inner),
+        ExprKind::Member { object, .. } => is_reference_chain(object),
+        _ => false,
+    }
 }

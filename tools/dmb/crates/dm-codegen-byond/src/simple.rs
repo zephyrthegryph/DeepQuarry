@@ -890,6 +890,11 @@ struct Compiler<'a> {
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
     // Issued by nameof admission and the enclosing parsed return statement.
     nameof_return_context: bool,
+    /// The expression DreamMaker does not reassociate at its root: the value of an assignment or variable initializer, a
+    /// condition, a switch selector, the operand of `<<` (see `reassociate` in expression.rs).
+    assoc_exempt_root: Option<*const Expr>,
+    /// The operator of the exempt chain being lowered (see `expression` in expression.rs).
+    assoc_off_op: Option<String>,
     nameof_return_recovery: Option<NameofDiagnosticRecovery>,
     locals: Vec<String>,
     local_slots: dm_syntax::ScopeMap<u32>,
@@ -905,6 +910,8 @@ struct Compiler<'a> {
     label_breaks: HashMap<String, LabelId>,
     label_loop_depths: HashMap<String, usize>,
     label_iterator_depths: HashMap<String, usize>,
+    /// Per active label: the number of iterators open outside the labelled statement (`break label` pops down to it).
+    label_break_iterator_depths: HashMap<String, usize>,
     try_depth: usize,
     /// (continue target, break target) for nested loops.
     loops: Vec<(LabelId, LabelId)>,
@@ -941,6 +948,8 @@ mod calls_dispatch;
 mod calls_general;
 #[path = "simple/calls_intrinsics.rs"]
 mod calls_intrinsics;
+#[path = "simple/const_vars.rs"]
+mod const_vars;
 #[path = "simple/emission.rs"]
 mod emission;
 #[path = "simple/expression.rs"]
