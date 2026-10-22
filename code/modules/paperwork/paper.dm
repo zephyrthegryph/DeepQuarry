@@ -65,6 +65,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
+	setup(PROC_REF(encode_text), mapload = TRUE)
 	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
 	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("bapped")))
@@ -140,10 +141,8 @@ CAPABILITIES(/obj/item/paper/card)
 	plane_foldable = FALSE // No airplanes for me.
 
 
-// ALLOW(init/INSTANCE_STATE): a paper encodes the text it was written with, titles its description and builds its info links
-/obj/item/paper/Initialize(mapload)
-	. = ..()
-
+/// A paper encodes the text it was written with, titles its description and builds its info links.
+/obj/item/paper/proc/encode_text(mapload)
 	if(mapload) // Jank, but we do this to prevent maploaded papers from somehow stacking across rounds if re-added to the board by a player.
 		was_maploaded = TRUE
 

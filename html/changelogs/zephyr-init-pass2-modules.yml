@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Init sweep pass 2 (modules): mapload checks and discard guards in SMES, disposal, hydroponics, materials, rings, mining, paper and others move to setup hooks"

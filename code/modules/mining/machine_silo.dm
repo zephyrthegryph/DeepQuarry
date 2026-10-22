@@ -15,6 +15,7 @@
 	var/datum/material_container/materials
 
 CAPABILITIES(/obj/machinery/ore_silo)
+	setup(PROC_REF(claim_default), mapload = TRUE)
 	ref_many(nameof(holds))
 	ref_many(nameof(ore_connected_machines))
 	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
@@ -26,8 +27,8 @@ CAPABILITIES(/obj/machinery/ore_silo)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
-/obj/machinery/ore_silo/Initialize(mapload)
-	. = ..()
+/// The first silo the map places on the station becomes the default silo.
+/obj/machinery/ore_silo/proc/claim_default(mapload)
 	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
 		GLOB.ore_silo_default = src
 

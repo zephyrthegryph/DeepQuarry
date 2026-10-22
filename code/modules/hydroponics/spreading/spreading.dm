@@ -67,6 +67,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 CAPABILITIES(/obj/effect/plant)
 	keeps_if(PROC_REF(not_on_open_turf))
 	keeps_if(PROC_REF(plant_controller_exists), warn = "Plant controller does not exist and the plant requires it")
+	setup(PROC_REF(take_seed), mapload = TRUE)
 	setup(PROC_REF(effect_plant_setup))
 	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
@@ -104,8 +105,7 @@ CAPABILITIES(/obj/effect/plant)
 	return !!SSplants
 
 // A vine grows from the seed it was made with (a constructor param, which keeps_if() cannot read: it is asked before the params apply), else the default seed.
-/obj/effect/plant/Initialize(mapload)
-	. = ..()
+/obj/effect/plant/proc/take_seed(mapload)
 	var/datum/seed/newseed = seed_at_make
 	if(!istype(newseed))
 		newseed = SSplants.seeds[DEFAULT_SEED]

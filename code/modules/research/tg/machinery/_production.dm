@@ -36,7 +36,7 @@
 CAPABILITIES(/obj/machinery/rnd/production)
 	setup(PROC_REF(configure_initial_parts))
 	configure(uses_power(active = 5000))
-	owns_one(nameof(materials), /datum/remote_materials)
+	owns_one(nameof(materials), /datum/remote_materials, starts = PROC_REF(make_remote_materials))
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
 	owns_one(nameof(print_run), /datum/fab_run)
 	fabricator(buildtypes = nameof(allowed_buildtypes), efficiency = nameof(efficiency_coeff), knows = PROC_REF(knows_design),
@@ -46,9 +46,11 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	ui_shape(busy = bool(), materials = list_of(row()), materialChoices = list_of(row()), onHold = bool(), materialMaximum = num(), queue = list_of(row()))
 
+/// Its link to the ore silo (owns_one(starts =)): only a machine the map places links to the silo.
+/obj/machinery/rnd/production/proc/make_remote_materials(current, mapload)
+	return new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)))
+
 /obj/machinery/rnd/production/Initialize(mapload)
-	// ALLOW(decl): mapload is a constructor argument of its store: only a machine the map places links to the ore silo
-	rel_set(src, nameof(materials), new /datum/remote_materials(src, mapload, mat_container_events = list((/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert))))
 	available_designs = list()
 	. = ..()
 
