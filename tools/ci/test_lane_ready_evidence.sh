@@ -6,15 +6,25 @@ scratch="$(mktemp -d E:/projects/dq-wt/lane-ready-evidence.XXXXXX)"
 echo "lane-ready evidence fixture: $scratch"
 mkdir -p "$scratch/tools"
 cp "${DQ_EVIDENCE_WRAPPER:-$source_root/tools/dq_lane_ready.sh}" "$scratch/tools/dq_lane_ready.sh"
+for helper in dq_git_safe dq_run_lock dq_proof_cache dq_declared_tests; do cp "$source_root/tools/$helper.sh" "$scratch/tools/$helper.sh"; done
 cd "$scratch"
 git init -q -b codex/evidence
 git config user.name 'Lane evidence test'
 git config user.email 'lane-evidence@example.invalid'
 printf '/data/\n' >.gitignore
 printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_merge_master.sh
+printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_focused_test.sh
 cat >tools/dq_merge_gates.sh <<'FIXTURE'
 #!/usr/bin/env bash
 set -euo pipefail
+pre="$(git rev-parse HEAD)"
+if [ "$DQ_EVIDENCE_FIXTURE" = shrunk ]; then
+  # The gates' baseline shrink: tests ran on the pre-shrink commit, then only a tools/ci baseline changed.
+  mkdir -p tools/ci; echo shrunk >tools/ci/x_baseline.txt; git add tools/ci/x_baseline.txt; git commit -q --amend --no-edit
+fi
+if [ "$DQ_EVIDENCE_FIXTURE" = shrunkcode ]; then
+  echo probe >>moved.txt; echo shrunk >tools/ci/x_baseline.txt; git add moved.txt tools/ci/x_baseline.txt; git commit -q --amend --no-edit
+fi
 if [ "$DQ_EVIDENCE_FIXTURE" = moved ]; then
   # The real gates amend the merge commit (baseline shrink, look keys): HEAD moves before the proof is named.
   echo probe >>moved.txt; git add moved.txt; git commit -q --amend --no-edit
@@ -24,13 +34,15 @@ dir=data/merge-gates
 mkdir -p "$dir"
 case "$DQ_EVIDENCE_FIXTURE" in
   missing) exit 0 ;;
-  incomplete|badcounts|wrongsha|wrongcommit|valid|moved) ;;
+  incomplete|badcounts|wrongsha|wrongcommit|valid|moved|shrunk|shrunkcode) ;;
   *) exit 2 ;;
 esac
 proof_sha="$sha"
 [ "$DQ_EVIDENCE_FIXTURE" != wrongsha ] || proof_sha=0000000000000000000000000000000000000000
 printf 'sha=%s\ntests=/datum/unit_test/evidence_probe\ntests_json=data/result.json\npassed=1\nfailed=0\nnew_failed=0\n' "$proof_sha" >"$dir/${sha:0:12}.ok"
 printf '{"commit":"%s","counts":{"passed":1,"failed":0}}\n' "$sha" >data/result.json
+case "$DQ_EVIDENCE_FIXTURE" in shrunk|shrunkcode) printf '{"commit":"%s","counts":{"passed":1,"failed":0}}
+' "${pre:0:10}" >data/result.json ;; esac
 if [ "$DQ_EVIDENCE_FIXTURE" = wrongcommit ]; then printf '{"commit":"other","counts":{"passed":1,"failed":0}}\n' >data/result.json; fi
 if [ "$DQ_EVIDENCE_FIXTURE" = incomplete ]; then exit 0; fi
 for marker in dm ratchets analyze; do printf '%s\n' "$sha" >"$dir/${sha:0:12}.$marker.ok"; done
@@ -79,3 +91,16 @@ echo 'PASS: gates that moved HEAD still stamp'
 # The refusal names expected and found.
 grep -q 'expected:' data-wrongsha.log && grep -q 'found:' data-wrongsha.log || { echo 'FAIL: refusal lacks expected/found' >&2; exit 1; }
 echo 'PASS: refusal prints expected vs found'
+
+# The exact reported sequence: the gates shrink baselines after the run, so the evidence names the pre-shrink commit.
+git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
+DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=shrunk bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-shrunk.log 2>&1 || { cat data-shrunk.log >&2; echo 'FAIL: baseline-shrunk HEAD was not stamped' >&2; exit 1; }
+git notes --ref=lane-ready show HEAD >/dev/null
+grep -q 'only tools/ci/\*_baseline.txt differ' data-shrunk.log || { echo 'FAIL: no matched-commits line' >&2; exit 1; }
+echo 'PASS: evidence for the pre-shrink commit is accepted when only baselines differ'
+git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
+if DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=shrunkcode bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-shrunkcode.log 2>&1; then
+ echo 'FAIL: evidence accepted across a non-baseline change' >&2
+ exit 1
+fi
+echo 'PASS: a non-baseline difference gets no evidence alias'

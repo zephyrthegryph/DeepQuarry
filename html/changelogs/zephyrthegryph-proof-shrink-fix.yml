@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_lane_ready accepts the test evidence of the tested commit when the gates' baseline shrink is the only difference to HEAD"
