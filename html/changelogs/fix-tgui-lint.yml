@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "tgui-tsc and biome-check now wait for analyze gen instead of racing its generated interface files"
