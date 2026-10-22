@@ -459,9 +459,15 @@ init_lines	code/modules/body/organs/subtypes/standard.dm	@/obj/item/organ/extern
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::forced_material
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
 init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::default_material
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::material
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::if
+init_lines	code/modules/clothing/accessories/hands.dm	@/obj/item/clothing/accessory/bracelet/material::Initialize::return
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::forced_material
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
 init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::default_material
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::material
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::if
+init_lines	code/modules/clothing/accessories/rings.dm	@/obj/item/clothing/accessory/ring/material::Initialize::return
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::hold.max_storage_space
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::if
 init_lines	code/modules/clothing/accessories/storage.dm	@/obj/item/clothing/accessory/storage::Initialize::expr

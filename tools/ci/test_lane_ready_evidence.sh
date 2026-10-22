@@ -12,13 +12,20 @@ git init -q -b codex/evidence
 git config user.name 'Lane evidence test'
 git config user.email 'lane-evidence@example.invalid'
 printf '/data/\n' >.gitignore
-printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_merge_master.sh
+# The merge stub stands for a master merge that brings in the fixed wrapper (DQ_REAL_WRAPPER) over a stale running copy.
+cat >tools/dq_merge_master.sh <<'MERGE'
+#!/usr/bin/env bash
+if [ -n "${DQ_REAL_WRAPPER:-}" ]; then
+  cp "$DQ_REAL_WRAPPER" tools/dq_lane_ready.sh; git add tools/dq_lane_ready.sh; git diff --cached --quiet || git commit -q -m 'Merge master (fixed wrapper)'
+fi
+exit 0
+MERGE
 printf '#!/usr/bin/env bash\nexit 0\n' >tools/dq_focused_test.sh
 cat >tools/dq_merge_gates.sh <<'FIXTURE'
 #!/usr/bin/env bash
 set -euo pipefail
 pre="$(git rev-parse HEAD)"
-if [ "$DQ_EVIDENCE_FIXTURE" = shrunk ]; then
+if [ "$DQ_EVIDENCE_FIXTURE" = shrunk ] || [ "$DQ_EVIDENCE_FIXTURE" = stale ]; then
   # The gates' baseline shrink: tests ran on the pre-shrink commit, then only a tools/ci baseline changed.
   mkdir -p tools/ci; echo shrunk >tools/ci/x_baseline.txt; git add tools/ci/x_baseline.txt; git commit -q --amend --no-edit
 fi
@@ -34,14 +41,14 @@ dir=data/merge-gates
 mkdir -p "$dir"
 case "$DQ_EVIDENCE_FIXTURE" in
   missing) exit 0 ;;
-  incomplete|badcounts|wrongsha|wrongcommit|valid|moved|shrunk|shrunkcode) ;;
+  incomplete|badcounts|wrongsha|wrongcommit|valid|moved|shrunk|shrunkcode|stale) ;;
   *) exit 2 ;;
 esac
 proof_sha="$sha"
 [ "$DQ_EVIDENCE_FIXTURE" != wrongsha ] || proof_sha=0000000000000000000000000000000000000000
 printf 'sha=%s\ntests=/datum/unit_test/evidence_probe\ntests_json=data/result.json\npassed=1\nfailed=0\nnew_failed=0\n' "$proof_sha" >"$dir/${sha:0:12}.ok"
 printf '{"commit":"%s","counts":{"passed":1,"failed":0}}\n' "$sha" >data/result.json
-case "$DQ_EVIDENCE_FIXTURE" in shrunk|shrunkcode) printf '{"commit":"%s","counts":{"passed":1,"failed":0}}
+case "$DQ_EVIDENCE_FIXTURE" in shrunk|shrunkcode|stale) printf '{"commit":"%s","counts":{"passed":1,"failed":0}}
 ' "${pre:0:10}" >data/result.json ;; esac
 if [ "$DQ_EVIDENCE_FIXTURE" = wrongcommit ]; then printf '{"commit":"other","counts":{"passed":1,"failed":0}}\n' >data/result.json; fi
 if [ "$DQ_EVIDENCE_FIXTURE" = incomplete ]; then exit 0; fi
@@ -96,7 +103,7 @@ echo 'PASS: refusal prints expected vs found'
 git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
 DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=shrunk bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-shrunk.log 2>&1 || { cat data-shrunk.log >&2; echo 'FAIL: baseline-shrunk HEAD was not stamped' >&2; exit 1; }
 git notes --ref=lane-ready show HEAD >/dev/null
-grep -q 'only tools/ci/\*_baseline.txt differ' data-shrunk.log || { echo 'FAIL: no matched-commits line' >&2; exit 1; }
+grep -q 'only tools/ci/\*_baseline.txt ' data-shrunk.log || { echo 'FAIL: no matched-commits line' >&2; exit 1; }
 echo 'PASS: evidence for the pre-shrink commit is accepted when only baselines differ'
 git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
 if DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=shrunkcode bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-shrunkcode.log 2>&1; then
@@ -104,3 +111,14 @@ if DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=shrunkcode bash tools/dq_lane_ready.
  exit 1
 fi
 echo 'PASS: a non-baseline difference gets no evidence alias'
+
+# The real sequence: the running wrapper predates the fix; the master merge brings the fixed one, then the gates (which ran their tests on the
+# merge commit) amend it with a baseline shrink. The stale copy cannot match the evidence, so the wrapper must re-run the merged copy.
+git notes --ref=lane-ready remove HEAD >/dev/null 2>&1 || true
+cp tools/dq_lane_ready.sh real_wrapper.sh
+sed 's/^\(\s*\)evidence_alt="\$tested"/:/' real_wrapper.sh >tools/dq_lane_ready.sh
+if cmp -s real_wrapper.sh tools/dq_lane_ready.sh; then echo 'FAIL: could not make the stale wrapper' >&2; exit 1; fi
+git add tools/dq_lane_ready.sh; git commit -q -m 'stale wrapper'
+DQ_REAL_WRAPPER="$PWD/real_wrapper.sh" DQ_LANE_NOTES_PUSH=0 DQ_EVIDENCE_FIXTURE=stale bash tools/dq_lane_ready.sh --tests /datum/unit_test/evidence_probe >data-stale.log 2>&1 || { cat data-stale.log >&2; echo 'FAIL: stale wrapper was not replaced by the merged copy' >&2; exit 1; }
+grep -q 're-running the merged copy' data-stale.log && git notes --ref=lane-ready show HEAD >/dev/null
+echo 'PASS: a wrapper the merge replaced re-runs the merged copy and stamps across the baseline shrink'

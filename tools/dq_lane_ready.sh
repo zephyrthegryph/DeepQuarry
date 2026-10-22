@@ -32,6 +32,11 @@ set -uo pipefail
 # The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
 export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
+# The merge below can bring in a newer copy of this very script (a fix lands on master, the lane only gets it by merging). The running
+# bash would keep executing the old text, so remember the script and its hash now and re-run the new copy after the merge.
+self_path="tools/dq_lane_ready.sh"
+self_sum="$(git hash-object "$self_path" 2>/dev/null || true)"
+orig_args=("$@")
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_run_lock.sh"
 run_lock_take "dq_lane_ready.sh $(git symbolic-ref -q --short HEAD)" || exit 1
@@ -109,7 +114,7 @@ if [ "$reuse_gates" -eq 1 ]; then
 	echo "== lane-ready: reusing completed gates for the unchanged current commit"
 elif [ "$merge" -eq 1 ]; then
 	echo "== lane-ready: merging origin/master into $branch"
-	bash tools/dq_merge_master.sh || die "the merge with origin/master did not complete (resolve, commit, rerun)"
+	bash tools/dq_merge_master.sh || die "the merge with origin/master did not complete (resolve, commit, rerun)"; if [ -z "${DQ_LANE_READY_REEXEC:-}" ] && [ -n "$self_sum" ] && [ "$(git hash-object "$self_path" 2>/dev/null)" != "$self_sum" ]; then echo "== lane-ready: the merge changed $self_path; re-running the merged copy"; DQ_LANE_READY_REEXEC=1 exec bash "$self_path" ${orig_args[@]+"${orig_args[@]}"}; fi
 else
 	git fetch -q origin || die "git fetch failed"
 	git merge-base --is-ancestor origin/master HEAD || die "REFUSED: --no-merge, but origin/master has commits $branch does not; rerun without --no-merge" 2
@@ -162,9 +167,9 @@ if [ "$reuse_gates" -eq 0 ]; then
 		# The gates run the tests on the commit they started from, then shrink ratchet baselines into the merge commit. When
 		# tools/ci/*_baseline.txt files are the whole difference, the run recorded against the old commit is evidence for the new one.
 		shrink_other="$(git diff --name-only "$tested" "$after" 2>/dev/null | grep -v -E '^tools/ci/[^/]*_baseline\.txt$' || true)"
-		if [ -z "$shrink_other" ] && ! git diff --quiet "$tested" "$after" 2>/dev/null; then
+		if [ -z "$shrink_other" ]; then
 			evidence_alt="$tested"
-			echo "== lane-ready: only tools/ci/*_baseline.txt differ between ${tested:0:10} (tested) and ${after:0:10}; test evidence for ${tested:0:10} is accepted for ${after:0:10}"
+			echo "== lane-ready: only tools/ci/*_baseline.txt (or nothing) differ between ${tested:0:10} (tested) and ${after:0:10}; test evidence for ${tested:0:10} is accepted for ${after:0:10}"
 		fi
 		tested="$after"
 	fi
