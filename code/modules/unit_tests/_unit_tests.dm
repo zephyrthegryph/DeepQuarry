@@ -225,6 +225,7 @@
 #include "dq_station_alert_tests.dm"
 #include "dq_type_trait_tests.dm"
 #include "dq_type_trait_writes.dm"
+#include "dq_sparse_slot_vv.dm"
 #include "dq_vg_binding_tests.dm"
 #include "dq_heat_domain_tests.dm"
 #include "dq_heat_api_tests.dm"

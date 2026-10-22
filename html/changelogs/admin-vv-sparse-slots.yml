@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "View Variables, mass edit and SDQL see sparse slots again: every slot a type declares is listed as @slot.name, editable, and resettable to unset."

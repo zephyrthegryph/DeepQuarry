@@ -27,6 +27,7 @@ pub const MARKERS: &[&str] = &[
     "SCHEMA",
     "TRACKED_SCHEMA",
     "SYSTEM_ACCESSOR",
+    "sparse",
     "STAGE_DEF",
     "STATE_GRAPH",
     "RESOURCE_DEF",

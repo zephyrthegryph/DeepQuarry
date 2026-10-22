@@ -10,7 +10,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-const GENERATED: &[&str] = &["actions", "auto_tracked", "declare", "deps", "ids", "plans", "reads", "stats", "system_accessors", "tracked_lists"];
+const GENERATED: &[&str] = &["actions", "auto_tracked", "declare", "deps", "ids", "plans", "reads", "stats", "sparse_slots", "system_accessors", "tracked_lists"];
 
 const SOURCE: &str = "/datum/look
 \tproc/state(x)

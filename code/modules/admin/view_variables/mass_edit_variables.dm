@@ -48,6 +48,8 @@
 	var/list/names = list()
 	for (var/V in target.vars)
 		names += V
+	for(var/slot_label in sparse_slots_of(target))
+		names += slot_label
 
 	names = sortList(names)
 
@@ -82,8 +84,11 @@
 /client/proc/mass_ask_value(datum/ask_sequence/admin/vv_mass/asked)
 	var/datum/target = asked.subject()
 	var/variable = asked.variable
-	var/var_value = target.vars[variable]
+	var/var_value = vv_var_value(target, variable)
 	var/default = vv_get_class(variable, var_value)
+	var/slot_name = sparse_slot_named(target, variable)
+	if(slot_name && isnull(var_value))
+		default = sparse_slot_vv_class(sparse_slot_row(target, slot_name)[3])
 
 	if(isnull(default))
 		to_chat(src, "Unable to determine variable type.", confidential = TRUE)
@@ -159,7 +164,7 @@
 				if (!thing)
 					continue
 				var/datum/D = thing
-				if (D.vv_edit_var(variable, initial(D.vars[variable])) != FALSE)
+				if (D.vv_edit_var(variable, vv_var_default(D, variable)) != FALSE)
 					accepted++
 				else
 					rejected++
@@ -247,9 +252,9 @@
 	if (rejected)
 		to_chat(src, "[rejected] out of [count] objects rejected your edit", confidential = TRUE)
 
-	log_world("### MassVarEdit by [src]: [target.type] (A/R [accepted]/[rejected]) [variable]=[html_encode("[target.vars[variable]]")]([list2params(value)])")
-	log_admin("[key_name(src)] mass modified [original_name]'s [variable] to [target.vars[variable]] ([accepted] objects modified)")
-	message_admins("[key_name_admin(src)] mass modified [original_name]'s [variable] to [target.vars[variable]] ([accepted] objects modified)")
+	log_world("### MassVarEdit by [src]: [target.type] (A/R [accepted]/[rejected]) [variable]=[html_encode("[vv_var_value(target, variable)]")]([list2params(value)])")
+	log_admin("[key_name(src)] mass modified [original_name]'s [variable] to [vv_var_value(target, variable)] ([accepted] objects modified)")
+	message_admins("[key_name_admin(src)] mass modified [original_name]'s [variable] to [vv_var_value(target, variable)] ([accepted] objects modified)")
 
 //not using global lists as vv is a debug function and debug functions should rely on as less things as possible.
 /proc/get_all_of_type(T, subtypes = TRUE)

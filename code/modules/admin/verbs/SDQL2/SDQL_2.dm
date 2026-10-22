@@ -751,6 +751,8 @@ CAPABILITIES(/datum/SDQL2_query)
 				if(superuser)
 					if(temp.vars.Find(v))
 						temp.vars[v] = SDQL_expression(d, set_list[sets]) // ALLOW(api): SDQL UPDATE: admin query sets vars by name
+					else if(sparse_slot_named(temp, v))
+						sparse_slot_write(temp, sparse_slot_named(temp, v), SDQL_expression(d, set_list[sets]))
 				else
 					temp.vv_edit_var(v, SDQL_expression(d, set_list[sets]))
 				break
@@ -981,6 +983,8 @@ CAPABILITIES(/datum/SDQL2_query)
 			v = D.vars[expression[start]]
 		else
 			v = "SECRET"
+	else if(D != null && (!long || expression[start + 1] == ".") && sparse_slot_named(D, expression[start]))
+		v = _sparse_get(D, sparse_slot_named(D, expression[start]))
 	else if(D != null && long && expression[start + 1] == ":" && hascall(D, expression[start]))
 		v = expression[start]
 	else if(!long || expression[start + 1] == ".")
