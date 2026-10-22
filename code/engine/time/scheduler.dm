@@ -723,7 +723,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/datum/E = rec.owner
 	if(!E)
 		return
-	var/failed = FALSE
 	try
 		switch(kind)
 			if(OM_HOOK_TICK)
@@ -750,7 +749,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			if(OM_HOOK_DESTROY)
 				B.on_entity_destroy(E)
 	catch(var/exception/e)
-		failed = TRUE
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
 		stat_inc(B.id, OM_STAT_ERRORS)
 

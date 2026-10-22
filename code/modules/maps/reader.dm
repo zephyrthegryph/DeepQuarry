@@ -499,8 +499,7 @@ CAPABILITIES(/datum/parsed_map)
 	// setup
 	var/list/modelCache = build_cache(no_changeturf)
 	pl_space_key = modelCache[SPACE_KEY]
-	var/list/bounds
-	src.bounds = bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
+	src.bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
 
 	// Building y coordinate ranges
 	var/y_relative_to_absolute = y_offset - 1

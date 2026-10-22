@@ -420,7 +420,6 @@
 		// likewise the held item's own menu() op (Move To Top, Toggle Digestable) is a line of the item's own Menu, not of every target's
 		C.dropped_by = GATE_MATCH
 		return
-	var/datum/target = (C.side == CAND_ACTOR) ? R.actor : R.target
 	if(C.side == CAND_ACTOR && !op_actor_side_binding(B))
 		C.dropped_by = GATE_MATCH
 		return

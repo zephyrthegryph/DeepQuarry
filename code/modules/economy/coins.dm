@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/coin/uranium)
 	var/mob/user = A.actor
 	if(!string_attached)
 		return OP_DECLINE
-	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
+	new /obj/item/stack/cable_coil(user.loc, 1)
 	set_string_attached(null)
 	balloon_alert(user, "string detached")
 	return OP_OK

@@ -75,6 +75,8 @@ CAPABILITIES(/datum/prompt/choice/platform_paint)
 	var/choice = A.answer.value
 	if(choice == "Decal")
 		var/obj/item/robot_module/robot/platform/tank_module = module
+		if(!istype(tank_module))
+			return
 		var/list/available = tank_module.available_decals
 		var/list/options = list()
 		for(var/decal_name in available)

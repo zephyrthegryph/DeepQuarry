@@ -207,7 +207,6 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 	var/mob/living/user = ask.answerer
 	var/mob/living/carbon/human/target = ask.subject
 	var/obj/item/organ/external/part = ask.part
-	var/obj/item/tool = ask.tool
 	var/atom/movable/removed = ask.value
 	var/wait = 0
 	if(istype(removed, /obj/item/implant))

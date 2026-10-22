@@ -104,7 +104,6 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 
 /datum/entry/part/req/acceptance_leaf/has_uniform/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
-	var/obj/item/I = A?.target
 	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_UNIFORM) || !(SLOT_ID_UNIFORM in dq_equip_slots_of(H)))
 		return null
 	return MSG(slot/needs_jumpsuit)
@@ -129,13 +128,11 @@ MSG_DEF_SELF(slot/needs_suit, "you need a suit first")
 
 /datum/entry/part/req/acceptance_leaf/left_ear_free/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
-	var/obj/item/I = A?.target
 	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_L)) ? MSG(slot/needs_both_ears) : null
 
 
 /datum/entry/part/req/acceptance_leaf/right_ear_free/acceptance_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A?.wearer
-	var/obj/item/I = A?.target
 	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_R)) ? MSG(slot/needs_both_ears) : null
 
 

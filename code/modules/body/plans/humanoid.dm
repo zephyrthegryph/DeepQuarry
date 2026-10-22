@@ -417,9 +417,3 @@
 /datum/body/humanoid/is_injured()
 	return ..() || injury_load(INJURY_CATEGORY_PHYSICAL) || injury_load(INJURY_CATEGORY_THERMAL)
 
-/// Mending runs the one shared pass (wounds heal their own damage through
-/// receive_tagged_treatment); the limbs just redraw.
-/datum/body/humanoid/mend(tag, amount, target = null)
-	. = ..()
-	if(.)
-		var/mob/living/carbon/human/H = owner

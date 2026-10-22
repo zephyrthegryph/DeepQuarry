@@ -338,7 +338,7 @@
 	rc_settle()
 	H.set_use_stance(I_HELP)
 	TEST_ASSERT_EQUAL(rc_units(pack), 180, "a tenth is drunk")
-	TEST_ASSERT(nutrition_of(H) > nutrition_of(src), "and feeds")
+	TEST_ASSERT(nutrition_of(H) > nutrition, "and feeds")
 	rc_use(H, pack)
 	TEST_ASSERT_EQUAL(rc_units(pack), 180, "in a friendly stance nothing is drunk")
 	var/obj/item/reagent_containers/blood/empty/water = allocate(/obj/item/reagent_containers/blood/empty)
