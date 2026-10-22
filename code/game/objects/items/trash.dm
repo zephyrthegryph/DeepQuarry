@@ -15,7 +15,7 @@ CAPABILITIES(/obj/item/trash)
 	after_init(0, then(PROC_REF(track_persistence)))
 
 /// Trash not loaded with the map is tracked for persistence.
-/obj/item/trash/proc/track_persistence(datum/act/A)
+/obj/item/trash/proc/track_persistence(datum/act/timer/A)
 	if(!A.mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
