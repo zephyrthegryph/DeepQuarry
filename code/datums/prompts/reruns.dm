@@ -1,75 +1,6 @@
-// Re-run prompts on native requests (doc/rewrite/final_api.html section 13, "Requests, prompts and workflows"). The legacy half of the
-// prompt layer, moved here from the object model's prompt helpers when it was retired: every question is a /datum/prompt request (open_request()), and these helpers
-// only keep the legacy procs that ask before they act working until each becomes an op with asks() or a request() with its own
-// handler.
-//
-// Some procs ask before they act and can't be split into an answer proc yet: a Topic() handler, an admin verb, a proc that asks
-// several things in a row. (A Topic() handler is an op with asks() steps.) They ask with a re-run helper: the first call opens a prompt request and returns null (the proc returns);
-// the answer runs the proc again with the same arguments, and this time the same helper call returns the answer (the request's
-// `value`). The re-run re-checks everything the proc checks. Ask everything before doing anything: the proc runs once per answer.
-//
-//   flow_ask(user, key, prompt, ...)                                 a question deep inside a prompt_flow()
-//
-// `prompt` is a /datum/prompt kind; the named arguments are its fields (question, title, choices, default, ...), as open_request()
-// takes them, plus `cancel_answer`: the answer a cancel, a closed window or a timeout gives instead (null: the re-run is dropped). A
-// prompt waits as long as its window stays open unless it is given a `timeout`. A yes_no answered "no" is dropped like a cancel.
-// The user and the datum re-run are held weakly while the question is open: the answer is dropped if either is gone.
-
-/// A re-run record: the owner of the prompt request it opened, and what runs again when it is answered.
-/datum/prompt_rerun
-	/// The answer's name within the re-run proc.
-	var/answer_key
-	/// Who answers (wrapped: a handle, never a reference).
-	var/actor_w
-	/// What is re-run (wrapped), or null.
-	var/target_w
-	/// What a cancel answers instead, or null (a cancel drops the re-run).
-	var/cancel_answer
-	/// The request kind, to read a yes_no's "no" as a cancel.
-	var/prompt_type
-
-/// Opens the record's prompt for `user`. Null when it could not be shown (no user).
-/datum/prompt_rerun/proc/ask(mob/user, prompt_type, list/fields)
-	src.prompt_type = prompt_type
-	var/list/opened = fields ? fields.Copy() : list()
-	cancel_answer = opened["cancel_answer"]
-	opened -= "cancel_answer"
-	if(isnull(opened["timeout"]))
-		opened["timeout"] = 0
-	opened["answerer"] = user
-	actor_w = rerun_wrap(user)
-	return request_open(src, prompt_type, TYPE_PROC_REF(/datum/prompt_rerun, answered), opened)
-
-/// The request ended: an answer (or the cancel answer) runs the asker again; anything else drops it.
-/datum/prompt_rerun/proc/answered(datum/act/request/A)
-	var/answer
-	if(A.answer)
-		answer = A.answer.value
-		if(ispath(prompt_type, /datum/prompt/yes_no) && !answer)
-			return
-	else if(!isnull(cancel_answer))
-		answer = cancel_answer
-	else
-		return
-	if(isnull(answer))
-		return
-	if(rerun_was_ref(actor_w) && !rerun_unwrap(actor_w))
-		return
-	if(rerun_was_ref(target_w) && !rerun_unwrap(target_w))
-		return
-	rerun(answer)
-
-/// Runs the asker again with `answer`.
-/datum/prompt_rerun/proc/rerun(answer)
-	return
-
-/// The mob that answered.
-/datum/prompt_rerun/proc/actor()
-	return rerun_unwrap(actor_w)
-
-/// The datum re-run.
-/datum/prompt_rerun/proc/target()
-	return rerun_unwrap(target_w)
+// Weak arguments and database answers for procs that run again (doc/rewrite/final_api.html section 13, "Requests, prompts and workflows").
+// Questions are asked by sequences of asks (code/datums/prompts/sequence.dm) or by an op's asks() steps; what is left here is the prompt flow of the procs that
+// read the database before they act (flow_select() and its relatives, below).
 
 // ---------------------------------------------------------------- weak arguments
 
@@ -108,136 +39,23 @@
 			return null
 		. += list(value)
 
-/// Starts a re-run record of `record_type` asking `prompt_type` (with `fields`) of `user`. `record_vars` set the record's own state.
-/proc/rerun_begin(record_type, mob/user, datum/target, key, prompt_type, list/fields, list/record_vars)
-	if(istype(user, /client))
-		var/client/C = user
-		user = C.mob
-	if(!ismob(user))
-		return
-	var/datum/prompt_rerun/R = new record_type
-	R.answer_key = key
-	R.target_w = target ? rerun_wrap(target) : null
-	for(var/name in record_vars)
-		R.vars[name] = record_vars[name] // ALLOW(api): a re-run record's state set by name from its helper
-	R.ask(user, prompt_type, fields)
-
-// ---------------------------------------------------------------- re-runs keeping their answers
+// ---------------------------------------------------------------- re-run state
 //
-// Verbs and procs re-run with the same arguments; the answers given so far ride along and are read back by key. Datum arguments and
-// answers are held weakly.
-
-/datum/prompt_rerun/kept
-	/// key -> wrapped answer, of every answer given in this chain so far.
-	var/list/answers
-	/// The re-run's arguments, wrapped.
-	var/list/rerun_args
-
-/datum/prompt_rerun/kept/rerun(answer)
-	LAZYINITLIST(answers)
-	answers[answer_key] = rerun_wrap(answer)
-	var/list/unwrapped = rerun_unwrap_list(rerun_args)
-	if(isnull(unwrapped))
-		return
-	try
-		with_actor(actor(), src, PROC_REF(run_again), unwrapped)
-	catch(var/exception/e)
-		stack_trace("[type] re-run: [e]")
-	finished()
-
-/// Calls the asker again with `unwrapped` (its arguments), `answers` visible to it.
-/datum/prompt_rerun/kept/proc/run_again(list/unwrapped)
-	return
-
-/// Clears the answers the re-run could see.
-/datum/prompt_rerun/kept/proc/finished()
-	return
-
-/// A previously given answer from a kept list, unwrapped (null if not given).
-/proc/rerun_kept_answer(list/answers, key)
-	if(!answers || isnull(answers[key]))
-		return null
-	return rerun_unwrap(answers[key])
-
-// ---- client procs
+// The answers of the flow re-run in progress (stored database answers), on the asking client or, for a datum, by "[REF(datum)]:[proc]".
 
 /// Answers of the re-run in progress (a prompt flow of a client), and which proc they're for.
 /client/var/list/rerun_answers
 /client/var/rerun_answers_proc
 
-/client/proc/client_rerun_ask(key, proc_name, list/proc_args, rights, prompt_type, list/fields)
-	var/mine = rerun_answers && rerun_answers_proc == proc_name
-	if(mine && !isnull(rerun_answers[key]))
-		return rerun_kept_answer(rerun_answers, key)
-	var/list/record_vars = list("answers" = mine ? rerun_answers.Copy() : null, "rerun_args" = rerun_wrap_list(proc_args), "asking_ckey" = ckey, "proc_name" = proc_name)
-	var/list/asked = fields ? fields.Copy() : list()
-	if(rights)
-		asked["rights"] = rights
-		asked["recheck_on_open"] = TRUE
-	rerun_begin(/datum/prompt_rerun/kept/client, mob, null, key, prompt_type, asked, record_vars)
-	return null
-
-/datum/prompt_rerun/kept/client
-	/// The asking client, by ckey while the prompt is open.
-	var/asking_ckey
-	var/proc_name
-
-/datum/prompt_rerun/kept/client/run_again(list/unwrapped)
-	var/client/C = GLOB.directory[asking_ckey]
-	if(!C)
-		return
-	C.rerun_answers = answers
-	C.rerun_answers_proc = proc_name
-	call(C, proc_name)(arglist(unwrapped))
-
-/datum/prompt_rerun/kept/client/finished()
-	var/client/C = GLOB.directory[asking_ckey]
-	if(C)
-		C.rerun_answers = null
-		C.rerun_answers_proc = null
-
-// ---- any datum proc
-
 /// Answers of the re-runs in progress, by "[REF(datum)]:[proc]".
 GLOBAL_LIST_EMPTY(rerun_answers)
 
-/datum/proc/rerun_ask_proc(mob/user, key, proc_name, list/proc_args, prompt_type, list/fields)
-	var/list/answers = GLOB.rerun_answers["[REF(src)]:[proc_name]"]
-	if(answers && !isnull(answers[key]))
-		return rerun_kept_answer(answers, key)
-	rerun_begin(/datum/prompt_rerun/kept/datum_proc, user, src, key, prompt_type, fields, list("answers" = answers?.Copy(), "rerun_args" = rerun_wrap_list(proc_args), "proc_name" = proc_name))
-	return null
-
-/datum/prompt_rerun/kept/datum_proc
-	var/proc_name
-	/// REF text of the datum re-run, for its answers' key.
-	var/target_ref
-
-/datum/prompt_rerun/kept/datum_proc/run_again(list/unwrapped)
-	var/datum/T = target()
-	if(!T)
-		return
-	target_ref = "[REF(T)]:[proc_name]"
-	GLOB.rerun_answers[target_ref] = answers
-	call(T, proc_name)(arglist(unwrapped))
-
-/datum/prompt_rerun/kept/datum_proc/finished()
-	if(!target_ref)
-		return
-	GLOB.rerun_answers -= target_ref
-	var/datum/T = target()
-	if(T)
-		SStgui.update_uis(T)
-
 // ---------------------------------------------------------------- prompt flows
 //
-// A prompt flow is an entry proc whose questions are asked deep below it, in helpers shared by many entries (View Variables' value
-// picker, the type picker). The entry starts with
+// A prompt flow is an entry proc that reads the database (flow_select() and its relatives, below). The entry starts with
 //	if(!GLOB.prompt_flow)
 //		return prompt_flow(src, PROC_REF(this_proc), args)
-// and every question below it is flow_ask(user, key, prompt, ...): null the first time (return), and the answer runs the entry again with
-// the same arguments, where the same flow_ask() returns it. Entries reached inside a running flow just run, so keys must be unique in
-// the whole flow. Everything is asked before anything is done.
+// and every query below it is answered by a re-run of the entry with the same arguments. Entries reached inside a running flow just run.
 
 /// The running prompt flow: its asker (client or datum), entry proc and arguments. Null outside one.
 GLOBAL_VAR(prompt_flow)
@@ -255,21 +73,9 @@ GLOBAL_VAR(prompt_flow)
 		throw e
 	GLOB.prompt_flow = null
 
-/// flow_ask()'s body: asks `user` a question of the running prompt flow.
-/proc/prompt_flow_ask(mob/user, key, prompt_type, list/fields)
-	var/list/running = GLOB.prompt_flow
-	if(!running)
-		CRASH("flow_ask([key]) outside a prompt flow")
-	var/asker = running["asker"]
-	if(istype(asker, /client))
-		var/client/C = asker
-		return C.client_rerun_ask(key, running["proc"], running["args"], running["rights"], prompt_type, fields)
-	var/datum/D = asker
-	return D.rerun_ask_proc(user, key, running["proc"], running["args"], prompt_type, fields)
-
 // ---------------------------------------------------------------- I/O inside prompt flows
 //
-// The same works for database answers: inside a running flow, `flow_select(sql, params)` starts the query as an I/O job
+// Inside a running flow, `flow_select(sql, params)` starts the query as an I/O job
 // (code/engine/io/jobs.dm) and unwinds the flow; when the rows arrive the entry runs again with the same arguments and the same
 // flow_select() call - the flow's Nth query - returns at once with the stored rows. Nothing waits.
 //
@@ -282,7 +88,7 @@ GLOBAL_VAR(prompt_flow)
 //		if(isnull(rows))		// the first run unwinds above; the re-run gets the rows (null = the query failed)
 //			...
 //
-// Rules, as for flow_ask():
+// Rules:
 // - Everything the flow does before its last query runs once per answer. Do reads first and act after them; a write query in the
 //   middle is fine (its stored result is replayed, it is not sent twice), but chat output and logs before a later query would repeat.
 // - I/O answers are keyed by their order in the run ("io1", "io2", ...), so a re-run must make the same queries in the same order given
@@ -290,7 +96,7 @@ GLOBAL_VAR(prompt_flow)
 // - The re-run re-checks: an asker client that left, a datum asker that was deleted, a user that logged out, or (with `rights`) a user
 //   who lost the rights drops the answer.
 
-/// The stored answers (prompts and queries) of the flow re-run in progress, or null.
+/// The stored answers (queries) of the flow re-run in progress, or null.
 /proc/prompt_flow_answers()
 	var/list/flow = GLOB.prompt_flow
 	if(!flow)
