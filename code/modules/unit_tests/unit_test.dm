@@ -144,6 +144,11 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 					rel_set(candidate, nameof(candidate.top_right), T)
 		if(candidate.bottom_left && candidate.top_right)
 			block = candidate
+			// The map load rolls roundstart dirt (and its decal) on some floors; the first test must not inherit it.
+			for(var/turf/simulated/floor/dirty_floor in block_turfs(block))
+				dirty_floor.dirt = 0
+				for(var/obj/effect/decal/cleanable/dirt/old_dirt in contents_of(dirty_floor))
+					qdel(old_dirt)
 			break
 		log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
 
@@ -238,6 +243,8 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 		unit_test_block_reset_turf(T)
 
+	unit_test_block_reset_border(block)
+
 	if(leaked)
 		var/list/parts = list()
 		for(var/leaked_type in leaked_types)
@@ -247,9 +254,31 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 	block.in_use = FALSE
 
+/// The ring of wall around a block (outside block_turfs(), so the leak check never sees it) back to the template's: a test that took a wall down (a dismantled wall leaves a girder on a plating) must not hand the next test a block with a hole or a girder in its edge.
+/proc/unit_test_block_reset_border(datum/unit_test_block/block)
+	var/turf/low = block.bottom_left
+	var/turf/high = block.top_right
+	if(!low || !high)
+		return
+	for(var/x in (low.x - 1) to (high.x + 1))
+		for(var/y in (low.y - 1) to (high.y + 1))
+			if(x >= low.x && x <= high.x && y >= low.y && y <= high.y)
+				continue
+			var/turf/ring = locate(x, y, block.z)
+			if(!ring)
+				continue
+			for(var/obj/debris in contents_of(ring))
+				if(!istype(debris, /obj/effect/landmark))
+					qdel(debris)
+			if(ring.type != /turf/simulated/wall)
+				ring.ChangeTurf(/turf/simulated/wall)
+
 /// Puts one block turf back to its template state: no hotspot, the default air and temperature on an open turf, a floor where a test left a wall.
 /proc/unit_test_block_reset_turf(turf/T)
 	if(istype(T, /turf/simulated))
+		// Dirt is turf state, not an object: a mob stepping on the floor raises it, and past 50 the step lays a dirt decal that the leak check then blames on the test. A floor can also start the block dirty (dirty_prob), so the block starts and ends every test clean.
+		var/turf/simulated/dirty_turf = T
+		dirty_turf.dirt = 0
 		// A wet floor stays wet (its dry timer runs on kernel time, which a test may never advance): the next test's mob slips on it and drops what it holds.
 		var/turf/simulated/wet_turf = T
 		if(wet_turf.wet)

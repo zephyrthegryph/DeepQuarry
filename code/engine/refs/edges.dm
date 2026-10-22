@@ -172,7 +172,8 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 
 /proc/relation_z_generation(z)
 	var/list/gens = GLOB.om_z_generations
-	return (z > 0 && z <= length(gens)) ? gens[z] : 0
+	// A level never released reads 0, also where a bump of a higher level grew the list over it: a null entry compares unequal to the 0 a handle without a generation carries, and every turf handle of that level stopped resolving.
+	return (z > 0 && z <= length(gens)) ? (gens[z] || 0) : 0
 
 /proc/relation_z_generation_bump(z)
 	if(z <= 0)
