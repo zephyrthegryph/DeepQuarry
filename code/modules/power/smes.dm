@@ -263,7 +263,13 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// Sets the stored charge (mapped presets, admin, tests).
 /obj/machinery/power/smes/proc/set_stored_charge(value)
-	adjust_stored_charge(value - stored_charge())
+	if(!vg_entity)
+		set_initial_charge(max(value, 0))
+		return
+	// A delta from the stored charge would lose digits (a DM number is a 32-bit float: a megajoule charge keeps about 0.06 J): empty the unit
+	// with a removal Rust clamps at zero, then add the value, so the set lands exactly.
+	adjust_charge(-(get_capacity() + 1))
+	adjust_charge(value)
 
 /// The input Rust is told to take: the unit works, the switch is on and the input wire is whole.
 /obj/machinery/power/smes/proc/input_enabled()

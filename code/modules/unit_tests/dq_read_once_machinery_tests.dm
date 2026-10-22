@@ -26,10 +26,11 @@
 	var/time_before = op_now()
 	var/list/ordinary = find_row(op_menu(H, C, helmet), "cycler_insert_helmet")
 	TEST_ASSERT(ordinary && ordinary["enabled"], "An ordinary compatible helmet is accepted by the actual cycler requirement")
+	helmet.set_icon_override(CUSTOM_ITEM_MOB)
+	// The write is the setter's own publication; what is pinned is that building the menu publishes nothing (no repair of the admission).
 	var/actor_gen = rx_of(H).act_gen
 	var/machine_gen = rx_of(C).act_gen
 	var/item_gen = rx_of(helmet).act_gen
-	helmet.set_icon_override(CUSTOM_ITEM_MOB)
 	var/list/customised = find_row(op_menu(H, C, helmet), "cycler_insert_helmet")
 	TEST_ASSERT_NOTNULL(customised, "Custom appearance disables rather than hides the helmet row")
 	TEST_ASSERT(!customised["enabled"], "The current custom helmet cannot be refitted")
@@ -64,10 +65,11 @@
 	var/time_before = op_now()
 	var/list/ordinary = find_row(op_menu(H, C, suit), "cycler_insert_suit")
 	TEST_ASSERT(ordinary && ordinary["enabled"], "An ordinary compatible voidsuit is accepted")
+	suit.set_icon_override(CUSTOM_ITEM_MOB)
+	// The write is the setter's own publication; what is pinned is that building the menu publishes nothing (no repair of the admission).
 	var/actor_gen = rx_of(H).act_gen
 	var/machine_gen = rx_of(C).act_gen
 	var/item_gen = rx_of(suit).act_gen
-	suit.set_icon_override(CUSTOM_ITEM_MOB)
 	var/list/customised = find_row(op_menu(H, C, suit), "cycler_insert_suit")
 	TEST_ASSERT_NOTNULL(customised, "Custom appearance keeps the disabled voidsuit row visible")
 	TEST_ASSERT(!customised["enabled"], "The current custom voidsuit cannot be refitted")
@@ -155,8 +157,6 @@
 	TEST_ASSERT_NOTNULL(denied, "Custody refusal keeps the installation row visible")
 	TEST_ASSERT(!denied["enabled"], "The installation requirement samples the actual custody refusal")
 	TEST_ASSERT_EQUAL(denied["reason"], H.custody_refusal, "The row preserves the real custodian's refusal")
-	var/actor_gen = rx_of(H).act_gen
-	var/kit_gen = rx_of(kit).act_gen
 	var/datum/op_result/refused = test_menu(H, kit, "install")
 	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "The public installation pick respects current custody")
 	TEST_ASSERT(!consume(kit, H), "The atomic consume also consults the actual custodian override")
@@ -165,6 +165,9 @@
 	TEST_ASSERT_EQUAL(kit.loc, H, "Custody refusal leaves the kit with its original custodian")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/machinery/floor_light)), lights_before, "Refused installation creates no floor light")
 	H.set_custody_blocked(FALSE)
+	// The policy setter publishes its own change; what is pinned is that building the menu publishes nothing (no repair of the admission).
+	var/actor_gen = rx_of(H).act_gen
+	var/kit_gen = rx_of(kit).act_gen
 	TEST_ASSERT_NULL(H.release_refusal(kit, H), "The same real custodian now permits release")
 	var/list/allowed = find_row(op_menu(H, kit, kit), "install")
 	TEST_ASSERT(allowed && allowed["enabled"], "Changing only custody policy refreshes the same kit's menu admission")

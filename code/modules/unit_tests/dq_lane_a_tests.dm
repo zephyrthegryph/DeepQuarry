@@ -181,7 +181,7 @@ CAPABILITIES(/obj/lanea_fixture)
 	TEST_ASSERT_EQUAL(length(GLOB.hook_change_pending), 0, "nothing is stranded in the pending list")
 	TEST_ASSERT_EQUAL(GLOB.act_depth, 0, "the depth is back to zero")
 	index["armed"] -= bad
-	qdel(bad)
+	qdel(bad, force = TRUE) // a hook is a prototype the type tables keep: only a forced delete removes it
 
 // ---------------------------------------------------------------- A: ownership API
 

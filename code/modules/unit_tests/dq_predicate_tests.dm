@@ -37,6 +37,8 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	A.held = held
 	var/result = R.check(A)
 	A.release()
+	if(istype(result, /datum/msg/instance)) // a detailed refusal is a message instance: the tests compare its text
+		return reason_text(result)
 	return result
 
 /proc/dq_native_test_weld_tier(datum/act/op/A)

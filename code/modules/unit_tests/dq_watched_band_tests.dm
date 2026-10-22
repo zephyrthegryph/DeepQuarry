@@ -131,6 +131,12 @@
 // The emitter's beam reads its network's availability through the power grid's tracked avail (power_avail() -> /datum/power_grid): a Rust-polled
 // value DM holds as state, so no world-watch channel is needed; the draw re-evaluates when the grid's avail changes.
 
+/// The icon states of the overlays an atom shows now.
+/proc/dq_overlay_states(atom/A)
+	. = list()
+	for(var/mutable_appearance/entry as anything in A.overlays)
+		. += entry.icon_state
+
 /datum/unit_test/dq_emitter_beam_follows_the_grids_avail
 
 /datum/unit_test/dq_emitter_beam_follows_the_grids_avail/Run()
@@ -145,11 +151,11 @@
 	state_changed(E)
 	refresh_flush()
 	TEST_ASSERT(!E.beam_shown(), "no availability, no beam")
-	var/before = length(E.rx?.look_overlays)
+	var/before_states = dq_overlay_states(E)
 	grid.set_avail(5000)
 	refresh_flush()
 	TEST_ASSERT(E.beam_shown(), "a live network shows the beam")
-	TEST_ASSERT(length(E.rx?.look_overlays) > before, "the grid's avail changing redrew the emitter with its beam (overlays [before] -> [length(E.rx?.look_overlays)])")
+	TEST_ASSERT(("emitter-beam" in dq_overlay_states(E)) && !("emitter-beam" in before_states), "the grid's avail changing redrew the emitter with its beam (overlays [json_encode(before_states)] -> [json_encode(dq_overlay_states(E))])")
 	power_test_drop_grid(grid_id)
 
 /// The old rule refused above 1%, not at it: a strict band read keeps exactly 1% modifiable.
