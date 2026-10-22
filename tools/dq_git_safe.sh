@@ -8,5 +8,11 @@ for _dq_k in merge.autoStash rebase.autoStash pull.autoStash; do
 	export "GIT_CONFIG_KEY_$_dq_n=$_dq_k" "GIT_CONFIG_VALUE_$_dq_n=false"
 	_dq_n=$((_dq_n + 1))
 done
+# The merge driver for tools/ci/*_baseline.txt (.gitattributes merge=dq-baseline; tools/ci/baseline_merge_driver.sh), supplied per command
+# like the lines above so a clean worktree needs no `git config`. A branch whose tree lacks the script gets a normal conflict.
+export "GIT_CONFIG_KEY_$_dq_n=merge.dq-baseline.driver" "GIT_CONFIG_VALUE_$_dq_n=bash tools/ci/baseline_merge_driver.sh %O %A %B %P"
+_dq_n=$((_dq_n + 1))
+export "GIT_CONFIG_KEY_$_dq_n=merge.dq-baseline.name" "GIT_CONFIG_VALUE_$_dq_n=shrink-only baseline merge"
+_dq_n=$((_dq_n + 1))
 export GIT_CONFIG_COUNT="$_dq_n"
 unset _dq_n _dq_k
