@@ -1,0 +1,5 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - refactor: "The robot gripper, the NIF and the AR soul set themselves up through setup(mapload = TRUE) instead of an Initialize() override"
+  - code_imp: "A test proves all three /mob/living/Initialize bodies run; the stale comments claiming one is dropped are fixed"
