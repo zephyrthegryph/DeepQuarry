@@ -502,6 +502,71 @@ CAPABILITIES(/obj/item/dq_forms_setup)
 	TEST_ASSERT_EQUAL(jointext(S.order, ","), "init,first,second", "the hooks run after Initialize(), in order")
 	TEST_ASSERT_EQUAL(S.name, "empty probe", "name_prefix() prefixes the name")
 
+/// setup(PROC_REF(x), mapload = TRUE): x(mapload) at the setup phase, its init hint honoured.
+/obj/item/dq_forms_hint
+	name = "hint probe"
+	var/list/order
+	var/saw_mapload
+	var/want_hint = INITIALIZE_HINT_NORMAL
+
+/obj/item/dq_forms_hint/proc/plain_a()
+	LAZYADD(order, "plain_a")
+
+/obj/item/dq_forms_hint/proc/hinted(mapload)
+	LAZYADD(order, "hinted")
+	saw_mapload = mapload ? TRUE : FALSE
+	return want_hint
+
+/obj/item/dq_forms_hint/proc/plain_b()
+	LAZYADD(order, "plain_b")
+
+/obj/item/dq_forms_hint/Initialize(mapload)
+	. = ..()
+	LAZYADD(order, "init")
+
+CAPABILITIES(/obj/item/dq_forms_hint)
+	setup(PROC_REF(plain_a))
+	setup(PROC_REF(hinted), mapload = TRUE)
+	setup(PROC_REF(plain_b))
+
+/obj/item/dq_forms_hint/discard
+	want_hint = INITIALIZE_HINT_QDEL
+
+/// A subtype that declares nothing inherits the hook.
+/obj/item/dq_forms_hint/child
+
+/// Made with a map (mapload TRUE) or at runtime (FALSE), a type's hint hook is handed what Initialize() got.
+/datum/unit_test/proc/dq_forms_hint_make(type, mapload)
+	if(!mapload)
+		return new type(dq_containment_floor())
+	var/list/made = list()
+	SSatoms.map_loader_begin("dq_forms_hint")
+	made += new type(dq_containment_floor())
+	SSatoms.map_loader_stop("dq_forms_hint")
+	SSatoms.InitializeAtoms(made.Copy())
+	return made[1]
+
+/datum/unit_test/dq_forms_setup_hint/Run()
+	var/obj/item/dq_forms_hint/runtime = dq_forms_hint_make(/obj/item/dq_forms_hint, FALSE)
+	TEST_ASSERT_EQUAL(runtime.saw_mapload, FALSE, "the hook gets mapload FALSE for an instance made at runtime")
+	TEST_ASSERT_EQUAL(jointext(runtime.order, ","), "init,plain_a,hinted,plain_b", "the hook runs after Initialize(), among plain setup() hooks in declaration order")
+	var/obj/item/dq_forms_hint/mapped = dq_forms_hint_make(/obj/item/dq_forms_hint, TRUE)
+	TEST_ASSERT_EQUAL(mapped.saw_mapload, TRUE, "the hook gets mapload TRUE for a map-loaded instance")
+	TEST_ASSERT_EQUAL(jointext(mapped.order, ","), "init,plain_a,hinted,plain_b", "the order is the same when map loaded")
+	var/obj/item/dq_forms_hint/child/kid = dq_forms_hint_make(/obj/item/dq_forms_hint/child, TRUE)
+	TEST_ASSERT_EQUAL(kid.saw_mapload, TRUE, "a subtype inherits the hook and gets mapload")
+	TEST_ASSERT_EQUAL(jointext(kid.order, ","), "init,plain_a,hinted,plain_b", "a subtype runs the inherited hooks once, in order")
+	qdel(runtime)
+	qdel(mapped)
+	qdel(kid)
+
+/datum/unit_test/dq_forms_setup_hint_qdel/Run()
+	for(var/mapload in list(FALSE, TRUE))
+		var/obj/item/dq_forms_hint/discard/D = dq_forms_hint_make(/obj/item/dq_forms_hint/discard, mapload)
+		TEST_ASSERT(QDELETED(D), "INITIALIZE_HINT_QDEL from the hook deletes the instance (mapload [mapload])")
+		TEST_ASSERT_EQUAL(jointext(D.order, ","), "init,plain_a,hinted", "the hooks after the one that returned QDEL do not run (mapload [mapload])")
+		TEST_ASSERT(!D.loc, "a discarded instance is out of the world (mapload [mapload])")
+
 CAPABILITIES(/obj/item/dq_forms_holder)
 	owns_one(nameof(part), /obj/item/dq_forms_part, on_destroy = ON_DESTROY_SPILL, starts = nameof(part_type))
 	owns_many(nameof(spares), /obj/item/dq_forms_part, count = 2)

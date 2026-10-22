@@ -1268,7 +1268,7 @@ starts_args = list(...)                    <span class="c">// constructor argume
         <code>starts_after = nameof(other)</code> builds an occupant after another. <code>starts_set = list(var = value)</code> configures each occupant once built
         (through its <code>set_&lt;var&gt;()</code> when it has one), and <code>on_lost = PROC_REF(x)</code> runs <code>x(thing)</code> on the holder whenever an occupant leaves the var,
         however the var was filled (deleted, or moved out of a contained slot). Capability <code>on_holder_init(A)</code> hooks and the lifecycle forms see them.</li>
-      <li><strong>The type's own setup:</strong> its code after <code>..()</code> (and named <code>setup()</code> hooks); every child above already exists.</li>
+      <li><strong>The type's own setup:</strong> its code after <code>..()</code> (and named <code>setup()</code> hooks); every child above already exists. <code>setup(PROC_REF(x), mapload = TRUE)</code> declares <code>x(mapload)</code>, which may return <code>INITIALIZE_HINT_QDEL</code> exactly as an <code>Initialize()</code> would (no later hook or <code>after_init()</code> runs).</li>
       <li><strong>After init:</strong> <code>after_init()</code> parts, when the instance's init is complete (after the whole map load for a map-loaded one).</li>
     </ol></div>
   <div class="note"><p><strong>Replaces:</strong></p>

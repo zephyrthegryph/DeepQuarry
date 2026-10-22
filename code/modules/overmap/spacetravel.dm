@@ -13,11 +13,18 @@
 	start_y = loc.y
 	// But pick an empty z level to use
 	map_z += using_map.get_empty_zlevel()
-	. = ..()
+	return ..()
+
+CAPABILITIES(/obj/effect/overmap/visitable/sector/temporary)
+	setup(PROC_REF(check_zlevel), mapload = TRUE)
+
+/// No empty z-level to claim: the sector is discarded (setup hook).
+/obj/effect/overmap/visitable/sector/temporary/proc/check_zlevel(mapload)
 	if(!map_z[1])
 		log_and_message_admins("Could not create empty sector at [x], [y]. No available z levels to allocate.")
 		return INITIALIZE_HINT_QDEL
 	testing("Temporary sector at [x],[y],[z] was created, corresponding zlevel is [english_list(map_z)].")
+	return INITIALIZE_HINT_NORMAL
 
 // its z-levels return to the empty pool.
 /obj/effect/overmap/visitable/sector/temporary/lifecycle_dematerialize()

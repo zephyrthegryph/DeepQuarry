@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "setup(PROC_REF(x), mapload = TRUE) hooks receive mapload and may return INITIALIZE_HINT_QDEL; SMES, dirt and temporary sectors use it"
