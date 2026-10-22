@@ -12,7 +12,7 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 		to_chat(user, "[rune] is [word]")
 
 /proc/runerandom() //randomizes word meaning
-	var/list/runewords=GLOB.rnwords
+	var/list/runewords = GLOB.rnwords.Copy() // GLOB.rnwords stays the full set; the words are handed out from a copy
 	for (var/word in GLOB.engwords)
 		GLOB.cultwords[word] = pick(runewords)
 		runewords -= GLOB.cultwords[word]

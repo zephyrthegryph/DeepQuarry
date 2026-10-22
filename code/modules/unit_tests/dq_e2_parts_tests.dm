@@ -384,6 +384,8 @@
 		"    67. ghost_join observe tier=normal claims=none (derived) side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:209 -> dropped by match",
 		"  winner: pry (tier part)")
 	TEST_ASSERT_EQUAL(length(lines), length(golden), "the explanation has the golden's lines (other types' topic links left out):\n[jointext(lines, "\n")]")
+	// An origin's line number moves whenever its file is edited above it: the file and the entry are what the golden pins.
+	var/regex/origin_line = regex(@"\.dm:[0-9]+ ->")
 	for(var/i in 1 to min(length(lines), length(golden)))
-		TEST_ASSERT_EQUAL(lines[i], golden[i], "line [i] of the explanation differs from the golden, whole text follows:\n[text]")
+		TEST_ASSERT_EQUAL(origin_line.Replace(lines[i], ".dm ->"), origin_line.Replace(golden[i], ".dm ->"),"line [i] of the explanation differs from the golden, whole text follows:\n[text]")
 

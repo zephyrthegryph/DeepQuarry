@@ -53,7 +53,7 @@
 
 /datum/unit_test/dq_ui_outputs_tracked_write_pushes_once/Run()
 	var/datum/dq_ui_out_host/host = new
-	var/datum/tgui/dq_ui_probe/probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	host.add_open_tguis(probe)
 	dq_ui_frame()
 	TEST_ASSERT_EQUAL(probe.pushes, 0, "nothing changed: nothing is pushed")
@@ -83,8 +83,8 @@
 /datum/unit_test/dq_ui_outputs_reads_decide_the_push/Run()
 	var/datum/dq_ui_out_host/exact/host = new
 	var/datum/dq_ui_out_host/bystander = new
-	var/datum/tgui/dq_ui_probe/probe = new
-	var/datum/tgui/dq_ui_probe/far_probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
+	var/datum/tgui/dq_ui_probe/far_probe = allocate(/datum/tgui/dq_ui_probe)
 	host.add_open_tguis(probe)
 	bystander.add_open_tguis(far_probe)
 	dq_ui_frame()
@@ -102,7 +102,7 @@
 /datum/unit_test/dq_ui_outputs_requests_coalesce
 
 /datum/unit_test/dq_ui_outputs_requests_coalesce/Run()
-	var/datum/tgui/dq_ui_probe/probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	for(var/i in 1 to 50)
 		probe.request_push()
 	TEST_ASSERT_EQUAL(probe.pushes, 0, "a request delivers nothing by itself")
@@ -193,7 +193,7 @@
 
 /datum/unit_test/dq_ui_outputs_external_change_pushes_window/Run()
 	var/obj/machinery/magnetic_controller/ctrl = allocate(/obj/machinery/magnetic_controller, dq_containment_floor())
-	var/datum/tgui/dq_ui_probe/probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	LAZYADD(ctrl.open_tguis, probe)
 	dq_ui_frame() // the machine's own init marks settle
 	var/base = probe.pushes
@@ -213,7 +213,7 @@
 
 /datum/unit_test/dq_ui_outputs_swept_host_refreshes_after_write/Run()
 	var/datum/tgui_feedback/host = new
-	var/datum/tgui/dq_ui_probe/probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	host.add_open_tguis(probe)
 	dq_ui_frame()
 	probe.pushes = 0 // opening the window is itself a write of the host's window list
@@ -233,7 +233,7 @@
 
 /datum/unit_test/dq_ui_outputs_swept_atom_host_refreshes_after_write/Run()
 	var/obj/item/beacon_locator/host = allocate(/obj/item/beacon_locator)
-	var/datum/tgui/dq_ui_probe/probe = new
+	var/datum/tgui/dq_ui_probe/probe = allocate(/datum/tgui/dq_ui_probe)
 	host.add_open_tguis(probe)
 	dq_ui_frame()
 	probe.pushes = 0 // opening the window is itself a write of the host's window list

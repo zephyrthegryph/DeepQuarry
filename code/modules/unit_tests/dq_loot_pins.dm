@@ -337,6 +337,8 @@
 /datum/unit_test/dq_resolver_table_pin/Run()
 	var/list/rows = list()
 	for(var/type in typesof(/atom))
+		if(findtext("[type]", "/dq_")) // a unit-test fixture type (dq_decl_*, dq_d5_*), not content
+			continue
 		var/resolver = dq_resolver_pin_proc(type)
 		if(!resolver)
 			continue

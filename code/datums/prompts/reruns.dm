@@ -8,12 +8,6 @@
 // the answer runs the proc again with the same arguments, and this time the same helper call returns the answer (the request's
 // `value`). The re-run re-checks everything the proc checks. Ask everything before doing anything: the proc runs once per answer.
 //
-//	var/amount = verb_ask(user, "amount", args, /datum/prompt/number, question = "How many?", max_value = 10)
-//	if(isnull(amount))
-//		return
-//
-//   verb_ask(user, key, args, prompt, ...)                           an ADMIN_VERB body (the verb's rights are re-checked)
-//   client_ask(key, PROC_REF(this proc), args, rights, prompt, ...)  a /client proc (`rights`: R_* re-checked)
 //   flow_ask(user, key, prompt, ...)                                 a question deep inside a prompt_flow()
 //
 // `prompt` is a /datum/prompt kind; the named arguments are its fields (question, title, choices, default, ...), as open_request()
@@ -165,37 +159,9 @@
 		return null
 	return rerun_unwrap(answers[key])
 
-// ---- admin verbs
-
-/// Answers of the re-run in progress (verb_ask), keyed like the prompts.
-/datum/admin_verb/var/list/rerun_answers
-
-/datum/admin_verb/proc/verb_rerun_ask(client/user, key, list/verb_args, prompt_type, list/fields)
-	if(rerun_answers && !isnull(rerun_answers[key]))
-		return rerun_kept_answer(rerun_answers, key)
-	var/list/rest = verb_args.Copy(2)
-	var/list/asked = fields ? fields.Copy() : list()
-	asked["rights"] = permissions
-	asked["recheck_on_open"] = TRUE
-	rerun_begin(/datum/prompt_rerun/kept/admin_verb, user, src, key, prompt_type, asked, list("answers" = rerun_answers?.Copy(), "rerun_args" = rerun_wrap_list(rest)))
-	return null
-
-/datum/prompt_rerun/kept/admin_verb/run_again(list/unwrapped)
-	var/mob/user = actor()
-	var/datum/admin_verb/V = target()
-	if(!user?.client || !V)
-		return
-	V.rerun_answers = answers
-	SSadmin_verbs.dynamic_invoke_verb(arglist(list(user.client, V.type) + unwrapped))
-
-/datum/prompt_rerun/kept/admin_verb/finished()
-	var/datum/admin_verb/V = target()
-	if(V)
-		V.rerun_answers = null
-
 // ---- client procs
 
-/// Answers of the re-run in progress (client_ask), and which proc they're for.
+/// Answers of the re-run in progress (a prompt flow of a client), and which proc they're for.
 /client/var/list/rerun_answers
 /client/var/rerun_answers_proc
 

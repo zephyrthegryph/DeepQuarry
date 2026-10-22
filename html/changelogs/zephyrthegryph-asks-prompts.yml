@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Admin verbs, the mentor PM, and spell target questions now ask through typed question sequences instead of re-running themselves."

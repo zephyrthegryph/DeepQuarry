@@ -17,7 +17,6 @@ var	code/engine/declare/table.dm	@/datum/centry::item
 var	code/engine/present/appearance_builder.dm	@/datum/controller/global_vars::look_builder
 var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
 var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
-var	code/game/objects/structures/transit_tubes.dm	@/obj/structure/transit_tube_pod::air_contents
 var	code/modules/admin/callproc/callproc.dm	@/datum/controller/global_vars::AdminProcCallHandler
 var	code/modules/client/client defines.dm	@/client::holder
 var	code/modules/client/client defines.dm	@/client::persistent_client

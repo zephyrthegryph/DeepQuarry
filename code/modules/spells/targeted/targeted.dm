@@ -30,6 +30,97 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 
 
 /datum/spell/targeted/choose_targets(mob/user)
+	return gather_targets(user, null)
+
+/datum/spell/targeted/targets_from_answers(mob/user, datum/ask_sequence/spell_cast/asked)
+	return gather_targets(user, asked)
+
+/// The living mobs a single-target spell may pick from.
+/datum/spell/targeted/proc/single_candidates(mob/user)
+	var/list/possible_targets = list()
+	var/list/starting_targets
+	if(range == -2)
+		starting_targets = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)
+	else
+		starting_targets = view_or_range(range, holder(), selection_type)
+
+	for(var/mob/living/M in starting_targets)
+		if(!(spell_flags & INCLUDEUSER) && M == user)
+			continue
+		if(compatible_mobs && length(compatible_mobs))
+			if(!is_type_in_list(M, compatible_mobs)) continue
+		if(compatible_mobs && length(compatible_mobs) && !is_type_in_list(M, compatible_mobs))
+			continue
+		possible_targets += M
+	return possible_targets
+
+/// The living mobs a multi-target spell may pick from.
+/datum/spell/targeted/proc/multi_candidates(mob/user)
+	var/list/possible_targets = list()
+	var/list/starting_targets
+
+	if(range == -2)
+		starting_targets = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)
+	else
+		starting_targets = view_or_range(range, holder(), selection_type)
+
+	for(var/mob/living/target in starting_targets)
+		if(!(spell_flags & INCLUDEUSER) && target == user)
+			continue
+		if(!is_type_in_list(target, compatible_mobs)) // compatible_mobs is lazy; an empty table always rejected, and null still does
+			continue
+		possible_targets += target
+	return possible_targets
+
+/datum/spell/targeted/target_questions(mob/user)
+	if(!(spell_flags & SELECTABLE))
+		return null
+	if(max_targets == 0)
+		return null
+	if(max_targets == 1)
+		if((range == 0 || range == -1) && spell_flags & INCLUDEUSER)
+			return null
+		if(!length(single_candidates(user)))
+			return null
+		return list(question_step("target", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = single_candidates(user)))
+	if(!length(multi_candidates(user)))
+		return null
+	var/list/steps = list()
+	for(var/i in 1 to max_targets)
+		steps += PROC_REF(ask_next_target)
+	return steps
+
+/datum/spell/targeted/casts_picked_on_stop()
+	return max_targets != 1 // closing a question of a many-target spell picks no more
+
+/// The mobs picked so far in the multi-target questions before step `upto`.
+/datum/spell/targeted/proc/picked_targets(datum/ask_sequence/spell_cast/asked, upto)
+	var/list/picked = list()
+	for(var/j in 1 to upto - 1)
+		var/mob/M = asked.get("target[j]")
+		if(!M)
+			continue
+		if(range != -2 && !(M in view_or_range(range, holder(), selection_type)))
+			continue
+		picked += M
+	return picked
+
+/// A step of the multi-target questions: the next pick, from the mobs not picked yet.
+/datum/spell/targeted/proc/ask_next_target(datum/ask_sequence/spell_cast/asked)
+	var/i = asked.step_index
+	if(i > 1 && isnull(asked.get("target[i - 1]")))
+		return ASK_STOP // the caster closed the last question: no more picks
+	var/mob/user = asked.actor()
+	if(!user)
+		return ASK_STOP
+	var/list/possible_targets = multi_candidates(user) - picked_targets(asked, i)
+	if(!length(possible_targets))
+		return null
+	var/list/step = question_step("target[i]", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
+	step["optional"] = TRUE // a closed question picks no more instead of dropping the cast
+	return step
+
+/datum/spell/targeted/proc/gather_targets(mob/user, datum/ask_sequence/spell_cast/asked)
 	var/list/targets = list()
 
 	if(max_targets == 0) //unlimited
@@ -43,25 +134,11 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 		if((range == 0 || range == -1) && spell_flags & INCLUDEUSER)
 			targets += user
 		else
-			var/list/possible_targets = list()
-			var/list/starting_targets
-			if(range == -2)
-				starting_targets = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)
-			else
-				starting_targets = view_or_range(range, holder(), selection_type)
-
-			for(var/mob/living/M in starting_targets)
-				if(!(spell_flags & INCLUDEUSER) && M == user)
-					continue
-				if(compatible_mobs && length(compatible_mobs))
-					if(!is_type_in_list(M, compatible_mobs)) continue
-				if(compatible_mobs && length(compatible_mobs) && !is_type_in_list(M, compatible_mobs))
-					continue
-				possible_targets += M
+			var/list/possible_targets = single_candidates(user)
 
 			if(possible_targets.len)
 				if(spell_flags & SELECTABLE) //if we are allowed to choose. see setup.dm for details
-					var/mob/temp_target = cast_ask(user, "target", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
+					var/mob/temp_target = asked?.get("target")
 					if(temp_target)
 						targets += temp_target
 				else
@@ -70,30 +147,15 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 
 
 	else
-		var/list/possible_targets = list()
-		var/list/starting_targets
-
-		if(range == -2)
-			starting_targets = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS)
-		else
-			starting_targets = view_or_range(range, holder(), selection_type)
-
-		for(var/mob/living/target in starting_targets)
-			if(!(spell_flags & INCLUDEUSER) && target == user)
-				continue
-			if(!is_type_in_list(target, compatible_mobs)) // compatible_mobs is lazy; an empty table always rejected, and null still does
-				continue
-			possible_targets += target
+		var/list/possible_targets = multi_candidates(user)
 
 		if(spell_flags & SELECTABLE)
 			for(var/i = 1, i<=max_targets, i++)
 				if(!possible_targets.len)
 					break
-				var/mob/M = cast_ask(user, "target[i]", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets, cancel_answer = "") // closing picks no more
-				if(isnull(M))
-					return list()
+				var/mob/M = asked?.get("target[i]")
 				if(!M)
-					break
+					break // closing a question picks no more
 				if(range != -2)
 					if(!(M in view_or_range(range, holder(), selection_type)))
 						continue

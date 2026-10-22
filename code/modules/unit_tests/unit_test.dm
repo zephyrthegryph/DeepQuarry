@@ -936,6 +936,8 @@ GLOBAL_VAR(dq_test_select_names)
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
+	// Before the state guard's snapshot: the first test of a bounded run parks the staleness backlog (GLOB.staleness_parked), the harness's own write, not the test's.
+	staleness_test_begin()
 	var/duration = 0
 	var/tick_start_index = 0
 	var/list/sites_before = SSexpedition?.sites?.Copy()
@@ -956,7 +958,6 @@ GLOBAL_VAR(dq_test_select_names)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
-	staleness_test_begin()
 	log_world("::group::([current_index]/[total_tests]) [test_path]")
 	log_test("Running [current_index]/[total_tests]: [test_path]")
 

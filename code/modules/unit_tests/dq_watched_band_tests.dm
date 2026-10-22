@@ -73,7 +73,7 @@
 	O.update()
 	SSwatched.arm_pending(0)
 	if(made)
-		qdel(made)
+		qdel(made, TRUE)
 	TEST_ASSERT_EQUAL(after, 1, "a corner change past the level moved the published band (was [before])")
 	// The lighting hot path: an update on a turf nothing watches pays one var read. Logged for the record, not asserted.
 	var/list/watch = O.lum_watch

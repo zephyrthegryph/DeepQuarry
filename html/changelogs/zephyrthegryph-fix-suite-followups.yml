@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The conversion pin sweep is an exhaustive-tier test with a normal-tier representative; the state guard no longer reports the harness's staleness park as a test leak"

@@ -3,10 +3,6 @@
 // ---- re-run prompts (code/datums/prompts/reruns.dm): the first call asks and returns null; the answer re-runs the caller, where
 // the same call returns the answer. `prompt` is a /datum/prompt kind; the named arguments are its fields (open_request()'s), plus
 // cancel_answer. ----
-/// In an ADMIN_VERB body (`verb_args`: the verb's args).
-#define verb_ask(user, key, verb_args, prompt, fields...) verb_rerun_ask(user, key, verb_args, prompt, list(fields))
-/// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.
-#define client_ask(key, proc_name, proc_args, rights, prompt, fields...) client_rerun_ask(key, proc_name, proc_args, rights, prompt, list(fields))
 /// Deep inside a prompt_flow().
 #define flow_ask(user, key, prompt, fields...) prompt_flow_ask(user, key, prompt, list(fields))
 /// Thrown by flow_io_answer() to unwind a prompt flow whose query is in flight; prompt_flow() catches it.

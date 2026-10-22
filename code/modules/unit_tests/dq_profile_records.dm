@@ -206,4 +206,24 @@
 	TEST_ASSERT(istype(mouse.vore_prefs, /datum/record/vore_prefs), "and a vore record")
 	TEST_ASSERT(!("looks" in mouse.vars), "but no human looks")
 
+/// profile(fields =) gives the declaring type's starting values only: the plain profile() of a base type, built before or after a
+/// declaration with fields, keeps no fields (entries are interned, so a declaration must not write into the shared one).
+/datum/unit_test/dq_profile_fields_do_not_leak_to_the_base_declaration
+
+/datum/unit_test/dq_profile_fields_do_not_leak_to_the_base_declaration/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/simple_mob/animal/passive/mouse/mouse = allocate(/mob/living/simple_mob/animal/passive/mouse, test_floor())
+	var/list/fields = list("digest_leave_remains" = TRUE, "can_be_drop_prey" = TRUE)
+	var/datum/entry/plain_first = profile(nameof(H.vore_prefs), /datum/record/vore_prefs)
+	var/datum/entry/with_fields = profile(nameof(H.vore_prefs), /datum/record/vore_prefs, fields = fields)
+	var/datum/entry/plain_after = profile(nameof(H.vore_prefs), /datum/record/vore_prefs)
+	TEST_ASSERT(with_fields != plain_first, "a declaration with fields is an entry of its own")
+	TEST_ASSERT_EQUAL(plain_first, plain_after, "the plain declaration is the same entry before and after it")
+	TEST_ASSERT_NULL(LAZYACCESS(plain_after.args, "profile_set"), "and it carries no starting fields")
+	TEST_ASSERT_EQUAL(LAZYACCESS(with_fields.args, "profile_set"), fields, "while the declaration with fields carries them")
+	// The built records: a human declares no fields, a mouse declares its own.
+	TEST_ASSERT(mouse.vore_prefs.digest_leave_remains, "the simple mob starts with its own vore field")
+	TEST_ASSERT(!H.vore_prefs.digest_leave_remains, "and the human does not take it")
+	TEST_ASSERT(!H.vore_prefs.can_be_drop_prey, "or the next one")
+
 #undef DQ_PROFILE_SAVES

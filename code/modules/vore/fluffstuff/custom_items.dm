@@ -1,5 +1,6 @@
 MSG_DEF_SELF(custom_items/the_necklace_never_quite_gets, "the necklace never quite gets past your head")
 MSG_DEF_SELF(custom_items/the_collar_doesnt_fit_you, "the collar doesn't fit you")
+MSG_DEF_SELF(custom_items/these_dont_look_made_to_fit_you, "these don't look like they were made to fit you")
 MSG_DEF_SELF(custom_items/these_dont_look_like_they, "these don't look like they were made to fit you")
 
 /* TUTORIAL
@@ -1201,6 +1202,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
+
+CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
+	extend(/datum/act/equip, needs(req_wearer_ckey("radiantaurora", because = MSG(custom_items/these_dont_look_made_to_fit_you))))
 
 
 

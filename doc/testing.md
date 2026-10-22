@@ -219,7 +219,8 @@ every cell of a large matrix:
 - `dq_lifecycle_sandbox` and `dq_state_latent_round_trip`;
 - `dq_rule_thresholds` and `dq_balance_harness`;
 - `all_clothing_shall_be_valid` and `dq_containment_conservation_fuzz`;
-- `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`.
+- `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`,
+  `dq_conversion_pin` (every recorded pin; the tests parented to it keep their own directories in the normal tier) and `dq_loot_roll_pin`.
 
 Each one has a normal-tier representative, a `.../representative` subtype that
 sets `tier = TEST_TIER_NORMAL`. It runs the same code over a fixed, curated

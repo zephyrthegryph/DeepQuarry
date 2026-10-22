@@ -670,6 +670,7 @@
 #include "dq_atmos_pipes_behaviour.dm"
 #include "dq_fwg3_modals.dm"
 #include "dq_fwg3_asks.dm"
+#include "dq_asks_spell_prompts.dm"
 #include "dq_keeps_dead_cleanup_tests.dm"
 #include "dq_keeps_dead_cleanup_more_tests.dm"
 #include "dq_keeps_dead_cleanup_batch2_tests.dm"

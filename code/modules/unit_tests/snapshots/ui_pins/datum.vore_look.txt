@@ -82,7 +82,7 @@ inside tab | selected: null
 inside tab | show_pictures: 0
 inside tab | soulcatcher: null
 inside tab | unsaved_changes: 1
-soulcatcher tab | abilities: {"nutrition":344,"size_change":{"current_size":1,"minimum_size":0.25,"maximum_size":2,"resize_cost":125}}
+soulcatcher tab | abilities: {"nutrition":6000,"size_change":{"current_size":1,"minimum_size":0.25,"maximum_size":2,"resize_cost":125}}
 soulcatcher tab | active_tab: 2
 soulcatcher tab | general_pref_data: null
 soulcatcher tab | host_mobtype: null
