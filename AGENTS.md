@@ -260,6 +260,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
   `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
   first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
+- **Stuck lanes and waiting.** `bash tools/dq_lane_pool.sh stuck` lists leases with no live process and no activity for 30 min (exit 1 if any; `status` flags them, with
+  idle time and machine-slot waits). A dirty or unpushed one is only reported, never wiped; a clean pushed one is reclaimed. `... cancel <branch>` withdraws a queued
+  `lease --wait`. A full suite takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` test worlds (default 1 while others wait) so focused runs are not starved.
 - **Everything important lives in the repo; `E:/dq-cache` holds only disposable caches.** Never install a script, wrapper or config under
   `E:/dq-cache` (the old `E:/dq-cache/bin/dq_lane_pool` is gone for this reason): call `bash tools/dq_lane_pool.sh` from your worktree. It
   runs origin/master's copy when its own differs (extracted with `git archive` under `E:/dq-cache/lane-pool/self`), so any worktree's copy is safe.

@@ -7,6 +7,8 @@
 #   bash tools/dq_lane_pool.sh release [<branch>|--path P] [--force] [--keep-outputs]
 #   bash tools/dq_lane_pool.sh status                          # who holds which slot, how big each worktree is
 #   bash tools/dq_lane_pool.sh path <branch>                   # the leased path of a branch (exit 1 if none)
+#   bash tools/dq_lane_pool.sh cancel <branch>                 # withdraw a queued `lease --wait` ticket; that waiter exits 4 ("cancelled"), nothing is killed
+#   bash tools/dq_lane_pool.sh stuck [--quiet]                 # list STUCK leases (below); exit 1 when there are any, so a coordinator can poll
 #
 # Classes (what the lane is, not how important): general = pool-1..N (a game lane: DM compile, test worlds); compiler = pool-c1, pool-c2
 # (DQ_LANE_POOL_COMPILER, default 2), reserved: general lanes never take them, and a compiler lane is served ahead of the general queue
@@ -37,9 +39,20 @@
 #     data/analyze-cache stay: they are the warm part of the pool. --keep-outputs skips the deletion.
 #   - Deletes the lane branch only when it is fully merged into origin/master (`git branch -d`); an unmerged branch is kept and named.
 #
+# Stuck and idle leases (`status`, `stuck`): a lease is STUCK when no live process uses its worktree (no process command line naming the
+# path, and no machine slot held or queued for it) and nothing has changed in it for DQ_LANE_POOL_STUCK_MIN minutes (default 30): the
+# lease file, HEAD, index, reflog, any modified or untracked file, the data/logs and data/runs trees, or a *.log at its root. A stuck lease
+# is only REPORTED, with how long it has been idle, whether its tree is dirty and whether commits are unpushed; a notice is written under
+# $STATE_DIR/notices/pool-N.stuck (removed when the lease is active again or gone). Nothing is ever wiped: a dirty tree, or a branch with
+# commits that are neither in origin/master nor in origin/<branch>, keeps its slot until its owner (or a human) releases it. A stuck lease
+# that is clean and whose commits are all pushed or merged is reclaimed by the next lease, once idle for the reclaim limit below. Why the
+# old reclaim never fired for a dead lane with uncommitted work: it skips every dirty tree (`wt_clean || continue`) and reclaims only a
+# lane whose branch is merged and whose tip moved off its start, so a stopped dirty lane was invisible to it for ever. `status` also shows,
+# per leased slot, a machine-slot wait (dm_compile / test_world queue entries of that worktree, from tools/dq_machine_slots.sh waiting).
+#
 # State: DQ_LANE_POOL_STATE (default E:/dq-cache/lane-pool): one <slot>.lease file per held slot and a lock directory. Override
 # DQ_LANE_POOL_DIR (where pool-N lives) and DQ_LANE_POOL_REPO (the repository) for tests. tools/ci/test_lane_pool.sh runs this in a scratch repo.
-# Exit status: 0 ok, 1 error, 3 pool full.
+# Exit status: 0 ok, 1 error, 3 pool full, 4 a queued lease was cancelled (stuck: 1 when any lease is stuck).
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 
@@ -195,15 +208,116 @@ release_slot() { # <slot> <force> <keep_outputs>
 
 RECLAIM_IDLE_MIN="${DQ_LANE_POOL_RECLAIM_IDLE_MIN:-180}"
 
-slot_idle_minutes() { # <slot> <worktree>: minutes since the lease, the worktree's HEAD or its index last changed
-	local gd newest=0 f m
-	gd="$(git -C "$2" rev-parse --absolute-git-dir 2>/dev/null)"
-	for f in "$(lease_file "$1")" "$gd/index" "$gd/HEAD" "$gd/logs/HEAD"; do
+STUCK_MIN="${DQ_LANE_POOL_STUCK_MIN:-30}"
+IDLE_FLAG_MIN="${DQ_LANE_POOL_IDLE_FLAG_MIN:-10}"
+NOTICE_DIR="$STATE_DIR/notices"
+SLOTS_SH="$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
+
+slot_activity_epoch() { # <slot> <worktree>: epoch seconds of the newest change to the lease, HEAD, index, reflog, a modified or untracked file or a log
+	local gd newest=0 f m wt="$2"
+	gd="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)"
+	for f in "$(lease_file "$1")" "$gd/HEAD" "$gd/logs/HEAD"; do   # not the index: wt_clean refreshes it, which would restart the idle clock
 		[ -e "$f" ] || continue
 		m="$(stat -c %Y "$f" 2>/dev/null || echo 0)"
 		[ "$m" -gt "$newest" ] && newest="$m"
 	done
-	echo $(( ($(date +%s) - newest) / 60 ))
+	[ -d "$wt" ] || { echo "$newest"; return; }
+	# the cheap signs are recent: skip the walk over the worktree's files (seconds on a 24k-file tree, which status pays per leased slot)
+	[ $(( ($(date +%s) - newest) / 60 )) -lt "$IDLE_FLAG_MIN" ] && { echo "$newest"; return; }
+	m="$(cd "$wt" && {
+		git ls-files -m -o --exclude-standard 2>/dev/null | head -n 400 | tr '\n' '\0' | xargs -0 stat -c %Y 2>/dev/null
+		find data/logs data/runs -maxdepth 4 -type f -printf '%T@\n' 2>/dev/null | cut -d. -f1
+		find . -maxdepth 1 -name '*.log' -type f -printf '%T@\n' 2>/dev/null | cut -d. -f1
+	} | sort -n | tail -n 1)"
+	case "$m" in ''|*[!0-9]*) ;; *) [ "$m" -gt "$newest" ] && newest="$m" ;; esac
+	echo "$newest"
+}
+
+slot_idle_minutes() { # <slot> <worktree>: minutes since anything in the lease or its worktree last changed
+	echo $(( ($(date +%s) - $(slot_activity_epoch "$1" "$2")) / 60 ))
+}
+
+PROC_SNAP=""; PROC_SNAP_DONE=0
+proc_snapshot() { # command lines of the running processes, lowercased with / separators (once per invocation). DQ_LANE_POOL_PROCS_CMD replaces the source (tests).
+	[ "$PROC_SNAP_DONE" -eq 1 ] && return 0
+	PROC_SNAP_DONE=1
+	local raw=""
+	if [ -n "${DQ_LANE_POOL_PROCS_CMD:-}" ]; then
+		raw="$(eval "$DQ_LANE_POOL_PROCS_CMD" 2>/dev/null)"
+	elif command -v powershell.exe >/dev/null 2>&1; then
+		raw="$(powershell.exe -NoProfile -NonInteractive -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.Name -notmatch "^(dmbc|powershell)" } | ForEach-Object { $_.CommandLine }' 2>/dev/null | tr -d '\r')"
+	elif [ -d /proc/self ]; then
+		raw="$(for f in /proc/[0-9]*; do { tr '\0' ' ' <"$f/cmdline"; echo " $(readlink "$f/cwd" 2>/dev/null)"; } 2>/dev/null; done)"
+	fi
+	PROC_SNAP="$(printf '%s\n' "$raw" | grep -v 'dq_lane_pool' | tr 'A-Z\\' 'a-z/' | sed 's|//*|/|g')"
+}
+
+slot_live() { # <slot> <worktree>: a process uses the worktree (its path on a command line, or a machine slot held or queued for it)
+	local wt="$2" a b
+	a="$(printf '%s' "$wt" | tr 'A-Z\\' 'a-z/' | sed -e 's|//*|/|g' -e 's|/$||')"
+	b="$(printf '%s' "$a" | sed 's|^\([a-z]\):|/\1|')"   # the msys spelling /e/projects/...
+	proc_snapshot
+	if [ -n "$PROC_SNAP" ]; then
+		a="$(printf '%s' "$a" | sed 's/[.[\*^$]/\\&/g')"; b="$(printf '%s' "$b" | sed 's/[.[\*^$]/\\&/g')"
+		printf '%s\n' "$PROC_SNAP" | grep -Eq "(^|[^a-z0-9_/.-])($a|$b)([^a-z0-9_-]|$)" && return 0
+	fi
+	[ -n "$(slot_usage "$wt")" ] && return 0
+	return 1
+}
+
+SLOT_USAGE_KEY=""; SLOT_USAGE=""
+slot_usage() { # <worktree>: "hold <class> <s> <label>" / "wait <class> <s> <label>" lines of the machine slots it holds or queues for (one process, cached per path)
+	if [ "$SLOT_USAGE_KEY" != "$1" ]; then
+		SLOT_USAGE_KEY="$1"; SLOT_USAGE=""
+		[ -f "$SLOTS_SH" ] && SLOT_USAGE="$(bash "$SLOTS_SH" usage "$1" 2>/dev/null)"
+	fi
+	printf '%s' "$SLOT_USAGE"
+}
+
+slot_pushed() { # <branch>: nothing is unpushed: every commit is in origin/master or in origin/<branch> (a deleted branch holds nothing)
+	git -C "$REPO" show-ref -q --verify "refs/heads/$1" || return 0
+	merged_into_master "$REPO" "$1" && return 0
+	git -C "$REPO" merge-base --is-ancestor "refs/heads/$1" "refs/remotes/origin/$1" 2>/dev/null
+}
+
+fmt_min() { # minutes -> 45m / 3h05m / 2d04h
+	local m="$1"
+	if [ "$m" -ge 2880 ]; then echo "$((m / 1440))d$(printf %02d $((m % 1440 / 60)))h"
+	elif [ "$m" -ge 120 ]; then echo "$((m / 60))h$(printf %02d $((m % 60)))m"
+	else echo "${m}m"; fi
+}
+
+# slot_eval <slot>: sets E_IDLE (minutes), E_LIVE (0/1), E_DIRTY (0/1), E_PUSHED (0/1), E_STUCK (0/1), E_WAIT ("class Ns" or "")
+slot_eval() {
+	local i="$1" wt branch w
+	wt="$(slot_path "$i")"; branch="$(lease_get "$i" branch)"
+	E_IDLE=0; E_LIVE=0; E_DIRTY=0; E_PUSHED=1; E_STUCK=0; E_WAIT=""
+	[ -d "$wt" ] || return 0
+	E_IDLE="$(slot_idle_minutes "$i" "$wt")"
+	slot_live "$i" "$wt" && E_LIVE=1
+	[ "$E_LIVE" -eq 0 ] && [ "$E_IDLE" -ge "$STUCK_MIN" ] && E_STUCK=1
+	if [ "$E_STUCK" -eq 1 ]; then   # the full-tree dirty check only for a stuck lease
+		wt_clean "$wt" || E_DIRTY=1
+		slot_pushed "$branch" || E_PUSHED=0
+	fi
+	w="$(slot_usage "$wt" | sed -n 's/^wait //p' | head -n 1)"
+	[ -n "$w" ] && E_WAIT="$(echo "$w" | awk '{ printf "%s %ds", $1, $2 }')"
+	return 0
+}
+
+stuck_notice() { # <slot>: write or remove $STATE_DIR/notices/pool-N.stuck from the E_* of slot_eval
+	local i="$1" f="$NOTICE_DIR/pool-$1.stuck"
+	if [ "$E_STUCK" -eq 1 ]; then
+		mkdir -p "$NOTICE_DIR" 2>/dev/null
+		{
+			echo "slot=pool-$i"; echo "branch=$(lease_get "$i" branch)"; echo "owner=$(lease_get "$i" owner)"
+			echo "idle_minutes=$E_IDLE"; echo "dirty=$E_DIRTY"; echo "unpushed=$((1 - E_PUSHED))"
+			echo "path=$(slot_path "$i")"; echo "noticed=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+			echo "action=$([ "$E_DIRTY" -eq 0 ] && [ "$E_PUSHED" -eq 1 ] && echo "reclaimable by the next lease after the reclaim idle limit" || echo "report only: dirty or unpushed work is never discarded")"
+		} >"$f.tmp" 2>/dev/null && mv -f "$f.tmp" "$f"
+	else
+		rm -f "$f" 2>/dev/null
+	fi
 }
 
 reclaim_finished() { # called under the lock: drop leases whose lane is done
@@ -227,6 +341,9 @@ reclaim_finished() { # called under the lock: drop leases whose lane is done
 			# the lane committed (tip moved off its start) and all of it is in origin/master: finished. A lane that has not committed yet
 			# also sits on a master ancestor, which is why the start commit is recorded.
 			release_slot "$i" 0 0; say "reclaimed pool-$i (lane $branch is merged into origin/master)"
+		elif ! slot_live "$i" "$wt" && slot_pushed "$branch"; then
+			# stuck (no process, idle past the limit), clean, and every commit pushed or merged: nothing can be lost (a lane that never committed lands here too)
+			release_slot "$i" 0 0; say "reclaimed pool-$i (stuck: clean, no live process, idle $(fmt_min "$(slot_idle_minutes "$i" "$wt")"), nothing unpushed on $branch)"
 		fi
 	done
 }
@@ -287,6 +404,7 @@ since=%s
 	trap 'rm -f "${ticket:-}"' EXIT
 	start=$(date +%s)
 	while :; do
+		[ -f "$ticket" ] || { say "cancelled: the queue ticket for $branch was withdrawn (dq_lane_pool.sh cancel)"; return 4; }
 		queue_prune
 		pos="$(queue_position "$ticket")"
 		if [ "$pos" = 1 ]; then
@@ -422,20 +540,31 @@ cmd_release() {
 }
 
 cmd_status() {
-	local i wt held=0
+	local i wt held=0 nstuck=0 tag
 	echo "lane pool: $POOL_SIZE general + $COMPILER_SLOTS compiler + light slot(s) under $POOL_DIR (state $STATE_DIR)"
 	for i in $(slots_all); do
 		wt="$(slot_path "$i")"
 		if [ -f "$(lease_file "$i")" ]; then
 			held=$((held + 1))
-			echo "  pool-$i  LEASED  $(lease_get "$i" branch)  since $(lease_get "$i" since)  ($(lease_get "$i" owner))  $([ -d "$wt" ] && echo "$(( $(size_cached "$wt") / 1024 )) MB")"
+			slot_eval "$i"; stuck_notice "$i"
+			tag=""
+			if [ "$E_STUCK" -eq 1 ]; then
+				tag="  STUCK: no live process, idle $(fmt_min "$E_IDLE"), $([ "$E_DIRTY" -eq 1 ] && echo "DIRTY tree" || echo "clean tree"), $([ "$E_PUSHED" -eq 1 ] && echo "nothing unpushed" || echo "UNPUSHED commits")$([ "$E_DIRTY" -eq 1 ] || [ "$E_PUSHED" -eq 0 ] && echo " (report only, never wiped)")"
+				nstuck=$((nstuck + 1))
+			elif [ "$E_IDLE" -ge "$IDLE_FLAG_MIN" ]; then
+				tag="  idle $(fmt_min "$E_IDLE")$([ "$E_LIVE" -eq 1 ] && echo " (a process still uses it)")"
+			else
+				tag="  active (last change $(fmt_min "$E_IDLE") ago)"
+			fi
+			[ -n "$E_WAIT" ] && tag="$tag  WAITING for machine slot: $E_WAIT"
+			echo "  pool-$i  LEASED  $(lease_get "$i" branch)  since $(lease_get "$i" since)  ($(lease_get "$i" owner))  $([ -d "$wt" ] && echo "$(( $(size_cached "$wt") / 1024 )) MB")$tag"
 		elif [ -d "$wt" ]; then
 			echo "  pool-$i  free    $(wt_clean "$wt" && echo clean || echo DIRTY)  $(( $(size_cached "$wt") / 1024 )) MB"
 		else
 			echo "  pool-$i  free    (not created yet: the first lease checks it out)"
 		fi
 	done
-	echo "  $held leased"
+	echo "  $held leased$([ "$nstuck" -gt 0 ] && echo ", $nstuck STUCK (bash tools/dq_lane_pool.sh stuck)")"
 	queue_prune
 	local t n=0
 	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
@@ -449,6 +578,34 @@ cmd_status() {
 	done
 	[ -d "$STATE_DIR/light-queue" ] && for t in "$STATE_DIR"/light-queue/*.q; do [ -e "$t" ] && echo "  waiting to land (bash tools/dq_land.sh --light): $(sed -n 's/^branch=//p' "$t")"; done
 	return 0
+}
+
+cmd_cancel() { # <branch>: remove that branch's queue tickets; the waiting process notices and exits
+	local b="${1:-}" t n=0 q
+	[ -n "$b" ] || die "usage: dq_lane_pool.sh cancel <branch>"
+	for q in "$STATE_DIR/queue" "$STATE_DIR/queue-light"; do
+		for t in "$q"/*.ticket; do
+			[ -e "$t" ] || continue
+			[ "$(sed -n 's/^branch=//p' "$t" | head -n 1)" = "$b" ] && rm -f "$t" && n=$((n + 1))
+		done
+	done
+	[ "$n" -gt 0 ] || die "no queued lease for '$b' (dq_lane_pool.sh status)"
+	say "cancelled $n queued lease ticket(s) for $b; its waiting process exits on its next poll"
+}
+
+cmd_stuck() { # [--quiet]: list stuck leases; exit 1 when there are any
+	local quiet=0 i n=0 wt
+	[ "${1:-}" = "--quiet" ] && quiet=1
+	for i in $(slots_all); do
+		if [ ! -f "$(lease_file "$i")" ]; then rm -f "$NOTICE_DIR/pool-$i.stuck" 2>/dev/null; continue; fi
+		wt="$(slot_path "$i")"
+		slot_eval "$i"; stuck_notice "$i"
+		[ "$E_STUCK" -eq 1 ] || continue
+		n=$((n + 1))
+		[ "$quiet" -eq 1 ] || echo "STUCK pool-$i $(lease_get "$i" branch) owner=$(lease_get "$i" owner) idle=$(fmt_min "$E_IDLE") dirty=$E_DIRTY unpushed=$((1 - E_PUSHED)) path=$wt action=$([ "$E_DIRTY" -eq 0 ] && [ "$E_PUSHED" -eq 1 ] && echo reclaimable || echo report-only)"
+	done
+	[ "$n" -eq 0 ] && { [ "$quiet" -eq 1 ] || echo "no stuck leases"; return 0; }
+	return 1
 }
 
 cmd_path() {
@@ -466,6 +623,8 @@ case "$cmd" in
 	release) cmd_release "$@" ;;
 	status) cmd_status ;;
 	path) cmd_path "$@" ;;
-	-h|--help|help|"") sed -n '2,37p' "$0"; [ -n "$cmd" ] || exit 2 ;;
-	*) echo "dq_lane_pool: unknown command '$cmd' (lease, release, status, path)" >&2; exit 2 ;;
+	cancel) cmd_cancel "$@" ;;
+	stuck) cmd_stuck "$@"; exit $? ;;
+	-h|--help|help|"") sed -n '2,55p' "$0"; [ -n "$cmd" ] || exit 2 ;;
+	*) echo "dq_lane_pool: unknown command '$cmd' (lease, release, status, path, stuck, cancel)" >&2; exit 2 ;;
 esac
