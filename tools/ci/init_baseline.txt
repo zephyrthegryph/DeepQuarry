@@ -80,23 +80,6 @@ init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize:
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::warm_init_dirs
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::rel_take_all
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::RefreshParts
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::return
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::message_admins
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::log_game
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::for
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.set_amount
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::other.Spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::has_spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::expr
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::Spread
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::if
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T
-init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T.hotspot_expose
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	@/obj/item/commcard/head::Initialize::SSradio.add_object
 init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
 init_lines	code/game/objects/items/devices/radio/radiopack.dm	@/obj/item/bluespaceradio::Initialize::make_tethered
@@ -239,10 +222,6 @@ init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initi
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::real_name
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
 init_lines	code/modules/mob/dead/observer/observer.dm	@/mob/observer/dead::Initialize::animate
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::if
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::gender
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::if
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	@/mob/living/carbon/human/ai_controlled::Initialize::identifying_gender
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::if
 init_lines	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::Initialize::species
@@ -311,14 +290,8 @@ init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persisten
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::if
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::tokens
 init_lines	code/modules/persistence/datum/persistence_datum.dm	@/datum/persistent::Initialize::ProcessAndApplyTokens
-init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::if
-init_lines	code/modules/persistence/graffiti.dm	@/obj/effect/decal/writing::Initialize::SSpersistence.track_value
 init_lines	code/modules/persistence/paintings.dm	@/datum/persistent/paintings::Initialize::load_database
 init_lines	code/modules/power/lighting.dm	@/obj/machinery/light/flamp::Initialize::layer
-init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo_type
-init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc
-init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo
-init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::caliber
 init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk/debug::Initialize::proto_set
 init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs
 init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs
@@ -335,39 +308,6 @@ init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::make_artifact_master
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::icon_num
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::else
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::icon_num
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::name
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::expr
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::expr
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::expr
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::expr
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::else if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::name
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::else if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::else if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::name
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::else if
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::name
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::desc
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::my_effect.trigger
-init_lines	code/modules/xenoarcheaology/artifacts/artifact.dm	@/obj/machinery/artifact::Initialize::artifact_master.do_large_randomization
-init_lines	code/modules/xenoarcheaology/finds/misc.dm	@/obj/machinery/crystal::Initialize::randomize_color
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
 world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
 world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
@@ -380,5 +320,3 @@ world_reads	code/modules/integrated_electronics/subtypes/camera.dm	GLOB.camerane
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
-world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
-world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."

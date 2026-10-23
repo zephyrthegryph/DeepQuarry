@@ -291,10 +291,10 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 			max_shells = secondary_max_shells
 
 		if(caliber && secondary_caliber)
-			caliber = secondary_caliber
+			set_caliber(secondary_caliber)
 
 		if(ammo_type && secondary_ammo_type)
-			ammo_type = secondary_ammo_type
+			set_ammo_type(secondary_ammo_type)
 
 		swap_cylinder("secondary_loaded", "tertiary_loaded")
 
@@ -305,10 +305,10 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 			max_shells = initial(max_shells)
 
 		if(caliber && secondary_caliber)
-			caliber = initial(caliber)
+			set_caliber(initial(caliber))
 
 		if(ammo_type && secondary_ammo_type)
-			ammo_type = initial(ammo_type)
+			set_ammo_type(initial(ammo_type))
 
 		swap_cylinder("tertiary_loaded", "secondary_loaded")
 
