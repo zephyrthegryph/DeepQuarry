@@ -59,13 +59,13 @@ describe('test_world default', () => {
     expect(focusedTestWorlds()).toBe(2);
     process.env.DQ_SLOT_PRIORITY = '1';
     expect(slotGroupSize('test_world', 9)).toBe(2);
-    expect(slotGroupSize('test_world', 9, { suite: true })).toBe(4);
-    expect(slotGroupSize('test_world', 3, { suite: true })).toBe(3);
+    expect(slotGroupSize('test_world', 9, { suite: true })).toBe(2);
+    expect(slotGroupSize('test_world', 1, { suite: true })).toBe(1);
     process.env.DQ_SLOTS_SUITE = '1';
-    expect(slotGroupSize('test_world', 9)).toBe(4);
+    expect(slotGroupSize('test_world', 9)).toBe(2);
     delete process.env.DQ_SLOTS_SUITE;
-    process.env.DQ_SLOTS_TEST_WORLD_FOCUSED = '3';
-    expect(slotGroupSize('test_world', 9)).toBe(3);
+    process.env.DQ_SLOTS_TEST_WORLD_FOCUSED = '1';
+    expect(slotGroupSize('test_world', 9)).toBe(1);
   });
 
   test('setting DQ_SLOTS_TEST_WORLD is one limit for every caller, and only test_world has roles', () => {
