@@ -1,6 +1,8 @@
 // Window links (hrefs) of plain datums through the input inbox: a codex book's page links go to its tree, a vote's link opens its window, and an
 // admin-only game mode link is refused for a player. These read the same for an op.
 
+/// The codex window's buttons are ops of the tree: a page button opens that page for the reader, up / back / home move them, a page of another
+/// codex is refused, and a quick link or a search opens the page it names.
 /datum/unit_test/dq_topic_codex_navigation
 
 /datum/unit_test/dq_topic_codex_navigation/Run()
@@ -17,23 +19,31 @@
 		break
 	TEST_ASSERT_NOTNULL(child, "the home page has a child page")
 	tree.reader_of(reader).visit(home, FALSE)
-	// a page's own link is forwarded to its tree: target= names a page of the tree
-	inbox_topic(reader, home, list("target" = "[REF(child)]"))
-	TEST_ASSERT_EQUAL(tree.current_page_of(reader), child, "a page link opens that page for the reader")
-	inbox_topic(reader, tree, list("go_to_parent" = 1))
-	TEST_ASSERT_EQUAL(tree.current_page_of(reader), home, "the up link goes to the parent")
-	inbox_topic(reader, tree, list("target" = "[REF(child)]"))
-	inbox_topic(reader, tree, list("go_to_home" = 1))
-	TEST_ASSERT_EQUAL(tree.current_page_of(reader), home, "the home link goes to the home page")
-	inbox_topic(reader, tree, list("go_back" = 1))
-	TEST_ASSERT_EQUAL(tree.current_page_of(reader), child, "the back link returns to the page before")
-	// a page of another codex is not a page of this tree
-	var/datum/codex_tree/other = new /datum/codex_tree(book, /datum/lore/codex/category/main_borealis_lore)
-	var/datum/lore/codex/foreign = other.home
-	var/datum/lore/codex/before = tree.current_page_of(reader)
-	inbox_topic(reader, tree, list("target" = "[REF(foreign)]"))
-	TEST_ASSERT_EQUAL(tree.current_page_of(reader), before, "a page that belongs to another codex is refused")
-	qdel(other)
+	var/list/order = tree.pages_in_order()
+	var/child_id = order.Find(child)
+	TEST_ASSERT(child_id > 1, "a page has a place in the tree's order, after the home page")
+	var/datum/op_result/opened = own(test_ui(reader, tree, "target", list("page" = child_id)))
+	TEST_ASSERT_EQUAL(opened?.outcome, ACT_COMMITTED, "a page button reaches its op; reason=[opened?.reason]")
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), child, "a page button opens that page for the reader")
+	var/list/data = hc_data(tree, reader)
+	TEST_ASSERT_EQUAL(data["page_name"], child.name, "the window shows the reader's page")
+	TEST_ASSERT(data["can_up"], "and offers the way up")
+	TEST_ASSERT(data["can_home"], "and home")
+	test_ui(reader, tree, "go_to_parent")
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), home, "the up button goes to the parent")
+	test_ui(reader, tree, "target", list("page" = child_id))
+	test_ui(reader, tree, "go_to_home")
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), home, "the home button goes to the home page")
+	test_ui(reader, tree, "go_back")
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), child, "the back button returns to the page before")
+	test_ui(reader, tree, "go_to_home")
+	test_ui(reader, tree, "quick_link", list("term" = child.name))
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), child, "a quick link opens the page whose name it carries")
+	// a page that is not in this tree is refused
+	var/before = tree.current_page_of(reader)
+	var/datum/op_result/refused = own(test_ui(reader, tree, "target", list("page" = length(order) + 1)))
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "a page the codex does not have is refused")
+	TEST_ASSERT_EQUAL(tree.current_page_of(reader), before, "and the reader stays where they were")
 
 /datum/unit_test/dq_topic_game_mode_rights
 

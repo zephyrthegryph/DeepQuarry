@@ -268,67 +268,6 @@
 
 	return prefix in CONFIG_GET(str_list/language_prefixes)
 
-//TBD
-/mob/proc/check_lang_data()
-	. = ""
-
-	for(var/datum/language/L in languages)
-		if(!(L.flags & NONGLOBAL))
-			var/lang_key = get_custom_prefix_by_lang(src, L)
-			. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + "<br/>[L.desc]<br/><br/>"
-
-/mob/living/check_lang_data()
-	. = ""
-
-	if(default_language)
-		. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/><br/>"
-
-	for(var/datum/language/L in languages)
-		if(!(L.flags & NONGLOBAL))
-			var/lang_key = get_custom_prefix_by_lang(src, L)
-			if(L == default_language)
-				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/>[L.desc]<br/><br/>"
-			else if (can_speak(L))
-				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a><br/>[L.desc]<br/><br/>"
-			else
-				. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
-
-// check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
-
-
-/// TOPIC_REF source: the languages this mob knows.
-/mob/living/proc/topic_known_languages()
-	return languages
-
-/mob/living/proc/topic_default_lang_reset(datum/act/op/A)
-	if (species_language)
-		apply_default_language(GLOB.all_languages[species_language])
-	else
-		apply_default_language(GLOB.all_languages[LANGUAGE_GIBBERISH])
-	check_languages()
-	return TRUE
-
-/mob/living/proc/topic_default_lang(datum/act/op/A, href_default_lang)
-	apply_default_language(href_default_lang)
-	check_languages()
-	return TRUE
-
-/// The key a language is spoken with: asked when the link is clicked, set here (the answerer is still checked to know the language, by the prompt).
-/mob/living/proc/topic_set_lang_key(datum/act/op/A, href_set_lang_key)
-	var/datum/language/L = href_set_lang_key
-	var/old_key = get_custom_prefix_by_lang(src, L)
-	var/custom_key = A.step_value("key")
-	if(custom_key && length(custom_key) == 1)
-		if(contains_az09(custom_key))
-			set_language_keys_at(custom_key, L)
-			if(old_key && old_key != custom_key)
-				remove_language_keys(old_key)
-		else if(custom_key == " ")
-			if(old_key && old_key != custom_key)
-				remove_language_keys(old_key)
-		else
-			tgui_alert_async(src, "Improper language key. Rejected.", "Error")
-
 /// Re-checked on the answer: the answerer still knows the language.
 /datum/prompt/text/language_key
 	title = "Language Key"
@@ -345,7 +284,7 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	rel_set(src, nameof(language), captured_language)
 	if(captured_language)
 		question = "Input a new key for [captured_language.name]"
-		default = get_custom_prefix_by_lang(A?.holder, captured_language)
+		default = get_custom_prefix_by_lang(answerer, captured_language)
 
 /datum/prompt/text/language_key/recheck_extra()
 	var/reason = ..()

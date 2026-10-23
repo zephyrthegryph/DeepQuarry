@@ -2,14 +2,18 @@
 //
 // State-machine arcade game. The DM side picks one of four screens
 // (start / normal / event / gameover) and React renders the matching
-// component. Per-event UIs still ship as HTML through the event
-// branch (HtmlRenderer + forwardTopic) — those individual events
-// would need a per-event-type restructure to be fully typed.
+// component. The event screen is a title, story lines and a list of choices.
 
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import { HtmlRenderer } from './common/HtmlRenderer';
+
+type EventAction = {
+  action: string | null;
+  label: string;
+  arg?: string | null;
+  value?: number | null;
+};
 
 type Screen = 'start' | 'normal' | 'event' | 'gameover';
 
@@ -18,7 +22,9 @@ type Data = {
   // Game-over
   reasons?: string[];
   // Event
-  event_html?: string;
+  event_title?: string;
+  event_lines?: string[];
+  event_actions?: EventAction[];
   // Normal stop
   turn?: number;
   stop_name?: string;
@@ -60,12 +66,37 @@ export const OrionTrail = () => {
       return (
         <Window width={520} height={420} title="The Orion Trail">
           <Window.Content scrollable>
-            <Section>
-              <HtmlRenderer
-                html={data.event_html ?? ''}
-                act={act}
-                forwardTopic
-              />
+            <Section title={data.event_title ?? ''}>
+              {(data.event_lines ?? []).map((line, i) => (
+                <Box key={i} mb={1}>
+                  {line}
+                </Box>
+              ))}
+              <Stack vertical align="flex-end">
+                {(data.event_actions ?? []).map((choice, i) =>
+                  choice.action ? (
+                    <Stack.Item key={i}>
+                      <Button
+                        onClick={() =>
+                          act(
+                            choice.action as string,
+                            choice.arg ? { [choice.arg]: choice.value } : undefined,
+                          )
+                        }
+                      >
+                        {choice.label}
+                      </Button>
+                    </Stack.Item>
+                  ) : (
+                    <Stack.Item key={i} color="label">
+                      {choice.label}
+                    </Stack.Item>
+                  ),
+                )}
+                <Stack.Item>
+                  <Button onClick={() => act('close')}>Close</Button>
+                </Stack.Item>
+              </Stack>
             </Section>
           </Window.Content>
         </Window>
