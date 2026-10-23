@@ -613,7 +613,7 @@
 #include "code\modules\overmap\ships\starmover_service.dm"
 #include "code\modules\overmap\ships\starmover_api.dm"
 #include "code\modules\client\statpanel_service.dm"
-#include "code\content\client\statpanel_api.dm"
+#include "code\modules\client\statpanel_api.dm"
 #include "code\modules\economy\supply_service.dm"
 #include "code\modules\economy\supply_api.dm"
 #include "code\controllers\subsystems\contracts.dm"
