@@ -92,8 +92,9 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 		GLOB.starting_legal_nifsoft = list()
 		GLOB.starting_illegal_nifsoft = list()
 		for(var/ns_type in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package))) // types, not instances
-			if(initial(ns_type.vended))
-				switch(initial(ns_type.illegal))
+			var/datum/nifsoft/NS = ns_type // read through initial() only
+			if(initial(NS.vended))
+				switch(initial(NS.illegal))
 					if(TRUE)
 						GLOB.starting_illegal_nifsoft += ns_type
 					if(FALSE)
