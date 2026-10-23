@@ -173,7 +173,7 @@
 	var/obj/item/toy/acorn_branch/branch = allocate(/obj/item/toy/acorn_branch)
 	problem = untyped_weak_reads(branch, nameof(branch.registered_mob), registrant)
 	TEST_ASSERT(!problem, problem)
-	TEST_ASSERT(branch.registered_mob, "a registrant who is gone leaves the branch registered")
+	TEST_ASSERT_NULL(branch.registered_mob(), "a registrant who is gone leaves the branch free")
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
 	problem = untyped_weak_reads(victim, nameof(victim.lastattacker), attacker)
@@ -181,4 +181,63 @@
 	var/obj/machinery/status_display/display = allocate(/obj/machinery/status_display)
 	var/obj/item/source = allocate(/obj/item/storage/toolbox)
 	problem = untyped_weak_reads(display, nameof(display.shuttle_key_token), source)
+	TEST_ASSERT(!problem, problem)
+
+/// A gone registrant frees the acorn branch: the next person registers and pulls an acorn.
+/datum/unit_test/untyped_followup_acorn_branch_frees
+
+/datum/unit_test/untyped_followup_acorn_branch_frees/Run()
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human)
+	var/obj/item/toy/acorn_branch/branch = allocate(/obj/item/toy/acorn_branch)
+	rel_set(branch, nameof(branch.registered_mob), first)
+	TEST_ASSERT_EQUAL(branch.registered_mob(), first, "the registrant is read back while they live")
+	qdel(first)
+	TEST_ASSERT_NULL(branch.registered_mob(), "the deleted registrant no longer resolves")
+	var/datum/act/op/A = new
+	A.actor = second
+	branch.interaction_self(A)
+	TEST_ASSERT_EQUAL(branch.registered_mob(), second, "the next person registers")
+	qdel(A)
+
+/// The death record keeps the attacker's name and key after the attacker is deleted.
+/datum/unit_test/untyped_followup_lastattacker_record
+
+/datum/unit_test/untyped_followup_lastattacker_record/Run()
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
+	attacker.set_real_name("Test Attacker")
+	victim.note_attacker(attacker)
+	var/list/live = victim.last_attacker_record()
+	TEST_ASSERT_EQUAL(live[1], "Test Attacker", "a live attacker is recorded by name")
+	qdel(attacker)
+	TEST_ASSERT_NULL(victim.lastattacker(), "the handle no longer resolves")
+	var/list/gone = victim.last_attacker_record()
+	TEST_ASSERT_EQUAL(gone[1], "Test Attacker", "the name survives the attacker")
+
+/// The laserdome ball keeps the thrower's name as text for its announcements.
+/datum/unit_test/untyped_followup_laserdome_holder_name
+
+/datum/unit_test/untyped_followup_laserdome_holder_name/Run()
+	var/obj/item/laserdome_hyperball/ball = allocate(/obj/item/laserdome_hyperball)
+	var/mob/living/carbon/human/thrower = allocate(/mob/living/carbon/human)
+	var/expected = "[thrower]"
+	rel_set(ball, nameof(ball.last_holder), thrower)
+	ball.last_holder_name = "[thrower]"
+	qdel(thrower)
+	TEST_ASSERT_NULL(ball.last_holder, "the strong reference clears")
+	TEST_ASSERT_EQUAL(ball.last_holder_name, expected, "the announcements still have a name")
+
+/// Nar-Sie's target takes a mob through rel_set, a beacon for the plain singularity, and clears when the target is deleted.
+/datum/unit_test/untyped_followup_narsie_target
+
+/datum/unit_test/untyped_followup_narsie_target/Run()
+	var/obj/singularity/narsie/narsie = allocate(/obj/singularity/narsie)
+	var/mob/living/carbon/human/food = allocate(/mob/living/carbon/human)
+	narsie.acquire(food)
+	TEST_ASSERT_EQUAL(narsie.target, food, "Nar-Sie hunts the mob")
+	qdel(food)
+	TEST_ASSERT_NULL(narsie.target, "the deleted mob is no longer the target")
+	var/obj/machinery/power/singularity_beacon/beacon = allocate(/obj/machinery/power/singularity_beacon)
+	var/problem = untyped_ref_clears(narsie, nameof(narsie.target), beacon)
 	TEST_ASSERT(!problem, problem)
