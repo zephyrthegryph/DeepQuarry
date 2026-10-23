@@ -61,6 +61,13 @@
 		data["event_title"] = event
 		data["event_lines"] = eventlines ? eventlines.Copy() : list()
 		data["event_actions"] = orion_event_actions()
+		// the market and every other event still show the ship's supplies
+		data["crew"] = settlers.Copy()
+		data["food"] = food
+		data["fuel"] = fuel
+		data["engine"] = engine
+		data["hull"] = hull
+		data["electronics"] = electronics
 		return data
 	if(gameStatus == ORION_STATUS_NORMAL)
 		data["screen"] = ORION_SCREEN_NORMAL

@@ -72,6 +72,22 @@ export const OrionTrail = () => {
                   {line}
                 </Box>
               ))}
+              <Box mb={1}>
+                <Box mb={1}>Crew: {(data.crew ?? []).join(', ') || 'None'}</Box>
+                <LabeledList>
+                  <LabeledList.Item label="Food">{data.food}</LabeledList.Item>
+                  <LabeledList.Item label="Fuel">{data.fuel}</LabeledList.Item>
+                  <LabeledList.Item label="Engine Parts">
+                    {data.engine}
+                  </LabeledList.Item>
+                  <LabeledList.Item label="Hull Panels">
+                    {data.hull}
+                  </LabeledList.Item>
+                  <LabeledList.Item label="Electronics">
+                    {data.electronics}
+                  </LabeledList.Item>
+                </LabeledList>
+              </Box>
               <Stack vertical align="flex-end">
                 {(data.event_actions ?? []).map((choice, i) =>
                   choice.action ? (
