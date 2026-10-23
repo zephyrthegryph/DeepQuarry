@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "eea806c364f75ad6"
+#define VERDIGRIS_ABI "b4f1f0de14609b1b"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -813,6 +813,16 @@
 		__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
+
+/// The id other binds take for this mixture (watches, pipe ports, pump
+/// transfers). Null for a datum with no handle; a stale handle is refused.
+// /datum/gas_mixture/proc/__arena_id (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_checked_arena_id(src_ref)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:checked_arena_id_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(src_ref)
 
 /// One Life cycle of a metabolism holder (`vg_chem::metabolism::cycle`). `args` is flat, 7 values per reagent:
 /// `volume, rate, dose, max_dose, overdose_at, overdose, overdose_mod`. Returns a flat list, 5 per reagent in the same order:
