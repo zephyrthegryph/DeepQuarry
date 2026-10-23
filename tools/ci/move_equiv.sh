@@ -30,6 +30,7 @@
 #   DQ_MOVE_EQUIV_FLAVORS  subset of "production test" (default both)
 #   DQ_MOVE_EQUIV_OVERLAY  space-separated paths (default none) copied from the worktree's HEAD over BOTH extracts before building, for
 #                          checking a move against a generator fix that the older revisions lack (for example "tools/analyze/src")
+#   DQ_MOVE_EQUIV_PLAIN=1  compare without any path map (any two revisions; paths that moved are then reported)
 #   DQ_MOVE_EQUIV_KEEP=1   keep the extracted source trees (about 1.4 GB each); by default they are deleted after the compiles
 set -u
 cd "$(dirname "$0")/../.." || exit 2
@@ -80,7 +81,7 @@ if [ -s "$others" ]; then
   echo "move_equiv: other changed files between $before_rev and $after_rev (expected: deepquarry.dme, tools/ci/lint_scopes.toml):"
   sed 's/^/  /' "$others"
 fi
-if [ ! -s "$maps" ]; then
+if [ ! -s "$maps" ] && [ "${DQ_MOVE_EQUIV_PLAIN:-}" != "1" ]; then
   echo "move_equiv: no pure renames between the two revisions" >&2
   exit 2
 fi
@@ -134,13 +135,15 @@ done
 if [ "${DQ_MOVE_EQUIV_KEEP:-}" != "1" ]; then rm -rf "$out/src"; fi
 
 # 4. Compare.
+mapargs=(--path-map-file "$maps")
+if [ "${DQ_MOVE_EQUIV_PLAIN:-}" = "1" ]; then mapargs=(); fi
 status=0
 for flavor in $flavors; do
   b="$out/$flavor/before"
   a="$out/$flavor/after"
   echo "== $flavor world: before ($before_rev) against after ($after_rev)"
   "$equiv" "$b/deepquarry.dmb" "$a/deepquarry.dmb" --rsc "$b/deepquarry.rsc" "$a/deepquarry.rsc" \
-    --path-map-file "$maps" --all --context 4 --json "$out/$flavor.report.json" "${extra[@]}" | tee "$out/$flavor.report.txt"
+    "${mapargs[@]}" --all --context 4 --json "$out/$flavor.report.json" "${extra[@]}" | tee "$out/$flavor.report.txt"
   [ "${PIPESTATUS[0]}" -eq 0 ] || status=1
   bw=$(count_of "$b/compile.log" 'warning:')
   aw=$(count_of "$a/compile.log" 'warning:')
