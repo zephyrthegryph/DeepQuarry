@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved 108 client and preferences files to code/content/client; move_candidates keeps a system's api file with its system"

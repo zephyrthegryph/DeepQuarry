@@ -23,7 +23,7 @@ import { computeCompileHash } from './lib/compile_hash';
 import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
-import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotGroupSize, withSlot } from './lib/machine_slots';
+import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotRoleSize, withSlot } from './lib/machine_slots';
 import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
 import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
@@ -2341,7 +2341,7 @@ async function runShardWorld(
   linkFrom: string,
   compiledOutput: CompiledOutput,
   wholeTier: boolean,
-  worldSlot: HeldSlot | null,
+  worldSlot: HeldSlot | null | undefined,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
@@ -2450,7 +2450,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   // A whole-tier run is the full suite: it may hold every test_world slot (four by default; focused runs and selections hold two,
   // lib/machine_slots.ts roleCap()) and its shards sweep staleness periodically instead of in full at every test end.
   const wholeTier = !selection;
-  const groupMax = slotGroupSize('test_world', shardCount, { suite: wholeTier ? true : undefined });
+  const groupMax = slotRoleSize('test_world', shardCount, { suite: wholeTier ? true : undefined });
   if (groupMax > 0 && groupMax < shardCount) {
     Juke.logger.info(`dm-test: ${shardCount} shards asked for, but this run may hold only ${groupMax} test_world slot(s): using ${groupMax}.`);
     shardCount = groupMax;
@@ -2487,6 +2487,9 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
   // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
   const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m), { suite: wholeTier ? true : undefined });
+
+  // [] = the class is off or a parent holds the slots (null: no slot needed). A group smaller than the shard count (the suite cap,
+  // DQ_SLOTS_SUITE_MAX_WORLDS) leaves the later shards undefined: each takes its own slot, in queue order, when it boots.
   if (worldSlots.length === 0) for (let i = 0; i < shardCount; i++) worldSlots.push(null);
   try {
     runs = await Promise.all(
@@ -2502,7 +2505,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           privateBase,
           compiledOutput,
           wholeTier,
-          worldSlots[i] ?? null,
+          worldSlots[i],
         )),
     );
   } finally {

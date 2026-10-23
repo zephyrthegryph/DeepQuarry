@@ -1366,7 +1366,7 @@
 
 /// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
 /// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
-/// Zero/null and already-released entries are skipped.
+/// Zero/null and already-released entries are skipped. Returns a log line for any release held at equilibrium, else null.
 // /proc/heat_body_release_list (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_release_list(bodies)
 	var/static/__f

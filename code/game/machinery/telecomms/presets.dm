@@ -59,10 +59,15 @@
 
 
 	//Common and other radio frequencies for people to freely use
-/obj/machinery/telecomms/receiver/preset_right/Initialize(mapload)
+CAPABILITIES(/obj/machinery/telecomms/receiver/preset_right)
+	derives(nameof(freq_listening), PROC_REF(listens_on_public_band))
+
+/// Its frequencies and the whole public band (derives(), at init).
+/obj/machinery/telecomms/receiver/preset_right/proc/listens_on_public_band(target)
+	var/list/heard = freq_listening ? freq_listening.Copy() : list()
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
-		LAZYOR(freq_listening, i)
-	. = ..()
+		heard |= i
+	return heard
 
 /obj/machinery/telecomms/receiver/preset_cent
 	id = "CentCom Receiver"
@@ -86,12 +91,17 @@
 	freq_listening = list(SUP_FREQ, SRV_FREQ)
 	autolinkers = list("processor2", "supply", "service", "unused")
 
-/obj/machinery/telecomms/bus/preset_two/Initialize(mapload)
+CAPABILITIES(/obj/machinery/telecomms/bus/preset_two)
+	derives(nameof(freq_listening), PROC_REF(listens_on_public_band))
+
+/// Its frequencies and the public band but the public channel (derives(), at init).
+/obj/machinery/telecomms/bus/preset_two/proc/listens_on_public_band(target)
+	var/list/heard = freq_listening ? freq_listening.Copy() : list()
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
 		if(i == PUB_FREQ)
 			continue
-		LAZYOR(freq_listening, i)
-	. = ..()
+		heard |= i
+	return heard
 
 /obj/machinery/telecomms/bus/preset_three
 	id = "Bus 3"
@@ -178,12 +188,17 @@
 	id = "Unused Server"
 	autolinkers = list("unused")
 
-/obj/machinery/telecomms/server/presets/unused/Initialize(mapload)
+CAPABILITIES(/obj/machinery/telecomms/server/presets/unused)
+	derives(nameof(freq_listening), PROC_REF(listens_on_unused_band))
+
+/// Its frequencies and every public one that is neither the AI's nor the public channel (derives(), at init).
+/obj/machinery/telecomms/server/presets/unused/proc/listens_on_unused_band(target)
+	var/list/heard = freq_listening ? freq_listening.Copy() : list()
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
 		if(i == AI_FREQ || i == PUB_FREQ)
 			continue
-		LAZYOR(freq_listening, i)
-	. = ..()
+		heard |= i
+	return heard
 
 /obj/machinery/telecomms/server/presets/command
 	id = "Command Server"

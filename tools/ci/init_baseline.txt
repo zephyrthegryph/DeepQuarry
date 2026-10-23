@@ -67,28 +67,11 @@ init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initiali
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::ASSERT
 init_lines	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::Initialize::network
-init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::mask
-init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::rel_set
-init_lines	code/game/machinery/computer/bodycamera.dm	@/obj/machinery/computer/security/telescreen/bodycamera::Initialize::bpinboard.add_filter
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::mask
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::rel_set
-init_lines	code/game/machinery/computer/camera.dm	@/obj/machinery/computer/security/telescreen/entertainment::Initialize::pinboard.add_filter
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::T
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::if
 init_lines	code/game/machinery/doors/airlock.dm	@/obj/machinery/door/airlock::Initialize::secured_wires
 init_lines	code/game/machinery/doors/airlock_angled_bay.dm	@/obj/machinery/door/airlock/angled_bay::Initialize::obtain_icon
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::explosive_events
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::config_mode
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::allowed_experiments
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::config_flags
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::experiment_events
-init_lines	code/game/machinery/doppler_array.dm	@/obj/machinery/doppler_array::Initialize::expr
 init_lines	code/game/machinery/embedded_controller/embedded_controller_base.dm	@/obj/machinery/embedded_controller/radio::Initialize::frequency
-init_lines	code/game/machinery/gear_dispenser.dm	@/obj/machinery/gear_dispenser/custom::Initialize::dispenses
-init_lines	code/game/machinery/navbeacon.dm	@/obj/machinery/navbeacon/patrol::Initialize::codes
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::if
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::make_from_existing
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::else
@@ -97,16 +80,6 @@ init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize:
 init_lines	code/game/machinery/pipe/construction.dm	@/obj/item/pipe::Initialize::warm_init_dirs
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::rel_take_all
 init_lines	code/game/machinery/protean_reconstitutor.dm	@/obj/machinery/protean_reconstitutor::Initialize::RefreshParts
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/receiver/preset_right::Initialize::for
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/receiver/preset_right::Initialize::LAZYOR
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/bus/preset_two::Initialize::for
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/bus/preset_two::Initialize::if
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/bus/preset_two::Initialize::expr
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/bus/preset_two::Initialize::LAZYOR
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::for
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::if
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::expr
-init_lines	code/game/machinery/telecomms/presets.dm	@/obj/machinery/telecomms/server/presets/unused::Initialize::LAZYOR
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::return
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel::Initialize::if
@@ -125,10 +98,6 @@ init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	@/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel::Initialize::T.hotspot_expose
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	@/obj/item/commcard/head::Initialize::SSradio.add_object
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::if
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::exonet.make_address
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::else
-init_lines	code/game/objects/items/devices/communicator/communicator.dm	@/mob/observer/dead::Initialize::exonet.make_address
 init_lines	code/game/objects/items/devices/defib.dm	@/obj/item/defib_kit::Initialize::make_tethered
 init_lines	code/game/objects/items/devices/radio/radiopack.dm	@/obj/item/bluespaceradio::Initialize::make_tethered
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	@/obj/item/motiontracker::Initialize::observe
@@ -205,15 +174,6 @@ init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initiali
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::color
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::limb
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::body_part
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::amputation_point
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::joint
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::max_damage
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
-init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::robotize
 init_lines	code/modules/clothing/clothing.dm	@/obj/item/clothing/suit::Initialize::MakeHood
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::if
 init_lines	code/modules/combat_ai/integration/mob_living.dm	@/mob/living::Initialize::initialize_ai_brain
@@ -223,15 +183,6 @@ init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Ini
 init_lines	code/modules/hydroponics/seed_packets.dm	@/obj/item/seeds/random::Initialize::seed_type
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::if
 init_lines	code/modules/instruments/instrument_data/_instrument_data.dm	@/datum/instrument::Initialize::calculate_samples
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/under/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/gloves/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/glasses/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/shoes/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/head/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/ears/circuitry::Initialize::setup_integrated_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/ears/circuitry::Initialize::built_in_speaker
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/ears/circuitry::Initialize::IC.force_add_circuit
-init_lines	code/modules/integrated_electronics/core/assemblies/clothing.dm	@/obj/item/clothing/suit/circuitry::Initialize::setup_integrated_circuit
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::if
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::network
 init_lines	code/modules/integrated_electronics/subtypes/camera.dm	@/obj/machinery/camera/intcircuit::Initialize::c_tag
@@ -368,18 +319,8 @@ init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/pro
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::desc
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::ammo
 init_lines	code/modules/projectiles/guns/projectile/pistol.dm	@/obj/item/gun/projectile/pirate::Initialize::caliber
-init_lines	code/modules/refinery/core/industrial_reagent_mixer.dm	@/obj/machinery/reagent_refinery/mixer::Initialize::mixer_angle
 init_lines	code/modules/research/tg/disks.dm	@/obj/item/disk/tech_disk/debug::Initialize::proto_set
 init_lines	code/modules/research/tg/machinery/_production.dm	@/obj/machinery/rnd/production::Initialize::available_designs
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::destructive_events
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::config_mode
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::allowed_experiments
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::config_flags
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::experiment_events
-init_lines	code/modules/research/tg/machinery/destructive_analyzer.dm	@/obj/machinery/rnd/destructive_analyzer::Initialize::expr
 init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::available_designs
 init_lines	code/modules/research/tg/machinery/mech_fabricator.dm	@/obj/machinery/mecha_part_fabricator_tg::Initialize::illegal_local_designs
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
@@ -388,14 +329,6 @@ init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_no
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::LAZYSET
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::for
 init_lines	code/modules/research/tg/techwebs/_techweb_node.dm	@/datum/techweb_node::Initialize::unlock_ids[id]
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::for
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::expr
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::expr
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::if
-init_lines	code/modules/shieldgen/shield_gen.dm	@/obj/machinery/shield_gen::Initialize::rel_set
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::original_name
 init_lines	code/modules/shuttles/landmarks.dm	@/obj/effect/shuttle_landmark/automatic::Initialize::landmark_tag
 init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_share_lists
@@ -449,4 +382,3 @@ world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GL
 world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	ammo_type = pick(GLOB.global_ammo_types)
 world_reads	code/modules/projectiles/guns/projectile/pistol.dm	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
-world_reads	code/modules/shieldgen/shield_gen.dm	for(var/obj/machinery/shield_capacitor/cap in range(1, src))

@@ -516,7 +516,7 @@ CAPABILITIES(/datum/preferences)
 
 // show_in_directory, directory_*, sensorpref, capture_crystal,
 // auto_backup_implant, borg_petting migrated to /datum/preference subtypes
-// (see code/modules/client/preferences/types/character/directory.dm).
+// (see code/content/client/preferences/types/character/directory.dm).
 
 /client/verb/toggle_capture_crystal()
 	set name = "Toggle Catchable"

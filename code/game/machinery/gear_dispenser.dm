@@ -399,9 +399,12 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 /obj/machinery/gear_dispenser/custom
 	name = "personal gear dispenser"
 
-/obj/machinery/gear_dispenser/custom/Initialize(mapload)
-	dispenses = subtypesof(/datum/gear_disp/custom)
-	. = ..()
+CAPABILITIES(/obj/machinery/gear_dispenser/custom)
+	derives(nameof(dispenses), PROC_REF(custom_gear))
+
+/// Every custom gear set there is (derives(), at init, before make_gear_entries() reads it).
+/obj/machinery/gear_dispenser/custom/proc/custom_gear(target)
+	return subtypesof(/datum/gear_disp/custom)
 
 ////////////////////////////// ERT SUIT DISPENSERS ///////////////////////////
 // Non-sealed armor
@@ -696,7 +699,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 
 		running[option_name] = G
 	to_chat(user, "[src] added [running.len] entries")
-	dispenses = running
+	set_dispenses(running)
 
 ////////////////////////////// RANDOM SUIT AND WEAPON DISPENSERS ///////////////////////////
 

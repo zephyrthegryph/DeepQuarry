@@ -257,6 +257,12 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 A holder that crashes does not block anyone: a slot or queue entry whose pid is gone (the Windows pid of a node or bash holder), or whose heartbeat
 (its `owner` file's mtime, touched every 15 s) is older than `DQ_SLOTS_STALE_SEC` (600), is removed by the next waiter. `dm_compile` and `cargo` are never held while waiting for another class, so they cannot deadlock.
 
+**Fair order and the suite cap.** Queues are oldest first (priority 0, then arrival); only the head takes a slot. A group of test worlds from a
+non-priority caller (full `dm-test`, many-world focused run) takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` worlds: unset = 1 while another run is queued
+when it asks (else all it wants), N = always N, 0 = off. The merge worktree and compiler lanes are exempt. It applies to new acquisitions only (nothing
+held is preempted, so a suite that started on an empty queue keeps both worlds until a shard exits; the freed slot then goes to the oldest waiter). Shards
+past the cap take their own slot in queue order. `dq_machine_slots.sh waiting|holding <worktree>` list a worktree's queue entries / slots; `stats` shows max wait.
+
 A run that launches several worlds (a sharded `dm-test`, the main/slow/sweep worlds of `dq_focused_test.sh`) takes their `test_world` slots **as a
 group**: one queue entry, and the head of the queue takes slots as they free up and starts nothing until it has all it asked for, clamped to the
 class capacity (a group larger than the budget could never be satisfied; `dm-test` clamps `--shards`, and `dq_focused_test.sh` starts the extra
@@ -455,6 +461,15 @@ bash tools/dq_worktree.sh pool                               # who holds what
   the queue. Run it once in the background and act when it exits. Never write your own retry or `until` loop around `lease`.
 - **Reclaim.** A lease whose branch is fully in `origin/master` is reclaimed only after `DQ_LANE_POOL_RECLAIM_IDLE_MIN` (180) minutes
   with no change to the lease, the worktree's HEAD or its index, so a lane that lands several merges keeps its slot between them.
+- **Stuck and idle leases.** A lease is STUCK when no live process uses its worktree (no command line naming the path, no machine slot held or
+  queued for it) and nothing in it changed for `DQ_LANE_POOL_STUCK_MIN` (30) minutes (lease file, HEAD, index, reflog, modified or untracked
+  files, `data/logs`, `data/runs`, root `*.log`). `status` tags every lease `active`, `idle Nm` or `STUCK: ... DIRTY|clean, UNPUSHED|nothing unpushed`,
+  and `WAITING for machine slot: test_world 12m` when the worktree is queued for a `dm_compile`/`test_world` slot while holding its pool slot.
+  `bash tools/dq_lane_pool.sh stuck [--quiet]` lists stuck leases and exits 1 when there are any (poll it); each also gets a notice file
+  `E:/dq-cache/lane-pool/notices/pool-N.stuck`. A dirty tree or unpushed commits are only reported, never wiped. A stuck lease that is clean with
+  every commit in origin/master or origin/<branch> is reclaimed by the next lease after the reclaim limit. Why the old reclaim missed a dead
+  dirty lane (init/sweep-5, 15 h): it skipped every dirty tree and reclaimed only a merged, committed lane.
+- **Cancel.** `bash tools/dq_lane_pool.sh cancel <branch>` removes that branch's queue ticket; the waiting `lease --wait` exits 4 ("cancelled"). Nothing is killed.
 - `dq_lane_ready.sh` warns outside a pool worktree (`DQ_LANE_POOL_STRICT=1` refuses). Self-test: `bash tools/ci/test_lane_pool.sh`.
 - The `reference-transaction` hook (`tools/hooks/reference-transaction`) now allows the update when the checkout's
   `dq_machine_slots.sh` has no `merge_lock_require` (a stale main checkout running `git gc` used to fail every ref update). Reinstall it
