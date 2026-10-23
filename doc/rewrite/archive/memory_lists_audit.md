@@ -148,7 +148,7 @@ The allowlist's kept section gives the reason on every line. The main groups:
 - Tank and clothing `sprite_sheets` are edited in place (`LAZYSET` in space
   suits), so they cannot be interned without copy-on-write there.
 - The 47 class-c tables could become getters if their types become common.
-- `code/modules/medical/book/reagents_tab.dm` got one read fix
+- `code/content/medical/book/reagents_tab.dm` got one read fix
   (`LAZYACCESS(CR.required_reagents, RQ)`) because reaction tables are lazy
   now; nothing else in the medical area was edited.
 
