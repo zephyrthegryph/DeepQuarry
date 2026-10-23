@@ -122,13 +122,21 @@
 /datum/own_audit_probe/proc/noop()
 	return
 
-/// Test builds: the periodic audit (started from the unit-test world's start).
+/// World time of the next periodic audit (test builds).
+GLOBAL_VAR_INIT(own_audit_next, 0)
+
+/// Test builds: the periodic audit. The suite runner calls it between tests once OWN_AUDIT_INTERVAL has passed (own_audit_due()); it is not a
+/// scheduler callback because the walk over every live datum is long enough for the runtime to yield it, and a scheduler callback must not sleep.
 /proc/own_audit_periodic()
 	// Re-armed first: each finding is reported as a runtime (OWN_REPORT), which unwinds this proc,
 	// and a finding must not end the periodic audit for the rest of the run.
-	after(timer_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
+	GLOB.own_audit_next = world.time + OWN_AUDIT_INTERVAL
 	var/list/lines = own_audit()
 	log_world("OWN AUDIT: [length(lines)] finding\s")
+
+/// TRUE when the periodic audit is due.
+/proc/own_audit_due()
+	return world.time >= GLOB.own_audit_next
 
 ADMIN_VERB(ownership_audit, R_DEBUG, "Ownership Audit", "Runs the ownership orphan audit now.", ADMIN_CATEGORY_DEBUG_MISC)
 	var/list/lines = own_audit(quiet = TRUE)
