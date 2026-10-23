@@ -4,10 +4,13 @@
 /obj/machinery/atmospherics/internals_spill(atom/movable/thing)
 	var/mob/living/M = thing
 	var/turf/T = get_turf(src)
-	if(!istype(M) || !T)
+	if(!istype(M))
 		return
 	M.remove_ventcrawl() //ventcrawling is serious business
-	dq_ledger_force_move(M, T, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	if(T)
+		dq_ledger_force_move(M, T, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	else
+		M.moveToNullspace() // destroyed in nullspace: the ventcrawler is put out to nullspace, not deleted with the pipe
 
 /// The pipe image (owned) leaves every ventcrawler's screen before teardown deletes it.
 /obj/machinery/atmospherics/lifecycle_dematerialize()

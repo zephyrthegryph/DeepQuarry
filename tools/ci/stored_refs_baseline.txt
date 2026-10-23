@@ -2,7 +2,6 @@
 # `analyze check --lint stored_refs` fails on a site not listed here. Shrink-only: after a sweep run
 # `analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.
 var	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::global_announcer
-var	code/_global_vars/silo.dm	@/datum/controller/global_vars::ore_silo_default
 var	code/_helpers/unsorted.dm	@/datum/controller/global_vars::dview_mob
 var	code/controllers/subsystems/atoms_batch.dm	@/datum/system/atoms::active_batch
 var	code/datums/capabilities/dispatch.dm	@/datum/controller/global_vars::dispatch_context_now
@@ -13,18 +12,13 @@ var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
 var	code/engine/declare/table.dm	@/datum/centry::item
 var	code/engine/present/appearance_builder.dm	@/datum/controller/global_vars::look_builder
 var	code/game/machinery/atmoalter/meter.dm	@/obj/machinery/meter::watched_air
-var	code/game/objects/items/devices/scanners/sleevemate.dm	@/datum/controller/global_vars::sleevemate_mob
 var	code/modules/admin/callproc/callproc.dm	@/datum/controller/global_vars::AdminProcCallHandler
 var	code/modules/client/client defines.dm	@/client::holder
 var	code/modules/client/client defines.dm	@/client::persistent_client
 var	code/modules/client/client defines.dm	@/client::void
 var	code/modules/debugging/debugger.dm	@/::Debugger
 var	code/modules/debugging/tracy.dm	@/::Tracy
-var	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::vendor_account
-var	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::station_account
-var	code/modules/mob/living/silicon/ai/multicam.dm	@/datum/controller/global_vars::ai_camera_room_landmark
 var	code/modules/player_tips/player_tips_service.dm	@/datum/system/player_tips::player_tips
-var	code/modules/research/message_server.dm	@/datum/controller/global_vars::blackbox
 list	code/ATMOSPHERICS/SSair.dm	@/datum/system/air::planetary
 list	code/ATMOSPHERICS/SSair.dm	@/datum/system/air::strings_to_mix
 list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/immutable_air = list()
@@ -32,10 +26,7 @@ list	code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm	var/static/list/air_temp
 list	code/ATMOSPHERICS/rust_pipenets.dm	@/datum/system/air::rust_pipe_region_networks
 list	code/ATMOSPHERICS/xgm_compat.dm	var/static/list/xgm_id_to_type
 list	code/_global_vars/mobs.dm	@/datum/controller/global_vars::deadmins
-list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::mannequins
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::overlay_cache
-list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::admin_laws
-list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::player_laws
 list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::virusDB
 list	code/controllers/subsystems/assets.dm	@/datum/system/assets::cache
 list	code/controllers/subsystems/atoms.dm	@/datum/system/atoms::after_init_pending
@@ -50,26 +41,20 @@ list	code/controllers/subsystems/shuttles.dm	@/datum/system/shuttles::sectors_to
 list	code/controllers/subsystems/tgui.dm	@/datum/system/tgui::asset_generations
 list	code/datums/containment/latency_policy.dm	@/datum/controller/global_vars::latency_sweep_holders
 list	code/datums/datum.dm	@/datum::open_tguis
-list	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::client_huds
 list	code/game/machinery/frame.dm	@/datum/controller/global_vars::construction_frame_wall
 list	code/game/machinery/frame.dm	@/datum/controller/global_vars::construction_frame_floor
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
 list	code/game/objects/items/devices/radio/radio_service.dm	@/datum/signal::data
-list	code/modules/admin/admin_ranks.dm	@/datum/controller/global_vars::admin_ranks
-list	code/modules/admin/admin_ranks.dm	@/datum/controller/global_vars::protected_ranks
 list	code/modules/admin/holder2.dm	@/datum/controller/global_vars::admin_datums
 list	code/modules/admin/holder2.dm	@/datum/controller/global_vars::protected_admins
 list	code/modules/asset_cache/asset_list.dm	@/datum/asset/simple::assets
 list	code/modules/belly_overlay/belly_overlay_asset.dm	@/datum/controller/global_vars::dq_belly_overlay_aci_by_name
 list	code/modules/economy/economy_misc.dm	@/datum/controller/global_vars::department_accounts
 list	code/modules/lighting/lighting_corner.dm	@/datum/lighting_corner::affecting
-list	code/modules/medical/causes/_cause.dm	@/datum/controller/global_vars::affliction_triggers_all
 list	code/modules/medical/contagion/engineered/engineered.dm	@/datum/controller/global_vars::archive_diseases
 list	code/modules/mob/living/life/living_systems.dm	var/static/list/owned
 list	code/modules/mob/living/silicon/robot/robot_upgrade_detection.dm	var/static/list/prototypes = list()
 list	code/modules/mob/mob_chunks.dm	@/datum/controller/global_vars::mob_chunks
-list	code/modules/overmap/turfs.dm	@/datum/controller/global_vars::map_sectors
-list	code/modules/paperwork/faxmachine.dm	@/datum/controller/global_vars::adminfaxes
 list	code/modules/reagents/reagents/_reagents.dm	@/datum/reagent::data
 list	code/modules/tgs_commands/vorestation.dm	@/datum/controller/global_vars::tgs_flow_senders
 list	code/modules/tgui/external.dm	@/client::tgui_windows

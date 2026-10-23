@@ -639,11 +639,11 @@
 	TEST_ASSERT_EQUAL(GLOB.map_sectors["901"], V, "registered by level text")
 	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], V, "every level of the sector")
 	var/obj/effect/overmap/visitable/other = new /obj/effect/overmap/visitable(null)
-	GLOB.map_sectors["902"] = other
+	rel_add(GLOB, nameof(GLOB.map_sectors), other, "902")
 	V.unregister_z_levels()
 	TEST_ASSERT_NULL(GLOB.map_sectors["901"], "the sector's own level is gone")
 	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], other, "a level another sector took over stays")
-	GLOB.map_sectors -= "902"
+	rel_add(GLOB, nameof(GLOB.map_sectors), null, "902")
 	qdel(other)
 	qdel(V)
 

@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 /obj/effect/overmap/visitable/proc/register_z_levels()
 	for(var/zlevel in map_z)
-		GLOB.map_sectors["[zlevel]"] = src
+		rel_add(GLOB, nameof(GLOB.map_sectors), src, "[zlevel]")
 
 	// Only the levels this sector made player or sealed are taken back at unregister: a level the map (or another sector) already had stays.
 	added_player_levels = map_z - using_map.player_levels
@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	// dying stardog ship linked by the next test's nav console, J9).
 	for(var/zlevel in map_z)
 		if(GLOB.map_sectors["[zlevel]"] == src)
-			GLOB.map_sectors -= "[zlevel]"
+			rel_add(GLOB, nameof(GLOB.map_sectors), null, "[zlevel]")
 
 	using_map.player_levels -= added_player_levels
 	using_map.sealed_levels -= added_sealed_levels

@@ -139,8 +139,8 @@ GLOBAL_PROTECT(protected_ranks)
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	GLOB.admin_ranks.Cut()
-	GLOB.protected_ranks.Cut()
+	rel_clear(GLOB, nameof(GLOB.admin_ranks))
+	rel_clear(GLOB, nameof(GLOB.protected_ranks))
 	//load text from file and process each entry
 	var/ranks_text = file2text("[global.config.directory]/admin_ranks.txt")
 	var/datum/admin_rank/previous_rank
@@ -154,8 +154,8 @@ GLOBAL_PROTECT(protected_ranks)
 			if(i)
 				txt_rank.process_keyword(i, count, previous_rank)
 			count++
-		GLOB.admin_ranks += txt_rank
-		GLOB.protected_ranks += txt_rank
+		rel_add(GLOB, nameof(GLOB.admin_ranks), txt_rank)
+		rel_add(GLOB, nameof(GLOB.protected_ranks), txt_rank)
 		previous_rank = txt_rank
 	if(!CONFIG_GET(flag/admin_legacy_system) && !dbfail)
 		if(CONFIG_GET(flag/load_legacy_ranks_only))
@@ -187,7 +187,7 @@ GLOBAL_PROTECT(protected_ranks)
 					var/datum/admin_rank/db_rank = new(rank_name, RANK_SOURCE_DB, rank_flags, rank_exclude_flags, rank_can_edit_flags)
 					if(QDELETED(db_rank))
 						continue
-					GLOB.admin_ranks += db_rank
+					rel_add(GLOB, nameof(GLOB.admin_ranks), db_rank)
 	//load ranks from backup file
 	if(dbfail)
 		var/backup_file = file2text("data/admins_backup.json")
@@ -205,7 +205,7 @@ GLOBAL_PROTECT(protected_ranks)
 			var/datum/admin_rank/json_rank = new("[J]", RANK_SOURCE_BACKUP, json["ranks"]["[J]"]["include rights"], json["ranks"]["[J]"]["exclude rights"], json["ranks"]["[J]"]["can edit rights"])
 			if(QDELETED(json_rank))
 				continue
-			GLOB.admin_ranks += json_rank
+			rel_add(GLOB, nameof(GLOB.admin_ranks), json_rank)
 		return json
 	#ifdef TESTING
 	var/msg = "Permission Sets Built:\n"

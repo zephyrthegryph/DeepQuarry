@@ -205,7 +205,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	if(lit_area)
 		lit_area.luminosity = saved_luminosity
 	if(saved_vendor_account)
-		GLOB.vendor_account = saved_vendor_account
+		rel_set(GLOB, nameof(GLOB.vendor_account), saved_vendor_account)
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(T)
 	GLOB.p2v_wire_windows = null
@@ -299,7 +299,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	saved_vendor_account = GLOB.vendor_account
 	var/datum/money_account/A = create_account("P2 Vendor Dept", money)
 	LAZYADD(p2v_accounts, A)
-	GLOB.vendor_account = A
+	rel_set(GLOB, nameof(GLOB.vendor_account), A)
 	return A
 
 /// Every product left on the vendor's shelves, hidden and premium included.

@@ -182,7 +182,12 @@ fn usage_scan(idx: &Index, f: &SourceFile) -> UsageScan {
             sc.events.push((name.to_string(), kind, rtype.clone(), no as u32));
             // The var named by the string must exist: on the receiver's type when it is known, else
             // on some type (a string var name can't be checked by the compiler).
-            if !rtype.is_empty() && under(&rtype, ENTITY_ROOTS) {
+            if recv == "GLOB" && rtype.is_empty() && !local_types.contains_key(recv) {
+                // A global: `GLOB` is the global_vars controller, whose vars are declared by the GLOBAL_* macros.
+                if !idx.globals.contains_key(name) {
+                    sc.unknown.push((no as u32, format!("{}({}, \"{}\"): {} has no global {}", func, recv, name, oi::GLOB_TYPE, name)));
+                }
+            } else if !rtype.is_empty() && under(&rtype, ENTITY_ROOTS) {
                 let prefix = format!("{}/", rtype);
                 let on_subtype = idx.name_decls.get(name).map(|v| v.iter().any(|(t, _, _)| t.starts_with(&prefix))).unwrap_or(false);
                 if idx.member(&rtype, name).is_none() && !on_subtype {

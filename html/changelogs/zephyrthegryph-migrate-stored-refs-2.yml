@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The silo, blackbox, AI camera room, sleevemate mob, economy accounts, admin faxes, admin ranks, AI law sets, affliction triggers, mannequins and map sectors held by the global variables are declared relations, so a deleted target leaves them by itself"
