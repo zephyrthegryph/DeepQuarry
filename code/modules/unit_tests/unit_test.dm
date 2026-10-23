@@ -651,8 +651,11 @@ GLOBAL_VAR(dq_test_select_names)
 	// Deleting a body hands the energy it holds above its surroundings to the air of its turf (atom/Destroy -> release_heat_body()): the turf's air is snapshotted first,
 	// so restore_atmos() puts it back after the deletion. Logged, so the heat a deletion released stays visible.
 	var/released_turfs = 0
-	for(var/atom/movable/held as anything in allocated?.Copy())
-		if(!QDELETED(held) && !isnull(held.heat_body))
+	for(var/datum/maybe_held as anything in allocated?.Copy())
+		if(!ismovable(maybe_held) || QDELETED(maybe_held))
+			continue
+		var/atom/movable/held = maybe_held
+		if(!isnull(held.heat_body))
 			var/turf/open/standing = get_turf(held)
 			if(istype(standing) && standing.air && !GLOB.dq_atmos_test_declared[standing])
 				dq_atmos_test_snapshot_air(standing)
@@ -1310,6 +1313,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
 		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
 		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
+		"act_taken" = TRUE, // a cumulative counter of the world actions taken (act.dm): it is 0 or 1 early in a fresh run, so it reads as a flag
+		"coalesce_absorbed" = TRUE, // a cumulative counter of the actions the coalescer absorbed (coalesce.dm), same reading
 		"starting_legal_nifsoft" = TRUE, // a lazily built cache (the nifsoft shop's legal product list, made on its first stock): rebuilding it is the same as keeping it
 		"starting_illegal_nifsoft" = TRUE, // a lazily built cache, same as the legal list: the shop's illegal product list
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
