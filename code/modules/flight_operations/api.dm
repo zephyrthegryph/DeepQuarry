@@ -77,7 +77,7 @@
 	if(!destination)
 		return
 	if(destination.target())
-		destination_by_target -= REF(destination.target())
+		destination_by_target -= ref_token(destination.target())
 	own_take_member(src, nameof(destinations), id)
 	spent(destination)
 
@@ -85,7 +85,7 @@
 	RETURN_TYPE(/datum/flight_destination)
 	if(!target)
 		return null
-	var/id = destination_by_target[REF(target)]
+	var/id = destination_by_target[ref_token(target)]
 	return destinations?[id]
 
 /datum/system/flight/proc/reserve_arrival_port(datum/flight_plan/plan)
@@ -100,7 +100,7 @@
 	return null
 
 /datum/system/flight/proc/port_for_landmark(obj/effect/shuttle_landmark/landmark)
-	return ports?[port_by_landmark[REF(landmark)]]
+	return ports?[port_by_landmark[ref_token(landmark)]]
 
 /datum/system/flight/proc/create_plan(datum/flight_vessel/vessel, destination_id)
 	var/datum/flight_destination/destination = destinations?[destination_id]
@@ -133,4 +133,4 @@
 /// Makes a destination the one found for its overmap target.
 /datum/system/flight/proc/index_destination_target(datum/flight_destination/destination)
 	if(destination.target())
-		destination_by_target[REF(destination.target())] = destination.id
+		destination_by_target[ref_token(destination.target())] = destination.id

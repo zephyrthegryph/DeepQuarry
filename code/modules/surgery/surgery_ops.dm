@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 	if(user == src)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))
 	var/datum/body/humanoid/B = body
-	LAZYSET(B.surgery_records, REF(user), list(zone, cleanliness, REF(work_target), S.success_chance(user, src, part, tool, cleanliness)))
+	LAZYSET(B.surgery_records, ref_token(user), list(zone, cleanliness, ref_token(work_target), S.success_chance(user, src, part, tool, cleanliness)))
 	S.begin(user, src, part, tool, work_target)
 	return null
 
@@ -147,12 +147,12 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 
 /mob/living/carbon/human/proc/surgery_record(mob/living/user)
 	var/datum/body/humanoid/B = body
-	return istype(B) ? LAZYACCESS(B.surgery_records, REF(user)) : null
+	return istype(B) ? LAZYACCESS(B.surgery_records, ref_token(user)) : null
 
 /mob/living/carbon/human/proc/surgery_record_end(mob/living/user)
 	var/datum/body/humanoid/B = body
 	if(istype(B))
-		LAZYREMOVE(B.surgery_records, REF(user))
+		LAZYREMOVE(B.surgery_records, entity_handle_of(user))
 
 /// An interrupted step is abandoned, not botched: no complication roll, and the target may be gone (audit D16).
 /mob/living/carbon/human/proc/surgery_interrupted(datum/act/op/A)
@@ -173,7 +173,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 		return
 	var/zone = record[1]
 	var/obj/item/organ/external/part = get_organ(zone)
-	var/atom/work_target = locate(record[3])
+	var/atom/work_target = resolve_token(record[3])
 	if(part && !S.target_still_valid(src, part, work_target))
 		return
 	surgical_step_ended(prob(record[4]), A.held, S, user, zone, record[2], part, work_target, record[4])
