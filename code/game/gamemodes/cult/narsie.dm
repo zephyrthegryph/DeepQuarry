@@ -306,7 +306,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 	var/capname = uppertext(name)
 
 	to_chat(target, span_boldnotice("[capname] HAS LOST INTEREST IN YOU."))
-	target = food
+	rel_set(src, nameof(target), food)
 
 	if(ishuman(target))
 		to_chat(target, span_danger("[capname] HUNGERS FOR YOUR SOUL."))

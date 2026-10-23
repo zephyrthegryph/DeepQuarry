@@ -18,12 +18,9 @@
 	var/area/placeofdeath = get_area(L)
 	var/podname = placeofdeath ? placeofdeath.name : "Unknown area"
 
-	var/laname = ""
-	var/lakey = ""
-	var/mob/lastattacker = L.lastattacker()
-	if(istype(lastattacker))
-		laname = lastattacker.real_name
-		lakey = lastattacker.key
+	var/list/attacker = L.last_attacker_record()
+	var/laname = attacker[1]
+	var/lakey = attacker[2]
 
 	var/list/data = list(
 	"name" = "[L.real_name]",
@@ -42,3 +39,16 @@
 	"coord" = "[L.x], [L.y], [L.z]"
 	)
 	death_list += list(data)
+
+/// Records who last struck this mob: the weak handle, plus their name and key as text so a death record still names an attacker who is gone.
+/mob/proc/note_attacker(mob/attacker)
+	rel_set(src, nameof(lastattacker), attacker)
+	sparse_set(src, lastattacker_name, attacker?.real_name)
+	sparse_set(src, lastattacker_key, attacker?.key)
+
+/// The last attacker's name and key for the death record: the live mob's, else what was noted when they struck.
+/mob/proc/last_attacker_record()
+	var/mob/lastattacker = lastattacker()
+	if(istype(lastattacker))
+		return list(lastattacker.real_name, lastattacker.key)
+	return list(sparse_get_or(src, lastattacker_name, ""), sparse_get_or(src, lastattacker_key, ""))

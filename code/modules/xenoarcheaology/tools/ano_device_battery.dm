@@ -258,7 +258,7 @@ CAPABILITIES(/obj/item/anodevice)
 		act_message(user, M, others = span_blue("%U% taps %T% with [src], but nothing happens."))
 
 	//admin logging
-	rel_set(M, nameof(M.lastattacker), user)
+	M.note_attacker(user)
 
 	if(inserted_battery()?.battery_effect)
 		add_attack_logs(user,M,"Anobattery tap ([inserted_battery()?.battery_effect?.name])")

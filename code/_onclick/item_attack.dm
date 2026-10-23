@@ -293,7 +293,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	PUBLISH_LEGACY(src, /datum/notice/item_attack, M, user, target_zone)
 
 	/////////////////////////
-	rel_set(M, nameof(M.lastattacker), user)
+	M.note_attacker(user)
 
 	if(!handling_of(src).no_attack_log)
 		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
