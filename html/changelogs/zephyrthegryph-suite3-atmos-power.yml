@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Setting a SMES charge before its first frame push no longer leaves the old charge in it"

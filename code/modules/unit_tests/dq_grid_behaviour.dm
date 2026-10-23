@@ -337,6 +337,10 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	if(!apc)
 		return
 	var/obj/machinery/power/terminal/term = apc.terminal
+	// The APC is the live station's: put its settings and cell back at the end, or the next power test finds an APC that never charges.
+	var/old_chargelevel = apc.chargelevel
+	var/old_operating = apc.operating
+	var/old_cell_charge = apc.cell.charge
 	term.connect_to_network()
 	term.set_power_supply(0)
 	apc.set_operating(TRUE)
@@ -362,6 +366,11 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	var/drained = apc.cell.charge
 	dq_power_test_step()
 	TEST_ASSERT(apc.cell.charge <= drained + 1, "the next power step does not hand the drained charge back ([apc.cell.charge] after [drained], was [charge])")
+	apc.set_chargelevel(old_chargelevel)
+	apc.set_operating(old_operating)
+	apc.cell.set_charge(old_cell_charge)
+	apc.seat_cell_charge(TRUE)
+	refresh_flush()
 
 /// A SMES charges from its input terminal's net and pays an APC's load on its output side after the supply is gone.
 /datum/unit_test/dq_p2_smes/grid_charges_and_discharges
