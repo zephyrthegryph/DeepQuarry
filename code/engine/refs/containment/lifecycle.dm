@@ -53,7 +53,8 @@
 		if(def.drop_policy == SLOT_DROP_HOLDER)
 			// The holder keeps the slot's contents, except the types the slot declares it still puts out (spills).
 			if(def.spills)
-				for(var/atom/movable/thing as anything in L.slots[def.slot_id].Copy())
+				var/list/kept = L.slots[def.slot_id]
+				for(var/atom/movable/thing as anything in kept.Copy())
 					if(!QDELETED(thing) && is_type_in_list(thing, def.spills))
 						def.spill(src, thing, drop)
 			continue
