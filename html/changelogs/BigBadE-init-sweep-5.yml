@@ -1,0 +1,4 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Initialize() overrides of the telecomms presets, patrol beacons, custom gear dispenser, industrial mixer, experiment machines, shield generators, wearable circuit cases, telescreens, ghosts and limb stumps become derives() and setup() hooks (init ratchet baseline shrinks)"

@@ -206,7 +206,9 @@ CAPABILITIES(/obj/machinery/navbeacon)
 /obj/machinery/navbeacon/patrol
 	var/next_patrol
 
-// ALLOW(init/INSTANCE_STATE): its patrol codes come from the next stop the map gave it
-/obj/machinery/navbeacon/patrol/Initialize(mapload)
-	codes = list("patrol" = 1, "next_patrol" = next_patrol)
-	. = ..()
+CAPABILITIES(/obj/machinery/navbeacon/patrol)
+	derives(nameof(codes), PROC_REF(patrol_codes))
+
+/// Its patrol codes, from the next stop the map gave it (derives(), at init).
+/obj/machinery/navbeacon/patrol/proc/patrol_codes(target)
+	return list("patrol" = 1, "next_patrol" = next_patrol)

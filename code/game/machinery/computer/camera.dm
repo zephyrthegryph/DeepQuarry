@@ -97,16 +97,15 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	click_on(PROC_REF(click_input))
 	ref_one(nameof(pinboard), /obj/effect/overlay/vis)
 	ref_one(nameof(showing), /atom)
+	setup(PROC_REF(make_pinboard))
 	setup(PROC_REF(tune_entertainment_radio))
 
-/obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
-
+/// The pinboard the feed is shown on, cut to the screen, once it is made (setup(), before its radio is tuned).
+/obj/machinery/computer/security/telescreen/entertainment/proc/make_pinboard()
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-
-	return ..()
 
 /// The monitor's radio listens on the entertainment frequency once it is made.
 /obj/machinery/computer/security/telescreen/entertainment/proc/tune_entertainment_radio()

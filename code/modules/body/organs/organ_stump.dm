@@ -9,6 +9,9 @@ CAPABILITIES(/obj/item/organ/external/stump)
 	stump_identity()
 	ref_one(nameof(stump_of), /obj/item/organ/external)
 	param(nameof(stump_of), pos = 2, keep = FALSE)
+	// Its damage and robotic state follow the limb once the Initialize() chain is done, before the organ's own setup (which places it in the body and
+	// fills its max_damage if still 0) and while the limb param is still held: the phase the dropped params wait for.
+	setup(PROC_REF(take_limb_condition), with_params = TRUE)
 	// A stump is the place a limb was on a body: once it has joined one, it lives while it is attached (removed, it ends).
 	lives_while(any_of(not(nameof(stump_joined)), nameof(owner)), watches = list(nameof(owner), nameof(stump_joined)))
 
@@ -31,15 +34,13 @@ CAPABILITIES(/obj/item/organ/external/stump)
 	if(istype(limb))
 		stump.set_organ_tag(limb.organ_tag)
 		stump.set_parent_organ(limb.parent_organ)
+		stump.body_part = limb.body_part
+		stump.amputation_point = limb.amputation_point
+		stump.joint = limb.joint
 
-// ALLOW(init/INSTANCE_STATE): a stump takes the place, joint and damage of the limb it replaces, robotic when both are
-/obj/item/organ/external/stump/Initialize(mapload)
+/// A stump takes the damage of the limb it replaces, robotic when both are (setup(), with the limb param still held).
+/obj/item/organ/external/stump/proc/take_limb_condition()
 	var/obj/item/organ/external/limb = stump_of
-	if(istype(limb))
-		body_part = limb.body_part
-		amputation_point = limb.amputation_point
-		joint = limb.joint
-	. = ..()
 	if(istype(limb))
 		set_max_damage(limb.max_damage)
 		if((limb.is_robotic()) && (!parent || (parent.is_robotic())))
