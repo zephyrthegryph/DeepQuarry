@@ -699,7 +699,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/custom)
 
 		running[option_name] = G
 	to_chat(user, "[src] added [running.len] entries")
-	dispenses = running
+	set_dispenses(running)
 
 ////////////////////////////// RANDOM SUIT AND WEAPON DISPENSERS ///////////////////////////
 
