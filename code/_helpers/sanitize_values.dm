@@ -1,16 +1,16 @@
 //general stuff
 /proc/sanitize_integer(number, min=0, max=1, default=0)
 	if(isnum(number))
-		number = round(number)
-		if(min <= number && number <= max)
-			return number
-	return default
+		var/rounded = round(number)
+		if(min <= rounded && rounded <= max)
+			return rounded
+	return isnull(default) ? null : default * 1 // every caller's default is a number or none (a literal, initial() of a number var, a weight): said in arithmetic so the result is plainly a number
 
 /proc/sanitize_float(number, min=0, max=1, accuracy=1, default=0)
 	if(isnum(number))
-		number = round(number, accuracy)
-		if(round(min, accuracy) <= number && number <= round(max, accuracy))
-			return number
+		var/rounded = round(number, accuracy)
+		if(round(min, accuracy) <= rounded && rounded <= round(max, accuracy))
+			return rounded
 	return default
 
 // Checks if the given input is a valid list index; returns true/false and doesn't change anything.
@@ -25,8 +25,8 @@
 
 /proc/sanitize_text(text, default="")
 	if(istext(text))
-		return text
-	return default
+		return "[text]" // the same text, spelled so the result is plainly text
+	return isnull(default) ? null : "[default]" // the default is text (or none)
 
 /proc/sanitize_inlist(value, list/List, default)
 	if(value in List)	return value
@@ -118,3 +118,13 @@
 			if(!(ainput[1] in 48 to 53) || !(ainput[2] in 48 to 57)) //0 to 5, 0 to 9
 				return (default || "00")
 			return input
+
+/// `value` as text, or null when it is none. For a value whose contract is text (a text preference's, a prompt's text answer): the same
+/// text comes back, and the result is plainly text.
+/proc/text_or_null(value)
+	return isnull(value) ? null : "[value]"
+
+/// `value` as a number, or null when it is none. For a value whose contract is a number (a toggle, a numeric preference's): the same
+/// number comes back, and the result is plainly a number.
+/proc/num_or_null(value)
+	return isnull(value) ? null : value * 1

@@ -90,7 +90,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes = value
+	target.identity().ooc_notes = text_or_null(value)
 	return
 
 /datum/preference/text/living/ooc_notes_likes
@@ -101,7 +101,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes_likes/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes_likes = value
+	target.identity().ooc_notes_likes = text_or_null(value)
 	return
 
 /datum/preference/text/living/ooc_notes_dislikes
@@ -112,7 +112,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes_dislikes/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes_dislikes = value
+	target.identity().ooc_notes_dislikes = text_or_null(value)
 	return
 
 /datum/preference/toggle/living/ooc_notes_style
@@ -123,7 +123,7 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/living/ooc_notes_style/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes_style = value
+	target.identity().ooc_notes_style = num_or_null(value)
 	return
 
 /datum/preference/text/living/ooc_notes_maybes
@@ -134,7 +134,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes_maybes/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes_maybes = value
+	target.identity().ooc_notes_maybes = text_or_null(value)
 	return
 
 /datum/preference/text/living/ooc_notes_favs
@@ -145,7 +145,7 @@
 	can_randomize = FALSE
 
 /datum/preference/text/living/ooc_notes_favs/apply_to_living(mob/living/target, value)
-	target.identity().ooc_notes_favs = value
+	target.identity().ooc_notes_favs = text_or_null(value)
 	return
 
 /datum/preference/toggle/human/name_is_always_random

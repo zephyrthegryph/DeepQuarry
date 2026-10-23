@@ -53,4 +53,4 @@
 	return null
 
 /datum/preference/text/human/custom_link/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_link = value
+	target.custom_link = text_or_null(value)

@@ -13,3 +13,8 @@ call	code/modules/vals/vals.dm	192
 call	code/modules/vals/vals.dm	193
 call	code/modules/vals/vals.dm	203
 call	code/modules/vals/vals.dm	204
+call	code/modules/vals/vals.dm	230
+call	code/modules/vals/vals.dm	265
+call	code/modules/vals/vals.dm	287
+call	code/modules/vals/vals.dm	288
+typed	code/modules/vals/vals.dm	255
