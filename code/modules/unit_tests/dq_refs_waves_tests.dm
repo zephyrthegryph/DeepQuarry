@@ -19,8 +19,8 @@
 
 /datum/unit_test/dq_refs_admin_fax_cache_is_bounded/Run()
 	test_driver_begin()
-	var/list/saved = GLOB.adminfaxes
-	GLOB.adminfaxes = list()
+	var/list/saved = GLOB.adminfaxes.Copy()
+	rel_clear(GLOB, nameof(GLOB.adminfaxes))
 	var/obj/item/pen/first = new(null)
 	admin_fax_keep(first)
 	for(var/i in 1 to ADMIN_FAX_KEEP)
@@ -28,6 +28,9 @@
 	TEST_ASSERT_EQUAL(length(GLOB.adminfaxes), ADMIN_FAX_KEEP, "the cache holds no more than its limit")
 	test_time(1 SECOND)
 	TEST_ASSERT(QDELETED(first), "the oldest copy was deleted when it fell out of the cache")
+	rel_clear(GLOB, nameof(GLOB.adminfaxes))
+	for(var/obj/item/kept as anything in saved)
+		rel_add(GLOB, nameof(GLOB.adminfaxes), kept)
 	QDEL_LIST(GLOB.adminfaxes)
 	GLOB.adminfaxes = saved
 

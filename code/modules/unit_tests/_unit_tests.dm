@@ -201,6 +201,7 @@
 #include "dq_lifeform_derives_tests.dm"
 #include "dq_mob_init_forms_tests.dm"
 #include "dq_mob_living_init_chain_tests.dm"
+#include "dq_spill_nullspace_tests.dm"
 #include "dq_lifeform_input_tests.dm"
 #include "dq_engine_layering_tests.dm"
 #include "dq_system_boundary_accessor_tests.dm"

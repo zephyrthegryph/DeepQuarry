@@ -67,6 +67,22 @@
 	qdel(rank, TRUE)
 	TEST_ASSERT(!(rank in GLOB.protected_ranks), "a deleted rank left the protected list")
 
+/// A clientless human has a null ckey: get_mannequin(null) is one stable mannequin (the "NULL" key), never a new one per call.
+/datum/unit_test/dq_mannequin_null_ckey
+
+/datum/unit_test/dq_mannequin_null_ckey/Run()
+	var/before = length(GLOB.mannequins)
+	var/mob/living/carbon/human/dummy/mannequin/first = get_mannequin(null)
+	TEST_ASSERT(istype(first) && !QDELETED(first), "a null ckey gets a mannequin")
+	var/after_first = length(GLOB.mannequins)
+	var/mob/living/carbon/human/dummy/mannequin/second = get_mannequin(null)
+	TEST_ASSERT_EQUAL(second, first, "the same mannequin comes back for a null ckey")
+	TEST_ASSERT_EQUAL(length(GLOB.mannequins), after_first, "the second call leaks no mannequin")
+	TEST_ASSERT_EQUAL(get_mannequin(), first, "and it is the default-key mannequin")
+	del_mannequin(null)
+	TEST_ASSERT_EQUAL(length(GLOB.mannequins), before, "del_mannequin(null) takes the key out")
+	qdel(first, TRUE)
+
 /// Mannequins are a keyed many by ckey; map sectors one keyed by level text. A deleted member takes its keys; a key can be emptied by name.
 /datum/unit_test/stored_refs_glob_keyed
 

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A machine or pipe destroyed in nullspace puts its occupant out to nullspace instead of deleting it"
+  - bugfix: "Costume and horror outfits on a clientless human share one mannequin instead of leaking a new one"

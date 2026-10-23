@@ -95,7 +95,10 @@ GLOBAL_LIST_INIT(string_slot_flags, list(
 ))
 
 GLOBAL_ALIST_EMPTY(mannequins)
+/// A clientless mob has a null ckey: it shares the "NULL" mannequin (the default key), as a null key did in the old list.
 /proc/get_mannequin(ckey = "NULL")
+	if(isnull(ckey))
+		ckey = "NULL"
 	var/mob/living/carbon/human/dummy/mannequin/M = GLOB.mannequins[ckey]
 	if(!istype(M))
 		rel_add(GLOB, nameof(GLOB.mannequins), new /mob/living/carbon/human/dummy/mannequin(null), ckey)
@@ -103,6 +106,8 @@ GLOBAL_ALIST_EMPTY(mannequins)
 	return M
 
 /proc/del_mannequin(ckey = "NULL")
+	if(isnull(ckey))
+		ckey = "NULL"
 	rel_add(GLOB, nameof(GLOB.mannequins), null, ckey)
 
 //////////////////////////

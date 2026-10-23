@@ -214,9 +214,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// (machine_internals spills, stock.dm): a human is moved to where the machine is and has its view reset, which no slot policy does.
 /obj/machinery/internals_spill(atom/movable/thing)
 	var/mob/living/carbon/human/H = thing
-	if(!istype(H) || !loc)
+	if(!istype(H))
 		return
-	dq_ledger_force_move(H, loc, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	if(loc)
+		dq_ledger_force_move(H, loc, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	else
+		H.moveToNullspace() // a machine destroyed in nullspace puts its occupant out to nullspace: it must not go with the machine
 	H.reset_perspective()
 
 /// TRUE for a type that is made with its own switch off (cookers).
