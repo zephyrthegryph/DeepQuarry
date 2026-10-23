@@ -21,7 +21,7 @@ GLOBAL_VAR_INIT(projectile_pre_reacted, null)
 
 /// The hit action and packet bullet_act() started for the round being resolved; ended by projectile_hit_end().
 GLOBAL_VAR_INIT(projectile_hit_act, null)
-GLOBAL_VAR_INIT(projectile_hit_packet, null)
+GLOBAL_DATUM_INIT(projectile_hit_packet, /datum/damage_packet, null)
 
 /// Starts the round's hit action ahead of the round's own effects (on_hit(): stun, embed, reagents ...), so a veto (a hook
 /// that takes the hit over) stops those too, a zero-damage round included. Returns TRUE if a hook vetoed. Otherwise marks
@@ -37,7 +37,7 @@ GLOBAL_VAR_INIT(projectile_hit_packet, null)
 		return TRUE
 	GLOB.projectile_pre_reacted = ref(src)
 	GLOB.projectile_hit_act = hit
-	GLOB.projectile_hit_packet = packet
+	rel_set(GLOB, nameof(GLOB.projectile_hit_packet), packet)
 	return FALSE
 
 /// Ends the hit action projectile_hit_begin() started on this atom, if any.
@@ -48,7 +48,7 @@ GLOBAL_VAR_INIT(projectile_hit_packet, null)
 	var/datum/act/hit = GLOB.projectile_hit_act
 	var/datum/damage_packet/packet = GLOB.projectile_hit_packet
 	GLOB.projectile_hit_act = null
-	GLOB.projectile_hit_packet = null
+	rel_clear(GLOB, nameof(GLOB.projectile_hit_packet))
 	act_done(hit)
 	packet?.release()
 

@@ -44,7 +44,7 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 /// Who does the next action and under what authority: a caller that starts a world action for an actor (slot_transfer()) sets these just
 /// before ACT_ATTEMPT() and clears them after; act_begin() consumes them, so only that one action carries them (a nested action starts clean).
 /// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts() still run.
-GLOBAL_VAR(act_next_actor)
+GLOBAL_DATUM(act_next_actor, /datum)
 GLOBAL_VAR(act_next_authority)
 
 /// Puts the nesting depth and the chain back to what they were when a handler began, after it runtimed. Without it each runtime in a hook leaks one level
@@ -79,7 +79,7 @@ GLOBAL_VAR(act_next_authority)
 	var/datum/act/action/A = act_context(act_type, holder, holder, GLOB.act_next_actor)
 	GLOB.act_taken++
 	A.authority = GLOB.act_next_authority
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	GLOB.act_next_authority = null
 	return A
 

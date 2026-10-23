@@ -36,7 +36,7 @@
 #define MAP_LOAD_CACHE_MODELS 12
 
 /// Queued async loads wait in the mapping system, oldest first (the running load is GLOB.map_load_active).
-GLOBAL_VAR(map_load_active)
+GLOBAL_DATUM(map_load_active, /datum/map_load)
 
 /// Queues a load behind the running one.
 /proc/map_load_enqueue(datum/map_load/M)
@@ -106,7 +106,7 @@ CAPABILITIES(/datum/map_load)
 	return src
 
 /datum/map_load/proc/start_job()
-	GLOB.map_load_active = src
+	rel_set(GLOB, nameof(GLOB.map_load_active), src)
 	job(src, TYPE_PROC_REF(/datum/map_load, run_step), 20, TYPE_PROC_REF(/datum/map_load, finished))
 
 /// Runs the whole load inline, to completion, and returns its result.
@@ -122,7 +122,7 @@ CAPABILITIES(/datum/map_load)
 /// The job finished: hand over the result and start whatever was waiting.
 /datum/map_load/proc/finished(datum/act/timer/A)
 	if(GLOB.map_load_active == src)
-		GLOB.map_load_active = null
+		rel_clear(GLOB, nameof(GLOB.map_load_active))
 	if(then)
 		after(then_owner, 0, then, with = (then_with || list()) + list(result))
 	then = null

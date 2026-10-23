@@ -70,7 +70,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 		return null
 	var/id = D.om_hid
 	if(id)
-		return GLOB.om_handle_texts[id]
+		return text_or_null(GLOB.om_handle_texts[id])
 	var/list/slots = GLOB.om_handle_slots
 	var/list/gens = GLOB.om_handle_gens
 	var/list/texts = GLOB.om_handle_texts
@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(client_handle_gen, 0)
 	if(!isdatum(D))
 		return null
 	var/id = D.om_hid
-	return id ? GLOB.om_handle_texts[id] : null
+	return id ? text_or_null(GLOB.om_handle_texts[id]) : null
 
 /// Slot `id` names `D`: its weak key, and the two numbers of its address that resolve_token() rebuilds the ref from. A key that is not the usual
 /// "<scramble>:<id>:<type>" (a ref kept as it is) leaves the numbers null, and the slot resolves through own_locate().

@@ -87,7 +87,10 @@ SYSTEM_DEF(kernel_jobs)
 	var/finished = 0
 	var/dropped = 0
 	/// Where the next run starts, so a budget that ends mid-list does not always favour the same jobs.
-	var/next_job
+	var/datum/kernel_job/next_job
+
+CAPABILITIES(/datum/system/kernel_jobs)
+	ref_one(nameof(next_job)) // a job deleted while the pass waited is simply not found: the next pass starts at the first
 
 /datum/system/kernel_jobs/reactions()
 	. = ..()
@@ -107,10 +110,10 @@ SYSTEM_DEF(kernel_jobs)
 	var/at = next_job ? running.Find(next_job) : 1
 	if(at > 1)
 		running = running.Copy(at) + running.Copy(1, at)
-	next_job = null
+	rel_clear(src, nameof(next_job))
 	for(var/datum/kernel_job/J as anything in running)
 		if(TICK_USAGE >= pass_limit)
-			next_job = J
+			rel_set(src, nameof(next_job), J)
 			return STEP_YIELD
 		if(!(J in jobs))
 			continue
