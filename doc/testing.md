@@ -560,11 +560,12 @@ Fresh worktrees should not pay cold build costs:
 ### Native compiler (incremental)
 
 The native compiler is the default (2026-10-15). It compiles with the in-tree Rust compiler (`tools/dmb`) through its
-resident daemon instead of DreamMaker. `DQ_COMPILER=dreammaker` (alias `byond`) selects DreamMaker; CI's production compile check
-(`tools/ci/compile_and_run.sh`) pins it as the cross-check until the two are proven equivalent. `bash tools/ci/dm_equiv.sh` is that
-proof: it compiles the production dme with both compilers and runs `dmb-equiv --all` over the pair (rules and evidence in
-`tools/dmb/crates/dmb-equiv/EQUIVALENCE.md`, status in `doc/rewrite/native_compiler_issues.md`; one difference left on 2026-10-22,
-the order global initializers run in). With neither cargo nor a built `dmbc` the default falls back to DreamMaker. The daemon retains parsed source and per-procedure
+resident daemon instead of DreamMaker. `DQ_COMPILER=dreammaker` (alias `byond`) selects DreamMaker; CI compiles natively too
+(`tools/ci/compile_and_run.sh`, the benchmark workflow). `bash tools/ci/dm_equiv.sh` is the DreamMaker cross-check, run by the
+`dreammaker_cross_check` job of `run_compile_checks.yml`: it compiles the production dme and the unit-test dme (`-DCIBUILDING -DCITESTING`)
+with both compilers and runs `dmb-equiv --all` over each pair (rules and evidence in
+`tools/dmb/crates/dmb-equiv/EQUIVALENCE.md`, status in `doc/rewrite/native_compiler_issues.md`; production: zero differences on 2026-10-22; test dme: one open cause, an untyped receiver naming a member declared on several types).
+`DQ_EQUIV_FLAVORS=production` or `test` runs one. With neither cargo nor a built `dmbc` the default falls back to DreamMaker. The daemon retains parsed source and per-procedure
 results, so an unchanged rebuild takes about 1.3 s and a proc-body edit about 20 s; a cold
 first build is about two minutes.
 

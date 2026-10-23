@@ -74,6 +74,7 @@ fn finalized_allocation_replays_negative_resolver_reads_in_same_store() {
     let input = || FinalInput {
         allocation: Arc::clone(&current.allocation),
         classifications: Vec::new(),
+        expressions: 0,
     };
     let host = Host(false);
     let recording = crate::lowering_memo::RecordingResolver::new(&host);
@@ -84,6 +85,7 @@ fn finalized_allocation_replays_negative_resolver_reads_in_same_store() {
     let ordered = Arc::new(OrderedRoster {
         keys: current.allocation.keys.clone(),
         ranks: current.allocation.ranks.clone(),
+        execution: Default::default(),
     });
     let saved = store.remember_final_allocation(
         FinalReceipt {

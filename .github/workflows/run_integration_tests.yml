@@ -27,6 +27,9 @@ jobs:
     name: Run Tests (${{ inputs.major && format('{0}.{1}; ', inputs.major, inputs.minor) || '' }}${{ inputs.label }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      # The native compiler builds inside the workspace so the cache below holds it.
+      DQ_DMBC_BUILD_DIR: ${{ github.workspace }}/tools/dmb/target
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -57,6 +60,11 @@ jobs:
         with:
           workspaces: verdigris -> target
           shared-key: verdigris-i686-linux
+      - name: Restore native compiler build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/dmb -> target
+          shared-key: dmbc-native
       - name: Build verdigris
         run: bash verdigris/build-linux.sh
       - name: Verify libverdigris.so

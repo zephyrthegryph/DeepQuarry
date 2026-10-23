@@ -10,14 +10,23 @@ fn shape(source: &str) -> Vec<String> {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &params).unwrap();
     let mut ledger = Ledger::default();
     for (index, text) in string_texts(&compiled).iter().enumerate() {
-        ledger.bind(reference(Table::String, text.as_str()), 100 + index as u32).unwrap();
+        ledger
+            .bind(reference(Table::String, text.as_str()), 100 + index as u32)
+            .unwrap();
     }
     let linked = link_proc(&compiled.code, &ledger).unwrap();
     byond_dmb::bytecode::decode(&linked.words)
         .unwrap()
         .iter()
         // `PushInt n` is `PushVal n` for a small whole number (FORMAT.md).
-        .map(|instruction| if instruction.name == "PushInt" { "PushVal" } else { instruction.name }.to_string())
+        .map(|instruction| {
+            if instruction.name == "PushInt" {
+                "PushVal"
+            } else {
+                instruction.name
+            }
+            .to_string()
+        })
         .collect()
 }
 
@@ -31,11 +40,26 @@ fn assigning(expression: &str) -> String {
 
 #[test]
 fn square_replaces_a_product_of_the_same_plain_value() {
-    assert_eq!(shape(&proc_returning("a*a")), ["GetVar", "Square", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("a**2")), ["GetVar", "Square", "Ret", "End"]);
+    assert_eq!(
+        shape(&proc_returning("a*a")),
+        ["GetVar", "Square", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("a**2")),
+        ["GetVar", "Square", "Ret", "End"]
+    );
     // The left operand of another product stays a plain product; an index or a call is not a plain value.
-    assert_eq!(shape(&proc_returning("a*a*b")), ["GetVar", "GetVar", "Mul", "GetVar", "Mul", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("a[1]*a[1]")).iter().filter(|op| *op == "Square").count(), 0);
+    assert_eq!(
+        shape(&proc_returning("a*a*b")),
+        ["GetVar", "GetVar", "Mul", "GetVar", "Mul", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("a[1]*a[1]"))
+            .iter()
+            .filter(|op| *op == "Square")
+            .count(),
+        0
+    );
 }
 
 #[test]
@@ -48,7 +72,10 @@ fn text_chains_with_a_parenthesised_sum_move_right_except_at_the_root_of_an_assi
     // As the whole value of an assignment the chain is left as written: `P (a b Add) Add "." Add`.
     assert_eq!(
         shape(&assigning("\"P\" + (a + b) + \".\"")),
-        ["PushVal", "GetVar", "GetVar", "Add", "Add", "PushVal", "Add", "SetVar", "GetVar", "Ret", "End"]
+        [
+            "PushVal", "GetVar", "GetVar", "Add", "Add", "PushVal", "Add", "SetVar", "GetVar",
+            "Ret", "End"
+        ]
     );
     // A subtraction in the middle is not an `+` chain.
     assert_eq!(
@@ -60,18 +87,38 @@ fn text_chains_with_a_parenthesised_sum_move_right_except_at_the_root_of_an_assi
 #[test]
 fn constants_decide_short_circuit_chains() {
     // `a && 1 && b` is `a && b`; `a && 0 && b` ends at the 0; `a || null || b` is `a || b`.
-    assert_eq!(shape(&proc_returning("a && 1 && b")), ["GetVar", "JmpAnd", "GetVar", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("a && 0 && b")), ["GetVar", "JmpAnd", "PushVal", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("a || null || b")), ["GetVar", "JmpOr", "GetVar", "Ret", "End"]);
+    assert_eq!(
+        shape(&proc_returning("a && 1 && b")),
+        ["GetVar", "JmpAnd", "GetVar", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("a && 0 && b")),
+        ["GetVar", "JmpAnd", "PushVal", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("a || null || b")),
+        ["GetVar", "JmpOr", "GetVar", "Ret", "End"]
+    );
     // A constant text decides a ternary and `!`.
-    assert_eq!(shape(&proc_returning("\"x\" ? a : b")), ["GetVar", "Ret", "End"]);
+    assert_eq!(
+        shape(&proc_returning("\"x\" ? a : b")),
+        ["GetVar", "Ret", "End"]
+    );
     assert_eq!(shape(&proc_returning("!\"x\"")), ["PushVal", "Ret", "End"]);
 }
 
 #[test]
 fn rgb_of_constants_is_text() {
-    assert_eq!(shape(&proc_returning("rgb(80,80,80,230)")), ["PushVal", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("rgb(a,80,80,230)")).last().map(String::as_str), Some("End"));
+    assert_eq!(
+        shape(&proc_returning("rgb(80,80,80,230)")),
+        ["PushVal", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("rgb(a,80,80,230)"))
+            .last()
+            .map(String::as_str),
+        Some("End")
+    );
     assert!(shape(&proc_returning("rgb(a,80,80,230)")).contains(&"Rgba".to_string()));
     // rgb2num of constant color text is the list of components.
     assert_eq!(
@@ -82,8 +129,14 @@ fn rgb_of_constants_is_text() {
 
 #[test]
 fn two_argument_image_has_its_own_opcode() {
-    assert_eq!(shape(&proc_returning("image(a, b)")), ["GetVar", "GetVar", "NewImage", "Ret", "End"]);
-    assert_eq!(shape(&proc_returning("image(a)")), ["GetVar", "NewImageArgs", "Ret", "End"]);
+    assert_eq!(
+        shape(&proc_returning("image(a, b)")),
+        ["GetVar", "GetVar", "NewImage", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("image(a)")),
+        ["GetVar", "NewImageArgs", "Ret", "End"]
+    );
 }
 
 #[test]
@@ -92,9 +145,14 @@ fn pick_thresholds_add_the_whole_number_share_of_each_choice() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &[]).unwrap();
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
-    let pick = decoded.iter().find(|ins| ins.opcode == 0x79).expect("PickSwitch");
+    let pick = decoded
+        .iter()
+        .find(|ins| ins.opcode == 0x79)
+        .expect("PickSwitch");
     let thresholds: Vec<u32> = match pick.typed_operands().unwrap().first() {
-        Some(byond_dmb::bytecode::Operand::PickSwitch { cases, .. }) => cases.iter().map(|(w, _)| *w).collect(),
+        Some(byond_dmb::bytecode::Operand::PickSwitch { cases, .. }) => {
+            cases.iter().map(|(w, _)| *w).collect()
+        }
         other => panic!("{other:?}"),
     };
     assert_eq!(thresholds, [16383, 32766, 49149]);
@@ -108,12 +166,24 @@ fn switch_tables_list_a_cases_alternatives_last_to_first_and_ranges_before_value
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["a".into()]).unwrap();
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
-    let switch = decoded.iter().find(|ins| ins.opcode == 0x7a).expect("SwitchRange");
+    let switch = decoded
+        .iter()
+        .find(|ins| ins.opcode == 0x7a)
+        .expect("SwitchRange");
     match switch.typed_operands().unwrap().first() {
         Some(byond_dmb::bytecode::Operand::RangeSwitch { ranges, exact, .. }) => {
             let number = |v: &byond_dmb::operands::Value| f32::from_bits(v.number_bits().unwrap());
-            assert_eq!(ranges.iter().map(|(low, _, _)| number(low)).collect::<Vec<_>>(), [30.0, 10.0]);
-            assert_eq!(exact.iter().map(|(v, _)| number(v)).collect::<Vec<_>>(), [3.0, 2.0, 1.0, 7.0]);
+            assert_eq!(
+                ranges
+                    .iter()
+                    .map(|(low, _, _)| number(low))
+                    .collect::<Vec<_>>(),
+                [30.0, 10.0]
+            );
+            assert_eq!(
+                exact.iter().map(|(v, _)| number(v)).collect::<Vec<_>>(),
+                [3.0, 2.0, 1.0, 7.0]
+            );
         }
         other => panic!("{other:?}"),
     }
@@ -121,30 +191,168 @@ fn switch_tables_list_a_cases_alternatives_last_to_first_and_ranges_before_value
 
 #[test]
 fn self_call_without_arguments_has_its_own_opcode() {
-    assert_eq!(shape("/proc/test(a)\n  return .()\n"), ["CallSelf", "Ret", "End"]);
+    assert_eq!(
+        shape("/proc/test(a)\n  return .()\n"),
+        ["CallSelf", "Ret", "End"]
+    );
 }
 
 #[test]
 fn range_loops_fuse_the_producer_into_the_iterator() {
     let ops = shape("/proc/test(a)\n  for(var/x in range(a, a))\n    a++\n  return a\n");
-    assert!(ops.contains(&"IterLoad".to_string()) && !ops.contains(&"Range".to_string()), "{ops:?}");
+    assert!(
+        ops.contains(&"IterLoad".to_string()) && !ops.contains(&"Range".to_string()),
+        "{ops:?}"
+    );
 }
 
 #[test]
 fn a_name_statement_emits_nothing() {
-    assert_eq!(shape("/proc/test(a)\n  a\n  return 1\n"), ["PushVal", "Ret", "End"]);
+    assert_eq!(
+        shape("/proc/test(a)\n  a\n  return 1\n"),
+        ["PushVal", "Ret", "End"]
+    );
 }
 
 #[test]
 fn bit_operators_bind_looser_than_comparison_and_in_binds_loosest() {
     let parse = |source: &str| dm_syntax::parse_expression(source).expr.unwrap();
     // `a == b | c` is `(a == b) | c`; `a << b < c` is `a << (b < c)`.
-    assert!(matches!(&parse("a == b | c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "|"));
-    assert!(matches!(&parse("a << b < c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "<<"));
+    assert!(
+        matches!(&parse("a == b | c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "|")
+    );
+    assert!(
+        matches!(&parse("a << b < c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "<<")
+    );
     // `a in b ? c : d` is `a in (b ? c : d)` and `a || b in c` is `(a || b) in c`.
-    assert!(matches!(&parse("a in b ? c : d").kind, dm_syntax::ExprKind::Binary { op, rhs, .. }
-        if op == "in" && matches!(rhs.kind, dm_syntax::ExprKind::Conditional { .. })));
-    assert!(matches!(&parse("a || b in c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "in"));
+    assert!(
+        matches!(&parse("a in b ? c : d").kind, dm_syntax::ExprKind::Binary { op, rhs, .. }
+        if op == "in" && matches!(rhs.kind, dm_syntax::ExprKind::Conditional { .. }))
+    );
+    assert!(
+        matches!(&parse("a || b in c").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "in")
+    );
     // `<>` is `!=`.
     assert!(matches!(&parse("a <> b").kind, dm_syntax::ExprKind::Binary { op, .. } if op == "!="));
+}
+
+/// The strings a procedure interns, in order.
+fn strings_of(source: &str) -> Vec<String> {
+    let ast = dm_syntax::parse(source);
+    let params: Vec<String> = ["a", "b", "c"].iter().map(|p| p.to_string()).collect();
+    string_texts(&compile_simple_proc_with_params(&ast.items[0].children, &params).unwrap())
+}
+
+fn statement(text: &str) -> String {
+    format!("/proc/test(a, b, c)\n  {text}\n")
+}
+
+#[test]
+fn a_store_through_a_safe_chain_tests_each_receiver_and_stores_after_the_last() {
+    // `a?.b.c = v`: the value follows the guard, saved registers are restored on the way out.
+    assert_eq!(
+        shape(&statement("a?.b.c = 6")),
+        [
+            "GetVar",
+            "SetCachePopJmpIfNull",
+            "PushCache",
+            "PushVal",
+            "PopCache",
+            "SetVar",
+            "End"
+        ]
+    );
+    assert_eq!(
+        shape(&statement("a?.b.c += 6")),
+        [
+            "GetVar",
+            "SetCachePopJmpIfNull",
+            "PushCache",
+            "PushVal",
+            "PopCache",
+            "AugAdd",
+            "End"
+        ]
+    );
+    // `a?.b?.c = v`: the second receiver is read from the cache the first guard set; its null path restores the register
+    // the first guard saved.
+    assert_eq!(
+        shape(&statement("a?.b?.c = 6")),
+        [
+            "GetVar",
+            "SetCachePopJmpIfNull",
+            "PushCache",
+            "GetVar",
+            "SetCachePopJmpIfNull",
+            "PushCache",
+            "PushVal",
+            "PopCache",
+            "SetVar",
+            "PopCache",
+            "End"
+        ]
+    );
+}
+
+#[test]
+fn a_bare_null_before_equals_is_the_text_null() {
+    // `list(null = a)` is keyed by the text "null", as `list(word = a)` is keyed by "word".
+    assert!(strings_of(&proc_returning("list(null = a)")).contains(&"null".to_string()));
+    assert!(strings_of(&proc_returning("list(word = a)")).contains(&"word".to_string()));
+}
+
+#[test]
+fn an_assignment_value_through_a_parenthesised_receiver_keeps_its_value_with_push_top() {
+    assert_eq!(
+        shape(&proc_returning("(a.b = 5)")),
+        ["PushVal", "SetVarExpr", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("((a).b = 5)")),
+        ["PushVal", "PushTop", "GetVar", "SetVar", "SetVar", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("((a.b).c = 5)")),
+        ["PushVal", "PushTop", "GetVar", "SetVar", "SetVar", "Ret", "End"]
+    );
+}
+
+#[test]
+fn digests_and_character_codes_of_constant_text_are_constants() {
+    assert_eq!(
+        shape(&proc_returning("md5(\"abc\")")),
+        ["PushVal", "Ret", "End"]
+    );
+    assert!(strings_of(&proc_returning("md5(\"abc\")"))
+        .contains(&"900150983cd24fb0d6963f7d28e17f72".to_string()));
+    assert!(strings_of(&proc_returning("md5(\"\")"))
+        .contains(&"d41d8cd98f00b204e9800998ecf8427e".to_string()));
+    assert!(strings_of(&proc_returning("md5(\"a\" + \"b\")"))
+        .contains(&"187ef4436122d1cc2f40dc2b92f0eba0".to_string()));
+    assert!(strings_of(&proc_returning("sha1(\"abc\")"))
+        .contains(&"a9993e364706816aba3e25717850c26c9cd0d89d".to_string()));
+    assert!(strings_of(&proc_returning("sha1(\"\")"))
+        .contains(&"da39a3ee5e6b4b0d3255bfef95601890afd80709".to_string()));
+    // A value that is not a constant text is a call.
+    assert_eq!(
+        shape(&proc_returning("md5(a)")),
+        ["GetVar", "Md5", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("md5(1)")),
+        ["PushVal", "Md5", "Ret", "End"]
+    );
+    // The code of the first character is a number; a position keeps the call.
+    assert_eq!(
+        shape(&proc_returning("text2ascii(\"A\")")),
+        ["PushVal", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("text2ascii(\"\")")),
+        ["PushVal", "Ret", "End"]
+    );
+    assert_eq!(
+        shape(&proc_returning("text2ascii(\"AB\", 2)")),
+        ["PushVal", "PushVal", "Text2Ascii", "Ret", "End"]
+    );
 }

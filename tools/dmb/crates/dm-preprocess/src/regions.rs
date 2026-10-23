@@ -32,9 +32,9 @@ pub use region_memo::{
     ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION,
 };
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod edit_tests;
+#[cfg(test)]
+mod tests;
 
 pub use expansion::{
     expand_regions, expand_regions_text, expand_regions_text_with_executor,
@@ -99,6 +99,8 @@ impl IncludeOccurrence {
 pub struct RegionLine {
     pub source_span: Span,
     pub source_line: usize,
+    /// Physical lines this logical line joins (backslash continuations).
+    pub source_lines: usize,
     pub text: crate::SourceText,
 }
 

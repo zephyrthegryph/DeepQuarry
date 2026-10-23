@@ -4,39 +4,39 @@
 //! generation/proof machinery. The cold pipeline and command-line driver will
 //! consume this library once their declaration/lowering contracts are complete.
 
-#[cfg(test)]
-#[path = "../../../shared/test_scratch.rs"]
-mod test_scratch;
 pub(crate) mod artifact_publication_store;
 pub mod cache_maintenance;
+mod callable_warnings;
 pub mod cli;
 pub mod compile_stats;
-pub mod query_db;
-pub(crate) mod stage_reuse;
 pub mod debug_sources;
 pub mod diagnostics;
 pub mod expansion_memo;
 pub mod filesystem_proofs;
-pub mod fs_watch;
 pub mod frozen_inputs;
+pub mod fs_watch;
 pub mod heap_census;
 pub mod input_snapshot;
-mod procedure_warnings;
-mod callable_warnings;
 pub(crate) mod local_warnings;
+mod procedure_warnings;
+pub mod query_db;
 pub mod source_checks;
+pub(crate) mod stage_reuse;
+#[cfg(test)]
+#[path = "../../../shared/test_scratch.rs"]
+mod test_scratch;
 pub use runner_host::disk as runner_disk;
 pub mod map_memo;
 pub mod output_cli;
 pub mod pinned_target;
 pub mod priority;
-pub mod publish;
 pub mod publication_proof;
+pub mod publish;
 pub mod request;
 pub mod request_failure;
 pub mod request_runner;
-pub mod resource_manifest;
 pub mod resource_journal_coverage;
+pub mod resource_manifest;
 pub mod runner_host;
 mod runner_retained_census;
 pub mod session;
@@ -53,19 +53,19 @@ pub mod cold;
 pub mod composition;
 pub mod driver_facts;
 pub mod engine;
-pub(crate) mod header_compat;
 pub mod engine_abi_coverage;
 pub mod engine_host;
 pub mod engine_link;
+pub(crate) mod header_compat;
 pub mod initialization_artifact;
 mod initializer_code;
 pub use initializer_code::InitializerCode;
 pub mod initializer_diagnostics;
 pub mod initializer_lowering;
 pub mod initializer_policy;
-mod initializer_tokens;
 #[cfg(test)]
 mod initializer_source_order_tests;
+mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
 pub mod lowering_memo;
@@ -103,11 +103,11 @@ pub mod non_text_output;
 pub mod resource_order;
 
 pub mod captured_non_text_driver;
-pub mod declaration_patch;
-pub mod retained_output;
 pub mod compile_driver;
+pub mod declaration_patch;
 mod request_lease;
 pub mod required_types;
+pub mod retained_output;
 pub mod skin;
 
 #[cfg(test)]
@@ -116,6 +116,11 @@ mod modified_instance_receipts;
 mod native_macro_receipts;
 pub mod startup;
 mod startup_allocation;
+mod startup_order;
+mod startup_order_dump;
+mod startup_order_facts;
+#[cfg(test)]
+mod startup_order_tests;
 #[cfg(test)]
 mod static_storage_receipts;
 
@@ -133,6 +138,6 @@ pub mod daemon;
 mod analysis_export;
 
 #[cfg(test)]
-mod string_continuation_receipts;
-#[cfg(test)]
 mod declared_read_validity_tests;
+#[cfg(test)]
+mod string_continuation_receipts;

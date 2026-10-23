@@ -21,6 +21,7 @@ fn final_input(allocation: &Arc<AllocationReceipt>) -> FinalInput {
     FinalInput {
         allocation: allocation.clone(),
         classifications: Vec::new(),
+        expressions: 0,
     }
 }
 fn finalize(
@@ -40,6 +41,7 @@ fn finalize(
             ordered: Arc::new(OrderedRoster {
                 keys: allocation.keys.clone(),
                 ranks: allocation.ranks.clone(),
+                execution: Default::default(),
             }),
         },
         &recording,

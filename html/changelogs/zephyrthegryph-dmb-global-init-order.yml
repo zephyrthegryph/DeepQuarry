@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Native compiler reproduces DreamMaker's global initializer order; CI compiles natively with a DreamMaker equivalence cross-check"

@@ -15,12 +15,17 @@ pub(crate) struct AllocationInput {
     // These numbers are semantic encounter positions compared as values, never
     // used to address an old occurrence/member arena.
     pub callables: Vec<(dm_ir::ProcedureIdentity, usize)>,
+    /// Digest of the allocation ledger's events (`startup_order_facts::OrderEvents`): the order of the walk.
+    pub events: u128,
+    /// Per write, the declared type and typed-list element type of a shared variable.
+    pub declared: Vec<Option<(Option<SymbolId>, Option<SymbolId>)>>,
 }
 impl AllocationInput {
     pub(super) fn capture(
         plan: &InitializerPlan,
         owners: &[SymbolId],
         frontend: &dm_tree::frontend::ColdFrontend,
+        events: &crate::startup_order_facts::OrderEvents,
     ) -> Result<Self, String> {
         let mut callables = Vec::new();
         for body in frontend.bodies.iter() {
@@ -60,6 +65,24 @@ impl AllocationInput {
                 .map(|(_, row)| row)
                 .collect(),
             callables,
+            events: events.digest,
+            declared: plan
+                .writes
+                .iter()
+                .zip(plan.origins.iter())
+                .map(|(write, origin)| match (&write.target, origin.kind) {
+                    (
+                        InitializerTarget::Shared { .. },
+                        dm_tree::initializers::InitializerOriginKind::Declaration(member),
+                    ) => plan.source.tree.member(member).map(|member| {
+                        (
+                            member.metadata.declared_type,
+                            member.metadata.list_element_type,
+                        )
+                    }),
+                    _ => None,
+                })
+                .collect(),
         })
     }
 }
@@ -99,6 +122,8 @@ impl AllocationReceipt {
 pub(crate) struct OrderedRoster {
     pub keys: Vec<Key>,
     pub ranks: BTreeMap<Key, usize>,
+    /// The order DreamMaker runs the global initializers in (`startup_order`); empty when the ledger is not at hand.
+    pub execution: BTreeMap<Key, usize>,
 }
 pub(crate) struct FinalInput {
     pub allocation: Arc<AllocationReceipt>,
@@ -108,6 +133,8 @@ pub(crate) struct FinalInput {
         SymbolId,
         crate::initializer_policy::ClassificationOwner,
     )>,
+    /// Digest of every non-instance write's initializer expression: the references that order the walk.
+    pub expressions: u128,
 }
 impl FinalInput {
     pub(super) fn capture(
@@ -130,14 +157,30 @@ impl FinalInput {
                 owner,
             ));
         }
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        for write in plan.writes.iter() {
+            if matches!(write.target, InitializerTarget::Instance { .. }) {
+                continue;
+            }
+            match &write.value {
+                dm_ir::InitializerValue::Expression(expression) => {
+                    hash.update(&[1]);
+                    hash.update(expression.source_text(&plan.symbols)?.as_bytes());
+                }
+                _ => hash.update(&[0]),
+            }
+            hash.update(&[0xff]);
+        }
         Some(Self {
             allocation: Arc::clone(allocation),
             classifications,
+            expressions: hash.digest128(),
         })
     }
     pub(crate) fn matches(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.allocation, &other.allocation)
             && self.classifications == other.classifications
+            && self.expressions == other.expressions
     }
 }
 pub(crate) struct FinalReceipt {

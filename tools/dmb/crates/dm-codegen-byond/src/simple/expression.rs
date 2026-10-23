@@ -47,7 +47,9 @@ impl Compiler<'_> {
         )?;
         // `!"text"` is a constant too (DreamMaker folds it to 0 or 1).
         let folded = fold_number(expr).or_else(|| match &expr.kind {
-            ExprKind::Unary { op, value } if op == "!" => constant_truth(value).map(|truth| if truth { 0.0 } else { 1.0 }),
+            ExprKind::Unary { op, value } if op == "!" => {
+                constant_truth(value).map(|truth| if truth { 0.0 } else { 1.0 })
+            }
             _ => None,
         });
         if let Some(number) = folded {
@@ -64,7 +66,9 @@ impl Compiler<'_> {
         // A `const` variable inside an operator expression that folds is its value (a bare read stays a variable read).
         if matches!(&expr.kind, ExprKind::Binary { .. } | ExprKind::Unary { .. }) {
             if let Some(substituted) = self.substitute_constants(expr) {
-                if fold_number(&substituted).is_some() || fold_literal_string_expression(&substituted).is_some() {
+                if fold_number(&substituted).is_some()
+                    || fold_literal_string_expression(&substituted).is_some()
+                {
                     return self.expression(&substituted, statement);
                 }
             }
@@ -102,8 +106,14 @@ impl Compiler<'_> {
                 then_value,
                 else_value,
             } => {
-                if let Some(condition) = constant_truth(condition).or_else(|| self.const_reference_truth(condition)) {
-                    let (kept, dead) = if condition { (then_value, else_value) } else { (else_value, then_value) };
+                if let Some(condition) =
+                    constant_truth(condition).or_else(|| self.const_reference_truth(condition))
+                {
+                    let (kept, dead) = if condition {
+                        (then_value, else_value)
+                    } else {
+                        (else_value, then_value)
+                    };
                     self.lower_dead(|compiler| compiler.expression(dead, statement))?;
                     return self.expression(kept, statement);
                 }
@@ -123,10 +133,7 @@ impl Compiler<'_> {
         }
         if let Some(bytes) = fold_literal_string_expression(expr) {
             let id = self.intern_format_template(bytes);
-            self.emit(
-                opcode::PUSH_VAL,
-                vec![Word::Value(ValueWord::String(id))],
-            );
+            self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::String(id))]);
             return Ok(());
         }
         match &expr.kind {
@@ -563,7 +570,10 @@ impl Compiler<'_> {
                     // `Type::name` of a `const` variable reads the variable (DreamMaker does not take `initial()` of it).
                     if let Ok(Some(symbol)) = self.member_global(path, selector) {
                         if self.is_constant_variable(symbol) {
-                            self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Global(symbol))]);
+                            self.emit(
+                                opcode::GET_VAR,
+                                vec![Word::Variable(VariableWord::Global(symbol))],
+                            );
                             return Ok(());
                         }
                     }
@@ -774,7 +784,11 @@ impl Compiler<'_> {
                     via_colon: false,
                 } = &lhs.kind
                 {
-                    if self.variable_expr(object, statement).is_err() {
+                    // A parenthesized receiver is not a plain reference chain to DreamMaker: the value is kept with
+                    // `PushTop` and the receiver goes through the cache register, not `SetVarExpr`.
+                    if self.variable_expr(object, statement).is_err()
+                        || parenthesized_receiver(object)
+                    {
                         self.expression(rhs, statement)?;
                         self.emit(opcode::PUSH_TOP, vec![]);
                         self.expression(object, statement)?;
@@ -901,7 +915,13 @@ impl Compiler<'_> {
     /// `lhs * rhs`. DreamMaker squares with `Square` (0x173) when both operands are the same side-effect-free
     /// expression, except for a product that is the left operand of another product (`a*a*b` is `a a Mul b Mul`, while
     /// `b*(a*a)` is `b a Square Mul`): a left-nested chain of products is emitted as plain multiplications.
-    fn multiplication(&mut self, lhs: &Expr, rhs: &Expr, square_ok: bool, statement: &str) -> Result<(), LowerError> {
+    fn multiplication(
+        &mut self,
+        lhs: &Expr,
+        rhs: &Expr,
+        square_ok: bool,
+        statement: &str,
+    ) -> Result<(), LowerError> {
         if square_ok && same_pure_expression(lhs, rhs) {
             self.expression(lhs, statement)?;
             self.emit(0x173, vec![]);
@@ -912,10 +932,16 @@ impl Compiler<'_> {
             left = inner;
         }
         // A sub-product of `const` variables is a constant; a `const` variable on the left of a product is its value.
-        let folded = self.substitute_constants(left).filter(|substituted| fold_number(substituted).is_some());
+        let folded = self
+            .substitute_constants(left)
+            .filter(|substituted| fold_number(substituted).is_some());
         match &left.kind {
             _ if folded.is_some() => self.expression(folded.as_ref().unwrap(), statement)?,
-            ExprKind::Binary { op, lhs: l2, rhs: r2 } if op == "*" && fold_number(left).is_none() => {
+            ExprKind::Binary {
+                op,
+                lhs: l2,
+                rhs: r2,
+            } if op == "*" && fold_number(left).is_none() => {
                 self.multiplication(l2, r2, false, statement)?
             }
             _ => match self.const_reference_literal(left) {
@@ -945,20 +971,47 @@ fn same_pure_expression(a: &Expr, b: &Expr) -> bool {
         (Ident(x), Ident(y)) => x == y,
         (Literal(x), Literal(y)) => x == y,
         (
-            Member { object: o1, selector: s1, via_colon: false },
-            Member { object: o2, selector: s2, via_colon: false },
+            Member {
+                object: o1,
+                selector: s1,
+                via_colon: false,
+            },
+            Member {
+                object: o2,
+                selector: s2,
+                via_colon: false,
+            },
         ) => s1 == s2 && same_pure_expression(o1, o2),
-        (Unary { op: p1, value: v1 }, Unary { op: p2, value: v2 }) => p1 == "-" && p2 == "-" && same_pure_expression(v1, v2),
+        (Unary { op: p1, value: v1 }, Unary { op: p2, value: v2 }) => {
+            p1 == "-" && p2 == "-" && same_pure_expression(v1, v2)
+        }
         (
-            Binary { op: p1, lhs: l1, rhs: r1 },
-            Binary { op: p2, lhs: l2, rhs: r2 },
+            Binary {
+                op: p1,
+                lhs: l1,
+                rhs: r1,
+            },
+            Binary {
+                op: p2,
+                lhs: l2,
+                rhs: r2,
+            },
         ) => {
             p1 == p2
                 && matches!(p1.as_str(), "+" | "-" | "/" | "%" | "**" | ">")
                 && same_pure_expression(l1, l2)
                 && same_pure_expression(r1, r2)
         }
-        (Call { callee: c1, args: a1 }, Call { callee: c2, args: a2 }) => {
+        (
+            Call {
+                callee: c1,
+                args: a1,
+            },
+            Call {
+                callee: c2,
+                args: a2,
+            },
+        ) => {
             matches!((&c1.kind, &c2.kind), (Ident(x), Ident(y)) if x == "round" && y == "round")
                 && a1.len() == a2.len()
                 && a1.iter().zip(a2).all(|(x, y)| same_pure_expression(x, y))
@@ -990,6 +1043,17 @@ fn is_associative_operator(op: &str) -> bool {
     matches!(op, "+" | "*" | "|" | "&" | "^")
 }
 
+/// A member chain with a parenthesis anywhere in it (`(a).b`, `(a.b).c`).
+fn parenthesized_receiver(expr: &Expr) -> bool {
+    match &expr.kind {
+        ExprKind::Group(_) => true,
+        ExprKind::Member { object, .. } | ExprKind::SafeMember { object, .. } => {
+            parenthesized_receiver(object)
+        }
+        _ => false,
+    }
+}
+
 pub(super) fn peel_groups(expr: &Expr) -> &Expr {
     let mut expr = expr;
     while let ExprKind::Group(inner) = &expr.kind {
@@ -1016,18 +1080,42 @@ fn reassociate(expr: &Expr, changed: &mut bool) -> Expr {
     }
 }
 
-fn associative_node(op: &str, span: dm_syntax::Span, lhs: Expr, rhs: Expr, changed: &mut bool) -> Expr {
-    if let ExprKind::Binary { op: left_op, lhs: first, rhs: middle } = &peel_groups(&lhs).kind {
-        if left_op == op && matches!(&peel_groups(middle).kind, ExprKind::Binary { op: inner, .. } if inner == op) {
+fn associative_node(
+    op: &str,
+    span: dm_syntax::Span,
+    lhs: Expr,
+    rhs: Expr,
+    changed: &mut bool,
+) -> Expr {
+    if let ExprKind::Binary {
+        op: left_op,
+        lhs: first,
+        rhs: middle,
+    } = &peel_groups(&lhs).kind
+    {
+        if left_op == op
+            && matches!(&peel_groups(middle).kind, ExprKind::Binary { op: inner, .. } if inner == op)
+        {
             *changed = true;
             let inner = associative_node(op, span, (**middle).clone(), rhs, changed);
             return Expr {
-                kind: ExprKind::Binary { op: op.to_string(), lhs: first.clone(), rhs: Box::new(inner) },
+                kind: ExprKind::Binary {
+                    op: op.to_string(),
+                    lhs: first.clone(),
+                    rhs: Box::new(inner),
+                },
                 span,
             };
         }
     }
-    Expr { kind: ExprKind::Binary { op: op.to_string(), lhs: Box::new(lhs), rhs: Box::new(rhs) }, span }
+    Expr {
+        kind: ExprKind::Binary {
+            op: op.to_string(),
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+        },
+        span,
+    }
 }
 
 /// Whether DreamMaker folds the truth of `expr` at compile time: a number, a plain text literal, `!`, and `||`, `&&` and
@@ -1042,7 +1130,9 @@ pub(super) fn constant_truth(expr: &Expr) -> Option<bool> {
         // A `list(...)` of constants is an object, so it is true (`list(EAST, WEST) ? a : b` is `a`).
         ExprKind::Call { callee, args }
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "list")
-                && args.iter().all(|arg| fold_number(arg).is_some() || constant_text_truth(arg).is_some()) =>
+                && args.iter().all(|arg| {
+                    fold_number(arg).is_some() || constant_text_truth(arg).is_some()
+                }) =>
         {
             Some(true)
         }
@@ -1056,7 +1146,11 @@ pub(super) fn constant_truth(expr: &Expr) -> Option<bool> {
             false => Some(false),
             true => constant_truth(rhs),
         },
-        ExprKind::Conditional { condition, then_value, else_value } => match constant_truth(condition)? {
+        ExprKind::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => match constant_truth(condition)? {
             true => constant_truth(then_value),
             false => constant_truth(else_value),
         },
@@ -1077,7 +1171,11 @@ impl Compiler<'_> {
     ) -> Result<Vec<&'e Expr>, LowerError> {
         fn collect<'e>(expr: &'e Expr, op: &str, out: &mut Vec<&'e Expr>) {
             match &peel_groups(expr).kind {
-                ExprKind::Binary { op: inner, lhs, rhs } if inner == op => {
+                ExprKind::Binary {
+                    op: inner,
+                    lhs,
+                    rhs,
+                } if inner == op => {
                     collect(lhs, op, out);
                     collect(rhs, op, out);
                 }

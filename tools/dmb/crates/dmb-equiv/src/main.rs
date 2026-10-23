@@ -29,8 +29,14 @@ fn main() -> ExitCode {
             match std::fs::read(path).and_then(|b| Dmb::from_bytes(&b)) {
                 Ok(d) => {
                     let ctx = Ctx::new(&d, None);
+                    let full = args.iter().any(|a| a == "--full");
                     for id in 0..d.variables.len() {
-                        println!("{id}	{}", ctx.var_name(id as u32));
+                        if full {
+                            let v = &d.variables[id];
+                            println!("{id}	{}	{}	{}", ctx.var_name(id as u32), v.kind, v.value);
+                        } else {
+                            println!("{id}	{}", ctx.var_name(id as u32));
+                        }
                     }
                     ExitCode::SUCCESS
                 }
@@ -340,7 +346,10 @@ fn no_debug_ops(args: &[String]) -> ExitCode {
         let Ok(ins) = byond_dmb::bytecode::decode(words) else {
             return fail(format!("decode error in procedure #{p}"));
         };
-        let n = ins.iter().filter(|i| i.opcode == 0x84 || i.opcode == 0x85).count();
+        let n = ins
+            .iter()
+            .filter(|i| i.opcode == 0x84 || i.opcode == 0x85)
+            .count();
         if n > 0 {
             procs += 1;
             ops += n;
@@ -349,8 +358,10 @@ fn no_debug_ops(args: &[String]) -> ExitCode {
             }
         }
     }
-    println!("procedures_with_debug_ops	{procs}
-debug_instructions	{ops}");
+    println!(
+        "procedures_with_debug_ops	{procs}
+debug_instructions	{ops}"
+    );
     if ops == 0 {
         ExitCode::SUCCESS
     } else {
@@ -381,7 +392,10 @@ fn global_order(args: &[String]) -> ExitCode {
     for i in ins.iter().filter(|i| i.name == "SetVar") {
         if let Ok(ops) = i.typed_operands() {
             for op in ops {
-                if let byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(id)) = op {
+                if let byond_dmb::bytecode::Operand::Variable(
+                    byond_dmb::operands::Variable::Global(id),
+                ) = op
+                {
                     println!("{id}	{}", ctx.var_name(id));
                 }
             }
