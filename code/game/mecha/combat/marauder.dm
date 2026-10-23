@@ -110,18 +110,8 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 	return 0
 
 //To be kill ltr
-/obj/mecha/combat/marauder/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_thrusters=1'>Toggle thrusters</a><br>
-						<a href='byond://?src=\ref[src];toggle_zoom=1'>Toggle zoom mode</a><br>
-						<a href='byond://?src=\ref[src];smoke=1'>Smoke</a>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/combat/marauder/ui_commands()
+	return ..() + list(list("key" = "toggle_thrusters", "label" = "Toggle thrusters"), list("key" = "toggle_zoom", "label" = "Toggle zoom mode"), list("key" = "smoke", "label" = "Smoke"))
 
 //Meant for random spawns.
 /obj/mecha/combat/marauder/old

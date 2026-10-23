@@ -62,17 +62,8 @@ TYPE_TABLE(/obj/mecha/combat/phazon/equipped, mecha_starting_equipment, list( \
 */
 
 
-/obj/mecha/combat/phazon/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];phasing=1'><span id="phasing_command">[phasing?"Dis":"En"]able phasing</span></a><br>
-						<a href='byond://?src=\ref[src];switch_damtype=1'>Change melee damage type</a><br>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/combat/phazon/ui_commands()
+	return ..() + list(list("key" = "phasing", "label" = "[phasing ? "Dis" : "En"]able phasing"), list("key" = "switch_damtype", "label" = "Change melee damage type"))
 
 
 
@@ -110,7 +101,7 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 /obj/mecha/combat/phazon/janus/take_damage(amount, type="brute")
 	..()
 	if(phasing)
-		phasing = FALSE
+		set_phasing(FALSE)
 		radiation_pulse(
 			src,
 			max_range = 7,

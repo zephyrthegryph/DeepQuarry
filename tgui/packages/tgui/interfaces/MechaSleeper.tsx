@@ -20,8 +20,7 @@ type Reagent = {
 };
 
 type Injectable = {
-  ref: string;
-  source_ref: string;
+  id: string;
   name: string;
 };
 
@@ -118,16 +117,11 @@ export const MechaSleeper = () => {
           ) : (
             <Stack vertical>
               {injectables.map((i) => (
-                <Stack.Item key={i.ref}>
+                <Stack.Item key={i.id}>
                   <Button
                     fluid
                     icon="syringe"
-                    onClick={() =>
-                      act('inject', {
-                        ref: i.ref,
-                        source: i.source_ref,
-                      })
-                    }
+                    onClick={() => act('inject', { reagent: i.id })}
                   >
                     Inject {i.name}
                   </Button>

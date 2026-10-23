@@ -17,7 +17,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 	owns_one(nameof(shields), /obj/item/shield_projector)
-	op("toggle_omnishield", topic("toggle_omnishield"), then(PROC_REF(topic_toggle_omnishield)))
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/critfail()
 	..()
@@ -51,12 +50,14 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 			src.mecha_log_message("Deactivated.")
 
 
-/obj/item/mecha_parts/mecha_equipment/omni_shield/proc/topic_toggle_omnishield(datum/act/op/A)
-	toggle_shield()
+/obj/item/mecha_parts/mecha_equipment/omni_shield/equip_controls()
+	return list(list("key" = "toggle_omnishield", "label" = "[shields?.active ? "Deactivate" : "Activate"]"))
 
-/obj/item/mecha_parts/mecha_equipment/omni_shield/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_omnishield=1'>[shields?.active?"Dea":"A"]ctivate</a>"
+/obj/item/mecha_parts/mecha_equipment/omni_shield/equip_press(mob/user, control, value)
+	if(control != "toggle_omnishield")
+		return FALSE
+	toggle_shield()
+	return TRUE
 
 ////// The shield projector object
 /obj/item/shield_projector/rectangle/mecha
