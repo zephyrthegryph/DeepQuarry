@@ -16,6 +16,7 @@
 	var/author = "unknown"
 
 CAPABILITIES(/obj/effect/decal/writing)
+	setup(PROC_REF(track_for_persistence), mapload = TRUE)
 	param(nameof(graffiti_age), pos = 1)
 	param(nameof(message), pos = 2)
 	param(nameof(author), pos = 3)
@@ -25,11 +26,10 @@ CAPABILITIES(/obj/effect/decal/writing)
 		begins(PROC_REF(engrave_begins)), wait(PROC_REF(engrave_time)), then(PROC_REF(interaction_engrave_graffiti)))
 	op("clear_graffiti", lit_welder(fuel = 0), wait(0.5 SECONDS), then(PROC_REF(clear_done)))
 
-// ALLOW(init/INSTANCE_STATE): graffiti not loaded with the map is tracked for persistence
-/obj/effect/decal/writing/Initialize(mapload)
+/// Graffiti not loaded with the map is tracked for persistence (setup hook: x(mapload)).
+/obj/effect/decal/writing/proc/track_for_persistence(mapload)
 	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 		SSpersistence.track_value(src, /datum/persistent/graffiti)
-	. = ..()
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): a scrawl unlike the others on its turf.
 /obj/effect/decal/writing/proc/roll_icon_state(datum/roller/R)

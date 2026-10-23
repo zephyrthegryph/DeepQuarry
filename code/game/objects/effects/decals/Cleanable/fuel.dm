@@ -10,16 +10,21 @@
 	persistent = FALSE
 
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
+	keeps_if(PROC_REF(lies_on_a_turf))
+	setup(PROC_REF(join_or_spread))
 	param(nameof(amount), pos = 1, overrides = TRUE)
 	param(nameof(quiet_spill), pos = 2)
 
 /// A spill that tells no admins (its constructor param).
 /obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
 
-// ALLOW(init/INSTANCE_STATE): spilled fuel joins the fuel already on its tile, or spreads
-/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload)
-	if(!isturf(loc))
-		return INITIALIZE_HINT_QDEL
+/// Spilled fuel lies on a turf.
+/obj/effect/decal/cleanable/liquid_fuel/proc/lies_on_a_turf()
+	return isturf(loc)
+
+/// Spilled fuel joins the fuel already on its tile, or spreads.
+/obj/effect/decal/cleanable/liquid_fuel/proc/join_or_spread()
+	ignite_spill()
 	if(!quiet_spill)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
@@ -33,9 +38,12 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 			has_spread = 1
 			break
 
-	. = ..()
 	if(!has_spread)
 		Spread()
+
+/// Plain fuel does not catch fire where it lands.
+/obj/effect/decal/cleanable/liquid_fuel/proc/ignite_spill()
+	return
 
 /obj/effect/decal/cleanable/liquid_fuel/proc/Spread(exclude=list())
 	//Allows liquid fuels to sometimes flow into other tiles.
@@ -63,12 +71,11 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
 	param(nameof(dir), pos = 2, overrides = TRUE)
 
-// ALLOW(init/INSTANCE_STATE): flamethrower fuel ignites its tile
-/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload)
+/// Flamethrower fuel ignites its tile.
+/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/ignite_spill()
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/T = loc
 		T.hotspot_expose((T20C*2) + 380,500) //Ignite the fuel.
-	. = ..()
 
 /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Spread()
 	//The spread for flamethrower fuel is much more precise, to create a wide fire pattern.
