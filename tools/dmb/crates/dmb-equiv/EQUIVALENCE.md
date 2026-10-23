@@ -127,6 +127,10 @@ DreamMaker's initializer order (`dmbc/src/startup_order.rs`), checked here becau
 The checker drops code no branch reaches (entry, branch targets and fallthrough until `Ret`/`End`/`Jmp`). `dump-vars FILE --full` prints each record's
 kind and value; `DQ_DUMP_GLOBAL_ORDER=FILE` makes dmbc write its computed order and ledger.
 
+## Path map (file moves)
+
+`--path-map OLD=NEW` (repeatable) and `--path-map-file FILE` (one `OLD=NEW` per line) compare a world built before a file move with one built after it. A string constant of the first world that equals `OLD`, or starts with it and continues with the end of the string, a `/` or `\`, or a character that cannot continue a file name, is rendered with `NEW` in its place (`canon::PathMap`; the longest old path wins; a backslash form is matched and kept). It is applied to the first world only, to string constants only (not names, keys or tables), so the second world still containing the old path, a different new path, a changed `:line` suffix or any other record or instruction difference is reported as usual. The report notes how many strings were rewritten. `tools/ci/move_equiv.sh` builds the map from `git diff --name-status -M100%`.
+
 ## Orders kept (runtime-observable) and dropped
 
 Evidence comes from `tests/fixtures/order_probe.dme` (and a second probe for
