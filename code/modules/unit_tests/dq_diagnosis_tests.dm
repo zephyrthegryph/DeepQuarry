@@ -176,8 +176,8 @@
 		"code/game/objects/items/devices/scanners/health.dm",
 		"code/game/objects/items/devices/scanners/guide.dm",
 		"code/game/machinery/adv_med.dm",
-		"code/modules/medical/bodyscanner/data.dm",
-		"code/modules/medical/bodyscanner/qualitative.dm",
+		"code/content/medical/bodyscanner/data.dm",
+		"code/content/medical/bodyscanner/qualitative.dm",
 		"code/game/machinery/computer/Operating.dm",
 		"code/datums/repositories/crew.dm",
 		"code/game/machinery/vitals_monitor.dm",
@@ -194,8 +194,8 @@
 		"code/game/mecha/equipment/tools/sleeper.dm",
 		"code/modules/integrated_electronics/subtypes/input.dm",
 		"code/modules/integrated_electronics/subtypes/z_mixed.dm",
-		"code/modules/medical/diagnosis/diagnose.dm",
-		"code/modules/medical/diagnosis/renderers.dm",
+		"code/content/medical/diagnosis/diagnose.dm",
+		"code/content/medical/diagnosis/renderers.dm",
 	)
 	var/regex/legacy = regex(@"injury_load\(INJURY_CATEGORY_(PHYSICAL|THERMAL|TOXIC|" + "ASPHYXIA" + @")\)")
 	for(var/path in readouts)

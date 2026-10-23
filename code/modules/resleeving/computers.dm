@@ -44,7 +44,7 @@
 
 /obj/machinery/computer/transhuman/resleeving/proc/releasepods()
 	for(var/obj/machinery/clonepod/transhuman/P in pods)
-		rel_clear(P, nameof(P.connected))
+		rel_clear(P, nameof(P.resleeving_console))
 		P.name = initial(P.name)
 	rel_clear(src, nameof(pods))
 	for(var/obj/machinery/transhuman/synthprinter/P in spods)
@@ -60,8 +60,8 @@
 	var/num = 1
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
-		if(!P.connected())
-			rel_set(P, nameof(P.connected), src)
+		if(!P.resleeving_console)
+			rel_add(src, nameof(pods), P)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
@@ -103,7 +103,7 @@
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return OP_OK
-	rel_set(pod, nameof(pod.connected), src)
+	rel_add(src, nameof(pods), pod)
 	pod.name = "[initial(pod.name)] #[LAZYLEN(pods)]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return OP_OK
