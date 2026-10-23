@@ -388,7 +388,8 @@ params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
   Roles apply while that variable is unset: a full-suite run (a whole-tier `dm-test`, `DQ_SLOTS_SUITE=1`) may hold
   every slot of the capacity, merge reserve included, and any other caller (focused runs, selections) at most
   `DQ_SLOTS_TEST_WORLD_FOCUSED` (default 2). Raising `DQ_SLOTS_TEST_WORLD_DEFAULT` (or the capacity) therefore gives
-  only the suite more worlds. Peak RAM per world has not been measured yet, so the default stays 2. `dm-test` sizes
+  only the suite more worlds. Measured 2026-10-23 (2 shards, 273 tests, 11 min): peak 1.6 GB private per world, 0.56 core; free RAM on the 64 GB machine
+  bottomed at 8 GB with two such worlds, other lanes' worlds and the dmbc daemons running, already under the 12 GB kept free, so the default stays 2. `dm-test` sizes
   its shard count to the slots its role may hold.
 - **A killed shard keeps its results.** A world writes its results file only when its suite is done, so the
   watchdog (`DQ_DD_WATCHDOG_MINUTES`, 60 minutes per shard on 4 shards) used to lose a killed shard whole. The
