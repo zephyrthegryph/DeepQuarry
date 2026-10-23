@@ -197,3 +197,23 @@
 	from_mixed = echo_mixed_a()
 	from_named = echo_named_user()
 	from_ref = echo_ref_user()
+
+// --- locals: a local holds what was assigned to it, so a call result passed through locals is still judged
+/datum/localer
+	var/via_one_local
+	var/via_local_chain
+	var/via_number_local
+	var/via_value_call_local
+
+/datum/localer/proc/hold()
+	var/one = mixed(1)
+	via_one_local = one
+	var/first = mixed(1)
+	var/second = first
+	var/third = second
+	via_local_chain = third
+	var/count = 4
+	count += 2
+	via_number_local = count
+	var/size = fact(2)
+	via_value_call_local = size
