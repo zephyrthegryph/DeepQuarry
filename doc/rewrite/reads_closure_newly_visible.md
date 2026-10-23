@@ -399,7 +399,7 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/modules/body/limb_state.dm:21 | `?hop_not_relation` | 4
 - stat_input_untracked | code/modules/body/plans/humanoid.dm:48 | `?hop_not_relation` | 1
 - stat_input_untracked | code/modules/client/preferences/middleware/character_setup.dm:602 | `GLOB.preference_entries_by_key` | 1
-- stat_input_untracked | code/modules/client/preferences_tgui.dm:191 | `GLOB.preference_entries_by_key` | 1
+- stat_input_untracked | code/content/client/preferences_tgui.dm:191 | `GLOB.preference_entries_by_key` | 1
 - stat_input_untracked | code/modules/clothing/spacesuits/rig/rig.dm:685 | `security_check_enabled` | 1
 - stat_input_untracked | code/modules/clothing/spacesuits/rig/rig.dm:700 | `ai_override_enabled` | 1
 - stat_input_untracked | code/modules/clothing/spacesuits/rig/rig.dm:938 | `malfunction_delay` | 1

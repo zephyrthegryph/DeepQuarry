@@ -119,14 +119,14 @@ Atomic multi-pref updates use `PREF_TRANSACTION_BEGIN(prefs)` / `PREF_TRANSACTIO
 
 | Path | What |
 |---|---|
-| `code/modules/client/preferences/_preference.dm` | TG base `/datum/preference` |
+| `code/content/client/preferences/_preference.dm` | TG base `/datum/preference` |
 | `code/modules/client/preferences/types/` | All pref subtype declarations (TG-style) |
-| `code/modules/client/preferences/_preference_dq.dm` | DQ extensions: `group`/`widget`/`depends_on`/`validate`/`sanitize`/`apply`/`get_pref_choices`/`get_widget_props` |
-| `code/modules/client/preferences/_preference_constraint.dm` | Constraint base |
-| `code/modules/client/preferences/_preference_editor.dm` | Editor base |
-| `code/modules/client/preferences/_preference_apply_hook.dm` | Apply-hook base |
+| `code/content/client/preferences/_preference_dq.dm` | DQ extensions: `group`/`widget`/`depends_on`/`validate`/`sanitize`/`apply`/`get_pref_choices`/`get_widget_props` |
+| `code/content/client/preferences/_preference_constraint.dm` | Constraint base |
+| `code/content/client/preferences/_preference_editor.dm` | Editor base |
+| `code/content/client/preferences/_preference_apply_hook.dm` | Apply-hook base |
 | `code/modules/client/preferences/_pref_metadata.dm` | Category/group/widget for inherited prefs (NEW prefs set these directly on the subtype) |
-| `code/modules/client/preferences/_pref_sanitizers.dm` | `sanitize()` overrides for inherited prefs |
+| `code/content/client/preferences/_pref_sanitizers.dm` | `sanitize()` overrides for inherited prefs |
 | `code/modules/client/preferences/_vanity_pref_types.dm` | Pref types copied by `vanity_copy_to` (protean/shapeshift path) |
 | `code/modules/client/preferences/constraints/` | Constraint subtypes |
 | `code/modules/client/preferences/editors/` | Editor subtypes |

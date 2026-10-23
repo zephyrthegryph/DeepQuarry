@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Deleting, gibbing or despawning a warm body no longer superheats its tile: the released heat is limited to what the tile's air and floor would reach in contact with the body"
