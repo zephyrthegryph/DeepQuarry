@@ -23,6 +23,8 @@ call	code/ATMOSPHERICS/rust_pipenets.dm	@/obj/machinery/atmospherics::rust_valve
 call	code/__defines/verdigris/_bindings_types.dm	@/datum::vg_entity
 call	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::max_explosion_range
 call	code/_onclick/hud/skybox.dm	@/atom/movable/screen/skybox::sky_image
+call	code/content/clothing/masks/voice.dm	@/obj/item/voice_changer::voice
+call	code/content/clothing/suits/shibari.dm	@/obj/item/clothing/suit/shibari::rope_mode
 call	code/contracts/acts/context.dm	@/datum/act/action::reason
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
 call	code/contracts/acts/context.dm	@/datum/op_result::reason
@@ -141,9 +143,7 @@ call	code/modules/client/preferences.dm	@/datum/preferences::lastnews
 call	code/modules/client/preferences.dm	@/datum/preferences::lastlorenews
 call	code/modules/client/preferences.dm	@/datum/preferences::right_click_binding
 call	code/modules/client/record_updater.dm	@/datum/prompt/choice/record_update_review::initial_refusal
-call	code/content/clothing/masks/voice.dm	@/obj/item/voice_changer::voice
 call	code/modules/clothing/spacesuits/rig/modules/specific/passive_protection.dm	@/obj/item/rig_module/rad_shield::stored_rad_armor
-call	code/content/clothing/suits/shibari.dm	@/obj/item/clothing/suit/shibari::rope_mode
 call	code/modules/contracts/contract.dm	@/datum/contract::standing_score
 call	code/modules/contracts/engineering_qualification.dm	@/datum/contract_requirement/recorded_stages::last_interval_end
 call	code/modules/contracts/medical_trial.dm	@/datum/affliction::contract_rare_eligibility_qualifying

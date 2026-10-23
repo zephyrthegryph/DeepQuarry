@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unit tests: fire and hot-air tests on the shared bridge floor put back the heat of the grille and windows standing on it; new flag-only guards for machine, area power and floor-temperature leaks"
