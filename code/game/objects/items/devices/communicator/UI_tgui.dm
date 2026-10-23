@@ -110,9 +110,9 @@ CAPABILITIES(/obj/item/communicator)
 		if(communicator.selfie_mode)
 			var/mob/target = get(communicator, /mob)
 			if(istype(target))
-				cam_screen.vis_contents = list(target)
+				vis_set(cam_screen, list(target))
 			else
-				cam_screen.vis_contents = list(communicator)
+				vis_set(cam_screen, list(communicator))
 			cam_background.fill_rect(1, 1, 1, 1)
 			cam_background.icon_state = "clear"
 			local_skybox.sky_image = null
@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/communicator)
 	for(var/turf/visible_turf in visible_things)
 		visible_turfs += visible_turf
 
-	cam_screen.vis_contents = visible_turfs
+	vis_set(cam_screen, visible_turfs)
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, (video_range * 2), (video_range * 2))
 
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/communicator)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - last_camera_turf().x, (world.maxy>>1) - last_camera_turf().y)
 
 /obj/item/communicator/proc/show_static()
-	cam_screen.vis_contents.Cut()
+	vis_clear(cam_screen)
 	cam_background.icon_state = "scanline2"
 	cam_background.fill_rect(1, 1, (video_range * 2), (video_range * 2))
 	local_skybox.sky_image = null

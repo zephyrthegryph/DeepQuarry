@@ -726,12 +726,12 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	if(!running)
 		set_running(TRUE)
 		if(ping)
-			vis_contents.Add(mask_ping)
+			vis_add(src, mask_ping)
 		else
-			vis_contents.Add(mask_full)
+			vis_add(src, mask_full)
 
-	bg.vis_contents.Cut()
-	bg.vis_contents.Add(map)
+	vis_clear(bg)
+	vis_add(bg, map)
 
 	if(extras && !extras_holder())
 		rel_set(src, nameof(extras_holder), extras)
@@ -755,8 +755,8 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 
 /atom/movable/screen/movable/mapper_holder/proc/off(inform = TRUE)
 	frame.powered = FALSE
-	bg.vis_contents.Cut()
-	vis_contents.Remove(mask_ping, mask_full, extras_holder())
+	vis_clear(bg)
+	vis_remove(src, list(mask_ping, mask_full, extras_holder()))
 	rel_clear(src, nameof(extras_holder))
 	set_running(FALSE)
 	if(inform)

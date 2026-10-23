@@ -1458,7 +1458,7 @@
 	if(istype(src.client.eye,/obj/machinery/camera))
 		var/obj/machinery/camera/cam = src.client.eye
 		if(LAZYLEN(cam.client_huds))
-			src.client.screen |= cam.client_huds
+			client_screen_include(src.client, cam.client_huds)
 
 	if(src.stat == DEAD) //Dead
 		if(!src.has_status(STAT_DRUGGED))

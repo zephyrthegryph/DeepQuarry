@@ -823,7 +823,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 	if(user?.client?.images.len)
 		for(var/image/i in user.client.images)
 			if(i.icon_state == "blueprints")
-				user.client.images.Remove(i)
+				client_images_remove(user.client, i)
 
 //GLOBAL VERB FOR PAPER TO ENABLE ANYONE TO MAKE AN AREA IN BUILDABLE AREAS.
 //THIS IS 70 TILES. ANYTHING LARGER SHOULD USE ACTUAL BLUEPRINTS.

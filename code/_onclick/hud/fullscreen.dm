@@ -50,7 +50,7 @@
 /mob/proc/reload_fullscreen()
 	if(client && stat != DEAD) //dead mob do not see any of the fullscreen overlays that he has.
 		for(var/category in screens)
-			client.screen |= screens[category]
+			client_screen_include(client, screens[category])
 
 /atom/movable/screen/fullscreen
 	icon = 'icons/mob/screen_full.dmi'

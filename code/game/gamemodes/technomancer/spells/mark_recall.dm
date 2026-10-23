@@ -24,7 +24,7 @@ CAPABILITIES(/datum/technomancer_marker)
 	I = image('icons/goonstation/featherzone.dmi', T(), "spawn-wall")
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
-	user.client?.images |= I
+	client_images_include(user.client, I)
 	after(src, 2.3 SECONDS, PROC_REF(loop_animation)) //That's just how long the animation is
 
 // the marker image comes off its caster's client.

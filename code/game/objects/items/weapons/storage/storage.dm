@@ -727,7 +727,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/screen/storage/bar_start = backdrop[1]
 	var/atom/movable/screen/storage/bar_continue = backdrop[2]
 	var/atom/movable/screen/storage/bar_end = backdrop[3]
-	bar_start.vis_contents.Cut()
+	vis_clear(bar_start)
 
 	var/matrix/M = matrix()
 	M.Scale((storage_width - storage_cap_width * 2 + 3) / 32, 1)

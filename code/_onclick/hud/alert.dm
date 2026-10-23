@@ -479,7 +479,7 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 	var/list/alerts = mymob().alerts
 	if(!hud_shown)
 		for(var/i in 1 to length(alerts))
-			mymob()?.client?.screen -= alerts[alerts[i]]
+			client_screen_remove(mymob()?.client, alerts[alerts[i]])
 		return TRUE
 	for(var/i in 1 to length(alerts))
 		var/atom/movable/screen/alert/alert = alerts[alerts[i]]
@@ -507,7 +507,7 @@ CAPABILITIES(/atom/movable/screen/alert/open_ticket)
 			else
 				. = ""
 		alert.screen_loc = .
-		mymob()?.client?.screen |= alert
+		client_screen_include(mymob()?.client, alert)
 	return 1
 
 /mob

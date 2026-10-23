@@ -441,7 +441,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		give_item_action(action, user, slot)
 	hud_layerise()
 	user.position_hud_item(src,slot)
-	if(user.client)	user.client.screen |= src
+	if(user.client)	client_screen_include(user.client, src)
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
 		if(sounds_of(src).equip && !muffled_by_belly(user))

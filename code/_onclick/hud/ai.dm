@@ -159,7 +159,7 @@
 	rel_add(HUD, nameof(HUD.adding), using)
 
 	if(client && apply_to_client)
-		client.screen = list()
+		client_screen_clear(client)
 		if(length(HUD.adding))
 			client_screen_add(client, HUD.adding)
 		if(length(HUD.other))
