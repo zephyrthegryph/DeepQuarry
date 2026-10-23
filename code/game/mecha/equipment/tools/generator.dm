@@ -18,7 +18,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	owns_one(nameof(fuel), starts = nameof(fuel_type))
-	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	every(0.2 SECONDS, then(PROC_REF(generator_step)), when = nameof(generating))
 
@@ -54,7 +53,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	return
 
 
-/obj/item/mecha_parts/mecha_equipment/generator/proc/topic_toggle(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/generator/proc/toggle_generator()
 	if(generating)
 		set_generating(FALSE)
 		set_ready_state(TRUE)
@@ -65,11 +64,17 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 		src.mecha_log_message("Activated.")
 	return
 
-/obj/item/mecha_parts/mecha_equipment/generator/get_equip_info()
-	var/output = ..()
-	if(output)
-		return "[output] \[[fuel]: [fuel_amount] cm<sup>3</sup>\] - <a href='byond://?src=\ref[src];toggle=1'>[generating?"Dea":"A"]ctivate</a>"
-	return
+/obj/item/mecha_parts/mecha_equipment/generator/equip_info_lines()
+	return list("[fuel]: [fuel_amount] cm^3")
+
+/obj/item/mecha_parts/mecha_equipment/generator/equip_controls()
+	return list(list("key" = "toggle", "label" = "[generating ? "Deactivate" : "Activate"]"))
+
+/obj/item/mecha_parts/mecha_equipment/generator/equip_press(mob/user, control, value)
+	if(control != "toggle")
+		return FALSE
+	toggle_generator()
+	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/generator/action(target)
 	if(chassis)
@@ -81,7 +86,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 			message = "Unit is full."
 		else
 			message = "[result] unit\s of [fuel] successfully loaded."
-			send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+			update_equip_info()
 		occupant_message(message)
 	return
 

@@ -120,8 +120,5 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 	..()
 	return
 
-/obj/mecha/combat/topic_close(datum/act/op/A)
-	am = null
-
 /obj/mecha/combat/proc/reset_melee()
 	melee_can_hit = 1

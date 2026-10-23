@@ -26,15 +26,29 @@ type DamageReport = {
 };
 
 type Cargo = {
-  ref: string;
+  id: string;
   name: string;
 };
 
+type EquipControl = {
+  key: string;
+  label: string;
+  value?: number;
+};
+
 type EquipPiece = {
-  ref: string;
+  id: string;
   name: string;
   kind: string;
+  ready: BooleanLike;
+  selected: BooleanLike;
   info_lines: string[];
+  controls: EquipControl[];
+};
+
+type Command = {
+  key: string;
+  label: string;
 };
 
 type EquipSlotInfo = {
@@ -91,6 +105,7 @@ type Data = {
   id_upload_locked: BooleanLike;
   maint_access: BooleanLike;
   equipment: EquipPiece[];
+  commands: Command[];
   slots: EquipSlotInfo[];
   can_eject: BooleanLike;
   // log view
@@ -152,8 +167,9 @@ const MainView = () => {
 
 const DamageBanner = () => {
   const { data, act } = useBackend<Data>();
-  const { damage_reports, high_pressure } = data;
-  if (damage_reports.length === 0 && !high_pressure) return null;
+  const { damage_reports, high_pressure, integrity_percent } = data;
+  const critical = integrity_percent < 30;
+  if (damage_reports.length === 0 && !high_pressure && !critical) return null;
   return (
     <Section>
       {damage_reports.map((d) => (
@@ -170,6 +186,11 @@ const DamageBanner = () => {
       {high_pressure ? (
         <Box color="bad" bold>
           DANGEROUSLY HIGH CABIN PRESSURE
+        </Box>
+      ) : null}
+      {critical ? (
+        <Box color="bad" bold>
+          DAMAGE LEVEL CRITICAL
         </Box>
       ) : null}
     </Section>
@@ -301,8 +322,8 @@ const StatsPanel = () => {
         ) : (
           <Stack vertical>
             {cargo.map((c) => (
-              <Stack.Item key={c.ref}>
-                <Button onClick={() => act('drop_from_cargo', { ref: c.ref })}>
+              <Stack.Item key={c.id}>
+                <Button onClick={() => act('drop_from_cargo', { id: c.id })}>
                   Unload
                 </Button>{' '}
                 {c.name}
@@ -326,9 +347,21 @@ const CommandsPanel = () => {
     airtank_connect,
     id_upload_locked,
     maint_access,
+    commands,
   } = data;
   return (
     <>
+      {commands.length > 0 ? (
+        <Section title="Special">
+          <Stack vertical>
+            {commands.map((c) => (
+              <Stack.Item key={c.key}>
+                <Button onClick={() => act(c.key)}>{c.label}</Button>
+              </Stack.Item>
+            ))}
+          </Stack>
+        </Section>
+      ) : null}
       <Section title="Electronics">
         <LabeledList>
           <LabeledList.Item label="Lights">
@@ -395,30 +428,52 @@ const EquipmentPanel = () => {
       ) : (
         <Stack vertical>
           {equipment.map((e) => (
-            <Stack.Item key={e.ref}>
+            <Stack.Item key={e.id}>
               <Section
                 title={`${e.kind}: ${e.name}`}
                 buttons={
                   <>
                     <Button
-                      onClick={() => act('equip_interact', { ref: e.ref })}
+                      selected={!!e.selected}
+                      onClick={() => act('select_equip', { id: e.id })}
                     >
-                      Open
+                      {e.selected ? 'Selected' : 'Select'}
                     </Button>{' '}
                     <Button
                       color="bad"
-                      onClick={() => act('detach_equipment', { ref: e.ref })}
+                      onClick={() => act('detach_equipment', { id: e.id })}
                     >
                       Detach
                     </Button>
                   </>
                 }
               >
+                <Box color={e.ready ? 'good' : 'bad'}>
+                  {e.ready ? 'Ready' : 'Not ready'}
+                </Box>
                 {e.info_lines.map((line, i) => (
                   <Box key={i} color="label">
                     {line}
                   </Box>
                 ))}
+                {e.controls.length > 0 ? (
+                  <Box mt={0.5}>
+                    {e.controls.map((c) => (
+                      <Button
+                        key={`${c.key}-${c.value ?? ''}`}
+                        onClick={() =>
+                          act('equip_control', {
+                            id: e.id,
+                            control: c.key,
+                            value: c.value,
+                          })
+                        }
+                      >
+                        {c.label}
+                      </Button>
+                    ))}
+                  </Box>
+                ) : null}
               </Section>
             </Stack.Item>
           ))}

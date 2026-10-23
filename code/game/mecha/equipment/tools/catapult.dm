@@ -39,20 +39,20 @@
 					return
 				rel_set(src, nameof(locked), target)
 				occupant_message("Locked on [target]")
-				send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+				update_equip_info()
 				return
 			else if(target!=locked())
 				if(locked() in view(chassis))
 					locked().throw_at(target, 14, 1.5, chassis)
 					rel_clear(src, nameof(locked))
-					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+					update_equip_info()
 					set_ready_state(FALSE)
 					chassis.use_power(energy_drain)
 					do_after_cooldown()
 				else
 					rel_clear(src, nameof(locked))
 					occupant_message("Lock on [locked()] disengaged.")
-					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+					update_equip_info()
 		if(2)
 			if(!action_checks(target)) return
 			var/list/atoms = list()
@@ -68,17 +68,30 @@
 			do_after_cooldown()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/gravcatapult/get_equip_info()
-	return "[..()] [mode==1?"([locked()||"Nothing"])":null] \[<a href='byond://?src=\ref[src];mode=1'>S</a>|<a href='byond://?src=\ref[src];mode=2'>P</a>\]"
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/equip_info_lines()
+	return list("Mode: [mode == 1 ? "Sling" : "Push"][mode == 1 ? " ([locked()||"Nothing"])" : null]")
+
+TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/gravcatapult, catapult_buttons, list(list("key" = "sling", "label" = "S"), list("key" = "push", "label" = "P")))
+
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/equip_controls()
+	return TYPE_TABLE_GET(src, catapult_buttons)
+
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/equip_press(mob/user, control, value)
+	switch(control)
+		if("sling")
+			set_catapult_mode(1)
+			return TRUE
+		if("push")
+			set_catapult_mode(2)
+			return TRUE
+	return FALSE
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/gravcatapult)
 	ref_one(nameof(locked))
-	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/topic_mode(datum/act/op/A, href_mode)
-	if(isnum(href_mode))
-		mode = href_mode
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/set_catapult_mode(new_mode)
+	mode = new_mode
+	update_equip_info()
 	return
 
 /// locked

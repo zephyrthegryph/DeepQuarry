@@ -13,7 +13,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
 	every(0.2 SECONDS, then(PROC_REF(relay_step)), when = nameof(relaying))
-	op("toggle_relay", topic("toggle_relay"), then(PROC_REF(topic_toggle_relay)))
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/relay_step(datum/act/timer/A)
 	if(!chassis) // the relay only works mounted
@@ -81,7 +80,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
 	return pow_chan
 
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/topic_toggle_relay(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/toggle_relay()
 	if(relaying)
 		set_relaying(FALSE)
 		set_ready_state(TRUE)
@@ -92,6 +91,11 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
 		src.mecha_log_message("Activated.")
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_relay=1'>[relaying?"Dea":"A"]ctivate</a>"
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/equip_controls()
+	return list(list("key" = "toggle_relay", "label" = "[relaying ? "Deactivate" : "Activate"]"))
+
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/equip_press(mob/user, control, value)
+	if(control != "toggle_relay")
+		return FALSE
+	toggle_relay()
+	return TRUE

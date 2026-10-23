@@ -30,8 +30,8 @@
 	desc = "A grenade launcher produced for use by government uprising subjugation forces, or that's what you might guess; fires matryoshka flashbangs."
 	projectile = /obj/item/grenade/flashbang/clusterbang
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang/limited/get_equip_info()//Limited version of the clusterbang launcher that can't reload
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"]\[[src.projectiles]\]"
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang/limited/equip_controls()//Limited version of the clusterbang launcher that can't reload
+	return list()
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang/limited/rearm()
 	return//Extra bit of security

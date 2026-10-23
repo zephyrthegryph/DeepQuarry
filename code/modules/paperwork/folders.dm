@@ -127,9 +127,9 @@ CAPABILITIES(/obj/item/folder)
 		then(PROC_REF(folder_label)))
 	interface("Folder")
 	without("ui_open")
-	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
-	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
-	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
+	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
+	op("rename", ui_act("rename", arg("ref", schema_text(32))), then(PROC_REF(ui_act_rename)))
+	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_text(32))), then(PROC_REF(ui_act_open)))
 
 /obj/item/folder/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -145,11 +145,11 @@ CAPABILITIES(/obj/item/folder)
 	var/list/data = list()
 	var/list/items = list()
 	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
-		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
+		items += list(list("ref" = ref_token(P), "name" = P.name, "kind" = "paper"))
 	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
-		items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
+		items += list(list("ref" = ref_token(Ph), "name" = Ph.name, "kind" = "photo"))
 	FOR_REAL_CONTENTS(var/obj/item/paper_bundle/Pb, src)
-		items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
+		items += list(list("ref" = ref_token(Pb), "name" = Pb.name, "kind" = "bundle"))
 	data["items"] = items
 	return data
 
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/item/folder)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return FALSE
 	if(slot_remove(O, user.loc, user))
@@ -176,7 +176,7 @@ CAPABILITIES(/obj/item/folder)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return FALSE
 	if(istype(O, /obj/item/paper))
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/folder)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return FALSE
 	switch(kind)

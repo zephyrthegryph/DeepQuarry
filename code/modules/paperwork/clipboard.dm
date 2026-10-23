@@ -90,10 +90,10 @@ CAPABILITIES(/obj/item/clipboard)
 	without("ui_open")
 	op("remove_pen", ui_act("remove_pen"), then(PROC_REF(ui_act_remove_pen)))
 	op("add_pen", ui_act("add_pen"), then(PROC_REF(ui_act_add_pen)))
-	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
-	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
-	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
-	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
+	op("write", ui_act("write", arg("ref", schema_text(32))), then(PROC_REF(ui_act_write)))
+	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
+	op("rename", ui_act("rename", arg("ref", schema_text(32))), then(PROC_REF(ui_act_rename)))
+	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_text(32))), then(PROC_REF(ui_act_open)))
 	drag_onto(PROC_REF(mousedrop_input))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/item/clipboard)
 	// Top paper first so React can render it at the head of the list.
 	if(toppaper())
 		items += list(list(
-			"ref" = "\ref[toppaper()]",
+			"ref" = ref_token(toppaper()),
 			"name" = toppaper().name,
 			"kind" = "paper",
 			"is_top" = TRUE,
@@ -116,14 +116,14 @@ CAPABILITIES(/obj/item/clipboard)
 		if(P == toppaper())
 			continue
 		items += list(list(
-			"ref" = "\ref[P]",
+			"ref" = ref_token(P),
 			"name" = P.name,
 			"kind" = "paper",
 			"is_top" = FALSE,
 		))
 	FOR_REAL_CONTENTS(var/obj/item/photo/Ph, src)
 		items += list(list(
-			"ref" = "\ref[Ph]",
+			"ref" = ref_token(Ph),
 			"name" = Ph.name,
 			"kind" = "photo",
 			"is_top" = FALSE,
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/item/clipboard)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return TRUE
 	if(O == toppaper() && istype(O, /obj/item/paper))
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/item/clipboard)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return TRUE
 	if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/clipboard)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return TRUE
 	if(istype(O, /obj/item/paper))
@@ -206,7 +206,7 @@ CAPABILITIES(/obj/item/clipboard)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/obj/item/O = ref
+	var/obj/item/O = ui_token(ref, null, /obj/item)
 	if(!O || O.loc != src)
 		return TRUE
 	switch(kind)

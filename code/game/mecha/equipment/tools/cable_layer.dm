@@ -23,7 +23,7 @@
 		message = "Reel is full."
 	else
 		message = "[result] meters of cable successfully loaded."
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+		update_equip_info()
 	occupant_message(message)
 	return
 
@@ -33,11 +33,10 @@ MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	setup(PROC_REF(sync_cable_length))
 	ref_one(nameof(last_piece))
-	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
-	op("cut", topic("cut"), needs(req(PROC_REF(reel_has_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
+	op("cut", ai(), needs(req(PROC_REF(reel_has_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(cut_cable)))
 	owns_one(nameof(cable), starts = PROC_REF(make_cable), on_destroy = ON_DESTROY_CONTAINED)
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/toggle_layer()
 	set_ready_state(!equip_ready)
 	occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
 	src.mecha_log_message("[equip_ready?"Dea":"A"]ctivated.")
@@ -57,7 +56,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	return chassis
 
 /// The pilot's answer: that much cable comes off the reel.
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cut_cable(datum/act/op/A)
 	if(!cable || !cable.get_amount())
 		return
 	var/m = min(A.step_value("length"), cable.get_amount())
@@ -65,11 +64,23 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 		use_cable(m)
 		new /obj/item/stack/cable_coil(get_turf(chassis), m)
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/get_equip_info()
-	var/output = ..()
-	if(output)
-		return "[output] \[Cable: [cable ? cable.get_amount() : 0] m\][(cable && cable.get_amount()) ? "- <a href='byond://?src=\ref[src];toggle=1'>[!equip_ready?"Dea":"A"]ctivate</a>|<a href='byond://?src=\ref[src];cut=1'>Cut</a>" : null]"
-	return
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/equip_info_lines()
+	return list("Cable: [cable ? cable.get_amount() : 0] m")
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/equip_controls()
+	if(!cable || !cable.get_amount())
+		return list()
+	return list(list("key" = "toggle", "label" = "[!equip_ready ? "Deactivate" : "Activate"]"), list("key" = "cut", "label" = "Cut"))
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/equip_press(mob/user, control, value)
+	switch(control)
+		if("toggle")
+			toggle_layer()
+			return TRUE
+		if("cut")
+			perform_op(user, src, "cut", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+			return TRUE
+	return FALSE
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/load_cable(obj/item/stack/cable_coil/CC)
 	if(istype(CC) && CC.get_amount())

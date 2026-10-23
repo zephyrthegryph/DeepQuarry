@@ -16,7 +16,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))
-	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/equip_look(datum/look/look)
 	..()
@@ -28,13 +27,16 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	..()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
+/obj/item/mecha_parts/mecha_equipment/repair_droid/equip_controls()
+	return list(list("key" = "toggle_repairs", "label" = "[repairing ? "Deactivate" : "Activate"]"))
 
+/obj/item/mecha_parts/mecha_equipment/repair_droid/equip_press(mob/user, control, value)
+	if(control != "toggle_repairs")
+		return FALSE
+	toggle_repairs()
+	return TRUE
 
-
-/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/toggle_repairs()
 	if(repairing)
 		set_repairing(FALSE)
 		src.mecha_log_message("Deactivated.")
@@ -42,7 +44,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	else
 		src.mecha_log_message("Activated.")
 		set_repairing(TRUE)
-	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+	update_equip_info()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/proc/repair_droid_step(datum/act/timer/A)
