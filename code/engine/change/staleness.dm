@@ -35,8 +35,14 @@
 #define STALENESS_BOUNDED_ROTATING 100
 /// Bounded mode: a queued-refresh backlog larger than this is left to the kernel's own drains instead of flushed at test end (the checks skip a queued atom).
 #define STALENESS_BOUNDED_FLUSH_MAX 500
-/// The world param that picks the test-end mode: "bounded" (tools/dq_focused_test.sh, ordinary focused runs) or "full" (absent: dm-test, merge gates, lane_ready).
+/// The world param that picks the test-end mode: "bounded" (tools/dq_focused_test.sh, ordinary focused runs), "periodic" (a full dm-test shard: bounded
+/// at every test end plus a full sweep every STALENESS_FULL_EVERY tests and after the last test) or "full" (absent: merge gates, lane_ready).
 #define STALENESS_MODE_PARAMETER "staleness"
+/// The world param that sets how many tests pass between two full sweeps in "periodic" mode.
+#define STALENESS_EVERY_PARAMETER "staleness-full-every"
+/// Tests between two full sweeps in periodic mode when the param is absent. A finding is attributed to the tests since the last clean full sweep,
+/// so this is also the widest range a finding names.
+#define STALENESS_FULL_EVERY 200
 /// Longest read-path text in a report.
 #define STALENESS_CHAIN_MAX 700
 
@@ -73,6 +79,15 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 GLOBAL_VAR_INIT(staleness_last_visited, 0)
 /// TRUE for a focused run's bounded test-end sweep (see staleness_suite_begin()); FALSE checks everything, as the full suite does.
 GLOBAL_VAR_INIT(staleness_bounded, FALSE)
+/// TRUE in "periodic" mode: bounded test ends plus a full sweep every staleness_every tests and after the last one.
+GLOBAL_VAR_INIT(staleness_periodic, FALSE)
+GLOBAL_VAR_INIT(staleness_every, STALENESS_FULL_EVERY)
+/// Tests that ended since the last clean full sweep, in order (periodic mode): the range a full sweep's finding is attributed to.
+GLOBAL_LIST_EMPTY(staleness_since_full)
+/// Full sweeps run this suite (periodic mode).
+GLOBAL_VAR_INIT(staleness_full_sweeps, 0)
+/// Text appended to a report filed while a periodic full sweep runs: which tests it may belong to.
+GLOBAL_VAR_INIT(staleness_range_note, "")
 /// Refs of the entities that existed when the suite started and were not yet checked (bounded mode only). Test-end sweeps consume it from the front.
 GLOBAL_LIST_EMPTY(stale_backlog)
 /// TRUE once the first test has parked the backlog.
@@ -150,7 +165,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		return
 	GLOB.staleness_seen[seen_key] = TRUE
 	var/path = staleness_read_path()
-	var/msg = "STALE [kind]: [E ? E.type : "global"] [what] served from cache by [trigger], a fresh computation gives [detail]; [culprit ? culprit : "no input was recorded"][path]"
+	var/msg = "STALE [kind]: [E ? E.type : "global"] [what] served from cache by [trigger], a fresh computation gives [detail]; [culprit ? culprit : "no input was recorded"][path][GLOB.staleness_range_note]"
 	GLOB.staleness_reports += msg
 	log_world("STALENESS|[kind]|[E ? E.type : "global"]|[what]|[trigger]|[staleness_flat(detail)]|[staleness_flat(culprit ? culprit : "-")]")
 	log_runtime(msg)
@@ -568,8 +583,12 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 /// focused run; anything else is full) and logs it. Bounded parks the boot backlog (everything that appeared since boot) so the first test's sweep checks
 /// what the test created plus a slice of it, not all of it.
 /proc/staleness_suite_begin()
-	GLOB.staleness_bounded = GLOB.staleness_strict && world.params?[STALENESS_MODE_PARAMETER] == "bounded"
-	log_test("STALENESS: test-end mode [GLOB.staleness_bounded ? "bounded" : "full"], [length(GLOB.stale_all)] entities swept so far[GLOB.staleness_bounded ? "; the boot backlog is parked at the first test, [STALENESS_BOUNDED_BACKLOG] checked per test end" : ""]")
+	var/mode = world.params?[STALENESS_MODE_PARAMETER]
+	GLOB.staleness_periodic = GLOB.staleness_strict && mode == "periodic"
+	GLOB.staleness_bounded = GLOB.staleness_strict && (mode == "bounded" || GLOB.staleness_periodic)
+	GLOB.staleness_every = max(1, round(text2num(world.params?[STALENESS_EVERY_PARAMETER]) || STALENESS_FULL_EVERY))
+	GLOB.staleness_since_full = list()
+	log_test("STALENESS: test-end mode [GLOB.staleness_periodic ? "periodic" : (GLOB.staleness_bounded ? "bounded" : "full")], [length(GLOB.stale_all)] entities swept so far[GLOB.staleness_bounded ? "; the boot backlog is parked at the first test, [STALENESS_BOUNDED_BACKLOG] checked per test end" : ""][GLOB.staleness_periodic ? "; a full sweep every [GLOB.staleness_every] tests and after the last test" : ""]")
 
 /// A test is about to run. The first one in a bounded run parks the boot backlog (everything swept before it, including what the round-start
 /// settle created after suite start), so its end checks only what it created plus a slice of the backlog.
@@ -589,7 +608,7 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 /// The end of a test: queued work settles, then everything that appeared during the test and a slice of the rest is checked, against the test's own
 /// result (a report fails it). The expectation flag is the test's own and ends with it. Full mode checks all of the first sweep's backlog; bounded mode
 /// (focused runs) checks what the test created plus STALENESS_BOUNDED_BACKLOG of the boot backlog, and the summary line says how much is left.
-/proc/staleness_test_end(test)
+/proc/staleness_test_end(test, last_test = FALSE)
 	if(!GLOB.staleness_strict)
 		return
 	var/started = REALTIMEOFDAY
@@ -607,10 +626,57 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	else
 		found = staleness_sweep("end of test", settle = TRUE)
 		visited = GLOB.staleness_last_visited
+	if(GLOB.staleness_periodic)
+		found += staleness_periodic_step(test, last_test)
 	GLOB.staleness_late_parked_total += GLOB.staleness_late_parked
 	log_test("STALENESS: end of [test] late_parked=[GLOB.staleness_late_parked] late_parked_total=[GLOB.staleness_late_parked_total] pretest_unseen=[length(GLOB.stale_pretest)] mode=[GLOB.staleness_bounded ? "bounded" : "full"] entities_checked=[visited] stat_draw_checks=[GLOB.staleness_checks - checks_before] backlog_remaining=[GLOB.staleness_bounded ? length(GLOB.stale_backlog) : 0] swept_total=[length(GLOB.stale_all)] refresh_queued_before=[queued][GLOB.staleness_bounded && queued > STALENESS_BOUNDED_FLUSH_MAX ? " (not flushed)" : ""] found=[found] took_ds=[REALTIMEOFDAY - started]")
 	GLOB.staleness_late_parked = 0
 	if(found)
 		log_world("STALENESS: [found] stale after [test]")
 	GLOB.staleness_expected = FALSE
+
+/// Periodic mode: records the test that just ended and, every STALENESS_FULL_EVERY tests and after the last one, checks everything the sweep walks. The
+/// bounded sweep at each test end looks at what that test made plus a slice, so a stale cache left in older state surfaces here instead. A report from the
+/// full sweep fails the test whose end ran it and names the tests since the last clean full sweep (the range it may belong to); the whole list is logged.
+/// Returns the reports the full sweep filed.
+/proc/staleness_periodic_step(test, last_test)
+	GLOB.staleness_since_full += "[test]"
+	if(!last_test && length(GLOB.staleness_since_full) < GLOB.staleness_every)
+		return 0
+	var/list/range = GLOB.staleness_since_full
+	GLOB.staleness_since_full = list()
+	GLOB.staleness_full_sweeps++
+	var/started = REALTIMEOFDAY
+	GLOB.staleness_range_note = "; found by full sweep #[GLOB.staleness_full_sweeps] after [length(range)] tests, so it belongs to one of them (first [range[1]], last [range[length(range)]]; all listed in tests.log)"
+	var/found = staleness_sweep_full("periodic full sweep")
+	GLOB.staleness_range_note = ""
+	if(found)
+		log_test("STALENESS: full sweep #[GLOB.staleness_full_sweeps] found [found] stale; the last clean full sweep was before these [length(range)] tests, one of them left it: [jointext(range, ", ")]")
+		log_world("STALENESS: full sweep #[GLOB.staleness_full_sweeps] found [found] stale among [length(range)] tests ([range[1]] .. [range[length(range)]])")
+	log_test("STALENESS: full sweep #[GLOB.staleness_full_sweeps] after [test] ([length(range)] tests since the last, [last_test ? "the last test" : "every [GLOB.staleness_every]"]) swept_total=[length(GLOB.stale_all)] found=[found] took_ds=[REALTIMEOFDAY - started]")
+	return found
+
+/// Checks every entity the sweep walks: the pending new ones, the whole boot backlog and one pass of the cursor over everything.
+/proc/staleness_sweep_full(trigger)
+	if(!GLOB.staleness_on || GLOB.staleness_depth)
+		return 0
+	staleness_settle()
+	var/before = GLOB.staleness_found
+	var/list/served = GLOB.staleness_served
+	GLOB.staleness_served = list()
+	for(var/ref in served)
+		var/datum/D = locate(ref)
+		if(isatom(D) && REF(D) == ref)
+			staleness_check_draw(D, trigger, served[ref], forced = TRUE)
+	var/list/fresh = GLOB.stale_new
+	GLOB.stale_new = list()
+	for(var/ref in fresh)
+		staleness_check_ref(ref, trigger)
+	var/list/backlog = GLOB.stale_backlog
+	GLOB.stale_backlog = list()
+	for(var/ref in backlog)
+		staleness_check_ref(ref, trigger)
+	staleness_sweep_older(trigger, length(GLOB.stale_all))
+	GLOB.staleness_last_visited = length(fresh) + length(backlog) + length(GLOB.stale_all)
+	return GLOB.staleness_found - before
 #endif

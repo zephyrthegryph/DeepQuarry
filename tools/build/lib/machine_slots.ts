@@ -22,10 +22,35 @@ import path from 'node:path';
 
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | (string & {});
 
-/** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
-/** Two test worlds at once by default: the machine is also the user's desktop (2026-10-19). DQ_SLOTS_TEST_WORLD raises it. */
+/**
+ * Test worlds the machine hosts at once for a full-suite run (`dm-test` over a whole tier): four. One world is one DreamDaemon thread at about 1 core and
+ * 3 GB private (data/bench/process-shard*.json of the run-5 profile: 2.9 GB private, 1.8 GB working set, 0.9 core), so four are 12 GB and 4 of 16
+ * cores, which fits beside two dmbc daemons (8 GB each) with the 12 GB kept free on a 64 GB machine. Everyone else (focused runs, selections)
+ * holds at most focusedTestWorlds(): the machine is also the user's desktop (2026-10-19). Same numbers as slots_default_test_world() in
+ * dq_machine_slots.sh. DQ_SLOTS_TEST_WORLD=N sets one limit for every caller.
+ */
 export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
-  return 2;
+  return 4;
+}
+
+/** Test worlds a caller that is not a full-suite run may hold at once (DQ_SLOTS_TEST_WORLD_FOCUSED, default 2). */
+export function focusedTestWorlds(): number {
+  const n = Number(process.env.DQ_SLOTS_TEST_WORLD_FOCUSED);
+  return Number.isInteger(n) && n >= 1 ? n : 2;
+}
+
+/**
+ * What a caller may hold of a class once its role is known (same rule as slots_role_cap() in dq_machine_slots.sh). Only test_world has roles, and only
+ * while DQ_SLOTS_TEST_WORLD is unset (setting it is choosing one limit for all): a full-suite run (DQ_SLOTS_SUITE=1 or opts.suite) may hold every slot,
+ * the merge reserve included; any other caller holds at most focusedTestWorlds().
+ */
+export function roleCap(cls: SlotClass, usable: number, max: number, suite: boolean): number {
+  if (cls !== 'test_world' || (process.env.DQ_SLOTS_TEST_WORLD ?? '') !== '') return usable;
+  return suite ? max : Math.min(usable, focusedTestWorlds());
+}
+
+function isSuite(opts?: { suite?: boolean }): boolean {
+  return opts?.suite ?? process.env.DQ_SLOTS_SUITE === '1';
 }
 
 const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1 };
@@ -229,10 +254,10 @@ function preheld(cls: SlotClass): boolean {
 
 /** How many slots a group that wants `want` of `cls` gets: the wish, clamped to the class capacity (a group larger than the budget
  * could never be satisfied). 0 when the class is off or the slots are held by a parent. */
-export function slotGroupSize(cls: SlotClass, want: number): number {
+export function slotGroupSize(cls: SlotClass, want: number, opts?: { suite?: boolean }): number {
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return 0;
-  return Math.min(want, usableSlots(cls, max, priorityOf(worktree())));
+  return Math.min(want, roleCap(cls, usableSlots(cls, max, priorityOf(worktree())), max, isSuite(opts)));
 }
 
 /**
@@ -241,12 +266,12 @@ export function slotGroupSize(cls: SlotClass, want: number): number {
  * a part, so two groups cannot each hold a part of the budget and wait on each other. Each slot is released on its own, so a sharded
  * run hands one back as its world finishes. Returns [] when the class is off.
  */
-export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
+export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m), opts?: { suite?: boolean }): Promise<HeldSlot[]> {
   refuseLight(cls, worktree());
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return [];
   const prio = priorityOf(worktree());
-  const usable = usableSlots(cls, max, prio) + extraSlots(cls, worktree());
+  const usable = roleCap(cls, usableSlots(cls, max, prio), max, isSuite(opts)) + extraSlots(cls, worktree());
   want = Math.min(Math.max(want, 1), usable);
   const dir = path.join(slotsDir(), cls);
   try {

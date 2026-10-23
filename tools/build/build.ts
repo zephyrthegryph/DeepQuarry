@@ -23,7 +23,8 @@ import { computeCompileHash } from './lib/compile_hash';
 import { pairIsByondOutput } from './lib/compiler_stamp';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
-import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
+import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotGroupSize, withSlot } from './lib/machine_slots';
+import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
 import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
@@ -1304,6 +1305,9 @@ type WorldRun = {
   clean: boolean;
   cleanText: string | null;
   results: Record<string, UnitTestEntry> | null;
+  /** What the world's runtime.log says it finished, when it died before writing `results` (a watchdog kill): per-test pass/fail so far,
+   * the test in flight, and how far it got. Null when `results` exists or the log has no test lines. */
+  salvaged?: SalvagedRun | null;
   durationSeconds: number;
   process: ProcessSummary | null;
   samples: ProcessSample[];
@@ -1682,6 +1686,16 @@ async function runIsolatedTestWorld(
       // the world died before finishing
     }
     receiptOutcome.resultsAvailable = results !== null;
+    let salvaged: SalvagedRun | null = null;
+    if (results === null) {
+      // The world died before writing its results (a watchdog kill): what its log says it finished is still a result.
+      try {
+        const parsed = parseRunLog(fs.readFileSync(`${logDir}/runtime.log`, 'utf-8'));
+        if (Object.keys(parsed.results).length || parsed.inFlight) salvaged = parsed;
+      } catch {
+        // no log either
+      }
+    }
     const inventory = options.issueInventory ? JSON.parse(fs.readFileSync(inventoryFile, 'utf8')) as IssuedSuiteInventory : undefined;
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
@@ -1692,6 +1706,7 @@ async function runIsolatedTestWorld(
       clean: cleanText !== null,
       cleanText,
       results,
+      salvaged,
       durationSeconds: (Date.now() - started) / 1000,
       process: processSummary,
       samples: options.sampler?.samples ?? [],
@@ -1830,11 +1845,21 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
         + `timeout (DQ_DD_WATCHDOG_MINUTES to raise it). ${run.results ? 'Partial' : 'No'} results were captured.`,
     );
   }
+  if (!run.results && run.salvaged) {
+    const done = Object.values(run.salvaged.results);
+    Juke.logger.error(
+      `Unit-test summary: the world died before writing its results; its log shows ${done.filter((t) => t.status === 0).length} passed, `
+        + `${done.filter((t) => t.status === 1).length} failed, ${done.filter((t) => t.status === 2).length} skipped so far`
+        + `${run.salvaged.position ? ` (it had reached ${run.salvaged.position.index} of ${run.salvaged.position.total})` : ''}; in flight: ${run.salvaged.inFlight ?? 'none'}. Tests after that never ran.`,
+    );
+    for (const t of done) if (t.status === 1) Juke.logger.error(`FAILED ${t.name}: ${t.message}`);
+  }
   if (!run.results) {
     if (!run.killedByWatchdog) Juke.logger.error('Unit-test summary: FAILED, the world exited without writing results.');
     return null;
   }
   recordSweepHashes(run.results);
+  recordDurations(measuredDurations(run.results, sweepTestPredicate()));
   const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation, run.runtimeIdentity);
   record.compiler_receipt = run.compilerReceipt;
   if (run.capturedCompiledOutput) Object.assign(record, { captured_compiled_output: run.capturedCompiledOutput });
@@ -2240,14 +2265,14 @@ function enumerateUnitTestTypes(): string[] {
 }
 
 /** Greedy bin-packing of every known non-sweep test onto `shardCount`
- * shards by historical duration (from the latest stored test run, if any),
- * heaviest first onto the currently lightest shard. Tests with no
- * historical record get a small default weight, so new tests still balance
- * instead of piling onto shard 0. */
+ * shards by measured duration, heaviest first onto the currently lightest
+ * shard. The durations come from the shared history (lib/suite_runner.ts,
+ * under E:/dq-cache, so a fresh pool worktree has them too), then from this
+ * worktree's last 30 stored runs for what the history lacks. A test with no
+ * record weighs the median of the known ones. */
 function assignTestShards(shardCount: number, selection: Set<string> | null, tier: TestTier): string[][] {
-  const shards: string[][] = Array.from({ length: shardCount }, () => []);
-  const loads = new Array(shardCount).fill(0);
-  const durations = new Map<string, number>();
+  const durations = readDurations();
+  const shared = durations.size;
   const isSweep = sweepTestPredicate();
   // Each test's newest recorded duration, from the last 30 runs: the newest
   // run alone is often a focused run of a handful of tests, or a normal-tier
@@ -2261,7 +2286,7 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
       continue;
     }
     for (const [name, entry] of Object.entries(run.tests)) {
-      if (!durations.has(name) && !isSweep(name)) durations.set(name, entry.duration_ds ?? 1);
+      if (!durations.has(name) && !isSweep(name) && entry.status !== 2 && entry.duration_ds) durations.set(name, entry.duration_ds);
     }
   }
   // Only test types the source scan finds: a run record also holds synthetic
@@ -2274,16 +2299,12 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
   const isExhaustive = exhaustiveTestPredicate();
   const isE0 = e0TestPredicate();
   for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name), isE0(name))) known.delete(name);
-  const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
-  const sorted = [...known].sort(
-    (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),
+  const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick; used only when there is no history at all
+  const { shards, loads, unknown } = packShards([...known], shardCount, durations, DEFAULT_WEIGHT_DS);
+  Juke.logger.info(
+    `dm-test: shard balance by measured time: ${known.size - unknown}/${known.size} tests have a duration (${shared} in the shared history); `
+      + `projected load per shard ${loads.map((l) => `${Math.round(l / 10)}s`).join('/')}.`,
   );
-  for (const name of sorted) {
-    let lightest = 0;
-    for (let i = 1; i < shardCount; i++) if (loads[i] < loads[lightest]) lightest = i;
-    shards[lightest].push(name);
-    loads[lightest] += durations.get(name) ?? DEFAULT_WEIGHT_DS;
-  }
   return shards;
 }
 
@@ -2426,6 +2447,19 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   const selection = resolveTestSelection(get);
   const selectionSet = selection ? new Set(selection) : null;
   if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
+  // A whole-tier run is the full suite: it may hold every test_world slot (four by default; focused runs and selections hold two,
+  // lib/machine_slots.ts roleCap()) and its shards sweep staleness periodically instead of in full at every test end.
+  const wholeTier = !selection;
+  const groupMax = slotGroupSize('test_world', shardCount, { suite: wholeTier ? true : undefined });
+  if (groupMax > 0 && groupMax < shardCount) {
+    Juke.logger.info(`dm-test: ${shardCount} shards asked for, but this run may hold only ${groupMax} test_world slot(s): using ${groupMax}.`);
+    shardCount = groupMax;
+  }
+  if (wholeTier || process.env.DQ_STALENESS === 'periodic') {
+    const staleness = suiteStalenessParams(process.env, worldParams);
+    Object.assign(worldParams, staleness);
+    Juke.logger.info(`dm-test: staleness ${worldParams.staleness ?? 'full'}${worldParams['staleness-full-every'] ? `, a full sweep every ${worldParams['staleness-full-every']} tests and after the last one` : ''}.`);
+  }
   const assignment = assignTestShards(shardCount, selectionSet, tier);
   // One assignment file for every shard ("path<TAB>shard" per line): a world
   // runs what's assigned to it, and places any test the file doesn't name by
@@ -2440,7 +2474,6 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
       + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
       + `plus every sweep test in the tier in each shard${selection ? ' that matches the selection' : ''}.`,
   );
-  const wholeTier = !selection;
   const watchdogMinutes = shardWatchdogMinutes(shardCount, wholeTier);
   const started = Date.now();
   // One private copy of the build for this run (a concurrent recompile in this
@@ -2453,7 +2486,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   let runs: ShardRun[];
   // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
   // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
-  const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m));
+  const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m), { suite: wholeTier ? true : undefined });
   if (worldSlots.length === 0) for (let i = 0; i < shardCount; i++) worldSlots.push(null);
   try {
     runs = await Promise.all(
@@ -2481,12 +2514,39 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   }
   const wallSeconds = (Date.now() - started) / 1000;
   for (const run of runs) {
+    // What one world costs the machine (the shard count and slot budget are sized from this): peak memory and CPU of the DreamDaemon.
+    if (run.process) {
+      Juke.logger.info(
+        `Shard ${run.index} process: peak ${Math.round(run.process.peak_private_mb)} MB private / ${Math.round(run.process.peak_working_set_mb)} MB working set, `
+          + `${Math.round(run.process.cpu_seconds)} CPU-s in ${Math.round(run.process.wall_seconds)}s (${(run.process.cpu_seconds / Math.max(run.process.wall_seconds, 1)).toFixed(2)} cores).`,
+      );
+    }
+  }
+  const notRun: Record<number, string[]> = {};
+  const isSweepName = sweepTestPredicate();
+  for (const run of runs) {
+    if (!run.results && run.salvaged) {
+      // The world died before writing its results: what its log finished stands as its results, and every assigned test without
+      // one is listed as never run (the run is not clean either way).
+      run.results = run.salvaged.results as Record<string, UnitTestEntry>;
+      notRun[run.index] = neverRan(assignment[run.index], run.salvaged);
+    }
     if (run.killedByWatchdog) {
+      const done = run.salvaged ? Object.keys(run.salvaged.results).length : 0;
       Juke.logger.error(
         `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
           + `${Math.round(watchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
-          + `${run.results ? 'Partial' : 'No'} results were captured.`,
+          + (run.salvaged
+            ? `${done} test result(s) were salvaged from its log (${run.salvaged.position ? `it had reached ${run.salvaged.position.index} of ${run.salvaged.position.total}` : 'position unknown'}; `
+              + `in flight: ${run.salvaged.inFlight ?? 'none'}); ${notRun[run.index]?.length ?? 0} assigned test(s) never ran.`
+            : 'No results were captured.'),
       );
+    }
+    const missing = notRun[run.index];
+    if (missing?.length) {
+      const list = `${SHARD_DIR}/${process.pid}/shard${run.index}-never-ran.txt`;
+      fs.writeFileSync(list, `${missing.join('\n')}\n`);
+      Juke.logger.error(`Shard ${run.index}: ${missing.length} test(s) NEVER RAN (the first of them was running when the world died): ${missing.slice(0, 15).join(', ')}${missing.length > 15 ? ', ...' : ''} (all in ${list}; kept with the shard lists).`);
     }
     if (!run.clean) {
       Juke.logger.error(`Shard ${run.index} (logs in ${run.logDir}) was not clean:`);
@@ -2496,6 +2556,8 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   }
   const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
   recordSweepHashes(results);
+  const recorded = recordDurations(measuredDurations(results, isSweepName));
+  if (recorded) Juke.logger.info(`dm-test: ${recorded} test durations in the shared history for the next run's shard balance.`);
   const record = testRunRecord(
     runIdentity(get(LabelParameter)),
     get(LabelParameter),
@@ -2506,19 +2568,26 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     compiledOutput.provenance ?? null,
   );
   record.compiler_receipts = runs.map((run) => run.compilerReceipt);
+  if (Object.keys(notRun).length) Object.assign(record, { never_ran: notRun, salvaged_shards: runs.filter((r) => r.salvaged).map((r) => r.index) });
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
   // A shard that wrote no results lost every test assigned to it: say so in
   // the summary, so its counts can't read as a complete run.
   const lost = runs.filter((r) => !r.results).map((r) => r.index);
+  const partial = runs.filter((r) => notRun[r.index]).map((r) => r.index);
   if (lost.length) {
     Juke.logger.error(
       `Shard(s) ${lost.join(', ')} wrote no results: their assigned tests did not run, and the counts below `
         + 'cover only the other shards.',
     );
   }
+  if (partial.length) {
+    Juke.logger.error(
+      `Shard(s) ${partial.join(', ')} were killed: the counts below include what they finished, and ${partial.reduce((n, i) => n + notRun[i].length, 0)} assigned test(s) never ran.`,
+    );
+  }
   Juke.logger.info(
-    `Unit-test summary (${shardCount} shards, tier ${tier}${lost.length ? `, ${lost.length} SHARD(S) LOST` : ''}): `
+    `Unit-test summary (${shardCount} shards, tier ${tier}${lost.length ? `, ${lost.length} SHARD(S) LOST` : ''}${partial.length ? `, ${partial.length} SHARD(S) KILLED` : ''}): `
       + `${record.counts.passed} passed, ${record.counts.failed} failed, `
       + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall (shards ${shardTimes}) / `
       + `~${Math.round(totalCpuSeconds)}s summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
