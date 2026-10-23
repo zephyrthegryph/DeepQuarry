@@ -221,12 +221,12 @@
 /datum/unit_test/untyped_followup_laserdome_holder_name/Run()
 	var/obj/item/laserdome_hyperball/ball = allocate(/obj/item/laserdome_hyperball)
 	var/mob/living/carbon/human/thrower = allocate(/mob/living/carbon/human)
-	thrower.set_real_name("Test Thrower")
+	var/expected = "[thrower]"
 	rel_set(ball, nameof(ball.last_holder), thrower)
 	ball.last_holder_name = "[thrower]"
 	qdel(thrower)
 	TEST_ASSERT_NULL(ball.last_holder, "the strong reference clears")
-	TEST_ASSERT_EQUAL(ball.last_holder_name, "Test Thrower", "the announcements still have a name")
+	TEST_ASSERT_EQUAL(ball.last_holder_name, expected, "the announcements still have a name")
 
 /// Nar-Sie's target takes a mob through rel_set, a beacon for the plain singularity, and clears when the target is deleted.
 /datum/unit_test/untyped_followup_narsie_target
