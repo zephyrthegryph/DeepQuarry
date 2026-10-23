@@ -11,10 +11,6 @@ stored	code/controllers/subsystems/contracts_damage_batch_api.dm	var/key = REF(s
 stored	code/controllers/subsystems/tgui.dm	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
 stored	code/datums/behaviours/sellable.dm	"physical_item_id" = REF(source),
 stored	code/datums/capabilities/debug_verbs.dm	var/ref_text = REF(target)
-stored	code/datums/ghost_spawn.dm	UNTYPED_LIST_ADD(compiled_pods, list("pod_type" = type, "pod_name" = spawn_object.name, "z_level" = spawn_object.z, "ref" = REF(spawn_object), "remains_active" = enabled))
-stored	code/datums/ghost_spawn.dm	all_fabricators += list(REF(DF) = DF.fabricator_tag)
-stored	code/datums/ghost_spawn.dm	vr_landmarks += list(REF(sloc) = sloc.name)
-stored	code/datums/ghost_spawn.dm	compiled_spawn_data += list(REF(player) = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
 stored	code/datums/helper_datums/stack_end_detector.dm	_canary_ref = REF(_canary)
 stored	code/domains/atmos/area_air_device.dm	air_uid_text = REF(src)
 stored	code/game/atom/atom_vv.dm	var/refid = REF(src)
@@ -88,18 +84,12 @@ stored	code/modules/mob/living/living.dm	var/refid = REF(src)
 stored	code/modules/mob/living/silicon/pai/api.dm	var/ghost_key = REF(ghost) // keyed by ref text: a ghost-less timestamp table, not a relation
 stored	code/modules/mob/living/silicon/pai/api.dm	asked[REF(ghost)] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 stored	code/modules/mob/living/silicon/pai/api.dm	"ref" = REF(ghost),
-stored	code/modules/mob/living/silicon/robot/robot_ui.dm	"ref" = REF(I),
-stored	code/modules/mob/living/silicon/robot/robot_ui.dm	"ref" = REF(I),
-stored	code/modules/mob/living/silicon/robot/robot_ui.dm	LAZYSET(modules, REF(I), R.get_slot_from_module(I))
-stored	code/modules/mob/living/silicon/robot/robot_ui.dm	LAZYSET(emag_modules, REF(I), R.get_slot_from_module(I))
 stored	code/modules/nifsoft/nif_tgui.dm	"ref" = REF(NS),
 stored	code/modules/power/apc.dm	"service_id" = REF(src),
 stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(techwebs),
 stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(experiment)
-stored	code/modules/stockmarket/computer.dm	"REF" = REF(S),
-stored	code/modules/stockmarket/computer.dm	"REF" = REF(S),
 stored	code/modules/tgui/modules/admin_shuttle_controller.dm	"ref" = REF(S),
 stored	code/modules/tgui/modules/admin_shuttle_controller.dm	"ref" = REF(S),
 stored	code/modules/tgui/modules/appearance_changer.dm	"instance" = REF(instance),
@@ -135,17 +125,11 @@ ref_macro	code/game/machinery/computer/atmos_alert.dm	minor_alarms[++minor_alarm
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
-ref_macro	code/game/machinery/computer/medical.dm	records[++records.len] = list("ref" = "\ref[R]", "id" = R.fields["id"], "name" = R.fields["name"])
-ref_macro	code/game/machinery/computer/medical.dm	. += list(list("name" = v.fields["name"], "D" = "\ref[v]"))
 ref_macro	code/game/machinery/computer/message.dm	M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
-ref_macro	code/game/machinery/computer/prisoner.dm	"ref" = "\ref[C]"
-ref_macro	code/game/machinery/computer/prisoner.dm	"ref" = "\ref[track]",
 ref_macro	code/game/machinery/computer/security.dm	"ref" = "\ref[R]",
 ref_macro	code/game/machinery/computer/skills.dm	"ref" = "\ref[R]",
 ref_macro	code/game/machinery/hologram.dm	to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
 ref_macro	code/game/machinery/jukebox.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
-ref_macro	code/game/machinery/pipe/pipe_dispenser.dm	r += list(list("pipe_name" = info.name, "ref" = "\ref[info]"))
-ref_macro	code/game/machinery/pipe/pipe_dispenser.dm	"ref" = "\ref[info]",
 ref_macro	code/game/machinery/pointdefense.dm	turret["ref"] = "\ref[PD]"
 ref_macro	code/game/objects/effects/chem/chemsmoke.dm	more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
 ref_macro	code/game/objects/items.dm	M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
@@ -340,10 +324,6 @@ ref_macro	code/modules/tgui/modules/admin/player_notes.dm	dat += "<A href='byond
 ref_macro	code/modules/tgui/modules/appearance_changer.dm	bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = "\ref[BR]")
 ref_macro	code/modules/tgui/modules/atmos_control.dm	"ref"= "\ref[alarm]",
 ref_macro	code/modules/tgui/modules/gyrotron_control.dm	"ref" = "\ref[G]"
-ref_macro	code/modules/tgui/modules/law_manager.dm	packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = "\ref[AL]")
-ref_macro	code/modules/tgui/modules/law_manager.dm	law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = "\ref[ALs]","laws" = packaged_laws)
-ref_macro	code/modules/tgui/modules/ntos-only/uav.dm	paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = "\ref[U]")))
-ref_macro	code/modules/tgui/modules/ntos-only/uav.dm	if("\ref[U]" == refstring)
 ref_macro	code/modules/tgui/modules/overmap.dm	rdata["reference"] = "\ref[R]"
 ref_macro	code/modules/tgui/modules/overmap.dm	log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
 ref_macro	code/modules/tgui/modules/overmap.dm	rdata["eng_reference"] = "\ref[E]"

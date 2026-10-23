@@ -3,7 +3,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	op("notify_laws", ui_act("notify_laws"), then(PROC_REF(ui_act_notify_laws)))
 	interface("LawManager")
 	op("law_channel", ui_act("law_channel", arg("law_channel", schema_text(4096))), then(PROC_REF(ui_act_law_channel)))
-	op("state_law", ui_act("state_law", arg("ref"), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
+	op("state_law", ui_act("state_law", arg("ref", schema_text(32)), arg("state_law", num())), then(PROC_REF(ui_act_state_law)))
 	op("add_zeroth_law", ui_act("add_zeroth_law"), then(PROC_REF(ui_act_add_zeroth_law)))
 	op("add_ion_law", ui_act("add_ion_law"), then(PROC_REF(ui_act_add_ion_law)))
 	op("add_inherent_law", ui_act("add_inherent_law"), then(PROC_REF(ui_act_add_inherent_law)))
@@ -43,7 +43,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_state_law(datum/act/op/A, ref, state_law_arg)
-	var/datum/ai_law/AL = ui_ref(ref, ui_source_owner_laws_all_laws(), /datum/ai_law)
+	var/datum/ai_law/AL = ui_member(ref, ui_source_owner_laws_all_laws(), /datum/ai_law)
 	if(AL)
 		var/state_law = state_law_arg
 		owner().laws.set_state_law(AL, state_law)
@@ -114,7 +114,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 
 /// The law the edit button names, when it is one of the owner's.
 /datum/tgui_module/law_manager/proc/edited_law(datum/act/op/A)
-	return ui_ref(A.args["edit_law"], ui_source_owner_laws_all_laws(), /datum/ai_law)
+	return ui_member(A.args["edit_law"], ui_source_owner_laws_all_laws(), /datum/ai_law)
 
 /datum/tgui_module/law_manager/proc/edit_law_default(datum/act/op/A)
 	var/datum/ai_law/AL = edited_law(A)
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/ui_act_delete_law(datum/act/op/A, delete_law)
 	var/mob/user = A.actor
 	if(is_malf(user))
-		var/datum/ai_law/AL = ui_ref(delete_law, ui_source_owner_laws_all_laws(), /datum/ai_law)
+		var/datum/ai_law/AL = ui_member(delete_law, ui_source_owner_laws_all_laws(), /datum/ai_law)
 		if(AL && is_malf(user))
 			owner().delete_law(AL)
 	return TRUE
@@ -143,7 +143,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 
 /datum/tgui_module/law_manager/proc/ui_act_state_law_set(datum/act/op/A, state_law_set)
 	var/mob/user = A.actor
-	var/datum/ai_laws/ALs = ui_ref(state_law_set, law_sets(), /datum/ai_laws)
+	var/datum/ai_laws/ALs = ui_member(state_law_set, law_sets(), /datum/ai_laws)
 	if(ALs && (is_admin(user) || (ALs in GLOB.player_laws)))
 		owner().statelaws(ALs)
 	return TRUE
@@ -151,7 +151,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/ui_act_transfer_laws(datum/act/op/A, transfer_laws)
 	var/mob/user = A.actor
 	if(is_malf(user))
-		var/datum/ai_laws/ALs = ui_ref(transfer_laws, law_sets(), /datum/ai_laws)
+		var/datum/ai_laws/ALs = ui_member(transfer_laws, law_sets(), /datum/ai_laws)
 		if(ALs && (is_admin(user) || (ALs in GLOB.player_laws)))
 			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
 			ALs.sync(owner(), 0)
@@ -208,7 +208,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/package_laws(list/data, field, list/datum/ai_law/laws)
 	var/list/packaged_laws = list()
 	for(var/datum/ai_law/AL in laws)
-		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = "\ref[AL]")
+		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = owner().laws.get_state_law(AL), "ref" = ref_token(AL))
 	data[field] = packaged_laws
 	data["has_[field]"] = packaged_laws.len
 
@@ -220,7 +220,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 		package_laws(packaged_laws, "ion_laws", ALs.ion_laws)
 		package_laws(packaged_laws, "inherent_laws", ALs.inherent_laws)
 		package_laws(packaged_laws, "supplied_laws", ALs.supplied_laws)
-		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = "\ref[ALs]","laws" = packaged_laws)
+		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = ref_token(ALs),"laws" = packaged_laws)
 
 	return law_sets
 

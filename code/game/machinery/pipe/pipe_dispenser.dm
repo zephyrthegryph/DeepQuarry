@@ -27,7 +27,7 @@
 CAPABILITIES(/obj/machinery/pipedispenser)
 	interface("PipeDispenser")
 	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
-	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref")), then(PROC_REF(ui_act_dispense_pipe)))
+	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref", schema_text(32))), then(PROC_REF(ui_act_dispense_pipe)))
 	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
 	op("put_back", item(/obj/item/pipe), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("put_back_meter", item(/obj/item/pipe_meter), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
@@ -62,20 +62,28 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 		var/list/r = list()
 		for(var/i in 1 to cat.len)
 			var/datum/pipe_recipe/info = cat[i]
-			r += list(list("pipe_name" = info.name, "ref" = "\ref[info]"))
+			r += list(list("pipe_name" = info.name, "ref" = ref_token(info)))
 			// Stationary pipe dispensers don't allow you to pre-select pipe directions.
 			// This makes it impossble to spawn bent versions of bendable pipes.
 			// We add a "Bent" pipe type with a special param to work around it.
 			if(info.dirtype == PIPE_BENDABLE)
 				r += list(list(
 					"pipe_name" = ("Bent " + info.name),
-					"ref" = "\ref[info]",
+					"ref" = ref_token(info),
 					"bent" = TRUE
 				))
 		data["categories"] += list(list("cat_name" = c, "recipes" = r))
 
 	return data
 
+
+/// Every recipe the window lists: the atmospherics ones, or the disposal ones for a disposal dispenser.
+/obj/machinery/pipedispenser/proc/listed_recipes()
+	var/list/recipes = disposals ? GLOB.disposal_pipe_recipes : GLOB.atmos_pipe_recipes
+	var/list/listed = list()
+	for(var/c in recipes)
+		listed += recipes[c]
+	return listed
 
 /obj/machinery/pipedispenser/proc/ui_act_p_layer(datum/act/op/A, raw_p_layer)
 	. = TRUE
@@ -85,7 +93,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 	var/mob/user = A.actor
 	. = TRUE
 	if(COOLDOWN_FINISHED(src, wait))
-		var/datum/pipe_recipe/recipe = ui_ref(raw_ref, null, /datum/pipe_recipe)
+		var/datum/pipe_recipe/recipe = ui_member(raw_ref, listed_recipes(), /datum/pipe_recipe)
 		if(!istype(recipe))
 			return
 
@@ -107,7 +115,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 		else if(istype(recipe, /datum/pipe_recipe/meter))
 			created_object = new recipe.pipe_type(loc)
 		else
-			log_runtime(EXCEPTION("Warning: [user] attempted to spawn pipe recipe type by ref [ui_ref(raw_ref, null, /datum/pipe_recipe)] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
+			log_runtime(EXCEPTION("Warning: [user] attempted to spawn pipe recipe type by handle [raw_ref] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
 			return
 
 		created_object.add_fingerprint(user)

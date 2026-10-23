@@ -10,7 +10,7 @@
 CAPABILITIES(/datum/tgui_module/uav)
 	every(20 SECONDS, then(PROC_REF(signal_check)), when = nameof(current_uav))
 	interface("UAV")
-	op("switch_uav", ui_act("switch_uav", arg("switch_uav", schema_ref(/obj/item/uav))), then(PROC_REF(ui_act_switch_uav)))
+	op("switch_uav", ui_act("switch_uav", arg("switch_uav", schema_text(32))), then(PROC_REF(ui_act_switch_uav)))
 	op("del_uav", ui_act("del_uav", arg("del_uav", schema_text(4096))), then(PROC_REF(ui_act_del_uav)))
 	op("view_uav", ui_act("view_uav"), then(PROC_REF(ui_act_view_uav)))
 	op("power_uav", ui_act("power_uav"), then(PROC_REF(ui_act_power_uav)))
@@ -41,14 +41,15 @@ CAPABILITIES(/datum/tgui_module/uav)
 	var/obj/item/modular_computer/mc_host = tgui_host()
 	if(istype(mc_host))
 		for(var/obj/item/uav/U in mc_host.paired_uavs) // a relation list: deleted UAVs leave it
-			paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = "\ref[U]")))
+			paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = ref_token(U))))
 
 	data["paired_uavs"] = paired_map
 	return data
 
 /datum/tgui_module/uav/proc/ui_act_switch_uav(datum/act/op/A, switch_uav)
 	var/mob/user = A.actor
-	var/obj/item/uav/U = switch_uav //This is a \ref to the UAV itself
+	var/obj/item/modular_computer/mc_host = tgui_host()
+	var/obj/item/uav/U = istype(mc_host) ? ui_member(switch_uav, mc_host.paired_uavs, /obj/item/uav) : null // the handle of a UAV this computer lists
 	if(!istype(U))
 		to_chat(user,span_warning("Something is blocking the connection to that UAV. In-person investigation is required."))
 		return FALSE
@@ -61,11 +62,13 @@ CAPABILITIES(/datum/tgui_module/uav)
 	return TRUE
 
 /datum/tgui_module/uav/proc/ui_act_del_uav(datum/act/op/A, del_uav)
-	var/refstring = del_uav //This is a \ref to the UAV itself
+	var/refstring = del_uav
 	var/obj/item/modular_computer/mc_host = tgui_host()
-	//Deleted UAVs have already left the (relation) list; match on the \ref the UI sent
+	if(!istype(mc_host))
+		return TRUE
+	//Deleted UAVs have already left the (relation) list; match on the handle the UI sent
 	for(var/obj/item/uav/U in mc_host.paired_uavs)
-		if("\ref[U]" == refstring)
+		if(ref_token(U) == refstring)
 			if(current_uav() == U)
 				set_current(null)
 			rel_remove(mc_host, nameof(/obj/item/modular_computer::paired_uavs), U)

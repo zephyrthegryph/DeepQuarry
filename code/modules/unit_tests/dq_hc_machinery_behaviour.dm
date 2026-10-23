@@ -142,12 +142,12 @@
 	TEST_ASSERT(length(data["categories"]) > 0, "the window lists the recipes")
 	var/list/first = GLOB.atmos_pipe_recipes[GLOB.atmos_pipe_recipes[1]]
 	var/datum/pipe_recipe/recipe = first[1]
-	press(H, D, "dispense_pipe", list("ref" = "\ref[recipe]"))
+	press(H, D, "dispense_pipe", list("ref" = ref_token(recipe)))
 	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe) in T, "a pipe is dispensed")
 	for(var/obj/item/pipe/P in T)
 		qdel(P)
 	D.set_unwrenched(1)
-	press(H, D, "dispense_pipe", list("ref" = "\ref[recipe]"))
+	press(H, D, "dispense_pipe", list("ref" = ref_token(recipe)))
 	TEST_ASSERT_NULL(locate(/obj/item/pipe) in T, "an unwrenched dispenser gives nothing")
 
 // ---------------------------------------------------------------------------------------------------------------------
