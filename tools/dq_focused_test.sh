@@ -601,7 +601,13 @@ print_result() {
 		[ -n "$ran_at" ] && echo "FOCUSED RUN TIME: queued $(( (ran_at - FOCUS_STARTED_EPOCH) / 60 )) min ($(( (ran_at - FOCUS_STARTED_EPOCH) )) s) for its compile/test slots (the 'Held by' lines above name the holders), then ran $(( ($(date +%s) - ran_at) / 60 )) min of the $CAP_MIN min cap"
 	fi
 	if [ -f "$CAP_MARKER" ]; then
-		echo "FOCUSED RUN CAPPED: the $CAP_MIN minute wall-clock cap was hit; the run's worlds were killed (guard log $GUARD_LOG). Name fewer or shorter tests."
+		local kind paused ran=0
+		kind="$(head -n 1 "$CAP_MARKER")"; paused="$(sed -n 's/^paused_s=//p' "$CAP_MARKER")"
+		[ -f "${WORLD_REGISTRY:-/nonexistent}/.running" ] && ran=$(( ($(date +%s) - $(tr -cd '0-9' <"$WORLD_REGISTRY/.running")) / 60 ))
+		echo "FOCUSED RUN CAPPED: the $CAP_MIN minute wall-clock cap was hit ($kind; queueing is not counted: ${paused:-0}s queued after the run started); the run's worlds were killed (guard log $GUARD_LOG). Name fewer or shorter tests."
+		echo "FOCUSED RESULT: CAPPED ($kind) after ${ran} min of the $CAP_MIN min cap, ${paused:-0}s queued and not counted; the tests did not finish, so there is no pass/fail (not a test failure)"
+		status_write failed "result=capped ($kind)" "passed=0" "failed=0" "exit_code=${2:-1}" "capped=1"
+		return 0
 	fi
 	local log="$1" rc="$2" json="${3:-}" line passed failed skipped note="" tail_note="" st=passed
 	line="$(grep -h 'Unit-test summary: [0-9]* passed' "$log" 2>/dev/null | tail -n 1 || true)"

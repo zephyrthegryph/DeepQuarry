@@ -52,7 +52,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	dq_heat_bind_flush()
 	var/list/pool = GLOB.dq_heat_body_pool
 	if(length(pool))
-		vg_heat_body_release_list(pool.Copy())
+		heat_release_log(vg_heat_body_release_list(pool.Copy()))
 		pool.Cut()
 
 /// A reserved handle from the pool (refilled in one call), or null if Rust refused.

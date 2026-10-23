@@ -29,6 +29,7 @@ g fetch -q origin
 
 export DQ_LANE_POOL_DIR="$tmp/pool" DQ_LANE_POOL_STATE="$tmp/state" DQ_LANE_POOL_SIZE=2 DQ_LANE_POOL_REPO="$tmp/repo" DQ_DMBC_DAEMON_DIR="$tmp/none"
 export DQ_LANE_POOL_NO_UPDATE=1
+export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
 pool() { bash "$tmp/repo/tools/dq_lane_pool.sh" "$@"; }
 
 p1="$(pool lease lane/a 2>/dev/null)"
@@ -119,6 +120,46 @@ echo 1024 "$2"
 rm -rf "$tmp/state/sizes"
 t0=$(date +%s); PATH="$tmp/slowbin:$PATH" pool status >/dev/null 2>&1; t1=$(date +%s)
 check "status returns promptly even when du is slow" '[ $((t1 - t0)) -lt 12 ]'
+
+# ---- stuck leases, cancel, suite cap (fresh pool and state; the earlier cases' leases are not involved) ----
+cp "$here/tools/dq_machine_slots.sh" "$tmp/repo/tools/"
+export DQ_LANE_POOL_DIR="$tmp/pool4" DQ_LANE_POOL_STATE="$tmp/state4" DQ_LANE_POOL_SIZE=2 DQ_SLOTS_DIR="$tmp/slots2" DQ_LANE_POOL_PROCS_CMD="echo nothing relevant"
+export DQ_LANE_POOL_STUCK_MIN=30 DQ_LANE_POOL_RECLAIM_IDLE_MIN=60
+sa="$(pool lease stuck/a 2>"$tmp/sa.err")"; sb="$(pool lease stuck/b 2>>"$tmp/sa.err")"; cat "$tmp/sa.err" >&2
+echo unsaved >>"$sa/a.txt"
+old() { # <slot dir> <slot name>: make every sign of activity two hours old
+	local gd; gd="$(git -C "$1" rev-parse --absolute-git-dir)"
+	touch -d "2 hours ago" "$DQ_LANE_POOL_STATE/pool-$2.lease" "$gd/HEAD" "$gd/logs/HEAD" "$1/a.txt"
+}
+pool status >/dev/null 2>&1
+old "$sa" 1; old "$sb" 2
+out="$(pool stuck 2>&1)"; rc=$?
+check "stuck lists a dirty and a clean idle lease and exits 1" '[ "$rc" -eq 1 ] && grep -q "STUCK pool-1 stuck/a.*dirty=1.*report-only" <<<"$out" && grep -q "STUCK pool-2 stuck/b.*dirty=0.*reclaimable" <<<"$out"'
+check "a notice file is written for a stuck lease" '[ -f "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ] && grep -q "dirty=1" "$DQ_LANE_POOL_STATE/notices/pool-1.stuck"'
+pool status >"$tmp/status.out" 2>&1
+check "status flags STUCK with the idle time" 'grep -q "pool-1  LEASED.*STUCK: no live process, idle 2h.*DIRTY" "$tmp/status.out" || { cat "$tmp/status.out" >&2; false; }'
+pool lease stuck/c >"$tmp/c.out" 2>"$tmp/c.err"; crc=$?
+check "the clean stuck lease is reclaimed, the dirty one is never wiped" '[ "$crc" -eq 0 ] && grep -q "reclaimed pool-2 (stuck" "$tmp/c.err" && [ "$(cat "$tmp/c.out")" = "$sb" ] && grep -q unsaved "$sa/a.txt" && [ "$(pool path stuck/a)" = "$sa" ]'
+DQ_LANE_POOL_PROCS_CMD="echo node run $sa/x" pool stuck >/dev/null 2>&1; lrc=$?
+check "a live process using the worktree makes it not stuck" '[ "$lrc" -eq 0 ]'
+check "the notice goes away once the lease is not stuck" '[ ! -f "$DQ_LANE_POOL_STATE/notices/pool-1.stuck" ]'
+
+DQ_LANE_POOL_WAIT_POLL=1 pool lease stuck/w --wait --timeout 3 >"$tmp/w.out" 2>"$tmp/w.err" &
+cw=$!
+sleep 4
+check "a queued lease shows in status" 'kill -0 "$cw" 2>/dev/null && pool status 2>&1 | grep -q "queue 1: stuck/w"'
+pool cancel stuck/w >/dev/null 2>&1
+wait "$cw"; cwrc=$?
+check "cancel makes the waiter exit 4 with a cancelled message, nothing killed" '[ "$cwrc" -eq 4 ] && grep -q cancelled "$tmp/w.err" && ! pool status 2>&1 | grep -q "stuck/w"'
+out="$(pool cancel stuck/nobody 2>&1)"; nrc=$?
+check "cancel of an unknown branch is an error" '[ "$nrc" -ne 0 ] && grep -q "no queued lease" <<<"$out"'
+
+capsize() { ( export DQ_SLOTS_DIR="$tmp/slots3" DQ_SLOTS_TEST_WORLD=2 DQ_SLOTS_MERGE_RESERVE=0 DQ_SLOT_WORKTREE=/x/pool-9 DQ_SLOT_PRIORITY="${PRIO:-1}"; . "$tmp/repo/tools/dq_machine_slots.sh"; slots_group_size test_world 2 ); }
+check "suite cap: no cap while nobody waits" '[ "$(capsize)" = 2 ]'
+mkdir -p "$tmp/slots3/test_world/queue"
+printf 'kind=bash\npid=%s\nworktree=/x/other\nlabel=f\nqueued=%s\n' "$$" "$(date +%s)" >"$tmp/slots3/test_world/queue/1-0000000000001-$$"
+check "suite cap: 1 world while another run waits, priority 0 exempt" '[ "$(capsize)" = 1 ] && [ "$(PRIO=0 capsize)" = 2 ]'
+check "suite cap: DQ_SLOTS_SUITE_MAX_WORLDS=2 always allows 2, =1 always caps" '[ "$(DQ_SLOTS_SUITE_MAX_WORLDS=2 capsize)" = 2 ] && [ "$(DQ_SLOTS_SUITE_MAX_WORLDS=1 capsize)" = 1 ]'
 
 [ "$fail" -eq 0 ] && echo "test_lane_pool: all passed" || echo "test_lane_pool: FAILED"
 exit "$fail"

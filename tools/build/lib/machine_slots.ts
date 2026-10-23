@@ -210,6 +210,28 @@ function markRunning(): void {
   } catch { /* best effort */ }
 }
 
+/** While a run waits in a queue it holds DQ_WORLD_REGISTRY/.waiting.<pid>.<n>: tools/dq_run_guard.js does not count that time against the
+ * run's wall-clock cap (same rule as _slots_mark_waiting in dq_machine_slots.sh). Returns a function that removes the marker. */
+let waitSeq = 0;
+function markWaiting(): () => void {
+  const dir = process.env.DQ_WORLD_REGISTRY;
+  if (!dir) return () => {};
+  const f = path.join(dir, `.waiting.${process.pid}.${++waitSeq}`);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(f, `${Math.floor(Date.now() / 1000)}\n`);
+  } catch {
+    // best effort
+  }
+  return () => {
+    try {
+      fs.rmSync(f, { force: true });
+    } catch {
+      // best effort
+    }
+  };
+}
+
 const held = new Set<HeldSlot>();
 let exitHooked = false;
 
@@ -227,12 +249,28 @@ function preheld(cls: SlotClass): boolean {
   return (process.env.DQ_SLOTS_PREHELD ?? '').split(',').includes(cls);
 }
 
+/** The suite cap (same rule as slots_suite_cap() in dq_machine_slots.sh): the most test worlds a priority-1 group may take.
+ * DQ_SLOTS_SUITE_MAX_WORLDS=N caps at N (0 = off); unset means 1 while another run is queued for the class, else no cap. New acquisitions only. */
+export function suiteCap(cls: SlotClass, prio: number): number | null {
+  if (cls !== 'test_world' || prio === 0) return null;
+  const raw = process.env.DQ_SLOTS_SUITE_MAX_WORLDS;
+  if (raw !== undefined && /^\d+$/.test(raw)) return Number(raw) >= 1 ? Number(raw) : null;
+  try {
+    const dir = path.join(slotsDir(), cls, 'queue');
+    for (const q of fs.readdirSync(dir)) if (!isDead(path.join(dir, q))) return 1;
+  } catch {
+    // no queue directory: nobody waits
+  }
+  return null;
+}
+
 /** How many slots a group that wants `want` of `cls` gets: the wish, clamped to the class capacity (a group larger than the budget
  * could never be satisfied). 0 when the class is off or the slots are held by a parent. */
 export function slotGroupSize(cls: SlotClass, want: number): number {
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return 0;
-  return Math.min(want, usableSlots(cls, max, priorityOf(worktree())));
+  const prio = priorityOf(worktree());
+  return Math.min(want, usableSlots(cls, max, prio), suiteCap(cls, prio) ?? Infinity);
 }
 
 /**
@@ -247,7 +285,7 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
   if (max <= 0 || preheld(cls)) return [];
   const prio = priorityOf(worktree());
   const usable = usableSlots(cls, max, prio) + extraSlots(cls, worktree());
-  want = Math.min(Math.max(want, 1), usable);
+  want = Math.min(Math.max(want, 1), usable, suiteCap(cls, prio) ?? Infinity);
   const dir = path.join(slotsDir(), cls);
   try {
     fs.mkdirSync(path.join(dir, 'queue'), { recursive: true });
@@ -264,6 +302,8 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
   let waited = 0;
   let last = 0;
   const taken: HeldSlot[] = [];
+  const endWait = markWaiting();
+  try {
   for (;;) {
     reap(dir, log);
     let order: string[] = [];
@@ -375,6 +415,9 @@ export async function acquireSlotGroup(cls: SlotClass, want: number, label: stri
     }
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     waited += Math.round(POLL_MS / 1000);
+  }
+  } finally {
+    endWait();
   }
 }
 
