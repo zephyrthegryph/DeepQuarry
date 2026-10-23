@@ -147,9 +147,9 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/mob/living/victim = victim_of(A)
 	if(!istype(victim) || QDELETED(holder))
 		return OP_FAILED
-	GLOB.act_next_actor = A.actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/B = ACT_ATTEMPT(holder, buckle, victim)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	if(ACT_REFUSED_BY(B))
 		var/datum/act_refusal/refused_B = B
 		A.reason = refused_B.reason || /datum/msg/op/not_available
@@ -234,9 +234,9 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	if(!istype(occupant) || occupant.buckled_to() != holder)
 		A.reason = /datum/msg/buckle/nobody
 		return OP_REFUSED
-	GLOB.act_next_actor = A.actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/U = ACT_ATTEMPT(holder, unbuckle, occupant)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	if(ACT_REFUSED_BY(U))
 		var/datum/act_refusal/refused_U = U
 		A.reason = refused_U.reason || /datum/msg/op/not_available

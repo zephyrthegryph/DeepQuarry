@@ -306,3 +306,31 @@ is recorded below with the patch for comparison.
 
 So the general path has to lose about 9 s of per-unit checking and whole-program link and composition
 on a body edit before step 6 can delete the patch; steps 4-6 are where that comes from.
+
+
+## Plan for the remaining patches (2026-10-23, lane `compiler/query-core-1`)
+
+Open special cases: the numeric-default patch (`declaration_patch.rs`, `try_default_patch`) and the append patch
+(`declaration_patch_append.rs`). Each is deleted when the general path (`retained_output`, whole-stage early cutoff) is
+no slower on the same edit. Measured today, production tree, pool-5, 4 workers, hot daemon, one numeric default of an
+unreferenced var changed (`var/initial_charges = 25` to `26`/`27`):
+
+| Path | Compile wall | Why |
+|---|---|---|
+| default patch | 12.8 s (patch itself 1.8 s; the rest is frontend, resources, input proofs) | rewrites one Variables record |
+| general path (patch removed) | 22.4 s (ABI 1.5, lowering 6.8, initializers 2.4, link 1.6, composition 2.0) | `retained_output` declines: "answers changed" |
+
+So deleting the default patch now regresses that edit kind by about 10 s; it was tried and reverted, nothing deleted.
+The cause is granularity: the retained-output admission compares one hash of all answers, so a changed var default (an
+answer read by its initializer and by `initial()`) reddens the whole stage.
+
+Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the six-session scenarios:
+
+1. Per-answer dirty set in `retained_output::admit`: replace the single answers hash with the set of changed answers and
+   their readers (reverse edges in `QueryDb`), so the stage reuses every unit whose read answers are unchanged.
+2. Re-evaluate only initializers whose recorded reads include a changed answer; splice their rows and the Variables
+   records through the same `retained_output` splice used for bodies.
+3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
+   `reads_initial`, `DefaultEdits` in `dm-tree` and the test's patch-count assertion.
+4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
+5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.

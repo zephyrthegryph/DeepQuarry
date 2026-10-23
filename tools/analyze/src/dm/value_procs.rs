@@ -13,10 +13,11 @@
 //! DM builtin in [`BUILTIN_VALUE_CALLS`].
 //!
 //! Two reads are values as well. A read of a builtin `world` var that is a number or text (`world.time`, [`WORLD_VALUE_VARS`]); and a read
-//! of a var that holds only values: every declaration of a var of that name in the tree has no type and a null, number or text initial
-//! value (an override too), and every assignment to a var of that name anywhere (any receiver, any operator) is a value. The var is judged
-//! by its name, so an assignment through a receiver of unknown type still counts against it. The proof does not see a write through
-//! `vars[...]` or a map instance var; the lint's own rules do not either.
+//! of a var that holds only values: the declaration of the var and every override of it has no type and a null, number or text initial
+//! value, and every assignment to it (any operator) is a value. A var is the type that declares it and its name, so two types that
+//! happen to name a var alike do not judge each other. An assignment reaches the one var its receiver's static type (or the proc's own
+//! type) finds; an assignment through a receiver of unknown type counts against every var of that name. The proof does not see a write
+//! through `vars[...]` or a map instance var; the lint's own rules do not either.
 //!
 //! A parameter is a value when it is untyped, takes a literal default, and every call of a proc of that name in the tree passes a value in
 //! its position (a call may reach any proc of its name, so this is judged by name). A name is ruled out when a definition is a verb or
@@ -48,6 +49,7 @@ pub const BUILTIN_VALUE_CALLS: &[&str] = &[
     "rand", "prob", "round", "floor", "ceil", "abs", "min", "max", "sqrt", "sin", "cos", "num2text", "text2num", "list2params", "length", "lowertext", "uppertext", "copytext",
     "replacetext", "findtext", "jointext", "get_dist", "nameof", "ckey", "clamp", "isnull", "initial", "md5", "replacetextEx", "turn", "get_dir", "html_decode", "html_encode",
     "text2ascii", "ascii2text", "file2text", "rgb", "istype", "ispath", "islist", "isnum", "istext", "time2text", "addtext", "splittext", "json_encode", "text2path", "trim",
+    "ref", "url_encode", "url_decode", "sha1", "findtextEx", "findlasttext", "findlasttextEx", "findtext_char", "length_char", "copytext_char", "sorttext", "sorttextEx", "log", "tan", "arcsin", "arccos", "arctan", "sign", "text",
 ];
 
 /// Builtin `world` vars that are a number, text or null.
@@ -81,6 +83,8 @@ pub(crate) struct ValueProcs<'a, 'k> {
     touched: RefCell<bool>,
     /// Var names that still hold only values (candidates start in; an assignment of a non-value takes a name out).
     vars: RefCell<HashMap<String, bool>>,
+    /// Var name -> every key of `vars` with that name, for a write whose receiver cannot be typed.
+    var_keys: HashMap<String, Vec<String>>,
     /// Set when a var name left `vars` during this pass: the definitions that read it must be looked at again.
     vars_changed: RefCell<bool>,
     /// Proc name -> per parameter position: still known to receive only values at every call in the tree. Judged by name, since a call
@@ -133,6 +137,12 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
         let parent: Vec<Option<usize>> = refs.iter().map(|r| r.parent_proc().filter(|p| !p.is_builtin()).and_then(|p| ids.get(&(type_key(&p.ty().get().path), p.name().to_string(), p.index())).copied())).collect();
         let vars = value_var_candidates(sem);
+        let mut var_keys: HashMap<String, Vec<String>> = HashMap::new();
+        for k in vars.keys() {
+            if let Some((_, n)) = k.rsplit_once("::") {
+                var_keys.entry(n.to_string()).or_default().push(k.clone());
+            }
+        }
         let def_names: Vec<String> = refs.iter().map(|r| r.name().to_string()).collect();
         let params = param_candidates(sem, &refs);
         let mut builtin_names: HashSet<String> = HashSet::new();
@@ -143,7 +153,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, builtin_names };
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), var_keys, vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, builtin_names };
         let mut live: Vec<usize> = (0..refs.len()).collect();
         loop {
             let mut changed = false;
@@ -259,6 +269,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                         self.call_value(owner, n, true)
                     }
                     Term::GlobalCall(n, _) => self.call_value("/", n, true),
+                    // `call_ext(lib, fn)(args)` hands back the external function's text (or null), never a reference.
+                    Term::ExternalCall { .. } => true,
                     Term::ParentCall(_) => match ctx.def {
                         Some(id) => self.parent_value(id),
                         None => false,
@@ -280,27 +292,52 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
     fn var_value(&self, ty: &str, name: &str) -> bool {
         *self.touched.borrow_mut() = true;
         let Some(sig) = self.sem.var_decl(ty, name) else { return false };
-        sig.declared.is_empty() && self.vars.borrow().get(name).copied().unwrap_or(false)
+        let Some(owner) = self.sem.var_owner(ty, name) else { return false };
+        sig.declared.is_empty() && self.vars.borrow().get(&var_key(&owner, name)).copied().unwrap_or(false)
     }
 
-    /// Takes out of `vars` every var name that `code` assigns a non-value to.
+    /// Takes out of `vars` every var that `code` assigns a non-value to. A write through a receiver of known type (or to the proc's own var)
+    /// takes out the one var it reaches, found by the type that declares it; a write through a receiver of unknown type takes out every
+    /// var of that name.
     fn scan_var_writes(&self, ctx: &Ctx, code: &Block) {
         for_each_expr(code, &mut |e| {
             let Expression::AssignOp { lhs, rhs, .. } = e else { return };
             let Expression::Base { term, follow } = strip_parens(lhs) else { return };
-            let name = match follow.last() {
+            let (name, owner): (String, Option<String>) = match follow.last() {
                 Some(last) => match &last.elem {
-                    Follow::Field(_, n) | Follow::StaticField(n) => n.to_string(),
+                    Follow::Field(_, n) => {
+                        let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
+                        let owner = match self.w.type_of(ctx.sc, &recv) {
+                            Some(t) if !t.is_empty() && t != "/" => self.sem.var_owner(&t, n),
+                            _ => None,
+                        };
+                        (n.to_string(), owner)
+                    }
+                    Follow::StaticField(n) => (n.to_string(), None),
                     _ => return,
                 },
                 None => match &term.elem {
-                    Term::Ident(n) if !ctx.sc.locals.contains_key(n.as_str()) && n != "." => n.to_string(),
+                    Term::Ident(n) if !ctx.sc.locals.contains_key(n.as_str()) && n != "." => {
+                        let owner = if ctx.sc.owner == "/" { None } else { self.sem.var_owner(ctx.sc.owner, n) };
+                        (n.to_string(), owner)
+                    }
                     _ => return,
                 },
             };
-            let live = self.vars.borrow().get(&name).copied().unwrap_or(false);
-            if live && !self.value_expr(ctx, rhs) {
-                self.vars.borrow_mut().insert(name, false);
+            let keys: Vec<String> = match owner {
+                Some(o) => vec![var_key(&o, &name)],
+                None => self.var_keys.get(&name).cloned().unwrap_or_default(),
+            };
+            if keys.is_empty() || !keys.iter().any(|k| self.vars.borrow().get(k).copied().unwrap_or(false)) {
+                return;
+            }
+            if !self.value_expr(ctx, rhs) {
+                let mut vars = self.vars.borrow_mut();
+                for k in keys {
+                    if let Some(b) = vars.get_mut(&k) {
+                        *b = false;
+                    }
+                }
                 *self.vars_changed.borrow_mut() = true;
             }
         });
@@ -620,12 +657,18 @@ fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> HashMap<String, Vec<bool>> {
     out
 }
 
-/// The names of the vars that could hold only values: every declaration or override of the name has no type and a null, number or text
-/// initial value.
+/// The key of a var in `vars`: the type that declares it and its name (a subtype's override is the same var).
+fn var_key(owner: &str, name: &str) -> String {
+    format!("{owner}::{name}")
+}
+
+/// The vars that could hold only values, by declaring type and name: every declaration or override of the var has no type and a null,
+/// number or text initial value.
 fn value_var_candidates(sem: &Sem) -> HashMap<String, bool> {
     use dreammaker::constants::Constant;
     let mut out: HashMap<String, bool> = HashMap::new();
     for ty in sem.objtree.iter_types() {
+        let path = type_key(&ty.get().path);
         for (name, tv) in ty.get().vars.iter() {
             let typed = tv.declaration.as_ref().map(|d| !d.var_type.type_path.is_empty()).unwrap_or(false);
             let init_ok = match (&tv.value.constant, &tv.value.expression) {
@@ -633,7 +676,8 @@ fn value_var_candidates(sem: &Sem) -> HashMap<String, bool> {
                 (None, None) => true,
                 _ => false,
             };
-            let slot = out.entry(name.to_string()).or_insert(true);
+            let owner = sem.var_owner(&path, name).unwrap_or_else(|| path.clone());
+            let slot = out.entry(var_key(&owner, name)).or_insert(true);
             if typed || !init_ok {
                 *slot = false;
             }

@@ -100,9 +100,9 @@
 		if(moves)
 			reason = move_into_refusal(holder, slot_id, item, actor, ledger_slot, units)
 		if(!reason && thing && moves)
-			GLOB.act_next_actor = actor
+			rel_set(GLOB, nameof(GLOB.act_next_actor), actor)
 			F = ACT_ATTEMPT(holder, insert, thing, is_var ? slot_id : into_slot, units)
-			GLOB.act_next_actor = null
+			rel_clear(GLOB, nameof(GLOB.act_next_actor))
 			if(ACT_REFUSED_BY(F))
 				var/datum/act_refusal/hooked = F
 				F = null
