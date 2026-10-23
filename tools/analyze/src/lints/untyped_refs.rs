@@ -5,13 +5,17 @@
 //! * `typed`: a value the model types as an atom or datum (a typed local, parameter, field, `new /type`), or
 //! * `call`: the result of a proc call the model cannot type (unknown counts: the value may be an entity),
 //!
-//! is reported at the var's declaration. Declare the var with its type and a relation (`ref_one`, `owns_one`, `weak = TRUE`), or give it a type
+//! is reported at the var's declaration. A call is a value, not an entity source, when it resolves (by the proc's identity: the calling type's
+//! lookup, a global proc, or the static type of the receiver) to procs whose every return path yields a number, text or null
+//! (`dm::value_procs`: a fixpoint over the whole tree, never a list of names), or to a DM builtin that returns one.
+//! Declare the var with its type and a relation (`ref_one`, `owns_one`, `weak = TRUE`), or give it a type
 //! that is not a reference. An untyped list is `stored_refs`'s list rule, not this one. Its own shrink-only baseline.
 
 use std::collections::{BTreeMap, HashMap};
 
 use dreammaker::ast::{AssignOp, Expression, Follow, Term};
 
+use crate::dm::value_procs::ValueProcs;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Kinds, Place, ProcScope, Walker};
 use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
@@ -39,7 +43,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "typed", hint: HINT }, RuleMeta { name: "call", hint: HINT }],
     allow: &[],
-    lists: &["exempt_types", "value_calls"],
+    lists: &["exempt_types"],
 };
 
 struct Untyped;
@@ -74,28 +78,6 @@ fn is_call(e: &Expression) -> bool {
     matches!(term.elem, Term::Call(..) | Term::GlobalCall(..))
 }
 
-/// Builtin calls whose result is never an entity: numbers, text, tests and the like.
-fn is_value_call(e: &Expression, extra: &[String]) -> bool {
-    let e = strip_parens(e);
-    let Expression::Base { term, follow } = e else { return false };
-    if !follow.is_empty() {
-        return false;
-    }
-    let name = match &term.elem {
-        Term::Call(n, _) | Term::GlobalCall(n, _) => n.as_str(),
-        _ => return false,
-    };
-    if extra.iter().any(|n| n == name) {
-        return true;
-    }
-    matches!(
-        name,
-        "rand" | "prob" | "round" | "floor" | "ceil" | "abs" | "min" | "max" | "sqrt" | "sin" | "cos" | "num2text" | "text2num" | "list2params" | "length" | "lowertext"
-            | "uppertext" | "copytext" | "replacetext" | "findtext" | "jointext" | "get_dist" | "nameof" | "REF" | "ckey" | "trim" | "clamp" | "text" | "isnull"
-            | "initial" | "md5" | "replacetextEx" | "turn" | "get_dir" | "html_decode" | "html_encode" | "text2ascii" | "ascii2text" | "file2text" | "rgb" | "ref" | "istype" | "ispath" | "islist" | "isnum" | "istext" | "time2text" | "addtext" | "splittext" | "json_encode" | "sanitize" | "text2path"
-    )
-}
-
 impl Lint for Untyped {
     fn meta(&self) -> &Meta {
         &META
@@ -108,8 +90,8 @@ impl Lint for Untyped {
         };
         let sem: &Sem = &sem;
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: Vec::new(), cache: Default::default() };
-        let value_calls = cx.list("value_calls").to_vec();
         let w = Walker { sem, kinds: &kinds };
+        let values = ValueProcs::build(sem, &w);
         let root = &cx.tree.root;
         // (declaring type, var) -> (rule, "file:line of the first assignment")
         let mut found: BTreeMap<(String, String), (&'static str, String)> = BTreeMap::new();
@@ -143,7 +125,7 @@ impl Lint for Untyped {
                             let rule = match w.type_of(&sc, rhs) {
                                 Some(t) if kinds.is_ref(&t) => "typed",
                                 Some(_) => return,
-                                None if is_call(rhs) && !is_value_call(rhs, &value_calls) => "call",
+                                None if is_call(rhs) && !values.is_value_call(&sc, rhs) => "call",
                                 None => return,
                             };
                             let at = format!("{}:{}", rel, engine_line(root, rel, line));

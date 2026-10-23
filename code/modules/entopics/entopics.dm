@@ -6,6 +6,7 @@
 	var/icon_state
 	var/plane
 	var/layer
+	/// Weak handle of the atom it is attached to (read it with holder()); the entopic does not keep its holder alive.
 	var/holder
 	var/alpha = 200 //Holo-ish
 	var/override = FALSE
@@ -51,7 +52,7 @@
 		tempimage.suffix = suffix
 
 	//Save these for later
-	holder = aholder
+	rel_set(src, nameof(holder), aholder)
 	if(aicon)
 		icon = aicon
 	if(icon_state)
@@ -60,6 +61,9 @@
 	my_image = tempimage
 
 	register_entopic()
+
+CAPABILITIES(/datum/entopic)
+	ref_one(nameof(holder), /atom, weak = TRUE)
 
 // it is unregistered from its viewers.
 /datum/entopic/on_destroy(force)

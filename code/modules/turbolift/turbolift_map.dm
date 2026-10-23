@@ -205,7 +205,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 						rel_set(newdoor, nameof(newdoor.floor), cfloor)
 						rel_add(cfloor, nameof(cfloor.doors), firedoor) //ition for fire doors
 						rel_set(firedoor, nameof(firedoor.turbolift_floor), cfloor)
-						firedoor.glass = cfloor //ition for fire doors
+						firedoor.glass = TRUE // the firedoor is glass
 
 		// Place exterior control panel.
 		var/turf/placing = locate(ext_panel_x, ext_panel_y, cz)

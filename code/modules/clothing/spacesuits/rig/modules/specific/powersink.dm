@@ -14,10 +14,11 @@
 
 	var/tmp/atom/interfaced_with	// Currently draining power from this device.
 	var/total_power_drained = 0
-	var/drain_loc
+	var/atom/drain_loc
 
 CAPABILITIES(/obj/item/rig_module/power_sink)
 	ref_one(nameof(interfaced_with), /atom)
+	ref_one(nameof(drain_loc), /atom)
 
 /obj/item/rig_module/power_sink/deactivate(forced = FALSE, mob/user)
 
@@ -57,7 +58,7 @@ CAPABILITIES(/obj/item/rig_module/power_sink)
 
 	to_chat(H, span_danger("You begin draining power from [target]!"))
 	rel_set(src, nameof(interfaced_with), target)
-	drain_loc = interfaced_with().loc
+	rel_set(src, nameof(drain_loc), interfaced_with().loc)
 
 	fx_sparks(holder, 5, FALSE)
 	play_sfx(H, SFX_EFFECTS_SPARKS2)
@@ -127,7 +128,7 @@ CAPABILITIES(/obj/item/rig_module/power_sink)
 			to_chat(M, span_notice(span_bold("Total power drained from [interfaced_with()]:") + " [round(total_power_drained*CELLRATE)] cell units."))
 		interfaced_with().drain_power(0,1,0) // Damage the victim.
 
-	drain_loc = null
+	rel_clear(src, nameof(drain_loc))
 	rel_clear(src, nameof(interfaced_with))
 	total_power_drained = 0
 

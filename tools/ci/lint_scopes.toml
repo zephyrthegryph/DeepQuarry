@@ -1686,8 +1686,6 @@ exempt_prefixes = ["code/engine/_generated/"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
 [lint.untyped.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
-# Global procs whose result is always a number or text, never an entity (checked at every return).
-value_calls = ["expiry_written", "stationtime2text", "sanitize_integer", "sanitize_float", "sanitizeSafe", "sanitize_simple", "sanitize_filename", "ref_token", "km_bundle_key", "reputation_rank", "heat_entry_value", "ucfirsts", "tlv_level", "stat_rule_is_boolean", "op_now", "defib_window_length"]
 
 # untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
 [lint.untyped_member]

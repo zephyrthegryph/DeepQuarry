@@ -38,7 +38,7 @@ CAPABILITIES(/datum/entity_narrate)
 ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add ref)", "Saves a reference of target mob to be called when narrating.", "Fun.Narrate", E as obj|mob|turf in orange(world.view))
 	//Making sure we got the list datum on our client.
 	if(!user.entity_narrate_holder)
-		user.entity_narrate_holder = new /datum/entity_narrate()
+		rel_set(user, nameof(user.entity_narrate_holder), new /datum/entity_narrate())
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))
 		return
 	//Since we extended to include all atoms, we're shutting things down with a guard clause for ghosts
@@ -93,7 +93,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 	var/client/user = context.request.answerer.client
 	// The original verb replay recreates a missing holder before a target denial.
 	if(!user.entity_narrate_holder)
-		user.entity_narrate_holder = new /datum/entity_narrate()
+		rel_set(user, nameof(user.entity_narrate_holder), new /datum/entity_narrate())
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 	var/atom/target = context.request.subject
 	var/unique_name = context.request.value
@@ -125,7 +125,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 
 /datum/admin_verb/remove_mob_for_narration/proc/current_holder(client/user)
 	if(!user.entity_narrate_holder)
-		user.entity_narrate_holder = new /datum/entity_narrate()
+		rel_set(user, nameof(user.entity_narrate_holder), new /datum/entity_narrate())
 		to_chat(user, "No references were added yet! First add references!")
 		return
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))
@@ -175,7 +175,7 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
 	if(!user.entity_narrate_holder)
-		user.entity_narrate_holder = new /datum/entity_narrate()
+		rel_set(user, nameof(user.entity_narrate_holder), new /datum/entity_narrate())
 		to_chat(user, "No references were added yet! First add references!")
 		return
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))
@@ -222,7 +222,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
 	if(!user.entity_narrate_holder)
-		user.entity_narrate_holder = new /datum/entity_narrate()
+		rel_set(user, nameof(user.entity_narrate_holder), new /datum/entity_narrate())
 		to_chat(user, "No references were added yet! First add references!")
 		return
 	if(!istype(user.entity_narrate_holder, /datum/entity_narrate))

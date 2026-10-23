@@ -26,7 +26,7 @@
 	offline_vision_restriction = FALSE
 	open = TRUE
 	cell_type =  /obj/item/cell/protean
-	var/assimilated_rig
+	var/obj/item/rig/assimilated_rig
 	var/can_assimilate_rig = TRUE
 	/// The protean is dormant: the cluster is a dead weight that protects nobody.
 	var/inert = FALSE
@@ -147,6 +147,7 @@ MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
 	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)
+	ref_one(nameof(assimilated_rig), /obj/item/rig)
 	configure(item_worn(flags = NOSTRIP))
 	configure(item_protection(siemens = 1))
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
@@ -693,7 +694,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	set_icon_state(R.icon_state)
 	user.drop_item(R)
 	R.forceMove(src)
-	assimilated_rig = R
+	rel_set(src, nameof(assimilated_rig), R)
 	slowdown = (initial(R.slowdown) *0.5)
 	offline_slowdown = slowdown
 
@@ -730,7 +731,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		offline_slowdown = initial(offline_slowdown)
 		wearer()?.worn_protection_changed()
 		user.put_in_hands(assimilated_rig)
-		assimilated_rig = null
+		rel_clear(src, nameof(assimilated_rig))
 		spent(tempRig)
 	else
 		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")

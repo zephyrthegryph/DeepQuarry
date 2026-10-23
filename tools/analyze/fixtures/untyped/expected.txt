@@ -1,0 +1,9 @@
+call	code/modules/vals/vals.dm	18
+call	code/modules/vals/vals.dm	86
+call	code/modules/vals/vals.dm	87
+call	code/modules/vals/vals.dm	90
+call	code/modules/vals/vals.dm	92
+call	code/modules/vals/vals.dm	94
+call	code/modules/vals/vals.dm	97
+call	code/modules/vals/vals.dm	98
+call	code/modules/vals/vals.dm	99

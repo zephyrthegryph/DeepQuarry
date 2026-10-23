@@ -32,7 +32,7 @@
 #define TABLE_KEY(part) (isnull(part) ? "t" : "t:[part]")
 
 /// The entity whose tables a pass is re-reading, or null outside a pass.
-GLOBAL_VAR(stat_pass_entity)
+GLOBAL_DATUM(stat_pass_entity, /datum)
 /// The stats (skey -> def) the open pass changed a row of.
 GLOBAL_LIST_EMPTY(stat_pass_touched)
 /// The values (skey -> value) those stats held when the pass first touched them.

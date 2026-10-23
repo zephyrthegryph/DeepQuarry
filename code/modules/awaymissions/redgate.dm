@@ -234,11 +234,11 @@ CAPABILITIES(/obj/structure/redgate/away)
 	icon_state = "flag"
 	var/laser_team = "neutral"
 	w_class = ITEMSIZE_NO_CONTAINER //no stashing the flag in a bag for you, bucko!
-	var/start_pos
+	var/atom/start_pos
 	var/flag_return_delay = 3 SECONDS	//how long you have to hold onto your team's flag before it returns home
 
 /obj/item/laserdome_flag/proc/remember_start_pos()
-	start_pos = src.loc	//save our starting location for later
+	rel_set(src, nameof(start_pos), src.loc)	//save our starting location for later
 
 /obj/item/laserdome_flag/proc/flag_return_failed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -256,6 +256,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
+	ref_one(nameof(start_pos), /atom)
 	configure(obj_rules(redgate_allowed = FALSE))
 	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
@@ -378,8 +379,8 @@ CAPABILITIES(/obj/structure/flag_base)
 			)
 	item_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER	//no shoving it in your backpack to hide it
-	var/start_pos
-	var/last_holder
+	var/atom/start_pos
+	var/mob/living/carbon/human/last_holder
 	var/last_team
 
 /obj/item/laserdome_hyperball_prop
@@ -394,9 +395,11 @@ CAPABILITIES(/obj/item/laserdome_hyperball_prop)
 	configure(obj_rules(redgate_allowed = FALSE))
 
 /obj/item/laserdome_hyperball/proc/remember_start_pos()
-	start_pos = src.loc	//save our starting location for later
+	rel_set(src, nameof(start_pos), src.loc)	//save our starting location for later
 
 CAPABILITIES(/obj/item/laserdome_hyperball)
+	ref_one(nameof(start_pos), /atom)
+	ref_one(nameof(last_holder), /mob/living/carbon/human)
 	configure(obj_rules(redgate_allowed = FALSE))
 	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
@@ -427,7 +430,7 @@ CAPABILITIES(/obj/item/laserdome_hyperball)
 
 	act_message(user, src, others = span_warning("%U% has taken %T%!"))
 	//cache our grabber and their team, for throw interactions with the goals later
-	last_holder = M
+	rel_set(src, nameof(last_holder), M)
 	last_team = grabbing_team
 	//finally, announcer calls out which team has the ball
 	GLOB.global_announcer.autosay("[capitalize(grabbing_team)] team on offense!","Laserdome Announcer","Entertainment")

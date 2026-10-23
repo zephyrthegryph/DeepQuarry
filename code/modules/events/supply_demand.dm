@@ -193,10 +193,11 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 /datum/supply_demand_order/thing
 	var/type_path	// Type path of the item required
 
-/datum/supply_demand_order/thing/New(qty, atom/type_path)
+/datum/supply_demand_order/thing/New(qty, type_path) // type_path: the item's type path
 	..()
+	var/atom/proto = type_path
 	src.type_path = type_path
-	src.name = initial(type_path.name)
+	src.name = initial(proto.name)
 	if(!name)
 		log_game("supply_demand event: Order for thing [type_path] has no name.")
 

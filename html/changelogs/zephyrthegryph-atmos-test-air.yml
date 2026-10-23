@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unit tests: a leftover-air guard logs a test that leaves turf air changed and puts it back; world-turf atmos tests now snapshot their air"
