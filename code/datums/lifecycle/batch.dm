@@ -172,7 +172,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		vg_power_unbind_node_list(batch.unbind_power_nodes)
 		power_topology_edited(/datum/destroy_batch)
 	if(length(batch.release_heat_bodies))
-		vg_heat_body_release_list(batch.release_heat_bodies)
+		heat_release_log(vg_heat_body_release_list(batch.release_heat_bodies))
 	if(length(batch.unbind_movers))
 		SSvg.unregister_many(batch.unbind_movers)
 	if(length(batch.unbind_entities))
@@ -203,7 +203,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	if(batch?.doomed[owner])
 		batch.release_heat_bodies += handle
 		return
-	vg_heat_body_release(handle)
+	heat_release_log(vg_heat_body_release(handle))
 
 /// Drops the power node of entity `entity`, owned by `owner`: queued for the
 /// batch's one call when `owner` is doomed, dropped now otherwise.

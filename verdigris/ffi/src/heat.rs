@@ -1228,7 +1228,13 @@ fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
 /// coupling entities and despawns it at once.
 #[auxmacros::bind("/proc/heat_body_release")]
 fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
-    if let Some(e) = body(&h)? {
+    RELEASE_NOTES.with_borrow_mut(Vec::clear);
+    release_one(&h)?;
+    take_release_notes()
+}
+
+fn release_one(h: &ByondValue) -> Result<()> {
+    if let Some(e) = body(h)? {
         RESERVED.with_borrow_mut(|r| r.remove(&e.index()));
         let body_i = e.index();
         with_world(|w| {
@@ -1239,18 +1245,19 @@ fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
             Ok(())
         })?;
     }
-    Ok(ByondValue::null())
+    Ok(())
 }
 
 /// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
 /// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
-/// Zero/null and already-released entries are skipped.
+/// Zero/null and already-released entries are skipped. Returns a log line for any release held at equilibrium, else null.
 #[auxmacros::bind("/proc/heat_body_release_list")]
 fn heat_body_release_list(bodies: ByondValue) -> Result<ByondValue> {
+    RELEASE_NOTES.with_borrow_mut(Vec::clear);
     for h in bodies.get_list_values()? {
-        heat_body_release(h)?;
+        release_one(&h)?;
     }
-    Ok(ByondValue::null())
+    take_release_notes()
 }
 
 /// Settles `body` if it is relaxing, then moves whatever it holds above
@@ -1289,8 +1296,15 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
                     );
                     let excess = b.energy - baseline;
                     if excess != 0.0 && !g.reservoir {
+                        // The solid takes what it would at equilibrium with the body, not the whole excess.
+                        let (taken, dissipated) =
+                            equilibrium_split(excess, f64::from(g.capacity), b.capacity);
+                        note_release(&format!(
+                            "solid cell {} took {taken:.0} J of {excess:.0} J, {dissipated:.0} J dissipated (body {:.0} J/K, solid {:.0} J/K)",
+                            coupling.cell, b.capacity, g.capacity
+                        ), dissipated);
                         #[allow(clippy::cast_possible_truncation)]
-                        let m = excess as f32;
+                        let m = taken as f32;
                         let mut cell = cell;
                         cell.energy += m;
                         cell.temperature = cell.energy / g.capacity;
@@ -1301,15 +1315,21 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
         }
         1 => {
             if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
-                if let Some(t) = (coupling.kind == gas_kind::TURF)
-                    .then(|| turf_gas_temperature(w, coupling.target))
+                if let Some((t, c_air, reservoir)) = (coupling.kind == gas_kind::TURF)
+                    .then(|| turf_gas_thermal(w, coupling.target))
                     .flatten()
                 {
                     #[allow(clippy::cast_possible_truncation)]
                     let baseline = f64::from(
                         vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0),
                     );
-                    turf_gas_heat(w, coupling.target, b.energy - baseline);
+                    let excess = b.energy - baseline;
+                    if reservoir || c_air <= 0.0 {
+                        // A reservoir (a planet's air) absorbs any amount without changing temperature.
+                        turf_gas_heat(w, coupling.target, excess);
+                    } else {
+                        release_into_turf(w, coupling.target, excess, f64::from(c_air), b.capacity);
+                    }
                 }
             }
         }
@@ -1514,12 +1534,81 @@ fn heat_reset() -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
-/// A turf's gas temperature (turf-air couplings), if it has gas.
-fn turf_gas_temperature(w: &vg_core::world::World, cell: u32) -> Option<f32> {
+thread_local! {
+    /// What this call's releases would have pushed past equilibrium, for DM to log.
+    static RELEASE_NOTES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Records a release that was held at the body's equilibrium with its surroundings (`dissipated` is the part left out).
+fn note_release(text: &str, dissipated: f64) {
+    if dissipated.abs() > 0.0 {
+        RELEASE_NOTES.with_borrow_mut(|n| n.push(text.to_owned()));
+    }
+}
+
+/// Drains the notes into one string for DM to log, or null when no release was held back.
+fn take_release_notes() -> Result<ByondValue> {
+    let notes = RELEASE_NOTES.with_borrow_mut(std::mem::take);
+    if notes.is_empty() {
+        return Ok(ByondValue::null());
+    }
+    Ok(ByondValue::new_str(notes.join("; "))?)
+}
+
+/// Splits a released body's `excess` joules between an environment of heat capacity `c_env` and the body's own `c_body`: the environment
+/// takes the share that brings it to the temperature the two would reach in contact (`excess * c_env / (c_env + c_body)`), never past
+/// the body's own temperature. Returns `(taken, left over)`; the rest stays with the vanishing body.
+fn equilibrium_split(excess: f64, c_env: f64, c_body: f64) -> (f64, f64) {
+    if c_env <= 0.0 || c_body <= 0.0 {
+        return (excess, 0.0);
+    }
+    let taken = excess * c_env / (c_env + c_body);
+    (taken, excess - taken)
+}
+
+/// Deposits a released body's `excess` joules into a turf: its air and its floor solid reach their common equilibrium with the body
+/// (air + floor + body heat capacities), no hotter than the body was, and what that leaves in the body is dissipated and logged.
+fn release_into_turf(w: &mut vg_core::world::World, cell: u32, excess: f64, c_air: f64, c_body: f64) {
+    // The floor shares the cell index (a turf's gas and solid are one grid cell); a space or non-node solid takes nothing.
+    let mut c_floor = 0.0f64;
+    if let Ok(field) = field() {
+        if let Some(g) = w.sim_mut().port(field.geometry).read(cell) {
+            if g.is_node() && !g.reservoir {
+                c_floor = f64::from(g.capacity);
+            }
+        }
+    }
+    let c_env = c_air + c_floor;
+    let (taken, dissipated) = equilibrium_split(excess, c_env, c_body);
+    let to_air = taken * c_air / c_env;
+    let to_floor = taken - to_air;
+    turf_gas_heat(w, cell, to_air);
+    if to_floor != 0.0 {
+        if let Ok(field) = field() {
+            let _ = w
+                .sim_mut()
+                .port(field.cells)
+                .submit(cell, vg_heat::SolidCmd::Add(to_floor as f32));
+        }
+    }
+    note_release(
+        &format!(
+            "turf cell {cell}: a body release of {excess:.0} J would have heated {c_air:.0} J/K of air by {:.0} K; air took {to_air:.0} J, floor {to_floor:.0} J, {dissipated:.0} J dissipated (body {c_body:.0} J/K)",
+            excess / c_air
+        ),
+        dissipated,
+    );
+}
+
+/// A turf's gas temperature, heat capacity and whether it is a reservoir, if it has gas.
+fn turf_gas_thermal(w: &vg_core::world::World, cell: u32) -> Option<(f32, f32, bool)> {
     use vg_core::thermo::Thermal;
     let key = crate::gas::turf_key().ok()?;
     let (gas, geom) = crate::gas::turf_read(w, key, cell)?;
-    geom.is_node().then(|| gas.thermal(geom.capacity).0)
+    geom.is_node().then(|| {
+        let (t, c) = gas.thermal(geom.capacity);
+        (t, c, geom.reservoir)
+    })
 }
 
 /// Adds `joules` to a turf's gas (a released body's excess), as a command.
