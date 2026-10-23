@@ -54,7 +54,6 @@ stored	code/modules/contracts/medical_trial_side_contracts.dm	"shipment_ref" = R
 stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
 stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
 stored	code/modules/contracts/social_framework.dm	"atom_id" = REF(source),
-stored	code/modules/economy/cargo_market.dm	"ref" = REF(crate),
 stored	code/modules/economy/sales_lots.dm	snapshot[REF(cargo)] = "[cargo.type]"
 stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
 stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
@@ -99,18 +98,6 @@ stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(techwebs),
 stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(experiment)
-stored	code/modules/research/tg/server_control.dm	"server_ref" = REF(server),
-stored	code/modules/research/tg/server_control.dm	"console_ref" = REF(console),
-stored	code/modules/resleeving/computers.dm	"pod" = REF(pod),
-stored	code/modules/resleeving/computers.dm	"spod" = REF(spod),
-stored	code/modules/resleeving/computers.dm	"sleever" = REF(resleever),
-stored	code/modules/resleeving/computers.dm	data["selected_pod"] = REF(selected_pod())
-stored	code/modules/resleeving/computers.dm	data["selected_printer"] = REF(selected_printer())
-stored	code/modules/resleeving/computers.dm	data["selected_sleever"] = REF(selected_sleever())
-stored	code/modules/resleeving/computers.dm	"recref" = REF(BR)
-stored	code/modules/resleeving/computers.dm	"recref" = REF(MR)
-stored	code/modules/resleeving/computers.dm	activerecord = REF(active_br),
-stored	code/modules/resleeving/computers.dm	activerecord = REF(active_mr),
 stored	code/modules/stockmarket/computer.dm	"REF" = REF(S),
 stored	code/modules/stockmarket/computer.dm	"REF" = REF(S),
 stored	code/modules/tgui/modules/admin_shuttle_controller.dm	"ref" = REF(S),
@@ -150,27 +137,16 @@ ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
 ref_macro	code/game/machinery/computer/medical.dm	records[++records.len] = list("ref" = "\ref[R]", "id" = R.fields["id"], "name" = R.fields["name"])
 ref_macro	code/game/machinery/computer/medical.dm	. += list(list("name" = v.fields["name"], "D" = "\ref[v]"))
-ref_macro	code/game/machinery/computer/message.dm	"ref" = "\ref[pda]",
-ref_macro	code/game/machinery/computer/message.dm	"ref" = "\ref[rc]",
-ref_macro	code/game/machinery/computer/message.dm	sendPDAs["[P.name]"] = "\ref[P]"
 ref_macro	code/game/machinery/computer/message.dm	M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
 ref_macro	code/game/machinery/computer/prisoner.dm	"ref" = "\ref[C]"
 ref_macro	code/game/machinery/computer/prisoner.dm	"ref" = "\ref[track]",
 ref_macro	code/game/machinery/computer/security.dm	"ref" = "\ref[R]",
 ref_macro	code/game/machinery/computer/skills.dm	"ref" = "\ref[R]",
-ref_macro	code/game/machinery/computer/supply.dm	"ref" = "\ref[S]",
-ref_macro	code/game/machinery/computer/supply.dm	"ref" = "\ref[E]",
-ref_macro	code/game/machinery/computer/supply.dm	"ref" = "\ref[P]"
-ref_macro	code/game/machinery/computer/supply.dm	"ref" = "\ref[P]",
 ref_macro	code/game/machinery/hologram.dm	to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
 ref_macro	code/game/machinery/jukebox.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
 ref_macro	code/game/machinery/pipe/pipe_dispenser.dm	r += list(list("pipe_name" = info.name, "ref" = "\ref[info]"))
 ref_macro	code/game/machinery/pipe/pipe_dispenser.dm	"ref" = "\ref[info]",
 ref_macro	code/game/machinery/pointdefense.dm	turret["ref"] = "\ref[PD]"
-ref_macro	code/game/machinery/telecomms/machine_interactions.dm	"ref" = "\ref[T]",
-ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Removed \ref[T] [T.name] from linked entities. %-")
-ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-")
-ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Successfully stored \ref[src] [name] in buffer %-")
 ref_macro	code/game/objects/effects/chem/chemsmoke.dm	more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
 ref_macro	code/game/objects/items.dm	M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
 ref_macro	code/game/objects/items/blueprints.dm	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
@@ -314,8 +290,6 @@ ref_macro	code/modules/mob/mob.dm	to_chat(src, span_filter_notice(span_warning("
 ref_macro	code/modules/mob/mob.dm	return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>")
 ref_macro	code/modules/nifsoft/software/14_commlink.dm	nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>)")
 ref_macro	code/modules/nifsoft/software/14_commlink.dm	nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
-ref_macro	code/modules/overmap/ships/computers/engine_control.dm	log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
-ref_macro	code/modules/overmap/ships/computers/engine_control.dm	rdata["eng_reference"] = "\ref[E]"
 ref_macro	code/modules/overmap/ships/computers/helm.dm	rdata["reference"] = "\ref[R]"
 ref_macro	code/modules/overmap/ships/computers/sensors.dm	contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
 ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];confirm=1'>Send fax</A> "

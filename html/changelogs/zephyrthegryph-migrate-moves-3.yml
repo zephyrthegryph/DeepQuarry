@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 113 clean clothing files to code/content/clothing; added tools/ci/move_candidates.sh to pick clean move candidates"
+  - bugfix: "SQL row types with several columns name their column order instead of relying on the order of vars (admin rank flags)"

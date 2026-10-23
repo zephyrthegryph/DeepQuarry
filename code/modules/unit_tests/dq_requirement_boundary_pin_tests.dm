@@ -1119,19 +1119,34 @@
 
 /datum/unit_test/dq_requirement_eighth_boundary/topic_inherited_parent/Run()
 	var/mob/living/carbon/human/external = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/dq_tgui_transport/pilot = allocate(/mob/living/carbon/human/dq_tgui_transport, external.loc)
+	var/mob/living/carbon/human/dq_tgui_transport/bystander = allocate(/mob/living/carbon/human/dq_tgui_transport, external.loc)
+	bystander.enable_godmode()
+	var/mob/living/carbon/human/dq_tgui_transport/denied_obj/pilot = allocate(/mob/living/carbon/human/dq_tgui_transport/denied_obj, external.loc)
 	pilot.enable_godmode()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, external.loc)
 	TEST_ASSERT_NULL(external.client, "The external actor really has no attached client")
 	var/datum/act/op/A = take(/datum/act/op)
-	A.actor = external
 	A.holder = mech
 	A.target = mech
-	TEST_ASSERT_EQUAL(mech.tgui_status(external, mech.tgui_state(external)), STATUS_CLOSE, "A real nonpilot preserves parent denial")
-	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot, pilot), "The real containment API establishes a pilot")
+	// the window's real state: a clientless person is closed out, one with a client-like transport works it
+	TEST_ASSERT_EQUAL(mech.tgui_status(external, mech.tgui_state(external)), STATUS_CLOSE, "A clientless nonpilot preserves the parent client denial")
+	TEST_ASSERT_EQUAL(mech.tgui_status(bystander, mech.tgui_state(bystander)), STATUS_INTERACTIVE, "A nonpilot with a transport works the window next to the suit")
+	// the buttons that need no pilot: the parent CanUseObjTopic denial binds a nonpilot, and the pilot exception beats it
+	A.actor = pilot
+	TEST_ASSERT_EQUAL(mech.actor_reaches(A), MSG(op/topic_gate), "A nonpilot the parent CanUseObjTopic refuses is refused")
+	A.actor = bystander
+	TEST_ASSERT_NULL(mech.actor_reaches(A), "A nonpilot the parent accepts is not")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot), "The real containment API establishes a pilot")
 	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), pilot, "The real slot identifies that pilot")
 	TEST_ASSERT_EQUAL(mech.tgui_status(pilot, mech.tgui_state(pilot)), STATUS_INTERACTIVE, "The actual pilot works the exosuit's window")
-	TEST_ASSERT_EQUAL(mech.tgui_status(external, mech.tgui_state(external)), STATUS_CLOSE, "A different actor remains refused after boarding")
+	A.actor = pilot
+	TEST_ASSERT_NULL(mech.actor_reaches(A), "The pilot exception beats the parent denial")
+	A.actor = bystander
+	TEST_ASSERT_NULL(mech.actor_reaches(A), "A different actor is judged on its own after boarding")
+	var/lights = mech.lights
+	own(test_ui(bystander, mech, "toggle_lights"))
+	TEST_ASSERT_EQUAL(mech.lights, lights, "A different actor still cannot work the pilot's buttons")
+	A.actor = external
 	for(var/type in list(/obj/item/rcd, /obj/item/areaeditor, /obj/item/sleevemate))
 		var/obj/item/I = allocate(type, external.loc)
 		A.holder = I

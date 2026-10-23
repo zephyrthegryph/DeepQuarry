@@ -457,6 +457,7 @@ legacy_forms_converted = [
   "code/modules/catalogue/",
   "code/modules/client/",
   "code/modules/clothing/",
+  "code/content/clothing/",
   "code/modules/communicator/",
   "code/modules/compass/",
   "code/modules/contracts/",
