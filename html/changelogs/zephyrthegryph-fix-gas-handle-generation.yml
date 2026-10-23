@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A gas mixture that outlived its slot, turf cell or pipe region can no longer read or write the mixture that reuses it; the stale handle is refused with a runtime naming the owner"

@@ -51,6 +51,9 @@ pub(crate) struct SlotTable {
     slot_of: std::collections::HashMap<u32, u32>,
     raw_of: Vec<Option<u32>>,
     free: Vec<u32>,
+    /// Per slot, bumped when the slot is retired: a datum stamped before holds
+    /// a stale handle even when the slot is handed to another region.
+    generation: Vec<u32>,
 }
 
 impl SlotTable {
@@ -60,6 +63,7 @@ impl SlotTable {
         }
         let s = self.free.pop().unwrap_or_else(|| {
             self.raw_of.push(None);
+            self.generation.push(0);
             u32::try_from(self.raw_of.len() - 1).unwrap_or(u32::MAX)
         });
         self.raw_of[s as usize] = Some(raw);
@@ -70,8 +74,13 @@ impl SlotTable {
     pub(crate) fn retire(&mut self, raw: u32) -> Option<u32> {
         let s = self.slot_of.remove(&raw)?;
         self.raw_of[s as usize] = None;
+        self.generation[s as usize] = mix::next_generation(self.generation[s as usize]);
         self.free.push(s);
         Some(s)
+    }
+
+    pub(crate) fn generation_of(&self, slot: u32) -> u32 {
+        self.generation.get(slot as usize).copied().unwrap_or(0)
     }
 
     pub(crate) fn raw_slot_of(&self, raw: u32) -> Option<u32> {
@@ -87,6 +96,11 @@ std::thread_local! {
     /// Region raw handle <-> DM-facing compact slot. See the module docs
     /// above.
     pub(crate) static REGION_SLOTS: std::cell::RefCell<SlotTable> = std::cell::RefCell::default();
+}
+
+/// The generation of a compacted pipe slot (see [`mix::generation`]).
+pub(crate) fn pipe_slot_generation(slot: u32) -> u32 {
+    REGION_SLOTS.with(|s| s.borrow().generation_of(slot))
 }
 
 /// The pipe region a compacted DM-facing `slot` names, or `None` once it
@@ -510,6 +524,22 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         return Ok(());
     }
     let unregister = || {
+        // The cell has no owner now: every datum stamped for it goes stale. The
+        // turf's own datum is re-stamped, so the turf can register again; a turf
+        // whose datum names this cell with an old stamp (a replaced turf's
+        // leftover) may not unregister the new owner's cell.
+        let air = src.read_var_id(byond_string!("air")).ok().filter(|a| !a.is_null());
+        let named = air
+            .as_ref()
+            .and_then(|a| MixRef::of_unchecked(a).ok())
+            .filter(|(r, _)| *r == MixRef::Turf(cell));
+        if let (Some(a), Some((r, held))) = (&air, named) {
+            mix::check_generation(r, held).map_err(|stale| stale.report(a))?;
+        }
+        mix::bump_turf_generation(cell);
+        if let Some(mut a) = air.filter(|_| named.is_some()) {
+            MixRef::Turf(cell).store(&mut a)?;
+        }
         with_world(|w| {
             unregister_cell(w, key, cell);
             Ok(())
@@ -553,6 +583,8 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
     let Some(mix) = mix::load(r) else {
         bail!("turf air has no gas mixture ({r:?})");
     };
+    // A new owner for the cell: the datum of the turf it replaced is stale.
+    mix::bump_turf_generation(cell);
     let mut value = mix::cell_of_mixture(&mix);
     if mix.is_immutable() || is_set(src.read_number_id(byond_string!("immutable_atmos"))) {
         value.flags |= vg_gas::cell::flags::IMMUTABLE;

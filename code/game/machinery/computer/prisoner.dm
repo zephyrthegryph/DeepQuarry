@@ -17,9 +17,9 @@
 CAPABILITIES(/obj/machinery/computer/prisoner)
 	configure(light_glow(color = "#a91515"))
 	interface("PrisonerManagement")
-	op("inject", ui_act("inject", arg("imp"), arg("val", num())), then(PROC_REF(ui_act_inject)))
+	op("inject", ui_act("inject", arg("imp", schema_text(32)), arg("val", num())), then(PROC_REF(ui_act_inject)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
-	op("warn", ui_act("warn", arg("imp", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), then(PROC_REF(ui_act_warn)))
+	op("warn", ui_act("warn", arg("imp", schema_text(32))), asks(/datum/prompt/text, fields = list("title" = "Enter your message here!", "question" = "Message:")), then(PROC_REF(ui_act_warn)))
 
 /obj/machinery/computer/prisoner/ui_data(datum/act/eval/A)
 	var/list/chemImplants = list()
@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 			chemImplants.Add(list(list(
 				"host" = C.imp_in(),
 				"units" = C.reagents.total_volume,
-				"ref" = "\ref[C]"
+				"ref" = ref_token(C)
 			)))
 		for(var/obj/item/implant/tracking/track in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
 			var/turf/T = get_turf(track)
@@ -52,15 +52,35 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 				loc_display = "E4R@4"
 			trackImplants.Add(list(list(
 				"host" = L,
-				"ref" = "\ref[track]",
+				"ref" = ref_token(track),
 				"id" = "[track.id]",
 				"loc" = "[loc_display]",
 			)))
 
 	return list("locked" = !screen, "chemImplants" = chemImplants, "trackImplants" = trackImplants)
 
+/// The implants the window lists as chemical ones: none while the console is locked.
+/obj/machinery/computer/prisoner/proc/listed_chem_implants()
+	var/list/listed = list()
+	if(!screen)
+		return listed
+	for(var/obj/item/implant/chem/C in REGISTRY_MEMBERS(REGISTRY_CHEM_IMPLANTS))
+		if(get_turf(C) && C.implanted)
+			listed += C
+	return listed
+
+/// The implants the window lists as tracking ones: none while the console is locked.
+/obj/machinery/computer/prisoner/proc/listed_tracking_implants()
+	var/list/listed = list()
+	if(!screen)
+		return listed
+	for(var/obj/item/implant/tracking/track in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
+		if(get_turf(track) && track.implanted)
+			listed += track
+	return listed
+
 /obj/machinery/computer/prisoner/proc/ui_act_inject(datum/act/op/A, imp, val)
-	var/obj/item/implant/I = ui_ref(imp, null, /obj/item/implant)
+	var/obj/item/implant/I = ui_member(imp, listed_chem_implants(), /obj/item/implant/chem)
 	if(I)
 		I.activate(clamp(val, 0, 10))
 	. = TRUE
@@ -80,7 +100,7 @@ CAPABILITIES(/obj/machinery/computer/prisoner)
 	var/message = R?.value
 	if(!message)
 		return OP_OK
-	var/obj/item/implant/I = ui_ref(imp, null, /obj/item/implant)
+	var/obj/item/implant/I = ui_member(imp, listed_tracking_implants(), /obj/item/implant/tracking)
 	if(I && I.imp_in())
 		to_chat(I.imp_in(), span_notice("You hear a voice in your head saying: '[message]'"))
 	return OP_OK

@@ -188,8 +188,8 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/modules/library/lib_items.dm` | 1 |
 | `code/modules/maintenance_panels/maintpanel_stack.dm` | 1 |
 | `code/modules/materials/sheets/organic/wood.dm` | 1 |
-| `code/modules/medical/instruments/instruments.dm` | 3 |
-| `code/modules/medical/instruments/resuscitation.dm` | 3 |
+| `code/content/medical/instruments/instruments.dm` | 3 |
+| `code/content/medical/instruments/resuscitation.dm` | 3 |
 | `code/modules/mob/living/silicon/robot/component.dm` | 2 |
 | `code/modules/mob/living/simple_mob/simple_mob.dm` | 1 |
 | `code/modules/nifsoft/nif_softshop.dm` | 3 |

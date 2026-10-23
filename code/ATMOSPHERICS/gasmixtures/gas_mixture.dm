@@ -59,6 +59,10 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	/// register_gasmixture_hook_ffi (verdigris GasArena::register_mix). Null until
 	/// registered. See code/ATMOSPHERICS/README.md.
 	var/_extools_pointer_gasmixture
+	/// The generation of the owner (slot, turf cell or pipe region) when this datum was stamped
+	/// with its handle. Every bind refuses a handle whose owner has moved on, so a datum that
+	/// outlives its mixture can never read or write whatever reuses the slot.
+	var/_extools_generation_gasmixture
 	/// Volume the mixture was created with; read by register_mix to size the
 	/// Rust-side mixture at New(). The live volume lives in the arena (return_volume()).
 	var/initial_volume = CELL_VOLUME
@@ -76,7 +80,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	// _extools_pointer_gasmixture.
 	vg_register_gasmixture_hook(src)
 
-/// Phase 1 (unbind): frees the Rust arena slot for reuse.
+/// Phase 1 (unbind): frees the Rust arena slot for reuse and clears the datum's handle.
 /datum/gas_mixture/lifecycle_unbind()
 	. = ..()
 	vg_unregister_gasmixture_hook(src)
@@ -130,8 +134,13 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	return vg_hook_mix_revision(src)
 
 /// Stable Rust arena ID used for dependency subscriptions.
+/// Null for a datum with no handle; a stale handle is refused with a runtime naming this datum.
 /datum/gas_mixture/proc/arena_id()
-	return _extools_pointer_gasmixture
+	return vg_checked_arena_id(src)
+
+/// Named in the runtime a bind raises for a stale handle.
+/datum/gas_mixture/proc/handle_owner_label()
+	return "[type] (handle [_extools_pointer_gasmixture], generation [_extools_generation_gasmixture])"
 
 /// Batched read: one FFI call returns pressure, temperature, volume, total moles,
 /// heat capacity and every gas's moles for each mixture in `mixtures` (nulls read

@@ -110,11 +110,26 @@ fn gas_retain_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
 /// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
 /// (the cell and the region own it).
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]
-fn unregister_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
+fn unregister_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
+    // A stale handle frees nothing: its slot belongs to whoever reuses it.
     if let Ok(MixRef::Main(slot)) = MixRef::of(&src) {
         mix::free(slot);
     }
+    // The datum is dead: it no longer names any mixture.
+    MixRef::clear(&mut src)?;
     Ok(ByondValue::null())
+}
+
+/// The id other binds take for this mixture (watches, pipe ports, pump
+/// transfers). Null for a datum with no handle; a stale handle is refused.
+#[auxmacros::bind("/datum/gas_mixture/proc/__arena_id")]
+fn checked_arena_id(src: ByondValue) -> Result<ByondValue> {
+    let Ok((r, held)) = MixRef::of_unchecked(&src) else {
+        return Ok(ByondValue::null());
+    };
+    mix::check_generation(r, held).map_err(|stale| stale.report(&src))?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok((r.id() as f32).into())
 }
 
 /// The mixture's gas revision (bumped whenever its gas changes).
@@ -249,8 +264,15 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
     let refs = mixtures
         .get_list_values()?
         .iter()
-        .map(|mix| MixRef::of(mix).ok())
-        .collect::<Vec<_>>();
+        .map(|mix| match MixRef::of_unchecked(mix) {
+            // Null or unregistered: reads as zeroes.
+            Err(_) => Ok(None),
+            // A stale handle is a bug: refuse it, never read zeroes for it.
+            Ok((r, held)) => mix::check_generation(r, held)
+                .map(|()| Some(r))
+                .map_err(|stale| stale.report(mix)),
+        })
+        .collect::<Result<Vec<_>>>()?;
     let stride = GAS_READ_HEADER + gas::GAS_COUNT;
     let values = {
         let mut values = Vec::with_capacity(refs.len() * stride);
