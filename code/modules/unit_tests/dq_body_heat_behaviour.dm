@@ -11,7 +11,7 @@
 
 /// A sealed square room of standard air, `radius` tiles from its centre, with its air, floor and walls at `kelvin`: its turfs, centre first,
 /// or null when the map has no clear block that size.
-/proc/body_heat_room(radius, kelvin)
+/proc/body_heat_room(radius, kelvin, datum/unit_test/dq_body_heat/test)
 	dq_atmos_test_restore_walls()
 	var/turf/centre = null
 	for(var/turf/simulated/floor/cand in world)
@@ -20,6 +20,10 @@
 			break
 	if(!centre)
 		return null
+	// The room's heat conducts through its ring into the floors around it (the mines' sand, three deck levels of rooms): they go back too.
+	test?.restore_solids_after(centre, radius + 15)
+	for(var/turf/open/N in block(locate(max(1, centre.x - radius - 15), max(1, centre.y - radius - 15), centre.z), locate(min(world.maxx, centre.x + radius + 15), min(world.maxy, centre.y + radius + 15), centre.z)))
+		dq_atmos_test_snapshot_air(N) // the air the room's heat spreads into (the mines' sand): restore_atmos() puts it back
 	var/list/room = list(centre)
 	for(var/turf/T as anything in block(locate(centre.x - radius, centre.y - radius, centre.z), locate(centre.x + radius, centre.y + radius, centre.z)))
 		if(T != centre)
@@ -35,38 +39,49 @@
 			if(N)
 				ring += N
 	for(var/turf/N as anything in ring)
+		body_heat_remember_solid(N) // before the wall replaces it: the floor's own temperature is what goes back
 		if(istype(N, /turf/simulated/wall) || N.blocks_air)
 			continue
 		GLOB.dq_atmos_test_walled_turfs[N] = N.type
 		N.ChangeTurf(/turf/simulated/wall)
 	SSair.run_gas_frames(1)
 	for(var/turf/open/T as anything in room)
+		body_heat_remember_solid(T)
 		dq_atmos_test_snapshot_air(T)
 		dq_atmos_test_fill_standard_air(T, kelvin)
 		heat_set_solid(T, kelvin)
-		GLOB.body_heat_room_solids |= T
 	for(var/turf/N as anything in ring)
 		heat_set_solid(N, kelvin)
-		GLOB.body_heat_room_solids |= N
 	// The band outside the walls takes some of a hot room's heat through them: it goes back to how it was too.
 	for(var/turf/B as anything in block(locate(centre.x - radius - 2, centre.y - radius - 2, centre.z), locate(centre.x + radius + 2, centre.y + radius + 2, centre.z)))
 		if(!(B in room) && !(B in ring))
-			GLOB.body_heat_room_solids |= B
+			body_heat_remember_solid(B)
 			if(istype(B, /turf/open))
 				dq_atmos_test_snapshot_air(B)
 	SSair.run_gas_frames(1)
 	return room
 
-/// Turfs whose solid a room set: body_heat_room_restore() brings them back to room temperature, so the next test's room starts clean.
+/// Turfs whose solid a room may change, by place: "x,y,z" -> list(x, y, z, solid temperature, seed temperature) as they were before the room. body_heat_room_restore()
+/// puts each back to exactly that, so the next test (and the Wild West Mines floors, which are not 20 C) start as they were found.
 GLOBAL_LIST_EMPTY(body_heat_room_solids)
 
-/proc/body_heat_room_restore()
+/proc/body_heat_remember_solid(turf/T)
+	if(!T)
+		return
+	var/key = "[T.x],[T.y],[T.z]"
+	if(GLOB.body_heat_room_solids[key])
+		return
+	GLOB.body_heat_room_solids[key] = list(T.x, T.y, T.z, T.get_temperature(), T.initial_temperature)
+
+/proc/body_heat_room_restore(datum/unit_test/dq_body_heat/test)
 	// The walls go back to what they were first (a turf keeps the temperature it was set to), then every solid the room set is at 20 °C.
 	dq_atmos_test_restore_state()
-	for(var/turf/T as anything in GLOB.body_heat_room_solids)
+	for(var/key in GLOB.body_heat_room_solids)
+		var/list/was = GLOB.body_heat_room_solids[key]
+		var/turf/T = locate(was[1], was[2], was[3])
 		if(T)
-			T.initial_temperature = T20C // a turf the room walled registers again at its seed temperature: the seed too
-			heat_set_solid(T, T20C)
+			heat_set_solid(T, was[4])
+			T.initial_temperature = was[5] // a turf the room walled registers again at its seed temperature: the seed too
 	GLOB.body_heat_room_solids.Cut()
 
 /// Every turf within `radius` of `centre` is a plain, empty floor with air.
@@ -107,11 +122,17 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	abstract_type = /datum/unit_test/dq_body_heat
 
 /datum/unit_test/dq_body_heat/Run()
+	restore_ambient_after() // the frames below advance world time: the cryogenic rooms warm and the map thermostats act, whatever this test does
 	test_driver_begin()
 	test_rng(1)
 	run_body_heat()
 	test_driver_end()
-	body_heat_room_restore()
+	// Deleting a body hands the energy it holds above its surroundings to the air of its turf (atom/Destroy -> release_heat_body()): the humans go now, while
+	// their room's air is still snapshotted, so restore_atmos() puts it back. Left to the end of the test they would heat the real floor's air for the next one.
+	for(var/datum/body_thing as anything in allocated?.Copy())
+		if(!QDELETED(body_thing))
+			qdel(body_thing, TRUE)
+	body_heat_room_restore(src)
 
 /datum/unit_test/dq_body_heat/proc/run_body_heat()
 	return
@@ -128,7 +149,7 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	priority = TEST_LONGER
 
 /datum/unit_test/dq_body_heat/cold_room_chills/run_body_heat()
-	var/list/room = body_heat_room(4, T0C - 50)
+	var/list/room = body_heat_room(4, T0C - 50, src)
 	TEST_ASSERT_NOTNULL(room, "no clear 9x9 block for the cold room")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, room[1])
 	var/list/temps = body_heat_frames(list(H), 20)
@@ -160,7 +181,7 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	priority = TEST_LONGER
 
 /datum/unit_test/dq_body_heat/hot_room_heats/run_body_heat()
-	var/list/room = body_heat_room(4, 400)
+	var/list/room = body_heat_room(4, 400, src)
 	TEST_ASSERT_NOTNULL(room, "no clear 9x9 block for the hot room")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, room[1])
 	var/list/temps = body_heat_frames(list(H), 20)
@@ -172,7 +193,7 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	priority = TEST_LONGER
 
 /datum/unit_test/dq_body_heat/fire_burns/run_body_heat()
-	var/list/room = body_heat_room(4, 1000)
+	var/list/room = body_heat_room(4, 1000, src)
 	TEST_ASSERT_NOTNULL(room, "no clear 9x9 block for the burning room")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, room[1])
 	var/injury0 = H.injury_load(INJURY_CATEGORY_THERMAL)
@@ -189,7 +210,7 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	priority = TEST_LONGER
 
 /datum/unit_test/dq_body_heat/crowd_does_not_heat_room/run_body_heat()
-	var/list/room = body_heat_room(4, T20C)
+	var/list/room = body_heat_room(4, T20C, src)
 	TEST_ASSERT_NOTNULL(room, "no clear 9x9 block for the room")
 	var/list/people = list()
 	for(var/i in 1 to 10)

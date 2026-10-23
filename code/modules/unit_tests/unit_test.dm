@@ -725,6 +725,139 @@ GLOBAL_VAR(dq_test_select_names)
 		if(!QDELETED(AM))
 			heat_set(AM, was[AM], HEAT_SOURCE_OTHER)
 
+/// Floors colder than this when the test starts are the map's cryogenic rooms, which drift by design; the heat guard does not judge them.
+#define UNIT_TEST_SOLID_COLD_ROOM_KELVIN 200
+
+/// The smallest change of a floor's own (solid) temperature the heat guard calls a leak, K. A hot floor warms the sealed test room's air through
+/// its own conduction, which no air snapshot sees.
+#define UNIT_TEST_SOLID_LEAK_KELVIN 5
+
+/// The most a floor outside the map-machinery rooms may drift while the clock runs and still be put back as ambient, K.
+#define UNIT_TEST_AMBIENT_FLOOR_KELVIN 15
+
+/// Turfs a test declared it writes to (dq_atmos_test_snapshot_air()), cleared as each test starts: the ambient restore never touches them, so a leak there still fails.
+GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
+
+/// For a test that advances the clock (steps the native world, or waits on an alarm): remembers the air, and the floor temperature, of the rooms that change on
+/// their own while world time passes, and puts them back when the test ends (a deferred cleanup). Those rooms are the cryogenic ones (colder than the heat guard's
+/// cold-room line when the test starts), which warm toward room temperature by design, and every area that holds map atmospherics machinery (vents, freezers,
+/// air alarms), whose thermostats and pumps act on the air and floors as the clock runs. Every area and turf it puts back is logged with the change in moles and
+/// temperature ("AMBIENT RESTORE"), so the drift stays visible. It never touches a turf the test wrote to itself (dq_atmos_test_snapshot_air()), the machines'
+/// settings, power or anything outside those rooms: those are still judged, and a change there still fails the test.
+/datum/unit_test/proc/restore_ambient_after()
+	var/list/all = unit_test_air_snapshot()
+	var/list/turfs = all["turfs"]
+	var/list/readings = all["readings"]
+	var/list/machine_areas = list()
+	for(var/obj/machinery/M as anything in unit_test_machines_tracked())
+		if(!QDELETED(M))
+			machine_areas[get_area(M)] = TRUE
+	var/list/kept_turfs = list()
+	var/list/kept_readings = list()
+	var/list/kept_solids = list()
+	var/list/solids = unit_test_solid_snapshot()
+	for(var/i in 1 to length(turfs))
+		var/turf/open/T = turfs[i]
+		var/offset = (i - 1) * GAS_READ_STRIDE
+		var/cold = readings[offset + GAS_READ_TOTAL_MOLES] > 0 && readings[offset + GAS_READ_TEMPERATURE] < UNIT_TEST_SOLID_COLD_ROOM_KELVIN
+		if(cold || machine_areas[get_area(T)])
+			kept_turfs += T
+			kept_readings += readings.Copy(offset + 1, offset + GAS_READ_STRIDE + 1)
+			if(!isnull(solids[T]) && machine_areas[get_area(T)])
+				kept_solids[T] = solids[T]
+	// The floors anywhere else drift too as the clock runs (the heat field relaxing toward its neighbours), by a few kelvin: those go back as well. A change of more
+	// than UNIT_TEST_AMBIENT_FLOOR_KELVIN outside the rooms above is a heat the test made, and still fails it.
+	for(var/turf/open/T as anything in solids)
+		if(isnull(kept_solids[T]))
+			kept_solids[T] = solids[T]
+	// An APC with nothing feeding it runs its cell flat as the clock runs and its area goes dark (the Strange Location's, in the Wild West Mines level, after a few
+	// minutes of world time): the charge and the channels it had when the test began.
+	var/list/apcs = list()
+	for(var/obj/machinery/power/apc/A in world)
+		if(A.cell && A.area)
+			apcs[A] = list(A.cell.charge, A.area.power_equip, A.area.power_light, A.area.power_environ)
+	defer_cleanup(src, PROC_REF(put_ambient_back), list("turfs" = kept_turfs, "readings" = kept_readings, "solids" = kept_solids, "apcs" = apcs, "machine_areas" = machine_areas))
+
+/datum/unit_test/proc/put_ambient_back(list/was)
+	var/list/solids = was["solids"]
+	var/list/machine_rooms = was["machine_areas"]
+	for(var/turf/open/T as anything in solids)
+		if(QDELETED(T) || GLOB.dq_atmos_test_declared[T])
+			continue
+		var/kelvin = vg_heat_turf_temperature(T)
+		if(!isnum(kelvin) || abs(kelvin - solids[T]) <= 0.5)
+			continue
+		if(!machine_rooms[get_area(T)] && abs(kelvin - solids[T]) > UNIT_TEST_AMBIENT_FLOOR_KELVIN)
+			continue // outside the machinery rooms only a few kelvin of drift is ambient
+		log_test("AMBIENT RESTORE:   floor [get_area(T)] ([T.x],[T.y],[T.z]): [round(kelvin, 0.1)] -> [round(solids[T], 0.1)] K")
+		var/seed = T.initial_temperature
+		heat_set_solid(T, solids[T])
+		T.initial_temperature = seed
+	var/list/apcs = was["apcs"]
+	for(var/obj/machinery/power/apc/A as anything in apcs)
+		if(QDELETED(A) || !A.cell || !A.area)
+			continue
+		var/list/row = apcs[A]
+		var/area/room = A.area
+		if(A.cell.charge == row[1] && room.power_equip == row[2] && room.power_light == row[3] && room.power_environ == row[4])
+			continue
+		log_test("AMBIENT RESTORE:   APC [A] in [room]: cell charge [round(row[1], 1)] -> now [round(A.cell.charge, 1)] J, channels equip/light/environ [row[2]]/[row[3]]/[row[4]] -> now [room.power_equip]/[room.power_light]/[room.power_environ]; put back")
+		A.cell.set_charge(row[1])
+		room.set_channels(row[2], row[3], row[4])
+		A.push_to_rust()
+	SSair.run_gas_frames(1)
+	// The air last, after the step that lands the floors: the map's vent pumps keep moving gas on every step, so a step after this would move it again.
+	// Not the turfs this test wrote to: a leak there is the test's own.
+	var/list/turfs = was["turfs"]
+	var/list/readings = was["readings"]
+	var/list/own_turfs = list()
+	var/list/own_readings = list()
+	for(var/i in 1 to length(turfs))
+		if(GLOB.dq_atmos_test_declared[turfs[i]])
+			continue
+		own_turfs += turfs[i]
+		own_readings += readings.Copy((i - 1) * GAS_READ_STRIDE + 1, i * GAS_READ_STRIDE + 1)
+	var/list/diff = unit_test_air_diff(list("turfs" = own_turfs, "readings" = own_readings), TRUE)
+	var/list/by_area = list()
+	for(var/line in diff["lines"])
+		var/area_name = copytext(line, 1, findtext(line, " ("))
+		by_area[area_name] = (by_area[area_name] || 0) + 1
+	for(var/area_name in by_area)
+		log_test("AMBIENT RESTORE: [type] put back the air of [by_area[area_name]] turf(s) in [area_name]")
+	for(var/line in diff["lines"])
+		log_test("AMBIENT RESTORE:   air [line]")
+
+/// Remembers the guarded settings of every watched machine standing in the area of `T` (the alarms an alarm test trips there) and puts them back when the test ends
+/// (a deferred cleanup), through each var's tracked setter, logging each var it changes ("MACHINE RESTORE").
+/datum/unit_test/proc/restore_area_machines_after(turf/T)
+	var/area/room = get_area(T)
+	var/list/all = unit_test_machine_snapshot()
+	var/list/was = list()
+	for(var/obj/machinery/M as anything in all)
+		if(get_area(M) == room)
+			was[M] = all[M]
+	defer_cleanup(src, PROC_REF(put_area_machines_back), was)
+
+/datum/unit_test/proc/put_area_machines_back(list/was)
+	unit_test_put_vars_back(was, "MACHINE RESTORE")
+
+/// Puts the guarded vars of each datum in `before` (datum -> list(name -> value)) back, through its tracked setter when it has one.
+/proc/unit_test_put_vars_back(list/before, log_label)
+	for(var/datum/D as anything in before)
+		if(QDELETED(D))
+			continue
+		var/list/row = before[D]
+		for(var/name in row)
+			if(D.vars[name] == row[name])
+				continue
+			if(log_label)
+				log_test("[log_label]: [D] ([D.type]) [name] = [D.vars[name]] -> [row[name]]")
+			var/setter = "set_[name]"
+			if(hascall(D, setter))
+				call(D, setter)(row[name])
+			else
+				D.vars[name] = row[name]
+
 /// A deferred cleanup that is a global proc taking no holder: defer_cleanup(null, GLOBAL_PROC_REF(x), args...).
 /datum/unit_test/proc/run_global_cleanup(proc_ref, ...)
 	call(proc_ref)(arglist(args.Copy(2)))
@@ -1005,12 +1138,18 @@ GLOBAL_VAR(dq_test_select_names)
 	staleness_test_begin()
 	var/duration = 0
 	var/tick_start_index = 0
+	// The gas wakes the world has pending (a thermostat machine's own pipe or room changing since the last test) are delivered before the baseline is taken, as the next
+	// tick would deliver them: a test that wakes its alarm through SSmachines.wake_dirty_gas_subscribers() delivers the whole queue, and a machine in another room
+	// (the telecomms freezer) would otherwise switch on inside that test and be blamed on it.
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
 	var/watching_before = length(GLOB.op_watchers)
 	var/list/air_before = unit_test_air_snapshot()
 	var/hotspots_before = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
+	GLOB.dq_atmos_test_declared.Cut()
 	var/list/machines_before = unit_test_machine_snapshot()
 	var/list/solids_before = unit_test_solid_snapshot()
 	var/list/areas_before = unit_test_area_snapshot()
@@ -1132,6 +1271,9 @@ GLOBAL_VAR(dq_test_select_names)
 /// GLOB vars the state guard ignores: run bookkeeping and counters that move on their own.
 /proc/unit_test_globals_ignored()
 	var/static/list/ignored = list(
+		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
+		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
+		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
@@ -1251,6 +1393,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/list/now = read_gas_mixtures(unit_test_airs_of(turfs))
 	var/leaked = 0
 	var/list/examples = list()
+	var/list/lines = list()
 	for(var/i in 1 to length(turfs))
 		var/turf/open/T = turfs[i]
 		if(QDELETED(T) || !istype(T) || !T.air)
@@ -1260,6 +1403,7 @@ GLOBAL_VAR(dq_test_select_names)
 		if(!changed)
 			continue
 		leaked++
+		lines += "[get_area(T)] ([T.x],[T.y],[T.z]): [changed]; moles [round(was[offset + GAS_READ_TOTAL_MOLES], 0.1)] -> [round(now[offset + GAS_READ_TOTAL_MOLES], 0.1)], [round(was[offset + GAS_READ_TEMPERATURE], 0.1)] -> [round(now[offset + GAS_READ_TEMPERATURE], 0.1)] K"
 		if(length(examples) < 3)
 			var/list/standing = list()
 			for(var/atom/movable/thing in T)
@@ -1268,7 +1412,7 @@ GLOBAL_VAR(dq_test_select_names)
 			examples += "[T] ([T.x],[T.y],[T.z]): [changed][T.active_hotspot ? ", a hotspot burns here" : ""][length(standing) ? ", holds [jointext(standing, "/")]" : ""]"
 		if(put_back)
 			unit_test_air_put_back(T, was, offset)
-	return list("leaked" = leaked, "examples" = examples)
+	return list("leaked" = leaked, "examples" = examples, "lines" = lines)
 
 /// Logs "STATE LEAK" (and adds it to `found`, which fails the test) for each turf whose air a test left changed (unit_test_air_diff()), and for a hotspot the test left burning. Test air is
 /// shared: the clear floors the atmos helpers find are the same turfs for every test, so air a test leaves behind drifts through the
@@ -1349,11 +1493,6 @@ GLOBAL_VAR(dq_test_select_names)
 				log_test(text)
 				found?.Add(text)
 
-/// The smallest change of a floor's own (solid) temperature the heat guard calls a leak, K. A hot floor warms the sealed test room's air through
-/// its own conduction, which no air snapshot sees.
-#define UNIT_TEST_SOLID_LEAK_KELVIN 5
-/// Floors colder than this when the test starts are the map's cryogenic rooms, which drift by design; the heat guard does not judge them.
-#define UNIT_TEST_SOLID_COLD_ROOM_KELVIN 200
 
 /// The solid temperature of every watched turf, as turf -> K.
 /proc/unit_test_solid_snapshot()
