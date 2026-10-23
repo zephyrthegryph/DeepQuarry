@@ -20,6 +20,7 @@ CAPABILITIES(/obj/structure/boulder)
 	op("measure_multi", item(/obj/item/xenoarch_multi_tool), label("Measure"), begins(MSG(boulder/multi_begins)), wait(PROC_REF(multi_time)), then(PROC_REF(multi_done)))
 	op("dig", item(/obj/item/pickaxe), label("Dig"), begins(PROC_REF(dig_begins)), starts(PROC_REF(dig_started)), wait(PROC_REF(dig_time)), then(PROC_REF(dig_done)))
 	ref_one(nameof(artifact_find_static))
+	owns_one(nameof(geological_data_static), /datum/geosample)
 
 MSG_DEF(boulder/tape_begins, span_notice("You extend %I% towards %T%."), span_bold("%U%") + " extends %I% towards %T%.")
 MSG_DEF(boulder/multi_begins, span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!"), span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")

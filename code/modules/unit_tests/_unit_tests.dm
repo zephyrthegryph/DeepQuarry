@@ -344,6 +344,7 @@
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
 #include "dq_relations_tests.dm"
+#include "dq_stored_refs_tests.dm"
 #include "dq_ntsl_statements_tests.dm"
 #include "dq_ownership_transfer_tests.dm"
 #include "dq_circuit_kit_delete_tests.dm"

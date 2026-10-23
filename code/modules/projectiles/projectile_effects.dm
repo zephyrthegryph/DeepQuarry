@@ -49,8 +49,6 @@
 	var/modifier_type_to_apply = null
 	/// Duration for modifier_type_to_apply (null = permanent).
 	var/modifier_duration = null
-	/// Extra effects to apply to turfs struck by this projectile (turf_effect proc ref).
-	var/datum/callback/turf_effect_callback = null
 
 /datum/projectile_effects/New(
 	stun = 0, weaken = 0, paralyze = 0, irradiate = 0,
@@ -94,8 +92,6 @@
 		return
 	if(incendiary && source && source.obj_damage_type() == BURN)
 		T.hotspot_expose(700, 5)
-	if(turf_effect_callback)
-		turf_effect_callback.Invoke(T, source)
 
 /// Merge another projectile_effects datum's values additively into this one.
 /// Useful when composing effects from multiple sources at fire-time.

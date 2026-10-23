@@ -16,4 +16,4 @@
 
 
 /datum/system/mapping/proc/set_engine_loader(obj/effect/landmark/engine_loader/loader)
-	engine_loader = loader
+	rel_set(src, nameof(engine_loader), loader)

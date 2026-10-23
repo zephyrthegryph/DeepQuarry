@@ -27,6 +27,8 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 	title = "[command_name()] Update"
 	announcement_type = "[command_name()] Update"
 
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/announcement/priority/security)
 /datum/announcement/priority/security/New(do_log = 1, new_sound = 'sound/misc/notice2.ogg', do_newscast = 0)
 	..(do_log, new_sound, do_newscast)
 	title = "Security Announcement"
