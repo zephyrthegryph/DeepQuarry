@@ -75,6 +75,10 @@ def strip_comments(text):
     return [re.sub(r"//.*", "", ln) for ln in text.split("\n")]
 
 
+SYSTEM_DEF = re.compile(r"^\s*SYSTEM_DEF\((\w+)\)")
+SYSTEM_PROC = re.compile(r"^/datum/system/(\w+)/proc/")
+
+
 INCLUDE = re.compile(r'^\s*#include\s+"([^"]+)"')
 
 
@@ -188,6 +192,25 @@ def main(argv):
             note = (note + " " + ",".join(dict.fromkeys(relinc[f]))).strip()
         reason = ";".join(dict.fromkeys(why))
         rows.append(("dirty" if why else "clean", f, target or "-", (reason + " " + note).strip()))
+    # system_boundary B3: a proc defined on /datum/system/X must sit in the folder of the file that declares X (SYSTEM_DEF(X)).
+    # A file that defines such procs stays dirty while the declaring file is in the old tree and is not itself moving clean.
+    owner = {}
+    for f in dm:
+        for ln in strip_comments(read(root, f)):
+            m = SYSTEM_DEF.match(ln)
+            if m:
+                owner.setdefault(m.group(1), f)
+    state = {r[1]: r[0] for r in rows}
+    for i, (st, f, target, reason) in enumerate(rows):
+        hit = []
+        for ln in strip_comments(read(root, f)):
+            m = SYSTEM_PROC.match(ln)
+            if m and m.group(1) in owner and owner[m.group(1)] != f:
+                o = owner[m.group(1)]
+                if target_of(o) is not None and state.get(o, "dirty") == "dirty":
+                    hit.append("systemowner:" + o)
+        if hit:
+            rows[i] = ("dirty", f, target, (";".join(dict.fromkeys(hit)) + " " + reason).strip())
     if summary:
         agg = {}
         for state, f, _, _ in rows:

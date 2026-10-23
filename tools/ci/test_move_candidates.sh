@@ -34,6 +34,16 @@ mk code/content/widgets/known.dm '/obj/item/known'
 mk code/modules/widgets/uses_content.dm '/obj/item/other
 	var/x = /obj/item/known'
 mk code/modules/widgets/inc/user.dm '#include "../clean.dm"'
+mk code/modules/widgets/sys_owner.dm 'SYSTEM_DEF(gizmos)
+	name = "Gizmos"'
+mk code/modules/widgets/sys_owner_dirty.dm 'SYSTEM_DEF(sprockets)
+	name = "Sprockets"
+/obj/x/Destroy()
+	return ..()'
+mk code/modules/widgets/gizmos_api.dm '/datum/system/gizmos/proc/poke()
+	return'
+mk code/modules/widgets/sprockets_api.dm '/datum/system/sprockets/proc/poke()
+	return'
 mk tools/ci/thing_baseline.txt 'rule	code/modules/widgets/baselined.dm	some text'
 mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:182 lines"]'
 mk tools/analyze/src/lints/x.rs 'Files::Under(&["code/modules/widgets/tooled/rig"])'
@@ -61,12 +71,14 @@ expect code/modules/widgets/tooled/rig/suit.dm dirty "toolref:code/modules/widge
 expect code/modules/widgets/uses_content.dm clean ""
 expect code/modules/widgets/clean.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
 expect code/modules/widgets/inc/user.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
+expect code/modules/widgets/sprockets_api.dm dirty "systemowner:code/modules/widgets/sys_owner_dirty.dm"
+expect code/modules/widgets/gizmos_api.dm clean ""
 expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 # a defines file is not listed as a content candidate at all; lint_scopes.toml never makes a file dirty
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 5 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 7 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
