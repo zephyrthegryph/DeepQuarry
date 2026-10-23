@@ -265,11 +265,19 @@ slot_live() { # <slot> <worktree>: a process uses the worktree (its path on a co
 	return 1
 }
 
+SLOT_USAGE_ALL=""; SLOT_USAGE_ALL_DONE=0
 SLOT_USAGE_KEY=""; SLOT_USAGE=""
 slot_usage() { # <worktree>: "hold <class> <s> <label>" / "wait <class> <s> <label>" lines of the machine slots it holds or queues for (one process, cached per path)
 	if [ "$SLOT_USAGE_KEY" != "$1" ]; then
 		SLOT_USAGE_KEY="$1"; SLOT_USAGE=""
-		[ -f "$SLOTS_SH" ] && SLOT_USAGE="$(bash "$SLOTS_SH" usage "$1" 2>/dev/null)"
+		if [ "$SLOT_USAGE_ALL_DONE" -eq 0 ]; then   # one process for every worktree, once per invocation
+			SLOT_USAGE_ALL_DONE=1
+			[ -f "$SLOTS_SH" ] && SLOT_USAGE_ALL="$(bash "$SLOTS_SH" usage-all 2>/dev/null)"
+		fi
+		local want
+		want="$(printf '%s' "$1" | tr 'A-Z\\' 'a-z/' | sed 's|//*|/|g; s|/$||')"
+		SLOT_USAGE="$(printf '%s
+' "$SLOT_USAGE_ALL" | awk -v w="$want" '$2 == w { k = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); print k " " $0 }')"
 	fi
 	printf '%s' "$SLOT_USAGE"
 }

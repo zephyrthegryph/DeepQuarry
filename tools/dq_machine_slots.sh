@@ -840,6 +840,27 @@ slots_holding() { # worktree: one line per live slot that worktree holds in any 
 	return 0
 }
 
+slots_usage_all() { # every fresh holder and waiter, one line each: "<hold|wait> <worktree, lower case, / separators> <class> <seconds> <label>"
+	# Cheap on purpose (the pool's status calls it once): no tasklist or per-field subprocess, a file counts while its heartbeat/poll touch is
+	# younger than DQ_SLOTS_FRESH_SEC (default 90; holders touch every 15 s, waiters every poll).
+	local cls f kind k v wt label t now fresh="${DQ_SLOTS_FRESH_SEC:-90}" mt
+	now="$(date +%s)"
+	for cls in dm_compile test_world cargo; do
+		for f in "$(slots_dir)/$cls"/slot.*/owner "$(slots_dir)/$cls"/queue/*; do
+			[ -f "$f" ] || continue
+			mt="$(stat -c %Y "$f" 2>/dev/null || echo 0)"
+			[ $(( now - mt )) -le "$fresh" ] || continue
+			wt=""; label=""; t=""
+			while IFS='=' read -r k v; do
+				case "$k" in worktree) wt="$v" ;; label) label="$v" ;; started | queued) t="$v" ;; esac
+			done <"$f"
+			case "$f" in */owner) kind=hold ;; *) kind=wait ;; esac
+			wt="${wt//\\//}"; wt="${wt,,}"; wt="${wt%/}"
+			echo "$kind $wt $cls $(( now - ${t:-$now} )) $label"
+		done
+	done
+}
+
 slots_stats() { # [N]
 	local f
 	f="$(slots_dir)/events.tsv"
@@ -932,6 +953,7 @@ if ! (return 0 2>/dev/null); then
 		stats) slots_stats "$@" ;;
 		waiting) slots_waiting "$@" ;;
 		holding) slots_holding "$@" ;;
+		usage-all) slots_usage_all ;;
 		usage) slots_holding "$@" | sed 's/^/hold /'; slots_waiting "$@" | sed 's/^/wait /' ;;   # both in one process: the pool calls this once per leased slot
 		reap) for c in dm_compile test_world cargo merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
 		selftest) slots_selftest; exit $? ;;
