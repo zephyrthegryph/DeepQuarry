@@ -26,6 +26,7 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 	set_busy(FALSE)
 
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
+	setup(PROC_REF(attach_experiment_handler))
 	setup(PROC_REF(configure_initial_scan_parts))
 	configure(uses_power(idle = 30, active = 2500))
 	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
@@ -43,7 +44,8 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 /obj/machinery/rnd/destructive_analyzer/proc/make_rmat(current, mapload)
 	return new /datum/remote_materials(src, mapload, mat_container_flags = MATCONTAINER_NO_INSERT)
 
-/obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
+/// Its destructive-scan experiment handler, once it is made (setup()).
+/obj/machinery/rnd/destructive_analyzer/proc/attach_experiment_handler()
 	//Destructive analysis
 	var/static/list/destructive_events = list(
 		/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
@@ -55,7 +57,6 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 		experiment_events = destructive_events, \
 	)
-	. = ..()
 
 /obj/machinery/rnd/destructive_analyzer/proc/configure_initial_scan_parts()
 	default_apply_parts()

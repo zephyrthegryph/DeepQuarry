@@ -335,11 +335,10 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	var/datum/exonet_protocol/exonet = null
 	var/list/exonet_messages = list() // ALLOW(instance_list): d: per-mob exonet_messages, filled at runtime; mobs are few
 
-// Proc: New()
+// Proc: make_exonet_address()
 // Parameters: None
-// Description: Gives ghosts an exonet address based on their key and ghost name.
-/mob/observer/dead/Initialize(mapload)
-	. = ..()
+// Description: Gives ghosts an exonet address based on their key and ghost name, once they are made (setup()).
+/mob/observer/dead/proc/make_exonet_address()
 	if(client)
 		exonet.make_address("communicator-[src.client]-[src.client.prefs.read_preference(/datum/preference/name/real_name)]")
 	else

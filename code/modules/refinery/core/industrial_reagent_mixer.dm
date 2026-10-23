@@ -11,9 +11,9 @@
 	var/mixer_rotation_rate = 45
 	var/got_input = FALSE
 
-/obj/machinery/reagent_refinery/mixer/Initialize(mapload)
-	set_mixer_angle(dir2angle(dir))
-	. = ..()
+/// The arm starts pointing the way the mixer faces (derives(), at init).
+/obj/machinery/reagent_refinery/mixer/proc/facing_angle(target)
+	return dir2angle(dir)
 
 /obj/machinery/reagent_refinery/mixer/refinery_step()
 	if(!anchored)
@@ -110,6 +110,7 @@
 	return got_input
 
 CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	derives(nameof(mixer_angle), PROC_REF(facing_angle))
 	setup(TYPE_PROC_REF(/obj/machinery, default_apply_parts))
 	configure(uses_power(idle = 0, active = 50))
 	without("reagent_refinery_set_transfer_amount")
