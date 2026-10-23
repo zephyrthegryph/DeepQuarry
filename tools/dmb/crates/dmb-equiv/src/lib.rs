@@ -10,7 +10,7 @@ pub mod permute;
 use byond_dmb::dmb::Dmb;
 use byond_dmb::ids::NONE;
 use byond_dmb::rsc;
-use canon::{class_fields, code_hashes, esc, num, Code, Ctx, Field};
+use canon::{class_fields, code_hashes, esc, num, Code, Ctx, Field, PathMap};
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write;
 use std::io;
@@ -60,6 +60,8 @@ pub struct Options {
     pub ignore_order: bool,
     /// Instructions of context shown on each side around the first bytecode difference (`--context N`).
     pub context: usize,
+    /// `OLD=NEW` source-path rewrites applied to the "before" (first) world's string constants; see `canon::PathMap`.
+    pub path_map: Vec<(String, String)>,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -69,6 +71,7 @@ impl Default for Options {
             ignore_debug: false,
             ignore_order: false,
             context: 0,
+            path_map: Vec::new(),
         }
     }
 }
@@ -128,6 +131,14 @@ fn field(family: &'static str, label: impl Into<String>, value: impl Into<String
 
 impl<'a> Canon<'a> {
     pub fn build(dmb: &'a Dmb, rsc_bytes: Option<&[u8]>) -> io::Result<Self> {
+        Self::build_with(dmb, rsc_bytes, PathMap::default())
+    }
+
+    pub fn build_with(
+        dmb: &'a Dmb,
+        rsc_bytes: Option<&[u8]>,
+        path_map: PathMap,
+    ) -> io::Result<Self> {
         let entries = rsc_bytes.map(rsc_entries).transpose()?;
         let rsc_names = entries.as_ref().map(|entries| {
             let mut m = HashMap::new();
@@ -138,7 +149,7 @@ impl<'a> Canon<'a> {
             }
             m
         });
-        let ctx = Ctx::new(dmb, rsc_names);
+        let ctx = Ctx::with_path_map(dmb, rsc_names, path_map);
         let mut records = BTreeMap::new();
         let mut orders = BTreeMap::new();
 
@@ -1256,11 +1267,20 @@ pub fn compare_dmbs(
     opts: &Options,
 ) -> io::Result<Report> {
     let (ca, cb) = std::thread::scope(|s| {
-        let ha = s.spawn(|| Canon::build(a, a_rsc));
+        let map = PathMap::new(&opts.path_map);
+        let ha = s.spawn(|| Canon::build_with(a, a_rsc, map));
         let hb = s.spawn(|| Canon::build(b, b_rsc));
         (ha.join().unwrap(), hb.join().unwrap())
     });
-    Ok(compare_canon(&ca?, &cb?, opts))
+    let (ca, cb) = (ca?, cb?);
+    let mut report = compare_canon(&ca, &cb, opts);
+    if !ca.ctx.path_map.is_empty() {
+        report.notes.push(format!(
+            "path-map: {} string constant(s) of the first world rewritten from an old source path",
+            ca.ctx.path_map.count_in(a)
+        ));
+    }
+    Ok(report)
 }
 
 /// Test helper: panic with a readable report unless the two output pairs are

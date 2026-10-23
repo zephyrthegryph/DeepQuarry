@@ -485,6 +485,7 @@
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
 #include "dq_stages_tests.dm"
+#include "dq_declared_lookup_tests.dm"
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
 #include "dq_memory_list_tests.dm"

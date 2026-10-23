@@ -209,3 +209,79 @@ fn invisible_orders_are_reported_but_do_not_gate() {
     let strict = dmb_equiv::compare_dmbs(&d, None, &p, None, &Options { strict_order: true, ..Options::default() }).unwrap();
     assert!(!strict.equivalent());
 }
+
+fn with_string(d: &Dmb, from: &[u8], to: &[u8]) -> Dmb {
+    let mut b = d.clone();
+    let id = string_id(d, from) as usize;
+    b.strings[id].data = to.to_vec();
+    round_trip(&b)
+}
+
+fn mapped(a: &Dmb, b: &Dmb, pairs: &[(&str, &str)]) -> Report {
+    let opts = Options {
+        path_map: pairs
+            .iter()
+            .map(|(o, n)| (o.to_string(), n.to_string()))
+            .collect(),
+        ..Options::default()
+    };
+    compare_dmbs(a, None, b, None, &opts).unwrap()
+}
+
+#[test]
+fn moved_file_path_is_equivalent_only_with_the_map() {
+    let d = fixture();
+    let before = with_string(&d, b"types:", b"code/modules/power/cell.dm");
+    let after = with_string(&d, b"types:", b"code/content/power/cell.dm");
+    assert!(!compare(&before, &after).equivalent());
+    let r = mapped(
+        &before,
+        &after,
+        &[("code/modules/power/cell.dm", "code/content/power/cell.dm")],
+    );
+    assert!(r.equivalent(), "{}", r.render_text());
+    assert!(r.notes.iter().any(|n| n.contains("path-map: 1 ")), "{:?}", r.notes);
+    // A directory prefix and a path followed by a line number are rewritten too.
+    let before = with_string(&d, b"types:", b"code/modules/power/cell.dm:12");
+    let after = with_string(&d, b"types:", b"code/content/power/cell.dm:12");
+    assert!(mapped(&before, &after, &[("code/modules/power", "code/content/power")]).equivalent());
+    assert!(mapped(&before, &after, &[("code/modules/power/cell.dm", "code/content/power/cell.dm")]).equivalent());
+    // Backslash paths follow the same map.
+    let before = with_string(&d, b"types:", b"code\\modules\\power\\cell.dm");
+    let after = with_string(&d, b"types:", b"code\\content\\power\\cell.dm");
+    assert!(mapped(&before, &after, &[("code/modules/power/cell.dm", "code/content/power/cell.dm")]).equivalent());
+}
+
+#[test]
+fn path_map_does_not_hide_other_differences() {
+    let d = fixture();
+    let pair = [("code/modules/power/cell.dm", "code/content/power/cell.dm")];
+    let before = with_string(&d, b"types:", b"code/modules/power/cell.dm");
+    // The file was moved somewhere else than the map says.
+    let wrong = with_string(&d, b"types:", b"code/content/power/other.dm");
+    assert!(!mapped(&before, &wrong, &pair).equivalent());
+    // The old path is still present after the move: the map only rewrites the first world.
+    assert!(!mapped(&before, &before, &pair).equivalent());
+    // A file whose name merely starts with the old one is not the old file.
+    let longer = with_string(&d, b"types:", b"code/modules/power/cell.dmx");
+    let longer_after = with_string(&d, b"types:", b"code/content/power/cell.dmx");
+    assert!(!mapped(&longer, &longer_after, &pair).equivalent());
+    // Text after the old path is kept verbatim.
+    let b1 = with_string(&d, b"types:", b"code/modules/power/cell.dm:12");
+    let a1 = with_string(&d, b"types:", b"code/content/power/cell.dm:13");
+    assert!(!mapped(&b1, &a1, &pair).equivalent());
+    // An unrelated real change next to a correct map is still reported, and only that one.
+    let mut after = with_string(&d, b"types:", b"code/content/power/cell.dm");
+    let zz = string_id(&after, b"zz");
+    after.variables.iter_mut().find(|v| v.name == zz).unwrap().value = 9.0f32.to_bits();
+    let r = mapped(&before, &round_trip(&after), &pair);
+    assert_eq!(categories(&r), [("type.type_var_decl".to_string(), 1)], "{}", r.render_text());
+    // A changed opcode is not a path.
+    let mut b = d.clone();
+    let p = proc_index(&d, b"/proc/dump");
+    let code_list = b.procs[p].code_locals_args[0] as usize;
+    let ins = bytecode::decode(&b.lists[code_list]).unwrap();
+    let target = ins.iter().find(|i| i.opcode == 0xf8).unwrap().offset;
+    b.lists[code_list][target] = 0x0f;
+    assert!(!mapped(&d, &round_trip(&b), &pair).equivalent());
+}
