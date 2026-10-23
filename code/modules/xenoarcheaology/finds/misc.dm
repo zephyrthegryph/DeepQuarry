@@ -38,10 +38,10 @@
 	anchored = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)
 
-/obj/machinery/crystal/Initialize(mapload)
-	randomize_color()
-	return ..()
+CAPABILITIES(/obj/machinery/crystal)
+	setup(PROC_REF(randomize_color))
 
+/// A crystal is violet 3 times in 10, else green.
 /obj/machinery/crystal/proc/randomize_color()
 	if(prob(30))
 		set_icon_state("crystal2")
