@@ -159,10 +159,11 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 			.["model_options"] = module_options
 			// Data for the upgrade options
 			.["target"] += get_upgrades()
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
+			var/obj/item/robot_module/target_module = target().module
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target_module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			if(kin)
 				.["target"]["pka"] += get_pka(kin)
-			for(var/obj/item/robotic_multibelt/multibelt in target().module.modules)
+			for(var/obj/item/robotic_multibelt/multibelt in target_module.modules)
 				.["target"]["multibelt"] += list(get_mult_belt(multibelt))
 
 			// Radio section
@@ -306,7 +307,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
 	target().module.emag.Remove(rem_item)
-	target().module.modules.Remove(rem_item)
+	var/obj/item/robot_module/target_module = target().module
+	target_module.modules.Remove(rem_item)
 	rem_item.moveToNullspace()
 	target().hud_used?.update_robot_modules_display()
 	spent(rem_item)
@@ -401,13 +403,15 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_install_modkit(datum/act/op/A, modkit_arg)
 	var/new_modkit = modkit_arg
-	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
+	var/obj/item/robot_module/target_module = target().module
+	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target_module.modules, /obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/borg/upgrade/modkit/M = new new_modkit(null)
 	M.install(kin, target())
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_remove_modkit(datum/act/op/A, modkit)
-	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
+	var/obj/item/robot_module/target_module = target().module
+	var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target_module.modules, /obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/rem_kit = modkit
 	rel_remove(kin, nameof(/obj/item/gun/energy/kinetic_accelerator::modkits), rem_kit)
 	spent(rem_kit)
@@ -752,7 +756,8 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/get_target_items(mob/user)
 	var/list/target_items = list()
-	for(var/obj/item in target().module.modules)
+	var/obj/item/robot_module/target_module = target().module
+	for(var/obj/item in target_module.modules)
 		target_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
 	return target_items
 
@@ -763,8 +768,9 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	source_list["sprite_size"] = spritesheet?.icon_size_id(source_list["sprite"] + "S")
 	var/list/source_items = list()
 	for(var/obj/item in (source.module.modules | source.module.emag))
+		var/obj/item/robot_module/target_module = target().module
 		var/exists
-		for(var/obj/has_item in (target().module.modules + target().module.emag))
+		for(var/obj/has_item in (target_module.modules + target_module.emag))
 			if(has_item.name == item.name)
 				exists = TRUE
 				break

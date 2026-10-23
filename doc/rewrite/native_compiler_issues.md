@@ -354,12 +354,18 @@ Results: production dme 1 -> 0 differences, test dme (`-DCIBUILDING -DCITESTING`
 Fixed on the way (each measured against `dm.exe`): `__LINE__` on a backslash-joined logical line and on a call held open over lines; the `a?.b.c = v` guard
 shape; a `null` key in `list(null = x)` is the text "null"; an assignment whose receiver chain has parentheses uses PushTop; `md5`/`sha1`/1-arg
 `text2ascii` of constants fold; the checker drops code that no branch reaches (`#if UNIT_TESTS return`).
-**Open (test dme: 6 differences, 1 cause; production 0):** `dq_ledger(H).slots[...]` in `dq_native_slot_accepts_tests.dm` reads `slots` on an untyped
-receiver. DreamMaker binds it to a static variable, the `slots` declared static on `/obj/belly` (the declaring type last in its class table), although other
-types declare `slots` as an instance variable (`/datum/ledger`); native reads the instance field by name (`UniqueStaticVar` answers Missing for an
-ambiguous name, `dm-tree/src/resolver.rs`). Differences: `proc.bytecode` in `Run`, `digestion_death`, `handle_touchable_atoms` and `<global-init>`, plus
-`global.extra`/`global.missing` (the static's procedure-scope name list differs). A fix needs DreamMaker's class-table order inside the dm-tree resolver
-(a last-created-declaration shortcut did not match). Lane: `bash tools/ci/dm_equiv.sh` with `DQ_EQUIV_FLAVORS=test` is the repro.
+**Closed 2026-10-23: untyped receiver naming a static (`untyped_member` lint).** `dq_ledger(H).slots[...]` in `dq_native_slot_accepts_tests.dm` read `slots` on an
+untyped receiver (a proc result: a `RETURN_TYPE` does not type a call for DreamMaker). DreamMaker binds such a member by name over its class table, and when
+the name is declared `static`/`global` on some type (`slots` is a static on `/obj/belly`, an instance var on `/datum/ledger`) it can pick the static, which
+one depending on the table order (probes: two types declaring the same name, each pair in both orders, no rule derived from the type paths alone). That is a
+game bug under DreamMaker, and native answers the instance variable, the intended one. The compiler is not changed: the `untyped_member` lint
+(`tools/analyze/src/lints/untyped_member.rs`, a hard ban, no baseline, `lint_scopes.toml` exempts only the vendored TGS DMAPI and generated output) rejects a
+member read or write through a receiver that has no static type when the member name is declared `static` or `global` on any type (a name declared on several
+types with one static among them is the same test). Typed means a declaration: a typed local, parameter or var, `src`, `usr`, `new /type`, a field declared
+with a type on a typed receiver, `global.x`. Untyped means an untyped local or parameter, a call result (`RETURN_TYPE` included), an index, a ternary. 81
+existing sites in 28 files were given a typed local (no behaviour change; two unit-test raw writes of `security_level` now use its setter). Test dme 6 -> 0
+differences, production 0, both EQUIVALENT (`DQ_EQUIV_FLAVORS=test bash tools/ci/dm_equiv.sh` and the default run); the `dreammaker_cross_check` job is now a needed
+job of the CI completion gate (`ci.yml`, `run_dreammaker_cross_check.yml`).
 
 **Not done, found by the fuzz runs, absent from the tree:** `d?.f()[i] op= v` (DreamMaker tests the receiver first for compound stores too) and `d?.f()[i]++`
 (pop-guard form) keep native's order; `rgb2num("red")` (named colors) is not folded; `1 / "text"` is folded by DreamMaker to `1`.

@@ -574,6 +574,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	adjust_department_faction_reputation(order.funding_department, counterparty.faction_id, 2)
 	if(order.market_requester_account)
 		adjust_personal_faction_reputation(order.market_requester_account, counterparty.faction_id, 4)
+	var/datum/supply_pack/order_pack = order.supply_pack_of()
 	emit_contract_event(CONTRACT_EVENT_CARGO_MARKET_PURCHASE, list(
 		"actor_account" = order.market_requester_account,
 		"principal_account" = listing?.reserved_account,
@@ -588,7 +589,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"order_id" = order.ordernum,
 		"pack_type" = order.supply_pack_of().type,
 		"pack_group" = order.supply_pack_of().group,
-		"contraband" = !!order.supply_pack_of().contraband,
+		"contraband" = !!order_pack.contraband,
 		"fact_id" = "market-purchase:[order.ordernum]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,

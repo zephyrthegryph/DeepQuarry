@@ -52,30 +52,32 @@
 
 /datum/vore_look/proc/attr_b_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
-	if(!(new_mode in vore_selected_of(host()).digest_modes))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(new_mode in selected_belly.digest_modes))
 		return FALSE
 
-	vore_selected_of(host()).digest_mode = new_mode
-	vore_selected_of(host()).updateVRPanels()
+	selected_belly.digest_mode = new_mode
+	selected_belly.updateVRPanels()
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_addons(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(toggle_addon in vore_selected_of(host()).mode_flag_list))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(toggle_addon in selected_belly.mode_flag_list))
 		return FALSE
-	vore_selected_of(host()).mode_flags ^= vore_selected_of(host()).mode_flag_list[toggle_addon]
-	vore_selected_of(host()).items_preserved = null //Re-evaltuate all items in belly on
-	vore_selected_of(host()).slow_digestion = FALSE
-	if(vore_selected_of(host()).mode_flags & DM_FLAG_SLOWBODY)
-		vore_selected_of(host()).slow_digestion = TRUE
+	selected_belly.mode_flags ^= selected_belly.mode_flag_list[toggle_addon]
+	selected_belly.items_preserved = null //Re-evaltuate all items in belly on
+	selected_belly.slow_digestion = FALSE
+	if(selected_belly.mode_flags & DM_FLAG_SLOWBODY)
+		selected_belly.slow_digestion = TRUE
 	if(toggle_addon == "TURBO MODE")
-		if(vore_selected_of(host()).mode_flags & DM_FLAG_TURBOMODE)
-			vore_selected_of(host()).speedy_mob_processing = TRUE
+		if(selected_belly.mode_flags & DM_FLAG_TURBOMODE)
+			selected_belly.speedy_mob_processing = TRUE
 			to_chat(user, span_warning("TURBO MODE activated! Belly processing speed tripled! This also affects timed settings, such as autotransfer and liquid generation."))
 		else
-			vore_selected_of(host()).speedy_mob_processing = FALSE
+			selected_belly.speedy_mob_processing = FALSE
 			to_chat(user, span_warning("TURBO MODE deactivated. Belly processing returned to normal speed."))
 	. = TRUE
 	if(.)
@@ -83,11 +85,12 @@
 
 /datum/vore_look/proc/attr_b_item_mode(mob/user, list/params, extra)
 	var/new_mode = params["val"]
-	if(!(new_mode in vore_selected_of(host()).item_digest_modes))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(new_mode in selected_belly.item_digest_modes))
 		return FALSE
 
-	vore_selected_of(host()).item_digest_mode = new_mode
-	vore_selected_of(host()).items_preserved = null //Re-evaltuate all items in belly on belly-mode change
+	selected_belly.item_digest_mode = new_mode
+	selected_belly.items_preserved = null //Re-evaltuate all items in belly on belly-mode change
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -661,10 +664,11 @@
 
 /datum/vore_look/proc/attr_b_drainmode(mob/user, list/params, extra)
 	var/new_drainmode = params["val"]
-	if(!(new_drainmode in vore_selected_of(host()).drainmodes))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(new_drainmode in selected_belly.drainmodes))
 		return FALSE
-	vore_selected_of(host()).drainmode = new_drainmode
-	vore_selected_of(host()).updateVRPanels()
+	selected_belly.drainmode = new_drainmode
+	selected_belly.updateVRPanels()
 	if(.)
 		set_unsaved_changes(TRUE)
 
@@ -879,36 +883,40 @@
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_whitelist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
+	selected_belly.autotransfer_whitelist ^= selected_belly.autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_blacklist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
+	selected_belly.autotransfer_blacklist ^= selected_belly.autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_whitelist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
+	selected_belly.autotransfer_secondary_whitelist ^= selected_belly.autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_blacklist ^= vore_selected_of(host()).autotransfer_flags_list[toggle_addon]
+	selected_belly.autotransfer_secondary_blacklist ^= selected_belly.autotransfer_flags_list[toggle_addon]
 	. = TRUE
 	. = TRUE
 	if(.)
@@ -916,36 +924,40 @@
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_whitelist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
+	selected_belly.autotransfer_whitelist_items ^= selected_belly.autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_items_primary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_blacklist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
+	selected_belly.autotransfer_blacklist_items ^= selected_belly.autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_whitelist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_whitelist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
+	selected_belly.autotransfer_secondary_whitelist_items ^= selected_belly.autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
 
 /datum/vore_look/proc/attr_b_autotransfer_blacklist_items_secondary(mob/user, list/params, extra)
 	var/toggle_addon = params["val"]
-	if(!(vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(selected_belly.autotransfer_flags_list_items[toggle_addon]))
 		return FALSE
-	vore_selected_of(host()).autotransfer_secondary_blacklist_items ^= vore_selected_of(host()).autotransfer_flags_list_items[toggle_addon]
+	selected_belly.autotransfer_secondary_blacklist_items ^= selected_belly.autotransfer_flags_list_items[toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)
@@ -1188,9 +1200,10 @@
 
 /datum/vore_look/proc/attr_b_vore_sprite_flags(mob/user, list/params, extra)
 	var/toggle_vs_flag = params["val"]
-	if(!(toggle_vs_flag in vore_selected_of(host()).vore_sprite_flag_list))
+	var/obj/belly/selected_belly = vore_selected_of(host())
+	if(!(toggle_vs_flag in selected_belly.vore_sprite_flag_list))
 		return FALSE
-	vore_selected_of(host()).vore_sprite_flags ^= vore_selected_of(host()).vore_sprite_flag_list[toggle_vs_flag]
+	selected_belly.vore_sprite_flags ^= selected_belly.vore_sprite_flag_list[toggle_vs_flag]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)

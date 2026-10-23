@@ -352,7 +352,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			"ref" = REF(viewing_channel()),
 		)
 		if(!viewing_channel().censored)
-			for(var/datum/feed_message/M in viewing_channel().messages)
+			var/datum/feed_channel/viewed_channel = viewing_channel()
+			for(var/datum/feed_message/M in viewed_channel.messages)
 				var/list/msgdata = list(
 					"title" = M.title,
 					"body" = M.body,

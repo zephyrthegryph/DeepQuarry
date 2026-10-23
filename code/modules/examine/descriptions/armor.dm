@@ -83,8 +83,9 @@
 		if(worn_of(src).covers & GLOB.string_part_flags[name])
 			covers += name
 
+	var/datum/type_trait/item_worn/worn = worn_of(src)
 	for(var/name in GLOB.string_slot_flags)
-		if(worn_of(src).slots & GLOB.string_slot_flags[name])
+		if(worn.slots & GLOB.string_slot_flags[name])
 			slots += name
 
 	if(covers.len)

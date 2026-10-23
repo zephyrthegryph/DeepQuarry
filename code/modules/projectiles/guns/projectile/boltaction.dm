@@ -98,8 +98,9 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	recoil = 2 // Owch
 	accuracy = -15 // You know damn well why.
 	set_item_state("gun")
-	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))// You can't sling it on your back
-	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))// But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	var/datum/type_trait/item_worn/worn = worn_of(src)
+	set_slot_flags(worn.slots & (~SLOT_BACK))// You can't sling it on your back
+	set_slot_flags(worn.slots | ((SLOT_BELT|SLOT_HOLSTER)))// But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off rifle"
 	desc = "The firepower of a rifle, now the size of a pistol, with an effective combat range of about three feet. Uses 7.62mm rounds."
 	pump_animation = "sawn_rifle-cycling"

@@ -71,7 +71,8 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 // Returns discovered datums.
 /datum/category_item/catalogue/proc/attempt_chain_discoveries(mob/user, list/new_cataloguers, type_to_test)
 	. = list()
-	for(var/G in category().collection().categories) // I heard you like loops.
+	var/datum/category_collection/all_categories = category().collection()
+	for(var/G in all_categories.categories) // I heard you like loops.
 		var/datum/category_group/catalogue/group = G
 		for(var/I in group.items)
 			var/datum/category_item/catalogue/item = I

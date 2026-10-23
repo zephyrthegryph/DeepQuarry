@@ -107,7 +107,8 @@ CAPABILITIES(/datum/newscaster_panel)
 	// Active channel's messages (screens 9, 12, 13).
 	var/list/channel_messages = list()
 	if(holder.admincaster_feed_channel())
-		for(var/datum/feed_message/MSG in holder.admincaster_feed_channel().messages)
+		var/datum/feed_channel/active_channel = holder.admincaster_feed_channel()
+		for(var/datum/feed_message/MSG in active_channel.messages)
 			channel_messages += list(pack_message(MSG))
 	data["channel_messages"] = channel_messages
 
