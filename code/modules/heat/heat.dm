@@ -141,6 +141,12 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	if(istype(self) && !isnull(self.heat_fire_turf) && self.heat_fire_turf != loc)
 		self.decouple_from_fire()
 
+/// Logs a release that Rust held at the body's equilibrium with its tile (`report` is its line, null when nothing was held back): the whole
+/// excess of a body is far more than a tile's air or floor can take, so the release keeps to what the air and floor would reach in contact.
+/proc/heat_release_log(report)
+	if(istext(report) && length(report))
+		log_world("HEAT RELEASE capped at equilibrium: [report]")
+
 /// Releases this atom's heat body: its excess heat goes to its surroundings
 /// (in a batched destroy, in the batch's one release call).
 /atom/proc/release_heat_body()
