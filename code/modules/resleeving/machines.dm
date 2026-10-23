@@ -8,6 +8,11 @@
 	name = "grower pod"
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	circuit = /obj/item/circuitboard/transhuman_clonepod
+	var/obj/machinery/computer/transhuman/resleeving/resleeving_console //What console it's done up with (relation); `connected` is the cloning console's alone
+
+// The grower pod is one of the resleeving console's pods (two-sided; clears when either dies).
+CAPABILITIES(/obj/machinery/clonepod/transhuman)
+	links(/obj/machinery/computer/transhuman/resleeving::pods, /obj/machinery/clonepod/transhuman::resleeving_console, a_many = TRUE)
 
 //A full version of the pod
 CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
