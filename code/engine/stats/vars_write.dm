@@ -31,6 +31,10 @@
 		TEST_REC_DELTA(E, "vars_write:[name]", null, value_to_hold)
 		return !!hold_override(E, def.id, value_to_hold, source)
 	if(!(name in E.vars))
+		// A sparse slot (`@slot.name`, or its bare name): written through the sparse writer, so null clears it.
+		var/slot = sparse_slot_named(E, name)
+		if(slot)
+			return sparse_slot_write(E, slot, value)
 		// A trait field (`@uses_power.active`, or the old var name `active_power_usage`): the holder's own copy, through set_trait().
 		var/list/trait_field = type_trait_field_named(E, name)
 		if(trait_field)

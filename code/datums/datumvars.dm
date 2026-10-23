@@ -14,6 +14,9 @@
 	datum_flags |= DF_VAR_EDITED
 	// A trait field (VV lists `@kind.field`; SDQL may name the old var): the holder's own copy of its trait block, through set_trait().
 	if(!(var_name in vars))
+		var/slot = sparse_slot_named(src, var_name)
+		if(slot)
+			return sparse_slot_write(src, slot, var_value)
 		var/list/trait_field = type_trait_field_named(src, var_name)
 		if(!trait_field)
 			return FALSE
@@ -53,6 +56,9 @@
 		if (NAMEOF(src, vars))
 			return debug_variable(var_name, list(), 0, src, viewer = viewer)
 	if(!(var_name in vars))
+		var/slot = sparse_slot_named(src, var_name)
+		if(slot)
+			return debug_variable(var_name, _sparse_get(src, slot), 0, src, viewer = viewer)
 		var/list/trait_field = type_trait_field_named(src, var_name)
 		if(trait_field)
 			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src, viewer = viewer)
