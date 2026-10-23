@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A deleted registrant no longer locks the oak staff; a deleted attacker still appears in death records; the Laserdome announcer still names a holder who is gone; Nar-Sie can hunt mobs again through a typed target"

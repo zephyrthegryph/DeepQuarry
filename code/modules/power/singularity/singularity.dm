@@ -1,6 +1,6 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
-/obj/singularity/
+/obj/singularity
 	name = "gravitational singularity"
 	desc = "A gravitational singularity."
 	icon = 'icons/obj/singularity.dmi'
@@ -22,7 +22,7 @@
 	var/grav_pull = 4 //How many tiles out do we pull?
 	var/consume_range = 0 //How many tiles out do we eat.
 	var/event_chance = 15 //Prob for event each tick.
-	var/obj/machinery/power/singularity_beacon/target = null //Its target. Moves towards the target if it has one.
+	var/atom/movable/target = null //Its target: a singularity beacon, or for Nar-Sie a mob. Moves towards the target if it has one.
 	var/last_failed_movement = 0 //Will not move in the same dir if it couldnt before, will help with the getting stuck on fields thing.
 	EXPIRY_DECLARE(last_warning)
 
@@ -51,7 +51,7 @@ CAPABILITIES(/obj/singularity)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
 	param(nameof(energy), pos = 1, default = 50)
-	ref_one(nameof(target), /obj/machinery/power/singularity_beacon)
+	ref_one(nameof(target), /atom/movable)
 	setup(PROC_REF(announce_and_find_beacon))
 
 /// Whether it is a singularity of its own (an energy ball's orbiting miniballs are not).
