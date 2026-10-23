@@ -87,7 +87,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 
 	var/datum/money_account/department_account = new()
 	department_account.set_owner_name("[department] Account")
-	department_account.set_account_number(rand(111111, 999999))
+	department_account.set_account_number(unused_account_number())
 	department_account.remote_access_pin = rand(1111, 111111)
 	department_account.set_money(5000)
 	department_account.set_department_id(department)
