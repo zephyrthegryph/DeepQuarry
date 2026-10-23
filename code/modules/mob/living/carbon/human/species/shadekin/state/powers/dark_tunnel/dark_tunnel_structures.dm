@@ -5,15 +5,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	icon = 'icons/obj/shadekin_portal.dmi'
 	density = TRUE
 	anchored = TRUE
-	var/locked = null
+	var/atom/locked = null
 	var/locked_name = ""
 	var/one_time_use = FALSE
 	var/precision = 1
 
-/// A closed hub points at itself: let go of it, or the deleted portal holds itself (a cycle never freed).
-/obj/structure/dark_portal/on_destroy(force)
-	locked = null
-	..()
+// A closed hub points at itself; the declared relation lets go of it when the portal is deleted (a cycle never freed).
+CAPABILITIES(/obj/structure/dark_portal)
+	ref_one(nameof(locked), /atom)
 
 /obj/structure/dark_portal/proc/close_portal()
 	return
@@ -45,7 +44,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	light_on = TRUE
 
 /obj/structure/dark_portal/hub/close_portal()
-	locked = src
+	rel_set(src, nameof(locked), src)
 	locked_name = src.name
 	precision = 1
 
@@ -91,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 			return TRUE
 		if(!desc)
 			return TRUE
-		locked = L[desc]
+		rel_set(src, nameof(locked), L[desc])
 		locked_name = desc
 		return TRUE
 	else if(locked_name == "somewhere on the station" || locked_name == "somewhere in the wilderness")
@@ -110,7 +109,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 				close_portal()
 				destination_station_areas.Remove(picked_area)
 				return TRUE
-			locked = pick(floors)
+			rel_set(src, nameof(locked), pick(floors))
 			locked_name = "somewhere on the station"
 			one_time_use = TRUE
 			precision = 0
@@ -130,7 +129,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 		close_portal()
 		destination_wilderness_areas.Remove(picked_area)
 		return TRUE
-	locked = pick(floors)
+	rel_set(src, nameof(locked), pick(floors))
 	locked_name = "somewhere in the wilderness"
 	one_time_use = TRUE
 	precision = 0
@@ -159,7 +158,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 	icon_state = "minion0"
 
 /obj/structure/dark_portal/minion/close_portal()
-	locked = null
+	rel_clear(src, nameof(locked))
 	locked_name = ""
 	precision = 1
 	set_icon_state("minion0")
@@ -201,7 +200,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 		if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)) == 1)
 			SK.shadekin_adjust_energy(-10)
 			var/obj/structure/dark_portal/target = REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)[1]
-			locked = target
+			rel_set(src, nameof(locked), target)
 			locked_name = target.name
 			set_icon_state("minion1")
 			after(src, 5 MINUTES, PROC_REF(check_to_close), with = list(target))
@@ -217,7 +216,7 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 			return TRUE
 		if(!desc)
 			return TRUE
-		locked = L[desc]
+		rel_set(src, nameof(locked), L[desc])
 		locked_name = desc
 		set_icon_state("minion1")
 		after(src, 5 MINUTES, PROC_REF(check_to_close_desc), with = list(locked))

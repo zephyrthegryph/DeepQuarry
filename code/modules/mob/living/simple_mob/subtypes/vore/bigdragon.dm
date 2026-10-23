@@ -119,8 +119,8 @@ I think I covered everything.
 	var/enraged
 	var/flametoggle = 1
 	var/specialtoggle = 1
-	var/gut1
-	var/gut2
+	var/obj/belly/gut1
+	var/obj/belly/gut2
 	var/small = 0
 	var/small_icon = 'icons/mob/bigdragon_small.dmi'
 	var/small_icon_state = "dragon_small"
@@ -481,7 +481,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 		"For a moment, you find yourself slipping underneath the tongue, into the plush silky space beneath. After a momentary squirm, the tongue scoops you back atop itself, twice as slimy as before.",
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you."))
-	gut1 = B
+	rel_set(src, nameof(gut1), B)
 	set_vore_selected(src, B)
 	B = new /obj/belly/dragon/throat(src)
 	B.set_affects_vore_sprites(FALSE)
@@ -511,7 +511,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 		"That mighty tongue of the dragon's curls itself into a halfpipe shape, cradling you snugly in it. The sides of the muscle hug your own flanks, forming a bed moulded to your contours. It keeps you well clear of those teeth, carrying you gently up against the ridges of it's palate, right before it's throat.",
 		"Rhythmically, the tongue nudges you closer and closer to it's slack slimy gullet. It leaves little gaps in the motions, seemingly chances for you to understand it's intentions and escape if you so wish. Remaining calm would result in slithering yet closer...",
 		"Saliva soaks the area all around you thickly, lubricating absolutely everything with the hot liquid. From time to time, the beast carefully shifts the rear of it's tongue to piston a cache of the goop down the hatch. The throat seen clenching tightly shut, the tongue's rear bobbing upwards, before down again - showing off a freshly slime-soaked entrance."))
-	gut2 = B
+	rel_set(src, nameof(gut2), B)
 	B = new /obj/belly/dragon/throat/heal(src)
 	B.set_affects_vore_sprites(FALSE)
 	B.own_emote_lists()
@@ -932,6 +932,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	ref_one(nameof(gut1), /obj/belly)
+	ref_one(nameof(gut2), /obj/belly)
 	knows(LANGUAGE_DRUDAKAR)
 	knows(LANGUAGE_UNATHI)
 	rolls(nameof(under), PROC_REF(roll_style))

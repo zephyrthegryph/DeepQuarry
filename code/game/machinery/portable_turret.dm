@@ -99,7 +99,7 @@
 	var/shot_sound 				//what sound should play when the turret fires
 	var/lethal_shot_sound		//what sound should play when the emagged turret fires
 
-	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
+	var/mob/living/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	/// How many machine frames the cover stays up after the turret last had a target.
 	var/timeout = 10
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -117,6 +117,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	ref_one(nameof(last_target), /mob/living)
 	configure(uses_power(idle = 50, active = 300, channel = EQUIP))
 	machine_basics(repair = NONE)
 	membership(joins = REGISTRY_TURRETS)
@@ -233,7 +234,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/proc/disarmed(datum/act/A)
 	cancel_after(src, "stand_down")
 	set_engaging(FALSE)
-	last_target = null
+	rel_clear(src, nameof(last_target))
 
 // ---- wrench, crowbar, a blow ----
 
@@ -428,7 +429,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/proc/target(mob/living/target)
 	if(target)
 		if(target in check_trajectory(target, src))	//Finally, check if we can actually hit the target
-			last_target = target
+			rel_set(src, nameof(last_target), target)
 			set_engaging(TRUE) // the cover pops up
 			after(src, timeout * MACHINE_SERVICE_INTERVAL, PROC_REF(stand_down), key = "stand_down")
 			if(!popup_cover_raised(src))
@@ -639,9 +640,10 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 
 /obj/machinery/porta_turret/proc/setup()
 	var/obj/item/gun/energy/E = installation	//All energy-based weapons are applicable
-	var/obj/item/projectile/P = initial(E.projectile_type)
+	var/projectile_path = initial(E.projectile_type) // a type path
+	var/obj/item/projectile/P = projectile_path
 
-	projectile = P
+	projectile = projectile_path
 	if(!lethal_projectile)
 		lethal_projectile = projectile
 	shot_sound = initial(P.fire_sound)

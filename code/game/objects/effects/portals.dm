@@ -11,12 +11,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	var/failchance = 5
 	/// Where it leads: a turf, a landmark, a beacon or a belly, not only an item.
 	var/atom/target
-	var/creator = null
+	/// The hand teleporter that opened it (a portal opened any other way has none).
+	var/obj/item/hand_tele/creator = null
 	anchored = TRUE
 	var/event = FALSE
 
 CAPABILITIES(/obj/effect/portal)
 	ref_one(nameof(target))
+	ref_one(nameof(creator), /obj/item/hand_tele)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("enter_portal", hand(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_enter_portal)))
 	op("ghost_follow", observer(), label("Go through"), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(portal_ghost_follow)))

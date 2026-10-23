@@ -2,7 +2,10 @@
 //Prevents items from being interacted with.
 /datum/vehicle_dummy_load
 	var/name = "dummy load"
-	var/actual_load
+	var/atom/movable/actual_load
+
+CAPABILITIES(/datum/vehicle_dummy_load)
+	ref_one(nameof(actual_load), /atom/movable)
 
 /obj/vehicle
 	name = "vehicle"

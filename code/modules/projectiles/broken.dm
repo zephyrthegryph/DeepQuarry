@@ -62,15 +62,16 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 				res_name = initial(res.name)
 			to_chat(user, span_notice("- x [material_needs[res]] [res_name]"))
 
-/obj/item/broken_gun/proc/setup_gun(obj/item/gun/path)
+/obj/item/broken_gun/proc/setup_gun(path) // path: the gun's type path
 	if(ispath(path))
-		name = "[pick("busted", "broken", "shattered", "scrapped")] [initial(path.name)]"
-		set_icon(initial(path.icon))
-		set_icon_state(initial(path.icon_state))
+		var/obj/item/gun/proto = path
+		name = "[pick("busted", "broken", "shattered", "scrapped")] [initial(proto.name)]"
+		set_icon(initial(proto.icon))
+		set_icon_state(initial(proto.icon_state))
 
 		my_guntype = path
 
-		set_w_class(initial(path.w_class))
+		set_w_class(initial(proto.w_class))
 
 		if(do_rotation)
 			adjust_rotation(rand() * pick(-1,1) * rand(0, 45))

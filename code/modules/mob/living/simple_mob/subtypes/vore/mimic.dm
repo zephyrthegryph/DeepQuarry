@@ -20,7 +20,7 @@
 	desc = "A rectangular steel crate. This one looks particularly unstable."
 	var/mimic_chance = 30
 	var/mimic_active = TRUE
-	var/nest = null
+	var/obj/structure/mob_spawner/nest = null
 
 /obj/structure/closet/crate/mimic/open()
 	if(src.opened)
@@ -49,6 +49,7 @@
 		return ..()
 
 CAPABILITIES(/obj/structure/closet/crate/mimic)
+	ref_one(nameof(nest), /obj/structure/mob_spawner)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_consume))))
 
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).

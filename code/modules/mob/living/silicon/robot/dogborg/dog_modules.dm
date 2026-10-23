@@ -484,10 +484,11 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 
 /obj/item/reagent_containers/glass/beaker/large/borg
 	var/mob/living/silicon/robot/R
-	var/last_robot_loc
+	var/atom/last_robot_loc
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/borg)
 	setup(PROC_REF(bind_robot))
+	ref_one(nameof(last_robot_loc), /atom)
 	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
 
 /// Binds the robot (or place) holding the module and watches for being moved out of it (setup()).
@@ -500,11 +501,11 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/borg)
 	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
-		last_robot_loc = old_loc
+		rel_set(src, nameof(last_robot_loc), old_loc)
 	if(!istype(loc, /obj/machinery) && loc != R && loc != R.module)
 		if(last_robot_loc)
 			forceMove(last_robot_loc)
-			last_robot_loc = null
+			rel_clear(src, nameof(last_robot_loc))
 		else
 			forceMove(R)
 		if(loc == R)
