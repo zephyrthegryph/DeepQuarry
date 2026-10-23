@@ -356,7 +356,7 @@
 
 // --- Germ-level cause ---------------------------------------------------
 //
-// Replaces the bridge code in code/modules/medical/infection_bridge.dm.
+// Replaces the bridge code in code/content/medical/infection_bridge.dm.
 // Any organ whose germ_level crosses INFECTION_LEVEL_ONE spawns
 // wound_infection on it. Wired uniformly through the registry rather
 // than special-cased on the organ side.
