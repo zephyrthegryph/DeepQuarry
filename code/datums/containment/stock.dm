@@ -51,6 +51,16 @@
 	name = "internals"
 	drop_policy = SLOT_DROP_HOLDER
 	is_default = TRUE
+	// An occupant left in the internals is put out when the machine goes (the machine says how: internals_spill()).
+	spills = list(/mob/living)
+
+/datum/relation_definition/slot/machine_internals/spill(atom/holder, atom/movable/thing, atom/drop)
+	var/atom/movable/machine = holder
+	machine.internals_spill(thing)
+
+/// How a holder with machine internals puts an occupant of them out when it is destroyed; a mech, which keeps its pilot in a slot of its own, puts out nothing.
+/atom/movable/proc/internals_spill(atom/movable/thing)
+	return
 
 /// Stock: latent records plus real items with unique state. Spilled on destroy.
 /datum/relation_definition/slot/stock

@@ -161,7 +161,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 
 /// click_order(input, keys...): the order ops answering one input sit in, highest first, declared ONCE by the bundle that composes them (the
 /// maintenance hatch orders the construction steps, the panel, the wires, the subversion reset and the window), so a type that has them needs no
-/// priority(above(...)) per op. `input` is a tool quality (TOOL_X) or BIND_HAND; only ops with a binding for that input take part. A key ending in
+/// priority(above(...)) per op. `input` is a tool quality (TOOL_X) or a binding kind (BIND_HAND, BIND_ITEM, BIND_IN_HAND, BIND_AT_TARGET, ...); only ops with a binding for that input take part. A key ending in
 /// "*" names every op whose key starts with the rest ("construction.undo:*"); a list of keys is one rank (its ops are not ordered among
 /// themselves). Each op sits just above the nearest lower rank the holder has. Keys the type does not have are skipped, so one order serves every
 /// type the bundle is on. An op's own priority(above/below(...)) still wins over it.
@@ -183,13 +183,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 		return findtext(key, copytext(pattern, 1, -1)) == 1
 	return key == pattern
 
-/// Does the op answer the click_order() input (a tool quality, or BIND_HAND)?
+/// Does the op answer the click_order() input (a tool quality, or a binding kind: BIND_HAND, BIND_ITEM, BIND_IN_HAND, BIND_AT_TARGET, ...)?
+/// BIND_ITEM takes a stack binding too: a stack is an item.
 /proc/op_plan_takes_input(datum/op_plan/P, input)
 	for(var/datum/entry/part/bind/B as anything in P.bindings)
-		if(input == BIND_HAND)
-			if(B.bind_kind == BIND_HAND)
+		if(B.bind_kind == BIND_TOOL)
+			if(input in B.args["quality"])
 				return TRUE
-		else if(B.bind_kind == BIND_TOOL && (input in B.args["quality"]))
+		else if(B.bind_kind == input || (input == BIND_ITEM && B.bind_kind == BIND_STACK))
 			return TRUE
 	return FALSE
 

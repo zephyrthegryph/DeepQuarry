@@ -124,7 +124,7 @@
 /// The order of a type's own ops with every gate ignored (one target-side candidate per binding at its op's tier, in declaration order), as the
 /// click sort puts them: a string of keys. Only types that carry something the default precedence orders (a construction step, the maintenance
 /// access, two item inputs where one is the narrower) or a relative priority are listed, so the table is the whole set the default can move.
-/proc/dx_menu_order_static(type)
+/proc/dx_menu_order_static(type, force = FALSE)
 	var/datum/type_table/T = table_of_type(type)
 	if(!T)
 		return null
@@ -165,7 +165,7 @@
 			S.ordered += C
 	if(broad && tooled)
 		interesting = TRUE // a tool and a broad item: binding specificity orders them
-	if(!interesting)
+	if(!interesting && !force)
 		return null
 	op_resolution_sort(S)
 	return dx_menu_order_keys(S.ordered)
@@ -189,7 +189,7 @@
 		TEST_ASSERT(ispath(type), "[name] is still a type")
 		// Ops declared since the capture (a converted interaction, a verb) may be new; the ones it had keep their order.
 		var/list/want = splittext(golden[name], ",")
-		var/list/have = splittext(dx_menu_order_static(type), ",")
+		var/list/have = splittext(dx_menu_order_static(type, TRUE), ",") // forced: a type listed for a relative priority it no longer has is still pinned
 		var/list/kept = list()
 		for(var/key in have)
 			if(key in want)

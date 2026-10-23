@@ -209,17 +209,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-// the base machine: board and parts deleted, occupants put out.
-/obj/machinery/on_destroy(force)
-	// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the
-	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
-	// Only a human stuck in the internals slot is put out by hand: it needs its view
-	// reset, which no slot policy does.
-	// ALLOW(latent): only materialized mobs are wanted here, and a mob is never a latent ledger entry
-	for(var/mob/living/carbon/human/H in contents)
-		H.forceMove(loc)
-		H.reset_perspective()
-	..()
+/// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the internals slot (SLOT_DROP_HOLDER) is deleted
+/// by the core /atom/movable Destroy(). An occupant left in the internals is put out by the destroy transaction's contents phase instead
+/// (machine_internals spills, stock.dm): a human is moved to where the machine is and has its view reset, which no slot policy does.
+/obj/machinery/internals_spill(atom/movable/thing)
+	var/mob/living/carbon/human/H = thing
+	if(!istype(H) || !loc)
+		return
+	dq_ledger_force_move(H, loc, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	H.reset_perspective()
 
 /// TRUE for a type that is made with its own switch off (cookers).
 /obj/machinery/proc/starts_switched_off()

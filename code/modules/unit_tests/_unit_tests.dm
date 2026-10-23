@@ -471,6 +471,8 @@
 #include "dq_ui_outputs_tests.dm"
 #include "dx_menu_order.dm"
 #include "dx_menu_order_golden.dm"
+#include "dx_click_order_conversion.dm"
+#include "dx_click_order_golden.dm"
 #include "dq_ability_tests.dm"
 #include "dq_living_ability_tests.dm"
 #include "dq_sys_sfx_tests.dm"

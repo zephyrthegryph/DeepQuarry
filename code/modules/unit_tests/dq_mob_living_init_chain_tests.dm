@@ -1,13 +1,13 @@
-// /mob/living/Initialize is defined three times (modules/mob/living/living.dm, modules/body/body.dm, modules/combat_ai/integration/mob_living.dm).
-// DM keeps all three: the last-included body runs first and each ..() calls the earlier definition. So the effects land as
-// body.dm (builds the body, then ..()), living.dm (after ..(): the HUD slot table), mob_living.dm (after ..(): the AI brain).
+// /mob/living/Initialize is defined twice (modules/mob/living/living.dm, modules/combat_ai/integration/mob_living.dm).
+// DM keeps both: the last-included body runs first and its ..() calls the earlier definition. So the effects land as
+// living.dm (after ..(): the HUD slot table), mob_living.dm (after ..(): the AI brain). The body is the owns_one(starts =) of the combat AI block.
 
 /datum/unit_test/dq_mob_living_init_chain
 
 /datum/unit_test/dq_mob_living_init_chain/Run()
 	var/turf/T = dq_containment_floor()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	TEST_ASSERT(istype(M.body, M.body_type), "body.dm's Initialize body ran: the body plan exists")
+	TEST_ASSERT(istype(M.body, M.body_type), "the declared starting body was made: the body plan exists")
 	TEST_ASSERT_EQUAL(M.body.owner, M, "and belongs to the mob")
 	TEST_ASSERT(M.has_huds && islist(M.hud_list) && length(M.hud_list) == TOTAL_HUDS, "living.dm's Initialize body ran: the HUD slot table exists")
 	TEST_ASSERT(M.use_modern_ai && istype(M.ai_brain, /datum/ai_brain), "mob_living.dm's Initialize body ran: the AI brain exists")

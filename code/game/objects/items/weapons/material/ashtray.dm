@@ -46,7 +46,8 @@ SETTER(/obj/item/material/ashtray, butts)
 CAPABILITIES(/obj/item/material/ashtray)
 	configure(item_handling(randpixel = 5))
 	setup(PROC_REF(prepare_material_dish))
-	op("add_butt", item(/obj/item), priority(above("material_interaction_item")), when(req(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
+	click_order(BIND_ITEM, "add_butt", "material_interaction_item")
+	op("add_butt", item(/obj/item), when(req(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 
 /// A click with the held item on itself is the in-hand use, not an item put in it.

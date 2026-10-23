@@ -61,7 +61,8 @@ CAPABILITIES(/mob/living)
 	on_change(cond_published(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
 	spontaneous_vore()
 	owns_one(nameof(aiming), /obj/aiming_overlay)
-	owns_one(nameof(body), /datum/body)
+	// a human builds its body in set_species(), before init, so its organs have part slots to attach into; the var then holds it and nothing is made here
+	owns_one(nameof(body), /datum/body, starts = nameof(body_type))
 	owns_one(nameof(changeling_state), /datum/changeling)
 	owns_one(nameof(character_setup_button), /datum/character_setup_button)
 	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))
@@ -144,7 +145,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		rel_set(ai_brain, nameof(ai_brain.primary_threat), taunter)
 	ai_brain.invalidate_selection()
 
-/// Re-open Initialize to drive brain creation. This is the last of three /mob/living/Initialize definitions (living.dm, body.dm, this file);
+/// Re-open Initialize to drive brain creation. This is the last of two /mob/living/Initialize definitions (living.dm, this file);
 /// DM keeps them all and each ..() calls the earlier one, so none is dropped (dq_mob_living_init_chain).
 // ALLOW(init/FRAMEWORK): the living base allocates its speech table and AI brain when its type has them
 /mob/living/Initialize(mapload)

@@ -45,22 +45,24 @@
 	if(can_atmos_pass != ATMOS_PASS_YES && isturf(loc))
 		update_nearby_tiles()
 
-/// Native subtype ending hooks chain here; generic legacy spill stays at its original LINKS phase.
+/// Native subtype ending hooks chain here.
 /obj/proc/ending_consequences(cause, datum/by)
 	return
 
-/obj/on_destroy(force)
-	if(rules_of(src).micro_target)
-		for(var/thing in contents_of(src))
-			if(!ismob(thing))
-				continue
-			var/mob/m = thing
-			if(isbelly(src.loc))
-				m.forceMove(src.loc)
-			else
-				m.forceMove(get_turf(src.loc))
-			act_message(m, src, others = span_notice("%U% tumbles out of %T%!"))
+/// The ending of a micro target (configure(obj_rules(micro_target = TRUE)); a type declares on_ending(TYPE_PROC_REF(/obj, micro_occupants_out)) beside it): the
+/// micros inside it tumble out to where it was (to the belly's holder when a belly holds it).
+/obj/proc/micro_occupants_out(cause, datum/by)
+	for(var/thing in contents_of(src))
+		if(!ismob(thing))
+			continue
+		var/mob/m = thing
+		if(isbelly(src.loc))
+			m.forceMove(src.loc)
+		else
+			m.forceMove(get_turf(src.loc))
+		act_message(m, src, others = span_notice("%U% tumbles out of %T%!"))
 
+/obj/on_destroy(force)
 	if(istype(src, /obj/item))
 		var/obj/item/I = src
 		if(I.possessed_voice && I.possessed_voice.len)
