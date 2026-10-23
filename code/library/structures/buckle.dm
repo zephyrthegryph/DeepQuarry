@@ -52,11 +52,12 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 /datum/capability/lib/buckle/entries()
 	var/list/who = list(req(CAP_PROC(can_buckle_victim)))
 	return list(
+		click_order(BIND_ITEM, "buckle.buckle_drag", "buckle.buckle_self"),
 		slot(SLOT_BUCKLE, accepts = list(/mob/living), capacity = slots),
 		examine_line(CAP_PROC(seated_line), when = req(CAP_PROC(has_occupants))),
 		op("buckle_self", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Buckle"), \
 			needs(who), then(CAP_PROC(buckle_victim)), says(MSG(buckle/self)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
-		op("buckle_drag", item(/mob/living), gesture(GESTURE_DRAG), priority(above("buckle.buckle_self")), when(CAP_PROC(is_other_drag)), label("Buckle"), \
+		op("buckle_drag", item(/mob/living), gesture(GESTURE_DRAG), when(CAP_PROC(is_other_drag)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/other)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("buckle_grab", item(/obj/item/grab), when(CAP_PROC(holds_someone)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/grabbed)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),

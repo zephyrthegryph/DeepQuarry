@@ -77,7 +77,7 @@ CAPABILITIES(/obj/structure/table)
 	table_frame()
 	climb(landing = PROC_REF(flipped_landing))
 	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed))))
-	extend("construction.build:table_reinforced", priority(above("place_dragged")))
+	click_order(BIND_ITEM, "construction.build:table_reinforced", "place_dragged")
 	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(PROC_REF(is_damaged)),
 		then(PROC_REF(repaired)), says(MSG(table/repaired)))
 	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req(PROC_REF(can_carpet))),

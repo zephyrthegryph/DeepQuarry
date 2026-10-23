@@ -62,6 +62,9 @@
 	var/holder_constraint
 	/// SLOT_DROP_*.
 	var/drop_policy = SLOT_DROP_SPILL
+	/// SLOT_DROP_HOLDER slots only: the types of thing the contents phase still puts out when the holder is destroyed (spill()), though the holder
+	/// keeps the rest of what the slot holds (a machine's internals keep their board and parts but put an occupant out). Null: none.
+	var/list/spills
 	/// Legacy moves into the holder (forceMove, new(holder)) land in the
 	/// default slot. The first declared slot is the default unless another
 	/// sets this.
@@ -102,6 +105,12 @@
 	var/provides = NONE
 	/// BAY_*: the compartment of the holder this slot sits in; paths cross that bay's boundary.
 	var/at
+
+/// A `spills` thing of a SLOT_DROP_HOLDER slot, put out by the destroy transaction's contents phase: moved to the holder's drop location through
+/// the ledger (a destroying move, so no slot hook re-derives anything). A slot whose holder puts things out another way overrides it.
+/datum/relation_definition/slot/proc/spill(atom/holder, atom/movable/thing, atom/drop)
+	if(drop && !QDELETED(drop))
+		dq_ledger_force_move(thing, drop, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
 
 /// SLOT_DROP_TRANSFER's destination (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3). The
 /// default reproduces the pre-L1 behaviour: the holder's own container, if

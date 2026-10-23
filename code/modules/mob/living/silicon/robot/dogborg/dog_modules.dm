@@ -308,7 +308,8 @@ CAPABILITIES(/obj/item/pupscrubber)
 /// Using it in the hand asks what to do: check the reserves (and fabricate a light from them), or change the colour of the lights it makes.
 CAPABILITIES(/obj/item/lightreplacer/dogborg)
 	ref_one(nameof(glass), /datum/matter_synth)
-	op("choose", in_hand(), label("Reserves or colour"), priority(above("colour")),
+	click_order(BIND_IN_HAND, "choose", "colour")
+	op("choose", in_hand(), label("Reserves or colour"),
 		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
 		then(PROC_REF(dogborg_chosen)))
 	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))

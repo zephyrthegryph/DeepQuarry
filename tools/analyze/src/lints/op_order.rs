@@ -472,7 +472,12 @@ impl Model {
                 "click_order" => {
                     let parts = split_args(&args);
                     let Some(input) = parts.first() else { continue };
-                    let input = if input.trim() == "BIND_HAND" { "hand".to_string() } else { input.trim().to_string() };
+                    let input = match input.trim() {
+                        "BIND_HAND" => "hand".to_string(),
+                        "BIND_IN_HAND" => "in_hand".to_string(),
+                        "BIND_ITEM" => "item".to_string(),
+                        other => other.to_string(),
+                    };
                     let mut ranks = Vec::new();
                     for p in &parts[1..] {
                         if let Some(k) = unquote(p) {
@@ -1231,8 +1236,9 @@ impl Composition {
         for (input, ranks) in &self.chains {
             let takes = |o: &Op| o.binds.iter().any(|x| match x {
                 Bind::Hand => input == "hand",
+                Bind::InHand => input == "in_hand",
+                Bind::Item(_) | Bind::Stack(_) => input == "item",
                 Bind::Tool(q) => q == input,
-                _ => false,
             });
             if !takes(a) || !takes(b) {
                 continue;
@@ -1381,6 +1387,17 @@ mod tests {
         assert!(bind_intents(&toggle, &Bind::Hand).contains(&"INTENT_TOGGLE".to_string()));
         assert!(!bind_intents(&toggle, &Bind::InHand).contains(&"INTENT_TOGGLE".to_string()));
         assert_eq!(bind_intents(&hostile, &Bind::Hand), vec!["INTENT_ATTACK".to_string()]);
+    }
+
+    #[test]
+    fn click_orders_cover_item_and_in_hand_bindings() {
+        let op = |key: &str, bind: Bind| Op { key: key.to_string(), binds: vec![bind], ..Op::default() };
+        let mut comp = Composition::default();
+        comp.chains.push(("item".to_string(), vec![vec!["stock".to_string()], vec!["open_with_item".to_string()]]));
+        comp.chains.push(("in_hand".to_string(), vec![vec!["invoke".to_string()], vec!["skin".to_string()]]));
+        assert!(comp.chain_orders(&op("stock", Bind::Item("/obj/item".into())), &op("open_with_item", Bind::Item("/obj/item".into()))));
+        assert!(comp.chain_orders(&op("invoke", Bind::InHand), &op("skin", Bind::InHand)));
+        assert!(!comp.chain_orders(&op("invoke", Bind::Hand), &op("skin", Bind::Hand)), "an order is for the input it names");
     }
 
     #[test]
