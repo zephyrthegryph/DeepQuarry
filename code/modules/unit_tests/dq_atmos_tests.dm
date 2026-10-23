@@ -4627,6 +4627,48 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(abs(T.air.get_moles(/datum/gas/oxygen) - initial_turf_oxygen - 25) < 0.001, "destroyed pipe gas was not atomically received by its turf")
 	TEST_ASSERT_EQUAL(length(SSair.rust_pipe_region_networks), initial_region_count, "fully removed Rust region left a compatibility wrapper")
 
+/// A region Rust keeps under the same handle when a pipe joins it (a Changed event, no prior) must have
+/// its old compatibility wrapper retired: dropped from the table alive, it would hard-delete with
+/// its mixture still stamped as owned by a pipe_network that no longer exists.
+/datum/unit_test/dq_rust_changed_region_retires_old_wrapper
+
+/datum/unit_test/dq_rust_changed_region_retires_old_wrapper/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		var/nearby_atmos = FALSE
+		for(var/turf/nearby in RANGE_TURFS(1, candidate))
+			if(locate_within(nearby, /obj/machinery/atmospherics))
+				nearby_atmos = TRUE
+				break
+		if(candidate.air && !nearby_atmos)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for changed-region test")
+	var/obj/machinery/atmospherics/pipe/simple/first = new(T)
+	first.rust_register_pipe_topology()
+	var/first_port = first.rust_pipe_port_ids[1]
+	var/datum/pipe_network/old_network = first.parent?.network
+	var/region
+	for(var/key in SSair.rust_pipe_region_networks)
+		if(SSair.rust_pipe_region_networks[key] == old_network)
+			region = key
+	TEST_ASSERT_NOTNULL(old_network, "the first pipe did not materialize a wrapper")
+	var/obj/machinery/atmospherics/pipe/simple/second = new(T)
+	second.rust_register_pipe_topology()
+	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, first_port, second.rust_pipe_port_ids[1])
+	SSair.rust_commit_pending_pipenets()
+	var/datum/pipe_network/new_network = first.parent?.network
+	TEST_ASSERT_NOTNULL(new_network, "the joined pipe has no wrapper")
+	var/orphans = list()
+	for(var/key in SSair.rust_pipe_region_networks)
+		if(SSair.rust_pipe_region_networks[key] == old_network && old_network != new_network)
+			orphans += key
+	TEST_ASSERT(old_network == new_network || QDELETED(old_network), "the replaced wrapper for region [region] was dropped without being destroyed")
+	TEST_ASSERT(!length(orphans), "the replaced wrapper is still in the region table")
+	TEST_ASSERT(!length(own_audit(TRUE)), "ownership audit found an orphan after the region changed")
+	qdel(second)
+	qdel(first)
+
 /datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes
 
 /datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes/Run()

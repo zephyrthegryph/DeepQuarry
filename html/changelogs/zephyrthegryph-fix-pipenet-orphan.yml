@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A pipe region that Rust keeps under the same handle now retires its old network wrapper instead of dropping it with its gas still owned"

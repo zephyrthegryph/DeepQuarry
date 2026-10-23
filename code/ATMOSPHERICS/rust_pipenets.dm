@@ -551,6 +551,15 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_region]
 		rust_pipe_region_networks -= prior_region
 		rust_retire_pipe_network(old_network)
+	// A region Rust kept (membership changed, or the surviving half of a split) comes back
+	// under its own handle with no prior: its old wrapper is replaced here, or it would be
+	// dropped from the table still owning its mixture and hard-delete with the gas stamped.
+	for(var/list/transition as anything in transitions)
+		var/kept_region = transition["region"]
+		var/datum/pipe_network/kept_network = rust_pipe_region_networks[kept_region]
+		if(kept_network)
+			rust_pipe_region_networks -= kept_region
+			rust_retire_pipe_network(kept_network)
 	for(var/list/transition as anything in transitions)
 		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
 		vg_bind_handle(region_air, transition["region"])
