@@ -1,7 +1,2 @@
 # System boundary ratchet (tools/ci/system_boundary_lint.py). `<rule>:<file>:<owner> <count>`; only shrinks.
 # Regenerate the file with --generate only when the rules change; otherwise --update lowers ceilings.
-B1:code/modules/expedition/expedition_controller.dm:SSflight 1
-B1:code/modules/overmap/sectors.dm:SSshuttles 1
-B1:code/modules/overmap/ships/ship.dm:SSflight 1
-B1:code/modules/persistence/paintings.dm:SSpersistence 3
-B1:maps/submaps/engine_submaps/engine.dm:SSmapping 1

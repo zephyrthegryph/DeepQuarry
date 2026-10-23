@@ -197,7 +197,7 @@
 	if(nif)
 		compiled_vis |= nif.planes_visible()
 	//event hud
-	if(vantag_hud)
+	if(sparse_get_or(src, vantag_hud, 0))
 		compiled_vis |= VIS_CH_VANTAG
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tummy_sprites))

@@ -47,13 +47,13 @@ CAPABILITIES(/obj/item/stack)
 	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
 	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
 	param(nameof(amount_at_make), pos = 1)
+	setup(PROC_REF(stack_start))
 
 /// The amount a stack is made with (its constructor param): null for its own, negative for a full stack.
 /obj/item/stack/var/amount_at_make
 
-// ALLOW(init/INSTANCE_STATE): a stack sets its starting amount (a negative one is a full stack), its in-hand sprite and its sale
-/obj/item/stack/Initialize(mapload)
-	. = ..()
+/// A stack sets its stack type, its starting amount (a negative one is a full stack), its in-hand sprite and its sale.
+/obj/item/stack/proc/stack_start()
 	if(!stacktype)
 		stacktype = type
 	if(!no_variants)

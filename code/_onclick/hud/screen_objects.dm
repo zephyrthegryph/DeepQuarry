@@ -319,25 +319,25 @@ CAPABILITIES(/atom/movable/screen)
 						L.set_m_intent(I_RUN)
 						L.hud_used.move_intent.icon_state = "running"
 		if("m_intent")
-			if(!user.m_int)
+			if(!sparse_get(user, m_int))
 				switch(user.m_intent)
 					if(I_RUN)
-						user.m_int = "13,14"
+						sparse_set(user, m_int, "13,14")
 					if(I_WALK)
-						user.m_int = "14,14"
+						sparse_set(user, m_int, "14,14")
 					if("face")
-						user.m_int = "15,14"
+						sparse_set(user, m_int, "15,14")
 			else
-				user.m_int = null
+				sparse_set(user, m_int, null)
 		if(I_WALK)
 			user.m_intent = I_WALK
-			user.m_int = "14,14"
+			sparse_set(user, m_int, "14,14")
 		if("face")
 			user.m_intent = "face"
-			user.m_int = "15,14"
+			sparse_set(user, m_int, "15,14")
 		if(I_RUN)
 			user.m_intent = I_RUN
-			user.m_int = "13,14"
+			sparse_set(user, m_int, "13,14")
 		if("Reset Machine")
 			user.unset_machine()
 		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.

@@ -343,7 +343,7 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 			to_chat(user,span_warning("\The [H] is protected from impersonation!"))
 			return
 		//Changeling bodies. Only changelings can be put in them.
-		if(H.changeling_locked && !is_changeling(stored_mind()))
+		if(sparse_get(H, changeling_locked) && !is_changeling(stored_mind()))
 			to_chat(user,span_warning("\The [H] is too complex to put this mind into!"))
 			return
 

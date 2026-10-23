@@ -19,7 +19,6 @@
 	footstep_e_range = -6
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
-	var/germs_rolled_at
 
 /mob/living/carbon/proc/life_germs(datum/seq_frame/life/F)
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
@@ -27,8 +26,8 @@
 	var/now = clock_now(src, CLOCK_BIO)
 	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
-	var/cycles = !isnull(src.germs_rolled_at) ? clamp((now - src.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
-	src.germs_rolled_at = now
+	var/cycles = !isnull(sparse_get(src, germs_rolled_at)) ? clamp((now - sparse_get(src, germs_rolled_at)) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
+	sparse_set(src, germs_rolled_at, now)
 	if(src.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
 	var/expected = cycles * 0.3
@@ -403,7 +402,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
 	play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
 	if(has_trait(src, SLIP_REFLEX_TRAIT) && !lying)
-		if(COOLDOWN_FINISHED(src, next_emote))
+		if(cooldown_ready(src, next_emote))
 			src.emote("sflip")
 			return TRUE
 	status_at_least(STAT_WEAKENED, FLOOR(stun_duration/2, 1))
@@ -545,4 +544,3 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 
 /mob/living/carbon
 	var/datum/looping_sound/mob/cozyloop/cozyloop
-	var/synth_reag_processing = TRUE

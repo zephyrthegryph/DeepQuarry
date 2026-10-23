@@ -654,7 +654,7 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,FALSE)
 		hud_used?.vis_enabled -= VIS_CH_STOMACH
 
-	if(vantag_hud)
+	if(sparse_get_or(src, vantag_hud, 0))
 		if(!(VIS_CH_VANTAG in hud_used?.vis_enabled))
 			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,TRUE)
 			hud_used?.vis_enabled += VIS_CH_VANTAG

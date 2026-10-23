@@ -162,6 +162,8 @@ CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
+	setup(PROC_REF(machine_start), mapload = TRUE)
+	setup(PROC_REF(machine_power_start))
 	section(maintenance, "The panel, deconstruct, secure and weld repair that the type's maintenance_flags offer (machinery_maintenance.dm)")
 	op("machine_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Open maintenance panel"),
 		when(PROC_REF(maint_offers_panel)), when(not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
@@ -201,9 +203,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// The facing a machine is built with (its constructor param).
 /obj/machinery/var/dir_at_make // ALLOW(base_vars): param() carries the constructor's facing into init through a var of the type it declares
 
-// ALLOW(init/INSTANCE_STATE): a machine faces the way it is built and, made after the map, checks its power
-/obj/machinery/Initialize(mapload)
-	. = ..()
+/// A machine faces the way it is built, may start switched off or broken and, made after the map, checks its power once it is made.
+/obj/machinery/proc/machine_start(mapload)
 	if(starts_switched_off())
 		set_switched_on(FALSE)
 	if(starts_broken())

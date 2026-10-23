@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mob scratch state (emote cooldowns, vore toggles, drain/slosh/footstep counters, medical snapshots) moved from base-type vars to sparse slots and cooldown tables"

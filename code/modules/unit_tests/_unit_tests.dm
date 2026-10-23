@@ -1389,6 +1389,7 @@
 #include "dq_a5_mob_init.dm"
 #include "dq_a10_content_init.dm"
 #include "dq_a2_item_init.dm"
+#include "dq_setup_base_tails_tests.dm"
 #include "dq_a11_initialization_tests.dm"
 #include "dq_a3_initialization_tests.dm"
 #include "dq_a4_initialization_tests.dm"

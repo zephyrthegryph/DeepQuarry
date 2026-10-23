@@ -69,7 +69,7 @@
 	var/manuals = 0
 	var/parcels = 0
 	for(var/atom/movable/O in contents_of(T))
-		if(O in before || O == E)
+		if((O in before) || O == E)
 			continue
 		own(O)
 		if(istype(O, /obj/item/paper))

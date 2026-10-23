@@ -20,7 +20,7 @@
 	held = hold(/obj/item/material/knife)
 
 /datum/unit_test/dq_timed_pin_w8/hide_scrape/is_done()
-	return !!locate(/obj/item/stack/hairlesshide) in user.loc
+	return !!(locate(/obj/item/stack/hairlesshide) in user.loc)
 
 // ---- Nail polish: painting someone else's nails takes two seconds and both must stay still ----
 

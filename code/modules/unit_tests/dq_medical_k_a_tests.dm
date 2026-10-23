@@ -64,15 +64,15 @@
 	breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	heat_set(breath, T20C, HEAT_SOURCE_OTHER)
 	var/co2_before = breath.get_moles(/datum/gas/carbon_dioxide)
-	H.photosynthesis_boost = 0
+	sparse_set(H, photosynthesis_boost, 0)
 	P.skin_exchange(H, breath)
 	TEST_ASSERT(!H.failed_last_breath, "a CO2-rich breath is a good breath for a plant")
-	TEST_ASSERT(H.photosynthesis_boost > 0, "CO2 in the breath boosts photosynthesis")
+	TEST_ASSERT(sparse_get_or(H, photosynthesis_boost, 0) > 0, "CO2 in the breath boosts photosynthesis")
 	TEST_ASSERT(breath.get_moles(/datum/gas/carbon_dioxide) < co2_before, "the skin takes CO2 in")
 
 	P.skin_exchange(H, null)
 	TEST_ASSERT(H.failed_last_breath, "no air is a failed breath")
-	TEST_ASSERT_EQUAL(H.photosynthesis_boost, 0, "no air, no boost")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, photosynthesis_boost, 0), 0, "no air, no boost")
 
 /// P2-D7: one photosynthesis trait; the alraune data scales gains with the CO2 boost and heals only with it.
 /datum/unit_test/dq_k_a_photosynthesis_shared
@@ -106,11 +106,11 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/total, src)
-	var/cycle = H.breath_cycle
+	var/cycle = sparse_get_or(H, breath_cycle, 0)
 	var/nutrition = nutrition_of(H)
 	for(var/i in 1 to 6)
 		seq_run_frame_now(H, /datum/sequence/life)
-	TEST_ASSERT_EQUAL(H.breath_cycle, cycle, "total stasis takes no breath")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, breath_cycle, 0), cycle, "total stasis takes no breath")
 	TEST_ASSERT_EQUAL(nutrition_of(H), nutrition, "total stasis metabolises nothing")
 	H.set_stasis(null, src)
 

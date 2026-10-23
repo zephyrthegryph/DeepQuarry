@@ -41,9 +41,8 @@
 /// The flooring a floor is made with (its constructor param), or its initial one.
 /turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): param() carries the constructor's flooring into init through a var of the type it declares
 
-// ALLOW(init/INSTANCE_STATE): a floor lays its flooring and may start dirty
-/turf/simulated/floor/Initialize(mapload)
-	. = ..()
+/// A floor lays its flooring and may start dirty once it is made.
+/turf/simulated/floor/proc/floor_start()
 	var/floortype = floortype_at_make || initial_flooring
 	if(floortype)
 		install_flooring(get_flooring_data(floortype), TRUE) // the first draw after init shows it

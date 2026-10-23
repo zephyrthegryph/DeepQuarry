@@ -1588,7 +1588,7 @@ CAPABILITIES(/datum/vore_look)
 			body_backup.revive()
 		body_backup.forceMove(T.loc)
 		release(body_backup, STAT_SUSPENDED, body_backup)
-		body_backup.ajourn = 0
+		sparse_set(body_backup, ajourn, 0)
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
 		rel_clear(body_backup, nameof(body_backup.teleop))
 		rel_take(T, nameof(T.body_backup))
@@ -1630,7 +1630,7 @@ CAPABILITIES(/datum/vore_look)
 		var/mob/living/body_backup = MMI.body_backup
 		release(body_backup, STAT_SUSPENDED, body_backup)
 		body_backup.forceMove(MMI.loc)
-		body_backup.ajourn = 0
+		sparse_set(body_backup, ajourn, 0)
 		rel_clear(body_backup, nameof(body_backup.teleop))
 		//And now installing the MMI into the body...
 		if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death

@@ -129,7 +129,6 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 /mob/living/carbon/alien/ventcrawl_carry()
 	return TRUE
 
-/mob/living/var/ventcrawl_layer = 3
 
 /mob/living/proc/ventcrawl_time(datum/act/op/A)
 	return A.arg("time")

@@ -290,7 +290,6 @@ call	code/modules/economy/service_invoices.dm	@/datum/service_invoice::created_t
 call	code/modules/economy/service_invoices.dm	@/datum/service_invoice::refund_time
 call	code/modules/economy/supply_service.dm	@/datum/system/supply::next_payroll
 call	code/modules/economy/supply_service.dm	@/datum/supply_order::ordernum
-call	code/modules/emotes/emote_mob.dm	@/mob::last_emote_summary
 call	code/modules/eventkit/collector_event/event_collector.dm	@/obj/structure/event_collector::next_item_added
 call	code/modules/events/event.dm	@/datum/event::endWhen
 call	code/modules/events/event_container.dm	@/datum/event_container::next_event_time
@@ -358,7 +357,6 @@ call	code/modules/medical/contagion/engineered/viral_trait.dm	@/datum/viral_trai
 call	code/modules/medical/diagnosis/diagnosis.dm	@/datum/diagnosis::band
 call	code/modules/medical/diagnosis/diagnosis.dm	@/datum/diagnosis_finding::trend
 call	code/modules/medical/diagnosis/diagnosis.dm	@/datum/diagnosis_finding::hint
-call	code/modules/medical/emergent.dm	@/mob/living/carbon/human::dq_last_bodytemperature
 call	code/modules/metrics/metrics_service.dm	@/datum/system/server_metrics::sample_t
 call	code/modules/mining/drilling/drill.dm	@/obj/machinery/mining/brace::brace_tier
 call	code/modules/mining/machine_silo.dm	@/datum/ore_silo_log::timestamp

@@ -32,7 +32,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 
 	//Person just died in guts!
 	if(L.stat == DEAD)
-		if(!L.digestion_in_progress)
+		if(!sparse_get_or(L, digestion_in_progress, FALSE))
 			if(L.check_sound_preference(/datum/preference/toggle/digestion_noises))
 				if(!B.fancy_vore)
 					SEND_SOUND(L, sound(get_sfx(SFX_CLASSIC_DEATH_SOUNDS)))

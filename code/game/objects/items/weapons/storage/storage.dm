@@ -68,6 +68,7 @@ CAPABILITIES(/obj/item/storage)
 	owns_one(nameof(hud), /datum/storage_hud)
 	ref_many(nameof(is_seeing), /mob)
 	drag_onto(PROC_REF(mousedrop_input))
+	setup(PROC_REF(storage_start))
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
 /obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
@@ -136,9 +137,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 // ---- Lifecycle ----
 
-/obj/item/storage/Initialize(mapload)
-	. = ..()
-
+/// Once the storage is made: its starting contents are declared (or dropped), and its capacity grows to fit what it holds.
+/obj/item/storage/proc/storage_start()
 	if(LAZYLEN(starts_with) && !empty)
 		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
 		// Latent-safe types without a variant stay declared until the storage

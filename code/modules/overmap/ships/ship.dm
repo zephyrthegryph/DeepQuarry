@@ -1,7 +1,7 @@
 #define SHIP_MOVE_RESOLUTION 0.00001
 #define MOVING(speed) abs(speed) >= min_speed
 #define SANITIZE_SPEED(speed) SIGN(speed) * CLAMP(abs(speed), 0, max_speed)
-#define CHANGE_SPEED_BY(speed_var, v_diff) \
+#define ADJUST_SPEED_BY(speed_var, v_diff) \
 	v_diff = SANITIZE_SPEED(v_diff);\
 	if(!MOVING(speed_var + v_diff)) \
 		{speed_var = 0};\
@@ -65,10 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
 	if(SSflight && flight_vessel_id)
-		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
-		if(vessel)
-			SSflight.vessel_by_ship -= REF(src)
-			spent(vessel)
+		SSflight.unregister_vessel(src, flight_vessel_id)
 	return ..()
 
 /obj/effect/overmap/visitable/ship/on_destroy(force)
@@ -156,8 +153,8 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	var/old_still = is_still()
 	var/new_x = speed[1]
 	var/new_y = speed[2]
-	CHANGE_SPEED_BY(new_x, n_x)
-	CHANGE_SPEED_BY(new_y, n_y)
+	ADJUST_SPEED_BY(new_x, n_x)
+	ADJUST_SPEED_BY(new_y, n_y)
 	set_speed(list(new_x, new_y)) // a new list each time: the tracked write redraws the heading
 	var/still = is_still()
 	// If nothing changed
@@ -298,13 +295,13 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
 	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
-	var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
+	var/datum/flight_destination/orbit = SSflight?.destination_by_id(vessel?.orbit_parent_id)
 	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION
 #undef MOVING
 #undef SANITIZE_SPEED
-#undef CHANGE_SPEED_BY
+#undef ADJUST_SPEED_BY
 
 /// A ship is only offered to a living thing next to both it and the one dragging (a ship-eating mob must be one that eats ships).
 /obj/effect/overmap/visitable/ship/proc/ingestion_possible(datum/act/op/A)

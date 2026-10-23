@@ -203,6 +203,7 @@ MSG_DEF_SELF(huge_portable/unanchored, "You unwrench it.")
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 	configure(uses_power(idle = 50, active = 1000))
 	huge_portable_controls()
+	setup(PROC_REF(number_huge_pump))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
 
 /// What a huge portable (a pump or a scrubber) is to a hand: worked only from its console; it takes no cell or tank; its wrench bolts it down
@@ -221,9 +222,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 	if(.)
 		set_use_power(1 + on)
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/Initialize(mapload)
-	. = ..(mapload, TRUE)
-
+/// A huge pump takes the next number and carries it in its name once it is made.
+/obj/machinery/portable_atmospherics/powered/pump/huge/proc/number_huge_pump()
 	id = gid
 	gid++
 

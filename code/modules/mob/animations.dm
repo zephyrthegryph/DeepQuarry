@@ -1,6 +1,5 @@
 //handles up-down floaty effect in space and zero-gravity
 /mob/var/is_floating = 0
-/mob/var/floatiness = 0
 
 /mob/proc/update_floating(dense_object=0)
 
@@ -37,11 +36,11 @@
 		if(is_floating)
 			stop_floating()
 		return
-	floatiness = n
+	sparse_set(src, floatiness, n)
 
-	if(floatiness && !is_floating)
+	if(sparse_get_or(src, floatiness, 0) && !is_floating)
 		start_floating()
-	else if(!floatiness && is_floating)
+	else if(!sparse_get_or(src, floatiness, 0) && is_floating)
 		stop_floating()
 
 /mob/proc/start_floating()
