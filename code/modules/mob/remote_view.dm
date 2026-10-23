@@ -379,7 +379,7 @@ CAPABILITIES(/datum/remote_view/item_zoom)
 	// Feedback
 	show_message = show_visible_messages
 	if(show_message)
-		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [handling_of(host_item).zoom_name ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
+		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [handling_of(host_item).zoom_name ? "[handling_of(host_item).zoom_name] of the [host_item.name]" : "[host_item.name]"]."))
 	PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 
 // The zooming item un-zooms and the viewer's client offset resets.
