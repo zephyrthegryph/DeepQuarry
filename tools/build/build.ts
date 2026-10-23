@@ -2320,7 +2320,7 @@ async function runShardWorld(
   linkFrom: string,
   compiledOutput: CompiledOutput,
   wholeTier: boolean,
-  worldSlot: HeldSlot | null,
+  worldSlot: HeldSlot | null | undefined,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
@@ -2454,6 +2454,8 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
   // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
   const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m));
+  // [] = the class is off or a parent holds the slots (null: no slot needed). A group smaller than the shard count (the suite cap,
+  // DQ_SLOTS_SUITE_MAX_WORLDS) leaves the later shards undefined: each takes its own slot, in queue order, when it boots.
   if (worldSlots.length === 0) for (let i = 0; i < shardCount; i++) worldSlots.push(null);
   try {
     runs = await Promise.all(
@@ -2469,7 +2471,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           privateBase,
           compiledOutput,
           wholeTier,
-          worldSlots[i] ?? null,
+          worldSlots[i],
         )),
     );
   } finally {
