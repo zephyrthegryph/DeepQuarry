@@ -75,7 +75,10 @@
 		var/list/rows = list()
 		for(var/type in typesof(root))
 			rand_seed(1) // a type that rolls its contents (random vials, old food, flavoured gum) rolls the same way whatever ran before it
-			rolls_fix_seed(1) // rolls() streams hash the round seed and the creation serial, which earlier tests advance: fixed here, a row does not depend on what ran first
+			rolls_fix_seed(1) // the round seed and the creation serial are fixed too
+			// A rolls() stream hashes where the instance stands (dq_containment_floor() takes the first clean floor in the world, so its block and tile change with what other tests left behind): the instance rolls from a creator stream of its own instead, the same for a type whatever ran before it.
+			var/datum/roller/fixed_stream = new /datum/roller("reagents_start/[type]")
+			GLOB.roll_creators += fixed_stream
 			var/atom/A
 			try
 				if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))
@@ -84,8 +87,10 @@
 				else
 					A = allocate(type, T)
 			catch
+				GLOB.roll_creators -= fixed_stream
 				rows += "[type] runtime" // the type's own Initialize() fails outside a body; its reagents are not pinned here
 				continue
+			GLOB.roll_creators -= fixed_stream
 			if(QDELETED(A))
 				rows += "[type] deleted"
 				continue

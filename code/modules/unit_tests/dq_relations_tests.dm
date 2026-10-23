@@ -131,6 +131,7 @@ CAPABILITIES(/datum/relations_refuse_dock)
 	set_global("pool_poison", FALSE)
 	var/datum/probe = new
 	var/checked = 0
+	var/list/pools_before = GLOB.object_pools.Copy()
 	for(var/T in subtypesof(/datum/pooled))
 		var/datum/pooled/proto = T
 		if(initial(proto.abstract_type) == T || T == /datum/pool_probe) // the probe counts its own resets on purpose (dq_foundation_look_tests.dm)
@@ -151,6 +152,10 @@ CAPABILITIES(/datum/relations_refuse_dock)
 			TEST_ASSERT_EQUAL(after[name], fresh[name], "[T].[name] is back to its fresh value after release")
 		again.release()
 		checked++
+	// A type no other code had pooled yet must be cold again for the tests that prove their own pool starts cold.
+	for(var/pooled_type in GLOB.object_pools)
+		if(!pools_before[pooled_type])
+			GLOB.object_pools -= pooled_type
 	TEST_ASSERT(checked > 0, "some pooled type was checked")
 	qdel(probe)
 

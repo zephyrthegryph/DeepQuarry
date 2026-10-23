@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A turf handle on a level that was never released resolves again after a higher level's generation was bumped"
+  - code_imp: "Unit test blocks start and end clean: dirt, the wall ring, pools made by the pool sweep; the reagent start snapshot rolls from a fixed stream"
