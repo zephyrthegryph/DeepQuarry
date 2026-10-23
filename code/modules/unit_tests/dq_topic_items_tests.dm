@@ -205,3 +205,22 @@
 	TEST_ASSERT_EQUAL(record_row["record"], ref_token(record), "by its handle")
 	own(test_ui(user, console, "view_rec", list("ref" = record_row["record"])))
 	TEST_ASSERT_EQUAL(console.active_BR, record, "the view button opens that record")
+	// a record of another console is not this console's to view or clone, and a console with no records names none
+	var/obj/machinery/computer/cloning/other_console = allocate(/obj/machinery/computer/cloning, get_step(T, WEST))
+	other_console.set_grid_power(TRUE)
+	var/mob/living/carbon/human/other_subject = allocate(/mob/living/carbon/human, get_step(T, SOUTH))
+	var/datum/transhuman/body_record/foreign = new
+	foreign.init_from_mob(other_subject)
+	foreign.ckey = "dq_topic_cloning_foreign"
+	rel_add(other_console, nameof(/obj/machinery/computer/cloning::records), foreign)
+	var/datum/transhuman/body_record/active_before = console.active_BR
+	own(test_ui(user, console, "view_rec", list("ref" = ref_token(foreign))))
+	TEST_ASSERT_EQUAL(console.active_BR, active_before, "a record held by another console cannot be viewed")
+	own(test_ui(user, console, "clone", list("ref" = ref_token(foreign))))
+	TEST_ASSERT_EQUAL(console.active_BR, active_before, "or cloned")
+	TEST_ASSERT_EQUAL(other_console.active_BR, null, "and the other console is untouched")
+	var/obj/machinery/computer/cloning/empty_console = allocate(/obj/machinery/computer/cloning, get_step(T, NORTH))
+	empty_console.set_grid_power(TRUE)
+	own(test_ui(user, empty_console, "view_rec", list("ref" = ref_token(record))))
+	TEST_ASSERT_NULL(empty_console.active_BR, "a console with no records at all names none")
+	TEST_ASSERT_NULL(empty_console.record_of(ref_token(record)), "so no handle finds a record in it")

@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The resleeving console, supply console, message monitor, telecommunications machines, ship engines console and research server control send the things they list (pods, records, orders, engines, servers) by handle instead of by reference text, and take them back only from their own lists"
+  - bugfix: "The fighter's landing gear and the hoverpod's stabilizer buttons work only for the pilot; the exosuit's maintenance, access and valve buttons check the clicker's access again; a cloning console names only its own records"
+  - bugfix: "A ship engines console can no longer work an engine of another ship, and a resleeving console no longer opens a record it does not list"

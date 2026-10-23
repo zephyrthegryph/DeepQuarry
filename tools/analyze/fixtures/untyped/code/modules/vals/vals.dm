@@ -217,3 +217,76 @@
 	via_number_local = count
 	var/size = fact(2)
 	via_value_call_local = size
+
+// --- an external function's result is text or null, never a reference; call()() is a dynamic call and stays unknown
+/proc/ffi_text(f)
+	return call_ext(f)(1)
+
+/proc/ffi_dynamic(o, p)
+	return call(o, p)()
+
+/datum/ffier
+	var/from_ffi
+	var/from_ffi_dynamic
+
+/datum/ffier/proc/use_ffi()
+	from_ffi = ffi_text("x")
+	from_ffi_dynamic = ffi_dynamic(src, "y")
+
+// --- builtins that hand back text or a number
+/datum/reffer
+	var/from_ref
+	var/from_url
+	var/from_sort
+
+/datum/reffer/proc/use_builtins()
+	from_ref = ref(src)
+	from_url = url_encode("a b")
+	from_sort = sorttext("a", "b")
+
+// --- a var is the type that declares it and its name: a write through a typed receiver reaches that var only; a write through an untyped one reaches every var of the name
+/datum/keyed_a
+	var/amount = 0
+
+/datum/keyed_a/proc/get()
+	return amount
+
+/datum/keyed_b
+	var/amount = 0
+
+/datum/keyed_b/proc/get()
+	return amount
+
+/datum/keyed_b/proc/spoil(datum/keyed_b/other)
+	other.amount = new /datum/thing
+
+/datum/keyed_c
+	var/from_a
+	var/from_b
+
+/datum/keyed_c/proc/read(datum/keyed_a/A, datum/keyed_b/B)
+	from_a = A.get()
+	from_b = B.get()
+
+/datum/keyed_d
+	var/level = 0
+
+/datum/keyed_d/proc/get()
+	return level
+
+/datum/keyed_e
+	var/level = 0
+
+/datum/keyed_e/proc/get()
+	return level
+
+/proc/spoil_blind(thing)
+	thing.level = new /datum/thing
+
+/datum/keyed_f
+	var/from_d
+	var/from_e
+
+/datum/keyed_f/proc/read(datum/keyed_d/D, datum/keyed_e/E)
+	from_d = D.get()
+	from_e = E.get()

@@ -1007,7 +1007,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 				var/assigned_visible = assigned_bid && assigned_counterparty && market_counterparty_visible(assigned_counterparty, user, console_unlocked)
 				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && BEFORE(src, assigned_bid.expires_at, CLOCK_WORLD)
 				outbound_crates.Add(list(list(
-					"ref" = REF(crate),
+					"ref" = ref_token(crate),
 					"name" = crate.name,
 					"contents" = length(crate.contents) + crate.latent_count(), // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 					"bid_id" = assigned_active ? assigned_bid.id : null,

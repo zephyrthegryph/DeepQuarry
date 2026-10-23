@@ -229,19 +229,19 @@
 		return "the transfer's authority is malformed"
 	var/forced = !!(authority & AUTH_ADMIN)
 	var/from_slot = entry[LEDGER_E_SLOT]
-	GLOB.act_next_actor = actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), actor)
 	GLOB.act_next_authority = authority
 	var/leaving = ACT_ATTEMPT(src, remove, thing, from_slot)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	GLOB.act_next_authority = null
 	if(ACT_REFUSED_BY(leaving))
 		var/datum/act_refusal/kept = leaving
 		log_world("SLOT_TRANSFER: [thing] out of [src] ([from_slot]) refused or taken over ([reason_text(kept.reason)])")
 		return kept.reason || /datum/msg/op/not_available
-	GLOB.act_next_actor = actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), actor)
 	GLOB.act_next_authority = authority
 	var/entering = ACT_ATTEMPT(new_holder, insert, thing, slot_id)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	GLOB.act_next_authority = null
 	if(ACT_REFUSED_BY(entering))
 		var/datum/act_refusal/refused = entering

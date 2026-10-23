@@ -32,7 +32,7 @@ const CAP_ROOT: &str = "/datum/capability";
 const CAPS_DIR: &str = "code/datums/capabilities/";
 /// Framework types whose act_ procs every host inherits (the modal actions).
 const BUILTIN_HOSTS: [&str; 2] = ["/datum", "/atom"];
-const VALIDATORS: [&str; 5] = ["ui_number", "ui_text", "ui_choice", "ui_ref", "ui_bool"];
+const VALIDATORS: [&str; 7] = ["ui_number", "ui_text", "ui_choice", "ui_ref", "ui_token", "ui_member", "ui_bool"];
 
 const R_UNSENT: &str = "ui_unsent_param";
 const R_UNVALIDATED: &str = "ui_unvalidated_param";
@@ -66,7 +66,7 @@ static META: Meta = Meta {
         },
         RuleMeta {
             name: R_UNVALIDATED,
-            hint: "validate the parameter first: ui_number/ui_text/ui_choice/ui_ref/ui_bool(param), or compare it to a constant (design review C2)",
+            hint: "validate the parameter first: ui_number/ui_text/ui_choice/ui_ref/ui_token/ui_member/ui_bool(param), or compare it to a constant (design review C2)",
         },
         RuleMeta {
             name: R_PROBLEM,

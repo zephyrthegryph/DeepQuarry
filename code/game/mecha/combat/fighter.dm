@@ -187,6 +187,8 @@ CAPABILITIES(/obj/mecha/combat/fighter)
 //Modified phazon code
 
 /obj/mecha/combat/fighter/proc/ui_act_toggle_landing_gear(datum/act/op/A)
+	if(!is_pilot(A.actor))
+		return
 	set_landing_gear_raised(!landing_gear_raised)
 	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
 	return
