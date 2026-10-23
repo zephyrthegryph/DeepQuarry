@@ -30,11 +30,21 @@
 	TEST_ASSERT(C.watchers[ref_token(watcher)], "the watch is filed under the watcher's token")
 	unwatch_mob_chunks(watcher, chunks, MOB_CHUNK_WATCH_ANY_MOB)
 	TEST_ASSERT(!LAZYLEN(C.watchers) || !C.watchers[ref_token(watcher)], "unwatch drops the watch")
-	watch_mob_chunks(watcher, chunks, MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
-	var/token = ref_token(watcher)
-	qdel(watcher)
-	mob_chunk_changed(C.id, MOB_CHUNK_WATCH_ANY_MOB)
-	TEST_ASSERT(!LAZYLEN(C.watchers) || !C.watchers[token], "a deleted watcher's token resolves to nothing and the next raise drops it")
+
+/// A watcher that unwatches in its teardown (an AI pack does) loses its entry the moment it is qdel()ed, not on the next raise.
+/datum/unit_test/dq_ref_text_chunk_deleted_pack_unwatches_at_once
+
+/datum/unit_test/dq_ref_text_chunk_deleted_pack_unwatches_at_once/Run()
+	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/list/chunks = mob_chunks_around(T, 0)
+	var/datum/mob_chunk/C = chunks[1]
+	var/datum/ai_pack/pack = new /datum/ai_pack("test")
+	pack.cover_chunks(chunks)
+	var/token = ref_token(pack)
+	TEST_ASSERT(C.watchers[token], "the pack's watch is filed under its token")
+	qdel(pack)
+	TEST_ASSERT(!LAZYLEN(C.watchers) || !C.watchers[token], "qdel() removed the pack's watch at once")
+
 
 /datum/unit_test/dq_ref_text_ore_silo_logs_by_token
 
