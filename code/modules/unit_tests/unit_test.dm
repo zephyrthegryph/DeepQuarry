@@ -1066,10 +1066,14 @@ GLOBAL_VAR(dq_test_select_names)
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
-	unit_test_globals_guard(globals_before, test_path)
-	unit_test_gravity_guard(gravity_before, test_path)
-	unit_test_watch_guard(watching_before, test_path)
-	unit_test_air_guard(air_before, hotspots_before, test_path)
+	var/list/state_leaks = list()
+	unit_test_globals_guard(globals_before, test_path, state_leaks)
+	unit_test_gravity_guard(gravity_before, test_path, state_leaks)
+	unit_test_watch_guard(watching_before, test_path, state_leaks)
+	unit_test_air_guard(air_before, hotspots_before, test_path, found = state_leaks)
+	if(length(state_leaks))
+		var/state_text = state_leaks.Join("\n\t")
+		leak = leak ? "[leak]\n\t[state_text]" : state_text
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -1108,10 +1112,10 @@ GLOBAL_VAR(dq_test_select_names)
  * shows only in a long focused run and never alone (dq_rule_thresholds, vent_internal_check). After each test, a
  * scalar GLOB var that changed is logged in tests.log: "STATE LEAK" for a flag (null, 0 or 1 before and after, not
  * a counter or a lazy-init marker), "STATE LEAK?" for text and paths; numbers that are not flags are ignored. It
- * only flags, never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
+ * fails the leaking test and never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
  * long run, grep the run's tests.log for STATE LEAK before it (tools/dq_focused_test.sh prints them on a failure). Change shared state with set_global()/set_var() (restored in teardown) and the guard stays quiet.
  */
-/proc/unit_test_globals_guard(list/before, test_path)
+/proc/unit_test_globals_guard(list/before, test_path, list/found)
 	var/list/ignored = unit_test_globals_ignored()
 	var/static/regex/counter = regex(@"(built|initialized|ready|done|loaded|roundstat|count|next|total|_id$|^id_|gen$|_gen|serial|tick|time|last|seq|index|builds|cursor|stamp)", "i")
 	for(var/name in GLOB.vars)
@@ -1126,9 +1130,13 @@ GLOBAL_VAR(dq_test_select_names)
 			continue
 		var/flag = (isnull(was) || was == 0 || was == 1) && (isnull(value) || value == 0 || value == 1)
 		if(flag && !counter.Find(name))
-			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
+			var/text = "STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). Change it with set_global() in the test so teardown restores it."
+			log_test(text)
+			found?.Add(text)
 		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
-			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
+			var/text = "STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)"
+			log_test(text)
+			found?.Add(text)
 
 /// What the watch index holds, as "type|key xholders": the leftover, named, when a test finds it not empty.
 /proc/unit_test_watch_index_text()
@@ -1145,10 +1153,12 @@ GLOBAL_VAR(dq_test_select_names)
 
 /// Logs "STATE LEAK" when the test left more entries in the watch index than it found: a wait, task or every() hop watch that never ended
 /// poisons the tests that assert the index is empty (dq_p1/wait_rechecks_on_a_published_read), which then fail only in a long run.
-/proc/unit_test_watch_guard(watching_before, test_path)
+/proc/unit_test_watch_guard(watching_before, test_path, list/found)
 	var/now = length(GLOB.op_watchers)
 	if(now > watching_before)
-		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
+		var/text = "STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])"
+		log_test(text)
+		found?.Add(text)
 
 /// The smallest change the air guard calls a leak. A test that pollutes shared air moves tens to hundreds of moles or tens of kelvin (the
 /// lingering-fire bridge left +80 mol); the margin keeps the guard off the small drift a busy world makes by itself.
@@ -1218,19 +1228,23 @@ GLOBAL_VAR(dq_test_select_names)
 			unit_test_air_put_back(T, was, offset)
 	return list("leaked" = leaked, "examples" = examples)
 
-/// Logs "STATE LEAK" for each turf whose air a test left changed (unit_test_air_diff()), and for a hotspot the test left burning. Test air is
+/// Logs "STATE LEAK" (and adds it to `found`, which fails the test) for each turf whose air a test left changed (unit_test_air_diff()), and for a hotspot the test left burning. Test air is
 /// shared: the clear floors the atmos helpers find are the same turfs for every test, so air a test leaves behind drifts through the
 /// neighbours and fails a later test that reads it. Snapshot a turf you change with dq_atmos_test_snapshot_air() (the finders do it for the
 /// turfs they return and their neighbours). The leak is logged and then put back from the snapshot taken before the test, so one polluter
 /// fails only itself: the line names the first test to leave a turf changed. Returns the number of leaked turfs.
-/proc/unit_test_air_guard(list/before, hotspots_before, test_path, quiet = FALSE)
+/proc/unit_test_air_guard(list/before, hotspots_before, test_path, quiet = FALSE, list/found)
 	var/list/diff = unit_test_air_diff(before, TRUE)
 	var/leaked = diff["leaked"]
 	if(leaked && !quiet)
-		log_test("STATE LEAK: [test_path] left the air of [leaked] turf(s) changed ([jointext(diff["examples"], "; ")]). Later tests that take the same floor read drifting air: call dq_atmos_test_snapshot_air() on every turf the test changes so restore_atmos() puts it back.")
+		var/text = "STATE LEAK: [test_path] left the air of [leaked] turf(s) changed ([jointext(diff["examples"], "; ")]). Call dq_atmos_test_snapshot_air() on every turf the test changes so restore_atmos() puts it back."
+		log_test(text)
+		found?.Add(text)
 	var/hotspots_now = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
 	if(hotspots_now > hotspots_before && !quiet)
-		log_test("STATE LEAK: [test_path] left [hotspots_now - hotspots_before] more hotspot(s) alive than it found. A lingering fire keeps heating its turf's air for every later test: qdel it in the test.")
+		var/text = "STATE LEAK: [test_path] left [hotspots_now - hotspots_before] more hotspot(s) alive than it found. qdel it in the test."
+		log_test(text)
+		found?.Add(text)
 	return leaked
 
 /// Puts one turf's air back to the batched record `was` read before the test (offset into it): the gases, then the temperature.
@@ -1259,10 +1273,12 @@ GLOBAL_VAR(dq_test_select_names)
 		.[A] = A.has_gravity
 
 /// Logs "STATE LEAK" for each area whose gravity the test changed (the state guard's rule: it flags, it does not restore).
-/proc/unit_test_gravity_guard(list/before, test_path)
+/proc/unit_test_gravity_guard(list/before, test_path, list/found)
 	for(var/area/A as anything in before)
 		if(!QDELETED(A) && A.has_gravity != before[A])
-			log_test("STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Its mobs drift in every later test: put it back (gravitychange()) in the test.")
+			var/text = "STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Put it back (gravitychange()) in the test."
+			log_test(text)
+			found?.Add(text)
 
 /// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
 /// that generates one must release it, through defer_cleanup() so a failing assert can't skip
