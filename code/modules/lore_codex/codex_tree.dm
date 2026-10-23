@@ -12,7 +12,7 @@ CAPABILITIES(/datum/codex_tree)
 	ref_one(nameof(holder), /atom/movable)
 	owns_one(nameof(home), /datum/lore/codex)
 	owns_many(nameof(readers))
-	interface("CodexReader", title = "The Empress Protects")
+	interface("CodexReader", title = "The Empress Protects", state = nameof(GLOB.tgui_hands_state))
 	op("target", ui_act("target", arg("page", int(1))), needs(req(PROC_REF(req_page))), then(PROC_REF(ui_act_target)))
 	op("quick_link", ui_act("quick_link", arg("term", schema_text(MAX_NAME_LEN))), then(PROC_REF(ui_act_quick_link)))
 	op("go_to_parent", ui_act("go_to_parent"), then(PROC_REF(ui_act_go_to_parent)))
@@ -198,9 +198,21 @@ CAPABILITIES(/datum/codex_reader)
 	return OP_OK
 
 /datum/codex_tree/proc/ui_act_close(datum/act/op/A)
-	SStgui.close_uis(src)
+	// the tree is shared by every reader of its codex: only the presser's window closes
+	SStgui.close_user_uis(A.actor, src)
 	return OP_OK
 
+
+/// The window is hosted by the codex book `user` holds (the tree itself is a shared datum with no place in the world): the hands state then
+/// applies its consciousness and held checks to the book, and a reader who is not holding one of this tree's books has no host and is closed.
+/datum/codex_tree/tgui_host(mob/user)
+	var/mob/living/L = user
+	if(!istype(L))
+		return null
+	for(var/obj/item/book/codex/book in L.get_all_held_items())
+		if(book.tree == src)
+			return book
+	return null
 
 /// The holder this refers to (a relation view: null once that is deleted).
 /datum/codex_tree/proc/holder() as /atom/movable

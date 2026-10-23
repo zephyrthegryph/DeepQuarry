@@ -260,6 +260,84 @@
 	TEST_ASSERT_NULL(C.event, "leaving ends the event")
 	TEST_ASSERT_EQUAL(C.gameStatus, ORION_STATUS_NORMAL, "and goes back to the trail")
 
+/// A person who stands in for one with a client: the real tgui state checks (consciousness, incapacity, distance, what is held) all run;
+/// only the "no client" close of shared_tgui_interaction is skipped, since a test world has no client to give a mob.
+/mob/living/carbon/human/dq_tgui_transport
+
+/mob/living/carbon/human/dq_tgui_transport/shared_tgui_interaction(src_object)
+	if(stat)
+		return STATUS_DISABLED
+	if(incapacitated())
+		return STATUS_UPDATE
+	return STATUS_INTERACTIVE
+
+/// The window's gate is the real tgui state: an ordinary mob with no client is closed, an unconscious one disabled, a restrained one view-only.
+/datum/unit_test/dq_hc_computers/orion_window_gate_state
+/datum/unit_test/dq_hc_computers/orion_window_gate_state/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/ordinary = hc_actor()
+	TEST_ASSERT_EQUAL(C.tgui_status(ordinary, C.tgui_state(ordinary)), STATUS_CLOSE, "a headless actor cannot keep the window open")
+	var/mob/living/carbon/human/dq_tgui_transport/H = allocate(/mob/living/carbon/human/dq_tgui_transport, hc_side())
+	H.enable_godmode()
+	TEST_ASSERT_EQUAL(C.tgui_status(H, C.tgui_state(H)), STATUS_INTERACTIVE, "a conscious person at the machine works the window")
+	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, hc_side())
+	TEST_ASSERT(H.equip_to_slot(cuffs, SLOT_ID_HANDCUFFED), "cuffs go on")
+	TEST_ASSERT_EQUAL(C.tgui_status(H, C.tgui_state(H)), STATUS_UPDATE, "an incapacitated person can only watch")
+	var/mob/living/carbon/human/dq_tgui_transport/asleep = allocate(/mob/living/carbon/human/dq_tgui_transport, hc_side())
+	asleep.enable_godmode()
+	asleep.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(C.tgui_status(asleep, C.tgui_state(asleep)), STATUS_DISABLED, "an unconscious person cannot work it")
+	var/mob/living/carbon/human/dq_tgui_transport/far = allocate(/mob/living/carbon/human/dq_tgui_transport, run_loc_floor_top_right)
+	far.enable_godmode()
+	TEST_ASSERT(C.tgui_status(far, C.tgui_state(far)) < STATUS_INTERACTIVE, "someone far from the machine cannot work it")
+
+/// The market shows the ship's supplies the old screen printed.
+/datum/unit_test/dq_hc_computers/orion_market_readouts
+/datum/unit_test/dq_hc_computers/orion_market_readouts/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	C.set_event(ORION_TRAIL_SPACEPORT)
+	C.set_fuel(30)
+	C.set_food(30)
+	C.set_engine(2)
+	C.set_hull(3)
+	C.set_electronics(4)
+	C.event()
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["screen"], "event", "the market is an event screen")
+	TEST_ASSERT_EQUAL(length(data["crew"]), length(C.settlers), "the crew is listed")
+	TEST_ASSERT_EQUAL(data["food"], C.food, "the food is shown")
+	TEST_ASSERT_EQUAL(data["fuel"], C.fuel, "the fuel is shown")
+	TEST_ASSERT_EQUAL(data["engine"], 2, "the engine parts are shown")
+	TEST_ASSERT_EQUAL(data["hull"], 3, "the hull panels are shown")
+	TEST_ASSERT_EQUAL(data["electronics"], 4, "the electronics are shown")
+
+/// A part or trade selector out of range is clamped to the nearest row and the fuel is charged once.
+/datum/unit_test/dq_hc_computers/orion_market_clamp
+/datum/unit_test/dq_hc_computers/orion_market_clamp/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	C.set_event(ORION_TRAIL_SPACEPORT)
+	C.set_fuel(30)
+	C.set_food(30)
+	C.event()
+	var/electronics_before = C.electronics
+	var/engine_before = C.engine
+	press(H, C, "buyparts", list("part" = 999))
+	TEST_ASSERT_EQUAL(C.electronics, electronics_before + 1, "part 999 is clamped to 3, the electronics")
+	TEST_ASSERT_EQUAL(C.fuel, 25, "and charged once")
+	press(H, C, "buyparts", list("part" = -5))
+	TEST_ASSERT_EQUAL(C.engine, engine_before + 1, "part -5 is clamped to 1, the engine parts")
+	TEST_ASSERT_EQUAL(C.fuel, 20, "and charged once")
+	press(H, C, "trade", list("kind" = 999))
+	TEST_ASSERT_EQUAL(C.fuel, 25, "trade 999 is clamped to 2 (food for fuel)")
+	TEST_ASSERT_EQUAL(C.food, 25, "and the food is paid once")
+	press(H, C, "trade", list("kind" = -5))
+	TEST_ASSERT_EQUAL(C.fuel, 20, "trade -5 is clamped to 1 (fuel for food)")
+	TEST_ASSERT_EQUAL(C.food, 30, "and the fuel is paid once")
+
 /datum/unit_test/dq_hc_computers/syndicate_pod_public_access_gate
 /datum/unit_test/dq_hc_computers/syndicate_pod_public_access_gate/run_gate()
 	var/obj/machinery/computer/pod/old/syndicate/C = hc_console(/obj/machinery/computer/pod/old/syndicate)
