@@ -1,0 +1,182 @@
+"""Move candidate checker. See move_candidates.sh for the rules."""
+import os
+import re
+import subprocess
+import sys
+
+NEW_TREE = ("code/engine/", "code/library/", "code/domains/", "code/content/", "code/world/", "code/defines/", "code/_generated/")
+# Old directory -> section 22 target. Anything not listed becomes code/content/<name>.
+DOMAINS = {"power": "domains/power", "heat": "domains/heat", "ATMOSPHERICS": "domains/atmos", "body": "domains/body",
+           "damage": "domains/damage", "combat_ai": "domains/ai", "life": "domains/life"}
+OLD_FORMS = [
+    ("Destroy()", re.compile(r"^\s*(?:[\w/]+/)?Destroy\(")),
+    ("spawn", re.compile(r"\bspawn\s*\(")),
+    ("sleep", re.compile(r"\bsleep\s*\(")),
+    ("do_after", re.compile(r"\bdo_after\s*\(")),
+    ("INVOKE_ASYNC", re.compile(r"\bINVOKE_ASYNC\b")),
+    ("Initialize", re.compile(r"^\s*(?:[\w/]+/)?Initialize\(")),
+    ("LateInitialize", re.compile(r"\bLateInitialize\b|\bINITIALIZE_HINT_LATELOAD\b")),
+    ("Topic", re.compile(r"^\s*(?:[\w/]+/)?Topic\(")),
+    ("New() override", re.compile(r"^\s*(?:[\w/]+/)?New\(")),
+    ("verb", re.compile(r"/verb/|^\s*verb/")),
+    ("flow_ask", re.compile(r"\bflow_ask\b|\bprompt_flow\b")),
+    ("CHANGE_", re.compile(r"\bCHANGE_\w+")),
+]
+ALLOW = re.compile(r"\bALLOW\(")
+TYPE_DEF = re.compile(r"^(/[A-Za-z_][\w/]*)\s*(?:\(|$)")
+TYPE_REF = re.compile(r"/(?:obj|mob|turf|area|datum|atom)(?:/[A-Za-z_]\w*)+")
+DATA_EXT = (".txt", ".json", ".tsv", ".csv", ".sha256sum", ".patch", ".toml")
+SCRIPT_EXT = (".sh", ".py", ".ts", ".rs", ".js", ".cmd", ".ps1")
+
+
+def run(args, cwd):
+    try:
+        return subprocess.run(args, cwd=cwd, capture_output=True, check=False).stdout.decode("utf-8", "replace")
+    except OSError:
+        return ""
+
+
+def list_files(root):
+    out = run(["git", "ls-files", "-z"], root)
+    if out:
+        return [p for p in out.split("\0") if p]
+    found = []
+    for d, _, names in os.walk(root):
+        for n in names:
+            found.append(os.path.relpath(os.path.join(d, n), root).replace(os.sep, "/"))
+    return found
+
+
+def read(root, rel):
+    try:
+        with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return ""
+
+
+def target_of(rel):
+    parts = rel.split("/")
+    if parts[0] != "code" or len(parts) < 3 or rel.startswith(NEW_TREE):
+        return None
+    top = parts[1]
+    if top in ("modules", "game", "datums") and len(parts) > 3:
+        name = parts[2]
+        layer = DOMAINS.get(name, "content/" + name)
+        return "code/" + layer + "/" + "/".join(parts[3:])
+    if top in DOMAINS:
+        return "code/" + DOMAINS[top] + "/" + "/".join(parts[2:])
+    return "code/content/" + "/".join(parts[1:])
+
+
+def strip_comments(text):
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return [re.sub(r"//.*", "", ln) for ln in text.split("\n")]
+
+
+def references(root, files):
+    """(kind, reference) pairs from baselines and tool sources."""
+    refs = []
+    pat = re.compile(r"\bcode/[\w./\-]+")
+    for rel in files:
+        kind = None
+        if rel == "tools/dm-health/baseline.json":
+            kind = "baseline"
+        elif rel.startswith("tools/ci/") and rel != "tools/ci/lint_scopes.toml":
+            if rel.endswith(SCRIPT_EXT):
+                kind = "toolref"
+            elif rel.endswith(DATA_EXT) or "/" in rel[len("tools/ci/"):]:
+                kind = "baseline"
+        elif rel.startswith(("tools/analyze/src/", "tools/build/")) and rel.endswith(SCRIPT_EXT):
+            kind = "toolref"
+        if kind is None:
+            continue
+        for m in set(pat.findall(read(root, rel))):
+            ref = m.rstrip(".,;:'\"")
+            # A bare domain-level directory (code/modules/, code/modules/clothing/) is a mention, not a file reference: moving the
+            # domain is what the lint_scopes commit follows. A file or a deeper directory names specific files.
+            if not ref.endswith(".dm") and len(ref.rstrip("/").split("/")) < 4:
+                continue
+            refs.append((kind, ref))
+    return refs
+
+
+def main(argv):
+    root = None
+    summary = False
+    only = None
+    paths = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--root":
+            i += 1
+            root = argv[i]
+        elif a == "--summary":
+            summary = True
+        elif a == "--clean":
+            only = "clean"
+        elif a == "--dirty":
+            only = "dirty"
+        elif a.startswith("-"):
+            print("move_candidates: unknown flag " + a, file=sys.stderr)
+            return 2
+        else:
+            paths.append(a.rstrip("/"))
+        i += 1
+    if root is None:
+        root = run(["git", "rev-parse", "--show-toplevel"], ".").strip() or "."
+    files = list_files(root)
+    dm = [f for f in files if f.endswith(".dm")]
+    old = [f for f in dm if target_of(f) is not None]
+    if paths:
+        old = [f for f in old if any(f == p or f.startswith(p + "/") for p in paths)]
+    refs = references(root, files)
+    content_types = set()
+    for f in dm:
+        if f.startswith("code/content/"):
+            for ln in strip_comments(read(root, f)):
+                m = TYPE_DEF.match(ln)
+                if m:
+                    content_types.add(m.group(1))
+    rows = []
+    for f in sorted(old):
+        why = []
+        for kind, ref in refs:
+            if f == ref or f.startswith(ref if ref.endswith("/") else ref + "/"):
+                why.append(kind + ":" + ref)
+        text = read(root, f)
+        if ALLOW.search(text):
+            why.append("allow")
+        lines = strip_comments(text)
+        for label, rx in OLD_FORMS:
+            if any(rx.search(ln) for ln in lines):
+                why.append("oldform:" + label)
+        if "/__defines/" in f:
+            why.append("defines")
+        target = target_of(f)
+        note = ""
+        if target and target.startswith(("code/library/", "code/domains/", "code/engine/")):
+            hit = sorted({t for ln in lines for t in TYPE_REF.findall(ln) if t in content_types})
+            if hit:
+                note = "layering:" + ",".join(hit[:3])
+        reason = ";".join(dict.fromkeys(why))
+        rows.append(("dirty" if why else "clean", f, target or "-", (reason + " " + note).strip()))
+    if summary:
+        agg = {}
+        for state, f, _, _ in rows:
+            parts = f.split("/")
+            d = "/".join(parts[:3]) if len(parts) > 3 else "/".join(parts[:-1])
+            c = agg.setdefault(d, [0, 0])
+            c[0 if state == "clean" else 1] += 1
+        for d, (c, x) in sorted(agg.items(), key=lambda kv: -kv[1][0]):
+            print("%5d clean %5d dirty  %s" % (c, x, d))
+        return 0
+    for row in rows:
+        if only is None or row[0] == only:
+            print("\t".join(row))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
