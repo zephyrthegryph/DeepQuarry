@@ -138,6 +138,14 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 		return null
 	return D
 
+/// The datum a handle names, only if it is in `within`, a list the caller's own window listed: unlike ui_token(), a null or empty list names nothing
+/// (an empty `within` there means anywhere), so a console with no entries cannot be handed one from elsewhere.
+/proc/ui_member(value, list/within, type)
+	READS_FROM() // a handle names a thing when a choice is made, never cached
+	if(!LAZYLEN(within))
+		return null
+	return ui_token(value, within, type)
+
 /// The datum a ref names, if it is in `within` (or anywhere with within null) and of type `type`.
 /proc/ui_ref(value, list/within, type)
 	READS_FROM() // a ref names a thing when a choice is made, never cached

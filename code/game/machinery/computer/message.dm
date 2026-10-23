@@ -110,7 +110,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/list/pda_msgs = list()
 		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
 			pda_msgs.Add(list(list(
-				"ref" = "\ref[pda]",
+				"ref" = ref_token(pda),
 				"sender" = pda.sender,
 				"recipient" = pda.recipient,
 				"message" = pda.message,
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/list/rc_msgs = list()
 		for(var/datum/data_rc_msg/rc in linkedServer().rc_msgs)
 			rc_msgs.Add(list(list(
-				"ref" = "\ref[rc]",
+				"ref" = ref_token(rc),
 				"sender" = rc.send_dpt,
 				"recipient" = rc.rec_dpt,
 				"message" = rc.message,
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 			if(!M || M.toff)
 				continue
-			sendPDAs["[P.name]"] = "\ref[P]"
+			sendPDAs["[P.name]"] = ref_token(P)
 		data["possibleRecipients"] = sendPDAs
 	var/mob/living/original = user.mind.original_character
 	data["isMalfAI"] = ((A.authority & AUTH_REMOTE_ACCESS) && (user.mind.special_role && (original && original == user)))
@@ -274,11 +274,11 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		set_temp(noserver)
 		return TRUE
 	if(kind == "pda")
-		var/datum/log_entry = ui_ref(id, linkedServer().pda_msgs, null)
+		var/datum/log_entry = ui_member(id, linkedServer().pda_msgs, /datum/data_pda_msg)
 		if(log_entry)
 			own_remove(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), log_entry)
 	else
-		var/datum/log_entry = ui_ref(id, linkedServer().rc_msgs, null)
+		var/datum/log_entry = ui_member(id, linkedServer().rc_msgs, /datum/data_rc_msg)
 		if(log_entry)
 			own_remove(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), log_entry)
 	show_temp("NOTICE: Log Deleted!", "average")
@@ -309,7 +309,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		set_temp(noserver)
 		return TRUE
-	var/obj/item/pda/P = ui_ref(val, null, /obj/item/pda)
+	var/obj/item/pda/P = ui_member(val, REGISTRY_MEMBERS(REGISTRY_PDAS), /obj/item/pda)
 	if(!istype(P) || !P.owner || P.hidden)
 		return FALSE
 

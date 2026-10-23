@@ -254,9 +254,13 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	scanner().locked = !scanner().locked
 	add_fingerprint(A.actor)
 
+/// The record in this console's own list that a handle names.
+/obj/machinery/computer/cloning/proc/record_of(ref)
+	return ui_member(ref, records, /datum/transhuman/body_record)
+
 /obj/machinery/computer/cloning/proc/ui_act_view_rec(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/record = ui_token(ref, null, /datum/transhuman/body_record)
+	var/datum/transhuman/body_record/record = record_of(ref)
 	if(!record)
 		return
 	rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), record)
@@ -353,7 +357,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/proc/ui_act_clone(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/C = ui_token(ref, null, /datum/transhuman/body_record)
+	var/datum/transhuman/body_record/C = record_of(ref)
 	if(!C)
 		return
 	//Look for that player! They better be dead!

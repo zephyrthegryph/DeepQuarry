@@ -92,7 +92,7 @@
 		rel_set(src, nameof(current_br), brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
-		view_b_rec(REF(brDisk.stored))
+		view_b_rec(ref_token(brDisk.stored))
 		return OP_PASS
 	return OP_DECLINE
 
@@ -146,7 +146,7 @@
 		else if(occupant && !pod.power_lost())
 			status = "cloning"
 		clonepods += list(list(
-			"pod" = REF(pod),
+			"pod" = ref_token(pod),
 			"name" = sanitize(capitalize(pod.name)),
 			"biomass" = pod.get_biomass(),
 			"status" = status,
@@ -157,7 +157,7 @@
 	var/list/synthpods = list()
 	for(var/obj/machinery/transhuman/synthprinter/spod in spods)
 		synthpods += list(list(
-			"spod" = REF(spod),
+			"spod" = ref_token(spod),
 			"name" = sanitize(capitalize(spod.name)),
 			"busy" = spod.busy,
 			"steel" = spod.stored_material[MAT_STEEL],
@@ -168,7 +168,7 @@
 	var/list/resleevers = list()
 	for(var/obj/machinery/transhuman/resleever/resleever in sleevers)
 		resleevers += list(list(
-			"sleever" = REF(resleever),
+			"sleever" = ref_token(resleever),
 			"name" = sanitize(capitalize(resleever.name)),
 			"occupied" = !!resleever.get_occupant(),
 			"occupant" = resleever.get_occupant() ? resleever.get_occupant().real_name : "None"
@@ -178,16 +178,16 @@
 	data["coredumped"] = our_db().core_dumped
 	data["emergency"] = disk()
 	data["temp"] = temp
-	data["selected_pod"] = REF(selected_pod())
-	data["selected_printer"] = REF(selected_printer())
-	data["selected_sleever"] = REF(selected_sleever())
+	data["selected_pod"] = ref_token(selected_pod())
+	data["selected_printer"] = ref_token(selected_printer())
+	data["selected_sleever"] = ref_token(selected_sleever())
 
 	var/list/bodyrecords_list_ui = list()
 	for(var/N in our_db().body_scans)
 		var/datum/transhuman/body_record/BR = our_db().body_scans[N]
 		bodyrecords_list_ui += list(list(
 			"name" = N,
-			"recref" = REF(BR)
+			"recref" = ref_token(BR)
 		))
 	data["bodyrecords"] = bodyrecords_list_ui
 
@@ -196,7 +196,7 @@
 		var/datum/transhuman/mind_record/MR = our_db().backed_up[N]
 		mindrecords_list_ui += list(list(
 			"name" = N,
-			"recref" = REF(MR)
+			"recref" = ref_token(MR)
 		))
 	data["mindrecords"] = mindrecords_list_ui
 
@@ -204,7 +204,7 @@
 	var/datum/transhuman/body_record/active_br = current_br
 	if(active_br)
 		data["active_b_rec"] = list(
-			activerecord = REF(active_br),
+			activerecord = ref_token(active_br),
 			realname = sanitize(active_br.mydna.name),
 			species = active_br.speciesname ? active_br.speciesname : active_br.mydna.dna.species,
 			sex = active_br.bodygender,
@@ -218,7 +218,7 @@
 	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(active_mr)
 		data["active_m_rec"] = list(
-			activerecord = REF(active_mr),
+			activerecord = ref_token(active_mr),
 			realname = sanitize(active_mr.mindname),
 			obviously_dead = active_mr.dead_state == MR_DEAD ? "Past-due" : "Current",
 			oocnotes = active_mr.mind_ref?.identity?.ooc_notes || "None.",
@@ -269,25 +269,25 @@
 	return OP_OK
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectpod(datum/act/op/A, ref)
-	if(!isnull(ref) && !(ref in src.pods))
+	var/obj/machinery/clonepod/selected = ui_member(ref, pods, /obj/machinery/clonepod)
+	if(!selected && !isnull(ref))
 		return FALSE
-	var/obj/machinery/clonepod/selected = ref
 	if(selected)
 		rel_set(src, nameof(selected_pod), selected)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectprinter(datum/act/op/A, ref)
-	if(!isnull(ref) && !(ref in src.spods))
+	var/obj/machinery/transhuman/synthprinter/selected = ui_member(ref, spods, /obj/machinery/transhuman/synthprinter)
+	if(!selected && !isnull(ref))
 		return FALSE
-	var/obj/machinery/transhuman/synthprinter/selected = ref
 	if(selected)
 		rel_set(src, nameof(/obj/machinery/computer/transhuman/resleeving::selected_printer), selected)
 	. = TRUE
 
 /obj/machinery/computer/transhuman/resleeving/proc/ui_act_selectsleever(datum/act/op/A, ref)
-	if(!isnull(ref) && !(ref in src.sleevers))
+	var/obj/machinery/transhuman/resleever/selected = ui_member(ref, sleevers, /obj/machinery/transhuman/resleever)
+	if(!selected && !isnull(ref))
 		return FALSE
-	var/obj/machinery/transhuman/resleever/selected = ref
 	if(selected)
 		rel_set(src, nameof(/obj/machinery/computer/transhuman/resleeving::selected_sleever), selected)
 	. = TRUE
@@ -586,11 +586,27 @@ CAPABILITIES(/obj/item/disk/transcore)
 	if(update_now)
 		SStgui.update_uis(src)
 
+/// The body record a handle names: one the window lists (the database's scans) or the one the console already has loaded (from a disk).
+/obj/machinery/computer/transhuman/resleeving/proc/body_record_of(ref)
+	var/list/listed = list()
+	for(var/N in our_db().body_scans)
+		listed += our_db().body_scans[N]
+	if(current_br)
+		listed += current_br
+	return ui_member(ref, listed, /datum/transhuman/body_record)
+
+/// The mind record a handle names: one the window lists (the database's backups).
+/obj/machinery/computer/transhuman/resleeving/proc/mind_record_of(ref)
+	var/list/listed = list()
+	for(var/N in our_db().backed_up)
+		listed += our_db().backed_up[N]
+	return ui_member(ref, listed, /datum/transhuman/mind_record)
+
 /obj/machinery/computer/transhuman/resleeving/proc/view_b_rec(ref)
 	if(!length(ref))
 		return
 
-	var/datum/transhuman/body_record/active_br = locate(ref)
+	var/datum/transhuman/body_record/active_br = body_record_of(ref)
 	if(istype(active_br))
 		if(isnull(active_br.mydna))
 			if(!QDELETED(active_br))
@@ -620,7 +636,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 	if(!length(ref))
 		return
 
-	var/datum/transhuman/mind_record/active_mr = locate(ref)
+	var/datum/transhuman/mind_record/active_mr = mind_record_of(ref)
 	if(istype(active_mr))
 		if(isnull(active_mr.ckey))
 			if(!QDELETED(active_mr))
@@ -690,9 +706,9 @@ CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
 	op("view_b_rec", ui_act("view_b_rec", arg("ref")), then(PROC_REF(ui_act_view_b_rec)))
 	op("view_m_rec", ui_act("view_m_rec", arg("ref")), then(PROC_REF(ui_act_view_m_rec)))
 	op("coredump", ui_act("coredump"), then(PROC_REF(ui_act_coredump)))
-	op("selectpod", ui_act("selectpod", arg("ref", schema_ref(/obj/machinery/clonepod))), then(PROC_REF(ui_act_selectpod)))
-	op("selectprinter", ui_act("selectprinter", arg("ref", schema_ref(/obj/machinery/transhuman/synthprinter))), then(PROC_REF(ui_act_selectprinter)))
-	op("selectsleever", ui_act("selectsleever", arg("ref", schema_ref(/obj/machinery/transhuman/resleever))), then(PROC_REF(ui_act_selectsleever)))
+	op("selectpod", ui_act("selectpod", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectpod)))
+	op("selectprinter", ui_act("selectprinter", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectprinter)))
+	op("selectsleever", ui_act("selectsleever", arg("ref", schema_text(32))), then(PROC_REF(ui_act_selectsleever)))
 	op("menu", ui_act("menu", arg("num", num(1, 3))), then(PROC_REF(ui_act_menu)))
 	op("sleeve", ui_act("sleeve", arg("mode", num())), then(PROC_REF(act_sleeve)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
