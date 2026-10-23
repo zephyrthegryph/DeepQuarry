@@ -34,11 +34,11 @@
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, test_floor())
 	H.add_language(LANGUAGE_GALCOM)
 	H.add_language(LANGUAGE_SOL_COMMON)
-	var/datum/language/chosen = null
-	for(var/datum/language/L in H.languages)
-		if(!(L.flags & NONGLOBAL) && H.can_speak(L) && L != H.default_language)
-			chosen = L
-			break
+	var/datum/language/species_own = GLOB.all_languages[H.species_language || LANGUAGE_GIBBERISH]
+	var/datum/language/chosen = GLOB.all_languages[LANGUAGE_SOL_COMMON]
+	if(chosen == species_own)
+		chosen = GLOB.all_languages[LANGUAGE_GALCOM]
+	TEST_ASSERT(H.can_speak(chosen), "the human can speak the language it will make its default")
 	TEST_ASSERT_NOTNULL(chosen, "the human knows a language it can speak and has not made its default")
 	var/datum/languages_panel/panel = allocate(/datum/languages_panel, H)
 	var/list/rows = hc_data(panel, H)["languages"]
@@ -47,16 +47,22 @@
 		row_ids += row["id"]
 	TEST_ASSERT(chosen.name in row_ids, "a language is named in the window by its name")
 	// allowed: the mob sets and resets its default
+	other.add_language(LANGUAGE_GALCOM)
+	other.add_language(LANGUAGE_SOL_COMMON)
+	other.apply_default_language(chosen)
+	other.apply_default_language(species_own)
+	var/datum/language/expected_reset = other.default_language
 	var/datum/op_result/set_result = own(test_ui(H, panel, "set_default", list("language" = chosen.name)))
 	TEST_ASSERT_EQUAL(set_result?.outcome, ACT_COMMITTED, "setting a default is allowed; reason=[set_result?.reason]")
 	TEST_ASSERT_EQUAL(H.default_language, chosen, "the chosen language is the default")
 	var/datum/op_result/reset_result = own(test_ui(H, panel, "reset_default"))
 	TEST_ASSERT_EQUAL(reset_result?.outcome, ACT_COMMITTED, "resetting is allowed; reason=[reset_result?.reason]")
-	TEST_ASSERT(H.default_language != chosen, "the default is back to the species' own")
+	TEST_ASSERT_EQUAL(H.default_language, expected_reset, "a reset applies the species' own default as the old link did")
 	// refused: someone else's window, and a language the mob does not know
+	var/datum/language/default_before = H.default_language
 	var/datum/op_result/not_yours = own(test_ui(other, panel, "set_default", list("language" = chosen.name)))
 	TEST_ASSERT_EQUAL(not_yours?.outcome, ACT_REFUSED, "another mob cannot set this mob's default")
-	TEST_ASSERT(H.default_language != chosen, "and nothing changed")
+	TEST_ASSERT_EQUAL(H.default_language, default_before, "and nothing changed")
 	var/datum/op_result/unknown = own(test_ui(H, panel, "set_default", list("language" = "No Such Language")))
 	TEST_ASSERT_EQUAL(unknown?.outcome, ACT_REFUSED, "a language the mob does not know is refused")
 	// effect: a custom key is asked for and set
