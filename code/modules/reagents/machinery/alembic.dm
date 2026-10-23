@@ -327,7 +327,7 @@ MSG_DEF_SELF(alembic/alembic_no_base, "There is already a base in the alembic.")
 MSG_DEF_SELF(alembic/alembic_no_reagent, "There is already a reagent in the alembic.")
 
 CAPABILITIES(/obj/machinery/alembic)
-	configure(machine_usage(click_sound = SFX_BUTTON, click_volume = 60))
+	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 60))
 	op("load_reagent", item(/obj/item/potion_material), label("Place reagent"), needs(req(PROC_REF(alembic_no_reagent))), then(PROC_REF(interaction_load_reagent)))
 	op("load_base", item(/obj/item/potion_base), label("Place base"), needs(req(PROC_REF(alembic_no_base))), then(PROC_REF(interaction_load_base)))
 	op("no_use", item(/obj/item), label("Use"), then(PROC_REF(interaction_no_use)))

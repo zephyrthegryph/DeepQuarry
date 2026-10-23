@@ -116,7 +116,7 @@
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
-	configure(machine_usage(click_sound = SFX_MACHINES_BUTTONBEEP))
+	configure(machine_usage(interface_sound = SFX_MACHINES_BUTTONBEEP))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 1000))
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove component"),
@@ -228,7 +228,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		if(prob(2))
 			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
-			playsound(src, usage_of(src).click_sound, 50, 1)
+			playsound(src, usage_of(src).interface_sound, 50, 1)
 		set_nanomass_reserve(nanomass_reserve - nanomass_required)
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))

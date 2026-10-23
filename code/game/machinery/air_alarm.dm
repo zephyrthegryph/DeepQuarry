@@ -122,7 +122,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
-	configure(machine_usage(click_sound = SFX_BUTTON, click_volume = 30))
+	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
 	configure(light_glow(power = 0.25))

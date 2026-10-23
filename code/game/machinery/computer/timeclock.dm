@@ -48,7 +48,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/timeclock)
-	configure(machine_usage(click_sound = TRAIT_NONE))
+	configure(machine_usage(interface_sound = TRAIT_NONE))
 	configure(light_glow(color = "#0099ff"))
 	interface("TimeClock")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))

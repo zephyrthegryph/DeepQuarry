@@ -69,7 +69,7 @@ MSG_DEF_SELF(chem_master/pill_bottle_loaded, "A pill bottle is already loaded in
 // The window: its buttons are ops, and every modal of the old ui_modal_opened()/ui_modal_answered() pair is an op bound to "modal:<id>" whose question
 // is asked inline (a modal of the window); a modal that chained to another (a count, then the name) is one op with two steps.
 CAPABILITIES(/obj/machinery/chem_master)
-	configure(machine_usage(wrench_time = 2 SECONDS, click_sound = SFX_BUTTON))
+	configure(machine_usage(wrench_time = 2 SECONDS, interface_sound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	reagents(900) // the buffer: a huge number so it should (probably) never dump your reagents
 	owns_one(nameof(beaker), /obj/item/reagent_containers)

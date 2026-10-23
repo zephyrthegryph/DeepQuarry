@@ -24,7 +24,7 @@ MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")
 // (one time in five over severity), a blob hits it as a medium blast, a screwdriver disconnects the monitor into a frame with its board (a
 // broken one drops its glass), and any other item is the hand's use of it.
 CAPABILITIES(/obj/machinery/computer)
-	configure(machine_usage(click_sound = SFX_KEYBOARD))
+	configure(machine_usage(interface_sound = SFX_KEYBOARD))
 	configure(uses_power(idle = 300, active = 300))
 	membership(joins = REGISTRY_COMPUTERS)
 	climb()
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/computer)
 	return (istype(G) && !!G.get_wrapped_item()) ? null : MSG(computer/gripper_empty)
 
 /obj/machinery/computer/proc/gripper_used(datum/act/op/A)
-	playsound(src, usage_of(src).click_sound, 100, 1, 0)
+	playsound(src, usage_of(src).interface_sound, 100, 1, 0)
 	return OP_OK
 
 /// Any other item on the console is the hand's use of it.

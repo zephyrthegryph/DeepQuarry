@@ -38,7 +38,7 @@ MSG_DEF_SELF(sleeper/needs_beaker, "There is no beaker to drain into.")
 	circuit = /obj/item/circuitboard/sleeper_console
 
 CAPABILITIES(/obj/machinery/sleep_console)
-	configure(machine_usage(interact_offline = 1, click_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
+	configure(machine_usage(interact_offline = 1, interface_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
 	configure(uses_power(idle = 40))
 	machine_basics(repair = NONE)
 	paired_console(/obj/machinery/sleeper, nameof(sleeper))

@@ -15,7 +15,7 @@
 
 
 CAPABILITIES(/obj/machinery/computer/id_restorer)
-	configure(machine_usage(click_sound = TRAIT_NONE))
+	configure(machine_usage(interface_sound = TRAIT_NONE))
 	configure(light_glow(color = "#11cc00"))
 
 //Frame

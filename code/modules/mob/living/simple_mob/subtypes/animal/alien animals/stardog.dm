@@ -924,7 +924,7 @@ CAPABILITIES(/obj/effect/landmark/stardog)
 	pixel_y = -16
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
-	configure(machine_usage(click_sound = SFX_VORE_SQUISH1))
+	configure(machine_usage(interface_sound = SFX_VORE_SQUISH1))
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
 	..()

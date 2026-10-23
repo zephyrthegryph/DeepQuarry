@@ -49,7 +49,7 @@ STAT(/obj/machinery/autolathe, disabled, ANY)
 STAT(/obj/machinery/autolathe, shocked, ANY)
 
 CAPABILITIES(/obj/machinery/autolathe)
-	configure(machine_usage(click_sound = SFX_KEYBOARD, click_volume = 30))
+	configure(machine_usage(interface_sound = SFX_KEYBOARD, click_volume = 30))
 	setup(PROC_REF(load_autolathe_research))
 	default_parts()
 	configure(uses_power(idle = 10, active = 2000))

@@ -116,7 +116,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
-	configure(machine_usage(click_sound = SFX_BUTTON))
+	configure(machine_usage(interface_sound = SFX_BUTTON))
 	click_order(BIND_HAND, "ui_open", "check_logs")
 	setup(PROC_REF(prepare_vendor_inventory))
 	configure(uses_power(idle = 10))

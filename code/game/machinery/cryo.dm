@@ -66,7 +66,7 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	return HEAT_TARGET_NONE
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
-	configure(machine_usage(interact_offline = 1, click_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
+	configure(machine_usage(interact_offline = 1, interface_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
 	setup(PROC_REF(face_initialize_directions))
 	configure(uses_power(idle = 20, active = 200))
 	machine_basics(repair = NONE)

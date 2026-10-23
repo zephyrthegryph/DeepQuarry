@@ -28,7 +28,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
-	configure(machine_usage(wrench_time = 2 SECONDS, click_sound = SFX_SWITCH))
+	configure(machine_usage(wrench_time = 2 SECONDS, interface_sound = SFX_SWITCH))
 	setup(PROC_REF(load_starting_cartridges))
 	configure(uses_power(idle = 100))
 	rotatable()

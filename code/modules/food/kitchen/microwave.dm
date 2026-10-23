@@ -46,7 +46,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
-	configure(machine_usage(click_sound = SFX_BUTTON, click_volume = 30))
+	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	default_parts()
 	configure(uses_power(idle = 5, active = 2000))
 	reagents(100)

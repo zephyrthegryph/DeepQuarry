@@ -35,7 +35,7 @@ MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
 MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
 CAPABILITIES(/obj/machinery/injector_maker)
-	configure(machine_usage(click_sound = SFX_BUTTON, click_volume = 60))
+	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 60))
 	configure(uses_power(idle = 5, active = 100))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),

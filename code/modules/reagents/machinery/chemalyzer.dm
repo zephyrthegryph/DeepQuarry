@@ -48,7 +48,7 @@ MSG_DEF_SELF(chemical_analyzer/analyzing, "Analyzing %I%, please stand by...")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/chemical_analyzer)
-	configure(machine_usage(click_sound = SFX_BUTTON))
+	configure(machine_usage(interface_sound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	op("analyze", item(/obj/item/reagent_containers), label("Analyze"), begins(MSG(chemical_analyzer/analyzing)), wait(2 SECONDS), claims(),
 		on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_done)))

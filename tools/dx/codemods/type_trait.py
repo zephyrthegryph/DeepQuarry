@@ -65,7 +65,7 @@ SPECS = {
     ),
     "machine_usage": dict(
         base="/obj/machinery", ctor="machine_usage", reader="usage_of", type_reader="usage_of_type",
-        fields={"clicksound": "click_sound", "clickvol": "click_volume", "interact_offline": "interact_offline",
+        fields={"clicksound": "interface_sound", "clickvol": "click_volume", "interact_offline": "interact_offline",
                 "maintenance_wrench_time": "wrench_time", "maintenance_weld_time": "weld_time"},
         skip={"code/game/machinery/machine_usage.dm"},
     ),

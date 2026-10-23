@@ -398,8 +398,8 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 			to_chat(user, span_warning("You momentarily forget how to use [src]."))
 			return 1
 
-	if(usage_of(src).click_sound && istype(user, /mob/living/carbon))
-		playsound(src, usage_of(src).click_sound, usage_of(src).click_volume)
+	if(usage_of(src).interface_sound && istype(user, /mob/living/carbon))
+		playsound(src, usage_of(src).interface_sound, usage_of(src).click_volume)
 
 	add_fingerprint(user)
 

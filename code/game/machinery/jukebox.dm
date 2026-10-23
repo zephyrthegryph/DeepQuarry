@@ -25,7 +25,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
-	configure(machine_usage(click_sound = SFX_MACHINES_BUTTONBEEP))
+	configure(machine_usage(interface_sound = SFX_MACHINES_BUTTONBEEP))
 	setup(PROC_REF(validate_track_library))
 	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
