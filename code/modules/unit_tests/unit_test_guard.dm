@@ -52,7 +52,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 
 /// The machines to judge after a test: the ones in `touched` (an area -> TRUE list), or every watched machine when it is time for the full compare. Logs and adds to
 /// `found` each guarded setting that changed, then takes the machine's present settings as its baseline (a leak fails its test once, not every test after it).
-/datum/unit_test_guard/proc/judge_machines(test_path, list/touched, list/found, force_full = FALSE)
+/datum/unit_test_guard/proc/judge_machines(test_path, list/touched, list/found, force_full = FALSE, quiet = FALSE)
 	if(!force_full)
 		since_full += "[test_path]"
 	var/full = force_full || length(since_full) >= unit_test_full_compare_every()
@@ -73,7 +73,8 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		for(var/name in was)
 			if(M.vars[name] != was[name])
 				var/text = "STATE LEAK: [who] left [M] ([M.type]) at ([M.x],[M.y],[M.z]) with [name] = [M.vars[name]] (was [was[name]]). Every later test sees the changed machine: set it through set_var() or put it back in the test."
-				log_test(text)
+				if(!quiet)
+					log_test(text)
 				found?.Add(text)
 				was[name] = M.vars[name]
 	if(full)
@@ -94,6 +95,8 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 /// Indices of the snapshot's turfs whose mixture revision moved since the snapshot (one batched read of every revision, one pass). Leaves the new revisions in
 /// snapshot["revs_now"].
 /proc/unit_test_air_changed(list/snapshot)
+	// A turf can be given a new air datum (the old handle then names nothing): the handles are looked up again each time, one pass over the watched turfs.
+	snapshot["airs"] = unit_test_airs_of(snapshot["turfs"])
 	var/list/now = vg_read_mixture_revisions(snapshot["airs"])
 	var/list/was = snapshot["revs"]
 	var/list/changed = list()

@@ -649,24 +649,12 @@ GLOBAL_VAR(dq_test_select_names)
 /// with them. Called as Run() returns and again on destroy (a no-op the second time).
 /datum/unit_test/proc/end_test_world()
 	run_deferred_cleanups()
-	// TEMPORARY: remove when release_body caps the dump (fix/body-heat-release).
-	// Deleting a body hands the energy it holds above its surroundings to the air of its turf (atom/Destroy -> release_heat_body()): the turf's air is snapshotted first,
-	// so restore_atmos() puts it back after the deletion. Logged, so the heat a deletion released stays visible.
-	var/released_turfs = 0
 	for(var/datum/maybe_held as anything in allocated?.Copy())
 		if(!ismovable(maybe_held) || QDELETED(maybe_held))
 			continue
-		var/atom/movable/held = maybe_held
-		var/area/standing_in = get_area(held)
+		var/area/standing_in = get_area(maybe_held)
 		if(standing_in)
 			LAZYSET(touched_areas, standing_in, TRUE)
-		if(!isnull(held.heat_body))
-			var/turf/open/standing = get_turf(held)
-			if(istype(standing) && standing.air && !GLOB.dq_atmos_test_declared[standing])
-				dq_atmos_test_snapshot_air(standing)
-				released_turfs++
-	if(released_turfs)
-		log_test("HEAT RELEASE: [type] snapshotted the air of [released_turfs] turf(s) before deleting heat-bearing things on them")
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing, TRUE) // a cleanup: forced, so a container's contents go with it instead of spilling onto the block (admission.md D10)

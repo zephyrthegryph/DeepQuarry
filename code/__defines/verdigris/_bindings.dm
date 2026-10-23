@@ -2260,8 +2260,8 @@
 	return call_ext(__f)(src_ref, holder)
 
 /// Batched change counters. Args: (list of gas mixtures). One float per mixture, in order: the mixture's revision (the counter that moves whenever its gas
-/// changes, low 24 bits), 0 for a null or unregistered entry. The unit-test guards compare two of these reads to find the mixtures a test touched, instead of
-/// reading every mixture whole.
+/// changes, low 24 bits), 0 for a null or unregistered entry. A stale handle is refused with an error, as in `read_mixtures`, never read as zero. The unit-test
+/// guards compare two of these reads to find the mixtures a test touched, instead of reading every mixture whole.
 // /proc/read_mixture_revisions (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_read_mixture_revisions(mixtures)
 	var/static/__f
