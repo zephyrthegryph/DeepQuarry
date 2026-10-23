@@ -1,12 +1,3 @@
-// This fixture represents an interactive transport without manufacturing a native client.
-// The real topic gate still checks consciousness, incapacity and physical distance.
-/mob/living/carbon/human/dq_orion_topic_headless/shared_tgui_interaction(src_object)
-	if(stat)
-		return STATUS_DISABLED
-	if(incapacitated())
-		return STATUS_UPDATE
-	return STATUS_INTERACTIVE
-
 // Computers, batch 5: the arcade machines (the battle game, the claw machine). See dq_hc_computers_base.dm for the rules.
 
 /datum/unit_test/dq_hc_computers/arcade_battle_newgame
@@ -173,33 +164,179 @@
 	TEST_ASSERT_EQUAL(E.uses, 8, "advanced specops systems reject the sequencer without payment")
 	TEST_ASSERT(!is_emagged(C), "a declined swipe does not mark the console subverted")
 
-/datum/unit_test/dq_hc_computers/orion_topic_dispatch_and_schema
-/datum/unit_test/dq_hc_computers/orion_topic_dispatch_and_schema/run_gate()
+/// The Orion Trail event screen's choices are window ops (ui_act), not links: eventclose only continues an event that can continue, and a part selector must be 1 to 3.
+/datum/unit_test/dq_hc_computers/orion_event_close_and_schema
+/datum/unit_test/dq_hc_computers/orion_event_close_and_schema/run_gate()
 	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
-	var/mob/living/carbon/human/ordinary = hc_actor()
+	var/mob/living/carbon/human/H = hc_actor()
 	C.set_event(C.events[1])
 	var/starting_event = C.event
 	C.canContinueEvent = FALSE
-	var/datum/op_result/no_transport = own(op_topic(ordinary, C, "eventclose", list("eventclose" = "1")))
-	TEST_ASSERT_EQUAL(no_transport?.outcome, ACT_REFUSED, "a headless actor cannot use the actual native topic transport")
-	TEST_ASSERT_EQUAL(no_transport?.reason, /datum/msg/op/topic_gate, "the native transport gate is the reason for refusal")
-	TEST_ASSERT_EQUAL(C.event, starting_event, "transport refusal cannot clear the game event")
-	var/mob/living/carbon/human/dq_orion_topic_headless/H = allocate(/mob/living/carbon/human/dq_orion_topic_headless, hc_side())
-	H.enable_godmode()
-	TEST_ASSERT(C.event, "the real game starts this check with a pending event")
-	var/datum/op_result/closed = own(op_topic(H, C, "eventclose", list("eventclose" = "1")))
-	TEST_ASSERT_EQUAL(closed?.outcome, ACT_COMMITTED, "the fixture transport reaches the declared href op; reason=[closed?.reason]")
-	TEST_ASSERT_EQUAL(C.event, starting_event, "an event that cannot continue remains pending after its close link")
+	var/datum/op_result/pending = own(press(H, C, "eventclose"))
+	TEST_ASSERT_EQUAL(pending?.outcome, ACT_COMMITTED, "the close choice reaches its op; reason=[pending?.reason]")
+	TEST_ASSERT_EQUAL(C.event, starting_event, "an event that cannot continue remains pending after its close choice")
 	C.canContinueEvent = TRUE
-	var/datum/op_result/continued = own(op_topic(H, C, "eventclose", list("eventclose" = "1")))
+	var/datum/op_result/continued = own(press(H, C, "eventclose"))
 	TEST_ASSERT_EQUAL(continued?.outcome, ACT_COMMITTED, "a continuable event reaches the real close handler; reason=[continued?.reason]")
 	TEST_ASSERT_NULL(C.event, "the real close handler clears a continuable game event")
 	var/fuel_before = C.fuel
 	var/engine_before = C.engine
-	var/datum/op_result/bad = own(op_topic(H, C, "buyparts", list("buyparts" = "not a number")))
-	TEST_ASSERT_EQUAL(bad?.outcome, ACT_REFUSED, "the real href schema rejects an invalid numeric part selector")
-	TEST_ASSERT_EQUAL(C.fuel, fuel_before, "the rejected href spends no fuel")
-	TEST_ASSERT_EQUAL(C.engine, engine_before, "the rejected href creates no part")
+	var/datum/op_result/bad = own(press(H, C, "buyparts", list("part" = "not a number")))
+	TEST_ASSERT_EQUAL(bad?.outcome, ACT_REFUSED, "the op schema rejects an invalid part selector")
+	TEST_ASSERT_EQUAL(C.fuel, fuel_before, "a rejected choice spends no fuel")
+	TEST_ASSERT_EQUAL(C.engine, engine_before, "and creates no part")
+
+/// Each event offers the choices its old screen had, as data, and the choices change the game as the old links did.
+/datum/unit_test/dq_hc_computers/orion_event_screens
+/datum/unit_test/dq_hc_computers/orion_event_screens/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	// Interstellar flux: slowing down costs supplies and ends the event.
+	C.set_event(ORION_TRAIL_FLUX)
+	C.event()
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["screen"], "event", "a pending event shows the event screen")
+	TEST_ASSERT_EQUAL(data["event_title"], ORION_TRAIL_FLUX, "the window names the event")
+	TEST_ASSERT(length(data["event_lines"]) >= 1, "the story is sent as lines")
+	TEST_ASSERT_NULL(data["event_html"], "no markup is sent")
+	var/list/keys = list()
+	for(var/list/choice in data["event_actions"])
+		keys += choice["action"]
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "slow,keepspeed", "the flux offers slowing down or keeping speed")
+	var/food_before = C.food
+	var/fuel_before = C.fuel
+	press(H, C, "slow")
+	TEST_ASSERT_NULL(C.event, "slowing down ends the event")
+	TEST_ASSERT_EQUAL(C.food, food_before - ((C.alive + C.traitors_aboard) * 2), "and costs the crew's food")
+	TEST_ASSERT_EQUAL(C.fuel, fuel_before - 5, "and fuel")
+	// A breakdown: the engine part is only offered while one is held; using it spends it.
+	C.set_engine(0)
+	C.set_event(ORION_TRAIL_BREAKDOWN)
+	C.event()
+	keys = list()
+	for(var/list/choice in C.orion_event_actions())
+		keys += choice["action"]
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "wait", "without an engine part only waiting is offered")
+	C.set_engine(1)
+	press(H, C, "useengine")
+	TEST_ASSERT_EQUAL(C.engine, 0, "using the part spends it")
+	TEST_ASSERT_NULL(C.event, "and ends the event")
+	// A choice for another event does nothing (the old handlers checked the event too).
+	C.set_event(ORION_TRAIL_RAIDERS)
+	C.set_engine(1)
+	press(H, C, "useengine")
+	TEST_ASSERT_EQUAL(C.engine, 1, "an engine part is not used when the engine did not break")
+	TEST_ASSERT_EQUAL(C.event, ORION_TRAIL_RAIDERS, "and the event stays")
+
+/// The spaceport's rows: buying a part, trading, and the rows the crew cannot afford.
+/datum/unit_test/dq_hc_computers/orion_spaceport_market
+/datum/unit_test/dq_hc_computers/orion_spaceport_market/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	C.set_event(ORION_TRAIL_SPACEPORT)
+	C.set_fuel(30)
+	C.set_food(30)
+	C.event()
+	TEST_ASSERT_EQUAL(C.gameStatus, ORION_STATUS_MARKET, "docking opens the market")
+	var/hull_before = C.hull
+	press(H, C, "buyparts", list("part" = 2))
+	TEST_ASSERT_EQUAL(C.hull, hull_before + 1, "buying hull plates adds one")
+	TEST_ASSERT_EQUAL(C.fuel, 25, "for five fuel")
+	press(H, C, "trade", list("kind" = 1))
+	TEST_ASSERT_EQUAL(C.fuel, 20, "trading fuel for food spends fuel")
+	TEST_ASSERT_EQUAL(C.food, 35, "and gains food")
+	C.set_fuel(5)
+	var/hull_poor = C.hull
+	press(H, C, "buyparts", list("part" = 2))
+	TEST_ASSERT_EQUAL(C.hull, hull_poor, "five fuel is not enough for a part")
+	var/list/unaffordable = list()
+	for(var/list/choice in C.orion_event_actions())
+		if(!choice["action"])
+			unaffordable += choice["label"]
+	TEST_ASSERT(("You cannot afford to buy Hull Plates" in unaffordable), "the unaffordable row is a label without an action")
+	press(H, C, "leave_spaceport")
+	TEST_ASSERT_NULL(C.event, "leaving ends the event")
+	TEST_ASSERT_EQUAL(C.gameStatus, ORION_STATUS_NORMAL, "and goes back to the trail")
+
+/// A person who stands in for one with a client: the real tgui state checks (consciousness, incapacity, distance, what is held) all run;
+/// only the "no client" close of shared_tgui_interaction is skipped, since a test world has no client to give a mob.
+/mob/living/carbon/human/dq_tgui_transport
+
+/mob/living/carbon/human/dq_tgui_transport/shared_tgui_interaction(src_object)
+	if(stat)
+		return STATUS_DISABLED
+	if(incapacitated())
+		return STATUS_UPDATE
+	return STATUS_INTERACTIVE
+
+/// The window's gate is the real tgui state: an ordinary mob with no client is closed, an unconscious one disabled, a restrained one view-only.
+/datum/unit_test/dq_hc_computers/orion_window_gate_state
+/datum/unit_test/dq_hc_computers/orion_window_gate_state/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/ordinary = hc_actor()
+	TEST_ASSERT_EQUAL(C.tgui_status(ordinary, C.tgui_state(ordinary)), STATUS_CLOSE, "a headless actor cannot keep the window open")
+	var/mob/living/carbon/human/dq_tgui_transport/H = allocate(/mob/living/carbon/human/dq_tgui_transport, hc_side())
+	H.enable_godmode()
+	TEST_ASSERT_EQUAL(C.tgui_status(H, C.tgui_state(H)), STATUS_INTERACTIVE, "a conscious person at the machine works the window")
+	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, hc_side())
+	TEST_ASSERT(H.equip_to_slot(cuffs, SLOT_ID_HANDCUFFED), "cuffs go on")
+	TEST_ASSERT_EQUAL(C.tgui_status(H, C.tgui_state(H)), STATUS_UPDATE, "an incapacitated person can only watch")
+	var/mob/living/carbon/human/dq_tgui_transport/asleep = allocate(/mob/living/carbon/human/dq_tgui_transport, hc_side())
+	asleep.enable_godmode()
+	asleep.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(C.tgui_status(asleep, C.tgui_state(asleep)), STATUS_DISABLED, "an unconscious person cannot work it")
+	var/mob/living/carbon/human/dq_tgui_transport/far = allocate(/mob/living/carbon/human/dq_tgui_transport, run_loc_floor_top_right)
+	far.enable_godmode()
+	TEST_ASSERT(C.tgui_status(far, C.tgui_state(far)) < STATUS_INTERACTIVE, "someone far from the machine cannot work it")
+
+/// The market shows the ship's supplies the old screen printed.
+/datum/unit_test/dq_hc_computers/orion_market_readouts
+/datum/unit_test/dq_hc_computers/orion_market_readouts/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	C.set_event(ORION_TRAIL_SPACEPORT)
+	C.set_fuel(30)
+	C.set_food(30)
+	C.set_engine(2)
+	C.set_hull(3)
+	C.set_electronics(4)
+	C.event()
+	var/list/data = hc_data(C, H)
+	TEST_ASSERT_EQUAL(data["screen"], "event", "the market is an event screen")
+	TEST_ASSERT_EQUAL(length(data["crew"]), length(C.settlers), "the crew is listed")
+	TEST_ASSERT_EQUAL(data["food"], C.food, "the food is shown")
+	TEST_ASSERT_EQUAL(data["fuel"], C.fuel, "the fuel is shown")
+	TEST_ASSERT_EQUAL(data["engine"], 2, "the engine parts are shown")
+	TEST_ASSERT_EQUAL(data["hull"], 3, "the hull panels are shown")
+	TEST_ASSERT_EQUAL(data["electronics"], 4, "the electronics are shown")
+
+/// A part or trade selector out of range is clamped to the nearest row and the fuel is charged once.
+/datum/unit_test/dq_hc_computers/orion_market_clamp
+/datum/unit_test/dq_hc_computers/orion_market_clamp/run_gate()
+	var/obj/machinery/computer/arcade/orion_trail/C = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	var/mob/living/carbon/human/H = hc_actor()
+	C.newgame(H)
+	C.set_event(ORION_TRAIL_SPACEPORT)
+	C.set_fuel(30)
+	C.set_food(30)
+	C.event()
+	var/electronics_before = C.electronics
+	var/engine_before = C.engine
+	press(H, C, "buyparts", list("part" = 999))
+	TEST_ASSERT_EQUAL(C.electronics, electronics_before + 1, "part 999 is clamped to 3, the electronics")
+	TEST_ASSERT_EQUAL(C.fuel, 25, "and charged once")
+	press(H, C, "buyparts", list("part" = -5))
+	TEST_ASSERT_EQUAL(C.engine, engine_before + 1, "part -5 is clamped to 1, the engine parts")
+	TEST_ASSERT_EQUAL(C.fuel, 20, "and charged once")
+	press(H, C, "trade", list("kind" = 999))
+	TEST_ASSERT_EQUAL(C.fuel, 25, "trade 999 is clamped to 2 (food for fuel)")
+	TEST_ASSERT_EQUAL(C.food, 25, "and the food is paid once")
+	press(H, C, "trade", list("kind" = -5))
+	TEST_ASSERT_EQUAL(C.fuel, 20, "trade -5 is clamped to 1 (fuel for food)")
+	TEST_ASSERT_EQUAL(C.food, 30, "and the fuel is paid once")
 
 /datum/unit_test/dq_hc_computers/syndicate_pod_public_access_gate
 /datum/unit_test/dq_hc_computers/syndicate_pod_public_access_gate/run_gate()

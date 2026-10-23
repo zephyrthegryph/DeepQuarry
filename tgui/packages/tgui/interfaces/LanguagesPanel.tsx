@@ -7,7 +7,7 @@ import type { BooleanLike } from 'tgui-core/react';
 import { EmptyState } from './common/EmptyState';
 
 type LanguageRow = {
-  ref: string;
+  id: string;
   name: string;
   key: string;
   custom_key: string | null;
@@ -49,7 +49,7 @@ export const LanguagesPanel = () => {
         <Section title="Languages">
           <Stack vertical>
             {languages.map((l) => (
-              <Stack.Item key={l.ref}>
+              <Stack.Item key={l.id}>
                 <Box>
                   <Box inline bold>
                     {l.name}
@@ -61,7 +61,7 @@ export const LanguagesPanel = () => {
                   </Box>{' '}
                   <Button
                     compact
-                    onClick={() => act('edit_key', { ref: l.ref })}
+                    onClick={() => act('edit_key', { language: l.id })}
                   >
                     Edit Custom Key
                   </Button>{' '}
@@ -72,7 +72,7 @@ export const LanguagesPanel = () => {
                   ) : l.can_speak ? (
                     <Button
                       compact
-                      onClick={() => act('set_default', { ref: l.ref })}
+                      onClick={() => act('set_default', { language: l.id })}
                     >
                       Set Default
                     </Button>

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A healed wound's age and its ten-minute fade now read the same clock, so wounds fade on schedule when the scheduler clock is not world.time"

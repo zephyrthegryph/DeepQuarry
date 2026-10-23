@@ -145,41 +145,6 @@ ref_macro	code/game/antagonist/station/traitor.dm	return "<a href='byond://?src=
 ref_macro	code/game/gamemodes/technomancer/catalog.dm	return "<a href='byond://?src=\ref[src];spell_category=[category]'>[category]</a>"
 ref_macro	code/game/machinery/camera/camera.dm	to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 ref_macro	code/game/machinery/camera/camera.dm	cam["camera"] = "\ref[src]"
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useengine=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useelec=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];usehull=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];holedeath=1'>Oh...</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Risk it</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=1'>Buy Engine Parts (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=2'>Buy Hull Plates (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=3'>Buy Spare Electronics (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=1'>Trade Fuel for Food (-5FU,+5FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=2'>Trade Food for Fuel (+5FU,-5FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];raid_spaceport=1'>!! Raid Spaceport !!</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
 ref_macro	code/game/machinery/computer/atmos_alert.dm	major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
 ref_macro	code/game/machinery/computer/atmos_alert.dm	minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
 ref_macro	code/game/machinery/computer/cloning.dm	"pod" = "\ref[pod]",
@@ -361,11 +326,6 @@ ref_macro	code/modules/integrated_electronics/subtypes/illegal.dm	message_admins
 ref_macro	code/modules/integrated_electronics/subtypes/input.dm	exonet.make_address("EPv2_circuit-\ref[src]")
 ref_macro	code/modules/library/lib_machines.dm	inv += list(list("ref" = "\ref[b]", "name" = b.name))
 ref_macro	code/modules/library/lib_machines.dm	"ref" = "\ref[b]",
-ref_macro	code/modules/lore_codex/codex_tree.dm	output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent()]'>[checked.parent().name]</a> \> [output]"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<a href='byond://?src=\ref[src];target=\ref[child]' class='button'>[child.name]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
 ref_macro	code/modules/lore_codex/pages.dm	return "<a href='byond://?src=\ref[src];quick_link=[target]'>[word_to_display]</a>"
 ref_macro	code/modules/media/media_tracks.dm	return list("ref" = "\ref[src]", "title" = title, "artist" = artist, "genre" = genre, "duration" = duration)
 ref_macro	code/modules/media/walkpod.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
@@ -373,11 +333,6 @@ ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?
 ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	throw_alert("\ref[source]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
-ref_macro	code/modules/mob/language/language.dm	. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a><br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language_panel.dm	"ref" = "\ref[lang]",
 ref_macro	code/modules/mob/language/synthetic.dm	message_start = span_binarysay("[name], <a href='byond://?src=\ref[S];track2=\ref[S];track=\ref[speaker];trackname=[html_encode(speaker.name)]'>" + span_name("[speaker.name]") + "</a>")
 ref_macro	code/modules/mob/living/carbon/human/attacks_panel.dm	"ref" = "\ref[u_attack]",
 ref_macro	code/modules/mob/living/carbon/human/examine.dm	var/link = "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>"
@@ -413,9 +368,6 @@ ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] 
 ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] = "\ref[general]"
 ref_macro	code/modules/mob/living/silicon/robot/drone/drone_console.dm	"ref" = "\ref[D]",
 ref_macro	code/modules/mob/living/silicon/robot/robot.dm	to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a>") + "<br>"))
-ref_macro	code/modules/mob/living/silicon/silicon.dm	. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br><br>"
-ref_macro	code/modules/mob/living/silicon/silicon.dm	default_str = " - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a>"
-ref_macro	code/modules/mob/living/silicon/silicon.dm	default_str = " - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a>"
 ref_macro	code/modules/mob/living/silicon/silicon.dm	to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
 ref_macro	code/modules/mob/living/silicon/silicon.dm	cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
 ref_macro	code/modules/mob/mob.dm	to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))

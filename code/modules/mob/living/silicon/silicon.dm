@@ -238,23 +238,6 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	..(rem_language)
 	remove_speech_synthesizer_langs(removed_language)
 
-/mob/living/silicon/check_lang_data()
-	. = ""
-
-	if(default_language)
-		. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br><br>"
-
-	for(var/datum/language/L in languages)
-		if(!(L.flags & NONGLOBAL))
-			var/default_str
-			if(L == default_language)
-				default_str = " - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a>"
-			else
-				default_str = " - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a>"
-
-			var/synth = (L in speech_synthesizer_langs)
-			. += span_bold("[L.name] ([get_language_prefix()][L.key])") + "[synth ? default_str : null]<br>Speech Synthesizer: <i>[synth ? "YES" : "NOT SUPPORTED"]</i><br>[L.desc]<br><br>"
-
 /mob/living/silicon/proc/toggle_sensor_mode() // to make borgs use omni starts here - Tank, clueless bird
 	if(sensor_type)
 		if(hud_used?.plane_holder)

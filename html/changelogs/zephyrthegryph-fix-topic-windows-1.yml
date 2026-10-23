@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The lore codex window follows the book the reader holds and its close button only closes the reader's own window"
+  - bugfix: "The Orion Trail spaceport market shows the crew, food, fuel and parts again"
