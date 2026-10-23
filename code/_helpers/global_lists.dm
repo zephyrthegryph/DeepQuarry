@@ -94,16 +94,16 @@ GLOBAL_LIST_INIT(string_slot_flags, list(
 	"holster" = SLOT_HOLSTER
 ))
 
-GLOBAL_LIST_EMPTY(mannequins)
+GLOBAL_ALIST_EMPTY(mannequins)
 /proc/get_mannequin(ckey = "NULL")
 	var/mob/living/carbon/human/dummy/mannequin/M = GLOB.mannequins[ckey]
 	if(!istype(M))
-		GLOB.mannequins[ckey] = new /mob/living/carbon/human/dummy/mannequin(null)
+		rel_add(GLOB, nameof(GLOB.mannequins), new /mob/living/carbon/human/dummy/mannequin(null), ckey)
 		M = GLOB.mannequins[ckey]
 	return M
 
 /proc/del_mannequin(ckey = "NULL")
-	GLOB.mannequins-= ckey
+	rel_add(GLOB, nameof(GLOB.mannequins), null, ckey)
 
 //////////////////////////
 /////Initial Building/////
@@ -244,9 +244,9 @@ GLOBAL_LIST_EMPTY(mannequins)
 	paths = subtypesof(/datum/ai_laws)
 	for(var/path in paths)
 		var/datum/ai_laws/laws = new path
-		GLOB.admin_laws += laws
+		rel_add(GLOB, nameof(GLOB.admin_laws), laws)
 		if(laws.selectable)
-			GLOB.player_laws += laws
+			rel_add(GLOB, nameof(GLOB.player_laws), laws)
 /*
 	// Custom species traits
 	paths = subtypesof(/datum/trait)

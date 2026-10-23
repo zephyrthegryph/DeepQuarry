@@ -315,7 +315,7 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
 	//Lazzzyyy.
 	if(!GLOB.sleevemate_mob)
-		GLOB.sleevemate_mob = new()
+		rel_set(GLOB, nameof(GLOB.sleevemate_mob), new /mob/living/carbon/human/dummy/mannequin)
 
 	if(!(soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE))
 		to_chat(user,span_notice("[GLOB.sleevemate_mob] can't be transferred!"))

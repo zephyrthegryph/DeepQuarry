@@ -41,7 +41,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	for(var/department in GLOB.station_departments)
 		create_department_account(department)
 	create_department_account("Vendor")
-	GLOB.vendor_account = GLOB.department_accounts["Vendor"]
+	rel_set(GLOB, nameof(GLOB.vendor_account), GLOB.department_accounts["Vendor"])
 
 	for(var/obj/item/retail_scanner/RS in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(RS.account_to_connect)
@@ -61,7 +61,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	if(!GLOB.station_account)
 		GLOB.next_account_number = rand(111111, 999999)
 
-		GLOB.station_account = new()
+		rel_set(GLOB, nameof(GLOB.station_account), new /datum/money_account)
 		GLOB.station_account.owner_name = "[station_name()] Station Account"
 		GLOB.station_account.account_number = rand(111111, 999999)
 		GLOB.station_account.remote_access_pin = rand(1111, 111111)

@@ -282,7 +282,7 @@ GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
 
 /proc/sdql2_vv_statobj()
 	if(!GLOB.sdql2_vv_statobj)
-		GLOB.sdql2_vv_statobj = new /obj/effect/statclick/SDQL2_VV_all(null, "VIEW VARIABLES (all)", null)
+		rel_set(GLOB, nameof(GLOB.sdql2_vv_statobj), new /obj/effect/statclick/SDQL2_VV_all(null, "VIEW VARIABLES (all)", null))
 	return GLOB.sdql2_vv_statobj
 
 /datum/SDQL2_query

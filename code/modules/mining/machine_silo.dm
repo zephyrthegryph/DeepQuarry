@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /// The first silo the map places on the station becomes the default silo.
 /obj/machinery/ore_silo/proc/claim_default(mapload)
 	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
-		GLOB.ore_silo_default = src
+		rel_set(GLOB, nameof(GLOB.ore_silo_default), src)
 
 /// The starting material store (owns_one(starts =)): every material, unlimited.
 /obj/machinery/ore_silo/proc/make_materials(current)
@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /obj/machinery/ore_silo/lifecycle_dematerialize()
 	..()
 	if(GLOB.ore_silo_default == src)
-		GLOB.ore_silo_default = null
+		rel_set(GLOB, nameof(GLOB.ore_silo_default), null)
 
 // connected machines disconnect.
 /obj/machinery/ore_silo/on_destroy(force)
