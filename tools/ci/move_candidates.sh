@@ -15,6 +15,8 @@
 #   defines   it sits under __defines/
 # A clean file may still carry a `layering` note: a target in library/ or domains/ that names a type declared under content/
 # (engine may not reference library or content; library may not reference content). Layering is a note, never dirty.
+# A clean file may also carry a `relinc:<includer>:<line>` note: a relative `#include "../x.dm"` in a .dm file that names it, or
+# that sits in it, breaks when either moves; the note names the include line to update in the move's follow-up commit. Never dirty.
 # lint_scopes.toml is not a dirty reason: the move's third commit follows the paths there.
 #
 #   --summary   one line per directory (clean/dirty counts) instead of one per file

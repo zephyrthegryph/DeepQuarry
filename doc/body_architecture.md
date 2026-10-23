@@ -330,7 +330,7 @@ MMI'd brain keeps its lesions, so damage and treatment carry on.
   bleeding and the bleed clock are rates on the body clock,
   `code/modules/body/body_clock.dm`).
 - `/datum/affliction/lesion/*` — located on an internal organ
-  (`code/modules/medical/conditions/lesions.dm`): contusion, laceration,
+  (`code/content/medical/conditions/lesions.dm`): contusion, laceration,
   perforation (hollow organs), necrosis, ischemic_injury, toxic_injury;
   `lesion/synthetic/component_fault` on prosthetic organs. Each carries
   `damage` points; organ `damage` is their sum (`recalc_integrity()`, one

@@ -7,7 +7,7 @@
 // threshold and auto-clear when it falls back below.
 //
 // The rule data lives entirely in /datum/affliction_trigger records
-// (see code/modules/medical/causes/causes.dm). This file walks the
+// (see code/content/medical/causes/causes.dm). This file walks the
 // organ_integrity / metric triggers and the chem-caused afflictions when
 // their body invalidation domain (BODY_DIRTY_ORGANS / _METRICS / _CHEMS on
 // body.dirty) is set: the base /mob/living on_reagent_change() and organ

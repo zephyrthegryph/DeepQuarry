@@ -815,7 +815,7 @@ This function completely restores a damaged organ to perfect condition.
 	var/synthetic = (is_robotic())
 
 	// Injury-driven afflictions (compartment syndrome, burn shock, fractures…).
-	// See code/modules/medical/cascades.dm.
+	// See code/content/medical/cascades.dm.
 	if(owner)
 		dq_check_damage_cascades(type, damage)
 

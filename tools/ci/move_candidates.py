@@ -1,5 +1,6 @@
 """Move candidate checker. See move_candidates.sh for the rules."""
 import os
+import posixpath
 import re
 import subprocess
 import sys
@@ -74,6 +75,28 @@ def strip_comments(text):
     return [re.sub(r"//.*", "", ln) for ln in text.split("\n")]
 
 
+INCLUDE = re.compile(r'^\s*#include\s+"([^"]+)"')
+
+
+def relative_includes(root, dm):
+    """{file: [note, ...]}: relative `#include "..."` lines in .dm files, resolved against the including file's directory
+    (the .dme lists root-relative paths and is not scanned). A note lands on the included file and on the includer, since a move
+    of either breaks the path; the note names the line to update."""
+    present = set(dm)
+    notes = {}
+    for g in dm:
+        for n, ln in enumerate(strip_comments(read(root, g)), 1):
+            m = INCLUDE.match(ln)
+            if not m:
+                continue
+            h = posixpath.normpath(posixpath.join(posixpath.dirname(g), m.group(1).replace("\\", "/")))
+            if h not in present:
+                continue
+            notes.setdefault(h, []).append("relinc:%s:%d" % (g, n))
+            notes.setdefault(g, []).append("relinc:%s:%d" % (g, n))
+    return notes
+
+
 def references(root, files):
     """(kind, reference) pairs from baselines and tool sources."""
     refs = []
@@ -132,6 +155,7 @@ def main(argv):
     if paths:
         old = [f for f in old if any(f == p or f.startswith(p + "/") for p in paths)]
     refs = references(root, files)
+    relinc = relative_includes(root, dm)
     content_types = set()
     for f in dm:
         if f.startswith("code/content/"):
@@ -160,6 +184,8 @@ def main(argv):
             hit = sorted({t for ln in lines for t in TYPE_REF.findall(ln) if t in content_types})
             if hit:
                 note = "layering:" + ",".join(hit[:3])
+        if f in relinc:
+            note = (note + " " + ",".join(dict.fromkeys(relinc[f]))).strip()
         reason = ";".join(dict.fromkeys(why))
         rows.append(("dirty" if why else "clean", f, target or "-", (reason + " " + note).strip()))
     if summary:
