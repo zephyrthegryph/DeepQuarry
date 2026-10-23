@@ -35,6 +35,9 @@ jobs:
     name: Benchmarks (${{ (github.event_name == 'schedule' || inputs.full_map) && 'Southern Cross' || 'test map' }})
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    env:
+      # The native compiler builds inside the workspace so the cache below holds it.
+      DQ_DMBC_BUILD_DIR: ${{ github.workspace }}/tools/dmb/target
     steps:
       - uses: actions/checkout@v6.0.2
       - name: Restore analyze build cache (every DM build runs `analyze gen` first)
@@ -59,6 +62,11 @@ jobs:
         with:
           workspaces: verdigris -> target
           shared-key: verdigris-i686-linux
+      - name: Restore native compiler build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/dmb -> target
+          shared-key: dmbc-native
       - name: Build verdigris
         run: bash verdigris/build-linux.sh
       - name: Install rust-g
@@ -85,7 +93,7 @@ jobs:
           if [ -n "${{ inputs.scenarios }}" ]; then
             args="$args --scenario=${{ inputs.scenarios }}"
           fi
-          DQ_COMPILER=dreammaker tools/build/build.sh --ci bench $args --label=ci-${{ github.run_number }}
+          DQ_COMPILER=native tools/build/build.sh --ci bench $args --label=ci-${{ github.run_number }}
       - name: Compare with master
         if: always() && steps.bench.outcome != 'skipped'
         run: |

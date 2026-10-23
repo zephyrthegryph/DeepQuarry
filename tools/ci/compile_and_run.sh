@@ -5,8 +5,10 @@ NC='\033[0m'
 
 source $HOME/BYOND/byond/bin/byondsetup
 
-# CI keeps DreamMaker as the cross-check for the native compiler (the local default), until the two are proven equivalent.
-export DQ_COMPILER=dreammaker
+# CI compiles with the native compiler (tools/dmb), as every local build does: `DQ_COMPILER=dreammaker` selects DreamMaker. The
+# DreamMaker cross-check is its own job (tools/ci/dm_equiv.sh): it compiles the production and the unit-test dme with both compilers
+# and fails on any difference between the worlds.
+export DQ_COMPILER="${DQ_COMPILER:-native}"
 
 # Clean up between steps so Juke doesn't refuse to recompile with different -D options
 rm -f deepquarry.dmb

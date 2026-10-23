@@ -156,7 +156,13 @@ impl Compiler<'_> {
                 value: rhs,
             }) = dm_syntax::named_argument(arg)
             {
-                if let ExprKind::Ident(name) = &lhs.kind {
+                // A bare word before `=` is the name as text, `null` included (`list(null = x)` has the key "null").
+                let name = match &lhs.kind {
+                    ExprKind::Ident(name) => Some(name.as_str()),
+                    ExprKind::Literal(value) if value == "null" => Some("null"),
+                    _ => None,
+                };
+                if let Some(name) = name {
                     self.intern_string(name);
                     self.emit(
                         opcode::PUSH_VAL,

@@ -260,6 +260,52 @@ fn line_macro_uses_physical_invocation_line_after_continuation() {
 }
 
 #[test]
+fn line_macro_is_the_line_a_continued_logical_line_ends_on() {
+    // Measured against DreamMaker 516.1687: a logical line joined by backslashes reads `__LINE__` as its last physical
+    // line, wherever on it the macro stands.
+    let files = fixture(&[
+        ("game.dme", "#include \"leaf.dm\"\n"),
+        (
+            "leaf.dm",
+            "#define CALL(x, y) (__LINE__)\n/proc/t()\n    var/a = CALL(1, \\\n        2)\n    var/b = __LINE__ + \\\n        __LINE__\n    var/c = __LINE__\n",
+        ),
+    ]);
+    let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
+    assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
+    assert!(output.text.contains("var/a = (4)"), "{}", output.text);
+    assert!(output.text.contains("var/b = 6 +"), "{}", output.text);
+    assert!(output.text.contains("var/c = 7"), "{}", output.text);
+}
+
+#[test]
+fn line_macro_of_a_call_held_over_lines_adds_the_held_lines() {
+    // A call left open at the end of a line is closed by later lines; DreamMaker reads `__LINE__` as the line it ends
+    // on plus the lines held back (a call over lines 3 to 6 reads 9).
+    let files = fixture(&[
+        (
+            "game.dme",
+            "#include \"leaf.dm\"
+",
+        ),
+        (
+            "leaf.dm",
+            "#define CALL(x) (__LINE__)
+/proc/t()
+    var/a = CALL(f(1,
+        2,
+        3,
+        4))
+    var/b = CALL(5)
+",
+        ),
+    ]);
+    let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
+    assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
+    assert!(output.text.contains("var/a = (9)"), "{}", output.text);
+    assert!(output.text.contains("var/b = (7)"), "{}", output.text);
+}
+
+#[test]
 fn leaf_disk_cache_replays_across_project_roots() {
     let first = PathBuf::from("C:/first/game.dme");
     let second = PathBuf::from("C:/second/game.dme");
@@ -667,8 +713,14 @@ fn cached_macro_delta_replays_define_and_undef() {
 
 #[test]
 fn directive_inside_open_macro_call_is_applied_in_order() {
-    for (define, expect_b) in [("#define ON
-", true), ("", false)] {
+    for (define, expect_b) in [
+        (
+            "#define ON
+",
+            true,
+        ),
+        ("", false),
+    ] {
         let text = format!(
             "#define EVENT(kind, payload) emit(kind, payload)
 {define}/proc/test()
@@ -681,12 +733,23 @@ fn directive_inside_open_macro_call_is_applied_in_order() {
 	return 1
 "
         );
-        let files = fixture(&[("game.dme", "#include \"leaf.dm\"
-"), ("leaf.dm", text.as_str())]);
+        let files = fixture(&[
+            (
+                "game.dme",
+                "#include \"leaf.dm\"
+",
+            ),
+            ("leaf.dm", text.as_str()),
+        ]);
         let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
         assert!(output.diagnostics.is_empty(), "{:?}", output.diagnostics);
         assert!(output.text.contains("emit(1, list("), "{}", output.text);
-        assert_eq!(output.text.contains("\"b\" = 2"), expect_b, "{}", output.text);
+        assert_eq!(
+            output.text.contains("\"b\" = 2"),
+            expect_b,
+            "{}",
+            output.text
+        );
         assert!(output.text.contains("return 1"), "{}", output.text);
     }
 }
@@ -694,15 +757,21 @@ fn directive_inside_open_macro_call_is_applied_in_order() {
 #[test]
 fn open_macro_call_never_closed_still_reports_per_line() {
     let files = fixture(&[
-        ("game.dme", "#include \"leaf.dm\"
-"),
-        ("leaf.dm", "#define EVENT(a) emit(a)
+        (
+            "game.dme",
+            "#include \"leaf.dm\"
+",
+        ),
+        (
+            "leaf.dm",
+            "#define EVENT(a) emit(a)
 /proc/test()
 	EVENT(1,
 #ifdef NOPE
 #endif
 	return 2
-"),
+",
+        ),
     ]);
     let output = preprocess_project(Path::new("game.dme"), &files, &BTreeMap::new());
     assert_eq!(output.diagnostics.len(), 1, "{:?}", output.diagnostics);

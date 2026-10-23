@@ -31,7 +31,10 @@ fn directive_free(prepared: &PreparedSource) -> bool {
 ///
 /// Every file the full planner would read is requested from the provider again, so a recording
 /// provider captures the same inputs; an unchanged file is recognised by `SourceText::same_view`.
-pub fn plan_regions_edit<P: SourceProvider>(prev: &DirectivePlan, provider: &P) -> Option<PlanEdit> {
+pub fn plan_regions_edit<P: SourceProvider>(
+    prev: &DirectivePlan,
+    provider: &P,
+) -> Option<PlanEdit> {
     if !prev.diagnostics.is_empty() || !prev.warnings.is_empty() {
         return None;
     }
@@ -64,11 +67,18 @@ pub fn plan_regions_edit<P: SourceProvider>(prev: &DirectivePlan, provider: &P) 
         if !path
             .extension()
             .is_some_and(|extension| extension.eq_ignore_ascii_case("dm"))
-            || prev.occurrences.iter().any(|entry| entry.parent == Some(occurrence))
+            || prev
+                .occurrences
+                .iter()
+                .any(|entry| entry.parent == Some(occurrence))
         {
             return None;
         }
-        let mut own = prev.regions.iter().enumerate().filter(|(_, region)| region.occurrence == occurrence);
+        let mut own = prev
+            .regions
+            .iter()
+            .enumerate()
+            .filter(|(_, region)| region.occurrence == occurrence);
         let (region_index, region) = own.next()?;
         if own.next().is_some()
             || region.manifest_source
@@ -94,6 +104,7 @@ pub fn plan_regions_edit<P: SourceProvider>(prev: &DirectivePlan, provider: &P) 
             lines.push(RegionLine {
                 source_span: logical.source_span,
                 source_line: logical.source_line,
+                source_lines: logical.source_lines,
                 text: SourceText::clone(logical.text),
             });
         }
@@ -105,7 +116,8 @@ pub fn plan_regions_edit<P: SourceProvider>(prev: &DirectivePlan, provider: &P) 
             target.segments[0].lines = lines;
         }
         plan.occurrences[occurrence].eof_cursor_line = Some(line_number.checked_add(1)?);
-        plan.source_line_starts.insert(path.clone(), prepared.line_starts().clone());
+        plan.source_line_starts
+            .insert(path.clone(), prepared.line_starts().clone());
         plan.source_texts.insert(path, prepared.original().clone());
         regions.push(region_index);
     }
@@ -134,7 +146,10 @@ pub fn expand_regions_edit(
     }
     let mut replaced = Vec::with_capacity(regions.len());
     for &region in regions {
-        let receipt = prev.receipts.iter().position(|receipt| receipt.region == region)?;
+        let receipt = prev
+            .receipts
+            .iter()
+            .position(|receipt| receipt.region == region)?;
         let output = region_memo::expand(plan, region, memo);
         if !output.diagnostics.is_empty() || output.receipt.is_none() {
             return None;
@@ -169,7 +184,9 @@ pub fn expand_regions_edit(
                 old_start: start,
                 new_start,
                 delta,
-                path: plan.occurrences[plan.regions[receipt.region].occurrence].path.clone(),
+                path: plan.occurrences[plan.regions[receipt.region].occurrence]
+                    .path
+                    .clone(),
                 lines: entry.output.lines.into_iter().collect(),
             });
             shift += delta;
@@ -201,7 +218,11 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
         return Err("joined text differs".into());
     }
     if a.origins.len() != b.origins.len() {
-        return Err(format!("origin rows {} vs {}", a.origins.len(), b.origins.len()));
+        return Err(format!(
+            "origin rows {} vs {}",
+            a.origins.len(),
+            b.origins.len()
+        ));
     }
     for (index, (x, y)) in a.origins.iter().zip(b.origins.iter()).enumerate() {
         let same = x.origin.output_line == y.origin.output_line
@@ -216,7 +237,10 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
         }
     }
     if a.receipts.len() != b.receipts.len()
-        || a.receipts.iter().zip(&b.receipts).any(|(x, y)| x.region != y.region || x.output != y.output)
+        || a.receipts
+            .iter()
+            .zip(&b.receipts)
+            .any(|(x, y)| x.region != y.region || x.output != y.output)
     {
         return Err("receipts differ".into());
     }
@@ -236,7 +260,10 @@ fn same_environment(a: &MacroEnvironment, b: &MacroEnvironment) -> bool {
     let collect = |environment: &MacroEnvironment| {
         let mut entries = BTreeMap::new();
         environment.visit_storage(|name, _, _, definition, origin| {
-            entries.insert(name.to_string(), (format!("{definition:?}"), format!("{origin:?}")));
+            entries.insert(
+                name.to_string(),
+                (format!("{definition:?}"), format!("{origin:?}")),
+            );
         });
         entries
     };
@@ -271,7 +298,10 @@ pub fn plans_equal(a: &DirectivePlan, b: &DirectivePlan, deep: &[usize]) -> Resu
                 return Err(format!("region {index} segment differs"));
             }
             for (l, m) in s.lines.iter().zip(&t.lines) {
-                if l.source_span != m.source_span || l.source_line != m.source_line || l.text.as_str() != m.text.as_str() {
+                if l.source_span != m.source_span
+                    || l.source_line != m.source_line
+                    || l.text.as_str() != m.text.as_str()
+                {
                     return Err(format!("region {index} line differs"));
                 }
             }
@@ -293,11 +323,17 @@ pub fn plans_equal(a: &DirectivePlan, b: &DirectivePlan, deep: &[usize]) -> Resu
         }
     }
     if a.source_texts.len() != b.source_texts.len()
-        || a.source_texts.iter().zip(&b.source_texts).any(|((p, x), (q, y))| p != q || x.as_str() != y.as_str())
+        || a.source_texts
+            .iter()
+            .zip(&b.source_texts)
+            .any(|((p, x), (q, y))| p != q || x.as_str() != y.as_str())
     {
         return Err("source texts differ".into());
     }
-    if a.source_line_starts != b.source_line_starts || a.dependencies != b.dependencies || a.file_dirs != b.file_dirs {
+    if a.source_line_starts != b.source_line_starts
+        || a.dependencies != b.dependencies
+        || a.file_dirs != b.file_dirs
+    {
         return Err("line starts, dependencies or file dirs differ".into());
     }
     Ok(())

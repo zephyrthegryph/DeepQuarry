@@ -64,6 +64,11 @@ impl Compiler<'_> {
                 return Ok(());
             }
         }
+        if !null_first {
+            if let Some(chain) = safe_member_chain(target) {
+                return self.assign_through_safe_chain(target, &chain, op, value, statement);
+            }
+        }
         if let ExprKind::SafeMember {
             object,
             selector,
@@ -158,11 +163,20 @@ impl Compiler<'_> {
         if op == "=" {
             if let ExprKind::Index { object, index } = &target.kind {
                 // `a?.f()[i] = v`: DreamMaker tests the receiver first, so `v` is not evaluated for a null receiver.
-                if let ExprKind::Call { callee, args } = &super::expression::peel_groups(object).kind {
-                    if let (true, ExprKind::SafeMember { object: receiver, selector, via_colon: false }) =
-                        (args.is_empty(), &callee.kind)
+                if let ExprKind::Call { callee, args } =
+                    &super::expression::peel_groups(object).kind
+                {
+                    if let (
+                        true,
+                        ExprKind::SafeMember {
+                            object: receiver,
+                            selector,
+                            via_colon: false,
+                        },
+                    ) = (args.is_empty(), &callee.kind)
                     {
-                        let proc_selector = self.safe_member_call_selector(receiver, selector, statement)?;
+                        let proc_selector =
+                            self.safe_member_call_selector(receiver, selector, statement)?;
                         self.record_call_selection(callee, selector, &proc_selector, true);
                         self.expression(receiver, statement)?;
                         let end = self.label();
@@ -196,13 +210,14 @@ impl Compiler<'_> {
                     self.expression(value, statement)?;
                     self.expression(object, statement)?;
                     self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                    let variable = match self.fallback_member_global(object, selector, *via_colon)? {
-                        Some(symbol) => VariableWord::Global(symbol),
-                        None => {
-                            self.intern_string(selector);
-                            VariableWord::Field(SymbolId::of(selector))
-                        }
-                    };
+                    let variable =
+                        match self.fallback_member_global(object, selector, *via_colon)? {
+                            Some(symbol) => VariableWord::Global(symbol),
+                            None => {
+                                self.intern_string(selector);
+                                VariableWord::Field(SymbolId::of(selector))
+                            }
+                        };
                     self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
                     return Ok(());
                 }
@@ -287,6 +302,78 @@ impl Compiler<'_> {
     ) -> Result<VariableWord, LowerError> {
         let meaning = self.variable_meaning(name, statement)?;
         self.variable_operand(&meaning, name, statement)
+    }
+    /// `a?.b.c = v` and `f()?.b?.c = v`: DreamMaker tests each `?.` receiver in turn, saving the cache register at every
+    /// guard, evaluates `v` once the last receiver passed and stores through the members that follow it. A receiver that
+    /// is null skips the store and restores the registers saved so far.
+    fn assign_through_safe_chain(
+        &mut self,
+        target: &Expr,
+        chain: &SafeChain,
+        op: &str,
+        value: &Expr,
+        statement: &str,
+    ) -> Result<(), LowerError> {
+        let assignment_opcode = match op {
+            "=" => opcode::SET_VAR,
+            "+=" => opcode::AUG_ADD,
+            "-=" => opcode::AUG_SUB,
+            "*=" => opcode::AUG_MUL,
+            "/=" => opcode::AUG_DIV,
+            "%=" => opcode::AUG_MOD,
+            "&=" => opcode::AUG_BAND,
+            "|=" => opcode::AUG_BOR,
+            "^=" => opcode::AUG_XOR,
+            "<<=" => 0x4d,
+            ">>=" => 0x4e,
+            _ => return Err(error(statement, "unsupported safe member assignment")),
+        };
+        self.source_feature_reference(target, true, statement)?;
+        let mut ends = Vec::new();
+        for (index, receiver) in chain.receivers.iter().enumerate() {
+            match receiver {
+                GuardReceiver::Expression(receiver) => self.expression(receiver, statement)?,
+                // A later receiver is read from the cache register the previous guard set.
+                GuardReceiver::FromCache(path) => {
+                    let variable = self.field_chain(path);
+                    self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
+                }
+            }
+            debug_assert!(index == 0 || matches!(receiver, GuardReceiver::FromCache(_)));
+            let end = self.label();
+            self.emit(318, vec![Word::Branch(end)]);
+            self.emit(opcode::PUSH_CACHE, vec![]);
+            ends.push(end);
+        }
+        self.expression(value, statement)?;
+        self.emit(opcode::POP_CACHE, vec![]);
+        let variable = self.field_chain(&chain.path);
+        self.emit(assignment_opcode, vec![Word::Variable(variable)]);
+        // The null path of guard i has i - 1 saved registers to restore.
+        for end in ends.iter().skip(1).rev() {
+            self.result.code.items.push(CodeItem::Label(*end));
+            self.emit(opcode::POP_CACHE, vec![]);
+        }
+        self.result.code.items.push(CodeItem::Label(ends[0]));
+        Ok(())
+    }
+    /// The members `path` read from the cache register: one field, or the fields nested as DreamMaker encodes a
+    /// multi-hop operand.
+    fn field_chain(&mut self, path: &[String]) -> VariableWord {
+        let mut fields = path
+            .iter()
+            .map(|selector| {
+                self.intern_string(selector);
+                VariableWord::Field(SymbolId::of(selector.as_str()))
+            })
+            .collect::<Vec<_>>();
+        let mut variable = fields
+            .pop()
+            .expect("a member chain has at least one member");
+        while let Some(owner) = fields.pop() {
+            variable = VariableWord::SetCache(Box::new(owner), Box::new(variable));
+        }
+        variable
     }
     pub(super) fn variable_expr(
         &mut self,
@@ -692,8 +779,14 @@ impl Compiler<'_> {
         {
             // A constant condition keeps one branch (DreamMaker 516.1687); the other is still checked.
             if let Some(value) = super::expression::constant_truth(condition) {
-                let (kept, dead) = if value { (then_value, else_value) } else { (else_value, then_value) };
-                self.lower_dead(|compiler| compiler.local_initializer(dead, declaration, statement))?;
+                let (kept, dead) = if value {
+                    (then_value, else_value)
+                } else {
+                    (else_value, then_value)
+                };
+                self.lower_dead(|compiler| {
+                    compiler.local_initializer(dead, declaration, statement)
+                })?;
                 return self.local_initializer(kept, declaration, statement);
             }
             self.expression(condition, statement)?;
@@ -807,16 +900,19 @@ impl Compiler<'_> {
 
 /// Assignment target as authored: the statement text before its first `=`.
 fn assignment_target_text(statement: &str) -> &str {
-    statement.split_once('=').map_or(statement, |(target, _)| target).trim()
+    statement
+        .split_once('=')
+        .map_or(statement, |(target, _)| target)
+        .trim()
 }
 
 /// `name/name...` with no spaces: a misspelled `var/` declaration.
 fn path_like_target(statement: &str) -> bool {
     let target = assignment_target_text(statement);
     target.contains('/')
-        && target
-            .split('/')
-            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+        && target.split('/').all(|part| {
+            !part.is_empty() && part.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
+        })
 }
 
 /// A receiver that only names things (identifiers and member reads, possibly parenthesised): evaluating it has no effect,
@@ -828,4 +924,112 @@ pub(super) fn is_reference_chain(expr: &Expr) -> bool {
         ExprKind::Member { object, .. } => is_reference_chain(object),
         _ => false,
     }
+}
+
+/// The `?.` receivers of an assignment target and the members stored through after the last of them.
+struct SafeChain {
+    /// Receivers to test in order.
+    receivers: Vec<GuardReceiver>,
+    /// The members from the last tested receiver to the stored member, in order.
+    path: Vec<String>,
+}
+
+/// What a `?.` is applied to.
+enum GuardReceiver {
+    /// The first receiver: the expression itself, with the members before it read as plain `.`.
+    Expression(Expr),
+    /// Every later receiver: the members after the previous receiver, read from the cache register it set.
+    FromCache(Vec<String>),
+}
+
+/// A member chain with its `?.` read as `.`.
+fn without_safe_access(expr: &Expr) -> Expr {
+    match &expr.kind {
+        ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        }
+        | ExprKind::Member {
+            object,
+            selector,
+            via_colon,
+        } => Expr {
+            span: expr.span,
+            kind: ExprKind::Member {
+                object: Box::new(without_safe_access(object)),
+                selector: selector.clone(),
+                via_colon: *via_colon,
+            },
+        },
+        ExprKind::Group(inner) => without_safe_access(inner),
+        _ => expr.clone(),
+    }
+}
+
+/// Splits a member chain with a `?.` before its stored member into guards (`None` when it has none).
+fn safe_member_chain(target: &Expr) -> Option<SafeChain> {
+    // The chain's nodes from the stored member in.
+    let mut nodes: Vec<&Expr> = Vec::new();
+    let mut at = super::expression::peel_groups(target);
+    while let ExprKind::Member { object, .. } | ExprKind::SafeMember { object, .. } = &at.kind {
+        nodes.push(at);
+        at = super::expression::peel_groups(object);
+    }
+    nodes.reverse();
+    let selector_of = |node: &Expr| match &node.kind {
+        ExprKind::Member { selector, .. } | ExprKind::SafeMember { selector, .. } => {
+            selector.clone()
+        }
+        _ => unreachable!("chain nodes are members"),
+    };
+    let safe = |node: &Expr| matches!(node.kind, ExprKind::SafeMember { .. });
+    let inner_safe = nodes
+        .iter()
+        .take(nodes.len().saturating_sub(1))
+        .any(|node| safe(node));
+    let colon = nodes.iter().any(|node| {
+        matches!(
+            node.kind,
+            ExprKind::Member {
+                via_colon: true,
+                ..
+            } | ExprKind::SafeMember {
+                via_colon: true,
+                ..
+            }
+        )
+    });
+    if !inner_safe || colon {
+        return None;
+    }
+    let mut receivers = Vec::new();
+    let mut last_guard = None;
+    for (index, node) in nodes.iter().enumerate() {
+        if safe(node) {
+            let (ExprKind::SafeMember { object, .. } | ExprKind::Member { object, .. }) =
+                &node.kind
+            else {
+                unreachable!("chain nodes are members")
+            };
+            receivers.push(match last_guard {
+                None => GuardReceiver::Expression(without_safe_access(object)),
+                Some(previous) => GuardReceiver::FromCache(
+                    nodes[previous..index]
+                        .iter()
+                        .map(|node| selector_of(node))
+                        .collect(),
+                ),
+            });
+            last_guard = Some(index);
+        }
+    }
+    let last_guard = last_guard.expect("a chain with an inner `?.` has a guard");
+    Some(SafeChain {
+        receivers,
+        path: nodes[last_guard..]
+            .iter()
+            .map(|node| selector_of(node))
+            .collect(),
+    })
 }

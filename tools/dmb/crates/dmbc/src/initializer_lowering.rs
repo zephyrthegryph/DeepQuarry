@@ -396,6 +396,9 @@ fn lower_plan<R: Resolver>(
     if let Some(allocation) = allocation {
         allocation.order_runtime(plan, &mut classified, host)?;
     }
+    if let Some(path) = std::env::var_os("DQ_DUMP_GLOBAL_ORDER") {
+        crate::startup_order_dump::dump(std::path::Path::new(&path), frontend, plan, &classified);
+    }
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
     // Capture portable policy once, before parallel fragment/assembly consumers.
@@ -914,12 +917,14 @@ fn value_continuation(
     global: bool,
 ) -> Option<dm_codegen_byond::initializer::ValueContinuation<'_>> {
     match write.runtime_value.as_ref() {
-        Some(RuntimeValue::SizedArrayExplicit(explicit)) => Some(dm_codegen_byond::initializer::ValueContinuation {
-            dimensions: &explicit.dimensions,
-            before_assignment: global,
-            emit_assignment: explicit.expression.is_some(),
-            assignment_is_allocation: false,
-        }),
+        Some(RuntimeValue::SizedArrayExplicit(explicit)) => {
+            Some(dm_codegen_byond::initializer::ValueContinuation {
+                dimensions: &explicit.dimensions,
+                before_assignment: global,
+                emit_assignment: explicit.expression.is_some(),
+                assignment_is_allocation: false,
+            })
+        }
         Some(RuntimeValue::SizedArray(dimensions)) => {
             Some(dm_codegen_byond::initializer::ValueContinuation {
                 dimensions,

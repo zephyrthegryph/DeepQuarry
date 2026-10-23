@@ -194,6 +194,7 @@ dependencies = [
  "byond-dmb",
  "dm-ir",
  "dm-syntax",
+ "md5",
  "serde",
  "serde_json",
 ]

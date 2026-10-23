@@ -122,11 +122,10 @@ byte-identical in the native compiler instead (`dreammaker_shapes` tests in `dm-
 ### Native vs DreamMaker, production dme (2026-10-22)
 
 `--ignore-debug --ignore-order`: 4,854 differences at the start of the lane (4,767 `proc.bytecode`, 87 `proc.proc_locals`),
-1 now. The one left is `proc.global_init_order`: DreamMaker runs the 1,409 global initializers in ascending variable-table
-id (the order in which each name first appears in the compiled procedures); native runs them in another order (894 statements
-moved; 150 of the 443 that run code, constructors and calls, run in another order relative to each other). Initializers
-that run code can observe each other, so the checker reports this instead of folding it into the order ruling. Matching
-DreamMaker needs its variable numbering; making the order irrelevant needs a dependency analysis of every constructor.
+0 now; the unit-test dme is at 6 differences from one cause, an untyped receiver naming a member declared on several types (147 at the start of the global-order lane). `proc.global_init_order` is proved: native reproduces
+DreamMaker's initializer order (`dmbc/src/startup_order.rs`), checked here because initializers that run code can observe each other.
+The checker drops code no branch reaches (entry, branch targets and fallthrough until `Ret`/`End`/`Jmp`). `dump-vars FILE --full` prints each record's
+kind and value; `DQ_DUMP_GLOBAL_ORDER=FILE` makes dmbc write its computed order and ledger.
 
 ## Orders kept (runtime-observable) and dropped
 

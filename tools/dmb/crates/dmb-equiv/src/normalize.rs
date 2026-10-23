@@ -157,7 +157,10 @@ fn merge_literals(lines: Vec<String>) -> Vec<String> {
                     let n: Option<usize> = if o == "Call" {
                         l.rsplit(", ").next().and_then(|x| x.parse().ok())
                     } else {
-                        l["CallGlob ".len()..].split(',').next().and_then(|x| x.parse().ok())
+                        l["CallGlob ".len()..]
+                            .split(',')
+                            .next()
+                            .and_then(|x| x.parse().ok())
                     };
                     match n {
                         Some(n) if n < depth => depth = depth + 1 - n,
@@ -191,7 +194,9 @@ fn merge_literals(lines: Vec<String>) -> Vec<String> {
             }
             // Every branch target inside the chain must come from inside it.
             let sources_inside = lines.iter().enumerate().all(|(k, l)| {
-                targets(l).iter().all(|t| !(*t > i + 1 && *t <= j) || (k > i + 1 && k < j))
+                targets(l)
+                    .iter()
+                    .all(|t| !(*t > i + 1 && *t <= j) || (k > i + 1 && k < j))
             });
             if !sources_inside {
                 continue;
@@ -275,29 +280,36 @@ fn drop_first_null_stores(lines: Vec<String>) -> Vec<String> {
     }
 }
 
-/// Instructions after `Ret`, `End` or an unconditional jump that nothing branches to never run.
+/// Instructions no path reaches never run: the entry, every branch target of a reachable instruction and the
+/// instruction after anything that is not an unconditional exit (`Ret`, `End`, `Jmp`, `JmpLoop`) are reachable.
 fn drop_unreachable(lines: Vec<String>) -> Vec<String> {
-    let tg: Vec<usize> = lines.iter().flat_map(|l| targets(l)).collect();
-    let mut drop = vec![false; lines.len()];
-    let mut dead = false;
-    for (i, l) in lines.iter().enumerate() {
-        if tg.contains(&i) {
-            dead = false;
-        }
-        if dead {
-            drop[i] = true;
-            continue;
-        }
-        let o = op(l);
-        if o == "Ret" || o == "End" || ((o == "Jmp" || o == "JmpLoop") && !targets(l).is_empty()) {
-            dead = true;
+    let mut reachable = vec![false; lines.len()];
+    let mut stack = vec![0usize];
+    while let Some(start) = stack.pop() {
+        let mut at = start;
+        while at < lines.len() && !reachable[at] {
+            reachable[at] = true;
+            let line = &lines[at];
+            for target in targets(line) {
+                if target < lines.len() && !reachable[target] {
+                    stack.push(target);
+                }
+            }
+            let o = op(line);
+            if o == "Ret"
+                || o == "End"
+                || ((o == "Jmp" || o == "JmpLoop") && !targets(line).is_empty())
+            {
+                break;
+            }
+            at += 1;
         }
     }
-    if drop.iter().any(|d| *d) {
-        remove(&lines, &drop)
-    } else {
-        lines
+    if reachable.iter().all(|r| *r) {
+        return lines;
     }
+    let drop: Vec<bool> = reachable.iter().map(|r| !*r).collect();
+    remove(&lines, &drop)
 }
 
 /// An unconditional jump to the next instruction does nothing.
@@ -320,7 +332,10 @@ fn drop_jump_to_next(lines: Vec<String>) -> Vec<String> {
 /// `/T::field` is the field's initial value. DreamMaker folds it to the constant; native pushes the type and reads
 /// `initial()` through the Cache register, which is what the VM defines the constant as. Where the default is a
 /// constant of the class tables, the three-instruction read is that constant.
-fn fold_static_reads(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<String>) -> Vec<String> {
+fn fold_static_reads(
+    lines: Vec<String>,
+    default: &dyn Fn(&str, &str) -> Option<String>,
+) -> Vec<String> {
     let mut out: Vec<String> = Vec::with_capacity(lines.len());
     let mut drop = vec![false; lines.len()];
     let mut rewrite: Vec<Option<String>> = vec![None; lines.len()];
@@ -332,7 +347,11 @@ fn fold_static_reads(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<
         let Some(path) = ["PushVal mobpath ", "PushVal path"].iter().find_map(|p| {
             let rest = lines[i].strip_prefix(p)?;
             // `path9 /obj/x` carries a tag number before the path.
-            let rest = if p.ends_with("path") { rest.split_once(' ')?.1 } else { rest };
+            let rest = if p.ends_with("path") {
+                rest.split_once(' ')?.1
+            } else {
+                rest
+            };
             rest.starts_with('/').then(|| rest.to_string())
         }) else {
             continue;
@@ -359,7 +378,11 @@ fn fold_static_reads(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<
         .enumerate()
         .map(|(i, l)| rewrite[i].take().unwrap_or(l))
         .collect();
-    out.extend(if drop.iter().any(|d| *d) { remove(&lines, &drop) } else { lines });
+    out.extend(if drop.iter().any(|d| *d) {
+        remove(&lines, &drop)
+    } else {
+        lines
+    });
     out
 }
 
@@ -384,8 +407,10 @@ pub fn sorted_pure_initializer(lines: &[String]) -> Option<Vec<String>> {
             current.push(l.clone());
             chunks.push((field.to_string(), std::mem::take(&mut current), constructs));
             constructs = false;
-        } else if matches!(op(l), "PushVal" | "NewList" | "NewAList" | "NewAssocList" | "EmptyList")
-            && targets(l).is_empty()
+        } else if matches!(
+            op(l),
+            "PushVal" | "NewList" | "NewAList" | "NewAssocList" | "EmptyList"
+        ) && targets(l).is_empty()
         {
             current.push(l.clone());
         } else if op(l) == "New" {
@@ -530,7 +555,19 @@ fn thread_jumps(lines: Vec<String>) -> Vec<String> {
             let o = op(&lines[i]).to_string();
             let tl = targets(&lines[i]);
             let [t] = tl.as_slice() else { break };
-            if *t >= lines.len() || *t == i || !matches!(o.as_str(), "Jmp" | "Jz" | "Jnz" | "JmpOr" | "JmpAnd" | "SetCacheJmpIfNull" | "SetCachePopJmpIfNull") {
+            if *t >= lines.len()
+                || *t == i
+                || !matches!(
+                    o.as_str(),
+                    "Jmp"
+                        | "Jz"
+                        | "Jnz"
+                        | "JmpOr"
+                        | "JmpAnd"
+                        | "SetCacheJmpIfNull"
+                        | "SetCachePopJmpIfNull"
+                )
+            {
                 break;
             }
             let target = lines[*t].clone();
@@ -538,17 +575,23 @@ fn thread_jumps(lines: Vec<String>) -> Vec<String> {
             let tt = targets(&target);
             let next = match (o.as_str(), to.as_str()) {
                 (_, "Jmp") if tt.len() == 1 => Some((lines[i].clone(), tt[0])),
-                ("Jz", "Jz") | ("Jnz", "Jnz") | ("JmpOr", "JmpOr") | ("JmpAnd", "JmpAnd") | ("SetCacheJmpIfNull", "SetCacheJmpIfNull")
+                ("Jz", "Jz")
+                | ("Jnz", "Jnz")
+                | ("JmpOr", "JmpOr")
+                | ("JmpAnd", "JmpAnd")
+                | ("SetCacheJmpIfNull", "SetCacheJmpIfNull")
                     if tt.len() == 1 =>
                 {
                     Some((lines[i].clone(), tt[0]))
                 }
-                ("SetCacheJmpIfNull", "SetCachePopJmpIfNull") if tt.len() == 1 => {
-                    Some((lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1), tt[0]))
-                }
-                ("SetCacheJmpIfNull", "Pop") if *t + 1 < lines.len() => {
-                    Some((lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1), *t + 1))
-                }
+                ("SetCacheJmpIfNull", "SetCachePopJmpIfNull") if tt.len() == 1 => Some((
+                    lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1),
+                    tt[0],
+                )),
+                ("SetCacheJmpIfNull", "Pop") if *t + 1 < lines.len() => Some((
+                    lines[i].replacen("SetCacheJmpIfNull", "SetCachePopJmpIfNull", 1),
+                    *t + 1,
+                )),
                 _ => None,
             };
             let Some((line, dest)) = next else { break };
@@ -722,7 +765,8 @@ pub fn initializer_order_difference(a: &[String], b: &[String]) -> Option<String
     if sa.len() != sb.len() || sa.len() < 2 {
         return None;
     }
-    let mut position: std::collections::HashMap<&Vec<String>, Vec<usize>> = std::collections::HashMap::new();
+    let mut position: std::collections::HashMap<&Vec<String>, Vec<usize>> =
+        std::collections::HashMap::new();
     for (i, statement) in sa.iter().enumerate() {
         position.entry(statement).or_default().push(i);
     }
@@ -749,11 +793,23 @@ pub fn initializer_order_difference(a: &[String], b: &[String]) -> Option<String
     };
     let runs_code = |statement: &Vec<String>| {
         statement.iter().any(|l| {
-            matches!(op(l), "New" | "Call" | "CallGlob" | "CallStatement" | "CallGlobalArgList" | "RegexNew" | "NewArgList")
-                || l.starts_with("GetVar global:")
+            matches!(
+                op(l),
+                "New"
+                    | "Call"
+                    | "CallGlob"
+                    | "CallStatement"
+                    | "CallGlobalArgList"
+                    | "RegexNew"
+                    | "NewArgList"
+            ) || l.starts_with("GetVar global:")
         })
     };
-    let code_order: Vec<usize> = order.iter().copied().filter(|&i| runs_code(&sa[i])).collect();
+    let code_order: Vec<usize> = order
+        .iter()
+        .copied()
+        .filter(|&i| runs_code(&sa[i]))
+        .collect();
     let moved = order.len() - longest_increasing(&order);
     if moved == 0 {
         return None;
@@ -767,7 +823,10 @@ pub fn initializer_order_difference(a: &[String], b: &[String]) -> Option<String
     ))
 }
 
-pub fn normalize(lines: Vec<String>, default: &dyn Fn(&str, &str) -> Option<String>) -> Vec<String> {
+pub fn normalize(
+    lines: Vec<String>,
+    default: &dyn Fn(&str, &str) -> Option<String>,
+) -> Vec<String> {
     let mut lines = fold_static_reads(lines, default);
     // Each pass can expose another (a folded short-circuit leaves dead code, a dropped jump exposes a literal pair).
     for _ in 0..8 {
@@ -800,9 +859,19 @@ mod tests {
     #[test]
     fn static_field_read_is_the_default_constant() {
         let table = |p: &str, f: &str| (p == "/obj/x" && f == "y").then(|| "\"font\"".to_string());
-        let nat = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.y)", "Ret"]);
+        let nat = v(&[
+            "PushVal path9 /obj/x",
+            "SetVar cache",
+            "GetVar initial(path9 /obj/x->.y)",
+            "Ret",
+        ]);
         assert_eq!(normalize(nat, &table), v(&["PushVal \"font\"", "Ret"]));
-        let other = v(&["PushVal path9 /obj/x", "SetVar cache", "GetVar initial(path9 /obj/x->.z)", "Ret"]);
+        let other = v(&[
+            "PushVal path9 /obj/x",
+            "SetVar cache",
+            "GetVar initial(path9 /obj/x->.z)",
+            "Ret",
+        ]);
         assert_eq!(normalize(other.clone(), &table), other);
     }
 
@@ -812,52 +881,159 @@ mod tests {
 
     #[test]
     fn right_nested_literals_equal_folded() {
-        let dm = v(&["PushVal \"a\"", "PushVal \"b\"", "GetVar src->.x", "Add", "PushVal \"c\"", "Add", "Add", "Ret"]);
-        let nat = v(&["PushVal \"ab\"", "GetVar src->.x", "Add", "PushVal \"c\"", "Add", "Ret"]);
+        let dm = v(&[
+            "PushVal \"a\"",
+            "PushVal \"b\"",
+            "GetVar src->.x",
+            "Add",
+            "PushVal \"c\"",
+            "Add",
+            "Add",
+            "Ret",
+        ]);
+        let nat = v(&[
+            "PushVal \"ab\"",
+            "GetVar src->.x",
+            "Add",
+            "PushVal \"c\"",
+            "Add",
+            "Ret",
+        ]);
         assert_eq!(normalize(dm, &none), normalize(nat, &none));
     }
 
     #[test]
     fn calls_inside_the_chain_do_not_disturb_the_merge() {
-        let dm = v(&["PushVal \"a\"", "PushVal \"b\"", "Call src->dproc:f, 0", "Add", "Add", "Ret"]);
-        assert_eq!(normalize(dm, &none), v(&["PushVal \"ab\"", "Call src->dproc:f, 0", "Add", "Ret"]));
+        let dm = v(&[
+            "PushVal \"a\"",
+            "PushVal \"b\"",
+            "Call src->dproc:f, 0",
+            "Add",
+            "Add",
+            "Ret",
+        ]);
+        assert_eq!(
+            normalize(dm, &none),
+            v(&["PushVal \"ab\"", "Call src->dproc:f, 0", "Add", "Ret"])
+        );
         // A call that would consume the literal B itself is left alone.
-        let eats = v(&["PushVal \"a\"", "PushVal \"b\"", "CallGlob 1, /proc/f", "Add", "Ret"]);
+        let eats = v(&[
+            "PushVal \"a\"",
+            "PushVal \"b\"",
+            "CallGlob 1, /proc/f",
+            "Add",
+            "Ret",
+        ]);
         assert_eq!(normalize(eats.clone(), &none), eats);
     }
 
     #[test]
     fn null_store_before_initializer_is_dead() {
-        let dm = v(&["PushVal null", "SetVar local0", "PushVal 1.0", "SetVar local0", "End"]);
-        assert_eq!(normalize(dm, &none), v(&["PushVal 1.0", "SetVar local0", "End"]));
+        let dm = v(&[
+            "PushVal null",
+            "SetVar local0",
+            "PushVal 1.0",
+            "SetVar local0",
+            "End",
+        ]);
+        assert_eq!(
+            normalize(dm, &none),
+            v(&["PushVal 1.0", "SetVar local0", "End"])
+        );
     }
 
     #[test]
     fn null_store_before_initializer_in_a_loop_is_dead() {
-        let dm = v(&["GetVar src", "Test", "Jz L8", "PushVal null", "SetVar local0", "PushVal 1.0", "SetVar local0", "JmpLoop L0", "End"]);
+        let dm = v(&[
+            "GetVar src",
+            "Test",
+            "Jz L8",
+            "PushVal null",
+            "SetVar local0",
+            "PushVal 1.0",
+            "SetVar local0",
+            "JmpLoop L0",
+            "End",
+        ]);
         assert_eq!(
             normalize(dm, &none),
-            v(&["GetVar src", "Test", "Jz L6", "PushVal 1.0", "SetVar local0", "JmpLoop L0", "End"])
+            v(&[
+                "GetVar src",
+                "Test",
+                "Jz L6",
+                "PushVal 1.0",
+                "SetVar local0",
+                "JmpLoop L0",
+                "End"
+            ])
         );
     }
 
     #[test]
     fn literals_merge_across_a_conditional_operand() {
         let dm = v(&[
-            "PushVal \"a\"", "PushVal \"b\"", "GetVar arg1", "Test", "Jz L7", "PushVal \"x\"", "Jmp L8",
-            "PushVal \"y\"", "Add", "PushVal \"c\"", "Add", "Add", "Ret",
+            "PushVal \"a\"",
+            "PushVal \"b\"",
+            "GetVar arg1",
+            "Test",
+            "Jz L7",
+            "PushVal \"x\"",
+            "Jmp L8",
+            "PushVal \"y\"",
+            "Add",
+            "PushVal \"c\"",
+            "Add",
+            "Add",
+            "Ret",
         ]);
         let nat = v(&[
-            "PushVal \"ab\"", "GetVar arg1", "Test", "Jz L6", "PushVal \"x\"", "Jmp L7", "PushVal \"y\"",
-            "Add", "PushVal \"c\"", "Add", "Ret",
+            "PushVal \"ab\"",
+            "GetVar arg1",
+            "Test",
+            "Jz L6",
+            "PushVal \"x\"",
+            "Jmp L7",
+            "PushVal \"y\"",
+            "Add",
+            "PushVal \"c\"",
+            "Add",
+            "Ret",
         ]);
         assert_eq!(normalize(dm, &none), normalize(nat, &none));
     }
 
     #[test]
+    fn code_only_dead_code_branches_to_never_runs() {
+        // The branch in the dead tail targets the dead `End`: no path from the entry reaches either.
+        let dm = v(&[
+            "PushVal 1.0",
+            "Ret",
+            "GetVar src->.x",
+            "Jz L5",
+            "PushVal 2.0",
+            "End",
+        ]);
+        assert_eq!(normalize(dm, &none), v(&["PushVal 1.0", "Ret"]));
+        // A branch from live code keeps its target and what follows it.
+        let live = v(&["GetVar src->.x", "Jz L3", "Ret", "PushVal 2.0", "End"]);
+        assert_eq!(normalize(live.clone(), &none), live);
+    }
+
+    #[test]
     fn flag_roundtrip_before_a_conditional_is_dropped() {
-        let nat = v(&["GetVar arg0", "IsIn 5", "GetFlag", "Test", "Jz L6", "End", "End"]);
-        assert_eq!(normalize(nat, &none), v(&["GetVar arg0", "IsIn 5", "Jz L4", "End", "End"]));
+        let nat = v(&[
+            "GetVar arg0",
+            "IsIn 5",
+            "GetFlag",
+            "Test",
+            "Jz L6",
+            "End",
+            "End",
+        ]);
+        assert_eq!(
+            normalize(nat, &none),
+            v(&["GetVar arg0", "IsIn 5", "Jz L4", "End", "End"])
+        );
         // A jump to the Test arrives with a value of its own: keep it.
         let kept = v(&["Jz L2", "GetFlag", "Test", "Jz L5", "End", "End"]);
         assert_eq!(normalize(kept.clone(), &none), kept);
@@ -866,12 +1042,24 @@ mod tests {
     #[test]
     fn get_dot_return_is_end() {
         let nat = v(&["PushVal 1.0", "SetVar .", "GetVar .", "Ret"]);
-        assert_eq!(normalize(nat, &none), v(&["PushVal 1.0", "SetVar .", "End"]));
+        assert_eq!(
+            normalize(nat, &none),
+            v(&["PushVal 1.0", "SetVar .", "End"])
+        );
     }
 
     #[test]
     fn cache_save_restore_and_register_reloads_are_dropped() {
-        let dm = v(&["GetVar usr", "SetCacheJmpIfNull L7", "PushCache", "GetVar src", "SetVar cache", "PopCache", "Pop", "End"]);
+        let dm = v(&[
+            "GetVar usr",
+            "SetCacheJmpIfNull L7",
+            "PushCache",
+            "GetVar src",
+            "SetVar cache",
+            "PopCache",
+            "Pop",
+            "End",
+        ]);
         assert_eq!(
             normalize(dm, &none),
             v(&["GetVar usr", "SetCacheJmpIfNull L3", "Pop", "End"])
@@ -888,7 +1076,13 @@ mod tests {
         assert_eq!(thread_jumps(a)[0], "JmpOr L4");
         let b = v(&["Switch {1.0=>L2;else=>L3}", "End", "Jmp L4", "End", "Ret"]);
         assert_eq!(thread_jumps(b)[0], "Switch {1.0=>L4;else=>L3}");
-        let c = v(&["SetCacheJmpIfNull L2", "End", "SetCachePopJmpIfNull L4", "End", "End"]);
+        let c = v(&[
+            "SetCacheJmpIfNull L2",
+            "End",
+            "SetCachePopJmpIfNull L4",
+            "End",
+            "End",
+        ]);
         assert_eq!(thread_jumps(c)[0], "SetCachePopJmpIfNull L4");
         // A conditional jump onto a different kind of test is not threaded.
         let d = v(&["Jz L2", "End", "JmpOr L4", "End", "Ret"]);
@@ -914,12 +1108,32 @@ mod tests {
 
     #[test]
     fn initializer_order_is_reported_not_hidden() {
-        let a = v(&["PushVal 1.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
-        let b = v(&["New 0", "SetVar global:b", "PushVal 1.0", "SetVar global:a", "End"]);
-        assert!(initializer_order_difference(&a, &b).unwrap().contains("1 of 2"));
+        let a = v(&[
+            "PushVal 1.0",
+            "SetVar global:a",
+            "New 0",
+            "SetVar global:b",
+            "End",
+        ]);
+        let b = v(&[
+            "New 0",
+            "SetVar global:b",
+            "PushVal 1.0",
+            "SetVar global:a",
+            "End",
+        ]);
+        assert!(initializer_order_difference(&a, &b)
+            .unwrap()
+            .contains("1 of 2"));
         assert_eq!(initializer_order_difference(&a, &a), None);
         // Different statements are a different program, not an order difference.
-        let c = v(&["PushVal 2.0", "SetVar global:a", "New 0", "SetVar global:b", "End"]);
+        let c = v(&[
+            "PushVal 2.0",
+            "SetVar global:a",
+            "New 0",
+            "SetVar global:b",
+            "End",
+        ]);
         assert_eq!(initializer_order_difference(&a, &c), None);
     }
 
@@ -931,34 +1145,101 @@ mod tests {
 
     #[test]
     fn pure_initializers_compare_in_any_order() {
-        let a = v(&["NewList 0", "SetVar src->.a", "PushVal 1.0", "SetVar src->.b", "End"]);
-        let b = v(&["PushVal 1.0", "SetVar src->.b", "NewList 0", "SetVar src->.a", "End"]);
+        let a = v(&[
+            "NewList 0",
+            "SetVar src->.a",
+            "PushVal 1.0",
+            "SetVar src->.b",
+            "End",
+        ]);
+        let b = v(&[
+            "PushVal 1.0",
+            "SetVar src->.b",
+            "NewList 0",
+            "SetVar src->.a",
+            "End",
+        ]);
         assert_eq!(sorted_pure_initializer(&a), sorted_pure_initializer(&b));
         assert!(sorted_pure_initializer(&a).is_some());
         // Constructors keep their relative order, a pure store may move across them.
-        let e = v(&["PushVal path32 /a", "New 0", "SetVar src->.p", "NewList 0", "SetVar src->.q", "End"]);
-        let f = v(&["NewList 0", "SetVar src->.q", "PushVal path32 /a", "New 0", "SetVar src->.p", "End"]);
+        let e = v(&[
+            "PushVal path32 /a",
+            "New 0",
+            "SetVar src->.p",
+            "NewList 0",
+            "SetVar src->.q",
+            "End",
+        ]);
+        let f = v(&[
+            "NewList 0",
+            "SetVar src->.q",
+            "PushVal path32 /a",
+            "New 0",
+            "SetVar src->.p",
+            "End",
+        ]);
         assert_eq!(sorted_pure_initializer(&e), sorted_pure_initializer(&f));
-        let g = v(&["PushVal path32 /a", "New 0", "SetVar src->.p", "PushVal path32 /b", "New 0", "SetVar src->.r", "End"]);
-        let h = v(&["PushVal path32 /b", "New 0", "SetVar src->.r", "PushVal path32 /a", "New 0", "SetVar src->.p", "End"]);
+        let g = v(&[
+            "PushVal path32 /a",
+            "New 0",
+            "SetVar src->.p",
+            "PushVal path32 /b",
+            "New 0",
+            "SetVar src->.r",
+            "End",
+        ]);
+        let h = v(&[
+            "PushVal path32 /b",
+            "New 0",
+            "SetVar src->.r",
+            "PushVal path32 /a",
+            "New 0",
+            "SetVar src->.p",
+            "End",
+        ]);
         assert_ne!(sorted_pure_initializer(&g), sorted_pure_initializer(&h));
         // A read or a call in the body keeps the order significant.
         let c = v(&["GetVar src->.a", "SetVar src->.b", "End"]);
         assert_eq!(sorted_pure_initializer(&c), None);
         // The same field stored twice is order dependent.
-        let d = v(&["PushVal 1.0", "SetVar src->.a", "PushVal 2.0", "SetVar src->.a", "End"]);
+        let d = v(&[
+            "PushVal 1.0",
+            "SetVar src->.a",
+            "PushVal 2.0",
+            "SetVar src->.a",
+            "End",
+        ]);
         assert_eq!(sorted_pure_initializer(&d), None);
     }
 
     #[test]
     fn null_store_in_a_loop_stays() {
-        let dm = v(&["GetVar src", "Test", "Jz L7", "PushVal null", "SetVar local0", "GetVar local0", "JmpLoop L0", "End"]);
+        let dm = v(&[
+            "GetVar src",
+            "Test",
+            "Jz L7",
+            "PushVal null",
+            "SetVar local0",
+            "GetVar local0",
+            "JmpLoop L0",
+            "End",
+        ]);
         assert_eq!(normalize(dm.clone(), &none), dm);
     }
 
     #[test]
     fn dead_jump_after_return_is_dropped_and_labels_shift() {
-        let dm = v(&["Jz L3", "Ret", "Jmp L3", "PushVal 1.0", "PushVal 2.0", "Ret"]);
-        assert_eq!(normalize(dm, &none), v(&["Jz L2", "Ret", "PushVal 1.0", "PushVal 2.0", "Ret"]));
+        let dm = v(&[
+            "Jz L3",
+            "Ret",
+            "Jmp L3",
+            "PushVal 1.0",
+            "PushVal 2.0",
+            "Ret",
+        ]);
+        assert_eq!(
+            normalize(dm, &none),
+            v(&["Jz L2", "Ret", "PushVal 1.0", "PushVal 2.0", "Ret"])
+        );
     }
 }

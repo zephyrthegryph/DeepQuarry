@@ -680,9 +680,10 @@ impl<P: SourceProvider> Context<'_, P> {
                     text,
                     &self.output.final_macros,
                     0,
+                    // `__LINE__` is the line a logical line ends on plus the lines a call held back, as DreamMaker reads it.
                     ExpandLocation {
                         file_name: &file_name,
-                        line: first_line,
+                        line: line_number + text.matches('\n').count(),
                     },
                 ) {
                     Ok(expanded) => {

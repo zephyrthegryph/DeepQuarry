@@ -40,16 +40,25 @@ impl Compiler<'_> {
         if name == "rgb2num" && !named_arguments && arglist_argument.is_none() {
             // DreamMaker folds `rgb2num("#rrggbb[aa]")` (also the short `#rgb[a]` spelling) to the list of components.
             if let [arg] = args {
-                if let Some(components) = constant_color_text(arg).and_then(|bytes| hex_color_components(&bytes)) {
+                if let Some(components) =
+                    constant_color_text(arg).and_then(|bytes| hex_color_components(&bytes))
+                {
                     for component in &components {
                         self.emit(opcode::PUSH_INT, vec![Word::Immediate(*component)]);
                     }
-                    self.emit(opcode::NEW_LIST, vec![Word::Immediate(components.len() as u32)]);
+                    self.emit(
+                        opcode::NEW_LIST,
+                        vec![Word::Immediate(components.len() as u32)],
+                    );
                     return Ok(());
                 }
             }
         }
-        if name == "rgb" && !named_arguments && arglist_argument.is_none() && (args.len() == 3 || args.len() == 4) {
+        if name == "rgb"
+            && !named_arguments
+            && arglist_argument.is_none()
+            && (args.len() == 3 || args.len() == 4)
+        {
             // DreamMaker folds rgb() of constant components to its text: each component truncated to a whole number
             // and clamped to 0..255, `#rrggbb` for three and `#rrggbbaa` for four.
             let folded: Option<Vec<f32>> = args.iter().map(fold_number).collect();
@@ -63,6 +72,24 @@ impl Compiler<'_> {
                     self.emit(
                         opcode::PUSH_VAL,
                         vec![Word::Value(ValueWord::String(SymbolId::of(&text)))],
+                    );
+                    return Ok(());
+                }
+            }
+        }
+        if matches!(name, "md5" | "sha1") && !named_arguments && arglist_argument.is_none() {
+            // DreamMaker folds the digest of a constant text.
+            if let [arg] = args {
+                if let Some(text) = super::helpers::constant_text(arg) {
+                    let digest = if name == "md5" {
+                        super::helpers::md5_hex(&text)
+                    } else {
+                        super::helpers::sha1_hex(&text)
+                    };
+                    self.intern_string(&digest);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(SymbolId::of(&digest)))],
                     );
                     return Ok(());
                 }
@@ -643,7 +670,8 @@ fn constant_color_text(arg: &Expr) -> Option<Vec<u8>> {
         ExprKind::Group(inner) => constant_color_text(inner),
         ExprKind::Literal(raw) => decode_constant_string_literal(raw).ok().flatten(),
         ExprKind::Call { callee, args }
-            if matches!(&callee.kind, ExprKind::Ident(name) if name == "rgb") && (args.len() == 3 || args.len() == 4) =>
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "rgb")
+                && (args.len() == 3 || args.len() == 4) =>
         {
             let components: Option<Vec<f32>> = args.iter().map(fold_number).collect();
             let components = components?;

@@ -120,8 +120,22 @@ pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) 
                 .next()?;
             matches!(
                 first,
-                "return" | "if" | "else" | "for" | "while" | "do" | "switch" | "spawn" | "break"
-                    | "continue" | "goto" | "del" | "set" | "try" | "catch" | "throw"
+                "return"
+                    | "if"
+                    | "else"
+                    | "for"
+                    | "while"
+                    | "do"
+                    | "switch"
+                    | "spawn"
+                    | "break"
+                    | "continue"
+                    | "goto"
+                    | "del"
+                    | "set"
+                    | "try"
+                    | "catch"
+                    | "throw"
             )
             .then_some((line, first))
         });
@@ -151,9 +165,10 @@ pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) 
         );
     }
     // `L[]`: an index needs exactly one argument.
-    if let Some(window) = tokens.windows(3).find(|window| {
-        window[0].0 == TokenKind::Ident && window[1].1 == "[" && window[2].1 == "]"
-    }) {
+    if let Some(window) = tokens
+        .windows(3)
+        .find(|window| window[0].0 == TokenKind::Ident && window[1].1 == "[" && window[2].1 == "]")
+    {
         return source_error(text, &format!("{}: expected 1 arg", window[0].1));
     }
     if diagnostics
@@ -175,8 +190,13 @@ pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) 
     }
     let detail = diagnostics
         .first()
-        .map_or("unrecognized syntax", |diagnostic| diagnostic.message.as_str());
-    error(text, &format!("expression syntax is unsupported ({detail})"))
+        .map_or("unrecognized syntax", |diagnostic| {
+            diagnostic.message.as_str()
+        });
+    error(
+        text,
+        &format!("expression syntax is unsupported ({detail})"),
+    )
 }
 
 /// Line marker: DreamMaker found this error at the next token; when the
@@ -231,9 +251,7 @@ pub(super) fn fold_literal_string_expression(expr: &Expr) -> Option<Vec<u8>> {
     while let ExprKind::Group(inner) = &root.kind {
         root = inner;
     }
-    if !matches!(&root.kind, ExprKind::Binary { op, .. } if op == "+")
-        || !literal_tree(root)
-    {
+    if !matches!(&root.kind, ExprKind::Binary { op, .. } if op == "+") || !literal_tree(root) {
         return None;
     }
     match dm_ir::constants::evaluate_expr_with_resources(
@@ -612,7 +630,11 @@ fn fold_shift_count(number: f32) -> Option<u32> {
     if number.is_nan() {
         return None;
     }
-    Some(if number < 0.0 { 0 } else { (number as u64 & 31) as u32 })
+    Some(if number < 0.0 {
+        0
+    } else {
+        (number as u64 & 31) as u32
+    })
 }
 
 /// The value DreamMaker's constant folder gives a numeric expression, or `None` where DreamMaker does not fold (comparisons, strings,
@@ -658,6 +680,20 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
             let ExprKind::Ident(name) = &callee.kind else {
                 return None;
             };
+            // `text2ascii("A")` is the code of the first character; with a position DreamMaker leaves the call.
+            if name == "text2ascii" {
+                let [text] = args.as_slice() else { return None };
+                let bytes = constant_text(text)?;
+                return Some(
+                    match std::str::from_utf8(&bytes)
+                        .ok()
+                        .and_then(|text| text.chars().next())
+                    {
+                        Some(first) => first as u32 as f32,
+                        None => f32::from(bytes.first().copied().unwrap_or(0)),
+                    },
+                );
+            }
             let values: Vec<f32> = args.iter().map(fold_number).collect::<Option<_>>()?;
             fold_builtin_call(name, &values)
         }
@@ -723,6 +759,73 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
     }
 }
 
+/// The bytes of a constant text argument: a plain literal or a concatenation of literals.
+pub(super) fn constant_text(expr: &Expr) -> Option<Vec<u8>> {
+    let mut root = expr;
+    while let ExprKind::Group(inner) = &root.kind {
+        root = inner;
+    }
+    if let ExprKind::Literal(raw) = &root.kind {
+        return decode_constant_string_literal(raw).ok().flatten();
+    }
+    fold_literal_string_expression(root)
+}
+
+/// The lowercase hex of the digest DreamMaker folds `md5("text")` to.
+pub(super) fn md5_hex(bytes: &[u8]) -> String {
+    format!("{:x}", md5::compute(bytes))
+}
+
+/// The lowercase hex of the digest DreamMaker folds `sha1("text")` to.
+pub(super) fn sha1_hex(bytes: &[u8]) -> String {
+    let mut state: [u32; 5] = [
+        0x6745_2301,
+        0xefcd_ab89,
+        0x98ba_dcfe,
+        0x1032_5476,
+        0xc3d2_e1f0,
+    ];
+    let mut message = bytes.to_vec();
+    message.push(0x80);
+    while message.len() % 64 != 56 {
+        message.push(0);
+    }
+    message.extend_from_slice(&((bytes.len() as u64) * 8).to_be_bytes());
+    for block in message.chunks_exact(64) {
+        let mut w = [0u32; 80];
+        for (index, word) in block.chunks_exact(4).enumerate() {
+            w[index] = u32::from_be_bytes([word[0], word[1], word[2], word[3]]);
+        }
+        for index in 16..80 {
+            w[index] = (w[index - 3] ^ w[index - 8] ^ w[index - 14] ^ w[index - 16]).rotate_left(1);
+        }
+        let [mut a, mut b, mut c, mut d, mut e] = state;
+        for (index, word) in w.iter().enumerate() {
+            let (f, k) = match index {
+                0..=19 => ((b & c) | (!b & d), 0x5a82_7999),
+                20..=39 => (b ^ c ^ d, 0x6ed9_eba1),
+                40..=59 => ((b & c) | (b & d) | (c & d), 0x8f1b_bcdc),
+                _ => (b ^ c ^ d, 0xca62_c1d6),
+            };
+            let next = a
+                .rotate_left(5)
+                .wrapping_add(f)
+                .wrapping_add(e)
+                .wrapping_add(k)
+                .wrapping_add(*word);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = next;
+        }
+        for (slot, value) in state.iter_mut().zip([a, b, c, d, e]) {
+            *slot = slot.wrapping_add(value);
+        }
+    }
+    state.iter().map(|word| format!("{word:08x}")).collect()
+}
+
 /// The builtin math functions DreamMaker evaluates at compile time when every argument is a literal (pinned 516.1687; `min` and
 /// `max` are not folded). Angles are in degrees; arguments outside a function's domain are compile errors there, not folded.
 /// `round(x)` is a floor (`round(0.5)` is 0, `round(-2.5)` is -3) and `round(x, step)` is `floor(x / step + 0.5) * step`.
@@ -744,12 +847,20 @@ pub(super) fn fold_builtin_call(name: &str, values: &[f32]) -> Option<f32> {
         ("arctan", 1) => x(0).atan().to_degrees(),
         ("arctan", 2) => x(1).atan2(x(0)).to_degrees(),
         ("log", 1) if values[0] > 0.0 => x(0).ln(),
-        ("log", 2) if values[0] > 0.0 && values[0] != 1.0 && values[1] > 0.0 => x(1).ln() / x(0).ln(),
+        ("log", 2) if values[0] > 0.0 && values[0] != 1.0 && values[1] > 0.0 => {
+            x(1).ln() / x(0).ln()
+        }
         // 32-bit arithmetic, as DreamMaker does it (`round(16777215, 1)` is 16777216).
-        ("round", 2) if values[1] != 0.0 => return Some((values[0] / values[1] + 0.5).floor() * values[1]),
+        ("round", 2) if values[1] != 0.0 => {
+            return Some((values[0] / values[1] + 0.5).floor() * values[1])
+        }
         // A reversed range is swapped first.
         ("clamp", 3) => {
-            let (low, high) = if values[1] > values[2] { (values[2], values[1]) } else { (values[1], values[2]) };
+            let (low, high) = if values[1] > values[2] {
+                (values[2], values[1])
+            } else {
+                (values[1], values[2])
+            };
             return Some(values[0].max(low).min(high));
         }
         _ => return None,

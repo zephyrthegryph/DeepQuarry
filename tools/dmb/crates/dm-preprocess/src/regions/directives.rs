@@ -317,6 +317,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     pending.push(RegionLine {
                         source_span: line.source_span,
                         source_line: line.source_line,
+                        source_lines: line.source_lines,
                         text: crate::SourceText::clone(line.text),
                     });
                 }
@@ -621,10 +622,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     match current.parent {
                         Some(parent) => {
                             let line = current.directive_line;
-                            let parent_dir = Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
-                                .parent()
-                                .map(Path::to_path_buf)
-                                .unwrap_or_default();
+                            let parent_dir =
+                                Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
+                                    .parent()
+                                    .map(Path::to_path_buf)
+                                    .unwrap_or_default();
                             let semantic = PathBuf::from(current.semantic_path.as_ref());
                             let spelling = semantic
                                 .strip_prefix(&parent_dir)
@@ -754,6 +756,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     pending.push(RegionLine {
                         source_span: span,
                         source_line,
+                        source_lines: logical.source_lines,
                         text: crate::SourceText::clone(logical.text),
                     });
                 }
@@ -859,22 +862,37 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         }
                     }
                 }
-                "warning" | "warn" => self.warn(
-                    occurrence,
-                    source_line,
-                    format!("#{word} {}", rest.trim()),
-                ),
+                "warning" | "warn" => {
+                    self.warn(occurrence, source_line, format!("#{word} {}", rest.trim()))
+                }
                 "" => {}
                 // DreamMaker rejects a directive it does not know; one it knows
                 // but the native planner does not implement stays unsupported.
-                other if !matches!(other, "define" | "undef" | "include" | "if" | "ifdef"
-                    | "ifndef" | "elif" | "else" | "endif" | "error" | "warn" | "warning"
-                    | "pragma") => self.error(
-                    occurrence,
-                    source_line,
-                    DiagnosticKind::Directive,
-                    format!("unknown directive {other}"),
-                ),
+                other
+                    if !matches!(
+                        other,
+                        "define"
+                            | "undef"
+                            | "include"
+                            | "if"
+                            | "ifdef"
+                            | "ifndef"
+                            | "elif"
+                            | "else"
+                            | "endif"
+                            | "error"
+                            | "warn"
+                            | "warning"
+                            | "pragma"
+                    ) =>
+                {
+                    self.error(
+                        occurrence,
+                        source_line,
+                        DiagnosticKind::Directive,
+                        format!("unknown directive {other}"),
+                    )
+                }
                 other => self.error(
                     occurrence,
                     source_line,
@@ -895,7 +913,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 occurrence,
                 line_number + 1,
                 DiagnosticKind::Conditional,
-                "still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)".into(),
+                "still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)"
+                    .into(),
             );
         }
         // Issue recovery boundaries from the SAME completed logical-line plan.

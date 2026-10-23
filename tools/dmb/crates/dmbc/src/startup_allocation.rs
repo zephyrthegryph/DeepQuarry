@@ -19,6 +19,8 @@ pub(crate) struct StartupAllocationRoster {
     allocation: Arc<AllocationReceipt>,
     finalized: OnceLock<Arc<OrderedRoster>>,
     artifacts: Option<Arc<crate::startup::StartupArtifacts>>,
+    /// The allocation ledger the execution order walks; absent for a roster issued without a frontend.
+    events: Option<Arc<crate::startup_order_facts::OrderEvents>>,
 }
 impl StartupAllocationRoster {
     /// `source_owners` is the existing admitted fresh type allocation roster;
@@ -50,7 +52,11 @@ impl StartupAllocationRoster {
         if !Arc::ptr_eq(&plan.source.occurrences, &frontend.snapshot.occurrences) {
             return Err("startup registration belongs to another current source".into());
         }
-        let input = AllocationInput::capture(plan, source_owners, frontend)?;
+        let events = Arc::new(crate::startup_order_facts::OrderEvents::capture(
+            &frontend.allocation_ledger,
+            &frontend.expanded.text,
+        ));
+        let input = AllocationInput::capture(plan, source_owners, frontend, &events)?;
         if let Some(allocation) = artifacts.and_then(|store| {
             store
                 .allocation(&input)
@@ -61,6 +67,7 @@ impl StartupAllocationRoster {
                 allocation,
                 finalized: OnceLock::new(),
                 artifacts: artifacts.cloned(),
+                events: Some(events),
             });
         }
         let mut rows = BTreeMap::<_, std::collections::VecDeque<_>>::new();
@@ -145,6 +152,7 @@ impl StartupAllocationRoster {
             current.allocation = store.remember_allocation(Arc::clone(&current.allocation));
         }
         current.artifacts = artifacts.cloned();
+        current.events = Some(events);
         Ok(current)
     }
     fn issue_with_registrations(
@@ -212,6 +220,7 @@ impl StartupAllocationRoster {
             }),
             finalized: OnceLock::new(),
             artifacts: None,
+            events: None,
         })
     }
     fn registration_owner(&self, write: &InitializerWrite) -> Result<SymbolId, String> {
@@ -342,7 +351,15 @@ impl StartupAllocationRoster {
             .enumerate()
             .map(|(rank, key)| (key, rank))
             .collect();
-        let ordered = Arc::new(OrderedRoster { keys, ranks });
+        let execution = match &self.events {
+            Some(events) => self.execution_order(plan, events, &recording)?,
+            None => BTreeMap::new(),
+        };
+        let ordered = Arc::new(OrderedRoster {
+            keys,
+            ranks,
+            execution,
+        });
         let ordered = if let (Some(store), Some(input)) = (&self.artifacts, final_input) {
             store.remember_final_allocation(FinalReceipt { input, ordered }, &recording)
         } else {
@@ -352,6 +369,103 @@ impl StartupAllocationRoster {
             .set(ordered)
             .map_err(|_| "startup registration roster issued twice")?;
         Ok(self.finalized.get().unwrap())
+    }
+    /// The order DreamMaker runs the global initializers in, by key (`startup_order`).
+    fn execution_order(
+        &self,
+        plan: &InitializerPlan,
+        events: &crate::startup_order_facts::OrderEvents,
+        host: &impl dm_ir::Resolver,
+    ) -> Result<BTreeMap<Key, usize>, String> {
+        use crate::startup_order::{OrderWrite, Ref};
+        let text = |id: SymbolId| plan.symbols.text(id).ok_or("startup order spelling absent");
+        let mut keys = Vec::new();
+        let mut writes = Vec::new();
+        let mut seen = BTreeSet::new();
+        for (index, write) in plan.writes.iter().enumerate() {
+            if matches!(write.target, InitializerTarget::Instance { .. }) {
+                continue;
+            }
+            let entry = key(write)?;
+            if !seen.insert(entry) {
+                continue;
+            }
+            let (event, procedure_static, owner, name, mut declared) = match &write.target {
+                InitializerTarget::ProcedureStatic(identity) => {
+                    let procedure = identity.procedure;
+                    let declared = match host.resolve(dm_ir::ResolveQuery::ProcedureStatic {
+                        procedure,
+                        name: identity.name,
+                    }) {
+                        dm_ir::ResolvedMeaning::ProcedureStatic(declaration) => declaration
+                            .declared_type
+                            .and_then(|declared| plan.symbols.text(declared))
+                            .and_then(|declared| {
+                                crate::startup_order_facts::declared_type_ref(Some(declared))
+                            }),
+                        _ => None,
+                    };
+                    (
+                        events.procedure(
+                            procedure.owner,
+                            procedure.name,
+                            procedure.verb,
+                            procedure.occurrence,
+                        ),
+                        true,
+                        procedure.owner,
+                        identity.name,
+                        declared,
+                    )
+                }
+                InitializerTarget::Shared { owner, name, .. } => {
+                    let declared = self
+                        .allocation
+                        .input
+                        .as_ref()
+                        .and_then(|input| input.declared.get(index).copied().flatten())
+                        .and_then(|(declared, element)| match declared {
+                            Some(declared) => match text(declared) {
+                                Ok("/list") => element.map(Ref::Type),
+                                Ok(_) => Some(Ref::Type(declared)),
+                                Err(_) => None,
+                            },
+                            None => None,
+                        });
+                    (events.field(*owner, *name), false, *owner, *name, declared)
+                }
+                InitializerTarget::Instance { .. } => continue,
+            };
+            let mut refs = Vec::new();
+            let mut world = false;
+            if let dm_ir::InitializerValue::Expression(expression) = &write.value {
+                if let Some(source) = expression.source_text(&plan.symbols) {
+                    if let Some(facts) =
+                        crate::startup_order_facts::expression_facts(&source, owner)
+                    {
+                        refs = facts.refs;
+                        world = facts.world;
+                    }
+                }
+                // A declared type is checked when the variable has an initializer.
+                refs.extend(declared.take());
+            }
+            writes.push(OrderWrite {
+                event: event.unwrap_or(u32::MAX),
+                procedure_static,
+                owner,
+                name,
+                refs,
+                world,
+            });
+            keys.push(entry);
+        }
+        let order = crate::startup_order::order(&events.events, &writes, &plan.symbols);
+        Ok(order
+            .into_iter()
+            .enumerate()
+            .map(|(rank, write)| (keys[write as usize], rank))
+            .collect())
     }
     pub(crate) fn order_runtime(
         &self,
@@ -377,15 +491,26 @@ impl StartupAllocationRoster {
                     return Err("startup allocation roster omits executable write".into());
                 }
             }
-            // Existing literal allocation phase remains first. Within each phase,
-            // the same current allocation producer controls execution and footer order.
-            group.writes.sort_by_key(|index| {
-                let write = &classified.writes[*index];
-                (
-                    write.phase == Some(crate::initializer_policy::Phase::Runtime),
-                    finalized.ranks[&key(&write.write).unwrap()],
-                )
-            });
+            if finalized.execution.is_empty() {
+                // No ledger at hand (a roster issued without a frontend): the literal allocation phase stays first and the
+                // rest follows the allocation rank.
+                group.writes.sort_by_key(|index| {
+                    let write = &classified.writes[*index];
+                    (
+                        write.phase == Some(crate::initializer_policy::Phase::Runtime),
+                        finalized.ranks[&key(&write.write).unwrap()],
+                    )
+                });
+            } else {
+                // DreamMaker runs every global initializer in the order it allocated the variable, literal or not.
+                group.writes.sort_by_key(|index| {
+                    finalized
+                        .execution
+                        .get(&key(&classified.writes[*index].write).unwrap())
+                        .copied()
+                        .unwrap_or(usize::MAX)
+                });
+            }
         }
         Ok(())
     }

@@ -134,7 +134,7 @@ this branch. Items marked OPEN are not.
 **Default.** `DQ_COMPILER` unset now means native (when a `dmbc` binary exists or cargo can build one, else DreamMaker). `dreammaker`
 (alias `byond`) is the fallback, `shadow` compares the two. `build.sh dm`, `dm-test`, `dq_focused_test.sh`, `dq_merge_gates.sh`,
 `dq_lane_ready.sh` and `dq_push_master.sh` all go through that selection, so they compile natively. CI's production compile check
-(`tools/ci/compile_and_run.sh`) and the benchmark workflow pin `DQ_COMPILER=dreammaker` as the cross-check. `DmbcTarget` now restores
+(`tools/ci/compile_and_run.sh`) and the benchmark workflow compile natively (switched 2026-10-22); the `dreammaker_cross_check` job runs `tools/ci/dm_equiv.sh`. `DmbcTarget` now restores
 `dmbc`/`dmbd` from a shared content-addressed cache (`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE`, `lib/dmbc_cache.ts`) keyed by the git ids of
 `tools/dmb`, so a fresh worktree copies the executables instead of running a 3-5 minute cargo build and keeping its own `target/`.
 
@@ -345,12 +345,21 @@ around the first one.
 - Switch tables: overlapping range and value cases and infinite bounds fell back to a compare chain; text `nameof()` labels did too. Alternatives of one case are tabled last to first.
 - Constant folds DreamMaker does and native did not: `"text" || x`, `!"text"`, `list(...) ? a : b`, `&&`/`||` chains (a constant that cannot decide the result is dropped, one that decides it ends the chain), `const` variables as the left operand of `* | & ^`, `rgb()`/`rgb2num()` of constants. Bare statements that only name a variable emit nothing.
 
-**Open: global initializer order (`proc.global_init_order`).** DreamMaker runs the 1,409 global initializers in ascending variable id
-(the order in which a name first appears in the compiled procedures); native runs them in another order (894 statements move, and 150 of
-the 443 that run code, `New` and calls, run in another order relative to each other). Initializers that run code can observe each
-other, so `dmb-equiv` reports this rather than counting it as table numbering. To close it: either give native DreamMaker's variable
-numbering for globals (their ids follow first appearance of the name among procedure parameters, locals and statics, then declarations),
-or prove the constructors independent. `dmb-equiv global-order FILE.dmb` prints the order of each side.
+**Closed 2026-10-22: global initializer order (`proc.global_init_order`).** DreamMaker runs the global initializers in ascending variable id. Native now
+reproduces that order without numbering variables: `startup_order.rs` rebuilds it from the allocation ledger (types, namespaces, fields, procedures,
+parents) by a tree walk with member and subtree keys, late subtrees and multi-pass resolution of references between initializers, and
+`startup_allocation.rs` ranks the writes by it. It is query-based like the rest of the allocation: `AllocationInput` carries a digest of the events and the
+declared types of shared variables, `FinalInput` a digest of the expressions, and the cache keys are v5. Debug aid: `DQ_DUMP_GLOBAL_ORDER=FILE`.
+Results: production dme 1 -> 0 differences, test dme (`-DCIBUILDING -DCITESTING`) 147 -> 6 (one cause, below; 0 with the receiver typed).
+Fixed on the way (each measured against `dm.exe`): `__LINE__` on a backslash-joined logical line and on a call held open over lines; the `a?.b.c = v` guard
+shape; a `null` key in `list(null = x)` is the text "null"; an assignment whose receiver chain has parentheses uses PushTop; `md5`/`sha1`/1-arg
+`text2ascii` of constants fold; the checker drops code that no branch reaches (`#if UNIT_TESTS return`).
+**Open (test dme: 6 differences, 1 cause; production 0):** `dq_ledger(H).slots[...]` in `dq_native_slot_accepts_tests.dm` reads `slots` on an untyped
+receiver. DreamMaker binds it to a static variable, the `slots` declared static on `/obj/belly` (the declaring type last in its class table), although other
+types declare `slots` as an instance variable (`/datum/ledger`); native reads the instance field by name (`UniqueStaticVar` answers Missing for an
+ambiguous name, `dm-tree/src/resolver.rs`). Differences: `proc.bytecode` in `Run`, `digestion_death`, `handle_touchable_atoms` and `<global-init>`, plus
+`global.extra`/`global.missing` (the static's procedure-scope name list differs). A fix needs DreamMaker's class-table order inside the dm-tree resolver
+(a last-created-declaration shortcut did not match). Lane: `bash tools/ci/dm_equiv.sh` with `DQ_EQUIV_FLAVORS=test` is the repro.
 
 **Not done, found by the fuzz runs, absent from the tree:** `d?.f()[i] op= v` (DreamMaker tests the receiver first for compound stores too) and `d?.f()[i]++`
 (pop-guard form) keep native's order; `rgb2num("red")` (named colors) is not folded; `1 / "text"` is folded by DreamMaker to `1`.
