@@ -130,13 +130,13 @@ GLOBAL_VAR_INIT(own_audit_next, 0)
 /proc/own_audit_periodic()
 	// Re-armed first: each finding is reported as a runtime (OWN_REPORT), which unwinds this proc,
 	// and a finding must not end the periodic audit for the rest of the run.
-	GLOB.own_audit_next = world.time + OWN_AUDIT_INTERVAL
+	COOLDOWN_START(GLOB, own_audit_next, OWN_AUDIT_INTERVAL)
 	var/list/lines = own_audit()
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 
 /// TRUE when the periodic audit is due.
 /proc/own_audit_due()
-	return world.time >= GLOB.own_audit_next
+	return COOLDOWN_FINISHED(GLOB, own_audit_next)
 
 ADMIN_VERB(ownership_audit, R_DEBUG, "Ownership Audit", "Runs the ownership orphan audit now.", ADMIN_CATEGORY_DEBUG_MISC)
 	var/list/lines = own_audit(quiet = TRUE)
