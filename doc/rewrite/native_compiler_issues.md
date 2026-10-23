@@ -363,7 +363,7 @@ game bug under DreamMaker, and native answers the instance variable, the intende
 member read or write through a receiver that has no static type when the member name is declared `static` or `global` on any type (a name declared on several
 types with one static among them is the same test). Typed means a declaration: a typed local, parameter or var, `src`, `usr`, `new /type`, a field declared
 with a type on a typed receiver, `global.x`. Untyped means an untyped local or parameter, a call result (`RETURN_TYPE` included), an index, a ternary. 81
-existing sites in 28 files were given a typed local (no behaviour change; the raw writes stay raw). Test dme 6 -> 0
+existing sites in 28 files were given a typed local (no behaviour change; two unit-test writes of `security_level` use its setter). Test dme 6 -> 0
 differences, production 0, both EQUIVALENT (`DQ_EQUIV_FLAVORS=test bash tools/ci/dm_equiv.sh` and the default run); the `dreammaker_cross_check` job is now a needed
 job of the CI completion gate (`ci.yml`, `run_dreammaker_cross_check.yml`).
 
