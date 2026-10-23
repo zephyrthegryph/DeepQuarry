@@ -26,9 +26,9 @@ SETTER(/mob, vore_fullness_ex)
 
 
 /mob/proc/update_fullness()
-	if(updating_fullness)
+	if(sparse_get_or(src, updating_fullness, FALSE))
 		return
-	updating_fullness = TRUE
+	sparse_set(src, updating_fullness, TRUE)
 	var/list/new_fullness = list()
 	var/total = 0
 	for(var/belly_class in vore_icon_bellies)
@@ -45,13 +45,13 @@ SETTER(/mob, vore_fullness_ex)
 	var/list/classes = vore_fullness_ex.Copy()
 	for(var/belly_class in vore_icon_bellies)
 		new_fullness[belly_class] /= size_multiplier //Divided by pred's size so a macro mob won't get macro belly from a regular prey.
-		new_fullness[belly_class] *= belly_size_multiplier // Some mobs are small even at 100% size. Let's account for that.
+		new_fullness[belly_class] *= nature_of(src).belly_size // Some mobs are small even at 100% size. Let's account for that.
 		new_fullness[belly_class] = round(new_fullness[belly_class], 1) // Because intervals of 0.25 are going to make sprite artists cry.
 		classes[belly_class] = min(vore_capacity_ex[belly_class], new_fullness[belly_class])
 		total += new_fullness[belly_class]
 	set_vore_fullness_ex(classes)
 	set_vore_fullness(min(vore_capacity, max(total, 0)))
-	updating_fullness = FALSE
+	sparse_set(src, updating_fullness, FALSE)
 	return new_fullness
 
 /mob/living/proc/vs_animate(belly_to_animate)

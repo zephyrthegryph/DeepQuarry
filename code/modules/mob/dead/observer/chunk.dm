@@ -10,7 +10,7 @@
 	if(add_images)
 		var/client/client = ghost.client
 		if(client)
-			if(length(obscured)) client.images += obscured
+			if(length(obscured)) client_images_add(client, obscured)
 	rel_add(ghost, nameof(ghost.visibleChunks), src)
 	visible++
 	rel_add(src, nameof(seenby), ghost)

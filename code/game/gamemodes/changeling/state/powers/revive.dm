@@ -71,7 +71,7 @@
 		return FALSE
 	to_chat(C, span_notice("We have regenerated."))
 	feedback_add_details("changeling_powers","CR")
-	C.forbid_seeing_deadchat = FALSE
+	sparse_set(C, forbid_seeing_deadchat, FALSE)
 	changeling.is_reviving = FALSE
 
 	return TRUE

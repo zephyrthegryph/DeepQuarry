@@ -253,7 +253,6 @@ CAPABILITIES(/obj/item/projectile/beam/emitter)
 	damage = 0
 	eyeblur = 0
 	excavation_amount = 0
-	no_attack_log = 1
 	hud_state = "monkey"
 	///What suits this beam can hit.
 	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/omni, /obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
@@ -262,6 +261,9 @@ CAPABILITIES(/obj/item/projectile/beam/emitter)
 	var/tag_damage = 1
 
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/beam/lasertag)
+	configure(item_handling(no_attack_log = 1))
 
 /obj/item/projectile/beam/lasertag/on_hit(atom/target, blocked = 0)
 	return handle_lasertag_attack(target, firer, tag_damage, TRUE, allowed_suits = allowed_suits) //We can't shoot this in the first place without having the proper vest / vest_override, so we feed it vest_override = TRUE
@@ -622,7 +624,6 @@ CAPABILITIES(/obj/item/projectile/beam/energy_net/shrink)
 	icon_state = "healbeam"
 	damage = 0 //stops it damaging walls
 	nodamage = TRUE
-	no_attack_log = TRUE
 	hud_state = "laser_disabler"
 	combustion = FALSE
 
@@ -631,6 +632,7 @@ CAPABILITIES(/obj/item/projectile/beam/energy_net/shrink)
 	impact_type = /obj/effect/projectile/impact/medigun
 
 CAPABILITIES(/obj/item/projectile/beam/medigun)
+	configure(item_handling(no_attack_log = TRUE))
 	configure(light_glow(color = "#80F5FF"))
 
 /obj/item/projectile/beam/medigun/on_hit(atom/target, blocked = 0)

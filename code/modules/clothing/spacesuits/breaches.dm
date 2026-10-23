@@ -25,6 +25,7 @@ CAPABILITIES(/datum/breach)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/space)
+	configure(item_handling(preserve = 1))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))
 	fits_as(FIT_NO_DIONA)
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))

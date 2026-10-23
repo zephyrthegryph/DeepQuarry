@@ -99,6 +99,6 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 
 /// Food with a centre of mass that was not placed off-centre lands up to 6 pixels off the tile centre.
 /obj/item/reagent_containers/food/proc/roll_jitter(datum/roller/R)
-	if(!(center_of_mass_x || center_of_mass_y) || pixel_x || pixel_y)
+	if(!(handling_of(src).center_x || handling_of(src).center_y) || pixel_x || pixel_y)
 		return list(pixel_x, pixel_y)
 	return list(R.number(-6, 6), R.number(-6, 6))

@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 			custom_emote(VISIBLE_MESSAGE, "[pick(S.speaking.signlang_verb)].")
 
 	for(var/mob/M in listening)
-		if(get_dist(M, src) <= world.view || (M.stat == DEAD && !forbid_seeing_deadchat))
+		if(get_dist(M, src) <= world.view || (M.stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE)))
 			M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
 
 	//Object message delivery

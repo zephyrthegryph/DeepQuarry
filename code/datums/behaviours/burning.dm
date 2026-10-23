@@ -27,18 +27,11 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	)
 
 /obj
-	/// Fire overlay appearance applied while burning.
-	var/burn_overlay
-	/// Particle type of the shared holder, for cleanup.
-	var/burn_particle_type
-	/// Fuel left, J.
-	var/burn_fuel = 0
 	/// The heat watch that puts the fire out when the object cools.
 	var/tmp/datum/native_watch/heat/burn_cool_watch
-	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
-	var/burn_ended_by
 
 CAPABILITIES(/obj)
+	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
@@ -63,13 +56,13 @@ CAPABILITIES(/obj)
 	// only flammable atoms should burn, but it's not really an error if we try
 	if(!(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
 		return FALSE
-	burn_overlay = fire_overlay
-	burn_ended_by = null
+	sparse_set(src, burn_overlay, fire_overlay)
+	sparse_set(src, burn_ended_by, null)
 	if(fire_particles)
 		// burning particles look pretty bad when they stack on mobs, so that behavior is not wanted for items
 		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
-		burn_particle_type = fire_particles
-	burn_fuel = max_integrity * BURN_ENERGY_PER_INTEGRITY
+		sparse_set(src, burn_particle_type, fire_particles)
+	sparse_set(src, burn_fuel, max_integrity * BURN_ENERGY_PER_INTEGRITY)
 	grant(src, /datum/capability/burning, src)
 	return TRUE
 
@@ -82,17 +75,17 @@ CAPABILITIES(/obj)
 /datum/capability/burning/draw(atom/holder, datum/look/look)
 	..()
 	var/obj/O = holder
-	look.overlay(O.burn_overlay)
+	look.overlay(sparse_get(O, burn_overlay))
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
 	var/obj/O = A.holder
 	O.burning_stop_heat()
-	if(O.burn_particle_type)
-		O.remove_shared_particles("[O.burn_particle_type]_[isitem(O)]")
-		O.burn_particle_type = null
+	if(sparse_get(O, burn_particle_type))
+		O.remove_shared_particles("[sparse_get(O, burn_particle_type)]_[isitem(O)]")
+		sparse_set(O, burn_particle_type, null)
 	if(!QDELETED(O))
 		O.set_resistance_flags(O.resistance_flags & (~ON_FIRE))
-	O.burn_overlay = null
+	sparse_set(O, burn_overlay, null)
 
 /// The heat source and the cooling watch on the object's heat body.
 /obj/proc/burning_start_heat()
@@ -129,7 +122,7 @@ CAPABILITIES(/obj)
 		burning_end(BURN_ENDED_COOLED)
 
 /obj/proc/burning_end(reason)
-	burn_ended_by = reason
+	sparse_set(src, burn_ended_by, reason)
 	extinguish()
 
 /obj/extinguish()
@@ -159,16 +152,16 @@ CAPABILITIES(/obj)
 		return
 	// Oxygen: the fire draws BURN_OXYGEN_PER_JOULE from the tile (a gas command).
 	// Its heat is already on the object's body (the heat source).
-	var/joules = min(BURN_POWER * seconds_per_tick, burn_fuel)
+	var/joules = min(BURN_POWER * seconds_per_tick, sparse_get_or(src, burn_fuel, 0))
 	if(!burn_gas_step(get_turf(src), joules, FALSE))
 		burning_end(BURN_ENDED_OXYGEN)
 		return
 	// Fuel and the integrity damage stream.
-	burn_fuel -= joules
+	sparse_set(src, burn_fuel, sparse_get_or(src, burn_fuel, 0) - (joules))
 	deal_damage(DAMAGE_THERMAL, joules / BURN_ENERGY_PER_INTEGRITY, FIRE, flags = DAMAGE_PACKET_SILENT)
 	if(QDELETED(src) || !is_burning())
 		return
-	if(burn_fuel <= 0)
+	if(sparse_get_or(src, burn_fuel, 0) <= 0)
 		burning_end(BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)

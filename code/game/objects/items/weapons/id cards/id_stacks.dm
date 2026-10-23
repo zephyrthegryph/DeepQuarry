@@ -71,6 +71,9 @@
 	name = "Gold ID"
 	initial_sprite_stack = list("base-stamp-gold", "top-blue", "stamp-n")
 
+CAPABILITIES(/obj/item/card/id/gold)
+	configure(item_handling(preserve = 1))
+
 /obj/item/card/id/gold/captain
 	name = "Captain's ID"
 	initial_sprite_stack = list("base-stamp-gold", "top-blue", "stamp-n", "pips-gold")

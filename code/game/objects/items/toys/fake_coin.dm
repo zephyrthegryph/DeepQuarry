@@ -8,7 +8,6 @@
 	desc = "A simple coin you can flip. The weight doesn't seem quite right..."
 	description_fluff = "This isn't a real coin; you can't use it on vending machines."
 	icon_state = "coin"
-	randpixel = 8
 	w_class = ITEMSIZE_TINY
 	var/sides = 2
 
@@ -98,12 +97,13 @@
 	icon_state = "coin_verdantium"
 
 CAPABILITIES(/obj/item/fake_coin)
+	configure(item_handling(randpixel = 8))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 0.0))
 	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 
 /// Old attack_self.
 /obj/item/fake_coin/proc/interaction_self(datum/act/op/A)

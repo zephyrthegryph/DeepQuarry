@@ -61,7 +61,7 @@
 		return
 
 	if(client)
-		client.screen |= contents
+		client_screen_include(client, contents)
 		if(hud_used)
 			hud_used.hidden_inventory_update() 	//Updates the screenloc of the items on the 'other' inventory bar
 

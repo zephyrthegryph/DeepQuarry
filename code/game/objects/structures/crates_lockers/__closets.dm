@@ -532,7 +532,7 @@ CAPABILITIES(/obj/structure/closet)
 		return
 	if(!door_obj)
 		rel_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
-	vis_contents |= door_obj
+	vis_include(src, door_obj)
 	door_obj.icon = decor.icon
 	door_obj.icon_state = "door_front"
 	set_is_animating_door(TRUE)

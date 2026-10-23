@@ -321,7 +321,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	target().SpinAnimation(speed, loops, direction)
 
 /datum/eventkit/player_effects/proc/ui_act_squish(datum/act/op/A)
-	var/is_squished = target().tf_scale_x || target().tf_scale_y
+	var/is_squished = sparse_get(target(), tf_scale_x) || sparse_get(target(), tf_scale_y)
 	play_sfx(target(), SFX_ITEMS_HOOH)
 	if(!is_squished)
 		target().SetTransform(null, (target().size_multiplier * 1.2), (target().size_multiplier * 0.5))

@@ -150,18 +150,15 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 		return amount // If channel is powered then you can do it.
 	return 0
 
-/obj/machinery
-	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
-
 // Do not do power stuff in New/Initialize until after ..()
 /// The machine reports its draw and joins its area's power once it is made.
 /obj/machinery/proc/machine_power_start()
 	// only add this if we init on a non-turf (and non-null)
-	if(!recursive_set && loc && !isturf(loc))
-		recursive_set = TRUE
+	if(!sparse_get_or(src, recursive_set, FALSE) && loc && !isturf(loc))
+		sparse_set(src, recursive_set, TRUE)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
-	power_init_complete = TRUE
+	sparse_set(src, power_init_complete, TRUE)
 	rel_set(src, nameof(power_area), get_area(src)) // the machine's draw reaches the area's demand with the relation
 
 // Or in Destroy at all, but especially after the ..().
@@ -177,8 +174,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	power_area_moved(old_loc, loc)
 
 	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
-	if(!recursive_set && loc && !isturf(loc))
-		recursive_set = TRUE
+	if(!sparse_get_or(src, recursive_set, FALSE) && loc && !isturf(loc))
+		sparse_set(src, recursive_set, TRUE)
 		dq_add_recursive_move(src)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_power_on_move))) //we only need this for recursive moving
 
@@ -196,7 +193,7 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 /obj/machinery/proc/area_changed(area/old_area, area/new_area)
 	if(old_area == new_area)
 		return
-	if(!power_init_complete)
+	if(!sparse_get_or(src, power_init_complete, FALSE))
 		return
 	rel_set(src, nameof(power_area), new_area) // the draw follows the relation: it leaves the old area's demand and joins the new one's
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.

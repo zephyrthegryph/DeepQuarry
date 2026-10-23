@@ -594,7 +594,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 				h_user.put_in_hands(B)
 			else if (!istype(src.loc, /turf))
 				src.forceMove(get_turf(h_user))
-				if(h_user.client)	h_user.client.screen -= src
+				if(h_user.client)	client_screen_remove(h_user.client, src)
 				h_user.put_in_hands(B)
 		to_chat(user, span_notice("You clip the [P.name] to [(src.name == "paper") ? "the paper" : src.name]."))
 		src.forceMove(B)
@@ -717,8 +717,8 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	name = "supply manifest"
 	var/is_copy = 1
 
-/obj/item/paper/manifest
-	sellable_type = /datum/sellable/manifest
+CAPABILITIES(/obj/item/paper/manifest)
+	configure(obj_rules(sellable_type = /datum/sellable/manifest))
 
 /obj/item/paper/crumpled/sampatti
 	info = "Sampatti Relay Sif-833 <BR> Decryption Key for 12-04-2488: <BR> 849B0022FBA920C244 <BR> Eyes Only.  <BR> The insider who knows all the secrets can bring down Lanka.";

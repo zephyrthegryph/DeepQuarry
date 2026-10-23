@@ -14,7 +14,6 @@
 
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/rawturkey
-	name_the_meat = FALSE
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -35,6 +34,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkey)
+	configure(mob_nature(name_the_meat = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 /datum/say_list/turkey

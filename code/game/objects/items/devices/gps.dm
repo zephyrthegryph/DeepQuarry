@@ -34,7 +34,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 	if(holder_ref() && loc != holder_ref())
 		unobserve(holder_ref(), /datum/notice/movable_attempted_move, src)
-		holder_ref().client?.screen -= compass
+		client_screen_remove(holder_ref().client, compass)
 		rel_clear(src, nameof(holder))
 
 	if(istype(loc, /mob))
@@ -45,12 +45,12 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(holder_ref() && tracking)
 		if(holder_ref().client)
 			if(check_visible_to_holder())
-				holder_ref().client.screen |= compass
+				client_screen_include(holder_ref().client, compass)
 			else
-				holder_ref().client.screen -= compass
+				client_screen_remove(holder_ref().client, compass)
 	else
 		if(holder_ref()?.client)
-			holder_ref().client.screen -= compass
+			client_screen_remove(holder_ref().client, compass)
 
 /obj/item/gps/pickup()
 	. = ..()

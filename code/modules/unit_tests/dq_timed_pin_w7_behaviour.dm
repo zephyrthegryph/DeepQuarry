@@ -1497,9 +1497,9 @@
 	TEST_ASSERT(!isnull(running(seat)), "resisting starts a timed action")
 	TEST_ASSERT(said(seat, "You begin to resist"), "it says it began")
 	test_time(9 SECONDS)
-	TEST_ASSERT(pred.prey_controlled, "the predator is still controlled before the end")
+	TEST_ASSERT(sparse_get_or(pred, prey_controlled, FALSE), "the predator is still controlled before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(!pred.prey_controlled, "control is restored at the end (10 seconds)")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE), "control is restored at the end (10 seconds)")
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/m_dominated_resist_via_resist
@@ -1512,9 +1512,9 @@
 	test_answer(seat, "Yes")
 	TEST_ASSERT(!isnull(running(seat)), "confirming starts a timed action")
 	test_time(9 SECONDS)
-	TEST_ASSERT(pred.prey_controlled, "the predator is still controlled before the end")
+	TEST_ASSERT(sparse_get_or(pred, prey_controlled, FALSE), "the predator is still controlled before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(!pred.prey_controlled, "control is restored at the end (10 seconds)")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE), "control is restored at the end (10 seconds)")
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w7/m_dominated_return_to_body

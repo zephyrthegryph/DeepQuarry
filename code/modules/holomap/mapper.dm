@@ -396,7 +396,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 		extras += O
 
 	extras_holder.filters = filter(type = "alpha", icon = mask_icon, x = T_x-(offset_x*0.5), y = T_y-(offset_y*0.5))
-	extras_holder.vis_contents = extras
+	vis_set(extras_holder, extras)
 
 	hud_item.update(bgmap, extras_holder, badmap ? FALSE : pinging)
 

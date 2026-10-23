@@ -8,15 +8,13 @@
 	gender = PLURAL
 	icon = 'icons/obj/ghost_trap.dmi'
 	icon_state = "item"
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 
 CAPABILITIES(/obj/item/ghost_trap)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	setup(PROC_REF(prepare_capture_experiment))
 	configure(item_thrown(force = 0))
 	// The captured entity working its way out (container_resist() starts it): two minutes.

@@ -1530,8 +1530,9 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	sawn_off = TRUE
 	set_w_class(ITEMSIZE_NORMAL)
 	set_force(5)
-	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))//you can't sling it on your back
-	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	var/datum/type_trait/item_worn/worn = worn_of(src)
+	set_slot_flags(worn.slots & (~SLOT_BACK))//you can't sling it on your back
+	set_slot_flags(worn.slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off shotgun"
 	desc += " The barrel seems to be crudely sawn in half."
 	set_icon_state("sawnshotgun[shotgun_variant]")

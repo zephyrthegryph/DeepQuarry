@@ -4,9 +4,10 @@
 	desc = "A jar. You're not sure what it's supposed to hold."
 	icon_state = "jar"
 	item_state = "beaker"
-	center_of_mass_x = 15
-	center_of_mass_y = 8
 	unacidable = TRUE
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/jar)
+	configure(item_handling(center_x = 15, center_y = 8))
 
 /obj/item/reagent_containers/food/drinks/jar/on_reagent_change()
 	if (reagents.reagent_list.len > 0)

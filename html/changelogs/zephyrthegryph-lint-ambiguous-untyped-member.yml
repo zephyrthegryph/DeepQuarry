@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added the untyped_member lint: a member read or write through a receiver with no static type is rejected when the member name is declared static or global on any type, because DreamMaker may bind the static. Existing sites now go through typed locals."

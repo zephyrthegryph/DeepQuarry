@@ -254,6 +254,42 @@ CAPABILITIES(/datum/relations_refine_base/linked)
 	qdel(P)
 	TEST_ASSERT_NULL(GLOB.client_images_by_loc[P], "a dying atom drops its images from the index")
 
+/// D11: the vis_contents verbs match the raw operators (add keeps duplicates out of a list argument's order, include is `|=`, set replaces,
+/// clear empties) and the client verbs treat a null client as no client.
+/datum/unit_test/native_ends_vis_and_null_client
+
+/datum/unit_test/native_ends_vis_and_null_client/Run()
+	var/obj/item/pen/holder = allocate(/obj/item/pen, test_floor())
+	var/obj/item/pen/a = allocate(/obj/item/pen, test_floor())
+	var/obj/item/pen/b = allocate(/obj/item/pen, test_floor())
+	var/obj/item/pen/c = allocate(/obj/item/pen, test_floor())
+	vis_add(holder, list(a, b))
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 2, "a list argument adds each member")
+	vis_include(holder, list(a, c))
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 3, "include is |=: members already shown are not added again")
+	vis_remove(holder, list(a, b))
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 1, "a list argument removes each member")
+	vis_set(holder, a)
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 1, "set with one atom shows exactly that atom")
+	TEST_ASSERT(a in holder.vis_contents, "set shows the given atom")
+	vis_set(holder, list(b, c))
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 2, "set with a list replaces the contents")
+	vis_set(holder, null)
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 0, "set with null empties the contents")
+	vis_add(holder, b)
+	vis_clear(holder)
+	TEST_ASSERT_EQUAL(length(holder.vis_contents), 0, "clear empties the contents")
+	vis_add(null, a)
+	vis_clear(null)
+	client_screen_add(null, a)
+	client_screen_include(null, a)
+	client_screen_remove(null, a)
+	client_screen_clear(null)
+	client_images_add(null, a)
+	client_images_include(null, a)
+	client_images_remove(null, a)
+	client_images_clear(null)
+
 /// D12: a member that joined a registry while globals initialized (the global message listener, made by GLOB) is in the membership store once
 /// the store (made on first use, so it exists from global init) recorded the join, so the one leave path finds it.
 /datum/unit_test/relations_registry_global_init_members_adopted

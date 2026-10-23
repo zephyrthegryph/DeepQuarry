@@ -61,22 +61,24 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	return TRUE
 
 /datum/nifsoft/soulcatcher/proc/notify_into(message)
-	var/sound = nif().good_sound
+	var/obj/item/nif/nif_item = nif()
+	var/sound = nif_item.good_sound
 
 	message = " " + span_bold("Soulcatcher") + " displays, \"" + span_notice(span_nif("[message]")) + "\""
 
 	to_chat(nif().human,
 			type = MESSAGE_TYPE_NIF,
-			html = span_nif(span_bold("\[[icon2html(nif().big_icon, nif().human)]NIF\]") + message))
+			html = span_nif(span_bold("\[[icon2html(nif_item.big_icon, nif().human)]NIF\]") + message))
 	nif().human << sound
 
 	for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 		to_chat(CS,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif().big_icon, CS.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif_item.big_icon, CS.client)]NIF\]") + message))
 		CS << sound
 
 /datum/nifsoft/soulcatcher/proc/say_into(message, mob/living/sender, mob/eyeobj, whisper)
+	var/obj/item/nif/nif_item = nif()
 	var/sender_name = eyeobj ? eyeobj.name : sender.name
 
 	//AR Projecting
@@ -95,21 +97,22 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 		message = " " + span_bold("[sender_name]") + " [speak_verb], \"[message]\""
 		to_chat(nif().human,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif().big_icon, nif().human.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif_item.big_icon, nif().human.client)]NIF\]") + message))
 		if(whisper)
 			speak_verb = "whispers"
 			to_chat(sender,
 					type = MESSAGE_TYPE_NIF,
-					html = span_nif(span_bold("\[[icon2html(nif().big_icon, sender.client)]NIF\]") + span_italics(message)))
+					html = span_nif(span_bold("\[[icon2html(nif_item.big_icon, sender.client)]NIF\]") + span_italics(message)))
 		else
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS,
 						type = MESSAGE_TYPE_NIF,
-						html = span_nif(span_bold("\[[icon2html(nif().big_icon, CS.client)]NIF\]") + message))
+						html = span_nif(span_bold("\[[icon2html(nif_item.big_icon, CS.client)]NIF\]") + message))
 
 	sender.log_talk("NSAY (NIF:[nif().human.real_name]): [message]", LOG_SAY, color="#ff00c8")
 
 /datum/nifsoft/soulcatcher/proc/emote_into(message, mob/living/sender, mob/eyeobj, whisper)
+	var/obj/item/nif/nif_item = nif()
 	var/sender_name = eyeobj ? eyeobj.name : sender.name
 
 	//AR Projecting
@@ -124,16 +127,16 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 		message = " " + span_bold("[sender_name]") + " [message]"
 		to_chat(nif().human,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif().big_icon,nif().human.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif_item.big_icon,nif().human.client)]NIF\]") + message))
 		if(whisper)
 			to_chat(sender,
 					type = MESSAGE_TYPE_NIF,
-					html = span_nif(span_bold("\[[icon2html(nif().big_icon,sender.client)]NIF\]") + span_italics(message)))
+					html = span_nif(span_bold("\[[icon2html(nif_item.big_icon,sender.client)]NIF\]") + span_italics(message)))
 		else
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS,
 						type = MESSAGE_TYPE_NIF,
-						html = span_nif(span_bold("\[[icon2html(nif().big_icon,CS.client)]NIF\]") + message))
+						html = span_nif(span_bold("\[[icon2html(nif_item.big_icon,CS.client)]NIF\]") + message))
 
 	sender.log_message("NME (NIF:[nif().human.real_name]): [message]", LOG_EMOTE, color="#ff00c8")
 
@@ -358,12 +361,12 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	if(src.soulcatcher()) // needs it's own handling to allow vore_fx
 		if(src.ext_blind)
 			src.status_set(STAT_BLINDED, 5)
-			src.client.screen.Remove(GLOB.global_hud.whitense)
+			client_screen_remove(src.client, GLOB.global_hud.whitense)
 			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			src.status_set(STAT_BLINDED, 0)
 			src.clear_fullscreens()
-			src.client.screen.Add(GLOB.global_hud.whitense)
+			client_screen_add(src.client, GLOB.global_hud.whitense)
 
 	//If they're deaf
 	if(src.ext_deaf)

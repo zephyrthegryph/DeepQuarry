@@ -28,11 +28,61 @@
 		var/turf/T = holder
 		T.vis_contents -= thing
 
+/// Shows `thing` (an atom, or a list) through `holder`'s vis_contents unless it is already there (`|=`).
+/proc/vis_include(atom/holder, thing)
+	if(!holder || isnull(thing) || datum_deleted(thing))
+		return
+	if(ismovable(holder))
+		var/atom/movable/M = holder
+		M.vis_contents |= thing
+	else if(isturf(holder))
+		var/turf/T = holder
+		T.vis_contents |= thing
+
+/// Replaces `holder`'s vis_contents with `thing` (an atom, a list, or null for none).
+/proc/vis_set(atom/holder, thing)
+	if(!holder)
+		return
+	var/list/shown = null
+	if(islist(thing))
+		shown = thing
+	else if(!isnull(thing))
+		shown = list(thing)
+	if(ismovable(holder))
+		var/atom/movable/M = holder
+		M.vis_contents = shown
+	else if(isturf(holder))
+		var/turf/T = holder
+		T.vis_contents = shown
+
+/// Empties `holder`'s vis_contents.
+/proc/vis_clear(atom/holder)
+	if(!holder)
+		return
+	if(ismovable(holder))
+		var/atom/movable/M = holder
+		M.vis_contents.Cut()
+	else if(isturf(holder))
+		var/turf/T = holder
+		T.vis_contents.Cut()
+
 /// Puts `thing` (a screen object, or a list) on client `C`'s screen.
 /proc/client_screen_add(client/C, thing)
 	if(!C || isnull(thing) || datum_deleted(thing))
 		return
 	C.screen += thing
+
+/// Puts `thing` (or a list) on client `C`'s screen unless it is already there (`|=`).
+/proc/client_screen_include(client/C, thing)
+	if(!C || isnull(thing) || datum_deleted(thing))
+		return
+	C.screen |= thing
+
+/// Empties client `C`'s screen.
+/proc/client_screen_clear(client/C)
+	if(!C)
+		return
+	C.screen = list()
 
 /// Takes `thing` (or a list) off client `C`'s screen.
 /proc/client_screen_remove(client/C, thing)
@@ -54,6 +104,10 @@ GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was s
 	if(!C || isnull(thing))
 		return
 	C.images += thing
+	client_images_index(C, thing)
+
+/// Records `thing` (an image or a list) as shown to `C`, by viewer and by the atom it rides on.
+/proc/client_images_index(client/C, thing)
 	for(var/image/I as anything in (islist(thing) ? thing : list(thing)))
 		if(!istype(I))
 			continue
@@ -67,6 +121,20 @@ GLOBAL_LIST_EMPTY(client_image_viewers) // image -> list of the clients it was s
 			if(!riding)
 				riding = GLOB.client_images_by_loc[rides] = list()
 			riding |= I
+
+/// Shows image `thing` (or a list) to client `C` unless it is already shown (`|=`).
+/proc/client_images_include(client/C, thing)
+	if(!C || isnull(thing))
+		return
+	C.images |= thing
+	client_images_index(C, thing)
+
+/// Takes every image off client `C`.
+/proc/client_images_clear(client/C)
+	if(!C)
+		return
+	client_images_client_gone(C)
+	C.images = null
 
 /// Stops showing image `thing` (or a list) to client `C`.
 /proc/client_images_remove(client/C, thing)

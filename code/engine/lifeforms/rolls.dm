@@ -297,7 +297,7 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 				if("jitter")
 					var/n = gen_args[1]
 					if(istext(n))
-						n = (n in holder.vars) ? holder.vars[n] : 0 // PIXEL_JITTER(nameof(randpixel)): the holder's own range
+						n = hascall(holder, n) ? call(holder, n)() : ((n in holder.vars) ? holder.vars[n] : 0) // PIXEL_JITTER(PROC_REF(randpixel_range)): the holder's own range from its proc, or from the var the name gives
 					return list(R.number(-n, n), R.number(-n, n))
 				if("wall_offset")
 					var/atom/A = holder

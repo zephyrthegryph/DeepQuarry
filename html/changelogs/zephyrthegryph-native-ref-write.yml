@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "HUD, screen and vis_contents writes go through the engine native-end verbs"

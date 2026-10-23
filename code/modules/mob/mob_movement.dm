@@ -194,7 +194,7 @@
 		return
 
 	// If dead and we try to move in our mob, it leaves our body
-	if(my_mob.stat == DEAD && isliving(my_mob) && !my_mob.forbid_seeing_deadchat)
+	if(my_mob.stat == DEAD && isliving(my_mob) && !sparse_get_or(my_mob, forbid_seeing_deadchat, FALSE))
 		my_mob.setMoveCooldown(my_mob.movement_delay(n, direct))
 		my_mob.ghostize()
 		return
@@ -349,8 +349,8 @@
 		// It's a grab chain
 		else
 			for(var/mob/M in grablist)
-				my_mob.other_mobs = 1
-				M.other_mobs = 1 //Has something to do with people being able or unable to pass a chain of mobs
+				sparse_set(my_mob, other_mobs, 1)
+				sparse_set(M, other_mobs, 1) //Has something to do with people being able or unable to pass a chain of mobs
 
 				// Step the chained mob towards where we were, then clear the
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
@@ -383,7 +383,7 @@
 
 /// Clears the grab-chain pass-through flag. Used as a deferred callback after a chain step.
 /mob/proc/clear_other_mobs()
-	other_mobs = null
+	sparse_set(src, other_mobs, null)
 
 
 //Set your incorporeal movespeed

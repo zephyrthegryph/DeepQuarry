@@ -458,7 +458,8 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		if(department_area?.department_id == "engineering-1")
 			engineering_area = department_area
 			engineering_owner = node.id
-	for(var/datum/generated_station_module/module in materialization().modules)
+	var/datum/generated_station_materialization/built = materialization()
+	for(var/datum/generated_station_module/module in built.modules)
 		var/area/generated_station/A = materialization().module_areas?[module.id]
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)

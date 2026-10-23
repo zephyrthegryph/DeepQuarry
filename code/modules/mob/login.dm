@@ -41,14 +41,14 @@
 	update_Login_details(src)
 	world.update_status()
 
-	client.images = null				//remove the images such as AIs being unable to see runes
-	client.screen = list()				//remove hud items just in case
+	client_images_clear(client)				//remove the images such as AIs being unable to see runes
+	client_screen_clear(client)				//remove hud items just in case
 	if(hud_used)
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
 	cooldown_set_end(src, next_move, 1)
-	disconnect_time = null // ition: clear the disconnect time
+	sparse_set(src, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)

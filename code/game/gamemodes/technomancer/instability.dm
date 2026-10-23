@@ -50,7 +50,7 @@
 	var/atom/movable/screen/wizard/instability/meter = new()
 	meter.screen_loc = ui_wiz_instability_display
 	rel_set(hud_used, nameof(/datum/hud::wiz_instability_display), meter)
-	client?.screen |= meter
+	client_screen_include(client, meter)
 
 // Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.

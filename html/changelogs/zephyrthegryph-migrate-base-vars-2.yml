@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "base_vars wave 2: rarely-set object, item, machine, atom and mob vars became sparse slots (formerly saved ones still ride with a serialized object), and the per-type constants of items, objects, machines, mobs and atoms moved into the item_handling, obj_rules, machine_usage, mob_nature and atom_shielding type traits"

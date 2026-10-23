@@ -70,7 +70,7 @@
 	..()
 
 /mob/living/carbon/unarmed_touch(mob/living/M, stance = I_HELP)
-	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
+	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 		if(src != M)
 			if(istype(M,/mob/living))
 				var/mob/living/L = M

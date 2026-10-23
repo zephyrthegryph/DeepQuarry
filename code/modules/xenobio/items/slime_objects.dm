@@ -216,10 +216,11 @@ CAPABILITIES(/obj/item/slime_crystal)
 	desc = "A glob of slime that is thick as honey.  For the brave " + JOB_XENOBIOLOGIST + "."
 	icon_state = "honeycomb"
 	filling_color = "#FFBB00"
-	center_of_mass_x = 17
-	center_of_mass_y = 10
 	nutriment_amt = 25 // Very filling.
 	nutriment_desc = list("slime" = 10, "sweetness" = 10, REAGENT_ID_BLISS = 5)
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slime)
+	configure(item_handling(center_x = 17, center_y = 10))
 
 //Flashlight
 

@@ -23,7 +23,7 @@
 	for(var/mob/M as anything in displayTo)
 		rel_add(src, nameof(viewers), M) // lists us in M.alt_appearances_viewing too
 		if(M.client)
-			M.client.images |= img
+			client_images_include(M.client, img)
 
 /datum/alternate_appearance/proc/hide(list/hideFrom)
 	var/list/hiding = hideFrom || viewers?.Copy()

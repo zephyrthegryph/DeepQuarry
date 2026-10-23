@@ -1,6 +1,4 @@
 /obj/structure/window
-	announce_damage_bands = TRUE
-	damage_wear = "cracks"
 	name = "window"
 	desc = "A window."
 	icon = 'icons/obj/structures_vr.dmi' // New icons
@@ -258,6 +256,7 @@ MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tin
 		update_nearby_tiles(need_rebuild=1)
 
 CAPABILITIES(/obj/structure/window)
+	configure(atom_shielding(announce_bands = TRUE, damage_wear = "cracks"))
 	setup(PROC_REF(window_setup))
 	setup(PROC_REF(register_window_controls))
 	setup(PROC_REF(refresh_window_tiles))

@@ -73,7 +73,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 /// A two-ear item fills the other ear with a placeholder.
 /mob/living/carbon/human/proc/equip_offear(obj/item/W, slot)
-	if(!(worn_of(W).slots & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
+	var/datum/type_trait/item_worn/worn = worn_of(W)
+	if(!(worn.slots & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
 		return
 	var/other = (slot == SLOT_ID_EAR_L) ? SLOT_ID_EAR_R : SLOT_ID_EAR_L
 	if(get_equipped_item(other))

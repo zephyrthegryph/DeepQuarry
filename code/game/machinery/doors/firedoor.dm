@@ -515,7 +515,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	if(signature != sleeping_signature)
 		sleeping_signature = signature
 		SSmachines.gas_woken_last++
-		gas_dependency_wake_count++
+		sparse_set(src, gas_dependency_wake_count, sparse_get_or(src, gas_dependency_wake_count, 0) + 1)
 		wake_from_air()
 
 /// The air crossed a band edge: the door reads it and goes back to waiting.

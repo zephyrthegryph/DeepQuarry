@@ -156,10 +156,10 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	if(!width || !height)
 		return
 	viewing_turfs = get_visible_turfs()
-	if(length(viewing_turfs)) vis_contents += viewing_turfs
+	if(length(viewing_turfs)) vis_add(src, viewing_turfs)
 	if(popup_screen)
-		popup_screen.vis_contents.Cut()
-		if(length(viewing_turfs)) popup_screen.vis_contents += viewing_turfs
+		vis_clear(popup_screen)
+		if(length(viewing_turfs)) vis_add(popup_screen, viewing_turfs)
 
 /atom/movable/screen/movable/pic_in_pic/proc/get_visible_turfs()
 	var/turf/T = get_turf(center())

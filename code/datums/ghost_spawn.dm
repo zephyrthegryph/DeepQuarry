@@ -239,7 +239,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 		if(player.soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_GHOSTS, TRUE))
 			soulcatcher_vore_active = TRUE
 
-		if(!player.no_vore && (get_z(player) in using_map.station_levels))
+		if(!nature_of(player).no_vore && (get_z(player) in using_map.station_levels))
 			if(ishuman(player))
 				var/mob/living/carbon/human/H = player
 				if(H.vore_prefs.latejoin_vore)

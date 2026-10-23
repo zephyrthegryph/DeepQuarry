@@ -6,14 +6,12 @@
 	w_class = ITEMSIZE_NORMAL
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/storage_cost = null
-	var/no_attack_log = 0			//If it's an item we don't want to log attack_logs with, set this to 1
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -30,8 +28,6 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
 	var/embed_chance = -1	//0 won't embed, and 100 will always embed
@@ -64,18 +60,14 @@
 
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
 
 
-	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
 	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
-	var/item_tf_spawn_allowed = FALSE
 	var/list/ckeys_allowed_itemspawn = null
-	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
@@ -89,15 +81,8 @@
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
-	//Vorestuff
-	var/trash_eatable = TRUE
-	var/digest_stage = null
-	var/d_mult_old = 1 //digest stage descriptions
 	var/d_mult = 1 //digest stage descriptions
 	var/gurgled = FALSE
-	var/oldname
-	var/cleanname
-	var/cleandesc
 	var/gurgled_color
 
 
@@ -441,7 +426,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		give_item_action(action, user, slot)
 	hud_layerise()
 	user.position_hud_item(src,slot)
-	if(user.client)	user.client.screen |= src
+	if(user.client)	client_screen_include(user.client, src)
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
 		if(sounds_of(src).equip && !muffled_by_belly(user))
@@ -635,8 +620,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		return FALSE
 
 	var/devicename
-	if(zoomdevicename)
-		devicename = zoomdevicename
+	if(handling_of(src).zoom_name)
+		devicename = handling_of(src).zoom_name
 	else
 		devicename = src.name
 
@@ -679,8 +664,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 //Used for selecting a random pixel placement, usually on initialize. Checks for pixel_x/y to not interfere with mapped in items.
 /obj/item/proc/randpixel_xy()
 	if(!pixel_x && !pixel_y)
-		set_pixel_x(rand(-randpixel, randpixel))
-		set_pixel_y(rand(-randpixel, randpixel))
+		set_pixel_x(rand(-handling_of(src).randpixel, handling_of(src).randpixel))
+		set_pixel_y(rand(-handling_of(src).randpixel, handling_of(src).randpixel))
 		return TRUE
 	else
 		return FALSE
@@ -826,8 +811,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 /obj/item/proc/get_worn_layer(default_layer = 0)
 
 	//1: worn_layer variable
-	if(!isnull(worn_layer)) //Can be zero, so...
-		return BODY_LAYER+worn_layer
+	if(!isnull(sparse_get(src, worn_layer))) //Can be zero, so...
+		return BODY_LAYER+sparse_get(src, worn_layer)
 
 	//2: your default
 	return BODY_LAYER+default_layer
@@ -908,11 +893,9 @@ closest to where the cursor has clicked on.
 Note: This proc can be overwritten to allow for different types of auto-alignment.
 */
 
-/obj/item/var/center_of_mass_x = 16
-/obj/item/var/center_of_mass_y = 16
 
 /proc/auto_align(obj/item/W, click_parameters, animate = FALSE)
-	if(!W.center_of_mass_x && !W.center_of_mass_y)
+	if(!handling_of(W).center_x && !handling_of(W).center_y)
 		W.randpixel_xy()
 		return
 
@@ -928,8 +911,8 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 		var/cell_x = max(0, min(CELLS-1, round(mouse_x/CELLSIZE)))
 		var/cell_y = max(0, min(CELLS-1, round(mouse_y/CELLSIZE)))
 
-		var/target_x = (CELLSIZE * (0.5 + cell_x)) - W.center_of_mass_x
-		var/target_y = (CELLSIZE * (0.5 + cell_y)) - W.center_of_mass_y
+		var/target_x = (CELLSIZE * (0.5 + cell_x)) - handling_of(W).center_x
+		var/target_y = (CELLSIZE * (0.5 + cell_y)) - handling_of(W).center_y
 		if(animate)
 			var/dist_x = abs(W.pixel_x - target_x)
 			var/dist_y = abs(W.pixel_y - target_y)
@@ -966,13 +949,13 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
 /obj/item/proc/item_tf_spawnpoint_set()
-	if(!item_tf_spawn_allowed)
-		item_tf_spawn_allowed = TRUE
+	if(!sparse_get_or(src, item_tf_spawn_allowed, FALSE))
+		sparse_set(src, item_tf_spawn_allowed, TRUE)
 		registry_join(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 /obj/item/proc/item_tf_spawnpoint_used()
-	if(item_tf_spawn_allowed)
-		item_tf_spawn_allowed = FALSE
+	if(sparse_get_or(src, item_tf_spawn_allowed, FALSE))
+		sparse_set(src, item_tf_spawn_allowed, FALSE)
 		registry_leave(REGISTRY_ITEM_TF_SPAWNPOINTS, src)
 
 // Ported from TG, used when dropping items on tables/closets.
@@ -1014,10 +997,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
 /obj/item/wash(clean_types)
 	. = ..()
-	if(cleanname)
-		name = cleanname
-	if(cleandesc)
-		desc = cleandesc
+	if(sparse_get(src, cleanname))
+		name = sparse_get(src, cleanname)
+	if(sparse_get(src, cleandesc))
+		desc = sparse_get(src, cleandesc)
 
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)

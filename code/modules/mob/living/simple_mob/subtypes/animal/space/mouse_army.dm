@@ -51,10 +51,9 @@
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
 
 	species_sounds = "Mouse"
-	pain_emote_1p = list("squeak", "squik")
-	pain_emote_1p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(mob_nature(pain_1p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

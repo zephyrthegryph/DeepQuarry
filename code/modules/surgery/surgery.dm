@@ -27,10 +27,6 @@
 // wiring, system restore, panel closure); a step's `part_biology` defaults to
 // the biologies its treatment tags work on.
 
-/obj
-	///How clean an object is for surgery purposes. Cleaner = less chance of infection.
-	var/surgery_cleanliness = 0 // Used for tables/etc which can have surgery done of them.
-
 GLOBAL_LIST_EMPTY(surgical_steps)
 GLOBAL_PROTECT(surgical_steps)
 

@@ -7,7 +7,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	surgery_cleanliness = 100
 	throwpass = 1
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
@@ -15,6 +14,7 @@
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
 CAPABILITIES(/obj/machinery/optable)
+	configure(obj_rules(surgery_cleanliness = 100))
 	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	finds(nameof(computer), /obj/machinery/computer/operating) // the paired rel_one writes the console's table
 	configure(uses_power(idle = 1, active = 5))
