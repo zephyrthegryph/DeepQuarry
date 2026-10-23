@@ -113,15 +113,29 @@
 
 	..()
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/get_equip_info()
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/equip_info_lines()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
-	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
+	var/list/lines = list()
+	if(occupant)
+		lines += "Occupant: [occupant]"
+	lines += "Exterior Hatch: [door_locked ? "locked" : "unlocked"]"
+	return lines
+
+TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/tool/passenger, passenger_buttons, list(list("key" = "toggle_lock", "label" = "Toggle Lock")))
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/equip_controls()
+	return TYPE_TABLE_GET(src, passenger_buttons)
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/equip_press(mob/user, control, value)
+	if(control != "toggle_lock")
+		return FALSE
+	toggle_hatch_lock()
+	return TRUE
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
-	op("toggle_lock", topic("toggle_lock"), then(PROC_REF(topic_toggle_lock)))
 	op("board", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(board_interrupted)), then(PROC_REF(boarded)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/toggle_hatch_lock()
 	door_locked = !door_locked
 	occupant_message("Passenger compartment hatch [door_locked? "locked" : "unlocked"].")
 	if (chassis)

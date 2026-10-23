@@ -28,8 +28,6 @@ stored	code/game/machinery/newscaster.dm	"ref" = REF(FC),
 stored	code/game/machinery/newscaster.dm	"ref" = REF(viewing_channel()),
 stored	code/game/machinery/newscaster.dm	"ref" = REF(M),
 stored	code/game/mecha/mecha_control_console.dm	data["ref"] = REF(src)
-stored	code/game/objects/items/devices/gps.dm	var/gps_ref = REF(gps)
-stored	code/game/objects/items/devices/gps.dm	var/gps_ref = REF(gps)
 stored	code/game/objects/items/devices/scanners/motiontracker_api.dm	var/rfe = REF(At)
 stored	code/game/objects/items/devices/uplink.dm	"ref" = REF(item),
 stored	code/game/objects/items/weapons/mop.dm	"target_id" = REF(T),
@@ -145,47 +143,8 @@ ref_macro	code/game/antagonist/station/traitor.dm	return "<a href='byond://?src=
 ref_macro	code/game/gamemodes/technomancer/catalog.dm	return "<a href='byond://?src=\ref[src];spell_category=[category]'>[category]</a>"
 ref_macro	code/game/machinery/camera/camera.dm	to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 ref_macro	code/game/machinery/camera/camera.dm	cam["camera"] = "\ref[src]"
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useengine=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useelec=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];usehull=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];holedeath=1'>Oh...</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Risk it</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=1'>Buy Engine Parts (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=2'>Buy Hull Plates (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=3'>Buy Spare Electronics (-5FU)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=1'>Trade Fuel for Food (-5FU,+5FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=2'>Trade Food for Fuel (+5FU,-5FO)</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];raid_spaceport=1'>!! Raid Spaceport !!</a></P>"))
-ref_macro	code/game/machinery/computer/arcade.dm	set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
 ref_macro	code/game/machinery/computer/atmos_alert.dm	major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
 ref_macro	code/game/machinery/computer/atmos_alert.dm	minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
-ref_macro	code/game/machinery/computer/cloning.dm	"pod" = "\ref[pod]",
-ref_macro	code/game/machinery/computer/cloning.dm	data["selected_pod"] = "\ref[selected_pod()]"
-ref_macro	code/game/machinery/computer/cloning.dm	temprecords.Add(list(list("record" = "\ref[BR]", "realname" = sanitize(tempRealName))))
-ref_macro	code/game/machinery/computer/cloning.dm	activerecord = "\ref[active_BR()]",
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
@@ -212,54 +171,6 @@ ref_macro	code/game/machinery/telecomms/machine_interactions.dm	"ref" = "\ref[T]
 ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Removed \ref[T] [T.name] from linked entities. %-")
 ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-")
 ref_macro	code/game/machinery/telecomms/machine_interactions.dm	report("-% Successfully stored \ref[src] [name] in buffer %-")
-ref_macro	code/game/mecha/equipment/mecha_equipment.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",get_equip_info())
-ref_macro	code/game/mecha/equipment/mecha_equipment.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"]"
-ref_macro	code/game/mecha/equipment/mecha_equipment.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/cable_layer.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/cable_layer.dm	return "[output] \[Cable: [cable ? cable.get_amount() : 0] m\][(cable && cable.get_amount()) ? "- <a href='byond://?src=\ref[src];toggle=1'>[!equip_ready?"Dea":"A"]ctivate</a>|<a href='byond://?src=\ref[src];cut=1'>Cut</a>" : null]"
-ref_macro	code/game/mecha/equipment/tools/catapult.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/catapult.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/catapult.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/catapult.dm	return "[..()] [mode==1?"([locked()||"Nothing"])":null] \[<a href='byond://?src=\ref[src];mode=1'>S</a>|<a href='byond://?src=\ref[src];mode=2'>P</a>\]"
-ref_macro	code/game/mecha/equipment/tools/catapult.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/cloak.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_cloak=1'>[equip_ready ? "A" : "Dea"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/energy_relay.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_relay=1'>[relaying?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/generator.dm	return "[output] \[[fuel]: [fuel_amount] cm<sup>3</sup>\] - <a href='byond://?src=\ref[src];toggle=1'>[generating?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/generator.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/inflatables.dm	var/data_return = (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"] - <a href='byond://?src=\ref[src];toggle_deployable_mode=1'>Deploy [my_deployer().mode?"Door":"Wall"]</a><br>\
-ref_macro	code/game/mecha/equipment/tools/jetpack.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] \[<a href=\"?src=\ref[src];toggle=1\">Toggle</a>\]"
-ref_macro	code/game/mecha/equipment/tools/passenger.dm	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
-ref_macro	code/game/mecha/equipment/tools/rcd.dm	content += " <a href='byond://?src=\ref[src];mode=[i]'>[mode]</a>"
-ref_macro	code/game/mecha/equipment/tools/repair_droid.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/repair_droid.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/tools/shield.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_shield=1'>[my_shield.active?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/shield_omni.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_omnishield=1'>[shields?.active?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/tools/sleeper.dm	temp = "<br />\[Occupant: [occupant] (Health: [round(occupant.vitality()*100)]%)\]<br /><a href='byond://?src=\ref[src];view_stats=1'>View stats</a>|<a href='byond://?src=\ref[src];eject=1'>Eject</a>"
-ref_macro	code/game/mecha/equipment/tools/sleeper.dm	"ref" = "\ref[R]",
-ref_macro	code/game/mecha/equipment/tools/sleeper.dm	"source_ref" = "\ref[SG]",
-ref_macro	code/game/mecha/equipment/tools/sleeper.dm	output += "<a href=\"?src=\ref[src];inject=\ref[R];source=\ref[SG]\">Inject [R.name]</a><br />"
-ref_macro	code/game/mecha/equipment/tools/syringe_gun.dm	return "[output] \[<a href=\"?src=\ref[src];toggle_mode=1\">[mode? "Analyze" : "Launch"]</a>\]<br />\[Syringes: [length(syringes)]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]\]<br /><a href='byond://?src=\ref[src];show_reagents=1'>Reagents list</a>"
-ref_macro	code/game/mecha/equipment/tools/syringe_gun.dm	inputs += "<input type=\"hidden\" name=\"src\" value=\"\ref[src]\">"
-ref_macro	code/game/mecha/equipment/tools/syringe_gun.dm	output += "[R]: [round(R.volume,0.001)] - <a href=\"?src=\ref[src];purge_reagent=[R.id]\">Purge Reagent</a><br />"
-ref_macro	code/game/mecha/equipment/tools/syringe_gun.dm	output += "Total: [round(reagents.total_volume,0.001)]/[reagents.maximum_volume] - <a href=\"?src=\ref[src];purge_all=1\">Purge All</a>"
-ref_macro	code/game/mecha/equipment/tools/syringe_gun.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_drone=1'>[enabled?"Dea":"A"]ctivate</a>"
-ref_macro	code/game/mecha/equipment/weapons/ballistic/ballistic.dm	return "[..()]\[[src.projectiles]\][(src.projectiles < initial(src.projectiles))?" - <a href='byond://?src=\ref[src];rearm=1'>Rearm</a>":null]"
-ref_macro	code/game/mecha/equipment/weapons/ballistic/ballistic.dm	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
-ref_macro	code/game/mecha/equipment/weapons/explosive/grenade.dm	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"]\[[src.projectiles]\]"
-ref_macro	code/game/mecha/mecha.dm	cargo_list += list(list("ref" = "\ref[O]", "name" = "[O]"))
-ref_macro	code/game/mecha/mecha.dm	"ref" = "\ref[W]",
-ref_macro	code/game/mecha/mecha.dm	output += " - <a href='byond://?src=\ref[src];[A.cockpit_repair]=1'>Recalibrate</a>"
-ref_macro	code/game/mecha/mecha.dm	output += "<a href='byond://?src=\ref[src];drop_from_cargo=\ref[O]'>Unload</a> : [O]<br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Hull Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Universal Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Special Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-ref_macro	code/game/mecha/mecha.dm	output += "<div id='\ref[MT]'>[MT.get_equip_info()]</div>"
-ref_macro	code/game/mecha/micro/micro_equipment.dm	return "[..()] \[<a href='byond://?src=\ref[src];mode=0'>BS</a>|<a href='byond://?src=\ref[src];mode=1'>BB</a>|<a href='byond://?src=\ref[src];mode=2'>S</a>\]"
-ref_macro	code/game/mecha/micro/micro_equipment.dm	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"
 ref_macro	code/game/objects/effects/chem/chemsmoke.dm	more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
 ref_macro	code/game/objects/items.dm	M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
 ref_macro	code/game/objects/items/blueprints.dm	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
@@ -285,12 +196,6 @@ ref_macro	code/game/objects/items/devices/communicator/helper.dm	"ref" = "\ref[E
 ref_macro	code/game/objects/items/devices/communicator/helper.dm	"ref" = "\ref[P]"
 ref_macro	code/game/objects/items/devices/communicator/messaging.dm	to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 ref_macro	code/game/objects/items/devices/communicator/messaging.dm	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
-ref_macro	code/game/objects/items/devices/gps.dm	compass.set_waypoint("\ref[gps]", gps_tag, gps_turf.x, gps_turf.y, gps_turf.z, LAZYACCESS(tracking_devices, "\ref[gps]"))
-ref_macro	code/game/objects/items/devices/gps.dm	compass.set_waypoint("\ref[gps]", gps_tag, 0, 0, 0, LAZYACCESS(tracking_devices, "\ref[gps]"))
-ref_macro	code/game/objects/items/devices/gps.dm	compass.show_waypoint("\ref[gps]")
-ref_macro	code/game/objects/items/devices/gps.dm	"ref" = "\ref[current_gps]",
-ref_macro	code/game/objects/items/devices/gps.dm	"trackingColor" = LAZYACCESS(tracking_devices, "\ref[current_gps]"),
-ref_macro	code/game/objects/items/devices/gps.dm	"trackingName" = LAZYACCESS(showing_tracked_names, "\ref[current_gps]"),
 ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += span_warning("No mind in that body") + " [stored_mind() != null ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindupload=1'>Upload</a>\]" : null]<br>"
 ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += span_bold("Mind-Scan (One Time): ") + "\[<a href='byond://?src=\ref[src];target=\ref[H];mindscan=1'>Perform</a>\]<br>"
 ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += span_bold("Body-Scan (One Time): ") + "\[<a href='byond://?src=\ref[src];target=\ref[H];bodyscan=1'>Perform</a>\]<br>"
@@ -361,11 +266,6 @@ ref_macro	code/modules/integrated_electronics/subtypes/illegal.dm	message_admins
 ref_macro	code/modules/integrated_electronics/subtypes/input.dm	exonet.make_address("EPv2_circuit-\ref[src]")
 ref_macro	code/modules/library/lib_machines.dm	inv += list(list("ref" = "\ref[b]", "name" = b.name))
 ref_macro	code/modules/library/lib_machines.dm	"ref" = "\ref[b]",
-ref_macro	code/modules/lore_codex/codex_tree.dm	output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent()]'>[checked.parent().name]</a> \> [output]"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<a href='byond://?src=\ref[src];target=\ref[child]' class='button'>[child.name]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
-ref_macro	code/modules/lore_codex/codex_tree.dm	dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
 ref_macro	code/modules/lore_codex/pages.dm	return "<a href='byond://?src=\ref[src];quick_link=[target]'>[word_to_display]</a>"
 ref_macro	code/modules/media/media_tracks.dm	return list("ref" = "\ref[src]", "title" = title, "artist" = artist, "genre" = genre, "duration" = duration)
 ref_macro	code/modules/media/walkpod.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
@@ -373,11 +273,6 @@ ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?
 ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	throw_alert("\ref[source]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
-ref_macro	code/modules/mob/language/language.dm	. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a><br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language.dm	. += span_bold("[L.name] ([get_language_prefix()][L.key][lang_key ? " [get_language_prefix()][lang_key]" : ""])") + " <a href='byond://?src=\ref[src];set_lang_key=\ref[L]'>Edit Custom Key</a> - cannot speak!<br/>[L.desc]<br/><br/>"
-ref_macro	code/modules/mob/language/language_panel.dm	"ref" = "\ref[lang]",
 ref_macro	code/modules/mob/language/synthetic.dm	message_start = span_binarysay("[name], <a href='byond://?src=\ref[S];track2=\ref[S];track=\ref[speaker];trackname=[html_encode(speaker.name)]'>" + span_name("[speaker.name]") + "</a>")
 ref_macro	code/modules/mob/living/carbon/human/attacks_panel.dm	"ref" = "\ref[u_attack]",
 ref_macro	code/modules/mob/living/carbon/human/examine.dm	var/link = "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[I]'>"
@@ -413,9 +308,6 @@ ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] 
 ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] = "\ref[general]"
 ref_macro	code/modules/mob/living/silicon/robot/drone/drone_console.dm	"ref" = "\ref[D]",
 ref_macro	code/modules/mob/living/silicon/robot/robot.dm	to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a>") + "<br>"))
-ref_macro	code/modules/mob/living/silicon/silicon.dm	. += "Current default language: [default_language] - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a><br><br>"
-ref_macro	code/modules/mob/living/silicon/silicon.dm	default_str = " - default - <a href='byond://?src=\ref[src];default_lang=reset'>reset</a>"
-ref_macro	code/modules/mob/living/silicon/silicon.dm	default_str = " - <a href='byond://?src=\ref[src];default_lang=\ref[L]'>set default</a>"
 ref_macro	code/modules/mob/living/silicon/silicon.dm	to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
 ref_macro	code/modules/mob/living/silicon/silicon.dm	cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
 ref_macro	code/modules/mob/mob.dm	to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
@@ -433,14 +325,8 @@ ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byon
 ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];togglefooter=1'>Toggle Footer</A> "
 ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];clear=1'>Clear page</A> "
 ref_macro	code/modules/paperwork/adminpaper.dm	text = "<center><img src=\ref[logo]></br>"
-ref_macro	code/modules/paperwork/clipboard.dm	"ref" = "\ref[toppaper()]",
-ref_macro	code/modules/paperwork/clipboard.dm	"ref" = "\ref[P]",
-ref_macro	code/modules/paperwork/clipboard.dm	"ref" = "\ref[Ph]",
 ref_macro	code/modules/paperwork/faxmachine.dm	msg += "(<a href='byond://?_src_=holder;[HrefToken()];FaxReply=\ref[sender];originfax=\ref[src];replyorigin=[reply_type]'>REPLY</a>)"
 ref_macro	code/modules/paperwork/faxmachine.dm	msg += "Receiving '[sent.name]' via secure connection ... <a href='byond://?_src_=holder;[HrefToken(TRUE)];AdminFaxView=\ref[sent]'>view message</a>"
-ref_macro	code/modules/paperwork/folders.dm	items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
-ref_macro	code/modules/paperwork/folders.dm	items += list(list("ref" = "\ref[Ph]", "name" = Ph.name, "kind" = "photo"))
-ref_macro	code/modules/paperwork/folders.dm	items += list(list("ref" = "\ref[Pb]", "name" = Pb.name, "kind" = "bundle"))
 ref_macro	code/modules/paperwork/paper.dm	addtofield(i, "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=[i]'>write</A></font>", 1)
 ref_macro	code/modules/paperwork/paper.dm	info_links = info_links + "<font face=\"[deffont]\"><A href='byond://?src=\ref[src];write=end'>write</A></font>"
 ref_macro	code/modules/paperwork/paper.dm	t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")

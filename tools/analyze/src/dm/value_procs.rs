@@ -12,6 +12,18 @@
 //! branches both are, a local whose every assignment in the proc is a value, or a call that resolves to value-returning procs or to a
 //! DM builtin in [`BUILTIN_VALUE_CALLS`].
 //!
+//! Two reads are values as well. A read of a builtin `world` var that is a number or text (`world.time`, [`WORLD_VALUE_VARS`]); and a read
+//! of a var that holds only values: every declaration of a var of that name in the tree has no type and a null, number or text initial
+//! value (an override too), and every assignment to a var of that name anywhere (any receiver, any operator) is a value. The var is judged
+//! by its name, so an assignment through a receiver of unknown type still counts against it. The proof does not see a write through
+//! `vars[...]` or a map instance var; the lint's own rules do not either.
+//!
+//! A parameter is a value when it is untyped, takes a literal default, and every call of a proc of that name in the tree passes a value in
+//! its position (a call may reach any proc of its name, so this is judged by name). A name is ruled out when a definition is a verb or
+//! overrides a DM builtin (a player or the engine supplies the arguments), when the name appears as a bare identifier, a string or a type
+//! path anywhere (`PROC_REF(x)`, `call(o, "x")`: a call nothing here sees), and when any call of it uses a named argument or `arglist()`.
+//! A method call on a receiver of unknown type is a value when every definition of that name is and no DM builtin type has one.
+//!
 //! A call resolves by the proc's identity, never by its name: an unscoped call is the proc found on the calling type (walking its
 //! parents) or else the global proc; `recv.f()` is found on the static type of `recv`, which must be known. A call may reach an
 //! override, so the call is a value only when the found definition and every override on the receiver type or below it are. A proc
@@ -38,6 +50,11 @@ pub const BUILTIN_VALUE_CALLS: &[&str] = &[
     "text2ascii", "ascii2text", "file2text", "rgb", "istype", "ispath", "islist", "isnum", "istext", "time2text", "addtext", "splittext", "json_encode", "text2path", "trim",
 ];
 
+/// Builtin `world` vars that are a number, text or null.
+pub const WORLD_VALUE_VARS: &[&str] = &[
+    "time", "timeofday", "realtime", "tick_lag", "tick_usage", "cpu", "map_cpu", "maxx", "maxy", "maxz", "fps", "byond_version", "byond_build", "port", "address", "name", "version",
+];
+
 type DefKey = (String, String, usize);
 
 /// What a call resolves to.
@@ -62,6 +79,17 @@ pub(crate) struct ValueProcs<'a, 'k> {
     targets: RefCell<HashMap<(String, String), Target>>,
     /// Set while a definition is evaluated: it read another definition's answer.
     touched: RefCell<bool>,
+    /// Var names that still hold only values (candidates start in; an assignment of a non-value takes a name out).
+    vars: RefCell<HashMap<String, bool>>,
+    /// Set when a var name left `vars` during this pass: the definitions that read it must be looked at again.
+    vars_changed: RefCell<bool>,
+    /// Proc name -> per parameter position: still known to receive only values at every call in the tree. Judged by name, since a call
+    /// whose receiver cannot be typed may reach any proc of that name.
+    params: RefCell<HashMap<String, Vec<bool>>>,
+    /// The name of each definition.
+    def_names: Vec<String>,
+    /// Names of the procs the DM builtin types define.
+    builtin_names: HashSet<String>,
 }
 
 struct Ctx<'c> {
@@ -104,10 +132,22 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
             }
         }
         let parent: Vec<Option<usize>> = refs.iter().map(|r| r.parent_proc().filter(|p| !p.is_builtin()).and_then(|p| ids.get(&(type_key(&p.ty().get().path), p.name().to_string(), p.index())).copied())).collect();
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false) };
+        let vars = value_var_candidates(sem);
+        let def_names: Vec<String> = refs.iter().map(|r| r.name().to_string()).collect();
+        let params = param_candidates(sem, &refs);
+        let mut builtin_names: HashSet<String> = HashSet::new();
+        for ty in sem.objtree.iter_types() {
+            for (name, tp) in ty.get().procs.iter() {
+                if tp.value.iter().any(|v| v.location.is_builtins()) {
+                    builtin_names.insert(name.to_string());
+                }
+            }
+        }
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, builtin_names };
         let mut live: Vec<usize> = (0..refs.len()).collect();
         loop {
             let mut changed = false;
+            *me.vars_changed.borrow_mut() = false;
             let mut next = Vec::new();
             for id in live {
                 *me.touched.borrow_mut() = false;
@@ -119,7 +159,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     next.push(id);
                 }
             }
-            if !changed {
+            if !changed && !*me.vars_changed.borrow() {
                 break;
             }
             live = next;
@@ -191,12 +231,20 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     return match &last.elem {
                         Follow::Unary(UnaryOp::Reference | UnaryOp::Dereference) => false,
                         Follow::Unary(_) => true,
+                        Follow::Field(_, name) if follow.len() == 1 && matches!(&term.elem, Term::Ident(n) if n == "world") => WORLD_VALUE_VARS.contains(&name.as_str()),
+                        Follow::Field(_, name) => {
+                            let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
+                            match self.w.type_of(ctx.sc, &recv) {
+                                Some(t) if !t.is_empty() => self.var_value(&t, name),
+                                _ => false,
+                            }
+                        }
                         Follow::Call(_, name, _) if follow.len() == 1 && matches!(&term.elem, Term::Ident(n) if n == "global") => self.call_value("/", name, true),
                         Follow::Call(_, name, _) => {
                             let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
                             match self.w.type_of(ctx.sc, &recv) {
                                 Some(t) if !t.is_empty() => self.call_value(&t, name, false),
-                                _ => false,
+                                _ => self.any_receiver_value(name),
                             }
                         }
                         _ => false,
@@ -205,7 +253,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 match &term.elem {
                     Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_) | Term::Resource(_) | Term::InterpString(..) | Term::__PROC__ | Term::__TYPE__ => true,
                     Term::Expr(inner) => self.value_expr(ctx, inner),
-                    Term::Ident(n) => n == "." || ctx.locals.contains(n.as_str()),
+                    Term::Ident(n) => n == "." || ctx.locals.contains(n.as_str()) || (!ctx.sc.locals.contains_key(n.as_str()) && self.var_value(ctx.sc.owner, n)),
                     Term::Call(n, _) => {
                         let owner = if ctx.sc.owner == "/" { "/" } else { ctx.sc.owner };
                         self.call_value(owner, n, true)
@@ -228,6 +276,109 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
     }
 
+    /// Whether the var `name` read on type `ty` holds only values.
+    fn var_value(&self, ty: &str, name: &str) -> bool {
+        *self.touched.borrow_mut() = true;
+        let Some(sig) = self.sem.var_decl(ty, name) else { return false };
+        sig.declared.is_empty() && self.vars.borrow().get(name).copied().unwrap_or(false)
+    }
+
+    /// Takes out of `vars` every var name that `code` assigns a non-value to.
+    fn scan_var_writes(&self, ctx: &Ctx, code: &Block) {
+        for_each_expr(code, &mut |e| {
+            let Expression::AssignOp { lhs, rhs, .. } = e else { return };
+            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
+            let name = match follow.last() {
+                Some(last) => match &last.elem {
+                    Follow::Field(_, n) | Follow::StaticField(n) => n.to_string(),
+                    _ => return,
+                },
+                None => match &term.elem {
+                    Term::Ident(n) if !ctx.sc.locals.contains_key(n.as_str()) && n != "." => n.to_string(),
+                    _ => return,
+                },
+            };
+            let live = self.vars.borrow().get(&name).copied().unwrap_or(false);
+            if live && !self.value_expr(ctx, rhs) {
+                self.vars.borrow_mut().insert(name, false);
+                *self.vars_changed.borrow_mut() = true;
+            }
+        });
+    }
+
+    /// A method call `x.name()` whose receiver has no static type: it runs some definition named `name`, so it is a value when every
+    /// definition of that name in the tree is and no DM builtin type has a proc of that name.
+    fn any_receiver_value(&self, name: &str) -> bool {
+        *self.touched.borrow_mut() = true;
+        if self.builtin_names.contains(name) {
+            return false;
+        }
+        let mut any = false;
+        for (i, n) in self.def_names.iter().enumerate() {
+            if n == name {
+                any = true;
+                if !self.value[i] {
+                    return false;
+                }
+            }
+        }
+        any
+    }
+
+    /// Takes a parameter position out of `params` for good.
+    fn kill_param(&self, name: &str, i: Option<usize>) {
+        let mut ps = self.params.borrow_mut();
+        let Some(v) = ps.get_mut(name) else { return };
+        let mut hit = false;
+        for (j, b) in v.iter_mut().enumerate() {
+            if *b && i.is_none_or(|i| i == j) {
+                *b = false;
+                hit = true;
+            }
+        }
+        if hit {
+            *self.vars_changed.borrow_mut() = true;
+        }
+    }
+
+    /// One call of `name`: a position that gets a non-value, a named argument or an `arglist()` leaves `params`.
+    fn call_site(&self, ctx: &Ctx, name: &str, args: &[Expression]) {
+        if !self.params.borrow().contains_key(name) {
+            return;
+        }
+        let spread = args.iter().any(|a| match strip_parens(a) {
+            Expression::AssignOp { .. } => true,
+            Expression::Base { term, follow } => follow.is_empty() && matches!(&term.elem, Term::Call(n, _) if n == "arglist"),
+            _ => false,
+        });
+        if spread {
+            self.kill_param(name, None);
+            return;
+        }
+        for (i, a) in args.iter().enumerate() {
+            if !self.value_expr(ctx, a) {
+                self.kill_param(name, Some(i));
+            }
+        }
+    }
+
+    /// Every call in `code` narrows the parameter positions of the procs it can reach.
+    fn scan_calls(&self, ctx: &Ctx, code: &Block, me: &str) {
+        for_each_expr(code, &mut |e| {
+            let Expression::Base { term, follow } = e else { return };
+            match &term.elem {
+                Term::Call(n, args) | Term::GlobalCall(n, args) => self.call_site(ctx, n, args),
+                Term::SelfCall(args) | Term::ParentCall(args) if !args.is_empty() => self.call_site(ctx, me, args),
+                _ => {}
+            }
+            for fo in follow.iter() {
+                if let Follow::Call(_, n, args) = &fo.elem {
+                    self.call_site(ctx, n, args);
+                }
+            }
+        });
+    }
+
     fn parent_value(&self, id: usize) -> bool {
         match self.parent[id] {
             Some(pid) => self.defs_value(&[pid]),
@@ -244,21 +395,33 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         let path = type_key(&r.ty().get().path);
         let mut locals: HashMap<String, (String, Option<crate::lints::stored_refs::Place>)> = HashMap::new();
         let mut bad: HashSet<String> = HashSet::new();
-        for p in v.parameters.iter() {
+        let mut value_params: Vec<String> = Vec::new();
+        *self.touched.borrow_mut() = true;
+        let flags = self.params.borrow().get(&self.def_names[id]).cloned().unwrap_or_default();
+        for (i, p) in v.parameters.iter().enumerate() {
             locals.insert(p.name.to_string(), (path_of(&p.var_type.type_path), None));
-            bad.insert(p.name.to_string());
+            if flags.get(i).copied().unwrap_or(false) {
+                value_params.push(p.name.to_string());
+            } else {
+                bad.insert(p.name.to_string());
+            }
         }
         collect_locals(code, "", &mut locals);
         let sc = ProcScope { owner: &path, locals };
-        let value_locals = self.value_locals(&sc, code, &mut bad, id);
+        let value_locals = self.value_locals(&sc, code, &mut bad, id, &value_params);
         let ctx = Ctx { sc: &sc, locals: &value_locals, def: Some(id) };
+        self.scan_var_writes(&ctx, code);
+        self.scan_calls(&ctx, code, &self.def_names[id]);
         self.returns_ok(&ctx, code)
     }
 
     /// The locals of a proc whose every assignment is a value.
-    fn value_locals(&self, sc: &ProcScope, code: &Block, bad: &mut HashSet<String>, id: usize) -> HashSet<String> {
+    fn value_locals(&self, sc: &ProcScope, code: &Block, bad: &mut HashSet<String>, id: usize, value_params: &[String]) -> HashSet<String> {
         let mut assigns: HashMap<String, Vec<&Expression>> = HashMap::new();
         declared_locals(code, &mut assigns, bad, self.w);
+        for n in value_params {
+            assigns.entry(n.clone()).or_default();
+        }
         for_each_expr(code, &mut |e| {
             let Expression::AssignOp { op, lhs, rhs } = e else { return };
             let Expression::Base { term, follow } = strip_parens(lhs) else { return };
@@ -325,11 +488,158 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         self.value_expr(&ctx, e)
     }
 
+    /// Whether the local `name` of the proc body `code` is assigned the result of a call that is not a value, directly or through other
+    /// locals (`var/x = f()`, then `y = x`): a local holds what was assigned to it, so passing it on passes the call's result on.
+    pub(crate) fn local_holds_call(&self, sc: &ProcScope, code: &Block, name: &str) -> bool {
+        let mut assigns: HashMap<String, Vec<&Expression>> = HashMap::new();
+        let mut bad: HashSet<String> = HashSet::new();
+        declared_locals(code, &mut assigns, &mut bad, self.w);
+        for_each_expr(code, &mut |e| {
+            let Expression::AssignOp { op, lhs, rhs } = e else { return };
+            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
+            let Term::Ident(n) = &term.elem else { return };
+            if follow.is_empty() && matches!(op, AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign) {
+                assigns.entry(n.to_string()).or_default().push(rhs);
+            }
+        });
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut todo = vec![name.to_string()];
+        while let Some(n) = todo.pop() {
+            if !seen.insert(n.clone()) {
+                continue;
+            }
+            for rhs in assigns.get(&n).map(|v| v.as_slice()).unwrap_or(&[]) {
+                let r = strip_parens(rhs);
+                if let Expression::Base { term, follow } = r {
+                    if let (true, Term::Ident(l)) = (follow.is_empty(), &term.elem) {
+                        if sc.locals.contains_key(l.as_str()) {
+                            todo.push(l.to_string());
+                            continue;
+                        }
+                    }
+                }
+                if is_call(r) && !self.is_value_call(sc, r) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     /// How many definitions are value-returning, and how many there are.
     #[allow(dead_code)]
     pub(crate) fn counts(&self) -> (usize, usize) {
         (self.value.iter().filter(|v| **v).count(), self.value.len())
     }
+}
+
+/// The value is the result of a proc call (a plain, global, or method call at the end of the chain).
+pub(crate) fn is_call(e: &Expression) -> bool {
+    let e = strip_parens(e);
+    let Expression::Base { term, follow } = e else { return false };
+    if let Some(last) = follow.last() {
+        return matches!(last.elem, Follow::Call(..));
+    }
+    matches!(term.elem, Term::Call(..) | Term::GlobalCall(..))
+}
+
+/// A literal: a null, number or text.
+fn literal_expr(e: &Expression) -> bool {
+    matches!(strip_parens(e), Expression::Base { term, follow } if follow.is_empty() && matches!(term.elem, Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_)))
+}
+
+/// The procs whose untyped parameters could receive only values: per name and position, true unless something rules it out here. A name is
+/// ruled out when a definition is a verb (a player supplies the arguments), overrides a DM builtin (the engine calls it), or is named by a
+/// reference or a string anywhere (`PROC_REF(x)`, `/proc/x`, `call(o, "x")`: called with arguments nothing here can see). A position is ruled
+/// out when its parameter has a type, an input type or a non-literal default. The call sites then narrow it (`call_site`).
+fn param_candidates(sem: &Sem, refs: &[ProcRef]) -> HashMap<String, Vec<bool>> {
+    use dreammaker::constants::Constant;
+    let mut named: HashSet<String> = HashSet::new();
+    for ty in sem.objtree.iter_types() {
+        for (_, tv) in ty.get().vars.iter() {
+            if let Some(Constant::String(s)) = &tv.value.constant {
+                named.insert(s.to_string());
+            }
+        }
+    }
+    let mut out: HashMap<String, Vec<bool>> = HashMap::new();
+    let mut barred: HashSet<String> = HashSet::new();
+    for r in refs {
+        let name = r.name().to_string();
+        let v = r.get();
+        let slot = out.entry(name.clone()).or_default();
+        if slot.len() < v.parameters.len() {
+            slot.resize(v.parameters.len(), true);
+        }
+        for (i, p) in v.parameters.iter().enumerate() {
+            if !p.var_type.type_path.is_empty() || p.input_type.is_some() || p.in_list.is_some() || p.default.as_ref().is_some_and(|d| !literal_expr(d)) {
+                slot[i] = false;
+            }
+        }
+        if r.get_declaration().is_some_and(|d| matches!(d.kind, dreammaker::ast::ProcDeclKind::Verb)) {
+            barred.insert(name.clone());
+        }
+        let mut cur = Some(*r);
+        while let Some(x) = cur {
+            if x.is_builtin() {
+                barred.insert(name.clone());
+                break;
+            }
+            cur = x.parent_proc();
+        }
+        if let Some(code) = v.code.as_ref() {
+            for_each_expr(code, &mut |e| {
+                let Expression::Base { term, follow } = e else { return };
+                match &term.elem {
+                    Term::Ident(n) => {
+                        named.insert(n.to_string());
+                    }
+                    Term::String(s) => {
+                        named.insert(s.to_string());
+                    }
+                    Term::Prefab(p) | Term::NewPrefab { prefab: p, .. } => {
+                        for (_, n) in p.path.iter() {
+                            named.insert(n.to_string());
+                        }
+                    }
+                    _ => {}
+                }
+                for fo in follow.iter() {
+                    if let Follow::ProcReference(n) = &fo.elem {
+                        named.insert(n.to_string());
+                    }
+                }
+            });
+        }
+    }
+    for n in barred.iter().chain(named.iter()) {
+        if let Some(v) = out.get_mut(n) {
+            v.iter_mut().for_each(|b| *b = false);
+        }
+    }
+    out
+}
+
+/// The names of the vars that could hold only values: every declaration or override of the name has no type and a null, number or text
+/// initial value.
+fn value_var_candidates(sem: &Sem) -> HashMap<String, bool> {
+    use dreammaker::constants::Constant;
+    let mut out: HashMap<String, bool> = HashMap::new();
+    for ty in sem.objtree.iter_types() {
+        for (name, tv) in ty.get().vars.iter() {
+            let typed = tv.declaration.as_ref().map(|d| !d.var_type.type_path.is_empty()).unwrap_or(false);
+            let init_ok = match (&tv.value.constant, &tv.value.expression) {
+                (Some(Constant::Null(_) | Constant::Float(_) | Constant::String(_) | Constant::Resource(_)), _) => true,
+                (None, None) => true,
+                _ => false,
+            };
+            let slot = out.entry(name.to_string()).or_insert(true);
+            if typed || !init_ok {
+                *slot = false;
+            }
+        }
+    }
+    out
 }
 
 fn for_each_expr<'b>(b: &'b Block, f: &mut dyn FnMut(&'b Expression)) {

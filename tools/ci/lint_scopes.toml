@@ -578,6 +578,7 @@ legacy_forms_converted = [
   "code/modules/point/",
   "code/modules/polls/",
   "code/modules/projectiles/",
+  "code/content/projectiles/",
   "code/modules/radiation/",
   "code/modules/random_map/",
   "code/modules/reagents/holder/",

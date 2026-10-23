@@ -60,8 +60,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher)
 			W.set_up(my_target, user = user)
 		return 1
 
-/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/get_equip_info()
-	return "[..()] \[[src.reagents.total_volume]\]"
+/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/equip_info_lines()
+	return list("Contents: [src.reagents.total_volume]")
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher/on_reagent_change()
 	return

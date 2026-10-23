@@ -72,7 +72,7 @@
 /proc/via_ternary(flag)
 	return flag ? 1 : "text"
 
-/proc/via_or(a)
+/proc/via_or(a) // every call passes a number: the parameter is a value
 	return a || 2
 
 /datum/base/proc/kind()
@@ -116,3 +116,104 @@
 	from_override = D.kind()
 	from_untyped = U.size()
 	from_builtin = rand(1, 5)
+
+// --- var reads: world.time, and a var that only ever holds values
+/proc/world_clock()
+	return world.time
+
+/datum/clock
+	var/manual
+	var/shared
+
+/datum/clock/proc/step(seconds)
+	manual = seconds * 10
+	manual += 2
+
+/datum/clock/proc/clock_now()
+	return isnull(manual) ? world.time : manual
+
+/datum/clock/proc/clock_shared()
+	return shared
+
+/datum/clock/proc/store_shared(datum/thing/T)
+	shared = T
+
+/datum/clock/proc/clock_shared_viaconst()
+	return shared
+
+/datum/reader
+	var/from_world
+	var/from_clock_var
+	var/from_clock_datum_var
+	var/from_local_value
+	var/from_param_local
+
+/datum/reader/proc/read(datum/clock/C, param)
+	from_world = world_clock()
+	from_clock_var = C.clock_now()
+	from_clock_datum_var = C.clock_shared()
+	var/made = C.clock_now()
+	from_local_value = made
+	var/untouched = param
+	from_param_local = untouched
+
+// --- argument passthrough: a parameter is a value when every call passes one
+/proc/echo(n)
+	return n
+
+/proc/echo_user()
+	return echo(3) + echo("a")
+
+/proc/echo_mixed(n)
+	return n
+
+/proc/echo_mixed_a()
+	return echo_mixed(4)
+
+/proc/echo_mixed_b(datum/thing/T)
+	return echo_mixed(T)
+
+/proc/echo_named(n)
+	return n
+
+/proc/echo_named_user()
+	return echo_named(n = 5)
+
+/proc/echo_ref(n)
+	return n
+
+/proc/echo_ref_user()
+	var/handler = "echo_ref"
+	return echo_ref(6)
+
+/datum/passer
+	var/from_echo
+	var/from_mixed
+	var/from_named
+	var/from_ref
+
+/datum/passer/proc/pass()
+	from_echo = echo_user()
+	from_mixed = echo_mixed_a()
+	from_named = echo_named_user()
+	from_ref = echo_ref_user()
+
+// --- locals: a local holds what was assigned to it, so a call result passed through locals is still judged
+/datum/localer
+	var/via_one_local
+	var/via_local_chain
+	var/via_number_local
+	var/via_value_call_local
+
+/datum/localer/proc/hold()
+	var/one = mixed(1)
+	via_one_local = one
+	var/first = mixed(1)
+	var/second = first
+	var/third = second
+	via_local_chain = third
+	var/count = 4
+	count += 2
+	via_number_local = count
+	var/size = fact(2)
+	via_value_call_local = size

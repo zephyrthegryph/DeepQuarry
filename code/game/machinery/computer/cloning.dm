@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			else if(occupant && !pod.power_lost())
 				status = "cloning"
 			tempods.Add(list(list(
-				"pod" = "\ref[pod]",
+				"pod" = ref_token(pod),
 				"name" = sanitize(capitalize(pod.name)),
 				"biomass" = pod.get_biomass(),
 				"status" = status,
@@ -214,11 +214,11 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	if(scanner())
 		data["occupant"] = scanner().get_occupant()
 		data["locked"] = scanner().locked
-	data["selected_pod"] = "\ref[selected_pod()]"
+	data["selected_pod"] = ref_token(selected_pod())
 	var/list/temprecords = list()
 	for(var/datum/transhuman/body_record/BR in records)
 		var tempRealName = BR.mydna.dna.real_name
-		temprecords.Add(list(list("record" = "\ref[BR]", "realname" = sanitize(tempRealName))))
+		temprecords.Add(list(list("record" = ref_token(BR), "realname" = sanitize(tempRealName))))
 	data["records"] = temprecords
 
 	if(selected_pod() && (selected_pod() in pods) && selected_pod().get_biomass() >= CLONE_BIOMASS)
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/proc/ui_act_view_rec(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/record = ui_ref(ref, null, /datum/transhuman/body_record)
+	var/datum/transhuman/body_record/record = ui_token(ref, null, /datum/transhuman/body_record)
 	if(!record)
 		return
 	rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), record)
@@ -269,7 +269,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 			if(active_BR().mydna.implant)
 				H = locate(active_BR().mydna.implant)
 			var/list/payload = list(
-				activerecord = "\ref[active_BR()]",
+				activerecord = ref_token(active_BR()),
 				health = (H && istype(H)) ? H.sensehealth() : "",
 				realname = sanitize(active_BR().mydna.dna.real_name),
 				unidentity = active_BR().mydna.dna.GetUniIdentity(),
@@ -344,7 +344,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/proc/ui_act_selectpod(datum/act/op/A, ref)
 	. = TRUE
-	var/obj/machinery/clonepod/selected = ui_ref(ref, null, /obj/machinery/clonepod)
+	var/obj/machinery/clonepod/selected = ui_token(ref, null, /obj/machinery/clonepod)
 	if(!selected)
 		return
 	if(istype(selected) && (selected in pods))
@@ -353,7 +353,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/proc/ui_act_clone(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/C = ui_ref(ref, null, /datum/transhuman/body_record)
+	var/datum/transhuman/body_record/C = ui_token(ref, null, /datum/transhuman/body_record)
 	if(!C)
 		return
 	//Look for that player! They better be dead!

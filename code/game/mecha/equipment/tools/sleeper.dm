@@ -79,53 +79,33 @@
 		return
 	return ..()
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/get_equip_info()
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/equip_info_lines()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	var/output = ..()
-	if(output)
-		var/temp = ""
-		if(occupant)
-			temp = "<br />\[Occupant: [occupant] (Health: [round(occupant.vitality()*100)]%)\]<br /><a href='byond://?src=\ref[src];view_stats=1'>View stats</a>|<a href='byond://?src=\ref[src];eject=1'>Eject</a>"
-		return "[output] [temp]"
-	return
+	if(!occupant)
+		return list()
+	return list("Occupant: [occupant] (Health: [round(occupant.vitality()*100)]%)")
 
-// TGUI migration. The view_stats sub-window (formerly
-// browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/equip_controls()
+	var/list/controls = list(list("key" = "view_stats", "label" = "View stats"))
+	if(src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER))
+		controls += list(list("key" = "eject", "label" = "Eject"))
+	return controls
 
-/// TOPIC_REF source: the equipment on the same exosuit.
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_chassis_equipment()
-	return chassis?.equipment
-
-/// TOPIC_REF source: the reagents held by the syringe guns on the same exosuit.
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_injectable_pool()
-	var/list/pool = list()
-	for(var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG in chassis?.equipment)
-		if(SG.reagents)
-			pool += SG.reagents.reagent_list
-	return pool
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(datum/act/op/A)
-	go_out()
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(datum/act/op/A, href_inject, href_source)
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = href_source
-	var/datum/reagent/R = href_inject
-	if(!SG || !R || !(R in SG.reagents?.reagent_list))
-		return
-	inject_reagent(R, SG)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/equip_press(mob/user, control, value)
+	switch(control)
+		if("view_stats")
+			tgui_interact(user)
+			return TRUE
+		if("eject")
+			go_out()
+			return TRUE
+	return FALSE
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	interface("MechaSleeper", title = "Mounted Sleeper")
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-	op("inject", ui_act("inject", arg("ref", schema_ref(/datum/reagent)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))), then(PROC_REF(ui_act_inject)))
-	op("topic_eject", topic("eject"), then(PROC_REF(topic_eject)))
-	op("view_stats", topic("view_stats"), then(PROC_REF(topic_view_stats)))
-	op("topic_inject", topic("inject", arg("inject", schema_ref(/datum/reagent), optional = TRUE, among = PROC_REF(topic_injectable_pool)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun), optional = TRUE, among = PROC_REF(topic_chassis_equipment))), then(PROC_REF(topic_inject)))
+	op("inject", ui_act("inject", arg("reagent", schema_text(64))), then(PROC_REF(ui_act_inject)))
 	every(1 SECOND, then(PROC_REF(sleeper_step)), when = nameof(sustaining))
 
 /// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
@@ -171,8 +151,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 		for(var/datum/reagent/R in SG.reagents.reagent_list)
 			if(R.volume > 0)
 				inj += list(list(
-					"ref" = "\ref[R]",
-					"source_ref" = "\ref[SG]",
+					"id" = R.id,
 					"name" = R.name,
 				))
 	data["injectables"] = inj
@@ -182,95 +161,18 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	go_out()
 	return TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_inject(datum/act/op/A, ref, source)
-	if(isnull(ref))
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_inject(datum/act/op/A, reagent)
+	if(!istext(reagent))
 		return FALSE
-	if(isnull(source))
+	// the window offers the reagents of the exosuit's syringe gun (the first one it carries)
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate_within(chassis, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	if(!SG?.reagents)
 		return FALSE
-	var/datum/reagent/R = ref
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = source
-	if(R && SG)
-		inject_reagent(R, SG)
-	return TRUE
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_stats()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	if(!occupant)
-		return
-	return {"<html>
-				<head>
-				<title>[occupant] statistics</title>
-				<script language='javascript' type='text/javascript'>
-				[JS_BYJAX]
-				</script>
-				<style>
-				h3 {margin-bottom:2px;font-size:14px;}
-				#lossinfo, #reagents, #injectwith {padding-left:15px;}
-				</style>
-				</head>
-				<body>
-				<h3>Health statistics</h3>
-				<div id="lossinfo">
-				[get_occupant_dam()]
-				</div>
-				<h3>Reagents in bloodstream</h3>
-				<div id="reagents">
-				[get_occupant_reagents()]
-				</div>
-				<div id="injectwith">
-				[get_available_reagents()]
-				</div>
-				</body>
-				</html>"}
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_dam()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	var/t1
-	switch(occupant.stat)
-		if(0)
-			t1 = "Conscious"
-		if(1)
-			t1 = "Unconscious"
-		if(2)
-			t1 = "*dead*"
-		else
-			t1 = "Unknown"
-	var/text = ""
-	var/vitality_pct = round(occupant.vitality()*100)
-	var/entry = span_bold("Health:") + " [vitality_pct]% ([t1])"
-	text += vitality_pct > 50 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
-
-	var/mob/living/_tmp_occ_4 = src?.slot_item(MECHA_SLOT_PILOT)
-	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.body_temperature()-T0C]&deg;C ([_tmp_occ_4.body_temperature()*1.8-459.67]&deg;F)"
-	text += occupant.body_temperature() > 50 ? span_blue(entry) : span_red(entry)
-	text += "<br />"
-
-	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
-	if(D)
-		text += D.render_chat()
-		text += "<br />"
-		spent(D)
-
-	return text
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_occupant_reagents()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	if(occupant.reagents)
-		for(var/datum/reagent/R in occupant.reagents.reagent_list)
-			if(R.volume > 0)
-				. += "[R]: [round(R.volume,0.01)]<br />"
-	return . || "None"
-
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/get_available_reagents()
-	var/output
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = locate(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun) in chassis.slot_contents()
-	if(SG && SG.reagents && islist(SG.reagents.reagent_list))
-		for(var/datum/reagent/R in SG.reagents.reagent_list)
-			if(R.volume > 0)
-				output += "<a href=\"?src=\ref[src];inject=\ref[R];source=\ref[SG]\">Inject [R.name]</a><br />"
-	return output
-
+	for(var/datum/reagent/R in SG.reagents.reagent_list)
+		if(R.id == reagent && R.volume > 0)
+			inject_reagent(R, SG)
+			return TRUE
+	return FALSE
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/inject_reagent(datum/reagent/R,obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
@@ -288,12 +190,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/update_equip_info()
-	if(..())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msleeper.browser","lossinfo",get_occupant_dam())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msleeper.browser","reagents",get_occupant_reagents())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msleeper.browser","injectwith",get_available_reagents())
-		return 1
-	return
+	SStgui.update_uis(src)
+	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/container_resist(mob/living)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)

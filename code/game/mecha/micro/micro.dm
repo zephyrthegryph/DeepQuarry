@@ -74,9 +74,6 @@
 	return
 
 
-/obj/mecha/micro/topic_close(datum/act/op/A)
-	am = null
-
 // override move_inside() so only micro crew can use them
 
 /obj/mecha/micro/move_inside(mob/user)

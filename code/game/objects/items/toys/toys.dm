@@ -2913,7 +2913,7 @@ CAPABILITIES(/obj/item/toy/partypopper)
 	icon_state = "acorn_branch"
 	w_class = ITEMSIZE_SMALL
 	EXPIRY_DECLARE(next_use)
-	var/registered_mob // Weak handle of the one person who may use it; a registrant who is gone leaves it registered (nobody else can use it).
+	var/registered_mob // Weak handle of the one person who may use it; a registrant who is gone frees the branch for the next person.
 
 CAPABILITIES(/obj/item/toy/acorn_branch)
 	ref_one(nameof(registered_mob), /mob/living/carbon/human, weak = TRUE)
@@ -2933,7 +2933,7 @@ CAPABILITIES(/obj/item/toy/acorn_branch)
 	if(!COOLDOWN_FINISHED(src, next_use))
 		to_chat(user, span_notice("You need to wait a bit longer before you can pull out another acorn."))
 		return OP_OK
-	if(registered_mob)
+	if(registered_mob())
 		if(registered_mob() != H)
 			to_chat(user, span_notice("It's a lovely branch!"))
 			return OP_OK

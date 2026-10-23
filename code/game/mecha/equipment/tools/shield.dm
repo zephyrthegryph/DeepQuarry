@@ -16,7 +16,6 @@
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 	setup(PROC_REF(configure_shield))
 	owns_one(nameof(my_shield), /obj/item/shield_projector/line/exosuit, starts = nameof(my_shield_type), starts_args = NO_LOC)
-	op("toggle_shield", topic("toggle_shield"), then(PROC_REF(topic_toggle_shield)))
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/proc/configure_shield()
 	my_shield.shield_regen_delay = equip_cooldown
@@ -70,10 +69,11 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 			src.mecha_log_message("Deactivated.")
 
 
-/obj/item/mecha_parts/mecha_equipment/combat_shield/proc/topic_toggle_shield(datum/act/op/A)
-	toggle_shield()
-	return
+/obj/item/mecha_parts/mecha_equipment/combat_shield/equip_controls()
+	return list(list("key" = "toggle_shield", "label" = "[my_shield.active ? "Deactivate" : "Activate"]"))
 
-/obj/item/mecha_parts/mecha_equipment/combat_shield/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_shield=1'>[my_shield.active?"Dea":"A"]ctivate</a>"
+/obj/item/mecha_parts/mecha_equipment/combat_shield/equip_press(mob/user, control, value)
+	if(control != "toggle_shield")
+		return FALSE
+	toggle_shield()
+	return TRUE

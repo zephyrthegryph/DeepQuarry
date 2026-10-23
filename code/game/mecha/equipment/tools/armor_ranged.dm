@@ -44,7 +44,3 @@
 	start_cooldown()
 	return max(0, inc_damage)
 
-/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name]"
-

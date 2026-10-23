@@ -5,6 +5,8 @@
 // /mob
 sparse(/mob, last_emote_summary, type = text)
 sparse(/mob, name_archive, type = text)
+sparse(/mob, lastattacker_name, type = text)
+sparse(/mob, lastattacker_key, type = text)
 sparse(/mob, floatiness, type = num)
 sparse(/mob, damageoverlaytemp, type = num)
 sparse(/mob, bhunger, type = num)

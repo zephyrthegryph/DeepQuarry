@@ -13,9 +13,9 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use dreammaker::ast::{AssignOp, Expression, Follow, Term};
+use dreammaker::ast::{AssignOp, Expression, Term};
 
-use crate::dm::value_procs::ValueProcs;
+use crate::dm::value_procs::{is_call, ValueProcs};
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Kinds, Place, ProcScope, Walker};
 use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
@@ -68,14 +68,13 @@ fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
     }
 }
 
-/// The value is the result of a proc call (a plain, global, or method call at the end of the chain).
-fn is_call(e: &Expression) -> bool {
-    let e = strip_parens(e);
-    let Expression::Base { term, follow } = e else { return false };
-    if let Some(last) = follow.last() {
-        return matches!(last.elem, Follow::Call(..));
+/// The name of the local the value is, when it is a bare local or parameter.
+fn local_name<'e>(sc: &ProcScope, e: &'e Expression) -> Option<&'e str> {
+    let Expression::Base { term, follow } = strip_parens(e) else { return None };
+    match &term.elem {
+        Term::Ident(n) if follow.is_empty() && sc.locals.contains_key(n.as_str()) => Some(n.as_str()),
+        _ => None,
     }
-    matches!(term.elem, Term::Call(..) | Term::GlobalCall(..))
 }
 
 impl Lint for Untyped {
@@ -124,6 +123,7 @@ impl Lint for Untyped {
                             }
                             let rule = match w.type_of(&sc, rhs) {
                                 Some(t) if kinds.is_ref(&t) => "typed",
+                                Some(t) if t.is_empty() && local_name(&sc, rhs).is_some_and(|n| values.local_holds_call(&sc, code, n)) => "call",
                                 Some(_) => return,
                                 None if is_call(rhs) && !values.is_value_call(&sc, rhs) => "call",
                                 None => return,

@@ -110,7 +110,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 		return
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.z == z)
-			singulo.target = src
+			rel_set(singulo, nameof(singulo.target), src)
 	set_icon_state("[icontype]1")
 	set_active(1)
 	if(user)
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 /obj/machinery/power/singularity_beacon/proc/Deactivate(mob/user = null)
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.target == src)
-			singulo.target = null
+			rel_clear(singulo, nameof(singulo.target))
 	set_icon_state("[icontype]0")
 	set_active(0)
 	if(user)

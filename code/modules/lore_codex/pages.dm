@@ -19,10 +19,6 @@ CAPABILITIES(/datum/lore/codex)
 	if(name)
 		keywords.Add(name)
 
-// Page links (quick links) are handled by the codex they belong to.
-/datum/lore/codex/topic_forward()
-	return holder()
-
 /datum/lore/codex/page
 
 // Returns an assoc list of keywords binded to a ref of this page.  If it's a category, it will also recursively call this on its children.

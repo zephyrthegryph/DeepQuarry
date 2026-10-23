@@ -9,7 +9,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/jetpack)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
-	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/attach_refusal(obj/mecha/M)
@@ -121,13 +120,16 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/jetpack)
 		return 0
 	return 1
 
-/obj/item/mecha_parts/mecha_equipment/tool/jetpack/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] \[<a href=\"?src=\ref[src];toggle=1\">Toggle</a>\]"
+TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, jetpack_buttons, list(list("key" = "toggle", "label" = "Toggle")))
 
+/obj/item/mecha_parts/mecha_equipment/tool/jetpack/equip_controls()
+	return TYPE_TABLE_GET(src, jetpack_buttons)
 
-/obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/topic_toggle(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/jetpack/equip_press(mob/user, control, value)
+	if(control != "toggle")
+		return FALSE
 	toggle()
+	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/do_after_cooldown()
 	after(src, equip_cooldown, PROC_REF(cooldown_over))

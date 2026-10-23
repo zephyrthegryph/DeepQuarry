@@ -60,27 +60,29 @@
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
-CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun)
-	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
-
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(datum/act/op/A, href_mode)
-	if(isnum(href_mode))
-		mode = href_mode
-		switch(mode)
-			if(0)
-				occupant_message("Now firing buckshot.")
-				projectile = /obj/item/projectile/scatter/shotgun
-			if(1)
-				occupant_message("Now firing beanbags.")
-				projectile = /obj/item/projectile/bullet/shotgun/beanbag
-			if(2)
-				occupant_message("Now firing slugs.")
-				projectile = /obj/item/projectile/bullet/shotgun
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/set_shell_mode(new_mode)
+	mode = new_mode
+	switch(mode)
+		if(0)
+			occupant_message("Now firing buckshot.")
+			projectile = /obj/item/projectile/scatter/shotgun
+		if(1)
+			occupant_message("Now firing beanbags.")
+			projectile = /obj/item/projectile/bullet/shotgun/beanbag
+		if(2)
+			occupant_message("Now firing slugs.")
+			projectile = /obj/item/projectile/bullet/shotgun
 
 	return
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/get_equip_info()
-	return "[..()] \[<a href='byond://?src=\ref[src];mode=0'>BS</a>|<a href='byond://?src=\ref[src];mode=1'>BB</a>|<a href='byond://?src=\ref[src];mode=2'>S</a>\]"
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/equip_controls()
+	return ..() + list(list("key" = "mode", "label" = "BS", "value" = 0), list("key" = "mode", "label" = "BB", "value" = 1), list("key" = "mode", "label" = "S", "value" = 2))
+
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/equip_press(mob/user, control, value)
+	if(control == "mode" && isnum(value))
+		set_shell_mode(value)
+		return TRUE
+	return ..()
 
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/microflashbang
@@ -187,10 +189,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill/micro)
 	return 1
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop)
-	op("empty_box", topic("empty_box"), then(PROC_REF(topic_empty_box)))
 	op("orescoop_empty_box", menu(), label("Empty Ore compartment"), needs(req_adjacent(), req_capable()), then(PROC_REF(orescoop_empty_box)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/empty_ore_compartment()
 	if(contents_count(src) < 1)
 		occupant_message("The ore compartment is empty.")
 		return
@@ -198,8 +199,16 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop)
 		O.forceMove(chassis.loc)
 	occupant_message("Ore compartment emptied.")
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/get_equip_info()
-	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"
+TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, orescoop_buttons, list(list("key" = "empty_box", "label" = "Empty ore compartment")))
+
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/equip_controls()
+	return TYPE_TABLE_GET(src, orescoop_buttons)
+
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/equip_press(mob/user, control, value)
+	if(control != "empty_box")
+		return FALSE
+	empty_ore_compartment()
+	return TRUE
 
 
 /// Old verb "Empty Ore compartment": so you can still get the ore out if someone detaches it from the mech.

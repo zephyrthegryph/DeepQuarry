@@ -6,12 +6,6 @@
 /obj/interim_micro_passenger_actor_click/Click(location, control, params)
 	test_menu(actor, mech, "mecha_enter_passenger")
 
-/// A passenger bay whose hatch link is open to the clientless test actor: the real equipment gate admits only the conscious pilot, which is not what the boarding checks.
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe
-
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe/topic_usable(datum/act/op/A)
-	return (!!A.actor && !A.actor.stat) ? null : MSG(op/topic_gate)
-
 /datum/unit_test/interim_micro_passenger_actor/Run()
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
@@ -25,7 +19,7 @@
 	TEST_ASSERT(actor.get_effective_size(TRUE) < 0.5, "actual resize produces a human admitted by the existing micro size gate")
 	TEST_ASSERT(bystander.get_effective_size(TRUE) >= 0.5, "actual unrelated human fails the unchanged micro size gate")
 	var/obj/mecha/micro/utility/gopher/mech = allocate(/obj/mecha/micro/utility/gopher, T)
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/bay = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe, T)
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/bay = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger, T)
 	TEST_ASSERT(isnull(bay.attach_refusal(mech)), "actual passenger component fits the real hull equipment capacity")
 	bay.attach(mech)
 	TEST_ASSERT_EQUAL(bay.chassis, mech, "actual attachment associates the exact chassis")
@@ -43,7 +37,7 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "real locked compartment refuses actual small-human boarding")
 	TEST_ASSERT_EQUAL(actor.loc, T, "real lock refusal preserves the actual resized human floor")
-	perform_op(actor, bay, "toggle_lock", null, ORIGIN_SYSTEM) // the hatch control link, as the system (the pilot gate is the link's, not the hatch's)
+	TEST_ASSERT(bay.equip_press(actor, "toggle_lock", null), "the hatch's own lock button is one the compartment offers") // the pilot gate is the exosuit window's, not the hatch's
 	TEST_ASSERT(!bay.door_locked, "actual existing hatch control unlocks the real mounted compartment")
 	actor.forceMove(far)
 	TEST_ASSERT(!actor.Adjacent(mech), "the actual distant resized human fails the parent proximity guard")

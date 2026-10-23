@@ -12,10 +12,6 @@
 
 	equip_type = EQUIP_HULL
 
-/obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name]"
-
 /obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster/handle_melee_contact(obj/item/W, mob/living/user, inc_damage = null)
 	if(!action_checks(user))
 		return inc_damage
