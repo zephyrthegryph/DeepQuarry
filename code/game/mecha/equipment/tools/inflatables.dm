@@ -18,20 +18,19 @@
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables)
 	setup(PROC_REF(link_deployer))
 	ref_one(nameof(my_deployer))
-	op("toggle_deployable_mode", topic("toggle_deployable_mode"), then(PROC_REF(topic_toggle_deployable_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/topic_toggle_deployable_mode(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/equip_info_lines()
+	return list("Doors left: [my_deployer().stored_doors]/[my_deployer().max_doors]", "Walls left: [my_deployer().stored_walls]/[my_deployer().max_walls]")
+
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/equip_controls()
+	return list(list("key" = "toggle_deployable_mode", "label" = "Deploy [my_deployer().mode ? "Door" : "Wall"]"))
+
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/equip_press(mob/user, control, value)
+	if(control != "toggle_deployable_mode")
+		return FALSE
 	my_deployer().attack_self()
 	update_chassis_page()
-	return
-
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/get_equip_info()
-	if(!chassis) return
-	var/data_return = (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"] - <a href='byond://?src=\ref[src];toggle_deployable_mode=1'>Deploy [my_deployer().mode?"Door":"Wall"]</a><br>\
-	&nbsp; - Doors left: " + span_yellow("[my_deployer().stored_doors]") + "/[my_deployer().max_doors]<br>\
-	&nbsp; - Walls left: " + span_yellow("[my_deployer().stored_walls]") + "/[my_deployer().max_walls]"
-
-	return data_return
+	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/action(atom/target, params)
 	if(!action_checks(target))

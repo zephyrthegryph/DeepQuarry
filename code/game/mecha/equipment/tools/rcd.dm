@@ -11,7 +11,6 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/rcd)
 	owns_one(nameof(my_rcd), starts = /obj/item/rcd/electric/mounted/mecha)
-	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)
@@ -21,22 +20,20 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/rcd)
 	my_rcd.use_rcd(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
 
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/proc/topic_mode(datum/act/op/A, href_mode)
-	if(isnum(href_mode))
-		my_rcd.mode_index = href_mode
-		occupant_message("RCD reconfigured to '[LAZYACCESS(TYPE_TABLE_GET(my_rcd, rcd_modes), my_rcd.mode_index)]'.")
-/*
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()
-	return "[..()] \[<a href='byond://?src=\ref[src];mode=0'>D</a>|<a href='byond://?src=\ref[src];mode=1'>C</a>|<a href='byond://?src=\ref[src];mode=2'>A</a>\]"
-*/
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()
-	var/list/content = list(..()) // This is all for one line, in the interest of string tree conservation.
-	var/i = 1
-	content += "<br>"
-	for(var/mode in TYPE_TABLE_GET(my_rcd, rcd_modes))
-		content += "     <a href='byond://?src=\ref[src];mode=[i]'>[mode]</a>"
-		if(i < length(TYPE_TABLE_GET(my_rcd, rcd_modes)))
-			content += "<br>"
-		i++
+/obj/item/mecha_parts/mecha_equipment/tool/rcd/proc/set_rcd_mode(new_mode)
+	my_rcd.mode_index = new_mode
+	occupant_message("RCD reconfigured to '[LAZYACCESS(TYPE_TABLE_GET(my_rcd, rcd_modes), my_rcd.mode_index)]'.")
 
-	return content.Join()
+/obj/item/mecha_parts/mecha_equipment/tool/rcd/equip_controls()
+	var/list/controls = list()
+	var/i = 1
+	for(var/mode in TYPE_TABLE_GET(my_rcd, rcd_modes))
+		controls += list(list("key" = "mode", "label" = "[mode]", "value" = i))
+		i++
+	return controls
+
+/obj/item/mecha_parts/mecha_equipment/tool/rcd/equip_press(mob/user, control, value)
+	if(control != "mode" || !isnum(value))
+		return FALSE
+	set_rcd_mode(value)
+	return TRUE

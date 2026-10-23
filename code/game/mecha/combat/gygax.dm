@@ -33,16 +33,8 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/gas, \
 		/obj/item/mecha_parts/component/electrical \
 		))
-/obj/mecha/combat/gygax/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_leg_overload=1'>Toggle leg actuators overload</a>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/combat/gygax/ui_commands()
+	return ..() + list(list("key" = "toggle_leg_overload", "label" = "Toggle leg actuators overload"))
 
 
 /obj/mecha/combat/gygax/dark

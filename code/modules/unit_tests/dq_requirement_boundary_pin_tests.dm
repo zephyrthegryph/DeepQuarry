@@ -1119,20 +1119,19 @@
 
 /datum/unit_test/dq_requirement_eighth_boundary/topic_inherited_parent/Run()
 	var/mob/living/carbon/human/external = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/pilot = allocate(/mob/living/carbon/human, external.loc)
+	var/mob/living/carbon/human/dq_tgui_transport/pilot = allocate(/mob/living/carbon/human/dq_tgui_transport, external.loc)
+	pilot.enable_godmode()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, external.loc)
 	TEST_ASSERT_NULL(external.client, "The external actor really has no attached client")
 	var/datum/act/op/A = take(/datum/act/op)
 	A.actor = external
 	A.holder = mech
 	A.target = mech
-	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A real nonpilot preserves parent denial")
+	TEST_ASSERT_EQUAL(mech.tgui_status(external, mech.tgui_state(external)), STATUS_CLOSE, "A real nonpilot preserves parent denial")
 	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot, pilot), "The real containment API establishes a pilot")
 	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), pilot, "The real slot identifies that pilot")
-	A.actor = pilot
-	TEST_ASSERT_NULL(mech.topic_usable(A), "The actual pilot is allowed through the pilot exception")
-	A.actor = external
-	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A different actor remains refused after boarding")
+	TEST_ASSERT_EQUAL(mech.tgui_status(pilot, mech.tgui_state(pilot)), STATUS_INTERACTIVE, "The actual pilot works the exosuit's window")
+	TEST_ASSERT_EQUAL(mech.tgui_status(external, mech.tgui_state(external)), STATUS_CLOSE, "A different actor remains refused after boarding")
 	for(var/type in list(/obj/item/rcd, /obj/item/areaeditor, /obj/item/sleevemate))
 		var/obj/item/I = allocate(type, external.loc)
 		A.holder = I

@@ -182,7 +182,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 	if(!chassis.selected)
 		rel_set(chassis, nameof(chassis.selected), available_equipment[1])
 		chassis.occupant_message("You select [chassis.selected]")
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
+		SStgui.update_uis(chassis)
 		button_icon_state = "mech_cycle_equip_on"
 		build_all_button_icons()
 		return
@@ -198,7 +198,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 				rel_set(chassis, nameof(chassis.selected), available_equipment[number+1])
 				chassis.occupant_message("You switch to [chassis.selected]")
 				button_icon_state = "mech_cycle_equip_on"
-			send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
+			SStgui.update_uis(chassis)
 			build_all_button_icons()
 			return
 
@@ -396,8 +396,7 @@ CAPABILITIES(/datum/action/innate/mecha)
 /obj/mecha/proc/phasing(mob/user)
 	if(user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
-	phasing = !phasing
-	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","phasing_command","[phasing?"Dis":"En"]able phasing")
+	set_phasing(!phasing)
 	if(phasing)
 		src.occupant_message(span_blue("Enabled phasing."))
 	else

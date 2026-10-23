@@ -24,10 +24,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
 	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
-	op("toggle_mode", topic("toggle_mode"), then(PROC_REF(topic_toggle_mode)))
-	op("show_reagents", topic("show_reagents"), then(PROC_REF(topic_show_reagents)))
-	op("topic_purge_reagent", topic("purge_reagent", arg("purge_reagent", schema_text(64), optional = TRUE)), then(PROC_REF(topic_purge_reagent)))
-	op("topic_purge_all", topic("purge_all"), then(PROC_REF(topic_purge_all)))
 	every(0.2 SECONDS, then(PROC_REF(syringe_gun_step)), when = nameof(synthesizing))
 
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
@@ -59,11 +55,21 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	flags &= ~NOREACT
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/get_equip_info()
-	var/output = ..()
-	if(output)
-		return "[output] \[<a href=\"?src=\ref[src];toggle_mode=1\">[mode? "Analyze" : "Launch"]</a>\]<br />\[Syringes: [length(syringes)]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]\]<br /><a href='byond://?src=\ref[src];show_reagents=1'>Reagents list</a>"
-	return
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/equip_info_lines()
+	return list("Mode: [mode ? "Analyze" : "Launch"]", "Syringes: [length(syringes)]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]")
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/equip_controls()
+	return list(list("key" = "toggle_mode", "label" = "[mode ? "Analyze" : "Launch"]"), list("key" = "show_reagents", "label" = "Reagents list"))
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/equip_press(mob/user, control, value)
+	switch(control)
+		if("toggle_mode")
+			toggle_mode()
+			return TRUE
+		if("show_reagents")
+			tgui_interact(user)
+			return TRUE
+	return FALSE
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/action(atom/movable/target)
 	if(!action_checks(target))
@@ -101,22 +107,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 
 // The legacy reagent-selection form is gone (MechaSyringeGun.tsx selects via tgui_act).
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(datum/act/op/A)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/toggle_mode()
 	mode = !mode
 	update_equip_info()
-
-// TGUI: structured reagent management UI (MechaSyringeGun.tsx).
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(datum/act/op/A, href_purge_reagent)
-	var/reagent = href_purge_reagent
-	if(reagent)
-		reagents.del_reagent(reagent)
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(datum/act/op/A)
-	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
 
@@ -185,65 +178,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	reagents.clear_reagents()
 	return TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_reagents_page()
-	var/output = {"<html>
-						<head>
-						<title>Reagent Synthesizer</title>
-						<script language='javascript' type='text/javascript'>
-						[JS_BYJAX]
-						</script>
-						<style>
-						h3 {margin-bottom:2px;font-size:14px;}
-						#reagents, #reagents_form {}
-						form {width: 90%; margin:10px auto; border:1px dotted #999; padding:6px;}
-						#submit {margin-top:5px;}
-						</style>
-						</head>
-						<body>
-						<h3>Current reagents:</h3>
-						<div id="reagents">
-						[get_current_reagents()]
-						</div>
-						<h3>Reagents production:</h3>
-						<div id="reagents_form">
-						[get_reagents_form()]
-						</div>
-						</body>
-						</html>
-						"}
-	return output
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_reagents_form()
-	var/r_list = get_reagents_list()
-	var/inputs
-	if(r_list)
-		inputs += "<input type=\"hidden\" name=\"src\" value=\"\ref[src]\">"
-		inputs += "<input type=\"hidden\" name=\"select_reagents\" value=\"1\">"
-		inputs += "<input id=\"submit\" type=\"submit\" value=\"Apply settings\">"
-	var/output = {"<form action="byond://" method="get">
-						[r_list || "No known reagents"]
-						[inputs]
-						</form>
-						[r_list? "<span style=\"font-size:80%;\">Only the first [synth_speed] selected reagent\s will be added to production</span>" : null]
-						"}
-	return output
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_reagents_list()
-	var/output
-	for(var/i=1 to known_reagents.len)
-		var/reagent_id = known_reagents[i]
-		output += {"<input type="checkbox" value="[reagent_id]" name="reagent_[i]" [(reagent_id in processed_reagents)? "checked=\"1\"" : null]> [known_reagents[reagent_id]]<br />"}
-	return output
-
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_current_reagents()
-	var/output
-	for(var/datum/reagent/R in reagents.reagent_list)
-		if(R.volume > 0)
-			output += "[R]: [round(R.volume,0.001)] - <a href=\"?src=\ref[src];purge_reagent=[R.id]\">Purge Reagent</a><br />"
-	if(output)
-		output += "Total: [round(reagents.total_volume,0.001)]/[reagents.maximum_volume] - <a href=\"?src=\ref[src];purge_all=1\">Purge All</a>"
-	return output || "None"
-
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/load_syringe(obj/item/reagent_containers/syringe/S)
 	if(length(syringes) < max_syringes)
 		if(get_dist(src,S) >= 2)
@@ -280,7 +214,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 			occupant_message("Reagent \"[R.name]\" already present in database, skipping.")
 		else if(R.reagent_state == 2 && add_known_reagent(R.id,R.name))
 			occupant_message("Reagent analyzed, identified as [R.name] and added to database.")
-			send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msyringegun.browser","reagents_form",get_reagents_form())
+			SStgui.update_uis(src)
 		else
 			occupant_message("Reagent \"[R.name]\" unable to be scanned, skipping.")
 	//VOREstation Block Edit - End
@@ -298,11 +232,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/update_equip_info()
-	if(..())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msyringegun.browser","reagents",get_current_reagents())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"msyringegun.browser","reagents_form",get_reagents_form())
-		return 1
-	return
+	SStgui.update_uis(src)
+	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/on_reagent_change()
 	..()
@@ -354,7 +285,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 	owns_one(nameof(MyBeam), /datum/beam)
 	ref_one(nameof(Target))
-	op("toggle_drone", topic("toggle_drone"), then(PROC_REF(topic_toggle_drone)))
 	every(2 SECONDS, then(PROC_REF(crisis_drone_step)), when = not(nameof(jammed)))
 
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
@@ -499,13 +429,14 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 	look.overlay(droid_state, enabled, icon)
 
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(datum/act/op/A)
-	toggle_drone()
-	return
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/equip_controls()
+	return list(list("key" = "toggle_drone", "label" = "[enabled ? "Deactivate" : "Activate"]"))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_drone=1'>[enabled?"Dea":"A"]ctivate</a>"
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/equip_press(mob/user, control, value)
+	if(control != "toggle_drone")
+		return FALSE
+	toggle_drone()
+	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/rad
 	name = "hazmat dronebay"

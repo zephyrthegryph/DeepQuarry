@@ -94,22 +94,8 @@ TYPE_TABLE(/obj/mecha/combat/gorilla, mecha_starting_equipment, list( \
 		return 1
 	return 0
 
-/obj/mecha/combat/gorilla/get_stats_part()
-	var/output = ..()
-	output += span_bold("Smoke:") + {"[smoke_reserve]"}
-	return output
-
-/obj/mecha/combat/gorilla/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_zoom=1'>Toggle zoom mode</a><br>
-						<a href='byond://?src=\ref[src];smoke=1'>Smoke</a>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/combat/gorilla/ui_commands()
+	return ..() + list(list("key" = "toggle_zoom", "label" = "Toggle zoom mode"), list("key" = "smoke", "label" = "Smoke"))
 
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/cannon
 	name = "8.8cm KwK 47"

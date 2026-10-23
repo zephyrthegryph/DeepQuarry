@@ -48,16 +48,17 @@
 /obj/item/mecha_parts/mecha_equipment/proc/equip_look(datum/look/look)
 	return
 
+/// The exosuit's window lists its equipment: it is sent again.
 /obj/item/mecha_parts/mecha_equipment/proc/update_chassis_page()
 	if(chassis)
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","equipment_menu",chassis.get_equipment_menu(),"dropdowns")
+		SStgui.update_uis(chassis)
 		return 1
 	return
 
+/// This equipment's entry in the exosuit's window changed: the window is sent again.
 /obj/item/mecha_parts/mecha_equipment/proc/update_equip_info()
 	if(chassis)
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",get_equip_info())
+		SStgui.update_uis(chassis)
 		return 1
 	return
 
@@ -116,9 +117,17 @@
 		src.mecha_log_message("Critical failure",1)
 	return
 
-/obj/item/mecha_parts/mecha_equipment/proc/get_equip_info()
-	if(!chassis) return
-	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"]"
+/// The status lines the exosuit's window shows under this equipment (plain text); a type adds its own readouts.
+/obj/item/mecha_parts/mecha_equipment/proc/equip_info_lines()
+	return list()
+
+/// The buttons the exosuit's window shows on this equipment: a list of list("key" = ..., "label" = ...). A type adds its own.
+/obj/item/mecha_parts/mecha_equipment/proc/equip_controls()
+	return list()
+
+/// A button of equip_controls() was pressed by `user`, the pilot; `value` is the number a mode button sent. TRUE once it was handled.
+/obj/item/mecha_parts/mecha_equipment/proc/equip_press(mob/user, control, value)
+	return FALSE
 
 /obj/item/mecha_parts/mecha_equipment/proc/is_ranged()//add a distance restricted equipment. Why not?
 	return range&RANGED
@@ -268,21 +277,10 @@ MSG_DEF_SELF(mecha/weapon_needs_combat, "Only a combat exosuit can mount a weapo
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
 	configure(item_combat(force = 5))
 	ref_one(nameof(chassis))
-	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
-
-// Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
-/obj/item/mecha_parts/mecha_equipment/topic_usable(datum/act/op/A)
-	if(!chassis || !A.actor || A.actor.stat)
-		return MSG(op/topic_gate)
-	return (A.actor == chassis.slot_item(MECHA_SLOT_PILOT)) ? null : MSG(op/topic_gate)
-
-/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(datum/act/op/A)
-	detach()
 
 /obj/item/mecha_parts/mecha_equipment/proc/set_ready_state(state)
 	set_equip_ready(state)
-	if(chassis)
-		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
+	update_equip_info()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/occupant_message(message)
