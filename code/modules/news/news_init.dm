@@ -8,11 +8,12 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lore/news)
 /datum/lore/news
 	var/tmp/datum/feed_channel/station_newspaper
-	var/datum/lore/codex/category/main_news/news_codex = new()
+	var/datum/lore/codex/category/main_news/news_codex
 	var/newsindex
 
 /datum/lore/news/New()
 	..()
+	rel_set(src, nameof(news_codex), new /datum/lore/codex/category/main_news)
 	after(src, 5 SECONDS, PROC_REF(find_station_newspaper)) //Give it a second or it gets fucky.
 	after(src, 30 SECONDS, PROC_REF(fill_codex_news)) // Yes, again.
 	if (!news_codex.newsindex)
@@ -48,3 +49,4 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lore/news)
 
 CAPABILITIES(/datum/lore/news)
 	ref_one(nameof(station_newspaper))
+	owns_one(nameof(news_codex), /datum/lore/codex/category/main_news)
