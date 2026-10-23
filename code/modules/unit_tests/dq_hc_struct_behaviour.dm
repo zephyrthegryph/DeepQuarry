@@ -205,10 +205,10 @@
 	S.space = P.w_class
 	var/list/data = hc_data(S, H)
 	TEST_ASSERT_EQUAL(length(data["contents"]), 1, "the window lists what is inside")
-	press(H, S, "retrieve", list("ref" = "\ref[P]"))
+	press(H, S, "retrieve", list("ref" = ref_token(P)))
 	TEST_ASSERT_EQUAL(P.loc, S, "a closed safe keeps it")
 	S.set_open(TRUE)
-	press(H, S, "retrieve", list("ref" = "\ref[P]"))
+	press(H, S, "retrieve", list("ref" = ref_token(P)))
 	TEST_ASSERT_EQUAL(P.loc, H, "an open one hands it over")
 	TEST_ASSERT_EQUAL(S.space, 0, "and has the room back")
 

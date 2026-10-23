@@ -21,7 +21,7 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	configure(light_glow(color = "#e6ffff"))
 	after_init(0, then(PROC_REF(listen_alarms)))
 	interface("AtmosAlertConsole")
-	op("clear", ui_act("clear", arg("ref")), then(PROC_REF(ui_act_clear)))
+	op("clear", ui_act("clear", arg("ref", schema_text(32))), then(PROC_REF(ui_act_clear)))
 
 /obj/machinery/computer/atmos_alert/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -29,10 +29,10 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	var/list/minor_alarms = list()
 
 	for(var/datum/alarm/alarm in GLOB.atmosphere_alarm.major_alarms(get_z(src)))
-		major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
+		major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = ref_token(alarm))
 
 	for(var/datum/alarm/alarm in GLOB.atmosphere_alarm.minor_alarms(get_z(src)))
-		minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
+		minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = ref_token(alarm))
 
 	data["priority_alarms"] = major_alarms
 	data["minor_alarms"] = minor_alarms
@@ -55,8 +55,15 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 		else
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR)
 
+/// The alarms the window lists: the major and the minor ones this console's level shows.
+/obj/machinery/computer/atmos_alert/proc/listed_alarms()
+	var/list/listed = list()
+	listed += GLOB.atmosphere_alarm.major_alarms(get_z(src))
+	listed += GLOB.atmosphere_alarm.minor_alarms(get_z(src))
+	return listed
+
 /obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, ref)
-	var/datum/alarm/alarm = ui_ref(ref, GLOB.atmosphere_alarm.alarms, /datum/alarm)
+	var/datum/alarm/alarm = ui_member(ref, listed_alarms(), /datum/alarm)
 	if(alarm)
 		for(var/datum/alarm_source/alarm_source in alarm.sources)
 			var/obj/machinery/alarm/air_alarm = alarm_source.source

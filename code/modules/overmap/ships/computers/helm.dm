@@ -37,7 +37,7 @@ CAPABILITIES(/obj/machinery/computer/ship/helm)
 		asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry x coordinate", "default" = computed(PROC_REF(add_x_default)), "max_value" = computed(PROC_REF(map_max_x)), "min_value" = 1, "timeout" = 0), step = "x", when = PROC_REF(add_is_new)),
 		asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new entry y coordinate", "default" = computed(PROC_REF(add_y_default)), "max_value" = computed(PROC_REF(map_max_y)), "min_value" = 1, "timeout" = 0), step = "y", when = PROC_REF(add_is_new)),
 		then(PROC_REF(ui_act_add)))
-	op("remove", ui_act("remove", arg("remove", schema_ref(/datum/computer_file/data/waypoint))), then(PROC_REF(ui_act_remove)))
+	op("remove", ui_act("remove", arg("remove", schema_text(32))), then(PROC_REF(ui_act_remove)))
 	op("setcoord", ui_act("setcoord", arg("setx", bool()), arg("sety", bool())),
 		asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation x coordinate", "default" = computed(PROC_REF(setcoord_x_default)), "max_value" = computed(PROC_REF(map_max_x)), "min_value" = 1, "timeout" = 0), step = "x", when = PROC_REF(setcoord_x)),
 		asks(/datum/prompt/number, fields = list("title" = "Coordinate input", "question" = "Input new destiniation y coordinate", "default" = computed(PROC_REF(setcoord_y_default)), "max_value" = computed(PROC_REF(map_max_y)), "min_value" = 1, "timeout" = 0), step = "y", when = PROC_REF(setcoord_y)),
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 		rdata["name"] = R.fields["name"]
 		rdata["x"] = R.fields["x"]
 		rdata["y"] = R.fields["y"]
-		rdata["reference"] = "\ref[R]"
+		rdata["reference"] = ref_token(R)
 		locations.Add(list(rdata))
 
 	data["locations"] = locations
@@ -244,11 +244,19 @@ CAPABILITIES(/obj/machinery/computer/ship/helm/adv)
 	helm_terminal_feedback(user)
 	return TRUE
 
-/obj/machinery/computer/ship/helm/proc/ui_act_remove(datum/act/op/A, datum/computer_file/data/waypoint/remove)
+/// The waypoint a handle names: one of this console's own entries.
+/obj/machinery/computer/ship/helm/proc/waypoint_of(handle)
+	var/list/entries = list()
+	for(var/key in known_sectors)
+		entries += LAZYACCESS(known_sectors, key)
+	return ui_member(handle, entries, /datum/computer_file/data/waypoint)
+
+/obj/machinery/computer/ship/helm/proc/ui_act_remove(datum/act/op/A, remove)
 	if(!ui_gate(A))
 		return FALSE
-	if(istype(remove) && LAZYACCESS(known_sectors, remove.fields["name"]) == remove) // only our own entries
-		rel_add(src, nameof(known_sectors), null, remove.fields["name"]) // disposes of the owned record
+	var/datum/computer_file/data/waypoint/entry = waypoint_of(remove)
+	if(entry && LAZYACCESS(known_sectors, entry.fields["name"]) == entry) // only our own entries
+		rel_add(src, nameof(known_sectors), null, entry.fields["name"]) // disposes of the owned record
 	helm_terminal_feedback(A.actor)
 	return TRUE
 
