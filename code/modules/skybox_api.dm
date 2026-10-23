@@ -9,6 +9,18 @@
 	RETURN_TYPE(/datum/system/skybox)
 	return ..()
 
+/// The map-edge appearance for an edge key (the static cache, read through the typed system).
+/datum/system/skybox/proc/mapedge_appearance(key)
+	return mapedge_cache[key]
+
+/// The dust appearance for a dust key.
+/datum/system/skybox/proc/dust_appearance(key)
+	return dust_cache[key]
+
+/// dust_cache as a flat list (see dust_by_index).
+/datum/system/skybox/proc/dust_appearance_index()
+	return dust_by_index
+
 /datum/system/skybox/proc/get_skybox(z)
 	if(!skybox_cache["[z]"])
 		skybox_cache["[z]"] = generate_skybox(z)

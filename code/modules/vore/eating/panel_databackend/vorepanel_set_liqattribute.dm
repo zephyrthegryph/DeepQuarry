@@ -33,10 +33,10 @@
 /datum/vore_look/proc/liq_b_liq_reagent_type(mob/user, list/params, extra)
 	var/new_reagent = params["val"]
 	var/obj/belly/selected_belly = vore_selected_of(host())
-	if(!(new_reagent in selected_belly.reagent_choices))
+	if(!(new_reagent in selected_belly.reagent_choices_table()))
 		return FALSE
 
-	selected_belly.reagent_chosen = new_reagent
+	vore_selected_of(host()).reagent_chosen = new_reagent
 	selected_belly.ReagentSwitch() // For changing variables when a new reagent is chosen
 	. = TRUE
 	if(.)
@@ -112,7 +112,7 @@
 	if(!reagent_toggle_addon)
 		return FALSE
 	var/obj/belly/selected_belly = vore_selected_of(host())
-	selected_belly.reagent_mode_flags ^= selected_belly.reagent_mode_flag_list[reagent_toggle_addon]
+	vore_selected_of(host()).reagent_mode_flags ^= selected_belly.reagent_mode_flag_list_table()[reagent_toggle_addon]
 	. = TRUE
 	if(.)
 		set_unsaved_changes(TRUE)

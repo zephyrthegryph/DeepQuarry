@@ -109,7 +109,7 @@ See Also:
 */
 /datum/n_Parser/nS_Parser/proc/GetBinaryOperator(O)
 	var/datum/n_scriptOptions/nS_Options/script_options = options()
-	return GetOperator(O, /datum/node/expression/op/binary, script_options.binary_operators)
+	return GetOperator(O, /datum/node/expression/op/binary, script_options.binary_operator_table())
 
 /*
 Proc: GetUnaryOperator
@@ -122,7 +122,7 @@ See Also:
 */
 /datum/n_Parser/nS_Parser/proc/GetUnaryOperator(O)
 	var/datum/n_scriptOptions/nS_Options/script_options = options()
-	return GetOperator(O, /datum/node/expression/op/unary,  script_options.unary_operators)
+	return GetOperator(O, /datum/node/expression/op/unary,  script_options.unary_operator_table())
 
 /*
 Proc: Reduce

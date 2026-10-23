@@ -95,6 +95,18 @@ associated values are <nS_Keyword> types of which the <n_Keyword.Parse()> proc w
 		"^"		= /datum/node/expression/op/binary/Power,
 		"%"		= /datum/node/expression/op/binary/Modulo)
 
+/// The binary operator table (the static of this type, read through a typed receiver).
+/datum/n_scriptOptions/nS_Options/proc/binary_operator_table()
+	return binary_operators
+
+/// The unary operator table.
+/datum/n_scriptOptions/nS_Options/proc/unary_operator_table()
+	return unary_operators
+
+/// The binary operator type an assignment token (`+=`, `=`, ...) applies, or null.
+/datum/n_scriptOptions/nS_Options/proc/assign_binary_operator(token)
+	return binary_operators[assign_operators[token]]
+
 /datum/n_scriptOptions/nS_Options/New()
 	.=..()
 	for(var/O in assign_operators+binary_operators+unary_operators)
