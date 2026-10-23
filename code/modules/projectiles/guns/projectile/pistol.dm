@@ -308,13 +308,26 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	load_method = SINGLE_CASING
 	max_shells = 1 //literally just a barrel
 
-/obj/item/gun/projectile/pirate/Initialize(mapload)
-	ammo_type = pick(GLOB.global_ammo_types)
-	desc += " Uses [GLOB.global_ammo_types[ammo_type]] rounds."
+CAPABILITIES(/obj/item/gun/projectile/pirate)
+	rolls(nameof(ammo_type), PROC_REF(roll_ammo_type))
+	rolls(nameof(caliber), PROC_REF(roll_caliber), from = nameof(ammo_type))
+	rolls(nameof(desc), PROC_REF(roll_desc), from = nameof(ammo_type))
 
+/// A zip gun is chambered for any of the known casings.
+/obj/item/gun/projectile/pirate/proc/roll_ammo_type(datum/roller/R)
+	var/list/casings = list()
+	for(var/casing in GLOB.global_ammo_types)
+		casings += casing
+	return R.choose(casings)
+
+/// It takes the caliber of the casing it was chambered for.
+/obj/item/gun/projectile/pirate/proc/roll_caliber(datum/roller/R)
 	var/obj/item/ammo_casing/ammo = ammo_type
-	caliber = initial(ammo.caliber)
-	. = ..()
+	return initial(ammo.caliber)
+
+/// Its description names the rounds it was chambered for.
+/obj/item/gun/projectile/pirate/proc/roll_desc(datum/roller/R)
+	return "[desc] Uses [GLOB.global_ammo_types[ammo_type]] rounds."
 
 /*
  * Derringer
