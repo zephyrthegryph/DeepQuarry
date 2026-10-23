@@ -64,8 +64,8 @@
 	var/clamped = FALSE
 	var/salved = FALSE
 	var/disinfected = FALSE
-	/// world.time the wound was made.
-	EXPIRY_DECLARE(created)
+	/// When it was made, on the scheduler clock (scheduler_time_of()).
+	var/created = 0
 	/// Number of merged wounds of this type.
 	var/amount = 1
 	var/germ_level = 0
@@ -87,7 +87,9 @@
 /datum/affliction/wound/New(location, initial_damage = 0)
 	..()
 	wound_category = injury_category
-	EXPIRY_STAMP(src, created, CLOCK_WORLD)
+	// The scheduler's time (world.time in play, the injected clock under a test): the clock the fade timer and its check read.
+	var/made_at = scheduler_time_of(src)
+	created = made_at
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage
@@ -156,7 +158,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		if(BEFORE(src, created + 10 MINUTES, CLOCK_WORLD)) // Wounds don't autoheal for ten minutes if not bandaged.
+		if(created + 10 MINUTES > scheduler_time_of(src)) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE
 	return FALSE
