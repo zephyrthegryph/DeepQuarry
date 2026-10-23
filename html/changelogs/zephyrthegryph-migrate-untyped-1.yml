@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The untyped lint treats initial(), md5() and other value-returning calls as values; 209 untyped rows leave its baseline"
