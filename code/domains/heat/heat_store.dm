@@ -86,4 +86,4 @@
 /// Drops the store's body. What it holds leaves the simulation with it: release it at equilibrium, or move its heat out first.
 /proc/heat_store_release(h)
 	if(h)
-		vg_heat_body_release(h)
+		heat_release_log(vg_heat_body_release(h))

@@ -213,4 +213,40 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	log_test("crowd: [at_ease_frames] body-frames at ease, all unlinked; room air [round(before, 0.01)] -> [round(after, 0.01)] K")
 	TEST_ASSERT(at_ease_frames > 250, "the crowd was at ease most of the time ([at_ease_frames] of 500 body-frames)")
 
+/// Deleting a warm body releases its excess heat into its tile, but only as far as the tile's air and floor would take it in contact with the
+/// body: the air ends no hotter than the body was, and the heat that reached the air is no more than the body's excess (a human is about 280 kJ/K
+/// and a tile's air about 2 kJ/K, so the whole excess in one tile's air was thousands of kelvin).
+/datum/unit_test/dq_body_heat/deleting_a_body_does_not_superheat_its_tile
+
+/datum/unit_test/dq_body_heat/deleting_a_body_does_not_superheat_its_tile/run_body_heat()
+	var/list/room = body_heat_room(2, T20C)
+	TEST_ASSERT_NOTNULL(room, "no clear 5x5 block for the room")
+	var/turf/spot = room[1]
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, spot)
+	var/body_k = T20C + 17
+	H.set_bodytemperature(body_k)
+	var/body_before = H.body_temperature()
+	TEST_ASSERT(abs(body_before - body_k) < 0.5, "the body was not set warm ([body_before] K)")
+	var/excess = H.body_heat_capacity() * (body_before - spot.return_air().return_temperature())
+	var/list/before = list()
+	var/air_joules_before = 0
+	for(var/turf/T as anything in room)
+		var/datum/gas_mixture/air = T.return_air()
+		before[T] = air.return_temperature()
+		air_joules_before += air.heat_capacity() * air.return_temperature()
+	qdel(H)
+	TEST_ASSERT(QDELETED(H), "the body was not deleted")
+	var/hottest = 0
+	var/air_joules_after = 0
+	for(var/frame in 1 to 3)
+		heat_test_world_seconds(1)
+		for(var/turf/T as anything in room)
+			hottest = max(hottest, T.return_air().return_temperature())
+	for(var/turf/T as anything in room)
+		var/datum/gas_mixture/air = T.return_air()
+		air_joules_after += air.heat_capacity() * air.return_temperature()
+	log_test("body delete: excess [round(excess)] J, hottest tile air [round(hottest, 0.01)] K (body [round(body_before, 0.01)] K), air gained [round(air_joules_after - air_joules_before)] J")
+	TEST_ASSERT(hottest <= body_before, "a deleted body left air at [hottest] K, hotter than the body ([body_before] K)")
+	TEST_ASSERT(air_joules_after - air_joules_before <= excess * 1.01, "the room air gained [air_joules_after - air_joules_before] J from a body with [excess] J of excess")
+
 #endif
