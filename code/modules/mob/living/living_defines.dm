@@ -16,8 +16,6 @@
 
 
 	var/tod = null // Time of death
-	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
-	var/tmp/revival_in_progress = FALSE
 
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
@@ -61,7 +59,6 @@
 									" is rocking slightly from side to side."
 									)
 
-	var/touch_reaction_flags
 
 
 	/// Whether that mind's body held its key (a key move follows it).
@@ -75,7 +72,6 @@
 	var/muffled = FALSE					// Used by muffling belly
 	var/forced_psay = FALSE				// If true will prevent the user from speaking with normal say/emotes, and instead redirect these to a private speech mode with their predator.
 	var/autowhisper = FALSE				// Automatically whisper
-	var/autowhisper_mode = null			// Mode to use with autowhisper
 /mob/living
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE

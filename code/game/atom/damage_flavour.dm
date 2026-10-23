@@ -2,14 +2,6 @@
 // code/datums/rules/declarations.dm keep each object's damage_band; examine()
 // shows the band's line. This replaces the hand-written per-type lines.
 
-/atom
-	/// What light damage looks like on this type, as a plural noun ("cracks", "scrapes and dents").
-	var/damage_wear = "scrapes and dents"
-	/// TRUE: announce to onlookers when integrity drops into a worse damage band
-	/// (3/4, 1/2, 1/4), with the band's generated line. Replaces the per-type
-	/// hand-written threshold messages.
-	var/announce_damage_bands = FALSE
-
 /// The examine line for `band` (DAMAGE_BAND_*), or null for none.
 /atom/proc/damage_flavour_text(band)
 	var/they = gender == PLURAL ? "They" : "It"
@@ -17,7 +9,7 @@
 	var/look = gender == PLURAL ? "look" : "looks"
 	switch(band)
 		if(DAMAGE_BAND_LIGHT)
-			return span_notice("[they] [have] a few [damage_wear].")
+			return span_notice("[they] [have] a few [shielding_of(src).damage_wear].")
 		if(DAMAGE_BAND_MODERATE)
 			return span_warning("[they] [look] seriously damaged.")
 		if(DAMAGE_BAND_HEAVY)
@@ -28,7 +20,7 @@
 /atom/proc/damage_band_announcement(band)
 	switch(band)
 		if(DAMAGE_BAND_LIGHT)
-			return "\The [src] starts to show [damage_wear]!"
+			return "\The [src] starts to show [shielding_of(src).damage_wear]!"
 		if(DAMAGE_BAND_MODERATE)
 			return "\The [src] looks seriously damaged!"
 		if(DAMAGE_BAND_HEAVY)

@@ -5,7 +5,6 @@
 	icon = 'icons/obj/shards.dmi'
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
-	randpixel = 8
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
@@ -38,6 +37,7 @@
 		spent(src)
 
 CAPABILITIES(/obj/item/material/shard)
+	configure(item_handling(randpixel = 8))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "slashed", "sliced", "cut")))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 

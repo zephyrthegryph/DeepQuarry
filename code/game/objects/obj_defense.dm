@@ -3,10 +3,6 @@
 	/// type; atom_destruction() spawns it before the slots' drop policies run.
 	/// Types with several kinds of debris override debris_entries().
 	var/debris_type
-	var/debris_amount = 1
-	/// Icon state shown while broken (integrity at or below integrity_failure).
-	/// atom_break() applies it and atom_fix() restores the initial icon_state.
-	var/broken_icon_state
 
 /// An explicit exposure to fire (lava, a flamethrower, a bonfire, a lighter):
 /// a pulse of heat into the object's heat node. Ignition, melting, overheating
@@ -41,12 +37,12 @@
 /// Declarative break look: types set broken_icon_state instead of overriding.
 /obj/atom_break(damage_flag)
 	. = ..()
-	if(broken_icon_state)
-		set_icon_state(broken_icon_state)
+	if(rules_of(src).broken_icon)
+		set_icon_state(rules_of(src).broken_icon)
 
 /obj/atom_fix()
 	. = ..()
-	if(broken_icon_state)
+	if(rules_of(src).broken_icon)
 		set_icon_state(initial(icon_state))
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
@@ -63,7 +59,7 @@
 
 /// Returns a custom fire overlay, if any
 /obj/proc/custom_fire_overlay()
-	return custom_fire_overlay
+	return sparse_get(src, custom_fire_overlay)
 
 ///called when the obj is destroyed by acid.
 /obj/proc/acid_melt()
@@ -140,7 +136,8 @@
 /obj/proc/debris_entries()
 	if(!debris_type)
 		return null
-	return list((debris_type) = debris_amount)
+	var/amount = sparse_get_or(src, debris_amount, 1)
+	return list((debris_type) = amount)
 
 /// Create the debris entries on the turf. Stacks get their amount.
 /obj/proc/spawn_debris()

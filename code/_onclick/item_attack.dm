@@ -295,7 +295,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	/////////////////////////
 	M.lastattacker = user
 
-	if(!no_attack_log)
+	if(!handling_of(src).no_attack_log)
 		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(stance)]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
@@ -303,7 +303,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	// every weapon override / log / check above runs exactly once per victim — but
 	// it has already set its own recovery cooldown and played the lunge, so skip the
 	// instant-attack versions of both here.
-	if(!user.melee_swing_resolving)
+	if(!sparse_get_or(user, melee_swing_resolving, FALSE))
 		user.setClickCooldown(user.get_attack_speed(src))
 		user.do_attack_animation(M)
 

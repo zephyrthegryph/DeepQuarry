@@ -251,7 +251,7 @@
 		if(o && o.splinted && o.splinted.loc == o)
 			. += span_warning("[p_They()] [p_have()] \a [o.splinted] on [p_their()] [o.name]!")
 
-	if(suiciding)
+	if(sparse_get_or(src, suiciding, 0))
 		. += span_warning("[p_They()] appears to have commited suicide... there is no hope of recovery.")
 
 	var/list/vorestrings = list()
@@ -297,12 +297,12 @@
 		. += span_deadsay("[p_Theyre()] [ssd_msg]. It doesn't look like [p_theyre()] waking up anytime soon.")
 	else if(!client)
 		. += span_deadsay("[p_Theyre()] [ssd_msg].")
-	if(client && away_from_keyboard && manual_afk)
+	if(client && sparse_get_or(src, away_from_keyboard, FALSE) && sparse_get_or(src, manual_afk, FALSE))
 		. += "\[Away From Keyboard for [round((client.inactivity/10)/60)] minutes\]"
 	else if(client && ((client.inactivity / 10) / 60 > 10)) //10 Minutes
 		. += "\[Inactive for [round((client.inactivity/10)/60)] minutes\]"
-	else if(disconnect_time)
-		. += "\[Disconnected/ghosted [round(((world.realtime - disconnect_time)/10)/60)] minutes ago\]"
+	else if(sparse_get(src, disconnect_time))
+		. += "\[Disconnected/ghosted [round(((world.realtime - sparse_get(src, disconnect_time))/10)/60)] minutes ago\]"
 
 /// Visible limb state: missing limbs and stumps, prostheses, wounds, dislocations, fractures,
 /// necrosis, bleeding and protruding implants. Infection is not read here: it reaches examine
@@ -362,7 +362,7 @@
 			lines += is_bleeding[limb]
 	for(var/implant in get_visible_implants(0))
 		lines += span_danger("[src] [user.p_have()] \a [implant] sticking out of [p_their()] flesh!")
-	if(digitalcamo)
+	if(sparse_get_or(src, digitalcamo, 0))
 		lines += "[p_Theyre()] repulsively uncanny!"
 	return list(lines, applying_pressure)
 

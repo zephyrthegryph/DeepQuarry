@@ -9,8 +9,9 @@
 	max_n2 = 0
 
 	species_sounds = "Vox"
-	pain_emote_1p = list("shriek")
-	pain_emote_3p = list("shrieks")
+
+CAPABILITIES(/mob/living/simple_mob/vox)
+	configure(mob_nature(pain_1p = list("shriek"), pain_3p = list("shrieks")))
 
 /mob/living/simple_mob/vox/armalis
 	name = "serpentine alien"

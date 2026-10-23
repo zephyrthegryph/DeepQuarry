@@ -19,10 +19,7 @@
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
-	var/spit_name = null 				//String
 
-	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
-	var/active_regen_delay = 300
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 

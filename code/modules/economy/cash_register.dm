@@ -488,8 +488,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 
 	// First check if item has a valid price
 	var/price = O.get_item_cost()
-	if(isnull(price) && O.economic_export_value > 0)
-		price = SSsupply.export_revenue(O.economic_export_value)
+	if(isnull(price) && sparse_get_or(O, economic_export_value, 0) > 0)
+		price = SSsupply.export_revenue(sparse_get_or(O, economic_export_value, 0))
 	if(isnull(price) && istype(O, /obj/item/stack))
 		var/obj/item/stack/material_stack = O
 		var/datum/material/material = material_stack.get_material()
@@ -510,7 +510,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 		set_price_list_at(O.name, price)
 		. = 1
 	rebuild_ticket()
-	if(!O.economic_sale_invoice_id)
+	if(!sparse_get_or(O, economic_sale_invoice_id, 0))
 		LAZYSET(verified_sale_items, ref_token(O), price)
 	ticket_changed()
 	// Animation and sound

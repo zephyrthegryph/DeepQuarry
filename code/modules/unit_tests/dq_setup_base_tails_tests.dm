@@ -66,7 +66,7 @@
 /datum/unit_test/dq_setup_base_tails_machine/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/machinery/dq_default_parts_probe/M = allocate(/obj/machinery/dq_default_parts_probe, T, WEST)
-	TEST_ASSERT(M.power_init_complete, "a machine has its power setup done after init")
+	TEST_ASSERT(sparse_get_or(M, power_init_complete, FALSE), "a machine has its power setup done after init")
 	TEST_ASSERT_EQUAL(M.power_area, get_area(M), "and draws from its area")
 	TEST_ASSERT_EQUAL(M.dir, WEST, "a machine made with a facing has it")
 

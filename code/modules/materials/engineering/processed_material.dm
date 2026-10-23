@@ -422,7 +422,7 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 /obj/item/stack/material/processed_alloy/proc/refresh_export_value()
 	if(!export_value_per_sheet)
 		return
-	economic_export_value = max(1, round(export_value_per_sheet * get_amount()))
+	sparse_set(src, economic_export_value, max(1, round(export_value_per_sheet * get_amount())))
 
 /obj/item/stack/material/processed_alloy/proc/set_processed_material(material_name)
 	var/datum/material/new_material = get_material_by_name(material_name)

@@ -43,7 +43,7 @@
 		return
 
 	for(var/obj/O in contents_of(M))
-		if(O.redgate_allowed == FALSE)
+		if(rules_of(O).redgate_allowed == FALSE)
 			to_chat(M, span_warning("The redgate refuses to allow you to pass whilst you possess \the [O]."))
 			return
 
@@ -234,7 +234,6 @@ CAPABILITIES(/obj/structure/redgate/away)
 	icon_state = "flag"
 	var/laser_team = "neutral"
 	w_class = ITEMSIZE_NO_CONTAINER //no stashing the flag in a bag for you, bucko!
-	redgate_allowed = FALSE //no running off the map with the flags either
 	var/start_pos
 	var/flag_return_delay = 3 SECONDS	//how long you have to hold onto your team's flag before it returns home
 
@@ -257,6 +256,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
+	configure(obj_rules(redgate_allowed = FALSE))
 	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
 	// The owning team channels a return with the flag in hand; moving, dropping it or being tagged drops it where they stand.
@@ -378,7 +378,6 @@ CAPABILITIES(/obj/structure/flag_base)
 			)
 	item_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER	//no shoving it in your backpack to hide it
-	redgate_allowed = FALSE	//you can't take your ball and go home
 	var/start_pos
 	var/last_holder
 	var/last_team
@@ -390,12 +389,15 @@ CAPABILITIES(/obj/structure/flag_base)
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER
-	redgate_allowed = FALSE //you can't take the demonstration balls and go home either
+
+CAPABILITIES(/obj/item/laserdome_hyperball_prop)
+	configure(obj_rules(redgate_allowed = FALSE))
 
 /obj/item/laserdome_hyperball/proc/remember_start_pos()
 	start_pos = src.loc	//save our starting location for later
 
 CAPABILITIES(/obj/item/laserdome_hyperball)
+	configure(obj_rules(redgate_allowed = FALSE))
 	setup(PROC_REF(remember_start_pos))
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
 

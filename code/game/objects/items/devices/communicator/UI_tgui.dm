@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	configure(obj_rules(show_messages = 1))
 	drag_onto(PROC_REF(communicator_dropped))
 	setup(PROC_REF(prepare_camera_connection))
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
@@ -487,7 +488,7 @@ CAPABILITIES(/obj/item/communicator)
 	to_chat(user, span_notice("[icon2html(src, user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.stat == DEAD && M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))
-			if(isnewplayer(M) || M.forbid_seeing_deadchat)
+			if(isnewplayer(M) || sparse_get_or(M, forbid_seeing_deadchat, FALSE))
 				continue
 			if(exonet.get_atom_from_address(their_address) == M)
 				continue

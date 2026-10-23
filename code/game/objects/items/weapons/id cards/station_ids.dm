@@ -152,7 +152,6 @@ CAPABILITIES(/obj/item/card/id)
 	desc = "A golden card which shows power and might."
 	icon_state = "gold-id"
 	item_state = "gold_id"
-	preserve_item = 1
 
 /obj/item/card/id/gold/captain
 	assignment = JOB_SITE_MANAGER

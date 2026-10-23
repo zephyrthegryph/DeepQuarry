@@ -188,7 +188,7 @@
 
 		else if(istype(I,/obj/))
 			var/obj/check_obj = I
-			if(ignore_show_messages || check_obj.show_messages)
+			if(ignore_show_messages || rules_of(check_obj).show_messages)
 				if(!sight_check || isInSight(I, O))
 					L |= recursive_content_check(I, L, recursion_limit - 1, client_check, sight_check, include_mobs, include_objects, ignore_show_messages)
 					if(include_objects)
@@ -218,7 +218,7 @@
 		else if(istype(I,/obj/))
 			hear |= recursive_content_check(I, hear, 3, 1, 0, include_mobs, include_objects)
 			var/obj/O = I
-			if(O.show_messages && include_objects)
+			if(rules_of(O).show_messages && include_objects)
 				hear += I
 
 	return hear
@@ -302,7 +302,7 @@
 			continue
 
 		var/mob/M = mob
-		if(M && M.stat == DEAD && remote_ghosts && !M.forbid_seeing_deadchat)
+		if(M && M.stat == DEAD && remote_ghosts && !sparse_get_or(M, forbid_seeing_deadchat, FALSE))
 			switch(type)
 				if(1) //Audio messages use ghost_ears
 					if(M.client?.prefs?.read_preference(/datum/preference/toggle/ghost_ears))

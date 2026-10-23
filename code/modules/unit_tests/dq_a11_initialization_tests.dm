@@ -42,8 +42,8 @@
 	scope_setup()
 	var/obj/item/disk/tech_disk/D = allocate(/obj/item/disk/tech_disk, test_floor())
 	TEST_ASSERT_NOTNULL(D.stored_research(), "The disk constructor retains its actual research store")
-	TEST_ASSERT(D.pixel_x >= -D.randpixel && D.pixel_x <= D.randpixel, "The native jitter preserves the configured horizontal range")
-	TEST_ASSERT(D.pixel_y >= -D.randpixel && D.pixel_y <= D.randpixel, "The native jitter preserves the configured vertical range")
+	TEST_ASSERT(D.pixel_x >= -handling_of(D).randpixel && D.pixel_x <= handling_of(D).randpixel, "The native jitter preserves the configured horizontal range")
+	TEST_ASSERT(D.pixel_y >= -handling_of(D).randpixel && D.pixel_y <= handling_of(D).randpixel, "The native jitter preserves the configured vertical range")
 
 /datum/unit_test/dq_a11_initialization/gas_plane/Run()
 	scope_setup()

@@ -48,7 +48,7 @@
 	new /datum/hud(src)
 
 	cooldown_set_end(src, next_move, 1)
-	disconnect_time = null // ition: clear the disconnect time
+	sparse_set(src, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)

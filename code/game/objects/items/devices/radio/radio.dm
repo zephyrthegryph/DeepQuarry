@@ -28,7 +28,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
-	show_messages = TRUE
 
 	// Bluespace radios talk directly to telecomms equipment
 	var/bluespace_radio = FALSE
@@ -150,6 +149,7 @@ SETTER(/obj/item/radio, frequency)
 /obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
 CAPABILITIES(/obj/item/radio)
+	configure(obj_rules(show_messages = TRUE))
 	setup(PROC_REF(sanitize_start_frequency))
 	configure(item_worn(slots = SLOT_BELT))
 	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)

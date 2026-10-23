@@ -6,12 +6,10 @@
 	icon = 'icons/obj/items_ch.dmi'
 	icon_state = "lego"
 	desc = "An absolutely horrifying mechanical trap, banned in most sectors across the universe. Placing one is considered a major war crime."
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/lego)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 0))
 
 /obj/item/lego/Crossed(atom/movable/AM as mob|obj)
@@ -36,12 +34,10 @@ CAPABILITIES(/obj/item/lego)
 	icon = 'icons/obj/items_ch.dmi'
 	icon_state = "lego"
 	desc = "An absolutely horrifying mechanical trap, banned in most sectors across the universe. Placing one is considered a major war crime."
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/lego/gib)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 0))
 
 /obj/item/lego/gib/Crossed(atom/movable/AM as mob|obj)

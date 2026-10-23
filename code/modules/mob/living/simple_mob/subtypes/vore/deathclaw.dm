@@ -123,6 +123,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
 	meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+	configure(mob_nature(vore_eyes = TRUE))
+
 /mob/living/simple_mob/vore/aggressive/deathclaw
 	meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat
 

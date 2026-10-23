@@ -43,6 +43,9 @@
 		. += M.examine(user)
 
 CAPABILITIES(/obj/item/holder)
+	configure(item_handling(cavity_implantable = FALSE))
+	configure(obj_rules(show_messages = 1))
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	ref_one(nameof(held_at_make), /mob)
 	ref_one(nameof(held_mob), /mob/living)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_HOLSTER))

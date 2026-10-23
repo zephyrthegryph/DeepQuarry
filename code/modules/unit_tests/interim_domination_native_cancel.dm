@@ -5,7 +5,7 @@
 	pred.vore_prefs.allow_mind_transfer = TRUE
 	prey.forceMove(pred)
 	TEST_ASSERT_EQUAL(prey.loc, pred, "the real public entry sees its actor physically inside a living predator")
-	TEST_ASSERT(!pred.prey_controlled && !prey.prey_controlled, "both real participants start without transferred control")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE) && !sparse_get_or(prey, prey_controlled, FALSE), "both real participants start without transferred control")
 	TEST_ASSERT_NULL(SSrequests.open_for(prey), "the actor starts without an unrelated question")
 	prey.dominate_predator()
 	var/datum/prompt/choice/control_transfer_review/asked = SSrequests.open_for(prey)
@@ -25,7 +25,7 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(prey), "an actual No ends the actor consent without another question")
 	TEST_ASSERT_NULL(SSrequests.open_for(pred), "an actual No never asks the partner for control")
 	TEST_ASSERT(QDELETED(review), "decline retires the actual waiting workflow")
-	TEST_ASSERT(!pred.prey_controlled && !prey.prey_controlled, "declining leaves both actual control states unchanged")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE) && !sparse_get_or(prey, prey_controlled, FALSE), "declining leaves both actual control states unchanged")
 	prey.dominate_predator()
 	asked = SSrequests.open_for(prey)
 	TEST_ASSERT(istype(asked), "the same real entry can open another independent consent")
@@ -36,4 +36,4 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(pred), "closing never opens partner consent")
 	TEST_ASSERT(QDELETED(review), "closing retires its actual workflow context")
 	TEST_ASSERT_EQUAL(prey.loc, pred, "both refusal paths preserve physical containment")
-	TEST_ASSERT(!pred.prey_controlled && !prey.prey_controlled, "closing leaves both real control states unchanged")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE) && !sparse_get_or(prey, prey_controlled, FALSE), "closing leaves both real control states unchanged")

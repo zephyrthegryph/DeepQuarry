@@ -19,7 +19,7 @@
 
 	// This is not the best way to handle this, but I don't want it to mess with ling camo
 	var/mob/living/M = holder.wearer()
-	M.digitalcamo++
+	sparse_set(M, digitalcamo, sparse_get_or(M, digitalcamo, 0) + 1)
 
 /obj/item/rig_module/electrowarfare_suite/deactivate(forced = FALSE, mob/user)
 
@@ -27,4 +27,4 @@
 		return
 
 	var/mob/living/M = holder.wearer()
-	M.digitalcamo = max(0,(M.digitalcamo-1))
+	sparse_set(M, digitalcamo, max(0,(sparse_get_or(M, digitalcamo, 0)-1)))

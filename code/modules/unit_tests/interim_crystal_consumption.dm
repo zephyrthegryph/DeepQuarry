@@ -28,7 +28,7 @@
 	var/obj/item/capture_crystal/crystal = allocate(/obj/item/capture_crystal, T)
 	rel_set(crystal, nameof(crystal.owner), owner)
 	rel_set(crystal, nameof(crystal.bound_mob), patient)
-	patient.capture_caught = TRUE
+	sparse_set(patient, capture_caught, TRUE)
 	patient.forceMove(crystal)
 	TEST_ASSERT(owner.put_in_active_hand(crystal), "The owner must hold the occupied crystal")
 	TEST_ASSERT_EQUAL(patient.loc, crystal, "The captured patient must physically reside inside the crystal")
@@ -36,5 +36,5 @@
 	TEST_ASSERT(QDELETED(crystal), "The owner must consume the occupied crystal")
 	TEST_ASSERT(!QDELETED(patient), "Consumption must preserve the captured creature")
 	TEST_ASSERT_EQUAL(patient.loc, T, "Consumption must release the creature onto the actual floor")
-	TEST_ASSERT(!patient.capture_caught, "Released creatures must no longer be under capture control")
+	TEST_ASSERT(!sparse_get_or(patient, capture_caught, FALSE), "Released creatures must no longer be under capture control")
 	TEST_ASSERT_NULL(owner.get_active_hand(), "Occupied consumption must also release the owner's hand")

@@ -408,10 +408,10 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/new_pose = prompt.pose
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
-	pose_move = FALSE
+	sparse_set(src, pose_move, FALSE)
 	for(var/o in A.answer.value)
 		if(o == "Cancel Pose on Movement")
-			pose_move = TRUE
+			sparse_set(src, pose_move, TRUE)
 		if(o == "Disable Pose Icon")
 			include_icon = FALSE
 		if(o == "Quiet Pose")

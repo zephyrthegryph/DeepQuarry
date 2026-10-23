@@ -38,11 +38,6 @@
 // the light is set once, and an item that irradiates or poisons carries the
 // material_emission capability, which ticks every 2 s while granted.
 
-/obj/item
-	var/mat_luminescence = 0
-	var/mat_radioactivity = 0
-	var/mat_toxicity = 0
-
 CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/material_emission, key = NONE)
 /datum/capability/material_emission
 
@@ -54,17 +49,17 @@ CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/mate
 	I.material_emission_step()
 
 /obj/item/proc/configure_material_behaviors(_lum = 0, _rad = 0, _tox = 0, colour = null)
-	var/old_luminescence = mat_luminescence
-	mat_luminescence = _lum
-	mat_radioactivity = _rad
-	mat_toxicity = _tox
-	if(mat_luminescence > 0)
-		var/range = clamp(mat_luminescence / 20, 0.5, 4)
-		var/power = clamp(mat_luminescence / 30, 0.3, 2)
+	var/old_luminescence = sparse_get_or(src, mat_luminescence, 0)
+	sparse_set(src, mat_luminescence, _lum)
+	sparse_set(src, mat_radioactivity, _rad)
+	sparse_set(src, mat_toxicity, _tox)
+	if(sparse_get_or(src, mat_luminescence, 0) > 0)
+		var/range = clamp(sparse_get_or(src, mat_luminescence, 0) / 20, 0.5, 4)
+		var/power = clamp(sparse_get_or(src, mat_luminescence, 0) / 30, 0.3, 2)
 		set_glow(src, GLOW(range, power, colour))
 	else if(old_luminescence > 0)
 		set_glow(src, GLOW(0, null, null))
-	if(mat_radioactivity > 0 || mat_toxicity > 0)
+	if(sparse_get_or(src, mat_radioactivity, 0) > 0 || sparse_get_or(src, mat_toxicity, 0) > 0)
 		grant(src, /datum/capability/material_emission, src)
 	else
 		revoke(src, /datum/capability/material_emission, src)
@@ -77,18 +72,18 @@ CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/mate
 	var/obj/item/I = src
 	if(QDELETED(I))
 		return
-	if(mat_radioactivity > 0)
+	if(sparse_get_or(src, mat_radioactivity, 0) > 0)
 		radiation_pulse(
 			I,
 			max_range = 3,
 			threshold = RAD_LIGHT_INSULATION,
-			chance = round(mat_radioactivity * 0.5, 1),
+			chance = round(sparse_get_or(src, mat_radioactivity, 0) * 0.5, 1),
 			minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
-			strength = mat_radioactivity,
+			strength = sparse_get_or(src, mat_radioactivity, 0),
 		)
-	if(mat_toxicity > 0)
+	if(sparse_get_or(src, mat_toxicity, 0) > 0)
 		// Sub-lethal but real, only while held bare in hand (loc is the mob). Dose is
 		// per fixed 2 s tick; deliberately not scaled by dt.
 		var/mob/living/carbon/human/H = I.loc
 		if(istype(H))
-			H.injure(INJURY_TOXIN, mat_toxicity * 0.01, null, I, 0, null, INJURE_SILENT)
+			H.injure(INJURY_TOXIN, sparse_get_or(src, mat_toxicity, 0) * 0.01, null, I, 0, null, INJURE_SILENT)

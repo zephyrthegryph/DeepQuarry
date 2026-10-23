@@ -1,5 +1,3 @@
-/mob
-	var/hive_lang_range = 0
 
 /mob/proc/adjust_hive_range()
 	set name = "Adjust Special Language Range"
@@ -13,10 +11,10 @@
 		return
 	switch(A.answer.value)
 		if("Global")
-			hive_lang_range = 0
+			sparse_set(src, hive_lang_range, 0)
 		if("This Z level")
-			hive_lang_range = -1
+			sparse_set(src, hive_lang_range, -1)
 		if("Local")
-			hive_lang_range = world.view
+			sparse_set(src, hive_lang_range, world.view)
 		if("Subtle")
-			hive_lang_range = 1
+			sparse_set(src, hive_lang_range, 1)
