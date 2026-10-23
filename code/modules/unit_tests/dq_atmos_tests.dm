@@ -686,7 +686,9 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
 
-	// Stock with fuel + oxidizer. The turf is shared with every later test that takes the first clear floor: its air is put back after this one (restore_atmos()).
+	// Stock with fuel + oxidizer. The turf is shared with every later test that takes the first clear floor: its air is put back after this one (restore_atmos()),
+	// and so is the heat of what stands on it (the fire takes a grille and windows to 600+ K).
+	restore_occupant_heat_after(T)
 	dq_atmos_test_snapshot_air_around(T)
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 30)
@@ -997,7 +999,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
 
-	// Stock with fuel + oxidizer.
+	// Stock with fuel + oxidizer. What stands on the floor is put back to its temperature after the fire.
+	restore_occupant_heat_after(T)
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 30)
 	air.adjust_gas(/datum/gas/oxygen, 80)
@@ -1182,6 +1185,10 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 			if(ok && run.len == count)
 				for(var/turf/open/T as anything in run)
 					dq_atmos_test_snapshot_air_around(T)
+					// What stands on the floor (the bridge's grille and windows) takes the heat of any hot air the test makes and keeps it, then warms
+					// the air of every later test that takes this floor: it is put back at the end.
+					GLOB.current_test?.restore_occupant_heat_after(T)
+				log_test("PIPE RUN: [count] clear floor(s) from ([cand.x],[cand.y],[cand.z]) heading [direction] in [get_area(cand)]")
 				return run
 	return null
 
