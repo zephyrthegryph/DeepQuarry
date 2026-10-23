@@ -384,14 +384,12 @@ params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 
 ### Test worlds, slots and a killed shard
 
-- **Slots.** A machine allows 4 test worlds at once (`DQ_SLOTS_TEST_WORLD`, default 4), of which a full-suite run
-  (a whole-tier `dm-test`, `DQ_SLOTS_SUITE=1`) may hold all four, merge reserve included. Everyone else (focused
-  runs, selections) holds at most 2 (`DQ_SLOTS_TEST_WORLD_FOCUSED`), the first two slots, so a full suite never
-  starves them of both. Setting `DQ_SLOTS_TEST_WORLD` yourself is one limit for every caller. The numbers: one
-  world is one thread of DM, about 0.9 core and 2.9 GB private (1.8 GB working set) over a 85-minute shard (the
-  run-5 `data/bench/process-shard*.json` samples), so four worlds are about 12 GB and 4 of 16 logical cores.
-  With two dmbc daemons (8 GB each) and the 12 GB kept free on a 64 GB machine that leaves room. `dm-test`
-  sizes its shard count to the slots its role may hold.
+- **Slots.** A machine allows 2 test worlds at once (`DQ_SLOTS_TEST_WORLD`, default 2; the machine is also the desktop).
+  Roles apply while that variable is unset: a full-suite run (a whole-tier `dm-test`, `DQ_SLOTS_SUITE=1`) may hold
+  every slot of the capacity, merge reserve included, and any other caller (focused runs, selections) at most
+  `DQ_SLOTS_TEST_WORLD_FOCUSED` (default 2). Raising `DQ_SLOTS_TEST_WORLD_DEFAULT` (or the capacity) therefore gives
+  only the suite more worlds. Peak RAM per world has not been measured yet, so the default stays 2. `dm-test` sizes
+  its shard count to the slots its role may hold.
 - **A killed shard keeps its results.** A world writes its results file only when its suite is done, so the
   watchdog (`DQ_DD_WATCHDOG_MINUTES`, 60 minutes per shard on 4 shards) used to lose a killed shard whole. The
   runner now reads the world's `runtime.log` (`::group::(i/N) path`, `PASS path 1.2s`, `::error::FAIL path`)

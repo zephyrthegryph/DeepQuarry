@@ -23,14 +23,13 @@ import path from 'node:path';
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | (string & {});
 
 /**
- * Test worlds the machine hosts at once for a full-suite run (`dm-test` over a whole tier): four. One world is one DreamDaemon thread at about 1 core and
- * 3 GB private (data/bench/process-shard*.json of the run-5 profile: 2.9 GB private, 1.8 GB working set, 0.9 core), so four are 12 GB and 4 of 16
- * cores, which fits beside two dmbc daemons (8 GB each) with the 12 GB kept free on a 64 GB machine. Everyone else (focused runs, selections)
- * holds at most focusedTestWorlds(): the machine is also the user's desktop (2026-10-19). Same numbers as slots_default_test_world() in
- * dq_machine_slots.sh. DQ_SLOTS_TEST_WORLD=N sets one limit for every caller.
+ * Test worlds the machine hosts at once: two, because the machine is also the user's desktop (2026-10-19) and peak RAM per world is not yet
+ * measured. DQ_SLOTS_TEST_WORLD raises it for everyone. A full-suite run (roleCap) may hold all of them; other callers hold at most
+ * focusedTestWorlds(), so raising the default to 4 later would give only the suite four. Same numbers as slots_default_test_world() in
+ * dq_machine_slots.sh.
  */
 export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
-  return 4;
+  return 2;
 }
 
 /** Test worlds a caller that is not a full-suite run may hold at once (DQ_SLOTS_TEST_WORLD_FOCUSED, default 2). */

@@ -51,8 +51,8 @@ describe('capacity', () => {
 });
 
 describe('test_world default', () => {
-  test('is four whatever the CPU count, and a focused caller holds two of them', () => {
-    for (const cpus of [1, 8, 16, 64]) expect(defaultTestWorlds(cpus)).toBe(4);
+  test('is two whatever the CPU count, and a focused caller holds two of them', () => {
+    for (const cpus of [1, 8, 16, 64]) expect(defaultTestWorlds(cpus)).toBe(2);
     delete process.env.DQ_SLOTS_TEST_WORLD;
     delete process.env.DQ_SLOTS_TEST_WORLD_FOCUSED;
     delete process.env.DQ_SLOTS_SUITE;

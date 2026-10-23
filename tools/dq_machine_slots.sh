@@ -12,8 +12,8 @@
 #
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
 #   dm_compile      DQ_SLOTS_DM_COMPILE=1       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
-#   test_world      DQ_SLOTS_TEST_WORLD=4       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld()). A full-suite dm-test
-#                                               (DQ_SLOTS_SUITE=1, set by the build tool) may hold all 4; every other caller holds at most
+#   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld()). A full-suite dm-test
+#                                               (DQ_SLOTS_SUITE=1) may hold all of the capacity; every other caller holds at most
 #                                               DQ_SLOTS_TEST_WORLD_FOCUSED (2). Setting DQ_SLOTS_TEST_WORLD itself is one limit for everyone.
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
 # dm_compile and cargo are never held while waiting for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
@@ -59,8 +59,8 @@ slots_cpus() { # logical CPUs of this machine (1 when unknown)
 	echo "$n"
 }
 
-slots_default_test_world() { # 4: what a full-suite run (DQ_SLOTS_SUITE=1) may hold; everyone else is held to slots_role_cap's 2. One world is about 1 core and 3 GB private (run-5 profile), so four fit beside two dmbc daemons with 12 GB kept free on 64 GB
-	echo "${DQ_SLOTS_TEST_WORLD_DEFAULT:-4}"
+slots_default_test_world() { # 2 until peak RAM per world is measured; a full-suite run (DQ_SLOTS_SUITE=1) may hold all of the capacity, everyone else at most slots_role_cap's 2
+	echo "${DQ_SLOTS_TEST_WORLD_DEFAULT:-2}"
 }
 
 slots_role_cap() { # class usable max -> what this caller may hold: test_world, with DQ_SLOTS_TEST_WORLD unset, is all of max for a full-suite run (DQ_SLOTS_SUITE=1, the merge reserve included) and at most DQ_SLOTS_TEST_WORLD_FOCUSED (2) for anyone else (the machine is also the user's desktop, 2026-10-19)
@@ -836,7 +836,7 @@ slots_selftest() {
 	unset DQ_SLOTS_TEST_WORLD DQ_SLOTS_MERGE_RESERVE
 	# 5b. roles: the default capacity is 4; a focused caller holds 2 of them, a full-suite run (DQ_SLOTS_SUITE=1) all 4, merge reserve or not;
 	# setting DQ_SLOTS_TEST_WORLD is one limit for everyone.
-	[ "$(slots_capacity test_world)" = 4 ] && [ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] && [ "$(DQ_SLOT_PRIORITY=0 slots_group_size test_world 9)" = 2 ] 		&& [ "$(DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 4 ] && [ "$(DQ_SLOTS_SUITE=1 slots_group_size test_world 3)" = 3 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD_FOCUSED=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 3 ] && [ "$(DQ_SLOTS_SUITE=1 slots_group_size cargo 9)" = 1 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		|| { echo "FAIL: test_world roles (focused 2, suite 4)"; ok=0; }
+	[ "$(slots_capacity test_world)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 slots_capacity test_world)" = 4 ] && [ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 4 ] && [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOTS_TEST_WORLD_FOCUSED=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 3 ] && [ "$(DQ_SLOTS_SUITE=1 slots_group_size cargo 9)" = 1 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		|| { echo "FAIL: test_world roles (focused 2, suite 4)"; ok=0; }
 	rm -rf "$tmp"
 	# lane classes: a compiler worktree is priority 0 with one extra cargo slot; a light worktree is refused a compile or test world
 	[ "$(_slots_priority /x/pool-c2)" = 0 ] && [ "$(_slots_priority /x/pool-3)" = 1 ] && [ "$(_slots_extra cargo /x/pool-c1)" = 1 ] && [ "$(_slots_extra cargo /x/pool-3)" = 0 ] && [ "$(_slots_extra dm_compile /x/pool-c1)" = 0 ] 		|| { echo "FAIL: compiler lane priority / extra cargo slot"; ok=0; }
