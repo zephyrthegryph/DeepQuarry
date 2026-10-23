@@ -203,7 +203,6 @@ pub struct Stale {
 impl Stale {
     /// The runtime for a datum holding this handle: owner type, handle and both
     /// generations (BYOND adds the DM stack to a bind's error).
-    #[must_use]
     pub fn report(&self, owner: &ByondValue) -> eyre::Report {
         let label = owner
             .call_id(byond_string!("handle_owner_label"), &[])
