@@ -7,8 +7,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	op("set_light_col", ui_act("set_light_col", arg("value", schema_text(4096))), then(PROC_REF(ui_act_set_light_col)))
 	op("select_module", ui_act("select_module"), then(PROC_REF(ui_act_select_module)))
 	op("toggle_component", ui_act("toggle_component", arg("component", num())), then(PROC_REF(ui_act_toggle_component)))
-	op("toggle_module", ui_act("toggle_module", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_toggle_module)))
-	op("activate_module", ui_act("activate_module", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_activate_module)))
+	op("toggle_module", ui_act("toggle_module", arg("ref", schema_text(32))), then(PROC_REF(ui_act_toggle_module)))
+	op("activate_module", ui_act("activate_module", arg("ref", schema_text(32))), then(PROC_REF(ui_act_activate_module)))
 	op("quick_action_comm", ui_act("quick_action_comm"), then(PROC_REF(ui_act_quick_action_comm)))
 	op("quick_action_pda", ui_act("quick_action_pda"), then(PROC_REF(ui_act_quick_action_pda)))
 	op("quick_action_crew_manifest", ui_act("quick_action_crew_manifest"), then(PROC_REF(ui_act_quick_action_crew_manifest)))
@@ -36,7 +36,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			continue
 
 		UNTYPED_LIST_ADD(modules, list(
-			"ref" = REF(I),
+			"ref" = ref_token(I),
 			"name" = "[I]",
 			"icon" = "[I.icon]",
 			"icon_state" = "[I.icon_state]",
@@ -50,7 +50,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 				continue
 
 			UNTYPED_LIST_ADD(emag_modules, list(
-				"ref" = REF(I),
+				"ref" = ref_token(I),
 				"name" = "[I.name]",
 				"icon" = "[I.icon]",
 				"icon_state" = "[I.icon_state]",
@@ -86,7 +86,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 		if(!I)
 			continue
 
-		LAZYSET(modules, REF(I), R.get_slot_from_module(I))
+		LAZYSET(modules, ref_token(I), R.get_slot_from_module(I))
 	data["modules"] = modules
 
 	var/list/emag_modules = list()
@@ -95,7 +95,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			if(!I)
 				continue
 
-			LAZYSET(emag_modules, REF(I), R.get_slot_from_module(I))
+			LAZYSET(emag_modules, ref_token(I), R.get_slot_from_module(I))
 	data["emag_modules"] = emag_modules
 
 	var/diagnosis_functional = R.is_component_functioning(ROBOT_SLOT_DIAGNOSIS)
@@ -151,14 +151,25 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 			to_chat(user, span_warning("You disable [C]."))
 	. = TRUE
 
+/// The module a handle names: one the window lists (the module's tools, and the emag tools while it shows them), nothing else.
+/datum/tgui_module/robot_ui/proc/listed_module(ref)
+	var/mob/living/silicon/robot/R = host()
+	if(!R?.module)
+		return null
+	var/list/listed = list()
+	listed += R.module.modules
+	if(R.emagged || R.emag_items)
+		listed += R.module.emag
+	return ui_member(ref, listed, /obj/item)
+
 /datum/tgui_module/robot_ui/proc/ui_act_toggle_module(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = host()
 	if(after_pending(R, "weapon_lock"))
 		to_chat(user, span_danger("Error: Modules locked."))
 		return
-	var/obj/item/module = ref
-	if(istype(module))
+	var/obj/item/module = listed_module(ref)
+	if(module)
 		if(R.activated(module))
 			R.uneq_specific(module)
 		else
@@ -167,8 +178,8 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 
 /datum/tgui_module/robot_ui/proc/ui_act_activate_module(datum/act/op/A, ref)
 	var/mob/living/silicon/robot/R = host()
-	var/obj/item/module = ref
-	if(istype(module) && module.loc == R)
+	var/obj/item/module = listed_module(ref)
+	if(module && module.loc == R)
 		module.attack_self(R)
 	. = TRUE
 
