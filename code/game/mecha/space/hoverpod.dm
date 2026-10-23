@@ -48,6 +48,8 @@ CAPABILITIES(/obj/mecha/working/hoverpod)
 //Modified phazon code
 
 /obj/mecha/working/hoverpod/proc/ui_act_toggle_stabilization(datum/act/op/A)
+	if(!is_pilot(A.actor))
+		return
 	set_stabilization_enabled(!stabilization_enabled)
 	src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
 	return

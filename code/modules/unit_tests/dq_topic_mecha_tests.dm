@@ -228,3 +228,150 @@
 	own(test_ui(pilot, gun, "purge_all"))
 	TEST_ASSERT_EQUAL(gun.reagents.total_volume, 0, "the purge-all button clears them all")
 	TEST_ASSERT_EQUAL(gun.tgui_status(pilot, gun.tgui_state(pilot)), STATUS_INTERACTIVE, "the window is still open after a press")
+
+/// A person the CanUseObjTopic gate refuses, as a borg or AI without the right ID is: the window's real tgui state still runs (a transport has no client
+/// to close it).
+/mob/living/carbon/human/dq_tgui_transport/denied_obj
+
+/mob/living/carbon/human/dq_tgui_transport/denied_obj/CanUseObjTopic(obj/O)
+	return 0
+
+/// The maintenance window actions keep the names the window sends (maint_protocol, maint_set_air, maint_remove_passenger) and each keeps its guards:
+/// protocols on and the actor next to the suit for the bolts, the bolts exposed for the valve and the hatch, a passenger to pull out.
+/datum/unit_test/dq_topic_mecha_maintenance_actions
+
+/datum/unit_test/dq_topic_mecha_maintenance_actions/Run()
+	test_driver_begin()
+	exercise_maintenance()
+	test_driver_end()
+
+/datum/unit_test/dq_topic_mecha_maintenance_actions/proc/exercise_maintenance()
+	var/turf/T = test_floor()
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	var/mob/living/carbon/human/dq_tgui_transport/tech = allocate(/mob/living/carbon/human/dq_tgui_transport, T)
+	tech.enable_godmode()
+	TEST_ASSERT_EQUAL(mech.tgui_status(tech, mech.tgui_state(tech)), STATUS_INTERACTIVE, "a conscious person next to the suit works its window")
+	// maint_protocol: the bolts, only with the protocols on
+	mech.set_state(MECHA_OPERATING)
+	mech.set_maint_access(0)
+	own(test_ui(tech, mech, "maint_protocol"))
+	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "with the protocols off the bolts button does nothing")
+	mech.set_maint_access(1)
+	own(test_ui(tech, mech, "maint_protocol"))
+	TEST_ASSERT_EQUAL(mech.state, MECHA_BOLTS_SECURED, "with the protocols on the bolts button exposes the bolts")
+	own(test_ui(tech, mech, "maint_protocol"))
+	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "and presses again to hide them")
+	var/mob/living/carbon/human/dq_tgui_transport/far = allocate(/mob/living/carbon/human/dq_tgui_transport, run_loc_floor_top_right)
+	far.enable_godmode()
+	own(test_ui(far, mech, "maint_protocol"))
+	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "someone not next to the suit cannot work the bolts")
+	// maint_set_air: bolts exposed, then a pressure
+	own(test_ui(tech, mech, "maint_set_air"))
+	TEST_ASSERT_NULL(SSrequests.open_for(tech), "with the bolts hidden the valve button asks nothing")
+	mech.set_state(MECHA_BOLTS_SECURED)
+	own(test_ui(tech, mech, "maint_set_air"))
+	TEST_ASSERT(istype(SSrequests.open_for(tech), /datum/prompt/number/mecha_tank_valve), "with the bolts exposed the valve button asks for a pressure")
+	test_answer(tech, 88)
+	test_time(0.1 SECONDS)
+	TEST_ASSERT_EQUAL(mech.internal_tank_valve, 88, "the answer sets the valve")
+	// maint_remove_passenger: needs a passenger and the bolts exposed
+	own(test_ui(tech, mech, "maint_remove_passenger"))
+	TEST_ASSERT_NULL(SSrequests.open_for(tech), "with nobody in a compartment the hatch button asks nothing")
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger, T)
+	var/mob/living/carbon/human/rider = allocate(/mob/living/carbon/human, T)
+	P.attach(mech)
+	TEST_ASSERT(move_into(P, OCCUPANT_SLOT_MECHA_PASSENGER, rider), "a passenger takes the compartment")
+	mech.set_state(MECHA_OPERATING)
+	own(test_ui(tech, mech, "maint_remove_passenger"))
+	TEST_ASSERT_NULL(SSrequests.open_for(tech), "with the bolts hidden the hatch button asks nothing")
+	mech.set_state(MECHA_BOLTS_SECURED)
+	own(test_ui(tech, mech, "maint_remove_passenger"))
+	TEST_ASSERT(istype(SSrequests.open_for(tech), /datum/prompt/choice/mecha_remove_passenger), "with a passenger and the bolts exposed the hatch button asks which one")
+	test_answer(tech, "[rider]")
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(P.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "the answer pulls the passenger out once the hatch is open")
+
+/// The old href gate, kept on the buttons that need no pilot: a conscious pilot always reaches them, anyone else must pass CanUseObjTopic() (the
+/// ID-access check a borg or AI gets against the suit).
+/datum/unit_test/dq_topic_mecha_access_requirement
+
+/datum/unit_test/dq_topic_mecha_access_requirement/Run()
+	var/turf/T = test_floor()
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	var/mob/living/carbon/human/dq_tgui_transport/ordinary = allocate(/mob/living/carbon/human/dq_tgui_transport, T)
+	ordinary.enable_godmode()
+	var/mob/living/carbon/human/dq_tgui_transport/denied_obj/denied = allocate(/mob/living/carbon/human/dq_tgui_transport/denied_obj, T)
+	denied.enable_godmode()
+	var/mob/living/silicon/robot/borg = allocate(/mob/living/silicon/robot, T)
+	borg.enable_godmode()
+	mech.set_maint_access(1)
+	mech.set_state(MECHA_OPERATING)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = mech
+	A.target = mech
+	A.actor = ordinary
+	TEST_ASSERT_NULL(mech.actor_reaches(A), "an ordinary person reaches the suit's buttons")
+	A.actor = denied
+	TEST_ASSERT_EQUAL(mech.actor_reaches(A), MSG(op/topic_gate), "a person CanUseObjTopic refuses does not")
+	A.actor = borg
+	TEST_ASSERT_NULL(mech.actor_reaches(A), "a borg passes where the suit's own check_access takes no list, as before")
+	ordinary.set_stat(UNCONSCIOUS)
+	A.actor = ordinary
+	TEST_ASSERT_EQUAL(mech.actor_reaches(A), MSG(op/topic_gate), "an unconscious person does not")
+	ordinary.set_stat(CONSCIOUS)
+	A.actor = null
+	TEST_ASSERT_EQUAL(mech.actor_reaches(A), MSG(op/topic_gate), "nobody does not")
+	A.release()
+	// the buttons themselves
+	mech.set_add_req_access(1)
+	own(test_ui(denied, mech, "access_finish"))
+	TEST_ASSERT_EQUAL(mech.add_req_access, 1, "a refused person's access button does nothing")
+	own(test_ui(denied, mech, "maint_protocol"))
+	TEST_ASSERT_EQUAL(mech.state, MECHA_OPERATING, "a refused person's bolts button does nothing")
+	mech.set_state(MECHA_BOLTS_SECURED)
+	own(test_ui(denied, mech, "maint_set_air"))
+	own(test_ui(denied, mech, "maint_remove_passenger"))
+	TEST_ASSERT_NULL(SSrequests.open_for(denied), "and its valve and hatch buttons ask nothing")
+	mech.set_state(MECHA_OPERATING)
+	own(test_ui(borg, mech, "access_finish"))
+	TEST_ASSERT_EQUAL(mech.add_req_access, 0, "a borg's access button works")
+	mech.set_add_req_access(1)
+	own(test_ui(ordinary, mech, "access_finish"))
+	TEST_ASSERT_EQUAL(mech.add_req_access, 0, "an ordinary person's access button works")
+	// the pilot's exception: boards, then reaches the buttons CanUseObjTopic would refuse
+	mech.set_add_req_access(1)
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, denied), "the refused person boards")
+	own(test_ui(denied, mech, "access_finish"))
+	TEST_ASSERT_EQUAL(mech.add_req_access, 0, "a pilot reaches the access button whatever CanUseObjTopic says")
+	// the pilot-only buttons stay the pilot's
+	var/lights = mech.lights
+	own(test_ui(ordinary, mech, "toggle_lights"))
+	TEST_ASSERT_EQUAL(mech.lights, lights, "a non-pilot's lights button does nothing")
+	own(test_ui(denied, mech, "toggle_lights"))
+	TEST_ASSERT(mech.lights != lights, "the pilot's lights button works")
+
+/// The fighter's landing gear and the hoverpod's stabilizer buttons are the pilot's: a bystander at the window changes nothing.
+/datum/unit_test/dq_topic_mecha_special_buttons
+
+/datum/unit_test/dq_topic_mecha_special_buttons/Run()
+	var/turf/T = test_floor()
+	var/obj/mecha/combat/fighter/fighter = allocate(/obj/mecha/combat/fighter, T)
+	var/obj/mecha/working/hoverpod/pod = allocate(/obj/mecha/working/hoverpod, T)
+	var/mob/living/carbon/human/dq_tgui_transport/bystander = allocate(/mob/living/carbon/human/dq_tgui_transport, T)
+	bystander.enable_godmode()
+	var/mob/living/carbon/human/dq_tgui_transport/pilot_a = allocate(/mob/living/carbon/human/dq_tgui_transport, T)
+	pilot_a.enable_godmode()
+	var/mob/living/carbon/human/dq_tgui_transport/pilot_b = allocate(/mob/living/carbon/human/dq_tgui_transport, T)
+	pilot_b.enable_godmode()
+	TEST_ASSERT(move_into(fighter, MECHA_SLOT_PILOT, pilot_a), "the fighter pilot gets in")
+	TEST_ASSERT(move_into(pod, MECHA_SLOT_PILOT, pilot_b), "the hoverpod pilot gets in")
+	var/gear = fighter.landing_gear_raised
+	own(test_ui(bystander, fighter, "toggle_landing_gear"))
+	TEST_ASSERT_EQUAL(fighter.landing_gear_raised, gear, "a bystander's landing gear button does nothing")
+	own(test_ui(pilot_a, fighter, "toggle_landing_gear"))
+	TEST_ASSERT(fighter.landing_gear_raised != gear, "the pilot's landing gear button works")
+	var/stable = pod.stabilization_enabled
+	own(test_ui(bystander, pod, "toggle_stabilization"))
+	TEST_ASSERT_EQUAL(pod.stabilization_enabled, stable, "a bystander's stabilizer button does nothing")
+	own(test_ui(pilot_b, pod, "toggle_stabilization"))
+	TEST_ASSERT(pod.stabilization_enabled != stable, "the pilot's stabilizer button works")
