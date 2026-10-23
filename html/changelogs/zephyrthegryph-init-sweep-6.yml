@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved the Initialize() work of large artifacts, crystals, liquid fuel, zip guns, AI-controlled humans and graffiti into declared setup(), keeps_if() and rolls() forms"
