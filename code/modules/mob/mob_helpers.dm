@@ -413,14 +413,14 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 			else
 				name = realname
 
-	if(subject && subject.forbid_seeing_deadchat && !check_rights_for(subject.client, R_HOLDER))
+	if(subject && sparse_get_or(subject, forbid_seeing_deadchat, FALSE) && !check_rights_for(subject.client, R_HOLDER))
 		return // Can't talk in deadchat if you can't see it.
 
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client && ((!isnewplayer(M) && M.stat == DEAD) || (check_rights_for(M.client, R_HOLDER) && M.client?.prefs?.read_preference(/datum/preference/toggle/holder/show_staff_dsay))) && M.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 			var/follow
 			var/lname
-			if(M.forbid_seeing_deadchat && !check_rights_for(M.client, R_HOLDER))
+			if(sparse_get_or(M, forbid_seeing_deadchat, FALSE) && !check_rights_for(M.client, R_HOLDER))
 				continue
 
 			if(subject)
@@ -450,7 +450,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		if(M.client && ((!isnewplayer(M) && M.stat == DEAD) || (check_rights_for(M.client, R_HOLDER) && M.client?.prefs?.read_preference(/datum/preference/toggle/holder/show_staff_dsay))) && M.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 			var/follow
 			var/lname = "Game Master"
-			if(M.forbid_seeing_deadchat && !check_rights_for(M.client, R_HOLDER))
+			if(sparse_get_or(M, forbid_seeing_deadchat, FALSE) && !check_rights_for(M.client, R_HOLDER))
 				continue
 
 			if(subject)

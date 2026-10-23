@@ -574,11 +574,11 @@
 	if(in_godmode(src))
 		return 0	// Cancelled by a component
 
-	if(src.suiciding)
+	if(sparse_get_or(src, suiciding, 0))
 		// Holding the breath: nothing is drawn in.
 		src.failed_last_breath = 1
 		src.body?.set_breath_quality(0)
-		src.suiciding--
+		sparse_set(src, suiciding, sparse_get_or(src, suiciding, 0) - 1)
 		return 0
 
 	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & INFINITE_AIR))
@@ -1601,7 +1601,7 @@
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
 		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
-		src.health_doll_key = null
+		sparse_set(src, health_doll_key, null)
 		return
 
 	if(src.is_critical()) //Crit
@@ -1609,7 +1609,7 @@
 
 	if(src.analgesia > 100)
 		hud_used?.healths?.icon_state = "health_numb"
-		src.health_doll_key = null
+		sparse_set(src, health_doll_key, null)
 		return
 
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
@@ -1632,9 +1632,9 @@
 		key += "|\ref[limb_image][limb_image.color]"
 	var/show_pain = trauma_val && src.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
-	if(key == src.health_doll_key)
+	if(key == sparse_get(src, health_doll_key))
 		return
-	src.health_doll_key = key
+	sparse_set(src, health_doll_key, key)
 
 	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
@@ -1656,8 +1656,6 @@
 	healths_ma.overlays = health_images
 	hud_used?.healths?.appearance = healths_ma
 
-/// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
-/mob/living/carbon/human/var/tmp/health_doll_key
 
 
 /mob/living/carbon/human/life_vision()

@@ -155,9 +155,9 @@
 	var/remaining_personal_payment = max(0, invoice.personal)
 	for(var/sale_handle in verified_sale_items)
 		var/obj/sale_item = resolve_token(sale_handle)
-		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
+		if(!sale_item || QDELETED(sale_item) || sparse_get_or(sale_item, economic_sale_invoice_id, 0) || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
 			continue
-		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && sale_item.economic_department != provider.department_id)
+		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && sparse_get(sale_item, economic_department) != provider.department_id)
 			continue
 		var/scanned_value = verified_sale_items[sale_handle]
 		if(!isnum(scanned_value) || scanned_value <= 0)
@@ -165,7 +165,7 @@
 		var/credited_value = min(round(scanned_value), remaining_personal_payment)
 		if(credited_value <= 0)
 			continue
-		sale_item.economic_sale_invoice_id = invoice.id
+		sparse_set(sale_item, economic_sale_invoice_id, invoice.id)
 		invoice.verified_items += ref_token(sale_item)
 		invoice.verified_item_types["[sale_item.type]"] = TRUE
 		invoice.verified_amount += credited_value
@@ -279,9 +279,9 @@
 	invoice.contract_revision++
 	for(var/sale_handle in invoice.verified_items)
 		var/obj/sale_item = resolve_token(sale_handle)
-		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
+		if(!sale_item || QDELETED(sale_item) || sparse_get_or(sale_item, economic_sale_invoice_id, 0) != invoice.id)
 			continue
-		sale_item.economic_sale_invoice_id = 0
+		sparse_set(sale_item, economic_sale_invoice_id, 0)
 		if(isitem(sale_item))
 			var/obj/item/sold_item = sale_item
 			if(sold_item.economic_adoption)

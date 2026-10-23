@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 		if(bound_mob in contents)
 			unleash()
 		to_chat(bound_mob, span_notice("You feel like yourself again. You are no longer under the influence of \the [src]'s command."))
-		bound_mob.capture_caught = FALSE
+		sparse_set(bound_mob, capture_caught, FALSE)
 	..()
 
 /obj/item/capture_crystal/examine(user)
@@ -345,7 +345,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/proc/capture(mob/living/M, mob/living/U)
-	if(!M.capture_crystal || M.capture_caught)
+	if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 		S.revivedby = U.name
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
-		bound_mob.capture_caught = TRUE
+		sparse_set(bound_mob, capture_caught, TRUE)
 		set_persist_storable(FALSE)
 	desc = "A glowing crystal in what appears to be some kind of steel housing."
 
@@ -411,7 +411,7 @@ CAPABILITIES(/obj/item/capture_crystal)
 	if(jobban_isbanned(M, JOB_GHOSTROLES))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
-	else if(!M.capture_crystal || M.capture_caught)
+	else if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else
@@ -450,7 +450,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	if(!istype(M) || M.stat != CONSCIOUS)
 		return "not conscious"
 	var/obj/item/capture_crystal/crystal = owner
-	if(crystal.bound_mob || !M.capture_crystal || M.capture_caught || get_dist(capturer, M) > 7)
+	if(crystal.bound_mob || !M.capture_crystal || sparse_get_or(M, capture_caught, FALSE) || get_dist(capturer, M) > 7)
 		return "not catchable"
 	return null
 
@@ -488,7 +488,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(bound_mob, /datum/notice/qdeleting, src)
 	unobserve(owner, /datum/notice/qdeleting, src)
-	bound_mob.capture_caught = FALSE
+	sparse_set(bound_mob, capture_caught, FALSE)
 	rel_clear(src, nameof(bound_mob))
 	rel_clear(src, nameof(owner))
 	active = FALSE
@@ -524,7 +524,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
 		start_activate_cooldown()
-		if(M.capture_caught)					//Can't capture things that were already caught.
+		if(sparse_get_or(M, capture_caught, FALSE))					//Can't capture things that were already caught.
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
 			return
@@ -1000,7 +1000,6 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 
 /mob/living
 	var/capture_crystal = TRUE		//If TRUE, the mob is capturable. Otherwise it isn't.
-	var/capture_caught = FALSE		//If TRUE, the mob has already been caught, and so cannot be caught again.
 
 /obj/item/capture_crystal/loadout
 	active = TRUE
@@ -1023,7 +1022,7 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/cheap/capture(mob/living/M, mob/living/U)
-	if(!M.capture_crystal || M.capture_caught)
+	if(!M.capture_crystal || sparse_get_or(M, capture_caught, FALSE))
 		to_chat(U, span_warning("This creature is not suitable for capture with this crystal."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
@@ -1035,7 +1034,7 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 	rel_set(src, nameof(owner), U)
 	if(!bound_mob)
 		rel_set(src, nameof(bound_mob), M)
-		bound_mob.capture_caught = TRUE
+		sparse_set(bound_mob, capture_caught, TRUE)
 		set_persist_storable(FALSE)
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
 
@@ -1062,7 +1061,7 @@ CAPABILITIES(/obj/item/capture_crystal/random)
 	else if(isliving(target))						//So we don't have a mob, let's try to claim one! Is the target a mob?
 		var/mob/living/M = target
 		start_activate_cooldown()
-		if(M.capture_caught)					//Can't capture things that were already caught.
+		if(sparse_get_or(M, capture_caught, FALSE))					//Can't capture things that were already caught.
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly... \The [M] is already under someone else's control."))
 			return

@@ -267,8 +267,9 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 
 /obj/item/holo
 	injury_kind = INJURY_PAIN
-	no_attack_log = 1
-	no_random_knockdown = TRUE
+
+CAPABILITIES(/obj/item/holo)
+	configure(item_handling(no_attack_log = 1, no_random_knockdown = TRUE))
 
 /obj/item/holo/esword
 	name = "holographic energy sword"

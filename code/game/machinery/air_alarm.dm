@@ -60,8 +60,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	clicksound = SFX_BUTTON
-	clickvol = 30
 	blocks_emissive = NONE
 	flags = WALL_ITEM
 	circuit = /obj/item/circuitboard/airalarm
@@ -124,6 +122,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
+	configure(machine_usage(click_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))
 	configure(light_glow(power = 0.25))

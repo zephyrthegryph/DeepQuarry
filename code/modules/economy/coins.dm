@@ -5,7 +5,6 @@
 	name = "Coin"
 	desc = "A simple coin you can flip."
 	icon_state = "coin"
-	randpixel = 8
 	w_class = ITEMSIZE_TINY
 	var/string_attached
 	var/sides = 2
@@ -172,12 +171,13 @@ CAPABILITIES(/obj/item/coin/uranium)
 	look.overlay("coin_string_overlay", when = string_attached)
 
 CAPABILITIES(/obj/item/coin)
+	configure(item_handling(randpixel = 8))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 0.0))
 	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
@@ -201,7 +201,6 @@ CAPABILITIES(/obj/item/coin)
 	name = "curious coin"
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. "
 	icon_state = "triangle"
-	randpixel = 8
 	w_class = ITEMSIZE_TINY
 	var/sides = 2
 	var/value = 1
@@ -227,12 +226,13 @@ CAPABILITIES(/obj/item/coin)
 	value = 20
 
 CAPABILITIES(/obj/item/aliencoin)
+	configure(item_handling(randpixel = 8))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 0.5))
 	configure(item_combat(force = 0.5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 
 /obj/item/aliencoin/proc/alien_coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor

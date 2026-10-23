@@ -430,7 +430,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 /mob/living/carbon/human/attack_generic(mob/user, damage, attack_message)
 	if(istype(user,/mob/living))
 		var/mob/living/L = user
-		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
+		if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
 			if((src != L))
 				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				act_message(L, src, MSG_SELF(span_warning("%T% is covered in sharp bits and it hurt when you touched them!")), \

@@ -229,7 +229,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
-		if((occupant.stat == DEAD) || (occupant.suiciding) || !occupant.key)  //Autoeject corpses and suiciding dudes.
+		if((occupant.stat == DEAD) || (sparse_get_or(occupant, suiciding, 0)) || !occupant.key)  //Autoeject corpses and suiciding dudes.
 			set_locked(0)
 			go_out()
 			connected_message("Clone Rejected: Deceased.")

@@ -1,15 +1,11 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
-	var/prey_controlled = FALSE			// If the mob is currently controlled by their prey.
 	var/weight = 137					// Weight for mobs for weightgain system
 	var/weight_gain = 1 				// How fast you gain weight
 	var/weight_loss = 0.5 				// How fast you lose weight
 	var/vore_egg_type = "egg" 			// Default egg type.	// Only used for creatures that have the xenochimera regen ability, so far.
 	var/metabolism = 0.0015
-	var/no_vore = FALSE					// If the character/mob can vore.
-	var/restrict_vore_ventcrawl = FALSE // Self explanatory
-	var/absorbing_prey = 0 				// Determines if the person is using the succubus drain or not. See station_special_abilities_vr.
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 	var/stuffing_feeder = FALSE			// Can feed foods to others whole, like trash eater can eat them on their own.
@@ -18,14 +14,9 @@
 	var/appendage_color = "#e03997" //Default pink. Used for the 'long_vore' trait.
 	var/appendage_alt_setting = FALSE	// Dictates if 'long_vore' user pulls prey to them or not. 1 = user thrown towards target.
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
-	var/trait_injection_selected = null			//What trait reagent you're injecting.
-	var/trait_injection_amount = 5				//How much you're injecting with traits.
 
 	var/parasitic = FALSE					//Digestion immunity and nutrition leeching variable
-	var/liquidbelly_visuals = TRUE			//Toggle for liquidbelly level visuals.
 
-	var/passtable_reset		// For crawling
-	var/passtable_crawl_checked = FALSE
 
 /mob/living/proc/handle_special_unlocks()
 	return
@@ -65,7 +56,7 @@
 		return TRUE
 
 /mob/living/init_vore(force)
-	if(no_vore)
+	if(nature_of(src).no_vore)
 		return FALSE
 	return ..()
 
@@ -559,7 +550,7 @@
 			MSG_OTHERS(span_vwarning("%U% licks themself!")), \
 			MSG_BLIND(span_infoplain(span_bold("Slurp!"))))
 	else
-		if((tasted.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
+		if((sparse_get(tasted, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(tasted?.grabbed_by_list()) || !tasted.stat))
 			act_message(src, tasted, MSG_SELF(span_warning("You try to lick %T%, but they deftly avoid your attempt.")), \
 				MSG_OTHERS(span_warning("%U% tries to lick %T%, but they dodge out of the way!")))
 			return
@@ -616,7 +607,7 @@
 			MSG_OTHERS(span_vwarning("%U% smells themself!")), \
 			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 	else
-		if((smelled.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
+		if((sparse_get(smelled, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE) && (!LAZYLEN(smelled?.grabbed_by_list()) || !smelled.stat))
 			act_message(src, smelled, MSG_SELF(span_warning("You try to smell %T%, but they deftly avoid your attempt.")), \
 				MSG_OTHERS(span_warning("%U% tries to smell %T%, but they dodge out of the way!")))
 			return
@@ -1864,8 +1855,8 @@
 	set name = "Toggle Liquidbelly Visuals"
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle liquidbelly fullscreen visual effect."
-	liquidbelly_visuals = !liquidbelly_visuals
-	to_chat(src, span_vwarning("Liquidbelly overlays [liquidbelly_visuals ? "enabled" : "disabled"]."))
+	sparse_set(src, liquidbelly_visuals, !sparse_get_or(src, liquidbelly_visuals, TRUE))
+	to_chat(src, span_vwarning("Liquidbelly overlays [sparse_get_or(src, liquidbelly_visuals, TRUE) ? "enabled" : "disabled"]."))
 
 /mob/living/proc/fix_vore_effects()
 	set name = "Fix Vore Effects"

@@ -40,7 +40,7 @@ TYPE_TABLE_DECLARE(/mob/living, butchery_organ_types, null)
 		neworg.set_meat_type(meat_type)
 
 /mob/living/gib()
-	if(butchery_drops_organs)
+	if(nature_of(src).drops_organs)
 		spawn_butchery_organs()
 
 		for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot

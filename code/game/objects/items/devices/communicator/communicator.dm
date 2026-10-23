@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 	icon = 'icons/obj/device.dmi'
 	icon_state = "communicator"
 	w_class = ITEMSIZE_SMALL
-	show_messages = 1
 
 
 	var/video_range = 3

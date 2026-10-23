@@ -42,7 +42,7 @@
 	deaf_loop.stop()
 
 /mob/proc/status_dizzy_started()
-	dizzy_was_resting = resting
+	sparse_set(src, dizzy_was_resting, resting)
 	set_dizzy_shaking(TRUE)
 
 /mob/proc/status_dizzy_ended()
@@ -53,7 +53,7 @@
 		client.pixel_y = 0
 
 /mob/proc/status_jittery_started()
-	jittery_was_resting = resting
+	sparse_set(src, jittery_was_resting, resting)
 	set_jittery_shaking(TRUE)
 
 /mob/proc/status_jittery_ended()

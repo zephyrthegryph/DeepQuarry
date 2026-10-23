@@ -12,7 +12,9 @@
 	var/list/blend_objects = null // Objects which to blend with // default null
 	var/list/noblend_objects = null // Objects to avoid blending with (such as children of listed blend objects. // default null
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
-	tk_reach = FALSE
+
+CAPABILITIES(/obj/structure)
+	configure(obj_rules(tk_reach = FALSE))
 
 /// The smoothing code writes these through their setters (interned lists, so an unchanged shape publishes nothing); a draw reads them.
 

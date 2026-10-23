@@ -18,19 +18,19 @@
 		return 0
 
 	var/mob/living/carbon/human/C = src
-	if(C.digitalcamo)
+	if(sparse_get_or(C, digitalcamo, 0))
 		to_chat(C, span_notice("We return to normal."))
 	else
 		to_chat(C, span_notice("We distort our form to prevent AI-tracking."))
-	C.digitalcamo = !C.digitalcamo
-	changeling.set_camo_draining(C.digitalcamo ? TRUE : FALSE)
+	sparse_set(C, digitalcamo, !sparse_get_or(C, digitalcamo, 0))
+	changeling.set_camo_draining(sparse_get_or(C, digitalcamo, 0) ? TRUE : FALSE)
 
 	feedback_add_details("changeling_powers","CAM")
 	return 1
 
 /// Digital camouflage costs a chemical every 4 seconds while it lasts (every() while camo_draining).
 /datum/changeling/proc/camo_drain(datum/act/timer/A)
-	if(!ishuman(owner) || !owner.digitalcamo || !owner.mind)
+	if(!ishuman(owner) || !sparse_get_or(owner, digitalcamo, 0) || !owner.mind)
 		set_camo_draining(FALSE)
 		return
 	chem_charges = max(chem_charges - 1, 0)

@@ -18,9 +18,9 @@
 			return FALSE
 	if(!vore_selected_of(pred))
 		return FALSE
-	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || sparse_get_or(pred, away_from_keyboard, FALSE)))
 		return FALSE
-	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || sparse_get_or(prey, away_from_keyboard, FALSE)))
 		return FALSE
 	if(!prey.vore_prefs.allowmobvore && isanimal(pred) && !pred.ckey)
 		return FALSE

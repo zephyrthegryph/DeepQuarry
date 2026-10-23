@@ -27,18 +27,15 @@
 // ---------------------------------------------------------------------------
 
 /mob/living
-	/// Wait before the next autofire_tick(), set by each tick from the gun's cadence.
-	var/tmp/autofire_delay = 0
 	var/tmp/obj/item/gun/autofire_gun
 	var/tmp/atom/autofire_target
-	var/tmp/autofire_params = null
 
 /// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
 /mob/living/var/tmp/autofire_on = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 
 /// The every() interval of autofire_tick(): the wait the last tick set.
 /mob/living/proc/autofire_interval(datum/act/A)
-	return autofire_delay
+	return sparse_get_or(src, autofire_delay, 0)
 
 /// Begin (or retarget) a held-trigger autofire session with gun G at target.
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
@@ -46,9 +43,9 @@
 		return
 	rel_set(src, nameof(autofire_gun), G)
 	rel_set(src, nameof(autofire_target), target)
-	autofire_params = params
+	sparse_set(src, autofire_params, params)
 	if(!autofire_on)
-		autofire_delay = 0 // the first trigger pull comes right away
+		sparse_set(src, autofire_delay, 0) // the first trigger pull comes right away
 		set_autofire_on(TRUE)
 
 /// Update the target/params of an in-progress session (mouse dragged onto a new
@@ -56,14 +53,14 @@
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
 		rel_set(src, nameof(autofire_target), target)
-		autofire_params = params
+		sparse_set(src, autofire_params, params)
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	set_autofire_on(FALSE)
 	rel_clear(src, nameof(autofire_gun))
 	rel_clear(src, nameof(autofire_target))
-	autofire_params = null
+	sparse_set(src, autofire_params, null)
 
 /// One iteration of the hold-to-fire loop (declared: while autofire_on).  Fires if the gun is
 /// ready and sets the wait before the next one; a stop condition ends the session.
@@ -79,7 +76,7 @@
 
 	var/delay
 	if(COOLDOWN_FINISHED(G, next_fire_time))
-		G.Fire(target, src, autofire_params)
+		G.Fire(target, src, sparse_get(src, autofire_params))
 		// Re-check: Fire()/handle_click_empty may have ended the session
 		// (dropped gun, ran dry) this tick.
 		if(!autofire_on)
@@ -89,7 +86,7 @@
 		// Not ready yet (mid-burst or cooling down): wait exactly until it is.
 		delay = max(1, G.next_fire_time - world.time)
 
-	autofire_delay = delay
+	sparse_set(src, autofire_delay, delay)
 
 // ---------------------------------------------------------------------------
 // Client mouse capture

@@ -40,7 +40,6 @@
 	var/computer_id = null
 	var/list/logging
 
-	var/other_mobs = null
 	var/memory = ""
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
@@ -122,8 +121,6 @@
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
-	var/away_from_keyboard = FALSE	//are we at, or away, from our keyboard?
-	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
 
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
 	var/tmp/mob/living/LAssailant = null
@@ -144,7 +141,6 @@
 	var/tmp/area/lastarea = null
 	EXPIRY_TMP_DECLARE(lastareachange)
 
-	var/digitalcamo = 0 // Can they be tracked by the AI?
 
 
 
@@ -165,7 +161,6 @@
 
 	var/list/active_genes
 	var/mob_size = MOB_MEDIUM
-	var/forbid_seeing_deadchat = FALSE // Used for lings to not see deadchat, and to have ghosting behave as if they were not really dead.
 
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
 
@@ -206,6 +201,7 @@
 
 
 CAPABILITIES(/mob)
+	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
@@ -314,12 +310,10 @@ CAPABILITIES(/mob)
 
 /mob
 
-	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
-	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

@@ -122,9 +122,9 @@
 	failed_last_breath = 0
 
 	// 4. The one stat transition back.
-	revival_in_progress = TRUE
+	sparse_set(src, revival_in_progress, TRUE)
 	set_stat((flags & REVIVE_UNCONSCIOUS) ? UNCONSCIOUS : CONSCIOUS)
-	revival_in_progress = FALSE
+	sparse_set(src, revival_in_progress, FALSE)
 	body?.on_status_changed()
 
 	// 5. Undo what death() did to the senses and screen.

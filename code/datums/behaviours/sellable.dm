@@ -14,37 +14,33 @@
 		. = new path
 		profiles[path] = .
 
-/obj
-	/// The /datum/sellable profile this object sells under, or null.
-	var/sellable_type
-
 /// Makes this object sellable under profile `path`. The first profile wins.
 /obj/proc/make_sellable(path = /datum/sellable)
-	if(sellable_type)
+	if(rules_of(src).sellable_type)
 		return
-	sellable_type = path
+	set_sellable_type(path)
 
 /// Offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
 /atom/proc/export_sale(datum/exported_crate/EC, in_crate)
 	return FALSE
 
 /obj/export_sale(datum/exported_crate/EC, in_crate)
-	if(!sellable_type)
+	if(!rules_of(src).sellable_type)
 		return FALSE
-	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	var/datum/sellable/profile = get_sellable_profile(rules_of(src).sellable_type)
 	return profile.sell(src, EC, in_crate)
 
 /// The sale value a retail scanner reads, or null when not sellable.
 /obj/proc/scan_profit()
-	if(!sellable_type)
+	if(!rules_of(src).sellable_type)
 		return null
-	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	var/datum/sellable/profile = get_sellable_profile(rules_of(src).sellable_type)
 	return profile.calculate_sell_value(src)
 
 /obj/examine(mob/user, infix = "", suffix = "")
 	. = ..()
-	if(sellable_type)
-		var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	if(rules_of(src).sellable_type)
+		var/datum/sellable/profile = get_sellable_profile(rules_of(src).sellable_type)
 		if(profile.sale_info)
 			. += span_notice(profile.sale_info)
 
@@ -79,19 +75,19 @@
 	EC.add_rows(list(export_row))
 	SSsupply.apply_market_demand(source, EC, export_row)
 	EC.set_value(EC.value + export_row["value"])
-	if(EC.sales_ledger_valid && source.economic_department == EC.sales_department)
+	if(EC.sales_ledger_valid && sparse_get(source, economic_department) == EC.sales_department)
 		EC.sales_eligible_value += export_row["value"]
-	else if(source.economic_department)
+	else if(sparse_get(source, economic_department))
 		LAZYINITLIST(EC.revenue_by_department)
-		EC.revenue_by_department[source.economic_department] += export_row["value"]
-		if(source.economic_producer_account)
+		EC.revenue_by_department[sparse_get(source, economic_department)] += export_row["value"]
+		if(sparse_get_or(source, economic_producer_account, 0))
 			LAZYINITLIST(EC.revenue_by_producer)
-			var/producer_key = "[source.economic_producer_account]"
+			var/producer_key = "[sparse_get_or(source, economic_producer_account, 0)]"
 			EC.revenue_by_producer[producer_key] += export_row["value"]
 	var/list/contract_context = list(
-		"actor_account" = source.economic_producer_account,
-		"department" = source.economic_department,
-		"origin_department" = source.economic_department,
+		"actor_account" = sparse_get_or(source, economic_producer_account, 0),
+		"department" = sparse_get(source, economic_department),
+		"origin_department" = sparse_get(source, economic_department),
 		// All accepted shuttle freight is handled by Cargo, including salvage,
 		// raw materials, and another department's manufactured goods.
 		"handling_department" = DEPARTMENT_CARGO,
@@ -163,7 +159,7 @@
 	return cashmoney.worth
 
 /datum/sellable/manufactured/calculate_sell_value(obj/source)
-	return max(1, source.economic_export_value)
+	return max(1, sparse_get_or(source, economic_export_value, 0))
 
 
 // Research samples

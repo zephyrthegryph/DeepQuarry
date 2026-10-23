@@ -102,7 +102,6 @@ Class Procs:
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
 	/// handling (rel_set() in Initialize and area_changed()).
 	var/tmp/area/power_area // ALLOW(base_vars): the relation to the area every machine contributes its draw to and reads its channels from, a link not a flag
-	var/tmp/power_init_complete = FALSE
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on, one bit of per-machine memory for flip detection
 	/// A caller forced the machine's power on by hand (stat_remove(NOPOWER) while its area is dark): area_gives_power() says yes. The shim's, not the grid's.
@@ -113,22 +112,13 @@ Class Procs:
 	var/list/component_parts = null
 	var/tmp/uid
 	var/global/gl_uid = 1
-	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.
-	var/clickvol = 40		// volume
-	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
-	/// Time spent securing or unsecuring this machine; zero is immediate.
-	var/maintenance_wrench_time = 0
-	/// Time spent welding a damaged machine back to full integrity.
-	var/maintenance_weld_time = 2 SECONDS
 	/// Inspectable material makeup retained from the frame and installed parts.
 	var/list/material_component_manifest
 	/// Whole-machine EMP rejection supplied by insulating component materials.
 	var/material_emp_resistance = 0
-	/// Monotonic diagnostic counter for exact dependency-wake assertions.
-	var/tmp/gas_dependency_wake_count = 0
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
@@ -137,6 +127,7 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
 	silicon_hand(tier = OP_PRIORITY_DEFAULT - 100) // the AI's Use of a machine is the hand's
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
@@ -368,12 +359,12 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
 /obj/machinery/tgui_status(mob/user)
-	if(!interact_offline && (!operable()))
+	if(!usage_of(src).interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
 /obj/machinery/CanUseTopic(mob/user)
-	if(!interact_offline && (!operable()))
+	if(!usage_of(src).interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
@@ -407,8 +398,8 @@ PROC_SUMMARY(/proc/dq_type_var) // vars[] / call() dispatcher: the walk cannot e
 			to_chat(user, span_warning("You momentarily forget how to use [src]."))
 			return 1
 
-	if(clicksound && istype(user, /mob/living/carbon))
-		playsound(src, clicksound, clickvol)
+	if(usage_of(src).click_sound && istype(user, /mob/living/carbon))
+		playsound(src, usage_of(src).click_sound, usage_of(src).click_volume)
 
 	add_fingerprint(user)
 

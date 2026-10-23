@@ -15,7 +15,6 @@
 	singular_name = "tile"
 	desc = "A non-descript floor tile"
 	icon = 'icons/obj/stacks.dmi' // parent obj/item/stack got edited, this puts icon back for carpets.
-	randpixel = 7
 	w_class = ITEMSIZE_NORMAL
 	max_amount = 60
 
@@ -49,9 +48,10 @@
 	return M ? M.stack_type : stacktype
 
 CAPABILITIES(/obj/item/stack/tile)
+	configure(item_handling(randpixel = 7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 	keeps_if(PROC_REF(material_exists))
 	derives(nameof(material), PROC_REF(tile_material))
 	derives(nameof(recipes), PROC_REF(material_recipes))

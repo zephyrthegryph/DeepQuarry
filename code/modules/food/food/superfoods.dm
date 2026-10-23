@@ -177,11 +177,12 @@ CAPABILITIES(/transformation/kitchen/thecake_fifthlayer)
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "thecakeslice"
 
-	center_of_mass_x = 16
-	center_of_mass_y= 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, "singularity?" = 1)
 	nutriment_amt = 5
 	//Add some randomized effect possibly, to make the slices special - Jack
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/thecakeslice)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/structure/thecake
 	name = "An unfinished cake"
@@ -469,8 +470,6 @@ CAPABILITIES(/transformation/kitchen/chaoscake_layernine)
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "chaoscake_slice-1"
 
-	center_of_mass_x = 16
-	center_of_mass_y= 10
 	nutriment_desc = list()
 	nutriment_amt = 4
 	volume = 80
@@ -480,6 +479,7 @@ CAPABILITIES(/transformation/kitchen/chaoscake_layernine)
 	var/slice_kind = 1
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chaoscakeslice)
+	configure(item_handling(center_x = 16, center_y = 10))
 	rolls(nameof(slice_kind), range_of(1, 6))
 	rolls(nameof(icon_state), PROC_REF(roll_slice_icon), from = list(nameof(slice_kind)))
 	rolls(nameof(name), PROC_REF(roll_slice_name), from = list(nameof(slice_kind)))

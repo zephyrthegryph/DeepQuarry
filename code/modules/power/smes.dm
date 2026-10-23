@@ -38,7 +38,6 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
-	clicksound = SFX_SWITCH
 	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge
@@ -98,6 +97,7 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	configure(machine_usage(click_sound = SFX_SWITCH))
 	setup(PROC_REF(wire_up), mapload = TRUE)
 	after_init(0, then(PROC_REF(mapped_after_init)))
 	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)

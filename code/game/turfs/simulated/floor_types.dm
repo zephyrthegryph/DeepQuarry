@@ -89,10 +89,9 @@
 	/// Whether this joined corner cancels the lighting overlay of the dynamic lighting beside it (update_breaklights()).
 	var/breaks_light = FALSE
 	rad_insulation = RAD_MEDIUM_INSULATION
-	rad_shield_material = MAT_TITANIUM
-	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
 
 CAPABILITIES(/turf/simulated/shuttle)
+	configure(atom_shielding(rad_material = MAT_TITANIUM, rad_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM))
 	setup(PROC_REF(finish_shuttle_turf))
 	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 

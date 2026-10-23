@@ -528,11 +528,17 @@
 /obj/item/reagent_containers/food/snacks/cheesiehonkers
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesiehonkers)
+	configure(item_handling(center_x = 15, center_y = 9))
+
 /obj/item/reagent_containers/food/snacks/tastybread
 	price_tag = 2
 
 /obj/item/reagent_containers/food/snacks/no_raisin
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/no_raisin)
+	configure(item_handling(center_x = 15, center_y = 4))
 
 /obj/item/reagent_containers/food/snacks/packaged/spacetwinkie
 	price_tag = 1
@@ -555,6 +561,9 @@
 /obj/item/reagent_containers/food/snacks/ghostburger
 	price_tag = 2
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostburger)
+	configure(item_handling(center_x = 16, center_y = 11))
+
 /obj/item/reagent_containers/food/snacks/human/burger
 	price_tag = 2
 
@@ -570,11 +579,20 @@
 /obj/item/reagent_containers/food/snacks/tofuburger
 	price_tag = 2
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofuburger)
+	configure(item_handling(center_x = 16, center_y = 10))
+
 /obj/item/reagent_containers/food/snacks/roburger
 	price_tag = 2
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roburger)
+	configure(item_handling(center_x = 16, center_y = 11))
+
 /obj/item/reagent_containers/food/snacks/roburgerbig
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roburgerbig)
+	configure(item_handling(center_x = 16, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/xenoburger
 	price_tag = 2
@@ -585,11 +603,17 @@
 /obj/item/reagent_containers/food/snacks/mimeburger
 	price_tag = 2
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mimeburger)
+	configure(item_handling(center_x = 16, center_y = 11))
+
 /obj/item/reagent_containers/food/snacks/spellburger
 	price_tag = 2
 
 /obj/item/reagent_containers/food/snacks/jellyburger
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger)
+	configure(item_handling(center_x = 16, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/bigbiteburger
 	price_tag = 4
@@ -611,6 +635,9 @@
 
 /obj/item/reagent_containers/food/snacks/jellysandwich
 	price_tag = 3
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellysandwich)
+	configure(item_handling(center_x = 16, center_y = 8))
 
 
 // Cookies and Candies //
@@ -639,8 +666,14 @@
 /obj/item/reagent_containers/food/snacks/fortunecookie
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fortunecookie)
+	configure(item_handling(center_x = 15, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/candiedapple
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candiedapple)
+	configure(item_handling(center_x = 15, center_y = 13))
 
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit
 	price_tag = 1
@@ -660,6 +693,9 @@
 /obj/item/reagent_containers/food/snacks/tofurkey
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofurkey)
+	configure(item_handling(center_x = 16, center_y = 8))
+
 /obj/item/reagent_containers/food/snacks/carpmeat
 	price_tag = 5
 
@@ -672,17 +708,29 @@
 /obj/item/reagent_containers/food/snacks/berryclafoutis
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/waffles
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/waffles)
+	configure(item_handling(center_x = 15, center_y = 11))
+
 /obj/item/reagent_containers/food/snacks/eggplantparm
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggplantparm)
+	configure(item_handling(center_x = 16, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/soylentgreen
 	price_tag = 5
 
 /obj/item/reagent_containers/food/snacks/soylenviridians
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylenviridians)
+	configure(item_handling(center_x = 15, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/wingfangchu
 	price_tag = 5
@@ -692,6 +740,9 @@
 
 /obj/item/reagent_containers/food/snacks/tofukabob
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofukabob)
+	configure(item_handling(center_x = 17, center_y = 15))
 
 /obj/item/reagent_containers/food/snacks/cubancarp
 	price_tag = 5
@@ -729,14 +780,26 @@
 /obj/item/reagent_containers/food/snacks/stewedsoymeat
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/stewedsoymeat)
+	configure(item_handling(center_x = 16, center_y = 10))
+
 /obj/item/reagent_containers/food/snacks/boiledspagetti
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledspagetti)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/boiledrice
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledrice)
+	configure(item_handling(center_x = 17, center_y = 11))
+
 /obj/item/reagent_containers/food/snacks/ricepudding
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ricepudding)
+	configure(item_handling(center_x = 17, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/pastatomato
 	price_tag = 5
@@ -759,19 +822,34 @@
 /obj/item/reagent_containers/food/snacks/slice/margherita
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/margherita)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/slice/meatpizza
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/meatpizza)
+	configure(item_handling(center_x = 16, center_y = 13))
 
 /obj/item/reagent_containers/food/snacks/slice/mushroompizza
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/mushroompizza)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/slice/vegetablepizza
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/vegetablepizza)
+	configure(item_handling(center_x = 16, center_y = 13))
 
 // Baked Goods //
 
 /obj/item/reagent_containers/food/snacks/poppypretzel
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/poppypretzel)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/baguette
 	price_tag = 2
@@ -779,8 +857,14 @@
 /obj/item/reagent_containers/food/snacks/jelliedtoast
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast)
+	configure(item_handling(center_x = 16, center_y = 8))
+
 /obj/item/reagent_containers/food/snacks/twobread
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/twobread)
+	configure(item_handling(center_x = 15, center_y = 12))
 
 /obj/item/reagent_containers/food/snacks/sliceable/meatbread
 	price_tag = 5
@@ -788,11 +872,17 @@
 /obj/item/reagent_containers/food/snacks/slice/meatbread
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/meatbread)
+	configure(item_handling(center_x = 16, center_y = 16))
+
 /obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread
 	price_tag = 5
 
 /obj/item/reagent_containers/food/snacks/slice/xenomeatbread
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/xenomeatbread)
+	configure(item_handling(center_x = 16, center_y = 13))
 
 /obj/item/reagent_containers/food/snacks/sliceable/bananabread
 	price_tag = 5
@@ -800,14 +890,26 @@
 /obj/item/reagent_containers/food/snacks/slice/bananabread
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bananabread)
+	configure(item_handling(center_x = 16, center_y = 8))
+
 /obj/item/reagent_containers/food/snacks/sliceable/tofubread
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/tofubread)
+	configure(item_handling(center_x = 16, center_y = 9))
 
 /obj/item/reagent_containers/food/snacks/slice/tofubread
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/tofubread)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/sliceable/bread
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bread)
+	configure(item_handling(center_x = 16, center_y = 9))
 
 /obj/item/reagent_containers/food/snacks/slice/bread
 	price_tag = 1
@@ -817,6 +919,9 @@
 
 /obj/item/reagent_containers/food/snacks/slice/creamcheesebread
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/creamcheesebread)
+	configure(item_handling(center_x = 16, center_y = 14))
 
 
 // Soups //
@@ -875,6 +980,9 @@
 /obj/item/reagent_containers/food/snacks/tofupie
 	price_tag = 4
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tofupie)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/plump_pie
 	price_tag = 4
 
@@ -884,8 +992,14 @@
 /obj/item/reagent_containers/food/snacks/applepie
 	price_tag = 4
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/applepie)
+	configure(item_handling(center_x = 16, center_y = 13))
+
 /obj/item/reagent_containers/food/snacks/cherrypie
 	price_tag = 4
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cherrypie)
+	configure(item_handling(center_x = 16, center_y = 11))
 
 
 // Cakes //
@@ -896,11 +1010,17 @@
 /obj/item/reagent_containers/food/snacks/slice/carrotcake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/carrotcake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/braincake
 	price_tag = 5
 
 /obj/item/reagent_containers/food/snacks/slice/braincake
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/braincake)
+	configure(item_handling(center_x = 16, center_y = 12))
 
 /obj/item/reagent_containers/food/snacks/sliceable/cheesecake
 	price_tag = 5
@@ -908,35 +1028,68 @@
 /obj/item/reagent_containers/food/snacks/slice/cheesecake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/cheesecake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/plaincake
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/plaincake)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/slice/plaincake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/plaincake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/orangecake
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/orangecake)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/slice/orangecake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/orangecake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/limecake
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/limecake)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/slice/limecake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/limecake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/lemoncake
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/lemoncake)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/slice/lemoncake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/lemoncake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/chocolatecake
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/chocolatecake)
+	configure(item_handling(center_x = 16, center_y = 10))
+
 /obj/item/reagent_containers/food/snacks/slice/chocolatecake
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/chocolatecake)
+	configure(item_handling(center_x = 16, center_y = 14))
 
 /obj/item/reagent_containers/food/snacks/sliceable/birthdaycake
 	price_tag = 5
@@ -944,17 +1097,32 @@
 /obj/item/reagent_containers/food/snacks/slice/birthdaycake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/birthdaycake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/applecake
 	price_tag = 5
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/applecake)
+	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/snacks/slice/applecake
 	price_tag = 1
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/applecake)
+	configure(item_handling(center_x = 16, center_y = 14))
+
 /obj/item/reagent_containers/food/snacks/sliceable/pumpkinpie
 	price_tag = 5
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pumpkinpie)
+	configure(item_handling(center_x = 16, center_y = 10))
+
 /obj/item/reagent_containers/food/snacks/slice/pumpkinpie
 	price_tag = 1
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/pumpkinpie)
+	configure(item_handling(center_x = 16, center_y = 12))
 
 
 // Misc //
@@ -971,8 +1139,14 @@
 /obj/item/reagent_containers/food/snacks/muffin
 	price_tag = 2
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/muffin)
+	configure(item_handling(center_x = 17, center_y = 4))
+
 /obj/item/reagent_containers/food/snacks/tossedsalad
 	price_tag = 2
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tossedsalad)
+	configure(item_handling(center_x = 17, center_y = 11))
 
 /obj/item/reagent_containers/food/snacks/validsalad
 	price_tag = 2

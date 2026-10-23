@@ -92,7 +92,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 /// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return (read_once(istype(user) && user.vore_prefs.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
+	return (read_once(istype(user) && user.vore_prefs.pickup_pref && sparse_get_or(user, pickup_active, TRUE) && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
 
 /// The players standing in the fur who may be picked up.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
@@ -922,9 +922,9 @@ CAPABILITIES(/obj/effect/landmark/stardog)
 	icon_state = "screen_eye"
 	pixel_x = -16
 	pixel_y = -16
-	clicksound = SFX_VORE_SQUISH1
 
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
+	configure(machine_usage(click_sound = SFX_VORE_SQUISH1))
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
 	..()

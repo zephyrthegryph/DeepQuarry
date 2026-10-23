@@ -5,8 +5,6 @@
 	VAR_PRIVATE/atom_integrity //defaults to max_integrity
 	var/max_integrity = 500
 	var/integrity_failure = 0 //0 if we have no special broken behavior, otherwise is a percentage of at what point the atom breaks. 0.5 being 50%
-	///Damage under this value will be completely ignored
-	var/damage_deflection = 0
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
 	/// The damage flag of the last take_damage(), for the breakpoint rules' effects.
@@ -128,7 +126,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 /atom/proc/on_update_integrity(old_value, new_value)
 	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_CALL_PARENT(TRUE)
-	if(announce_damage_bands)
+	if(shielding_of(src).announce_bands)
 		announce_damage_band(old_value, new_value)
 
 /// Called after the atom takes damage and integrity is below integrity_failure level
@@ -155,7 +153,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 	GLOB.incoming_damage_kind = 0
 	if(!uses_integrity)
 		CRASH("/atom/proc/run_atom_armor was called on [src] without being implemented as a type that uses integrity!")
-	if(damage_flag == MELEE && damage_amount < damage_deflection)
+	if(damage_flag == MELEE && damage_amount < shielding_of(src).deflection)
 		return 0
 	if(damage_type != BRUTE && damage_type != BURN)
 		return 0

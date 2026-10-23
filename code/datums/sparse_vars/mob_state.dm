@@ -61,3 +61,53 @@ sparse(/mob/living/carbon/human, gender_change_cooldown, type = num)
 sparse(/mob/living/carbon/human, changeling_locked, type = bool)
 sparse(/mob/living/carbon/human, can_defib, type = num)
 sparse(/mob/living/carbon/human, damage_multiplier, type = num)
+
+// /mob
+sparse(/mob, autowhisper_mode, type = text)
+sparse(/mob, away_from_keyboard, type = bool)
+sparse(/mob, died_in_vr, type = bool)
+sparse(/mob, digitalcamo, type = num)
+sparse(/mob, disconnect_time, type = num)
+sparse(/mob, dizzy_was_resting, type = bool)
+sparse(/mob, forbid_seeing_deadchat, type = bool)
+sparse(/mob, hive_lang_range, type = num)
+sparse(/mob, jittery_was_resting, type = bool)
+sparse(/mob, manual_afk, type = bool)
+sparse(/mob, other_mobs, type = num)
+sparse(/mob, updating_fullness, type = bool)
+
+// /mob/living
+sparse(/mob/living, absorbing_prey, type = num)
+sparse(/mob/living, autofire_delay, type = num)
+sparse(/mob/living, autofire_params, type = text)
+sparse(/mob/living, liquidbelly_visuals, type = bool)
+sparse(/mob/living, melee_swing_resolving, type = bool)
+sparse(/mob/living, omen_incidents, type = num)
+sparse(/mob/living, omen_luck, type = num)
+sparse(/mob/living, omen_safe_disposals, type = bool)
+sparse(/mob/living, omen_vorish, type = bool)
+sparse(/mob/living, passtable_crawl_checked, type = bool)
+sparse(/mob/living, passtable_reset, type = bool)
+sparse(/mob/living, pickup_active, type = bool)
+sparse(/mob/living, rad_countdown_minimum, type = num)
+sparse(/mob/living, revival_in_progress, type = bool)
+sparse(/mob/living, trait_injection_amount, type = num)
+sparse(/mob/living, trait_injection_selected)
+sparse(/mob/living, updating_cult_vision, type = num)
+
+// /mob/living/carbon
+sparse(/mob/living/carbon, pose_move, type = bool)
+
+// /mob/living/carbon/human
+sparse(/mob/living/carbon/human, active_regen, type = bool)
+sparse(/mob/living/carbon/human, active_regen_delay, type = num)
+sparse(/mob/living/carbon/human, health_doll_key, type = text)
+sparse(/mob/living/carbon/human, spit_name, type = text)
+
+// /mob
+sparse(/mob, suiciding, type = num)
+
+// /mob/living
+sparse(/mob/living, capture_caught, type = bool)
+sparse(/mob/living, prey_controlled, type = bool)
+sparse(/mob/living, touch_reaction_flags, type = num)

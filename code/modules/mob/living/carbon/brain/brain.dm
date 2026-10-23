@@ -19,8 +19,6 @@
 	var/alert = null
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
-	no_vore = TRUE
-	can_pain_emote = FALSE // Sanity/safety
 	low_priority = TRUE
 
 // a brain with a player dies and ghosts; its host forgets the view.
@@ -130,6 +128,7 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
+	configure(mob_nature(no_vore = TRUE, can_pain_emote = FALSE))
 	ref_one(nameof(host), /datum/mind_host)
 	configure(mob_kind(use_me = 0))
 	knows(LANGUAGE_GALCOM, default = TRUE)

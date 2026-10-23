@@ -3,10 +3,10 @@
 MSG_DEF_SELF(internal/it_cant_be_worn, "it can't be worn")
 
 /obj/item/storage/internal
-	preserve_item = 1
 	var/obj/item/master_item
 
 CAPABILITIES(/obj/item/storage/internal)
+	configure(item_handling(preserve = 1))
 	extend(/datum/act/equip, needs(req_type(list(), because = MSG(internal/it_cant_be_worn))))
 	configure(item_worn(flags = ABSTRACT))
 	ref_one(nameof(master_item), /obj/item)

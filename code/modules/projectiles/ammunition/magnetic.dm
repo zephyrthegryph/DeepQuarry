@@ -6,7 +6,9 @@
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 1800)
 	var/remaining = 9
-	preserve_item = 1
+
+CAPABILITIES(/obj/item/magnetic_ammo)
+	configure(item_handling(preserve = 1))
 
 /obj/item/magnetic_ammo/examine(mob/user)
 	. = ..()

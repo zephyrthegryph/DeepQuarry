@@ -264,7 +264,7 @@
 		return TRACKING_TERMINATE
 	if(invisibility >= INVISIBILITY_LEVEL_ONE) //cloaked
 		return TRACKING_TERMINATE
-	if(digitalcamo)
+	if(sparse_get_or(src, digitalcamo, 0))
 		return TRACKING_TERMINATE
 	if(alpha < 127) // For lings and possible future alpha-based cloaks.
 		return TRACKING_TERMINATE

@@ -4,11 +4,8 @@
 	icon_state = "magboots0"
 	flags = PHORONGUARD
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
-	center_of_mass_x = 17
-	center_of_mass_y = 12
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
-	preserve_item = 1
 	var/magpulse = 0
 	var/icon_base = "magboots"
 	///The message that gets shown when we enable the magboots.
@@ -31,6 +28,7 @@
 		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_handling(center_x = 17, center_y = 12, preserve = 1))
 	fits_anyone()
 	extend(/datum/act/equip, needs(req_overshoe_clearance()))
 	configure(item_combat(force = 3))

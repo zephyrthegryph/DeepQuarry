@@ -170,14 +170,14 @@
 	if(!C)
 		return
 	var/idle_limit = 10 MINUTES
-	if(C.inactivity >= idle_limit && !src.away_from_keyboard && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
+	if(C.inactivity >= idle_limit && !sparse_get_or(src, away_from_keyboard, FALSE) && C.prefs?.read_preference(/datum/preference/toggle/auto_afk))	//if we're not already afk and we've been idle too long, and we have automarking enabled... then automark it
 		src.add_status_indicator("afk")
 		to_chat(src, span_notice("You have been idle for too long, and automatically marked as AFK."))
-		src.away_from_keyboard = TRUE
-	else if(src.away_from_keyboard && C.inactivity < idle_limit && !src.manual_afk) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
+		sparse_set(src, away_from_keyboard, TRUE)
+	else if(sparse_get_or(src, away_from_keyboard, FALSE) && C.inactivity < idle_limit && !sparse_get_or(src, manual_afk, FALSE)) //if we're afk but we do something AND we weren't manually flagged as afk, unmark it
 		src.remove_status_indicator("afk")
 		to_chat(src, span_notice("You have been automatically un-marked as AFK."))
-		src.away_from_keyboard = FALSE
+		sparse_set(src, away_from_keyboard, FALSE)
 
 /// Lazy: a client's idle time is checked on a timer, not every cycle.
 

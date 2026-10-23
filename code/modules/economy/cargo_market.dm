@@ -26,9 +26,9 @@ TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_departments, list())
 		if(!type_match)
 			return FALSE
 	var/list/departments = TYPE_TABLE_GET(src, accepted_departments)
-	if(length(departments) && !(item.economic_department in departments))
+	if(length(departments) && !(sparse_get(item, economic_department) in departments))
 		return FALSE
-	return length(type_paths) || item.economic_export_value > 0
+	return length(type_paths) || sparse_get_or(item, economic_export_value, 0) > 0
 
 /datum/cargo_market_profile/materials
 	id = "materials"
@@ -648,7 +648,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	export.market_contract_key = bid.reservation_key
 	export.set_market_premium(export.market_premium + premium)
 	bid.fulfilled_units += matched_quantity
-	var/contributor_account = export.market_router_account || item.economic_producer_account
+	var/contributor_account = export.market_router_account || sparse_get_or(item, economic_producer_account, 0)
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(bid.reservation_key)
 	var/contact_commission = 0
 	if(agent_contract?.contact_account_number == contributor_account)
@@ -658,7 +658,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"actor_account" = contributor_account,
 		"principal_account" = bid.reserved_account,
 		"department" = DEPARTMENT_CARGO,
-		"origin_department" = item.economic_department,
+		"origin_department" = sparse_get(item, economic_department),
 		"counterparty_id" = counterparty.id,
 		"faction_id" = counterparty.faction_id,
 		"bid_id" = bid.id,

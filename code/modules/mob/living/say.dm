@@ -160,7 +160,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//Redirect to say_dead if talker is dead
 	if(stat)
-		if(stat == DEAD && !forbid_seeing_deadchat)
+		if(stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))
 			return say_dead(message)
 		return
 	if(forced_psay)
@@ -384,7 +384,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		var/dst = get_dist(get_turf(M),get_turf(src))
 		var/runechat_enabled = M.client?.prefs?.read_preference(/datum/preference/toggle/runechat_mob)
 
-		if(dst <= message_range || (M.stat == DEAD && !forbid_seeing_deadchat)) //Inside normal message range, or dead with ears (handled in the view proc)
+		if(dst <= message_range || (M.stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))) //Inside normal message range, or dead with ears (handled in the view proc)
 			if(M.hear_say(message_pieces, verb, italics, src, speech_sound, sound_vol))
 				if(M.client && !runechat_enabled)
 					var/image/I1 = listening[M] || speech_bubble

@@ -5,9 +5,6 @@
 	desc = "Apply butt."
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "stool_preview" //set for the map
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_HUGE
 	var/base_icon = "stool_base"
 	var/datum/material/material
@@ -116,6 +113,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/stool)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
@@ -156,14 +154,12 @@ CAPABILITIES(/obj/item/stool)
 	desc = "Apply butt."
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "bar_stool_preview" //set for the map
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	w_class = ITEMSIZE_HUGE
 	base_icon = "bar_stool_base"
 	anchored = TRUE
 
 CAPABILITIES(/obj/item/stool/baystool)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 

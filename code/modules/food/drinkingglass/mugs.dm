@@ -15,8 +15,9 @@
 	desc = "A cup with the British flag emblazoned on it."
 	icon_state = "britcup"
 	volume = 30
-	center_of_mass_x = 15
-	center_of_mass_y = 13
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/britcup)
+	configure(item_handling(center_x = 15, center_y = 13))
 
 /*
  * Text Mug
@@ -27,8 +28,9 @@
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "textmug"
 	volume = 30
-	center_of_mass_x = 15
-	center_of_mass_y = 13
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/textmug)
+	configure(item_handling(center_x = 15, center_y = 13))
 
 /*
  * Coffee Mugs
