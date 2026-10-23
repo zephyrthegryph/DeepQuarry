@@ -132,7 +132,7 @@
 /// constraint-driven invalidation. Default: pass through if valid, else default.
 ///
 /// The contextual gate `validate(preferences, value)` is defined upstream in
-/// /datum/preference/proc/validate (see code/modules/client/preferences/_preference.dm
+/// /datum/preference/proc/validate (see code/content/client/preferences/_preference.dm
 // / block) — this proc just chains through it.
 /datum/preference/proc/sanitize(value, datum/preferences/preferences)
 	if(validate(preferences, value))
