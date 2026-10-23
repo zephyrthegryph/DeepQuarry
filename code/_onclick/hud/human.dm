@@ -305,7 +305,7 @@
 	hud_used?.radio_use_icon?.alpha = HUD.ui_alpha
 
 	if(client)
-		client.screen = list()
+		client_screen_clear(client)
 
 		client_screen_add(client, hud_elements)
 		if(length(HUD.adding))

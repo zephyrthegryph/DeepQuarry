@@ -30,7 +30,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 	if(add_images)
 		var/client/client = eye.GetViewerClient()
 		if(client)
-			if(length(obscured)) client.images += obscured
+			if(length(obscured)) client_images_add(client, obscured)
 	rel_add(eye, nameof(eye.visibleChunks), src)
 	visible++
 	rel_add(src, nameof(seenby), eye)

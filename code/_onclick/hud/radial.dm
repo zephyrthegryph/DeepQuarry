@@ -226,7 +226,7 @@ CAPABILITIES(/datum/radial_menu)
 
 /datum/radial_menu/proc/HideElement(atom/movable/screen/radial/slice/E)
 	E.set_choice_icon(null)
-	E.vis_contents.Cut()
+	vis_clear(E)
 	E.set_alpha(0)
 	E.name = "None"
 	E.maptext = null
@@ -253,7 +253,7 @@ CAPABILITIES(/datum/radial_menu)
 	E.set_alpha(255)
 	E.mouse_opacity = MOUSE_OPACITY_ICON
 	E.set_choice_icon(null)
-	E.vis_contents.Cut()
+	vis_clear(E)
 	if(choice_id == NEXT_PAGE_ID)
 		E.name = "Next Page"
 		E.set_next_page(TRUE)

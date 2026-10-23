@@ -33,8 +33,8 @@
 // Description: Adds a static overlay to the client's screen.
 /mob/living/voice/Login()
 	..()
-	client.screen |= GLOB.global_hud.whitense
-	client.screen |= GLOB.global_hud.darkMask
+	client_screen_include(client, GLOB.global_hud.whitense)
+	client_screen_include(client, GLOB.global_hud.darkMask)
 
 // Proc: ghostize()
 // Parameters: None

@@ -460,12 +460,12 @@
 		var/shown = islist(overlay) ? (overlay[1] in client.screen) : (overlay in client.screen)
 		if(claims?[overlay])
 			if(!shown)
-				client.screen |= overlay
+				client_screen_include(client, overlay)
 		else if(shown)
 			client_screen_remove(client, overlay)
 	for(var/overlay in claims)
 		if(!(overlay in owned))
-			client.screen |= overlay
+			client_screen_include(client, overlay)
 
 /// The root's health icon is event-driven; darksight re-adapts on a timer for players.
 /// Mob types with their own HUD (life_hud() overrides) keep it awake unless they say otherwise.

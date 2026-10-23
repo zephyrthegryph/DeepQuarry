@@ -108,12 +108,12 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
 	rel_set(src, nameof(showing), thing)
 	if(bpinboard)
-		bpinboard.vis_contents = list(thing)
+		vis_set(bpinboard, list(thing))
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/stop_showing()
 	// Reverse of the above
 	if(bpinboard)
-		bpinboard.vis_contents = null
+		vis_set(bpinboard, null)
 	rel_clear(src, nameof(showing))
 	rel_clear(src, nameof(the_camera))
 

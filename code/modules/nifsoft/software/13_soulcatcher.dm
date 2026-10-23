@@ -358,12 +358,12 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	if(src.soulcatcher()) // needs it's own handling to allow vore_fx
 		if(src.ext_blind)
 			src.status_set(STAT_BLINDED, 5)
-			src.client.screen.Remove(GLOB.global_hud.whitense)
+			client_screen_remove(src.client, GLOB.global_hud.whitense)
 			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			src.status_set(STAT_BLINDED, 0)
 			src.clear_fullscreens()
-			src.client.screen.Add(GLOB.global_hud.whitense)
+			client_screen_add(src.client, GLOB.global_hud.whitense)
 
 	//If they're deaf
 	if(src.ext_deaf)

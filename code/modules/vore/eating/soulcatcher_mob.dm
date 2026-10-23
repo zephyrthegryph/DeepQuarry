@@ -36,15 +36,15 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 
 	if(src.ext_blind)
 		src.status_set(STAT_BLINDED, 5)
-		src.client.screen.Remove(GLOB.global_hud.whitense)
+		client_screen_remove(src.client, GLOB.global_hud.whitense)
 		src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 	else
 		src.status_set(STAT_BLINDED, 0)
 		src.clear_fullscreen("blind")
 		if(!src.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
-			src.client.screen.Add(GLOB.global_hud.whitense)
+			client_screen_add(src.client, GLOB.global_hud.whitense)
 	if(src.gem().flag_check(SOULGEM_SHOW_VORE_SFX))
-		src.client.screen.Remove(GLOB.global_hud.whitense)
+		client_screen_remove(src.client, GLOB.global_hud.whitense)
 
 // Say proc for captures souls
 /mob/living/carbon/brain/caught_soul/vore/say(message, datum/language/speaking = null, whispering = 0)
