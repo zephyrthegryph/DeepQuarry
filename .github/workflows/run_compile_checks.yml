@@ -7,9 +7,7 @@ name: Compile Checks
 # referenced outside its guard (e.g. by generated code) fails here.
 #
 # Both compile with the native compiler (tools/dmb), the compiler every local build uses.
-# The second job is the DreamMaker cross-check: it compiles the production dme and the
-# unit-test dme with DreamMaker and with the native compiler and fails on any difference
-# between the two worlds (tools/ci/dm_equiv.sh, tools/dmb/crates/dmb-equiv/EQUIVALENCE.md).
+# The DreamMaker cross-check is its own workflow (run_dreammaker_cross_check.yml) and its own gate job in ci.yml.
 on:
   workflow_call:
     inputs:
@@ -68,47 +66,3 @@ jobs:
         env:
           EXTRA_ARGS: "-DMAP_TEST"
           RUN: "0"
-
-  dreammaker_cross_check:
-    name: DreamMaker cross-check (${{ inputs.major && format('{0}.{1}', inputs.major, inputs.minor) || 'default BYOND' }})
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    env:
-      DQ_DMBC_BUILD_DIR: ${{ github.workspace }}/tools/dmb/target
-
-    steps:
-      - uses: actions/checkout@v6.0.2
-      - name: Restore analyze build cache (every DM build runs `analyze gen` first)
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: tools/analyze -> target
-          shared-key: analyze-gen
-      - name: Restore native compiler build cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: tools/dmb -> target
-          shared-key: dmbc-native
-      - name: Ensure +x on CI directory
-        run: |
-          chmod -R +x ./tools/ci
-      - name: Restore BYOND from Cache
-        uses: ./.github/actions/restore_or_install_byond
-        with:
-          major: ${{ inputs.major }}
-          minor: ${{ inputs.minor }}
-      - name: Compile the production and the unit-test dme with DreamMaker and with native, and compare the worlds
-        run: |
-          source $HOME/BYOND/byond/bin/byondsetup
-          cp config/example/* config/
-          mkdir -p data/spritesheets
-          bash tools/ci/dm_equiv.sh
-      - name: Upload the comparison reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dm-equiv-reports
-          path: |
-            data/dm_equiv/*.report.txt
-            data/dm_equiv/*.report.json
-          if-no-files-found: ignore
-          retention-days: 30

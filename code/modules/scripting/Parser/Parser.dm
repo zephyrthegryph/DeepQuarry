@@ -100,9 +100,10 @@ CAPABILITIES(/datum/n_Parser)
 				if(!istype(ntok, /datum/token/symbol))
 					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
+				var/datum/n_scriptOptions/nS_Options/script_options = options()
 				if(ntok.value=="(")
 					ParseFunctionStatement()
-				else if(options().assign_operators.Find(ntok.value))
+				else if(script_options.assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
 					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
@@ -145,11 +146,12 @@ CAPABILITIES(/datum/n_Parser)
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
 	var/name=curToken().value
-	if(!options().IsValidID(name))
+	var/datum/n_scriptOptions/nS_Options/script_options = options()
+	if(!script_options.IsValidID(name))
 		rel_add(src, nameof(errors), new/datum/scriptError/InvalidID(curToken()))
 		return
 	NextToken()
-	var/t=options().binary_operators[options().assign_operators[curToken().value]]
+	var/t=script_options.assign_binary_operator(curToken().value)
 	var/datum/node/statement/VariableAssignment/stmt=new()
 	rel_set(stmt, nameof(stmt.var_name), new /datum/node/identifier(name))
 	NextToken()

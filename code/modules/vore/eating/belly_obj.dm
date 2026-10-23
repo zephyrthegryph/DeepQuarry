@@ -303,6 +303,35 @@ CAPABILITIES(/obj/belly)
 	return ..()
 
 /// A belly made inside a mob binds to it (setup()); made anywhere else it is probably just in a prefs list.
+// The static option tables, read through a typed receiver: a static read through a local does not evaluate the local, and an untyped receiver
+// lets DreamMaker bind a same-named static of another type.
+/obj/belly/proc/digest_modes_table()
+	return digest_modes
+
+/obj/belly/proc/mode_flag_list_table()
+	return mode_flag_list
+
+/obj/belly/proc/item_digest_modes_table()
+	return item_digest_modes
+
+/obj/belly/proc/drainmodes_table()
+	return drainmodes
+
+/obj/belly/proc/autotransfer_flags_list_table()
+	return autotransfer_flags_list
+
+/obj/belly/proc/autotransfer_flags_list_items_table()
+	return autotransfer_flags_list_items
+
+/obj/belly/proc/vore_sprite_flag_list_table()
+	return vore_sprite_flag_list
+
+/obj/belly/proc/reagent_choices_table()
+	return reagent_choices
+
+/obj/belly/proc/reagent_mode_flag_list_table()
+	return reagent_mode_flag_list
+
 /obj/belly/proc/bind_to_owner()
 	if(ismob(loc))
 		rel_set(src, nameof(owner), loc)

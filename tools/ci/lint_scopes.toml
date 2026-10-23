@@ -1685,6 +1685,10 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code
 [lint.untyped.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
 
+# untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
+[lint.untyped_member]
+exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
+
 # player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
 [lint.player_link]
 exempt_prefixes = ["code/engine/_generated/"]

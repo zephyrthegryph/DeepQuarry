@@ -10,11 +10,13 @@
 
 /datum/property_provider/type_var/tag/slot_flag/read_initial(path)
 	var/obj/item/I = path
-	return worn_of_type(I.type).slots & flag
+	var/datum/type_trait/item_worn/worn = worn_of_type(I.type)
+	return worn.slots & flag
 
 /datum/property_provider/type_var/tag/slot_flag/instance_value(datum/D)
 	var/obj/item/I = D
-	return (worn_of(I).slots & flag) ? TRUE : FALSE
+	var/datum/type_trait/item_worn/worn = worn_of(I)
+	return (worn.slots & flag) ? TRUE : FALSE
 
 /datum/property_def/tag/wear_suit
 	id = TAG_WEAR_SUIT
