@@ -74,7 +74,7 @@ CAPABILITIES(/obj/structure/mob_spawner)
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
 		rel_add(src, nameof(spawned_mobs), O)
-		O.nest = src
+		rel_set(O, nameof(O.nest), src)
 		return O
 	return 0
 
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
 		rel_add(src, nameof(spawned_mobs), O)
-		O.nest = src
+		rel_set(O, nameof(O.nest), src)
 		return O
 	return 0
 

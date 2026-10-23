@@ -138,9 +138,9 @@ CAPABILITIES(/obj/item/locator)
 	throw_speed = 3
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 10000)
-	preserve_item = 1
 
 CAPABILITIES(/obj/item/hand_tele)
+	configure(item_handling(preserve = 1))
 	configure(item_thrown(force = 5))
 	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
 	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal))),
@@ -205,7 +205,7 @@ MSG_DEF_SELF(hand_tele/malfunctioning, "It's malfunctioning.")
 		O.show_message(span_notice("Locked In."), 2)
 	var/obj/effect/portal/NEWP = new /obj/effect/portal( get_turf(src) )
 	rel_set(NEWP, nameof(NEWP.target), T)
-	NEWP.creator = src
+	rel_set(NEWP, nameof(NEWP.creator), src)
 	NEWP.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)
 	return OP_OK

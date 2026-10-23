@@ -22,8 +22,10 @@
 	camera_cancels++
 	return ..()
 /obj/machinery/dq_decl_cleanup_holder
-/obj/dq_decl_cleanup_micro_holder
-	micro_target = TRUE
+
+CAPABILITIES(/obj/dq_decl_cleanup_micro_holder)
+	configure(obj_rules(micro_target = TRUE))
+	on_ending(TYPE_PROC_REF(/obj, micro_occupants_out))
 
 /obj/structure/micro_tunnel/dq_decl_cleanup_capture
 	var/list/captured_messages

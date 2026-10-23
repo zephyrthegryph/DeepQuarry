@@ -251,12 +251,12 @@ CAPABILITIES(/obj/effect/landmark/costume/sexymime)
 /obj/effect/landmark/proc/record_special_coordinates()
 	switch(name)
 		if("Holding Facility")
-			GLOB.holdingfacility += loc
+			GLOB.holdingfacility += get_turf(src) // a turf, never deleted (the landmark sits on it)
 		if("tdome1")
-			GLOB.tdome1 += loc
+			GLOB.tdome1 += get_turf(src) // a turf, never deleted (the landmark sits on it)
 		if("tdome2")
-			GLOB.tdome2 += loc
+			GLOB.tdome2 += get_turf(src) // a turf, never deleted (the landmark sits on it)
 		if("tdomeadmin")
-			GLOB.tdomeadmin += loc
+			GLOB.tdomeadmin += get_turf(src) // a turf, never deleted (the landmark sits on it)
 		if("tdomeobserve")
-			GLOB.tdomeobserve += loc
+			GLOB.tdomeobserve += get_turf(src) // a turf, never deleted (the landmark sits on it)

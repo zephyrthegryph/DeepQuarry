@@ -12,10 +12,10 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 
 /// Files a copy of a fax sent to the admins; the oldest copies past ADMIN_FAX_KEEP are deleted.
 /proc/admin_fax_keep(obj/item/rcvdcopy)
-	GLOB.adminfaxes += rcvdcopy
+	rel_add(GLOB, nameof(GLOB.adminfaxes), rcvdcopy)
 	while(length(GLOB.adminfaxes) > ADMIN_FAX_KEEP)
 		var/obj/item/oldest = GLOB.adminfaxes[1]
-		GLOB.adminfaxes.Cut(1, 2)
+		rel_remove(GLOB, nameof(GLOB.adminfaxes), oldest)
 		if(!QDELETED(oldest))
 			oldest.expire(0)
 

@@ -16,7 +16,7 @@
 	if(src?.buckled_to())
 		to_chat(src, span_warning("You cannot ventcrawl while src?.buckled_to()!"))
 		return FALSE
-	if(restrict_vore_ventcrawl)
+	if(nature_of(src).restrict_vore_ventcrawl)
 		var/foundstuff = FALSE
 		for(var/obj/belly/B in vore_organs)
 			if(contents_count(B))

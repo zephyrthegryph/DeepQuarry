@@ -88,6 +88,7 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 			continue
 		if((locate_on(east, /obj/item)) || (locate_on(east, /obj/structure)) || (locate_on(east, /mob)))
 			continue
+		dq_atmos_test_snapshot_air_around(T) // a shared world floor: restore_atmos() puts its air back after the test
 		return T
 	return null
 

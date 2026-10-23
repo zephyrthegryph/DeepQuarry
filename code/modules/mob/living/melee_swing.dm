@@ -49,9 +49,6 @@
 
 /// TRUE while a windup/swing is in progress; blocks starting another and is read by ClickOn.
 /mob/living/var/is_swinging = FALSE
-/// TRUE while begin_melee_swing is resolving hits through /obj/item/attack(); tells attack()
-/// to skip its own click cooldown + lunge animation (the swing already did both).
-/mob/living/var/melee_swing_resolving = FALSE
 /// Monotonic swing id. The stuck-flag safety timer only clears the swing it was armed for,
 /// so a timer left over from a finished swing can never clobber a newer one.
 
@@ -63,7 +60,7 @@
 		return FALSE
 	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
 	is_swinging = FALSE
-	melee_swing_resolving = FALSE
+	sparse_set(src, melee_swing_resolving, FALSE)
 	return TRUE
 
 /// The turfs a swing with `weapon` aimed at `target` would strike: the tile toward the
@@ -119,7 +116,7 @@
 	// statement between a TRUE flag and its clear is a potential permanent wedge
 	// if it runtimes.
 	is_swinging = TRUE
-	melee_swing_resolving = FALSE
+	sparse_set(src, melee_swing_resolving, FALSE)
 	var/serial = sparse_get_or(src, melee_swing_serial, 0) + 1
 	sparse_set(src, melee_swing_serial, serial)
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
@@ -165,7 +162,7 @@
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
 	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes
 	// the base attack() skip its instant cooldown/animation — already paid above.
-	melee_swing_resolving = TRUE
+	sparse_set(src, melee_swing_resolving, TRUE)
 	for(var/turf/T as anything in swing_tiles)
 		for(var/mob/living/victim in contents_of(T))
 			if(victim == src)
@@ -173,7 +170,7 @@
 			if(QDELETED(weapon))
 				break // a weapon override consumed/destroyed it mid-sweep
 			weapon.attack(victim, src, zone, 1) // attack_modifier 1; null would zero the damage
-	melee_swing_resolving = FALSE
+	sparse_set(src, melee_swing_resolving, FALSE)
 
 	return TRUE
 

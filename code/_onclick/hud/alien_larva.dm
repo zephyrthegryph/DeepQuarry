@@ -22,7 +22,7 @@
 	hud_used?.healths?.screen_loc = ui_alien_health
 
 	if(client && apply_to_client)
-		client.screen = list()
+		client_screen_clear(client)
 		client_screen_add(client, list(hud_used?.healths))
 		if(length(HUD.adding))
 			client_screen_add(client, HUD.adding)

@@ -2,14 +2,14 @@
 	name = "small rock"
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "ore2"
-	randpixel = 8
 	w_class = ITEMSIZE_SMALL
 	var/datum/geosample/geologic_data
 	var/material
 
 CAPABILITIES(/obj/item/ore)
+	configure(item_handling(randpixel = 8))
 	owns_one(nameof(geologic_data), /datum/geosample)
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/ore/archeology_debris
@@ -192,7 +192,6 @@ CAPABILITIES(/obj/item/ore/glass)
 	desc = "A conglomerate of ore."
 	icon = 'icons/obj/mining_ore.dmi'
 	icon_state = "ore2"
-	randpixel = 8
 	w_class = ITEMSIZE_LARGE
 	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (11 writers)
 		ORE_SAND = 0,
@@ -215,6 +214,9 @@ CAPABILITIES(/obj/item/ore/glass)
 		ORE_MHYDROGEN = 0,
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
+
+CAPABILITIES(/obj/item/ore_chunk)
+	configure(item_handling(randpixel = 8))
 
 /obj/item/ore_chunk/examine(mob/user)
 	. = ..()

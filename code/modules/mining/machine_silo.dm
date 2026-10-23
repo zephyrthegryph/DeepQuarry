@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /// The first silo the map places on the station becomes the default silo.
 /obj/machinery/ore_silo/proc/claim_default(mapload)
 	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
-		GLOB.ore_silo_default = src
+		rel_set(GLOB, nameof(GLOB.ore_silo_default), src)
 
 /// The starting material store (owns_one(starts =)): every material, unlimited.
 /obj/machinery/ore_silo/proc/make_materials(current)
@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 /obj/machinery/ore_silo/lifecycle_dematerialize()
 	..()
 	if(GLOB.ore_silo_default == src)
-		GLOB.ore_silo_default = null
+		rel_set(GLOB, nameof(GLOB.ore_silo_default), null)
 
 // connected machines disconnect.
 /obj/machinery/ore_silo/on_destroy(force)
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		)
 
 	data["logs"] = list()
-	for(var/datum/ore_silo_log/entry as anything in GLOB.silo_access_logs[REF(src)])
+	for(var/datum/ore_silo_log/entry as anything in GLOB.silo_access_logs[ref_token(src)])
 		data["logs"] += list(
 			list(
 				"rawMaterials" = entry.get_raw_materials(""),
@@ -191,9 +191,9 @@ CAPABILITIES(/obj/machinery/ore_silo)
 		return
 
 	var/datum/ore_silo_log/entry = new(M, action, amount, noun, mats)
-	var/list/datum/ore_silo_log/logs = GLOB.silo_access_logs[REF(src)]
+	var/list/datum/ore_silo_log/logs = GLOB.silo_access_logs[ref_token(src)]
 	if(!LAZYLEN(logs))
-		GLOB.silo_access_logs[REF(src)] = logs = list(entry)
+		GLOB.silo_access_logs[ref_token(src)] = logs = list(entry)
 	else if(!logs[1].merge(entry))
 		logs.Insert(1, entry)
 

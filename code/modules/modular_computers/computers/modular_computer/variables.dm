@@ -26,9 +26,6 @@
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	var/overlay_icon = null									// Icon file used for overlays
 	icon_state = null
-	center_of_mass_x = 0
-	center_of_mass_y = 0									// No pixelshifting by placing on tables, etc.
-	randpixel = 0											// And no random pixelshifting on-creation either.
 	var/icon_state_unpowered = null							// Icon state when the computer is turned off
 	var/icon_state_menu = "menu"							// Icon state overlay when the computer is turned on, but no program is loaded that would override the screen.
 	var/icon_state_screensaver = null
@@ -80,6 +77,7 @@
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	configure(item_handling(center_x = 0, center_y = 0, randpixel = 0))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0),
 		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),
 		then(PROC_REF(screwdriver_used)))

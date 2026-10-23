@@ -125,6 +125,11 @@ re_m!(DECLARE_CALL, r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*na
 /// An accessor's var-name argument: a string literal (banned, `string_name`) or `nameof(v)` /
 /// `nameof(x.v)` / `nameof(/type::v)`. Group: the var name.
 pub const VAR_ARG: &str = r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#;
+// A global declared through a `GLOBAL_*` macro (code/__defines/__globals.dm): `GLOBAL_DATUM(x, /type)`, `GLOBAL_LIST_EMPTY(x)`, ... Groups: 1 = macro
+// suffix, 2 = the var name, 3 = the type argument of the typed forms.
+re_m!(GLOBAL_DECL, r"^GLOBAL_(DATUM_INIT|DATUM|LIST_INIT_TYPED|LIST_EMPTY_TYPED|LIST_INIT|LIST_EMPTY|LIST|ALIST_INIT|ALIST_EMPTY|ALIST|VAR_INIT|VAR_CONST|VAR)\(\s*(\w+)\s*(?:,\s*(/[\w/]+))?");
+/// The type `GLOB` has; the vars of every `GLOBAL_*` macro are its globals ([`Index::globals`]).
+pub const GLOB_TYPE: &str = "/datum/controller/global_vars";
 re_m!(REGISTRY, r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,");
 pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
     Pat::new(&format!(
@@ -284,6 +289,10 @@ pub struct Member {
 pub struct Index {
     /// type -> var -> (vtype, is_list)
     pub members: HashMap<String, HashMap<String, (String, bool)>>,
+    /// The vars of `GLOB` declared through `GLOBAL_*` macros: name -> (vtype, is_list). Kept apart from `members` on purpose: a member is
+    /// something the write checks (`raw_write`) police, and the GLOB vars have their own rules (stored_refs); this map only answers "is there
+    /// such a global" for an accessor that names one (`rel_set(GLOB, nameof(GLOB.x), ...)`).
+    pub globals: HashMap<String, (String, bool)>,
     /// type -> var -> declaration (insertion ordered, like the Python dicts)
     pub decls: OrdMap<OrdMap<Decl>>,
     /// The registry types: the flyweights plus every `REGISTRY_TYPE(...)` seen.
@@ -377,6 +386,10 @@ fn file_idx(f: &SourceFile) -> FileIdx {
             }
             IdxEv::Decl { owner, name, macro_name, .. } => structure.push((1, owner, name, macro_name, false)),
             IdxEv::Registry(t) => structure.push((2, t, "", "", false)),
+            IdxEv::Global { name, vtype, is_list } => {
+                members.push(("GLOBAL", name, vtype, *is_list));
+                structure.push((3, name, vtype, "", *is_list));
+            }
         }
     }
     let (h_members, h_struct) = (incr::ctx_key(&members), incr::ctx_key(&structure));
@@ -390,6 +403,8 @@ pub enum IdxEv {
     Member { owner: String, vtype: String, is_list: bool, name: String },
     Decl { owner: String, name: String, macro_name: String, opts: String, rel: String, line: u32 },
     Registry(String),
+    /// A var of `GLOB` declared through a `GLOBAL_*` macro.
+    Global { name: String, vtype: String, is_list: bool },
 }
 
 /// `(vtype, is_list)` of a member declared with the path segments `segs`.
@@ -498,6 +513,9 @@ impl Index {
                 inner.insert(&name, Decl { macro_name, opts, rel, line: line as usize });
             }
             IdxEv::Registry(t) => self.registry.push(t),
+            IdxEv::Global { name, vtype, is_list } => {
+                self.globals.insert(name, (vtype, is_list));
+            }
         }
     }
 
@@ -585,6 +603,22 @@ pub fn file_events(rel: &str, raw: &View, code: &View) -> Vec<IdxEv> {
                 let vt = if m.matched(2) && !m.s(2).is_empty() { format!("{}/", m.s(2).trim_matches('/')) } else { String::new() };
                 let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
                 ev.push(member_ev(owner, &vt, m.s(5)));
+                current = None;
+                continue;
+            }
+            // GLOBAL_*(x, ...) declares a var of /datum/controller/global_vars through a macro.
+            if let Some(m) = GLOBAL_DECL.captures(line) {
+                let (kind, name) = (m.s(1), m.s(2));
+                let ty = if m.matched(3) { m.s(3).trim_matches('/') } else { "" };
+                let segs = match kind {
+                    "DATUM" | "DATUM_INIT" if !ty.is_empty() => format!("{}/", ty),
+                    "LIST_INIT_TYPED" | "LIST_EMPTY_TYPED" if !ty.is_empty() => format!("list/{}/", ty),
+                    k if k.starts_with("LIST") => "list/".to_string(),
+                    k if k.starts_with("ALIST") => "alist/".to_string(),
+                    _ => String::new(),
+                };
+                let (vtype, is_list) = member_parts(&segs);
+                ev.push(IdxEv::Global { name: name.to_string(), vtype, is_list });
                 current = None;
                 continue;
             }
@@ -767,5 +801,30 @@ mod tests {
         assert_eq!(idx.decl("/obj/thing", "bar").unwrap().1.macro_name, "OWN");
         assert!(idx.member("/obj/thing", "baz").is_some());
         assert!(idx.member("/obj/thing", "on").is_some());
+    }
+
+    #[test]
+    fn global_macros_declare_vars_of_glob() {
+        let f = SourceFile::from_text(
+            "code/g.dm",
+            "GLOBAL_DATUM(box, /obj/thing)
+GLOBAL_DATUM_INIT(made, /datum/foo, new)
+GLOBAL_LIST_EMPTY(pool)
+GLOBAL_LIST_INIT_TYPED(typed, /obj/item, list())
+GLOBAL_VAR(plain)
+GLOBAL_ALIST_EMPTY(map)
+",
+        );
+        let idx = Index::build(&[&f]);
+        let m = |n: &str| idx.globals.get(n).cloned().unwrap_or_else(|| panic!("no global {}", n));
+        assert_eq!(m("box"), ("/obj/thing".to_string(), false));
+        assert_eq!(m("made").0, "/datum/foo");
+        assert_eq!(m("pool"), (String::new(), true));
+        assert_eq!(m("typed"), ("/obj/item".to_string(), true));
+        assert_eq!(m("plain"), (String::new(), false));
+        assert_eq!(m("map").0, "/alist");
+        assert!(!idx.globals.contains_key("absent"));
+        // They are globals, not members of any type: the write checks do not see them.
+        assert!(idx.member(GLOB_TYPE, "box").is_none() && !idx.name_decls.contains_key("box"));
     }
 }

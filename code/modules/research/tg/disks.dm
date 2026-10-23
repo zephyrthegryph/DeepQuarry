@@ -5,7 +5,6 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	icon = 'icons/obj/discs_vr.dmi'
 	icon_state = "data-blue"
 	item_state = "card-id"
-	randpixel = 5
 	w_class = ITEMSIZE_SMALL
 	/// The disk's own scratch web (a private copy it owns), or a registered round web (the debug disk).
 	var/tmp/datum/techweb/stored_research_static
@@ -29,14 +28,14 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	icon = 'icons/obj/discs_vr.dmi'
 	icon_state = "data-purple"
 	item_state = "card-id"
-	randpixel = 5
 	w_class = ITEMSIZE_SMALL
 
 	///List of all `/datum/design` stored on the disk.
 	var/list/blueprints
 
 CAPABILITIES(/obj/item/disk/design_disk)
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	configure(item_handling(randpixel = 5))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 
 /**
  * Used for special interactions with a techweb when uploading the designs.
@@ -51,6 +50,7 @@ CAPABILITIES(/obj/item/disk/design_disk)
 	return stored_research_static
 
 CAPABILITIES(/obj/item/disk/tech_disk)
-	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	configure(item_handling(randpixel = 5))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(PROC_REF(randpixel_range)))
 	setup(PROC_REF(disk_tech_disk_setup))
 	owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY)

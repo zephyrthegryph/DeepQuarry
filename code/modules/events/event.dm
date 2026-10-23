@@ -12,7 +12,7 @@
 	var/list/min_job_count
 	var/event_type
 
-/datum/event_meta/New(event_severity, event_name, datum/event/type, event_weight, list/job_weights, is_one_shot = 0, min_event_weight = 0, max_event_weight = 0, add_to_queue = 1, list/min_jobs)
+/datum/event_meta/New(event_severity, event_name, type, event_weight, list/job_weights, is_one_shot = 0, min_event_weight = 0, max_event_weight = 0, add_to_queue = 1, list/min_jobs)
 	name = event_name
 	severity = event_severity
 	event_type = type

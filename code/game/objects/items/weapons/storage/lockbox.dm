@@ -8,7 +8,6 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4 //The sum of the w_classes of all the items in this storage item.
 	req_access = list(ACCESS_ARMORY)
-	preserve_item = 1
 	var/broken = 0
 	var/icon_locked = "lockbox+l"
 	var/icon_closed = "lockbox"
@@ -21,6 +20,8 @@ MSG_DEF_SELF(lockbox/locked, "It's locked!")
 // A lockbox starts locked. An ID with the access locks and unlocks it (locking shuts the window of whoever is looking into it); a broken lock
 // stays open for good; locked, it takes nothing and does not open; an energy blade slices the lock open, and an emag shorts it out.
 CAPABILITIES(/obj/item/storage/lockbox)
+	click_order(BIND_ITEM, "storage.put_in", "locked_click")
+	configure(item_handling(preserve = 1))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	lock(id_types = list(/obj/item/card/id), starts_locked = TRUE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
@@ -29,7 +30,7 @@ CAPABILITIES(/obj/item/storage/lockbox)
 	extend("storage.refuse", when(not(LOCK_LOCKED)))
 	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
 	op("slice", item(/obj/item/melee/energy/blade), when(PROC_REF(blade_can_slice)), label("Slice open"), then(PROC_REF(slice_open)), passes())
-	op("locked_click", item(/obj/item), priority(below("storage.put_in")), when(LOCK_LOCKED), label("Put in"), says(MSG(lockbox/locked)), passes())
+	op("locked_click", item(/obj/item), when(LOCK_LOCKED), label("Put in"), says(MSG(lockbox/locked)), passes())
 
 /// The lock still works: a broken one stays open.
 /obj/item/storage/lockbox/proc/lock_works(datum/act/A)

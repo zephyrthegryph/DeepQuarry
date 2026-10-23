@@ -129,7 +129,7 @@
 	TEST_ASSERT_EQUAL(prey_identity.dna(), prey.dna, "sharing doesn't point the prey's identity at the predator's DNA")
 	TEST_ASSERT_EQUAL(pred_identity.dna(), pred.dna, "the predator's identity still references its own DNA")
 	TEST_ASSERT_EQUAL(pred.languages, pred_languages, "the controlled body keeps its own language list")
-	TEST_ASSERT(pred.prey_controlled, "the predator is marked as controlled")
+	TEST_ASSERT(sparse_get_or(pred, prey_controlled, FALSE), "the predator is marked as controlled")
 
 	seat.restore_control(FALSE)
 	TEST_ASSERT_EQUAL(pred.mind, pred_mind, "the predator's mind is back in its body")
@@ -137,7 +137,7 @@
 	TEST_ASSERT_EQUAL(prey.mind, prey_mind, "the prey's mind is back in its body")
 	TEST_ASSERT_EQUAL(prey.identity(), prey_identity, "the prey reads its own identity again")
 	TEST_ASSERT_EQUAL(prey_identity.ooc_notes, "notes of Dominant Prey", "the prey's OOC notes survived")
-	TEST_ASSERT(!pred.prey_controlled, "the predator is no longer controlled")
+	TEST_ASSERT(!sparse_get_or(pred, prey_controlled, FALSE), "the predator is no longer controlled")
 	TEST_ASSERT(QDELETED(seat), "the back seat is deleted")
 
 

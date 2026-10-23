@@ -15,6 +15,11 @@
 
 CAPABILITIES(/datum/node/BlockDefinition)
 	ref_many(nameof(functions), /datum/node/statement/FunctionDefinition)
+	ref_many(nameof(statements), /datum/node/statement)
+
+/// Appends a statement to the block, in order.
+/datum/node/BlockDefinition/proc/add_statement(datum/node/statement/stmt)
+	rel_add(src, nameof(statements), stmt)
 
 /*
 	Proc: SetVar

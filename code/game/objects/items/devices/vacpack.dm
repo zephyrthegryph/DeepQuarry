@@ -336,7 +336,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 			if(!target_storage.insert_refusal(target_item, user))
 				return TRUE
 		else//if it's not a trash bag, it's a vorebelly or borg belly. Check trash eat
-			if(is_type_in_list(target_item, GLOB.edible_trash) && target_item.trash_eatable && !is_type_in_list(target_item, GLOB.item_vore_blacklist))
+			if(is_type_in_list(target_item, GLOB.edible_trash) && sparse_get_or(target_item, trash_eatable, TRUE) && !is_type_in_list(target_item, GLOB.item_vore_blacklist))
 				return TRUE
 			if(isliving(user))
 				var/mob/living/trashcheck = user

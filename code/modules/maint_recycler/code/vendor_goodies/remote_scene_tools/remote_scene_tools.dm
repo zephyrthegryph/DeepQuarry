@@ -29,7 +29,7 @@ why aren't these accessories?
 	var/partner_name
 	/// Whether the partner is a live one (sanity_check()): the tool shows its lit state while it is.
 	var/partner_live = FALSE
-	var/last_loc
+	var/atom/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE
 
@@ -118,7 +118,7 @@ why aren't these accessories?
 //user just gets the shit spammed out of them
 	if(last_loc == loc)
 		return
-	last_loc = loc
+	rel_set(src, nameof(last_loc), loc)
 	linked()?.linked_updated()
 	linked_updated()
 
@@ -195,6 +195,7 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 	on_notice(/datum/notice/atom_entering, then(PROC_REF(check_loc)))
 	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
 	ref_one(nameof(worn_mob), /mob)
+	ref_one(nameof(last_loc), /atom)
 	ref_one(nameof(partner_wearer), /mob)
 	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 

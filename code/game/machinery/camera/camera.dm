@@ -9,7 +9,6 @@
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
 	integrity_failure = 0.5
-	damage_deflection = 5
 
 	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: replaced per instance at runtime (26 assignments)
 	var/c_tag = null
@@ -46,10 +45,12 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	configure(atom_shielding(deflection = 5))
 	setup(PROC_REF(install_viewer_hud))
 	setup(PROC_REF(configure_initial_upgrades))
 	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
 	ref_many(nameof(motionTargets), /mob)
+	ref_many(nameof(client_huds), /atom/movable/screen)
 	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
 	on_notice(/datum/notice/machinery_power_restored, then(PROC_REF(on_power_signal)))
 	configure(uses_power(idle = 5, active = 10))
@@ -648,4 +649,4 @@ SETTER(/obj/machinery/camera, status)
 	visible_message("[icon2html(src, viewers(src))] *beep*", "[icon2html(src, viewers(src))] *beep*")
 
 /obj/machinery/camera/proc/install_viewer_hud()
-	LAZYOR(client_huds, GLOB.global_hud.whitense)
+	rel_add(src, nameof(client_huds), GLOB.global_hud.whitense)

@@ -280,10 +280,11 @@ CAPABILITIES(/obj/item/card_fluff)
 
 /obj/item/card/id/synthetic/borg
 	var/mob/living/silicon/robot/robot_owner
-	var/last_robot_loc
+	var/atom/last_robot_loc
 
 CAPABILITIES(/obj/item/card/id/synthetic/borg)
 	ref_one(nameof(robot_owner), /mob/living/silicon/robot)
+	ref_one(nameof(last_robot_loc), /atom)
 	setup(PROC_REF(bind_robot_owner))
 
 /obj/item/card/id/synthetic/borg/proc/bind_robot_owner()
@@ -297,11 +298,11 @@ CAPABILITIES(/obj/item/card/id/synthetic/borg)
 	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == robot_owner() || old_loc == robot_owner().module)
-		last_robot_loc = old_loc
+		rel_set(src, nameof(last_robot_loc), old_loc)
 	if(!istype(loc, /obj/machinery) && loc != robot_owner() && loc != robot_owner().module)
 		if(last_robot_loc)
 			forceMove(last_robot_loc)
-			last_robot_loc = null
+			rel_clear(src, nameof(last_robot_loc))
 		else
 			forceMove(robot_owner())
 		if(loc == robot_owner())

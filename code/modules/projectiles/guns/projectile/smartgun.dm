@@ -121,7 +121,6 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	desc = "A smartgun rail casing."
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
 	icon_state = "smartguncase"
-	randpixel = 10
 	w_class = ITEMSIZE_SMALL
 
 	leaves_residue = FALSE
@@ -129,6 +128,7 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	projectile_type = /obj/item/projectile/bullet/smartgun
 
 CAPABILITIES(/obj/item/ammo_casing/smartgun)
+	configure(item_handling(randpixel = 10))
 	configure(item_worn(slots = SLOT_BELT))
 
 /**

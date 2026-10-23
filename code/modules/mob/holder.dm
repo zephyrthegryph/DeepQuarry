@@ -4,10 +4,6 @@
 	name = "holder"
 	desc = "You shouldn't ever see this."
 	icon = 'icons/obj/objects.dmi'
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
-	show_messages = 1
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -368,7 +364,7 @@ CAPABILITIES(/obj/item/holder/fish)
 		return
 
 	// Dodge pickup if enabled by personal space bubble.
-	if(!self_grab && (touch_reaction_flags & SPECIES_TRAIT_PICKUP_DODGE))
+	if(!self_grab && (sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_PICKUP_DODGE))
 		act_message(src, grabber, others = span_notice("%U% deftly evades %T%'s attempt to pick them up!"))
 		to_chat(grabber, span_notice("[src] evaded your pickup attempt!"))
 		return

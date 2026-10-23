@@ -33,10 +33,9 @@
 	center_offset = 0
 
 	species_sounds = "Raccoon"
-	pain_emote_1p = list("chitter")
-	pain_emote_3p = list("chitters")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/raccoon)
+	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))
 	after_init(0, then(PROC_REF(raccoon_ghostjoin_ready)))
 
 /mob/living/simple_mob/animal/passive/raccoon/proc/raccoon_ghostjoin_ready(datum/act/timer/A)

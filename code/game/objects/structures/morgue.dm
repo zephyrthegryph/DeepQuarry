@@ -48,7 +48,7 @@ CAPABILITIES(/obj/structure/morgue)
 			set_icon_state("morgue2")
 			get_occupants()
 			for (var/mob/living/carbon/human/H in occupants)
-				if(HAS_SYNTHETIC_BIOLOGY(H) || H.suiciding || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
+				if(HAS_SYNTHETIC_BIOLOGY(H) || sparse_get_or(H, suiciding, 0) || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
 					set_icon_state("morgue2")
 					break
 				else

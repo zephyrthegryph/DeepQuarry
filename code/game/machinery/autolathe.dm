@@ -19,8 +19,6 @@ MSG_DEF(autolathe/uploading, "You begin to upload %I% into %T%.", "%U% begins to
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	clicksound = SFX_KEYBOARD
-	clickvol = 30
 
 	circuit = /obj/item/circuitboard/autolathe
 
@@ -51,6 +49,7 @@ STAT(/obj/machinery/autolathe, disabled, ANY)
 STAT(/obj/machinery/autolathe, shocked, ANY)
 
 CAPABILITIES(/obj/machinery/autolathe)
+	configure(machine_usage(interface_sound = SFX_KEYBOARD, click_volume = 30))
 	setup(PROC_REF(load_autolathe_research))
 	default_parts()
 	configure(uses_power(idle = 10, active = 2000))

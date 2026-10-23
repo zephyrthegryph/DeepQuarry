@@ -1,11 +1,16 @@
 /obj/machinery/atmospherics/var/image/pipe_image
 
-// ventcrawlers inside are put out; its pipe image comes off players' clients.
-/obj/machinery/atmospherics/on_destroy(force)
-	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
-		M.remove_ventcrawl()
-		M.forceMove(get_turf(src))
-	..()
+// ventcrawlers inside are put out when the contents phase of its destruction runs (machine_internals spills, stock.dm); its pipe image comes off players' clients.
+/obj/machinery/atmospherics/internals_spill(atom/movable/thing)
+	var/mob/living/M = thing
+	var/turf/T = get_turf(src)
+	if(!istype(M))
+		return
+	M.remove_ventcrawl() //ventcrawling is serious business
+	if(T)
+		dq_ledger_force_move(M, T, LEDGER_MOVE_FORCED | LEDGER_MOVE_DESTROYING)
+	else
+		M.moveToNullspace() // destroyed in nullspace: the ventcrawler is put out to nullspace, not deleted with the pipe
 
 /// The pipe image (owned) leaves every ventcrawler's screen before teardown deletes it.
 /obj/machinery/atmospherics/lifecycle_dematerialize()

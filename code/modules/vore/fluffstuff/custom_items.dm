@@ -1298,12 +1298,11 @@ CAPABILITIES(/obj/item/rig/nikki)
 	base_name = "Clara's Vacuum Flask"
 	base_icon = "claraflask"
 	icon = 'icons/vore/custom_items_vr.dmi'
-	center_of_mass_x = 15
-	center_of_mass_y = 4
 	filling_states = list(15, 30, 50, 60, 80, 100)
 	volume = 60
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask)
+	configure(item_handling(center_x = 15, center_y = 4))
 	configure(reagents(add = list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20)))
 
 /// The flask keeps its own name and description whatever it holds.

@@ -169,6 +169,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(mob_nature(gib_on_butchery = TRUE, drops_organs = FALSE))
 	ref_one(nameof(movement_target), /obj)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
 	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
@@ -642,7 +643,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(force)
 		set_vore_active(TRUE)
 		voremob_loaded = TRUE
-	if(!vore_active || no_vore || !voremob_loaded)
+	if(!vore_active || nature_of(src).no_vore || !voremob_loaded)
 		return
 
 	enable_slosh() // Sloshy element
@@ -722,7 +723,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/tryBumpNom(mob/tmob)
 	//returns TRUE if we actually start an attempt to bumpnom, FALSE if checks fail or the random bump nom chance fails
 	if(istype(tmob) && will_eat(tmob) && !istype(tmob, type) && prob(vore_bump_chance) && !ckey) //check if they decide to eat. Includes sanity check to prevent cannibalism.
-		if(!faction_bump_vore && faction == tmob.faction)
+		if(!nature_of(src).faction_bump_vore && faction == tmob.faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(STAT_WEAKENED, 5)

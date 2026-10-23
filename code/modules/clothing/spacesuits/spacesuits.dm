@@ -6,12 +6,8 @@
 	name = "Space helmet"
 	icon_state = "space"
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment."
-	randpixel = 0
-	center_of_mass_x = 0
-	center_of_mass_y = 0
 	flags = PHORONGUARD
 	armor_spec = "bio=100;rad=50;cold=60"
-	preserve_item = 1
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
@@ -23,6 +19,7 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0, preserve = 1))
 	fits_as(FIT_NO_DIONA)
 	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
@@ -71,7 +68,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	flags = PHORONGUARD
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor_spec = "bio=100;rad=50;cold=60"
-	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
 	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).

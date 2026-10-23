@@ -87,7 +87,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/visualnet/ghost)
 	if(istype(c, /area))
 		if(choice == 0)
 			// Remove the area.
-			LAZYREMOVE(chunk.hidden_areas, c)
+			rel_remove(chunk, nameof(chunk.hidden_areas), c)
 		else if(choice == 1)
 			// You can't have the same area in the list twice.
-			LAZYOR(chunk.hidden_areas, c)
+			rel_add(chunk, nameof(chunk.hidden_areas), c)

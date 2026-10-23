@@ -24,7 +24,7 @@ static META: Meta = Meta {
             "Raw writes of BYOND built-ins that hold references: vis_contents, client.images, client.screen (doc/rewrite/proposals/relations.md D11).",
             "rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep run `analyze baseline --update --lint native_ref_write`.",
         ],
-        banned: &[],
+        banned: &["raw_write"],
     },
     rules: &[RuleMeta { name: "raw_write", hint: HINT }],
     allow: &[],

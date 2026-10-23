@@ -44,7 +44,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
-	clicksound = SFX_BUTTON
 
 	// Power
 	use_power = USE_POWER_IDLE
@@ -117,6 +116,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	configure(machine_usage(interface_sound = SFX_BUTTON))
 	click_order(BIND_HAND, "ui_open", "check_logs")
 	setup(PROC_REF(prepare_vendor_inventory))
 	configure(uses_power(idle = 10))
@@ -163,13 +163,14 @@ CAPABILITIES(/obj/machinery/vending)
 	op("toggle_voice", ui_act(), at(SPACE_PANEL), toggles(nameof(shut_up)))
 
 	section(intake, "What it takes in, and the log")
+	click_order(BIND_ITEM, "open_with_item", "stock")
 	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_operable(), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin)))
 	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), needs(req(PROC_REF(never))))
 	op("refill", item(/obj/item/refill_cartridge),
 		needs(req_closed(SPACE_PANEL), req_operable(), req(PROC_REF(refill_port)), req(PROC_REF(refill_secured)), req(PROC_REF(cartridge_fits))),
 		then(PROC_REF(refilled)), says(MSG(vending/refilled)), consumes())
 	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
-	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
+	op("open_with_item", item(/obj/item), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
 	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"),
 		needs(req(PROC_REF(log_access_ok))), then(PROC_REF(check_logs_op)))

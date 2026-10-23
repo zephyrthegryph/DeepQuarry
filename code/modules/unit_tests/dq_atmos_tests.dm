@@ -19,6 +19,7 @@
 			continue
 		var/area/A = get_area(candidate)
 		if(A && (!A.requires_power || (A.power_equip && A.power_light && A.power_environ)))
+			dq_atmos_test_snapshot_area_air(candidate) // a shared world floor, and an alarm raised here answers through the area's vents and scrubbers
 			return candidate
 	return null
 
@@ -205,6 +206,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		if(sim_turf.air) // genuinely air-bearing turf (return_air() is now never-null, so it can't be the presence check)
 			T = sim_turf
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "No simulated turf with air available for persistence test")
 
 	var/datum/gas_mixture/air = T.return_air()
@@ -369,6 +371,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		if(sim_turf.air) // genuinely air-bearing turf (return_air() is now never-null, so it can't be the presence check)
 			T = sim_turf
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no simulated turf with air for canister test")
 
 	var/obj/machinery/portable_atmospherics/canister/oxygen/C = new(T)
@@ -411,6 +414,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		if(sim_turf.air) // genuinely air-bearing turf (return_air() is now never-null, so it can't be the presence check)
 			T = sim_turf
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no simulated turf for hotspot test")
 
 	// Wipe any preexisting hotspot from earlier tests.
@@ -682,7 +686,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
 
-	// Stock with fuel + oxidizer.
+	// Stock with fuel + oxidizer. The turf is shared with every later test that takes the first clear floor: its air is put back after this one (restore_atmos()).
+	dq_atmos_test_snapshot_air_around(T)
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 30)
 	air.adjust_gas(/datum/gas/oxygen, 80)
@@ -1032,8 +1037,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 			if(istype(n, /turf/simulated/floor))
 				var/turf/simulated/floor/floor_n = n
 				if(floor_n.air && !floor_n.blocks_air)
-					dq_atmos_test_snapshot_air(cand)
-					dq_atmos_test_snapshot_air(floor_n)
+					dq_atmos_test_snapshot_air_around(cand)
+					dq_atmos_test_snapshot_air_around(floor_n)
 					return list(cand, floor_n)
 	return null
 
@@ -1081,8 +1086,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 					if(istype(n, /turf/simulated/floor))
 						var/turf/simulated/floor/floor_n = n
 						if(floor_n.air && !floor_n.blocks_air)
-							dq_atmos_test_snapshot_air(seed)
-							dq_atmos_test_snapshot_air(floor_n)
+							dq_atmos_test_snapshot_air_around(seed)
+							dq_atmos_test_snapshot_air_around(floor_n)
 							return list(seed, floor_n)
 	// Fallback: any floor pair with built adjacency.
 	return dq_atmos_test_find_floor_pair_with_real_adjacency()
@@ -1131,6 +1136,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 						connected = FALSE
 						break
 				if(connected)
+					for(var/turf/open/T as anything in line)
+						dq_atmos_test_snapshot_air_around(T)
 					return line
 	return null
 
@@ -1173,6 +1180,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 				run += nf
 				cur = nf
 			if(ok && run.len == count)
+				for(var/turf/open/T as anything in run)
+					dq_atmos_test_snapshot_air_around(T)
 				return run
 	return null
 
@@ -1194,6 +1203,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	T.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 	T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	heat_set(T.air, temperature, HEAT_SOURCE_OTHER)
+
+/// Snapshots a turf and the turfs its gas spreads to, so a test that vents or heats one turf leaves the neighbourhood as it found it.
+/proc/dq_atmos_test_snapshot_air_around(turf/open/T)
+	if(!istype(T))
+		return
+	dq_atmos_test_snapshot_air(T)
+	for(var/turf/open/N as anything in vg_atmos_adjacent_turfs(T))
+		dq_atmos_test_snapshot_air(N)
+
+/// Snapshots the air of every open turf in the area of `T`, for a test that raises an alarm or drives the area's devices: they move gas on turfs the test never names.
+/proc/dq_atmos_test_snapshot_area_air(turf/T)
+	var/area/room = get_area(T)
+	if(!room)
+		return
+	for(var/turf/open/N in room)
+		dq_atmos_test_snapshot_air(N)
 
 /proc/dq_atmos_test_snapshot_air(turf/open/T)
 	if(!istype(T) || !T.air || (T in GLOB.dq_atmos_test_air_snapshots))
@@ -2014,6 +2039,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for fire-protection test")
 
 	if(T.active_hotspot)
@@ -2951,12 +2977,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.sample_pressure()
 	TEST_ASSERT(gas_watch_data(S)?.watch, "a settled airlock sensor did not arm a gas watch")
 	var/before = S.previousPressure
-	var/wakes_before = S.gas_dependency_wake_count
+	var/wakes_before = sparse_get_or(S, gas_dependency_wake_count, 0)
 	T.return_air().adjust_moles(/datum/gas/oxygen, 0.000001)
 	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), before, "tiny real gas change preserves the displayed pressure")
 	while(!SSmachines.wake_dirty_gas_subscribers())
 		stoplag()
-	TEST_ASSERT_EQUAL(S.gas_dependency_wake_count, wakes_before, "unchanged rounded pressure does not wake sensor")
+	TEST_ASSERT_EQUAL(sparse_get_or(S, gas_dependency_wake_count, 0), wakes_before, "unchanged rounded pressure does not wake sensor")
 	TEST_ASSERT_EQUAL(S.previousPressure, before, "unchanged pressure preserves sampled state")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
@@ -3215,6 +3241,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for portable pump test")
 
 	// Drain ambient so the pump's effect shows up clearly.
@@ -3352,6 +3379,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for passive gate test")
 
 	var/obj/machinery/atmospherics/binary/passive_gate/G = new(T)
@@ -3820,6 +3848,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for high-pressure test")
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -4168,12 +4197,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	native_system().drain()
 	native_system().take_gas_changes()
 	// A vent pump's flow law is a Rust device edge: it has no DM step, so no gas change wakes it.
-	var/vent_wakes = V.gas_dependency_wake_count
+	var/vent_wakes = sparse_get_or(V, gas_dependency_wake_count, 0)
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
 	while(!SSmachines.wake_dirty_gas_subscribers())
 		stoplag()
-	TEST_ASSERT_EQUAL(V.gas_dependency_wake_count, vent_wakes, "a gas change woke a vent pump, which has no DM work")
+	TEST_ASSERT_EQUAL(sparse_get_or(V, gas_dependency_wake_count, 0), vent_wakes, "a gas change woke a vent pump, which has no DM work")
 	TEST_ASSERT(!machine_stepping(V), "a vent pump has no work")
 
 	var/obj/machinery/alarm/A = new(T)
@@ -4392,14 +4421,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	F.set_density(TRUE)
 	TEST_ASSERT(test_machine_idle(F), "stable closed firedoor retained timed polling")
 	TEST_ASSERT(length(F.air_watches), "closed firedoor did not register gas dependencies")
-	var/firedoor_wakes_before = F.gas_dependency_wake_count
+	var/firedoor_wakes_before = sparse_get_or(F, gas_dependency_wake_count, 0)
 	// Temperature levels need the native gas frame and world crossings, as other gas-level tests do.
 	heat_set(T.air, T.air.return_temperature() + 10, HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
-	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
+	TEST_ASSERT_EQUAL(sparse_get_or(F, gas_dependency_wake_count, 0), firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
 	heat_set(T.air, convert_c2k(60), HEAT_SOURCE_OTHER)
 	dq_gas_level_test_deliver()
-	TEST_ASSERT(F.gas_dependency_wake_count > firedoor_wakes_before, "temperature change did not wake closed firedoor (temperature=[T.air.return_temperature()], dependency=[F.dependency_air_0?.return_temperature()], hot=[F.air_hot_0], cold=[F.air_cold_0], turf id=[T.air.arena_id()], dependency id=[F.dependency_air_0?.arena_id()])")
+	TEST_ASSERT(sparse_get_or(F, gas_dependency_wake_count, 0) > firedoor_wakes_before, "temperature change did not wake closed firedoor (temperature=[T.air.return_temperature()], dependency=[F.dependency_air_0?.return_temperature()], hot=[F.air_hot_0], cold=[F.air_cold_0], turf id=[T.air.arena_id()], dependency id=[F.dependency_air_0?.arena_id()])")
 	TEST_ASSERT(test_machine_idle(F), "dependency wake left a firedoor polling after evaluating its state")
 	TEST_ASSERT(length(F.air_watches), "early-woken firedoor did not return to dependency sleep")
 	F.set_density(FALSE)
@@ -5243,6 +5272,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for species breath sweep")
 
 	var/species_tested = 0
@@ -5322,6 +5352,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for gas-overlay sweep")
 
 	// Count the known visible gases up front, from the SAME source the loop
@@ -5634,6 +5665,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for cryo cool test")
 
 	var/obj/machinery/atmospherics/unary/cryo_cell/C = new(T)
@@ -5989,6 +6021,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for thruster remove_ratio test")
 
 	var/obj/machinery/atmospherics/unary/engine/E = new(T)
@@ -6061,8 +6094,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/direction = get_dir(A, B)
 	// Large pressure difference and low resistance → move_prob clamps high.
 	P.experience_pressure_difference(500, direction)
-	TEST_ASSERT(P.last_high_pressure_movement_air_cycle == SSair.times_fired, \
-		"unanchored item did not register a pressure push (last_cycle=[P.last_high_pressure_movement_air_cycle], expected [SSair.times_fired])")
+	TEST_ASSERT(sparse_get_or(P, last_high_pressure_movement_air_cycle, 0) == SSair.times_fired, \
+		"unanchored item did not register a pressure push (last_cycle=[sparse_get_or(P, last_high_pressure_movement_air_cycle, 0)], expected [SSair.times_fired])")
 
 	qdel(P)
 
@@ -6397,6 +6430,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			pipe_turf = cand
 			break
+	dq_atmos_test_snapshot_air_around(pipe_turf) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(pipe_turf, "no floor for the three-pipeline test")
 	var/initial_total = 0
 	var/initial_thermal = 0
@@ -6762,6 +6796,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for volume_pump test")
 
 	var/obj/machinery/atmospherics/binary/volume_pump/V = new(T)
@@ -7198,6 +7233,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(cand.air && !cand.blocks_air)
 			T = cand
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for overlay test")
 
 	// The picked turf is nondeterministic (first floor with air in world) and may
@@ -7654,7 +7690,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// on the negative (no-wake) cases.
 	for(var/i in 1 to 16)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(M.gas_dependency_wake_count > wakes)
+		if(sparse_get_or(M, gas_dependency_wake_count, 0) > wakes)
 			return
 		stoplag()
 
@@ -7664,6 +7700,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(candidate.air && !candidate.blocks_air)
 			T = candidate
 			break
+	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for the wake-count test")
 	dq_atmos_test_drain_dependency_queue()
 

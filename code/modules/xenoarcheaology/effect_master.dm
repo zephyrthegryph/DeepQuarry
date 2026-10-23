@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	atom_shielding(deflection = 0, damage_wear = "scrapes and dents", announce_bands = FALSE, rad_thickness_mm = 0) // how it takes hits and shields radiation: a type trait (code/game/atom/atom_shielding.dm)
 	light_glow(range = 0, power = 1, color = COLOR_WHITE) // the light it casts while light_on: a type trait (code/modules/lighting/glow.dm)
 	ref_many(nameof(light_sources))
 	owns_one(nameof(artifact_master), /datum/artifact_master)

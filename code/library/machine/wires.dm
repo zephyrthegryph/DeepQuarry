@@ -429,11 +429,12 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/list/assemblies
 	/// Admin: hide what each wire is, even from those who could see it.
 	var/hide_wire_names = FALSE
-	/// REF() of the last mob that cut, mended or pulsed a wire (wires_last_user(): a lathe refreshes that hand's window when a pulse runs out).
-	var/last_user_ref
+	/// The last mob that cut, mended or pulsed a wire (wires_last_user(): a lathe refreshes that hand's window when a pulse runs out). Weak: it reads null once the mob is gone.
+	var/mob/last_user
 	var/datum/capability/lib/wires/def
 
 CAPABILITIES(/datum/cap_data/wires)
+	ref_one(nameof(last_user), /mob, weak = TRUE)
 	ref_one(nameof(owner)) // the record's back view of its holder, which owns the record through its wires activation
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
@@ -469,7 +470,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /// Runs the wire's effects on each capability that brought it, for the event "cut", "mend" or "pulse".
 /datum/cap_data/wires/proc/wire_effects(wire, event, mob/user)
 	if(user)
-		last_user_ref = REF(user)
+		rel_set(src, nameof(last_user), user)
 	for(var/datum/capability/C as anything in bringers?[wire])
 		C.wire_event(owner, wire, event, user)
 
@@ -740,7 +741,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /proc/wires_last_user(datum/holder)
 	RETURN_TYPE(/mob)
 	var/datum/cap_data/wires/W = wiring_of(holder)
-	var/mob/user = W?.last_user_ref ? locate(W.last_user_ref) : null
+	var/mob/user = W?.last_user
 	return istype(user) && !QDELETED(user) ? user : null
 
 /// Is `wire` of `holder` cut?

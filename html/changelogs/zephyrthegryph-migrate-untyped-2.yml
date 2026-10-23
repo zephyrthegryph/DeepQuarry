@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The untyped ratchet finds value-returning procs from their bodies and resolves calls by proc identity; the hand-written value_calls list is gone"
+  - code_imp: "45 of the 57 typed untyped-ratchet rows are resolved: entity vars are typed and declared (ref_one, weak where a dangling reference was tolerated); vars that hold type paths lose their mistyped parameters"

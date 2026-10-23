@@ -7,7 +7,7 @@
 	if(hud_used?.autowhisper_display)
 		hud_used?.autowhisper_display?.icon_state = "[autowhisper ? "autowhisper1" : "autowhisper"]"
 
-	if(autowhisper_mode == "Psay/Pme")
+	if(sparse_get(src, autowhisper_mode) == "Psay/Pme")
 		if(isbelly(loc) && absorbed)
 			var/obj/belly/b = loc
 			if(b.mode_flags & DM_FLAG_FORCEPSAY)
@@ -37,7 +37,7 @@
 			return
 		choice = "Adjacent Turfs (Default)"
 	if(!choice || choice == "Adjacent Turfs (Default)")
-		autowhisper_mode = null
+		sparse_set(src, autowhisper_mode, null)
 		balloon_alert(src, "subtles returned to default setting")
 		return
 	if(choice == "Psay/Pme")
@@ -49,5 +49,5 @@
 					return
 			forced_psay = TRUE
 			to_chat(src, span_notice("As a note, this option will only work if you are in a situation where you can send psay/pme messages! Otherwise it will work as default whisper/subtle."))
-	autowhisper_mode = choice
-	balloon_alert(src, "subtles set to [autowhisper_mode]")
+	sparse_set(src, autowhisper_mode, choice)
+	balloon_alert(src, "subtles set to [sparse_get(src, autowhisper_mode)]")

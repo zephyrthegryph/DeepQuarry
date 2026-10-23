@@ -28,10 +28,10 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 		set_gurgled_color(contamination_color)
 		var/list/pickfrom = GLOB.contamination_flavors[contamination_flavor]
 		var/gurgleflavor = pick(pickfrom)
-		cleanname = src.name
-		cleandesc = src.desc
-		name = "[gurgleflavor] [cleanname]"
-		desc = "[cleandesc] It seems to be covered in ominously foul residue and needs a wash."
+		sparse_set(src, cleanname, src.name)
+		sparse_set(src, cleandesc, src.desc)
+		name = "[gurgleflavor] [sparse_get(src, cleanname)]"
+		desc = "[sparse_get(src, cleandesc)] It seems to be covered in ominously foul residue and needs a wash."
 		return TRUE
 
 /obj/item/proc/can_gurgle()
@@ -88,7 +88,7 @@ MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice
 
 /obj/item/storage/box/gurgle_contaminate(atom/movable/item_storage = null)
 	if((. = ..()))
-		name = "soggy [cleanname]"
+		name = "soggy [sparse_get(src, cleanname)]"
 		desc = "This soggy box is about to fall apart any time."
 
 //Storages that contaminate contents

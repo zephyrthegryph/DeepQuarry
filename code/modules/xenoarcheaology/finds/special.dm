@@ -154,15 +154,16 @@ CAPABILITIES(/obj/item/vampiric)
 //animated blood 2 SPOOKY
 /obj/effect/decal/cleanable/blood/splatter/animated
 	var/tmp/turf/target_turf
-	var/loc_last_process
+	var/atom/loc_last_process
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
 	setup(PROC_REF(splatter_animated_setup))
 	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
 	ref_one(nameof(target_turf))
+	ref_one(nameof(loc_last_process), /atom)
 
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/splatter_animated_setup()
-	loc_last_process = src.loc
+	rel_set(src, nameof(loc_last_process), src.loc)
 
 /// Crawls toward its target turf every 2 s (every() gated on target_turf); arrived, it does nothing.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/animated_blood_step(datum/act/timer/A)
@@ -172,7 +173,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
 		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
 			rel_clear(src, nameof(target_turf))
-		loc_last_process = src.loc
+		rel_set(src, nameof(loc_last_process), src.loc)
 
 		//leave some drips behind
 		if(prob(50))

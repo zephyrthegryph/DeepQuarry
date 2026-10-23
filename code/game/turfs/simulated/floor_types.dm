@@ -34,7 +34,8 @@
 	new_dest.set_icon(my_turf().icon)
 	new_dest.copy_overlays(my_turf(), TRUE)
 	new_dest.underlays = my_turf().underlays.Copy()
-	new_dest.set_decals(my_turf().decals)
+	var/turf/simulated/shuttle/held_turf = my_turf()
+	new_dest.set_decals(held_turf.decals)
 	//Shuttle specific stuff
 	new_dest.interior_corner = my_turf().interior_corner
 	new_dest.takes_underlays = my_turf().takes_underlays
@@ -89,10 +90,9 @@
 	/// Whether this joined corner cancels the lighting overlay of the dynamic lighting beside it (update_breaklights()).
 	var/breaks_light = FALSE
 	rad_insulation = RAD_MEDIUM_INSULATION
-	rad_shield_material = MAT_TITANIUM
-	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
 
 CAPABILITIES(/turf/simulated/shuttle)
+	configure(atom_shielding(rad_material = MAT_TITANIUM, rad_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM))
 	setup(PROC_REF(finish_shuttle_turf))
 	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 

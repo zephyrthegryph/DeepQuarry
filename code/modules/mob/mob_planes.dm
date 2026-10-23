@@ -268,7 +268,7 @@ CAPABILITIES(/atom/movable/screen/plane_master/augmented)
 	if(state)
 		registry_join(REGISTRY_ENTOPIC_USERS, my_mob)
 		if(my_mob.client)
-			my_mob.client.images |= GLOB.entopic_images
+			client_images_include(my_mob.client, GLOB.entopic_images)
 	else
 		registry_leave(REGISTRY_ENTOPIC_USERS, my_mob)
 		if(my_mob.client)

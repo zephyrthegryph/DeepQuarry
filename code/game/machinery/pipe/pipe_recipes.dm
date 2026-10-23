@@ -129,11 +129,12 @@ GLOBAL_LIST_INIT(disposal_pipe_recipes, list(
 	var/construction_type 		// The type PATH to the type of pipe fitting object the recipe makes.
 	var/paintable = FALSE // If TRUE, allow the RPD to paint this pipe. //
 
-/datum/pipe_recipe/pipe/New(label, obj/machinery/atmospherics/path)
+/datum/pipe_recipe/pipe/New(label, path) // path: the pipe's type path
+	var/obj/machinery/atmospherics/proto = path
 	name = label
 	pipe_type = path
-	construction_type = initial(path.construction_type)
-	icon_state = initial(path.pipe_state)
+	construction_type = initial(proto.construction_type)
+	icon_state = initial(proto.pipe_state)
 	var/obj/item/pipe/construction_path = construction_type
 	dirtype = initial(construction_path.dispenser_class)
 	if (dirtype == PIPE_TRIN_M)

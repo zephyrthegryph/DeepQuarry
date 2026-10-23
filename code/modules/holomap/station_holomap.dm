@@ -120,8 +120,8 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 			animate(holomap_datum.station_map, alpha = 255, time = 5, easing = LINEAR_EASING)
 			flick("station_map_activate", src)
 			// Wait, if wea re not modifying the holomap_obj... can't it be part of the global hud?
-			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
-			user.client.images |= holomap_datum.station_map
+			client_screen_include(user.client, GLOB.global_hud.holomap) // TODO - HACK! This should be there permenently really.
+			client_images_include(user.client, holomap_datum.station_map)
 
 			rel_set(src, nameof(watching_mob), user)
 			dq_add_recursive_move(watching_mob())

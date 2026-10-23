@@ -72,6 +72,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 /datum/capability/lib/reagent_container/entries()
 	return list(
+		click_order(BIND_AT_TARGET, "reagent_container.spray", "reagent_container.fill", "reagent_container.pour"),
 		(lid && lid_visible) ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
 		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), when(CAP_PROC(range_known)), label("Set transfer amount"),
 			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
@@ -79,7 +80,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			needs(req_source_open(), req_source_has_reagents(),
 				req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/pour))),
-		length(taps) ? op("fill", at_target(), when(CAP_PROC(target_is_tap)), priority(OP_PRIORITY_PART), priority(above("reagent_container.pour")), label("Fill"),
+		length(taps) ? op("fill", at_target(), when(CAP_PROC(target_is_tap)), priority(OP_PRIORITY_PART), label("Fill"),
 			needs(req(CAP_PROC(sink_open)), req_source_has_reagents(),
 				req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/fill))) : null,
@@ -100,7 +101,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		injects ? op("inject", at_target(/mob/living), when(not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req_source_has_reagents(), req_sink_has_room()),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
-		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), priority(above("reagent_container.fill")), label("Spray"),
+		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), label("Spray"),
 			needs(req_source_open(), req(CAP_PROC(source_has_amount))),
 			then(CAP_PROC(sprayed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
 		(lid && lid_visible) ? look_layer(LOOK_LID, when = not(REAGENT_CONTAINER_LID_OPEN)) : null,

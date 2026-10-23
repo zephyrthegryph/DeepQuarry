@@ -1,4 +1,3 @@
-/mob/var/suiciding = 0
 
 /mob/living/carbon/human/verb/suicide() /// At best, useful for admins to see if it's being called.
 	set hidden = 1
@@ -28,7 +27,7 @@
 		to_chat(src, "You can't commit suicide before the game starts!")
 		return
 
-	if (suiciding)
+	if (sparse_get_or(src, suiciding, 0))
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
@@ -37,7 +36,7 @@
 		return
 
 	if(confirm == "Yes")
-		suiciding = 1
+		sparse_set(src, suiciding, 1)
 		to_chat(viewers(loc),span_danger("[src]'s brain is growing dull and lifeless. It looks like it's lost the will to live."))
 		after(src, 5 SECONDS, PROC_REF(brain_suicide_ends))
 
@@ -51,7 +50,7 @@
 		to_chat(src, "You're already dead!")
 		return
 
-	if (suiciding)
+	if (sparse_get_or(src, suiciding, 0))
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
@@ -60,7 +59,7 @@
 		return
 
 	if(confirm == "Yes")
-		suiciding = 1
+		sparse_set(src, suiciding, 1)
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
 		death(0)
 
@@ -74,7 +73,7 @@
 		to_chat(src, "You're already dead!")
 		return
 
-	if (suiciding)
+	if (sparse_get_or(src, suiciding, 0))
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
@@ -83,7 +82,7 @@
 		return
 
 	if(confirm == "Yes")
-		suiciding = 1
+		sparse_set(src, suiciding, 1)
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
 		death(0)
 
@@ -106,7 +105,7 @@
 
 /mob/living/carbon/brain/proc/brain_suicide_ends()
 	death(0)
-	suiciding = 0
+	sparse_set(src, suiciding, 0)
 
 /mob/living/carbon/brain/proc/brain_suicide_answered(datum/act/request/A)
 	if(!A.answer)

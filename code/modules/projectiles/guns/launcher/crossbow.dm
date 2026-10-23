@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/arrow/quill)
 	var/max_tension = 5                     // Highest possible tension.
 	var/release_speed = 5                   // Speed per unit of tension.
 	var/tmp/obj/item/cell/cell	// Used for firing superheated rods.
-	var/current_user                        // Used to check if the crossbow has changed hands since being drawn.
+	var/current_user                        // A weak handle (read it with current_user()). Used to check if the crossbow has changed hands since being drawn.
 	w_class = ITEMSIZE_HUGE //.
 
 	///Var for attack_self chain
@@ -78,6 +78,7 @@ CAPABILITIES(/obj/item/arrow/quill)
 // Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
 // losing the bolt ends it with the notches drawn so far, and the string relaxes.
 CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	ref_one(nameof(current_user), /mob, weak = TRUE)
 	configure(item_worn(slots = SLOT_BACK))
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
@@ -129,7 +130,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 	if(user.restrained())
 		return
 
-	current_user = user
+	rel_set(src, nameof(current_user), user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), MSG_OTHERS("%U% begins to draw back the string of %T%."))
 	set_tension(1)
 	// crossbow strings don't just magically pull back on their own: one notch of tension every 2.5 seconds up to max_tension
@@ -166,7 +167,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 
 /obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
 
-	if(!bolt || !tension || current_user != user) //Arrow has been fired, bow has been relaxed or user has changed.
+	if(!bolt || !tension || current_user() != user) //Arrow has been fired, bow has been relaxed or user has changed.
 		return
 
 

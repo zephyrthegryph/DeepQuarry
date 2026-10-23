@@ -48,7 +48,7 @@
 			continue
 		for(var/datum/mind/other_antag in current_antagonists)
 			if(antag.current && antag.current.client)
-				antag.current.client.images |= get_indicator(antag, other_antag)
+				client_images_include(antag.current.client, get_indicator(antag, other_antag))
 
 /datum/antagonist/proc/update_icons_added(datum/mind/player)
 	if(!antag_indicator || !player.current)
@@ -61,11 +61,11 @@
 		if(!antag.current)
 			continue
 		if(antag.current.client)
-			antag.current.client.images |= get_indicator(antag, player)
+			client_images_include(antag.current.client, get_indicator(antag, player))
 		if(!give_to_player)
 			continue
 		if(player.current.client)
-			player.current.client.images |= get_indicator(player, antag)
+			client_images_include(player.current.client, get_indicator(player, antag))
 
 /datum/antagonist/proc/update_icons_removed(datum/mind/player)
 	if(!antag_indicator || !player.current)

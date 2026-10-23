@@ -27,18 +27,10 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 #define OMEN_TRAIT_SOURCE "omen"
 
 /mob/living
-	/// How many incidents are left. If 0 exactly, the omen ends.
-	var/omen_incidents = INFINITY
-	/// Base probability of negative events. Cursed are half as unlucky.
-	var/omen_luck = 1
 	/// Base damage from negative events. Cursed take 25% of this damage.
 	var/omen_damage = 1
 	/// If we want to do more evil events, such as spontaneous combustion
 	var/omen_evil = TRUE
-	/// If our codebase has safe disposals or not
-	var/omen_safe_disposals = FALSE
-	/// If we have vore interactions or not
-	var/omen_vorish = TRUE
 
 /// TRUE while the mob carries an omen.
 /mob/living/proc/has_omen()
@@ -51,30 +43,30 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
  */
 /mob/living/proc/add_omen(incidents_left = INFINITY, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
 	if(!has_omen())
-		omen_incidents = incidents_left
-		omen_luck = luck_mod
+		sparse_set(src, omen_incidents, incidents_left)
+		sparse_set(src, omen_luck, luck_mod)
 		omen_damage = damage_mod
 		omen_evil = evil
-		omen_safe_disposals = safe_disposals
-		omen_vorish = vorish
+		sparse_set(src, omen_safe_disposals, safe_disposals)
+		sparse_set(src, omen_vorish, vorish)
 		grant(src, /datum/capability/omen, src)
 		return
 	// If we have more incidents left the new one is dropped.
-	if(omen_incidents > incidents_left)
+	if(sparse_get_or(src, omen_incidents, INFINITY) > incidents_left)
 		return
-	omen_incidents = incidents_left
+	sparse_set(src, omen_incidents, incidents_left)
 	// The new omen is weaker than our current omen? Let's split the difference.
-	if(omen_luck > luck_mod)
-		omen_luck += luck_mod * 0.5
+	if(sparse_get_or(src, omen_luck, 1) > luck_mod)
+		sparse_set(src, omen_luck, sparse_get_or(src, omen_luck, 1) + (luck_mod * 0.5))
 	if(omen_damage > damage_mod)
 		omen_damage += damage_mod * 0.5
 	// If the new omen has special modifiers, we take them on forever!
 	if(evil)
 		omen_evil = TRUE
 	if(safe_disposals)
-		omen_safe_disposals = TRUE
+		sparse_set(src, omen_safe_disposals, TRUE)
 	if(vorish)
-		omen_vorish = TRUE
+		sparse_set(src, omen_vorish, TRUE)
 
 /mob/living/proc/remove_omen()
 	revoke(src, /datum/capability/omen, src)
@@ -120,8 +112,8 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	return has_omen() && omen_check_throw(src, source, speed)
 
 /mob/living/proc/omen_consume()
-	omen_incidents--
-	if(omen_incidents < 1)
+	sparse_set(src, omen_incidents, sparse_get_or(src, omen_incidents, INFINITY) - 1)
+	if(sparse_get_or(src, omen_incidents, INFINITY) < 1)
 		remove_omen()
 
 /**
@@ -147,7 +139,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 		omen_consume()
 		return
 
-	var/effective_luck = omen_luck
+	var/effective_luck = sparse_get_or(src, omen_luck, 1)
 
 	// If there's nobody to witness the misfortune, make it less likely.
 	// This way, we allow for people to be able to get into hilarious situations without making the game nigh unplayable most of the time.
@@ -187,7 +179,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 			omen_consume()
 			return
 
-		if(omen_vorish)
+		if(sparse_get_or(src, omen_vorish, TRUE))
 			for(var/mob/living/living_mob in the_turf)
 				if(living_mob == our_guy || (vore_selected_of(living_mob) == vore_selected_of(living_guy)))
 					continue //Don't do anything to ourselves.
@@ -211,7 +203,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 				omen_consume()
 				return
 
-		if((omen_evil || omen_safe_disposals) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
+		if((omen_evil || sparse_get_or(src, omen_safe_disposals, FALSE)) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
 			for(var/obj/machinery/disposal/evil_disposal in the_turf)
 				if(!evil_disposal.operable())
 					continue
@@ -270,7 +262,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 					to_chat(living_guy, span_warning("The mirror explodes into a million pieces! Wait, does that mean you're even more unlucky?"))
 					evil_mirror.shatter()
 					if(prob(50 * effective_luck)) // sometimes
-						omen_luck += 0.25
+						sparse_set(src, omen_luck, sparse_get_or(src, omen_luck, 1) + (0.25))
 						omen_damage += 0.25
 					var/max_health_coefficient = (living_guy.get_endurance() * 0.06)
 					for(var/obj/item/organ/external/limb in living_guy.organs)
@@ -313,7 +305,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 			return
 	//Ran out of turf options. Let's do more generic options.
 
-	if(prob(omen_luck * 5))
+	if(prob(sparse_get_or(src, omen_luck, 1) * 5))
 		// In complete darkness
 		if(our_guy_pos.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
 			living_guy.status_at_least(STAT_BLINDED, 5) //10 seconds of 'OH GOD WHAT'S HAPPENING'
@@ -335,7 +327,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 		our_guy.emote("scream")
 		to_chat(our_guy, span_cult("What a horrible night... To have a curse!"))
 
-	if(prob(30 * omen_luck) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
+	if(prob(30 * sparse_get_or(src, omen_luck, 1)) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
 		play_sfx(our_guy, SFX_EFFECTS_TABLEHEADSMASH)
 		act_message(our_guy, null, MSG_SELF(span_bolddanger("You hit your head really badly falling down!")), \
 			MSG_OTHERS(span_danger("%U% hits %THEIR% head really badly falling down!")))
@@ -358,7 +350,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 	return
 
 /mob/living/proc/omen_check_roll(mob/living/unlucky_soul, obj/item/dice/the_dice, silent, result)
-	if(prob(20 * omen_luck))
+	if(prob(20 * sparse_get_or(src, omen_luck, 1)))
 		//unlucky_soul.visible_message(span_danger("[unlucky_soul] rolls [the_dice] with it landing on the edge of [result] before tilting over!"), span_boldwarning("You feel dreadfully unlucky as you roll the dice!"))
 		//I had thought about making this have a notice that it happened.
 		//However, gaslighting the user by providing no visible notice is MUCH funnier.
@@ -366,7 +358,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 ///Returns TRUE and stops us from catching
 /mob/living/proc/omen_check_throw(mob/living/unlucky_soul, source, speed)
-	if(prob(30 * omen_luck)) //~9% chance
+	if(prob(30 * sparse_get_or(src, omen_luck, 1))) //~9% chance
 		if(istype(source, /obj/item/grenade))
 			var/obj/item/grenade/bad_grenade = source
 			if(bad_grenade.active)
@@ -389,7 +381,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
  * damage_to_inflict, damage_type, injury_verb, is_sharp, is_edge.
 */
 /mob/living/proc/omen_check_pickup(mob/living/unlucky_soul, obj/item/item)
-	if(prob(3 * omen_luck) && ishuman(unlucky_soul)) // ~3% chance
+	if(prob(3 * sparse_get_or(src, omen_luck, 1)) && ishuman(unlucky_soul)) // ~3% chance
 		var/mob/living/carbon/human/unlucky_human = unlucky_soul
 
 		///How much damage we'll inflect.
@@ -461,7 +453,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 		unlucky_human.injure(injury_kind, damage_to_inflict * omen_damage, current_hand, item)
 
 /mob/living/proc/omen_check_stairs(mob/living/unlucky_soul)
-	if(prob(3 * omen_luck)) /// Bonk!
+	if(prob(3 * sparse_get_or(src, omen_luck, 1))) /// Bonk!
 		play_sfx(unlucky_soul, SFX_EFFECTS_TABLEHEADSMASH)
 		act_message(unlucky_soul, null, MSG_SELF(span_bolddanger("A stair gives way and you trip to the bottom!")), \
 			MSG_OTHERS(span_danger("One of the stairs give way as %U% steps onto it, tumbling them down to the bottom!")))
@@ -476,7 +468,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 		return
 	if(!ishuman(unlucky_soul))
 		return
-	if(prob(3 * omen_luck))
+	if(prob(3 * sparse_get_or(src, omen_luck, 1)))
 		var/mob/living/carbon/human/human_guy = unlucky_soul
 		if(human_guy.should_have_organ(O_HEART))
 			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organ_list())

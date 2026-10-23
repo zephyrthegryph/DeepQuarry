@@ -135,7 +135,7 @@
 	if(!.)
 		return
 
-	src.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
+	client_screen_remove(src.client, list(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired))
 
 	if (src.stat != DEAD)
 		if(src.has_status(STAT_BLINDED))

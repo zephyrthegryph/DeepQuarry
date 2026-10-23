@@ -51,7 +51,6 @@
 	var/construct_type = "shade"
 	var/list/construct_spells = list() // ALLOW(instance_list): d: per-mob construct_spells, sized at creation and filled in place; mobs are few
 
-	can_pain_emote = FALSE
 
 /mob/living/simple_mob/construct/place_spell_in_hand(path)
 	if(!path || !ispath(path))
@@ -90,6 +89,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_nature(can_pain_emote = FALSE))
 	setup(PROC_REF(prepare_construct_spells))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))

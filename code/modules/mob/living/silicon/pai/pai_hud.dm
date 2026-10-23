@@ -345,7 +345,7 @@
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	if(client)
-		client.screen = list()
+		client_screen_clear(client)
 		client_screen_add(client, HUD.hud_elements)
 		client_screen_add(client, HUD.adding)
 		client_screen_add(client, HUD.hotkeybuttons)
@@ -405,13 +405,13 @@
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.healths)
-			client.screen |= hud_used?.healths
+			client_screen_include(client, hud_used?.healths)
 		if(hud_used?.internals)
-			client.screen |= hud_used?.internals
+			client_screen_include(client, hud_used?.internals)
 		if(hud_used?.gun_setting_icon)
-			client.screen |= hud_used?.gun_setting_icon
+			client_screen_include(client, hud_used?.gun_setting_icon)
 		if(hud_used.hud_elements)
-			if(length(hud_used.hud_elements)) client.screen |= hud_used.hud_elements
+			if(length(hud_used.hud_elements)) client_screen_include(client, hud_used.hud_elements)
 
 		client_screen_add(client, hud_used?.zone_sel)				//This one is a special snowflake
 

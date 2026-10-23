@@ -17,9 +17,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /datum/mob_chunk
 	var/id
-	/// REF(watcher) -> list(mask, handler).
+	/// ref_token(watcher) -> list(mask, handler).
 	var/list/watchers
-	/// REF(mob) -> TRUE for every living mob standing in this chunk, kept by publish_mob_move() and the mob's init and destroy. Held by REF text like the
+	/// ref_token(mob) -> TRUE for every living mob standing in this chunk, kept by publish_mob_move() and the mob's init and destroy. Held by REF text like the
 	/// watchers, so a deleted mob never lingers; the AI packs read it to find who is near (living_in_chunk()). Filled by a scan when the chunk is made.
 	var/list/living_refs
 
@@ -54,15 +54,15 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 			if(!T)
 				continue
 			for(var/mob/living/L as anything in turf_contents_of_type(T, /mob/living))
-				LAZYSET(C.living_refs, REF(L), TRUE)
+				LAZYSET(C.living_refs, ref_token(L), TRUE)
 
 /// The living mobs standing in the chunk with id `id` (a fresh list; callers filter stat and deletion).
 /proc/living_in_chunk(id)
 	. = list()
 	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"] || mob_chunk(id)
 	for(var/key in C.living_refs)
-		var/mob/living/L = locate(key)
-		if(L && !QDELETED(L) && REF(L) == key)
+		var/mob/living/L = resolve_token(key)
+		if(L)
 			. += L
 
 /// A living mob came into (`entered` TRUE) or left the chunk with id `id`: kept only for chunks that exist (a new chunk scans).
@@ -73,9 +73,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	if(!C)
 		return
 	if(entered)
-		LAZYSET(C.living_refs, REF(L), TRUE)
+		LAZYSET(C.living_refs, ref_token(L), TRUE)
 	else
-		LAZYREMOVE(C.living_refs, REF(L))
+		LAZYREMOVE(C.living_refs, entity_handle_of(L))
 
 /// Raises `bits` on chunk `id` if anything watches it.
 /proc/mob_chunk_changed(id, bits)
@@ -92,8 +92,8 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		var/list/watch = C.watchers[key]
 		if(!watch || !(watch[1] & bits))
 			continue
-		var/datum/watcher = locate(key)
-		if(!watcher || QDELETED(watcher) || REF(watcher) != key)
+		var/datum/watcher = resolve_token(key)
+		if(!watcher)
 			C.watchers -= key
 			continue
 		call(watcher, watch[2])(C, bits)
@@ -109,9 +109,10 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /// `watcher`.handler(chunk, bits) runs when `mask` is raised on any of `chunks`. Returns the chunks, for unwatch_mob_chunks().
 /proc/watch_mob_chunks(datum/watcher, list/chunks, mask, handler)
-	var/key = REF(watcher)
+	var/key = ref_token(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
-		LAZYSET(C.watchers, key, list(mask, handler))
+		if(key) // a deleted watcher would be dropped on the first raise anyway
+			LAZYSET(C.watchers, key, list(mask, handler))
 	if(mask & MOB_CHUNK_WATCH_ANY_MOB)
 		GLOB.mob_chunk_watches += length(chunks)
 	if(mask & MOB_CHUNK_WATCH_PLAYER)
@@ -120,7 +121,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 
 /// Drops watches made by watch_mob_chunks(). Returns null, for `chunks = unwatch_mob_chunks(...)`.
 /proc/unwatch_mob_chunks(datum/watcher, list/chunks, mask)
-	var/key = REF(watcher)
+	var/key = entity_handle_of(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
 		LAZYREMOVE(C.watchers, key)
 	if(mask & MOB_CHUNK_WATCH_ANY_MOB)

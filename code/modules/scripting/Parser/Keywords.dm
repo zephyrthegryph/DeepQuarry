@@ -50,7 +50,7 @@
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
 	rel_set(stmt, nameof(stmt.value), parser.ParseExpression())
-	LAZYADD(parser.curBlock().statements, stmt)
+	parser.curBlock().add_statement(stmt)
 
 /datum/n_Keyword/nS_Keyword/kwIf/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -61,7 +61,7 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0)) //Token needs to be preserved for parse loop, so skip=0
 		return KW_ERR
-	LAZYADD(parser.curBlock().statements, stmt)
+	parser.curBlock().add_statement(stmt)
 	rel_set(stmt, nameof(stmt.block), new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
@@ -88,7 +88,7 @@
 		return KW_FAIL
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
 		return KW_ERR
-	LAZYADD(parser.curBlock().statements, stmt)
+	parser.curBlock().add_statement(stmt)
 	rel_set(stmt, nameof(stmt.block), new /datum/node/BlockDefinition)
 	parser.AddBlock(stmt.block)
 
@@ -99,7 +99,7 @@
 		. = KW_WARN
 	var/datum/node/statement/BreakStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	LAZYADD(parser.curBlock().statements, stmt)
+	parser.curBlock().add_statement(stmt)
 
 /datum/n_Keyword/nS_Keyword/kwContinue/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -108,7 +108,7 @@
 		. = KW_WARN
 	var/datum/node/statement/ContinueStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
-	LAZYADD(parser.curBlock().statements, stmt)
+	parser.curBlock().add_statement(stmt)
 
 /datum/n_Keyword/nS_Keyword/kwDef/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
@@ -142,10 +142,10 @@
 		return KW_FAIL
 
 	if(istype(parser.curToken(), /datum/token/end)) //Function prototype
-		LAZYADD(parser.curBlock().statements, def)
+		parser.curBlock().add_statement(def)
 	else if(parser.curToken().value=="{" && istype(parser.curToken(), /datum/token/symbol))
 		rel_set(def, nameof(def.block), new /datum/node/BlockDefinition/FunctionBlock)
-		LAZYADD(parser.curBlock().statements, def)
+		parser.curBlock().add_statement(def)
 		var/datum/node/BlockDefinition/enclosing = parser.curBlock()
 		rel_add(enclosing, nameof(enclosing.functions), def, def.func_name)
 		parser.AddBlock(def.block)

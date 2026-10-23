@@ -9,7 +9,6 @@
 	/// Zones a surgical step is currently being performed on (lazy).
 	//Active emote/pose
 	var/pose = null
-	var/pose_move = FALSE
 	var/image/pose_indicator
 	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 	var/datum/reagents/metabolism/ingested/ingested = null

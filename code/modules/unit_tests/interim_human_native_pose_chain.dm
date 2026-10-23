@@ -19,7 +19,7 @@
 	TEST_ASSERT_NULL(actor.pose, "the pose is not committed before the real checklist answer")
 	test_answer(actor, list("Cancel Pose on Movement", "Quiet Pose"))
 	TEST_ASSERT_EQUAL(actor.pose, "stands at attention.", "the native checklist commits the exact entered pose")
-	TEST_ASSERT(actor.pose_move, "the actual selected movement option is applied")
+	TEST_ASSERT(sparse_get_or(actor, pose_move, FALSE), "the actual selected movement option is applied")
 	TEST_ASSERT_NOTNULL(actor.pose_indicator, "the default icon option creates the real pose indicator")
 	var/image/original_indicator = actor.pose_indicator
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the accepted checklist ends the workflow")
@@ -31,7 +31,7 @@
 	test_answer(actor, null, REQ_CANCELLED)
 	TEST_ASSERT_EQUAL(actor.pose, "stands at attention.", "checklist cancellation preserves the actual previously committed pose")
 	TEST_ASSERT_EQUAL(actor.pose_indicator, original_indicator, "checklist cancellation preserves the exact original indicator")
-	TEST_ASSERT(actor.pose_move, "checklist cancellation preserves the original movement option")
+	TEST_ASSERT(sparse_get_or(actor, pose_move, FALSE), "checklist cancellation preserves the original movement option")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "checklist cancellation ends without another prompt")
 
 	actor.pose()
@@ -48,7 +48,7 @@
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/checklist/pose_options), "the empty-choice control reaches the actual checklist")
 	test_answer(actor, list())
 	TEST_ASSERT_EQUAL(actor.pose, "waits patiently.", "an accepted empty checklist still commits the real pose")
-	TEST_ASSERT(!actor.pose_move, "the empty checklist resets movement cancellation to its actual default")
+	TEST_ASSERT(!sparse_get_or(actor, pose_move, FALSE), "the empty checklist resets movement cancellation to its actual default")
 	TEST_ASSERT_NOTNULL(actor.pose_indicator, "the empty checklist retains the actual default indicator")
 
 	actor.pose()

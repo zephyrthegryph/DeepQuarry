@@ -3,13 +3,15 @@
 	/// A private access-check object (owned: built in New).
 	var/obj/access
 	var/emagged = 0
-	var/ui_ref
+	/// The window it is open in, while it is.
+	var/datum/tgui/ui_ref
 	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
 	var/list/monitored_alarms
 	/// The panel of the alarm last opened from it (/datum/air_alarm_remote).
 	var/datum/air_alarm_remote/remote_panel
 
 CAPABILITIES(/datum/tgui_module/atmos_control)
+	ref_one(nameof(ui_ref), /datum/tgui)
 	owns_one(nameof(access), /obj)
 	owns_one(nameof(remote_panel), /datum/air_alarm_remote)
 	interface("AtmosControl")
@@ -56,7 +58,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 
 /datum/tgui_module/atmos_control/ui_opening(mob/user, datum/tgui/ui)
 	..()
-	ui_ref = ui
+	rel_set(src, nameof(ui_ref), ui)
 	ui.set_autoupdate(TRUE)
 
 /datum/tgui_module/atmos_control/tgui_static_data(mob/user)
@@ -93,7 +95,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 
 /datum/tgui_module/atmos_control/tgui_close()
 	. = ..()
-	ui_ref = null
+	rel_clear(src, nameof(ui_ref))
 
 /datum/tgui_module/atmos_control/ntos
 	ntos = TRUE

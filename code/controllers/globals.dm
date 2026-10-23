@@ -91,3 +91,25 @@ GLOBAL_REAL_VAR(list/benchmark_early_notes)
 		var/list/notes = benchmark_early_notes || (benchmark_early_notes = list())
 		notes += list(list(name, ds, mb_before, mb_after))
 #endif
+
+// The globals that hold a reference to a datum or atom are declared relations of the GLOB holder: a deleted target leaves its global by
+// itself, and every write goes through rel_set()/rel_add()/rel_remove()/rel_clear() on GLOB (doc/rewrite/proposals/reference_storage.md).
+CAPABILITIES(/datum/controller/global_vars)
+	ref_one(nameof(ore_silo_default))
+	ref_one(nameof(ai_camera_room_landmark))
+	ref_one(nameof(blackbox))
+	ref_one(nameof(sleevemate_mob))
+	ref_one(nameof(vendor_account))
+	ref_one(nameof(station_account))
+	ref_one(nameof(sdql2_vv_statobj))
+	ref_one(nameof(character_directory))
+	ref_one(nameof(changelog_tgui))
+	ref_many(nameof(adminfaxes))
+	ref_many(nameof(admin_ranks))
+	ref_many(nameof(protected_ranks))
+	ref_many(nameof(admin_laws))
+	ref_many(nameof(player_laws))
+	ref_many(nameof(affliction_triggers_all))
+	// Keyed many: an alist, key -> member (the ckey, or the level as text); a member that is deleted takes its keys with it.
+	ref_many(nameof(mannequins))
+	ref_many(nameof(map_sectors))

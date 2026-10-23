@@ -205,13 +205,17 @@
 
 /datum/unit_test/dq_manual_account_creation_is_conservative
 
+/datum/unit_test/dq_manual_account_creation_is_conservative/proc/restore_station_account(datum/money_account/saved)
+	rel_set(GLOB, nameof(GLOB.station_account), saved)
+
 /datum/unit_test/dq_manual_account_creation_is_conservative/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/test_station = new
 	test_station.set_owner_name("Test Station")
 	test_station.set_money(100)
 	test_station.suspended = TRUE
-	set_global("station_account", test_station)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test/dq_manual_account_creation_is_conservative, restore_station_account), GLOB.station_account)
+	rel_set(GLOB, nameof(GLOB.station_account), test_station)
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.set_registered_name("Account Test Captain")
@@ -752,7 +756,7 @@
 	parts_lathe.addToQueue(test_recipe, producer.account_number)
 	TEST_ASSERT_EQUAL(parts_lathe.queue_producer_accounts[1], producer.account_number, "parts-lathe queue discarded producer identity")
 	var/obj/item/parts_output = parts_lathe.build(test_recipe, producer.account_number)
-	TEST_ASSERT_EQUAL(parts_output.economic_producer_account, producer.account_number, "parts-lathe output discarded producer identity")
+	TEST_ASSERT_EQUAL(sparse_get_or(parts_output, economic_producer_account, 0), producer.account_number, "parts-lathe output discarded producer identity")
 	var/obj/machinery/mecha_part_fabricator_tg/mech_fabricator = new(test_turf)
 	var/datum/design_techweb/test_design = new
 	test_design.build_path = /obj/item
@@ -764,7 +768,7 @@
 	fabricator_exit.set_density(TRUE)
 	mech_fabricator.current_producer_account = producer.account_number
 	TEST_ASSERT(!mech_fabricator.dispense_built_part(test_design), "obstructed mech-fabricator unexpectedly dispensed its output")
-	TEST_ASSERT_EQUAL(mech_fabricator.stored_part.economic_producer_account, producer.account_number, "obstructed mech-fabricator output lost producer provenance")
+	TEST_ASSERT_EQUAL(sparse_get_or(mech_fabricator.stored_part, economic_producer_account, 0), producer.account_number, "obstructed mech-fabricator output lost producer provenance")
 	var/obj/item/stored_mech_part = mech_fabricator.stored_part
 	fabricator_exit.set_density(old_exit_density)
 	mech_fabricator.release_stored_part()
@@ -1221,7 +1225,7 @@
 	TEST_ASSERT_EQUAL(customer.money, customer_before - 50, "storefront did not debit the advertised price")
 	TEST_ASSERT_EQUAL(research.money, research_before + 50, "storefront did not credit its configured department")
 	TEST_ASSERT(store_item.loc != store, "storefront retained the purchased physical item")
-	TEST_ASSERT(store_item.economic_sale_invoice_id > 0, "storefront sale did not produce verified invoice evidence")
+	TEST_ASSERT(sparse_get_or(store_item, economic_sale_invoice_id, 0) > 0, "storefront sale did not produce verified invoice evidence")
 	var/datum/economic_adoption/adoption = store_item.economic_adoption
 	TEST_ASSERT_NOTNULL(adoption, "verified Research sale did not attach operational-use evidence to the physical item")
 	TEST_ASSERT(adoption.record_use(customer_mob), "the purchasing department's first real item use did not publish adoption evidence")

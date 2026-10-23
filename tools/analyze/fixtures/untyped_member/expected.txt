@@ -1,0 +1,8 @@
+static_member	code/members.dm	20
+static_member	code/members.dm	23
+static_member	code/members.dm	27
+static_member	code/members.dm	30
+static_member	code/members.dm	33
+static_member	code/members.dm	36
+static_member	code/members.dm	39
+static_member	code/members.dm	43

@@ -46,10 +46,9 @@
 
 	species_sounds = "Mouse"
 
-	pain_emote_1p = list("squeak", "squik")
-	pain_emote_3p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(mob_nature(pain_1p = list("squeak", "squik"), pain_3p = list("squeaks", "squiks"), restrict_vore_ventcrawl = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	verb_entry(/mob/living/proc/ventcrawl)
@@ -243,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
 
-	restrict_vore_ventcrawl = TRUE
 
 
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"

@@ -242,7 +242,6 @@ CAPABILITIES(/obj/structure/bed)
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "rollerbed"
 	anchored = FALSE
-	surgery_cleanliness = 60
 	var/bedtype = /obj/structure/bed/roller
 	var/rollertype = /obj/item/roller
 	flippable = FALSE
@@ -253,15 +252,18 @@ CAPABILITIES(/obj/structure/bed)
 /obj/structure/bed/roller/adv
 	name = "advanced roller bed"
 	icon_state = "rollerbedadv"
-	surgery_cleanliness = 75
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
+
+CAPABILITIES(/obj/structure/bed/roller/adv)
+	configure(obj_rules(surgery_cleanliness = 75))
 
 /// Draws none of what the types above draw.
 /obj/structure/bed/roller/look_parts(datum/look/look)
 	return
 
 CAPABILITIES(/obj/structure/bed/roller)
+	configure(obj_rules(surgery_cleanliness = 60))
 	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
 	drag_onto(PROC_REF(drop_input))
 
@@ -282,13 +284,12 @@ CAPABILITIES(/obj/structure/bed/roller)
 	desc = "A collapsed roller bed that can be carried around."
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "folded_rollerbed"
-	center_of_mass_x = 17
-	center_of_mass_y = 7
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
 
 CAPABILITIES(/obj/item/roller)
+	configure(item_handling(center_x = 17, center_y = 7))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))

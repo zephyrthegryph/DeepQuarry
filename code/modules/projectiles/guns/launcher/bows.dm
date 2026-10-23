@@ -108,7 +108,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	if(user.restrained())
 		return
 
-	current_user = user
+	rel_set(src, nameof(current_user), user)
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
 	perform_op(user, src, "draw_bow", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)

@@ -76,7 +76,6 @@
 /proc/create_wormhole(turf/enter as turf, atom/exit, min_duration = 30 SECONDS, max_duration = 60 SECONDS)
 	var/obj/effect/portal/P = new /obj/effect/portal( enter )
 	rel_set(P, nameof(P.target), exit)
-	P.creator = null
 	P.set_icon('icons/obj/objects.dmi')
 	P.failchance = 0
 	P.set_icon_state("bhole3") // Better icon as well

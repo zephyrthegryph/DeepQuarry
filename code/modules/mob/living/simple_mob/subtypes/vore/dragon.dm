@@ -110,7 +110,6 @@
 	mount_offset_y = 24
 	mount_offset_x = -9
 	has_eye_glow = TRUE
-	vore_eyes = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
@@ -137,7 +136,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
 	mount_offset_y = 24
 	mount_offset_x = -9
 	has_eye_glow = TRUE
-	vore_eyes = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/space)
+	configure(mob_nature(vore_eyes = TRUE))
 
 // A fluff sprite for an event mob created by grayscaledrake
 

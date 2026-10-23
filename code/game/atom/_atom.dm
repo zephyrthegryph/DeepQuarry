@@ -52,10 +52,6 @@
 
 	/// Radiation insulation types
 	var/rad_insulation = RAD_NO_INSULATION
-	/// MAT_* name this atom's radiation shielding derives from (apply_rad_shield_material()), or null.
-	var/rad_shield_material
-	/// Thickness of that shielding in mm.
-	var/rad_shield_thickness_mm = 0
 
 
 /atom/Destroy()

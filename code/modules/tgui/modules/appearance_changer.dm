@@ -1070,7 +1070,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
-	cam_screen.vis_contents = list(owner()) // Copied from the vore version.
+	vis_set(cam_screen, list(owner())) // Copied from the vore version.
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
 	local_skybox.sky_image = null
@@ -1210,7 +1210,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 		spent(src, user)
 
 /datum/tgui_module/appearance_changer/vore/update_active_camera_screen(datum/act/notice/N)
-	cam_screen.vis_contents = list(owner())
+	vis_set(cam_screen, list(owner()))
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)
 	local_skybox.sky_image = null

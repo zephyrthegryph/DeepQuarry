@@ -17,13 +17,15 @@
 	allow_quick_empty = 1
 	allow_quick_gather = 1
 	collection_mode = 1
-	var/linked
+	/// A basket's offhand grip, and an offhand's basket.
+	var/obj/item/storage/laundry_basket/linked
 	resistance_flags = FLAMMABLE
 
 
 
 // Lifting the basket takes both hands.
 CAPABILITIES(/obj/item/storage/laundry_basket)
+	ref_one(nameof(linked), /obj/item/storage/laundry_basket)
 	configure(storage(max_size = ITEMSIZE_LARGE))
 	two_hands()
 
@@ -31,9 +33,9 @@ CAPABILITIES(/obj/item/storage/laundry_basket)
 	var/obj/item/storage/laundry_basket/offhand/O = new(user)
 	O.name = "[name] - second hand"
 	O.desc = "Your second grip on the [name]."
-	O.linked = src
+	rel_set(O, nameof(O.linked), src)
 	user.put_in_inactive_hand(O)
-	linked = O
+	rel_set(src, nameof(linked), O)
 	return
 
 /obj/item/storage/laundry_basket/draw(datum/look/look)
@@ -48,7 +50,8 @@ CAPABILITIES(/obj/item/storage/laundry_basket)
 
 /obj/item/storage/laundry_basket/dropped(mob/user, equipping, slot)
 	if(linked)
-		QDEL_NULL(linked)
+		ended_with(linked, src)
+		rel_clear(src, nameof(linked))
 	return ..()
 
 /obj/item/storage/laundry_basket/show_to(mob/user)

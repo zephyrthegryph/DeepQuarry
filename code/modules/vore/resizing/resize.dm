@@ -21,9 +21,6 @@
 	var/center_offset = 0.5				// Center offset for uneven scaling symmetry.
 	var/offset_override = TRUE			// Pref toggle for center offset.
 
-/mob/living
-	var/pickup_active = TRUE			// Toggle whether your help (combat mode off) touch picks up micros or pets them
-
 // Define holder_type on types we want to be scoop-able
 /mob/living/carbon/human
 	holder_type = /obj/item/holder/micro
@@ -242,7 +239,7 @@
 /mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE, stance = I_HELP) //second one is for the Grabber, only exists for animals to self-grab; `stance` is M's (the scooper's) stance
 	if(src == M)
 		return FALSE
-	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && M.pickup_active))
+	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && sparse_get_or(M, pickup_active, TRUE)))
 		return FALSE
 	if(stance != I_HELP)
 		return FALSE
@@ -479,8 +476,8 @@
 	set desc = "Toggles whether your help (combat mode off) action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
 	set category = VERB_CAT_IC_SETTINGS
 
-	pickup_active = !pickup_active
-	to_chat(src, span_filter_notice("You will [pickup_active ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
+	sparse_set(src, pickup_active, !sparse_get_or(src, pickup_active, TRUE))
+	to_chat(src, span_filter_notice("You will [sparse_get_or(src, pickup_active, TRUE) ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
 
 #undef STEP_TEXT_OWNER
 #undef STEP_TEXT_PREY

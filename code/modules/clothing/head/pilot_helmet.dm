@@ -150,8 +150,8 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 /obj/item/clothing/head/pilot/equipped(mob/user,slot)
 	. = ..()
 	if(slot == SLOT_ID_HEAD && user.client)
-		user.client.screen |= pilot_hud
-		user.client.images |= raw_images
+		client_screen_include(user.client, pilot_hud)
+		client_images_include(user.client, raw_images)
 
 /obj/item/clothing/head/pilot/dropped(mob/user, equipping, slot)
 	. = ..()

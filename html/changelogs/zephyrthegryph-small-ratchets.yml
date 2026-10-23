@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Machine and pipe occupants are put out by the destroy transaction's contents phase, micro buildings by a declared ending, a living body is a declared starting occupant, and relative op priorities are click_order() declarations"
+  - code_imp: "The decl and op_order ratchets reach zero and ban their forms; the arrival test no longer leaves the act counter changed"

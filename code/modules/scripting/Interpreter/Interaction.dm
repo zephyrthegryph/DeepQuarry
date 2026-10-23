@@ -76,7 +76,7 @@
 		rel_add(C, nameof(C.parameters), new/datum/node/expression/value/variable(p))
 	var/datum/node/statement/ReturnStatement/R=new()
 	rel_set(R, nameof(R.value), C)
-	LAZYADD(S.block.statements, R)
+	S.block.add_statement(R)
 	rel_add(globalScope, nameof(globalScope.functions), S, name)
 /*
 	Proc: VarExists
