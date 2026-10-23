@@ -6,6 +6,9 @@
 /datum/chunk/ghost
 	var/list/hidden_areas
 
+CAPABILITIES(/datum/chunk/ghost)
+	ref_many(nameof(hidden_areas), /area)
+
 /datum/chunk/ghost/add(mob/observer/dead/ghost, add_images = TRUE)
 	if(add_images)
 		var/client/client = ghost.client
@@ -38,7 +41,7 @@
 /datum/chunk/ghost/New(loc, x, y, z)
 	for(var/area/A in range(16, locate(x + 8, y + 8, z)))
 		if(A.flag_check(AREA_BLOCK_GHOST_SIGHT))
-			LAZYADD(hidden_areas, A)
+			rel_add(src, nameof(hidden_areas), A)
 
 	// 0xf = 15
 	x &= ~0xf

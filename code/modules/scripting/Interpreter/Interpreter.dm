@@ -18,8 +18,8 @@
 	var/datum/scope/globalScope
 	var/datum/node/BlockDefinition/program
 	var/tmp/datum/node/statement/FunctionDefinition/curFunction_ref
-	var/datum/stack/scopes	= new()
-	var/datum/stack/functions	= new()
+	var/datum/stack/scopes
+	var/datum/stack/functions
 
 	var/tmp/datum/container	// associated container for interpeter
 /*
@@ -59,6 +59,8 @@
 CAPABILITIES(/datum/n_Interpreter)
 	owns_one(nameof(globalScope), /datum/scope)
 	owns_one(nameof(program), /datum/node/BlockDefinition)
+	owns_one(nameof(scopes), /datum/stack)
+	owns_one(nameof(functions), /datum/stack)
 	ref_one(nameof(container))
 	ref_one(nameof(curFunction_ref))
 	ref_one(nameof(curScope_ref))
@@ -69,6 +71,8 @@ CAPABILITIES(/datum/n_Interpreter)
 */
 /datum/n_Interpreter/New(datum/node/BlockDefinition/GlobalBlock/program=null)
 	.=..()
+	rel_set(src, nameof(scopes), new /datum/stack)
+	rel_set(src, nameof(functions), new /datum/stack)
 	if(program)Load(program)
 
 /*

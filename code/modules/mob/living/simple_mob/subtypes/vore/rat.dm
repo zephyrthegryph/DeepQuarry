@@ -105,6 +105,9 @@
 	var/mob/living/carbon/human/food
 	var/hunger = 0
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
+	ref_one(nameof(food), /mob/living/carbon/human)
+
 /*
 /mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post_due()
 	return TRUE
@@ -179,10 +182,6 @@
 			EatTarget()
 			hunger = 0
 			rel_set(src, nameof(food), null)
-
-CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
-	ref_one(nameof(food), /mob/living/carbon/human)
-	op("tame_rat_interaction_feed", item(/obj/item/reagent_containers/food/snacks), label("Feed"), then(PROC_REF(tame_rat_interaction_feed)))
 
 /// Feed the rat your food to satisfy it.
 /mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(datum/act/op/A)

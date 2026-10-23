@@ -30,6 +30,7 @@ CAPABILITIES(/datum/power_grid)
 
 CAPABILITIES(/datum/power_grid_registry)
 	owns_many(nameof(owned_grids), /datum/power_grid)
+	ref_many(nameof(by_id), /datum/power_grid)
 
 /proc/power_grid_registry()
 	RETURN_TYPE(/datum/power_grid_registry)
@@ -66,17 +67,15 @@ CAPABILITIES(/datum/power_grid_registry)
 		return
 	if(lookup(id))
 		drop(id)
-	if(!by_id)
-		by_id = alist()
 	rel_add(src, nameof(owned_grids), grid)
-	by_id[id] = grid
+	rel_add(src, nameof(by_id), grid, id)
 	tracked_changed(src, power_grid_identity_key(id))
 
 /datum/power_grid_registry/proc/drop(id)
 	var/datum/power_grid/grid = lookup(id)
 	if(!grid)
 		return
-	by_id -= id
+	rel_add(src, nameof(by_id), null, id)
 	tracked_changed(src, power_grid_identity_key(id))
 	rel_take(src, nameof(owned_grids), grid)
 	lifeform_end(grid, END_SCOPE)
@@ -86,7 +85,7 @@ CAPABILITIES(/datum/power_grid_registry)
 	for(var/id in ids())
 		if(lookup(id) != grid)
 			continue
-		by_id -= id
+		rel_add(src, nameof(by_id), null, id)
 		tracked_changed(src, power_grid_identity_key(id))
 		rel_take(src, nameof(owned_grids), grid)
 

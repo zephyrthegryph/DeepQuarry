@@ -38,6 +38,9 @@ SYSTEM_DEF(proximity)
 CAPABILITIES(/datum/proximity_cell)
 	ref_many(nameof(members), /atom/movable)
 
+CAPABILITIES(/datum/system/proximity)
+	owns_one(nameof(carried), /datum/proximity_carried)
+
 /datum/proximity_carried
 
 /// One client's eye, counted into a cell. Tests make them without a client.
@@ -48,7 +51,7 @@ CAPABILITIES(/datum/proximity_cell)
 /// Made at New(), not at initialize(): the atoms boot before this system's init stage, and a tracked thing initialised inside a container (a mouse
 /// nest in a trash pile) is filed as carried at once, so its hold needs this source to exist then.
 /datum/system/proximity/preinit()
-	carried = new
+	rel_set(src, nameof(carried), new /datum/proximity_carried)
 
 /datum/system/proximity/reactions()
 	. = ..()
@@ -117,7 +120,7 @@ CAPABILITIES(/datum/proximity_cell)
 	if(!R)
 		R = new
 		R.client = C
-		C.proximity_eye = R
+		rel_set(C, nameof(C.proximity_eye), R)
 	eye_place(R, get_turf(C.eye))
 
 /// The client left: its eye stops counting.
@@ -126,7 +129,7 @@ CAPABILITIES(/datum/proximity_cell)
 	if(!R)
 		return
 	eye_place(R, null)
-	C.proximity_eye = null
+	rel_clear(C, nameof(C.proximity_eye))
 	R.client = null
 
 /// Counts the eye record `R` into the cell of `T` (none when null), leaving the cell it was in.

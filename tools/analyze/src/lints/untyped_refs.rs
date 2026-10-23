@@ -39,7 +39,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "typed", hint: HINT }, RuleMeta { name: "call", hint: HINT }],
     allow: &[],
-    lists: &["exempt_types"],
+    lists: &["exempt_types", "value_calls"],
 };
 
 struct Untyped;
@@ -75,7 +75,7 @@ fn is_call(e: &Expression) -> bool {
 }
 
 /// Builtin calls whose result is never an entity: numbers, text, tests and the like.
-fn is_value_call(e: &Expression) -> bool {
+fn is_value_call(e: &Expression, extra: &[String]) -> bool {
     let e = strip_parens(e);
     let Expression::Base { term, follow } = e else { return false };
     if !follow.is_empty() {
@@ -85,11 +85,14 @@ fn is_value_call(e: &Expression) -> bool {
         Term::Call(n, _) | Term::GlobalCall(n, _) => n.as_str(),
         _ => return false,
     };
+    if extra.iter().any(|n| n == name) {
+        return true;
+    }
     matches!(
         name,
         "rand" | "prob" | "round" | "floor" | "ceil" | "abs" | "min" | "max" | "sqrt" | "sin" | "cos" | "num2text" | "text2num" | "list2params" | "length" | "lowertext"
             | "uppertext" | "copytext" | "replacetext" | "findtext" | "jointext" | "get_dist" | "nameof" | "REF" | "ckey" | "trim" | "clamp" | "text" | "isnull"
-            | "istype" | "ispath" | "islist" | "isnum" | "istext" | "time2text" | "addtext" | "splittext" | "json_encode" | "sanitize" | "text2path"
+            | "initial" | "md5" | "replacetextEx" | "turn" | "get_dir" | "html_decode" | "html_encode" | "text2ascii" | "ascii2text" | "file2text" | "rgb" | "ref" | "istype" | "ispath" | "islist" | "isnum" | "istext" | "time2text" | "addtext" | "splittext" | "json_encode" | "sanitize" | "text2path"
     )
 }
 
@@ -105,6 +108,7 @@ impl Lint for Untyped {
         };
         let sem: &Sem = &sem;
         let kinds = Kinds { sem, exempt_types: cx.list("exempt_types").to_vec(), registry: Vec::new(), cache: Default::default() };
+        let value_calls = cx.list("value_calls").to_vec();
         let w = Walker { sem, kinds: &kinds };
         let root = &cx.tree.root;
         // (declaring type, var) -> (rule, "file:line of the first assignment")
@@ -139,7 +143,7 @@ impl Lint for Untyped {
                             let rule = match w.type_of(&sc, rhs) {
                                 Some(t) if kinds.is_ref(&t) => "typed",
                                 Some(_) => return,
-                                None if is_call(rhs) && !is_value_call(rhs) => "call",
+                                None if is_call(rhs) && !is_value_call(rhs, &value_calls) => "call",
                                 None => return,
                             };
                             let at = format!("{}:{}", rel, engine_line(root, rel, line));

@@ -465,7 +465,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		target().radio.syndie = 1
 	target().module.channels += list("[selected_radio_channel]" = 1)
 	target().radio.channels[selected_radio_channel] = LAZYACCESS(target().module.channels, selected_radio_channel)
-	target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
+	rel_add(target().radio, nameof(/obj/item/radio::secure_radio_connections), SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT), selected_radio_channel)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_rem_channel(datum/act/op/A, channel)
@@ -482,7 +482,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	for(var/n_chan in target().module.channels)
 		target().radio.channels[n_chan] = LAZYACCESS(target().module.channels, n_chan)
 	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
-	target().radio.secure_radio_connections -= selected_radio_channel
+	rel_add(target().radio, nameof(/obj/item/radio::secure_radio_connections), null, selected_radio_channel)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_add_component(datum/act/op/A, component, new_part)

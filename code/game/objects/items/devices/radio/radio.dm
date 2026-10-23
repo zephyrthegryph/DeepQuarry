@@ -44,7 +44,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 	var/datum/radio_frequency/radio_connection
 	/// Channel name -> the radio service's shared frequency datum (not owned; rebuilt on materialize).
-	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
+	var/tmp/alist/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -77,7 +77,7 @@ SETTER(/obj/item/radio, frequency)
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		rel_add(src, nameof(secure_radio_connections), SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT), ch_name)
 
 /obj/item/radio/on_dematerialize()
 	if(SSradio)
@@ -151,6 +151,7 @@ SETTER(/obj/item/radio, frequency)
 CAPABILITIES(/obj/item/radio)
 	configure(obj_rules(show_messages = TRUE))
 	setup(PROC_REF(sanitize_start_frequency))
+	ref_many(nameof(secure_radio_connections), /datum/radio_frequency)
 	configure(item_worn(slots = SLOT_BELT))
 	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
 	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)
@@ -787,7 +788,7 @@ CAPABILITIES(/obj/item/radio/borg)
 		return OP_OK
 	for(var/ch_name in channels)
 		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		rel_add(src, nameof(secure_radio_connections), null, ch_name)
 	keyslot.forceMove(get_turf(user))
 	rel_take(src, nameof(keyslot))
 	recalculateChannels()
@@ -829,17 +830,17 @@ CAPABILITIES(/obj/item/radio/borg)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		rel_add(src, nameof(secure_radio_connections), SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT), ch_name)
 
 /obj/item/radio/proc/config(op)
 	if(SSradio)
 		for (var/ch_name in channels)
 			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+	rel_clear(src, nameof(secure_radio_connections))
 	set_channels(op)
 	if(SSradio)
 		for (var/ch_name in op)
-			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			rel_add(src, nameof(secure_radio_connections), SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT), ch_name)
 	return
 
 /obj/item/radio/off
