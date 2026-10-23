@@ -104,7 +104,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/ui_opening(mob/user, datum/tgui/ui)
 	..()
-	var/user_ref = REF(user)
+	var/user_ref = ref_token(user)
 	var/is_living = isliving(user)
 	// Ghosts shouldn't count towards concurrent users, which produces
 	// an audible terminal_on click.
@@ -278,7 +278,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/tgui_close(mob/user)
 	. = ..()
-	var/user_ref = REF(user)
+	var/user_ref = entity_handle_of(user)
 	var/is_living = isliving(user)
 	// living creature or not, we remove you anyway.
 	LAZYREMOVE(concurrent_users, user_ref)

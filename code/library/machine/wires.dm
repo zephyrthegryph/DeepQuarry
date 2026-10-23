@@ -429,7 +429,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, name 
 	var/list/assemblies
 	/// Admin: hide what each wire is, even from those who could see it.
 	var/hide_wire_names = FALSE
-	/// REF() of the last mob that cut, mended or pulsed a wire (wires_last_user(): a lathe refreshes that hand's window when a pulse runs out).
+	/// ref_token() of the last mob that cut, mended or pulsed a wire (wires_last_user(): a lathe refreshes that hand's window when a pulse runs out).
 	var/last_user_ref
 	var/datum/capability/lib/wires/def
 
@@ -469,7 +469,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /// Runs the wire's effects on each capability that brought it, for the event "cut", "mend" or "pulse".
 /datum/cap_data/wires/proc/wire_effects(wire, event, mob/user)
 	if(user)
-		last_user_ref = REF(user)
+		last_user_ref = ref_token(user)
 	for(var/datum/capability/C as anything in bringers?[wire])
 		C.wire_event(owner, wire, event, user)
 
@@ -740,7 +740,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /proc/wires_last_user(datum/holder)
 	RETURN_TYPE(/mob)
 	var/datum/cap_data/wires/W = wiring_of(holder)
-	var/mob/user = W?.last_user_ref ? locate(W.last_user_ref) : null
+	var/mob/user = W?.last_user_ref ? resolve_token(W.last_user_ref) : null
 	return istype(user) && !QDELETED(user) ? user : null
 
 /// Is `wire` of `holder` cut?

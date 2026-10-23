@@ -156,7 +156,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 	rel_add(src, nameof(agents), agent)
-	squad.add_member(REF(defender))
+	squad.add_member(ref_token(defender))
 	director().register_defender(defender)
 	return agent
 
@@ -271,7 +271,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	var/department_id = agent.department_id
 	var/datum/generated_station_squad/squad = director()?.squads?[agent.squad_id]
 	if(squad && agent.defender())
-		squad.member_ids -= REF(agent.defender())
+		squad.member_ids -= entity_handle_of(agent.defender())
 	director()?.unregister_defender(agent.defender())
 	own_take_member(src, nameof(agents), agent)
 	spent(agent)
