@@ -24,7 +24,8 @@
 #define DQ_PIN_DIR "code/modules/unit_tests/snapshots/pins/"
 
 /// The whole-type sweep: every recorded pin (about 1,400 types, minutes per world), so it is an exhaustive-tier test. The tests parented to it capture
-/// their own directories and stay in the normal tier; the normal tier's share of this sweep is dq_conversion_pin/representative.
+/// their own directories or subtrees and are exhaustive too, each with a /representative of its own; the normal tier's share of this sweep is
+/// dq_conversion_pin/representative.
 /datum/unit_test/dq_conversion_pin
 	tier = TEST_TIER_EXHAUSTIVE
 	var/list/capture_gravity_before

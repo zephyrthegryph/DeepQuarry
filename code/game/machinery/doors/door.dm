@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/door)
 /// Arms the autoclose `wait` deciseconds from now (a still-pending one is replaced).
 /obj/machinery/door/proc/autoclose_in(wait)
 	clear_autoclose_blockers()
-	after(src, max(wait, 0), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_WORLD)
+	after(src, max(wait, 0), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_OWN)
 
 /// Stops waiting to autoclose.
 /obj/machinery/door/proc/autoclose_cancel()
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/machinery/door)
 		return
 	if(!autoclose)
 		return
-	after(src, next_close_wait(), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_WORLD)
+	after(src, next_close_wait(), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_OWN)
 	close()
 
 /// Waits for `blocker` to move away (or be deleted) instead of polling: the autoclose is dropped and one is armed at once when it does.
