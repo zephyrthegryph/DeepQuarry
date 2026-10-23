@@ -168,6 +168,7 @@ unknown_var	code/modules/own/accessors.dm	26
 unknown_var	code/modules/own/accessors.dm	27
 unknown_var	code/modules/own/accessors.dm	28
 unknown_var	code/modules/own/drift.dm	8
+unknown_var	code/modules/own/globals.dm	11
 unknown_var	code/modules/own/unicode.dm	9
 unknown_var	code/modules/own/unicode.dm	10
 unknown_var	code/modules/tgs/tgs_api.dm	8

@@ -272,6 +272,21 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of item_tooling() (code/game/objects/items/item_tooling.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_TOOLING "item_tooling"
 #define ITEM_TOOLING_KEY "item_tooling"
+/// The entry kind of item_handling() (code/game/objects/items/item_handling.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_HANDLING "item_handling"
+#define ITEM_HANDLING_KEY "item_handling"
+/// The entry kind of obj_rules() (code/game/objects/obj_rules.dm) and the key its run-time writes publish.
+#define ENTRY_OBJ_RULES "obj_rules"
+#define OBJ_RULES_KEY "obj_rules"
+/// The entry kind of machine_usage() (code/game/machinery/machine_usage.dm) and the key its run-time writes publish.
+#define ENTRY_MACHINE_USAGE "machine_usage"
+#define MACHINE_USAGE_KEY "machine_usage"
+/// The entry kind of mob_nature() (code/modules/mob/mob_nature.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_NATURE "mob_nature"
+#define MOB_NATURE_KEY "mob_nature"
+/// The entry kind of atom_shielding() (code/game/atom/atom_shielding.dm) and the key its run-time writes publish.
+#define ENTRY_ATOM_SHIELDING "atom_shielding"
+#define ATOM_SHIELDING_KEY "atom_shielding"
 
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"

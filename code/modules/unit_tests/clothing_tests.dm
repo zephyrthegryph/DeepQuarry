@@ -235,10 +235,12 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 	var/covered_slots = 0
 	for(var/obj/item/clothing/path as anything in selected)
 		icon_files["[initial(path.icon)]"] = TRUE
-		covered_slots |= worn_of_type(path).slots
+		var/datum/type_trait/item_worn/covered_worn = worn_of_type(path)
+		covered_slots |= covered_worn.slots
 	for(var/obj/item/clothing/path as anything in clothing_candidates())
 		var/icon_file = "[initial(path.icon)]"
-		var/slots = worn_of_type(path).slots
+		var/datum/type_trait/item_worn/worn = worn_of_type(path)
+		var/slots = worn.slots
 		if(icon_files[icon_file] && !(slots & ~covered_slots))
 			continue
 		selected |= path
@@ -261,11 +263,13 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 	var/covered_slots = 0
 	for(var/obj/item/clothing/path as anything in selected)
 		covered_icons["[initial(path.icon)]"] = TRUE
-		covered_slots |= worn_of_type(path).slots
+		var/datum/type_trait/item_worn/covered_worn = worn_of_type(path)
+		covered_slots |= covered_worn.slots
 	var/list/candidates = clothing_candidates()
 	TEST_ASSERT(length(selected) < length(candidates), "Normal-tier coverage must remain smaller than the exhaustive sweep")
 	for(var/obj/item/clothing/path as anything in candidates)
 		TEST_ASSERT(covered_icons["[initial(path.icon)]"], "The representative must cover icon file [initial(path.icon)]")
-		var/slots = worn_of_type(path).slots
+		var/datum/type_trait/item_worn/worn = worn_of_type(path)
+		var/slots = worn.slots
 		TEST_ASSERT(!(slots & ~covered_slots), "The representative must cover every declared wearable slot of [path] (missing flags [slots & ~covered_slots])")
 	return ..()

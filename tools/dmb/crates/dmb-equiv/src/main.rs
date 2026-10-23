@@ -1,5 +1,6 @@
 //! dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all]
 //!                       [--strict-order] [--ignore-debug] [--quiet]
+//!                       [--path-map OLD=NEW]... [--path-map-file FILE]
 //! dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables all|classes,procs,...]
 //! dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING
 //!
@@ -88,7 +89,7 @@ fn main() -> ExitCode {
             }
         }
         Some("-h" | "--help") | None => {
-            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all] [--context N] [--ignore-order] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
+            eprintln!("usage: dmb-equiv A.dmb B.dmb [--rsc A.rsc B.rsc] [--json OUT] [--max-examples N] [--all] [--context N] [--ignore-order] [--path-map OLD=NEW]... [--path-map-file FILE] [--strict-order] [--ignore-debug] [--quiet]\n       dmb-equiv permute IN.dmb OUT.dmb [--seed N] [--tables LIST]\n       dmb-equiv dump-proc FILE.dmb KEY-SUBSTRING");
             ExitCode::from(2)
         }
         _ => compare_cmd(&args),
@@ -128,6 +129,26 @@ fn compare_cmd(args: &[String]) -> ExitCode {
                 i += 1;
             }
             "--all" => opts.max_examples = usize::MAX,
+            "--path-map" if i + 1 < args.len() => {
+                match args[i + 1].split_once('=') {
+                    Some((o, n)) if !o.is_empty() => opts.path_map.push((o.to_string(), n.to_string())),
+                    _ => return fail("--path-map needs OLD=NEW"),
+                }
+                i += 1;
+            }
+            "--path-map-file" if i + 1 < args.len() => {
+                let text = match std::fs::read_to_string(&args[i + 1]) {
+                    Ok(t) => t,
+                    Err(e) => return fail(format!("{}: {e}", args[i + 1])),
+                };
+                for line in text.lines().filter(|l| !l.trim().is_empty()) {
+                    match line.split_once('=') {
+                        Some((o, n)) if !o.is_empty() => opts.path_map.push((o.to_string(), n.to_string())),
+                        _ => return fail(format!("bad path-map line: {line}")),
+                    }
+                }
+                i += 1;
+            }
             "--strict-order" => opts.strict_order = true,
             "--ignore-debug" => opts.ignore_debug = true,
             "--quiet" => quiet = true,

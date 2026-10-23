@@ -2913,9 +2913,10 @@ CAPABILITIES(/obj/item/toy/partypopper)
 	icon_state = "acorn_branch"
 	w_class = ITEMSIZE_SMALL
 	EXPIRY_DECLARE(next_use)
-	var/registered_mob //On request, only one person is able to use it at a time.
+	var/registered_mob // Weak handle of the one person who may use it; a registrant who is gone frees the branch for the next person.
 
 CAPABILITIES(/obj/item/toy/acorn_branch)
+	ref_one(nameof(registered_mob), /mob/living/carbon/human, weak = TRUE)
 	op("pick_acorn", in_hand(), when(req_actor_kind(/mob/living/carbon/human)), needs(req_conscious()), then(PROC_REF(interaction_self)))
 
 /obj/item/toy/acorn_branch/proc/can_pull_acorn(mob/user, atom/target, obj/item/held)
@@ -2932,12 +2933,12 @@ CAPABILITIES(/obj/item/toy/acorn_branch)
 	if(!COOLDOWN_FINISHED(src, next_use))
 		to_chat(user, span_notice("You need to wait a bit longer before you can pull out another acorn."))
 		return OP_OK
-	if(registered_mob)
-		if(registered_mob != H)
+	if(registered_mob())
+		if(registered_mob() != H)
 			to_chat(user, span_notice("It's a lovely branch!"))
 			return OP_OK
 	else
-		registered_mob = H
+		rel_set(src, nameof(registered_mob), H)
 	if(H.get_inactive_hand())
 		to_chat(user, span_notice("You need to have a free hand to pick an acorn out!"))
 		return OP_OK

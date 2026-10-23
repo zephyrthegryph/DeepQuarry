@@ -52,11 +52,12 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 /datum/capability/lib/buckle/entries()
 	var/list/who = list(req(CAP_PROC(can_buckle_victim)))
 	return list(
+		click_order(BIND_ITEM, "buckle.buckle_drag", "buckle.buckle_self"),
 		slot(SLOT_BUCKLE, accepts = list(/mob/living), capacity = slots),
 		examine_line(CAP_PROC(seated_line), when = req(CAP_PROC(has_occupants))),
 		op("buckle_self", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Buckle"), \
 			needs(who), then(CAP_PROC(buckle_victim)), says(MSG(buckle/self)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
-		op("buckle_drag", item(/mob/living), gesture(GESTURE_DRAG), priority(above("buckle.buckle_self")), when(CAP_PROC(is_other_drag)), label("Buckle"), \
+		op("buckle_drag", item(/mob/living), gesture(GESTURE_DRAG), when(CAP_PROC(is_other_drag)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/other)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("buckle_grab", item(/obj/item/grab), when(CAP_PROC(holds_someone)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/grabbed)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
@@ -146,9 +147,9 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/mob/living/victim = victim_of(A)
 	if(!istype(victim) || QDELETED(holder))
 		return OP_FAILED
-	GLOB.act_next_actor = A.actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/B = ACT_ATTEMPT(holder, buckle, victim)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	if(ACT_REFUSED_BY(B))
 		var/datum/act_refusal/refused_B = B
 		A.reason = refused_B.reason || /datum/msg/op/not_available
@@ -233,9 +234,9 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	if(!istype(occupant) || occupant.buckled_to() != holder)
 		A.reason = /datum/msg/buckle/nobody
 		return OP_REFUSED
-	GLOB.act_next_actor = A.actor
+	rel_set(GLOB, nameof(GLOB.act_next_actor), A.actor)
 	var/U = ACT_ATTEMPT(holder, unbuckle, occupant)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	if(ACT_REFUSED_BY(U))
 		var/datum/act_refusal/refused_U = U
 		A.reason = refused_U.reason || /datum/msg/op/not_available

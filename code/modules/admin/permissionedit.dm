@@ -423,7 +423,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		if(QDELETED(custom_rank))
 			new_rank_names -= new_rank_name
 			continue
-		GLOB.admin_ranks += custom_rank
+		rel_add(GLOB, nameof(GLOB.admin_ranks), custom_rank)
 		custom_ranks += custom_rank
 
 	var/list/new_ranks = list()
@@ -625,7 +625,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		to_chat(user, span_danger("Rank creation failed, check runtimes."), confidential = TRUE)
 		return
 
-	GLOB.admin_ranks += custom_rank
+	rel_add(GLOB, nameof(GLOB.admin_ranks), custom_rank)
 
 	var/m1 = "[key_name_admin(user)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
 	var/m2 = "[key_name(user)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
@@ -730,7 +730,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	var/m1 = "[key_name_admin(user)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
 	var/m2 = "[key_name(user)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
-	GLOB.admin_ranks -= target_rank
+	rel_remove(GLOB, nameof(GLOB.admin_ranks), target_rank)
 	QDEL_NULL(target_rank)
 
 	if(local_only_deletion)
@@ -1031,6 +1031,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	var/include_flags
 	var/exclude_flags
 	var/edit_flags
+
+TYPE_TABLE(/datum/io/sql/row/permission_rank_flags, sql_columns, list("include_flags", "exclude_flags", "edit_flags"))
 
 /datum/admins/proc/permission_rank_prompt_ended(datum/act/request/A)
 	if(!A.answer)

@@ -29,8 +29,6 @@
 	var/regulator_max_cop = 25
 	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
 	var/pumping = FALSE
-	clicksound = SFX_SWITCH
-	interact_offline = TRUE
 	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater
 
@@ -41,6 +39,7 @@ MSG_DEF_SELF(space_heater/hatch_closed, "the hatch must be open to insert a powe
 MSG_DEF_SELF(space_heater/cell_present, "there is already a power cell inside")
 
 CAPABILITIES(/obj/machinery/space_heater)
+	configure(machine_usage(interface_sound = SFX_SWITCH, interact_offline = TRUE))
 	default_parts()
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))

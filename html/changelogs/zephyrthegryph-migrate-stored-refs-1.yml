@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Stored references on firedoors, ghost chunks, scripting nodes, radios, power grids and a few machines are declared relations, so a deleted target leaves them by itself"

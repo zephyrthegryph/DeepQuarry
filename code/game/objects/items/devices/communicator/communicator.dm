@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 	icon = 'icons/obj/device.dmi'
 	icon_state = "communicator"
 	w_class = ITEMSIZE_SMALL
-	show_messages = 1
 
 
 	var/video_range = 3
@@ -398,8 +397,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 /// Declared setup: prepare communicator huds, after its parents initialize.
 /obj/machinery/camera/communicator/proc/prepare_communicator_huds()
-	LAZYOR(client_huds, GLOB.global_hud.whitense)
-	LAZYOR(client_huds, GLOB.global_hud.darkMask)
+	rel_add(src, nameof(client_huds), GLOB.global_hud.whitense)
+	for(var/atom/movable/screen/mask as anything in GLOB.global_hud.darkMask)
+		rel_add(src, nameof(client_huds), mask)
 
 //It's the 26th century. We should have smart watches by now.
 /obj/item/communicator/watch

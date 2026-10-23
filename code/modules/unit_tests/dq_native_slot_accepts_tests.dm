@@ -38,7 +38,8 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	H2.set_admission_ready(TRUE)
 	TEST_ASSERT(move_into(H2, "dq-native-slot", I, M), "Real transfer to another holder removes candidate from old slot")
 	TEST_ASSERT_EQUAL(I.loc, H2, "Real removal/adoption updates custody")
-	TEST_ASSERT(!(I in dq_ledger(H).slots["dq-native-slot"]), "Actual old ledger slot is empty")
+	var/datum/ledger/old_ledger = dq_ledger(H)
+	TEST_ASSERT(!(I in old_ledger.slots["dq-native-slot"]), "Actual old ledger slot is empty")
 
 /datum/unit_test/dq_native_equipment_wearer_mover/Run()
 	var/turf/T = run_loc_floor_bottom_left

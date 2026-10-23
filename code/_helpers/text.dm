@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 		while(index)
 			t = copytext(t, 1, index) + copytext(t, index+1)
 			index = findtext(t, char)
-	return t
+	return text_or_null(t) // copytext() leaves text (or null) in t
 
 //Runs byond's sanitization proc along-side strip_html_simple
 //I believe strip_html_simple() is required to run first to prevent '<' from displaying as '&lt;' that html_encode() would cause
@@ -72,7 +72,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 		//Maybe, we need trim text twice? Here and before copytext?
 		input = trim(input)
 
-	return input
+	return text_or_null(input) // text by now (encoded, replaced or trimmed); said so the result is plainly text
 
 //Run sanitize(), but remove <, >, " first to prevent displaying them as &gt; &lt; &34; in some places, after html_encode().
 //Best used for sanitize object names, window titles.
@@ -193,7 +193,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 		while(index)
 			t = copytext(t, 1, index) + repl_chars[char] + copytext(t, index + length(char))
 			index = findtext(t, char, index + length(char))
-	return t
+	return text_or_null(t) // the text it was given, with the characters replaced
 
 /proc/sanitize_filename(t)
 	return sanitize_simple(t, list("\n"="", "\t"="", "/"="", "\\"="", "?"="", "%"="", "*"="", ":"="", "|"="", "\""="", "<"="", ">"=""))
@@ -739,7 +739,7 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 		while(index)
 			t = copytext(t, 1, index) + repl_chars[char] + copytext(t, index+5)
 			index = findtext(t, char)
-	return t
+	return text_or_null(t) // the text it was given, with its quotes put back
 
 // Rips out paper HTML but tries to keep it semi-readable.
 /proc/paper_html_to_plaintext(paper_text)

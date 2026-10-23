@@ -61,7 +61,7 @@
 		return
 
 	if(client)
-		client.screen |= contents
+		client_screen_include(client, contents)
 		if(hud_used)
 			hud_used.hidden_inventory_update() 	//Updates the screenloc of the items on the 'other' inventory bar
 
@@ -150,9 +150,9 @@
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
 			bio.flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
 		if(oocnotes)
-			identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-			identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-			identity().ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-			identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-			identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-			identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+			identity().ooc_notes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes))
+			identity().ooc_notes_likes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes))
+			identity().ooc_notes_dislikes = text_or_null(client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes))
+			identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
+			identity().ooc_notes_maybes = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_maybes))
+			identity().ooc_notes_style = num_or_null(read_preference(/datum/preference/toggle/living/ooc_notes_style))

@@ -54,7 +54,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 CAPABILITIES(/obj/mecha/combat/fighter)
 	setup(PROC_REF(prepare_ion_trail))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
-	op("toggle_landing_gear", topic("toggle_landing_gear"), then(PROC_REF(topic_toggle_landing_gear)))
+	op("toggle_landing_gear", ui_act("toggle_landing_gear"), then(PROC_REF(ui_act_toggle_landing_gear)))
 
 
 /obj/mecha/combat/fighter/proc/prepare_ion_trail()
@@ -186,22 +186,15 @@ CAPABILITIES(/obj/mecha/combat/fighter)
 
 //Modified phazon code
 
-/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(datum/act/op/A)
-	landing_gear_raised = !landing_gear_raised
-	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
+/obj/mecha/combat/fighter/proc/ui_act_toggle_landing_gear(datum/act/op/A)
+	if(!is_pilot(A.actor))
+		return
+	set_landing_gear_raised(!landing_gear_raised)
 	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
 	return
 
-/obj/mecha/combat/fighter/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_landing_gear=1'><span id="landing_gear_command">[landing_gear_raised?"Lower":"Raise"] landing gear</span></a><br>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/combat/fighter/ui_commands()
+	return ..() + list(list("key" = "toggle_landing_gear", "label" = "[landing_gear_raised ? "Lower" : "Raise"] landing gear"))
 
 /obj/mecha/combat/fighter/can_ztravel()
 	return (landing_gear_raised && has_charge(step_energy_drain))

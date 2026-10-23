@@ -442,7 +442,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 
 /// The admin objective editor's steal answers (a possible item name, or "custom" with an item type and a name).
-/datum/objective/steal/proc/apply_steal_choice(new_target, obj/item/custom_target, custom_name)
+/datum/objective/steal/proc/apply_steal_choice(new_target, custom_target, custom_name) // custom_target: an item type path
 	if (!new_target) return
 	if (new_target == "custom")
 		if (!custom_target || !custom_name) return

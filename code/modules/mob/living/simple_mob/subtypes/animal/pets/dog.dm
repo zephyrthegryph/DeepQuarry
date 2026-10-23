@@ -26,10 +26,9 @@
 	var/obj/item/inventory_head
 	var/obj/item/inventory_back
 	species_sounds = "Canine"
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	op("dog_item", item(/obj/item), then(PROC_REF(dog_interaction_item)))
 	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL)

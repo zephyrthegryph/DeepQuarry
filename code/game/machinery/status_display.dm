@@ -122,14 +122,14 @@
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
-			unobserve(shuttle_key_token, /datum/notice/shuttle_schedule_changed, src)
-			shuttle_key_token = null
+			unobserve(shuttle_key_token(), /datum/notice/shuttle_schedule_changed, src)
+			rel_clear(src, nameof(shuttle_key_token))
 		shuttle_key_id = want_shuttle
 		var/datum/source = shuttle_schedule_source(want_shuttle)
 		if(source)
 			sleep_audit_join(src)
 			observe(source, /datum/notice/shuttle_schedule_changed, src, then(PROC_REF(shuttle_schedule_seen)))
-			shuttle_key_token = source
+			rel_set(src, nameof(shuttle_key_token), source)
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
 	if(after_pending(src, "refresh_token"))
@@ -160,6 +160,8 @@
 		refresh()
 
 CAPABILITIES(/obj/machinery/status_display)
+	// The schedule source is observed, not owned; a source that died is simply not found (unobserve() of null does nothing).
+	ref_one(nameof(shuttle_key_token), /datum, weak = TRUE)
 	setup(PROC_REF(connect_display_radio))
 	configure(uses_power(idle = 10))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))

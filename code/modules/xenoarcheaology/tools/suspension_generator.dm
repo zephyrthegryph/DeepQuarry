@@ -17,6 +17,7 @@
 CAPABILITIES(/obj/machinery/suspension_gen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
+	ref_one(nameof(auth_card), /obj/item/card/id)
 	interface("XenoarchSuspension")
 	without("ui_open")
 	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))

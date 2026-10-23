@@ -27,7 +27,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	w_class = ITEMSIZE_NORMAL
-	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
 	/// Mobs looking into this storage.
@@ -54,6 +53,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/storage)
+	configure(obj_rules(show_messages = 1))
 	storage(
 		space = nameof(/obj/item/storage::max_storage_space),
 		slots = nameof(/obj/item/storage::storage_slots),
@@ -727,7 +727,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/screen/storage/bar_start = backdrop[1]
 	var/atom/movable/screen/storage/bar_continue = backdrop[2]
 	var/atom/movable/screen/storage/bar_end = backdrop[3]
-	bar_start.vis_contents.Cut()
+	vis_clear(bar_start)
 
 	var/matrix/M = matrix()
 	M.Scale((storage_width - storage_cap_width * 2 + 3) / 32, 1)

@@ -308,7 +308,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 /atom/movable/screen/button_palette/proc/refresh_owner()
 	var/mob/viewer = our_hud().mymob()
 	if(viewer.client)
-		viewer.client.screen |= src
+		client_screen_include(viewer.client, src)
 
 
 /// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): opened on enter, closed on exit.
@@ -421,7 +421,7 @@ CAPABILITIES(/atom/movable/screen/button_palette)
 /atom/movable/screen/palette_scroll/proc/refresh_owner()
 	var/mob/viewer = our_hud().mymob()
 	if(viewer.client)
-		viewer.client.screen |= src
+		client_screen_include(viewer.client, src)
 
 
 /atom/movable/screen/palette_scroll/proc/palette_clicked(datum/act/input/A)
@@ -483,7 +483,7 @@ CAPABILITIES(/atom/movable/screen/action_landing)
 	var/datum/hud/our_hud = owner()?.owner()
 	var/mob/viewer = our_hud.mymob()
 	if(viewer.client)
-		viewer.client.screen |= src
+		client_screen_include(viewer.client, src)
 
 
 /// Reacts to having a button dropped on it

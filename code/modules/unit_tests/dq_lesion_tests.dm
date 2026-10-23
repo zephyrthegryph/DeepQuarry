@@ -1,6 +1,6 @@
 // Unit tests for internal organ lesions: organ integrity (`damage`) is
 // derived from lesion afflictions located on the organ
-// (code/modules/medical/conditions/lesions.dm,
+// (code/content/medical/conditions/lesions.dm,
 // code/modules/body/parts/organ_integrity.dm). Harm arrives through
 // injure() aimed at the organ; healing through mend().
 

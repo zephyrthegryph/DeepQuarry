@@ -90,26 +90,150 @@ impl MixRef {
         }
     }
 
-    /// The handle a gas mixture datum holds.
+    /// The handle a gas mixture datum holds, with the generation the datum
+    /// was stamped with (`None` when the datum carries none).
     ///
     /// # Errors
     /// If the datum has no valid handle.
-    pub fn of(v: &ByondValue) -> Result<Self> {
+    pub fn of_unchecked(v: &ByondValue) -> Result<(Self, Option<u32>)> {
         let n = v.read_number_id(byond_string!("_extools_pointer_gasmixture"))?;
-        Self::from_f32(n).ok_or_else(|| eyre!("invalid gas mixture handle {n}"))
+        let r = Self::from_f32(n).ok_or_else(|| eyre!("invalid gas mixture handle {n}"))?;
+        let held = v
+            .read_var_id(byond_string!("_extools_generation_gasmixture"))
+            .ok()
+            .filter(|g| !g.is_null())
+            .and_then(|g| g.get_number().ok())
+            .map(generation_from_f32);
+        Ok((r, held))
     }
 
-    /// Writes the handle into a gas mixture datum.
+    /// The handle a gas mixture datum holds. A handle whose generation is not
+    /// the one the owner is at now (the mixture was freed, or the turf or
+    /// region was replaced, since the datum was stamped) is refused: the error
+    /// names the owner type, the handle and both generations.
     ///
     /// # Errors
-    /// If the var cannot be written.
+    /// If the datum has no valid handle, or the handle is stale.
+    pub fn of(v: &ByondValue) -> Result<Self> {
+        let (r, held) = Self::of_unchecked(v)?;
+        check_generation(r, held).map_err(|stale| stale.report(v))?;
+        Ok(r)
+    }
+
+    /// Writes the handle and its current generation into a gas mixture datum.
+    ///
+    /// # Errors
+    /// If the vars cannot be written.
     pub fn store(self, v: &mut ByondValue) -> Result<()> {
         #[allow(clippy::cast_precision_loss)]
-        v.write_var_id(
-            byond_string!("_extools_pointer_gasmixture"),
-            &ByondValue::from(self.id() as f32),
-        )?;
+        {
+            v.write_var_id(
+                byond_string!("_extools_pointer_gasmixture"),
+                &ByondValue::from(self.id() as f32),
+            )?;
+            v.write_var_id(
+                byond_string!("_extools_generation_gasmixture"),
+                &ByondValue::from(generation(self) as f32),
+            )?;
+        }
         Ok(())
+    }
+
+    /// Clears a datum's handle (its owner let go of it).
+    ///
+    /// # Errors
+    /// If the vars cannot be written.
+    pub fn clear(v: &mut ByondValue) -> Result<()> {
+        v.write_var_id(byond_string!("_extools_pointer_gasmixture"), &ByondValue::null())?;
+        v.write_var_id(byond_string!("_extools_generation_gasmixture"), &ByondValue::null())?;
+        Ok(())
+    }
+}
+
+// --- Generations -----------------------------------------------------------------
+
+/// A generation is a number a datum can hold exactly (an `f32`).
+pub const GENERATION_MASK: u32 = 0x00FF_FFFF;
+
+/// The generation after `g`.
+#[must_use]
+pub const fn next_generation(g: u32) -> u32 {
+    g.wrapping_add(1) & GENERATION_MASK
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn generation_from_f32(v: f32) -> u32 {
+    if v >= 0.0 { (v as u32) & GENERATION_MASK } else { u32::MAX }
+}
+
+thread_local! {
+    /// Turf cell generations. A cell has no slot to carry one: it is bumped when
+    /// a turf's air is bound to the cell and when the cell is unregistered, so
+    /// the old turf object a `ChangeTurf` leaves behind holds a stale one.
+    static TURF_GENERATIONS: RefCell<HashMap<u32, u32>> = RefCell::new(HashMap::new());
+}
+
+/// Starts a new owner of turf `cell`: every datum stamped before is stale.
+pub fn bump_turf_generation(cell: u32) -> u32 {
+    TURF_GENERATIONS.with_borrow_mut(|g| {
+        let e = g.entry(cell).or_insert(0);
+        *e = next_generation(*e);
+        *e
+    })
+}
+
+/// The generation `r` is at now.
+#[must_use]
+pub fn generation(r: MixRef) -> u32 {
+    match r {
+        MixRef::Main(i) => with_mixes(|m| m.slots.get(i as usize).map_or(0, |s| s.generation)),
+        MixRef::Pipe(s) => super::pipe_slot_generation(s),
+        MixRef::Turf(c) => TURF_GENERATIONS.with_borrow(|g| g.get(&c).copied().unwrap_or(0)),
+    }
+}
+
+/// What a stale handle looks like.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Stale {
+    pub handle: MixRef,
+    pub held: Option<u32>,
+    pub current: u32,
+}
+
+impl Stale {
+    /// The runtime for a datum holding this handle: owner type, handle and both
+    /// generations (BYOND adds the DM stack to a bind's error).
+    pub fn report(&self, owner: &ByondValue) -> eyre::Report {
+        let label = owner
+            .call_id(byond_string!("handle_owner_label"), &[])
+            .ok()
+            .and_then(|v| v.get_string().ok())
+            .unwrap_or_else(|| "unknown owner".to_string());
+        eyre!(
+            "stale gas mixture handle {} ({:?}) on {label}: the datum holds generation {:?}, the {} is at generation {}; the mixture it named was freed or replaced",
+            self.handle.id(),
+            self.handle,
+            self.held,
+            match self.handle {
+                MixRef::Main(_) => "main slot",
+                MixRef::Pipe(_) => "pipe region slot",
+                MixRef::Turf(_) => "turf cell",
+            },
+            self.current,
+        )
+    }
+}
+
+/// Whether a datum stamped with `held` may use `r`.
+///
+/// # Errors
+/// [`Stale`] when it may not (a datum with no generation never may).
+pub fn check_generation(r: MixRef, held: Option<u32>) -> std::result::Result<(), Stale> {
+    let current = generation(r);
+    if held == Some(current) {
+        Ok(())
+    } else {
+        Err(Stale { handle: r, held, current })
     }
 }
 
@@ -174,6 +298,9 @@ struct Slot {
     mix: Mixture,
     revision: Counter,
     live: bool,
+    /// Bumped each time the slot is freed, so a datum that still holds the
+    /// number of a freed slot cannot read the mixture that reuses it.
+    generation: u32,
 }
 
 /// Mirror ports: the reactor's watches on main and pipe mixtures, and the
@@ -351,6 +478,7 @@ pub fn alloc(mix: Mixture) -> Result<u32> {
                 mix: Mixture::new(),
                 revision: Counter::new(),
                 live: false,
+                generation: 0,
             });
             i
         };
@@ -380,6 +508,7 @@ pub fn free(i: u32) {
             slot.live = false;
             slot.mix = Mixture::new();
             slot.revision.bump();
+            slot.generation = next_generation(slot.generation);
             m.free.push(i);
             m.live -= 1;
         }
@@ -1553,5 +1682,67 @@ mod tests {
         assert_eq!(obs.len(), GAS_OBSERVATION_STRIDE, "the temperature watch heard the region: {obs:?}");
         assert!(obs[2] as u8 & GAS_CHANGE_TEMPERATURE != 0, "as a temperature change: {obs:?}");
         unwatch_dirty(301);
+    }
+
+    #[test]
+    fn a_freed_main_slot_reused_by_a_new_mixture_refuses_the_old_handle() {
+        with_world(|_| Ok(())).unwrap();
+        let a = alloc(tank(5.0)).unwrap();
+        let stamped = generation(MixRef::Main(a));
+        assert_eq!(check_generation(MixRef::Main(a), Some(stamped)), Ok(()));
+        free(a);
+        let b = alloc(tank(9.0)).unwrap();
+        assert_eq!(a, b, "the free slot is handed out again");
+        // The stale datum still holds `a` and `stamped`; the new mixture is not its to read.
+        let refused = check_generation(MixRef::Main(a), Some(stamped)).unwrap_err();
+        assert_eq!(refused.held, Some(stamped));
+        assert_ne!(refused.current, stamped);
+        // The new owner is stamped with the slot's current generation and passes.
+        assert_eq!(check_generation(MixRef::Main(b), Some(generation(MixRef::Main(b)))), Ok(()));
+        // A datum with no generation never passes.
+        assert!(check_generation(MixRef::Main(b), None).is_err());
+        free(b);
+    }
+
+    #[test]
+    fn a_turf_cell_given_a_new_owner_refuses_the_old_turfs_handle() {
+        let cell = 4_000_001;
+        let stamped = bump_turf_generation(cell);
+        assert_eq!(check_generation(MixRef::Turf(cell), Some(stamped)), Ok(()));
+        // ChangeTurf: the successor's air takes the cell over.
+        let successor = bump_turf_generation(cell);
+        assert_ne!(successor, stamped);
+        assert!(check_generation(MixRef::Turf(cell), Some(stamped)).is_err());
+        assert_eq!(check_generation(MixRef::Turf(cell), Some(successor)), Ok(()));
+        // Unregistering the cell also strands every earlier datum.
+        bump_turf_generation(cell);
+        assert!(check_generation(MixRef::Turf(cell), Some(successor)).is_err());
+    }
+
+    #[test]
+    fn a_retired_pipe_slot_reused_by_another_region_refuses_the_old_handle() {
+        use super::super::REGION_SLOTS;
+        let (slot, stamped) = REGION_SLOTS.with(|s| {
+            let slot = s.borrow_mut().slot_for(9_000_001);
+            (slot, s.borrow().generation_of(slot))
+        });
+        assert_eq!(check_generation(MixRef::Pipe(slot), Some(stamped)), Ok(()));
+        // The region is rebuilt: its slot is retired and handed to another region.
+        let reused = REGION_SLOTS.with(|s| {
+            s.borrow_mut().retire(9_000_001);
+            s.borrow_mut().slot_for(9_000_002)
+        });
+        assert_eq!(reused, slot);
+        assert!(check_generation(MixRef::Pipe(slot), Some(stamped)).is_err());
+        let now = generation(MixRef::Pipe(slot));
+        assert_eq!(check_generation(MixRef::Pipe(slot), Some(now)), Ok(()));
+        REGION_SLOTS.with(|s| s.borrow_mut().retire(9_000_002));
+    }
+
+    #[test]
+    fn generations_wrap_inside_what_a_datum_can_hold_exactly() {
+        assert_eq!(next_generation(0), 1);
+        assert_eq!(next_generation(GENERATION_MASK), 0);
+        assert!(f64::from(GENERATION_MASK as f32) == f64::from(GENERATION_MASK));
     }
 }

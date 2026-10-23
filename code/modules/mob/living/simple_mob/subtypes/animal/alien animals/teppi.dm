@@ -104,7 +104,7 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	var/teppi_wool = FALSE
 	var/amount_grown = 0
 	var/teppi_adult = TRUE
-	var/friend_zone //where friends go when we eat them
+	var/obj/belly/friend_zone //where friends go when we eat them
 //	var/teppi_id //This is all for anti-incest business, which I might finish eventually, but am not sure if it's really deisrable right now.
 //	var/mom_id
 //	var/dad_id
@@ -303,7 +303,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	p.set_item_digest_mode(IM_HOLD)
 	p.set_fancy_vore(1)
 	p.set_vore_verb("nyomp")
-	friend_zone = p
+	rel_set(src, nameof(friend_zone), p)
 
 	p.own_emote_lists()
 	p.set_emote_lists_at(DM_DRAIN, B.emote_lists[DM_DRAIN])
@@ -419,6 +419,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	ref_one(nameof(friend_zone), /obj/belly)
 	ref_one(nameof(parent_one), /mob/living/simple_mob/vore/alienanimals/teppi)
 	ref_one(nameof(parent_two), /mob/living/simple_mob/vore/alienanimals/teppi)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

@@ -44,7 +44,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 	data["multitool"] = FALSE
 	data["multitool_buffer"] = null
 
-	if(running || interact_offline)
+	if(running || usage_of(src).interact_offline)
 		data["id"] = id
 		data["network"] = network
 		data["autolinkers"] = !!LAZYLEN(autolinkers)
@@ -63,7 +63,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 		for(var/obj/machinery/telecomms/T in links)
 			i++
 			linked.Add(list(list(
-				"ref" = "\ref[T]",
+				"ref" = ref_token(T),
 				"name" = "[T]",
 				"id" = T.id,
 				"index" = i,
@@ -155,7 +155,7 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 
 /obj/machinery/telecomms/proc/ui_act_unlink(datum/act/op/A, unlink)
 	var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink)
-	report("-% Removed \ref[T] [T.name] from linked entities. %-")
+	report("-% Removed [ref_token(T)] [T.name] from linked entities. %-")
 	rel_remove(src, nameof(links), T)
 	return OP_OK
 
@@ -168,13 +168,13 @@ MSG_DEF_SELF(tcomms/cannot_lock, "It can only change its signal lock on the tele
 /obj/machinery/telecomms/proc/ui_act_link(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
 	rel_add(src, nameof(links), P.buffer())
-	report("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-")
+	report("-% Successfully linked with [ref_token(P.buffer())] [P.buffer().name] %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_buffer(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
 	rel_set(P, nameof(/obj/item/multitool::buffer), src)
-	report("-% Successfully stored \ref[src] [name] in buffer %-")
+	report("-% Successfully stored [ref_token(src)] [name] in buffer %-")
 	return OP_OK
 
 /obj/machinery/telecomms/proc/ui_act_flush(datum/act/op/A)
@@ -275,12 +275,11 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 // ---- ranged machines: the receiver and the broadcaster ----
 
 /obj/machinery/telecomms/broadcaster
-	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 	ranged = "use_broadcast_range"
 
 /obj/machinery/telecomms/receiver
-	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 	ranged = "use_receive_range"
 
 CAPABILITIES(/obj/machinery/telecomms/receiver)
+	configure(machine_usage(interact_offline = TRUE))
 	configure(uses_power(idle = 600))

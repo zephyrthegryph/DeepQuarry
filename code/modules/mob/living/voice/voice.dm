@@ -33,8 +33,8 @@
 // Description: Adds a static overlay to the client's screen.
 /mob/living/voice/Login()
 	..()
-	client.screen |= GLOB.global_hud.whitense
-	client.screen |= GLOB.global_hud.darkMask
+	client_screen_include(client, GLOB.global_hud.whitense)
+	client_screen_include(client, GLOB.global_hud.darkMask)
 
 // Proc: ghostize()
 // Parameters: None
@@ -138,11 +138,8 @@
 /mob/living/voice/get_available_emotes()
 	LAZYOR(., GLOB.simple_mob_default_emotes)
 
-/mob/living/voice
-	no_vore = TRUE
-	can_pain_emote = FALSE
-
 CAPABILITIES(/mob/living/voice)
+	configure(mob_nature(no_vore = TRUE, can_pain_emote = FALSE))
 	configure(mob_kind(emote_type = 2))
 	ref_one(nameof(comm))
 	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us

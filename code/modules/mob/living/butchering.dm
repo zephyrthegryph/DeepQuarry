@@ -3,10 +3,7 @@
 /mob/living
 	var/meat_amount = 0					// How much meat to drop from this mob when butchered
 	var/meat_type					// The meat object to drop
-	var/name_the_meat = TRUE
 
-	var/gib_on_butchery = FALSE
-	var/butchery_drops_organs = TRUE	// Do we spawn and/or drop organs when butchered?
 
 	var/list/butchery_loot				// Associated list, path = number.
 
@@ -29,7 +26,7 @@
 /// One cut of meat.
 /mob/living/proc/harvest_cut(datum/act/op/A)
 	var/obj/item/meat = new meat_type(get_turf(src))
-	if(name_the_meat)
+	if(nature_of(src).name_the_meat)
 		meat.name = "[src.name] [meat.name]"
 	new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
 	meat_amount--
@@ -79,13 +76,13 @@
 			butchery_loot = null
 
 	// removed() is a ledger move out; the detach hook empties the caches.
-	if(LAZYLEN(organs) && butchery_drops_organs)
+	if(LAZYLEN(organs) && nature_of(src).drops_organs)
 		for(var/obj/item/organ/OR in organs.Copy())
 			OR.removed()
 
-	if(butchery_drops_organs)
+	if(nature_of(src).drops_organs)
 		spawn_butchery_organs()
-	if(length(internal_organ_list()) && butchery_drops_organs)
+	if(length(internal_organ_list()) && nature_of(src).drops_organs)
 		for(var/obj/item/organ/OR in internal_organ_list())
 			OR.removed()
 
@@ -93,11 +90,11 @@
 		if(issmall(src))
 			act_message(user, src, others = span_danger("%U% chops up %T%!"))
 			new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-			if(gib_on_butchery)
+			if(nature_of(src).gib_on_butchery)
 				destroyed(src, user, BRUTE)
 		else
 			act_message(user, src, others = span_danger("%U% butchers %T% messily!"))
-			if(gib_on_butchery)
+			if(nature_of(src).gib_on_butchery)
 				gib()
 
 // A meat type path or a shared definition, never a per-mob instance.

@@ -38,6 +38,10 @@
 	dq_atmos_test_isolate_pair(T, T)
 	dq_atmos_test_fill_standard_air(T)
 	T.air_update_turf(TRUE, FALSE)
+	var/list/occupants = list()
+	for(var/atom/movable/AM in T)
+		occupants += "[AM.type] [round(AM.get_temperature(), 0.1)] K"
+	log_test("GAS LEVEL ROOM: ([T.x],[T.y],[T.z]) floor [round(T.get_temperature(), 0.1)] K, air [round(T.air.return_temperature(), 0.1)] K, holds [jointext(occupants, "; ")]")
 	return T
 
 /// An artifact in air that stays under its breaking temperature is left alone; heat the air past it and it breaks, with nobody polling it.

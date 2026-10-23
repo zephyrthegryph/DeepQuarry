@@ -89,7 +89,7 @@
 	blackness.set_icon('icons/effects/effects.dmi')
 	blackness.set_icon_state("1")
 	blackness.mouse_opacity = 2			//Can't see anything!
-	new_voice.client.screen.Add(blackness)
+	client_screen_add(new_voice.client, blackness)
 
 
 	//Now for some connection fluff.
@@ -112,7 +112,7 @@
 			after(src, 2 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 4), keeps_dead = TRUE)
 		if(4)
 			//We're connected, no need to hide everything.
-			new_voice.client?.screen.Remove(blackness)
+			client_screen_remove(new_voice.client, blackness)
 			spent(blackness, user)
 
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [src] established."))

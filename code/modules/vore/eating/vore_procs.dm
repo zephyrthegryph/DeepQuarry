@@ -197,13 +197,13 @@
 		else
 			to_chat(user, span_vwarning(refusal))
 		return FALSE
-	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || sparse_get_or(pred, away_from_keyboard, FALSE)))
 		if(user == pred)
 			to_chat(user, span_vwarning("You aren't set as being able to pred while AFK"))
 			return FALSE
 		to_chat(user, span_vnotice("The predator prefers not to be fed while AFK"))
 		return FALSE
-	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || sparse_get_or(prey, away_from_keyboard, FALSE)))
 		if(user == prey)
 			to_chat(user, span_vwarning("You aren't set as being able to prey while AFK"))
 			return FALSE

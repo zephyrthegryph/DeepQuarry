@@ -188,7 +188,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 					var/list/records = list()
 					data["records"] = records
 					for(var/datum/data/record/R in sortRecord(GLOB.data_core.general))
-						records[++records.len] = list("ref" = "\ref[R]", "id" = R.fields["id"], "name" = R.fields["name"])
+						records[++records.len] = list("ref" = ref_token(R), "id" = R.fields["id"], "name" = R.fields["name"])
 			if(MED_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
@@ -324,7 +324,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/v = ui_ref(vir, null, /datum/data/record)
+	var/list/viruses = list()
+	for(var/virus_id in GLOB.virusDB)
+		viruses += GLOB.virusDB[virus_id]
+	var/datum/data/record/v = ui_member(vir, viruses, /datum/data/record)
 	if(!istype(v))
 		return FALSE
 	tgui_modal_message(src, "virus", "", null, v.fields["tgui_description"])
@@ -352,8 +355,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
-	if(!(general_record in GLOB.data_core.general))
+	var/datum/data/record/general_record = ui_member(d_rec, GLOB.data_core.general, /datum/data/record)
+	if(!general_record)
 		show_temp("Record not found.", "danger")
 		return
 
@@ -681,4 +684,4 @@ CAPABILITIES(/obj/machinery/computer/med_data/laptop)
 		var/datum/data/record/v = GLOB.virusDB[virus_id]
 		if(!istype(v))
 			continue
-		. += list(list("name" = v.fields["name"], "D" = "\ref[v]"))
+		. += list(list("name" = v.fields["name"], "D" = ref_token(v)))

@@ -1610,7 +1610,7 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 /datum/trait/neutral/patting_defence/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
 	if(trait_prefs && trait_prefs["biting_toggle"])
-		H.touch_reaction_flags |= SPECIES_TRAIT_PATTING_DEFENCE
+		sparse_set(H, touch_reaction_flags, sparse_get(H, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
 	grant(H, granted_verb(/mob/living/proc/toggle_patting_defence), src)
 
 /datum/trait/neutral/personal_space
@@ -1624,9 +1624,9 @@ TYPE_TABLE(/datum/trait/neutral/food_pref/stimulant, food_pref_allergens, list(A
 /datum/trait/neutral/personal_space/apply(datum/species/S, mob/living/carbon/human/H, list/trait_prefs)
 	..()
 	if(trait_prefs && trait_prefs["bubble_toggle"])
-		H.touch_reaction_flags |= SPECIES_TRAIT_PERSONAL_BUBBLE
+		sparse_set(H, touch_reaction_flags, sparse_get(H, touch_reaction_flags) | (SPECIES_TRAIT_PERSONAL_BUBBLE))
 	if(trait_prefs && trait_prefs["pickup_dodge_toggle"])
-		H.touch_reaction_flags |= SPECIES_TRAIT_PICKUP_DODGE
+		sparse_set(H, touch_reaction_flags, sparse_get(H, touch_reaction_flags) | (SPECIES_TRAIT_PICKUP_DODGE))
 	grant(H, granted_verb(/mob/living/proc/toggle_personal_space), src)
 	grant(H, granted_verb(/mob/living/proc/toggle_pickup_dodge), src)
 

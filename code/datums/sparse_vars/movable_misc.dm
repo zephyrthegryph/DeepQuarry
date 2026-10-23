@@ -167,3 +167,10 @@ sparse(/atom/movable, hovering, type = bool)
 
 /// The sparse slots above: runtime state a saved movable cannot carry.
 GLOBAL_LIST_INIT(dq_movable_runtime_slots, list("belly_cycles", "recursive_listeners", "moved_recently", "dynamic_lights", "cloak_selfimage", "cloaked", "parachute", "parachuting", "softfall", "hovering"))
+
+// /atom/movable
+sparse(/atom/movable, is_swarming, type = bool)
+sparse(/atom/movable, last_high_pressure_movement_air_cycle, type = num)
+sparse(/atom/movable, swarm_offset_x, type = num)
+sparse(/atom/movable, swarm_offset_y, type = num)
+

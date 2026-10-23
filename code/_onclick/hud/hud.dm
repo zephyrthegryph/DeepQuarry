@@ -449,20 +449,20 @@ CAPABILITIES(/datum/hud)
 		return
 	rel_add(src, nameof(minihuds), MH)
 	if(mymob().client)
-		mymob().client.screen -= miniobjs
+		client_screen_remove(mymob().client, miniobjs)
 	miniobjs += MH.get_screen_objs()
 	if(mymob().client)
-		mymob().client.screen += miniobjs
+		client_screen_add(mymob().client, miniobjs)
 
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
 	rel_remove(src, nameof(minihuds), MH)
 	if(mymob().client)
-		mymob().client.screen -= miniobjs
+		client_screen_remove(mymob().client, miniobjs)
 	miniobjs -= MH.get_screen_objs()
 	if(mymob().client)
-		mymob().client.screen += miniobjs
+		client_screen_add(mymob().client, miniobjs)
 
 //Triggered when F12 is pressed (Unless someone changed something in the DMF)
 /mob/verb/button_pressed_F12(full = 0 as null)
@@ -504,11 +504,11 @@ CAPABILITIES(/datum/hud)
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.healths)
-			client.screen |= hud_used?.healths
+			client_screen_include(client, hud_used?.healths)
 		if(hud_used?.internals)
-			client.screen |= hud_used?.internals
+			client_screen_include(client, hud_used?.internals)
 		if(hud_used?.gun_setting_icon)
-			client.screen |= hud_used?.gun_setting_icon
+			client_screen_include(client, hud_used?.gun_setting_icon)
 
 		if(hud_used?.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
@@ -574,7 +574,7 @@ CAPABILITIES(/datum/hud)
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client_screen_add(client, hud_used.hotkeybuttons)
 		if(hud_used?.internals)
-			client.screen |= hud_used?.internals
+			client_screen_include(client, hud_used?.internals)
 		if(hud_used.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
@@ -608,7 +608,7 @@ CAPABILITIES(/datum/hud)
 	hud_elements |= hud_used?.lleill_display
 
 	if(client)
-		client.screen = list()
+		client_screen_clear(client)
 
 		client_screen_add(client, hud_elements)
 		client_screen_add(client, client.void)

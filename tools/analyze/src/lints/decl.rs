@@ -51,8 +51,23 @@ static META: Meta = Meta {
             "Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).",
             "rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.",
         ],
-        // Rules whose backlog reached 0: a new site fails outright (no baseline row can cover it).
-        banned: &["init_gas", "init_service", "init_bind", "destroy_qdel_owned", "destroy_registry", "destroy_scheduling", "destroy_unbind"],
+        // Every rule's backlog reached 0: a new site fails outright (no baseline row can cover it).
+        banned: &[
+            "init_reagents",
+            "init_gas",
+            "init_registry",
+            "init_service",
+            "init_bind",
+            "init_scheduling",
+            "init_visuals",
+            "init_new_child",
+            "destroy_qdel_owned",
+            "destroy_drop",
+            "destroy_registry",
+            "destroy_scheduling",
+            "destroy_unbind",
+            "destroy_effects",
+        ],
     },
     // The old RULES: the INIT_RULES, then the two special rules, then the DESTROY_RULES.
     rules: rules![

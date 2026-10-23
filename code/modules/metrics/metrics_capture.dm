@@ -162,7 +162,9 @@
 // ---------------------------------------------------------------- the frame outside the MC
 
 /// Where each tick's proc time went, split at the MC's iteration, accumulated between samples (read and
-/// reset by the frame metrics source). All in percent of a tick, summed over ticks.
+/// reset by the frame metrics source). All in percent of a tick, summed over ticks. The one instance is a global made at world setup and
+/// never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/tick_frame)
 /datum/tick_frame
 	/// Before the MC's iteration (or the whole tick when the MC did not run): resumed sleeping procs, verbs
 	/// run on the spot, Topic, clicks.

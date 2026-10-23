@@ -458,7 +458,8 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		if(department_area?.department_id == "engineering-1")
 			engineering_area = department_area
 			engineering_owner = node.id
-	for(var/datum/generated_station_module/module in materialization().modules)
+	var/datum/generated_station_materialization/built = materialization()
+	for(var/datum/generated_station_module/module in built.modules)
 		var/area/generated_station/A = materialization().module_areas?[module.id]
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)
@@ -625,7 +626,7 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(GENERATED_STATION_UTILITY_POWER_ROUTE in intent.utility_intents)
 			var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
-			route[REF(T)] = T
+			route[ref_token(T)] = T
 	return route
 
 /datum/generated_station_utility_builder/proc/build_planned_lights()
@@ -668,13 +669,13 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)
-	var/key = REF(T)
+	var/key = ref_token(T)
 	connections[key] = (connections[key] || 0) | direction
 
 /datum/generated_station_utility_builder/proc/path_directions(list/path, turf/T)
 	var/directions = 0
 	for(var/direction in GLOB.cardinal)
-		if(path[REF(get_step(T, direction))])
+		if(path[ref_token(get_step(T, direction))])
 			directions |= direction
 	return directions
 
@@ -731,10 +732,10 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 	while(length(queue))
 		var/turf/current = queue[1]
 		queue.Cut(1, 2)
-		var/current_key = REF(current)
+		var/current_key = ref_token(current)
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(current, direction)
-			var/neighbor_key = REF(neighbor)
+			var/neighbor_key = ref_token(neighbor)
 			if(!path[neighbor_key] || visited[neighbor_key])
 				continue
 			visited[neighbor_key] = TRUE

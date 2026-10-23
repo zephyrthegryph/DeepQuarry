@@ -109,7 +109,7 @@ REMOVAL
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoon-2"
 	var/loadable_item = null
-	var/loaded_item = null
+	var/obj/item/loaded_item = null
 	var/loadable_name = null
 	COOLDOWN_DECLARE(firable)
 /obj/item/xenobio/examine(mob/user)
@@ -120,6 +120,7 @@ REMOVAL
 		.+= "There appears to be an empty slot for attaching a [loadable_name]."
 
 CAPABILITIES(/obj/item/xenobio)
+	ref_one(nameof(loaded_item), /obj/item)
 	op("interaction_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("interaction_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("interaction_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -130,7 +131,7 @@ CAPABILITIES(/obj/item/xenobio)
 	if(user.get_inactive_hand() == src && loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
-		loaded_item = null
+		rel_clear(src, nameof(loaded_item))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
 		return OP_DECLINE
@@ -146,7 +147,7 @@ CAPABILITIES(/obj/item/xenobio)
 			return OP_PASS
 		if(!own_bring_in(src, nameof(loaded_item), I, null, user, TRUE, null, FALSE))
 			return OP_PASS
-		loaded_item = I
+		rel_set(src, nameof(loaded_item), I)
 		act_message(user, src, MSG_SELF(span_notice("You slot [I] into %T%.")), MSG_OTHERS(span_notice("%U% inserts [I] into %T%.")))
 		return OP_OK
 	return OP_DECLINE
@@ -157,7 +158,7 @@ CAPABILITIES(/obj/item/xenobio)
 	if(loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
-		loaded_item = null
+		rel_clear(src, nameof(loaded_item))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	return OP_OK
 
@@ -201,7 +202,7 @@ CAPABILITIES(/obj/item/xenobio)
 		var/obj/item/reagent_containers/food/snacks/monkeycube/cube = loaded_item
 		cube.forceMove(A)
 		cube.Expand()
-		loaded_item = null
+		rel_clear(src, nameof(loaded_item))
 		COOLDOWN_START(src, firable, 2 SECONDS)
 
 // Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time.

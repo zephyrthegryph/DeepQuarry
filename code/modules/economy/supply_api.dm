@@ -18,12 +18,23 @@
 /datum/system/supply/proc/export_history_snapshot()
 	return exported_crates?.Copy()
 
-/// Resolve a UI reference against the live owner collection, just as the console did.
+/// Resolve a window handle (a ref_token()) against the live order history: only an order in it is named.
 /datum/system/supply/proc/order_from_ref(reference)
-	return order_for_ui(ui_ref(reference, type = /datum/supply_order))
+	return ui_member(reference, order_history, /datum/supply_order)
 
 /datum/system/supply/proc/export_from_ref(reference)
-	return export_for_ui(ui_ref(reference, type = /datum/exported_crate))
+	return ui_member(reference, exported_crates, /datum/exported_crate)
+
+/// The catalog pack a window handle names; nothing outside the catalog is.
+/datum/system/supply/proc/pack_from_ref(reference)
+	return ui_member(reference, catalog_packs(), /datum/supply_pack)
+
+/// Every pack in the catalog.
+/datum/system/supply/proc/catalog_packs()
+	var/list/packs = list()
+	for(var/pack_name in supply_pack)
+		packs += supply_pack[pack_name]
+	return packs
 
 /// Admit a typed UI selection against the live owner collection. A null collection
 /// retains ui_ref's historical global lookup; an allocated empty collection rejects it.

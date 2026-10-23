@@ -281,7 +281,7 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 
 	if(!load)
 		return
-	dummy_load.actual_load = C
+	rel_set(dummy_load, nameof(dummy_load.actual_load), C)
 	C.forceMove(src)
 
 	if(load_item_visible)
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 	if(istype(load, /datum/vehicle_dummy_load))
 		var/datum/vehicle_dummy_load/dummy_load = load
 		rel_set(src, nameof(load), dummy_load.actual_load)
-		dummy_load.actual_load = null
+		rel_clear(dummy_load, nameof(dummy_load.actual_load))
 		spent(dummy_load, src)
 		set_load_image(null)
 	..()

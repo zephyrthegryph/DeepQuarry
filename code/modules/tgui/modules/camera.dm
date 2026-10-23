@@ -40,7 +40,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 	. = ..()
 
 /atom/movable/screen/map_view_tg/camera/proc/show_camera(list/visible_turfs, turf/newturf, size_x, size_y)
-	vis_contents = visible_turfs
+	vis_set(src, visible_turfs)
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, size_x, size_y)
 
@@ -51,7 +51,7 @@ CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - newturf.x, (world.maxy>>1) - newturf.y)
 
 /atom/movable/screen/map_view_tg/camera/proc/show_camera_static()
-	vis_contents.Cut()
+	vis_clear(src)
 	cam_background.icon_state = "scanline2"
 	cam_background.fill_rect(1, 1, DEFAULT_MAP_SIZE, DEFAULT_MAP_SIZE)
 	local_skybox.sky_image = null
@@ -104,7 +104,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/ui_opening(mob/user, datum/tgui/ui)
 	..()
-	var/user_ref = REF(user)
+	var/user_ref = ref_token(user)
 	var/is_living = isliving(user)
 	// Ghosts shouldn't count towards concurrent users, which produces
 	// an audible terminal_on click.
@@ -278,7 +278,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /datum/tgui_module/camera/tgui_close(mob/user)
 	. = ..()
-	var/user_ref = REF(user)
+	var/user_ref = entity_handle_of(user)
 	var/is_living = isliving(user)
 	// living creature or not, we remove you anyway.
 	LAZYREMOVE(concurrent_users, user_ref)

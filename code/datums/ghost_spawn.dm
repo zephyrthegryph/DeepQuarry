@@ -146,7 +146,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 			type = "Mob"
 		else if(isstructure(spawn_object))
 			type = "Structure"
-		UNTYPED_LIST_ADD(compiled_pods, list("pod_type" = type, "pod_name" = spawn_object.name, "z_level" = spawn_object.z, "ref" = REF(spawn_object), "remains_active" = enabled))
+		UNTYPED_LIST_ADD(compiled_pods, list("pod_type" = type, "pod_name" = spawn_object.name, "z_level" = spawn_object.z, "ref" = ref_token(spawn_object), "remains_active" = enabled))
 	return compiled_pods
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_ghost_join_data(mob/user)
@@ -202,7 +202,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 		if(DF.power_lost() || !DF.produce_drones)
 			continue
 		if(DF.drone_progress >= 100)
-			all_fabricators += list(REF(DF) = DF.fabricator_tag)
+			all_fabricators += list(ref_token(DF) = DF.fabricator_tag)
 
 	return list(
 				"disabled" = !CONFIG_GET(flag/allow_drone_spawn),
@@ -215,7 +215,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 	var/datum/data/record/record_found = find_general_record("name", user.client.prefs.read_preference(/datum/preference/name/real_name))
 	var/list/vr_landmarks = list()
 	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-		vr_landmarks += list(REF(sloc) = sloc.name)
+		vr_landmarks += list(ref_token(sloc) = sloc.name)
 
 	return list(
 				"record_found" = !!record_found,
@@ -239,7 +239,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 		if(player.soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_GHOSTS, TRUE))
 			soulcatcher_vore_active = TRUE
 
-		if(!player.no_vore && (get_z(player) in using_map.station_levels))
+		if(!nature_of(player).no_vore && (get_z(player) in using_map.station_levels))
 			if(ishuman(player))
 				var/mob/living/carbon/human/H = player
 				if(H.vore_prefs.latejoin_vore)
@@ -252,7 +252,7 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 				var/mob/living/simple_mob/SM = player
 				if(SM.vore_active && SM.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
-		compiled_spawn_data += list(REF(player) = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
+		compiled_spawn_data += list(ref_token(player) = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
 	return compiled_spawn_data
 
 #undef GHOST_POD_TAB

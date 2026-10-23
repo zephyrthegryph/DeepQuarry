@@ -459,10 +459,10 @@ CAPABILITIES(/datum/mind)
 	if (client?.prefs)
 		// directory tags migrated from legacy /datum/preferences vars
 		// to /datum/preference subtypes.
-		mind.show_in_directory = client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory)
+		mind.show_in_directory = num_or_null(client.prefs.read_preference(/datum/preference/toggle/human/show_in_directory))
 		mind.directory_tag = client.prefs.read_preference(/datum/preference/choiced/human/directory_tag)
 		mind.directory_erptag = client.prefs.read_preference(/datum/preference/choiced/human/directory_erptag)
-		mind.directory_ad = client.prefs.read_preference(/datum/preference/text/human/directory_ad)
+		mind.directory_ad = text_or_null(client.prefs.read_preference(/datum/preference/text/human/directory_ad))
 		mind.vantag_preference = client.prefs.read_preference(/datum/preference/choiced/human/vantag_preference)
 		mind.directory_gendertag = client.prefs.read_preference(/datum/preference/choiced/human/directory_gendertag)
 		mind.directory_sexualitytag = client.prefs.read_preference(/datum/preference/choiced/human/directory_sexualitytag)

@@ -206,6 +206,23 @@ pub const CAP_KEY_CALLS: &[&str] = &["configure"];
 /// Calls whose `source =` argument must be a datum or SRC_*, never text or null.
 pub const SOURCE_CALLS: &[&str] = &["hold", "hold_until", "hold_override", "grant", "release", "status_end"];
 
+/// The position of each `#include`d file of `deepquarry.dme` (repo-relative, forward slashes). A file the dme does not include (generated
+/// output) has no entry and sorts after every included file.
+pub fn dme_include_order(root: &std::path::Path) -> HashMap<String, usize> {
+    let mut out = HashMap::new();
+    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else { return out };
+    for line in text.lines() {
+        let line = line.trim();
+        let Some(rest) = line.strip_prefix("#include") else { continue };
+        let rest = rest.trim();
+        let Some(path) = rest.strip_prefix('"').and_then(|r| r.split('"').next()) else { continue };
+        let rel = path.replace('\\', "/");
+        let n = out.len();
+        out.entry(rel).or_insert(n);
+    }
+    out
+}
+
 impl Decls {
     pub fn get(tree: &Tree) -> Arc<Decls> {
         tree.memo("sem/decls", || {
@@ -215,7 +232,10 @@ impl Decls {
             let stored: Vec<Stored> = crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
             let default = Stored::default();
             let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
-            let key = crate::incr::ctx_key(&nonempty);
+            // Generated declarations follow `deepquarry.dme` include order, not file path: moving a file leaves the include in its
+            // place, so it must not move the types and procs generated from its markers (typesof() and proc-table order follow them).
+            let include_order = dme_include_order(&tree.root);
+            let key = crate::incr::mix(&[crate::incr::ctx_key(&nonempty), crate::incr::ctx_key(&include_order.iter().collect::<std::collections::BTreeMap<_, _>>())]);
             let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
             let mut d = Decls { key, ..Decls::default() };
             for (f, p) in files.iter().zip(parts) {
@@ -237,7 +257,8 @@ impl Decls {
                     d.publishers.entry(k).or_default().push(s);
                 }
             }
-            d.markers.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
+            let at = |rel: &str| include_order.get(rel).copied().unwrap_or(usize::MAX);
+            d.markers.sort_by(|a, b| (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line)));
             // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
             // declares `a` on /A and `b` on /B.
             let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
@@ -808,5 +829,31 @@ mod block_tests {
         let f = SourceFile::from_text("code/a.dm", "STATE_GRAPH(GRAPH_X)\n\tstart(STAGE_A)\n\n\tstage(STAGE_B, then(PROC_REF(y)))\n/obj/thing/proc/x()\n\treturn 1\n");
         let d = scan_file(&f);
         assert_eq!(d.markers[0].args, vec!["GRAPH_X", "start(STAGE_A)", "stage(STAGE_B, then(PROC_REF(y)))"]);
+    }
+}
+
+#[cfg(test)]
+mod include_order_tests {
+    use super::dme_include_order;
+
+    /// The generated declarations follow the dme, so a file moved to a path that sorts elsewhere keeps its position.
+    #[test]
+    fn include_order_is_the_dme_line_order_not_the_path_order() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("deepquarry.dme"),
+            r#"// comment
+#include "code\zeta\late.dm"
+#include "code\alpha\early.dm"
+#include "code\alpha\early.dm"
+#define X 1
+"#,
+        )
+        .unwrap();
+        let order = dme_include_order(dir.path());
+        assert_eq!(order.get("code/zeta/late.dm"), Some(&0));
+        assert_eq!(order.get("code/alpha/early.dm"), Some(&1));
+        assert_eq!(order.len(), 2);
+        assert_eq!(dme_include_order(&dir.path().join("missing")).len(), 0);
     }
 }

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Bank account numbers are now unique, so two accounts can no longer answer for the same card"

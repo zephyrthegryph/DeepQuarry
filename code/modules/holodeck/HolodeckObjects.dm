@@ -71,7 +71,8 @@ CAPABILITIES(/turf/simulated/floor/holofloor)
 
 /// The dust of the skybox over this tile: one of its cached pieces, picked by where the tile is.
 /turf/simulated/floor/holofloor/space/proc/space_dust()
-	return SSskybox.ready().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+	var/datum/system/skybox/sky = SSskybox.ready()
+	return sky.dust_appearance("[((x + y) ^ ~(x * y) + z) % 25]")
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'
@@ -267,8 +268,9 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 
 /obj/item/holo
 	injury_kind = INJURY_PAIN
-	no_attack_log = 1
-	no_random_knockdown = TRUE
+
+CAPABILITIES(/obj/item/holo)
+	configure(item_handling(no_attack_log = 1, no_random_knockdown = TRUE))
 
 /obj/item/holo/esword
 	name = "holographic energy sword"

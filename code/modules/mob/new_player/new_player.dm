@@ -201,7 +201,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 				cryst.capture(cryst.bound_mob, carrier)
 			else
 				//Something went wrong, but lets try to do as much as we can.
-				cryst.bound_mob.capture_caught = TRUE
+				sparse_set(cryst.bound_mob, capture_caught, TRUE)
 				cryst.set_persist_storable(FALSE)
 			spent(src)
 			return
@@ -363,7 +363,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	new_character.name = real_name
 	client.init_verbs()
 	new_character.dna.ready_dna(new_character)
-	new_character.dna.b_type = client.prefs.read_preference(/datum/preference/text/human/b_type) // migrated pref
+	new_character.dna.b_type = text_or_null(client.prefs.read_preference(/datum/preference/text/human/b_type)) // migrated pref
 	new_character.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
 	new_character.sync_organ_dna()
 	new_character.sync_addictions() // Handle round-start addictions

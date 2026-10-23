@@ -297,7 +297,7 @@ core = [
 # directory when it ends in `/`. The key is read by the part's DropPaths("<key>").
 [lint.check_grep.lists]
 # Field declarations reached zero independently of the wider interaction/hit sweeps.
-legacy_fields_converted = ["code/game/machinery/", "code/modules/power/"]
+legacy_fields_converted = ["code/game/machinery/", "code/modules/power/", "code/content/power/", "code/domains/power/"]
 # The files (a directory ends in `/`, else an exact file) of the source families whose stat tables moved into factors() entries in their CAPABILITIES blocks
 # (doc/rewrite/proposals/stat_layer.md section 8): a raw `factors =` table var there is a hard ban. Files are only ever added.
 factors_converted = []
@@ -332,15 +332,17 @@ ui_push_converted = [
   "code/game/objects/structures/crates_lockers/closets/statue.dm",
   "code/modules/mining/mineral_effect.dm",
   "code/modules/power/fusion/fuel_assembly/fuel_assembly.dm",
-  "code/modules/power/fusion_coil.dm",
+  "code/content/power/fusion_coil.dm",
   "code/modules/power/port_gen.dm",
   "code/modules/power/solar.dm",
-  "code/modules/power/supermatter/setup_supermatter.dm",
+  "code/content/power/supermatter/setup_supermatter.dm",
   "code/modules/telesci/quantum_pad.dm",
 ]
 legacy_forms_converted = [
   "code/game/machinery/",
   "code/modules/power/",
+  "code/content/power/",
+  "code/domains/power/",
   "code/ATMOSPHERICS/",
   "code/_global_vars/",
   "code/_helpers/",
@@ -455,6 +457,7 @@ legacy_forms_converted = [
   "code/modules/catalogue/",
   "code/modules/client/",
   "code/modules/clothing/",
+  "code/content/clothing/",
   "code/modules/communicator/",
   "code/modules/compass/",
   "code/modules/contracts/",
@@ -511,6 +514,7 @@ legacy_forms_converted = [
   "code/modules/materials/",
   "code/modules/media/",
   "code/modules/medical/",
+  "code/content/medical/",
   "code/modules/messages/",
   "code/modules/metric/",
   "code/modules/metrics/",
@@ -576,6 +580,7 @@ legacy_forms_converted = [
   "code/modules/point/",
   "code/modules/polls/",
   "code/modules/projectiles/",
+  "code/content/projectiles/",
   "code/modules/radiation/",
   "code/modules/random_map/",
   "code/modules/reagents/holder/",
@@ -1684,6 +1689,10 @@ exempt_prefixes = ["code/engine/_generated/"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
 [lint.untyped.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
+
+# untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
+[lint.untyped_member]
+exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
 
 # player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
 [lint.player_link]

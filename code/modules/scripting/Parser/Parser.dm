@@ -34,14 +34,16 @@
 	The token at <index> in <tokens>.
 */
 	var/tmp/datum/token/curToken_ref
-	var/datum/stack/blocks=new
-	var/datum/node/BlockDefinition/GlobalBlock/global_block=new
+	var/datum/stack/blocks
+	var/datum/node/BlockDefinition/GlobalBlock/global_block
 	var/tmp/datum/node/BlockDefinition/curBlock_ref
 
 CAPABILITIES(/datum/n_Parser)
 	owns_many(nameof(errors))
 	owns_many(nameof(warnings))
 	ref_one(nameof(curBlock_ref))
+	owns_one(nameof(blocks), /datum/stack)
+	ref_one(nameof(global_block), /datum/node/BlockDefinition/GlobalBlock)
 	ref_one(nameof(curToken_ref))
 
 /*
@@ -77,6 +79,8 @@ CAPABILITIES(/datum/n_Parser)
 /datum/n_Parser/nS_Parser/New(tokens[], datum/n_scriptOptions/options)
 	src.tokens=tokens
 	rel_set(src, nameof(options_ref), options)
+	rel_set(src, nameof(blocks), new /datum/stack)
+	rel_set(src, nameof(global_block), new /datum/node/BlockDefinition/GlobalBlock)
 	rel_set(src, nameof(curBlock_ref), global_block)
 	return ..()
 
@@ -100,9 +104,10 @@ CAPABILITIES(/datum/n_Parser)
 				if(!istype(ntok, /datum/token/symbol))
 					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
+				var/datum/n_scriptOptions/nS_Options/script_options = options()
 				if(ntok.value=="(")
 					ParseFunctionStatement()
-				else if(options().assign_operators.Find(ntok.value))
+				else if(script_options.assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
 					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
@@ -145,11 +150,12 @@ CAPABILITIES(/datum/n_Parser)
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
 	var/name=curToken().value
-	if(!options().IsValidID(name))
+	var/datum/n_scriptOptions/nS_Options/script_options = options()
+	if(!script_options.IsValidID(name))
 		rel_add(src, nameof(errors), new/datum/scriptError/InvalidID(curToken()))
 		return
 	NextToken()
-	var/t=options().binary_operators[options().assign_operators[curToken().value]]
+	var/t=script_options.assign_binary_operator(curToken().value)
 	var/datum/node/statement/VariableAssignment/stmt=new()
 	rel_set(stmt, nameof(stmt.var_name), new /datum/node/identifier(name))
 	NextToken()

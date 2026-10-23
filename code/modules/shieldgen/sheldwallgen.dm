@@ -17,7 +17,6 @@
 		locked = 1
 		var/destroyed = 0
 		var/directwired = 1
-		var/obj/structure/cable/attached		// the attached cable
 		var/storedpower = 0
 		//There have to be at least two posts, so these are effectively doubled
 		var/power_draw = 30000 //30 kW. How much power is drawn from powernet. Increase this to allow the generator to sustain longer shields, at the cost of more power draw.
@@ -247,7 +246,6 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		active = 1
 		var/delay = 5
 		var/last_active
-		var/mob/U
 		var/obj/machinery/shieldwallgen/gen_primary
 		var/obj/machinery/shieldwallgen/gen_secondary
 		var/power_usage = 2500	//how much power it takes to sustain the shield

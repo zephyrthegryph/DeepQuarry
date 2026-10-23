@@ -17,15 +17,15 @@
 	var/arrival_message
 	var/departure_message
 
-	var/start_location
-	var/last_location
+	var/obj/effect/shuttle_landmark/start_location
+	var/obj/effect/shuttle_landmark/last_location
 	var/return_warning = 0
 	var/legit = FALSE
 
 /datum/shuttle/autodock/multi/New()
 	..()
-	start_location = current_location()
-	last_location = current_location()
+	rel_set(src, nameof(start_location), current_location())
+	rel_set(src, nameof(last_location), current_location())
 
 /datum/shuttle/autodock/multi/proc/set_destination(destination_key, mob/user)
 	if(moving_status != SHUTTLE_IDLE)
@@ -67,4 +67,6 @@
 	GLOB.command_announcement.Announce(arrival_message, (announcer ? announcer : "[using_map.boss_name]"))
 
 CAPABILITIES(/datum/shuttle/autodock/multi)
+	ref_one(nameof(start_location), /obj/effect/shuttle_landmark)
+	ref_one(nameof(last_location), /obj/effect/shuttle_landmark)
 	ref_many(nameof(destinations_cache))

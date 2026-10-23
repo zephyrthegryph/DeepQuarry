@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The exosuit window now carries its equipment's readouts and buttons (selecting, switching on and off, modes, rearming, cable cutting) and each exosuit type's special buttons as window actions instead of browser links; the mounted sleeper and syringe gun windows, the GPS, clipboard, folder and cloning console name their entries by handle instead of by reference text."
+  - bugfix: "The exosuit window lists what its equipment reports (it showed nothing under each piece) and warns when the damage level is critical"
+  - bugfix: "A Gygax's leg actuator overload button works from the exosuit window, and only the pilot can detach equipment from it"

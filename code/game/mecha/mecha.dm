@@ -231,47 +231,40 @@ CAPABILITIES(/obj/mecha)
 	interface("MechaInterface", autoupdate = TRUE)
 	without("ui_open")
 	op("rfreq", ui_act("rfreq", arg("delta", num())), then(PROC_REF(ui_act_rfreq)))
-	op("drop_from_cargo", ui_act("drop_from_cargo", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_drop_from_cargo)))
-	op("detach_equipment", ui_act("detach_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_detach_equipment)))
-	op("equip_interact", ui_act("equip_interact", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_equip_interact)))
-	op("view_main", ui_act("view_main"), then(PROC_REF(ui_act_view_main)))
-	op("access_add", ui_act("access_add", arg("id", num())), then(PROC_REF(ui_act_access_add)))
-	op("access_del", ui_act("access_del", arg("id", num())), then(PROC_REF(ui_act_access_del)))
-	op("access_finish", ui_act("access_finish"), then(PROC_REF(ui_act_access_finish)))
-	op("maint_req_access", ui_act("maint_req_access"), then(PROC_REF(ui_act_maint_req_access)))
-	op("maint_protocol", ui_act("maint_protocol"), then(PROC_REF(ui_act_maint_protocol)))
-	op("maint_set_air", ui_act("maint_set_air"), then(PROC_REF(ui_act_maint_set_air)))
-	op("maint_remove_passenger", ui_act("maint_remove_passenger"), then(PROC_REF(ui_act_maint_remove_passenger)))
-	op("update_content", topic("update_content"), then(PROC_REF(topic_update_content)))
-	op("close", topic("close"), then(PROC_REF(topic_close)))
-	op("select_equip", topic("select_equip", arg("select_equip", schema_ref(/obj/item/mecha_parts/mecha_equipment), optional = TRUE, among = PROC_REF(topic_equipment_pool))), then(PROC_REF(topic_select_equip)))
-	op("eject", topic("eject"), then(PROC_REF(topic_eject)))
-	op("toggle_lights", topic("toggle_lights"), then(PROC_REF(topic_toggle_lights)))
-	op("toggle_airtank", topic("toggle_airtank"), then(PROC_REF(topic_toggle_airtank)))
-	op("toggle_thrusters", topic("toggle_thrusters"), then(PROC_REF(topic_toggle_thrusters)))
-	op("smoke", topic("smoke"), then(PROC_REF(topic_smoke)))
-	op("toggle_zoom", topic("toggle_zoom"), then(PROC_REF(topic_toggle_zoom)))
-	op("toggle_defence_mode", topic("toggle_defence_mode"), then(PROC_REF(topic_toggle_defence_mode)))
-	op("switch_damtype", topic("switch_damtype"), then(PROC_REF(topic_switch_damtype)))
-	op("phasing", topic("phasing"), then(PROC_REF(topic_phasing)))
-	op("rmictoggle", topic("rmictoggle"), then(PROC_REF(topic_rmictoggle)))
-	op("rspktoggle", topic("rspktoggle"), then(PROC_REF(topic_rspktoggle)))
-	op("topic_rfreq", topic("rfreq", arg("rfreq", num(), optional = TRUE)), then(PROC_REF(topic_rfreq)))
-	op("port_disconnect", topic("port_disconnect"), then(PROC_REF(topic_port_disconnect)))
-	op("port_connect", topic("port_connect"), then(PROC_REF(topic_port_connect)))
-	op("view_log", topic("view_log"), then(PROC_REF(topic_view_log)))
-	op("change_name", topic("change_name"), asks(/datum/prompt/text, fields = list("title" = "Rename exosuit", "question" = "Choose new exosuit name", "default" = computed(PROC_REF(exosuit_default_name)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_INSIDE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(topic_change_name)))
-	op("toggle_id_upload", topic("toggle_id_upload"), then(PROC_REF(topic_toggle_id_upload)))
-	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
-	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
-	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
-	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
-	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
-	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
-	op("repair_int_control_lost", topic("repair_int_control_lost"), when(PROC_REF(control_lost)), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot_recalibrate))), then(PROC_REF(start_recalibration)))
+	op("drop_from_cargo", ui_act("drop_from_cargo", arg("id", schema_text(32))), then(PROC_REF(ui_act_drop_from_cargo)))
+	op("select_equip", ui_act("select_equip", arg("id", schema_text(32))), then(PROC_REF(ui_act_select_equip)))
+	op("detach_equipment", ui_act("detach_equipment", arg("id", schema_text(32))), then(PROC_REF(ui_act_detach_equipment)))
+	op("equip_control", ui_act("equip_control", arg("id", schema_text(32)), arg("control", schema_text(32)), arg("value", num(), optional = TRUE)), then(PROC_REF(ui_act_equip_control)))
+	op("view_main", ui_act("view_main"), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_view_main)))
+	op("access_add", ui_act("access_add", arg("id", num())), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_access_add)))
+	op("access_del", ui_act("access_del", arg("id", num())), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_access_del)))
+	op("access_finish", ui_act("access_finish"), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_access_finish)))
+	op("maint_req_access", ui_act("maint_req_access"), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_maint_req_access)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("toggle_lights", ui_act("toggle_lights"), then(PROC_REF(ui_act_toggle_lights)))
+	op("toggle_airtank", ui_act("toggle_airtank"), then(PROC_REF(ui_act_toggle_airtank)))
+	op("toggle_thrusters", ui_act("toggle_thrusters"), then(PROC_REF(ui_act_toggle_thrusters)))
+	op("smoke", ui_act("smoke"), then(PROC_REF(ui_act_smoke)))
+	op("toggle_zoom", ui_act("toggle_zoom"), then(PROC_REF(ui_act_toggle_zoom)))
+	op("toggle_defence_mode", ui_act("toggle_defence_mode"), then(PROC_REF(ui_act_toggle_defence_mode)))
+	op("switch_damtype", ui_act("switch_damtype"), then(PROC_REF(ui_act_switch_damtype)))
+	op("phasing", ui_act("phasing"), then(PROC_REF(ui_act_phasing)))
+	op("rmictoggle", ui_act("rmictoggle"), then(PROC_REF(ui_act_rmictoggle)))
+	op("rspktoggle", ui_act("rspktoggle"), then(PROC_REF(ui_act_rspktoggle)))
+	op("port_disconnect", ui_act("port_disconnect"), then(PROC_REF(ui_act_port_disconnect)))
+	op("port_connect", ui_act("port_connect"), then(PROC_REF(ui_act_port_connect)))
+	op("view_log", ui_act("view_log"), then(PROC_REF(ui_act_view_log)))
+	op("toggle_id_upload", ui_act("toggle_id_upload"), then(PROC_REF(ui_act_toggle_id_upload)))
+	op("toggle_maint_access", ui_act("toggle_maint_access"), then(PROC_REF(ui_act_toggle_maint_access)))
+	op("dna_lock", ui_act("dna_lock"), then(PROC_REF(ui_act_dna_lock)))
+	op("reset_dna", ui_act("reset_dna"), then(PROC_REF(ui_act_reset_dna)))
+	op("change_name", ui_act("change_name"), asks(/datum/prompt/text, fields = list("title" = "Rename exosuit", "question" = "Choose new exosuit name", "default" = computed(PROC_REF(exosuit_default_name)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_INSIDE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(ui_act_change_name)))
+	op("maint_access", ui_act("maint_protocol"), needs(req(PROC_REF(actor_reaches))), then(PROC_REF(ui_act_maint_access)))
+	op("set_internal_tank_valve", ui_act("maint_set_air"), needs(req(PROC_REF(actor_reaches)), req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(ui_act_set_internal_tank_valve)))
+	op("remove_passenger", ui_act("maint_remove_passenger"), needs(req(PROC_REF(actor_reaches)), req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(ui_act_remove_passenger)))
+	op("repair_int_control_lost", ui_act("repair_int_control_lost"), when(PROC_REF(control_lost)), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot_recalibrate))), then(PROC_REF(start_recalibration)))
+	op("toggle_leg_overload", ui_act("toggle_leg_overload"), then(PROC_REF(mecha_overload_op)))
 	mecha_maintenance()
-	op("topic_drop_from_cargo", topic("drop_from_cargo", arg("drop_from_cargo", schema_ref(/obj), optional = TRUE, among = PROC_REF(topic_cargo_pool))), then(PROC_REF(topic_drop_from_cargo)))
 	op("mecha_paint_kit", item(/obj/item/kit/paint), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mecha_paint_kit_op)))
 	op("mecha_weld_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
 	op("mecha_weld_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
@@ -2089,7 +2082,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	// Cargo.
 	var/list/cargo_list = list()
 	for(var/obj/O in cargo)
-		cargo_list += list(list("ref" = "\ref[O]", "name" = "[O]"))
+		cargo_list += list(list("id" = ref_token(O), "name" = "[O]"))
 	data["cargo"] = cargo_list
 	// Radio / airtank.
 	data["radio_mic"] = !!radio.broadcasting
@@ -2115,12 +2108,16 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		var/list/L = vars[k[1]]
 		for(var/obj/item/mecha_parts/mecha_equipment/W as anything in L)
 			equip += list(list(
-				"ref" = "\ref[W]",
+				"id" = ref_token(W),
 				"name" = W.name,
 				"kind" = k[2],
-				"info_lines" = list(),
+				"ready" = !!W.equip_ready,
+				"selected" = (selected == W),
+				"info_lines" = W.equip_info_lines(),
+				"controls" = W.equip_controls(),
 			))
 	data["equipment"] = equip
+	data["commands"] = ui_commands()
 	// Slot capacity.
 	data["slots"] = list(
 		list("label" = "Hull",          "used" = length(hull_equipment),          "max" = max_hull_equip),
@@ -2134,72 +2131,93 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 	return data
 
-/obj/mecha/proc/ui_gate(datum/act/op/A)
-	var/action = A.window_action()
-	var/static/list/static_routes = list(
-		"toggle_lights" = "toggle_lights",
-		"rmictoggle" = "rmictoggle",
-		"rspktoggle" = "rspktoggle",
-		"toggle_airtank" = "toggle_airtank",
-		"port_disconnect" = "port_disconnect",
-		"port_connect" = "port_connect",
-		"toggle_id_upload" = "toggle_id_upload",
-		"toggle_maint_access" = "toggle_maint_access",
-		"dna_lock" = "dna_lock",
-		"view_log" = "view_log",
-		"change_name" = "change_name",
-		"reset_dna" = "reset_dna",
-		"repair_int_control_lost" = "repair_int_control_lost",
-		"eject" = "eject",
-	)
-	if(action in static_routes)
-		Topic(null, list("[static_routes[action]]" = "1"))
-		return FALSE
-	return TRUE
+/// The equipment mounted on this exosuit that `id` (the ref_token() the window was sent) names; null for anything else.
+/obj/mecha/proc/equipment_of(id)
+	return ui_token(id, equipment, /obj/item/mecha_parts/mecha_equipment)
+
+/// The item in the cargo compartment that `id` (the ref_token() the window was sent) names; null for anything else.
+/obj/mecha/proc/cargo_of(id)
+	return ui_token(id, cargo, /obj)
 
 /obj/mecha/proc/ui_act_rfreq(datum/act/op/A, delta)
-	if(!ui_gate(A))
+	var/mob/user = A.actor
+	if(!is_pilot(user))
+		return
+	if(!isnum(delta))
+		return
+	var/new_frequency = radio.frequency + delta
+	if((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
+		new_frequency = sanitize_frequency(new_frequency)
+	radio.set_frequency(new_frequency)
+
+/obj/mecha/proc/ui_act_drop_from_cargo(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!is_pilot(user))
+		return
+	var/obj/O = cargo_of(id)
+	if(!O)
+		return
+	occupant_message(span_notice("You unload [O]."))
+	if(!slot_remove(O, get_turf(src)))
+		O.forceMove(get_turf(src))
+	rel_remove(src, nameof(cargo), O)
+	var/turf/T = get_turf(O)
+	if(T)
+		T.Entered(O)
+	mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(cargo)]")
+
+/obj/mecha/proc/ui_act_select_equip(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!is_pilot(user))
+		return
+	var/obj/item/mecha_parts/mecha_equipment/equip = equipment_of(id)
+	if(!equip)
+		return
+	rel_set(src, nameof(selected), equip)
+	occupant_message("You switch to [equip].")
+	visible_message("[src] raises [equip].")
+	SStgui.update_uis(src)
+
+/// The window's Detach button: the pilot takes the equipment off the exosuit.
+/obj/mecha/proc/ui_act_detach_equipment(datum/act/op/A, id)
+	if(!is_pilot(A.actor))
 		return FALSE
-	Topic(null, list("rfreq" = delta))
+	var/obj/item/mecha_parts/mecha_equipment/W = equipment_of(id)
+	if(!W)
+		return FALSE
+	W.detach()
 	return TRUE
 
-/obj/mecha/proc/ui_act_drop_from_cargo(datum/act/op/A, ref)
-	if(!ui_gate(A))
+/// One of the buttons an equipment offers (equip_controls()), pressed by the pilot.
+/obj/mecha/proc/ui_act_equip_control(datum/act/op/A, id, control, value)
+	var/mob/user = A.actor
+	if(!is_pilot(user))
 		return FALSE
-	Topic(null, list("drop_from_cargo" = ref))
+	var/obj/item/mecha_parts/mecha_equipment/W = equipment_of(id)
+	if(!W || !istext(control))
+		return FALSE
+	var/offered = FALSE
+	for(var/list/C in W.equip_controls())
+		if(C["key"] == control && C["value"] == value)
+			offered = TRUE
+			break
+	if(!offered)
+		return FALSE
+	if(!W.equip_press(user, control, value))
+		return FALSE
+	SStgui.update_uis(src)
 	return TRUE
 
-/obj/mecha/proc/ui_act_detach_equipment(datum/act/op/A, ref)
-	if(!ui_gate(A))
-		return FALSE
-	if(isnull(ref))
-		return FALSE
-	var/obj/item/mecha_parts/mecha_equipment/W = ref
-	if(W in equipment)
-		W.detach()
-	return TRUE
-
-/obj/mecha/proc/ui_act_equip_interact(datum/act/op/A, ref)
-	if(!ui_gate(A))
-		return FALSE
-	var/obj/item/mecha_parts/mecha_equipment/W = ref
-	if(W && (W in equipment))
-		if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
-			W.Topic(null, list("view_stats" = "1"))
-		else if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))
-			W.Topic(null, list("show_reagents" = "1"))
-	return TRUE
+/// The special buttons this kind of exosuit adds to its window: a list of list("key" = the window action, "label" = ...); a type adds its own.
+/obj/mecha/proc/ui_commands()
+	return list()
 
 /obj/mecha/proc/ui_act_view_main(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_tgui_subview("main")
 	return TRUE
 // Access sub-view
 
 /obj/mecha/proc/ui_act_access_add(datum/act/op/A, id)
-	if(!ui_gate(A))
-		return FALSE
 	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
@@ -2207,184 +2225,22 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
-	if(!ui_gate(A))
-		return FALSE
 	var/a = id
 	if(a in operation_req_access)
 		remove_operation_req_access(a)
 	return TRUE
 
 /obj/mecha/proc/ui_act_access_finish(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	set_add_req_access(0)
 	set_tgui_subview("main")
 	return TRUE
 // Maint sub-view
 
 /obj/mecha/proc/ui_act_maint_req_access(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card)
 		set_tgui_subview("access")
 	return TRUE
-
-/obj/mecha/proc/ui_act_maint_protocol(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	Topic(null, list("maint_access" = "1"))
-	return TRUE
-
-/obj/mecha/proc/ui_act_maint_set_air(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	Topic(null, list("set_internal_tank_valve" = "1"))
-	return TRUE
-
-/obj/mecha/proc/ui_act_maint_remove_passenger(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	Topic(null, list("remove_passenger" = "1"))
-	return TRUE
-
-/obj/mecha/proc/report_internal_damage()
-	var/output = null
-	for(var/datum/mech_affliction/A as anything in mech_body_plan().active_afflictions(src))
-		output += span_red(span_bold(A.alarm))
-		if(A.cockpit_repair)
-			output += " - <a href='byond://?src=\ref[src];[A.cockpit_repair]=1'>Recalibrate</a>"
-		output += "<br />"
-	if(return_pressure() > WARNING_HIGH_PRESSURE)
-		output += span_red(span_bold("DANGEROUSLY HIGH CABIN PRESSURE")) + "<br />"
-	return output
-
-/obj/mecha/proc/get_stats_part()
-	var/integrity = get_integrity()/max_integrity*100
-	var/cell_charge = get_charge()
-	// internal_tank is now /obj/item/tank, no return_pressure/return_temperature
-	// procs on it; read through air_contents (a /datum/gas_mixture).
-	var/datum/gas_mixture/tank_air = internal_tank?.return_air()
-	var/tank_pressure = tank_air ? round(tank_air.return_pressure(), 0.01) : "None"
-	var/tank_temperature = tank_air ? tank_air.return_temperature() : "Unknown"
-	var/cabin_pressure = round(return_pressure(),0.01)
-
-	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
-	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-
-	var/output = {"[report_internal_damage()]
-						<b>Armor Integrity: </b>[AC?"[round(AC.get_integrity() / AC.max_integrity * 100, 0.1)]%":span_warning("ARMOR MISSING")]<br>
-						<b>Hull Integrity: </b>[HC?"[round(HC.get_integrity() / HC.max_integrity * 100, 0.1)]%":span_warning("HULL MISSING")]<br>
-						[integrity<30? span_red(span_bold("DAMAGE LEVEL CRITICAL")) + "<br>":null]
-						<b>Chassis Integrity: </b> [integrity]%<br>
-						<b>Powercell charge: </b>[isnull(cell_charge)?"No powercell installed":"[cell.percent()]%"]<br>
-						<b>Air source: </b>[use_internal_tank?"Internal Airtank":"Environment"]<br>
-						<b>Airtank pressure: </b>[tank_pressure]kPa<br>
-						<b>Airtank temperature: </b>[tank_temperature]K|[tank_temperature - T0C]&deg;C<br>
-						<b>Cabin pressure: </b>[cabin_pressure>WARNING_HIGH_PRESSURE ? span_red("[cabin_pressure]"): cabin_pressure]kPa<br>
-						<b>Cabin temperature: </b> [get_interior_temperature()]K|[get_interior_temperature() - T0C]&deg;C<br>
-						<b>Lights: </b>[lights?"on":"off"]<br>
-						[src.dna?"<b>DNA-locked:</b><br> <span style='font-size:10px;letter-spacing:-1px;'>[src.dna]</span> \[<a href='byond://?src=\ref[src];reset_dna=1'>Reset</a>\]<br>":null]
-					"}
-
-	if(defence_mode_possible)
-		output += span_bold("Defence mode: [defence_mode?"on":"off"]") + "<br>"
-	if(overload_possible)
-		output += span_bold("Leg actuators overload: [overload?"on":"off"]") + "<br>"
-	if(smoke_possible)
-		output += span_bold("Smoke:") + " [smoke_reserve]<br>"
-	if(thrusters_possible)
-		output += span_bold("Thrusters:") + " [thrusters?"on":"off"]<br>"
-
-//Cargo components. Keep this last otherwise it does weird alignment issues.
-	output += span_bold("Cargo Compartment Contents:") + "<div style=\"margin-left: 15px;\">"
-	if(length(src.cargo))
-		for(var/obj/O in src.cargo)
-			output += "<a href='byond://?src=\ref[src];drop_from_cargo=\ref[O]'>Unload</a> : [O]<br>"
-	else
-		output += "Nothing"
-	output += "</div>"
-	return output
-
-/obj/mecha/proc/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Electronics</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_lights=1'>Toggle Lights</a><br>
-						<b>Radio settings:</b><br>
-						Microphone: <a href='byond://?src=\ref[src];rmictoggle=1'><span id="rmicstate">[radio.broadcasting?"Engaged":"Disengaged"]</span></a><br>
-						Speaker: <a href='byond://?src=\ref[src];rspktoggle=1'><span id="rspkstate">[radio.listening?"Engaged":"Disengaged"]</span></a><br>
-						Frequency:
-						<a href='byond://?src=\ref[src];rfreq=-10'>-</a>
-						<a href='byond://?src=\ref[src];rfreq=-2'>-</a>
-						<span id="rfreq">[format_frequency(radio.frequency)]</span>
-						<a href='byond://?src=\ref[src];rfreq=2'>+</a>
-						<a href='byond://?src=\ref[src];rfreq=10'>+</a><br>
-						</div>
-						</div>
-						<div class='wr'>
-						<div class='header'>Airtank</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_airtank=1'>Toggle Internal Airtank Usage</a><br>
-						[connected_port?"<a href='byond://?src=\ref[src];port_disconnect=1'>Disconnect from port</a><br>":null]
-						[(internal_tank && !connected_port)?"<a href='byond://?src=\ref[src];port_connect=1'>Connect to port</a><br>":null]
-						</div>
-						</div>
-						<div class='wr'>
-						<div class='header'>Permissions & Logging</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_id_upload=1'><span id='t_id_upload'>[add_req_access?"L":"Unl"]ock ID upload panel</span></a><br>
-						<a href='byond://?src=\ref[src];toggle_maint_access=1'><span id='t_maint_access'>[maint_access?"Forbid":"Permit"] maintenance protocols</span></a><br>
-						<a href='byond://?src=\ref[src];dna_lock=1'>DNA-lock</a><br>
-						<a href='byond://?src=\ref[src];view_log=1'>View internal log</a><br>
-						<a href='byond://?src=\ref[src];change_name=1'>Change exosuit name</a><br>
-						</div>
-						</div>
-						<div id='equipment_menu'>[get_equipment_menu()]</div>
-						<hr>
-						[slot_item(MECHA_SLOT_PILOT)?"<a href='byond://?src=\ref[src];eject=1'>Eject</a><br>":null]
-						"}
-	return output
-
-/obj/mecha/proc/get_equipment_menu() //outputs mecha html equipment menu
-	var/output
-	if(equipment.len)
-		output += {"<div class='wr'>
-						<div class='header'>Equipment</div>
-						<div class='links'>"}
-		for(var/obj/item/mecha_parts/mecha_equipment/W in hull_equipment)
-			output += "Hull Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in weapon_equipment)
-			output += "Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in utility_equipment)
-			output += "Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in universal_equipment)
-			output += "Universal Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in special_equipment)
-			output += "Special Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // Adds micro equipent to the menu
-			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
-			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-	output += {"<b>Available hull slots:</b> [max_hull_equip-length(hull_equipment)]<br>
-		<b>Available weapon slots:</b> [max_weapon_equip-length(weapon_equipment)]<br>
-		<b>Available micro weapon slots:</b> [max_micro_weapon_equip-length(micro_weapon_equipment)]<br>
-		<b>Available utility slots:</b> [max_utility_equip-length(utility_equipment)]<br>
-		<b>Available micro utility slots:</b> [max_micro_utility_equip-length(micro_utility_equipment)]<br>
-		<b>Available universal slots:</b> [max_universal_equip-length(universal_equipment)]<br>
-		<b>Available special slots:</b> [max_special_equip-length(special_equipment)]<br>
-		</div></div>
-	"}
-	return output
-
-/obj/mecha/proc/get_equipment_list() //outputs mecha equipment list in html
-	if(!equipment.len)
-		return
-	var/output = span_bold("Equipment:") + "<div style=\"margin-left: 15px;\">"
-	for(var/obj/item/mecha_parts/mecha_equipment/MT in equipment)
-		output += "<div id='\ref[MT]'>[MT.get_equip_info()]</div>"
-	output += "</div>"
-	return output
 
 /obj/mecha/proc/get_log_tgui()
 	var/list/data = list()
@@ -2447,128 +2303,86 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 ///// Topic /////
 /////////////////
 
-// Href actions (topic ops). Pilot-only ones check topic_is_pilot(); the maintenance
+// The window's buttons (ui_act ops). Pilot-only ones check is_pilot(); the maintenance
 // ones are for someone standing next to the exosuit.
 
-// A conscious clicker; the pilot always reaches the controls, anyone else needs the usual obj reach.
-/obj/mecha/topic_usable(datum/act/op/A)
-	if(!A.actor || A.actor.stat)
-		return MSG(op/topic_gate)
-	if(topic_is_pilot(A.actor))
-		return null
-	return ..()
-
-/obj/mecha/proc/topic_is_pilot(mob/user)
+/obj/mecha/proc/is_pilot(mob/user)
 	return user && user == slot_item(MECHA_SLOT_PILOT)
 
-/// TOPIC_REF source: the equipment mounted on this exosuit.
-/obj/mecha/proc/topic_equipment_pool()
-	return equipment
-
-/// TOPIC_REF source: the cargo compartment.
-/obj/mecha/proc/topic_cargo_pool()
-	return cargo
-
-/obj/mecha/proc/topic_update_content(datum/act/op/A)
+/// Requirement for the buttons that need no pilot: the old href gate (topic_usable). A conscious pilot always reaches the controls; anyone
+/// else must pass CanUseObjTopic(), which gives a borg or AI the ID-access check against this exosuit.
+/obj/mecha/proc/actor_reaches(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
-		return
-	send_byjax(user, "exosuit.browser", "content", get_stats_part())
+	if(!user || user.stat)
+		return MSG(op/topic_gate)
+	if(is_pilot(user))
+		return null
+	return user.CanUseObjTopic(src) ? null : MSG(op/topic_gate)
 
-/obj/mecha/proc/topic_close(datum/act/op/A)
-	return
-
-/obj/mecha/proc/topic_select_equip(datum/act/op/A, href_select_equip)
+/obj/mecha/proc/ui_act_eject(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
-		return
-	var/obj/item/mecha_parts/mecha_equipment/equip = href_select_equip
-	if(!equip)
-		return
-	rel_set(src, nameof(selected), equip)
-	occupant_message("You switch to [equip].")
-	visible_message("[src] raises [equip].")
-	send_byjax(user, "exosuit.browser", "eq_list", get_equipment_list())
-
-/obj/mecha/proc/topic_eject(datum/act/op/A)
-	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		mecha_verb_eject(user)
 
-/obj/mecha/proc/topic_toggle_lights(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_lights(datum/act/op/A)
 	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		lights(user)
 
-/obj/mecha/proc/topic_toggle_airtank(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_airtank(datum/act/op/A)
 	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		internal_tank(user)
 
-/obj/mecha/proc/topic_toggle_thrusters(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_thrusters(datum/act/op/A)
 	var/mob/user = A.actor
 	thrusters(user)
 
-/obj/mecha/proc/topic_smoke(datum/act/op/A)
+/obj/mecha/proc/ui_act_smoke(datum/act/op/A)
 	var/mob/user = A.actor
 	smoke(user)
 
-/obj/mecha/proc/topic_toggle_zoom(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_zoom(datum/act/op/A)
 	var/mob/user = A.actor
 	zoom(user)
 
-/obj/mecha/proc/topic_toggle_defence_mode(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_defence_mode(datum/act/op/A)
 	var/mob/user = A.actor
 	defence_mode(user)
 
-/obj/mecha/proc/topic_switch_damtype(datum/act/op/A)
+/obj/mecha/proc/ui_act_switch_damtype(datum/act/op/A)
 	var/mob/user = A.actor
 	query_damtype(user)
 
-/obj/mecha/proc/topic_phasing(datum/act/op/A)
+/obj/mecha/proc/ui_act_phasing(datum/act/op/A)
 	var/mob/user = A.actor
 	phasing(user)
 
-/obj/mecha/proc/topic_rmictoggle(datum/act/op/A)
+/obj/mecha/proc/ui_act_rmictoggle(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	radio.broadcasting = !radio.broadcasting
-	send_byjax(user, "exosuit.browser", "rmicstate", (radio.broadcasting ? "Engaged" : "Disengaged"))
 
-/obj/mecha/proc/topic_rspktoggle(datum/act/op/A)
+/obj/mecha/proc/ui_act_rspktoggle(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	radio.listening = !radio.listening
-	send_byjax(user, "exosuit.browser", "rspkstate", (radio.listening ? "Engaged" : "Disengaged"))
 
-/obj/mecha/proc/topic_rfreq(datum/act/op/A, href_rfreq)
+/obj/mecha/proc/ui_act_port_disconnect(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
-		return
-	var/delta = href_rfreq
-	if(!isnum(delta))
-		return
-	var/new_frequency = radio.frequency + delta
-	if((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
-		new_frequency = sanitize_frequency(new_frequency)
-	radio.set_frequency(new_frequency)
-	send_byjax(user, "exosuit.browser", "rfreq", "[format_frequency(radio.frequency)]")
-
-/obj/mecha/proc/topic_port_disconnect(datum/act/op/A)
-	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		mecha_verb_disconnect_from_port(user)
 
-/obj/mecha/proc/topic_port_connect(datum/act/op/A)
+/obj/mecha/proc/ui_act_port_connect(datum/act/op/A)
 	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		mecha_verb_connect_to_port(user)
 
-/obj/mecha/proc/topic_view_log(datum/act/op/A)
+/obj/mecha/proc/ui_act_view_log(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	// fully-structured TGUI log sub-view.
 	set_tgui_subview("log")
@@ -2577,9 +2391,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/exosuit_default_name(datum/act/op/A)
 	return initial(name)
 
-/obj/mecha/proc/topic_change_name(datum/act/op/A)
+/obj/mecha/proc/ui_act_change_name(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	var/newname = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
 	if(newname)
@@ -2587,24 +2401,22 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	else
 		tgui_alert_async(user, "nope.avi")
 
-/obj/mecha/proc/topic_toggle_id_upload(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_id_upload(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	set_add_req_access(!add_req_access)
-	send_byjax(user, "exosuit.browser", "t_id_upload", "[add_req_access ? "L" : "Unl"]ock ID upload panel")
 
-/obj/mecha/proc/topic_toggle_maint_access(datum/act/op/A)
+/obj/mecha/proc/ui_act_toggle_maint_access(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	if(state)
 		occupant_message(span_warning("Maintenance protocols in effect"))
 		return
 	set_maint_access(!maint_access)
-	send_byjax(user, "exosuit.browser", "t_maint_access", "[maint_access ? "Forbid" : "Permit"] maintenance protocols")
 
-/obj/mecha/proc/topic_maint_access(datum/act/op/A)
+/obj/mecha/proc/ui_act_maint_access(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!maint_access || !in_range(src, user))
 		return
@@ -2637,7 +2449,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha/proc/valve_default(datum/act/op/A)
 	return internal_tank_valve
 
-/obj/mecha/proc/topic_set_internal_tank_valve(datum/act/op/A)
+/obj/mecha/proc/ui_act_set_internal_tank_valve(datum/act/op/A)
 	var/mob/user = A.actor
 	var/pressure = A.step_value("pressure")
 	if(pressure)
@@ -2661,7 +2473,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
 	return msg_text(span_notice("You begin opening the hatch on [P]..."), span_infoplain(span_bold("[A.actor]") + " begins opening the hatch on [P]..."))
 
-/obj/mecha/proc/topic_remove_passenger(datum/act/op/A)
+/obj/mecha/proc/ui_act_remove_passenger(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
 	if(!P)
@@ -2671,17 +2483,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	P.forced_out(user, passenger_occupant)
 	return OP_OK
 
-/obj/mecha/proc/topic_finish_req_access(datum/act/op/A)
+/obj/mecha/proc/ui_act_dna_lock(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!in_range(src, user))
-		return
-	set_add_req_access(0)
-	// close TGUI panel (legacy browse(null))
-	SStgui.close_uis(src)
-
-/obj/mecha/proc/topic_dna_lock(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
+	if(!is_pilot(user))
 		return
 	if(istype(user, /mob/living/carbon/brain))
 		occupant_message("You are a brain. No.")
@@ -2690,26 +2494,10 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	set_dna(pilot.dna?.unique_enzymes)
 	occupant_message("You feel a prick as the needle takes your DNA sample.")
 
-/obj/mecha/proc/topic_reset_dna(datum/act/op/A)
+/obj/mecha/proc/ui_act_reset_dna(datum/act/op/A)
 	var/mob/user = A.actor
-	if(topic_is_pilot(user))
+	if(is_pilot(user))
 		set_dna(null)
-
-/obj/mecha/proc/topic_drop_from_cargo(datum/act/op/A, href_drop_from_cargo)
-	var/mob/user = A.actor
-	if(!topic_is_pilot(user))
-		return
-	var/obj/O = href_drop_from_cargo
-	if(!O)
-		return
-	occupant_message(span_notice("You unload [O]."))
-	if(!slot_remove(O, get_turf(src)))
-		O.forceMove(get_turf(src))
-	rel_remove(src, nameof(cargo), O)
-	var/turf/T = get_turf(O)
-	if(T)
-		T.Entered(O)
-	mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(cargo)]")
 
 /// Maintenance-panel settings: re-checked on the answer, still next to the mech with its bolts exposed.
 /datum/prompt/number/mecha_tank_valve

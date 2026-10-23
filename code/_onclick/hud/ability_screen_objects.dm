@@ -43,7 +43,7 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 	if(showing && (forced_state != 2)) // We are closing the ability master, hide the abilities.
 		for(var/atom/movable/screen/ability/O in ability_objects)
 			if(my_mob() && my_mob().client)
-				my_mob().client.screen -= O
+				client_screen_remove(my_mob().client, O)
 		set_showing(0)
 	else if(forced_state != 1) // We're opening it, show the icons. OR, if forced_state == 2, we're forcing it to open it.
 		open_ability_master()
@@ -69,8 +69,8 @@ CAPABILITIES(/atom/movable/screen/movable/ability_master)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		A.screen_loc = "[encode_screen_X(xpos)]:[x_pix],[encode_screen_Y(ypos)]:[y_pix]"
 		if(my_mob() && my_mob().client)
-			my_mob().client.screen += A
-			my_mob().client.screen |= src
+			client_screen_add(my_mob().client, A)
+			client_screen_include(my_mob().client, src)
 
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
 	if(user && user.client)

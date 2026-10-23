@@ -38,22 +38,18 @@
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_buy(datum/act/op/A, share)
 	var/mob/user = A.actor
 	add_fingerprint(A.actor)
-	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+	var/datum/stock/S = ui_member(share, ui_source_glob_stockexchange_stocks(), /datum/stock)
+	if(!S)
 		return FALSE
-	if(isnull(share))
-		return FALSE
-	var/datum/stock/S = share
 	if (S)
 		buy_some_shares(S, user)
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_sell(datum/act/op/A, share)
 	var/mob/user = A.actor
 	add_fingerprint(A.actor)
-	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+	var/datum/stock/S = ui_member(share, ui_source_glob_stockexchange_stocks(), /datum/stock)
+	if(!S)
 		return FALSE
-	if(isnull(share))
-		return FALSE
-	var/datum/stock/S = share
 	if (S)
 		sell_some_shares(S, user)
 
@@ -63,7 +59,7 @@
 
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_archive(datum/act/op/A, share)
 	add_fingerprint(A.actor)
-	var/datum/stock/S = share
+	var/datum/stock/S = ui_member(share, ui_source_glob_stockexchange_stocks(), /datum/stock)
 	if(S)
 		rel_set(src, nameof(/obj/machinery/computer/stockexchange::current_stock), S)
 		set_screen("archive")
@@ -71,11 +67,9 @@
 /obj/machinery/computer/stockexchange/proc/ui_act_stocks_history(datum/act/op/A, share)
 	var/mob/user = A.actor
 	add_fingerprint(A.actor)
-	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+	var/datum/stock/S = ui_member(share, ui_source_glob_stockexchange_stocks(), /datum/stock)
+	if(!S)
 		return FALSE
-	if(isnull(share))
-		return FALSE
-	var/datum/stock/S = share
 	if (S)
 		S.displayValues(user)
 
@@ -90,7 +84,7 @@
 	if (vmode > 1)
 		set_vmode(0)
 
-/// The list the UI_ARG_REF rows resolve refs in.
+/// The stocks the window lists: a handle names one of these and nothing else.
 /obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()
 	return GLOB.stockExchange.stocks
 
@@ -137,7 +131,7 @@
 						value = S.current_value
 
 					data["stocks"] += list(list(
-						"REF" = REF(S),
+						"REF" = ref_token(S),
 						"valueChange" = S.disp_value_change, // > 0 is +, < 0 is -, else its =
 						"bankrupt" = S.bankrupt,
 						"ID" = S.short_name,
@@ -170,7 +164,7 @@
 						unification = DisplayTimeText(world.time - S.last_unification)
 
 					data["stocks"] += list(list(
-						"REF" = REF(S),
+						"REF" = ref_token(S),
 						"bankrupt" = S.bankrupt,
 						"ID" = S.short_name,
 						"Name" = S.name,
@@ -269,11 +263,11 @@ CAPABILITIES(/obj/machinery/computer/stockexchange)
 	interface("StockExchange")
 	without("ui_open")
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
-	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_buy)))
-	op("stocks_sell", ui_act("stocks_sell", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_sell)))
+	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_text(32))), then(PROC_REF(ui_act_stocks_buy)))
+	op("stocks_sell", ui_act("stocks_sell", arg("share", schema_text(32))), then(PROC_REF(ui_act_stocks_sell)))
 	op("stocks_check", ui_act("stocks_check"), then(PROC_REF(ui_act_stocks_check)))
-	op("stocks_archive", ui_act("stocks_archive", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_archive)))
-	op("stocks_history", ui_act("stocks_history", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_history)))
+	op("stocks_archive", ui_act("stocks_archive", arg("share", schema_text(32))), then(PROC_REF(ui_act_stocks_archive)))
+	op("stocks_history", ui_act("stocks_history", arg("share", schema_text(32))), then(PROC_REF(ui_act_stocks_history)))
 	op("stocks_backbutton", ui_act("stocks_backbutton"), then(PROC_REF(ui_act_stocks_backbutton)))
 	op("stocks_cycle_view", ui_act("stocks_cycle_view"), then(PROC_REF(ui_act_stocks_cycle_view)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))

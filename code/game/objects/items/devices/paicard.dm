@@ -9,8 +9,6 @@
 	icon_state = "pai"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	show_messages = 0
-	preserve_item = 1
 
 	var/obj/item/radio/borg/pai/radio
 	var/mob/living/silicon/pai/pai
@@ -47,6 +45,8 @@
 
 
 CAPABILITIES(/obj/item/paicard)
+	configure(obj_rules(show_messages = 0))
+	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(paicard_after_init)))
@@ -939,7 +939,7 @@ CAPABILITIES(/obj/item/radio/borg/pai)
 	if(!istype(loc,/obj/item/paicard))
 		return
 	var/obj/item/paicard/card = loc
-	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+	rel_clear(src, nameof(secure_radio_connections))
 	set_channels(list())
 
 	for(var/internal_chan in internal_channels)
@@ -947,7 +947,7 @@ CAPABILITIES(/obj/item/radio/borg/pai)
 		if(has_channel_access(card.pai, internal_chan))
 			add_channels(ch_name)
 			set_channels_at(ch_name, 1)
-			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			rel_add(src, nameof(secure_radio_connections), SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT), ch_name)
 
 /obj/item/paicard/typeb
 	name = "personal AI device"

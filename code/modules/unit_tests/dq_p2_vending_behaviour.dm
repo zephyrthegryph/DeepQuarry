@@ -205,7 +205,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	if(lit_area)
 		lit_area.luminosity = saved_luminosity
 	if(saved_vendor_account)
-		GLOB.vendor_account = saved_vendor_account
+		rel_set(GLOB, nameof(GLOB.vendor_account), saved_vendor_account)
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 		own_turf_contents(T)
 	GLOB.p2v_wire_windows = null
@@ -299,7 +299,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	saved_vendor_account = GLOB.vendor_account
 	var/datum/money_account/A = create_account("P2 Vendor Dept", money)
 	LAZYADD(p2v_accounts, A)
-	GLOB.vendor_account = A
+	rel_set(GLOB, nameof(GLOB.vendor_account), A)
 	return A
 
 /// Every product left on the vendor's shelves, hidden and premium included.
@@ -682,7 +682,8 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/p2v_test/priced)
 	var/mob/living/carbon/human/H = p2v_actor()
 	var/obj/item/card/id/C = p2v_id(H, null, 100)
-	p2v_account(C).security_level = 1
+	var/datum/money_account/card_account = p2v_account(C)
+	card_account.set_security_level(1)
 	press(H, V, "vend", list("vend" = p2v_key(V, /obj/item/pen)))
 	TEST_ASSERT_EQUAL(p2v_account(C).money, 100, "nothing paid")
 	TEST_ASSERT_EQUAL(dept.money, 0, "nothing received")
@@ -727,7 +728,8 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	V.set_req_access(list(ACCESS_SECURITY))
 	var/mob/living/carbon/human/H = p2v_actor()
 	var/obj/item/card/id/C = p2v_id(H, list(ACCESS_ENGINE), 100)
-	p2v_account(C).security_level = 1
+	var/datum/money_account/card_account = p2v_account(C)
+	card_account.set_security_level(1)
 	p2v_ui(H, V, "vend", list("vend" = p2v_key(V, /obj/item/pen)))
 	p2v_settle(0)
 	test_answer(H, p2v_account(C).remote_access_pin)

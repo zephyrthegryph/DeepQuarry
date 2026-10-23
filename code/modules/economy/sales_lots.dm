@@ -62,8 +62,8 @@
 	return TRUE
 
 /obj/item/retail_scanner/proc/freight_item_value(obj/item/item)
-	if(item.economic_export_value > 0)
-		return SSsupply.export_revenue(item.economic_export_value)
+	if(sparse_get_or(item, economic_export_value, 0) > 0)
+		return SSsupply.export_revenue(sparse_get_or(item, economic_export_value, 0))
 	var/value = item.scan_profit()
 	return isnum(value) ? max(0, SSsupply.export_revenue(value)) : 0
 
@@ -101,12 +101,12 @@
 				continue
 		var/value = freight_item_value(cargo)
 		total_value += value
-		if(cargo.economic_department != department)
-			ineligible += "[cargo.name] ([cargo.economic_department || "unattributed"])"
+		if(sparse_get(cargo, economic_department) != department)
+			ineligible += "[cargo.name] ([sparse_get(cargo, economic_department) || "unattributed"])"
 			continue
 		eligible_value += value
-		if(cargo.economic_producer_account && value > 0)
-			var/producer_key = "[cargo.economic_producer_account]"
+		if(sparse_get_or(cargo, economic_producer_account, 0) && value > 0)
+			var/producer_key = "[sparse_get_or(cargo, economic_producer_account, 0)]"
 			producer_values[producer_key] = (producer_values[producer_key] || 0) + value
 	if(!eligible_value)
 		to_chat(user, span_warning("No [department]-origin goods in this crate qualify for ledger routing."))
@@ -264,8 +264,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/department_storefront, REGISTRY_TRANSACTION_D
 	return storefront_department_authorized(user, department_id)
 
 /obj/machinery/department_storefront/proc/storefront_suggested_price(obj/item/item)
-	if(item.economic_export_value > 0)
-		return max(1, SSsupply.export_revenue(item.economic_export_value))
+	if(sparse_get_or(item, economic_export_value, 0) > 0)
+		return max(1, SSsupply.export_revenue(sparse_get_or(item, economic_export_value, 0)))
 	return max(5, round(item.w_class * 5))
 
 CAPABILITIES(/obj/machinery/department_storefront)

@@ -36,11 +36,11 @@
 	set desc = "Toggles the automatic biting for if someone pats you on the head or boops your nose."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE)
-		touch_reaction_flags &= ~(SPECIES_TRAIT_PATTING_DEFENCE)
+	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_PATTING_DEFENCE)
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) & (~(SPECIES_TRAIT_PATTING_DEFENCE)))
 		to_chat(src,span_notice("You will no longer bite hands who pat or boop you."))
 	else
-		touch_reaction_flags |= SPECIES_TRAIT_PATTING_DEFENCE
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) | (SPECIES_TRAIT_PATTING_DEFENCE))
 		to_chat(src,span_notice("You will now bite hands who pat or boop you."))
 
 /mob/living/proc/toggle_personal_space()
@@ -48,11 +48,11 @@
 	set desc = "Toggles dodging any attempts to hug or pat you."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE)
-		touch_reaction_flags &= ~(SPECIES_TRAIT_PERSONAL_BUBBLE)
+	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE)
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) & (~(SPECIES_TRAIT_PERSONAL_BUBBLE)))
 		to_chat(src,span_notice("You will no longer dodge all attempts at hugging, patting, booping, licking, smelling and hand shaking."))
 	else
-		touch_reaction_flags |= SPECIES_TRAIT_PERSONAL_BUBBLE
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) | (SPECIES_TRAIT_PERSONAL_BUBBLE))
 		to_chat(src,span_notice("You will now dodge all attempts at hugging, patting, booping, licking, smelling and hand shaking."))
 
 /mob/living/proc/toggle_pickup_dodge()
@@ -60,11 +60,11 @@
 	set desc = "Toggles dodging any attempts to pick you up."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(touch_reaction_flags & SPECIES_TRAIT_PICKUP_DODGE)
-		touch_reaction_flags &= ~(SPECIES_TRAIT_PICKUP_DODGE)
+	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_PICKUP_DODGE)
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) & (~(SPECIES_TRAIT_PICKUP_DODGE)))
 		to_chat(src, span_notice("You will no longer dodge pickup attempts."))
 		return
-	touch_reaction_flags |= SPECIES_TRAIT_PICKUP_DODGE
+	sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) | (SPECIES_TRAIT_PICKUP_DODGE))
 	to_chat(src, span_notice("You will now dodge pickup attempts."))
 
 /mob/living/proc/toggle_thorns()
@@ -72,11 +72,11 @@
 	set desc = "Toggles defensive thorns across your body."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
-		touch_reaction_flags &= ~(SPECIES_TRAIT_THORNS)
+	if(sparse_get(src, touch_reaction_flags) & SPECIES_TRAIT_THORNS)
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) & (~(SPECIES_TRAIT_THORNS)))
 		to_chat(src,span_notice("You will no longer be covered in defensive thorns."))
 	else
-		touch_reaction_flags |= SPECIES_TRAIT_THORNS
+		sparse_set(src, touch_reaction_flags, sparse_get(src, touch_reaction_flags) | (SPECIES_TRAIT_THORNS))
 		to_chat(src,span_notice("You will now be covered in defensive thorns that may hurt those who touch you."))
 
 /mob/living/proc/toggle_sparkles()

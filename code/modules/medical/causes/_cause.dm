@@ -268,7 +268,7 @@ GLOBAL_PROTECT(affliction_triggers_by_kind)
 		if(!length(c.produces))
 			spent(c)
 			continue
-		GLOB.affliction_triggers_all += c
+		rel_add(GLOB, nameof(GLOB.affliction_triggers_all), c)
 		// Index by the cause's PARENT type (the kind), not its own
 		// concrete type. Callers look up "/datum/affliction_trigger/injury"
 		// and expect every authored damage_event subtype.

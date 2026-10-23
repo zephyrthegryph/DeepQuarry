@@ -27,7 +27,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	clear_fullscreen()
 	// The screen objects are ours (rel_set by the HUD setup) and go in teardown.
 	if(client)
-		client.screen = list()
+		client_screen_clear(client)
 	if(mind && mind.current == src)
 		spellremove(src)
 	if(!istype(src,/mob/observer))
@@ -491,7 +491,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
 		return
-	client.screen.Cut()
+	client_screen_clear(client)
 	client_screen_add(client, client.void)
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
@@ -518,7 +518,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set category = VERB_CAT_OOC_RESOURCES
 
 	if(!GLOB.changelog_tgui)
-		GLOB.changelog_tgui = new /datum/changelog()
+		rel_set(GLOB, nameof(GLOB.changelog_tgui), new /datum/changelog())
 	GLOB.changelog_tgui.tgui_interact(usr)
 
 	if(prefs?.read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash)

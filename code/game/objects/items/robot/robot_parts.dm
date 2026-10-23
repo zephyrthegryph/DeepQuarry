@@ -289,6 +289,7 @@ CAPABILITIES(/obj/item/robot_parts/head)
 
 
 CAPABILITIES(/obj/item/robot_parts)
+	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 

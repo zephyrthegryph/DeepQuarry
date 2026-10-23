@@ -59,8 +59,6 @@
 	var/bolted_at_start = FALSE
 	var/welded_at_start = FALSE
 	rad_insulation = RAD_MEDIUM_INSULATION
-	rad_shield_material = MAT_STEEL
-	rad_shield_thickness_mm = RAD_AIRLOCK_THICKNESS_MM
 
 	// Frozen airlocks and how to deice them
 	var/frozen = FALSE
@@ -132,6 +130,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(atom_shielding(rad_material = MAT_STEEL, rad_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	setup(PROC_REF(join_close_group))
 	name_prefix("\improper")
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
@@ -170,9 +169,11 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
 	section(touch, "What a hand or a held thing does to the door")
+	click_order(TOOL_CROWBAR, "remove_electronics", "pry")
+	click_order(TOOL_WELDER, "weld_shut.toggle", "repair")
 	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),
 		needs(req(PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
-	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
+	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
 	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
 		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
@@ -188,7 +189,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
 		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable))), then(PROC_REF(panel_toggled)))
-	extend("weld_shut.toggle", priority(above("repair")), when(any_of(not(PROC_REF(damaged)), not(req_stance(I_HELP)))))
+	extend("weld_shut.toggle", when(any_of(not(PROC_REF(damaged)), not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	// Touching a live door shocks you instead of doing what you meant. Window buttons and a silicon's link are not touches.

@@ -62,7 +62,8 @@
 			candidate_areas += department_area
 		// Planned rooms own their own areas; the department shell may hold only
 		// circulation, so fall back to any room area belonging to this department.
-		for(var/datum/generated_station_module/module in site().station_materialization.modules)
+		var/datum/generated_station_materialization/station_materialization = site().station_materialization
+		for(var/datum/generated_station_module/module in station_materialization.modules)
 			if(module.department_node_id != department.layout_node_id)
 				continue
 			var/area/generated_station/room_area = site().station_materialization.module_areas?[module.id]

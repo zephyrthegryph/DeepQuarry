@@ -1,6 +1,5 @@
 /obj/machinery/computer/pandemic
 	maintenance_flags = MACHINE_MAINT_WRENCH
-	maintenance_wrench_time = 4 SECONDS
 	name = "PanD.E.M.I.C 2200"
 	desc = "Used to work with viruses."
 	circuit = /obj/item/circuitboard/pandemic
@@ -19,7 +18,9 @@
 /obj/item/reagent_containers/glass/beaker/vial/vaccine
 	max_transfer_amount = 15
 	volume = 15
-	sellable_type = /datum/sellable/vaccine
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/vaccine)
+	configure(obj_rules(sellable_type = /datum/sellable/vaccine))
 
 /obj/machinery/computer/pandemic/draw(datum/look/look)
 	..()
@@ -91,6 +92,7 @@ MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
 MSG_DEF_SELF(pandemic/not_beaker, "not possible right now")
 
 CAPABILITIES(/obj/machinery/computer/pandemic)
+	configure(machine_usage(wrench_time = 4 SECONDS))
 	configure(uses_power(idle = 20))
 	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(any_of(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req(PROC_REF(empty_slot_holds)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))

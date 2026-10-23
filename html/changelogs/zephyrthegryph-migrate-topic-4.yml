@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The cyborg window, AI law manager, UAV controller, stock exchange, prisoner management console, medical records console, pipe dispenser and ghost spawn menu send the things they list by handle instead of by reference text, and take them back only from their own lists"
+  - bugfix: "A pipe dispenser dispenses only its own kind of pipe, a locked prisoner console injects nothing, a UAV controller watches only the vehicles it is paired with, and a cyborg's module buttons reach only the tools the window lists"

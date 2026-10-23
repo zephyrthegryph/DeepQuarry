@@ -36,7 +36,7 @@
 #define MAP_LOAD_CACHE_MODELS 12
 
 /// Queued async loads wait in the mapping system, oldest first (the running load is GLOB.map_load_active).
-GLOBAL_VAR(map_load_active)
+GLOBAL_DATUM(map_load_active, /datum/map_load)
 
 /// Queues a load behind the running one.
 /proc/map_load_enqueue(datum/map_load/M)
@@ -45,7 +45,7 @@ GLOBAL_VAR(map_load_active)
 /datum/map_load
 	// The load's inputs. Plain references: the load is a short-lived job and the template outlives it
 	// (a template is a long-lived singleton; a deleted one fails the load at its next step).
-	var/template
+	var/datum/map_template/template
 	var/mode = MAP_LOAD_AT
 	var/centered = FALSE
 	var/origin_x = 0
@@ -70,18 +70,22 @@ GLOBAL_VAR(map_load_active)
 	var/steps = 0
 
 	// What is being parsed / placed.
-	var/parsed
+	var/datum/parsed_map/parsed
 	/// The parsed map new_z loads copy from (GLOB.cached_maps), while it is still being parsed and cached.
-	var/source
+	var/datum/parsed_map/source
 	var/cache_key
-	var/init_job
+	var/datum/atom_init_job/init_job
 	var/list/init_ctx
 
 CAPABILITIES(/datum/map_load)
 	ref_one(nameof(then_owner))
+	ref_one(nameof(template), /datum/map_template)
+	ref_one(nameof(parsed), /datum/parsed_map)
+	ref_one(nameof(source), /datum/parsed_map)
+	ref_one(nameof(init_job), /datum/atom_init_job)
 
 /datum/map_load/New(datum/map_template/template, mode, centered, turf/at, then, datum/then_owner, list/then_with)
-	src.template = template
+	rel_set(src, nameof(template), template)
 	src.mode = mode
 	src.centered = centered
 	src.then = then
@@ -102,7 +106,7 @@ CAPABILITIES(/datum/map_load)
 	return src
 
 /datum/map_load/proc/start_job()
-	GLOB.map_load_active = src
+	rel_set(GLOB, nameof(GLOB.map_load_active), src)
 	job(src, TYPE_PROC_REF(/datum/map_load, run_step), 20, TYPE_PROC_REF(/datum/map_load, finished))
 
 /// Runs the whole load inline, to completion, and returns its result.
@@ -118,7 +122,7 @@ CAPABILITIES(/datum/map_load)
 /// The job finished: hand over the result and start whatever was waiting.
 /datum/map_load/proc/finished(datum/act/timer/A)
 	if(GLOB.map_load_active == src)
-		GLOB.map_load_active = null
+		rel_clear(GLOB, nameof(GLOB.map_load_active))
 	if(then)
 		after(then_owner, 0, then, with = (then_with || list()) + list(result))
 	then = null
@@ -131,9 +135,9 @@ CAPABILITIES(/datum/map_load)
 
 /// Drops what the finished load held.
 /datum/map_load/proc/release()
-	parsed = null
-	source = null
-	init_job = null
+	rel_clear(src, nameof(parsed))
+	rel_clear(src, nameof(source))
+	rel_clear(src, nameof(init_job))
 	init_ctx = null
 
 /// Does one chunk of the current phase. JOB_MORE until the load is over (JOB_DONE).
@@ -203,8 +207,8 @@ CAPABILITIES(/datum/map_load)
 		var/datum/parsed_map/P = T.parsed_map
 		if(!P)
 			P = new /datum/parsed_map()
-		parsed = P
-		source = P
+		rel_set(src, nameof(parsed), P)
+		rel_set(src, nameof(source), P)
 		rel_set(T, nameof(T.parsed_map), T.keep_cached_map ? P : null)
 		phase = P.bounds ? MAP_LOAD_CACHE : MAP_LOAD_PARSE
 		if(phase == MAP_LOAD_PARSE)
@@ -238,12 +242,12 @@ CAPABILITIES(/datum/map_load)
 	cache_key = file(T.mappath)
 	if(!(cache_key in GLOB.cached_maps))
 		var/datum/parsed_map/P = new /datum/parsed_map()
-		source = P
-		parsed = P
+		rel_set(src, nameof(source), P)
+		rel_set(src, nameof(parsed), P)
 		phase = MAP_LOAD_PARSE
 		P.parse_begin(cache_key, -INFINITY, INFINITY, -INFINITY, INFINITY, -INFINITY, INFINITY, FALSE)
 	else
-		source = GLOB.cached_maps[cache_key]
+		rel_set(src, nameof(source), GLOB.cached_maps[cache_key])
 		phase = MAP_LOAD_CACHE
 	return JOB_MORE
 
@@ -267,7 +271,7 @@ CAPABILITIES(/datum/map_load)
 		if(!(cache_key in GLOB.cached_maps))
 			GLOB.cached_maps[cache_key] = P
 		var/datum/parsed_map/cached = GLOB.cached_maps[cache_key]
-		parsed = isnull(cached.bounds) ? cached : cached.copy()
+		rel_set(src, nameof(parsed), isnull(cached.bounds) ? cached : cached.copy())
 	phase = MAP_LOAD_BEGIN
 	return JOB_MORE
 
@@ -310,7 +314,7 @@ CAPABILITIES(/datum/map_load)
 		return JOB_MORE
 	var/datum/atom_init_job/I = new
 	I.atoms = init_ctx["targets"]
-	init_job = I
+	rel_set(src, nameof(init_job), I)
 	phase = MAP_LOAD_INIT
 	return JOB_MORE
 

@@ -8,6 +8,9 @@
 /mob/living/simple_mob/humanoid/possessed
 	use_modern_ai = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
+	configure(mob_nature(can_pain_emote = FALSE))
+
 TYPE_TABLE(/mob/living/simple_mob/humanoid/possessed, get_ai_behaviors, list( \
 	/datum/ai_behavior/threaten, \
 	/datum/ai_behavior/approach_threat, \

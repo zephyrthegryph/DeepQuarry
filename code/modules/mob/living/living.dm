@@ -123,16 +123,16 @@
 	set name = "Toggle AFK"
 	set category = VERB_CAT_IC_GAME
 	set desc = "Mark yourself as Away From Keyboard, or clear that status!"
-	if(away_from_keyboard)
+	if(sparse_get_or(src, away_from_keyboard, FALSE))
 		remove_status_indicator("afk")
 		to_chat(src, span_notice("You are no longer marked as AFK."))
-		away_from_keyboard = FALSE
-		manual_afk = FALSE
+		sparse_set(src, away_from_keyboard, FALSE)
+		sparse_set(src, manual_afk, FALSE)
 	else
 		add_status_indicator("afk")
 		to_chat(src, span_notice("You are now marked as AFK."))
-		away_from_keyboard = TRUE
-		manual_afk = TRUE
+		sparse_set(src, away_from_keyboard, TRUE)
+		sparse_set(src, manual_afk, TRUE)
 
 //This proc is used for mobs which are affected by pressure to calculate the amount of pressure that actually
 //affects them once clothing is factored in. ~Errorage
@@ -653,19 +653,19 @@ sparse(/mob/living, vomiting, type = bool)
 	if(lying)
 		stop_pulling()
 
-		if(!passtable_crawl_checked)
-			passtable_crawl_checked = TRUE
+		if(!sparse_get_or(src, passtable_crawl_checked, FALSE))
+			sparse_set(src, passtable_crawl_checked, TRUE)
 			if(pass_flags & PASSTABLE)
-				passtable_reset = FALSE
+				sparse_set(src, passtable_reset, FALSE)
 			else
-				passtable_reset = TRUE
+				sparse_set(src, passtable_reset, TRUE)
 				pass_flags |= PASSTABLE
 
 	else
-		if(passtable_reset)
-			passtable_reset = FALSE
+		if(sparse_get(src, passtable_reset))
+			sparse_set(src, passtable_reset, FALSE)
 			pass_flags &= ~PASSTABLE
-		passtable_crawl_checked = FALSE
+		sparse_set(src, passtable_crawl_checked, FALSE)
 
 	for(var/obj/item/grab/G in src?.grabbed_by_list())
 		if(G.state >= GRAB_AGGRESSIVE)

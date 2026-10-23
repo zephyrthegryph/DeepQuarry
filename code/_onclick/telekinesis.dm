@@ -1,7 +1,3 @@
-/obj
-	/// A telekinetic reach can grab or poke this (the telekinesis adapter's default). Structures refuse
-	/// unless they declare an INTERACT_TK of their own.
-	var/tk_reach = TRUE
 
 /*
 	This is similar to item attack_self, but applies to anything

@@ -1,7 +1,7 @@
 // Internal organ side of the humanoid body plan.
 //
 // An internal organ's integrity (`damage`) is DERIVED from the lesion
-// afflictions located on it (code/modules/medical/conditions/lesions.dm),
+// afflictions located on it (code/content/medical/conditions/lesions.dm),
 // recomputed by recalc_integrity() whenever a lesion changes: one pass over
 // the lesions on this organ (the body's location index), never a scan of the
 // whole body. Nothing writes `damage` directly.

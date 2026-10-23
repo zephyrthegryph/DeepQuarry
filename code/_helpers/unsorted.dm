@@ -402,27 +402,27 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/list/sortmob = sort_names(REGISTRY_MEMBERS(REGISTRY_MOBS))
 	var/list/after_simplemob_minded = list()
 	for(var/mob/observer/eye/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/observer/blob/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/ai/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/pai/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/silicon/robot/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -431,18 +431,18 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if(M.low_sorting_priority && !M.client)
 			delaylist.Add(M)
 		else
-			if (!M.client && !M.disconnect_time)
+			if (!M.client && !sparse_get(M, disconnect_time))
 				after_simplemob_minded.Add(M)
 				continue
 			moblist.Add(M)
 	moblist.Add(delaylist)
 	for(var/mob/living/carbon/brain/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
 	for(var/mob/living/carbon/alien/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -451,7 +451,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	for(var/mob/new_player/M in sortmob)
 		moblist += M
 	for(var/mob/living/simple_mob/M in sortmob)
-		if (!M.client && !M.disconnect_time) // Addition
+		if (!M.client && !sparse_get(M, disconnect_time)) // Addition
 			after_simplemob_minded.Add(M)
 			continue
 		moblist.Add(M)
@@ -1079,9 +1079,9 @@ GLOBAL_LIST_INIT(common_tools, list(
 		return null // Not lying down means no surface (blocks surgery)
 	var/cleanliness = 0
 	for(var/obj/O in contents_of(loc)) // Looks for the best surface.
-		if(O.surgery_cleanliness)
-			if(!cleanliness || cleanliness < O.surgery_cleanliness)
-				cleanliness = O.surgery_cleanliness
+		if(rules_of(O).surgery_cleanliness)
+			if(!cleanliness || cleanliness < rules_of(O).surgery_cleanliness)
+				cleanliness = rules_of(O).surgery_cleanliness
 	if(!cleanliness) //We have no good objects on the turf. Time to check the floor!
 		var/turf/T = get_turf(src)
 		if(dq_get_was_bloodied(T)) //floor is contaminated

@@ -12,13 +12,13 @@ CAPABILITIES(/datum/codex_tree)
 	ref_one(nameof(holder), /atom/movable)
 	owns_one(nameof(home), /datum/lore/codex)
 	owns_many(nameof(readers))
-	op("target", topic("target", arg("target", schema_ref(/datum/lore/codex), optional = TRUE)), then(PROC_REF(topic_target)))
-	op("search_query", topic("search_query", arg("search_query", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_search_query)))
-	op("go_to_parent", topic("go_to_parent"), then(PROC_REF(topic_go_to_parent)))
-	op("go_back", topic("go_back"), then(PROC_REF(topic_go_back)))
-	op("go_to_home", topic("go_to_home"), then(PROC_REF(topic_go_to_home)))
-	op("quick_link", topic("quick_link", arg("quick_link", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_quick_link)))
-	op("close", topic("close"), then(PROC_REF(topic_close)))
+	interface("CodexReader", title = "The Empress Protects", state = nameof(GLOB.tgui_hands_state))
+	op("target", ui_act("target", arg("page", int(1))), needs(req(PROC_REF(req_page))), then(PROC_REF(ui_act_target)))
+	op("quick_link", ui_act("quick_link", arg("term", schema_text(MAX_NAME_LEN))), then(PROC_REF(ui_act_quick_link)))
+	op("go_to_parent", ui_act("go_to_parent"), then(PROC_REF(ui_act_go_to_parent)))
+	op("go_back", ui_act("go_back"), then(PROC_REF(ui_act_go_back)))
+	op("go_to_home", ui_act("go_to_home"), then(PROC_REF(ui_act_go_to_home)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
 
 /datum/codex_tree/New(new_holder, new_root_type)
 	rel_set(src, nameof(holder), new_holder)
@@ -104,28 +104,23 @@ CAPABILITIES(/datum/codex_reader)
 	else
 		go_to_page(H[length(H)], TRUE, user)
 
-/datum/codex_tree/proc/get_tree_position(mob/user)
-	var/datum/lore/codex/checked = current_page_of(user)
-	if(istype(checked))
-		var/output = ""
-		output = span_bold("[checked.name]")
-		while(checked.parent())
-			output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent()]'>[checked.parent().name]</a> \> [output]"
-			checked = checked.parent()
-		return output
+/// Every page of the tree in a fixed order (the home page first, then each category's pages in turn): a page's place in it is the id the window uses.
+/datum/codex_tree/proc/pages_in_order()
+	var/list/out = list()
+	if(!home)
+		return out
+	var/list/queue = list(home)
+	while(length(queue))
+		var/datum/lore/codex/D = queue[length(queue)]
+		queue.len--
+		out += D
+		if(istype(D, /datum/lore/codex/category))
+			var/datum/lore/codex/category/C = D
+			for(var/i in length(C.child_pages) to 1 step -1)
+				queue += C.child_pages[i]
+	return out
 
-/datum/codex_tree/proc/make_search_bar()
-	var/html = {"
-	<form id="submitForm" action="?">
-	<input type = 'hidden' name = 'src' value = '\ref[src]'>
-	<input type = 'hidden' name = 'action' value='search'>
-	<label for = 'search_query'>Page Search: </label>
-	<input type = 'text' name = 'search_query' id = 'search_query'>
-	<input type = 'submit' value = 'Go'>
-	</form>
-	"}
-	return html
-
+/// Opens the reader's window on their current page (the home page the first time).
 /datum/codex_tree/proc/display(mob/user)
 	if(!home)
 		generate_pages()
@@ -138,87 +133,86 @@ CAPABILITIES(/datum/codex_reader)
 		if(!istype(D))
 			log_runtime("Codex_tree failed to failed to load for [user].")
 			return
+	tgui_interact(user)
 
-	user << browse_rsc('html/browser/codex.css', "codex.css")
-
-	var/dat
-	dat =  "<head>"
-	dat += "<title>[holder()?.name] ([D.name])</title>"
-	dat += "<link rel='stylesheet' href='codex.css' />"
-	dat += "</head>"
-
-	dat += "<body>"
-	dat += "[get_tree_position(user)]<br>"
-	dat += "[make_search_bar()]<br>"
-	dat += "<center>"
-	dat += "<h2>[D.name]</h2>"
-	dat += "<br>"
-	if(D.data)
-		dat += "[D.data]<br>"
-	dat += "<br>"
+/// /datum/codex_tree's window data: the reader's page, the way up from it and the pages under it.
+/datum/codex_tree/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	var/mob/user = A.actor
+	var/datum/lore/codex/D = current_page_of(user)
+	if(!istype(D))
+		return data
+	var/list/order = pages_in_order()
+	var/list/trail = list()
+	var/datum/lore/codex/up = D.parent()
+	while(up)
+		trail += list(list("name" = up.name, "id" = order.Find(up)))
+		up = up.parent()
+	// The way up was walked from the page to the home page; it reads the other way.
+	var/list/trail_down = list()
+	for(var/i in length(trail) to 1 step -1)
+		trail_down += list(trail[i])
+	var/list/children = list()
 	if(istype(D, /datum/lore/codex/category))
-		dat += "<div class='button-group'>"
 		var/datum/lore/codex/category/C = D
 		for(var/datum/lore/codex/child in C.child_pages)
-			dat += "<a href='byond://?src=\ref[src];target=\ref[child]' class='button'>[child.name]</a>"
-		dat += "</div>"
-	dat += "<hr>"
+			children += list(list("name" = child.name, "id" = order.Find(child)))
 	var/datum/codex_reader/R = LAZYACCESS(readers, "[user]")
-	if(LAZYLEN(R?.history))
-		dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-	if(D.parent())
-		dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
-	if(D != home)
-		dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"
-	dat += "</center></body>"
-	// structured TGUI AdminReport; byond:// links forwarded to host.
-	dq_admin_report_html(user, "The Empress Protects", dat, src)
+	data["page_name"] = D.name
+	data["page_html"] = D.data
+	data["trail"] = trail_down
+	data["children"] = children
+	data["can_back"] = !!LAZYLEN(R?.history)
+	data["can_up"] = !!D.parent()
+	data["can_home"] = D != home
+	return data
+
+/// Requirement: the button names a page of this codex (a page of another codex is not).
+/datum/codex_tree/proc/req_page(datum/act/op/A)
+	var/id = A.args ? A.args["page"] : null
+	return isnum(id) && LAZYACCESS(pages_in_order(), id) ? null : MSG(req_silent)
+
+/datum/codex_tree/proc/ui_act_target(datum/act/op/A, page)
+	go_to_page(LAZYACCESS(pages_in_order(), page), FALSE, A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/codex_tree/proc/ui_act_quick_link(datum/act/op/A, term)
+	quick_link(term, A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/codex_tree/proc/ui_act_go_to_parent(datum/act/op/A)
+	go_to_parent(A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/codex_tree/proc/ui_act_go_back(datum/act/op/A)
+	go_back(A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/codex_tree/proc/ui_act_go_to_home(datum/act/op/A)
+	go_to_page(home, FALSE, A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/codex_tree/proc/ui_act_close(datum/act/op/A)
+	// the tree is shared by every reader of its codex: only the presser's window closes
+	SStgui.close_user_uis(A.actor, src)
+	return OP_OK
 
 
-/datum/codex_tree/proc/topic_target(datum/act/op/A, href_target)
-	var/mob/user = A.actor
-	var/datum/lore/codex/new_page = href_target
-	if(!new_page || new_page.holder() != src) // only pages of this codex
-		return
-	go_to_page(new_page, FALSE, user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_search_query(datum/act/op/A, href_search_query)
-	var/mob/user = A.actor
-	quick_link(href_search_query, user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_go_to_parent(datum/act/op/A)
-	var/mob/user = A.actor
-	go_to_parent(user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_go_back(datum/act/op/A)
-	var/mob/user = A.actor
-	go_back(user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_go_to_home(datum/act/op/A)
-	var/mob/user = A.actor
-	go_to_page(home, FALSE, user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_quick_link(datum/act/op/A, href_quick_link)
-	var/mob/user = A.actor
-	quick_link(href_quick_link, user)
-	display(user)
-	return TRUE
-
-/datum/codex_tree/proc/topic_close(datum/act/op/A)
-	// close TGUI codex viewer
-	SStgui.close_uis(src)
-	return TRUE
-
+/// The window is hosted by the codex book `user` holds (the tree itself is a shared datum with no place in the world): the hands state then
+/// applies its consciousness and held checks to the book, and a reader who is not holding one of this tree's books has no host and is closed.
+/datum/codex_tree/tgui_host(mob/user)
+	var/mob/living/L = user
+	if(!istype(L))
+		return null
+	for(var/obj/item/book/codex/book in L.get_all_held_items())
+		if(book.tree == src)
+			return book
+	return null
 
 /// The holder this refers to (a relation view: null once that is deleted).
 /datum/codex_tree/proc/holder() as /atom/movable

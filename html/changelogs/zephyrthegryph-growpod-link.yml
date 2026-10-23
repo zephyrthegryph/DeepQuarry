@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Growpods in the resleeving console's area now link to it again"

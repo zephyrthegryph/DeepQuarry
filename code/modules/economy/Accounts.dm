@@ -216,6 +216,14 @@ SETTER(/datum/money_account, security_level)
 
 REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 
+/// A random account number no registered account already holds (two accounts sharing a number would answer each other's cards).
+/proc/unused_account_number()
+	READS_FROM() // the account registry is asked when a number is drawn, never cached
+	var/number = rand(111111, 999999)
+	while(get_account(number))
+		number = rand(111111, 999999)
+	return number
+
 /proc/create_account(new_owner_name = "Default user", starting_funds = 0, obj/machinery/account_database/source_db, offmap = FALSE)
 
 	//create a new account
@@ -236,12 +244,14 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		T.time = "[rand(0,24)]:[rand(11,59)]"
 		T.source_terminal = "NTGalaxyNet Terminal #[rand(111,1111)]"
 
-		M.set_account_number(rand(111111, 999999))
+		M.set_account_number(unused_account_number())
 	else
 		T.date = GLOB.current_date_string
 		T.time = stationtime2text()
 		T.source_terminal = source_db.machine_id
 
+		while(get_account(GLOB.next_account_number))
+			GLOB.next_account_number += rand(1,25)
 		M.set_account_number(GLOB.next_account_number)
 		GLOB.next_account_number += rand(1,25)
 

@@ -91,13 +91,14 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	if(!GLOB.starting_legal_nifsoft)
 		GLOB.starting_legal_nifsoft = list()
 		GLOB.starting_illegal_nifsoft = list()
-		for(var/datum/nifsoft/NS as anything in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package)))
+		for(var/ns_type in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package))) // types, not instances
+			var/datum/nifsoft/NS = ns_type // read through initial() only
 			if(initial(NS.vended))
 				switch(initial(NS.illegal))
 					if(TRUE)
-						GLOB.starting_illegal_nifsoft += NS
+						GLOB.starting_illegal_nifsoft += ns_type
 					if(FALSE)
-						GLOB.starting_legal_nifsoft += NS
+						GLOB.starting_legal_nifsoft += ns_type
 
 	products = GLOB.starting_legal_nifsoft.Copy()
 	contraband = GLOB.starting_illegal_nifsoft.Copy()

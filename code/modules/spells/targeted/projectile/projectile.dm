@@ -27,7 +27,7 @@ If the spell_projectile is seeking, it will update its target every process and 
 			return
 
 
-		projectile.shot_from = user //fired from the user
+		projectile.shot_from = user.name //fired from the user (the text the hit line prints)
 		projectile.hitscan = !proj_step_delay
 		projectile.speed = proj_step_delay
 		if(istype(projectile, /obj/item/projectile/spell_projectile))

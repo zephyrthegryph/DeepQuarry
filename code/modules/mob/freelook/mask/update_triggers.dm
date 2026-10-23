@@ -2,18 +2,17 @@
 
 #define CULT_UPDATE_BUFFER 30
 
-/mob/living/var/updating_cult_vision = 0
 
 /mob/living/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	if(!GLOB.cultnet.provides_vision(src))
 		return
-	if(!updating_cult_vision)
-		updating_cult_vision = 1
+	if(!sparse_get_or(src, updating_cult_vision, 0))
+		sparse_set(src, updating_cult_vision, 1)
 		after(src, CULT_UPDATE_BUFFER, PROC_REF(cult_vision_settle), with = list(old_loc))
 
 /mob/living/proc/cult_vision_settle(atom/old_loc)
-	updating_cult_vision = 0
+	sparse_set(src, updating_cult_vision, 0)
 	if(old_loc != loc)
 		GLOB.cultnet.updateVisibility(old_loc, 0)
 		GLOB.cultnet.updateVisibility(loc, 0)

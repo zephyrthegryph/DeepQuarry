@@ -585,13 +585,13 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			if(FEMALE)
 				t_him = "her"
 
-	if(target.touch_reaction_flags & SPECIES_TRAIT_PERSONAL_BUBBLE)
+	if(sparse_get(target, touch_reaction_flags) & SPECIES_TRAIT_PERSONAL_BUBBLE)
 		act_message(H, target, MSG_SELF(span_notice("%T% moves to avoid being touched by you!")), \
 			MSG_OTHERS(span_notice("%T% moves to avoid being touched by %U%!")))
 		return
 
 	var/covered_mouth = FALSE
-	if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && ishuman(target)) // No need to test this for now if they don't have the trait
+	if((sparse_get(target, touch_reaction_flags) & SPECIES_TRAIT_PATTING_DEFENCE) && ishuman(target)) // No need to test this for now if they don't have the trait
 		var/mob/living/carbon/human/M = target
 		if(M.get_equipped_item(SLOT_ID_HEAD))
 			if((worn_of(M.get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || (worn_of(M.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
@@ -603,7 +603,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		covered_mouth = TRUE
 
 	if(hud_of(H)?.zone_sel?.selecting == BP_HEAD)
-		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
+		if((sparse_get(target, touch_reaction_flags) & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent head patting!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
@@ -612,7 +612,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	else if(hud_of(H)?.zone_sel?.selecting == BP_R_HAND || hud_of(H)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
 	else if(hud_of(H)?.zone_sel?.selecting == "mouth")
-		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
+		if((sparse_get(target, touch_reaction_flags) & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent nose booping!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten

@@ -37,8 +37,8 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	setup(PROC_REF(connect_initial_server_control))
 	interface("ServerControl")
 	without("ui_open")
-	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))
-	op("lock_console", ui_act("lock_console", arg("selected_console", schema_ref(/obj/machinery/computer/rdconsole_tg))), then(PROC_REF(ui_act_lock_console)))
+	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_text(32))), then(PROC_REF(ui_act_lockdown_server)))
+	op("lock_console", ui_act("lock_console", arg("selected_console", schema_text(32))), then(PROC_REF(ui_act_lock_console)))
 	op("connect_techweb", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Connect techweb"), then(PROC_REF(interaction_connect_techweb)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 				"server_name" = server,
 				"server_details" = server.get_status_text(),
 				"server_disabled" = server.research_disabled || !server.working,
-				"server_ref" = REF(server),
+				"server_ref" = ref_token(server),
 			))
 
 		for(var/obj/machinery/computer/rdconsole_tg/console as anything in stored_research().consoles_accessing)
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 				"console_name" = console,
 				"console_location" = get_area(console),
 				"console_locked" = console.locked,
-				"console_ref" = REF(console),
+				"console_ref" = ref_token(console),
 			))
 
 	return data
@@ -81,9 +81,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	if(!isnull(selected_server) && !(selected_server in ui_source_stored_research_techweb_servers()))
-		return FALSE
-	var/obj/machinery/rnd/server/server_selected = selected_server
+	var/obj/machinery/rnd/server/server_selected = ui_member(selected_server, ui_source_stored_research_techweb_servers(), /obj/machinery/rnd/server)
 	if(!server_selected)
 		return FALSE
 	server_selected.toggle_disable(user)
@@ -92,21 +90,19 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 /obj/machinery/computer/rdservercontrol/proc/ui_act_lock_console(datum/act/op/A, selected_console)
 	if(!ui_gate(A))
 		return FALSE
-	if(!isnull(selected_console) && !(selected_console in ui_source_stored_research_consoles_accessing()))
-		return FALSE
-	var/obj/machinery/computer/rdconsole_tg/console_selected = selected_console
+	var/obj/machinery/computer/rdconsole_tg/console_selected = ui_member(selected_console, ui_source_stored_research_consoles_accessing(), /obj/machinery/computer/rdconsole_tg)
 	if(!console_selected)
 		return FALSE
 	console_selected.set_locked(!console_selected.locked)
 	return TRUE
 
-/// The list the UI_ARG_REF rows resolve refs in.
+/// The list the window's console handles resolve in.
 /obj/machinery/computer/rdservercontrol/proc/ui_source_stored_research_consoles_accessing()
-	return stored_research().consoles_accessing
+	return stored_research()?.consoles_accessing
 
-/// The list the UI_ARG_REF rows resolve refs in.
+/// The list the window's server handles resolve in.
 /obj/machinery/computer/rdservercontrol/proc/ui_source_stored_research_techweb_servers()
-	return stored_research().techweb_servers
+	return stored_research()?.techweb_servers
 
 /// A shared definition/flyweight (never cleared).
 /obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb

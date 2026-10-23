@@ -50,10 +50,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_def)
 	/// The types that declare it.
 	var/list/types
 	/// A status's companion immunity stat (STAT_<NAME>_IMMUNE) points at its status.
-	var/immune_of
+	var/datum/stat_def/immune_of
 	/// Ranks come from the reads graph: one above the highest rank of any stat it reads on the same entity.
 	var/rank = 0
 	var/rank_known = FALSE
+
+CAPABILITIES(/datum/stat_def)
+	ref_one(nameof(immune_of)) // a definition lives for the round; the link names the status an immunity stat belongs to
 
 GLOBAL_LIST_EMPTY(stat_defs) // "[id]" -> /datum/stat_def
 GLOBAL_LIST_EMPTY(stat_defs_by_name) // name -> /datum/stat_def
@@ -163,7 +166,7 @@ PROC_SUMMARY(/proc/stat_defs_build) // vars[] / call() dispatcher: the walk cann
 		immune.boolean = TRUE
 		immune.base = FALSE
 		immune.types = list(type)
-		immune.immune_of = def
+		rel_set(immune, nameof(immune.immune_of), def)
 		GLOB.stat_defs["[immune.id]"] = immune
 		GLOB.stat_defs_by_name[immune.name] = immune
 

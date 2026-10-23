@@ -49,6 +49,7 @@
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no heat-tracked floor")
+	restore_solids_after(T)
 	var/datum/native_test_listener/listener = new
 	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, T.get_temperature() + 50, TRUE, TYPE_PROC_REF(/datum/native_test_listener, on_cross))
 	TEST_ASSERT_NOTNULL(watch, "the turf watch was refused")
@@ -73,10 +74,10 @@
 /datum/unit_test/dq_native_pump_wrapper_conserves_moles
 
 /datum/unit_test/dq_native_pump_wrapper_conserves_moles/Run()
-	var/datum/gas_mixture/source = new(1000)
+	var/datum/gas_mixture/source = allocate(/datum/gas_mixture, 1000)
 	source.adjust_gas(/datum/gas/oxygen, 200)
 	heat_set(source, T20C, HEAT_SOURCE_OTHER)
-	var/datum/gas_mixture/sink = new(1000)
+	var/datum/gas_mixture/sink = allocate(/datum/gas_mixture, 1000)
 	sink.adjust_gas(/datum/gas/oxygen, 50)
 	heat_set(sink, T20C, HEAT_SOURCE_OTHER)
 	var/total = source.total_moles() + sink.total_moles()
@@ -87,17 +88,17 @@
 	TEST_ASSERT(power >= 0, "pump_gas refused a movable transfer")
 	TEST_ASSERT(abs(sink.total_moles() - 90) < 0.01, "the sink holds [sink.total_moles()], expected 90")
 	TEST_ASSERT(abs(source.total_moles() + sink.total_moles() - total) < 0.01, "pump_gas did not conserve moles")
-	TEST_ASSERT_EQUAL(pump_gas(null, new /datum/gas_mixture(10), sink, 5, null), -1, "an empty source pumped")
+	TEST_ASSERT_EQUAL(pump_gas(null, allocate(/datum/gas_mixture, 10), sink, 5, null), -1, "an empty source pumped")
 
 /// scrub_gas() through vg_scrub moves only the filtered gas.
 /datum/unit_test/dq_native_scrub_wrapper_takes_only_the_filtered_gas
 
 /datum/unit_test/dq_native_scrub_wrapper_takes_only_the_filtered_gas/Run()
-	var/datum/gas_mixture/source = new(1000)
+	var/datum/gas_mixture/source = allocate(/datum/gas_mixture, 1000)
 	source.adjust_gas(/datum/gas/oxygen, 100)
 	source.adjust_gas(/datum/gas/carbon_dioxide, 50)
 	heat_set(source, T20C, HEAT_SOURCE_OTHER)
-	var/datum/gas_mixture/sink = new(1000)
+	var/datum/gas_mixture/sink = allocate(/datum/gas_mixture, 1000)
 	heat_set(sink, T20C, HEAT_SOURCE_OTHER)
 	var/power = scrub_gas(null, list(GAS_CO2), source, sink, null, null)
 	TEST_ASSERT(power >= 0, "scrub_gas refused")
@@ -108,10 +109,10 @@
 /datum/unit_test/dq_native_thermal_exchange_moves_heat_between_mixtures
 
 /datum/unit_test/dq_native_thermal_exchange_moves_heat_between_mixtures/Run()
-	var/datum/gas_mixture/hot = new(70)
+	var/datum/gas_mixture/hot = allocate(/datum/gas_mixture, 70)
 	hot.adjust_gas(/datum/gas/nitrogen, 50)
 	heat_set(hot, T0C + 300, HEAT_SOURCE_OTHER)
-	var/datum/gas_mixture/cold = new(2500)
+	var/datum/gas_mixture/cold = allocate(/datum/gas_mixture, 2500)
 	cold.adjust_gas(/datum/gas/nitrogen, 80)
 	heat_set(cold, T20C, HEAT_SOURCE_OTHER)
 	var/energy = hot.thermal_energy() + cold.thermal_energy()

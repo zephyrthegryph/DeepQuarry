@@ -26,9 +26,9 @@ TYPE_TABLE_DECLARE(/datum/cargo_market_profile, accepted_departments, list())
 		if(!type_match)
 			return FALSE
 	var/list/departments = TYPE_TABLE_GET(src, accepted_departments)
-	if(length(departments) && !(item.economic_department in departments))
+	if(length(departments) && !(sparse_get(item, economic_department) in departments))
 		return FALSE
-	return length(type_paths) || item.economic_export_value > 0
+	return length(type_paths) || sparse_get_or(item, economic_export_value, 0) > 0
 
 /datum/cargo_market_profile/materials
 	id = "materials"
@@ -574,6 +574,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	adjust_department_faction_reputation(order.funding_department, counterparty.faction_id, 2)
 	if(order.market_requester_account)
 		adjust_personal_faction_reputation(order.market_requester_account, counterparty.faction_id, 4)
+	var/datum/supply_pack/order_pack = order.supply_pack_of()
 	emit_contract_event(CONTRACT_EVENT_CARGO_MARKET_PURCHASE, list(
 		"actor_account" = order.market_requester_account,
 		"principal_account" = listing?.reserved_account,
@@ -588,7 +589,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"order_id" = order.ordernum,
 		"pack_type" = order.supply_pack_of().type,
 		"pack_group" = order.supply_pack_of().group,
-		"contraband" = !!order.supply_pack_of().contraband,
+		"contraband" = !!order_pack.contraband,
 		"fact_id" = "market-purchase:[order.ordernum]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
@@ -648,7 +649,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 	export.market_contract_key = bid.reservation_key
 	export.set_market_premium(export.market_premium + premium)
 	bid.fulfilled_units += matched_quantity
-	var/contributor_account = export.market_router_account || item.economic_producer_account
+	var/contributor_account = export.market_router_account || sparse_get_or(item, economic_producer_account, 0)
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(bid.reservation_key)
 	var/contact_commission = 0
 	if(agent_contract?.contact_account_number == contributor_account)
@@ -658,7 +659,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		"actor_account" = contributor_account,
 		"principal_account" = bid.reserved_account,
 		"department" = DEPARTMENT_CARGO,
-		"origin_department" = item.economic_department,
+		"origin_department" = sparse_get(item, economic_department),
 		"counterparty_id" = counterparty.id,
 		"faction_id" = counterparty.faction_id,
 		"bid_id" = bid.id,
@@ -1006,7 +1007,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 				var/assigned_visible = assigned_bid && assigned_counterparty && market_counterparty_visible(assigned_counterparty, user, console_unlocked)
 				var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && BEFORE(src, assigned_bid.expires_at, CLOCK_WORLD)
 				outbound_crates.Add(list(list(
-					"ref" = REF(crate),
+					"ref" = ref_token(crate),
 					"name" = crate.name,
 					"contents" = length(crate.contents) + crate.latent_count(), // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 					"bid_id" = assigned_active ? assigned_bid.id : null,

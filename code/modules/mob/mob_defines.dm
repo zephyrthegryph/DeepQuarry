@@ -40,7 +40,6 @@
 	var/computer_id = null
 	var/list/logging
 
-	var/other_mobs = null
 	var/memory = ""
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
@@ -122,8 +121,6 @@
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
-	var/away_from_keyboard = FALSE	//are we at, or away, from our keyboard?
-	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
 
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
 	var/tmp/mob/living/LAssailant = null
@@ -144,7 +141,6 @@
 	var/tmp/area/lastarea = null
 	EXPIRY_TMP_DECLARE(lastareachange)
 
-	var/digitalcamo = 0 // Can they be tracked by the AI?
 
 
 
@@ -165,7 +161,6 @@
 
 	var/list/active_genes
 	var/mob_size = MOB_MEDIUM
-	var/forbid_seeing_deadchat = FALSE // Used for lings to not see deadchat, and to have ghosting behave as if they were not really dead.
 
 	var/seedarkness = 1	//Determines mob's ability to see shadows. 1 = Normal vision, 0 = darkvision
 
@@ -206,7 +201,9 @@
 
 
 CAPABILITIES(/mob)
+	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
+	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none
 	ref_one(nameof(LAssailant), /mob/living) // the last living mob to push, drag or grab this mob
 	ref_one(nameof(click_intercept), /datum)
 	ref_one(nameof(hovered_atom_view), /atom)
@@ -267,9 +264,6 @@ CAPABILITIES(/mob)
 	op("flavor_change", topic("flavor_change", arg("flavor_change", schema_text(32), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_flavor_change)))
 	// The links of living mobs, humans and cyborgs, guarded by their holder type: they move into those types' own blocks (code/library/mob/hands.dm,
 	// code/modules/combat_ai/integration/mob_living.dm) when that work is free.
-	op("default_lang_reset", topic("default_lang=reset"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), then(TYPE_PROC_REF(/mob/living, topic_default_lang_reset)))
-	op("default_lang", topic("default_lang", arg("default_lang", schema_ref(/datum/language), optional = TRUE, among = TYPE_PROC_REF(/mob/living, topic_known_languages))), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), then(TYPE_PROC_REF(/mob/living, topic_default_lang)))
-	op("set_lang_key", topic("set_lang_key", arg("set_lang_key", schema_ref(/datum/language), optional = TRUE, among = TYPE_PROC_REF(/mob/living, topic_known_languages))), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), asks(/datum/prompt/text/language_key, fields = list("language" = arg_of("set_lang_key")), step = "key"), then(TYPE_PROC_REF(/mob/living, topic_set_lang_key)))
 	op("vore_prefs", topic("vore_prefs"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_vore_prefs)))
 	op("ooc_notes", topic("ooc_notes"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_ooc_notes)))
 	op("print_ooc_notes_chat", topic("print_ooc_notes_chat"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_print_ooc_notes_chat)))
@@ -314,12 +308,10 @@ CAPABILITIES(/mob)
 
 /mob
 
-	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
-	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

@@ -22,10 +22,9 @@
 
 	say_list_type = /datum/say_list/wolfgirl
 	species_sounds = "Canine"
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolfgirl)
+	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 // Activate Noms!
 /mob/living/simple_mob/vore/wolfgirl

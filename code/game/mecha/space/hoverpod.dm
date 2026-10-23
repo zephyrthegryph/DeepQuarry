@@ -28,7 +28,7 @@
 CAPABILITIES(/obj/mecha/working/hoverpod)
 	setup(PROC_REF(prepare_ion_trail))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
-	op("toggle_stabilization", topic("toggle_stabilization"), then(PROC_REF(topic_toggle_stabilization)))
+	op("toggle_stabilization", ui_act("toggle_stabilization"), then(PROC_REF(ui_act_toggle_stabilization)))
 
 /obj/mecha/working/hoverpod/proc/prepare_ion_trail()
 	ion_trail.set_up(src)
@@ -47,22 +47,15 @@ CAPABILITIES(/obj/mecha/working/hoverpod)
 
 //Modified phazon code
 
-/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(datum/act/op/A)
-	stabilization_enabled = !stabilization_enabled
-	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
+/obj/mecha/working/hoverpod/proc/ui_act_toggle_stabilization(datum/act/op/A)
+	if(!is_pilot(A.actor))
+		return
+	set_stabilization_enabled(!stabilization_enabled)
 	src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
 	return
 
-/obj/mecha/working/hoverpod/get_commands()
-	var/output = {"<div class='wr'>
-						<div class='header'>Special</div>
-						<div class='links'>
-						<a href='byond://?src=\ref[src];toggle_stabilization=1'><span id="stabilization_command">[stabilization_enabled?"Dis":"En"]able thruster stabilization</span></a><br>
-						</div>
-						</div>
-						"}
-	output += ..()
-	return output
+/obj/mecha/working/hoverpod/ui_commands()
+	return ..() + list(list("key" = "toggle_stabilization", "label" = "[stabilization_enabled ? "Dis" : "En"]able thruster stabilization"))
 
 /obj/mecha/working/hoverpod/can_ztravel()
 	return (stabilization_enabled && has_charge(step_energy_drain))

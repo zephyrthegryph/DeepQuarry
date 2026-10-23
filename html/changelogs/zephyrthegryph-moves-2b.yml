@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved 83 projectiles files to code/content/projectiles; generated declarations now follow .dme include order, so moving a file no longer reorders them; dmb-equiv --path-map and tools/ci/move_equiv.sh check file moves"

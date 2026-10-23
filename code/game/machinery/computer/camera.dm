@@ -157,12 +157,12 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 		return
 	rel_set(src, nameof(showing), thing)
 	if(pinboard)
-		pinboard.vis_contents = list(thing)
+		vis_set(pinboard, list(thing))
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/stop_showing()
 	// Reverse of the above
 	if(pinboard)
-		pinboard.vis_contents = null
+		vis_set(pinboard, null)
 	rel_clear(src, nameof(showing))
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(atom/thing)

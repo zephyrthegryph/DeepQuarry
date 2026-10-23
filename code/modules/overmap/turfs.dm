@@ -1,5 +1,5 @@
 //Dimension of overmap (squares 4 lyfe)
-GLOBAL_LIST_EMPTY(map_sectors)
+GLOBAL_ALIST_EMPTY(map_sectors)
 
 /area/overmap
 	name = "System Map"

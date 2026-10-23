@@ -50,6 +50,8 @@
 
 // The unarmed attack to go with the hardclaws
 GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
+/// The one instance is a global made at world setup and never deleted in a round (relations proposal wave 2).
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/unarmed_attack/hardclaws)
 /datum/unarmed_attack/hardclaws
 	attack_verb = list("claws")
 	attack_noun = list("talons")

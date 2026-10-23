@@ -783,7 +783,7 @@
 /// From /datum/definition_event/qdeleting.
 /// From /datum/definition_event/reagent_expose_obj.
 /datum/notice/reagent_expose_obj
-	var/reagent
+	var/datum/reagent/reagent
 	var/amount
 
 /datum/notice/reagent_expose_obj/fill(reagent, amount)

@@ -232,7 +232,7 @@
 	extra_huds(HUD, HUD.ui_style, hud_elements)
 
 	if(client)
-		client.screen = list()
+		client_screen_clear(client)
 		client_screen_add(client, hud_elements)
 		client_screen_add(client, HUD.adding)
 		client_screen_add(client, HUD.hotkeybuttons)

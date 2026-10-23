@@ -308,7 +308,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return FALSE
 	var/obj/O = target
 	if(istype(O))
-		if(!O.tk_reach)
+		if(!rules_of(O).tk_reach)
 			return FALSE
 		if(isitem(O) && !isturf(O.loc))
 			return FALSE

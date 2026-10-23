@@ -6,7 +6,7 @@
 // - Regeneration is a TREAT_REGENERATION treatment funded by refactory steel,
 //   charged from what mend() actually repaired, scaled by STAT_HEALING.
 // - The swarm's own troubles are nanite afflictions
-//   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
+//   (code/content/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
 //   holds it alive through the /datum/act/body_status question it takes over, knocks it out through
 //   the consciousness model and leaves its control cluster inert, until it is

@@ -75,7 +75,7 @@ CAPABILITIES(/datum/system/flight)
 /datum/system/flight/proc/register_destination(obj/effect/overmap/visitable/target)
 	if(!target || QDELETED(target))
 		return null
-	var/existing_id = destination_by_target[REF(target)]
+	var/existing_id = destination_by_target[ref_token(target)]
 	if(existing_id)
 		return destinations?[existing_id]
 	var/datum/flight_destination/destination = new
@@ -108,7 +108,7 @@ CAPABILITIES(/datum/system/flight)
 		destination.orbit_radius = 19
 		destination.orbit_phase = 42
 	rel_add(src, nameof(destinations), destination, destination.id)
-	var/target_ref = REF(target) // lookup keyed by ref string: plain data
+	var/target_ref = ref_token(target) // lookup keyed by the target's token
 	destination_by_target[target_ref] = destination.id
 	return destination
 
@@ -229,7 +229,7 @@ CAPABILITIES(/datum/system/flight)
 		if(host_id == station_id)
 			port.berth_group = "southern-cross-hangar-three"
 		rel_add(src, nameof(ports), port, port.id)
-		var/landmark_ref = REF(landmark) // lookup keyed by ref string: plain data
+		var/landmark_ref = ref_token(landmark) // lookup keyed by the landmark's token
 		port_by_landmark[landmark_ref] = port.id
 
 /datum/system/flight/proc/sync_vessel_ports()

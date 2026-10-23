@@ -48,10 +48,15 @@ jobs:
     with:
       max_required_byond_client: 516
 
+  dreammaker_cross_check:
+    name: DreamMaker Cross-check
+    needs: start_gate
+    uses: ./.github/workflows/run_dreammaker_cross_check.yml
+
   completion_gate: # Serves as a non-moving target for branch rulesets
     if: always() && !cancelled()
     name: Completion Gate
-    needs: [run_unit_tests, run_compile_checks, run_linters]
+    needs: [run_unit_tests, run_compile_checks, dreammaker_cross_check, run_linters]
     runs-on: ubuntu-24.04
     steps:
       - name: Decide whether the needed jobs succeeded or failed

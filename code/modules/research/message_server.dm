@@ -290,14 +290,14 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 	return !istype(GLOB.blackbox, /obj/machinery/blackbox_recorder)
 
 /obj/machinery/blackbox_recorder/proc/machinery_blackbox_recorder_setup()
-	GLOB.blackbox = src
+	rel_set(GLOB, nameof(GLOB.blackbox), src)
 
 // The blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 // it owns (an owned list): the replacement takes the list over.
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
 	var/turf/T = locate(1,1,2)
 	if(T)
-		GLOB.blackbox = null
+		rel_set(GLOB, nameof(GLOB.blackbox), null)
 		var/obj/machinery/blackbox_recorder/BR = new/obj/machinery/blackbox_recorder(T)
 		BR.msg_common = msg_common
 		BR.msg_science = msg_science

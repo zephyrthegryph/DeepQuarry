@@ -75,13 +75,96 @@ pub struct Ctx<'a> {
     pub hidden: HashMap<u32, String>,
     /// Instance initializer proc ID -> inline canonical body (short bodies).
     pub inline_inits: HashMap<u32, String>,
+    /// Source-path rewrites applied to string constants (empty unless `--path-map` is given); see `PathMap`.
+    pub path_map: PathMap,
+}
+
+/// Old-to-new source path rewrites for comparing a build from before a file move with one from after it.
+///
+/// Only a string constant that equals an old path, or starts with one (the path is followed by the end of the
+/// string, a path separator or a character that cannot continue a file name), is rewritten, and only on the side
+/// the map is given for (the "before" side). Every other byte of every string, and every other table, record and
+/// instruction is left alone, so a changed constant, an added or removed file, or a new string equal to an old
+/// path on the "after" side is still reported. A backslash separator is matched, and kept, when the string uses it.
+#[derive(Clone, Debug, Default)]
+pub struct PathMap {
+    pairs: Vec<(Vec<u8>, Vec<u8>)>,
+}
+
+impl PathMap {
+    pub fn new(pairs: &[(String, String)]) -> Self {
+        let mut out: Vec<(Vec<u8>, Vec<u8>)> = pairs
+            .iter()
+            .filter(|(o, n)| !o.is_empty() && o != n)
+            .map(|(o, n)| (o.clone().into_bytes(), n.clone().into_bytes()))
+            .collect();
+        // Longest old path first so a file wins over a directory prefix.
+        out.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        PathMap { pairs: out }
+    }
+    pub fn is_empty(&self) -> bool {
+        self.pairs.is_empty()
+    }
+    fn continues_name(b: u8) -> bool {
+        b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.')
+    }
+    fn swap_sep(v: &[u8], backslash: bool) -> Vec<u8> {
+        v.iter()
+            .map(|&c| match (c, backslash) {
+                (b'/', true) => b'\\',
+                (b'\\', false) => b'/',
+                _ => c,
+            })
+            .collect()
+    }
+    /// The rewritten bytes, or None when no pair applies.
+    pub fn rewrite(&self, text: &[u8]) -> Option<Vec<u8>> {
+        for (old, new) in &self.pairs {
+            for backslash in [false, true] {
+                let o = Self::swap_sep(old, backslash);
+                if !text.starts_with(&o) {
+                    continue;
+                }
+                let rest = &text[o.len()..];
+                let ok = rest
+                    .first()
+                    .map_or(true, |&b| b == b'/' || b == b'\\' || !Self::continues_name(b));
+                if !ok {
+                    continue;
+                }
+                let mut out = Self::swap_sep(new, backslash);
+                out.extend_from_slice(rest);
+                return Some(out);
+            }
+        }
+        None
+    }
+    /// Number of distinct strings in `dmb` the map rewrites.
+    pub fn count_in(&self, dmb: &Dmb) -> usize {
+        if self.is_empty() {
+            return 0;
+        }
+        dmb.strings
+            .iter()
+            .filter(|s| self.rewrite(&s.data).is_some())
+            .count()
+    }
 }
 
 const CYCLE: &str = "<cycle>";
 
 impl<'a> Ctx<'a> {
     pub fn new(dmb: &'a Dmb, rsc_names: Option<HashMap<u32, Vec<u8>>>) -> Self {
+        Self::with_path_map(dmb, rsc_names, PathMap::default())
+    }
+
+    pub fn with_path_map(
+        dmb: &'a Dmb,
+        rsc_names: Option<HashMap<u32, Vec<u8>>>,
+        path_map: PathMap,
+    ) -> Self {
         let mut ctx = Ctx {
+            path_map,
             dmb,
             rsc_names,
             proc_keys: vec![String::new(); dmb.procs.len()],
@@ -159,7 +242,10 @@ impl<'a> Ctx<'a> {
             return "null".into();
         }
         match self.dmb.string(id) {
-            Some(b) => format!("\"{}\"", esc(b)),
+            Some(b) => match self.path_map.rewrite(b) {
+                Some(r) => format!("\"{}\"", esc(&r)),
+                None => format!("\"{}\"", esc(b)),
+            },
             None => format!("<bad-string {id}>"),
         }
     }

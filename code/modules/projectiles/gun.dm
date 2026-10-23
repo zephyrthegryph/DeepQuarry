@@ -46,8 +46,6 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 4
 	throw_range = 5
-	preserve_item = 1
-	zoomdevicename = "scope"
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -111,6 +109,8 @@
 	var/datum/gun_firemode_selector/firemode_selector = null
 
 CAPABILITIES(/obj/item/gun)
+	configure(item_handling(zoom_name = "scope"))
+	configure(item_handling(preserve = 1))
 	setup(PROC_REF(item_gun_setup))
 	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_thrown(force = 5))

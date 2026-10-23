@@ -22,6 +22,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/mmi)
+	configure(item_handling(cavity_implantable = FALSE))
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)

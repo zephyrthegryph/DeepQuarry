@@ -182,10 +182,11 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 				"source_terminal" = T.source_terminal
 			))
 
+		var/datum/money_account/shown_account = authenticated_account()
 		data["authenticated_account"] = list(
 			"owner_name" = authenticated_account().owner_name,
 			"money" = authenticated_account().money,
-			"security_level" = authenticated_account().security_level,
+			"security_level" = shown_account.security_level,
 			"transactions" = transactions,
 		)
 
@@ -343,7 +344,8 @@ CAPABILITIES(/obj/machinery/atm)
 		// be re-authorised: either the matching card is physically inserted, or
 		// the account PIN is re-entered and validated. Raising the level is always
 		// allowed for the already-authenticated holder.
-		if(new_sec_level < authenticated_account().security_level)
+		var/datum/money_account/current_account = authenticated_account()
+		if(new_sec_level < current_account.security_level)
 			var/card_present = held_card() && held_card().associated_account_number == authenticated_account().account_number
 			if(!card_present)
 				var/tried_pin = A.step_value("k325")

@@ -11,6 +11,9 @@
 	var/target_turf = TRUE
 	var/teleport_delay = 3 SECONDS
 
+CAPABILITIES(/obj/belly/special/teleporter)
+	ref_one(nameof(target), /atom/movable)
+
 /obj/belly/special/teleporter/Entered(atom/movable/thing, atom/OldLoc)
 	. = ..()
 	if(teleport_delay <= 0) //just try to teleport immediately.

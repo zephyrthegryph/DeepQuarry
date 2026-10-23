@@ -40,7 +40,7 @@
 		return FALSE
 	if(P.stat == DEAD)
 		return FALSE
-	if(P.suiciding)
+	if(sparse_get_or(P, suiciding, 0))
 		return FALSE
 	if(P.vitality() > 0.95)
 		return FALSE

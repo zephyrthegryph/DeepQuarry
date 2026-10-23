@@ -19,7 +19,7 @@
 
 	if(istype(src,/mob/living/carbon))
 		var/mob/living/carbon/C = src
-		if(C.suiciding)
+		if(sparse_get_or(C, suiciding, 0))
 			to_chat(src, "You're committing suicide, this isn't going to work.")
 			return FALSE
 		if(C.does_not_breathe == FALSE)

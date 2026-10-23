@@ -7,37 +7,21 @@
 	var/w_class // Size of the object.
 	animate_movement = 2
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
-	var/show_messages
 	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
 
 	var/show_examine = TRUE	// Does this pop up on a mob when the mob is examined?
 
-	var/redgate_allowed = TRUE	//can we be taken through the redgate, in either direction?
-	var/tmp/being_shocked = FALSE
-	var/micro_accepted_scale = 0.5
-	var/micro_target = FALSE
 	var/explosion_resistance
-	/// Department and value attribution used when station-made goods are exported.
-	var/economic_department
-	var/economic_export_value = 0
-	var/economic_producer_account = 0
-	/// The finalized department checkout which last sold this physical item.
-	/// Prevents one object being presented repeatedly as several distinct sales.
-	var/economic_sale_invoice_id = 0
 
-	/// Cached custom fire overlay
-	var/tmp/custom_fire_overlay
-	/// Particles this obj uses when burning, if any
-	var/burning_particles
 
 	var/obj_flags = CAN_BE_HIT
 
 	uses_integrity = TRUE
 
 /obj/proc/set_economic_provenance(department, export_value, producer_account = 0)
-	economic_department = department
-	economic_export_value = max(1, round(export_value))
-	economic_producer_account = producer_account
+	sparse_set(src, economic_department, department)
+	sparse_set(src, economic_export_value, max(1, round(export_value)))
+	sparse_set(src, economic_producer_account, producer_account)
 	emit_contract_event(CONTRACT_EVENT_ITEM_PRODUCED, list(
 		"actor_account" = producer_account,
 		"department" = department,
@@ -48,7 +32,7 @@
 		"fact_id" = "production:[REF(src)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
-		"metrics" = list("value" = economic_export_value),
+		"metrics" = list("value" = sparse_get_or(src, economic_export_value, 0)),
 		"detail" = "Fabricated [name] for [department].",
 	), "item-produced:[REF(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
@@ -61,22 +45,24 @@
 	if(can_atmos_pass != ATMOS_PASS_YES && isturf(loc))
 		update_nearby_tiles()
 
-/// Native subtype ending hooks chain here; generic legacy spill stays at its original LINKS phase.
+/// Native subtype ending hooks chain here.
 /obj/proc/ending_consequences(cause, datum/by)
 	return
 
-/obj/on_destroy(force)
-	if(micro_target)
-		for(var/thing in contents_of(src))
-			if(!ismob(thing))
-				continue
-			var/mob/m = thing
-			if(isbelly(src.loc))
-				m.forceMove(src.loc)
-			else
-				m.forceMove(get_turf(src.loc))
-			act_message(m, src, others = span_notice("%U% tumbles out of %T%!"))
+/// The ending of a micro target (configure(obj_rules(micro_target = TRUE)); a type declares on_ending(TYPE_PROC_REF(/obj, micro_occupants_out)) beside it): the
+/// micros inside it tumble out to where it was (to the belly's holder when a belly holds it).
+/obj/proc/micro_occupants_out(cause, datum/by)
+	for(var/thing in contents_of(src))
+		if(!ismob(thing))
+			continue
+		var/mob/m = thing
+		if(isbelly(src.loc))
+			m.forceMove(src.loc)
+		else
+			m.forceMove(get_turf(src.loc))
+		act_message(m, src, others = span_notice("%U% tumbles out of %T%!"))
 
+/obj/on_destroy(force)
 	if(istype(src, /obj/item))
 		var/obj/item/I = src
 		if(I.possessed_voice && I.possessed_voice.len)

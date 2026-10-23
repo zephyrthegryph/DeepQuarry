@@ -237,7 +237,7 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	to_chat(src, span_warning("You place a new glamour ring at your feet."))
 	var/spawnloc = get_turf(src)
 	var/obj/structure/glamour_ring/R = new(spawnloc)
-	R.connected_mob = src
+	rel_set(R, nameof(R.connected_mob), src)
 	rel_add(src, nameof(teleporters), R)
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost_spawn

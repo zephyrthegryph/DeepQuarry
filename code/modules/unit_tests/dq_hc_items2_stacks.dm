@@ -264,11 +264,11 @@
 	var/obj/item/stack/material/processed_alloy/S = allocate(/obj/item/stack/material/processed_alloy, tile(2, 2), 10)
 	S.export_value_per_sheet = 7
 	S.set_amount(4, TRUE)
-	TEST_ASSERT_EQUAL(S.economic_export_value, 28, "the value is per sheet times the sheets")
+	TEST_ASSERT_EQUAL(sparse_get_or(S, economic_export_value, 0), 28, "the value is per sheet times the sheets")
 	TEST_ASSERT(S.use(1), "uses one")
-	TEST_ASSERT_EQUAL(S.economic_export_value, 21, "using a sheet takes its value with it")
+	TEST_ASSERT_EQUAL(sparse_get_or(S, economic_export_value, 0), 21, "using a sheet takes its value with it")
 	TEST_ASSERT(S.add(2), "adds two")
-	TEST_ASSERT_EQUAL(S.economic_export_value, 35, "adding sheets adds their value")
+	TEST_ASSERT_EQUAL(sparse_get_or(S, economic_export_value, 0), 35, "adding sheets adds their value")
 
 /datum/unit_test/dq_hc_items/stack_supermatter_split_asks_through_the_other_hand
 

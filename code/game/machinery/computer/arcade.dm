@@ -3,7 +3,6 @@
 	desc = "random arcade machine"
 	icon_state = "arcade1"
 	icon_keyboard = null
-	clicksound = null	//Gets too spammy and makes no sense for arcade to have the console keyboard noise anyway
 	var/list/prizes = list(	/obj/item/storage/box/snappops					= 2, // ALLOW(instance_list): d: edited in place per instance (1 writers)
 							/obj/item/toy/blink										= 2,
 							/obj/item/clothing/under/syndicate/tacticool			= 2,
@@ -26,6 +25,7 @@
 	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
 CAPABILITIES(/obj/machinery/computer/arcade)
+	configure(machine_usage(interface_sound = TRAIT_NONE))
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
 	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))
@@ -327,7 +327,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	var/fuel = 60
 	var/turns = 4
 	var/alive = 4
-	var/eventdat = null
+	/// The current event's story, one line each (the window lists them; its choices are orion_event_actions()).
+	var/list/eventlines
 	var/event = null
 	var/list/settlers = list("Harry","Larry","Bob") // ALLOW(instance_list): d: edited in place per instance (5 writers)
 	var/list/events = list(ORION_TRAIL_RAIDERS		= 3, // ALLOW(instance_list): d: edited in place per instance (1 writers)
@@ -389,7 +390,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 	traitors_aboard = 0
 
 	//spaceport junk
-	spaceport_raided = 0
+	set_spaceport_raided(0)
 	spaceport_freebie = 0
 	last_spaceport_action = ""
 
@@ -414,7 +415,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 	if(hits < 3)
 		after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(L, hits + 1))
 
-// Event screens embed href links (event()); the tgui buttons call the orion_* procs directly.
+// The tgui buttons (and the event screens' choices) call the orion_* procs directly.
 
 /// Work done after every game action.
 /obj/machinery/computer/arcade/orion_trail/proc/orion_refresh(mob/user)
@@ -628,7 +629,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 	if(gameStatus == ORION_STATUS_MARKET)
 		set_event(null)
 		set_gameStatus(ORION_STATUS_NORMAL)
-		spaceport_raided = 0
+		set_spaceport_raided(0)
 		spaceport_freebie = 0
 		last_spaceport_action = ""
 	orion_refresh(user)
@@ -638,7 +639,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 		if(!spaceport_raided)
 			play_sfx(src, SFX_ARCADE_RAID, ignore_walls = FALSE)
 			var/success = min(15 * alive,100) //default crew (4) have a 60% chance
-			spaceport_raided = 1
+			set_spaceport_raided(1)
 
 			var/FU = 0
 			var/FO = 0
@@ -671,11 +672,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			event()
 	orion_refresh(user)
 
-/obj/machinery/computer/arcade/orion_trail/proc/orion_buyparts(mob/user, list/args)
+/obj/machinery/computer/arcade/orion_trail/proc/orion_buyparts(mob/user, part)
 	if(gameStatus == ORION_STATUS_MARKET)
 		if(!spaceport_raided && fuel > 5)
 			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
-			switch(args["buyparts"])
+			switch(part)
 				if(1) //Engine Parts
 					set_engine(engine + 1)
 					last_spaceport_action = "Bought Engine Parts"
@@ -689,11 +690,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 			event()
 	orion_refresh(user)
 
-/obj/machinery/computer/arcade/orion_trail/proc/orion_trade(mob/user, list/args)
+/obj/machinery/computer/arcade/orion_trail/proc/orion_trade(mob/user, kind)
 	if(gameStatus == ORION_STATUS_MARKET)
 		if(!spaceport_raided)
 			play_sfx(src, SFX_ARCADE_GET_FUEL, ignore_walls = FALSE)
-			switch(args["trade"])
+			switch(kind)
 				if(1) //Fuel
 					if(fuel > 5)
 						set_fuel(fuel - 5)
@@ -708,92 +709,69 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 						event()
 	orion_refresh(user)
 
+/// Rolls the event that just began and writes its story lines; the choices are read live by orion_event_actions().
 /obj/machinery/computer/arcade/orion_trail/proc/event()
-	set_eventdat("<center><h1>[event]</h1></center>")
+	var/list/lines = list()
 	canContinueEvent = 0
 	switch(event)
 		if(ORION_TRAIL_RAIDERS)
-			set_eventdat(eventdat + ("Raiders have come aboard your ship!"))
+			lines += "Raiders have come aboard your ship!"
 			if(prob(50))
 				var/sfood = rand(1,10)
 				var/sfuel = rand(1,10)
 				set_food(food - sfood)
 				set_fuel(fuel - sfuel)
-				set_eventdat(eventdat + ("<br>They have stolen [sfood] <b>Food</b> and [sfuel] <b>Fuel</b>."))
+				lines += "They have stolen [sfood] Food and [sfuel] Fuel."
 			else if(prob(10))
 				var/deadname = remove_crewmember()
-				set_eventdat(eventdat + ("<br>[deadname] tried to fight back, but was killed."))
+				lines += "[deadname] tried to fight back, but was killed."
 			else
-				set_eventdat(eventdat + ("<br>Fortunately, you fended them off without any trouble."))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+				lines += "Fortunately, you fended them off without any trouble."
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_FLUX)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			set_eventdat(eventdat + ("This region of space is highly turbulent. <br>If we go slowly we may avoid more damage, but if we keep our speed we won't waste supplies."))
-			set_eventdat(eventdat + ("<br>What will you do?"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];slow=1'>Slow Down</a> <a href='byond://?src=\ref[src];keepspeed=1'>Continue</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			lines += "This region of space is highly turbulent."
+			lines += "If we go slowly we may avoid more damage, but if we keep our speed we won't waste supplies."
+			lines += "What will you do?"
 
 		if(ORION_TRAIL_ILLNESS)
-			set_eventdat(eventdat + ("A deadly illness has been contracted!"))
+			lines += "A deadly illness has been contracted!"
 			var/deadname = remove_crewmember()
-			set_eventdat(eventdat + ("<br>[deadname] was killed by the disease."))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			lines += "[deadname] was killed by the disease."
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_BREAKDOWN)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			set_eventdat(eventdat + ("Oh no! The engine has broken down!"))
-			set_eventdat(eventdat + ("<br>You can repair it with an engine part, or you can make repairs for 3 days."))
-			if(engine >= 1)
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useengine=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			else
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			lines += "Oh no! The engine has broken down!"
+			lines += "You can repair it with an engine part, or you can make repairs for 3 days."
 
 		if(ORION_TRAIL_MALFUNCTION)
-			set_eventdat(eventdat + ("The ship's systems are malfunctioning!"))
-			set_eventdat(eventdat + ("<br>You can replace the broken electronics with spares, or you can spend 3 days troubleshooting the AI."))
-			if(electronics >= 1)
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];useelec=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			else
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			lines += "The ship's systems are malfunctioning!"
+			lines += "You can replace the broken electronics with spares, or you can spend 3 days troubleshooting the AI."
 
 		if(ORION_TRAIL_COLLISION)
 			play_sfx(src, SFX_ARCADE_EXPLO, ignore_walls = FALSE)
-			set_eventdat(eventdat + ("Something hit us! Looks like there's some hull damage."))
+			lines += "Something hit us! Looks like there's some hull damage."
 			if(prob(25))
 				var/sfood = rand(5,15)
 				var/sfuel = rand(5,15)
 				set_food(food - sfood)
 				set_fuel(fuel - sfuel)
-				set_eventdat(eventdat + ("<br>[sfood] <b>Food</b> and [sfuel] <b>Fuel</b> was vented out into space."))
+				lines += "[sfood] Food and [sfuel] Fuel was vented out into space."
 			if(prob(10))
 				var/deadname = remove_crewmember()
-				set_eventdat(eventdat + ("<br>[deadname] was killed by rapid depressurization."))
-			set_eventdat(eventdat + ("<br>You can repair the damage with hull plates, or you can spend the next 3 days welding scrap together."))
-			if(hull >= 1)
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];usehull=1'>Use Part</a> <a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			else
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];wait=1'>Wait</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+				lines += "[deadname] was killed by rapid depressurization."
+			lines += "You can repair the damage with hull plates, or you can spend the next 3 days welding scrap together."
 
 		if(ORION_TRAIL_BLACKHOLE)
-			set_eventdat(eventdat + ("You were swept away into the black hole."))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];holedeath=1'>Oh...</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+			lines += "You were swept away into the black hole."
 			set_settlers(list())
 
 		if(ORION_TRAIL_MUTINY)
-			set_eventdat(eventdat + ("You've been hearing rumors of dissenting opinions amoungst your men."))
+			lines += "You've been hearing rumors of dissenting opinions amoungst your men."
 			if(settlers.len <= 2)
-				set_eventdat(eventdat + ("<br>Your crew's so tiny you don't think anybody would risk an uprising."))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+				lines += "Your crew's so tiny you don't think anybody would risk an uprising."
 				if(prob(10))
 					traitors_aboard = min(++traitors_aboard,2)
 			else
@@ -802,37 +780,33 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 						traitors_aboard = min(++traitors_aboard,2)
 				else if(prob(70))
 					traitors_aboard = min(++traitors_aboard,2)
-
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];killcrew=1'>Kill a crewmember</a></P>"))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Risk it</a></P>"))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_MUTINY_ATTACK)
 			if(traitors_aboard <= 0) //shouldn't trigger, but hey.
-				set_eventdat(eventdat + ("Haha, fooled you, there isn't a mutiny on board!"))
-				set_eventdat(eventdat + ("<br>(You should report this to a coder :S)"))
+				lines += "Haha, fooled you, there isn't a mutiny on board!"
+				lines += "(You should report this to a coder :S)"
 			else
 				var/trait1 = remove_crewmember()
 				var/trait2 = ""
 				if(traitors_aboard >= 2)
 					trait2 = remove_crewmember()
 
-				set_eventdat(eventdat + ("Oh no, some of your crew are attempting to mutiny!!"))
+				lines += "Oh no, some of your crew are attempting to mutiny!!"
 				if(trait2)
-					set_eventdat(eventdat + ("<br>[trait1] and [trait2]'s have armed themselves with weapons!"))
+					lines += "[trait1] and [trait2]'s have armed themselves with weapons!"
 				else
-					set_eventdat(eventdat + ("<br>[trait1]'s armed with a weapon!"))
+					lines += "[trait1]'s armed with a weapon!"
 
 				var/chance2attack = alive*20
 				if(prob(chance2attack))
 					var/chancetokill = 30*traitors_aboard-(5*alive) //eg: 30*2-(10) = 50%, 2 traitorss, 2 crew is 50% chance
 					if(prob(chancetokill))
 						var/deadguy = remove_crewmember()
-						set_eventdat(eventdat + ("<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] up to [deadguy] and murder[trait2 ? "" : "s"] them!"))
+						lines += "The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] up to [deadguy] and murder[trait2 ? "" : "s"] them!"
 					else
-						set_eventdat(eventdat + ("<br>You valiantly fight off the traitor[trait2 ? "s":""]!"))
-						set_eventdat(eventdat + ("<br>You cut the traitor[trait2 ? "s":""] up into meat... Eww"))
+						lines += "You valiantly fight off the traitor[trait2 ? "s":""]!"
+						lines += "You cut the traitor[trait2 ? "s":""] up into meat... Eww"
 						if(trait2)
 							set_food(food + 30)
 							traitors_aboard = max(0,traitors_aboard-2)
@@ -840,34 +814,25 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 							set_food(food + 15)
 							traitors_aboard = max(0,--traitors_aboard)
 				else
-					set_eventdat(eventdat + ("<br>The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] away, What wimps!"))
+					lines += "The traitor[trait2 ? "s":""] run[trait2 ? "":"s"] away, What wimps!"
 					if(trait2)
 						traitors_aboard = max(0,traitors_aboard-2)
 					else
 						traitors_aboard = max(0,--traitors_aboard)
-
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];eventclose=1'>Continue</a></P>"))
-			set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
 			canContinueEvent = 1
 
 		if(ORION_TRAIL_SPACEPORT)
 			set_gameStatus(ORION_STATUS_MARKET)
 			if(spaceport_raided)
-				set_eventdat(eventdat + ("The Spaceport is on high alert! they wont let you dock since you tried to attack them!"))
+				lines += "The Spaceport is on high alert! they wont let you dock since you tried to attack them!"
 				if(last_spaceport_action)
-					set_eventdat(eventdat + ("<br>Last Spaceport Action: [last_spaceport_action]"))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];close=1'>Close</a></P>"))
+					lines += "Last Spaceport Action: [last_spaceport_action]"
 			else
-				set_eventdat(eventdat + ("You pull the ship up to dock at a nearby Spaceport, lucky find!"))
-				set_eventdat(eventdat + ("<br>This Spaceport is home to travellers who failed to reach Orion, but managed to find a different home..."))
-				set_eventdat(eventdat + ("<br>Trading terms: FU = Fuel, FO = Food"))
+				lines += "You pull the ship up to dock at a nearby Spaceport, lucky find!"
+				lines += "This Spaceport is home to travellers who failed to reach Orion, but managed to find a different home..."
+				lines += "Trading terms: FU = Fuel, FO = Food"
 				if(last_spaceport_action)
-					set_eventdat(eventdat + ("<br>Last Spaceport Action: [last_spaceport_action]"))
-				set_eventdat(eventdat + ("<h3><b>Crew:</b></h3>"))
-				set_eventdat(eventdat + (english_list(settlers)))
-				set_eventdat(eventdat + ("<br><b>Food: </b>[food] | <b>Fuel: </b>[fuel]"))
-				set_eventdat(eventdat + ("<br><b>Engine Parts: </b>[engine] | <b>Hull Panels: </b>[hull] | <b>Electronics: </b>[electronics]"))
+					lines += "Last Spaceport Action: [last_spaceport_action]"
 
 				//If your crew is pathetic you can get freebies (provided you haven't already gotten one from this port)
 				if(!spaceport_freebie && (fuel < 20 || food < 20))
@@ -883,64 +848,63 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 						add_crewmember()
 						freecrew++
 
-					set_eventdat(eventdat + ("<br>The traders of the spaceport take pity on you, and give you some supplies. (+[FU]FU,+[FO]FO)"))
+					lines += "The traders of the spaceport take pity on you, and give you some supplies. (+[FU]FU,+[FO]FO)"
 					if(freecrew)
-						set_eventdat(eventdat + ("<br>You also gain a new crewmember!"))
+						lines += "You also gain a new crewmember!"
 
 					set_fuel(fuel + FU)
 					set_food(food + FO)
+	set_eventlines(lines)
 
-				//CREW INTERACTIONS
-				set_eventdat(eventdat + ("<P ALIGN=Right>Crew Management:</P>"))
+/// The choices the current event offers, read live: each is an action (an op key), its label and, for the market's part and trade rows, the
+/// number it passes under its arg name. A market row the crew cannot afford has no action.
+/obj/machinery/computer/arcade/orion_trail/proc/orion_event_actions()
+	var/list/actions = list()
+	switch(event)
+		if(ORION_TRAIL_RAIDERS, ORION_TRAIL_ILLNESS, ORION_TRAIL_MUTINY_ATTACK)
+			actions += list(list("action" = "eventclose", "label" = "Continue"))
+		if(ORION_TRAIL_FLUX)
+			actions += list(list("action" = "slow", "label" = "Slow Down"))
+			actions += list(list("action" = "keepspeed", "label" = "Continue"))
+		if(ORION_TRAIL_BREAKDOWN)
+			if(engine >= 1)
+				actions += list(list("action" = "useengine", "label" = "Use Part"))
+			actions += list(list("action" = "wait", "label" = "Wait"))
+		if(ORION_TRAIL_MALFUNCTION)
+			if(electronics >= 1)
+				actions += list(list("action" = "useelec", "label" = "Use Part"))
+			actions += list(list("action" = "wait", "label" = "Wait"))
+		if(ORION_TRAIL_COLLISION)
+			if(hull >= 1)
+				actions += list(list("action" = "usehull", "label" = "Use Part"))
+			actions += list(list("action" = "wait", "label" = "Wait"))
+		if(ORION_TRAIL_BLACKHOLE)
+			actions += list(list("action" = "holedeath", "label" = "Oh..."))
+		if(ORION_TRAIL_MUTINY)
+			if(settlers.len <= 2)
+				actions += list(list("action" = "eventclose", "label" = "Continue"))
+			else
+				actions += list(list("action" = "killcrew", "label" = "Kill a crewmember"))
+				actions += list(list("action" = "eventclose", "label" = "Risk it"))
+		if(ORION_TRAIL_SPACEPORT)
+			if(spaceport_raided)
+				actions += list(list("action" = "leave_spaceport", "label" = "Depart Spaceport"))
+			else
+				actions += list(orion_market_row(food >= 10 && fuel >= 10, "buycrew", null, null, "Hire a new Crewmember (-10FU,-10FO)", "You cannot afford a new Crewmember"))
+				actions += list(orion_market_row(settlers.len > 1, "sellcrew", null, null, "Sell crew for Fuel and Food (+7FU,+7FO)", "You cannot afford to sell a Crewmember"))
+				actions += list(orion_market_row(fuel > 5, "buyparts", "part", 1, "Buy Engine Parts (-5FU)", "You cannot afford to buy Engine Parts"))
+				actions += list(orion_market_row(fuel > 5, "buyparts", "part", 2, "Buy Hull Plates (-5FU)", "You cannot afford to buy Hull Plates"))
+				actions += list(orion_market_row(fuel > 5, "buyparts", "part", 3, "Buy Spare Electronics (-5FU)", "You cannot afford to buy Spare Electronics"))
+				actions += list(orion_market_row(fuel > 5, "trade", "kind", 1, "Trade Fuel for Food (-5FU,+5FO)", "You cannot afford to Trade Fuel for Food"))
+				actions += list(orion_market_row(food > 5, "trade", "kind", 2, "Trade Food for Fuel (+5FU,-5FO)", "You cannot afford to Trade Food for Fuel"))
+				actions += list(list("action" = "raid_spaceport", "label" = "!! Raid Spaceport !!"))
+				actions += list(list("action" = "leave_spaceport", "label" = "Depart Spaceport"))
+	return actions
 
-				//Buy crew
-				if(food >= 10 && fuel >= 10)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buycrew=1'>Hire a new Crewmember (-10FU,-10FO)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford a new Crewmember</P>"))
-
-				//Sell crew
-				if(settlers.len > 1)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];sellcrew=1'>Sell crew for Fuel and Food (+7FU,+7FO)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to sell a Crewmember</P>"))
-
-				//BUY/SELL STUFF
-				set_eventdat(eventdat + ("<P ALIGN=Right>Spare Parts:</P>"))
-
-				//Engine parts
-				if(fuel > 5)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=1'>Buy Engine Parts (-5FU)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Engine Parts</a>"))
-
-				//Hull plates
-				if(fuel > 5)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=2'>Buy Hull Plates (-5FU)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Hull Plates</a>"))
-
-				//Electronics
-				if(fuel > 5)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];buyparts=3'>Buy Spare Electronics (-5FU)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to buy Spare Electronics</a>"))
-
-				//Trade
-				if(fuel > 5)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=1'>Trade Fuel for Food (-5FU,+5FO)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to Trade Fuel for Food</P"))
-
-				if(food > 5)
-					set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];trade=2'>Trade Food for Fuel (+5FU,-5FO)</a></P>"))
-				else
-					set_eventdat(eventdat + ("<P ALIGN=Right>You cannot afford to Trade Food for Fuel</P"))
-
-				//Raid the spaceport
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];raid_spaceport=1'>!! Raid Spaceport !!</a></P>"))
-
-				set_eventdat(eventdat + ("<P ALIGN=Right><a href='byond://?src=\ref[src];leave_spaceport=1'>Depart Spaceport</a></P>"))
+/obj/machinery/computer/arcade/orion_trail/proc/orion_market_row(affordable, action, arg_name, value, label, refusal)
+	if(!affordable)
+		return list("action" = null, "label" = refusal)
+	return list("action" = action, "label" = label, "arg" = arg_name, "value" = value)
 
 /obj/machinery/computer/arcade/orion_trail/proc/add_crewmember(specific = "")
 	var/newcrew = ""
@@ -1045,22 +1009,7 @@ CAPABILITIES(/obj/item/orion_ship)
 			explosion(src.loc, 1,2,4)
 			destroyed(src, null, "explosion")
 
-#undef ORION_TRAIL_WINTURN
-#undef ORION_TRAIL_RAIDERS
-#undef ORION_TRAIL_FLUX
-#undef ORION_TRAIL_ILLNESS
-#undef ORION_TRAIL_BREAKDOWN
-#undef ORION_TRAIL_MUTINY
-#undef ORION_TRAIL_MUTINY_ATTACK
-#undef ORION_TRAIL_MALFUNCTION
-#undef ORION_TRAIL_COLLISION
-#undef ORION_TRAIL_SPACEPORT
-#undef ORION_TRAIL_BLACKHOLE
 
-#undef ORION_STATUS_START
-#undef ORION_STATUS_NORMAL
-#undef ORION_STATUS_GAMEOVER
-#undef ORION_STATUS_MARKET
 
 //////////////////
 // Claw Machine //
@@ -1337,62 +1286,6 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 							/obj/item/toy/snake_popper								= 1
 							)
 
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_slow(datum/act/op/A)
-	orion_slow(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_useengine(datum/act/op/A)
-	orion_useengine(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_useelec(datum/act/op/A)
-	orion_useelec(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_usehull(datum/act/op/A)
-	orion_usehull(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_wait(datum/act/op/A)
-	orion_wait(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_keepspeed(datum/act/op/A)
-	orion_keepspeed(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_holedeath(datum/act/op/A)
-	orion_holedeath(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_eventclose(datum/act/op/A)
-	orion_eventclose(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_buycrew(datum/act/op/A)
-	orion_buycrew(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_sellcrew(datum/act/op/A)
-	orion_sellcrew(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_leave_spaceport(datum/act/op/A)
-	orion_leave_spaceport(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_raid_spaceport(datum/act/op/A)
-	orion_raid_spaceport(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_buyparts(datum/act/op/A, buyparts)
-	orion_buyparts(A.actor, A.args)
-	return OP_OK
-
-/obj/machinery/computer/arcade/orion_trail/proc/topic_orion_trade(datum/act/op/A, trade)
-	orion_trade(A.actor, A.args)
-	return OP_OK
 
 /// The swipe already ran; capture the account for this PIN question, not a later card edit.
 /obj/machinery/computer/arcade/clawmachine/proc/pin_account(datum/act/op/A)

@@ -689,6 +689,42 @@ GLOBAL_VAR(dq_test_select_names)
 	else
 		LAZYADD(deferred_cleanups, list(list(src, TYPE_PROC_REF(/datum/unit_test, run_global_cleanup), list(proc_ref) + with)))
 
+/// Remembers the solid (floor) temperature of every turf within `radius` of `centre` and puts them back when the test ends (a deferred cleanup).
+/// A test that heats a floor with add_heat() leaves it hot for every later test that takes the same floor, and the floor's conduction then warms that
+/// test's sealed air (the heat guard, unit_test_solid_guard(), flags it). Take it before the first heat is added.
+/datum/unit_test/proc/restore_solids_after(turf/centre, radius = 3)
+	var/list/was = list()
+	for(var/turf/T as anything in block(locate(max(1, centre.x - radius), max(1, centre.y - radius), centre.z), locate(min(world.maxx, centre.x + radius), min(world.maxy, centre.y + radius), centre.z)))
+		var/kelvin = vg_heat_turf_temperature(T)
+		if(isnum(kelvin))
+			was[T] = list(kelvin, T.initial_temperature)
+	defer_cleanup(src, PROC_REF(put_solids_back), was)
+
+/datum/unit_test/proc/put_solids_back(list/was)
+	for(var/turf/T as anything in was)
+		if(QDELETED(T))
+			continue
+		var/list/row = was[T]
+		heat_set_solid(T, row[1])
+		T.initial_temperature = row[2]
+	// The heat field takes a solid's new temperature at the next world step (the write is queued): step once so it lands in this test.
+	SSair.run_gas_frames(1)
+
+/// Remembers the temperature of every heat-bearing thing standing on `T` and puts them back when the test ends (a deferred cleanup). A fire lit on a
+/// shared floor heats its grille and windows to 600+ K; their heat bodies stay coupled to the floor's air and warm it for every later test that takes
+/// the floor (the gas level tests woke a sleeping service on it). Take it before the fire is lit.
+/datum/unit_test/proc/restore_occupant_heat_after(turf/T)
+	var/list/was = list()
+	for(var/atom/movable/AM in T)
+		if(!isnull(AM.heat_body))
+			was[AM] = AM.get_temperature()
+	defer_cleanup(src, PROC_REF(put_occupant_heat_back), was)
+
+/datum/unit_test/proc/put_occupant_heat_back(list/was)
+	for(var/atom/movable/AM as anything in was)
+		if(!QDELETED(AM))
+			heat_set(AM, was[AM], HEAT_SOURCE_OTHER)
+
 /// A deferred cleanup that is a global proc taking no holder: defer_cleanup(null, GLOBAL_PROC_REF(x), args...).
 /datum/unit_test/proc/run_global_cleanup(proc_ref, ...)
 	call(proc_ref)(arglist(args.Copy(2)))
@@ -973,6 +1009,11 @@ GLOBAL_VAR(dq_test_select_names)
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
 	var/watching_before = length(GLOB.op_watchers)
+	var/list/air_before = unit_test_air_snapshot()
+	var/hotspots_before = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
+	var/list/machines_before = unit_test_machine_snapshot()
+	var/list/solids_before = unit_test_solid_snapshot()
+	var/list/areas_before = unit_test_area_snapshot()
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -1067,6 +1108,10 @@ GLOBAL_VAR(dq_test_select_names)
 	unit_test_globals_guard(globals_before, test_path)
 	unit_test_gravity_guard(gravity_before, test_path)
 	unit_test_watch_guard(watching_before, test_path)
+	unit_test_air_guard(air_before, hotspots_before, test_path)
+	unit_test_machine_guard(machines_before, test_path)
+	unit_test_solid_guard(solids_before, test_path)
+	unit_test_area_guard(areas_before, test_path)
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -1146,6 +1191,209 @@ GLOBAL_VAR(dq_test_select_names)
 	var/now = length(GLOB.op_watchers)
 	if(now > watching_before)
 		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
+
+/// The smallest change the air guard calls a leak. A test that pollutes shared air moves tens to hundreds of moles or tens of kelvin (the
+/// lingering-fire bridge left +80 mol); the margin keeps the guard off the small drift a busy world makes by itself.
+#define UNIT_TEST_AIR_LEAK_MOLES 25
+#define UNIT_TEST_AIR_LEAK_KELVIN 25
+
+/**
+ * The turfs the air guard watches: every open turf with air, none excluded (an exclusion needs evidence that the turf changes by design on an
+ * idle world, and dq_air_guard_exclusions_are_ambient finds none). Built once per run; a turf replaced or emptied since is skipped when read.
+ */
+/proc/unit_test_air_tracked()
+	var/static/list/cache
+	if(cache)
+		return cache
+	cache = list()
+	for(var/turf/open/T in world)
+		if(T.air && !T.blocks_air && !istype(T, /turf/space))
+			cache += T
+	log_test("AIR GUARD: watching [length(cache)] turf(s) for leftover air; none excluded")
+	return cache
+
+/// The air of every tracked turf, as turf list + one batched record (read_gas_mixtures()): the air guard compares it after a test.
+/proc/unit_test_air_snapshot()
+	var/list/live = list()
+	var/list/mixes = list()
+	for(var/turf/open/T as anything in unit_test_air_tracked())
+		if(QDELETED(T) || !istype(T) || !T.air || T.blocks_air)
+			continue
+		live += T
+		mixes += T.air
+	return list("turfs" = live, "readings" = read_gas_mixtures(mixes))
+
+/// What the change of one turf's air between two batched records is, as text, or null when it is under the thresholds.
+/proc/unit_test_air_change(list/was, list/now, offset)
+	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
+		var/delta = now[offset + GAS_READ_MOLES(gas_id)] - was[offset + GAS_READ_MOLES(gas_id)]
+		if(abs(delta) > UNIT_TEST_AIR_LEAK_MOLES)
+			return "gas id [gas_id] [delta > 0 ? "+" : ""][round(delta, 0.1)] mol"
+	if(was[offset + GAS_READ_TOTAL_MOLES] > UNIT_TEST_AIR_LEAK_MOLES * 2 && now[offset + GAS_READ_TOTAL_MOLES] > UNIT_TEST_AIR_LEAK_MOLES * 2 && abs(now[offset + GAS_READ_TEMPERATURE] - was[offset + GAS_READ_TEMPERATURE]) > UNIT_TEST_AIR_LEAK_KELVIN)
+		return "temperature [round(was[offset + GAS_READ_TEMPERATURE], 0.1)] -> [round(now[offset + GAS_READ_TEMPERATURE], 0.1)] K"
+
+/**
+ * Compares the air now with a unit_test_air_snapshot() and returns list("leaked" = turfs changed, "examples" = text). With `put_back`, the leaked turfs are restored from the snapshot.
+ */
+/proc/unit_test_air_diff(list/before, put_back = FALSE)
+	var/list/turfs = before["turfs"]
+	var/list/was = before["readings"]
+	var/list/now = read_gas_mixtures(unit_test_airs_of(turfs))
+	var/leaked = 0
+	var/list/examples = list()
+	for(var/i in 1 to length(turfs))
+		var/turf/open/T = turfs[i]
+		if(QDELETED(T) || !istype(T) || !T.air)
+			continue
+		var/offset = (i - 1) * GAS_READ_STRIDE
+		var/changed = unit_test_air_change(was, now, offset)
+		if(!changed)
+			continue
+		leaked++
+		if(length(examples) < 3)
+			var/list/standing = list()
+			for(var/atom/movable/thing in T)
+				if(length(standing) < 4)
+					standing += "[thing.type]"
+			examples += "[T] ([T.x],[T.y],[T.z]): [changed][T.active_hotspot ? ", a hotspot burns here" : ""][length(standing) ? ", holds [jointext(standing, "/")]" : ""]"
+		if(put_back)
+			unit_test_air_put_back(T, was, offset)
+	return list("leaked" = leaked, "examples" = examples)
+
+/// Logs "STATE LEAK" for each turf whose air a test left changed (unit_test_air_diff()), and for a hotspot the test left burning. Test air is
+/// shared: the clear floors the atmos helpers find are the same turfs for every test, so air a test leaves behind drifts through the
+/// neighbours and fails a later test that reads it. Snapshot a turf you change with dq_atmos_test_snapshot_air() (the finders do it for the
+/// turfs they return and their neighbours). The leak is logged and then put back from the snapshot taken before the test, so one polluter
+/// fails only itself: the line names the first test to leave a turf changed. Returns the number of leaked turfs.
+/proc/unit_test_air_guard(list/before, hotspots_before, test_path, quiet = FALSE)
+	var/list/diff = unit_test_air_diff(before, TRUE)
+	var/leaked = diff["leaked"]
+	if(leaked && !quiet)
+		log_test("STATE LEAK: [test_path] left the air of [leaked] turf(s) changed ([jointext(diff["examples"], "; ")]). Later tests that take the same floor read drifting air: call dq_atmos_test_snapshot_air() on every turf the test changes so restore_atmos() puts it back.")
+	var/hotspots_now = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
+	if(hotspots_now > hotspots_before && !quiet)
+		log_test("STATE LEAK: [test_path] left [hotspots_now - hotspots_before] more hotspot(s) alive than it found. A lingering fire keeps heating its turf's air for every later test: qdel it in the test.")
+	return leaked
+
+/// Puts one turf's air back to the batched record `was` read before the test (offset into it): the gases, then the temperature.
+/proc/unit_test_air_put_back(turf/open/T, list/was, offset)
+	var/datum/gas_mixture/air = T.air
+	air.clear()
+	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
+		var/moles = was[offset + GAS_READ_MOLES(gas_id)]
+		if(moles)
+			air.set_moles(gas_id, moles)
+	if(was[offset + GAS_READ_TOTAL_MOLES] > 0)
+		heat_set(air, was[offset + GAS_READ_TEMPERATURE], HEAT_SOURCE_OTHER)
+	T.air_update_turf(TRUE, FALSE)
+
+/// The air of each turf in the list, a null where it has none (keeps the indices of the snapshot).
+/proc/unit_test_airs_of(list/turfs)
+	. = list()
+	for(var/turf/open/T as anything in turfs)
+		. += T.air
+
+/// The settings of a map atmospherics machine or air alarm a test can leave changed (and a later test then reads): a machine on or off, a pump's target, an alarm's mode.
+/proc/unit_test_machine_vars()
+	var/static/list/names = list("use_power", "on", "mode", "target_pressure", "set_temperature", "power_setting", "target_temperature", "pumping", "pressure_checks", "rcon_setting", "danger_level", "regulating_temperature", "thermostat_mode", "shorted", "aidisabled", "locked", "panel_open", "stat")
+	return names
+
+/// The atmospherics machines and air alarms on the map when the first test starts (built once), the set the machine guard watches.
+/proc/unit_test_machines_tracked()
+	var/static/list/cache
+	if(cache)
+		return cache
+	cache = list()
+	for(var/obj/machinery/atmospherics/M in world)
+		cache += M
+	for(var/obj/machinery/alarm/M in world)
+		cache += M
+	log_test("MACHINE GUARD: watching [length(cache)] atmospherics machine(s) and air alarm(s)")
+	return cache
+
+/// Every watched machine's guarded settings, as machine -> list(var name -> value).
+/proc/unit_test_machine_snapshot()
+	. = list()
+	for(var/obj/machinery/M as anything in unit_test_machines_tracked())
+		if(QDELETED(M))
+			continue
+		var/list/seen = list()
+		for(var/name in unit_test_machine_vars())
+			if(name in M.vars)
+				seen[name] = M.vars[name]
+		.[M] = seen
+
+/// Logs "STATE LEAK" for each watched machine whose guarded settings the test changed (the state guard's rule: it flags, it does not restore).
+/proc/unit_test_machine_guard(list/before, test_path)
+	for(var/obj/machinery/M as anything in before)
+		if(QDELETED(M))
+			continue
+		var/list/was = before[M]
+		for(var/name in was)
+			if(M.vars[name] != was[name])
+				log_test("STATE LEAK: [test_path] left [M] ([M.type]) at ([M.x],[M.y],[M.z]) with [name] = [M.vars[name]] (was [was[name]]). Every later test sees the changed machine: set it through set_var() or put it back in the test.")
+
+/// The smallest change of a floor's own (solid) temperature the heat guard calls a leak, K. A hot floor warms the sealed test room's air through
+/// its own conduction, which no air snapshot sees.
+#define UNIT_TEST_SOLID_LEAK_KELVIN 5
+/// Floors colder than this when the test starts are the map's cryogenic rooms, which drift by design; the heat guard does not judge them.
+#define UNIT_TEST_SOLID_COLD_ROOM_KELVIN 200
+
+/// The solid temperature of every watched turf, as turf -> K.
+/proc/unit_test_solid_snapshot()
+	. = list()
+	for(var/turf/open/T as anything in unit_test_air_tracked())
+		if(QDELETED(T) || !istype(T))
+			continue
+		var/kelvin = vg_heat_turf_temperature(T)
+		// The map's cryogenic rooms (the processing strata, ~100 K) warm toward room temperature on their own on an idle world, as the pumps there do.
+		if(isnum(kelvin) && kelvin > UNIT_TEST_SOLID_COLD_ROOM_KELVIN)
+			.[T] = kelvin
+
+/// Logs "STATE LEAK" for turfs whose solid temperature the test changed (flags, does not restore).
+/proc/unit_test_solid_guard(list/before, test_path)
+	var/leaked = 0
+	var/list/moved = list() // text -> |change|
+	for(var/turf/open/T as anything in before)
+		if(QDELETED(T) || !istype(T))
+			continue
+		var/kelvin = vg_heat_turf_temperature(T)
+		if(!isnum(kelvin) || abs(kelvin - before[T]) <= UNIT_TEST_SOLID_LEAK_KELVIN)
+			continue
+		leaked++
+		moved["[T] ([T.x],[T.y],[T.z]) in [get_area(T)]: [round(before[T], 0.1)] -> [round(kelvin, 0.1)] K"] = abs(kelvin - before[T])
+	if(!leaked)
+		return
+	// The three that moved most: the polluter's own floor, not the cold rooms that drift by themselves.
+	var/list/examples = list()
+	for(var/i in 1 to min(3, length(moved)))
+		var/best
+		for(var/text in moved)
+			if(!(text in examples) && (isnull(best) || moved[text] > moved[best]))
+				best = text
+		examples += best
+	log_test("STATE LEAK: [test_path] left the solid temperature of [leaked] turf(s) changed, the largest moves first ([jointext(examples, "; ")]). A hot or cold floor feeds heat into the air of every later test that takes it: heat_set_solid() it back in the test.")
+
+/// What an area's power, alarms and lights read as, per area: var name -> value.
+/proc/unit_test_area_snapshot()
+	. = list()
+	var/static/list/names = list("power_equip", "power_light", "power_environ", "requires_power", "atmosalm", "poweralm", "fire", "party", "lightswitch", "firedoors_closed")
+	for(var/area/A in world)
+		var/list/seen = list()
+		for(var/name in names)
+			if(name in A.vars)
+				seen[name] = A.vars[name]
+		.[A] = seen
+
+/// Logs "STATE LEAK" for each area whose power or alarm state the test changed (flags, does not restore).
+/proc/unit_test_area_guard(list/before, test_path)
+	for(var/area/A as anything in before)
+		if(QDELETED(A))
+			continue
+		var/list/was = before[A]
+		for(var/name in was)
+			if(A.vars[name] != was[name])
+				log_test("STATE LEAK: [test_path] left [A] ([A.type]) with [name] = [A.vars[name]] (was [was[name]]). Every machine in it behaves differently in later tests: put it back in the test.")
 
 /// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
 /// program), and every later test's mobs then drift.
@@ -1466,6 +1714,12 @@ GLOBAL_VAR(boot_unclean)
 	for(var/unit_path in tests_to_run)
 		CHECK_TICK //We check tick first because the unit test we run last may be so expensive that checking tick will lock up this loop forever
 		current_test_index++
+		if(own_audit_due())
+			try
+				own_audit_periodic()
+			catch(var/exception/audit_e)
+				framework_failures += "OWN AUDIT (periodic): [audit_e.name] at [audit_e.file]:[audit_e.line]"
+				log_test("OWNERSHIP periodic audit raised: [audit_e.name] at [audit_e.file]:[audit_e.line] -- [audit_e.desc]")
 		// A runtime anywhere in RunUnitTest() outside the test's own Run()
 		// (block release, cleanup of what the test left behind) would otherwise
 		// unwind this loop into the OM trampoline's try/catch and stop the

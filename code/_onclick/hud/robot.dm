@@ -198,7 +198,7 @@
 	hud_used?.radio_use_icon?.alpha = HUD.ui_alpha
 
 	if(client && apply_to_client)
-		client.screen = list()
+		client_screen_clear(client)
 		client_screen_add(client, list( hud_used?.throw_icon, hud_used?.zone_sel, hud_used?.hands, hud_used?.healths, hud_used?.pullin, robot_inventory, hud_used?.gun_setting_icon))
 		if(HUD.combat_mode_button)
 			client_screen_add(client, HUD.combat_mode_button)

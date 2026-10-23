@@ -18,7 +18,6 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	anchored = TRUE
 	layer = TABLE_LAYER
 	throwpass = 1
-	surgery_cleanliness = 50
 	/// 0: standing; 1: flipped on its side; -1: a kind that is never flipped or stood on (a rack, a bench).
 	var/flipped = 0
 	max_integrity = 10
@@ -72,12 +71,13 @@ MSG_DEF(table/uncarpeted, "You remove the carpet from %T%.", "%U% removes the ca
 MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some damage to %T%.")
 
 CAPABILITIES(/obj/structure/table)
+	configure(obj_rules(surgery_cleanliness = 50))
 	setup(PROC_REF(finish_building))
 	smoothing()
 	table_frame()
 	climb(landing = PROC_REF(flipped_landing))
 	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed))))
-	extend("construction.build:table_reinforced", priority(above("place_dragged")))
+	click_order(BIND_ITEM, "construction.build:table_reinforced", "place_dragged")
 	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(PROC_REF(is_damaged)),
 		then(PROC_REF(repaired)), says(MSG(table/repaired)))
 	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req(PROC_REF(can_carpet))),

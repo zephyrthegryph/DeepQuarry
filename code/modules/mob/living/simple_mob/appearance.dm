@@ -24,7 +24,7 @@
 			state = "[icon_dead]-[vore_fullness]"
 		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED)) && icon_rest && (vore_icons & SA_ICON_REST))
 			state = "[icon_rest]-[vore_fullness]"
-		if(vore_eyes && awake)
+		if(nature_of(src).vore_eyes && awake)
 			eye_state = state
 		for(var/belly_state in vore_fullness_states(state))
 			look.overlay(belly_state)

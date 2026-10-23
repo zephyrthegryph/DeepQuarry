@@ -108,9 +108,9 @@
 	if(embedded_flag)
 		handle_embedded_objects() //Moving with objects stuck in you can cause bad times.
 
-	if(pose && pose_move) //clear pose on movement if choosing to
+	if(pose && sparse_get_or(src, pose_move, FALSE)) //clear pose on movement if choosing to
 		pose = null
-		pose_move = FALSE
+		sparse_set(src, pose_move, FALSE)
 		remove_pose_indicator()
 
 // This calculates the amount of slowdown to receive from items worn. This does NOT include species modifiers.

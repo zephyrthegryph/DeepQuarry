@@ -213,7 +213,8 @@
 	TEST_ASSERT_EQUAL(spray?.outcome, ACT_COMMITTED, "a spray commits")
 	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "using one transfer (5)")
 	var/has_pour = FALSE
-	for(var/datum/centry/C as anything in table_of(sprayer).items)
+	var/datum/type_table/sprayer_table = table_of(sprayer)
+	for(var/datum/centry/C as anything in sprayer_table.items)
 		if(C.eff_key == "reagent_container.pour")
 			has_pour = TRUE
 	TEST_ASSERT(!has_pour, "a sprayer has no pour op")

@@ -122,9 +122,9 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	if(!destination)
 		A.reason = /datum/msg/climb/blocked
 		return OP_REFUSED
-	GLOB.act_next_actor = climber
+	rel_set(GLOB, nameof(GLOB.act_next_actor), climber)
 	var/C = ACT_ATTEMPT(climber, climb, holder)
-	GLOB.act_next_actor = null
+	rel_clear(GLOB, nameof(GLOB.act_next_actor))
 	if(ACT_REFUSED_BY(C))
 		var/datum/act_refusal/refused_C = C
 		A.reason = refused_C.reason || /datum/msg/op/not_available

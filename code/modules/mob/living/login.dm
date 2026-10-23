@@ -30,7 +30,7 @@
 	mind.active = 1		//indicates that the mind is currently synced with a client
 	//If they're SSD, remove it so they can wake back up.
 	SSantag.update_antag_icons(mind)
-	client.screen |= GLOB.global_hud.darksight
+	client_screen_include(client, GLOB.global_hud.darksight)
 	// The darksight overlay is client state: it lives on the hud Login() just built.
 	var/image/dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
 	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
@@ -39,7 +39,7 @@
 	dsma.blend_mode = BLEND_ADD
 	dsoverlay.appearance = dsma
 	hud_used.dsoverlay = dsoverlay
-	client.images |= dsoverlay
+	client_images_include(client, dsoverlay)
 
 	if(ai_brain && !ai_brain.autopilot)
 		ai_brain.go_sleep()
@@ -49,7 +49,7 @@
 
 	// Vore stuff
 
-	if(!no_vore)
+	if(!nature_of(src).no_vore)
 		grant(src, granted_verb(/mob/living/proc/vorebelly_printout), src)
 		if(!vorePanel)
 			add_vore_panel_button()

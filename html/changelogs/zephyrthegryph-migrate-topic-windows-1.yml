@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The Orion Trail event screens, the known-languages window and the lore codex reader are now structured TGUI windows; their buttons are window actions instead of browser links. The event text is plainer (no bold markup) and the spaceport market shows live supplies."

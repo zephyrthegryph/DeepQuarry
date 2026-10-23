@@ -11,7 +11,7 @@
 		var/obj/item/I = A
 		I.inhabit_item(src, object_name, src, allow_emotes)
 		var/mob/living/possessed_voice = I.possessed_voice
-		I.trash_eatable = vore_prefs.devourable
+		sparse_set(I, trash_eatable, vore_prefs.devourable)
 		I.unacidable = !vore_prefs.digestable
 		forceMove(possessed_voice)
 

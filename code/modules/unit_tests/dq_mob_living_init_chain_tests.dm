@@ -1,16 +1,68 @@
-// /mob/living/Initialize is defined three times (modules/mob/living/living.dm, modules/body/body.dm, modules/combat_ai/integration/mob_living.dm).
-// DM keeps all three: the last-included body runs first and each ..() calls the earlier definition. So the effects land as
-// body.dm (builds the body, then ..()), living.dm (after ..(): the HUD slot table), mob_living.dm (after ..(): the AI brain).
+// /mob/living/Initialize is defined twice (modules/mob/living/living.dm, modules/combat_ai/integration/mob_living.dm).
+// DM keeps both: the last-included body runs first and its ..() calls the earlier definition. So the effects land as
+// living.dm (after ..(): the HUD slot table), mob_living.dm (after ..(): the AI brain). The body is the owns_one(starts =) of the combat AI block.
 
 /datum/unit_test/dq_mob_living_init_chain
 
 /datum/unit_test/dq_mob_living_init_chain/Run()
 	var/turf/T = dq_containment_floor()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	TEST_ASSERT(istype(M.body, M.body_type), "body.dm's Initialize body ran: the body plan exists")
+	TEST_ASSERT(istype(M.body, M.body_type), "the declared starting body was made: the body plan exists")
 	TEST_ASSERT_EQUAL(M.body.owner, M, "and belongs to the mob")
 	TEST_ASSERT(M.has_huds && islist(M.hud_list) && length(M.hud_list) == TOTAL_HUDS, "living.dm's Initialize body ran: the HUD slot table exists")
 	TEST_ASSERT(M.use_modern_ai && istype(M.ai_brain, /datum/ai_brain), "mob_living.dm's Initialize body ran: the AI brain exists")
+
+// Body creation order: the declared starting body (owns_one(starts =) of the combat AI block) is made inside /mob/living/Initialize's chain,
+// so a type's own Initialize code that runs before its ..() sees no body and code after ..() sees it. A human is the exception: it runs
+// set_species() before ..(), which builds the body there. The probes below record what they saw.
+/mob/living/silicon/robot/dq_body_order_probe
+	var/body_before_init_chain = "unset"
+	var/body_after_init_chain = "unset"
+
+/mob/living/silicon/robot/dq_body_order_probe/setup_radio()
+	body_before_init_chain = body // ran before ..() in robot Initialize
+	return ..()
+
+/mob/living/silicon/robot/dq_body_order_probe/Initialize(mapload)
+	. = ..()
+	body_after_init_chain = body
+
+/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe
+	var/body_before_init_chain = "unset"
+	var/body_after_init_chain = "unset"
+
+/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe/Initialize(mapload)
+	body_before_init_chain = body
+	. = ..()
+	body_after_init_chain = body
+
+/mob/living/carbon/human/dq_body_order_probe
+	var/body_after_set_species = "unset"
+	var/body_after_init_chain = "unset"
+
+/mob/living/carbon/human/dq_body_order_probe/set_species(new_species, keep_organs = FALSE)
+	. = ..()
+	if(body_after_set_species == "unset")
+		body_after_set_species = body // set_species runs before the human's ..()
+
+/mob/living/carbon/human/dq_body_order_probe/Initialize(mapload)
+	. = ..()
+	body_after_init_chain = body
+
+/datum/unit_test/dq_body_creation_order
+
+/datum/unit_test/dq_body_creation_order/Run()
+	var/turf/T = dq_containment_floor()
+	var/mob/living/silicon/robot/dq_body_order_probe/R = allocate(/mob/living/silicon/robot/dq_body_order_probe, T)
+	TEST_ASSERT_NULL(R.body_before_init_chain, "a robot has no body in code that runs before ..()")
+	TEST_ASSERT(istype(R.body_after_init_chain, /datum/body), "a robot has its body after ..()")
+	var/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe/M = allocate(/mob/living/simple_mob/animal/passive/mouse/dq_body_order_probe, T)
+	TEST_ASSERT_NULL(M.body_before_init_chain, "a mouse has no body in code that runs before ..()")
+	TEST_ASSERT(istype(M.body_after_init_chain, /datum/body), "a mouse has its body after ..()")
+	var/mob/living/carbon/human/dq_body_order_probe/H = allocate(/mob/living/carbon/human/dq_body_order_probe, T)
+	TEST_ASSERT(istype(H.body_after_set_species, /datum/body), "a human already has a body before ..() because set_species builds it")
+	TEST_ASSERT(istype(H.body_after_init_chain, /datum/body), "and still has it after ..()")
+	TEST_ASSERT_EQUAL(H.body_after_init_chain, H.body_after_set_species, "the same body: the chain does not replace it")
 
 // The setup(PROC_REF(x), mapload = TRUE) forms that replaced the gripper's, the NIF's and the AR soul's Initialize() tails.
 /datum/unit_test/dq_mob_setup_tails

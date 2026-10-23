@@ -48,11 +48,10 @@
 
 	say_list_type = /datum/say_list/fennec
 
-	pain_emote_1p = list("yelp", "whine", "bark", "growl")
-	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 	species_sounds = "Vulpine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 // Activate Noms!

@@ -23,6 +23,9 @@
 	// Baseline: drop slots that were already stale, then count what is alive.
 	vg_gas_retain_mixtures(dq_gas_arena_live_mixtures())
 	var/baseline_live = dq_gas_arena_live_count()
+	var/list/baseline_set = list()
+	for(var/datum/gas_mixture/known as anything in dq_gas_arena_live_mixtures())
+		baseline_set[known] = TRUE
 
 	var/list/run = dq_atmos_test_find_clear_pipe_run(3)
 	TEST_ASSERT_NOTNULL(run, "no clear floor run for the arena leak test")
@@ -67,8 +70,17 @@
 		qdel(machine)
 	qdel(receiver)
 	SSair.rust_commit_pending_pipenets()
+	// The floor snapshots dq_atmos_test_find_clear_pipe_run() took are fixture mixtures held until the test's restore: put the floors back first so
+	// only what the machinery and networks left behind is counted.
+	dq_atmos_test_restore_state()
 
 	var/leaked = vg_gas_retain_mixtures(dq_gas_arena_live_mixtures())
 	TEST_ASSERT_EQUAL(leaked, 0, "[leaked] arena slot(s) lost their gas mixture without it being destroyed (an orphaned mixture)")
 	var/after_live = dq_gas_arena_live_count()
+	if(after_live > baseline_live)
+		for(var/datum/gas_mixture/mix as anything in dq_gas_arena_live_mixtures())
+			if(baseline_set[mix] || QDELETED(mix))
+				continue
+			var/datum/owner_datum = owner_of(mix)
+			log_test("gas arena leak: [REF(mix)] volume=[mix.return_volume()] own_holder_ref=[mix.own_holder_ref] own_slot=[mix.own_slot] owner=[owner_datum ? "[owner_datum.type] [REF(owner_datum)]" : "none"]")
 	TEST_ASSERT(after_live <= baseline_live, "live gas mixtures went from [baseline_live] to [after_live]: a destroyed machine or network left a mixture alive")

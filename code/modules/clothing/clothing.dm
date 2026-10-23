@@ -883,7 +883,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 	var/taurized = FALSE
 	w_class = ITEMSIZE_NORMAL
-	preserve_item = 1
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
@@ -897,6 +896,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_handling(preserve = 1))
 	extend(/datum/act/equip, needs(req(PROC_REF(limb_clearance))))
 	suit_storage(list(POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
@@ -1021,7 +1021,6 @@ CAPABILITIES(/obj/item/clothing/suit)
 	name = "under"
 	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
-	show_messages = 1
 	blood_sprite_state = "uniformblood"
 
 	var/has_sensor = 1 //For the crew computer 2 = unable to change mode
@@ -1077,6 +1076,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	configure(obj_rules(show_messages = 1))
 	configure(item_worn(covers = ARMS|LEGS|ARMS, slots = SLOT_ICLOTHING))
 	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))

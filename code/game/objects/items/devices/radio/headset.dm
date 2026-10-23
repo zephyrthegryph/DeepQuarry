@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/radio/headset)
 		return OP_OK
 	for(var/ch_name in channels)
 		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		rel_add(src, nameof(secure_radio_connections), null, ch_name)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/item/radio/headset)
 			return
 
 		for (var/ch_name in channels)
-			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			rel_add(src, nameof(secure_radio_connections), SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT), ch_name)
 
 	if(setDescription)
 		setupRadioDescription()
