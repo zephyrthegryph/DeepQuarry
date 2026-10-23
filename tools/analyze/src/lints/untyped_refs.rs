@@ -13,9 +13,9 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use dreammaker::ast::{AssignOp, Expression, Follow, Term};
+use dreammaker::ast::{AssignOp, Expression, Term};
 
-use crate::dm::value_procs::ValueProcs;
+use crate::dm::value_procs::{is_call, ValueProcs};
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::lints::stored_refs::{collect_locals, path_of, Kinds, Place, ProcScope, Walker};
 use crate::sem::ast::{stmt_blocks, stmt_exprs, strip_parens, walk_expr};
@@ -66,16 +66,6 @@ fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
             walk_block(nb, f);
         }
     }
-}
-
-/// The value is the result of a proc call (a plain, global, or method call at the end of the chain).
-fn is_call(e: &Expression) -> bool {
-    let e = strip_parens(e);
-    let Expression::Base { term, follow } = e else { return false };
-    if let Some(last) = follow.last() {
-        return matches!(last.elem, Follow::Call(..));
-    }
-    matches!(term.elem, Term::Call(..) | Term::GlobalCall(..))
 }
 
 impl Lint for Untyped {

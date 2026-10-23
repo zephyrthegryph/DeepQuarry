@@ -88,8 +88,7 @@
 	..()
 	wound_category = injury_category
 	// The scheduler's time (world.time in play, the injected clock under a test): the clock the fade timer and its check read.
-	var/made_at = scheduler_time_of(src)
-	created = made_at
+	created = scheduler_time_of(src)
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage

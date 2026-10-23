@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The untyped lint now proves world.time, value-only vars, argument passthrough and unknown-receiver calls are values; wound creation assigns scheduler_time_of() directly"
