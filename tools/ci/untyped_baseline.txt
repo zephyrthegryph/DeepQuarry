@@ -9,7 +9,6 @@ typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_rig
 typed	code/modules/vore/eating/vore.dm	@/datum/vore_preferences::spont_belly_front
 call	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::max_explosion_range
 call	code/_onclick/hud/skybox.dm	@/atom/movable/screen/skybox::sky_image
-call	code/content/clothing/masks/voice.dm	@/obj/item/voice_changer::voice
 call	code/content/clothing/suits/shibari.dm	@/obj/item/clothing/suit/shibari::rope_mode
 call	code/contracts/acts/context.dm	@/datum/act/action::reason
 call	code/contracts/acts/context.dm	@/datum/act/action::reply
