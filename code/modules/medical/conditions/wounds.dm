@@ -87,7 +87,7 @@
 /datum/affliction/wound/New(location, initial_damage = 0)
 	..()
 	wound_category = injury_category
-	EXPIRY_STAMP(src, created, CLOCK_WORLD)
+	created = time_scheduler().now() // the scheduler's time (world.time in play, the injected clock under a test), the one the fade timer and its check read
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage
@@ -156,7 +156,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		if(BEFORE(src, created + 10 MINUTES, CLOCK_WORLD)) // Wounds don't autoheal for ten minutes if not bandaged.
+		if(created + 10 MINUTES > scheduler_time_of(src)) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE
 	return FALSE
