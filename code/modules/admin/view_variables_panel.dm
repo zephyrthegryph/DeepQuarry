@@ -156,6 +156,13 @@ CAPABILITIES(/datum/view_variables_panel)
 					"name" = varname,
 					"value_html" = "[thing_datum.vv_get_var(varname, user)]",
 				))
+		// Its sparse slots (every one its type declares, set or not), edited through the sparse writer.
+		var/list/slot_fields = sparse_slots_of(thing_datum)
+		for(var/slot_label in slot_fields)
+			variables += list(list(
+				"name" = slot_label,
+				"value_html" = "[debug_variable(slot_label, slot_fields[slot_label], 0, thing_datum, viewer = user)]",
+			))
 		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
 		var/list/trait_fields = type_trait_fields_of(thing_datum)
 		for(var/field_name in trait_fields)
