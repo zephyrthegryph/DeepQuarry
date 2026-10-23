@@ -13,8 +13,7 @@
 	var/name
 	var/score
 
-/datum/io/sql/row/e6_score/column_names()
-	return list("name", "score")
+TYPE_TABLE(/datum/io/sql/row/e6_score, sql_columns, list("name", "score"))
 
 /// A row type with more than one column names them in order; the order of `vars` is not the declaration order.
 /datum/unit_test/kernel_db_row_columns_named
@@ -27,9 +26,9 @@
 		for(var/name in row.vars)
 			if(!(name in plain.vars))
 				own += name
-		var/list/named = row.column_names()
+		var/list/named = TYPE_TABLE_GET(row, sql_columns)
 		if(length(own) > 1)
-			TEST_ASSERT(named, "[row_path] has [length(own)] columns and must name their order in column_names()")
+			TEST_ASSERT(named, "[row_path] has [length(own)] columns and must name their order in an sql_columns table")
 		if(named)
 			TEST_ASSERT_EQUAL(length(named), length(own), "[row_path] names every column once")
 			for(var/name in named)

@@ -1032,8 +1032,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	var/exclude_flags
 	var/edit_flags
 
-/datum/io/sql/row/permission_rank_flags/column_names()
-	return list("include_flags", "exclude_flags", "edit_flags")
+TYPE_TABLE(/datum/io/sql/row/permission_rank_flags, sql_columns, list("include_flags", "exclude_flags", "edit_flags"))
 
 /datum/admins/proc/permission_rank_prompt_ended(datum/act/request/A)
 	if(!A.answer)
