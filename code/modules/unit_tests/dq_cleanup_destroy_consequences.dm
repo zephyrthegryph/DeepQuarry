@@ -25,6 +25,7 @@
 
 CAPABILITIES(/obj/dq_cleanup_micro_holder)
 	configure(obj_rules(micro_target = TRUE))
+	on_ending(TYPE_PROC_REF(/obj, micro_occupants_out))
 
 /obj/structure/micro_tunnel/dq_cleanup_capture
 	var/list/captured_messages

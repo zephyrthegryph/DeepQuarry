@@ -38,6 +38,8 @@
 /datum/unit_test/dq_gameplay/arrival_spawn
 
 /datum/unit_test/dq_gameplay/arrival_spawn/play()
+	// act_taken is a cumulative counter that equipping a joiner moves; set_global() puts it back after the test, so the state guard stays quiet.
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/mob/living/carbon/human/H = spawn_arrival()
 	if(!H)
 		return

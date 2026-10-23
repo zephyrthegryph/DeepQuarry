@@ -205,13 +205,17 @@
 
 /datum/unit_test/dq_manual_account_creation_is_conservative
 
+/datum/unit_test/dq_manual_account_creation_is_conservative/proc/restore_station_account(datum/money_account/saved)
+	rel_set(GLOB, nameof(GLOB.station_account), saved)
+
 /datum/unit_test/dq_manual_account_creation_is_conservative/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/money_account/test_station = new
 	test_station.set_owner_name("Test Station")
 	test_station.set_money(100)
 	test_station.suspended = TRUE
-	set_global("station_account", test_station)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test/dq_manual_account_creation_is_conservative, restore_station_account), GLOB.station_account)
+	rel_set(GLOB, nameof(GLOB.station_account), test_station)
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
 	authorizer.set_registered_name("Account Test Captain")

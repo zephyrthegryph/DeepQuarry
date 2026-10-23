@@ -518,7 +518,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set category = VERB_CAT_OOC_RESOURCES
 
 	if(!GLOB.changelog_tgui)
-		GLOB.changelog_tgui = new /datum/changelog()
+		rel_set(GLOB, nameof(GLOB.changelog_tgui), new /datum/changelog())
 	GLOB.changelog_tgui.tgui_interact(usr)
 
 	if(prefs?.read_preference(/datum/preference/text/lastchangelog) != GLOB.changelog_hash)

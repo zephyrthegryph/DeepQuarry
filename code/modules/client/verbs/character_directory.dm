@@ -12,7 +12,7 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 	usr.setMoveCooldown(10)
 
 	if(!GLOB.character_directory)
-		GLOB.character_directory = new
+		rel_set(GLOB, nameof(GLOB.character_directory), new /datum/character_directory)
 	GLOB.character_directory.tgui_interact(mob)
 
 

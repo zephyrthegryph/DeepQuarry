@@ -205,8 +205,6 @@ init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initiali
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::color
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::if
 init_lines	code/modules/blob2/overmind/overmind.dm	@/mob/observer/blob::Initialize::blob_core
-init_lines	code/modules/body/body.dm	@/mob/living::Initialize::if
-init_lines	code/modules/body/body.dm	@/mob/living::Initialize::rel_set
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::limb
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::if
 init_lines	code/modules/body/organs/organ_stump.dm	@/obj/item/organ/external/stump::Initialize::body_part

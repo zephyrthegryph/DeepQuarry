@@ -126,13 +126,13 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 /// Declared setup: replace camera room, after the complete parent chain.
 /obj/effect/landmark/ai_multicam_room/proc/replace_camera_room()
 	spent(GLOB.ai_camera_room_landmark)
-	GLOB.ai_camera_room_landmark = src
+	rel_set(GLOB, nameof(GLOB.ai_camera_room_landmark), src)
 
 /// Phase 2: stops being the multicam room.
 /obj/effect/landmark/ai_multicam_room/lifecycle_dematerialize()
 	. = ..()
 	if(GLOB.ai_camera_room_landmark == src)
-		GLOB.ai_camera_room_landmark = null
+		rel_set(GLOB, nameof(GLOB.ai_camera_room_landmark), null)
 
 //Dummy camera eyes
 
