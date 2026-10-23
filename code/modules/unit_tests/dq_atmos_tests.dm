@@ -682,7 +682,8 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
 
-	// Stock with fuel + oxidizer.
+	// Stock with fuel + oxidizer. The turf is shared with every later test that takes the first clear floor: its air is put back after this one (restore_atmos()).
+	dq_atmos_test_snapshot_air(T)
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 30)
 	air.adjust_gas(/datum/gas/oxygen, 80)

@@ -1466,6 +1466,12 @@ GLOBAL_VAR(boot_unclean)
 	for(var/unit_path in tests_to_run)
 		CHECK_TICK //We check tick first because the unit test we run last may be so expensive that checking tick will lock up this loop forever
 		current_test_index++
+		if(own_audit_due())
+			try
+				own_audit_periodic()
+			catch(var/exception/audit_e)
+				framework_failures += "OWN AUDIT (periodic): [audit_e.name] at [audit_e.file]:[audit_e.line]"
+				log_test("OWNERSHIP periodic audit raised: [audit_e.name] at [audit_e.file]:[audit_e.line] -- [audit_e.desc]")
 		// A runtime anywhere in RunUnitTest() outside the test's own Run()
 		// (block release, cleanup of what the test left behind) would otherwise
 		// unwind this loop into the OM trampoline's try/catch and stop the
