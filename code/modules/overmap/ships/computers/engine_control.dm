@@ -23,21 +23,25 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number/ship_console_global_limit, fields = list("default" = computed(PROC_REF(global_limit_default))), step = "limit"),
 		then(PROC_REF(ui_act_set_global_limit)))
 	op("global_limit", ui_act("global_limit", arg("global_limit", num())), then(PROC_REF(ui_act_global_limit)))
-	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)),
+	op("set_limit", ui_act("set_limit", arg("engine", schema_text(32))), needs(req(PROC_REF(engine_named), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Input new thrust limit (0..100)", "title" = "Thrust limit", "default" = computed(PROC_REF(engine_limit_default)), "max_value" = 100, "timeout" = 0), step = "limit"),
 		then(PROC_REF(ui_act_set_limit)))
-	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_limit)))
-	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_toggle_engine)))
+	op("limit", ui_act("limit", arg("engine", schema_text(32)), arg("limit", num())), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_limit)))
+	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_text(32))), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_toggle_engine)))
 
-/// A button that names an engine names one.
+/// The engine of this console's own ship that a handle names; an engine of another ship is not one.
+/obj/machinery/computer/ship/engines/proc/engine_of(ref)
+	return ui_member(ref, linked()?.engines, /datum/ship_engine)
+
+/// A button that names an engine names one of this ship's.
 /obj/machinery/computer/ship/engines/proc/engine_named(datum/act/op/A)
-	return (!isnull(A.args["engine"])) ? null : /datum/msg/req_failed
+	return engine_of(A.args["engine"]) ? null : /datum/msg/req_failed
 
 /obj/machinery/computer/ship/engines/proc/global_limit_default(datum/act/op/A)
 	return linked()?.thrust_limit * 100
 
 /obj/machinery/computer/ship/engines/proc/engine_limit_default(datum/act/op/A)
-	var/datum/ship_engine/E = A.args["engine"]
+	var/datum/ship_engine/E = engine_of(A.args["engine"])
 	return E?.get_thrust_limit()
 
 /// The keyboard under the operator's fingers (a silicon types nothing).
@@ -71,10 +75,10 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] ([ref_token(E)]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
-		rdata["eng_reference"] = "\ref[E]"
+		rdata["eng_reference"] = ref_token(E)
 		total_thrust += E.get_thrust()
 		enginfo.Add(list(rdata))
 
@@ -105,18 +109,27 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 	terminal_typed(A.actor)
 	return TRUE
 
-/obj/machinery/computer/ship/engines/proc/ui_act_set_limit(datum/act/op/A, datum/ship_engine/engine)
-	engine.set_thrust_limit(clamp(A.step_value("limit")/100, 0, 1))
+/obj/machinery/computer/ship/engines/proc/ui_act_set_limit(datum/act/op/A, engine)
+	var/datum/ship_engine/E = engine_of(engine)
+	if(!E)
+		return FALSE
+	E.set_thrust_limit(clamp(A.step_value("limit")/100, 0, 1))
 	terminal_typed(A.actor)
 	return TRUE
 
-/obj/machinery/computer/ship/engines/proc/ui_act_limit(datum/act/op/A, datum/ship_engine/engine, limit)
-	engine.set_thrust_limit(clamp(engine.get_thrust_limit() + limit, 0, 1))
+/obj/machinery/computer/ship/engines/proc/ui_act_limit(datum/act/op/A, engine, limit)
+	var/datum/ship_engine/E = engine_of(engine)
+	if(!E)
+		return FALSE
+	E.set_thrust_limit(clamp(E.get_thrust_limit() + limit, 0, 1))
 	terminal_typed(A.actor)
 	return TRUE
 
-/obj/machinery/computer/ship/engines/proc/ui_act_toggle_engine(datum/act/op/A, datum/ship_engine/engine)
-	engine.toggle()
+/obj/machinery/computer/ship/engines/proc/ui_act_toggle_engine(datum/act/op/A, engine)
+	var/datum/ship_engine/E = engine_of(engine)
+	if(!E)
+		return FALSE
+	E.toggle()
 	terminal_typed(A.actor)
 	return TRUE
 

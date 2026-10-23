@@ -138,7 +138,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
 		var/datum/cargo_market_counterparty/market_seller = SSsupply.order_counterparty(S)
 		orders.Add(list(list(
-			"ref" = "\ref[S]",
+			"ref" = ref_token(S),
 			"status" = S.status,
 			"cost" = SSsupply.order_price(S),
 			"can_approve" = can_fund,
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 	for(var/datum/exported_crate/E in SSsupply.export_history_snapshot())
 		var/datum/cargo_market_counterparty/market_buyer = SSsupply.export_counterparty(E)
 		receipts.Add(list(list(
-			"ref" = "\ref[E]",
+			"ref" = ref_token(E),
 			"contents" = E.rows,
 			"error" = E.rows["error"],
 			"title" = list(
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 				"contraband" = P.contraband,
 				"manifest" = uniqueList(P.manifest),
 				"random" = P.num_contained,
-				"ref" = "\ref[P]"
+				"ref" = ref_token(P)
 			)
 
 		pack_list.Add(list(pack))
@@ -267,7 +267,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparty(market_bid?.counterparty_id)
 	if(!can_trade_market(user) && !has_faction_market_access(user, counterparty?.faction_id))
 		return refuse(user, "You can't route crates to that buyer.")
-	var/obj/structure/closet/crate/routed = ui_ref(crate, null, /obj/structure/closet/crate)
+	var/obj/structure/closet/crate/routed = ui_token(crate, null, /obj/structure/closet/crate) // the shuttle check is route_market_crate()'s
 	if(!routed)
 		return refuse(user, "That crate is gone.")
 	if(!SSsupply.route_market_crate(routed, bid, user, contraband_ok()))
@@ -275,7 +275,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_view_crate(mob/user, crate)
-	var/datum/supply_pack/P = ui_ref(crate, null, /datum/supply_pack)
+	var/datum/supply_pack/P = ui_member(crate, SSsupply.catalog_packs(), /datum/supply_pack)
 	if(!P)
 		return refuse(user, null)
 	var/list/payload = list(
@@ -283,7 +283,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		"desc" = P.desc,
 		"cost" = P.cost,
 		"manifest" = uniqueList(P.manifest),
-		"ref" = "\ref[P]",
+		"ref" = ref_token(P),
 		"random" = P.num_contained,
 	)
 	tgui_modal_message(src, "view_crate", "", null, payload)
@@ -312,7 +312,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /// The pack `ref` names if this console may order it now, else null (the user was told why).
 /obj/machinery/computer/supplycomp/proc/orderable_pack(mob/user, ref)
-	var/datum/supply_pack/S = ui_ref(ref, null, /datum/supply_pack)
+	var/datum/supply_pack/S = ui_member(ref, SSsupply.catalog_packs(), /datum/supply_pack)
 	if(!S)
 		refuse(user, null)
 		return null
@@ -372,7 +372,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return FALSE
 
 /obj/machinery/computer/supplycomp/proc/act_edit_order_value(mob/user, default, edit, ref)
-	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
+	var/datum/supply_order/O = ui_member(ref, SSsupply.order_history_snapshot(), /datum/supply_order)
 	var/field = ui_choice(edit, list("Supply Pack", "Cost", "Index", "Reason", "Ordered by", "Ordered at", "Approved by", "Approved at"))
 	if(!O || !field || !accepts_orders(user))
 		return UI_REFUSED
@@ -399,7 +399,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
+	var/datum/supply_order/O = ui_member(ref, SSsupply.order_history_snapshot(), /datum/supply_order)
 	if(!O)
 		return refuse(user, null)
 	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(user, O.funding_department))
@@ -408,14 +408,14 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_deny_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
+	var/datum/supply_order/O = ui_member(ref, SSsupply.order_history_snapshot(), /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.deny_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_delete_order(mob/user, ref)
-	var/datum/supply_order/O = SSsupply.order_for_ui(ui_ref(ref, type = /datum/supply_order))
+	var/datum/supply_order/O = ui_member(ref, SSsupply.order_history_snapshot(), /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
 	SSsupply.delete_order(O, user)
@@ -429,7 +429,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 
 /// The exported crate `ref` names, if this console may edit exports.
 /obj/machinery/computer/supplycomp/proc/editable_export(mob/user, ref)
-	var/datum/exported_crate/E = SSsupply.export_for_ui(ui_ref(ref, type = /datum/exported_crate))
+	var/datum/exported_crate/E = ui_member(ref, SSsupply.export_history_snapshot(), /datum/exported_crate)
 	if(!E)
 		refuse(user, null)
 		return null
