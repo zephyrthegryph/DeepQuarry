@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/list/release_heat_bodies = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Entity handles whose power node goes in one vg_power_unbind_node_list().
 	var/list/unbind_power_nodes = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
-	/// Flat `port, mixture handle` pairs removed by one vg_pipe_remove_list().
+	/// Flat `port, /datum/gas_mixture or 0` pairs removed by one vg_pipe_remove_list().
 	var/list/remove_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Pipe port handles whose /datum/pipe_port is freed after that removal.
 	var/list/free_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
@@ -217,7 +217,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	vg_power_unbind_node(entity)
 	power_topology_edited(owner)
 
-/// Removes pipe port `port` of `owner` (its gas to `mixture_handle`, 0:
+/// Removes pipe port `port` of `owner` (its gas to the /datum/gas_mixture `mixture_handle`, 0:
 /// discarded) and frees the port datum. Returns TRUE when the batch queued
 /// both for its one removal call (`owner` doomed); FALSE: the caller removes
 /// and frees the port now.

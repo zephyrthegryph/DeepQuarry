@@ -20,6 +20,11 @@
 //! anything dirty after heat. Every transfer and every external work in or
 //! out is booked per step ([`Books`]); debug builds assert the books balance.
 
+// vg_heat_pump_create's argument count is inherent to the DM call convention (a
+// pump's two sides, flow and power parameters); the lint fires inside
+// `::byondapi::bind`'s macro expansion, where an item-level allow does not reach.
+#![allow(clippy::too_many_arguments)]
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -162,7 +167,7 @@ impl Res {
                 let t = if r.is_num() { num(r)? } else { vg_heat::consts::TCMB };
                 Self::Space(t.max(0.0).to_bits())
             }
-            _ => bail!("not a heat reservoir kind: {kind}"),
+            _ => return Err(eyre::eyre!("not a heat reservoir kind: {kind}")),
         })
     }
 }

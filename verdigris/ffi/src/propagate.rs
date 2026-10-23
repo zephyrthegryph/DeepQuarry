@@ -94,7 +94,7 @@ fn radiation_pulse(
         let layer = w.global::<RadiationLayer>().map_err(|e| eyre!("{e}"))?;
         match layer.0.as_ref() {
             Some(field) => Ok(field.pulse(source, range, threshold, &targets)),
-            None => bail!("radiation field used before radiation_set_cells"),
+            None => Err(eyre!("radiation field used before radiation_set_cells")),
         }
     })?;
     let values: Vec<ByondValue> = result.into_iter().map(ByondValue::from).collect();

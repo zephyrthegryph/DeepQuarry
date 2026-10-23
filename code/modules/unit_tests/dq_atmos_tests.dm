@@ -2408,7 +2408,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Exercise the exact flat-ID ABI independently of the machinery queue. This
 	// catches argument/list marshalling regressions instead of reporting them as
 	// an apparently inert vent.
-	var/list/direct_transfer = vg_batch_transfer_hook(list(V.air_contents.arena_id(), turf_air.arena_id(), 1))
+	var/list/direct_transfer = vg_batch_transfer_hook(list(V.air_contents.arena_id(), V.air_contents.arena_generation(), turf_air.arena_id(), turf_air.arena_generation(), 1))
 	TEST_ASSERT(islist(direct_transfer) && length(direct_transfer) == 1, \
 		"batch transfer ABI did not return one result: [json_encode(direct_transfer)]")
 	TEST_ASSERT(direct_transfer?[1] > 0.9, \

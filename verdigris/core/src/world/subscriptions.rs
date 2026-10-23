@@ -204,7 +204,7 @@ impl World {
     /// Cancels one subscription. Returns it (a watch is the caller's to
     /// unregister), or `None` if it was stale.
     pub fn unsubscribe(&mut self, e: EntityId) -> Option<Subscription> {
-        let (sub, what) = self.sub_record(e)?;
+        let (_, what) = self.sub_record(e)?;
         match what {
             Subscription::Rate { model, token } => {
                 self.subs.reactor.unwatch_model(model, token);

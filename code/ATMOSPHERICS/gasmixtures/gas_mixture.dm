@@ -138,6 +138,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 /datum/gas_mixture/proc/arena_id()
 	return vg_checked_arena_id(src)
 
+/// The generation `arena_id()` is valid for: queue both when a bind takes a bare id later.
+/// Null for a datum with no handle; a stale handle is refused.
+/datum/gas_mixture/proc/arena_generation()
+	return vg_checked_arena_generation(src)
+
 /// Named in the runtime a bind raises for a stale handle.
 /datum/gas_mixture/proc/handle_owner_label()
 	return "[type] (handle [_extools_pointer_gasmixture], generation [_extools_generation_gasmixture])"
