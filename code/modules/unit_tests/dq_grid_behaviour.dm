@@ -351,8 +351,11 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	TEST_ASSERT_NOTNULL(sink.attached, "no cable under the APC's terminal")
 	if(!sink.attached)
 		return
-	sink.drain_rate = 1000000
+	// The station grid behind the terminal is live, so the sink's own draw first takes the net's spare (about 1 MW) and only
+	// the shortfall comes off APC cells, in the net's node order. The appetite is the spare plus a margin past every APC's
+	// per-tick take, so this APC is reached wherever earlier tests left it in that order (reconnecting an APC re-appends its node).
 	sink.PN = term.power_region
+	sink.drain_rate = power_surplus(sink.PN) + 1000000
 	sink.drained_this_tick = 0
 	sink.pwr_drain()
 	TEST_ASSERT(apc.cell.charge < charge, "the sink drew down the cell ([apc.cell.charge] of [charge])")
