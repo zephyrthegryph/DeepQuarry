@@ -488,6 +488,44 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         self.value_expr(&ctx, e)
     }
 
+    /// Whether the local `name` of the proc body `code` is assigned the result of a call that is not a value, directly or through other
+    /// locals (`var/x = f()`, then `y = x`): a local holds what was assigned to it, so passing it on passes the call's result on.
+    pub(crate) fn local_holds_call(&self, sc: &ProcScope, code: &Block, name: &str) -> bool {
+        let mut assigns: HashMap<String, Vec<&Expression>> = HashMap::new();
+        let mut bad: HashSet<String> = HashSet::new();
+        declared_locals(code, &mut assigns, &mut bad, self.w);
+        for_each_expr(code, &mut |e| {
+            let Expression::AssignOp { op, lhs, rhs } = e else { return };
+            let Expression::Base { term, follow } = strip_parens(lhs) else { return };
+            let Term::Ident(n) = &term.elem else { return };
+            if follow.is_empty() && matches!(op, AssignOp::Assign | AssignOp::AssignInto | AssignOp::AndAssign | AssignOp::OrAssign) {
+                assigns.entry(n.to_string()).or_default().push(rhs);
+            }
+        });
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut todo = vec![name.to_string()];
+        while let Some(n) = todo.pop() {
+            if !seen.insert(n.clone()) {
+                continue;
+            }
+            for rhs in assigns.get(&n).map(|v| v.as_slice()).unwrap_or(&[]) {
+                let r = strip_parens(rhs);
+                if let Expression::Base { term, follow } = r {
+                    if let (true, Term::Ident(l)) = (follow.is_empty(), &term.elem) {
+                        if sc.locals.contains_key(l.as_str()) {
+                            todo.push(l.to_string());
+                            continue;
+                        }
+                    }
+                }
+                if is_call(r) && !self.is_value_call(sc, r) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     /// How many definitions are value-returning, and how many there are.
     #[allow(dead_code)]
     pub(crate) fn counts(&self) -> (usize, usize) {

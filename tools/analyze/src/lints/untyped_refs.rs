@@ -68,6 +68,15 @@ fn walk_block(b: &dreammaker::ast::Block, f: &mut dyn FnMut(&Expression, u32)) {
     }
 }
 
+/// The name of the local the value is, when it is a bare local or parameter.
+fn local_name<'e>(sc: &ProcScope, e: &'e Expression) -> Option<&'e str> {
+    let Expression::Base { term, follow } = strip_parens(e) else { return None };
+    match &term.elem {
+        Term::Ident(n) if follow.is_empty() && sc.locals.contains_key(n.as_str()) => Some(n.as_str()),
+        _ => None,
+    }
+}
+
 impl Lint for Untyped {
     fn meta(&self) -> &Meta {
         &META
@@ -114,6 +123,7 @@ impl Lint for Untyped {
                             }
                             let rule = match w.type_of(&sc, rhs) {
                                 Some(t) if kinds.is_ref(&t) => "typed",
+                                Some(t) if t.is_empty() && local_name(&sc, rhs).is_some_and(|n| values.local_holds_call(&sc, code, n)) => "call",
                                 Some(_) => return,
                                 None if is_call(rhs) && !values.is_value_call(&sc, rhs) => "call",
                                 None => return,
