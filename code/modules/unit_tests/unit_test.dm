@@ -973,6 +973,8 @@ GLOBAL_VAR(dq_test_select_names)
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
 	var/watching_before = length(GLOB.op_watchers)
+	var/list/air_before = unit_test_air_snapshot()
+	var/hotspots_before = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -1067,6 +1069,7 @@ GLOBAL_VAR(dq_test_select_names)
 	unit_test_globals_guard(globals_before, test_path)
 	unit_test_gravity_guard(gravity_before, test_path)
 	unit_test_watch_guard(watching_before, test_path)
+	unit_test_air_guard(air_before, hotspots_before, test_path)
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -1146,6 +1149,107 @@ GLOBAL_VAR(dq_test_select_names)
 	var/now = length(GLOB.op_watchers)
 	if(now > watching_before)
 		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
+
+/// The smallest change the air guard calls a leak. A test that pollutes shared air moves tens to hundreds of moles or tens of kelvin (the
+/// lingering-fire bridge left +80 mol); the margin keeps the guard off the small drift a busy world makes by itself.
+#define UNIT_TEST_AIR_LEAK_MOLES 25
+#define UNIT_TEST_AIR_LEAK_KELVIN 25
+
+/**
+ * The turfs the air guard watches: every open turf with air, none excluded (an exclusion needs evidence that the turf changes by design on an
+ * idle world, and dq_air_guard_exclusions_are_ambient finds none). Built once per run; a turf replaced or emptied since is skipped when read.
+ */
+/proc/unit_test_air_tracked()
+	var/static/list/cache
+	if(cache)
+		return cache
+	cache = list()
+	for(var/turf/open/T in world)
+		if(T.air && !T.blocks_air && !istype(T, /turf/space))
+			cache += T
+	log_test("AIR GUARD: watching [length(cache)] turf(s) for leftover air; none excluded")
+	return cache
+
+/// The air of every tracked turf, as turf list + one batched record (read_gas_mixtures()): the air guard compares it after a test.
+/proc/unit_test_air_snapshot()
+	var/list/live = list()
+	var/list/mixes = list()
+	for(var/turf/open/T as anything in unit_test_air_tracked())
+		if(QDELETED(T) || !istype(T) || !T.air || T.blocks_air)
+			continue
+		live += T
+		mixes += T.air
+	return list("turfs" = live, "readings" = read_gas_mixtures(mixes))
+
+/// What the change of one turf's air between two batched records is, as text, or null when it is under the thresholds.
+/proc/unit_test_air_change(list/was, list/now, offset)
+	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
+		var/delta = now[offset + GAS_READ_MOLES(gas_id)] - was[offset + GAS_READ_MOLES(gas_id)]
+		if(abs(delta) > UNIT_TEST_AIR_LEAK_MOLES)
+			return "gas id [gas_id] [delta > 0 ? "+" : ""][round(delta, 0.1)] mol"
+	if(was[offset + GAS_READ_TOTAL_MOLES] > UNIT_TEST_AIR_LEAK_MOLES * 2 && now[offset + GAS_READ_TOTAL_MOLES] > UNIT_TEST_AIR_LEAK_MOLES * 2 && abs(now[offset + GAS_READ_TEMPERATURE] - was[offset + GAS_READ_TEMPERATURE]) > UNIT_TEST_AIR_LEAK_KELVIN)
+		return "temperature [round(was[offset + GAS_READ_TEMPERATURE], 0.1)] -> [round(now[offset + GAS_READ_TEMPERATURE], 0.1)] K"
+
+/**
+ * Compares the air now with a unit_test_air_snapshot() and returns list("leaked" = turfs changed, "examples" = text). With `put_back`, the leaked turfs are restored from the snapshot.
+ */
+/proc/unit_test_air_diff(list/before, put_back = FALSE)
+	var/list/turfs = before["turfs"]
+	var/list/was = before["readings"]
+	var/list/now = read_gas_mixtures(unit_test_airs_of(turfs))
+	var/leaked = 0
+	var/list/examples = list()
+	for(var/i in 1 to length(turfs))
+		var/turf/open/T = turfs[i]
+		if(QDELETED(T) || !istype(T) || !T.air)
+			continue
+		var/offset = (i - 1) * GAS_READ_STRIDE
+		var/changed = unit_test_air_change(was, now, offset)
+		if(!changed)
+			continue
+		leaked++
+		if(length(examples) < 3)
+			var/list/standing = list()
+			for(var/atom/movable/thing in T)
+				if(length(standing) < 4)
+					standing += "[thing.type]"
+			examples += "[T] ([T.x],[T.y],[T.z]): [changed][T.active_hotspot ? ", a hotspot burns here" : ""][length(standing) ? ", holds [jointext(standing, "/")]" : ""]"
+		if(put_back)
+			unit_test_air_put_back(T, was, offset)
+	return list("leaked" = leaked, "examples" = examples)
+
+/// Logs "STATE LEAK" for each turf whose air a test left changed (unit_test_air_diff()), and for a hotspot the test left burning. Test air is
+/// shared: the clear floors the atmos helpers find are the same turfs for every test, so air a test leaves behind drifts through the
+/// neighbours and fails a later test that reads it. Snapshot a turf you change with dq_atmos_test_snapshot_air() (the finders do it for the
+/// turfs they return and their neighbours). The leak is logged and then put back from the snapshot taken before the test, so one polluter
+/// fails only itself: the line names the first test to leave a turf changed. Returns the number of leaked turfs.
+/proc/unit_test_air_guard(list/before, hotspots_before, test_path, quiet = FALSE)
+	var/list/diff = unit_test_air_diff(before, TRUE)
+	var/leaked = diff["leaked"]
+	if(leaked && !quiet)
+		log_test("STATE LEAK: [test_path] left the air of [leaked] turf(s) changed ([jointext(diff["examples"], "; ")]). Later tests that take the same floor read drifting air: call dq_atmos_test_snapshot_air() on every turf the test changes so restore_atmos() puts it back.")
+	var/hotspots_now = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
+	if(hotspots_now > hotspots_before && !quiet)
+		log_test("STATE LEAK: [test_path] left [hotspots_now - hotspots_before] more hotspot(s) alive than it found. A lingering fire keeps heating its turf's air for every later test: qdel it in the test.")
+	return leaked
+
+/// Puts one turf's air back to the batched record `was` read before the test (offset into it): the gases, then the temperature.
+/proc/unit_test_air_put_back(turf/open/T, list/was, offset)
+	var/datum/gas_mixture/air = T.air
+	air.clear()
+	for(var/gas_id in 0 to GAS_ID_COUNT - 1)
+		var/moles = was[offset + GAS_READ_MOLES(gas_id)]
+		if(moles)
+			air.set_moles(gas_id, moles)
+	if(was[offset + GAS_READ_TOTAL_MOLES] > 0)
+		heat_set(air, was[offset + GAS_READ_TEMPERATURE], HEAT_SOURCE_OTHER)
+	T.air_update_turf(TRUE, FALSE)
+
+/// The air of each turf in the list, a null where it has none (keeps the indices of the snapshot).
+/proc/unit_test_airs_of(list/turfs)
+	. = list()
+	for(var/turf/open/T as anything in turfs)
+		. += T.air
 
 /// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
 /// program), and every later test's mobs then drift.
