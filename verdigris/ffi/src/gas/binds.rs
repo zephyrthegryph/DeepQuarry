@@ -297,6 +297,25 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
     Ok(list)
 }
 
+/// Batched change counters. Args: (list of gas mixtures). One float per mixture, in order: the mixture's revision (the counter that moves whenever its gas
+/// changes, low 24 bits), 0 for a null or unregistered entry. The unit-test guards compare two of these reads to find the mixtures a test touched, instead of
+/// reading every mixture whole.
+#[auxmacros::bind("/proc/read_mixture_revisions")]
+fn read_mixture_revisions(mixtures: ByondValue) -> Result<ByondValue> {
+    let values = mixtures
+        .get_list_values()?
+        .iter()
+        .map(|mix| {
+            #[allow(clippy::cast_precision_loss)]
+            let revision = MixRef::of(mix).map_or(0.0, |r| (mix::revision(r) & 0x00FF_FFFF) as f32);
+            ByondValue::from(revision)
+        })
+        .collect::<Vec<_>>();
+    let list = ByondValue::new_list()?;
+    list.write_list(&values)?;
+    Ok(list)
+}
+
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
 #[auxmacros::bind("/datum/gas_mixture/proc/set_temperature")]
 fn set_temperature_hook(src: ByondValue, arg_temp: ByondValue) -> Result<ByondValue> {

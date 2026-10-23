@@ -22,8 +22,8 @@
 		return null
 	// The room's heat conducts through its ring into the floors around it (the mines' sand, three deck levels of rooms): they go back too.
 	test?.restore_solids_after(centre, radius + 15)
-	for(var/turf/open/N in block(locate(max(1, centre.x - radius - 15), max(1, centre.y - radius - 15), centre.z), locate(min(world.maxx, centre.x + radius + 15), min(world.maxy, centre.y + radius + 15), centre.z)))
-		dq_atmos_test_snapshot_air(N) // the air the room's heat spreads into (the mines' sand): restore_atmos() puts it back
+	for(var/turf/open/N in block(locate(max(1, centre.x - radius - 3), max(1, centre.y - radius - 3), centre.z), locate(min(world.maxx, centre.x + radius + 3), min(world.maxy, centre.y + radius + 3), centre.z)))
+		dq_atmos_test_snapshot_air(N) // the air the room's heat spreads into (the mines' sand, a few tiles out): restore_atmos() puts it back
 	var/list/room = list(centre)
 	for(var/turf/T as anything in block(locate(centre.x - radius, centre.y - radius, centre.z), locate(centre.x + radius, centre.y + radius, centre.z)))
 		if(T != centre)

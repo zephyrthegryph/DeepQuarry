@@ -181,6 +181,7 @@
 #include "tgui_create_message.dm"
 #include "trait_tests.dm"
 #include "unit_test.dm"
+#include "unit_test_guard.dm"
 #include "vbo_tests.dm"
 #include "vore_tests.dm"
 // DQ fork tests â€” need TEST_ASSERT* macros in scope, which are #undef'd at
