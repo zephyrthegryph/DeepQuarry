@@ -1,4 +1,4 @@
-// The character setup system's API (code/modules/client/preferences_save_service.dm declares the system).
+// The character setup system's API (code/content/client/preferences_save_service.dm declares the system).
 //
 //   SScharacter_setup.queue_preferences_save(prefs)   write `prefs` on the next save pass (use it when several preferences change at once)
 

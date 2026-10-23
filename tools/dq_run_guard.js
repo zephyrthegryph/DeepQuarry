@@ -12,6 +12,10 @@
 // The cap measures RUN time: its clock starts when the run first holds a machine slot (the slot libraries write <dir>/.running then),
 // not while it queues for a compile or test slot. A run that never gets a slot within --queue-max-s (default 5400) is stopped
 // like a capped one, so nothing waits forever. The focused script reports the queue time separately.
+// Time spent waiting in a machine-slot queue AFTER the run started is not run time either: a run that holds its compile slot and then
+// queues for test worlds has a <registry>/.waiting.<pid>[.n] file for each live waiter (written by the slot libraries); the guard adds
+// every poll interval in which one exists to the deadline. The total of that waiting is bounded by --queue-max-s too, so nothing waits
+// forever; the marker then says "queue-ceiling" instead of "capped".
 // Every poll:
 //   - the run's shell is gone (killed, or its parent was): every registered process still alive is killed, so a stopped task leaves no
 //     world running, and the guard exits;
@@ -94,6 +98,26 @@ function killRegistered(why) {
 	return killed;
 }
 
+let pausedMs = 0;
+let lastTick = Date.now();
+/** Is a live process waiting in a slot queue for this run? (.waiting.<pid>[.n] files of the registry; a dead pid's file is ignored and removed) */
+function someoneWaiting() {
+	let names;
+	try { names = fs.readdirSync(registry); } catch { return false; }
+	let any = false;
+	for (const n of names) {
+		const m = /^\.waiting\.(\d+)(\.\d+)?$/.exec(n);
+		if (!m) continue;
+		const pid = Number(m[1]);
+		// a bash pid in the file name is an msys pid; a node pid is a Windows one: either may fail the image check, so a file also counts while it is fresh
+		let fresh = false;
+		try { fresh = Date.now() - fs.statSync(path.join(registry, n)).mtimeMs < 6 * 3600 * 1000; } catch { /* gone */ }
+		if (fresh && (imageName(pid) !== null || !win)) any = true;
+		else if (!fresh) { try { fs.rmSync(path.join(registry, n), { force: true }); } catch { /* best effort */ } }
+	}
+	return any;
+}
+
 let cappedAt = 0;
 let startedLogged = false;
 let rootKilled = false;
@@ -107,12 +131,16 @@ function tick() {
 	let runningAt = 0;
 	try { runningAt = Number(fs.readFileSync(path.join(registry, '.running'), 'utf8').trim()) * 1000 || 0; } catch { /* still queued */ }
 	if (runningAt && !startedLogged) { startedLogged = true; log(`run started after queueing ${Math.round((runningAt - guardStart) / 1000)}s; cap clock starts now`); }
-	const overCap = runningAt ? Date.now() >= runningAt + capMs : Date.now() >= guardStart + queueMaxMs;
+	const nowMs = Date.now();
+	if (runningAt && someoneWaiting()) pausedMs += nowMs - lastTick;
+	lastTick = nowMs;
+	const queueCeiling = !runningAt ? nowMs >= guardStart + queueMaxMs : pausedMs >= queueMaxMs;
+	const overCap = queueCeiling || (runningAt && nowMs >= runningAt + capMs + pausedMs);
 	if (overCap) {
 		if (!cappedAt) {
 			cappedAt = Date.now();
-			log(runningAt ? 'wall-clock cap reached' : 'no slot after the queue ceiling; stopping the run');
-			if (marker) { try { fs.writeFileSync(marker, 'capped\n'); } catch { /* best effort */ } }
+			log(queueCeiling ? `no slot after the queue ceiling (${Math.round(pausedMs / 1000)}s queued while running); stopping the run` : `wall-clock cap reached (${Math.round(pausedMs / 1000)}s of queueing not counted)`);
+			if (marker) { try { fs.writeFileSync(marker, `${queueCeiling ? 'queue-ceiling' : 'capped'}\npaused_s=${Math.round(pausedMs / 1000)}\n`); } catch { /* best effort */ } }
 		}
 		killRegistered('wall-clock cap');
 		if (!rootKilled && Date.now() - cappedAt >= rootGraceMs) {

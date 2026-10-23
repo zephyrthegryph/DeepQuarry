@@ -5,6 +5,8 @@
 #
 #   bash tools/dq_machine_slots.sh run <class> [--label TEXT] -- <command...>   # hold a slot while the command runs
 #   bash tools/dq_machine_slots.sh status [class]                                # who holds what, who waits
+#   bash tools/dq_machine_slots.sh waiting <worktree>                            # the queue entries a worktree has (class, seconds)
+#   bash tools/dq_machine_slots.sh holding <worktree>                            # the slots a worktree holds right now
 #   bash tools/dq_machine_slots.sh stats [N]                                     # the last N waits and holds (default 20)
 #   bash tools/dq_machine_slots.sh reap                                          # drop dead holders and waiters now
 #   bash tools/dq_machine_slots.sh selftest                                      # exercise it in a scratch directory
@@ -34,6 +36,16 @@
 # may hold ONE slot beyond the cargo cap (DQ_SLOTS_COMPILER_EXTRA_CARGO, default 1) so a compiler build never waits for a game lane's
 # cargo. A light lane (pool-light, or DQ_LANE_CLASS=light) never compiles DM or runs a test world: dm_compile and test_world refuse
 # there with exit 64.
+#
+# Fair order and the suite cap: a queue is oldest first (priority 0, then arrival time), and a waiter takes a slot only at the head. A
+# run that takes several test worlds as a group (a full `dm-test`, a many-world focused run) would otherwise hold both worlds for its
+# whole run and starve every other lane's focused run, so a non-priority group takes at most DQ_SLOTS_SUITE_MAX_WORLDS worlds: unset
+# means 1 when any other run is queued for a test world at the moment the group asks (else all it wants), a number N always caps it at
+# N, 0 turns the cap off. The merge worktree and compiler lanes (priority 0) are exempt. The cap applies to new acquisitions only: a
+# group already running keeps what it holds (nothing is preempted), and the shards past the cap take their own slot, in queue order,
+# one by one (tools/build/lib/machine_slots.ts acquireSlotGroup; tools/dq_focused_test.sh hands slots on as worlds end).
+# `dq_machine_slots.sh waiting <worktree>` lists the queue entries a worktree has (class, seconds waited): tools/dq_lane_pool.sh status
+# uses it to show which pool slots sit idle while waiting for a machine slot.
 #
 # Waiting prints the class, your place in the queue and who holds the slots every 30 s. DQ_SLOT_PRIORITY=0 forces the
 # front of the queue for a caller that is not the merge worktree.
@@ -95,6 +107,21 @@ slots_usable() { # class max prio -> how many slots (counted from 1) this caller
 	case "$res" in '' | *[!0-9]*) res=0 ;; esac
 	[ "$res" -le $((max - 1)) ] || res=$((max - 1))
 	echo $((max - res))
+}
+
+slots_suite_cap() { # class prio: the most worlds a group of this class may take now (prints nothing for no cap); see "Fair order" above
+	local cls="$1" prio="$2" v="${DQ_SLOTS_SUITE_MAX_WORLDS:-}" d q n=0
+	[ "$cls" = "test_world" ] || return 0
+	[ "$prio" = "0" ] && return 0
+	case "$v" in '' | *[!0-9]*) v="" ;; esac
+	if [ -n "$v" ]; then [ "$v" -ge 1 ] && echo "$v"; return 0; fi
+	d="$(slots_dir)/$cls"
+	for q in "$d"/queue/*; do
+		[ -f "$q" ] || continue
+		_slots_dead "$q" || n=$((n + 1))
+	done
+	[ "$n" -gt 0 ] && echo 1
+	return 0
 }
 
 _slots_norm() { printf '%s' "$1" | tr 'A-Z\\' 'a-z/' | sed -e 's|^/\([a-z]\)/|\1:/|' -e 's|/*$||'; }
@@ -177,6 +204,18 @@ _slots_mark_running() {
 	[ -f "$DQ_WORLD_REGISTRY/.running" ] || { mkdir -p "$DQ_WORLD_REGISTRY" && date +%s >"$DQ_WORLD_REGISTRY/.running"; } 2>/dev/null || true
 }
 
+# While a run waits in a queue it holds DQ_WORLD_REGISTRY/.waiting.<pid> (epoch seconds): tools/dq_run_guard.js does not count that time against
+# the run's wall-clock cap, so a gate that got its compile slot and then queued an hour behind a full suite for test worlds is not killed
+# for the wait (it used to be: .running starts at the FIRST slot, and the test_world wait came after it).
+_slots_mark_waiting() {
+	[ -n "${DQ_WORLD_REGISTRY:-}" ] || return 0
+	{ mkdir -p "$DQ_WORLD_REGISTRY" && date +%s >"$DQ_WORLD_REGISTRY/.waiting.$$"; } 2>/dev/null || true
+}
+_slots_clear_waiting() {
+	[ -n "${DQ_WORLD_REGISTRY:-}" ] || return 0
+	rm -f "$DQ_WORLD_REGISTRY/.waiting.$$" 2>/dev/null || true
+}
+
 SLOTS_SELF="${BASH_SOURCE[0]}"
 SLOTS_HELD=""        # the slot directory this shell holds
 SLOTS_HELD_CLASS=""
@@ -248,6 +287,7 @@ _slots_acquire() {
 	SLOTS_QUEUE="$d/queue/$name"
 	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\nsession=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "${DQ_MERGE_SESSION:+env:$DQ_MERGE_SESSION}" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
+	_slots_mark_waiting
 	while true; do
 		_slots_reap "$d"
 		if _slots_single_may_go "$d" "$name"; then
@@ -255,6 +295,7 @@ _slots_acquire() {
 				if mkdir "$d/slot.$i" 2>/dev/null; then
 					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
 					_slots_mark_running
+					_slots_clear_waiting
 					SLOTS_HELD="$d/slot.$i"
 					SLOTS_HELD_CLASS="$cls"
 					SLOTS_T_GOT="$(date +%s)"
@@ -325,6 +366,7 @@ _slots_release() {
 		SLOTS_HELD=""
 	fi
 	if [ -n "$SLOTS_QUEUE" ]; then rm -f "$SLOTS_QUEUE"; SLOTS_QUEUE=""; fi
+	_slots_clear_waiting
 }
 
 slots_release() {
@@ -352,6 +394,9 @@ slots_group_size() { # class wanted -> how many slots a group of that wish gets 
 	local max
 	max="$(slots_capacity "$1")"
 	[ "$max" -gt 0 ] && max="$(slots_usable "$1" "$max" "$(_slots_priority "$(_slots_worktree)")")"
+	local cap
+	cap="$(slots_suite_cap "$1" "$(_slots_priority "$(_slots_worktree)")")"
+	if [ "$max" -gt 0 ] && [ -n "$cap" ] && [ "$cap" -lt "$max" ]; then max="$cap"; fi
 	if [ "$max" -gt 0 ] && [ "$2" -gt "$max" ]; then echo "$max"; else echo "$2"; fi
 }
 
@@ -385,6 +430,7 @@ _slots_group_acquire() {
 	SLOTS_QUEUE="$d/queue/$name"
 	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
 	SLOTS_GROUP_T_QUEUED="$now"
+	_slots_mark_waiting
 	local free take
 	while true; do
 		_slots_reap "$d"
@@ -408,6 +454,7 @@ _slots_group_acquire() {
 			done
 			if [ "$have" -ge "$want" ]; then
 				SLOTS_GROUP_DIRS=("${dirs[@]}")
+				_slots_clear_waiting
 				SLOTS_GROUP_T_GOT="$(date +%s)"
 				rm -f "$SLOTS_QUEUE"
 				SLOTS_QUEUE=""
@@ -458,6 +505,7 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 	local i
 	for i in "${!SLOTS_GROUP_DIRS[@]}"; do slots_group_release_one; done
 	if [ -n "$SLOTS_QUEUE" ]; then rm -f "$SLOTS_QUEUE"; SLOTS_QUEUE=""; fi
+	_slots_clear_waiting
 	if [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi
 	return 0
 }
@@ -762,13 +810,64 @@ slots_status() { # [class]
 	[ "$any" -eq 1 ] || echo "(nothing held, nobody waiting)"
 }
 
+slots_waiting() { # worktree: one line per live queue entry of that worktree in dm_compile / test_world: "<class> <seconds waited> <label>"
+	local want f cls now
+	want="$(_slots_norm "${1:?worktree}")"
+	now="$(date +%s)"
+	for cls in dm_compile test_world; do
+		for f in "$(slots_dir)/$cls"/queue/*; do
+			[ -f "$f" ] || continue
+			_slots_dead "$f" && continue
+			[ "$(_slots_norm "$(_slots_field "$f" worktree)")" = "$want" ] || continue
+			echo "$cls $(( now - $(_slots_num "$f" queued "$now") )) $(_slots_field "$f" label)"
+		done
+	done
+	return 0
+}
+
+slots_holding() { # worktree: one line per live slot that worktree holds in any class: "<class> <seconds held> <label>"
+	local want f cls now
+	want="$(_slots_norm "${1:?worktree}")"
+	now="$(date +%s)"
+	for cls in dm_compile test_world cargo; do
+		for f in "$(slots_dir)/$cls"/slot.*; do
+			[ -f "$f/owner" ] || continue
+			_slots_dead "$f/owner" && continue
+			[ "$(_slots_norm "$(_slots_field "$f/owner" worktree)")" = "$want" ] || continue
+			echo "$cls $(( now - $(_slots_num "$f/owner" started "$now") )) $(_slots_field "$f/owner" label)"
+		done
+	done
+	return 0
+}
+
+slots_usage_all() { # every fresh holder and waiter, one line each: "<hold|wait> <worktree, lower case, / separators> <class> <seconds> <label>"
+	# Cheap on purpose (the pool's status calls it once): no tasklist or per-field subprocess, a file counts while its heartbeat/poll touch is
+	# younger than DQ_SLOTS_FRESH_SEC (default 90; holders touch every 15 s, waiters every poll).
+	local cls f kind k v wt label t now fresh="${DQ_SLOTS_FRESH_SEC:-90}" mt
+	now="$(date +%s)"
+	for cls in dm_compile test_world cargo; do
+		for f in "$(slots_dir)/$cls"/slot.*/owner "$(slots_dir)/$cls"/queue/*; do
+			[ -f "$f" ] || continue
+			mt="$(stat -c %Y "$f" 2>/dev/null || echo 0)"
+			[ $(( now - mt )) -le "$fresh" ] || continue
+			wt=""; label=""; t=""
+			while IFS='=' read -r k v; do
+				case "$k" in worktree) wt="$v" ;; label) label="$v" ;; started | queued) t="$v" ;; esac
+			done <"$f"
+			case "$f" in */owner) kind=hold ;; *) kind=wait ;; esac
+			wt="${wt//\\//}"; wt="${wt,,}"; wt="${wt%/}"
+			echo "$kind $wt $cls $(( now - ${t:-$now} )) $label"
+		done
+	done
+}
+
 slots_stats() { # [N]
 	local f
 	f="$(slots_dir)/events.tsv"
 	[ -f "$f" ] || { echo "no events yet ($f)"; return 0; }
 	echo "time	class	slot	worktree	label	waited_s	held_s"
 	tail -n "${1:-20}" "$f"
-	awk -F'\t' '{ w[$2] += $6; h[$2] += $7; n[$2]++ } END { for (c in n) printf "%s: %d runs, mean wait %.0fs, mean hold %.0fs\n", c, n[c], w[c] / n[c], h[c] / n[c] }' "$f"
+	awk -F'\t' '{ w[$2] += $6; h[$2] += $7; n[$2]++; if ($6 > m[$2]) m[$2] = $6 } END { for (c in n) printf "%s: %d runs, mean wait %.0fs, max wait %ds, mean hold %.0fs\n", c, n[c], w[c] / n[c], m[c], h[c] / n[c] }' "$f"
 }
 
 # Exercises the protocol in a scratch directory: capacity, queue order, priority, crash recovery, the stats log.
@@ -821,6 +920,19 @@ slots_selftest() {
 	grep -q "group of 2" "$tmp/g2.log" && grep -q started "$tmp/g2.log" || { echo "FAIL: group g2 never got its slots"; ok=0; }
 	[ -z "$(ls "$tmp/test_world" | grep '^slot')" ] || { echo "FAIL: a group left slots behind"; ok=0; }
 	unset DQ_SLOTS_TEST_WORLD
+	# 6. the suite cap: a non-priority group is capped at DQ_SLOTS_SUITE_MAX_WORLDS (default 1 only while another run is queued); priority 0 is exempt.
+	export DQ_SLOTS_MERGE_RESERVE=0 DQ_SLOTS_TEST_WORLD=2
+	[ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 2)" = 2 ] || { echo "FAIL: no cap while nobody waits"; ok=0; }
+	[ "$(DQ_SLOTS_SUITE_MAX_WORLDS=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 2)" = 1 ] && [ "$(DQ_SLOTS_SUITE_MAX_WORLDS=1 DQ_SLOT_PRIORITY=0 slots_group_size test_world 2)" = 2 ] \
+		&& [ "$(DQ_SLOTS_SUITE_MAX_WORLDS=0 DQ_SLOT_PRIORITY=1 slots_group_size test_world 2)" = 2 ] || { echo "FAIL: explicit suite cap"; ok=0; }
+	mkdir -p "$tmp/test_world/queue"
+	printf 'kind=bash\npid=%s\nworktree=/x/other\nlabel=focused\nqueued=%s\n' "$$" "$(date +%s)" >"$tmp/test_world/queue/1-$(printf '%013d' "$(date +%s)")-$$"
+	[ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 2)" = 1 ] || { echo "FAIL: default suite cap is 1 while another run waits"; ok=0; }
+	out="$(slots_waiting /x/other)"
+	case "$out" in "test_world "[0-9]*" focused") ;; *) echo "FAIL: waiting should list the queued entry: '$out'"; ok=0 ;; esac
+	[ -z "$(slots_waiting /x/nobody)" ] || { echo "FAIL: waiting lists another worktree's entry"; ok=0; }
+	rm -rf "$tmp/test_world"
+	unset DQ_SLOTS_TEST_WORLD DQ_SLOTS_MERGE_RESERVE
 	rm -rf "$tmp"
 	# lane classes: a compiler worktree is priority 0 with one extra cargo slot; a light worktree is refused a compile or test world
 	[ "$(_slots_priority /x/pool-c2)" = 0 ] && [ "$(_slots_priority /x/pool-3)" = 1 ] && [ "$(_slots_extra cargo /x/pool-c1)" = 1 ] && [ "$(_slots_extra cargo /x/pool-3)" = 0 ] && [ "$(_slots_extra dm_compile /x/pool-c1)" = 0 ] 		|| { echo "FAIL: compiler lane priority / extra cargo slot"; ok=0; }
@@ -839,6 +951,10 @@ if ! (return 0 2>/dev/null); then
 		run) slots_run "$@"; exit $? ;;
 		status) slots_status "$@" ;;
 		stats) slots_stats "$@" ;;
+		waiting) slots_waiting "$@" ;;
+		holding) slots_holding "$@" ;;
+		usage-all) slots_usage_all ;;
+		usage) slots_holding "$@" | sed 's/^/hold /'; slots_waiting "$@" | sed 's/^/wait /' ;;   # both in one process: the pool calls this once per leased slot
 		reap) for c in dm_compile test_world cargo merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
 		selftest) slots_selftest; exit $? ;;
 		_hold) _ml_hold "$@"; exit 0 ;;

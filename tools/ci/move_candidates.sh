@@ -12,6 +12,8 @@
 #   allow     it has an ALLOW(...) annotation
 #   oldform   it uses Destroy(), spawn, sleep, do_after, INVOKE_ASYNC, Initialize, LateInitialize, Topic, a New() override, /verb/,
 #             flow_ask / prompt_flow or CHANGE_ (comments are ignored)
+#   systemowner  it defines procs on /datum/system/X and the file declaring SYSTEM_DEF(X) stays in the old tree (system_boundary B3
+#             wants the procs in the owner's folder; a move together is fine)
 #   defines   it sits under __defines/
 # A clean file may still carry a `layering` note: a target in library/ or domains/ that names a type declared under content/
 # (engine may not reference library or content; library may not reference content). Layering is a note, never dirty.
