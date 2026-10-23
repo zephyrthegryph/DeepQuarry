@@ -27,6 +27,7 @@
 	var/datum/looping_sound/shield_generator/shield_hum
 
 CAPABILITIES(/obj/machinery/shield_gen)
+	setup(PROC_REF(link_capacitors))
 	configure(machine_usage(interact_offline = TRUE))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator, starts = /datum/looping_sound/shield_generator)
@@ -50,9 +51,8 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	desc = "A machine that generates a field of energy optimized for blocking meteorites when activated.  This version comes with a more efficent shield matrix."
 	energy_conversion_rate = 0.0012
 
-// Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
-
-/obj/machinery/shield_gen/Initialize(mapload)
+/// The capacitors beside a bolted-down generator that face it feed it (two-sided with each capacitor's owned_gen), once it is made (setup()).
+/obj/machinery/shield_gen/proc/link_capacitors()
 	if(anchored)
 		for(var/obj/machinery/shield_capacitor/cap in range(1, src))
 			if(!cap.anchored)
@@ -61,7 +61,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				rel_set(cap, nameof(cap.owned_gen), src)
-	. = ..()
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
 /obj/machinery/shield_gen/proc/on_emag(datum/act/op/A)

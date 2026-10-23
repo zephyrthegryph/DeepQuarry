@@ -125,9 +125,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	worn_state = "circuitry"
 
-/obj/item/clothing/under/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/under/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/under/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing)
-	return ..()
 
 /obj/item/clothing/under/circuitry/equipped(mob/user, slot) // Set wearer var when equiped.
 	rel_set(src, nameof(wearer), user)
@@ -145,9 +148,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
-/obj/item/clothing/gloves/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/gloves/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/gloves/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/small)
-	return ..()
 
 /obj/item/clothing/gloves/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -165,9 +171,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "night" // The on-mob sprite would be identical anyways.
 
-/obj/item/clothing/glasses/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/glasses/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/glasses/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/small)
-	return ..()
 
 /obj/item/clothing/glasses/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -185,9 +194,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
-/obj/item/clothing/shoes/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/shoes/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/shoes/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/small)
-	return ..()
 
 /obj/item/clothing/shoes/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -205,9 +217,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
-/obj/item/clothing/head/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/head/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/head/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/small)
-	return ..()
 
 /obj/item/clothing/head/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -225,11 +240,14 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
-/obj/item/clothing/ears/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/ears/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/ears/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/small)
 	var/obj/item/integrated_circuit/built_in/earpiece_speaker/built_in_speaker = new(IC)
 	IC.force_add_circuit(built_in_speaker)
-	return ..()
 
 /obj/item/clothing/ears/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -247,9 +265,12 @@ CAPABILITIES(/obj/item/clothing)
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
-/obj/item/clothing/suit/circuitry/Initialize(mapload)
+CAPABILITIES(/obj/item/clothing/suit/circuitry)
+	setup(PROC_REF(build_circuit))
+
+/// Its circuit holder and the action button that pulses it, once it is made (setup()).
+/obj/item/clothing/suit/circuitry/proc/build_circuit()
 	setup_integrated_circuit(/obj/item/electronic_assembly/clothing/large)
-	return ..()
 
 /obj/item/clothing/suit/circuitry/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)

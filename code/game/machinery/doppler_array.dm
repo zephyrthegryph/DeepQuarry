@@ -11,7 +11,8 @@
 
 	var/list/detected_explosions
 
-/obj/machinery/doppler_array/Initialize(mapload)
+/// Its ordnance experiment handler, once it is made (setup()).
+/obj/machinery/doppler_array/proc/attach_experiment_handler()
 	//Explosive analysis
 	var/static/list/explosive_events = list(
 		/datum/notice/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
@@ -22,7 +23,6 @@
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 		experiment_events = explosive_events, \
 	)
-	. = ..()
 
 /obj/machinery/doppler_array/proc/listen_for_explosions()
 	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
@@ -31,6 +31,7 @@
 MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
 
 CAPABILITIES(/obj/machinery/doppler_array)
+	setup(PROC_REF(attach_experiment_handler))
 	setup(PROC_REF(listen_for_explosions))
 	interface("DopplerArray")
 	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
