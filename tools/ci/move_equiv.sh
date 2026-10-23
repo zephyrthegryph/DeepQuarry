@@ -5,34 +5,35 @@
 #   bash tools/ci/move_equiv.sh BEFORE AFTER [-- extra dmb-equiv flags]
 #
 # BEFORE and AFTER are git revisions (commit, tag, HEAD~3, ...): the parent of the first move commit and the last commit of the
-# move series (the pure `git mv` commit, the .dme path commit and the lint_scopes path commit). The script
-#   1. builds dmb-equiv from the checked-out tree (older trees may not have `--path-map`),
-#   2. lists the move with `git diff --name-status -M100% BEFORE AFTER` and turns every pure rename (R100) into an `OLD=NEW` map line,
-#      and prints every other changed file so a change that is not a move is visible (the .dme and tools/ci/lint_scopes.toml are
+# move series (the pure `git mv` commit, the .dme path commit and the lint_scopes path commit).
+#
+# NEVER CHECK OUT. `git checkout` (any form), `git switch`, `git reset`, `git restore` and `git stash` are banned (AGENTS.md section 4,
+# "Git safety"), in a lane worktree too. This script never changes the worktree's HEAD, index or files: each revision is extracted
+# with `git archive <rev> | tar -x` into its own scratch directory under the output directory and built from there.
+#
+# What it does
+#   1. builds dmb-equiv from the worktree (older trees may not have `--path-map`),
+#   2. lists the move with `git diff --name-status -M100% BEFORE AFTER`: every pure rename (R100) becomes an `OLD=NEW` path-map line,
+#      and every other changed file is printed so a change that is not a move is visible (the .dme and tools/ci/lint_scopes.toml are
 #      expected to change),
-#   3. `git switch --detach`es to BEFORE and to AFTER in turn and compiles the production world and the unit-test world
-#      (-DCIBUILDING -DCITESTING) with DreamMaker (DQ_COMPILER=dreammaker, strict), keeping the compile logs,
-#   4. restores the starting branch (or detached commit),
-#   5. compares each flavour's before/after worlds (dmb-equiv --all, default order policy, debug streams included) with the map
-#      and compares the number of compiler warnings and errors of the two compiles.
+#   3. extracts both revisions, gives each extract a fresh `git init` (build.ts refuses to build unless its root is the git toplevel)
+#      and the worktree's icons/gen (DQ_ICON_SEED), and compiles the production world and the unit-test world (-DCIBUILDING
+#      -DCITESTING) of each with DreamMaker (DQ_COMPILER=dreammaker, strict), keeping the compile logs,
+#   4. compares each flavour's before/after worlds (dmb-equiv --all, default order policy: type, proc and var-name table order
+#      gates; debug streams included) with the map, and compares the compilers' warning and error counts.
 #
-# Exit 0 only when both worlds are EQUIVALENT and the warning counts match. The map rewrites only string constants equal to or
-# prefixed by a moved file's old path, in the BEFORE world only (tools/dmb/crates/dmb-equiv/EQUIVALENCE.md "Path map"), so any
-# other difference is still reported. The working tree must be clean (it is switched between the two revisions); run it in a lane
-# worktree, never in the main checkout.
+# Exit 0 only when both worlds are EQUIVALENT and the counts match. The map rewrites only string constants equal to or prefixed by a
+# moved file's old path, in the BEFORE world only (tools/dmb/crates/dmb-equiv/EQUIVALENCE.md "Path map"), so any other difference
+# is still reported. --ignore-order is never passed.
 #
-#   DQ_MOVE_EQUIV_DIR      where worlds, logs and reports go (default data/move_equiv, gitignored)
+#   DQ_MOVE_EQUIV_DIR      where extracts, worlds, logs and reports go (default data/move_equiv, gitignored)
 #   DQ_MOVE_EQUIV_FLAVORS  subset of "production test" (default both)
+#   DQ_MOVE_EQUIV_OVERLAY  space-separated paths (default none) copied from the worktree's HEAD over BOTH extracts before building, for
+#                          checking a move against a generator fix that the older revisions lack (for example "tools/analyze/src")
+#   DQ_MOVE_EQUIV_KEEP=1   keep the extracted source trees (about 1.4 GB each); by default they are deleted after the compiles
 set -u
-# The script runs from a copy outside the tree: bash reads a script as it goes, and the tree is switched between revisions where
-# this file may differ or not exist.
-if [ -z "${DQ_MOVE_EQUIV_ROOT:-}" ]; then
-  root=$(cd "$(dirname "$0")/../.." && pwd) || exit 2
-  copy="$root/data/move_equiv.run.sh"
-  mkdir -p "$root/data" && cp "$0" "$copy" || exit 2
-  DQ_MOVE_EQUIV_ROOT=$root exec bash "$copy" "$@"
-fi
-cd "$DQ_MOVE_EQUIV_ROOT" || exit 2
+cd "$(dirname "$0")/../.." || exit 2
+root=$(pwd)
 
 if [ $# -lt 2 ]; then
   echo "usage: bash tools/ci/move_equiv.sh BEFORE AFTER [-- extra dmb-equiv flags]" >&2
@@ -46,20 +47,15 @@ if [ "${1:-}" = "--" ]; then shift; extra=("$@"); fi
 
 out="${DQ_MOVE_EQUIV_DIR:-data/move_equiv}"
 flavors="${DQ_MOVE_EQUIV_FLAVORS:-production test}"
+overlay="${DQ_MOVE_EQUIV_OVERLAY:-}"
 
 before=$(git rev-parse --verify "$before_rev^{commit}") || exit 2
 after=$(git rev-parse --verify "$after_rev^{commit}") || exit 2
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  echo "move_equiv: the working tree has tracked changes; commit them first (the script switches revisions)" >&2
-  exit 2
-fi
-start_branch=$(git symbolic-ref --short -q HEAD || true)
-start_commit=$(git rev-parse HEAD)
 
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
 
-# 1. dmb-equiv from the starting tree.
+# 1. dmb-equiv from the worktree.
 bash tools/dq_machine_slots.sh run cargo -- cargo build --release --manifest-path tools/dmb/Cargo.toml -p dmb-equiv || exit 2
 equiv_src=tools/dmb/target/release/dmb-equiv
 [ -x "$equiv_src" ] || equiv_src=tools/dmb/target/release/dmb-equiv.exe
@@ -97,38 +93,47 @@ defines_of() {
   esac
 }
 
-restore() {
-  if [ -n "$start_branch" ]; then git switch -q "$start_branch"; else git switch -q --detach "$start_commit"; fi
+# 3. One extract per revision; the worktree is never touched.
+extract() { # side rev
+  local side=$1 rev=$2 dir="$out/src/$1"
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  git archive "$rev" | tar -x -C "$dir" || return 1
+  if [ -n "$overlay" ]; then
+    # shellcheck disable=SC2086
+    git archive HEAD $overlay | tar -x -C "$dir" || return 1
+  fi
+  ( cd "$dir" && git init -q . ) || return 1
 }
-trap restore EXIT
 
-compile() { # flavor side rev
-  local flavor=$1 side=$2 rev=$3 dest="$out/$1/$2"
+compile() { # flavor side
+  local flavor=$1 side=$2 dir="$out/src/$2" dest="$out/$1/$2"
   mkdir -p "$dest"
-  git switch -q --detach "$rev" || return 1
-  rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler
   # shellcheck disable=SC2046
-  DQ_COMPILER=dreammaker DQ_COMPILER_STRICT=1 tools/build/build.sh dm $(defines_of "$flavor") > "$dest/compile.log" 2>&1
+  ( cd "$dir" && rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler \
+      && DQ_ICON_SEED="$root/icons/gen" DQ_COMPILER=dreammaker DQ_COMPILER_STRICT=1 \
+         tools/build/build.sh dm $(defines_of "$flavor") ) > "$dest/compile.log" 2>&1
   local rc=$?
   if [ $rc -ne 0 ]; then
     echo "move_equiv: the $side compile of the $flavor world failed (log: $dest/compile.log)" >&2
     return 1
   fi
-  cp deepquarry.dmb deepquarry.rsc "$dest/"
+  cp "$dir/deepquarry.dmb" "$dir/deepquarry.rsc" "$dest/"
 }
 
 count_of() { # log pattern
   grep -c -E "$2" "$1" || true
 }
 
+extract before "$before" || exit 2
+extract after "$after" || exit 2
 for flavor in $flavors; do
-  compile "$flavor" before "$before" || exit 2
-  compile "$flavor" after "$after" || exit 2
+  compile "$flavor" before || exit 2
+  compile "$flavor" after || exit 2
 done
-restore
-trap - EXIT
+if [ "${DQ_MOVE_EQUIV_KEEP:-}" != "1" ]; then rm -rf "$out/src"; fi
 
-# 5. Compare.
+# 4. Compare.
 status=0
 for flavor in $flavors; do
   b="$out/$flavor/before"
