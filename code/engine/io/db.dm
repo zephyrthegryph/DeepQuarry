@@ -10,9 +10,11 @@
 //     /datum/io/sql/row/note
 //         var/note
 //         var/author
+//     /datum/io/sql/row/note/column_names()
+//         return list("note", "author")
 //
 // A request kind declares its query once. Each `:field` in it binds the request's own var of that name, and an answer's `rows` is
-// a list of `row_type` datums, one per result row, each column (by position) a var of the row type, in declaration order. A query that is expected to return rows
+// a list of `row_type` datums, one per result row, each column (by position) a var of the row type, named by column_names() when the row has more than one. A query that is expected to return rows
 // and matches nothing ends REQ_NO_RESULT, not an empty answer (`expects_rows = FALSE` marks a write). A connection that is
 // down, or a query the server refuses, ends REQ_TRANSPORT_FAILED with `last_error` set. Nothing waits: the work runs on the I/O
 // lane (datums/om/io.dm) and the answer arrives through the request's handler.
@@ -93,6 +95,12 @@ SYSTEM_DEF(db)
 /datum/io/sql/row
 	parent_type = /datum
 
+/// The column names in the order the query selects them. A row type with two or more columns overrides this: the order of a datum's
+/// `vars` is the order of its names' string table entries, which follows where each name first appears in the source, not where it is
+/// declared, so a row type's declaration order says nothing. Null (one column, or none) derives the column from the type's own var.
+/datum/io/sql/row/proc/column_names()
+	return null
+
 /// A database query as a request. A kind sets `query` and (for a read) `row_type`, and declares a var for each :field.
 /datum/io/sql
 	abstract_type = /datum/io/sql
@@ -127,7 +135,7 @@ SYSTEM_DEF(db)
 			. += name
 		at = max(end, colon + 1)
 
-/// The names of the columns a result row carries, in order: the row_type's own vars in declaration order (the database returns
+/// The names of the columns a result row carries, in order: the row type's column_names(), or its one own var (the database returns
 /// a row's columns by position, so the query selects them in that order).
 /datum/io/sql/proc/row_columns()
 	var/static/list/base_vars
@@ -135,6 +143,9 @@ SYSTEM_DEF(db)
 		var/datum/io/sql/row/plain = new
 		base_vars = plain.vars.Copy()
 	var/datum/io/sql/row/sample = new row_type
+	var/list/named = sample.column_names()
+	if(named)
+		return named
 	. = list()
 	for(var/name in sample.vars)
 		if(!(name in base_vars))

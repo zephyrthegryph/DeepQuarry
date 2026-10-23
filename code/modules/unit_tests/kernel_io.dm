@@ -13,6 +13,28 @@
 	var/name
 	var/score
 
+/datum/io/sql/row/e6_score/column_names()
+	return list("name", "score")
+
+/// A row type with more than one column names them in order; the order of `vars` is not the declaration order.
+/datum/unit_test/kernel_db_row_columns_named
+
+/datum/unit_test/kernel_db_row_columns_named/Run()
+	var/datum/io/sql/row/plain = new
+	for(var/row_path in subtypesof(/datum/io/sql/row))
+		var/datum/io/sql/row/row = new row_path
+		var/list/own = list()
+		for(var/name in row.vars)
+			if(!(name in plain.vars))
+				own += name
+		var/list/named = row.column_names()
+		if(length(own) > 1)
+			TEST_ASSERT(named, "[row_path] has [length(own)] columns and must name their order in column_names()")
+		if(named)
+			TEST_ASSERT_EQUAL(length(named), length(own), "[row_path] names every column once")
+			for(var/name in named)
+				TEST_ASSERT(name in own, "[row_path] names [name], which is not one of its vars")
+
 /// A write kind.
 /datum/io/sql/e6_bump
 	query = "UPDATE scores SET score = score + 1 WHERE who = :who"
