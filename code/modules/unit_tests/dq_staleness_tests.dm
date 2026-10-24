@@ -153,6 +153,34 @@ SETTER(/obj/stale_lamp, glow)
 	var/list/found = staleness_test_reports_since(since)
 	TEST_ASSERT(findtext(found[1], "none of: noise"), "the report names the written var the graph skipped: [found[1]]")
 
+/// The periodic mode's full sweep finds a stale draw and names the tests since the last full sweep in the report; a clean one files nothing and
+/// clears the range.
+/datum/unit_test/dq_staleness_full_sweep_attributes
+	boot_needs = list()
+
+/datum/unit_test/dq_staleness_full_sweep_attributes/Run()
+	set_global(nameof(GLOB.staleness_full_sweeps), GLOB.staleness_full_sweeps)
+	set_global(nameof(GLOB.staleness_every), GLOB.staleness_every)
+	GLOB.staleness_expected = TRUE
+	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(staleness_sweep_full("test"), 0, "a full sweep over a clean tree files nothing")
+	var/since = length(GLOB.staleness_reports)
+	L.set_noise(7)
+	var/list/range_before = GLOB.staleness_since_full
+	var/every_before = GLOB.staleness_every
+	GLOB.staleness_since_full = list("/datum/unit_test/earlier_a", "/datum/unit_test/earlier_b")
+	GLOB.staleness_every = 3
+	var/found = staleness_periodic_step("/datum/unit_test/this_one", FALSE)
+	var/list/range_after = GLOB.staleness_since_full
+	GLOB.staleness_since_full = range_before
+	GLOB.staleness_every = every_before
+	TEST_ASSERT(found >= 1, "the third test's end ran the full sweep and it found the stale draw")
+	TEST_ASSERT_EQUAL(length(range_after), 0, "the range restarts after a full sweep")
+	var/list/reports = staleness_test_reports_since(since)
+	TEST_ASSERT(length(reports), "the sweep filed a report")
+	TEST_ASSERT(findtext(reports[1], "earlier_a") && findtext(reports[1], "this_one"), "the report names the first and last test of the range: [reports[1]]")
+
 /// A keyed shared image whose key does not name what varies it is found on a hit.
 /datum/unit_test/dq_staleness_image_key
 	boot_needs = list()
