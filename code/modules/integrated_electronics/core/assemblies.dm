@@ -310,7 +310,7 @@ CAPABILITIES(/datum/ic_export_view)
 			break
 
 	if(!found)
-		UNTYPED_LIST_ADD(component_positions, list("ref" = REF(C), "x" = new_x, "y" = new_y))
+		UNTYPED_LIST_ADD(component_positions, list("ref" = ref_token(C), "x" = new_x, "y" = new_y))
 
 	return TRUE
 // End TGUI
