@@ -423,11 +423,26 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
 ) -> Result<crate::retained_output::Patched, String> {
     let started = Instant::now();
     let db = memo.and_then(|memo| memo.query_db());
-    let answers = db.and_then(|db| db.answers_version());
-    let admitted = crate::retained_output::admit(&retained, frontend, answers, db.map(|db| &**db))?;
-    dm_profile::request_mark("incremental.admitted");
     startup.validate_for(frontend)?;
     let static_resolver = startup.resolver(frontend, resolver)?;
+    let answer = |query: &dm_ir::ResolveQuery| static_resolver.resolve(*query);
+    let request = db.map(|db| db.request_answers(&answer));
+    let proof = match (db, request.as_ref()) {
+        (Some(db), Some(request)) => Some(crate::retained_output::AnswerProof {
+            db: &**db,
+            request,
+            workers: config.workers,
+        }),
+        _ => None,
+    };
+    let admitted = crate::retained_output::admit(
+        &retained,
+        frontend,
+        db.and_then(|db| db.answers_version()),
+        db.and_then(|db| db.answers_context()),
+        proof,
+    )?;
+    dm_profile::request_mark("incremental.admitted");
     let plan = startup.plan();
     let source_bindings = roster
         .source_bindings(frontend)

@@ -148,6 +148,11 @@ struct AnswerSlot {
     born: u64,
     /// Request in which the hash last differed from the slot it replaced (0: never).
     changed: u64,
+    /// The hash this slot had when the retained output was last published (0: the slot did not
+    /// exist then, or no output is published). See [`QueryDb::mark_published`].
+    base: u128,
+    /// The question, so the whole table can be asked again (see [`QueryDb::prove_against_base`]).
+    query: dm_ir::ResolveQuery,
 }
 impl AnswerSlot {
     /// The slot `proved` becomes when it replaces `self`: the same id, so `born` is kept and
@@ -156,6 +161,7 @@ impl AnswerSlot {
         match prior {
             Some(prior) => {
                 proved.born = prior.born;
+                proved.base = prior.base;
                 proved.changed = if prior.hash != proved.hash { proved.request } else { prior.changed };
             }
             None => proved.born = proved.request,
@@ -182,6 +188,13 @@ struct Answers {
     mismatches: std::sync::atomic::AtomicUsize,
     /// Request that last dropped the whole table (project change); its slots are all fresh.
     cleared: std::sync::atomic::AtomicU64,
+    /// How many times the whole table was dropped, and the count when the published output's
+    /// answers were marked: unequal means the marks are gone.
+    drops: std::sync::atomic::AtomicU64,
+    marked_drops: std::sync::atomic::AtomicU64,
+    /// Number of the last marking (0: none); a retained output holds the number of the marking
+    /// made for it and is compared only while that is still the last.
+    epoch: std::sync::atomic::AtomicU64,
     /// Every resource search the table holds: the world version does not cover the filesystem,
     /// so these are proven again when a request opens (see [`QueryDb::begin_answers`]).
     resource_queries: Mutex<std::collections::HashMap<u128, dm_ir::ResolveQuery>>,
@@ -196,6 +209,9 @@ impl Default for Answers {
             carried: Default::default(),
             mismatches: Default::default(),
             cleared: Default::default(),
+            drops: Default::default(),
+            marked_drops: Default::default(),
+            epoch: Default::default(),
             resource_queries: Default::default(),
         }
     }
@@ -212,6 +228,7 @@ impl Answers {
     fn clear(&self) {
         let request = self.current.read().unwrap_or_else(|error| error.into_inner()).request;
         self.cleared.store(request, std::sync::atomic::Ordering::Relaxed);
+        self.drops.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         for shard in self.shards.iter() {
             shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
         }
@@ -393,6 +410,8 @@ impl RequestAnswers<'_> {
                 positive: positive_answer(&meaning),
                 born: 0,
                 changed: 0,
+                base: 0,
+                query: *query,
             },
         );
         answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -517,6 +536,8 @@ impl QueryDb {
                         positive: positive_answer(&meaning),
                         born: 0,
                         changed: 0,
+                        base: 0,
+                        query,
                     },
                 ),
             );
@@ -527,9 +548,25 @@ impl QueryDb {
     /// Equal versions at two points mean every answer read in between and still held is equal,
     /// so a stage whose other inputs are equal too may reuse its whole earlier output.
     pub(crate) fn answers_version(&self) -> Option<u128> {
-        let (identity, world) = {
+        let identity = {
             let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
-            (current.tree.as_ref()?.declaration_identity(), current.world)
+            current.tree.as_ref()?.declaration_identity()
+        };
+        let context = self.answers_context()?;
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-answers-version-v2 ");
+        hash.update(&identity.to_le_bytes());
+        hash.update(&context.to_le_bytes());
+        Some(hash.digest128())
+    }
+    /// What `answers_version` holds besides the tree: the answer world and each resource
+    /// search's current answer. Two requests with equal contexts and different trees may still
+    /// give every answer the same value; [`Self::prove_against_base`] decides that per answer.
+    pub(crate) fn answers_context(&self) -> Option<u128> {
+        let world = {
+            let current = self.answers.current.read().unwrap_or_else(|error| error.into_inner());
+            current.tree.as_ref()?;
+            current.world
         };
         if world == 0 {
             return None;
@@ -548,14 +585,76 @@ impl QueryDb {
         };
         resources.sort_unstable();
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dm-answers-version-v1\0");
-        hash.update(&identity.to_le_bytes());
+        hash.update(b"dm-answers-context-v1 ");
         hash.update(&world.to_le_bytes());
         for (id, answer) in resources {
             hash.update(&id.to_le_bytes());
             hash.update(&answer.to_le_bytes());
         }
         Some(hash.digest128())
+    }
+    /// Record every held answer as the answer of the output that was just published. Called
+    /// once the request's output is the retained one (its tree is the current tree, so each
+    /// slot a stage asked holds the value that output was built from). The number returned
+    /// goes with that output: a later marking (for another output) retires it.
+    pub(crate) fn mark_published(&self) -> u64 {
+        use std::sync::atomic::Ordering::Relaxed;
+        for shard in self.answers.shards.iter() {
+            for slot in shard.lock().unwrap_or_else(|error| error.into_inner()).values_mut() {
+                slot.base = slot.hash;
+            }
+        }
+        self.answers.marked_drops.store(self.answers.drops.load(Relaxed), Relaxed);
+        self.answers.epoch.fetch_add(1, Relaxed) + 1
+    }
+    /// Ask again, under this request's tree, every answer the published output was built from
+    /// and compare with the value it had then. This is the per-answer form of "the answers are
+    /// the same", independent of which stage asked what this request: every slot marked at
+    /// publication is asked, so no unasked answer is assumed equal. `Ok` carries the number of
+    /// answers asked; `Err` says why the published output cannot stand on the answers.
+    ///
+    /// Answers asked for the first time after the mark (no base) cannot have been read by the
+    /// published output's units, so they are not compared; a unit that reads them is new and
+    /// is lowered by the caller.
+    pub(crate) fn prove_against_base(
+        &self,
+        answers: &RequestAnswers<'_>,
+        marks: u64,
+        workers: usize,
+    ) -> Result<usize, String> {
+        static PROVE: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.prove_base");
+        let _timer = PROVE.time();
+        use std::sync::atomic::Ordering::Relaxed;
+        if marks == 0 || self.answers.epoch.load(Relaxed) != marks {
+            return Err("the published answers were marked for another output".into());
+        }
+        if self.answers.drops.load(Relaxed) != self.answers.marked_drops.load(Relaxed) {
+            return Err("the answer table was dropped since the output was published".into());
+        }
+        let mut held: Vec<(u128, dm_ir::ResolveQuery, u128)> = Vec::new();
+        for shard in self.answers.shards.iter() {
+            let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+            held.extend(
+                slots.iter().filter(|(_, slot)| slot.base != 0).map(|(id, slot)| (*id, slot.query, slot.base)),
+            );
+        }
+        let threads = workers.clamp(1, 16);
+        let chunk = held.len().div_ceil(threads).max(1);
+        let differing: usize = std::thread::scope(|scope| {
+            let handles: Vec<_> = held
+                .chunks(chunk)
+                .map(|part| {
+                    scope.spawn(move || {
+                        part.iter().filter(|(id, query, base)| !answers.matches(*id, query, *base)).count()
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|handle| handle.join().expect("answer proof worker")).sum()
+        });
+        if differing > 0 {
+            return Err(format!("{differing} of {} published answers changed", held.len()));
+        }
+        Ok(held.len())
     }
     /// Which answers this request holds with a value different from the one before it: from the
     /// slot this table held, else from the hash a stored unit recorded when a proof asked it
@@ -843,5 +942,82 @@ mod tests {
         let diff = db.answer_diff();
         assert_eq!(diff.changed, vec![query_id(&asked()[0])], "{diff:?}");
         assert_eq!(diff.fresh, asked().len() - 1);
+    }
+
+    /// Open a request on `text` and ask again every answer marked for the output (`marks`).
+    fn prove(db: &QueryDb, text: &str, marks: u64) -> Result<usize, String> {
+        let tree = tree(text);
+        db.next_request();
+        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        db.prove_against_base(&db.request_answers(&resolver), marks, 2)
+    }
+
+    #[test]
+    fn a_tree_that_differs_but_gives_every_marked_answer_again_is_admitted() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let marks = db.mark_published();
+        // A body edit, and a proc nothing marked asked about: the declaration identity differs
+        // for the second, every marked answer is the same.
+        assert_eq!(prove(&db, &BASE.replace("return 1", "return 2"), marks), Ok(asked().len()));
+        let unrelated = format!("{BASE}/datum/a/proc/other()
+	return 3
+");
+        assert_ne!(tree(BASE).declaration_identity(), tree(&unrelated).declaration_identity());
+        assert_eq!(prove(&db, &unrelated, marks), Ok(asked().len()));
+    }
+
+    #[test]
+    fn an_edited_default_or_an_added_proc_that_was_asked_about_is_declined() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let marks = db.mark_published();
+        let default = prove(&db, &BASE.replace("= 25", "= 26"), marks).unwrap_err();
+        assert!(default.starts_with("1 of "), "{default}");
+        let proc = prove(&db, &format!("{BASE}/datum/a/proc/extra()
+	return 3
+"), marks).unwrap_err();
+        assert!(proc.starts_with("1 of "), "{proc}");
+    }
+
+    #[test]
+    fn the_proof_asks_answers_no_stage_asked_this_request() {
+        // Nothing asks the answers in the proving request except the proof itself: the edited
+        // default is still found, because the proof walks the marked table, not the asked set.
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let marks = db.mark_published();
+        assert!(prove(&db, &BASE.replace("= 25", "= 27"), marks).is_err());
+        assert!(db.answer_diff().changed.contains(&query_id(&asked()[0])));
+    }
+
+    #[test]
+    fn marks_that_no_longer_describe_the_output_are_declined() {
+        let db = QueryDb::default();
+        assert!(prove(&db, BASE, 0).is_err(), "nothing marked");
+        request(&db, BASE);
+        let first = db.mark_published();
+        let second = db.mark_published();
+        assert!(prove(&db, BASE, first).unwrap_err().contains("another output"));
+        assert!(prove(&db, BASE, second).is_ok());
+        db.answers.clear();
+        assert!(prove(&db, BASE, second).unwrap_err().contains("dropped"));
+    }
+
+    #[test]
+    fn an_answer_first_asked_after_the_mark_is_not_compared() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let marks = db.mark_published();
+        // A stage asks something new in the next request (a new unit's read): it has no base.
+        let tree = tree(BASE);
+        db.next_request();
+        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        let answers = db.request_answers(&resolver);
+        let novel = dm_ir::ResolveQuery::HasMemberVar { owner: symbol("/datum/a"), name: symbol("novel") };
+        answers.current(query_id(&novel), &novel);
+        assert_eq!(db.prove_against_base(&answers, marks, 1), Ok(asked().len()));
     }
 }

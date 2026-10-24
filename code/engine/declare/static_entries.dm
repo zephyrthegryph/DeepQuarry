@@ -33,6 +33,10 @@ SYSTEM_DEF(static_entries)
 	name = "Static entries"
 	/// type => its nearest static table; null until setup ran.
 	var/list/tables_by_type
+	/// table => the types that read it, and table => (kind => the first entry of that kind), built once after setup (static_table_groups()) so a kind's
+	/// engine visits each declaring table once instead of walking every type and rescanning every table's items for every kind.
+	var/list/types_by_table
+	var/list/first_by_kind
 	/// TRUE once the engines of the static kinds were told.
 	var/ready = FALSE
 
@@ -80,12 +84,37 @@ SYSTEM_DEF(static_entries)
 			for(var/sub in typesof(type))
 				by_type[sub] = table
 	SSstatic_entries.tables_by_type = by_type
+	var/list/groups = static_table_groups(by_type)
+	SSstatic_entries.types_by_table = groups[1]
+	SSstatic_entries.first_by_kind = groups[2]
 	SSstatic_entries.ready = TRUE
 	for(var/datum/entry_engine/engine_type as anything in subtypesof(/datum/entry_engine))
 		var/kind = engine_type::kind
 		var/datum/entry_engine/engine = kind ? entry_engine_for(kind) : null
 		if(engine?.static_kind)
 			engine.static_built(by_type)
+
+/// list(table => its types, table => (kind => its first centry)) for a type => table map: one pass over the types and one over each table's items,
+/// whatever the number of kinds. static_find() answers the same as first_by_kind[table][kind] (the first entry of the kind in items order).
+/proc/static_table_groups(list/by_type)
+	var/list/types_by_table = list()
+	for(var/type in by_type)
+		var/datum/type_table/T = by_type[type]
+		var/list/types = types_by_table[T]
+		if(!types)
+			types = list()
+			types_by_table[T] = types
+		types += type
+	var/list/first_by_kind = list()
+	for(var/datum/type_table/T as anything in types_by_table)
+		var/list/by_kind = list()
+		for(var/datum/centry/C as anything in T.items)
+			var/datum/entry/E = C.item
+			if(istype(E) && isnull(by_kind[E.kind]))
+				by_kind[E.kind] = C
+		first_by_kind[T] = by_kind
+	log_world("STATIC_ENTRIES: grouped [length(by_type)] types into [length(types_by_table)] tables")
+	return list(types_by_table, first_by_kind)
 
 /// Sorts type paths by their text.
 /proc/cmp_type_text_asc(a, b)

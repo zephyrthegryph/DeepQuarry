@@ -1246,6 +1246,8 @@ fn run_build_attempt(
                 publication.archive.identity(),
                 warnings,
                 procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_version()),
+                procedure_memo.as_ref().and_then(|memo| memo.query_db()?.answers_context()),
+                procedure_memo.as_ref().and_then(|memo| Some(memo.query_db()?.mark_published())),
                 output.dmb.content_hash(),
             ) {
                 Some(base) => {
