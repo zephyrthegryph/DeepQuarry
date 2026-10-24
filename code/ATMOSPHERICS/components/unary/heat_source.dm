@@ -9,6 +9,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
 	gas_watch(air = nameof(air_contents), changed = PROC_REF(gas_changed))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(service)), when = nameof(heating))
+	after_init(0, then(PROC_REF(reconsider))) // decides at init whether it works, not at the first gas wake or switch
 	on_change(nameof(use_power), ANY, then(PROC_REF(reconsider)))
 	on_change(nameof(set_temperature), ANY, then(PROC_REF(reconsider)))
 	part_replacement()
