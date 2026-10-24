@@ -28,3 +28,27 @@
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
+
+/// The machine guard judges only the machines in the areas a test touched; the full compare (every UNIT_TEST_FULL_COMPARE_EVERY tests and at the end of the run) finds a change made
+/// anywhere else. A machine setting changed in a room the test never touched is missed by the scoped pass and caught by the full one, and the baseline then follows it.
+/datum/unit_test/dq_guard_full_compare_catches_untouched_machine
+
+/datum/unit_test/dq_guard_full_compare_catches_untouched_machine/Run()
+	var/datum/unit_test_guard/guard = unit_test_guard_session()
+	var/obj/machinery/alarm/A
+	for(var/obj/machinery/alarm/candidate in guard.machine_state)
+		if(!QDELETED(candidate) && candidate.use_power == USE_POWER_IDLE)
+			A = candidate
+			break
+	TEST_ASSERT_NOTNULL(A, "no idle air alarm to seed")
+	defer_cleanup(A, TYPE_PROC_REF(/obj/machinery/alarm, set_use_power), USE_POWER_IDLE) // the world gets its alarm back whatever the asserts do
+	A.set_use_power(USE_POWER_ACTIVE)
+	var/list/scoped = list()
+	guard.judge_machines("dq_guard_seed", list(), scoped, quiet = TRUE) // no area touched: not judged
+	TEST_ASSERT_EQUAL(length(scoped), 0, "the scoped pass judged a machine in an area the test never touched")
+	var/list/full = list()
+	guard.judge_machines("dq_guard_seed", null, full, TRUE, TRUE)
+	TEST_ASSERT(length(full) >= 1, "the full compare did not see the changed alarm")
+	// The baseline followed the change: put the alarm back and let the guard take it as the new baseline, so the runner's own compare of this test finds nothing.
+	A.set_use_power(USE_POWER_IDLE)
+	guard.judge_machines("dq_guard_seed", null, list(), TRUE, TRUE)

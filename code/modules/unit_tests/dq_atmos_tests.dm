@@ -1228,7 +1228,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		dq_atmos_test_snapshot_air(N)
 
 /proc/dq_atmos_test_snapshot_air(turf/open/T)
-	if(!istype(T) || !T.air || (T in GLOB.dq_atmos_test_air_snapshots))
+	if(!istype(T) || !T.air)
+		return
+	GLOB.dq_atmos_test_declared[T] = TRUE
+	if(T in GLOB.dq_atmos_test_air_snapshots)
 		return
 	GLOB.dq_atmos_test_air_snapshots[T] = T.air.copy()
 
@@ -2455,6 +2458,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_dp_vent_pump_releases_to_turf
 
 /datum/unit_test/dq_dp_vent_pump_releases_to_turf/Run()
+	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for the dual-port vent test")
 	var/turf/simulated/floor/T = run[2]
@@ -3770,6 +3774,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_full_atmos_cycle_vent_then_scrubber
 
 /datum/unit_test/dq_full_atmos_cycle_vent_then_scrubber/Run()
+	restore_ambient_after() // the frames below advance world time: the cryogenic rooms warm and the map thermostats act
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
@@ -3979,6 +3984,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"air alarm did not detect a dangerous (plasma-laden) atmosphere: danger_level stayed [A.danger_level]")
 
 	turf_air.set_moles(/datum/gas/plasma, 0)
+	A.atmos_reset() // the plasma raised the Bridge's alarm and closed its firedoors: give both back
 	qdel(A)
 
 /datum/unit_test/dq_air_alarm_skips_unchanged_air
@@ -4063,6 +4069,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_air_alarm_chain_follows_air/Run()
 	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the air alarm chain test")
+	restore_area_machines_after(T) // the room's own map alarm answers the plasma: it switches its thermostat
+	restore_ambient_after() // and the vents it commands pump gas into rooms the test never names
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
@@ -4099,6 +4107,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_air_alarm_second_alarm_follows_own_air/Run()
 	var/turf/simulated/floor/T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the second air alarm test")
+	restore_ambient_after() // the alarm's area vents pump gas into rooms the test never names
 	var/turf/simulated/floor/T2
 	for(var/turf/simulated/floor/candidate in range(3, T))
 		if(candidate != T && candidate.air && !candidate.blocks_air && get_area(candidate) == get_area(T))
@@ -4135,6 +4144,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	refresh_flush()
 	TEST_ASSERT_NOTEQUAL(second.icon_state, "alarm_0", "the second alarm's sprite did not follow its own air")
 	T2.air.set_moles(/datum/gas/plasma, 0)
+	main.atmos_reset() // the area's alarm level is raised by the main alarm: give it back for the next test
 	qdel(second)
 	qdel(main)
 

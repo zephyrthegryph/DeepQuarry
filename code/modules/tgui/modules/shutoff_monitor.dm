@@ -3,19 +3,19 @@
 
 CAPABILITIES(/datum/tgui_module/shutoff_monitor)
 	interface("ShutoffMonitor")
-	op("toggle_enable", ui_act("toggle_enable", arg("valve", schema_ref(/obj/machinery/atmospherics/valve/shutoff))), then(PROC_REF(ui_act_toggle_enable)))
-	op("toggle_open", ui_act("toggle_open", arg("valve", schema_ref(/obj/machinery/atmospherics/valve/shutoff))), then(PROC_REF(ui_act_toggle_open)))
+	op("toggle_enable", ui_act("toggle_enable", arg("valve", schema_text(32))), then(PROC_REF(ui_act_toggle_enable)))
+	op("toggle_open", ui_act("toggle_open", arg("valve", schema_text(32))), then(PROC_REF(ui_act_toggle_open)))
 
 /datum/tgui_module/shutoff_monitor/proc/ui_act_toggle_enable(datum/act/op/A, valve)
-	var/obj/machinery/atmospherics/valve/shutoff/S = valve
-	if(!istype(S))
+	var/obj/machinery/atmospherics/valve/shutoff/S = ui_member(valve, REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES), /obj/machinery/atmospherics/valve/shutoff)
+	if(!S)
 		return FALSE
 	S.set_close_on_leaks(!S.close_on_leaks)
 	return TRUE
 
 /datum/tgui_module/shutoff_monitor/proc/ui_act_toggle_open(datum/act/op/A, valve)
-	var/obj/machinery/atmospherics/valve/shutoff/S = valve
-	if(!istype(S))
+	var/obj/machinery/atmospherics/valve/shutoff/S = ui_member(valve, REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES), /obj/machinery/atmospherics/valve/shutoff)
+	if(!S)
 		return FALSE
 	if(S.open)
 		S.close()
@@ -35,7 +35,7 @@ CAPABILITIES(/datum/tgui_module/shutoff_monitor)
 			"x" = S.x,
 			"y" = S.y,
 			"z" = S.z,
-			"ref" = "\ref[S]"
+			"ref" = ref_token(S)
 		)))
 
 	data["valves"] = valves

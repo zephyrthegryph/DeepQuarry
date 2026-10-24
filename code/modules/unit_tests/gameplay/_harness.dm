@@ -26,6 +26,7 @@
 	dview(0, test_floor())
 
 /datum/unit_test/dq_gameplay/Run()
+	restore_ambient_after() // every scenario lets world time pass (pass_time()) while its players act
 	var/started = REALTIMEOFDAY
 	test_driver_begin()
 	set_global(nameof(GLOB.test_prompts), list())
