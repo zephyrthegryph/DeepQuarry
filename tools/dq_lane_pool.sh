@@ -61,7 +61,7 @@ POOL_SIZE="${DQ_LANE_POOL_SIZE:-8}"
 COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
-here="$(cd "$_dq_dir/.." && pwd)"
+_o="$PWD"; cd "$_dq_dir/.." && here="$PWD"; cd "$_o"   # builtins only: no $(...) fork
 REPO="${DQ_LANE_POOL_REPO:-$here}"
 case "$POOL_SIZE" in ''|*[!0-9]*) echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2 ;; esac
 [ "$POOL_SIZE" -ge 1 ] || { echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2; }
@@ -71,22 +71,21 @@ say() { echo "dq_lane_pool: $*" >&2; }
 
 # DQ_LANE_POOL_NO_FETCH=1 skips every fetch; only tools/ci/test_lane_pool.sh sets it (its origin is a local bare repository the test pushes to itself)
 fetch_origin() { [ "${DQ_LANE_POOL_NO_FETCH:-}" = 1 ] && return 0; git -C "$1" fetch -q origin; }
-slot_path() { echo "$POOL_DIR/pool-$1"; }
-slots_general() { seq 1 "$POOL_SIZE"; }
-slots_compiler() { local k; for k in $(seq 1 "$COMPILER_SLOTS"); do echo "c$k"; done; }
-slots_all() { slots_general; slots_compiler; echo light; }
-slots_for_class() { # the slots a class may take, in the order it tries them
+SLOTS_GENERAL=(); SLOTS_COMPILER=(); _k=0   # arrays built once: a seq or $(...) per call is a fork
+while [ "$_k" -lt "$POOL_SIZE" ]; do _k=$((_k + 1)); SLOTS_GENERAL+=("$_k"); done
+_k=0; while [ "$_k" -lt "$COMPILER_SLOTS" ]; do _k=$((_k + 1)); SLOTS_COMPILER+=("c$_k"); done
+slots_for_class() { # <class>: sets CLASS_SLOTS to the slots a class may take, in the order it tries them
 	case "$1" in
-		compiler) slots_compiler; slots_general ;;
-		light) echo light ;;
-		*) slots_general ;;
+		compiler) CLASS_SLOTS=("${SLOTS_COMPILER[@]}" "${SLOTS_GENERAL[@]}") ;;
+		light) CLASS_SLOTS=(light) ;;
+		*) CLASS_SLOTS=("${SLOTS_GENERAL[@]}") ;;
 	esac
 }
-lane_class() { # <branch> <explicit class or empty>
-	case "${2:-}" in compiler|light|general) echo "$2"; return ;; '') ;; *) die "--class must be general, compiler or light" ;; esac
-	case "$1" in tools/dmb*) echo compiler ;; *) echo general ;; esac
+lane_class() { # <branch> <explicit class or empty>: sets LANE_CLASS
+	case "${2:-}" in compiler|light|general) LANE_CLASS="$2"; return ;; '') ;; *) die "--class must be general, compiler or light" ;; esac
+	case "$1" in tools/dmb*) LANE_CLASS=compiler ;; *) LANE_CLASS=general ;; esac
 }
-lease_file() { echo "$STATE_DIR/pool-$1.lease"; }
+now_utc() { TZ=UTC printf -v NOW_UTC '%(%Y-%m-%dT%H:%M:%SZ)T' -1; }
 lease_load() { # <slot>: sets L_branch, L_owner, L_since, L_start with no fork
 	local k v; L_branch=""; L_owner=""; L_since=""; L_start=""
 	[ -f "$STATE_DIR/pool-$1.lease" ] || return 0
@@ -94,16 +93,20 @@ lease_load() { # <slot>: sets L_branch, L_owner, L_since, L_start with no fork
 		case "$k" in branch) [ -z "$L_branch" ] && L_branch="$v" ;; owner) [ -z "$L_owner" ] && L_owner="$v" ;; since) [ -z "$L_since" ] && L_since="$v" ;; start) [ -z "$L_start" ] && L_start="$v" ;; esac
 	done <"$STATE_DIR/pool-$1.lease"
 }
-lease_get() { sed -n "s/^$2=//p" "$(lease_file "$1")" 2>/dev/null | head -n 1; }
+lease_get() { # <slot> <key>: sets LG (the first value of that key in the lease file) with no fork
+	local k v; LG=""
+	[ -f "$STATE_DIR/pool-$1.lease" ] || return 0
+	while IFS='=' read -r k v; do [ "$k" = "$2" ] && { LG="$v"; return 0; }; done <"$STATE_DIR/pool-$1.lease"
+}
 
 LOCK="$STATE_DIR/pool.lock"
 lock_take() {
-	mkdir -p "$STATE_DIR"
+	[ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR"
 	local i=0
 	while ! mkdir "$LOCK" 2>/dev/null; do
 		# A lock older than two minutes belongs to a crashed caller (the critical sections below take seconds, except the
 		# one-time worktree creation, which refreshes the lock's mtime when it starts).
-		if [ -d "$LOCK" ] && [ -n "$(find "$LOCK" -maxdepth 0 -mmin +2 2>/dev/null)" ]; then rmdir "$LOCK" 2>/dev/null; continue; fi
+		if [ -d "$LOCK" ]; then mtv_of "$LOCK"; if [ "$MTV" -gt 0 ] && [ $(( EPOCHSECONDS - MTV )) -gt 120 ]; then rmdir "$LOCK" 2>/dev/null; continue; fi; fi
 		i=$((i + 1))
 		[ "$i" -le 600 ] || die "could not take the pool lock ($LOCK) in 60 s"
 		sleep 0.1
@@ -113,13 +116,20 @@ lock_take() {
 lock_drop() { rmdir "$LOCK" 2>/dev/null; trap - EXIT; }
 
 _wt_clean_full() { # <path>: no tracked change, no untracked non-ignored file, no merge/rebase/cherry-pick in progress
-	local wt="$1" gd m
+	local wt="$1" m fd o=""
+	gitdir_of "$wt"   # the git dir without a fork (rev-parse --absolute-git-dir)
+	[ -e "$GD/HEAD" ] || return 1
+	for m in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do [ -e "$GD/$m" ] && return 1; done
+	# Fast path, one git start instead of three: a status with no line at all (nothing staged, modified or untracked) is clean by every
+	# definition below. Anything it does list goes on to the exact checks, which also forgive a CR-only difference.
+	o="$(git -C "$wt" status --porcelain=v1 --untracked-files=normal 2>/dev/null)" && [ -z "$o" ] && return 0
+	# the untracked listing runs beside the refresh and the diff (a git start costs a few hundred ms on a loaded host), and no head/$(...) forks
+	exec {fd}< <(git -C "$wt" ls-files --others --exclude-standard 2>/dev/null)
 	git -C "$wt" update-index -q --refresh >/dev/null 2>&1
-	gd="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
-	for m in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do [ -e "$gd/$m" ] && return 1; done
 	# a CR-only difference (autocrlf / eol phantom: the index stat is stale but the content matches modulo CR) is not dirty
-	git -C "$wt" diff --quiet --ignore-cr-at-eol HEAD -- >/dev/null 2>&1 || return 1 # --quiet honors the flag; --name-only does not
-	[ -z "$(git -C "$wt" ls-files --others --exclude-standard 2>/dev/null | head -n 1)" ]
+	if ! git -C "$wt" diff --quiet --ignore-cr-at-eol HEAD -- >/dev/null 2>&1; then exec {fd}<&-; return 1; fi # --quiet honors the flag; --name-only does not
+	read -r -u "$fd" o; exec {fd}<&-
+	[ -z "$o" ]
 }
 wt_clean() { # full check, result cached for status
 	_wt_clean_full "$1"; local rc=$?
@@ -130,7 +140,6 @@ wt_clean() { # full check, result cached for status
 # ---- cached dirty state ---------------------------------------------------------------------------------------------------------
 # A full dirty check (git status over a 13 to 16 GB worktree) takes minutes, so status and stuck never run it. The result of every check is
 # cached under $STATE_DIR/dirty keyed by the index mtime; stuck re-checks only a lease idle past the stuck limit, with tracked files only.
-dirty_file() { echo "$STATE_DIR/dirty/${1//[^A-Za-z0-9]/_}"; }
 dirty_key() { # <wt>: sets DK to the index mtime
 	gitdir_of "$1"; mtv_of "$GD/index"; DK="$MTV"
 }
@@ -194,20 +203,22 @@ retire_daemon() { # <wt>: ask the dmbc daemon registered for this worktree to re
 }
 
 drop_outputs() { # <wt>: build outputs only; icons/gen, node_modules, tools/analyze/target and data/analyze-cache stay
-	local wt="$1" f d n=0
+	local wt="$1" f n=0 cand=() ign=()
 	for f in "$wt"/deepquarry.*; do
 		[ -e "$f" ] || continue
 		case "$f" in *.dme|*.dm|*.md) continue ;; esac
-		# only files git ignores: never a tracked file
-		git -C "$wt" check-ignore -q -- "${f#"$wt"/}" 2>/dev/null || continue
-		rm -rf "$f" && n=$((n + 1))
+		cand+=("${f#"$wt"/}")
 	done
 	for f in "$wt"/.dmbc "$wt"/tools/dmb/target "$wt"/verdigris/target "$wt"/data/*; do
 		[ -e "$f" ] || continue
 		case "$f" in "$wt"/data/analyze-cache) continue ;; esac
-		git -C "$wt" check-ignore -q -- "${f#"$wt"/}" 2>/dev/null || continue
-		rm -rf "$f" && n=$((n + 1))
+		cand+=("${f#"$wt"/}")
 	done
+	if [ "${#cand[@]}" -gt 0 ]; then
+		# only paths git ignores: never a tracked file. One check-ignore for all candidates (it prints the ignored ones).
+		while IFS= read -r f; do ign+=("$f"); done < <(git -C "$wt" check-ignore -- "${cand[@]}" 2>/dev/null)
+		for f in ${ign[@]+"${ign[@]}"}; do rm -rf "$wt/$f" && n=$((n + 1)); done
+	fi
 	say "dropped $n build output path(s) in $wt"
 }
 
@@ -231,13 +242,13 @@ size_cached() { # <path>: sets SZ (KB); a stale entry is refreshed by a detached
 # ---- release ----------------------------------------------------------------------------------------------------------------------
 release_slot() { # <slot> <force> <keep_outputs>
 	local i="$1" force="$2" keep="$3" wt branch
-	wt="$(slot_path "$i")"
-	branch="$(lease_get "$i" branch)"
+	wt="$POOL_DIR/pool-$i"
+	lease_get "$i" branch; branch="$LG"
 	if [ -d "$wt" ]; then
 		if ! wt_clean "$wt"; then
 			if [ "$force" -eq 1 ]; then
 				say "WARNING: $wt is not clean; --force records the release and leaves the tree as it is (the slot stays unusable until it is cleaned by hand)"
-				rm -f "$(lease_file "$i")"
+				rm -f "$STATE_DIR/pool-$i.lease"
 				return 0
 			fi
 			git -C "$wt" status --short | head -n 8 >&2
@@ -248,7 +259,7 @@ release_slot() { # <slot> <force> <keep_outputs>
 		fetch_origin "$wt" 2>/dev/null
 		git -C "$wt" switch -q --detach origin/master || die "could not move $wt to a detached origin/master"
 	fi
-	rm -f "$(lease_file "$i")"
+	rm -f "$STATE_DIR/pool-$i.lease"
 	if [ -n "$branch" ] && git -C "$REPO" show-ref -q --verify "refs/heads/$branch"; then
 		if merged_into_master "$REPO" "$branch"; then
 			git -C "$REPO" branch -q -d "$branch" 2>/dev/null && say "deleted merged branch $branch"
@@ -270,16 +281,18 @@ SLOTS_SH="$_dq_dir/dq_machine_slots.sh"
 # (EPOCHSECONDS, read, [[ =~ ]]) and a single batched stat (mt_prefetch). A command substitution is a fork too: the hot paths set variables.
 declare -A MT=() LOGMAX=(); MT_PREFETCHED=0
 mt_prefetch() { # one stat for every slot's lease, HEAD, reflog, index, dirty-cache, size-cache and the process-snapshot cache
-	local i wt f files=() line
+	local i wt f files=() line key
 	MT=(); MT_PREFETCHED=1
 	for i in "${ALL_SLOTS[@]}"; do
-		wt="$POOL_DIR/pool-$i"
-		files+=("$STATE_DIR/pool-$i.lease" "$(dirty_file "$wt")" "$STATE_DIR/sizes/${wt//[^A-Za-z0-9]/_}")
+		wt="$POOL_DIR/pool-$i"; key="${wt//[^A-Za-z0-9]/_}"
+		files+=("$STATE_DIR/pool-$i.lease" "$STATE_DIR/dirty/$key" "$STATE_DIR/dirty/$key.full" "$STATE_DIR/sizes/$key" "$STATE_DIR/sizes/$key.busy")
 		[ -d "$wt" ] || continue
 		gitdir_of "$wt"
 		files+=("$GD/HEAD" "$GD/logs/HEAD" "$GD/index")
 	done
-	files+=("$STATE_DIR/procs.snap")
+	files+=("$STATE_DIR/procs.snap" "$STATE_DIR/prune.stamp")
+	# a file that does not exist is recorded as 0 up front: stat prints nothing for it, and mtv_of would otherwise fork a stat of its own to find that out
+	for f in "${files[@]}"; do MT["$f"]=0; done
 	while IFS=' ' read -r line f; do MT["$f"]="$line"; done < <(stat -c '%Y %n' "${files[@]}" 2>/dev/null)
 	# the newest file under every worktree's log and run directories, from one find for the whole pool
 	LOGMAX=(); local wts=() w m logpaths=()
@@ -298,6 +311,12 @@ mt_prefetch() { # one stat for every slot's lease, HEAD, reflog, index, dirty-ca
 mtv_of() { # <path>: sets MTV to the mtime (0 when absent); from the prefetch when there is one
 	if [ -n "${MT[$1]:-}" ]; then MTV="${MT[$1]}"
 	else MTV="$(stat -c %Y "$1" 2>/dev/null || echo 0)"; fi
+}
+head_branch() { # <wt>: sets HB to the branch HEAD points at (empty when detached), read from the worktree's HEAD file with no git start
+	local h=""; HB=""; gitdir_of "$1"
+	[ -f "$GD/HEAD" ] && read -r h <"$GD/HEAD"
+	[[ "$h" == "ref: refs/heads/"* ]] && HB="${h#ref: refs/heads/}"
+	return 0
 }
 gitdir_of() { # <wt>: sets GD to the worktree's git dir without running git (a linked worktree's .git file says "gitdir: <path>")
 	local k v; GD="$1/.git"
@@ -328,23 +347,13 @@ slot_activity_set() { # <slot> <worktree>: sets ACT_V to epoch seconds of the ne
 	fi
 	ACT_V="$newest"
 }
-slot_activity_epoch() { slot_activity_set "$@"; echo "$ACT_V"; }
 
 slot_idle_set() { slot_activity_set "$@"; IDLE_V=$(( (EPOCHSECONDS - ACT_V) / 60 )); }
-slot_idle_minutes() { # <slot> <worktree>: minutes since anything in the lease or its worktree last changed
-	slot_idle_set "$@"; echo "$IDLE_V"
-}
 
 PROC_SNAP=""; PROC_SNAP_DONE=0
 PROC_CACHE_OK=0   # status and stuck may use a snapshot up to 5 minutes old; the reclaim path never does
-proc_snapshot() { # command lines of the running processes, lowercased with / separators (once per invocation). DQ_LANE_POOL_PROCS_CMD replaces the source (tests).
-	[ "$PROC_SNAP_DONE" -eq 1 ] && return 0
-	PROC_SNAP_DONE=1
+proc_collect() { # runs the process listing (powershell: seconds on a loaded host) and sets PROC_SNAP; with PROC_CACHE_OK it also stores it in the cache
 	local raw="" cache="$STATE_DIR/procs.snap" f
-	if [ "$PROC_CACHE_OK" -eq 1 ] && [ -z "${DQ_LANE_POOL_PROCS_CMD:-}" ]; then
-		mtv_of "$cache"
-		if [ $(( EPOCHSECONDS - MTV )) -lt 300 ]; then read -r -d '' PROC_SNAP <"$cache"; return 0; fi
-	fi
 	if [ -n "${DQ_LANE_POOL_PROCS_CMD:-}" ]; then
 		raw="$(eval "$DQ_LANE_POOL_PROCS_CMD" 2>/dev/null)"
 	elif command -v powershell.exe >/dev/null 2>&1; then
@@ -356,6 +365,28 @@ proc_snapshot() { # command lines of the running processes, lowercased with / se
 	if [ "$PROC_CACHE_OK" -eq 1 ] && [ -z "${DQ_LANE_POOL_PROCS_CMD:-}" ]; then
 		mkdir -p "$STATE_DIR" 2>/dev/null; printf '%s\n' "$PROC_SNAP" >"$cache.tmp.$$" 2>/dev/null && mv -f "$cache.tmp.$$" "$cache"
 	fi
+}
+proc_snapshot() { # command lines of the running processes, lowercased with / separators (once per invocation). DQ_LANE_POOL_PROCS_CMD replaces the source (tests).
+	[ "$PROC_SNAP_DONE" -eq 1 ] && return 0
+	PROC_SNAP_DONE=1
+	local cache="$STATE_DIR/procs.snap" age
+	if [ "$PROC_CACHE_OK" -eq 1 ] && [ -z "${DQ_LANE_POOL_PROCS_CMD:-}" ]; then
+		# status and stuck never wait for the listing once there is one: a snapshot up to 30 minutes old is used, and one older than 5 minutes is
+		# refreshed by a detached process for the next call (the listing costs seconds, status must answer in a few)
+		mtv_of "$cache"; age=$(( EPOCHSECONDS - MTV ))
+		if [ "$MTV" -gt 0 ] && [ "$age" -lt 1800 ]; then
+			PROC_SNAP=$(<"$cache")   # $(<file) reads without a fork; read -d '' is byte by byte (0.5 s for 200 KB)
+			if [ "$age" -ge 300 ]; then
+				mtv_of "$cache.busy"
+				if [ $(( EPOCHSECONDS - MTV )) -ge 120 ]; then
+					: >"$cache.busy"
+					( nohup bash "${BASH_SOURCE[0]}" _procs_refresh >/dev/null 2>&1; rm -f "$cache.busy" ) >/dev/null 2>&1 &
+				fi
+			fi
+			return 0
+		fi
+	fi
+	proc_collect
 }
 
 norm_path() { # <path>: sets NP to the lower-case path with / separators, no doubled or trailing /
@@ -450,7 +481,7 @@ stuck_notice() { # <slot>: write or remove $STATE_DIR/notices/pool-N.stuck from 
 		{
 			echo "slot=pool-$i"; echo "branch=$L_branch"; echo "owner=$L_owner"
 			echo "idle_minutes=$E_IDLE"; echo "dirty=$E_DIRTY"; echo "unpushed=$((1 - E_PUSHED))"
-			echo "path=$POOL_DIR/pool-$i"; echo "noticed=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+			echo "path=$POOL_DIR/pool-$i"; now_utc; echo "noticed=$NOW_UTC"
 			echo "action=$([ "$E_DIRTY" -eq 0 ] && [ "$E_PUSHED" -eq 1 ] && echo "reclaimable by the next lease after the reclaim idle limit" || echo "report only: dirty or unpushed work is never discarded")"
 		} >"$f.tmp" 2>/dev/null && mv -f "$f.tmp" "$f"
 	else
@@ -460,29 +491,36 @@ stuck_notice() { # <slot>: write or remove $STATE_DIR/notices/pool-N.stuck from 
 }
 
 reclaim_finished() { # called under the lock: drop leases whose lane is done
-	local i wt branch idle_limit
-	for i in $(slots_all); do
-		[ -f "$(lease_file "$i")" ] || continue
-		wt="$(slot_path "$i")"
-		branch="$(lease_get "$i" branch)"
-		if [ ! -d "$wt" ]; then rm -f "$(lease_file "$i")"; say "reclaimed pool-$i (worktree gone)"; continue; fi
-		wt_clean "$wt" || continue
-		if ! git -C "$REPO" show-ref -q --verify "refs/heads/$branch"; then
-			release_slot "$i" 0 0; say "reclaimed pool-$i (branch $branch is gone)"; continue
-		fi
+	local i wt branch idle_limit start tip held=0
+	for i in "${ALL_SLOTS[@]}"; do [ -f "$STATE_DIR/pool-$i.lease" ] && held=1; done
+	[ "$held" -eq 1 ] || return 0
+	mt_prefetch   # one stat and one find for every slot's signs of activity, instead of one per file
+	local -A heads=(); local sha ref
+	while read -r sha ref; do heads["${ref#refs/heads/}"]="$sha"; done < <(git -C "$REPO" for-each-ref --format='%(objectname) %(refname)' refs/heads 2>/dev/null)   # one git start for every branch tip
+	for i in "${ALL_SLOTS[@]}"; do
+		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		wt="$POOL_DIR/pool-$i"
+		lease_get "$i" branch; branch="$LG"; lease_get "$i" start; start="$LG"
+		if [ ! -d "$wt" ]; then rm -f "$STATE_DIR/pool-$i.lease"; say "reclaimed pool-$i (worktree gone)"; continue; fi
 		# A lane that lands several merges in a row (a wave per merge) is merged and clean between merges while its agent is still
 		# working in the slot, so a merged lane is reclaimed only once nothing has touched its worktree for a while (or by release).
 		idle_limit="$RECLAIM_IDLE_MIN"; [ "$i" = light ] && idle_limit="${DQ_LANE_POOL_LIGHT_IDLE_MIN:-30}"   # a light lane lasts minutes
-		if [ "$(slot_idle_minutes "$i" "$wt")" -lt "$idle_limit" ]; then
-			continue
+		slot_idle_set "$i" "$wt"
+		tip="${heads[$branch]:-}"
+		if [ -n "$tip" ] && [ "$IDLE_V" -lt "$idle_limit" ]; then
+			continue   # a recently touched lease whose branch exists is active: no git status of a worktree that could be 15 GB
 		fi
-		if merged_into_master "$REPO" "$branch" && [ "$(git -C "$REPO" rev-parse "refs/heads/$branch")" != "$(lease_get "$i" start)" ]; then
+		wt_clean "$wt" || continue
+		if [ -z "$tip" ]; then
+			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (branch $branch is gone)"; continue
+		fi
+		if merged_into_master "$REPO" "$branch" && [ "$tip" != "$start" ]; then
 			# the lane committed (tip moved off its start) and all of it is in origin/master: finished. A lane that has not committed yet
 			# also sits on a master ancestor, which is why the start commit is recorded.
-			release_slot "$i" 0 0; say "reclaimed pool-$i (lane $branch is merged into origin/master)"
+			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (lane $branch is merged into origin/master)"
 		elif ! slot_live "$i" "$wt" && slot_pushed "$branch"; then
 			# stuck (no process, idle past the limit), clean, and every commit pushed or merged: nothing can be lost (a lane that never committed lands here too)
-			release_slot "$i" 0 0; say "reclaimed pool-$i (stuck: clean, no live process, idle $(fmt_min "$(slot_idle_minutes "$i" "$wt")"), nothing unpushed on $branch)"
+			RECLAIMED=1; release_slot "$i" 0 0; say "reclaimed pool-$i (stuck: clean, no live process, idle $(fmt_min "$IDLE_V"), nothing unpushed on $branch)"
 		fi
 	done
 }
@@ -508,12 +546,13 @@ ticket_get() { # <ticket> <key>: sets KV
 }
 
 queue_position() { # <ticket>: 1 when it is the oldest live ticket
-	local n=0 t
-	for t in $(ls "$QUEUE_DIR"/*.ticket 2>/dev/null | sort); do
+	local n=0 t   # sets QPOS; the glob is already sorted, so no ls | sort forks
+	QPOS=0
+	for t in "$QUEUE_DIR"/*.ticket; do
+		[ -e "$t" ] || continue
 		n=$((n + 1))
-		[ "$t" = "$1" ] && { echo "$n"; return; }
+		[ "$t" = "$1" ] && { QPOS="$n"; return; }
 	done
-	echo 0
 }
 
 cmd_lease() {
@@ -531,25 +570,26 @@ cmd_lease() {
 		if [ "$skip" -eq 1 ]; then skip=0; continue; fi
 		case "$a" in --base) skip=1 ;; -*) ;; *) [ -n "$branch" ] || branch="$a" ;; esac
 	done
-	class="$(lane_class "$branch" "$class")"
+	lane_class "$branch" "$class"; class="$LANE_CLASS"
 	args+=(--class "$class")
 	case "$class" in
 		light) QUEUE_DIR="$STATE_DIR/queue-light" ;;   # its own queue: the one shared slot never waits behind game lanes, nor they behind it
 		compiler) prefix="0-" ;;                         # sorts ahead of the general tickets (plain timestamps) in the same dir
 	esac
 	[ "$wait" -eq 1 ] || { lease_once "${args[@]}"; return; }
-	mkdir -p "$QUEUE_DIR"
-	ticket="$QUEUE_DIR/${prefix}$(date +%s%N)-$$.ticket"
+	[ -d "$QUEUE_DIR" ] || mkdir -p "$QUEUE_DIR"
+	now_utc
+	ticket="$QUEUE_DIR/${prefix}${EPOCHREALTIME/./}000-$$.ticket"   # microseconds padded to the old nanosecond width: same ordering
 	printf 'pid=%s
 branch=%s
 since=%s
-' "$$" "$branch" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$ticket"
+' "$$" "$branch" "$NOW_UTC" >"$ticket"
 	trap 'rm -f "${ticket:-}"' EXIT
-	start=$(date +%s)
+	start="$EPOCHSECONDS"
 	while :; do
 		[ -f "$ticket" ] || { say "cancelled: the queue ticket for $branch was withdrawn (dq_lane_pool.sh cancel)"; return 4; }
 		queue_prune
-		pos="$(queue_position "$ticket")"
+		queue_position "$ticket"; pos="$QPOS"
 		if [ "$pos" = 1 ]; then
 			out="$(lease_once "${args[@]}" 2>"$ticket.err")"; rc=$?
 			if [ "$rc" -ne 3 ]; then
@@ -560,7 +600,7 @@ since=%s
 			rm -f "$ticket.err"
 		fi
 		[ "$pos" != "$last_pos" ] && { say "waiting for a slot: position $pos in the queue (bash tools/dq_lane_pool.sh status)"; last_pos="$pos"; }
-		if [ $(( $(date +%s) - start )) -ge $(( timeout_min * 60 )) ]; then
+		if [ $(( EPOCHSECONDS - start )) -ge $(( timeout_min * 60 )) ]; then
 			say "gave up after $timeout_min minutes in the queue"; return 3
 		fi
 		sleep "${DQ_LANE_POOL_WAIT_POLL:-20}"
@@ -568,7 +608,7 @@ since=%s
 }
 
 lease_once() {
-	local branch="" base="origin/master" i wt held=0 free="" skipped="" class="" nslots=0
+	local branch="" base="origin/master" i wt held=0 free="" skipped="" class="" nslots=0 base_sha="" tip="" br_sha=""
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--base) shift; base="${1:?--base needs a ref}" ;;
@@ -579,37 +619,56 @@ lease_once() {
 		shift
 	done
 	[ -n "$branch" ] || die "usage: dq_lane_pool.sh lease <branch>"
-	git check-ref-format --branch "$branch" >/dev/null 2>&1 || die "'$branch' is not a valid branch name"
+	# the usual names (letters, digits, _ - . and / between words) are valid by git's rules; anything else asks git
+	if ! { [[ "$branch" =~ ^[A-Za-z0-9_][A-Za-z0-9_-]*(/[A-Za-z0-9_][A-Za-z0-9_.-]*)*$ ]] && [[ "$branch" != *..* && "$branch" != *.lock && "$branch" != *.lock/* && "$branch" != *./* && "$branch" != *. ]]; }; then
+		git check-ref-format --branch "$branch" >/dev/null 2>&1 || die "'$branch' is not a valid branch name"
+	fi
 	case "$branch" in master|main|rewrite/integ-current) die "'$branch' is not a lane branch" ;; esac
-	class="$(lane_class "$branch" "$class")"
+	lane_class "$branch" "$class"; class="$LANE_CLASS"
 
 	fetch_origin "$REPO" || say "warning: git fetch failed; using the last fetched origin/master"
-	git -C "$REPO" rev-parse -q --verify "$base" >/dev/null || die "no such base: $base"
 	lock_take
+	br_sha=""
+	if [ "$base" = origin/master ]; then   # the default base and the lane branch's tip in one git start
+		local sha ref
+		while read -r sha ref; do
+			case "$ref" in refs/remotes/origin/master) base_sha="$sha" ;; "refs/heads/$branch") br_sha="$sha" ;; esac
+		done < <(git -C "$REPO" for-each-ref --format='%(objectname) %(refname)' refs/remotes/origin/master "refs/heads/$branch" 2>/dev/null)
+		[ -n "$base_sha" ] || die "no such base: $base"
+	else
+		base_sha="$(git -C "$REPO" rev-parse -q --verify "$base")" || die "no such base: $base"
+		br_sha="$(git -C "$REPO" rev-parse -q --verify "refs/heads/$branch")" || br_sha=""
+	fi
 	# A lane that already holds a slot gets it back.
-	for i in $(slots_all); do
-		if [ -f "$(lease_file "$i")" ] && [ "$(lease_get "$i" branch)" = "$branch" ]; then
-			wt="$(slot_path "$i")"
-			if [ -d "$wt" ] && [ "$(git -C "$wt" symbolic-ref -q --short HEAD)" = "$branch" ]; then
+	for i in "${ALL_SLOTS[@]}"; do
+		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		lease_get "$i" branch
+		if [ "$LG" = "$branch" ]; then
+			wt="$POOL_DIR/pool-$i"
+			head_branch "$wt"
+			if [ -d "$wt" ] && [ "$HB" = "$branch" ]; then
 				lock_drop; say "$branch already holds pool-$i"; echo "$wt"; return 0
 			fi
-			rm -f "$(lease_file "$i")"  # a stale record: the worktree moved on
+			rm -f "$STATE_DIR/pool-$i.lease"  # a stale record: the worktree moved on
 		fi
 	done
-	reclaim_finished
-	for i in $(slots_for_class "$class"); do nslots=$((nslots + 1)); [ -f "$(lease_file "$i")" ] && held=$((held + 1)); done
+	RECLAIMED=0; reclaim_finished
+	if [ "$RECLAIMED" -eq 1 ]; then br_sha="$(git -C "$REPO" rev-parse -q --verify "refs/heads/$branch")" || br_sha=""; fi   # a reclaim may have deleted the lane branch
+	slots_for_class "$class"
+	for i in "${CLASS_SLOTS[@]}"; do nslots=$((nslots + 1)); [ -f "$STATE_DIR/pool-$i.lease" ] && held=$((held + 1)); done
 	if [ "$nslots" -eq 0 ] || [ "$held" -ge "$nslots" ]; then
 		echo "dq_lane_pool: POOL FULL ($class lanes): $held of $nslots worktrees are in use; at most $POOL_SIZE general lanes run at once (DQ_LANE_POOL_SIZE)." >&2
-		for i in $(slots_for_class "$class"); do
-			echo "  pool-$i: $(lease_get "$i" branch) since $(lease_get "$i" since) ($(lease_get "$i" owner))" >&2
+		for i in "${CLASS_SLOTS[@]}"; do
+			lease_load "$i"
+			echo "  pool-$i: $L_branch since $L_since ($L_owner)" >&2
 		done
 		echo "  Finish one lane (dq_lane_ready.sh, merge, then 'bash tools/dq_lane_pool.sh release <branch>') and ask again, or wait." >&2
 		lock_drop
 		return 3
 	fi
-	for i in $(slots_for_class "$class"); do
-		[ -f "$(lease_file "$i")" ] && continue
-		wt="$(slot_path "$i")"
+	for i in "${CLASS_SLOTS[@]}"; do
+		[ -f "$STATE_DIR/pool-$i.lease" ] && continue
+		wt="$POOL_DIR/pool-$i"
 		if [ -d "$wt" ] && ! wt_clean "$wt"; then skipped="$skipped pool-$i"; continue; fi
 		free="$i"; break
 	done
@@ -617,41 +676,44 @@ lease_once() {
 		lock_drop
 		die "no usable slot: every free worktree is dirty or mid-merge ($skipped); clean or finish it by hand (nothing is cleaned for you)"
 	fi
-	i="$free"; wt="$(slot_path "$i")"
+	i="$free"; wt="$POOL_DIR/pool-$i"
 	if [ ! -e "$wt/.git" ]; then
 		[ -z "$(ls -A "$wt" 2>/dev/null)" ] || { lock_drop; die "$wt exists and is not a worktree; move it away"; }
 		say "creating $wt (one-time checkout; later leases are a switch)"
-		mkdir -p "$POOL_DIR"
+		[ -d "$POOL_DIR" ] || mkdir -p "$POOL_DIR"
 		touch "$LOCK"
 		git -C "$REPO" worktree add --detach "$wt" "$base" >&2 || { lock_drop; die "git worktree add failed"; }
 	fi
 	fetch_origin "$wt" 2>/dev/null
-	if git -C "$REPO" show-ref -q --verify "refs/heads/$branch"; then
+	tip="$base_sha"   # HEAD after the switch: the base for -c and -C, the branch tip when resuming (no rev-parse afterwards)
+	if [ -n "$br_sha" ]; then
 		if merged_into_master "$REPO" "$branch"; then
 			git -C "$wt" switch -q -C "$branch" "$base" || { lock_drop; die "git switch -C $branch failed in $wt"; }
 			say "restarted merged branch $branch on $base"
 		else
 			git -C "$wt" switch -q "$branch" || { lock_drop; die "git switch $branch failed in $wt (is it checked out in another worktree?)"; }
+			tip="$br_sha"
 			say "resumed $branch (it holds commits $base lacks); merge master with: bash tools/dq_merge_master.sh"
 		fi
 	else
 		git -C "$wt" switch -q -c "$branch" "$base" || { lock_drop; die "git switch -c $branch failed in $wt"; }
 	fi
+	now_utc
 	{
 		echo "branch=$branch"
-		echo "since=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+		echo "since=$NOW_UTC"
 		echo "owner=${DQ_LANE_OWNER:-${USERNAME:-${USER:-unknown}}}"
 		echo "class=$class"
 		echo "base=$base"
-		echo "start=$(git -C "$wt" rev-parse HEAD)"
-	} >"$(lease_file "$i")"
+		echo "start=$tip"
+	} >"$STATE_DIR/pool-$i.lease"
 	lock_drop
-	say "leased pool-$i ($class) to $branch ($(git -C "$wt" rev-parse --short HEAD) = $base); release with: bash tools/dq_lane_pool.sh release $branch"
+	say "leased pool-$i ($class) to $branch (${tip:0:10} = $base); release with: bash tools/dq_lane_pool.sh release $branch"
 	echo "$wt"
 }
 
 cmd_release() {
-	local target="" force=0 keep=0 i found=""
+	local target="" force=0 keep=0 i found="" tphys="" sphys="" old="$PWD"
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			--force) force=1 ;;
@@ -666,16 +728,22 @@ cmd_release() {
 		target="$(git rev-parse --show-toplevel 2>/dev/null)" || die "usage: dq_lane_pool.sh release [<branch>|--path P]"
 	fi
 	lock_take
-	for i in $(slots_all); do
-		[ -f "$(lease_file "$i")" ] || continue
-		if [ "$(lease_get "$i" branch)" = "$target" ] || [ "$(slot_path "$i")" = "$target" ] || [ "$(cd "$(slot_path "$i")" 2>/dev/null && pwd)" = "$(cd "$target" 2>/dev/null && pwd)" ]; then found="$i"; break; fi
+	for i in "${ALL_SLOTS[@]}"; do
+		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		lease_get "$i" branch
+		if [ "$LG" = "$target" ] || [ "$POOL_DIR/pool-$i" = "$target" ]; then found="$i"; break; fi
+		# same directory spelled differently (msys/windows paths, symlinks): compare the shell's own resolved cwd, no subshells
+		if [ -z "$tphys" ]; then tphys="-"; cd "$target" 2>/dev/null && tphys="$PWD"; cd "$old"; fi
+		sphys=""; cd "$POOL_DIR/pool-$i" 2>/dev/null && sphys="$PWD"; cd "$old"
+		if [ -n "$sphys" ] && [ "$sphys" = "$tphys" ]; then found="$i"; break; fi
 	done
 	[ -n "$found" ] || { lock_drop; die "no lease for '$target' (dq_lane_pool.sh status)"; }
 	release_slot "$found" "$force" "$keep"
 	local rc=$?
 	lock_drop
 	# Cache hygiene, at most every 6 hours, detached: caps the shared caches and removes abandoned test scratch (tools/dq_cache_prune.sh).
-	if [ -z "$(find "$STATE_DIR/prune.stamp" -mmin -360 2>/dev/null)" ] && [ -f "$REPO/tools/dq_cache_prune.sh" ]; then
+	mtv_of "$STATE_DIR/prune.stamp"
+	if [ $(( EPOCHSECONDS - MTV )) -ge 21600 ] && [ -f "$REPO/tools/dq_cache_prune.sh" ]; then
 		: >"$STATE_DIR/prune.stamp"
 		( nohup bash "$REPO/tools/dq_cache_prune.sh" >"$STATE_DIR/prune.log" 2>&1 & ) >/dev/null 2>&1
 	fi
@@ -740,7 +808,8 @@ cmd_cancel() { # <branch>: remove that branch's queue tickets; the waiting proce
 	for q in "$STATE_DIR/queue" "$STATE_DIR/queue-light"; do
 		for t in "$q"/*.ticket; do
 			[ -e "$t" ] || continue
-			[ "$(sed -n 's/^branch=//p' "$t" | head -n 1)" = "$b" ] && rm -f "$t" && n=$((n + 1))
+			ticket_get "$t" branch
+			[ "$KV" = "$b" ] && rm -f "$t" && n=$((n + 1))
 		done
 	done
 	[ "$n" -gt 0 ] || die "no queued lease for '$b' (dq_lane_pool.sh status)"
@@ -767,8 +836,10 @@ cmd_stuck() { # [--quiet]: list stuck leases; exit 1 when there are any
 
 cmd_path() {
 	local i
-	for i in $(slots_all); do
-		if [ -f "$(lease_file "$i")" ] && [ "$(lease_get "$i" branch)" = "${1:-}" ]; then slot_path "$i"; return 0; fi
+	for i in "${ALL_SLOTS[@]}"; do
+		[ -f "$STATE_DIR/pool-$i.lease" ] || continue
+		lease_get "$i" branch
+		if [ "$LG" = "${1:-}" ]; then echo "$POOL_DIR/pool-$i"; return 0; fi
 	done
 	return 1
 }
@@ -782,6 +853,7 @@ case "$cmd" in
 	path) cmd_path "$@" ;;
 	cancel) cmd_cancel "$@" ;;
 	stuck) cmd_stuck "$@"; exit $? ;;
+	_procs_refresh) PROC_CACHE_OK=1; proc_collect ;;   # internal: the detached refresh of the process snapshot that status and stuck start
 	-h|--help|help|"") sed -n '2,55p' "$0"; [ -n "$cmd" ] || exit 2 ;;
 	*) echo "dq_lane_pool: unknown command '$cmd' (lease, release, status, path, stuck, cancel)" >&2; exit 2 ;;
 esac
