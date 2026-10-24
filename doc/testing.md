@@ -238,7 +238,11 @@ every cell of a large matrix:
 - `dq_rule_thresholds` and `dq_balance_harness`;
 - `all_clothing_shall_be_valid` and `dq_containment_conservation_fuzz`;
 - `dq_all_species_handle_breath_safely` and `dq_latent_closet_types`,
-  `dq_conversion_pin` (every recorded pin; the tests parented to it keep their own directories in the normal tier) and `dq_loot_roll_pin`.
+  `dq_conversion_pin` (every recorded pin) and `dq_loot_roll_pin`;
+- the scoped and bulk pins parented to `dq_conversion_pin` (`dq_requirement_third_pin` to `_sixth_pin`, `dq_machinery_audit_pin` and its `/i7`,
+  `dq_interaction_domain_snapshot/i7_bulk` and `/i7_structures_bulk`), `dq_hit_pin`,
+  `dq_rust_adjacency_matches_pairwise_rule` and `dq_construction_mech_all_blueprints_round_trip`. A pin's representative names a few recorded
+  trees in `capture_roots`.
 
 Each one has a normal-tier representative, a `.../representative` subtype that
 sets `tier = TEST_TIER_NORMAL`. It runs the same code over a fixed, curated

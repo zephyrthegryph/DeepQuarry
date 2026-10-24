@@ -821,7 +821,7 @@ CAPABILITIES(/obj/machinery/light)
 		return
 	// Charging is time based. Preserve the historical rate of 0.4 charge every two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	after(src, charge_steps * (2 SECONDS), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_WORLD)
+	after(src, charge_steps * (2 SECONDS), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_OWN)
 
 /obj/machinery/light/proc/finish_emergency_recharge(datum/act/A)
 	if(QDELETED(src) || !cell || !has_power())

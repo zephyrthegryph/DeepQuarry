@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Whole-tree test sweeps (atmos adjacency, mech blueprints, the requirement, hit and i7 pins) moved to the exhaustive tier with small normal-tier representatives"
+  - code_imp: "Door autoclose and the light fixture's emergency cell run on the entity's own clock, so their tests pass time on the kernel test clock instead of sleeping"
+  - bugfix: "The i7 machinery snapshot is re-blessed for the arcade orion trail's added ops"
