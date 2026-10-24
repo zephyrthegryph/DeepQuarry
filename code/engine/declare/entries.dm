@@ -44,14 +44,26 @@
 
 /// The text that tells two entries apart: kind, key, every argument and every child, by value.
 /proc/entry_signature(kind, key, list/args, list/children)
-	var/list/parts = list(kind, isnull(key) ? "~" : "k[key]")
+	. = "[kind]|[isnull(key) ? "~" : "k[key]"]"
 	for(var/name in args)
-		parts += "[name]=[entry_value_signature(args[name])]"
+		var/v = args[name]
+		// Leaf values are signed inline (the same text datum_signature gives): this runs for every argument of every entry at boot.
+		if(isnum(v))
+			. += "|[name]=n[v]"
+		else if(istext(v))
+			. += "|[name]=t[length(v)]:[v]"
+		else
+			. += "|[name]=[entry_value_signature(v)]"
 	for(var/child in children)
-		parts += "(" + entry_value_signature(child) + ")"
-	return jointext(parts, "|")
+		. += "|(" + entry_value_signature(child) + ")"
 
 /proc/entry_value_signature(value)
+	if(isnull(value))
+		return "~"
+	if(isnum(value))
+		return "n[value]"
+	if(istext(value))
+		return "t[length(value)]:[value]"
 	if(istype(value, /datum/entry))
 		var/datum/entry/E = value
 		return "e:[E.sig]"

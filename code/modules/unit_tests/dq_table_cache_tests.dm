@@ -159,3 +159,112 @@
 		kinds++
 	log_world("DQ_TABLE_CACHE: type trait tables equal the scanning build over [kinds] kinds")
 	TEST_ASSERT(kinds > 0, "there are type trait kinds")
+
+// ---- interned entry signatures ----
+// The signature builders inline their leaf cases for boot speed. These are the plain forms they replaced: every interned entry and part
+// must still carry exactly the signature the plain form computes, and no two interned objects may share one.
+
+/proc/dq_ref_datum_signature(value, depth = 0)
+	if(isnull(value))
+		return "~"
+	if(isnum(value))
+		return "n[value]"
+	if(istext(value))
+		return "t[length(value)]:[value]"
+	if(ispath(value))
+		return "p[value]"
+	if(depth > 8)
+		return "?"
+	if(islist(value))
+		var/list/L = value
+		var/list/parts = list()
+		for(var/i in 1 to length(L))
+			var/k = L[i]
+			var/entry = dq_ref_datum_signature(k, depth + 1)
+			if(!isnum(k) && !isnull(k) && !isnull(L[k]))
+				entry += "=" + dq_ref_datum_signature(L[k], depth + 1)
+			parts += entry
+		return "\[[jointext(parts, ",")]]"
+	if(isatom(value))
+		var/atom/A = value
+		return "a[SHARED_CACHE_UID(A)]"
+	if(isdatum(value))
+		var/datum/D = value
+		var/list/parts = list()
+		for(var/name in signature_vars_of(D))
+			var/v = D.vars[name]
+			if(v == initial(D.vars[name]))
+				continue
+			parts += "[name]:[dq_ref_datum_signature(v, depth + 1)]"
+		return "d[D.type]{[jointext(parts, ";")]}"
+	return "x[value]"
+
+/proc/dq_ref_value_signature(value)
+	if(istype(value, /datum/entry))
+		var/datum/entry/E = value
+		return "e:[E.sig]"
+	if(islist(value))
+		var/list/L = value
+		var/list/parts = list()
+		for(var/i in 1 to length(L))
+			var/k = L[i]
+			var/part = dq_ref_value_signature(k)
+			if(!isnum(k) && !isnull(k) && !isdatum(k) && !islist(k) && !isnull(L[k]))
+				part += "=" + dq_ref_value_signature(L[k])
+			parts += part
+		return "\[[jointext(parts, ",")]]"
+	if(istype(value, /datum/capability))
+		var/datum/capability/def = value
+		return "c:[def.type]:[def.key]:[def.ctor ? dq_ref_value_signature(def.ctor) : ""]"
+	return dq_ref_datum_signature(value)
+
+/proc/dq_ref_entry_signature(kind, key, list/args, list/children)
+	var/list/parts = list(kind, isnull(key) ? "~" : "k[key]")
+	for(var/name in args)
+		parts += "[name]=[dq_ref_value_signature(args[name])]"
+	for(var/child in children)
+		parts += "(" + dq_ref_value_signature(child) + ")"
+	return jointext(parts, "|")
+
+/// Checks one entry (and its children) against the plain signature build: counts it in seen, and appends a line to bad on a mismatch.
+/proc/dq_check_entry_signature(datum/entry/E, list/seen, list/bad)
+	if(!E || seen[E])
+		return
+	seen[E] = TRUE
+	if(istype(E, /datum/entry/block) || istype(E, /datum/entry/line) || istype(E, /datum/entry/skip_built))
+		return
+	var/expected = dq_ref_entry_signature(E.kind, E.key, E.args, E.children)
+	if(istype(E, /datum/entry/part))
+		expected = "[E.type]|" + dq_ref_entry_signature(ENTRY_OP_PART, null, E.args, E.children)
+	if(E.sig != expected)
+		bad += "[E.sig] != [expected]"
+	for(var/datum/entry/child in E.children)
+		dq_check_entry_signature(child, seen, bad)
+
+/datum/unit_test/dq_interned_entry_signatures_unchanged
+
+/datum/unit_test/dq_interned_entry_signatures_unchanged/Run()
+	var/list/seen = list()
+	var/list/bad = list()
+	var/probes = 0
+	var/list/types = list()
+	for(var/t in typesof(/obj/item) + typesof(/obj/machinery))
+		if(ispath(t, /obj/item/projectile) || findtext("[t]", "/spawner"))
+			continue
+		types += t
+		if(length(types) >= 250)
+			break
+	for(var/t in types)
+		var/atom/movable/probe = new t(null)
+		var/list/chain = list()
+		probe.declared_entries(chain)
+		for(var/datum/entry/E in chain)
+			dq_check_entry_signature(E, seen, bad)
+		probes++
+		qdel(probe)
+	for(var/sig in GLOB.caps_interned)
+		var/datum/capability/C = GLOB.caps_interned[sig]
+		TEST_ASSERT_EQUAL(sig, dq_ref_datum_signature(C), "an interned capability's signature equals the plain build")
+	TEST_ASSERT(!length(bad), "entry signatures differ from the plain build: [length(bad)], first [bad[1]]")
+	TEST_ASSERT(length(seen) > 100, "the probes declared entries (got [length(seen)])")
+	log_world("DQ_SIGNATURES probes=[probes] entries=[length(seen)] caps=[length(GLOB.caps_interned)]")
