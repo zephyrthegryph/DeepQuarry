@@ -202,6 +202,10 @@
 	// a blast that vents smoke leaves its smoke system alive: the ownership audit flags it at the end of the run
 	for(var/datum/effect/effect/system/smoke_spread/leftover)
 		qdel(leftover)
+	// sparks of this capture outlive it (5 s) and count against FX_SPARKS_MAX_LIVE: the next capture would then record a capped spark count
+	if(GLOB.fx_live_sparks > 0)
+		for(var/obj/effect/effect/sparks/spent)
+			qdel(spent)
 
 /datum/unit_test/dq_hit_pin/Run()
 	var/list/bad = list()

@@ -19,6 +19,7 @@ sparse(/obj, micro_accepted_scale, type = num)
 
 // /obj/item
 sparse(/obj/item, cleandesc, type = text)
+sparse(/obj/item, warned_of_possession, type = list)
 sparse(/obj/item, cleanname, type = text)
 sparse(/obj/item, d_mult_old, type = num)
 sparse(/obj/item, digest_stage, type = num)

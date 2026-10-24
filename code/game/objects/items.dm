@@ -69,7 +69,6 @@
 									//This is automatically set to false when an item is removed from storage
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
-	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
 	var/tmp/obj/item/organ/internal/augment/my_augment
@@ -300,8 +299,7 @@
 			ghost.assumeform(src)
 			ghost.animate_towards(user)
 	// EDIT START. This handles possessed items.
-	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // Is this item possessed?
-		warned_of_possession |= user.ckey
+	if(src.possessed_voice && src.possessed_voice.len > 1 && possession_warn_new(user.ckey)) // Is this item possessed?
 		tgui_alert_async(user,{"
 		THIS ITEM IS POSSESSED BY A PLAYER CURRENTLY IN THE ROUND. This could be by anomalous means or otherwise.
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
@@ -1001,12 +999,21 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
+/// Records that `ckey` has been told this item is possessed (sparse slot warned_of_possession); TRUE the first time only.
+/obj/item/proc/possession_warn_new(ckey)
+	var/list/warned = sparse_get(src, warned_of_possession)
+	if(!warned)
+		warned = list()
+		sparse_set(src, warned_of_possession, warned)
+	if(ckey in warned)
+		return FALSE
+	warned |= ckey
+	return TRUE
+
 /obj/item/proc/inhabit_item(mob/candidate, candidate_name, mob/living/candidate_original_form, is_item_tf = FALSE)
 	//This makes it so that any object in the game can have something put in it like the cursed sword!
 	//This means the proc can also be manually called by admin commands.
 	//Handle moving the person into the object.
-	if(!warned_of_possession) //Creates a list of warned users.
-		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
