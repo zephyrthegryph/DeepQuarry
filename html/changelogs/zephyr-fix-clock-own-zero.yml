@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "An entity's own timer clock starts at 1, so 0 stays free to mean never set"
+  - code_imp: "Hit pin captures clear their sparks so one capture no longer fills the live spark cap for the next"
