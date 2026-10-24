@@ -72,22 +72,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 /// scan of the tables seen so far), so the cost is the types plus the tables, not their product. The equality test (dq_table_cache_tests.dm) compares it with the
 /// scanning original.
 /proc/type_trait_table_build(list/by_type, kind, trait_type)
-	var/list/built_of_table = list()
-	var/list/seen = list()
+	var/list/built_of_table = list() // table -> its trait, or FALSE when the table declares none: one lookup per type
 	var/list/table = list()
 	for(var/type in by_type)
 		var/datum/type_table/T = by_type[type]
-		if(!seen[T])
-			seen[T] = TRUE
+		var/datum/type_trait/known = built_of_table[T]
+		if(isnull(known))
 			var/datum/centry/C = static_find(T, kind)
 			var/datum/entry/E = C?.item
-			var/datum/type_trait/made = null
 			if(E)
-				made = new trait_type
-				made.kind = kind
-				made.apply_args(E.args)
-			built_of_table[T] = made
-		var/datum/type_trait/known = built_of_table[T]
+				known = new trait_type
+				known.kind = kind
+				known.apply_args(E.args)
+			built_of_table[T] = known || FALSE
 		if(known)
 			table[type] = known
 	return table

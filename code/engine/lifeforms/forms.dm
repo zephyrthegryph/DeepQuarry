@@ -54,6 +54,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lifeform_plan)
 	var/list/setups
 	/// Immutable plan fact: this type opts into the before-parameter-drop completion phase.
 	var/setup_with_params = FALSE
+	/// The setup() / name_prefix() hooks in declaration order, split by phase at build: lists of (handler, prefix) (handler, prefix, mapload) rows (setup_run() walks one, no entry reads).
+	var/list/setup_rows_plain
+	var/list/setup_rows_params
 	var/datum/centry/tooltip
 	/// var name -> list of /datum/centry of the forms that follow that var (registry keys, radio frequencies, derives inputs, lives_while).
 	var/list/watch
@@ -133,9 +136,12 @@ GLOBAL_REAL_VAR(list/lifeform_plans)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
 	for(var/datum/centry/C as anything in P.setups)
 		var/datum/entry/E = C.item
+		var/row = list(E.args["handler"], E.args["prefix"], E.args["mapload"])
 		if(E.args["with_params"])
 			P.setup_with_params = TRUE
-			break
+			LAZYADD(P.setup_rows_params, list(row))
+		else
+			LAZYADD(P.setup_rows_plain, list(row))
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
 		if(!datum_has_var(D, E.args["var"]))
