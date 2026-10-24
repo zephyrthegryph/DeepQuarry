@@ -255,7 +255,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			O.remove_markings(mark_datum.name)
 			successful = TRUE
 	if (successful)
-		markings_len -= 1
+		sparse_set_or(src, markings_len, sparse_get_or(src, markings_len, 0) - 1, 0)
 		update_dna()
 		return TRUE
 	return FALSE
@@ -268,9 +268,9 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
 			success = TRUE
-			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
+			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = sparse_get_or(src, markings_len, 0) + 1, "on" = TRUE))
 	if (success)
-		markings_len += 1
+		sparse_set_or(src, markings_len, sparse_get_or(src, markings_len, 0) + 1, 0)
 		update_dna()
 	return success
 
@@ -286,12 +286,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			if (!index)
 				continue
 			var/change_from = O.markings[mark_datum.name]["priority"]
-			if (change_from == clamp(change_from + change, 1, markings_len))
+			if (change_from == clamp(change_from + change, 1, sparse_get_or(src, markings_len, 0)))
 				continue
 			if (!success)
 				success = TRUE
 				change_priority_marking_to_priority(change_from + change, change_from)
-			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, markings_len)
+			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, sparse_get_or(src, markings_len, 0))
 			tracked_changed(O, nameof(O.markings))
 			if ((move_down && index == O.markings.len) || (!move_down && index == 1))
 				continue
@@ -357,7 +357,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			last_color = sorted[marking][bp]["color"]
 		if (should_add_color)
 			sorted[marking]["color"] = last_color||"#000000"
-	markings_len = sorted.len
+	sparse_set_or(src, markings_len, sorted.len, 0)
 	//todo - add an autofixing thing for having markings with the same priorities as another, and for having markings that should have the same priorities across bodyparts, but don't
 	//does not really need to happen, that kinda thing will only happen when putting another person's limb onto your own body
 	return sorted
@@ -405,7 +405,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
 		O.set_markings(I.markings?.Copy())
-	markings_len = character.markings_len
+	sparse_set_or(src, markings_len, sparse_get_or(character, markings_len, 0), 0)
 
 	if(options.copy_flavour)
 		bio.flavor_texts = character.bio.flavor_texts?.Copy()
@@ -480,11 +480,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 /// Weight, size, voice and sprite offsets.
 /mob/living/carbon/human/proc/copy_physique_from(mob/living/carbon/human/character)
 	weight			= character.weight
-	weight_gain		= character.weight_gain
-	weight_loss		= character.weight_loss
+	sparse_set_or(src, weight_gain, sparse_get_or(character, weight_gain, 1), 1)
+	sparse_set_or(src, weight_loss, sparse_get_or(character, weight_loss, 0.5), 0.5)
 	set_fuzzy(character.fuzzy)
 	set_offset_override(character.offset_override)
-	voice_freq		= character.voice_freq
+	sparse_set_or(src, voice_freq, sparse_get_or(character, voice_freq, 42500), 42500)
 	if (species && character.species)
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod

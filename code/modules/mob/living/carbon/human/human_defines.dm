@@ -73,7 +73,6 @@
 	var/sensorpref = 5		//Suit sensor loadout pref
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
-	var/markings_len = 0 //mostly an arbitrary number
 	var/low_sorting_priority = FALSE
 
 	var/list/body_writing // assoc list by BP_ key

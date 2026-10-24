@@ -2,17 +2,12 @@
 /mob/living
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
 	var/weight = 137					// Weight for mobs for weightgain system
-	var/weight_gain = 1 				// How fast you gain weight
-	var/weight_loss = 0.5 				// How fast you lose weight
-	var/vore_egg_type = "egg" 			// Default egg type.	// Only used for creatures that have the xenochimera regen ability, so far.
 	var/metabolism = 0.0015
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
-	var/stuffing_feeder = FALSE			// Can feed foods to others whole, like trash eater can eat them on their own.
 	var/adminbus_trash = FALSE			// For abusing trash eater for event shenanigans.
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/appendage_color = "#e03997" //Default pink. Used for the 'long_vore' trait.
-	var/appendage_alt_setting = FALSE	// Dictates if 'long_vore' user pulls prey to them or not. 1 = user thrown towards target.
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 
 	var/parasitic = FALSE					//Digestion immunity and nutrition leeching variable
@@ -660,7 +655,7 @@
 			return
 		//Actual escaping
 		set_absorbed(FALSE) //Make sure we're not absorbed
-		muffled = FALSE		//Removes Muffling
+		sparse_set_or(src, muffled, FALSE, FALSE)	//Removes Muffling
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
@@ -1176,8 +1171,8 @@
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Switch whether you will try to feed other people food whole or normally, bite by bite."
 
-	stuffing_feeder = !stuffing_feeder
-	to_chat(src, span_notice("You will [stuffing_feeder ? "now" : "no longer"] try to feed food whole."))
+	sparse_set_or(src, stuffing_feeder, !sparse_get_or(src, stuffing_feeder, FALSE), FALSE)
+	to_chat(src, span_notice("You will [sparse_get_or(src, stuffing_feeder, FALSE) ? "now" : "no longer"] try to feed food whole."))
 
 /mob/living/proc/switch_scaling()
 	set name = "Switch scaling mode"
@@ -1874,7 +1869,7 @@
 			return
 
 		set_absorbed(FALSE)
-		muffled = FALSE
+		sparse_set_or(src, muffled, FALSE, FALSE)
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)

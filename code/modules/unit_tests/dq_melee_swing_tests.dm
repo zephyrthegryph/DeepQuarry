@@ -144,7 +144,7 @@
 	TEST_ASSERT_NOTNULL(op_pending_of(attacker), "the windup is running")
 	victim.forceMove(far)                     // dodge out of the swing tiles
 	test_time(weapon.get_melee_windup() + 4)  // wait past the swing resolution
-	TEST_ASSERT(!attacker.is_swinging, "and the swing has resolved")
+	TEST_ASSERT(!sparse_get_or(attacker, is_swinging, FALSE), "and the swing has resolved")
 	TEST_ASSERT_EQUAL(victim.vitality(), before, "a victim that left the tiles during windup should take no damage")
 
 
@@ -168,7 +168,7 @@
 	attacker.set_combat_mode(TRUE)
 
 	attacker.begin_melee_swing(victim, weapon)
-	TEST_ASSERT(attacker.is_swinging, "the swing is committed while the windup runs")
+	TEST_ASSERT(sparse_get_or(attacker, is_swinging, FALSE), "the swing is committed while the windup runs")
 	test_time(weapon.get_melee_windup() + 1 SECOND)
 	TEST_ASSERT(cooldown_end(attacker, next_click) > world.time, "a recovery cooldown should be active immediately after the swing")
 	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")

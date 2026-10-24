@@ -15,7 +15,6 @@
 	var/now_pushing = null
 
 
-	var/tod = null // Time of death
 
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
@@ -69,9 +68,7 @@
 
 
 /mob
-	var/muffled = FALSE					// Used by muffling belly
 	var/forced_psay = FALSE				// If true will prevent the user from speaking with normal say/emotes, and instead redirect these to a private speech mode with their predator.
-	var/autowhisper = FALSE				// Automatically whisper
 /mob/living
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE

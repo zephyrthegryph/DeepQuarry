@@ -1,5 +1,4 @@
 /mob/living/var/list/icon/pipes_shown = list()
-/mob/living/var/is_ventcrawling = FALSE
 
 /mob/living/proc/can_ventcrawl()
 	if(!client)
@@ -30,7 +29,7 @@
 /mob/living/Login()
 	. = ..()
 	//login during ventcrawl
-	if(is_ventcrawling && istype(loc, /obj/machinery/atmospherics)) //attach us back into the pipes
+	if(sparse_get_or(src, is_ventcrawling, FALSE) && istype(loc, /obj/machinery/atmospherics)) //attach us back into the pipes
 		remove_ventcrawl()
 		add_ventcrawl(loc)
 		client_screen_add(client, GLOB.global_hud.centermarker)
@@ -52,8 +51,8 @@
 	//Try to find it in our allowed list (istype includes subtypes)
 	var/listed = FALSE
 	var/list/vent_allow = TYPE_TABLE_COPY(src, ventcrawl_get_item_whitelist)
-	if(islist(ventcraw_item_admin_allow)) // If mob has a list varedited onto it, we allow anything in this list as well
-		vent_allow += ventcraw_item_admin_allow
+	if(islist(sparse_get(src, ventcraw_item_admin_allow))) // If mob has a list varedited onto it, we allow anything in this list as well
+		vent_allow += sparse_get(src, ventcraw_item_admin_allow)
 	for(var/test_type in vent_allow)
 		if(istype(carried_item,test_type))
 			listed = TRUE
@@ -204,7 +203,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		to_chat(src, "You must be standing on or beside an air vent to enter it.")
 
 /mob/living/proc/add_ventcrawl(obj/machinery/atmospherics/starting_machine)
-	is_ventcrawling = TRUE
+	sparse_set_or(src, is_ventcrawling, TRUE, FALSE)
 	var/datum/pipe_network/network = starting_machine.return_network(starting_machine)
 	if(!network)
 		return
@@ -220,7 +219,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 		client_screen_add(client, GLOB.global_hud.centermarker)
 
 /mob/living/proc/remove_ventcrawl()
-	is_ventcrawling = FALSE
+	sparse_set_or(src, is_ventcrawling, FALSE, FALSE)
 	if(client)
 		for(var/image/current_image in pipes_shown)
 			client_images_remove(client, current_image)

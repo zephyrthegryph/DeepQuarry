@@ -339,7 +339,7 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-		if(H.resleeve_lock && stored_mind().loaded_from_ckey != H.resleeve_lock)
+		if(sparse_get(H, resleeve_lock) && stored_mind().loaded_from_ckey != sparse_get(H, resleeve_lock))
 			to_chat(user,span_warning("\The [H] is protected from impersonation!"))
 			return
 		//Changeling bodies. Only changelings can be put in them.

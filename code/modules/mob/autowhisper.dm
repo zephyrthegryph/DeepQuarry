@@ -3,9 +3,9 @@
 	set desc = "Toggle whether you will automatically whisper/subtle"
 	set category = VERB_CAT_IC_SETTINGS
 
-	autowhisper = !autowhisper
+	sparse_set_or(src, autowhisper, !sparse_get_or(src, autowhisper, FALSE), FALSE)
 	if(hud_used?.autowhisper_display)
-		hud_used?.autowhisper_display?.icon_state = "[autowhisper ? "autowhisper1" : "autowhisper"]"
+		hud_used?.autowhisper_display?.icon_state = "[sparse_get_or(src, autowhisper, FALSE) ? "autowhisper1" : "autowhisper"]"
 
 	if(sparse_get(src, autowhisper_mode) == "Psay/Pme")
 		if(isbelly(loc) && absorbed)
@@ -15,7 +15,7 @@
 				to_chat(src, span_notice("autowhisper [autowhisper ? "enabled, [mes]" : "disabled, [mes]"]."))
 				return
 		else
-			forced_psay = autowhisper
+			forced_psay = sparse_get_or(src, autowhisper, FALSE)
 			balloon_alert(src, "autowhisper [autowhisper ? "enabled, using psay/pme" : "disabled"]")
 	else
 		balloon_alert(src, "autowhisper [autowhisper ? "enabled" : "disabled"]")
@@ -41,7 +41,7 @@
 		balloon_alert(src, "subtles returned to default setting")
 		return
 	if(choice == "Psay/Pme")
-		if(autowhisper)
+		if(sparse_get_or(src, autowhisper, FALSE))
 			if(isbelly(loc) && absorbed)
 				var/obj/belly/b = loc
 				if(b.mode_flags & DM_FLAG_FORCEPSAY)

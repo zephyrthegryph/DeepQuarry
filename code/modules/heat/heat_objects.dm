@@ -191,7 +191,6 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 	/// keeps the default. Sets how far above ambient heat_output runs it.
 	var/heat_dissipation
 	/// Watts currently fed to the heat body by set_heat_output().
-	var/tmp/heat_output_now = 0
 
 /obj/machinery/thermal_properties()
 	. = ..()
@@ -206,22 +205,22 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 
 /// Re-reads current_heat_output(). power_change() calls it; call it when load changes.
 /obj/machinery/proc/update_heat_output()
-	if(!heat_output && !heat_output_now)
+	if(!heat_output && !sparse_get_or(src, heat_output_now, 0))
 		return
 	set_heat_output(current_heat_output())
 
 /// Feeds `watts` into the heat body; the body is kept while it emits.
 /obj/machinery/proc/set_heat_output(watts)
 	watts = max(watts, 0)
-	if(watts == heat_output_now && (!watts || !isnull(heat_body)))
+	if(watts == sparse_get_or(src, heat_output_now, 0) && (!watts || !isnull(heat_body)))
 		return
 	if(watts)
 		if(!create_heat_body(TRUE))
-			heat_output_now = 0
+			sparse_set_or(src, heat_output_now, 0, 0)
 			return
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, watts)
 	else if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)
 		vg_heat_body_keep(heat_body, FALSE)
-	heat_output_now = watts
+	sparse_set_or(src, heat_output_now, watts, 0)

@@ -140,7 +140,7 @@
 
 	new_mob.share_identity(identity()) // the character's OOC notes, by reference
 	new_mob.appendage_color = appendage_color
-	new_mob.appendage_alt_setting = appendage_alt_setting
+	sparse_set_or(new_mob, appendage_alt_setting, sparse_get_or(src, appendage_alt_setting, FALSE), FALSE)
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
 	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)

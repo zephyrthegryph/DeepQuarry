@@ -143,7 +143,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	set_pixel_y(H.pixel_y)
 	set_dir(H.dir)
 	initial_lying = H.lying
-	initial_lying_prev = H.lying_prev
+	initial_lying_prev = sparse_get_or(H, lying_prev, 0)
 	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
 		set_appearance_flags(appearance_flags | PIXEL_SCALE)
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.set_is_shifted(initial_is_shifted)
 		gargoyle.set_dir(dir)
 		gargoyle.set_lying(initial_lying)
-		gargoyle.lying_prev = initial_lying_prev
+		sparse_set_or(gargoyle, lying_prev, initial_lying_prev, 0)
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))

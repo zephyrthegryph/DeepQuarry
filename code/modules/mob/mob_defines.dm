@@ -55,7 +55,6 @@
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
-	var/lying_prev = 0
 	var/is_shifted = FALSE // Edit; pixel shifting
 	var/canmove = 1
 	//Allows mobs to move through dense areas without restriction. For instance, in space or out of holder objects.
@@ -88,13 +87,11 @@
 	/// object's own Move() -- BUCKLED()/BUCKLED_MOBS() (om.dm) are pure graph
 	/// reads now, with no field left to transiently null for the same effect.
 
-	var/seer = 0 //for cult//Carbon, probably Human
 
 	var/tmp/datum/hud/hud_used = null
 
 	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
-	var/in_throw_mode = 0
 
 	var/inertia_dir = 0
 
@@ -117,7 +114,6 @@
 
 	var/voice_name = "unidentifiable voice"
 
-	var/list/ventcraw_item_admin_allow = null // If this is a list, it will be appended to the default list of items the mob is allowed to ventcrawl with
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
@@ -196,8 +192,6 @@
 
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
 	var/vent_crawl_time = 4.5 SECONDS // Time to animate entering a vent
-	VAR_PRIVATE/is_motion_tracking = FALSE // Prevent multiple unsubs and resubs, also used to check if the vis layer is enabled, use has_motiontracking() to get externally.
-	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 
 CAPABILITIES(/mob)

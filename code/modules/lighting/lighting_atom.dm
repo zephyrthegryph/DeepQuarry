@@ -17,7 +17,6 @@
 	///Hint for directional light cone positioning. Y is relevant when facing east/west (same value used for both east and west)
 	var/light_cone_y_offset // When facing east/west, ignored for north/south (uses 16 in those cases)
 	///Highest-intensity light affecting us, which determines our visibility.
-	var/tmp/affecting_dynamic_lumi = 0
 	///Lazylist to keep track on the sources of illumination.
 	// affected_dynamic_lights lives in code/datums/sparse_vars/movable_misc.dm
 	///Either FALSE, [EMISSIVE_BLOCK_GENERIC], or [EMISSIVE_BLOCK_UNIQUE]
@@ -182,11 +181,11 @@ SETTER(/atom, light_on)
 		if(adl[i] <= highest)
 			continue
 		highest = adl[i]
-	if(highest == affecting_dynamic_lumi)
+	if(highest == sparse_get_or(src, affecting_dynamic_lumi, 0))
 		return
-	luminosity -= affecting_dynamic_lumi
-	affecting_dynamic_lumi = highest
-	luminosity += affecting_dynamic_lumi
+	luminosity -= sparse_get_or(src, affecting_dynamic_lumi, 0)
+	sparse_set_or(src, affecting_dynamic_lumi, highest, 0)
+	luminosity += sparse_get_or(src, affecting_dynamic_lumi, 0)
 
 
 ///Helper to change several lighting overlay settings.

@@ -769,15 +769,14 @@ CAPABILITIES(/datum/shred_limb_review)
 	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
 
 /mob/living/
-	var/flight_vore = FALSE
 
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
 	set desc = "Allows you to engage in voracious misadventures while flying."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	flight_vore = !flight_vore
-	if(flight_vore)
+	sparse_set_or(src, flight_vore, !sparse_get_or(src, flight_vore, FALSE), FALSE)
+	if(sparse_get_or(src, flight_vore, FALSE))
 		to_chat(src, "You have allowed for flight vore! Bumping into characters while flying will now trigger dropnoms! Unless prefs don't match.. then you will take a tumble!")
 	else
 		to_chat(src, "Flight vore disabled! You will no longer engage dropnoms while in flight.")
@@ -1049,7 +1048,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_alt_setting = (A.answer.value != "Pull target to self")
+	sparse_set_or(src, appendage_alt_setting, (A.answer.value != "Pull target to self"), FALSE)
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1118,7 +1117,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 		var/throw_range = get_dist(firer,M)
 		if(isliving(firer)) //Let's check for any alt settings. Such as: User selected to be thrown at target.
 			var/mob/living/F = firer
-			if(F.appendage_alt_setting == 1)
+			if(sparse_get_or(F, appendage_alt_setting, FALSE) == 1)
 				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
 				return
 		if(istype(M))

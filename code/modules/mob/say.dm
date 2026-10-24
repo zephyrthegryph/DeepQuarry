@@ -39,9 +39,9 @@
 		pme(message)
 		return
 
-	if(muffled)
+	if(sparse_get_or(src, muffled, FALSE))
 		return me_verb_subtle(message)
-	if(autowhisper)
+	if(sparse_get_or(src, autowhisper, FALSE))
 		return me_verb_subtle(message)
 	message = sanitize_or_reflect(message,src) //Reflect too-long messages (within reason)
 
@@ -345,7 +345,7 @@
 	if(m_type == 2 && muzzled) return
 
 	var/subtle_mode
-	if(autowhisper && sparse_get(src, autowhisper_mode) && !mode_selection)
+	if(sparse_get_or(src, autowhisper, FALSE) && sparse_get(src, autowhisper_mode) && !mode_selection)
 		if(sparse_get(src, autowhisper_mode) != "Psay/Pme")	//This isn't actually a custom subtle mode, so we shouldn't use it!
 			subtle_mode = sparse_get(src, autowhisper_mode)
 	if(picked_mode)
@@ -862,8 +862,8 @@
 	if(!T) return
 
 	var/ourfreq = null
-	if(voice_freq > 0 )
-		ourfreq = voice_freq
+	if(sparse_get_or(src, voice_freq, 42500) > 0 )
+		ourfreq = sparse_get_or(src, voice_freq, 42500)
 
 	if(client)
 		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls

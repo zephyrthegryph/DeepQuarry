@@ -56,7 +56,7 @@
 		if(forced_psay)
 			pme(message)
 			return
-		if(autowhisper)
+		if(sparse_get_or(src, autowhisper, FALSE))
 			return me_verb_subtle(message)
 
 		if(act == "help")

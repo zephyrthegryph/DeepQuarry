@@ -71,7 +71,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	if(source.is_incorporeal())
 		return
 
-	if(source?.buckled_to() || source.throwing || source.movement_type & (source.is_ventcrawling | stat_value(source, STAT_FLYING)))
+	if(source?.buckled_to() || source.throwing || source.movement_type & (sparse_get_or(source, is_ventcrawling, FALSE) | stat_value(source, STAT_FLYING)))
 		return
 
 	if(source.lying) //play crawling sound if we're lying

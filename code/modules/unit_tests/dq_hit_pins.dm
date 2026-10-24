@@ -39,7 +39,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
-		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx", "refresh_pass",
+		"om_hid", "own_key_text", "shared_cache_uid", "rx", "refresh_pass",
 	)
 	return skip
 

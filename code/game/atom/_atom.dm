@@ -291,8 +291,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	var/list/output = list("[icon2html(src,user.client)] That's [f_name] [suffix] [borg]", get_examine_desc())
 	if(uses_integrity && get_integrity() < max_integrity)
 		dq_rules_settle(src) // a pending integrity wake lands before we read the band
-	if(damage_band)
-		output += damage_flavour_text(damage_band)
+	if(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE))
+		output += damage_flavour_text(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE))
 
 	output += examine_lines(user)
 	PUBLISH_LEGACY(src, /datum/notice/examine, user, output)

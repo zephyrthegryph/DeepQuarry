@@ -672,8 +672,8 @@ sparse(/mob/living, vomiting, type = bool)
 			set_canmove(0)
 			break
 
-	if(lying != lying_prev)
-		lying_prev = lying
+	if(lying != sparse_get_or(src, lying_prev, 0))
+		sparse_set_or(src, lying_prev, lying, 0)
 		update_transform()
 		update_mob_action_buttons()
 		if(lying && LAZYLEN(src?.buckled_mob_list()))
@@ -849,7 +849,7 @@ sparse(/mob/living, vomiting, type = bool)
 	if(stance == I_HELP && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
 		var/obj/item/I = item
 		var/mob/living/carbon/human/H = target
-		if(H.in_throw_mode && !H.combat_mode && unEquip(I))
+		if(sparse_get_or(H, in_throw_mode, 0) && !H.combat_mode && unEquip(I))
 			H.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
 			visible_message(span_filter_notice(span_bold("[src]") + " hands \the [H] \a [I]."), span_notice("You give \the [target] \a [I]."))
 		else
@@ -1506,9 +1506,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
-		voice_freq = choice
+		sparse_set_or(src, voice_freq, choice, 42500)
 		return
-	voice_freq = clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ)
+	sparse_set_or(src, voice_freq, clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ), 42500)
 
 /mob/living/verb/set_voice_type()
 	set name = "Set Voice Type"

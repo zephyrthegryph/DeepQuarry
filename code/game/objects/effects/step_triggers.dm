@@ -338,7 +338,7 @@ CAPABILITIES(/obj/effect/step_trigger/teleporter/deathfall)
 	var/mob/living/L
 	if(isliving(A))
 		L = A
-		if(L.is_floating)
+		if(sparse_get_or(L, is_floating, 0))
 			return //Flyers/nograv can ignore it
 
 	A.forceMove(T)

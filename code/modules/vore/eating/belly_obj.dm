@@ -556,11 +556,11 @@ CAPABILITIES(/obj/belly)
 		p.undo_prey_takeover(FALSE)
 		return 0
 	for(var/mob/living/L in contents_of(M))
-		L.muffled = FALSE
+		sparse_set_or(L, muffled, FALSE, FALSE)
 		L.forced_psay = FALSE
 
 	for(var/obj/item/holder/H in contents_of(M))
-		H.held_mob.muffled = FALSE
+		sparse_set_or(H.held_mob, muffled, FALSE, FALSE)
 		H.held_mob.forced_psay = FALSE
 
 	if(isliving(M))
@@ -576,8 +576,8 @@ CAPABILITIES(/obj/belly)
 		var/mob/living/OW = owner
 		if(ML.client)
 			ML.stop_sound_channel(CHANNEL_PREYLOOP) //Stop the internal loop, it'll restart if the isbelly check on next tick anyway
-		if(ML.muffled)
-			ML.muffled = FALSE
+		if(sparse_get_or(ML, muffled, FALSE))
+			sparse_set_or(ML, muffled, FALSE, FALSE)
 		if(ML.forced_psay)
 			ML.forced_psay = FALSE
 		if(ML.absorbed)

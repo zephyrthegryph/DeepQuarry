@@ -97,8 +97,8 @@
 /datum/unit_test/dq_med6_life_stages_idle_when_healthy/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_phobias(0)
-	H.weight_gain = 0
-	H.weight_loss = 0
+	sparse_set_or(H, weight_gain, 0, 1)
+	sparse_set_or(H, weight_loss, 0, 0.5)
 	H.set_bodytemperature(H.species.body_temperature || H.body_temperature())
 	// A fresh body starts with every domain dirty; its first medical pass settles them
 	// (dirty condition domains processed), as the first Life() would.

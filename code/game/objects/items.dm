@@ -67,13 +67,11 @@
 
 	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
-	var/list/ckeys_allowed_itemspawn = null
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
-	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
 	var/tmp/obj/item/organ/internal/augment/my_augment
