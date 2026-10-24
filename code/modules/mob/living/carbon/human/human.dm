@@ -17,7 +17,6 @@
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
-	var/spit_projectile = null			//Projectile type.
 
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities

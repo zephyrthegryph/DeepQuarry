@@ -604,7 +604,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
 		return
 
-	speech_sound_enabled = !speech_sound_enabled
-	to_chat(src, "You will [speech_sound_enabled ? "now" : "no longer"] have a chance to play your species defined speech sound on a Say.")
+	sparse_set_or(src, speech_sound_enabled, !sparse_get_or(src, speech_sound_enabled, TRUE), TRUE)
+	to_chat(src, "You will [sparse_get_or(src, speech_sound_enabled, TRUE) ? "now" : "no longer"] have a chance to play your species defined speech sound on a Say.")
 
 	return TRUE

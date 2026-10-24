@@ -361,7 +361,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		L.update_floating( L.Check_Dense_Object() )
 
 	L.set_lastarea(src)
-	EXPIRY_STAMP(L, lastareachange, CLOCK_WORLD)
+	sparse_set(L, lastareachange, world.time)
 	play_ambience(L, initial = TRUE)
 	if(flag_check(AREA_NO_SPOILERS))
 		L.disable_spoiler_vision()

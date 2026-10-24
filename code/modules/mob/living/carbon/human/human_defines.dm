@@ -27,7 +27,6 @@
 
 	var/identifying_gender // In case the human identifies as another gender than it's biological
 
-	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 
 
 	// Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
@@ -76,8 +75,6 @@
 	var/list/body_writing // assoc list by BP_ key
 
 
-/mob/living/carbon/human
-	var/speech_sound_enabled = TRUE
 
 /mob/living/carbon/human/ai_controlled
 	low_priority = TRUE

@@ -4,7 +4,6 @@
 	var/weight = 137					// Weight for mobs for weightgain system
 	var/metabolism = 0.0015
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
-	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
 	var/vis_height = 32					// Sprite height used for resize features.
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 

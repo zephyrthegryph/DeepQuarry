@@ -231,10 +231,10 @@
 	if(!pref)
 		return
 
-	if(ELAPSED(src, lastareachange, CLOCK_WORLD) >= pref MINUTES) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+	if(world.time - sparse_get_or(src, lastareachange, 0) >= pref MINUTES) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
 		var/area/A = get_area(src)
 		if(A)
-			EXPIRY_STAMP(src, lastareachange, CLOCK_WORLD) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
+			sparse_set(src, lastareachange, world.time) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
 			A.play_ambience(src, initial = FALSE)
 
 /// Lazy: sleeps until the next replay is due.
@@ -245,7 +245,7 @@
 	var/pref = src.read_preference(/datum/preference/numeric/ambience_freq)
 	if(!pref)
 		return 0
-	return max(1 SECONDS, src.lastareachange + pref MINUTES - world.time)
+	return max(1 SECONDS, sparse_get_or(src, lastareachange, 0) + pref MINUTES - world.time)
 
 /// Gravity, pulling and grabs.
 /mob/living/proc/life_movement(datum/seq_frame/life/F)
@@ -439,18 +439,20 @@
 /// is newly claimed and removing what nobody claimed, instead of stripping and
 /// re-adding every overlay every tick. Claims are an assoc set, so it stays bounded
 /// while the HUD stage sleeps.
-/mob
-	var/tmp/list/global_hud_claims
+sparse(/mob, global_hud_claims, type = list)
 
 /mob/proc/claim_global_hud(overlay)
 	if(!overlay)
 		return
-	LAZYINITLIST(global_hud_claims)
-	global_hud_claims[overlay] = TRUE
+	var/list/claims = sparse_get(src, global_hud_claims)
+	if(!claims)
+		claims = list()
+		sparse_set(src, global_hud_claims, claims)
+	claims[overlay] = TRUE
 
 /mob/proc/reconcile_global_huds()
-	var/list/claims = global_hud_claims
-	global_hud_claims = null
+	var/list/claims = sparse_get(src, global_hud_claims)
+	sparse_set(src, global_hud_claims, null)
 	if(!client)
 		return
 	var/static/list/owned

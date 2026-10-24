@@ -14,7 +14,6 @@ base_var	code/datums/behaviours/burning.dm	@/obj::burn_cool_watch
 base_var	code/datums/behaviours/footstep.dm	@/mob/living::footstep_type
 base_var	code/datums/behaviours/omen.dm	@/mob/living::omen_damage
 base_var	code/datums/behaviours/omen.dm	@/mob/living::omen_evil
-base_var	code/datums/behaviours/radiation_countdown.dm	@/mob/living::rad_countdown_started
 base_var	code/datums/behaviours/swarming.dm	@/atom/movable::swarm_members
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
@@ -62,7 +61,6 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::movement_type
 base_var	code/game/atoms_movable.dm	@/atom/movable::autotransferable
 base_var	code/game/atoms_movable.dm	@/atom/movable::listening_recursive
 base_var	code/game/gamemodes/changeling/state/changeling.dm	@/mob/living::changeling_state
-base_var	code/game/gamemodes/technomancer/instability.dm	@/mob/living::last_instability_event
 base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	@/mob/living::summoned
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::component_parts
 base_var	code/game/machinery/machinery.dm	@/obj/machinery::circuit
@@ -79,7 +77,6 @@ base_var	code/game/objects/items.dm	@/obj/item::embed_chance
 base_var	code/game/objects/items.dm	@/obj/item::climbing_delay
 base_var	code/game/objects/items.dm	@/obj/item::digestable
 base_var	code/game/objects/items.dm	@/obj/item::possessed_voice
-base_var	code/game/objects/items.dm	@/obj/item::warned_of_possession
 base_var	code/game/objects/items.dm	@/obj/item::my_augment
 base_var	code/game/objects/items.dm	@/obj/item::identity
 base_var	code/game/objects/items.dm	@/obj/item::identity_type
@@ -153,12 +150,10 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::a
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::addiction_counters
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	@/mob/living/carbon/human::side_effects
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::wearing_rig
-base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::spit_projectile
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::teleporters
 base_var	code/modules/mob/living/carbon/human/human.dm	@/mob/living/carbon/human::genetic_side_effects
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	@/mob/living/carbon/human::default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::synthetic
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::step_count
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_holder
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::vr_link
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::ear_style
@@ -169,12 +164,9 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carb
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::ability_flags
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::sensorpref
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::body_writing
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	@/mob/living/carbon/human::speech_sound_enabled
 base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human::heartbeat
-base_var	code/modules/mob/living/carbon/human/life.dm	@/mob/living/carbon/human::hud_full_refresh_at
 base_var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	@/mob/living::shadekin
 base_var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	@/mob/living/carbon/human::character_forms
-base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/tourettes.dm	@/mob/living/carbon/human::disability_motor_tics
 base_var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	@/mob/living::trait_states
 base_var	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	@/mob/living/carbon/human::xenochimera
 base_var	code/modules/mob/living/carbon/shock.dm	@/mob/living::traumatic_shock
@@ -182,8 +174,6 @@ base_var	code/modules/mob/living/carbon/shock.dm	@/mob/living/carbon::shock_stag
 base_var	code/modules/mob/living/default_language.dm	@/mob/living::default_language
 base_var	code/modules/mob/living/inventory.dm	@/mob/living::internal
 base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_set
-base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_z
-base_var	code/modules/mob/living/life/living_systems.dm	@/mob::global_hud_claims
 base_var	code/modules/mob/living/living.dm	@/mob/living::character_setup_button
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::now_pushing
 base_var	code/modules/mob/living/living_defines.dm	@/mob/living::failed_last_breath
@@ -229,7 +219,6 @@ base_var	code/modules/mob/mob_defines.dm	@/mob::faction
 base_var	code/modules/mob/mob_defines.dm	@/mob::LAssailant
 base_var	code/modules/mob/mob_defines.dm	@/mob::spell_list
 base_var	code/modules/mob/mob_defines.dm	@/mob::update_icon
-base_var	code/modules/mob/mob_defines.dm	@/mob::lastareachange
 base_var	code/modules/mob/mob_defines.dm	@/mob::control_object
 base_var	code/modules/mob/mob_defines.dm	@/mob::teleop
 base_var	code/modules/mob/mob_defines.dm	@/mob::active_genes
@@ -255,12 +244,10 @@ base_var	code/modules/recycling/disposal_connection.dm	@/obj::disposal_connectio
 base_var	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	@/atom/movable::experiment_handler
 base_var	code/modules/resleeving/infocore_records.dm	@/mob/living/carbon/human::original_player
 base_var	code/modules/tgui/external.dm	@/mob::tgui_open_uis
-base_var	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::pipes_shown
 base_var	code/modules/vore/appearance/preferences.dm	@/mob/living/carbon/human::hair_accessory_style_static
 base_var	code/modules/vore/eating/living.dm	@/mob/living::temp_languages
 base_var	code/modules/vore/eating/living.dm	@/mob/living::weight
 base_var	code/modules/vore/eating/living.dm	@/mob/living::metabolism
-base_var	code/modules/vore/eating/living.dm	@/mob/living::next_preyloop
 base_var	code/modules/vore/eating/living.dm	@/mob/living::trait_injection_reagents
 base_var	code/modules/vore/eating/living.dm	@/mob/living::vore_panel_button
 base_var	code/modules/vore/eating/mob.dm	@/mob::vore_organs
@@ -285,4 +272,3 @@ list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aime
 list_init	code/modules/refinery/core/industrial_reagent_grinder.dm	@/obj/machinery/reagent_refinery/grinder::holdingitems
 list_init	code/modules/tgui/external.dm	@/mob::tgui_open_uis
 list_init	code/modules/tgui/external.dm	@/client::tgui_windows
-list_init	code/modules/ventcrawl/ventcrawl.dm	@/mob/living::pipes_shown

@@ -134,7 +134,6 @@
 	var/status_flags = CANPUSH	//bitflags: CANPUSH, LEAPING, HIDING, PASSEMOTES, FAKEDEATH. Status immunities and godmode are effects (EFFECT_IMMUNE_*, EFFECT_GODMODE).
 
 	var/tmp/area/lastarea = null
-	EXPIRY_TMP_DECLARE(lastareachange)
 
 
 
