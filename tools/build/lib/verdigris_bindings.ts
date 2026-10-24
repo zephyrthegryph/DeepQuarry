@@ -1109,7 +1109,10 @@ export function generateVerdigrisBindings(root: string, check: boolean): string[
       : null;
     if (current === content) continue;
     stale.push(rel);
-    if (!check) fs.writeFileSync(full, content);
+    if (!check) {
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, content);
+    }
   }
   return stale;
 }
