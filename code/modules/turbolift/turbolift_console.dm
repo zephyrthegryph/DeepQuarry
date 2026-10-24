@@ -170,7 +170,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 	op("interact", observer(), label("View"), then(TYPE_PROC_REF(/atom, op_interact)))
 	interface("Turbolift")
 	without("ui_open")
-	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_ref())), then(PROC_REF(ui_act_move_to_floor)))
+	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_text(32))), then(PROC_REF(ui_act_move_to_floor)))
 	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
 	op("emergency_stop", ui_act("emergency_stop"), then(PROC_REF(ui_act_emergency_stop)))
 
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/structure/lift/panel)
 		var/datum/turbolift_floor/floor = lift().floors[i]
 		floors.Add(list(list(
 			"id" = i,
-			"ref" = "\ref[floor]",
+			"ref" = ref_token(floor),
 			"queued" = (floor in lift().queued_floors),
 			"target" = (lift().target_floor() == floor),
 			"current" = (lift().current_floor() == floor),
@@ -199,12 +199,12 @@ CAPABILITIES(/obj/structure/lift/panel)
 
 /obj/structure/lift/panel/proc/ui_act_move_to_floor(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(isnull(ref))
+	var/datum/turbolift_floor/target_floor = ui_member(ref, lift()?.floors, /datum/turbolift_floor)
+	if(!target_floor)
 		return FALSE
 	. = TRUE
-	lift().queue_move_to(ref)
-	if(.)
-		pressed(user)
+	lift().queue_move_to(target_floor)
+	pressed(user)
 
 /obj/structure/lift/panel/proc/ui_act_toggle_doors(datum/act/op/A)
 	var/mob/user = A.actor

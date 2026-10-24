@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 		set_icon_state("drone_fab_nopower")
 		return drone_progress
 	var/was_ready = drone_progress >= 100
-	drone_progress = clamp(round(((world.time - time_last_drone) / CONFIG_GET(number/drone_build_time)) * 100), 0, 100)
+	set_drone_progress(clamp(round(((world.time - time_last_drone) / CONFIG_GET(number/drone_build_time)) * 100), 0, 100))
 	set_icon_state(drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active")
 	if(!was_ready && drone_progress >= 100)
 		visible_message("\The [src] voices a strident beep, indicating a drone chassis is prepared.")
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 
 	visible_message("\The [src] churns and grinds as it lurches into motion, disgorging a shiny new drone after a few moments.")
 	flick("h_lathe_leave",src)
-	drone_progress = 0
+	set_drone_progress(0)
 
 	EXPIRY_STAMP(src, time_last_drone, CLOCK_WORLD)
 	work_start(src)
