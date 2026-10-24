@@ -12,7 +12,7 @@ STATIC_ENTRY(butchery_rules)
 
 /datum/type_trait/butchery_rules
 	var/meat_amount = 0
-	var/butchery_loot = null
+	var/list/butchery_loot = null
 
 /datum/type_trait/butchery_rules/copy_values(datum/type_trait/butchery_rules/into)
 	into.meat_amount = meat_amount

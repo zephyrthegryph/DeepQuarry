@@ -11,8 +11,8 @@ STATIC_ENTRY(item_rules)
 	return entry_make(ENTRY_ITEM_RULES, null, list("sprite_sheets_obj" = sprite_sheets_obj, "actions_types" = actions_types))
 
 /datum/type_trait/item_rules
-	var/sprite_sheets_obj = null
-	var/actions_types = null
+	var/list/sprite_sheets_obj = null
+	var/list/actions_types = null
 
 /datum/type_trait/item_rules/copy_values(datum/type_trait/item_rules/into)
 	into.sprite_sheets_obj = sprite_sheets_obj
