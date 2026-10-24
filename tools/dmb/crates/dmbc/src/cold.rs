@@ -355,6 +355,10 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     let abi_preparation = total.elapsed();
     dm_profile::request_mark("cold.abi_prepared");
     if let Some(retained) = retained {
+        crate::daemon_eprintln!(
+            "native incremental output: before admit {:.3}s (startup + ABI preparation)",
+            abi_preparation.as_secs_f64()
+        );
         match incremental_output(
             retained,
             frontend,
@@ -435,6 +439,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         }),
         _ => None,
     };
+    let admit_started = Instant::now();
     let admitted = crate::retained_output::admit(
         &retained,
         frontend,
@@ -443,6 +448,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         proof,
     )?;
     dm_profile::request_mark("incremental.admitted");
+    let admit_seconds = admit_started.elapsed().as_secs_f64();
     let plan = startup.plan();
     let source_bindings = roster
         .source_bindings(frontend)
@@ -490,6 +496,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         ));
     }
     let contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
+    let lower_seconds = admit_started.elapsed().as_secs_f64() - admit_seconds;
     let patched = crate::retained_output::splice(
         retained,
         admitted,
@@ -503,11 +510,13 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
     )?;
     crate::compile_stats::note_patch(patched.changed_bodies);
     crate::daemon_eprintln!(
-        "native incremental output: changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s",
+        "native incremental output: changed_bodies={} shifted_initializers={} patched_rows={} {:.3}s (admit {:.3}s, lower {:.3}s)",
         patched.changed_bodies,
         patched.shifted_initializers,
         patched.patched_rows,
-        started.elapsed().as_secs_f64()
+        started.elapsed().as_secs_f64(),
+        admit_seconds,
+        lower_seconds
     );
     Ok(patched)
 }
