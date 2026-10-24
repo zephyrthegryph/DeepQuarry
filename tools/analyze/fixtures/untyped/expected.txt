@@ -17,4 +17,10 @@ call	code/modules/vals/vals.dm	230
 call	code/modules/vals/vals.dm	265
 call	code/modules/vals/vals.dm	287
 call	code/modules/vals/vals.dm	288
+call	code/modules/vals/vals.dm	348
+call	code/modules/vals/vals.dm	349
+call	code/modules/vals/vals.dm	353
+call	code/modules/vals/vals.dm	354
+call	code/modules/vals/vals.dm	355
 typed	code/modules/vals/vals.dm	255
+typed	code/modules/vals/vals.dm	304
