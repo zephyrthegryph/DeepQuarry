@@ -239,6 +239,7 @@
 #include "dq_heat_machines_behaviour.dm"
 #include "dq_boot_gate.dm"
 #include "dq_body_heat_behaviour.dm"
+#include "dq_telecomms_drift_tests.dm"
 #include "dq_body_rate_pins.dm"
 #include "dq_material_heat_behaviour.dm"
 #include "dq_gas_reaction_energy_behaviour.dm"
