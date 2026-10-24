@@ -23,20 +23,24 @@
 		rel_clear(vr_link, nameof(vr_link.vr_holder))
 		rel_clear(src, nameof(vr_link))
 
+	// The organs, limbs and gibs are this body turned into parts: they start at its temperature (deleting it drops its heat, heat.dm).
+	var/body_k = body_temperature()
 	for(var/obj/item/organ/I in internal_organ_list()) // a fresh list: removed() empties the slot
 		I.removed()
+		I.inherit_heat(body_k)
 		if(!QDELETED(I) && isturf(I.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
 	for(var/obj/item/organ/external/E in src.organs.Copy())
 		E.droplimb(0,DROPLIMB_EDGE,1)
+		E.inherit_heat(body_k)
 
 	for(var/obj/item/I in contents_of(src))
 		drop_from_inventory(I)
 		I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)), rand(1,3), round(30/I.w_class))
 
 	..(species.gibbed_anim) // uses the default mob.dmi file for these, so we only need to specify the first argument
-	gibs(loc, dna, null, species.get_flesh_colour(src), species.get_blood_colour(src))
+	gibs(loc, dna, null, species.get_flesh_colour(src), species.get_blood_colour(src), body_k)
 	dq_destroy_collect_end()
 
 /mob/living/carbon/human/dust()

@@ -3595,6 +3595,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline
 
 /datum/unit_test/dq_pipeline_port_coupling_heats_the_pipeline/Run()
+	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear pipe run for the port coupling test")
 	var/turf/simulated/floor/T = run[1]
@@ -3622,7 +3623,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		vg_frame_force_devices()
 		native_system().drain()
 	TEST_ASSERT(air.return_temperature() > before + 1, "the coupled body did not heat its pipeline: [before] -> [air.return_temperature()] (body [body_before] -> [vg_heat_body_temperature(body)])")
-	vg_heat_body_release(body)
+	vg_heat_body_drop(body)
 	qdel(P)
 	qdel(Q)
 

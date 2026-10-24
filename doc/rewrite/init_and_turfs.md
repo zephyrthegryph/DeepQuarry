@@ -1004,8 +1004,8 @@ the per-turf gate for cosmetic effects outside `destroy_effects()`: machinery
 destruction sparks and sound, catwalk and railing break messages use it.
 
 Heat bodies, pipe ports and power nodes now release in one call each per
-batch too (`dq_heat_body_release()`, `dq_pipe_port_remove()`,
-`dq_power_unbind_node()` queue into the batch; `vg_heat_body_release_list`,
+batch too (`dq_heat_body_drop()`, `dq_pipe_port_remove()`,
+`dq_power_unbind_node()` queue into the batch; `vg_heat_body_drop_list`,
 `vg_pipe_remove_list`, `vg_power_unbind_node_list`), and the pipe topology
 commits once per batch after the removal (rewrite/l-boot2).
 

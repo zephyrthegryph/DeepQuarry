@@ -127,8 +127,8 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	test_rng(1)
 	run_body_heat()
 	test_driver_end()
-	// Deleting a body hands the energy it holds above its surroundings to the air of its turf (atom/Destroy -> release_heat_body()): the humans go now, while
-	// their room's air is still snapshotted, so restore_atmos() puts it back. Left to the end of the test they would heat the real floor's air for the next one.
+	// The humans go now, while their room's air is still snapshotted, so restore_atmos() puts it back. (Deleting a body drops its heat and deposits
+	// nothing, atom/Destroy -> drop_heat_body(); this keeps the cleanup order the other tests here rely on.)
 	for(var/datum/body_thing as anything in allocated?.Copy())
 		if(!QDELETED(body_thing))
 			qdel(body_thing, TRUE)
@@ -234,9 +234,8 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	log_test("crowd: [at_ease_frames] body-frames at ease, all unlinked; room air [round(before, 0.01)] -> [round(after, 0.01)] K")
 	TEST_ASSERT(at_ease_frames > 250, "the crowd was at ease most of the time ([at_ease_frames] of 500 body-frames)")
 
-/// Deleting a warm body releases its excess heat into its tile, but only as far as the tile's air and floor would take it in contact with the
-/// body: the air ends no hotter than the body was, and the heat that reached the air is no more than the body's excess (a human is about 280 kJ/K
-/// and a tile's air about 2 kJ/K, so the whole excess in one tile's air was thousands of kelvin).
+/// Deleting a warm body drops its heat: its tile's air takes none of it (deletion is not a physical event, so nothing is deposited). A human is
+/// about 280 kJ/K and a tile's air about 2 kJ/K, so the whole excess in one tile's air would be thousands of kelvin.
 /datum/unit_test/dq_body_heat/deleting_a_body_does_not_superheat_its_tile
 
 /datum/unit_test/dq_body_heat/deleting_a_body_does_not_superheat_its_tile/run_body_heat()
@@ -249,25 +248,20 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	var/body_before = H.body_temperature()
 	TEST_ASSERT(abs(body_before - body_k) < 0.5, "the body was not set warm ([body_before] K)")
 	var/excess = H.body_heat_capacity() * (body_before - spot.return_air().return_temperature())
-	var/list/before = list()
 	var/air_joules_before = 0
 	for(var/turf/T as anything in room)
 		var/datum/gas_mixture/air = T.return_air()
-		before[T] = air.return_temperature()
 		air_joules_before += air.heat_capacity() * air.return_temperature()
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "the body was not deleted")
-	var/hottest = 0
 	var/air_joules_after = 0
 	for(var/frame in 1 to 3)
 		heat_test_world_seconds(1)
-		for(var/turf/T as anything in room)
-			hottest = max(hottest, T.return_air().return_temperature())
 	for(var/turf/T as anything in room)
 		var/datum/gas_mixture/air = T.return_air()
 		air_joules_after += air.heat_capacity() * air.return_temperature()
-	log_test("body delete: excess [round(excess)] J, hottest tile air [round(hottest, 0.01)] K (body [round(body_before, 0.01)] K), air gained [round(air_joules_after - air_joules_before)] J")
-	TEST_ASSERT(hottest <= body_before, "a deleted body left air at [hottest] K, hotter than the body ([body_before] K)")
-	TEST_ASSERT(air_joules_after - air_joules_before <= excess * 1.01, "the room air gained [air_joules_after - air_joules_before] J from a body with [excess] J of excess")
+	var/gained = air_joules_after - air_joules_before
+	log_test("body delete: excess [round(excess)] J, room air gained [round(gained)] J")
+	TEST_ASSERT(gained < excess * 0.01, "the room air gained [gained] J from deleting a body with [excess] J of excess; a deleted body deposits nothing")
 
 #endif
