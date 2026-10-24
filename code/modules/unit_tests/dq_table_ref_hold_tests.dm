@@ -24,6 +24,21 @@
 	qdel(locate(key))
 	return refs
 
+/// Where the collector keeps the deleted datum `ref_text`: each queue that holds it (with its age), so a subject that is alive with no reference
+/// besides the collector's can be told from one a pass has not reached. A subject in the check queue was filtered out by a pass that saw a
+/// reference on it, and waits there five minutes.
+/datum/unit_test/dq_table_ref_hold/proc/dq_table_gc_whereabouts(ref_text)
+	var/atom/A = locate(ref_text)
+	if(!A)
+		return "gone"
+	var/list/where = list()
+	for(var/level in 1 to GC_QUEUE_COUNT)
+		var/list/queue = SSgarbage.queues[level]
+		for(var/list/entry as anything in queue)
+			if(length(entry) >= GC_QUEUE_ITEM_REF && entry[GC_QUEUE_ITEM_REF] == A)
+				where += "queue [level] for [(world.time - entry[GC_QUEUE_ITEM_QUEUE_TIME]) / 10] s"
+	return "[A.type] gc_destroyed [A.gc_destroyed], loc [A?.loc ? A.loc : "none"], in [length(where) ? jointext(where, ", ") : "no queue"], queue lengths [length(SSgarbage.queues[GC_QUEUE_FILTER])]/[length(SSgarbage.queues[GC_QUEUE_CHECK])]"
+
 /// A turf next to `T` that is open floor with nothing on it, for the control probe.
 /datum/unit_test/dq_table_ref_hold/proc/dq_table_control_tile(turf/T)
 	for(var/d in list(SOUTH, WEST, NORTH, EAST))
@@ -67,6 +82,8 @@
 		refresh_flush()
 		dq_test_gc_pass(GC_QUEUE_FILTER)
 	out["held"] = dq_table_refs_of(subject_ref)
+	if(out["held"] != -1)
+		log_world("TABLE_REF_HOLD: [label]: the subject is still alive after the settle time: [dq_table_gc_whereabouts(subject_ref)]")
 	out["pen"] = dq_table_refs_of(pen_ref) - pen_before
 	out["probe"] = dq_table_probe(T) - dq_table_probe(control)
 	log_world("TABLE_REF_HOLD: [label]: control pen refs [base]; extra refs on the neighbour pen [out["pen"]], on a fresh pen of the tile [out["probe"]], (absolute: pen [pen_before] before and [dq_table_refs_of(pen_ref)] after, subject [subject_before] before) subject [out["held"] == -1 ? "freed" : "held by [out["held"]]"]")
@@ -81,6 +98,7 @@
 	return out
 
 /datum/unit_test/dq_table_ref_hold/Run()
+	restore_ambient_after() // the cycles wait over a minute of world time: the telecomms freezer's thermostat starts pumping and cools its rooms meanwhile
 	var/turf/T = test_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the table test")
 	var/turf/control = dq_table_control_tile(T)
