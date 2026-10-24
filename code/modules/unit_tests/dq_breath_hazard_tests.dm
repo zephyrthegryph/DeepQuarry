@@ -30,6 +30,8 @@
 
 /// A human sealed on a floor tile with standard air, the steps in `sleepers` asleep in it.
 /datum/unit_test/life_om/breath_hazard/proc/setup_breather(with_internals = FALSE, pair = FALSE, container_type = null)
+	// The human's body warms the tile's floor several kelvin while the Life frames run, and the map's vents move gas in their rooms meanwhile.
+	restore_ambient_after()
 	var/list/run = dq_atmos_test_find_clear_pipe_run(pair ? 2 : 1)
 	if(!run)
 		TEST_FAIL("no clear floor for the hazard test")
