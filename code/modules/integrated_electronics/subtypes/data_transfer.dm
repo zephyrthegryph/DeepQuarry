@@ -23,7 +23,7 @@ CAPABILITIES(/obj/item/integrated_circuit/transfer/multiplexer)
 /obj/item/integrated_circuit/transfer/multiplexer/declare_pins()
 	for(var/i = 1 to number_of_inputs)
 		inputs["input [i]"] = IC_PINTYPE_ANY
-	complexity = number_of_inputs
+	set_complexity(number_of_inputs)
 
 /// Once its pins are built the multiplexer says how many inputs it has.
 /obj/item/integrated_circuit/transfer/multiplexer/proc/describe_inputs()
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/integrated_circuit/transfer/multiplexer)
 /obj/item/integrated_circuit/transfer/demultiplexer/declare_pins()
 	for(var/i = 1 to number_of_outputs)
 		outputs["output [i]"] = IC_PINTYPE_ANY
-	complexity = number_of_outputs
+	set_complexity(number_of_outputs)
 
 CAPABILITIES(/obj/item/integrated_circuit/transfer/demultiplexer)
 	setup(PROC_REF(describe_outputs))
@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/integrated_circuit/transfer/demultiplexer)
 /obj/item/integrated_circuit/transfer/pulsedemultiplexer/declare_pins()
 	for(var/i = 1 to number_of_outputs)
 		activators["output [i]"] = IC_PINTYPE_PULSE_OUT
-	complexity = number_of_outputs
+	set_complexity(number_of_outputs)
 
 CAPABILITIES(/obj/item/integrated_circuit/transfer/pulsedemultiplexer)
 	setup(PROC_REF(describe_pulse_outputs))
