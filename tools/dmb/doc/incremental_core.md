@@ -345,6 +345,22 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
      of a 21 s hot compile); the per-slot bookkeeping is one extra map lookup and a 16-byte wider slot per resolved
      answer, below the noise of the compile wall (20.3-27.2 s hot, same machine, before and after). 1b should therefore gate on the diff (run the stage proofs first, or move
      `admit` after them) instead of on the hash.
+   - **1b (landed 2026-10-24).** `retained_output::admit` no longer gates on `answers_version()` (tree identity folded in).
+     It decides last, on the answers: equal version passes as before; otherwise the answer world and resource searches
+     (`QueryDb::answers_context`) must be equal and `QueryDb::prove_against_base` asks again, under this request's tree,
+     every slot marked at the retained output's publication (`mark_published`, a per-slot `base` hash plus the question,
+     numbered per output in `OutputBase::marks`) and requires each to equal its marked value. The proof walks the marked
+     table, not the answers some stage asked this request, so soundness does not depend on lazy filling or on a proof
+     stopping at the first differing read; an answer first asked after the mark has no base and belongs to a new unit
+     (admit relowers only changed bodies, the roster is unchanged). Declined: no marks (first request, declaration
+     patches, a later marking for another output), table dropped since the mark, a changed answer. Cargo tests in
+     `query_db.rs`: tree differs but every marked answer is the same (admitted); edited default, asked-about added proc
+     (declined); the proof finds a change no stage asked this request; stale/zero/dropped marks (declined); a new answer
+     is not compared. Measured finding: a var default, `initial()`-read default, added proc or added type edit now declines
+     with "program text outside bodies changed", not "answers changed": those edits change the text outside bodies
+     (`text_key`), and the answer world (the static resolver's `Tree` version) differs with the declarations too. They
+     cannot be admitted by an answer gate alone; step 2 (re-evaluating initializers whose reads changed, and a `text_key`
+     that tolerates the default's own row) is what admits them. Hot body edits keep the patch (13 s).
 2. Re-evaluate only initializers whose recorded reads include a changed answer; splice their rows and the Variables
    records through the same `retained_output` splice used for bodies.
 3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
