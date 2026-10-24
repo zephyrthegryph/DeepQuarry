@@ -48,6 +48,20 @@ pub struct IndexCounts {
     pub contradicted: AtomicU64,
 }
 
+/// What one stage did with the records it offered the index.
+#[derive(Default)]
+pub struct StageCounts {
+    /// Records taken as current without resolving the reads the world fixes.
+    pub certified: AtomicU64,
+    /// Records whose reads were all replayed and passed.
+    pub replayed: AtomicU64,
+    /// Certified records whose stored answers a replay then contradicted.
+    pub contradicted: AtomicU64,
+    /// Reads of a certified record answered by the typed sidecar, and reads that had none.
+    pub typed: AtomicU64,
+    pub untyped: AtomicU64,
+}
+
 struct WorldSet {
     key: dm_cache::RecordKey,
     loaded: HashSet<u128>,
@@ -59,6 +73,15 @@ pub struct DepIndex {
     policy: u128,
     worlds: Mutex<HashMap<u128, Arc<WorldSet>>>,
     pub counts: IndexCounts,
+    abi: StageCounts,
+    initializer: StageCounts,
+}
+
+/// `DMB_DEP_INDEX_VERIFY=1`: certified ABI and initializer records are replayed anyway and a
+/// read that differs from its stored answer is counted as a contradiction.
+pub fn verify() -> bool {
+    static VERIFY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *VERIFY.get_or_init(|| std::env::var_os("DMB_DEP_INDEX_VERIFY").is_some_and(|value| value == "1"))
 }
 
 /// Disabled by `DMB_DEP_INDEX=0`.
@@ -67,14 +90,43 @@ pub fn enabled() -> bool {
     *ENABLED.get_or_init(|| std::env::var_os("DMB_DEP_INDEX").is_none_or(|value| value != "0"))
 }
 
-/// The id of one stored record: its full key and every recorded read, exactly as stored.
+/// The id of one stored lowering record: its full key and every recorded read, exactly as stored.
 pub fn record_id<'a>(
+    key: &[u8],
+    reads: impl IntoIterator<Item = (&'a ResolveQuery, &'a [u8])>,
+) -> u128 {
+    record_id_in(Scope::Lowering, key, reads)
+}
+
+/// Which stage's records an id names. A stage's key bytes never collide with another's, but the
+/// ids share one set per world, so each stage hashes its own tag into them.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Scope {
+    Lowering,
+    Abi,
+    Initializer,
+}
+impl Scope {
+    fn tag(self) -> &'static [u8] {
+        match self {
+            // Lowering ids predate scopes; they keep their original bytes.
+            Scope::Lowering => b"",
+            Scope::Abi => b"abi\0",
+            Scope::Initializer => b"initializer\0",
+        }
+    }
+}
+
+/// `record_id` for a record of `scope`.
+pub fn record_id_in<'a>(
+    scope: Scope,
     key: &[u8],
     reads: impl IntoIterator<Item = (&'a ResolveQuery, &'a [u8])>,
 ) -> u128 {
     use std::hash::{Hash, Hasher};
     let mut hasher = xxhash_rust::xxh3::Xxh3::new();
     hasher.update(b"dm-dep-index-record-v1\0");
+    hasher.update(scope.tag());
     hasher.update(&(key.len() as u64).to_le_bytes());
     hasher.update(key);
     for (query, answer) in reads {
@@ -102,6 +154,84 @@ pub fn world_determines(domain: ReadDomain) -> bool {
     )
 }
 
+/// Replay the stored reads of an ABI or initializer record against `provider` and return the
+/// current answers it holds under, or `None` when one differs.
+///
+/// A record whose id the index holds for the provider's world (and `DMB_DEP_INDEX_VERIFY` is not
+/// set) takes the typed sidecar answer of every read the world fixes, so those reads resolve no
+/// query and issue no domain version. Every other read resolves and compares its canonical bytes
+/// exactly as a replay without an index does. A record that passes unrecorded is noted so the
+/// next session certifies it. `typed` may be shorter than `reads` (an untyped read resolves).
+pub fn replay_reads(
+    index: Option<&DepIndex>,
+    scope: Scope,
+    provider: &dyn Resolver,
+    key: &[u8],
+    reads: &[(ResolveQuery, Vec<u8>)],
+    typed: &[Option<dm_ir::PortableResolvedAnswer>],
+) -> Option<Vec<crate::lowering_memo::ResolverRead>> {
+    let certificate = index.and_then(|index| {
+        let world = DepIndex::world_of(provider)?;
+        let id = record_id_in(
+            scope,
+            key,
+            reads.iter().map(|(query, answer)| (query, answer.as_slice())),
+        );
+        Some((index, world, id, index.certified(world, id)))
+    });
+    let known = certificate.is_some_and(|(_, _, _, known)| known);
+    let trusted = known && !verify();
+    let mut current = Vec::with_capacity(reads.len());
+    for (position, (query, expected)) in reads.iter().enumerate() {
+        let domain = query.domain();
+        if trusted && world_determines(domain) {
+            let answer = typed
+                .get(position)
+                .and_then(Option::as_ref)
+                .map(dm_ir::PortableResolvedAnswer::restore)
+                .filter(|answer| answer.canonical_bytes() == *expected);
+            if let Some(answer) = answer {
+                if let Some((index, ..)) = certificate {
+                    index.stage(scope).typed.fetch_add(1, Ordering::Relaxed);
+                }
+                current.push(crate::lowering_memo::ResolverRead {
+                    query: *query,
+                    domain,
+                    answer,
+                });
+                continue;
+            }
+            if let Some((index, ..)) = certificate {
+                index.stage(scope).untyped.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        let answer = provider.resolve(*query);
+        if !crate::lowering_memo_wire::initializer::portable(&answer)
+            || answer.canonical_bytes() != *expected
+        {
+            if let Some((index, ..)) = certificate.filter(|_| known && world_determines(domain)) {
+                index.contradicts(scope, query);
+            }
+            return None;
+        }
+        current.push(crate::lowering_memo::ResolverRead {
+            query: *query,
+            domain,
+            answer,
+        });
+    }
+    if let Some((index, world, id, known)) = certificate {
+        if trusted {
+            index.stage(scope).certified.fetch_add(1, Ordering::Relaxed);
+        } else if known {
+            index.stage(scope).replayed.fetch_add(1, Ordering::Relaxed);
+        } else {
+            index.passed(scope, world, id);
+        }
+    }
+    Some(current)
+}
+
 /// What `adopt` decided about one record.
 pub enum Adoption {
     /// Nothing to do: no world, already carrying the world's receipt, or no room for one.
@@ -119,6 +249,38 @@ impl DepIndex {
             policy,
             worlds: Mutex::new(HashMap::new()),
             counts: IndexCounts::default(),
+            abi: StageCounts::default(),
+            initializer: StageCounts::default(),
+        }
+    }
+    /// The counters of an ABI or initializer stage.
+    pub fn stage(&self, scope: Scope) -> &StageCounts {
+        match scope {
+            Scope::Abi => &self.abi,
+            _ => &self.initializer,
+        }
+    }
+    /// The world a request's reads are judged under: the resolver's `Tree` domain version.
+    pub fn world_of(resolver: &dyn Resolver) -> Option<u128> {
+        resolver.domain_version(ReadDomain::Tree)
+    }
+    /// A stored ABI or initializer record's reads were replayed and passed under `world`:
+    /// remember it for the next session (nothing to do for a record already known).
+    pub fn passed(&self, scope: Scope, world: u128, id: u128) {
+        self.stage(scope).replayed.fetch_add(1, Ordering::Relaxed);
+        self.note(world, id);
+    }
+    /// A certified ABI or initializer record's stored answer differed from the current one.
+    pub fn contradicts(&self, scope: Scope, query: &ResolveQuery) {
+        if self
+            .stage(scope)
+            .contradicted
+            .fetch_add(1, Ordering::Relaxed)
+            < 8
+        {
+            crate::daemon_eprintln!(
+                "native dependency index: certified {scope:?} record contradicted by {query:?}"
+            );
         }
     }
     fn record_key(&self, world: u128) -> dm_cache::RecordKey {
@@ -288,8 +450,18 @@ impl DepIndex {
         }
     }
     pub fn summary(&self) -> String {
+        let stage = |name: &str, counts: &StageCounts| {
+            format!(
+                " {name}[certified={} replayed={} contradicted={} typed={} untyped={}]",
+                counts.certified.load(Ordering::Relaxed),
+                counts.replayed.load(Ordering::Relaxed),
+                counts.contradicted.load(Ordering::Relaxed),
+                counts.typed.load(Ordering::Relaxed),
+                counts.untyped.load(Ordering::Relaxed)
+            )
+        };
         format!(
-            "offered={} certified={} noted={} loaded={} already_current={} no_world={} roster_full={} contradicted={}",
+            "offered={} certified={} noted={} loaded={} already_current={} no_world={} roster_full={} contradicted={}{}{}",
             self.counts.offered.load(Ordering::Relaxed),
             self.counts.certified.load(Ordering::Relaxed),
             self.counts.noted.load(Ordering::Relaxed),
@@ -297,7 +469,9 @@ impl DepIndex {
             self.counts.already_current.load(Ordering::Relaxed),
             self.counts.no_world.load(Ordering::Relaxed),
             self.counts.roster_full.load(Ordering::Relaxed),
-            self.counts.contradicted.load(Ordering::Relaxed)
+            self.counts.contradicted.load(Ordering::Relaxed),
+            stage("abi", &self.abi),
+            stage("initializer", &self.initializer)
         )
     }
 }
@@ -423,6 +597,73 @@ mod tests {
             versions,
             vec![(ReadDomain::ResourceSearch, 1), (ReadDomain::Tree, 3)]
         );
+    }
+
+    struct Counting {
+        resolves: std::sync::atomic::AtomicUsize,
+        answer: ResolvedMeaning,
+    }
+    impl Resolver for Counting {
+        fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+            self.resolves.fetch_add(1, Ordering::Relaxed);
+            self.answer.clone()
+        }
+        fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
+            (domain == ReadDomain::Tree).then_some(11)
+        }
+    }
+    fn counting(answer: ResolvedMeaning) -> Counting {
+        Counting {
+            resolves: Default::default(),
+            answer,
+        }
+    }
+
+    #[test]
+    fn replay_reads_certifies_the_second_session_and_skips_the_world_fixed_resolves() {
+        let root = scratch("dep-index-replay");
+        let world_read = ResolveQuery::GlobalProc(SymbolId::of("absent"));
+        let catalog_read = ResolveQuery::ResourceIn {
+            path: SymbolId::of("a.dmi"),
+            search_context: 0,
+        };
+        let reads = vec![
+            (world_read, ResolvedMeaning::Missing.canonical_bytes()),
+            (catalog_read, ResolvedMeaning::Missing.canonical_bytes()),
+        ];
+        let typed = vec![Some(dm_ir::PortableResolvedAnswer::Missing); 2];
+        let provider = counting(ResolvedMeaning::Missing);
+
+        let first = index(&root);
+        let current =
+            replay_reads(Some(&first), Scope::Abi, &provider, b"k", &reads, &typed).unwrap();
+        assert_eq!(current.len(), 2);
+        assert_eq!(provider.resolves.load(Ordering::Relaxed), 2, "unknown record replays");
+        persist(&first);
+        drop(first);
+
+        let second = index(&root);
+        let current =
+            replay_reads(Some(&second), Scope::Abi, &provider, b"k", &reads, &typed).unwrap();
+        assert_eq!(current[0].answer, ResolvedMeaning::Missing);
+        assert_eq!(current[0].domain, world_read.domain());
+        // The world-fixed read came from the sidecar; the resource read resolved again.
+        assert_eq!(provider.resolves.load(Ordering::Relaxed), 3);
+        assert_eq!(second.stage(Scope::Abi).certified.load(Ordering::Relaxed), 1);
+        // Another scope's id is a different record: it replays everything.
+        replay_reads(Some(&second), Scope::Initializer, &provider, b"k", &reads, &typed).unwrap();
+        assert_eq!(provider.resolves.load(Ordering::Relaxed), 5);
+        // A sidecar that disagrees with the stored bytes is not trusted.
+        let wrong = vec![Some(dm_ir::PortableResolvedAnswer::Presence(true)); 2];
+        replay_reads(Some(&second), Scope::Abi, &provider, b"k", &reads, &wrong).unwrap();
+        assert_eq!(provider.resolves.load(Ordering::Relaxed), 7);
+        assert_eq!(second.stage(Scope::Abi).untyped.load(Ordering::Relaxed), 1);
+        // A changed answer fails whatever the index holds, and a certified world read that
+        // is resolved and differs is counted as a contradiction.
+        let changed = counting(ResolvedMeaning::Presence(true));
+        assert!(replay_reads(Some(&second), Scope::Abi, &changed, b"k", &reads, &[]).is_none());
+        assert_eq!(second.stage(Scope::Abi).contradicted.load(Ordering::Relaxed), 1);
+        assert!(replay_reads(None, Scope::Abi, &changed, b"k", &reads, &typed).is_none());
     }
 
     #[test]

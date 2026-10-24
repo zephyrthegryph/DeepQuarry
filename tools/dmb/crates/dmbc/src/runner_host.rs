@@ -464,6 +464,11 @@ impl BuildHost {
                 ),
             ));
         }
+        // One dependency index per request, shared by lowering, ABI and initializer replays.
+        let dep_index = disk
+            .as_ref()
+            .filter(|_| crate::dep_index::enabled())
+            .map(|disk| Arc::new(crate::dep_index::DepIndex::new(Arc::clone(disk), policy)));
         let abi_disk = disk.clone();
         // One transport per request for both initializer stores, as the one-shot facade builds it.
         let initializer_disk = disk.clone().map(|disk| {
@@ -472,6 +477,7 @@ impl BuildHost {
                 self.engine.as_ref().map(|engine| engine.abi_engine_owner()),
                 policy,
                 publishable,
+                dep_index.clone(),
             )
         });
         let mut memo = crate::lowering_memo::ProcedureMemo::with_resident_for_request(
@@ -480,6 +486,7 @@ impl BuildHost {
             disk,
             publishable,
         );
+        memo.share_dep_index(dep_index.clone());
         memo.symbolic = Some(self.symbolic.as_ref().unwrap().1.for_request(publishable));
         memo.initializers = Some(
             self.initializers
@@ -513,7 +520,7 @@ impl BuildHost {
         // The retained ABI store reads and stages per-unit rows through this request's disk snapshot, so a
         // fresh session (restart, eviction, another worktree) does not recompute every unit's ABI.
         if let (Some(disk), Some(abi)) = (abi_disk, &memo.abi) {
-            memo.abi_disk = abi.attach_disk(disk, policy);
+            memo.abi_disk = abi.attach_disk(disk, policy, dep_index);
         }
         if self
             .initializer_fragments
