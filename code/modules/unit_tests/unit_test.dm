@@ -1208,7 +1208,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		if(!test.run_finished)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
-		staleness_test_end(test)
+		staleness_test_end(test, current_index >= total_tests)
 		test.restore_atmos()
 		test.put_ambient_back() // last, right before the guards read: the regulated rooms swing several kelvin a second, so a put-back made earlier would be stale by then
 

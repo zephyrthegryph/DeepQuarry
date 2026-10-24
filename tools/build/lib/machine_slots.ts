@@ -22,10 +22,34 @@ import path from 'node:path';
 
 export type SlotClass = 'dm_compile' | 'test_world' | 'cargo' | (string & {});
 
-/** One DreamDaemon is mostly single-threaded; leave room for compiles and cargo: a third of the CPUs, 2 to 6 (same rule as slots_default_test_world()). */
-/** Two test worlds at once by default: the machine is also the user's desktop (2026-10-19). DQ_SLOTS_TEST_WORLD raises it. */
+/**
+ * Test worlds the machine hosts at once: two, because the machine is also the user's desktop (2026-10-19) and peak RAM per world is not yet
+ * measured. DQ_SLOTS_TEST_WORLD raises it for everyone. A full-suite run (roleCap) may hold all of them; other callers hold at most
+ * focusedTestWorlds(), so raising the default to 4 later would give only the suite four. Same numbers as slots_default_test_world() in
+ * dq_machine_slots.sh.
+ */
 export function defaultTestWorlds(_cpus: number = os.cpus().length): number {
   return 2;
+}
+
+/** Test worlds a caller that is not a full-suite run may hold at once (DQ_SLOTS_TEST_WORLD_FOCUSED, default 2). */
+export function focusedTestWorlds(): number {
+  const n = Number(process.env.DQ_SLOTS_TEST_WORLD_FOCUSED);
+  return Number.isInteger(n) && n >= 1 ? n : 2;
+}
+
+/**
+ * What a caller may hold of a class once its role is known (same rule as slots_role_cap() in dq_machine_slots.sh). Only test_world has roles, and only
+ * while DQ_SLOTS_TEST_WORLD is unset (setting it is choosing one limit for all): a full-suite run (DQ_SLOTS_SUITE=1 or opts.suite) may hold every slot,
+ * the merge reserve included; any other caller holds at most focusedTestWorlds().
+ */
+export function roleCap(cls: SlotClass, usable: number, max: number, suite: boolean): number {
+  if (cls !== 'test_world' || (process.env.DQ_SLOTS_TEST_WORLD ?? '') !== '') return usable;
+  return suite ? max : Math.min(usable, focusedTestWorlds());
+}
+
+function isSuite(opts?: { suite?: boolean }): boolean {
+  return opts?.suite ?? process.env.DQ_SLOTS_SUITE === '1';
 }
 
 const DEFAULTS: Record<string, number> = { dm_compile: 1, test_world: defaultTestWorlds(), cargo: 1 };
@@ -264,13 +288,21 @@ export function suiteCap(cls: SlotClass, prio: number): number | null {
   return null;
 }
 
+/** The most worlds this caller's role may hold at once, before the suite cap (a fairness cap on how many it takes NOW; the shards beyond it take
+ * their own slots as they boot): the shard count a whole-tier run plans for. 0 when the class is off or a parent holds the slots. */
+export function slotRoleSize(cls: SlotClass, want: number, opts?: { suite?: boolean }): number {
+  const max = slotCapacity(cls);
+  if (max <= 0 || preheld(cls)) return 0;
+  return Math.min(want, roleCap(cls, usableSlots(cls, max, priorityOf(worktree())), max, isSuite(opts)));
+}
+
 /** How many slots a group that wants `want` of `cls` gets: the wish, clamped to the class capacity (a group larger than the budget
  * could never be satisfied). 0 when the class is off or the slots are held by a parent. */
-export function slotGroupSize(cls: SlotClass, want: number): number {
+export function slotGroupSize(cls: SlotClass, want: number, opts?: { suite?: boolean }): number {
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return 0;
   const prio = priorityOf(worktree());
-  return Math.min(want, usableSlots(cls, max, prio), suiteCap(cls, prio) ?? Infinity);
+  return Math.min(want, roleCap(cls, usableSlots(cls, max, prio), max, isSuite(opts)), suiteCap(cls, prio) ?? Infinity);
 }
 
 /**
@@ -279,12 +311,12 @@ export function slotGroupSize(cls: SlotClass, want: number): number {
  * a part, so two groups cannot each hold a part of the budget and wait on each other. Each slot is released on its own, so a sharded
  * run hands one back as its world finishes. Returns [] when the class is off.
  */
-export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m)): Promise<HeldSlot[]> {
+export async function acquireSlotGroup(cls: SlotClass, want: number, label: string, log: (m: string) => void = (m) => console.log(m), opts?: { suite?: boolean }): Promise<HeldSlot[]> {
   refuseLight(cls, worktree());
   const max = slotCapacity(cls);
   if (max <= 0 || preheld(cls)) return [];
   const prio = priorityOf(worktree());
-  const usable = usableSlots(cls, max, prio) + extraSlots(cls, worktree());
+  const usable = roleCap(cls, usableSlots(cls, max, prio), max, isSuite(opts)) + extraSlots(cls, worktree());
   want = Math.min(Math.max(want, 1), usable, suiteCap(cls, prio) ?? Infinity);
   const dir = path.join(slotsDir(), cls);
   try {
