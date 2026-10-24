@@ -48,10 +48,10 @@ CAPABILITIES(/obj/item/grown)
 	icon_state = "corncob"
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/corncob)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_thrown(force = 0))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -72,8 +72,8 @@ CAPABILITIES(/obj/item/corncob)
 	icon_state = "banana_peel"
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/bananapeel)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_thrown(force = 0))

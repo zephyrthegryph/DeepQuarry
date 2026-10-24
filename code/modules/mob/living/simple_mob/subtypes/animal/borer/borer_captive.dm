@@ -3,7 +3,9 @@
 /mob/living/captive_brain
 	name = "host brain"
 	real_name = "host brain"
-	universal_understand = 1
+
+CAPABILITIES(/mob/living/captive_brain)
+	configure(mob_rules(universal_understand = 1))
 
 /mob/living/captive_brain/say(message, datum/language/speaking = null, whispering = 0)
 

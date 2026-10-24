@@ -5,7 +5,6 @@
 
 /*********************Mining Hammer****************/
 /obj/item/kinetic_crusher
-	conflict_id = CONFLICT_ELEMENT_CRUSHER
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "crusher"
 	item_state = "crusher0"
@@ -17,9 +16,7 @@
 	desc = "An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. \
 	While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna."
 	w_class = ITEMSIZE_LARGE
-	throw_speed = 4
 	embed_chance = FALSE
-	actions_types = list(/datum/action/item_action/toggle_light)
 	var/charged = TRUE
 	var/charge_time = 15
 	var/detonation_damage = 50 //75
@@ -55,6 +52,9 @@ CAPABILITIES(/obj/item/kinetic_crusher/cyborg)
 
 
 CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_light)))
+	configure(atom_rules(conflict_id = CONFLICT_ELEMENT_CRUSHER))
+	configure(movable_motion(throw_speed = 4))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 25, armor_penetration = 10, attack_verbs = list("smashed", "crushed", "cleaved", "chopped", "pulped"), sharp = FALSE, edge = FALSE))

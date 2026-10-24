@@ -14,7 +14,6 @@
 			slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	throw_speed = 1
 	throw_range = 3
 	w_class = ITEMSIZE_NORMAL
 	var/scancount = 0
@@ -300,6 +299,7 @@
 
 
 CAPABILITIES(/obj/item/taskmanager)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_handling(preserve = FALSE))
 	configure(item_thrown(force = 7))
 	configure(item_combat(force = 0))

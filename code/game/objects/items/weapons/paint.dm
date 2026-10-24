@@ -12,13 +12,13 @@
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 60
 	volume = 60
-	unacidable = FALSE
 	flags = NONE
 	var/paint_type = "red"
 
 // A paint can paints a floor, 5 units at a time while it has more than that (in any stance: it is not splashed over it); everything else is the glass
 // container's.
 CAPABILITIES(/obj/item/reagent_containers/glass/paint)
+	configure(movable_motion(unacidable = FALSE))
 	click_order(BIND_AT_TARGET, "paint", "reagent_container.splash")
 	op("paint", at_target(/turf/simulated), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(req_reagents(5, more = TRUE)),
 		label("Paint"), then(PROC_REF(painted)))

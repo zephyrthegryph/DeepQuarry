@@ -3,11 +3,11 @@
 	desc = "A rod of pure obsidian, its very presence disrupts and dampens the powers of paranormal phenomenae."
 	icon_state = "nullrod"
 	item_state = "nullrod"
-	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/nullrod)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 15))
@@ -114,12 +114,11 @@ CAPABILITIES(/obj/item/energy_net)
 	anchored = FALSE
 
 	can_buckle = TRUE
-	buckle_lying = 0
-	buckle_dir = SOUTH
 
 	var/escape_time = 8 SECONDS
 
 CAPABILITIES(/obj/effect/energy_net)
+	configure(buckle_rules(lying = 0, dir = SOUTH))
 	after_init(2 SECONDS, then(PROC_REF(check_empty))) // a net that caught nobody goes away
 	// Tearing at the net takes escape_time; being stunned does not stop it, and the buckled mob comes from the unbuckle hook.
 	op("tear", ai(), takes("victim"), wait(PROC_REF(tear_time), keeps = HELD | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_timed_done)))

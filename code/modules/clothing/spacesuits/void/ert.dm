@@ -10,6 +10,7 @@
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/suit/item.dmi', SPECIES_SKRELL = 'icons/inventory/suit/item.dmi', SPECIES_UNATHI = 'icons/inventory/suit/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/suit/item.dmi', SPECIES_AKULA = 'icons/inventory/suit/item.dmi', SPECIES_SERGAL = 'icons/inventory/suit/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/suit/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/suit/item.dmi', SPECIES_FENNEC = 'icons/inventory/suit/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/suit/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/suit/item.dmi', SPECIES_NEVREAN = 'icons/inventory/suit/item.dmi', SPECIES_RAPALA = 'icons/inventory/suit/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/suit/item.dmi', SPECIES_ZADDAT = 'icons/inventory/suit/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
 	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
@@ -79,6 +80,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
 
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/head/item.dmi', SPECIES_SKRELL = 'icons/inventory/head/item.dmi', SPECIES_UNATHI = 'icons/inventory/head/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/head/item.dmi', SPECIES_AKULA = 'icons/inventory/head/item.dmi', SPECIES_SERGAL = 'icons/inventory/head/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/head/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/head/item.dmi', SPECIES_FENNEC = 'icons/inventory/head/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/head/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/head/item.dmi', SPECIES_NEVREAN = 'icons/inventory/head/item.dmi', SPECIES_RAPALA = 'icons/inventory/head/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/head/item.dmi', SPECIES_ZADDAT = 'icons/inventory/head/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
 	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
@@ -146,24 +148,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
 		SPECIES_ALRAUNE			= 'icons/inventory/suit/mob.dmi',
 		SPECIES_ZADDAT			= 'icons/inventory/suit/mob.dmi'
 		)
-	sprite_sheets_obj = list(
-		SPECIES_TAJARAN			= 'icons/inventory/suit/item.dmi',
-		SPECIES_SKRELL			= 'icons/inventory/suit/item.dmi',
-		SPECIES_UNATHI			= 'icons/inventory/suit/item.dmi',
-		SPECIES_XENOHYBRID		= 'icons/inventory/suit/item.dmi',
-		SPECIES_AKULA			= 'icons/inventory/suit/item.dmi',
-		SPECIES_SERGAL			= 'icons/inventory/suit/item.dmi',
-		SPECIES_VULPKANIN		= 'icons/inventory/suit/item.dmi',
-		SPECIES_ZORREN_HIGH		= 'icons/inventory/suit/item.dmi',
-		SPECIES_FENNEC			= 'icons/inventory/suit/item.dmi',
-		SPECIES_SHADEKIN		= 'icons/inventory/suit/item.dmi',
-		SPECIES_VASILISSAN		= 'icons/inventory/suit/item.dmi',
-		SPECIES_NEVREAN			= 'icons/inventory/suit/item.dmi',
-		SPECIES_RAPALA			= 'icons/inventory/suit/item.dmi',
-		SPECIES_ALRAUNE			= 'icons/inventory/suit/item.dmi',
-		SPECIES_ZADDAT			= 'icons/inventory/suit/item.dmi',
-		SPECIES_LLEILL			= 'icons/inventory/suit/item.dmi'
-		)
 
 /obj/item/clothing/head/helmet/space/void/responseteam
 	sprite_sheets = list(
@@ -184,22 +168,4 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
 		SPECIES_RAPALA			= 'icons/inventory/head/mob.dmi',
 		SPECIES_ALRAUNE			= 'icons/inventory/head/mob.dmi',
 		SPECIES_ZADDAT			= 'icons/inventory/head/mob.dmi'
-		)
-	sprite_sheets_obj = list(
-		SPECIES_TAJARAN 			= 'icons/inventory/head/item.dmi',
-		SPECIES_SKRELL			= 'icons/inventory/head/item.dmi',
-		SPECIES_UNATHI			= 'icons/inventory/head/item.dmi',
-		SPECIES_XENOHYBRID		= 'icons/inventory/head/item.dmi',
-		SPECIES_AKULA			= 'icons/inventory/head/item.dmi',
-		SPECIES_SERGAL			= 'icons/inventory/head/item.dmi',
-		SPECIES_VULPKANIN		= 'icons/inventory/head/item.dmi',
-		SPECIES_ZORREN_HIGH		= 'icons/inventory/head/item.dmi',
-		SPECIES_FENNEC			= 'icons/inventory/head/item.dmi',
-		SPECIES_SHADEKIN		= 'icons/inventory/head/item.dmi',
-		SPECIES_VASILISSAN		= 'icons/inventory/head/item.dmi',
-		SPECIES_NEVREAN			= 'icons/inventory/head/item.dmi',
-		SPECIES_RAPALA			= 'icons/inventory/head/item.dmi',
-		SPECIES_ALRAUNE			= 'icons/inventory/head/item.dmi',
-		SPECIES_ZADDAT			= 'icons/inventory/head/item.dmi',
-		SPECIES_LLEILL			= 'icons/inventory/suit/item.dmi'
 		)

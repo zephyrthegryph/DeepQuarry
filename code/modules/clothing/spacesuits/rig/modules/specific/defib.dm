@@ -9,7 +9,6 @@
 	engage_string = "Toggle Mode"
 
 /obj/item/shockpaddles/standalone/rig
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "mounted defib"
 	desc = "Rig mounted defib. How are you seeing this? Stop that."
 	wielded = 1
@@ -18,6 +17,7 @@
 	return 1
 
 CAPABILITIES(/obj/item/shockpaddles/standalone/rig)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

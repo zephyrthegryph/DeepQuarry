@@ -68,10 +68,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling)
 	desc = "A suction cupped mass of flesh, shaped like a foot."
 	name = "fleshy grippers"
 	icon_state = "lingspacesuit"
-	actions_types = list(/datum/action/item_action/toggle_grippers)
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_grippers)))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/clothing/shoes/magboots/changeling/set_slowdown()
@@ -130,7 +130,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling/armored)
 	desc = "A tough, hard mass of chitin, with long talons for digging into terrain."
 	name = "chitinous talons"
 	icon_state = "lingarmor"
-	actions_types = list(/datum/action/item_action/toggle_talons)
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling/armored)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_talons)))
 
 /obj/item/clothing/gloves/combat/changeling //Combined insulated/fireproof gloves
 	name = "chitinous gauntlets"

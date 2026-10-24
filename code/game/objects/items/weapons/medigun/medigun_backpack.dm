@@ -7,7 +7,6 @@
 	icon_state = "mg-backpack"
 	item_state = "mg-backpack-onmob"
 	w_class = ITEMSIZE_HUGE
-	unacidable = TRUE
 
 	var/medigun_path = /obj/item/bork_medigun/linked
 	var/obj/item/cell/bcell = /obj/item/cell
@@ -35,6 +34,7 @@
 
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = TRUE))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))

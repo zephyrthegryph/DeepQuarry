@@ -44,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "is smashed into pieces!"))
 	configure(mob_movement(swap = 0, push = 0))

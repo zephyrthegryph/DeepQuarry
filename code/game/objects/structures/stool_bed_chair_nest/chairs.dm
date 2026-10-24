@@ -5,8 +5,6 @@
 	icon_state = "chair_preview"
 	color = "#666666"
 	base_icon = "chair"
-	buckle_dir = 0
-	buckle_lying = 0 //force people to sit up in chairs when src?.buckled_to()
 	var/propelled = 0 // Check for fire-extinguisher-driven chairs
 	/// Whether anyone is buckled to it (the armrests are drawn over the rider).
 	var/occupied = FALSE
@@ -19,6 +17,7 @@ MSG_DEF_SELF(chair/kit_unready, "The kit is not ready to be attached!")
 MSG_DEF_SELF(chair/padded, "Take the padding off first.")
 
 CAPABILITIES(/obj/structure/bed/chair)
+	configure(buckle_rules(dir = 0, lying = 0))
 	after_init(0, then(PROC_REF(init_update_layer)))
 	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
 		needs(req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
@@ -199,9 +198,11 @@ CAPABILITIES(/obj/structure/bed/chair)
 
 /obj/structure/bed/chair/office
 	anchored = FALSE
-	buckle_movable = 1
 	can_pad = FALSE
 	can_unpad = FALSE
+
+CAPABILITIES(/obj/structure/bed/chair/office)
+	configure(buckle_rules(movable = 1))
 
 /// Draws none of what the types above draw.
 /obj/structure/bed/chair/office/look_parts(datum/look/look)
@@ -690,7 +691,9 @@ CAPABILITIES(/obj/structure/bed/chair/sofa/bench)
 	desc = "Like a normal chair, but more stationary."
 	icon_state = "bay_chair_preview"
 	base_icon = "bay_chair"
-	buckle_movable = 1
+
+CAPABILITIES(/obj/structure/bed/chair/bay/chair)
+	configure(buckle_rules(movable = 1))
 
 /obj/structure/bed/chair/bay/chair/padded/red
 	padding_key = MAT_CARPET
@@ -777,9 +780,11 @@ CAPABILITIES(/obj/structure/bed/chair/sofa/bench)
 	desc = "A comfortable, secure seat. It has a sturdy-looking buckling system for smoother flights."
 	base_icon = "shuttle_chair"
 	icon_state = "shuttle_chair_preview"
-	buckle_movable = 0
 	var/buckling_sound = SFX_EFFECTS_METAL_CLOSE
 	var/padding = MAT_CLOTH_BLUE
+
+CAPABILITIES(/obj/structure/bed/chair/bay/shuttle)
+	configure(buckle_rules(movable = 0))
 
 /obj/structure/bed/chair/bay/shuttle
 	padding_key = MAT_CLOTH_BLUE

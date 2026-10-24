@@ -5,12 +5,9 @@
 	var/metabolism = 0.0015
 	var/fuzzy = 0						// Preference toggle for sharp/fuzzy icon.
 	EXPIRY_DECLARE(next_preyloop) // For Fancy sound internal loop
-	var/adminbus_trash = FALSE			// For abusing trash eater for event shenanigans.
 	var/vis_height = 32					// Sprite height used for resize features.
-	var/appendage_color = "#e03997" //Default pink. Used for the 'long_vore' trait.
 	var/list/trait_injection_reagents	//List of all the reagents allowed to be used for injection via venom bite. Lazy.
 
-	var/parasitic = FALSE					//Digestion immunity and nutrition leeching variable
 
 
 /mob/living/proc/handle_special_unlocks()
@@ -1008,7 +1005,7 @@
 		to_chat(src, span_notice("You are not holding anything."))
 		return
 
-	if(is_type_in_list(I, GLOB.edible_trash) || adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && HAS_SYNTHETIC_BIOLOGY(src)) // adds edible tech for synth
+	if(is_type_in_list(I, GLOB.edible_trash) || living_rules_of(src).adminbus_trash || is_type_in_list(I,GLOB.edible_tech) && HAS_SYNTHETIC_BIOLOGY(src)) // adds edible tech for synth
 		if(!I.on_trash_eaten(src)) // shows object's rejection message itself (or eats it later)
 			return
 		swallow_trash(I)
@@ -1843,8 +1840,8 @@
 	set name = "Restrict Trash Eater"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Toggle Trash Eater restriction level."
-	adminbus_trash = !adminbus_trash
-	to_chat(src, span_vwarning("Trash Eater restriction level set to [adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))
+	set_adminbus_trash(!living_rules_of(src).adminbus_trash)
+	to_chat(src, span_vwarning("Trash Eater restriction level set to [living_rules_of(src).adminbus_trash ? "everything not blacklisted" : "only whitelisted items"]."))
 
 /mob/living/proc/liquidbelly_visuals()
 	set name = "Toggle Liquidbelly Visuals"

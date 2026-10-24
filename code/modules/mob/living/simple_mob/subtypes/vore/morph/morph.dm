@@ -37,7 +37,6 @@
 	attacktext = "glomped"
 	attack_sound = SFX_EFFECTS_BLOBATTACK
 
-	meat_amount = 0
 
 	vore_active = 1
 	vore_default_mode = DM_HOLD
@@ -59,6 +58,7 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	configure(butchery_rules(meat_amount = 0))
 	ref_one(nameof(form), /atom/movable)
 	ref_one(nameof(original_mind), /datum/mind)
 	configure(mob_movement(bump = SLIME))

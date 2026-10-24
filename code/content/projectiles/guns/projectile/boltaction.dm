@@ -156,6 +156,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/surplus)
 	pump_rifle_verb_scope(user)
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
+	configure(movable_motion(icon_height = 32))
 	op("pump_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(pump_rifle_verb_scope_op)))
 
 /// The pump_rifle_verb_scope op: the verb's effect, as the old resolver ran it.

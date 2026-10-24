@@ -4,7 +4,6 @@
 
 	combat_mode = TRUE
 
-	low_sorting_priority = TRUE
 
 	species_at_make = SPECIES_HUMAN // its species (a constructor argument still wins)
 
@@ -33,6 +32,7 @@
 
 // Its outfit: each to_wear_* var names what it starts wearing in that slot (null: nothing), so a subtype only changes the vars.
 CAPABILITIES(/mob/living/carbon/human/ai_controlled)
+	configure(living_rules(low_sorting_priority = TRUE))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
 	wears(nameof(to_wear_suit), SLOT_ID_SUIT)

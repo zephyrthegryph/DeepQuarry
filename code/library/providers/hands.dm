@@ -45,6 +45,8 @@
 /// A carbon mob grants what its species declares while its species relation names it (the relation scope, scopes.dm): a species change is a write
 /// of the var and everything the old species gave goes in the same step.
 CAPABILITIES(/mob/living/carbon)
+	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
+	configure(living_rules(fire_heats_body = TRUE))
 	setup(PROC_REF(alias_bloodstream))
 	ref_one(nameof(bloodstr), /datum/reagents/metabolism/bloodstream)
 	cooldowns(taste_cooldown, taste_repeat_cooldown)

@@ -21,7 +21,6 @@ MSG_DEF(turretid/shorted, "You short out the turret controls' access analysis mo
 	icon_state = "control_standby"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	var/enabled = FALSE
 	var/lethal = FALSE
 	var/lethal_is_configurable = TRUE
@@ -55,6 +54,7 @@ MSG_DEF(turretid/shorted, "You short out the turret controls' access analysis mo
 	icon_state = "control_kill"
 
 CAPABILITIES(/obj/machinery/turretid)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(resolve_control_area))
 	machine_basics(repair = NONE)
 	links(/obj/machinery/turretid::control_area, /area::turret_controls, b_many = TRUE)

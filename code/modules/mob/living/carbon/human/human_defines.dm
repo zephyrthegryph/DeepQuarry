@@ -36,7 +36,6 @@
 	var/mob/living/carbon/human/vr_link = null
 
 
-	butchery_loot = list(/obj/item/stack/animalhide/human = 1)
 
 	// Horray Furries!
 	var/datum/sprite_accessory/ears/ear_style = null
@@ -73,7 +72,6 @@
 	var/sensorpref = 5		//Suit sensor loadout pref
 	var/wings_hidden = FALSE
 	var/tail_hidden = FALSE
-	var/low_sorting_priority = FALSE
 
 	var/list/body_writing // assoc list by BP_ key
 

@@ -15,7 +15,6 @@
 
 	w_class = ITEMSIZE_NORMAL
 
-	throw_speed = 1
 	throw_range = 4
 
 	var/datum/gas_mixture/air_contents = null
@@ -40,6 +39,7 @@
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	configure(movable_motion(throw_speed = 1))
 	setup(PROC_REF(start_up))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 10.0))

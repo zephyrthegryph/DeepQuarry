@@ -46,7 +46,7 @@
 		see_invisible = initial(see_invisible)
 		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
-		force_max_speed = initial(force_max_speed)
+		set_force_max_speed(living_rules_of_type(type).force_max_speed)
 
 		//Cosmetics mostly
 		flick("phasein",src)
@@ -128,7 +128,7 @@
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
-	force_max_speed = initial(force_max_speed)
+	set_force_max_speed(living_rules_of_type(type).force_max_speed)
 	var/original_canmove = canmove
 	set_canmove(FALSE)
 	set_is_shifting(TRUE)
@@ -147,7 +147,7 @@
 	set_canmove(original_canmove)
 	set_incorporeal_move(TRUE)
 	set_density(FALSE)
-	force_max_speed = TRUE
+	set_force_max_speed(TRUE)
 
 	after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
 /// Phase-in animation done: maybe grab someone on arrival.
@@ -313,7 +313,7 @@
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
-	force_max_speed = initial(force_max_speed)
+	set_force_max_speed(living_rules_of_type(type).force_max_speed)
 	var/original_canmove = canmove
 	set_canmove(FALSE)
 	set_is_shifting(TRUE)

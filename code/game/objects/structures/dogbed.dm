@@ -4,5 +4,3 @@
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "dogbed"
 	can_buckle = TRUE
-	buckle_dir = SOUTH
-	buckle_lying = 1

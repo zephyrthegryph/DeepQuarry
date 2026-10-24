@@ -53,7 +53,7 @@
 		if(!cooldown_ready(src, next_emote))
 			to_chat(src, span_warning("You cannot use another emote yet."))
 			return
-		if(forced_psay)
+		if(mob_rules_of(src).forced_psay)
 			pme(message)
 			return
 		if(sparse_get_or(src, autowhisper, FALSE))

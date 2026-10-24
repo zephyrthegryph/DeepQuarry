@@ -294,7 +294,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return OP_OK
-		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && sparse_get_or(W, trash_eatable, TRUE) && !is_type_in_list(W, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && sparse_get_or(W, trash_eatable, TRUE) && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
 			vore_selected_of(gargoyle).nom_atom(W)
@@ -326,7 +326,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	if(isitem(source) && vore_selected_of(gargoyle) && sparse_get_or(gargoyle, trash_catching, FALSE))
 		var/obj/item/I = source
-		if(gargoyle.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && sparse_get_or(I, trash_eatable, TRUE) && !is_type_in_list(I, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && sparse_get_or(I, trash_eatable, TRUE) && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)
 			return
 	else if(isliving(source))

@@ -41,7 +41,6 @@
 		. = FALSE
 
 /obj/item/gun/energy/kinetic_accelerator
-	conflict_id = CONFLICT_ELEMENT_KA
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."
 	icon_state = "kineticgun"
@@ -101,6 +100,7 @@
 		M.uninstall(src, FALSE)
 
 CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	configure(atom_rules(conflict_id = CONFLICT_ELEMENT_KA))
 	setup(PROC_REF(empty_initial_charge))
 	configure(item_worn(flags = NONE))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))

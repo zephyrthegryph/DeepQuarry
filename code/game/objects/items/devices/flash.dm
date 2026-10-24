@@ -5,7 +5,6 @@
 	icon_state = "flash"
 	item_state = "flashtool"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 4
 	throw_range = 10
 
 	///Number of times it's been used.
@@ -44,6 +43,7 @@
 
 
 CAPABILITIES(/obj/item/flash)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(power_supply), starts = nameof(cell_type))

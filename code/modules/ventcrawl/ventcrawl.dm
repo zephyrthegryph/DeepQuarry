@@ -194,8 +194,8 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 						return
 
 			// Handle animation delay
-			fade_towards(vent_found, vent_crawl_time)
-			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = vent_crawl_time))
+			fade_towards(vent_found, mob_rules_of(src).vent_crawl_time)
+			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = mob_rules_of(src).vent_crawl_time))
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

@@ -7,7 +7,6 @@
 // for movement.
 
 /mob/living/simple_mob/illusion
-	use_modern_ai = TRUE
 	ai_attack_on_sight = FALSE
 
 // Intentionally empty: controlled externally.

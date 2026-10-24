@@ -18,10 +18,12 @@
 // all still live on the mob and are reused unchanged.
 
 /mob/living/simple_mob/vore/scrubble
-	use_modern_ai = TRUE
 	// Skittish: prey, not an on-sight aggressor. It only engages (to flee/pounce)
 	// targets it has reason to react to, picked by the selector below.
 	ai_attack_on_sight = TRUE   // legacy holder was /hostile, so it does react
+
+CAPABILITIES(/mob/living/simple_mob/vore/scrubble)
+	configure(living_rules(use_modern_ai = TRUE))
 
 /mob/living/simple_mob/vore/scrubble/initialize_ai_brain()
 	. = ..()

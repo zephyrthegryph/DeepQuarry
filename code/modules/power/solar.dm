@@ -12,7 +12,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	icon_state = "sp_base"
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	var/id = 0
 	/// Power this panel last reported to its controller (was the controller's connected_panels[panel] value).
@@ -39,6 +38,7 @@ MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes t
 // its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
 // takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_reinforced_integrity))
 	configure(uses_power(idle = 0, active = 0))
 	climb()

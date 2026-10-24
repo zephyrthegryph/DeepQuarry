@@ -35,7 +35,6 @@
 	heat_damage_per_tick = 3
 	cold_damage_per_tick = 3
 
-	meat_amount = 2
 	holder_type = /obj/item/holder/armadillo
 
 	speak_emote = list("rumbles", "chirr?", "churr")
@@ -46,6 +45,7 @@
 
 //Hat simulator stolen from slime code.
 CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
+	configure(butchery_rules(meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "sand"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)

@@ -9,7 +9,6 @@
 	icon_state = "bullet"
 	density = FALSE
 	anchored = TRUE
-	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
@@ -26,6 +25,9 @@
 	submunitions = list(
 		/obj/item/projectile/bullet/pellet/shotgun/flak = 3
 		)
+
+CAPABILITIES(/obj/item/projectile/scatter)
+	configure(movable_motion(unacidable = TRUE))
 
 /*
  * Energy

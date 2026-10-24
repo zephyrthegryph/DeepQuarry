@@ -6,9 +6,7 @@
 	icon_state = "grinder"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	req_access = list(ACCESS_KITCHEN,ACCESS_MORGUE)
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 
 	var/operating = 0 //Is it on?
 	var/dirty = 0 // Does it need cleaning?
@@ -87,6 +85,8 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 	return
 
 CAPABILITIES(/obj/machinery/gibber)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(wrench_time = 4 SECONDS))
 	configure(uses_power(idle = 2, active = 500))
 	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing))), then(PROC_REF(gibber_interaction_hand)))
@@ -239,11 +239,11 @@ CAPABILITIES(/obj/machinery/gibber)
 	set_operating(1)
 
 	var/slab_name = occupant.name
-	var/slab_count = 2 + occupant.meat_amount
+	var/slab_count = 2 + butchery_of(occupant).meat_amount
 	var/slab_type = occupant.meat_type ? occupant.meat_type : /obj/item/reagent_containers/food/snacks/meat
 	var/slab_nutrition = nutrition_of(occupant) / 15
 
-	var/list/byproducts = occupant?.butchery_loot?.Copy()
+	var/list/byproducts = butchery_of(occupant).butchery_loot?.Copy()
 
 	if(ishuman(occupant))
 		var/mob/living/carbon/human/H = occupant
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/machinery/gibber)
 			new_meat.name = "[slab_name] [new_meat.name]"
 			new_meat.reagents.add_reagent(REAGENT_ID_NUTRIMENT,slab_nutrition)
 			if(occupant.reagents)
-				occupant.reagents.trans_to_obj(new_meat, round(occupant.reagents.total_volume/(2 + occupant.meat_amount),1))
+				occupant.reagents.trans_to_obj(new_meat, round(occupant.reagents.total_volume/(2 + butchery_of(occupant).meat_amount),1))
 
 	add_attack_logs(user,occupant,"Used [src] to gib")
 

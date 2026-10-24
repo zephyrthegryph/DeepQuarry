@@ -29,7 +29,6 @@
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 	grab_resist = 100
 	faction = FACTION_ECLIPSE
 	size_multiplier = 2
@@ -40,6 +39,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 
 /mob/living/simple_mob/vore/fossiltank/emp_act
@@ -121,7 +121,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 	grab_resist = 100
 
 	faction = FACTION_TYR_ANT
@@ -141,6 +140,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(chain_target), /atom)
 	configure(light_glow(color = "#14ff20"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))

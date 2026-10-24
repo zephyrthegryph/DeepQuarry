@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 
 	if(src?.buckled_to())
 		var/obj/Ob = src?.buckled_to()
-		if(Ob.buckle_lying)
+		if(buckle_of(Ob).lying)
 			to_chat(M, span_notice("You cannot use your augments when restrained."))
 			return 0
 

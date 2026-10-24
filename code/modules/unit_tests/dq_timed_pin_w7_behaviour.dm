@@ -627,20 +627,20 @@
 	user.put_in_active_hand(K)
 	crab.set_stat(DEAD)
 	var/turf/spot = get_turf(crab)
-	var/start_meat = crab.meat_amount
+	var/start_meat = butchery_of(crab).meat_amount
 	TEST_ASSERT(start_meat >= 3, "setup: the crab has meat on it")
 	test_click(user, crab, K)
 	h_started(user, 0.5 SECONDS * (crab.mob_size / 10))
 	test_click(user, crab, K)
 	TEST_ASSERT_EQUAL(running_count(user), 1, "a second click while it is cut starts nothing more")
 	test_time(0.3 SECONDS)
-	TEST_ASSERT_EQUAL(crab.meat_amount, start_meat, "no meat is taken before the first cut ends")
+	TEST_ASSERT_EQUAL(butchery_of(crab).meat_amount, start_meat, "no meat is taken before the first cut ends")
 	test_time(0.3 SECONDS)
-	TEST_ASSERT_EQUAL(crab.meat_amount, start_meat - 1, "one cut of meat is taken after the first interval")
+	TEST_ASSERT_EQUAL(butchery_of(crab).meat_amount, start_meat - 1, "one cut of meat is taken after the first interval")
 	test_time(1.0 SECONDS)
-	TEST_ASSERT_EQUAL(crab.meat_amount, start_meat - 3, "a cut per interval")
+	TEST_ASSERT_EQUAL(butchery_of(crab).meat_amount, start_meat - 3, "a cut per interval")
 	test_time(3 SECONDS)
-	TEST_ASSERT_EQUAL(crab.meat_amount, 0, "all the meat is cut")
+	TEST_ASSERT_EQUAL(butchery_of(crab).meat_amount, 0, "all the meat is cut")
 	var/meat_count = 0
 	for(var/obj/item/reagent_containers/food/snacks/crabmeat/M in range(1, spot))
 		meat_count++
@@ -658,13 +658,13 @@
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	user.put_in_active_hand(K)
 	crab.set_stat(DEAD)
-	var/start_meat = crab.meat_amount
+	var/start_meat = butchery_of(crab).meat_amount
 	test_click(user, crab, K)
 	var/datum/T = h_started(user)
 	test_time(0.2 SECONDS)
 	h_step_away(user)
 	test_time(5 SECONDS)
-	TEST_ASSERT_EQUAL(crab.meat_amount, start_meat, "moving cancels the first cut: no meat is taken")
+	TEST_ASSERT_EQUAL(butchery_of(crab).meat_amount, start_meat, "moving cancels the first cut: no meat is taken")
 	TEST_ASSERT(!QDELETED(crab), "the animal is not butchered")
 	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 

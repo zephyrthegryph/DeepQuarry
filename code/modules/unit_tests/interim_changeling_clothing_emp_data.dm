@@ -35,8 +35,8 @@
 	var/turf/T = test_floor()
 	var/obj/item/biological = allocate(protected_item_type, T)
 	var/obj/item/control = allocate(parent_item_type, T)
-	TEST_ASSERT_EQUAL(biological.emp_protection_flags, EMP_PROTECT_SELF, "Actual fabricated clothing retains only the original self-protection bit")
-	TEST_ASSERT_EQUAL(control.emp_protection_flags, NONE, "The actual parent control has no biological EMP protection")
+	TEST_ASSERT_EQUAL(atom_rules_of(biological).emp_protection, EMP_PROTECT_SELF, "Actual fabricated clothing retains only the original self-protection bit")
+	TEST_ASSERT_EQUAL(atom_rules_of(control).emp_protection, NONE, "The actual parent control has no biological EMP protection")
 	TEST_ASSERT(!biological.canremove, "The actual fabricated subtype retains its biological removal restriction")
 	var/list/choices
 	switch(parent_item_type)

@@ -216,11 +216,11 @@
 				sparse_set_or(L, muffled, FALSE, FALSE)
 
 			//Force psay
-			if((mode_flags & DM_FLAG_FORCEPSAY) && !L.forced_psay && L.absorbed)
-				L.forced_psay = TRUE
+			if((mode_flags & DM_FLAG_FORCEPSAY) && !mob_rules_of(L).forced_psay && L.absorbed)
+				L.set_forced_psay(TRUE)
 			//Fix forcepsay sometimes being sticky.
-			else if(!(mode_flags & DM_FLAG_FORCEPSAY) && L.forced_psay)
-				L.forced_psay = FALSE
+			else if(!(mode_flags & DM_FLAG_FORCEPSAY) && mob_rules_of(L).forced_psay)
+				L.set_forced_psay(FALSE)
 
 			// Wet flag
 			if(mode_flags & DM_FLAG_WETTENS)

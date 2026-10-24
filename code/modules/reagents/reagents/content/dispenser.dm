@@ -522,7 +522,7 @@
 	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_HEAD), GLOB.item_digestion_blacklist))
+			if(motion_of(H.get_equipped_item(SLOT_ID_HEAD)).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_HEAD), GLOB.item_digestion_blacklist))
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] protects you from the acid."))
 				remove_self(volume)
 				return
@@ -534,7 +534,7 @@
 			return
 
 		if(H.get_equipped_item(SLOT_ID_MASK))
-			if(H.get_equipped_item(SLOT_ID_MASK).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_MASK), GLOB.item_digestion_blacklist))
+			if(motion_of(H.get_equipped_item(SLOT_ID_MASK)).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_MASK), GLOB.item_digestion_blacklist))
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] protects you from the acid."))
 				remove_self(volume)
 				return
@@ -546,7 +546,7 @@
 			return
 
 		if(H.get_equipped_item(SLOT_ID_EYES))
-			if(H.get_equipped_item(SLOT_ID_EYES).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_EYES), GLOB.item_digestion_blacklist))
+			if(motion_of(H.get_equipped_item(SLOT_ID_EYES)).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_EYES), GLOB.item_digestion_blacklist))
 				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] partially protect you from the acid!"))
 				removed /= 2
 			else if(removed > meltdose)
@@ -573,7 +573,7 @@
 	if(volume < meltdose) // Not enough to melt anything
 		M.injure(injury_kind, removed * power * 0.2, source = src) //Chemical burns. Acid doesn't make bones shatter, like brute trauma would.
 		return
-	if(!M.unacidable && removed > 0)
+	if(!motion_of(M).unacidable && removed > 0)
 		if(ishuman(M) && volume >= meltdose)
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/external/affecting = H.get_organ(BP_HEAD)
@@ -599,7 +599,7 @@
 				B.owner_adjust_nutrition((B.nutrition_percent / 100) * 5 * spent_amt)
 			return
 	..()
-	if(O.unacidable || is_type_in_list(O, GLOB.item_digestion_blacklist))
+	if(motion_of(O).unacidable || is_type_in_list(O, GLOB.item_digestion_blacklist))
 		return
 	if((istype(O, /obj/item) || istype(O, /obj/effect/plant)) && (volume > meltdose))
 		var/obj/effect/decal/cleanable/molten_item/I = new/obj/effect/decal/cleanable/molten_item(O.loc)

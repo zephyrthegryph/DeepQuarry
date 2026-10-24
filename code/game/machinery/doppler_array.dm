@@ -1,5 +1,4 @@
 /obj/machinery/doppler_array
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	anchored = TRUE
 	name = "tachyon-doppler array"
 	density = TRUE
@@ -31,6 +30,7 @@
 MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
 
 CAPABILITIES(/obj/machinery/doppler_array)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(attach_experiment_handler))
 	setup(PROC_REF(listen_for_explosions))
 	interface("DopplerArray")

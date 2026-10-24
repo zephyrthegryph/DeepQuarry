@@ -43,7 +43,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	icon_state = "generic"
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 
 	// Power
 	use_power = USE_POWER_IDLE
@@ -116,6 +115,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON))
 	click_order(BIND_HAND, "ui_open", "check_logs")
 	setup(PROC_REF(prepare_vendor_inventory))

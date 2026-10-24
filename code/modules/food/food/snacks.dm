@@ -1735,7 +1735,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	H.set_species(monkey_type)
 	H.set_real_name(H.species.get_random_name())
 	H.name = H.real_name
-	H.low_sorting_priority = TRUE
+	H.set_low_sorting_priority(TRUE)
 	H.species.produceCopy(H.species.traits.Copy(),H,null,FALSE)
 	if(ismob(loc))
 		var/mob/M = loc
@@ -4558,15 +4558,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/macncheese)
 ////////////////////////////////////////////////////////////////////////////////
 
 /mob/living
-	var/composition_reagent
 
 ///mob/living/simple_mob/adultslime	//The literal only thing in the game that uses this is commented out, so I comment out this too
 
 /mob/living/carbon/alien/diona
-	composition_reagent = REAGENT_ID_NUTRIMENT//Dionae are plants, so eating them doesn't give animal protein
 
 /mob/living/simple_mob/slime
-	composition_reagent = REAGENT_ID_SLIMEJELLY
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals

@@ -16,7 +16,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_amount = 15
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	//Space dragons aren't affected by atmos.
@@ -42,10 +41,7 @@
 	pixel_y = 0
 	mount_offset_y = 15
 	mount_offset_x = -12
-	max_buckled_mobs = 1
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	say_list_type = /datum/say_list/dragonboss
 
@@ -112,6 +108,8 @@
 	has_eye_glow = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
+	configure(butchery_rules(meat_amount = 15))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

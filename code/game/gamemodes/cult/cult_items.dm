@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/melee/cultblade)
 		to_chat(user, span_critical("The blade hisses, forcing itself from your manipulators. \The [src] will only allow mortals to wield it against foes, not kin."))
 
 	user.drop_from_inventory(src, src.loc)
-	throw_at(get_edge_target_turf(src, pick(GLOB.alldirs)), rand(1,3), throw_speed)
+	throw_at(get_edge_target_turf(src, pick(GLOB.alldirs)), rand(1,3), motion_of(src).throw_speed)
 
 	var/spooky = SFX_HALLUCINATIONS_GROWL_MIX
 	playsound(src, spooky, 50, 1)

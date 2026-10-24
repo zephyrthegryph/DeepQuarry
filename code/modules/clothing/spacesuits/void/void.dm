@@ -9,7 +9,6 @@
 
 	//Species-specific stuff.
 	sprite_sheets = VR_SPECIES_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = VR_SPECIES_SPRITE_SHEETS_HEAD_ITEM
 
 	light_overlay = "helmet_light"
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
@@ -24,9 +23,7 @@
 	slowdown = 0.5
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	special_hood_handling = TRUE
-	actions_types = list(/datum/action/item_action/toggle_helmet)
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
 
 	//Breach thresholds, should ideally be inherited by most (if not all) voidsuits.
 	//With 0.2 resiliance, will reach 10 breach damage after 3 laser carbine blasts or 8 smg hits.
@@ -56,6 +53,7 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet), sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))
 	fits_as(FIT_HUMANOID_HYBRID_SKRELL)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
@@ -370,10 +368,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = null
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 	fits_as(FIT_NO_DIONA_VOX)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 1))
@@ -439,9 +437,9 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 	icon_state = "autolokhelmet"
 	item_state = "autolokhelmet"
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 	fits_as(FIT_NO_DIONA_VOX)
 	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 

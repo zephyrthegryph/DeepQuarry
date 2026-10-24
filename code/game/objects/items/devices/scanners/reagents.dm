@@ -6,13 +6,13 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "spectrometer"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 4
 	throw_range = 20
 
 	var/details = 0
 	var/recent_fail = 0
 
 CAPABILITIES(/obj/item/reagent_scanner)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))

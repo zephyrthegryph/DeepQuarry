@@ -13,11 +13,11 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	icon_state = "std_mod"
 	desc = "An AI Module for transmitting encrypted instructions to the AI."
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 3
 	throw_range = 15
 	var/datum/ai_laws/laws = null
 
 CAPABILITIES(/obj/item/aiModule)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_handling(preserve = 1))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))

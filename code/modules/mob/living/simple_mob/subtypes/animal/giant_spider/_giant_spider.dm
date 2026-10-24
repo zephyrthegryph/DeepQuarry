@@ -97,7 +97,6 @@
 
 	speak_emote = list("chitters")
 
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	say_list_type = /datum/say_list/spider
@@ -112,9 +111,6 @@
 	var/poison_chance = 10			// Chance for injection to occur.
 	var/poison_per_bite = 5			// Amount added per injection.
 
-	butchery_loot = list(\
-		/obj/item/stack/material/chitin = 1\
-		)
 
 	species_sounds = "Spider"
 
@@ -124,6 +120,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	configure(butchery_rules(meat_amount = 5, butchery_loot = list( /obj/item/stack/material/chitin = 1 )))
 	configure(mob_nature(pain_1p = list("chitter", "click"), pain_3p = list("chitters", "clicks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_movement(no_pull_when_living = TRUE))

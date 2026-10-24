@@ -27,7 +27,6 @@
 	icon_state = "weeds"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	var/delete_me
@@ -132,6 +131,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/effect/alien/weeds)
+	configure(movable_motion(unacidable = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))

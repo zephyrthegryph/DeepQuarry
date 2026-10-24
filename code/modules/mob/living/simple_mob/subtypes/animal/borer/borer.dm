@@ -23,7 +23,6 @@
 	movement_cooldown = 1.5
 	mob_size = MOB_TINY // no landmines for you
 
-	universal_understand = TRUE
 
 	holder_type = /obj/item/holder/borer
 
@@ -41,7 +40,6 @@
 	var/has_reproduced = FALSE
 	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
 
-	vent_crawl_time = 30 						// faster vent crawler
 
 	var/static/borer_chem_list = list(
 			// Antag utlity

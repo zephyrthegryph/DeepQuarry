@@ -38,7 +38,6 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 
-	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	harm_intent_damage = 5
@@ -51,6 +50,7 @@
 	species_sounds = "Vulpine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	configure(butchery_rules(meat_amount = 2))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

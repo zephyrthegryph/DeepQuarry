@@ -36,7 +36,6 @@
 	minbodytemp = 175
 	endurance = 200
 
-	universal_understand = 1
 
 	movement_cooldown = -1
 
@@ -46,7 +45,6 @@
 	attacktext = list("gouged", "bit", "cut", "clawed", "whipped")
 
 	organ_names = /datum/decl/mob_organ_names/kururak
-	meat_amount = 5
 
 	armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100"
 
@@ -93,6 +91,9 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(butchery_rules(meat_amount = 5))
+	configure(mob_rules(universal_understand = 1))
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.

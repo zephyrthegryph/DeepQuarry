@@ -12,7 +12,7 @@
 		I.inhabit_item(src, object_name, src, allow_emotes)
 		var/mob/living/possessed_voice = I.possessed_voice
 		sparse_set(I, trash_eatable, vore_prefs.devourable)
-		I.unacidable = !vore_prefs.digestable
+		I.set_unacidable(!vore_prefs.digestable)
 		forceMove(possessed_voice)
 
 /mob/living/proc/mob_belly_transfer(mob/living/M)
@@ -139,7 +139,7 @@
 	//It can be used for other things, but be advised, if you're using it to put a simplemob into a carbon mob, you're gonna be overriding a bunch of prefs
 
 	new_mob.share_identity(identity()) // the character's OOC notes, by reference
-	new_mob.appendage_color = appendage_color
+	new_mob.set_appendage_color(living_rules_of(src).appendage_color)
 	sparse_set_or(new_mob, appendage_alt_setting, sparse_get_or(src, appendage_alt_setting, FALSE), FALSE)
 
 	record_copy(new_mob.vore_prefs, vore_prefs)

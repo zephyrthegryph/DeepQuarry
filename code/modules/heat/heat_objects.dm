@@ -187,15 +187,12 @@ CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key
 	/// The power goes into the machine's heat body, which passes it to its
 	/// surroundings; above its heat limit the overheating rule damages it.
 	var/heat_output = 0
-	/// Declared heat dissipation: conductance to the surroundings, W/K. Null
-	/// keeps the default. Sets how far above ambient heat_output runs it.
-	var/heat_dissipation
 	/// Watts currently fed to the heat body by set_heat_output().
 
 /obj/machinery/thermal_properties()
 	. = ..()
-	if(heat_dissipation)
-		.[THERMAL_CONDUCTANCE] = heat_dissipation
+	if(machine_rules_of(src).heat_dissipation)
+		.[THERMAL_CONDUCTANCE] = machine_rules_of(src).heat_dissipation
 
 /// Watts the machine emits right now. Subtypes scale it by load.
 /obj/machinery/proc/current_heat_output()

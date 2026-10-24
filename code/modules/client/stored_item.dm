@@ -317,6 +317,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/adv)
 	persist_storable = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void)
+	configure(item_rules(sprite_sheets_obj = VR_SPECIES_SPRITE_SHEETS_HEAD_ITEM))
 	fits_as(FIT_HUMANOID_HYBRID)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 /obj/item/clothing/suit/space/void

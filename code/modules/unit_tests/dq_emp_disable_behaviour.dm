@@ -88,7 +88,7 @@
 	TEST_ASSERT(!p2e_gps_sees(watcher, G), "still off a few seconds on")
 	pass_time(4 SECONDS)
 	TEST_ASSERT(p2e_gps_sees(watcher, G), "back after its outage")
-	G.emp_protection_flags = EMP_PROTECT_SELF
+	G.set_emp_protection_flags(EMP_PROTECT_SELF)
 	G.emp_act(1)
 	pass_time(1 SECOND)
 	TEST_ASSERT(p2e_gps_sees(watcher, G), "a shielded GPS shrugs a pulse off")

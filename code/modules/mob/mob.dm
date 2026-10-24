@@ -816,7 +816,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return 0
 	set_dir(ndir)
 	var/obj/buckled = src?.buckled_to()
-	if(buckled && buckled.buckle_movable)
+	if(buckled && buckle_of(buckled).movable)
 		buckled.set_dir(ndir)
 	setMoveCooldown(movement_delay())
 	return 1

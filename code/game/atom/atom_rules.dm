@@ -64,3 +64,14 @@ READS_AS(/proc/atom_rules_of, ATOM_RULES_KEY)
 
 /atom/proc/set_light_system(value)
 	return set_trait(src, ENTRY_ATOM_RULES, "light_system", value)
+
+// Map variants of two computers that thrown things pass: the test map's former `throwpass = 1` var edits, now a type that declares it.
+/obj/machinery/computer/ship/engines/throwpass
+
+CAPABILITIES(/obj/machinery/computer/ship/engines/throwpass)
+	configure(atom_rules(throwpass = 1))
+
+/obj/machinery/computer/power_monitor/throwpass
+
+CAPABILITIES(/obj/machinery/computer/power_monitor/throwpass)
+	configure(atom_rules(throwpass = 1))

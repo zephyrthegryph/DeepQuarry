@@ -79,7 +79,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_control_standby"
 	density = FALSE
-	unacidable = TRUE
 	flags = WALL_ITEM
 
 	var/id_tag
@@ -89,6 +88,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	var/datum/radio_frequency/radio_connection
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio)
+	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(channel = ENVIRON))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 

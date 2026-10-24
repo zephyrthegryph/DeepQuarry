@@ -41,7 +41,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_amount = 8
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	old_x = -16
@@ -50,10 +49,7 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_x = 5
 	mount_offset_y = 30
 
@@ -70,6 +66,8 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	configure(butchery_rules(meat_amount = 8))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -130,7 +128,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
 	meat_type = /obj/item/reagent_containers/food/snacks/deathclawmeat
 
 /mob/living/simple_mob/metroid
-	meat_amount = 6
 	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
 /mob/living/simple_mob/metroid/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.

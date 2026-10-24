@@ -4,9 +4,9 @@
 	desc = "A jar. You're not sure what it's supposed to hold."
 	icon_state = "jar"
 	item_state = "beaker"
-	unacidable = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/jar)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(center_x = 15, center_y = 8))
 
 /obj/item/reagent_containers/food/drinks/jar/on_reagent_change()

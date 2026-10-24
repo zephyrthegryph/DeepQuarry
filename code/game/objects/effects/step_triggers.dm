@@ -305,10 +305,12 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "no_item1"
 	var/targetid = "Default"
-	unacidable = 1
 	layer = 99
 	anchored = 1
 	invisibility = INVISIBILITY_BADMIN
+
+CAPABILITIES(/obj/effect/autostriptarget)
+	configure(movable_motion(unacidable = 1))
 
 /obj/effect/autostriptarget/mob
 	name = "Autostrip target to send mobs to."

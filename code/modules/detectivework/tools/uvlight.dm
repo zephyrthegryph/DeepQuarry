@@ -5,7 +5,6 @@
 	icon_state = "uv_off"
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
-	actions_types = list(/datum/action/item_action/toggle_uv_light)
 	MATERIAL_BULK(MAT_STEEL, 150)
 
 	/// Scanned atom handle (ref_token) -> the invisibility it had before the scan.
@@ -20,6 +19,7 @@
 /obj/item/uv_light/var/on = FALSE
 
 CAPABILITIES(/obj/item/uv_light)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_uv_light)))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

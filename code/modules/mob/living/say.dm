@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		if(stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))
 			return say_dead(message)
 		return
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		psay(message)
 		return
 	//Maybe they are using say/whisper to do a quick emote, so do those

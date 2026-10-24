@@ -120,7 +120,6 @@ CAPABILITIES(/obj/item/clothing/mask/gas/swat)
 	desc = "Clearly not designed for a human face."
 	flags = PHORONGUARD
 	var/mask_open = FALSE	// Controls if the Vox can eat through this mask
-	actions_types = list(/datum/action/item_action/toggle_feeding_port)
 	helmet_handling = TRUE
 	special_handling = TRUE
 
@@ -140,6 +139,7 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, gasmask_filtered_gases, list(GA
 	return
 
 CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_feeding_port)))
 	fits_as(FIT_VOX)
 	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT))
 	op("vox_mask_port_self", in_hand(), label("Feeding port"), then(PROC_REF(vox_mask_port_self)))

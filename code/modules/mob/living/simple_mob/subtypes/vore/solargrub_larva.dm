@@ -15,9 +15,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	melee_damage_lower = 1	// This is a tiny worm. It will nibble and thats about it.
 	melee_damage_upper = 1
 
-	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat
-	butchery_loot = list()		// No hides
 
 	faction = FACTION_GRUBS
 
@@ -268,6 +266,7 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(butchery_rules(meat_amount = 1, butchery_loot = list()))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
 	verb_entry(/mob/living/proc/ventcrawl)

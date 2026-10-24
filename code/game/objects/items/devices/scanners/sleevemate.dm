@@ -8,7 +8,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	icon_state = "sleevemate"
 	item_state = "healthanalyzer"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 5
 	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 
@@ -96,6 +95,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

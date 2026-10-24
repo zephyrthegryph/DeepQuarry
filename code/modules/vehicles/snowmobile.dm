@@ -7,7 +7,6 @@
 	load_item_visible = 1
 	speed_mod = 0.6 //Speed on non-specially-defined tiles
 	car_limit = 0	//No trailers.
-	max_buckled_mobs = 2
 	active_engines = 1
 	key_type = /obj/item/key/snowmobile
 	outdoors_speed_mod = 0.7 //The general 'outdoors' speed. I.E., the general difference you'll be at when driving outside on ideal terrain (...Snow)
@@ -33,6 +32,7 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile/random)
 	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile)
+	configure(buckle_rules(max_mobs = 2))
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
 	op("snowmobile_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Buckle"), then(PROC_REF(interaction_snowmobile_drag)))
 	op("snowmobile_hand", hand(), then(PROC_REF(interaction_snowmobile_hand)))

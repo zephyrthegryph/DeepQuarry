@@ -11,19 +11,16 @@
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
 	var/tmp/datum/throw_source
-	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
 	var/item_state = null // Used to specify the item state for the on-mob overlays.
 	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
 	var/icon_rotation = DEFAULT_ICON_ROTATION // Used to rotate icons in update_transform()
-	var/icon_expected_height = 32
 	var/icon_expected_width = 32
 	var/old_x = 0
 	var/old_y = 0
 	var/datum/riding/riding_datum = null
-	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
 	// dq_get_cloaked(src) lives in code/datums/sparse_vars/movable_misc.dm
@@ -32,7 +29,6 @@
 	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
 	// recursive_listeners lives in code/datums/sparse_vars/movable_misc.dm
 	var/listening_recursive = NON_LISTENING_ATOM
-	var/unacidable = TRUE
 
 // ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
@@ -59,7 +55,7 @@
 		start_blocking_light()
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
 		update_transform()
-	switch(light_system)
+	switch(atom_rules_of(src).light_system)
 		if(MOVABLE_LIGHT)
 			add_overlay_lighting(src, starts_on = light_on)
 		if(MOVABLE_LIGHT_DIRECTIONAL)
@@ -71,7 +67,7 @@
 	. = ..()
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
-	if(light_system == STATIC_LIGHT)
+	if(atom_rules_of(src).light_system == STATIC_LIGHT)
 		update_light()
 	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
@@ -109,7 +105,7 @@
 		vg_entity = 0
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
-	if(light_system == STATIC_LIGHT && light)
+	if(atom_rules_of(src).light_system == STATIC_LIGHT && light)
 		rel_clear(src, nameof(light))
 	return ..()
 
@@ -602,7 +598,7 @@ SETTER(/atom/movable, anchored)
 	rel_set(src, nameof(throwing), TT)
 
 	set_pixel_z(0)
-	if(spin && does_spin)
+	if(spin && motion_of(src).does_spin)
 		SpinAnimation(4,1)
 
 	SSthrow_steps.kernel_join(TT) // code/datums/thrownthing.dm

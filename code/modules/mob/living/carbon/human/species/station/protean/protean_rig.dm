@@ -201,30 +201,11 @@ CAPABILITIES(/obj/item/rig/protean)
 		SPECIES_SHADEKIN		 = 'icons/mob/head.dmi',
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_PROTEAN			 = 'icons/mob/head.dmi',
-		SPECIES_HUMAN			 = 'icons/mob/head.dmi',
-		SPECIES_TAJARAN 		 = 'icons/mob/head.dmi',
-		SPECIES_SKRELL 			 = 'icons/mob/head.dmi',
-		SPECIES_UNATHI 			 = 'icons/mob/head.dmi',
-		SPECIES_XENOHYBRID		 = 'icons/mob/head.dmi',
-		SPECIES_AKULA 			 = 'icons/mob/head.dmi',
-		SPECIES_SERGAL			 = 'icons/mob/head.dmi',
-		SPECIES_NEVREAN			 = 'icons/mob/head.dmi',
-		SPECIES_VULPKANIN 		 = 'icons/mob/head.dmi',
-		SPECIES_ZORREN_HIGH 	 = 'icons/mob/head.dmi',
-		SPECIES_FENNEC 			 = 'icons/mob/head.dmi',
-		SPECIES_PROMETHEAN		 = 'icons/mob/head.dmi',
-		SPECIES_TESHARI 		 = 'icons/mob/head.dmi',
-		SPECIES_VASILISSAN		 = 'icons/mob/head.dmi',
-		SPECIES_VOX				 = 'icons/mob/head.dmi',
-		SPECIES_XENOMORPH_HYBRID = 'icons/mob/head.dmi',
-		SPECIES_SHADEKIN		 = 'icons/mob/head.dmi',
-		)
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_PROTEAN = 'icons/mob/head.dmi', SPECIES_HUMAN = 'icons/mob/head.dmi', SPECIES_TAJARAN = 'icons/mob/head.dmi', SPECIES_SKRELL = 'icons/mob/head.dmi', SPECIES_UNATHI = 'icons/mob/head.dmi', SPECIES_XENOHYBRID = 'icons/mob/head.dmi', SPECIES_AKULA = 'icons/mob/head.dmi', SPECIES_SERGAL = 'icons/mob/head.dmi', SPECIES_NEVREAN = 'icons/mob/head.dmi', SPECIES_VULPKANIN = 'icons/mob/head.dmi', SPECIES_ZORREN_HIGH = 'icons/mob/head.dmi', SPECIES_FENNEC = 'icons/mob/head.dmi', SPECIES_PROMETHEAN = 'icons/mob/head.dmi', SPECIES_TESHARI = 'icons/mob/head.dmi', SPECIES_VASILISSAN = 'icons/mob/head.dmi', SPECIES_VOX = 'icons/mob/head.dmi', SPECIES_XENOMORPH_HYBRID = 'icons/mob/head.dmi', SPECIES_SHADEKIN = 'icons/mob/head.dmi', )))
 	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
@@ -253,29 +234,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
 		SPECIES_SHADEKIN		 = 'icons/mob/hands.dmi'
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_HUMAN			 = 'icons/mob/hands.dmi',
-		SPECIES_TAJARAN 		 = 'icons/mob/hands.dmi',
-		SPECIES_SKRELL 			 = 'icons/mob/hands.dmi',
-		SPECIES_UNATHI 			 = 'icons/mob/hands.dmi',
-		SPECIES_XENOHYBRID		 = 'icons/mob/hands.dmi',
-		SPECIES_AKULA 			 = 'icons/mob/hands.dmi',
-		SPECIES_SERGAL			 = 'icons/mob/hands.dmi',
-		SPECIES_NEVREAN			 = 'icons/mob/hands.dmi',
-		SPECIES_VULPKANIN 		 = 'icons/mob/hands.dmi',
-		SPECIES_ZORREN_HIGH 	 = 'icons/mob/hands.dmi',
-		SPECIES_FENNEC 			 = 'icons/mob/hands.dmi',
-		SPECIES_PROMETHEAN		 = 'icons/mob/hands.dmi',
-		SPECIES_TESHARI 		 = 'icons/mob/hands.dmi',
-		SPECIES_VASILISSAN		 = 'icons/mob/hands.dmi',
-		SPECIES_VOX				 = 'icons/mob/hands.dmi',
-		SPECIES_XENOMORPH_HYBRID = 'icons/mob/hands.dmi',
-		SPECIES_SHADEKIN		 = 'icons/mob/hands.dmi'
-		)
 	icon = 'icons/inventory/hands/item.dmi'
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_HUMAN = 'icons/mob/hands.dmi', SPECIES_TAJARAN = 'icons/mob/hands.dmi', SPECIES_SKRELL = 'icons/mob/hands.dmi', SPECIES_UNATHI = 'icons/mob/hands.dmi', SPECIES_XENOHYBRID = 'icons/mob/hands.dmi', SPECIES_AKULA = 'icons/mob/hands.dmi', SPECIES_SERGAL = 'icons/mob/hands.dmi', SPECIES_NEVREAN = 'icons/mob/hands.dmi', SPECIES_VULPKANIN = 'icons/mob/hands.dmi', SPECIES_ZORREN_HIGH = 'icons/mob/hands.dmi', SPECIES_FENNEC = 'icons/mob/hands.dmi', SPECIES_PROMETHEAN = 'icons/mob/hands.dmi', SPECIES_TESHARI = 'icons/mob/hands.dmi', SPECIES_VASILISSAN = 'icons/mob/hands.dmi', SPECIES_VOX = 'icons/mob/hands.dmi', SPECIES_XENOMORPH_HYBRID = 'icons/mob/hands.dmi', SPECIES_SHADEKIN = 'icons/mob/hands.dmi' )))
 	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/hands.dmi'))
 	configure(item_protection(siemens = 0))
@@ -289,11 +252,11 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
 		SPECIES_VOX				 = 'icons/mob/species/vox/shoes.dmi',
 		SPECIES_XENOMORPH_HYBRID = 'icons/mob/species/xenomorph_hybrid/shoes.dmi'
 		)
-	sprite_sheets_obj = list()
 	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
+	configure(item_rules(sprite_sheets_obj = list()))
 	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/feet.dmi'))
 
@@ -308,11 +271,11 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
 		SPECIES_XENOMORPH_HYBRID = 'icons/mob/species/xenomorph_hybrid/suit.dmi'
 		)
 
-	sprite_sheets_obj = list()
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
+	configure(item_rules(sprite_sheets_obj = list()))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))
 	fits_as(FIT_PROTEAN_HARDSUIT)
 	configure(item_worn(worn_icon = 'icons/mob/spacesuit.dmi'))
@@ -665,25 +628,25 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
 		gloves.set_sprite_sheets(R.gloves.sprite_sheets.Copy())
-		gloves.sprite_sheets_obj = R.gloves.sprite_sheets_obj.Copy()
+		gloves.set_sprite_sheets_obj(item_rules_of(R.gloves).sprite_sheets_obj.Copy())
 		gloves.icon = R.gloves.icon
 		gloves.icon_state = R.gloves.icon_state
 		gloves.set_default_worn_icon(worn_of(R.gloves).worn_icon)
 	if(R.helmet)
 		helmet.set_sprite_sheets(R.helmet.sprite_sheets.Copy())
-		helmet.sprite_sheets_obj = R.helmet.sprite_sheets_obj.Copy()
+		helmet.set_sprite_sheets_obj(item_rules_of(R.helmet).sprite_sheets_obj.Copy())
 		helmet.icon = R.helmet.icon
 		helmet.icon_state = R.helmet.icon_state
 		helmet.set_default_worn_icon(worn_of(R.helmet).worn_icon)
 	if(R.boots)
 		boots.set_sprite_sheets(R.boots.sprite_sheets.Copy())
-		boots.sprite_sheets_obj = R.boots.sprite_sheets_obj.Copy()
+		boots.set_sprite_sheets_obj(item_rules_of(R.boots).sprite_sheets_obj.Copy())
 		boots.icon = R.boots.icon
 		boots.icon_state = R.boots.icon_state
 		boots.set_default_worn_icon(worn_of(R.boots).worn_icon)
 	if(R.chest)
 		chest.set_sprite_sheets(R.chest.sprite_sheets.Copy())
-		chest.sprite_sheets_obj = R.chest.sprite_sheets_obj.Copy()
+		chest.set_sprite_sheets_obj(item_rules_of(R.chest).sprite_sheets_obj.Copy())
 		chest.icon = R.chest.icon
 		chest.icon_state = R.chest.icon_state
 		chest.set_default_worn_icon(worn_of(R.chest).worn_icon)
@@ -716,13 +679,13 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
 		//If someone figures out a smarter way to do this, please tell me
 		var/obj/item/rig/tempRig = new /obj/item/rig/protean()
 		gloves.set_sprite_sheets(tempRig.gloves.sprite_sheets.Copy())
-		gloves.sprite_sheets_obj = tempRig.gloves.sprite_sheets.Copy()
+		gloves.set_sprite_sheets_obj(tempRig.gloves.sprite_sheets.Copy())
 		helmet.set_sprite_sheets(tempRig.helmet.sprite_sheets.Copy())
-		helmet.sprite_sheets_obj = tempRig.helmet.sprite_sheets.Copy()
+		helmet.set_sprite_sheets_obj(tempRig.helmet.sprite_sheets.Copy())
 		boots.set_sprite_sheets(tempRig.boots.sprite_sheets.Copy())
-		boots.sprite_sheets_obj = tempRig.boots.sprite_sheets.Copy()
+		boots.set_sprite_sheets_obj(tempRig.boots.sprite_sheets.Copy())
 		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
-		chest.sprite_sheets_obj = tempRig.chest.sprite_sheets.Copy()
+		chest.set_sprite_sheets_obj(tempRig.chest.sprite_sheets.Copy())
 		slowdown = initial(slowdown)
 		name = tempRig.name
 		set_icon(tempRig.icon) // Reset the icon back to its original

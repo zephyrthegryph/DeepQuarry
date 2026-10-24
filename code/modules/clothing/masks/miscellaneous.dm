@@ -336,7 +336,6 @@ CAPABILITIES(/obj/item/clothing/mask/veil)
 	desc = "A neat, circular mask made out of paper. Perhaps you could try drawing on it with a pen!"
 	w_class = ITEMSIZE_SMALL
 	icon_state = "papermask"
-	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
 	var/list/papermask_designs
 	special_handling = TRUE
 
@@ -371,6 +370,7 @@ CAPABILITIES(/obj/item/clothing/mask/veil)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/paper)
+	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(papermask_designs), PROC_REF(build_papermask_designs))
 	op("paper_mask_design_self", in_hand(), label("Change design"), then(PROC_REF(paper_mask_design_self)))
@@ -408,7 +408,6 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	desc = "Express your happiness or hide your sorrows with this modular cutout. Draw your current emotions onto it with a pen!"
 	w_class = ITEMSIZE_SMALL
 	icon_state = "joy"
-	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
 	var/list/joymask_designs
 	special_handling = TRUE
 
@@ -423,6 +422,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/emotions)
+	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/redraw_design)))
 	configure(item_worn(covers = FACE))
 	per_type(nameof(joymask_designs), PROC_REF(build_joymask_designs))
 	op("emotion_mask_design_self", in_hand(), label("Change emotion"), then(PROC_REF(emotion_mask_design_self)))
