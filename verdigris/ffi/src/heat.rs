@@ -380,6 +380,47 @@ fn heat_turf_temperature(turf: ByondValue) -> Result<ByondValue> {
         .map_or_else(ByondValue::null, ByondValue::from))
 }
 
+/// Batched solid temperatures. Args: (list of turfs). One float per turf, in order: its solid's temperature in K, -1 for a turf with no node in the heat field
+/// or a value that is not finite. The unit-test guards read every watched floor with one call instead of one `heat_turf_temperature` each.
+#[auxmacros::bind("/proc/heat_turf_temperatures")]
+fn heat_turf_temperatures(turfs: ByondValue) -> Result<ByondValue> {
+    let cells = turfs
+        .get_list_values()?
+        .iter()
+        .map(|t| t.get_ref().ok())
+        .collect::<Vec<_>>();
+    let field = field()?;
+    let values = with_world(|w| {
+        Ok(cells
+            .iter()
+            .map(|cell| {
+                let Some(cell) = *cell else {
+                    return -1.0_f32;
+                };
+                let Some(g) = w.sim_mut().port(field.geometry).read(cell) else {
+                    return -1.0;
+                };
+                if !g.is_node() {
+                    return -1.0;
+                }
+                let Some(c) = w.sim_mut().port(field.cells).read(cell) else {
+                    return -1.0;
+                };
+                let t = if g.reservoir {
+                    c.temperature
+                } else {
+                    c.temperature_in(g.capacity)
+                };
+                if t.is_finite() { t } else { -1.0 }
+            })
+            .map(ByondValue::from)
+            .collect::<Vec<_>>())
+    })?;
+    let list = ByondValue::new_list()?;
+    list.write_list(&values)?;
+    Ok(list)
+}
+
 #[auxmacros::bind("/turf/proc/heat_add_turf")]
 fn heat_add_turf(turf: ByondValue, joules: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;
