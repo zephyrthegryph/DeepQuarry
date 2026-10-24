@@ -78,14 +78,14 @@ function cargoAvailable(): boolean {
 }
 /**
  * DQ_COMPILER selects the backend: `native` (default; tools/dmb), `dreammaker` (alias `byond`) or `shadow`.
- * Unset means native when a dmbc binary exists or cargo can build one, else DreamMaker with a warning.
+ * Unset means native when a dmbc binary exists or cargo can build one; otherwise it fails (no silent DreamMaker fallback; set DQ_COMPILER=dreammaker explicitly).
  * CI pins `dreammaker` for the production compile check.
  */
 export function compilerMode(): CompilerMode {
   const mode = process.env.DQ_COMPILER;
   if (mode === undefined || mode === '') {
     if (process.env.DQ_NATIVE_COMPILER || nativeCompilerPath() || cargoAvailable()) return 'native';
-    return 'byond';
+    throw new Error('DQ_COMPILER is unset and no native compiler is available (no dmbc binary, DQ_NATIVE_COMPILER or cargo). Install cargo or run `build.sh dmbc`; set DQ_COMPILER=dreammaker to use DreamMaker explicitly.');
   }
   if (mode === 'dreammaker') return 'byond';
   if (mode !== 'byond' && mode !== 'native' && mode !== 'shadow') {

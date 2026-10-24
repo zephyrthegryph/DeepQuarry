@@ -215,7 +215,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`tools/ci/compile_and_run.sh`, the benchmark workflow; `DQ_COMPILER=dreammaker` still selects DreamMaker), and a DreamMaker cross-check job
   (`dreammaker_cross_check` in `run_compile_checks.yml`, part of the completion gate) runs `bash tools/ci/dm_equiv.sh`: it compiles the production
   dme and the unit-test dme both ways and runs `dmb-equiv` (every difference listed). 2026-10-22 the production dme reports zero differences, including the order the global initializers run in; the unit-test dme reports one open
-  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary the default falls back to DreamMaker. See
+  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary an unset `DQ_COMPILER` fails the build instead of falling back to DreamMaker (set `DQ_COMPILER=dreammaker` on purpose). The local land/merge/push gates no longer run a DreamMaker compile; the CI cross-check above is the DreamMaker check. See
   `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
 - **One shared dmbc daemon per compiler version.** Every native compile uses the one shared compiler binary
   (`tools/build/lib/dmbc_cache.ts`), so every worktree talks to the same daemon (`tools/build/lib/dmbc_daemons.ts`), which keeps one
