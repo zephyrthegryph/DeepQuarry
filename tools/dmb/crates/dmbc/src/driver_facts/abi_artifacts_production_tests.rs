@@ -744,6 +744,58 @@ fn disk_roundtrip(signature: &str, changed_signature: &str) {
 }
 
 #[test]
+fn indexed_abi_rows_certify_in_a_later_session_and_prepare_identically() {
+    let root = crate::test_scratch::dir("abi-dep-index");
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let session = |expect_certified: bool| {
+        let disk = Arc::new(crate::runner_host::disk::LazyDisk::new(root.clone()));
+        let index = Arc::new(crate::dep_index::DepIndex::new(Arc::clone(&disk), 17));
+        let store = AbiArtifacts::with_disk_index(
+            owner.clone(),
+            Arc::clone(&disk),
+            17,
+            Some(Arc::clone(&index)),
+        );
+        let current = frontend(
+            "/proc/probe(value=7)
+    return value
+/proc/other(a, b = 2)
+    return a + b
+",
+            engine,
+        );
+        same(
+            &prepared(&current, engine, Some(&store)),
+            &prepared(&current, engine, None),
+        );
+        index.flush();
+        disk.finish_batch().unwrap();
+        let abi = index.stage(crate::dep_index::Scope::Abi);
+        (
+            store.totals().0,
+            abi.certified.load(std::sync::atomic::Ordering::Relaxed),
+            abi.replayed.load(std::sync::atomic::Ordering::Relaxed),
+            expect_certified,
+        )
+    };
+    // First session computes and stages; the second replays the rows and notes them; the third
+    // finds them in the index and takes their world-fixed reads without resolving.
+    let first = session(false);
+    assert_eq!((first.0, first.1), (0, 0), "nothing to reuse yet");
+    let second = session(false);
+    assert!(second.0 > 0 && second.1 == 0 && second.2 > 0, "{second:?}");
+    let third = session(true);
+    assert!(third.0 > 0 && third.1 > 0 && third.2 == 0, "{third:?}");
+}
+
+#[test]
 fn issued_abi_local_structure_tracks_parent_and_definition_without_sibling_churn() {
     let owner = crate::runner_host::EnginePayload::capture(
         include_bytes!("../../../../fixtures/native_template.bin").to_vec(),

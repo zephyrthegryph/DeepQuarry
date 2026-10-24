@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The local merge and push gates no longer run a DreamMaker compile (CI keeps it); an unset DQ_COMPILER with no native compiler now fails instead of falling back to DreamMaker"

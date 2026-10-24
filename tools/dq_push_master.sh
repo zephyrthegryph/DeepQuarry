@@ -12,8 +12,8 @@
 # 1. Refuses a dirty tree (staged or unstaged changes to tracked files, untracked .dm under code/): what is
 #    checked must be exactly what is pushed.
 # 2. Merges origin/master (tools/dq_merge_master.sh: settles the generated files; any other conflict stops here).
-# 3. Runs, on that HEAD: tools/build/build.sh dm (DreamChecker must run and report 0 diagnostics, DreamMaker 0
-#    errors), bash tools/ci/check_ratchets.sh, tools/build/build.sh analyze. Any failure stops here. A step that
+# 3. Runs, on that HEAD: tools/build/build.sh dm (DreamChecker must run and report 0 diagnostics, the
+#    compiler 0 errors), bash tools/ci/check_ratchets.sh, tools/build/build.sh analyze. Any failure stops here. A step that
 #    tools/dq_merge_gates.sh already passed on this exact HEAD (data/merge-gates/<sha>.dm.ok, .ratchets.ok, .analyze.ok; it runs
 #    them alongside the test world) is not run again; DQ_PUSH_FULL=1 runs everything.
 # 4. Refuses unless HEAD, or each parent of the merge, carries a passing lane-ready / merge-gates test stamp
@@ -180,7 +180,7 @@ for round in 1 2 3; do
 		echo "== re-proof passed: HEAD is now ${sha:0:12} and carries the fresh stamp"
 	fi
 
-	# tools/dq_merge_gates.sh runs the production build (DreamMaker + DreamChecker) next to the test world and stamps the exact
+	# tools/dq_merge_gates.sh runs the production build (native compile + DreamChecker) next to the test world and stamps the exact
 	# HEAD when both reported clean. Clean tree and an unmoved HEAD are checked here and below.
 	stamped() { # <kind>: did the gates pass this check on exactly this HEAD?
 		[ "${DQ_PUSH_FULL:-0}" != "1" ] && [ -f "data/merge-gates/${sha:0:12}.$1.ok" ] && [ "$(cat "data/merge-gates/${sha:0:12}.$1.ok")" = "$sha" ]
@@ -194,12 +194,6 @@ for round in 1 2 3; do
 		grep -q "dream-checker: passed" "$log.dm.log" || die "DreamChecker did not run (install it: tools/ci/install_spaceman_dmm.sh); see $log.dm.log"
 		grep -q "Found 0 diagnostics" "$log.dm.log" || { grep -iE "error|warning" "$log.dm.log" | head -30; die "DreamChecker reported diagnostics; see $log.dm.log"; }
 		grep -qE "deepquarry\.dmb - 0 errors" "$log.dm.log" || die "the compiler did not report 0 errors; see $log.dm.log"
-		if [ "${DQ_DREAMMAKER_GATE:-1}" != "0" ]; then
-			echo "== build.sh dm with DreamMaker on ${sha:0:12} (log $log.dreammaker.log): the tree must be valid DM, not only valid for dmbc"
-			rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler
-			DQ_COMPILER=dreammaker tools/build/build.sh dm >"$log.dreammaker.log" 2>&1 || { tail -40 "$log.dreammaker.log"; die "DreamMaker rejects the tree; see $log.dreammaker.log"; }
-			grep -qE "deepquarry\.dmb - 0 errors" "$log.dreammaker.log" || die "DreamMaker did not report 0 errors; see $log.dreammaker.log"
-		fi
 	fi
 
 	# The same check on the same commit is not run twice; a new merge commit, a different HEAD or DQ_PUSH_FULL=1 runs it here.

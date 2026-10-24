@@ -120,8 +120,18 @@ impl AbiArtifacts {
         disk: Arc<crate::runner_host::disk::LazyDisk>,
         policy: u128,
     ) -> Self {
+        Self::with_disk_index(engine, disk, policy, None)
+    }
+
+    /// `with_disk`, certifying rows through a persisted dependency index.
+    pub(crate) fn with_disk_index(
+        engine: Arc<crate::runner_host::EnginePayload>,
+        disk: Arc<crate::runner_host::disk::LazyDisk>,
+        policy: u128,
+        index: Option<Arc<crate::dep_index::DepIndex>>,
+    ) -> Self {
         let mut store = Self::with_engine_owner(Arc::clone(&engine));
-        let transport = Arc::new(disk::Transport::new(disk, policy, engine));
+        let transport = Arc::new(disk::Transport::new(disk, policy, engine).with_index(index));
         *store.disk.write().unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
         store.pinned_disk = Some(transport);
         store
@@ -134,9 +144,10 @@ impl AbiArtifacts {
         &self,
         disk: Arc<crate::runner_host::disk::LazyDisk>,
         policy: u128,
+        index: Option<Arc<crate::dep_index::DepIndex>>,
     ) -> Option<AbiDiskLease> {
         let engine = Arc::clone(self.engine_owner.as_ref()?);
-        let transport = Arc::new(disk::Transport::new(disk, policy, engine));
+        let transport = Arc::new(disk::Transport::new(disk, policy, engine).with_index(index));
         *self.disk.write().unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
         Some(AbiDiskLease(transport))
     }
@@ -184,6 +195,15 @@ impl AbiArtifacts {
 }
 struct BorrowedResolver<'a>(&'a dyn Resolver);
 impl Resolver for BorrowedResolver<'_> {
+    // The borrowed resolver is the request's own, so its observation interface is the borrowed
+    // one: a transparent recorder over it (the unit's `RecordingResolver`) can then take answers
+    // an admitted disk row already proved, without another resolve per read.
+    fn observes_reads(&self) -> bool {
+        self.0.observes_reads()
+    }
+    fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
+        self.0.transparent_receipt_observer()
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
