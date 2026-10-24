@@ -24,6 +24,9 @@ fn gas_idx_from_value(value: &ByondValue) -> Result<gas::GasIDX> {
     gas::gas_idx_from_value(raw)
 }
 
+/// Values per `auxmos_batch_transfer` operation.
+const BATCH_TRANSFER_STRIDE: usize = 5;
+
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
 /// datum's own slot is freed.
@@ -130,6 +133,19 @@ fn checked_arena_id(src: ByondValue) -> Result<ByondValue> {
     mix::check_generation(r, held).map_err(|stale| stale.report(&src))?;
     #[allow(clippy::cast_precision_loss)]
     Ok((r.id() as f32).into())
+}
+
+/// The generation this mixture's handle is valid for, to queue next to
+/// [`checked_arena_id`]'s id (a queued batch keeps no datum). Null for a datum
+/// with no handle; a stale handle is refused.
+#[auxmacros::bind("/datum/gas_mixture/proc/__arena_generation")]
+fn checked_arena_generation(src: ByondValue) -> Result<ByondValue> {
+    let Ok((r, held)) = MixRef::of_unchecked(&src) else {
+        return Ok(ByondValue::null());
+    };
+    mix::check_generation(r, held).map_err(|stale| stale.report(&src))?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok((mix::generation(r) as f32).into())
 }
 
 /// The mixture's gas revision (bumped whenever its gas changes).
@@ -650,26 +666,28 @@ fn moles_to_pressure(
     ))
 }
 
-/// Flat operation list: source handle, sink handle, requested moles. Returns
-/// one actual mole count per operation after shared-source clamping.
+/// Flat operation list, `BATCH_TRANSFER_STRIDE` (5) values each: source handle,
+/// source generation, sink handle, sink generation, requested moles. Returns one
+/// actual mole count per operation after shared-source clamping; `-1` for an
+/// operation naming a handle that is invalid or stale (nothing moved).
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
     // `values()` walks the numbered positions directly (handle 0 is valid).
     let values = operations.values()?.collect::<Vec<_>>();
     let parsed = values
-        .chunks_exact(3)
+        .chunks_exact(BATCH_TRANSFER_STRIDE)
         .map(|operation| {
-            let source = MixRef::from_f32(operation[0].get_number().unwrap_or(-1.0));
-            let sink = MixRef::from_f32(operation[1].get_number().unwrap_or(-1.0));
-            (source, sink, operation[2].get_number().unwrap_or(0.0))
+            let source = mix::checked_ref_value(&operation[0], &operation[1]);
+            let sink = mix::checked_ref_value(&operation[2], &operation[3]);
+            (source.ok().zip(sink.ok()), operation[4].get_number().unwrap_or(0.0))
         })
         .collect::<Vec<_>>();
     let results = {
         parsed
             .into_iter()
-            .map(|(source, sink, requested)| {
-                let (Some(source), Some(sink)) = (source, sink) else {
-                    return 0.0;
+            .map(|(pair, requested)| {
+                let Some((source, sink)) = pair else {
+                    return -1.0;
                 };
                 if source == sink || requested <= 0.0 {
                     return 0.0;

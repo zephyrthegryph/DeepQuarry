@@ -135,7 +135,7 @@ CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
 		return FALSE
 	rust_external_port_id = rust_new_pipe_port(src, 2)
 	rust_external_port_volume = external_air.return_volume()
-	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, rust_external_port_id, external_air.arena_id(), rust_external_port_volume)
+	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, rust_external_port_id, external_air, rust_external_port_volume)
 	SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, rust_pipe_port_ids[1], rust_external_port_id)
 	SSair.rust_commit_pending_pipenets()
 	return TRUE

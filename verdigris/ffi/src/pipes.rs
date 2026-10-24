@@ -80,6 +80,7 @@ fn pipe_upsert(
 ) -> Result<ByondValue> {
     let e = handle_entity(&port)?;
     let volume = num(&volume)?;
+    let source = mixture_arg(&mixture_handle)?;
     let fresh = with_world(|w| {
         Ok(w.network::<Pipes>()
             .map_err(|e| eyre!("{e}"))?
@@ -88,7 +89,7 @@ fn pipe_upsert(
     })?;
     // Outside the world borrow: a turf or pipe mixture reads the world.
     let gas = if fresh {
-        gas_from_handle(&mixture_handle)
+        gas_from_ref(source)
     } else {
         PipeGas::default()
     };
@@ -138,8 +139,24 @@ fn pipe_upsert_list(triples: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::from(ok as f32))
 }
 
-fn gas_from_handle(handle: &ByondValue) -> PipeGas {
-    let Some(mix_ref) = num(handle).ok().and_then(MixRef::from_f32) else {
+/// A gas mixture argument: the `/datum/gas_mixture` itself (its handle is
+/// checked against its generation by [`MixRef::of`]), or `0`/null for none. A
+/// bare handle number is refused: it cannot say which mixture it was minted for.
+fn mixture_arg(v: &ByondValue) -> Result<Option<MixRef>> {
+    if v.is_null() {
+        return Ok(None);
+    }
+    if let Ok(n) = v.get_number() {
+        if n == 0.0 {
+            return Ok(None);
+        }
+        bail!("pass the gas mixture datum, not its bare handle {n}");
+    }
+    MixRef::of(v).map(Some)
+}
+
+fn gas_from_ref(source: Option<MixRef>) -> PipeGas {
+    let Some(mix_ref) = source else {
         return PipeGas::default();
     };
     mix::load(mix_ref).map_or_else(PipeGas::default, |m| {
@@ -152,15 +169,19 @@ fn gas_from_handle(handle: &ByondValue) -> PipeGas {
 #[auxmacros::bind("/proc/vg_pipe_remove")]
 fn pipe_remove(port: ByondValue, mixture_handle: ByondValue) -> Result<ByondValue> {
     let e = handle_entity(&port)?;
-    if let Some(target) = num(&mixture_handle).ok().and_then(MixRef::from_f32) {
+    // A refused target still removes the port (its gas is discarded) and then
+    // reports the refusal, so a stale mixture never strands a doomed port.
+    let target = mixture_arg(&mixture_handle);
+    if let Ok(Some(target)) = target {
         RELEASE_TARGETS.with(|r| r.borrow_mut().insert(e, target));
     }
     with_world(|w| {
         w.edit_network::<Pipes>(move |host| host.unbind_node(e))
             .map_err(|e| eyre!("{e}"))?;
         Ok(true)
-    })
-    .map(ByondValue::from)
+    })?;
+    target?;
+    Ok(true.into())
 }
 
 /// Batched destroy's one pipe release (`doc/rewrite/init_and_turfs.md`
@@ -174,13 +195,19 @@ fn pipe_remove_list(pairs: ByondValue) -> Result<ByondValue> {
         bail!("pairs must be a flat port, mixture_handle list");
     }
     let mut doomed = Vec::with_capacity(values.len() / 2);
+    let mut refused: Option<eyre::Report> = None;
     for pair in values.chunks_exact(2) {
         // A stale or unbound handle is skipped (the rest still go).
         let Ok(e) = handle_entity(&pair[0]) else {
             continue;
         };
-        if let Some(target) = num(&pair[1]).ok().and_then(MixRef::from_f32) {
-            RELEASE_TARGETS.with(|r| r.borrow_mut().insert(e, target));
+        match mixture_arg(&pair[1]) {
+            Ok(Some(target)) => {
+                RELEASE_TARGETS.with(|r| r.borrow_mut().insert(e, target));
+            }
+            Ok(None) => {}
+            // The port still goes (its gas is discarded); the refusal is reported after.
+            Err(err) => refused = refused.or(Some(err)),
         }
         doomed.push(e);
     }
@@ -195,6 +222,9 @@ fn pipe_remove_list(pairs: ByondValue) -> Result<ByondValue> {
         })
         .map_err(|e| eyre!("{e}"))
     })?;
+    if let Some(err) = refused {
+        return Err(err);
+    }
     Ok(ByondValue::null())
 }
 
@@ -399,17 +429,26 @@ fn pipe_device_set_list(triples: ByondValue) -> Result<ByondValue> {
 }
 
 /// Registers (or replaces) a device edge between a port and a turf (a vent
-/// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
-/// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
+/// pump or scrubber): `turf_air` is the turf's `/datum/gas_mixture` (checked
+/// against its generation), not a port id. See [`pipe_device_set`]'s own docs on flows.
+/// The turf cell a device edge can face; space, walls and other main-owned
+/// mixtures have none.
+const fn turf_cell(r: Option<MixRef>) -> Option<u32> {
+    match r {
+        Some(MixRef::Turf(cell)) => Some(cell),
+        _ => None,
+    }
+}
+
 #[auxmacros::bind("/proc/vg_pipe_device_set_turf")]
 fn pipe_device_set_turf(
     id: ByondValue,
     port_a: ByondValue,
-    turf_mixture_handle: ByondValue,
+    turf_air: ByondValue,
 ) -> Result<ByondValue> {
     let e = handle_entity(&id)?;
     let ea = handle_entity(&port_a)?;
-    let Some(MixRef::Turf(cell)) = num(&turf_mixture_handle).ok().and_then(MixRef::from_f32) else {
+    let Some(cell) = turf_cell(mixture_arg(&turf_air)?) else {
         return Ok(false.into());
     };
     let ok = with_world(|w| {
@@ -732,4 +771,35 @@ pub(crate) fn apply_devices(w: &mut World) -> Vec<f32> {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod handle_tests {
+    use super::*;
+
+    #[test]
+    fn a_device_edge_faces_only_a_turf_cell() {
+        assert_eq!(turf_cell(Some(MixRef::Turf(7))), Some(7));
+        assert_eq!(turf_cell(Some(MixRef::Main(7))), None);
+        assert_eq!(turf_cell(Some(MixRef::Pipe(7))), None);
+        assert_eq!(turf_cell(None), None);
+    }
+
+    #[test]
+    fn a_stale_turf_handle_is_refused_before_a_device_edge_is_made() {
+        let cell = 4_000_101;
+        let stamped = mix::bump_turf_generation(cell);
+        #[allow(clippy::cast_precision_loss)]
+        let id = MixRef::Turf(cell).id() as f32;
+        let ok = mix::checked_ref(id, Some(stamped)).unwrap();
+        assert_eq!(turf_cell(Some(ok)), Some(cell));
+        mix::bump_turf_generation(cell);
+        assert!(mix::checked_ref(id, Some(stamped)).is_err());
+    }
+
+    #[test]
+    fn an_empty_gas_source_is_a_vacuum_port() {
+        let gas = gas_from_ref(None);
+        assert_eq!(gas, PipeGas::default());
+    }
 }

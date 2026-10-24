@@ -143,7 +143,7 @@ fn cell_kind_flags(kind: i32) -> Result<(bool, u8)> {
         HEAT_CELL_SOLID => (false, 0),
         HEAT_CELL_SPACE => (true, flags::SPACE),
         HEAT_CELL_PLANET => (true, flags::PLANET),
-        other => bail!("unknown HEAT_CELL_* kind {other}"),
+        other => return Err(eyre!("unknown HEAT_CELL_* kind {other}")),
     })
 }
 
@@ -499,7 +499,7 @@ fn coupling_kind_for(target_kind: i32) -> Result<i32> {
     match target_kind {
         HEAT_TARGET_NONE | HEAT_TARGET_SOLID | HEAT_TARGET_TURF_AIR | HEAT_TARGET_MIXTURE
         | HEAT_TARGET_BODY | HEAT_TARGET_PIPE_PORT => Ok(target_kind),
-        other => bail!("bad heat target kind {other}"),
+        other => Err(eyre!("bad heat target kind {other}")),
     }
 }
 
@@ -973,7 +973,7 @@ fn heat_body_configure_list(args: ByondValue) -> Result<ByondValue> {
             keep: keep.is_true(),
         });
         #[allow(clippy::cast_possible_truncation)]
-        couplings.push((num(kind)? as i32, target.clone(), num(conductance)?));
+        couplings.push((num(kind)? as i32, *target, num(conductance)?));
     }
     let done = with_world(|w| Ok(configure_bodies(w, &specs)))?;
     let mut configured = 0u32;

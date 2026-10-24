@@ -251,7 +251,7 @@ pub fn link_heat(sa: State, sb: State, g: f64, dt: f64) -> f64 {
 /// Integrates one edge over `dt` seconds, applying its flows to `res` and
 /// booking them in `books`.
 pub fn step_edge<R: Copy>(res: &mut impl Reservoirs<R>, books: &mut Books, edge: &Edge<R>, dt: f64) -> Flow {
-    if !(dt > 0.0) {
+    if dt.is_nan() || dt <= 0.0 {
         return Flow::default();
     }
     let (Some(sa), Some(sb)) = (res.state(edge.a), res.state(edge.b)) else {

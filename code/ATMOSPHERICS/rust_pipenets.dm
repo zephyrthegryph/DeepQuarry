@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	for(var/index = 1 to rust_pipe_port_count())
 		var/datum/gas_mixture/port_air = rust_pipe_port_air(index)
 		if(port_air)
-			SSair.rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, rust_pipe_port_ids[index], port_air.arena_id(), rust_pipe_port_volume(index))
+			SSair.rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, rust_pipe_port_ids[index], port_air, rust_pipe_port_volume(index))
 
 /// Queue physical and internal connectivity after all referenced ports exist.
 /obj/machinery/atmospherics/proc/rust_register_pipe_edges()
@@ -207,7 +207,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
 		var/turf/open/release_turf = get_turf(src)
-		var/release_to = port_volume > 0 && release_turf?.air ? release_turf.air.arena_id() : 0
+		var/release_to = port_volume > 0 && release_turf?.air ? release_turf.air : 0
 		// Batched destroy: one removal call for the whole doomed set (init_and_turfs.md §4.4).
 		if(dq_pipe_port_remove(src, port_id, release_to))
 			continue
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 
 /// One device edge edit (RUST_DEVICE_OP_*), applied to the Rust network now.
 /// `id` is the device's entity handle; SET uses `f1`/`f2` as the two port
-/// handles, SET_TURF `f1` the port and `f2` the turf's gas handle. A device's
+/// handles, SET_TURF `f1` the port and `f2` the turf's /datum/gas_mixture (its handle is checked against its generation). A device's
 /// flow(s) and valve are rows set through the generated component accessors.
 /datum/system/air/proc/rust_queue_device_operation(opcode, id, f1 = 0, f2 = 0)
 	switch(opcode)
@@ -327,11 +327,11 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	// whose handle lives in the main arena; Rust turf devices can only address
 	// turf-arena cells. A device on (or moved onto) such a tile has no turf edge.
 	var/turf_arena_id = turf_air.arena_id()
-	if(turf_arena_id < GAS_HANDLE_TURF_BASE)
+	if(isnull(turf_arena_id) || turf_arena_id < GAS_HANDLE_TURF_BASE)
 		rust_unregister_device()
 		return FALSE
 	rust_ensure_device_id()
-	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_arena_id)
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_air)
 
 	SSair.rust_commit_pending_devices()
 	return TRUE
@@ -486,7 +486,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			if(!port_air)
 				continue
 			upserts += machine.rust_pipe_port_ids[index]
-			upserts += port_air.arena_id()
+			upserts += port_air
 			upserts += machine.rust_pipe_port_volume(index)
 
 	if(length(upserts))
