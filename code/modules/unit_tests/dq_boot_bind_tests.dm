@@ -20,7 +20,7 @@
 	vg_heat_body_couple(written.heat_body, 0, HEAT_TARGET_NONE, 0, 0)
 	vg_heat_body_set_temperature(written.heat_body, 350)
 	TEST_ASSERT(released.create_heat_body(TRUE), "a third reserved body")
-	released.release_heat_body()
+	released.drop_heat_body()
 	TEST_ASSERT(!GLOB.dq_heat_bind_pending[ref_token(released)], "a body released while pending leaves the queue")
 	// A read configures just that body first.
 	var/read = plain.get_temperature()

@@ -40,7 +40,7 @@ use crate::world::{list, num, with_world};
 thread_local! {
     static FIELD: Cell<Option<FieldKey<SolidHeat>>> = const { Cell::new(None) };
     /// (body row index, slot) -> (coupling kind, coupling entity), the
-    /// side table `heat_body_couple`/`heat_body_create`/`heat_body_release`
+    /// side table `heat_body_couple`/`heat_body_create`/`heat_body_drop`
     /// keep in sync so a re-couple can find and drop the old one.
     static COUPLINGS: RefCell<HashMap<(u32, u8), (u8, vg_core::entity::EntityId)>> = RefCell::new(HashMap::new());
     /// Coupling entity index -> owning body entity, the reverse of
@@ -1223,11 +1223,11 @@ fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
     Ok(ok.into())
 }
 
-/// Releases a body: settles it (if relaxing) into its environment,
-/// deposits its excess over slot 0's environment there too, drops its
-/// coupling entities and despawns it at once.
-#[auxmacros::bind("/proc/heat_body_release")]
-fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
+/// Drops a body: settles it (if relaxing), drops its coupling entities and
+/// despawns it at once. What it holds over its environment is discarded, never
+/// deposited (deletion is not a physical event); the returned line says how much.
+#[auxmacros::bind("/proc/heat_body_drop")]
+fn heat_body_drop(h: ByondValue) -> Result<ByondValue> {
     RELEASE_NOTES.with_borrow_mut(Vec::clear);
     release_one(&h)?;
     take_release_notes()
@@ -1238,7 +1238,7 @@ fn release_one(h: &ByondValue) -> Result<()> {
         RESERVED.with_borrow_mut(|r| r.remove(&e.index()));
         let body_i = e.index();
         with_world(|w| {
-            release_body(w, e)?;
+            drop_body(w, e)?;
             drop_coupling(w, body_i, 0);
             drop_coupling(w, body_i, 1);
             let _ = w.despawn(e);
@@ -1248,11 +1248,11 @@ fn release_one(h: &ByondValue) -> Result<()> {
     Ok(())
 }
 
-/// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
-/// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
-/// Zero/null and already-released entries are skipped. Returns a log line for any release held at equilibrium, else null.
-#[auxmacros::bind("/proc/heat_body_release_list")]
-fn heat_body_release_list(bodies: ByondValue) -> Result<ByondValue> {
+/// Batched destroy's one heat drop (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`heat_body_drop`] for every handle in `bodies`.
+/// Zero/null and already-released entries are skipped. Returns a log line for each dropped body that held heat over its surroundings, else null.
+#[auxmacros::bind("/proc/heat_body_drop_list")]
+fn heat_body_drop_list(bodies: ByondValue) -> Result<ByondValue> {
     RELEASE_NOTES.with_borrow_mut(Vec::clear);
     for h in bodies.get_list_values()? {
         release_one(&h)?;
@@ -1260,12 +1260,11 @@ fn heat_body_release_list(bodies: ByondValue) -> Result<ByondValue> {
     take_release_notes()
 }
 
-/// Settles `body` if it is relaxing, then moves whatever it holds above
-/// slot 0's environment there too (`body.rs::release`, ported): the
-/// baseline (what the environment already is) stays out of the books as
-/// released, not conserved -- exactly `heat.dm`'s "excess heat goes to its
-/// surroundings" contract.
-fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> Result<()> {
+/// Settles `body` if it is relaxing (the heat it already exchanged while relaxing is real and is booked to its environment), then notes how much
+/// it still holds above slot 0's environment. That excess is **dropped, not transferred**: deleting a thing removes it from the world, it is
+/// not a physical event, so nothing is deposited anywhere. Whoever turns a thing into remains (gibs, ash, melt) moves the heat explicitly
+/// (`heat_inherit()` in `code/modules/heat/heat.dm`) before deleting it.
+fn drop_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> Result<()> {
     let Some(mut b) = w.read::<HeatBody>(e) else {
         return Ok(());
     };
@@ -1276,85 +1275,46 @@ fn release_body(w: &mut vg_core::world::World, e: vg_core::entity::EntityId) -> 
     else {
         return Ok(());
     };
-    match kind {
-        0 => {
-            if let Some(coupling) = w.read::<SolidCoupling>(coupling_e) {
-                let field = field()?;
-                if let (Some(g), Some(cell)) = (
-                    w.sim_mut().port(field.geometry).read(coupling.cell),
-                    w.sim_mut().port(field.cells).read(coupling.cell),
-                ) {
-                    let baseline_t = if g.reservoir {
-                        cell.temperature
-                    } else {
-                        cell.temperature_in(g.capacity)
-                    };
-                    #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(
-                        vg_core::thermo::phase_energy(baseline_t, b.capacity as f32, b.phase())
-                            .max(0.0),
-                    );
-                    let excess = b.energy - baseline;
-                    if excess != 0.0 && !g.reservoir {
-                        // The solid takes what it would at equilibrium with the body, not the whole excess.
-                        let (taken, dissipated) =
-                            equilibrium_split(excess, f64::from(g.capacity), b.capacity);
-                        note_release(&format!(
-                            "solid cell {} took {taken:.0} J of {excess:.0} J, {dissipated:.0} J dissipated (body {:.0} J/K, solid {:.0} J/K)",
-                            coupling.cell, b.capacity, g.capacity
-                        ), dissipated);
-                        #[allow(clippy::cast_possible_truncation)]
-                        let m = taken as f32;
-                        let mut cell = cell;
-                        cell.energy += m;
-                        cell.temperature = cell.energy / g.capacity;
-                        let _ = w.sim_mut().port(field.cells).put(coupling.cell, cell);
-                    }
-                }
-            }
-        }
-        1 => {
-            if let Some(coupling) = w.read::<GasCoupling>(coupling_e) {
-                if let Some((t, c_air, reservoir)) = (coupling.kind == gas_kind::TURF)
-                    .then(|| turf_gas_thermal(w, coupling.target))
-                    .flatten()
-                {
-                    #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(
-                        vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0),
-                    );
-                    let excess = b.energy - baseline;
-                    if reservoir || c_air <= 0.0 {
-                        // A reservoir (a planet's air) absorbs any amount without changing temperature.
-                        turf_gas_heat(w, coupling.target, excess);
-                    } else {
-                        release_into_turf(w, coupling.target, excess, f64::from(c_air), b.capacity);
-                    }
-                }
-            }
-        }
-        2 => {
-            if let Some(coupling) = w.read::<BodyCoupling>(coupling_e) {
-                let other_e = vg_core::entity::EntityId::from_bits(coupling.other).unwrap_or(e);
-                if let Some(mut other) = w.read::<HeatBody>(other_e) {
-                    #[allow(clippy::cast_possible_truncation)]
-                    let baseline = f64::from(
-                        vg_core::thermo::phase_energy(
-                            other.temperature() as f32,
-                            b.capacity as f32,
-                            b.phase(),
-                        )
-                        .max(0.0),
-                    );
-                    let excess = b.energy - baseline;
-                    if excess != 0.0 {
-                        other.energy += excess;
-                        let _ = w.put(other_e, other);
-                    }
-                }
-            }
-        }
-        _ => {}
+    // The environment's temperature at slot 0, to measure what the body held over it.
+    let env_t: Option<f32> = match kind {
+        0 => w.read::<SolidCoupling>(coupling_e).and_then(|coupling| {
+            let field = field().ok()?;
+            let g = w.sim_mut().port(field.geometry).read(coupling.cell)?;
+            let cell = w.sim_mut().port(field.cells).read(coupling.cell)?;
+            Some(if g.reservoir {
+                cell.temperature
+            } else {
+                cell.temperature_in(g.capacity)
+            })
+        }),
+        1 => w.read::<GasCoupling>(coupling_e).and_then(|coupling| {
+            (coupling.kind == gas_kind::TURF)
+                .then(|| turf_gas_thermal(w, coupling.target))
+                .flatten()
+                .map(|(t, _, _)| t)
+        }),
+        2 => w.read::<BodyCoupling>(coupling_e).and_then(|coupling| {
+            let other_e = vg_core::entity::EntityId::from_bits(coupling.other).unwrap_or(e);
+            #[allow(clippy::cast_possible_truncation)]
+            w.read::<HeatBody>(other_e).map(|o| o.temperature() as f32)
+        }),
+        _ => None,
+    };
+    if let Some(t) = env_t {
+        #[allow(clippy::cast_possible_truncation)]
+        let baseline = f64::from(
+            vg_core::thermo::phase_energy(t, b.capacity as f32, b.phase()).max(0.0),
+        );
+        let excess = b.energy - baseline;
+        note_release(
+            &format!(
+                "body {} dropped holding {excess:.0} J over its surroundings ({:.1} K body, {t:.1} K surroundings, {:.0} J/K)",
+                e.index(),
+                b.temperature(),
+                b.capacity
+            ),
+            excess,
+        );
     }
     Ok(())
 }
@@ -1373,7 +1333,7 @@ fn heat_body_flow(h: ByondValue) -> Result<ByondValue> {
 /// [`vg_heat::laws::HeatEvent::Settled`] (`LawCtx::emit`'s entity is
 /// always the coupling's own, the law's anchor -- never the body it
 /// `Foreign`-joins), so this resolves it back to the owning body through
-/// [`COUPLING_BODY`] and releases it exactly as `heat_body_release` would
+/// [`COUPLING_BODY`] and releases it exactly as `heat_body_drop` would
 /// (the settle already happened inside the law; only dropping the
 /// coupling entities and despawning is left).
 fn drain_settled_bodies(w: &mut vg_core::world::World) {
@@ -1535,69 +1495,24 @@ fn heat_reset() -> Result<ByondValue> {
 }
 
 thread_local! {
-    /// What this call's releases would have pushed past equilibrium, for DM to log.
+    /// What this call's drops discarded, for DM to log.
     static RELEASE_NOTES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Records a release that was held at the body's equilibrium with its surroundings (`dissipated` is the part left out).
-fn note_release(text: &str, dissipated: f64) {
-    if dissipated.abs() > 0.0 {
+/// Records a dropped body that held `excess` joules over its surroundings.
+fn note_release(text: &str, excess: f64) {
+    if excess.abs() >= 1.0 {
         RELEASE_NOTES.with_borrow_mut(|n| n.push(text.to_owned()));
     }
 }
 
-/// Drains the notes into one string for DM to log, or null when no release was held back.
+/// Drains the notes into one string for DM to log, or null when nothing was dropped.
 fn take_release_notes() -> Result<ByondValue> {
     let notes = RELEASE_NOTES.with_borrow_mut(std::mem::take);
     if notes.is_empty() {
         return Ok(ByondValue::null());
     }
     Ok(ByondValue::new_str(notes.join("; "))?)
-}
-
-/// Splits a released body's `excess` joules between an environment of heat capacity `c_env` and the body's own `c_body`: the environment
-/// takes the share that brings it to the temperature the two would reach in contact (`excess * c_env / (c_env + c_body)`), never past
-/// the body's own temperature. Returns `(taken, left over)`; the rest stays with the vanishing body.
-fn equilibrium_split(excess: f64, c_env: f64, c_body: f64) -> (f64, f64) {
-    if c_env <= 0.0 || c_body <= 0.0 {
-        return (excess, 0.0);
-    }
-    let taken = excess * c_env / (c_env + c_body);
-    (taken, excess - taken)
-}
-
-/// Deposits a released body's `excess` joules into a turf: its air and its floor solid reach their common equilibrium with the body
-/// (air + floor + body heat capacities), no hotter than the body was, and what that leaves in the body is dissipated and logged.
-fn release_into_turf(w: &mut vg_core::world::World, cell: u32, excess: f64, c_air: f64, c_body: f64) {
-    // The floor shares the cell index (a turf's gas and solid are one grid cell); a space or non-node solid takes nothing.
-    let mut c_floor = 0.0f64;
-    if let Ok(field) = field() {
-        if let Some(g) = w.sim_mut().port(field.geometry).read(cell) {
-            if g.is_node() && !g.reservoir {
-                c_floor = f64::from(g.capacity);
-            }
-        }
-    }
-    let c_env = c_air + c_floor;
-    let (taken, dissipated) = equilibrium_split(excess, c_env, c_body);
-    let to_air = taken * c_air / c_env;
-    let to_floor = taken - to_air;
-    turf_gas_heat(w, cell, to_air);
-    if to_floor != 0.0 {
-        if let Ok(field) = field() {
-            let _ = w
-                .sim_mut()
-                .port(field.cells)
-                .submit(cell, vg_heat::SolidCmd::Add(to_floor as f32));
-        }
-    }
-    note_release(
-        &format!(
-            "turf cell {cell}: a body release of {excess:.0} J would have heated {c_air:.0} J/K of air by {:.0} K; air took {to_air:.0} J, floor {to_floor:.0} J, {dissipated:.0} J dissipated (body {c_body:.0} J/K)",
-            excess / c_air
-        ),
-        dissipated,
-    );
 }
 
 /// A turf's gas temperature, heat capacity and whether it is a reservoir, if it has gas.

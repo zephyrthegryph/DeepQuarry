@@ -6,6 +6,8 @@
 /mob/proc/disintegrate(anim, remains, do_gibs, anim_file = 'icons/mob/mob.dmi')
 	// Everything deleted on the way is destroyed as one batch (batch.dm).
 	dq_destroy_collect_begin()
+	// The remains and gibs are this body turned into something else: they start at its temperature (deleting the body drops its heat, heat.dm).
+	var/body_k = body_temperature()
 	if(stat != DEAD)
 		death(1)
 	set_transforming(1)
@@ -22,9 +24,10 @@
 	flick(anim, animation)
 
 	if(remains)
-		new remains(loc)
+		var/atom/movable/left = new remains(loc)
+		left.inherit_heat(body_k)
 	if(do_gibs)
-		gibs(loc, dna)
+		gibs(loc, dna, temperature = body_k)
 
 	if(!QDELETED(src))
 		ghostize()

@@ -11,7 +11,7 @@
 //   heat_store_set_power(h, watts)                                       a sustained source (an exothermic material)
 //   heat_store_link(h, thing, conductance, emissivity, area)            a heat link to a reservoir: its edge id
 //   heat_store_engine(h, thing, efficiency, conductance)                a heat engine to a reservoir: its edge id (vg_heat_edge_take_work())
-//   heat_store_release(h)                                                drops the body; its heat leaves with it (call at equilibrium)
+//   heat_store_drop(h)                                                drops the body; what it still holds is discarded, not deposited (heat_equalize() first)
 //
 // As an endpoint of heat_move(), heat_equalize() or heat_conduct() a store is HEAT_STORE(h). Edge ids are removed with vg_heat_edge_remove().
 
@@ -83,7 +83,7 @@
 		return null
 	return vg_heat_engine_create(HEAT_TARGET_BODY, h, r[1], r[2], clamp(efficiency, 0, 1), max(conductance, 0))
 
-/// Drops the store's body. What it holds leaves the simulation with it: release it at equilibrium, or move its heat out first.
-/proc/heat_store_release(h)
+/// Drops the store's body. What it still holds is discarded, never deposited anywhere: move its heat out first (heat_equalize()) if it should go somewhere.
+/proc/heat_store_drop(h)
 	if(h)
-		heat_release_log(vg_heat_body_release(h))
+		heat_drop_log(vg_heat_body_drop(h))

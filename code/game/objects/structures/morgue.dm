@@ -294,6 +294,12 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 		set_cremating(1)
 		locked = 1
 
+		// The ash is what the cremated contents burn to: it starts at the hottest of them (deleting them drops their heat, heat.dm).
+		var/ash_k = null
+		for(var/atom/movable/burnt as anything in contents)
+			var/burnt_k = burnt.get_temperature()
+			ash_k = isnull(ash_k) ? burnt_k : max(ash_k, burnt_k)
+
 		for(var/mob/living/M in contents)
 			if (M.stat!=2)
 				if (!iscarbon(M))
@@ -310,7 +316,8 @@ MSG_DEF_SELF(crematorium/locked, "It's locked.")
 		for(var/obj/O in contents) //obj instead of obj/item so that bodybags and ashes get destroyed. We dont want tons and tons of ash piling up
 			consume(O)
 
-		new /obj/effect/decal/cleanable/ash(src)
+		var/obj/effect/decal/cleanable/ash/ash = new /obj/effect/decal/cleanable/ash(src)
+		ash.inherit_heat(ash_k)
 		after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return
 
