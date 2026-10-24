@@ -801,11 +801,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/solid_was = solids["k"]
 	var/list/solid_moved = unit_test_solid_changed(solids)
 	var/list/solid_now = solids["now"]
-	for(var/i in solid_moved)
+	for(var/k in 1 to length(solid_moved))
+		var/i = solid_moved[k]
 		var/turf/open/T = solid_turfs[i]
 		if(QDELETED(T)) // (the declared list is of air the test writes; a floor's temperature is not part of it)
 			continue
-		var/kelvin = solid_now[i]
+		var/kelvin = solid_now[k]
 		if(kelvin < 0 || abs(kelvin - solid_was[i]) <= 0.5)
 			continue
 		if(!machine_rooms[get_area(T)] && abs(kelvin - solid_was[i]) > UNIT_TEST_AMBIENT_FLOOR_KELVIN)
