@@ -328,6 +328,23 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
 
 1. Per-answer dirty set in `retained_output::admit`: replace the single answers hash with the set of changed answers and
    their readers (reverse edges in `QueryDb`), so the stage reuses every unit whose read answers are unchanged.
+   - **1a (landed 2026-10-23, report only).** `QueryDb::answer_diff()` returns an `AnswerDiff` (ids of changed answers,
+     count of fresh slots, slots held, whether the table was dropped). Each `AnswerSlot` carries `born` (first request)
+     and `changed` (last request in which its hash differed from the slot it replaced, or from the hash a stored unit
+     recorded when a proof asked it: `RequestAnswers::matches`). `admit` takes the `QueryDb` and appends the summary to
+     the "answers changed" decline reason; the daemon logs `native answer diff:` once per request. Admit decisions are
+     unchanged. Cargo tests in `query_db.rs`: one edited default changes exactly one answer; a body edit changes none;
+     an added proc changes only the answers that named it; a fresh table finds the same one from recorded hashes.
+     Findings that shape 1b: (1) the table is populated lazily by whichever stage asks, so the diff names only answers
+     some stage asked, and a unit proof stops at its first differing read; (2) `admit` runs right after ABI
+     preparation, before the initializer and lowering proofs, so a diff taken there is a lower bound: the end-of-request
+     line is the complete one; (3) on a hot string-default edit and on the `initial(max_integrity)` edit the diff is 0
+     changed answers, i.e. `answers_version()` reddens only because it folds in the tree identity, not because an
+     answer any stored unit read moved (request 2 after a cold request 1: 1,036,017 answers resolved from the stored
+     units' reads, 0 carried, 0 changed). Cost: the end-of-request scan of 1.04M slots took 13-16 ms per compile (0.07%
+     of a 21 s hot compile); the per-slot bookkeeping is one extra map lookup and a 16-byte wider slot per resolved
+     answer, below the noise of the compile wall (20.3-27.2 s hot, same machine, before and after). 1b should therefore gate on the diff (run the stage proofs first, or move
+     `admit` after them) instead of on the hash.
 2. Re-evaluate only initializers whose recorded reads include a changed answer; splice their rows and the Variables
    records through the same `retained_output` splice used for bodies.
 3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
