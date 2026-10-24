@@ -17,21 +17,15 @@ stored	code/game/atom/atom_vv.dm	var/refid = REF(src)
 stored	code/game/machinery/air_alarm.dm	"service_id" = REF(src),
 stored	code/game/machinery/camera/tracking.dm	var/mob_ref = REF(M)
 stored	code/game/machinery/iv_drip.dm	"container_id" = REF(beaker),
-stored	code/game/machinery/newscaster.dm	"ref" = REF(FC),
-stored	code/game/machinery/newscaster.dm	"ref" = REF(viewing_channel()),
-stored	code/game/machinery/newscaster.dm	"ref" = REF(M),
 stored	code/game/objects/items/devices/scanners/motiontracker_api.dm	var/rfe = REF(At)
-stored	code/game/objects/items/devices/uplink.dm	"ref" = REF(item),
 stored	code/game/objects/items/weapons/mop.dm	"target_id" = REF(T),
 stored	code/game/objects/objs.dm	"physical_item_id" = REF(src),
 stored	code/modules/admin/callproc/callproc.dm	GLOB.LastAdminCalledTargetRef = REF(target)
 stored	code/modules/admin/misc_admin_panels.dm	"ref" = REF(d),
 stored	code/modules/admin/misc_admin_panels.dm	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
 stored	code/modules/admin/misc_admin_panels.dm	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
-stored	code/modules/admin/modify_robot.dm	multi_belt_list["ref"] = REF(mult_belt)
 stored	code/modules/admin/view_variables/debug_variable_appearance.dm	appearance_ref = REF(appearance_father)
 stored	code/modules/admin/view_variables_panel.dm	dq_vv_panel.refid = REF(thing)
-stored	code/modules/anomalies/anomaly_harvester.dm	"ref" = REF(sample)
 stored	code/modules/client/record_updater.dm	review.console = REF(COM)
 stored	code/modules/client/statpanel_service.dm	"ref" = REF(S),
 stored	code/modules/client/verbs/character_directory.dm	LAZYSET(GLOB.chardirectory_photos, REF(src), base64)
@@ -56,7 +50,6 @@ stored	code/modules/economy/sales_lots.dm	var/item_ref = REF(item)
 stored	code/modules/economy/service_invoices.dm	"physical_item_id" = REF(item),
 stored	code/modules/events/supply_demand.dm	"shortage_id" = REF(src),
 stored	code/modules/events/supply_demand.dm	"shortage_id" = REF(src),
-stored	code/modules/integrated_electronics/core/assemblies.dm	UNTYPED_LIST_ADD(component_positions, list("ref" = REF(C), "x" = new_x, "y" = new_y))
 stored	code/modules/integrated_electronics/core/circuit_serialization.dm	component_indices[REF(IC)] = component_index
 stored	code/modules/integrated_electronics/core/circuit_serialization.dm	"ref" = REF(IC),
 stored	code/modules/integrated_electronics/core/circuit_serialization.dm	"ref" = REF(IC),
@@ -65,7 +58,6 @@ stored	code/modules/integrated_electronics/core/integrated_circuit.dm	pindata["r
 stored	code/modules/integrated_electronics/core/integrated_circuit.dm	"ref" = REF(linked),
 stored	code/modules/integrated_electronics/core/integrated_circuit.dm	"holder_ref" = REF(linked.holder()),
 stored	code/modules/logging/log_holder.dm	var/list/serialization_data = state_serialize(logged) || list(STATE_KEY_TYPE = "[logged.type]", "ref" = REF(logged))
-stored	code/modules/lootpanel/ui.dm	"ref" = REF(index),
 stored	code/modules/materials/containers/material_container.dm	"ref" = REF(material),
 stored	code/modules/materials/registry.dm	key = REF(key)
 stored	code/modules/materials/registry.dm	value = REF(value)
@@ -84,13 +76,6 @@ stored	code/modules/nifsoft/nif_tgui.dm	"ref" = REF(NS),
 stored	code/modules/power/apc.dm	"service_id" = REF(src),
 stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
 stored	code/modules/power/supermatter/supermatter.dm	"machine_id" = REF(src),
-stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(techwebs),
-stored	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	ref = REF(experiment)
-stored	code/modules/tgui/modules/admin_shuttle_controller.dm	"ref" = REF(S),
-stored	code/modules/tgui/modules/admin_shuttle_controller.dm	"ref" = REF(S),
-stored	code/modules/tgui/modules/appearance_changer.dm	"instance" = REF(instance),
-stored	code/modules/tgui/modules/appearance_changer.dm	"instance" = REF(instance),
-stored	code/modules/tgui/modules/appearance_changer.dm	"instance" = REF(instance),
 ref_macro	code/_global_vars/lists/logging.dm	GLOBAL_LIST_EMPTY(lastsignalers) // Keeps last 100 signals here in format: "[src] used \ref[src] @ location [src.loc]: [freq]/[code]"
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[icon]"
 ref_macro	code/_helpers/icons.dm	var/icon_ref = "\ref[rsc_ref]"

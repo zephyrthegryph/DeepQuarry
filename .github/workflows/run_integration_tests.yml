@@ -65,6 +65,8 @@ jobs:
         with:
           workspaces: tools/dmb -> target
           shared-key: dmbc-native
+      - name: Generate the Verdigris bindings
+        run: bash tools/ci/gen_verdigris_bindings.sh
       - name: Build verdigris
         run: bash verdigris/build-linux.sh
       - name: Verify libverdigris.so

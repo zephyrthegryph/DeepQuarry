@@ -664,18 +664,27 @@ impl RetainedGeneration {
         &self,
         image: &PatchImage,
         rows: &[(usize, Arc<Vec<u32>>)],
+        variable_values: &[(u32, u8, u32)],
         base: crate::retained_output::OutputBase,
         initializers: Option<Vec<crate::symbolic::PositionedCode>>,
     ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
         self.attempt
             .with_pending(|_| {
-                let spliced = {
+                let mut spliced = {
                     let _profile = dm_profile::stage("patch.splice");
                     image
                         .rows
                         .splice(rows)
                         .map_err(|error| format!("list splice: {error}"))?
                 };
+                if !variable_values.is_empty() {
+                    // Fixed-width records: no row range moves. The retained model does not hold
+                    // the new values, so it is dropped and rebuilt from the image when needed.
+                    spliced = spliced
+                        .patch_variable_values(variable_values)
+                        .map_err(|error| format!("variable patch: {error}"))?;
+                    *self.current.lock().unwrap_or_else(|e| e.into_inner()) = None;
+                }
                 dm_profile::request_mark("patch.spliced");
                 let encoded = spliced.image().clone();
                 validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;

@@ -345,8 +345,37 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
      of a 21 s hot compile); the per-slot bookkeeping is one extra map lookup and a 16-byte wider slot per resolved
      answer, below the noise of the compile wall (20.3-27.2 s hot, same machine, before and after). 1b should therefore gate on the diff (run the stage proofs first, or move
      `admit` after them) instead of on the hash.
+   - **1b (landed 2026-10-24).** `retained_output::admit` no longer gates on `answers_version()` (tree identity folded in).
+     It decides last, on the answers: equal version passes as before; otherwise the answer world and resource searches
+     (`QueryDb::answers_context`) must be equal and `QueryDb::prove_against_base` asks again, under this request's tree,
+     every slot marked at the retained output's publication (`mark_published`, a per-slot `base` hash plus the question,
+     numbered per output in `OutputBase::marks`) and requires each to equal its marked value. The proof walks the marked
+     table, not the answers some stage asked this request, so soundness does not depend on lazy filling or on a proof
+     stopping at the first differing read; an answer first asked after the mark has no base and belongs to a new unit
+     (admit relowers only changed bodies, the roster is unchanged). Declined: no marks (first request, declaration
+     patches, a later marking for another output), table dropped since the mark, a changed answer. Cargo tests in
+     `query_db.rs`: tree differs but every marked answer is the same (admitted); edited default, asked-about added proc
+     (declined); the proof finds a change no stage asked this request; stale/zero/dropped marks (declined); a new answer
+     is not compared. Measured finding: a var default, `initial()`-read default, added proc or added type edit now declines
+     with "program text outside bodies changed", not "answers changed": those edits change the text outside bodies
+     (`text_key`), and the answer world (the static resolver's `Tree` version) differs with the declarations too. They
+     cannot be admitted by an answer gate alone; step 2 (re-evaluating initializers whose reads changed, and a `text_key`
+     that tolerates the default's own row) is what admits them. Hot body edits keep the patch (13 s).
 2. Re-evaluate only initializers whose recorded reads include a changed answer; splice their rows and the Variables
    records through the same `retained_output` splice used for bodies.
+   - **2a (landed 2026-10-24).** `retained_output::admit` admits a pure numeric default edit (`tree.default_edits()`,
+     relative to the retained output's own tree) without the `text_key` and answer-gate checks: `default_edit_records`
+     proves that the rows outside bodies differ only in rows `var/<edited name> = <number>` (per-row hashes of both
+     layouts; at most one changed row per edit, same head text), that no text reads `initial(<name>)`, and that each
+     retained Variables record holds the old value. `splice` writes the new values through `patch_rows`, which patches
+     the fixed-width Variables records after the row splice and drops the retained model (rebuilt from the image on
+     demand); the model path (`patch_model`) sets the values too. Composes with changed bodies in the same request.
+     `DMB_DEFAULT_PATCH=0` (or a test's `disable_default_patch`) makes the default patch decline so the general path
+     takes the edit. Cargo test `numeric_default_edits_on_the_general_path_match_fresh`. Production tree, pool-c2, 4
+     workers, hot daemon, `initial_charges` 25 to 26..29: general path 11.0-12.5 s compile (splice 0.4 s; was 22.4 s
+     declined), default patch 8.0-8.7 s on the same machine state; dmb-equiv against a true cold compile of the same
+     source: EQUIVALENT (identical pair hash). The remaining 3 s is ABI preparation and startup validation that run
+     before `admit`; the patch is therefore kept until `admit` can run before them (step 3 not met).
 3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
    `reads_initial`, `DefaultEdits` in `dm-tree` and the test's patch-count assertion.
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.

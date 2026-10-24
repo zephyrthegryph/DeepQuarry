@@ -1114,7 +1114,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_earstyles(list(list(
 					"name" = instance.name,
-					"instance" = REF(instance),
+					"instance" = ref_token(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,
@@ -1127,7 +1127,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_tailstyles(list(list(
 					"name" = instance.name,
-					"instance" = REF(instance),
+					"instance" = ref_token(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,
@@ -1140,7 +1140,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			if(can_use_sprite(instance, target, user))
 				add_valid_wingstyles(list(list(
 					"name" = instance.name,
-					"instance" = REF(instance),
+					"instance" = ref_token(instance),
 					"color" = !!instance.do_colouration,
 					"second_color" = !!instance.extra_overlay,
 					"icon" = instance.icon,

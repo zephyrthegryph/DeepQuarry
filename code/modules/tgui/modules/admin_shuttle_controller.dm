@@ -24,7 +24,7 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 		var/datum/shuttle/S = shuttles_shuttles()[shuttle_name]
 		shuttles.Add(list(list(
 			"name" = shuttle_name,
-			"ref" = REF(S),
+			"ref" = ref_token(S),
 			"current_location" = S.get_location_name(),
 			"status" = S.moving_status,
 		)))
@@ -34,7 +34,7 @@ CAPABILITIES(/datum/tgui_module/admin_shuttle_controller)
 	for(var/obj/effect/overmap/visitable/ship/S as anything in shuttles_ships())
 		overmap_ships.Add(list(list(
 			"name" = S.name,
-			"ref" = REF(S),
+			"ref" = ref_token(S),
 		)))
 	data["overmap_ships"] = overmap_ships
 

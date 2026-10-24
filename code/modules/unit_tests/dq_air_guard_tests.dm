@@ -37,7 +37,7 @@
 	var/datum/unit_test_guard/guard = unit_test_guard_session()
 	var/obj/machinery/alarm/A
 	for(var/obj/machinery/alarm/candidate in guard.machine_state)
-		if(!QDELETED(candidate) && candidate.use_power == USE_POWER_IDLE)
+		if(!QDELETED(candidate) && candidate.use_power == USE_POWER_IDLE && !guard.drifted_areas[get_area(candidate)])
 			A = candidate
 			break
 	TEST_ASSERT_NOTNULL(A, "no idle air alarm to seed")

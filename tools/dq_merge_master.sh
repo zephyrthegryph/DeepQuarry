@@ -4,8 +4,8 @@
 #   bash tools/dq_merge_master.sh              # git fetch origin, then merge origin/master
 #   bash tools/dq_merge_master.sh some/ref     # merge another ref (no fetch)
 #
-# The `analyze gen` output (code/engine/_generated/, code/_generated/reads.dm and
-# tgui/packages/tgui/interfaces/generated/) is no longer committed: every build regenerates it
+# The `analyze gen` output (code/engine/_generated/, code/_generated/reads.dm,
+# tgui/packages/tgui/interfaces/generated/ and the Verdigris bindings: code/__defines/verdigris/_bindings*.dm, verdigris/ffi/src/abi.rs) is no longer committed: every build regenerates it
 # (doc/rewrite/agent_workflow.md). A branch that still tracks those files gets a modify/delete
 # conflict on them when it merges master. This script resolves exactly those conflicts as deleted
 # (`git rm --cached`: the file stays on disk), untracks any generated file the branch still tracks,
@@ -27,8 +27,8 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 	exit 1
 fi
 
-GEN_RE='^(code/engine/_generated/|code/_generated/reads\.dm$|tgui/packages/tgui/interfaces/generated/)'
-GEN_PATHS=(code/engine/_generated code/_generated/reads.dm tgui/packages/tgui/interfaces/generated)
+GEN_RE='^(code/engine/_generated/|code/_generated/reads\.dm$|code/__defines/verdigris/_(bindings|bindings_types|component_schemas)\.dm$|verdigris/ffi/src/abi\.rs$|tgui/packages/tgui/interfaces/generated/)'
+GEN_PATHS=(code/engine/_generated code/_generated/reads.dm code/__defines/verdigris/_bindings.dm code/__defines/verdigris/_bindings_types.dm code/__defines/verdigris/_component_schemas.dm verdigris/ffi/src/abi.rs tgui/packages/tgui/interfaces/generated)
 
 ref="${1:-}"
 if [ -z "$ref" ]; then
@@ -70,7 +70,7 @@ fi
 mapfile -t tracked < <(git ls-files -- "${GEN_PATHS[@]}")
 if [ ${#tracked[@]} -gt 0 ]; then
 	echo "dq_merge_master: untracking ${#tracked[@]} generated file(s)"
-	git rm -r -q --cached -- "${GEN_PATHS[@]}"
+	git rm -r -q --cached -- "${tracked[@]}"
 fi
 
 mapfile -t remaining < <(git diff --name-only --diff-filter=U)
@@ -85,6 +85,7 @@ fi
 if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
 	echo "dq_merge_master: merged $ref; regenerating"
 	tools/build/build.sh gen || exit 1
+bash tools/ci/gen_verdigris_bindings.sh || exit 1
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
 	exit 0
 fi
@@ -94,3 +95,4 @@ fi
 
 echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
+bash tools/ci/gen_verdigris_bindings.sh || exit 1

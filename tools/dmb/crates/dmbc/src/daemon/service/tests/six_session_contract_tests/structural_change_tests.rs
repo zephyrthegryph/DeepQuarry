@@ -142,6 +142,45 @@ fn numeric_default_edits_match_fresh_with_and_without_initial_reads() {
 }
 
 #[test]
+fn numeric_default_edits_on_the_general_path_match_fresh() {
+    // With the special-case patch off, the retained-output admission takes a pure numeric default
+    // edit (rewriting the Variables record); an initial() read of the var and an edit that is not
+    // a numeric default must decline it. Every revision equals a fresh compile.
+    let with_initial = format!(
+        "{TREE}/proc/reads_initial()
+    var/datum/base/item = new
+    return initial(item.value)
+"
+    );
+    for (source, splices) in [(TREE.to_string(), true), (with_initial, false)] {
+        let roots = Roots::new();
+        crate::declaration_patch::disable_default_patch(&roots.manifest(0));
+        let mut shared = shared();
+        Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+        edit_all(&roots, &source);
+        let initial = compare_revision(&shared, &roots);
+        let mut previous = initial.clone();
+        for value in ["9", "11.5", "0x10", "7"] {
+            let edited = source.replace("var/value = 7", &format!("var/value = {value}"));
+            edit_all(&roots, &edited);
+            let current = compare_revision(&shared, &roots);
+            if value == "7" {
+                assert_eq!(current, initial, "returning to 7 reproduces the initial bytes");
+            } else {
+                assert_ne!(current, previous, "default {value} must publish new content");
+            }
+            previous = current;
+        }
+        let applied = crate::retained_output::applied(&roots.manifest(0));
+        if splices {
+            assert_eq!(applied, 4, "every numeric default edit takes the retained-output splice");
+        } else {
+            assert_eq!(applied, 0, "initial() of the edited var declines the splice");
+        }
+    }
+}
+
+#[test]
 fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
     // Added procs/verbs/overrides append to the retained model (semantic
     // equivalence is asserted by compare_revision); a referenced new name
