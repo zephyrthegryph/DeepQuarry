@@ -57,7 +57,7 @@
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
-	// dematerialize() must run before release_heat_body(): it drops this
+	// dematerialize() must run before drop_heat_body(): it drops this
 	// atom's rule bindings (dq_rules_on_dematerialize()), which cancel their
 	// live heat watches against the still-valid body handle. Releasing the
 	// body first frees/recycles its slot in Rust while those watches are
@@ -69,7 +69,7 @@
 	// ---- end L2 ----
 	caps_destroy(src)
 	if(!isnull(heat_body))
-		release_heat_body()
+		drop_heat_body()
 	if(reagents)
 		rel_clear(src, nameof(reagents))
 	if(light)

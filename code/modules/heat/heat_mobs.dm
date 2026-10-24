@@ -132,7 +132,7 @@
 	body.surroundings_edges = null
 	body.surroundings_at = null
 
-/mob/living/release_heat_body()
+/mob/living/drop_heat_body()
 	drop_surroundings()
 	return ..()
 

@@ -49,6 +49,9 @@
 	if(!original || QDELETED(original))
 		return null
 	var/atom/holder = original.loc
+	// The successor is what the original turned into (burnt to ash, melted): it starts at the original's temperature. Deleting the original
+	// alone would drop its heat (heat.dm), so it is carried here, explicitly.
+	var/inherited_k = isnull(original.heat_body) ? null : original.get_temperature()
 	var/slot_id
 	var/datum/ledger/L = dq_ledger_peek(holder)
 	if(L && dq_slot_defs_for(holder))
@@ -66,6 +69,7 @@
 		original.set_containment_successor(built)
 		rel_forward_identity(original, built)
 		ending_qdel(original, END_REPLACED, built)
+		built.inherit_heat(inherited_k)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built) && replace_slot_takes(original, built))
 			move_into(holder, slot_id, built)
 		return built
@@ -78,6 +82,7 @@
 	original.set_containment_successor(successor)
 	rel_forward_identity(original, successor)
 	ending_qdel(original, END_REPLACED, successor)
+	successor.inherit_heat(inherited_k)
 	// Into the slot only once the original has left it: a one-item slot (a
 	// hand) would refuse the successor while the original still filled it.
 	// Best effort: the slot may refuse the successor (different accepts
