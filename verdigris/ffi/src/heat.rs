@@ -421,6 +421,63 @@ fn heat_turf_temperatures(turfs: ByondValue) -> Result<ByondValue> {
     Ok(list)
 }
 
+/// The solid temperature of one turf cell as `heat_turf_temperatures` reports it: K, or -1 for a cell with no node in the heat field or a value that is not finite.
+fn solid_kelvin(w: &mut vg_core::world::World, field: &FieldKey<SolidHeat>, cell: Option<u32>) -> f32 {
+    let Some(cell) = cell else {
+        return -1.0;
+    };
+    let Some(g) = w.sim_mut().port(field.geometry).read(cell) else {
+        return -1.0;
+    };
+    if !g.is_node() {
+        return -1.0;
+    }
+    let Some(c) = w.sim_mut().port(field.cells).read(cell) else {
+        return -1.0;
+    };
+    let t = if g.reservoir {
+        c.temperature
+    } else {
+        c.temperature_in(g.capacity)
+    };
+    if t.is_finite() { t } else { -1.0 }
+}
+
+/// Batched solid temperature moves. Args: (list of turfs, list of the temperatures the caller last took, one per turf, epsilon in K). A flat list of
+/// (1-based index, temperature now) pairs for the turfs whose temperature differs from the given one by more than epsilon, in order. The same reading as
+/// `heat_turf_temperatures`, without building the unmoved turfs' values: the unit-test guard asks it twice a test.
+#[auxmacros::bind("/proc/heat_turf_moves")]
+fn heat_turf_moves(turfs: ByondValue, was: ByondValue, epsilon: ByondValue) -> Result<ByondValue> {
+    let cells = turfs
+        .get_list_values()?
+        .iter()
+        .map(|t| t.get_ref().ok())
+        .collect::<Vec<_>>();
+    let was = was
+        .get_list_values()?
+        .iter()
+        .map(|v| v.get_number().unwrap_or(f32::NAN))
+        .collect::<Vec<_>>();
+    let epsilon = epsilon.get_number()?;
+    let field = field()?;
+    let moves = with_world(|w| {
+        let mut moves = Vec::new();
+        for (i, cell) in cells.iter().enumerate() {
+            let now = solid_kelvin(w, &field, *cell);
+            let before = was.get(i).copied().unwrap_or(f32::NAN);
+            if before.is_nan() || (now - before).abs() > epsilon {
+                #[allow(clippy::cast_precision_loss)]
+                moves.push(ByondValue::from((i + 1) as f32));
+                moves.push(ByondValue::from(now));
+            }
+        }
+        Ok(moves)
+    })?;
+    let list = ByondValue::new_list()?;
+    list.write_list(&moves)?;
+    Ok(list)
+}
+
 #[auxmacros::bind("/turf/proc/heat_add_turf")]
 fn heat_add_turf(turf: ByondValue, joules: ByondValue) -> Result<ByondValue> {
     let cell = turf.get_ref()?;

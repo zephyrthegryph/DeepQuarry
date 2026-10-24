@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "cbcb60173bbba35c"
+#define VERDIGRIS_ABI "0e89beeeaf410192"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -718,6 +718,36 @@
 		__f = load_ext(VERDIGRIS, "byond:adjust_multi_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(arglist(args))
+
+/// Args: (watch id, list of the revisions the caller last took, one per watched mixture). The 1-based indices of the watched mixtures that changed since: their
+/// revision is not the one given, or their handle's owner was replaced or freed since the watch resolved it (the caller then looks the mixture up again and
+/// rebinds it with `air_watch_rebind`). Null when the watch is gone (dropped past the cap), so the caller starts a new one.
+// /proc/air_watch_changed (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_air_watch_changed(watch, revisions)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:air_watch_changed_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(watch, revisions)
+
+/// Args: (list of gas mixtures). Starts a watch over them, in order, and returns its id. A stale handle is refused with an error, as in `read_mixtures`.
+// /proc/air_watch_new (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_air_watch_new(mixtures)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:air_watch_new_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixtures)
+
+/// Args: (watch id, list of 1-based indices, list of the mixtures now at those indices). Points the watch's entries at the given mixtures (a turf given a new air
+/// datum). A stale handle is refused with an error.
+// /proc/air_watch_rebind (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_air_watch_rebind(watch, indices, mixtures)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:air_watch_rebind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(watch, indices, mixtures)
 
 /// Returns: the turfs this turf shares air with (face neighbours only).
 // /proc/atmos_adjacent_turfs (verdigris/ffi/src/gas/mod.rs)
@@ -1725,6 +1755,17 @@
 		__f = load_ext(VERDIGRIS, "byond:heat_set_turfs_bulk_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(records)
+
+/// Batched solid temperature moves. Args: (list of turfs, list of the temperatures the caller last took, one per turf, epsilon in K). A flat list of
+/// (1-based index, temperature now) pairs for the turfs whose temperature differs from the given one by more than epsilon, in order. The same reading as
+/// `heat_turf_temperatures`, without building the unmoved turfs' values: the unit-test guard asks it twice a test.
+// /proc/heat_turf_moves (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_turf_moves(turfs, was, epsilon)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:heat_turf_moves_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turfs, was, epsilon)
 
 // /turf/proc/heat_turf_properties (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_turf_properties(turf)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unit-test guard: the air guard asks the engine which mixtures changed (a watch over their change counters) and the floor guard gets only the floors that moved, cutting the guard's cost per test from about 96 ms to about 22 ms; the run logs GUARD COST per section"

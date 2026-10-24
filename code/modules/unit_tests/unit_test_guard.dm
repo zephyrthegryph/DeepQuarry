@@ -23,6 +23,9 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	var/list/machines_by_area
 	/// Tests judged since the last full compare of the machines, by name.
 	var/list/since_full = list()
+	/// The guard's own cost by section, in tick percent summed over the run (see spend()), and the tests it was spent on.
+	var/list/spent = list()
+	var/tests_judged = 0
 
 /// The run's guard session, built on the first test (the only whole-map snapshot of the run).
 /proc/unit_test_guard_session()
@@ -39,6 +42,27 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		LAZYADD(guard.machines_by_area[get_area(M)], M)
 	GLOB.unit_test_guard = guard
 	return guard
+
+/// Adds the tick usage since `mark` (a TICK_USAGE reading) to the section's total and returns the present reading, so sections chain: mark = guard.spend("air", mark).
+/datum/unit_test_guard/proc/spend(section, mark)
+	var/now = TICK_USAGE
+	var/delta = now - mark
+	if(delta < 0)
+		delta += 100 // the tick ended inside the section
+	spent[section] = (spent[section] || 0) + delta
+	return now
+
+/// Logs what the guard cost the run, per test and per section, in milliseconds (a tick is world.tick_lag deciseconds, a tick percent is tick_lag * 1 ms).
+/datum/unit_test_guard/proc/log_cost()
+	if(!tests_judged)
+		return
+	var/ms_per_percent = world.tick_lag * 1 // tick_lag deciseconds * 100 ms / 100 percent
+	var/total = 0
+	var/list/parts = list()
+	for(var/section in spent)
+		total += spent[section]
+		parts += "[section] [round(spent[section] * ms_per_percent / tests_judged, 0.1)]"
+	log_test("GUARD COST: [round(total * ms_per_percent / tests_judged, 0.1)] ms per test over [tests_judged] test(s) ([jointext(parts, ", ")] ms)")
 
 /// A test starts: whatever the world did since the last one (the rooms drift by the second, a machine answers a pending wake) becomes the baseline, not the test's.
 /datum/unit_test_guard/proc/begin()
@@ -83,6 +107,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 /// The end of the run: one last full compare of the watched machines against the session baseline. A change here is named with the tests since the last full compare.
 /// Returns how many settings had changed.
 /datum/unit_test_guard/proc/final_compare()
+	log_cost()
 	var/list/found = list()
 	if(length(since_full))
 		judge_machines("the end of the run", null, found, TRUE)
@@ -92,18 +117,26 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 
 // ---- air ----
 
-/// Indices of the snapshot's turfs whose mixture revision moved since the snapshot (one batched read of every revision, one pass). Leaves the new revisions in
-/// snapshot["revs_now"].
+/// Indices of the snapshot's turfs whose mixture changed since the snapshot: the engine's air watch over the snapshot's mixtures names them from their change counters
+/// (and a turf given a new air datum or freed), reading no datum. The air of each such turf is looked up again and the watch pointed at it.
 /proc/unit_test_air_changed(list/snapshot)
-	// A turf can be given a new air datum (the old handle then names nothing): the handles are looked up again each time, one pass over the watched turfs.
-	snapshot["airs"] = unit_test_airs_of(snapshot["turfs"])
-	var/list/now = vg_read_mixture_revisions(snapshot["airs"])
-	var/list/was = snapshot["revs"]
-	var/list/changed = list()
-	for(var/i in 1 to length(now))
-		if(now[i] != was[i])
-			changed += i
-	snapshot["revs_now"] = now
+	var/list/airs = snapshot["airs"]
+	var/list/turfs = snapshot["turfs"]
+	var/list/changed = isnull(snapshot["watch"]) ? null : vg_air_watch_changed(snapshot["watch"], snapshot["revs"])
+	if(isnull(changed))
+		// No watch yet, or the engine dropped it: the handles are looked up again and a new watch started, every mixture counting as unchanged until its revision moves.
+		airs = unit_test_airs_of(turfs)
+		snapshot["airs"] = airs
+		snapshot["watch"] = vg_air_watch_new(airs)
+		changed = vg_air_watch_changed(snapshot["watch"], snapshot["revs"])
+	if(length(changed))
+		var/list/fresh = list()
+		for(var/i in changed)
+			var/turf/open/T = turfs[i]
+			var/datum/gas_mixture/air = QDELETED(T) ? null : T.air
+			airs[i] = air
+			fresh += air
+		vg_air_watch_rebind(snapshot["watch"], changed, fresh)
 	return changed
 
 /// Makes the snapshot current for the mixtures that changed (a between-test drift becomes the baseline): their readings, revisions and cold-room marks.
@@ -145,15 +178,15 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 
 // ---- floors ----
 
-/// Indices of the snapshot's turfs whose floor temperature differs from the snapshot's by more than a hundredth of a kelvin (one batched read, one pass). Leaves
-/// the new temperatures in snapshot["now"].
+/// Indices of the snapshot's turfs whose floor temperature differs from the snapshot's by more than a hundredth of a kelvin: the engine compares them in one
+/// call and returns only the ones that moved. Leaves their temperatures now in snapshot["now"] (indexed like the result).
 /proc/unit_test_solid_changed(list/snapshot)
-	var/list/now = vg_heat_turf_temperatures(snapshot["turfs"])
-	var/list/was = snapshot["k"]
+	var/list/moves = vg_heat_turf_moves(snapshot["turfs"], snapshot["k"], 0.01)
 	var/list/changed = list()
-	for(var/i in 1 to length(now))
-		if(abs(now[i] - was[i]) > 0.01)
-			changed += i
+	var/list/now = list()
+	for(var/i in 1 to length(moves) step 2)
+		changed += moves[i]
+		now += moves[i + 1]
 	snapshot["now"] = now
 	return changed
 
@@ -162,5 +195,5 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	var/list/changed = unit_test_solid_changed(snapshot)
 	var/list/was = snapshot["k"]
 	var/list/now = snapshot["now"]
-	for(var/i in changed)
-		was[i] = now[i]
+	for(var/k in 1 to length(changed))
+		was[changed[k]] = now[k]

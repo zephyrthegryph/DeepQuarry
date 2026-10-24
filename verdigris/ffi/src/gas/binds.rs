@@ -338,6 +338,129 @@ fn read_mixture_revisions(mixtures: ByondValue) -> Result<ByondValue> {
     Ok(list)
 }
 
+thread_local! {
+    /// Air watches (see `air_watch_new`): watch id -> the resolved handle and the generation it was resolved at, per watched mixture (None for a null or unregistered
+    /// entry). A watch reads no datum when it is asked what changed, so the question costs a counter read per mixture, not two var reads and a lookup.
+    static AIR_WATCHES: std::cell::RefCell<AirWatches> = std::cell::RefCell::new(AirWatches::default());
+}
+
+/// How many air watches stay resident. The unit-test guard keeps one for its session and the air-guard tests a few throwaway ones; the oldest is dropped past this,
+/// and a caller whose watch was dropped is told (`air_watch_changed` returns null) and makes a new one.
+const AIR_WATCH_CAP: usize = 16;
+
+#[derive(Default)]
+struct AirWatches {
+    next: u32,
+    entries: std::collections::BTreeMap<u32, Vec<Option<(MixRef, u32)>>>,
+}
+
+/// One watched mixture: its handle and generation when the datum is a registered, current mixture, else None.
+fn air_watch_entry(mix: &ByondValue) -> Result<Option<(MixRef, u32)>> {
+    match MixRef::of_unchecked(mix) {
+        Err(_) => Ok(None),
+        Ok((r, held)) => mix::check_generation(r, held)
+            .map(|()| Some((r, mix::generation(r))))
+            .map_err(|stale| stale.report(mix)),
+    }
+}
+
+#[allow(clippy::cast_precision_loss)]
+fn index_value(i: usize) -> ByondValue {
+    ByondValue::from(i as f32)
+}
+
+/// Args: (list of gas mixtures). Starts a watch over them, in order, and returns its id. A stale handle is refused with an error, as in `read_mixtures`.
+#[auxmacros::bind("/proc/air_watch_new")]
+fn air_watch_new(mixtures: ByondValue) -> Result<ByondValue> {
+    let entries = mixtures
+        .get_list_values()?
+        .iter()
+        .map(air_watch_entry)
+        .collect::<Result<Vec<_>>>()?;
+    let id = AIR_WATCHES.with_borrow_mut(|w| {
+        w.next += 1;
+        let id = w.next;
+        w.entries.insert(id, entries);
+        while w.entries.len() > AIR_WATCH_CAP {
+            w.entries.pop_first();
+        }
+        id
+    });
+    Ok(index_value(id as usize))
+}
+
+/// Args: (watch id, list of the revisions the caller last took, one per watched mixture). The 1-based indices of the watched mixtures that changed since: their
+/// revision is not the one given, or their handle's owner was replaced or freed since the watch resolved it (the caller then looks the mixture up again and
+/// rebinds it with `air_watch_rebind`). Null when the watch is gone (dropped past the cap), so the caller starts a new one.
+#[auxmacros::bind("/proc/air_watch_changed")]
+fn air_watch_changed(watch: ByondValue, revisions: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let id = watch.get_number()? as u32;
+    let revs = revisions
+        .get_list_values()?
+        .iter()
+        .map(|v| v.get_number().unwrap_or(f32::NAN))
+        .collect::<Vec<_>>();
+    let changed = AIR_WATCHES.with_borrow(|w| {
+        let entries = w.entries.get(&id)?;
+        let mut changed = Vec::new();
+        for (i, entry) in entries.iter().enumerate() {
+            let now = match entry {
+                None => 0.0_f32,
+                Some((r, held)) => {
+                    if mix::generation(*r) != *held {
+                        changed.push(index_value(i + 1));
+                        continue;
+                    }
+                    #[allow(clippy::cast_precision_loss)]
+                    {
+                        (mix::revision(*r) & 0x00FF_FFFF) as f32
+                    }
+                }
+            };
+            let was = revs.get(i).copied().unwrap_or(f32::NAN);
+            if was.is_nan() || (now - was).abs() > f32::EPSILON {
+                changed.push(index_value(i + 1));
+            }
+        }
+        Some(changed)
+    });
+    let Some(changed) = changed else {
+        return Ok(ByondValue::null());
+    };
+    let list = ByondValue::new_list()?;
+    list.write_list(&changed)?;
+    Ok(list)
+}
+
+/// Args: (watch id, list of 1-based indices, list of the mixtures now at those indices). Points the watch's entries at the given mixtures (a turf given a new air
+/// datum). A stale handle is refused with an error.
+#[auxmacros::bind("/proc/air_watch_rebind")]
+fn air_watch_rebind(watch: ByondValue, indices: ByondValue, mixtures: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let id = watch.get_number()? as u32;
+    let indices = indices.get_list_values()?;
+    let fresh = mixtures
+        .get_list_values()?
+        .iter()
+        .map(air_watch_entry)
+        .collect::<Result<Vec<_>>>()?;
+    AIR_WATCHES.with_borrow_mut(|w| {
+        let Some(entries) = w.entries.get_mut(&id) else {
+            eyre::bail!("air watch {id} is gone");
+        };
+        for (idx, entry) in indices.iter().zip(fresh) {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let i = idx.get_number()? as usize;
+            if let Some(slot) = i.checked_sub(1).and_then(|i| entries.get_mut(i)) {
+                *slot = entry;
+            }
+        }
+        Ok(())
+    })?;
+    Ok(ByondValue::null())
+}
+
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
 #[auxmacros::bind("/datum/gas_mixture/proc/set_temperature")]
 fn set_temperature_hook(src: ByondValue, arg_temp: ByondValue) -> Result<ByondValue> {
