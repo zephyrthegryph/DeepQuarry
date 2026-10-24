@@ -1,0 +1,14 @@
+# Paths that stop tools/dq_land_disjoint.sh from accepting a lane without a re-proof: when the lane, or the master commits it must merge
+# with, changed one of these, the combination can behave differently with no file overlap, so the lane is proved again.
+# One path prefix per line; # comments. Checked on both sides, in addition to tools/ci/lane_ready_global.txt (dq_lane_check.js, master side).
+code/__defines/
+code/__odlint.dm
+code/__pragmas.dm
+SpacemanDMM.toml
+tools/ci/lint_scopes.toml
+tools/analyze/
+tools/build/
+tools/dmb/
+tgui/
+verdigris/
+maps/

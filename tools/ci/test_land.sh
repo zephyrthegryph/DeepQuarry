@@ -112,4 +112,22 @@ git switch -q --detach
 rc="$(DQ_MERGE_SESSION= run)"
 check "a detached HEAD is still refused" '[ "$rc" = 2 ] && grep -q "detached HEAD" "$tmp/out.log"'
 
+# disjoint accept (stub tools/dq_land_disjoint.sh: merges master into the lane and stores the proof, like the real one on success)
+cat >tools/dq_land_disjoint.sh <<'STUB'
+#!/usr/bin/env bash
+[ -z "${DISJOINT_NO:-}" ] || { echo "== land-disjoint: NOT accepted: stub"; exit 1; }
+echo disjoint >>"$STATE/events"
+git fetch -q origin; git merge -q --no-edit origin/master >/dev/null 2>&1
+. tools/dq_proof_cache.sh
+proof_store "$(proof_tree HEAD)" "$(git rev-parse origin/master)" "smoke_one" 1 0 0 0 0 ""
+git notes --ref=lane-ready add -f -m '{"ok":true}' HEAD
+exit 0
+STUB
+lane
+rc="$(MOVE_DURING_QUEUE=1 run)"
+check "master moved while queued but the lane qualifies: accepted twice without a proof run, the queue move not counted" '[ "$rc" = 0 ] && [ "$(ev)" = "disjoint lock release disjoint lock push " ] && ! grep -q "^prove$" "$STATE/events"'
+lane
+rc="$(DISJOINT_NO=1 run)"
+check "a lane that does not qualify is proved as before" '[ "$rc" = 0 ] && [ "$(ev)" = "prove lock gates-reuse push " ]'
+
 [ "$fail" -eq 0 ] && echo "test_land: all passed" || { echo "test_land: FAILED"; exit 1; }
