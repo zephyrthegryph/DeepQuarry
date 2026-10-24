@@ -1131,18 +1131,18 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/turf/T = H.loc
 	H.set_low_priority(TRUE)
-	TEST_ASSERT_EQUAL(H.life_z, T.z, "a low-priority mob joins its z-level's presence")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, life_z, 0), T.z, "a low-priority mob joins its z-level's presence")
 	H.moveToNullspace()
-	TEST_ASSERT_EQUAL(H.life_z, 0, "nullspace leaves it")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, life_z, 0), 0, "nullspace leaves it")
 	TEST_ASSERT(!(H in life_z_presence(T.z).members), "and the presence forgets it")
 	H.forceMove(T)
-	TEST_ASSERT_EQUAL(H.life_z, T.z, "forceMove() back joins again")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, life_z, 0), T.z, "forceMove() back joins again")
 	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
 	H.forceMove(C)
-	TEST_ASSERT_EQUAL(H.life_z, T.z, "inside a container on the same z-level it stays")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, life_z, 0), T.z, "inside a container on the same z-level it stays")
 	H.forceMove(T)
 	H.set_low_priority(FALSE)
-	TEST_ASSERT_EQUAL(H.life_z, 0, "a mob that isn't low priority keeps its own relevance")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, life_z, 0), 0, "a mob that isn't low priority keeps its own relevance")
 
 // --- Human sleep rules ------------------------------------------------------------------------------------------------
 
