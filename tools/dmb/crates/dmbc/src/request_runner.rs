@@ -1154,6 +1154,10 @@ fn run_build_attempt(
                 memo.counts.local_ns.load(Relaxed) as f64 / 1e9, memo.counts.keyed_ns.load(Relaxed) as f64 / 1e9,
                 dmbc::lowering::local_decline_stats());
             dmbc::daemon_eprintln!("native domain memo: {}", dmbc::engine_host::take_domain_memo_counts());
+            match memo.dep_index() {
+                Some(index) => dmbc::daemon_eprintln!("native dependency index: {}", index.summary()),
+                None => dmbc::daemon_eprintln!("native dependency index: off"),
+            }
             if let Some(db) = memo.query_db() {
                 let started = std::time::Instant::now();
                 let summary = db.answer_diff().summary();
