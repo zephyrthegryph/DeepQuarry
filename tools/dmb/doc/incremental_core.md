@@ -370,14 +370,16 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
      retained Variables record holds the old value. `splice` writes the new values through `patch_rows`, which patches
      the fixed-width Variables records after the row splice and drops the retained model (rebuilt from the image on
      demand); the model path (`patch_model`) sets the values too. Composes with changed bodies in the same request.
-     `DMB_DEFAULT_PATCH=0` (or a test's `disable_default_patch`) makes the default patch decline so the general path
-     takes the edit. Cargo test `numeric_default_edits_on_the_general_path_match_fresh`. Production tree, pool-c2, 4
-     workers, hot daemon, `initial_charges` 25 to 26..29: general path 11.0-12.5 s compile (splice 0.4 s; was 22.4 s
-     declined), default patch 8.0-8.7 s on the same machine state; dmb-equiv against a true cold compile of the same
-     source: EQUIVALENT (identical pair hash). The remaining 3 s is ABI preparation and startup validation that run
-     before `admit`; the patch is therefore kept until `admit` can run before them (step 3 not met).
-3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
-   `reads_initial`, `DefaultEdits` in `dm-tree` and the test's patch-count assertion.
+     Cargo test `numeric_default_edits_on_the_general_path_match_fresh`.
+3. **Landed 2026-10-24 (compiler/admit-early).** The 3 s gap attributed to ABI preparation and startup validation running
+   before `admit` was not there: the default patch ran the same startup capture and ABI preparation (`lower_selected`),
+   and the general path's work after them is 0.41-0.45 s (admit 0.24-0.27 s, lowering none, splice the rest; logged as
+   `native incremental output: ... (admit, lower)` with `before admit` for the preparation, 1.6-2.0 s hot). Same
+   production tree, pool-c2, 4 workers, hot daemons (one per namespace, one with `DMB_DEFAULT_PATCH=0`), `initial_charges`
+   edited 27 to 35 on a machine shared with other lanes: general path 10.7-11.4 s, default patch 12.4-13.8 s (8.0-8.7 s
+   in the quiet measurement above, so the earlier gap was machine state). With the general path at or below the patch,
+   `try_default_patch`, `DMB_DEFAULT_PATCH`, `disable_default_patch` and the patch-count test are deleted; `reads_initial`
+   stays in `retained_output` (the admission proof uses it), as does `DefaultEdits` in `dm-tree` (the frontend's proof).
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
 5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.
 
