@@ -476,17 +476,12 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
         // no record yet
       }
     }
-    const stale = generateVerdigrisBindings(process.cwd(), true);
-    if (key && !stale.length) {
+    // The bindings are build output, not committed: write whatever is missing or out of date.
+    const written = generateVerdigrisBindings(process.cwd(), false);
+    if (written.length) Juke.logger.info(`verdigris bindings: wrote ${written.join(', ')}`);
+    if (key) {
       fs.mkdirSync('data', { recursive: true });
       fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
-    }
-    if (stale.length) {
-      Juke.logger.error(
-        `verdigris bindings are stale (${stale.join(', ')}). `
-          + 'Run `tools/build/build.sh verdigris-bindings` and commit the result.',
-      );
-      throw new Juke.ExitCode(1);
     }
   },
 });
