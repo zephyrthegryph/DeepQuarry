@@ -1703,3 +1703,7 @@ exempt_files = ["code/modules/mob/bind_player.dm"]
 # native_ref_write (doc/rewrite/proposals/relations.md D11): the engine's own presentation code and tests are exempt; the rest is a ratchet.
 [lint.native_ref_write]
 exempt_prefixes = ["code/engine/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
+
+# weak_raw_read (tools/analyze/src/lints/weak_raw_read.rs; doc/rewrite/proposals/relations.md D5): a hard ban. The weak-reference store reads the handle by design; tests read it to prove the handle stays.
+[lint.weak_raw_read]
+exempt_prefixes = ["code/engine/refs/weak.dm", "code/engine/_generated/", "code/modules/unit_tests/", "code/tests/"]

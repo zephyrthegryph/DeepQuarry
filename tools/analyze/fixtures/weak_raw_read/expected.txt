@@ -1,0 +1,7 @@
+raw	code/modules/weak/weak.dm	26
+raw	code/modules/weak/weak.dm	30
+raw	code/modules/weak/weak.dm	33
+raw	code/modules/weak/weak.dm	36
+raw	code/modules/weak/weak.dm	39
+raw	code/modules/weak/weak.dm	46
+raw	code/modules/weak/weak.dm	54
