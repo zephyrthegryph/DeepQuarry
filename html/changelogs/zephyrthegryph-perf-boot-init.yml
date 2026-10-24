@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot: setup hooks run from rows precomputed in the lifeform plan, InitAtom skips its pending-list lookups when the lists are empty, and the type-trait table build does one lookup per type"

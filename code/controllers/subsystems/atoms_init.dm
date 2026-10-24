@@ -40,7 +40,7 @@
 		result = A.Initialize(arglist(arguments))
 	// Opt-in constructor completion needs the settled parent state and transient params.
 	// Never run it for an Initialize/keeps_if rejection; the ordinary setup phase stays below.
-	if(setup_pending?[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !init_discard_pending?[A])
+	if(length(setup_pending) && setup_pending[A] == SETUP_PENDING_WITH_PARAMS && result == INITIALIZE_HINT_NORMAL && !(length(init_discard_pending) && init_discard_pending[A]))
 		try
 			setup_run(A, with_params = TRUE)
 			if(param_drop_pending?[A])
@@ -51,10 +51,10 @@
 			setup_pending -= A
 			throw e
 	// keeps_if() (code/engine/lifeforms/keeps_if.dm): a failed condition is the atom's INITIALIZE_HINT_QDEL.
-	if(init_discard_pending?[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
+	if(length(init_discard_pending) && init_discard_pending[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
 		result = INITIALIZE_HINT_QDEL
 	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
-	if(setup_pending?[A])
+	if(length(setup_pending) && setup_pending[A])
 		if(result == INITIALIZE_HINT_NORMAL)
 			// A setup(PROC_REF(x), mapload = TRUE) hook may return INITIALIZE_HINT_QDEL: handled below as an Initialize() return.
 			if(setup_run(A, FALSE, length(arguments) ? arguments[1] : FALSE) == INITIALIZE_HINT_QDEL)
@@ -64,7 +64,7 @@
 
 	// param(keep = FALSE) values are for Initialize() and the type's setup() (a statue's setup reads the mob it copies); they go once both ran
 	// (code/engine/lifeforms/params.dm).
-	if(param_drop_pending?[A])
+	if(length(param_drop_pending) && param_drop_pending[A])
 		params_drop(A)
 
 	#ifdef BENCHMARK_DEEP_PROFILE
