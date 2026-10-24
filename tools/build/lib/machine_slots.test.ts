@@ -205,11 +205,11 @@ describe('agrees with tools/dq_machine_slots.sh', () => {
 
   test.skipIf(bash.status !== 0)('a slot held by the script blocks the build tool, and the other way round', async () => {
     process.env.DQ_SLOTS_CARGO = '1';
-    // The script holds the only slot for 4 s.
-    const child = spawn('bash', [script, 'run', 'cargo', '--label', 'shell-holder', '--', 'sleep', '6'], { env: process.env, stdio: 'ignore' });
+    // The script holds the only slot for 3 s.
+    const child = spawn('bash', [script, 'run', 'cargo', '--label', 'shell-holder', '--', 'sleep', '3'], { env: process.env, stdio: 'ignore' });
     const childDone = exited(child);
     // bash takes a few seconds to start on a loaded Windows machine: wait until it holds the slot.
-    for (let i = 0; i < 40 && !fs.existsSync(path.join(tmp, 'cargo', 'slot.1', 'owner')); i++) await new Promise((r) => setTimeout(r, 500));
+    for (let i = 0; i < 120 && !fs.existsSync(path.join(tmp, 'cargo', 'slot.1', 'owner')); i++) await new Promise((r) => setTimeout(r, 500));
     expect(slotsStatus(['cargo'])).toContain("'shell-holder'");
     const t0 = Date.now();
     const s = await acquireSlot('cargo', 'node-waiter', quiet);
@@ -220,8 +220,12 @@ describe('agrees with tools/dq_machine_slots.sh', () => {
     expect(status.stdout).toContain("'node-waiter'");
     const waiter = spawn('bash', [script, 'run', 'cargo', '--label', 'shell-waiter', '--', 'true'], { env: process.env, stdio: 'ignore' });
     const waiterDone = exited(waiter);
-    // The script is slow to start and polls every second: it must still be waiting after several of its polls.
-    await new Promise((r) => setTimeout(r, 6000));
+    // Wait until the script is really queued (a loaded host starts bash slowly), then it polls every second: it must still be waiting after several of its polls.
+    const queueDir = path.join(tmp, 'cargo', 'queue');
+    const queued = () => fs.existsSync(queueDir) && fs.readdirSync(queueDir).some((f) => fs.readFileSync(path.join(queueDir, f), 'utf-8').includes('label=shell-waiter'));
+    for (let i = 0; i < 120 && !queued() && waiter.exitCode === null; i++) await new Promise((r) => setTimeout(r, 250));
+    expect(queued()).toBe(true);
+    await new Promise((r) => setTimeout(r, 3500));
     expect(waiter.exitCode).toBeNull();
     s?.release();
     expect(await waiterDone).toBe(0);

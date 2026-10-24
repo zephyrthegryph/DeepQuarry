@@ -88,7 +88,7 @@ slots_capacity() { # class -> count (0 = off)
 	local cls="$1" up var val
 	[ "$cls" = "merge_base" ] && { echo 1; return; } # the merge worktree lock is always exactly one and never off (no limit would be the race)
 	[ "${DQ_SLOTS:-1}" = "0" ] && { echo 0; return; }
-	up="$(printf '%s' "$cls" | tr 'a-z' 'A-Z')"
+	up="${cls^^}"
 	var="DQ_SLOTS_$up"
 	val="${!var:-}"
 	if [ -z "$val" ]; then
@@ -109,7 +109,7 @@ slots_capacity() { # class -> count (0 = off)
 slots_usable() { # class max prio -> how many slots (counted from 1) this caller may take
 	local cls="$1" max="$2" prio="$3" up var res
 	[ "$prio" = "0" ] && { echo "$max"; return; }
-	up="$(printf '%s' "$cls" | tr 'a-z' 'A-Z')"
+	up="${cls^^}"
 	var="DQ_SLOTS_MERGE_RESERVE_$up"
 	res="${!var:-${DQ_SLOTS_MERGE_RESERVE:-}}"
 	if [ -z "$res" ]; then
@@ -135,22 +135,36 @@ slots_suite_cap() { # class prio: the most worlds a group of this class may take
 	return 0
 }
 
-_slots_norm() { printf '%s' "$1" | tr 'A-Z\\' 'a-z/' | sed -e 's|^/\([a-z]\)/|\1:/|' -e 's|/*$||'; }
-
-_slots_worktree() {
-	if [ -n "${DQ_SLOT_WORKTREE:-}" ]; then echo "$DQ_SLOT_WORKTREE"; return; fi
-	git rev-parse --show-toplevel 2>/dev/null || pwd
+# Written with bash builtins only (lower case, / separators, /e/ to e:/, no trailing /): every exec of tr, sed, basename, head or cat costs a
+# few hundred ms on a loaded Windows host, a command substitution of a function does not. _slots_norm_set sets NORM with no fork at all.
+_slots_norm_set() {
+	NORM="${1,,}"; NORM="${NORM//\\//}"
+	[[ "$NORM" =~ ^/([a-z])/(.*)$ ]] && NORM="${BASH_REMATCH[1]}:/${BASH_REMATCH[2]}"
+	while [[ "$NORM" == */ ]]; do NORM="${NORM%/}"; done
 }
+_slots_norm() { _slots_norm_set "$1"; printf '%s' "$NORM"; }
+
+SLOTS_WT=""; SLOTS_WT_PWD=""
+_slots_worktree_set() { # sets SLOTS_WT; the git start is paid once per directory (a call through $(...) cannot cache, so hot paths call this)
+	if [ -n "${DQ_SLOT_WORKTREE:-}" ]; then SLOTS_WT="$DQ_SLOT_WORKTREE"; return 0; fi
+	if [ -z "$SLOTS_WT" ] || [ "$SLOTS_WT_PWD" != "$PWD" ]; then
+		SLOTS_WT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; SLOTS_WT_PWD="$PWD"
+	fi
+}
+_slots_worktree() { _slots_worktree_set; printf '%s\n' "$SLOTS_WT"; }
 
 _slots_is_lane() { # <worktree> <compiler|light>: is this worktree a compiler / light lane slot (or declared one with DQ_LANE_CLASS)?
 	[ "${DQ_LANE_CLASS:-}" = "$2" ] && return 0
-	case "$2:$(basename "$(_slots_norm "$1")")" in compiler:pool-c[0-9]*|light:pool-light) return 0 ;; esac
+	_slots_norm_set "$1"
+	case "$2:${NORM##*/}" in compiler:pool-c[0-9]*|light:pool-light) return 0 ;; esac
 	return 1
 }
 
 _slots_priority() { # worktree -> 0 (merge worktree or compiler lane, front of the queue) or 1
 	if [ -n "${DQ_SLOT_PRIORITY:-}" ]; then echo "$DQ_SLOT_PRIORITY"; return; fi
-	if [ "$(_slots_norm "$1")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ]; then echo 0; return; fi
+	local a
+	_slots_norm_set "$1"; a="$NORM"; _slots_norm_set "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
+	if [ "$a" = "$NORM" ]; then echo 0; return; fi
 	if _slots_is_lane "$1" compiler; then echo 0; else echo 1; fi
 }
 
@@ -166,9 +180,16 @@ _slots_refuse_light() { # class worktree: a light lane never compiles DM or runs
 	exit 64
 }
 
-_slots_winpid() { cat "/proc/$1/winpid" 2>/dev/null || echo "$1"; }
+_slots_winpid() { local w; if [ -r "/proc/$1/winpid" ] && read -r w <"/proc/$1/winpid" && [ -n "$w" ]; then echo "$w"; else echo "$1"; fi; }
 
-_slots_field() { sed -n "s/^$2=//p" "$1" 2>/dev/null | head -n 1; }
+_slots_field() { # file key: the first value of key (everything after "key=" on its line); no sed | head pipeline
+	local k v
+	[ -r "$1" ] || return 0
+	while IFS='=' read -r k v || [ -n "$k" ]; do
+		if [ "$k" = "$2" ]; then printf '%s\n' "$v"; return 0; fi
+	done <"$1"
+	return 0
+}
 
 _slots_num() { # file key default -> the key's value when it is a number, else the default (a file still being written has none)
 	local v
@@ -196,7 +217,7 @@ _slots_dead() { # file
 	kind="$(_slots_field "$f" kind)"
 	pid="$(_slots_field "$f" pid)"
 	winpid="$(_slots_field "$f" winpid)"
-	age=$(( $(date +%s) - $(_slots_mtime "$f") ))
+	age=$(( EPOCHSECONDS - $(_slots_mtime "$f") ))
 	if [ "$age" -gt "$stale" ]; then return 0; fi
 	if [ "$kind" = "bash" ] && [ -n "$pid" ]; then
 		kill -0 "$pid" 2>/dev/null && return 1 || return 0
@@ -256,7 +277,7 @@ _slots_reap() { # class dir: remove dead holders and waiters
 
 _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	local d="$1" f out="" now started
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	for f in "$d"/slot.*; do
 		[ -f "$f/owner" ] || continue
 		started="$(_slots_field "$f/owner" started)"
@@ -270,12 +291,14 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 # patience (DQ_SLOTS_GROUP_PATIENCE_SEC, default 120) blocks like any head again and then takes what is free, so groups are delayed,
 # never starved.
 _slots_single_may_go() { # dir name
-	local d="$1" name="$2" q now queued
-	now="$(date +%s)"
-	for q in $(ls "$d/queue" 2>/dev/null | sort); do
+	local d="$1" name="$2" q f now="$EPOCHSECONDS" queued grp k v
+	for f in "$d"/queue/*; do   # the glob is sorted, as ls | sort was
+		[ -e "$f" ] || continue
+		q="${f##*/}"
 		[ "$q" = "$name" ] && return 0
-		grep -q '^group=' "$d/queue/$q" 2>/dev/null || return 1
-		queued="$(_slots_field "$d/queue/$q" queued)"
+		grp=0; while IFS='=' read -r k v || [ -n "$k" ]; do [ "$k" = group ] && { grp=1; break; }; done <"$f" 2>/dev/null   # a "group=" line, as grep -q '^group=' found it
+		[ "$grp" -eq 1 ] || return 1
+		queued="$(_slots_field "$f" queued)"
 		[ $(( now - ${queued:-$now} )) -lt "${DQ_SLOTS_GROUP_PATIENCE_SEC:-120}" ] || return 1
 	done
 	return 1
@@ -283,19 +306,20 @@ _slots_single_may_go() { # dir name
 
 _slots_acquire() {
 	local cls="${1:?class}" label="${2:-}" max root d top prio usable now name waited=0 last=0 i pos
-	_slots_refuse_light "$cls" "$(_slots_worktree)"
+	_slots_worktree_set
+	_slots_refuse_light "$cls" "$SLOTS_WT"
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
 	root="$(slots_dir)"
 	d="$root/$cls"
 	mkdir -p "$d/queue" 2>/dev/null || { echo "== machine slots: cannot create $d; running without a $cls limit" >&2; return 0; }
-	top="$(_slots_worktree)"
+	top="$SLOTS_WT"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
 	usable="$(slots_role_cap "$cls" "$usable" "$max")"
 	usable=$((usable + $(_slots_extra "$cls" "$top")))
-	now="$(date +%s)"
-	name="$prio-$(printf '%013d' "$now")-$$"
+	now="$EPOCHSECONDS"
+	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
 	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\nsession=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "${DQ_MERGE_SESSION:+env:$DQ_MERGE_SESSION}" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
@@ -305,12 +329,12 @@ _slots_acquire() {
 		if _slots_single_may_go "$d" "$name"; then
 			for ((i = 1; i <= usable; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
-					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
+					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
 					_slots_mark_running
 					_slots_clear_waiting
 					SLOTS_HELD="$d/slot.$i"
 					SLOTS_HELD_CLASS="$cls"
-					SLOTS_T_GOT="$(date +%s)"
+					SLOTS_T_GOT="$EPOCHSECONDS"
 					rm -f "$SLOTS_QUEUE"
 					SLOTS_QUEUE=""
 					_slots_heartbeat "$d/slot.$i/owner"
@@ -367,7 +391,7 @@ _slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
 
 _slots_release() {
 	local now owner worktree label started
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
 	if [ -n "$SLOTS_HELD" ]; then
 		owner="$SLOTS_HELD/owner"
@@ -426,20 +450,21 @@ _slots_group_acquire() {
 	local owners=() dirs=()
 	SLOTS_GROUP_DIRS=()
 	SLOTS_GROUP_CLASS="$cls"
-	_slots_refuse_light "$cls" "$(_slots_worktree)"
+	_slots_worktree_set
+	_slots_refuse_light "$cls" "$SLOTS_WT"
 	max="$(slots_capacity "$cls")"
 	[ "$max" -gt 0 ] 2>/dev/null || return 0
 	root="$(slots_dir)"
 	d="$root/$cls"
 	mkdir -p "$d/queue" 2>/dev/null || { echo "== machine slots: cannot create $d; running without a $cls limit" >&2; return 0; }
-	top="$(_slots_worktree)"
+	top="$SLOTS_WT"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
 	usable="$(slots_role_cap "$cls" "$usable" "$max")"
 	usable=$((usable + $(_slots_extra "$cls" "$top")))
 	[ "$want" -le "$usable" ] || want="$usable"
-	now="$(date +%s)"
-	name="$prio-$(printf '%013d' "$now")-$$"
+	now="$EPOCHSECONDS"
+	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
 	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\ngroup=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "$want" >"$SLOTS_QUEUE"
 	SLOTS_GROUP_T_QUEUED="$now"
@@ -458,7 +483,7 @@ _slots_group_acquire() {
 			[ "$take" -lt "$want" ] && want="$take"
 			for ((i = 1; i <= usable && have < want; i++)); do
 				if mkdir "$d/slot.$i" 2>/dev/null; then
-					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$(date +%s)" "$prio" >"$d/slot.$i/owner"
+					printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nstarted=%s\npriority=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$EPOCHSECONDS" "$prio" >"$d/slot.$i/owner"
 					_slots_mark_running
 					dirs+=("$d/slot.$i")
 					owners+=("$d/slot.$i/owner")
@@ -468,7 +493,7 @@ _slots_group_acquire() {
 			if [ "$have" -ge "$want" ]; then
 				SLOTS_GROUP_DIRS=("${dirs[@]}")
 				_slots_clear_waiting
-				SLOTS_GROUP_T_GOT="$(date +%s)"
+				SLOTS_GROUP_T_GOT="$EPOCHSECONDS"
 				rm -f "$SLOTS_QUEUE"
 				SLOTS_QUEUE=""
 				# One heartbeat for the whole group; a released slot's owner file is gone and is skipped.
@@ -498,7 +523,7 @@ _slots_group_acquire() {
 slots_group_release_one() { # hand back one slot of the group; the last one stops the heartbeat
 	local i left=0 dir="" now owner
 	_slots_errexit_off
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	for i in "${!SLOTS_GROUP_DIRS[@]}"; do
 		if [ -n "${SLOTS_GROUP_DIRS[$i]}" ]; then
 			if [ -z "$dir" ]; then dir="${SLOTS_GROUP_DIRS[$i]}"; SLOTS_GROUP_DIRS[$i]=""; else left=$((left + 1)); fi
@@ -561,7 +586,7 @@ _ml_set_field() { # owner key value: rewrite one line atomically
 
 _ml_event() { # owner: one events.tsv line for the end of a batch
 	local o="$1" now
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" merge_base 1 "$(_slots_field "$o" worktree)" "$(_slots_field "$o" lanes)" 0 "$((now - $(_slots_num "$o" started "$now")))" >>"$(slots_dir)/events.tsv" 2>/dev/null
 }
 
@@ -655,12 +680,12 @@ merge_lock_require_ref() { # the ref hook: merge_lock_require, falling back to t
 _ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over from the acquiring shell and keeps it alive
 	local d="$1" max="${2:-21600}" o t0 now pid="$$" body last_check=0 why
 	o="$d/owner"
-	t0="$(date +%s)"
+	t0="$EPOCHSECONDS"
 	body="$(grep -v -e '^pid=' -e '^winpid=' -e '^kind=' "$o" 2>/dev/null)"
 	{ printf 'kind=bash\npid=%s\nwinpid=%s\n' "$pid" "$(_slots_winpid "$pid")"; printf '%s\n' "$body"; } >"$o.$pid.tmp" && mv -f "$o.$pid.tmp" "$o"
 	while true; do
 		[ -d "$d" ] && [ "$(_slots_field "$o" pid)" = "$pid" ] || exit 0 # released, or reclaimed and taken by another batch
-		now="$(date +%s)"
+		now="$EPOCHSECONDS"
 		if [ $((now - t0)) -ge "$max" ]; then
 			echo "== merge lock: holder pid $pid expired after ${max}s; releasing" >&2
 			break
@@ -745,7 +770,7 @@ merge_lock_who() {
 	local o now
 	o="$(_ml_slot)/owner"
 	if [ ! -f "$o" ]; then echo "nobody holds the merge lock"; return 0; fi
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	echo "merge lock held by $(_slots_field "$o" worktree) lanes '$(_slots_field "$o" lanes)' holder pid $(_slots_field "$o" pid), held $((now - $(_slots_num "$o" started "$now")))s$(_slots_dead "$o" && echo ' [DEAD, reclaimed by the next waiter]')"
 }
 
@@ -804,7 +829,7 @@ slots_run() { # class [--label TEXT] -- command...
 slots_status() { # [class]
 	local root cls d f any=0 now max
 	root="$(slots_dir)"
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	for cls in ${1:-dm_compile test_world cargo merge_base}; do
 		d="$root/$cls"
 		max="$(slots_capacity "$cls")"
@@ -826,7 +851,7 @@ slots_status() { # [class]
 slots_waiting() { # worktree: one line per live queue entry of that worktree in dm_compile / test_world: "<class> <seconds waited> <label>"
 	local want f cls now
 	want="$(_slots_norm "${1:?worktree}")"
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	for cls in dm_compile test_world; do
 		for f in "$(slots_dir)/$cls"/queue/*; do
 			[ -f "$f" ] || continue
@@ -841,7 +866,7 @@ slots_waiting() { # worktree: one line per live queue entry of that worktree in 
 slots_holding() { # worktree: one line per live slot that worktree holds in any class: "<class> <seconds held> <label>"
 	local want f cls now
 	want="$(_slots_norm "${1:?worktree}")"
-	now="$(date +%s)"
+	now="$EPOCHSECONDS"
 	for cls in dm_compile test_world cargo; do
 		for f in "$(slots_dir)/$cls"/slot.*; do
 			[ -f "$f/owner" ] || continue
