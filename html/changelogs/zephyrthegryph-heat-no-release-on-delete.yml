@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Deleting a thing drops its heat body without depositing its stored heat into the tile; gibs, organs, dust, ash and replacements carry the heat explicitly"

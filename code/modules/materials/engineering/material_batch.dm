@@ -563,12 +563,12 @@
 		heat_equalize(HEAT_STORE(heat_store), into)
 	rest_temperature = temperature()
 	drop_heat_links()
-	heat_store_release(heat_store)
+	heat_store_drop(heat_store)
 	heat_store = null
 
 /datum/material_batch/on_destroy(force)
 	drop_heat_links()
 	if(heat_store)
-		heat_store_release(heat_store)
+		heat_store_drop(heat_store)
 		heat_store = null
 	return ..()

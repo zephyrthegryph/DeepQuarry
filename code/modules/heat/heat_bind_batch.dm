@@ -20,7 +20,7 @@
 //   - a pending body is configured before anything reads it:
 //     resolve_heat_body() runs at every DM read site (get_temperature(),
 //     heat_capacity_changed(), heat_recouple(), watch registration);
-//   - a body released while pending leaves the queue (release_heat_body()),
+//   - a body released while pending leaves the queue (drop_heat_body()),
 //     and the configure skips handles that are no longer reserved, so a stale
 //     handle is never configured into someone else's body;
 //   - handles left in the pool when the outermost scope ends are released.
@@ -52,7 +52,7 @@ GLOBAL_VAR_INIT(dq_heat_bind_flushes, 0)
 	dq_heat_bind_flush()
 	var/list/pool = GLOB.dq_heat_body_pool
 	if(length(pool))
-		heat_release_log(vg_heat_body_release_list(pool.Copy()))
+		heat_drop_log(vg_heat_body_drop_list(pool.Copy()))
 		pool.Cut()
 
 /// A reserved handle from the pool (refilled in one call), or null if Rust refused.

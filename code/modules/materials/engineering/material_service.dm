@@ -238,7 +238,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service/on_destroy(force)
 	drop_heat_links()
 	if(heat_store)
-		heat_store_release(heat_store)
+		heat_store_drop(heat_store)
 		set_heat_store(null)
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	if(batch && (batch.doomed[src] || batch.doomed[owner()]))
