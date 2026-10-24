@@ -131,6 +131,7 @@
 /datum/unit_test/dq_damage_flavour_bands
 
 /datum/unit_test/dq_damage_flavour_bands/Run()
+	restore_ambient_after() // the test floor is in the Telecomms compartment, which cools by design while world time passes
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/railing/railing = allocate(/obj/structure/railing, T)
