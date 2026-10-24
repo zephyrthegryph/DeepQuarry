@@ -261,7 +261,7 @@
 		for(var/datum/entry/E in chain)
 			dq_check_entry_signature(E, seen, bad)
 		probes++
-		qdel(probe) // ALLOW(lifecycle): a probe instance made only to read a type's declarations
+		qdel(probe)
 	for(var/sig in GLOB.caps_interned)
 		var/datum/capability/C = GLOB.caps_interned[sig]
 		TEST_ASSERT_EQUAL(sig, dq_ref_datum_signature(C), "an interned capability's signature equals the plain build")
