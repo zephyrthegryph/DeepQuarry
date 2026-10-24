@@ -230,14 +230,14 @@
 
 /datum/unit_test/dq_interned_entry_signatures_unchanged/Run()
 	var/entries = 0
-	for(var/sig in GLOB.entries_interned)
-		var/datum/entry/E = GLOB.entries_interned[sig]
+	for(var/sig in entries_interned())
+		var/datum/entry/E = entries_interned()[sig]
 		TEST_ASSERT(E.sig == sig, "an interned entry is filed under its own signature ([sig])")
 		TEST_ASSERT_EQUAL(sig, dq_ref_entry_signature(E.kind, E.key, E.args, E.children), "the entry's signature equals the plain build")
 		entries++
 	var/parts = 0
-	for(var/sig in GLOB.parts_interned)
-		var/datum/entry/part/P = GLOB.parts_interned[sig]
+	for(var/sig in parts_interned())
+		var/datum/entry/part/P = parts_interned()[sig]
 		TEST_ASSERT(P.sig == sig, "an interned part is filed under its own signature ([sig])")
 		TEST_ASSERT_EQUAL(sig, "[P.type]|" + dq_ref_entry_signature(ENTRY_OP_PART, null, P.args, P.children), "the part's signature equals the plain build")
 		parts++
