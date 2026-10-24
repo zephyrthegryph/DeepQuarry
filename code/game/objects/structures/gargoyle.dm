@@ -7,7 +7,7 @@
 	var/initial_blind
 	var/initial_is_shifted
 	var/initial_lying
-	var/initial_lying_prev as num
+	var/initial_lying_prev
 	var/wagging
 	var/flapping
 	max_integrity = 100
@@ -143,7 +143,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	set_pixel_y(H.pixel_y)
 	set_dir(H.dir)
 	initial_lying = H.lying
-	initial_lying_prev = sparse_get_or(H, lying_prev, 0)
+	initial_lying_prev = round(sparse_get_or(H, lying_prev, 0)) // a number: lying_prev holds the mob's lying (0 or 1)
 	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
 		set_appearance_flags(appearance_flags | PIXEL_SCALE)
