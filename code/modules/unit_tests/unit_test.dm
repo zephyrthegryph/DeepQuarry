@@ -1159,7 +1159,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		stoplag()
 	// The whole-map baselines (air, floors, machines) are the run's guard session: taken once, kept current, brought up to date here for what the world did since the last test.
 	var/datum/unit_test_guard/guard = unit_test_guard_session()
+	var/cost_mark = TICK_USAGE
 	guard.begin()
+	cost_mark = guard.spend("begin", cost_mark)
+	guard.tests_judged++
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
@@ -1169,6 +1172,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	GLOB.dq_atmos_test_declared.Cut()
 	var/list/solids_before = guard.solids
 	var/list/areas_before = unit_test_area_snapshot()
+	cost_mark = guard.spend("snapshots", cost_mark)
 	test.baseline = list("air" = air_before, "solids" = solids_before, "machines" = guard.machine_state)
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
@@ -1262,19 +1266,25 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	// A test must delete everything it creates (allocate(), or its own qdel()s). Whatever
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
+	cost_mark = TICK_USAGE
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
 	var/list/state_leaks = list()
 	unit_test_globals_guard(globals_before, test_path, state_leaks)
 	unit_test_gravity_guard(gravity_before, test_path, state_leaks)
 	unit_test_watch_guard(watching_before, test_path, state_leaks)
+	cost_mark = guard.spend("globals", cost_mark)
 	var/list/touched = test_touched || list() // an area -> TRUE list: where this test's things stood, and where its air and floors changed
 	for(var/turf/declared as anything in GLOB.dq_atmos_test_declared)
 		if(declared.loc)
 			touched[declared.loc] = TRUE
 	unit_test_air_guard(air_before, hotspots_before, test_path, found = state_leaks, touched = touched)
+	cost_mark = guard.spend("air", cost_mark)
 	unit_test_solid_guard(solids_before, test_path, state_leaks, touched)
+	cost_mark = guard.spend("floors", cost_mark)
 	guard.judge_machines(test_path, touched, state_leaks)
+	cost_mark = guard.spend("machines", cost_mark)
 	unit_test_area_guard(areas_before, test_path, state_leaks)
+	guard.spend("areas", cost_mark)
 	if(length(state_leaks))
 		var/state_text = state_leaks.Join("\n\t")
 		leak = leak ? "[leak]\n\t[state_text]" : state_text
@@ -1409,7 +1419,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		var/offset = (i - 1) * GAS_READ_STRIDE
 		if(readings[offset + GAS_READ_TOTAL_MOLES] > 0 && readings[offset + GAS_READ_TEMPERATURE] < UNIT_TEST_SOLID_COLD_ROOM_KELVIN)
 			skip[live[i]] = readings[offset + GAS_READ_TEMPERATURE]
-	return list("turfs" = live, "airs" = mixes, "readings" = readings, "revs" = vg_read_mixture_revisions(mixes), "skip" = skip)
+	return list("turfs" = live, "airs" = mixes, "readings" = readings, "revs" = vg_read_mixture_revisions(mixes), "watch" = vg_air_watch_new(mixes), "skip" = skip)
 
 /// What the change of one turf's air between two batched records is, as text, or null when it is under the thresholds.
 /proc/unit_test_air_change(list/was, was_offset, list/now, now_offset)
@@ -1592,21 +1602,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/now = before["now"]
 	var/leaked = 0
 	var/list/moves = list() // text -> |change|
-	for(var/i in moved)
+	for(var/k in 1 to length(moved))
+		var/i = moved[k]
 		var/turf/open/T = turfs[i]
 		if(QDELETED(T) || !istype(T))
 			continue
 		if(touched && T.loc)
 			touched[T.loc] = TRUE
-		var/kelvin = now[i]
+		var/kelvin = now[k]
 		// The map's cryogenic rooms (the processing strata, ~100 K) warm toward room temperature on their own on an idle world, as the pumps there do.
 		if(kelvin < 0 || was[i] <= UNIT_TEST_SOLID_COLD_ROOM_KELVIN || abs(kelvin - was[i]) <= UNIT_TEST_SOLID_LEAK_KELVIN)
 			continue
 		leaked++
 		moves["[T] ([T.x],[T.y],[T.z]) in [get_area(T)]: [round(was[i], 0.1)] -> [round(kelvin, 0.1)] K"] = abs(kelvin - was[i])
 	if(before["session"])
-		for(var/i in moved)
-			was[i] = now[i]
+		for(var/k in 1 to length(moved))
+			was[moved[k]] = now[k]
 	if(!leaked)
 		return
 	// The three that moved most: the polluter's own floor, not the cold rooms that drift by themselves.
