@@ -1299,6 +1299,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
 		"act_taken" = TRUE, // a cumulative counter of the world actions taken (act.dm): it is 0 or 1 early in a fresh run, so it reads as a flag
 		"coalesce_absorbed" = TRUE, // a cumulative counter of the actions the coalescer absorbed (coalesce.dm), same reading
+		"standing_cache_hits" = TRUE, "standing_cache_misses" = TRUE, "standing_cache_drops" = TRUE, // diagnostic counters of the standing cache (standings.dm): 0 or 1 early in a run so they read as flags; tests read them as deltas
+		"staleness_late_parked" = TRUE, // the staleness checker's per-summary counter: the kernel drains bump it mid-test when they first reach a pre-test entity, and staleness_test_end() zeroes it itself
 		"starting_legal_nifsoft" = TRUE, // a lazily built cache (the nifsoft shop's legal product list, made on its first stock): rebuilding it is the same as keeping it
 		"starting_illegal_nifsoft" = TRUE, // a lazily built cache, same as the legal list: the shop's illegal product list
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
