@@ -156,6 +156,7 @@ fn borrowed_disk_failure_admission_keeps_exact_keys_and_negative_reads() {
                     selections_only: false,
                     verify: false,
                     modified: None,
+                    certificates: None,
                 },
                 host,
                 &prepared,
