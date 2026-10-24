@@ -141,7 +141,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 			"name" = sample.name,
 			"icon" = sample.icon,
 			"icon_state" = sample.icon_state,
-			"ref" = REF(sample)
+			"ref" = ref_token(sample)
 		))
 
 	var/obj/effect/anomaly/anom = harvested
