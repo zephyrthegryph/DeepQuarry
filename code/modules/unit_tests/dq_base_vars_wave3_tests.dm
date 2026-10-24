@@ -139,13 +139,14 @@
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/dq_sparse_probe/H = allocate(/mob/living/carbon/human/dq_sparse_probe, test_floor())
-	sparse_set(H, lying_prev, 7)
+	// voice_freq, not lying_prev: update_canmove() rewrites lying_prev from the mob's lying on every tick the world runs during Run(), which cleared the slot (the flake).
+	sparse_set(H, voice_freq, 7)
 	vars_write(H, "meat_amount", 6)
 	var/datum/SDQL2_query/defaults = allocate(/datum/SDQL2_query, list())
 	var/datum/SDQL_parser/read_parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("SELECT /mob/living/carbon/human/dq_sparse_probe", actor))
 	var/list/read_tree = read_parser.parse(actor)
 	var/datum/SDQL2_query/reader = allocate(/datum/SDQL2_query, read_tree, FALSE, TRUE, defaults.options, FALSE, actor)
-	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("lying_prev")), 7, "SDQL reads a wave 3 slot by its old var name")
+	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("voice_freq")), 7, "SDQL reads a wave 3 slot by its old var name")
 	TEST_ASSERT_EQUAL(reader.SDQL_expression(H, list("meat_amount")), 6, "SDQL reads a wave 3 trait var by its old var name")
 	var/datum/SDQL_parser/parser = allocate(/datum/SDQL_parser, SDQL2_tokenize("UPDATE /mob/living/carbon/human/dq_sparse_probe SET max_nutrition = 55", actor))
 	var/list/tree = parser.parse(actor)
@@ -157,7 +158,7 @@
 	// a runtime inside the query fails this test with its message instead of reading as a query that never finishes.
 	query.Run()
 	TEST_ASSERT(query.finished, "the update query finishes")
-	TEST_ASSERT_EQUAL(sparse_get(H, lying_prev), 7, "the slot is as it was")
+	TEST_ASSERT_EQUAL(sparse_get(H, voice_freq), 7, "the slot is as it was")
 	TEST_ASSERT_EQUAL(living_rules_of(H).max_nutrition, 55, "and the trait var")
 
 

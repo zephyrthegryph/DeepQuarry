@@ -83,7 +83,22 @@ gate_tests_with_retry() {
 			n=${#names[@]}
 			echo "GATE FLAKE: ${names[*]} failed once and passed in isolation; recorded in $(flake_ledger); needs a fix lane (tools/dq_flake_log.sh)"
 			flake_record flake "${names[*]}" "$first_line"
-			echo "FOCUSED RESULT: $(( ${passed:-0} + n )) passed, $(( ${failed:-0} - n )) failed (json: ${json:-none}) [recovered by an isolated rerun: ${names[*]}]"
+			# The first run's record still says "failed": write a merged record beside it (same commit, the recovered tests moved from
+			# failed to passed, the flaked names kept under "recovered") so the counts on the result line match the JSON it names.
+			rjson="$json"
+			if [ -n "$json" ] && [ -f "$json" ]; then
+				rjson="${json%.json}.recovered.json"
+				node -e '
+					const fs = require("fs");
+					const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+					const names = process.argv[3].split(" ").filter(Boolean);
+					const set = new Set(names.map(n => "/datum/unit_test/" + n));
+					r.failed = (r.failed || []).filter(t => !set.has(t));
+					r.recovered = names;
+					r.counts = Object.assign({}, r.counts, { passed: r.counts.passed + names.length, failed: r.counts.failed - names.length });
+					fs.writeFileSync(process.argv[2], JSON.stringify(r));' "$json" "$rjson" "${names[*]}" || rjson="$json"
+			fi
+			echo "FOCUSED RESULT: $(( ${passed:-0} + n )) passed, $(( ${failed:-0} - n )) failed (json: ${rjson:-none}) [recovered by an isolated rerun: ${names[*]}]"
 			echo "KNOWN FAILURES CHECK: 0 NEW, 0 KNOWN (the failures above passed in an isolated rerun: flakes)"
 			rm -f "$log" "$rlog"
 			return 0
