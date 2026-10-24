@@ -144,6 +144,24 @@ struct AnswerSlot {
     world: u128,
     hash: u128,
     positive: bool,
+    /// Request that first held this id (the slot is `fresh` in that request).
+    born: u64,
+    /// Request in which the hash last differed from the slot it replaced (0: never).
+    changed: u64,
+}
+impl AnswerSlot {
+    /// The slot `proved` becomes when it replaces `self`: the same id, so `born` is kept and
+    /// `changed` moves to this request when the answer's value differs.
+    fn replaced_by(prior: Option<AnswerSlot>, mut proved: AnswerSlot) -> AnswerSlot {
+        match prior {
+            Some(prior) => {
+                proved.born = prior.born;
+                proved.changed = if prior.hash != proved.hash { proved.request } else { prior.changed };
+            }
+            None => proved.born = proved.request,
+        }
+        proved
+    }
 }
 #[derive(Default)]
 struct AnswerRequest {
@@ -162,6 +180,8 @@ struct Answers {
     carried: std::sync::atomic::AtomicUsize,
     /// Answers a stage's own resolver disagreed with (verification only).
     mismatches: std::sync::atomic::AtomicUsize,
+    /// Request that last dropped the whole table (project change); its slots are all fresh.
+    cleared: std::sync::atomic::AtomicU64,
     /// Every resource search the table holds: the world version does not cover the filesystem,
     /// so these are proven again when a request opens (see [`QueryDb::begin_answers`]).
     resource_queries: Mutex<std::collections::HashMap<u128, dm_ir::ResolveQuery>>,
@@ -175,6 +195,7 @@ impl Default for Answers {
             resolved: Default::default(),
             carried: Default::default(),
             mismatches: Default::default(),
+            cleared: Default::default(),
             resource_queries: Default::default(),
         }
     }
@@ -189,6 +210,8 @@ impl Answers {
         self.carried.store(0, Ordering::Relaxed);
     }
     fn clear(&self) {
+        let request = self.current.read().unwrap_or_else(|error| error.into_inner()).request;
+        self.cleared.store(request, std::sync::atomic::Ordering::Relaxed);
         for shard in self.shards.iter() {
             shard.lock().unwrap_or_else(|error| error.into_inner()).clear();
         }
@@ -199,6 +222,39 @@ impl Answers {
             .iter()
             .map(|shard| shard.lock().unwrap_or_else(|error| error.into_inner()).len())
             .sum()
+    }
+}
+
+/// The answers of one request that differ from the table before it (see
+/// [`QueryDb::answer_diff`]).
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct AnswerDiff {
+    pub request: u64,
+    /// Ids (`query_id`) of answers held before whose value changed, sorted.
+    pub changed: Vec<u128>,
+    /// Answers asked for the first time this request (or since the table was cleared) that equal
+    /// what asked them recorded, or that nothing recorded.
+    pub fresh: usize,
+    /// The table was dropped when the request opened (project change): nothing is comparable.
+    pub cleared: bool,
+    /// Slots in the table.
+    pub held: usize,
+}
+impl AnswerDiff {
+    /// One line for a decline reason or a log.
+    pub(crate) fn summary(&self) -> String {
+        let shown: Vec<String> =
+            self.changed.iter().take(8).map(|id| format!("{:08x}", (*id >> 96) as u32)).collect();
+        format!(
+            "request {}: {} answers changed [{}{}], {} fresh, {} held{}",
+            self.request,
+            self.changed.len(),
+            shown.join(" "),
+            if self.changed.len() > shown.len() { " ..." } else { "" },
+            self.fresh,
+            self.held,
+            if self.cleared { ", table cleared" } else { "" },
+        )
     }
 }
 
@@ -268,8 +324,10 @@ impl RequestAnswers<'_> {
         let current = answers.current.read().unwrap_or_else(|error| error.into_inner());
         let identity = current.tree.as_ref().map_or(0, |tree| tree.declaration_identity());
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
+        let prior;
         {
             let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+            prior = slots.get(&id).copied();
             if let Some(slot) = slots.get_mut(&id) {
                 if slot.request == current.request && slot.tree == identity {
                     let hash = slot.hash;
@@ -325,13 +383,18 @@ impl RequestAnswers<'_> {
         let timer = RESOLVE.time();
         let meaning = (self.answer)(query);
         drop(timer);
-        let slot = AnswerSlot {
-            request: current.request,
-            tree: identity,
-            world: current.world,
-            hash: answer_hash(&meaning),
-            positive: positive_answer(&meaning),
-        };
+        let slot = AnswerSlot::replaced_by(
+            prior,
+            AnswerSlot {
+                request: current.request,
+                tree: identity,
+                world: current.world,
+                hash: answer_hash(&meaning),
+                positive: positive_answer(&meaning),
+                born: 0,
+                changed: 0,
+            },
+        );
         answers.resolved.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if matches!(query.domain(), dm_ir::ReadDomain::ResourceSearch) {
             answers
@@ -358,7 +421,23 @@ impl RequestAnswers<'_> {
     }
     /// Whether the current answer to `query` has the recorded hash.
     pub(crate) fn unchanged_hash(&self, query: &dm_ir::ResolveQuery, recorded: u128) -> bool {
-        self.current(query_id(query), query) == recorded
+        self.matches(query_id(query), query, recorded)
+    }
+    /// Whether the current answer has the hash a stored unit recorded. A different value marks
+    /// the slot changed in this request: the slot is created by the first stage to ask, so the
+    /// recorded hash is the only earlier value there is to compare with.
+    fn matches(&self, id: u128, query: &dm_ir::ResolveQuery, recorded: u128) -> bool {
+        let hash = self.current(id, query);
+        if hash == recorded {
+            return true;
+        }
+        let answers = &self.db.answers;
+        let request = answers.current.read().unwrap_or_else(|error| error.into_inner()).request;
+        let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
+        if let Some(slot) = shard.lock().unwrap_or_else(|error| error.into_inner()).get_mut(&id) {
+            slot.changed = request;
+        }
+        false
     }
 }
 impl dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning> for RequestAnswers<'_> {
@@ -424,15 +503,22 @@ impl QueryDb {
         for (id, query) in queries {
             let meaning = resolve(&query);
             let shard = &self.answers.shards[(id as usize) % ANSWER_SHARDS];
-            shard.lock().unwrap_or_else(|error| error.into_inner()).insert(
+            let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+            let prior = slots.get(&id).copied();
+            slots.insert(
                 id,
-                AnswerSlot {
-                    request,
-                    tree: identity,
-                    world,
-                    hash: answer_hash(&meaning),
-                    positive: positive_answer(&meaning),
-                },
+                AnswerSlot::replaced_by(
+                    prior,
+                    AnswerSlot {
+                        request,
+                        tree: identity,
+                        world,
+                        hash: answer_hash(&meaning),
+                        positive: positive_answer(&meaning),
+                        born: 0,
+                        changed: 0,
+                    },
+                ),
             );
         }
     }
@@ -470,6 +556,33 @@ impl QueryDb {
             hash.update(&answer.to_le_bytes());
         }
         Some(hash.digest128())
+    }
+    /// Which answers this request holds with a value different from the one before it: from the
+    /// slot this table held, else from the hash a stored unit recorded when a proof asked it
+    /// (`matches`). It is the per-slot form of what [`Self::answers_version`] compares as one
+    /// hash. Only answers some stage asked are slots, and a proof stops at the first differing
+    /// read of a unit, so the set is the changed answers the request's stages met, not every
+    /// answer the edit could reach.
+    pub(crate) fn answer_diff(&self) -> AnswerDiff {
+        static DIFF: dm_profile::Accumulator = dm_profile::Accumulator::new("query.answer.diff");
+        let _timer = DIFF.time();
+        use std::sync::atomic::Ordering;
+        let request = self.answers.current.read().unwrap_or_else(|error| error.into_inner()).request;
+        let cleared = self.answers.cleared.load(Ordering::Relaxed) == request;
+        let mut diff = AnswerDiff { request, cleared, ..Default::default() };
+        for shard in self.answers.shards.iter() {
+            let slots = shard.lock().unwrap_or_else(|error| error.into_inner());
+            diff.held += slots.len();
+            for (id, slot) in slots.iter() {
+                if slot.changed == request {
+                    diff.changed.push(*id);
+                } else if slot.born == request {
+                    diff.fresh += 1;
+                }
+            }
+        }
+        diff.changed.sort_unstable();
+        diff
     }
     /// Answers a stage's resolver disagreed with in verification (see [`RequestAnswers`]).
     pub(crate) fn answer_mismatches(&self) -> usize {
@@ -542,7 +655,7 @@ impl QueryDb {
                             .map(|unit| {
                                 unit.reads
                                     .iter()
-                                    .all(|(id, query, recorded)| answers.current(*id, query) == *recorded)
+                                    .all(|(id, query, recorded)| answers.matches(*id, query, *recorded))
                             })
                             .collect::<Vec<_>>()
                     })
@@ -560,6 +673,7 @@ impl QueryDb {
             .collect();
         if detail {
             let (resolved, carried, held) = self.answer_counts();
+            eprintln!("detail query answers: {}", self.answer_diff().summary());
             eprintln!(
                 "detail query units: stored={} proven={} answers resolved={} carried={} held={} mismatches={} reads={:.3}s check={:.3}s",
                 units.len(),
@@ -605,5 +719,129 @@ mod tests {
         let project = db.revise(&sources(&[("a.dm", "x2")]), 2).unwrap();
         assert!(!project.green);
         assert!(db.revise(&sources(&[("a.dm", "x2")]), 2).unwrap().green);
+    }
+
+    struct Text(String);
+    impl dm_preprocess::SourceProvider for Text {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok(self.0.clone())
+        }
+    }
+    fn tree(text: &str) -> Arc<dm_tree::SemanticTree> {
+        let engine = crate::runner_host::EnginePayload::capture(
+            include_bytes!("../../../fixtures/native_template.bin").to_vec(),
+            1,
+            true,
+            0,
+        )
+        .unwrap();
+        let seed = engine.snapshot.frontend_seed();
+        let front = dm_tree::frontend::build_with_config(
+            std::path::Path::new("slots.dme"),
+            &Text(text.into()),
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig { workers: 1, engine: Some(&seed), observer: None },
+        )
+        .unwrap();
+        Arc::clone(&front.snapshot.tree)
+    }
+    fn symbol(text: &str) -> dm_ir::SymbolId {
+        dm_ir::SymbolId::of(text)
+    }
+    /// The queries a unit reading `/datum/a`'s default, its proc and a neighbour would ask.
+    fn asked() -> Vec<dm_ir::ResolveQuery> {
+        use dm_ir::ResolveQuery as Q;
+        let owner = symbol("/datum/a");
+        vec![
+            Q::Var { owner, name: symbol("charges") },
+            Q::Var { owner, name: symbol("label") },
+            Q::HasMemberVar { owner, name: symbol("charges") },
+            Q::HasMemberProc { owner, name: symbol("run") },
+            Q::HasMemberProc { owner, name: symbol("extra") },
+            Q::Proc { owner, name: symbol("run"), verb: false },
+        ]
+    }
+    /// Open a request on `text`, ask every query, and return the diff against the request before.
+    fn request(db: &QueryDb, text: &str) -> (AnswerDiff, Vec<(u128, u128)>) {
+        let tree = tree(text);
+        db.next_request();
+        db.begin_answers(&tree, None, &|query| dm_ir::Resolver::resolve(tree.as_ref(), *query));
+        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(tree.as_ref(), *query);
+        let answers = db.request_answers(&resolver);
+        let hashes = asked().iter().map(|q| (query_id(q), answers.current(query_id(q), q))).collect();
+        (db.answer_diff(), hashes)
+    }
+    const BASE: &str = "/datum/a
+	var/charges = 25
+	var/label = \"x\"
+/datum/a/proc/run()
+	return 1
+";
+
+    #[test]
+    fn one_edited_default_changes_exactly_one_answer() {
+        let db = QueryDb::default();
+        let (first, base) = request(&db, BASE);
+        assert_eq!((first.changed.len(), first.fresh), (0, asked().len()), "{first:?}");
+        let (same, _) = request(&db, BASE);
+        assert_eq!(same.changed, Vec::<u128>::new(), "{same:?}");
+        assert_eq!(same.fresh, 0);
+        let (edited, now) = request(&db, &BASE.replace("= 25", "= 26"));
+        let differing: Vec<u128> =
+            base.iter().zip(&now).filter(|(a, b)| a.1 != b.1).map(|(a, _)| a.0).collect();
+        assert_eq!(edited.changed, differing, "{edited:?}");
+        assert_eq!(edited.changed.len(), 1, "{edited:?}");
+        assert_eq!(edited.changed[0], query_id(&asked()[0]));
+        assert!(!edited.cleared);
+    }
+
+    #[test]
+    fn an_edited_body_changes_no_declaration_answer() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let (edited, _) = request(&db, &BASE.replace("return 1", "return 2"));
+        assert_eq!(edited.changed, Vec::<u128>::new(), "{edited:?}");
+        assert_eq!(edited.fresh, 0);
+    }
+
+    #[test]
+    fn an_added_proc_changes_only_the_answers_that_named_it() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        let (added, _) = request(&db, &format!("{BASE}/datum/a/proc/extra()
+	return 3
+"));
+        assert_eq!(added.changed, vec![query_id(&asked()[4])], "{added:?}");
+        assert!(added.summary().contains(": 1 answers changed"), "{}", added.summary());
+    }
+
+    #[test]
+    fn dropping_the_table_makes_every_answer_fresh() {
+        let db = QueryDb::default();
+        request(&db, BASE);
+        db.answers.next_request();
+        db.answers.clear();
+        let diff = db.answer_diff();
+        assert!(diff.cleared);
+        assert_eq!(diff.held, 0);
+    }
+
+    #[test]
+    fn a_fresh_table_reports_the_answers_that_differ_from_what_units_recorded() {
+        // A table that never saw the earlier revision (a proof opens the slots): the recorded
+        // hashes of the earlier revision are the only earlier values.
+        let (_, recorded) = request(&QueryDb::default(), BASE);
+        let db = QueryDb::default();
+        let edited = tree(&BASE.replace("= 25", "= 26"));
+        db.next_request();
+        db.begin_answers(&edited, None, &|query| dm_ir::Resolver::resolve(edited.as_ref(), *query));
+        let resolver = |query: &dm_ir::ResolveQuery| dm_ir::Resolver::resolve(edited.as_ref(), *query);
+        let answers = db.request_answers(&resolver);
+        for (query, (id, hash)) in asked().iter().zip(&recorded) {
+            assert_eq!(answers.matches(*id, query, *hash), *id != query_id(&asked()[0]));
+        }
+        let diff = db.answer_diff();
+        assert_eq!(diff.changed, vec![query_id(&asked()[0])], "{diff:?}");
+        assert_eq!(diff.fresh, asked().len() - 1);
     }
 }
