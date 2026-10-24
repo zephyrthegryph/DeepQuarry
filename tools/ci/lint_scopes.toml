@@ -593,7 +593,6 @@ legacy_forms_converted = [
   "code/modules/recycling/",
   "code/modules/refinery/",
   "code/modules/research/",
-  "code/content/research/",
   "code/modules/resleeving/",
   "code/modules/rogueminer/",
   "code/modules/salvage/",
