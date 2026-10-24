@@ -26,10 +26,10 @@
 		return null
 	dq_atmos_test_isolate_pair(pair[1], pair[2])
 	for(var/turf/open/T as anything in pair)
+		body_heat_remember_solid(T)
 		dq_atmos_test_snapshot_air(T)
 		dq_atmos_test_fill_standard_air(T, T20C)
 		heat_set_solid(T, T20C)
-		GLOB.body_heat_room_solids |= T
 	SSair.run_gas_frames(1)
 	return pair
 

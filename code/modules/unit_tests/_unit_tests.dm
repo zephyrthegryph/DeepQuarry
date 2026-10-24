@@ -181,6 +181,7 @@
 #include "tgui_create_message.dm"
 #include "trait_tests.dm"
 #include "unit_test.dm"
+#include "unit_test_guard.dm"
 #include "vbo_tests.dm"
 #include "vore_tests.dm"
 // DQ fork tests â€” need TEST_ASSERT* macros in scope, which are #undef'd at
@@ -188,6 +189,7 @@
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
 #include "dq_air_guard_tests.dm"
+#include "dq_thermostat_init_tests.dm"
 #include "dq_after_init_tests.dm"
 #include "dq_init_settle_tests.dm"
 #include "dq_init_forms_behaviour_tests.dm"

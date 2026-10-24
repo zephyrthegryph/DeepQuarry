@@ -220,6 +220,7 @@
 /datum/unit_test/dq_h3_hotspot_heats_items
 
 /datum/unit_test/dq_h3_hotspot_heats_items/Run()
+	restore_ambient_after() // the world steps below advance world time: the map vents keep moving gas meanwhile
 	dq_h3_cool_floor(test_floor())
 	var/turf/open/T = test_floor()
 	var/datum/gas_mixture/saved = new
