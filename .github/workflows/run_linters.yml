@@ -107,6 +107,8 @@ jobs:
       # runner has no cross toolchain for. `cargo test`'s default-members
       # (core, domains/heat, gen/layout, domains/power, verdigris,
       # tools/bench, tools/replay) already matches this clippy package list.
+      - name: Generate the Verdigris bindings
+        run: bash tools/ci/gen_verdigris_bindings.sh
       - name: Verdigris cargo fmt
         working-directory: verdigris
         run: cargo fmt --all --check
