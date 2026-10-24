@@ -3,22 +3,22 @@
 	set desc = "Toggle whether you will automatically whisper/subtle"
 	set category = VERB_CAT_IC_SETTINGS
 
-	autowhisper = !autowhisper
+	sparse_set_or(src, autowhisper, !sparse_get_or(src, autowhisper, FALSE), FALSE)
 	if(hud_used?.autowhisper_display)
-		hud_used?.autowhisper_display?.icon_state = "[autowhisper ? "autowhisper1" : "autowhisper"]"
+		hud_used?.autowhisper_display?.icon_state = "[sparse_get_or(src, autowhisper, FALSE) ? "autowhisper1" : "autowhisper"]"
 
 	if(sparse_get(src, autowhisper_mode) == "Psay/Pme")
 		if(isbelly(loc) && absorbed)
 			var/obj/belly/b = loc
 			if(b.mode_flags & DM_FLAG_FORCEPSAY)
 				var/mes = "but you are affected by forced psay right now, so you will automatically use psay/pme instead of any other option."
-				to_chat(src, span_notice("autowhisper [autowhisper ? "enabled, [mes]" : "disabled, [mes]"]."))
+				to_chat(src, span_notice("autowhisper [sparse_get_or(src, autowhisper, FALSE) ? "enabled, [mes]" : "disabled, [mes]"]."))
 				return
 		else
-			forced_psay = autowhisper
-			balloon_alert(src, "autowhisper [autowhisper ? "enabled, using psay/pme" : "disabled"]")
+			set_forced_psay(sparse_get_or(src, autowhisper, FALSE))
+			balloon_alert(src, "autowhisper [sparse_get_or(src, autowhisper, FALSE) ? "enabled, using psay/pme" : "disabled"]")
 	else
-		balloon_alert(src, "autowhisper [autowhisper ? "enabled" : "disabled"]")
+		balloon_alert(src, "autowhisper [sparse_get_or(src, autowhisper, FALSE) ? "enabled" : "disabled"]")
 
 /mob/living/verb/autowhisper_mode()
 	set name = "Autowhisper Mode"
@@ -41,13 +41,13 @@
 		balloon_alert(src, "subtles returned to default setting")
 		return
 	if(choice == "Psay/Pme")
-		if(autowhisper)
+		if(sparse_get_or(src, autowhisper, FALSE))
 			if(isbelly(loc) && absorbed)
 				var/obj/belly/b = loc
 				if(b.mode_flags & DM_FLAG_FORCEPSAY)
 					to_chat(src, span_warning("You can't set that mode right now, as you appear to be absorbed in a belly using forced psay!"))
 					return
-			forced_psay = TRUE
+			set_forced_psay(TRUE)
 			to_chat(src, span_notice("As a note, this option will only work if you are in a situation where you can send psay/pme messages! Otherwise it will work as default whisper/subtle."))
 	sparse_set(src, autowhisper_mode, choice)
 	balloon_alert(src, "subtles set to [sparse_get(src, autowhisper_mode)]")

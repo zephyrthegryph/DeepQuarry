@@ -7,10 +7,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/quadruped
 
-	butchery_loot = list(\
-		/obj/item/stack/animalhide = 3\
-		)
-
 TYPE_TABLE(/mob/living/simple_mob/animal, butchery_organ_types, list( \
 		/obj/item/organ/internal/brain, \
 		/obj/item/organ/internal/heart, \

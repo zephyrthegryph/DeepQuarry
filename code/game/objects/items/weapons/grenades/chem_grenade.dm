@@ -5,7 +5,6 @@
 	desc = "A hand made chemical grenade."
 	w_class = ITEMSIZE_SMALL
 	det_time = null
-	unacidable = TRUE
 
 	var/stage = 0
 	var/state = 0
@@ -19,6 +18,7 @@
 
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_combat(force = 2.0))
 	// a hand-built casing: 0 empty, 1 parts in, 2 locked (armed by its self-use); the screwdriver locks and unlocks it, ahead of the timer
 	stages(nameof(stage),

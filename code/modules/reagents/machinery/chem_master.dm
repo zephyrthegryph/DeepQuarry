@@ -1,10 +1,8 @@
 /obj/machinery/chem_master
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "ChemMaster 3000"
 	desc = "Used to separate and package chemicals in to patches, pills, or bottles. Warranty void if used to create Space Drugs."
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "mixer0"
 	circuit = /obj/item/circuitboard/chem_master
@@ -69,6 +67,8 @@ MSG_DEF_SELF(chem_master/pill_bottle_loaded, "A pill bottle is already loaded in
 // The window: its buttons are ops, and every modal of the old ui_modal_opened()/ui_modal_answered() pair is an op bound to "modal:<id>" whose question
 // is asked inline (a modal of the window); a modal that chained to another (a count, then the name) is one op with two steps.
 CAPABILITIES(/obj/machinery/chem_master)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(wrench_time = 2 SECONDS, interface_sound = SFX_BUTTON))
 	configure(uses_power(idle = 20))
 	reagents(900) // the buffer: a huge number so it should (probably) never dump your reagents

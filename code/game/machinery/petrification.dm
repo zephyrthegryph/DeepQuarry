@@ -6,7 +6,6 @@
 
 	use_power = USE_POWER_IDLE
 	anchored = TRUE
-	unacidable = TRUE
 	dir = EAST
 	var/material = "stone"
 	var/identifier = "statue"
@@ -18,6 +17,7 @@
 	var/list/remotes
 
 CAPABILITIES(/obj/machinery/petrification)
+	configure(movable_motion(unacidable = TRUE))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 100, active = 1000))
 	owns_many(nameof(remotes))

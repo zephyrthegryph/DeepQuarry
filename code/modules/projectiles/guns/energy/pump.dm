@@ -81,7 +81,6 @@
 /obj/item/gun/energy/locked/frontier
 	resistance_flags = BOMB_PROOF
 	/// Rugged: a pulse reaches the internal cells two steps weaker (energy_gun_emp_refresh()).
-	emp_protection_flags = EMP_PROTECT_CONTENTS
 	name = "frontier phaser"
 	desc = "An extraordinarily rugged laser weapon, built to last and requiring effectively no maintenance. Includes a built-in crank charger for recharging away from civilization. This one has a safety interlock that prevents firing while in proximity to the facility."
 	description_fluff = "The NT Brand Model E2 Secured Phaser System, a specialty phaser that has an intergrated chip that prevents the user from opperating the weapon within the vicinity of any NanoTrasen opperated outposts/stations/bases. However, this chip can be disabled so the weapon CAN BE used in the vicinity of any NanoTrasen opperated outposts/stations/bases. The weapon doesn't use traditional weapon power cells and instead works via a pump action that recharges the internal cells. It is a staple amongst exploration personell who usually don't have the license to opperate a lethal weapon through NT and provides them with a weapon that can be recharged away from civilization."
@@ -92,7 +91,6 @@
 	charge_cost = 100 // Reduced cost
 
 	battery_lock = 1
-	unacidable = TRUE
 
 	var/recharging = 0
 	var/phase_power = 15
@@ -144,6 +142,8 @@
 	return initial(icon_state)
 
 CAPABILITIES(/obj/item/gun/energy/locked/frontier)
+	configure(atom_rules(emp_protection = EMP_PROTECT_CONTENTS))
+	configure(movable_motion(unacidable = TRUE))
 	op("pump", ai(), wait(1 SECOND, repeats = PROC_REF(pump_more), after_step = PROC_REF(pump_cycle)), on_interrupt(PROC_REF(pump_end)), then(PROC_REF(pump_end)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(frontier_emp_shield)))
 
@@ -223,7 +223,6 @@ CAPABILITIES(/obj/item/gun/energy/locked/frontier)
 	item_state = "sniper"
 	item_state_slots = list(slot_r_hand_str = "lsniper", slot_l_hand_str = "lsniper")
 	wielded_item_state = "lsniper-wielded"
-	actions_types = list(/datum/action/item_action/use_scope)
 	w_class = ITEMSIZE_LARGE
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	accuracy = -15 //better than most snipers but still has penalty
@@ -242,6 +241,7 @@ CAPABILITIES(/obj/item/gun/energy/locked/frontier)
 	perform_scope_interaction(user, "frontier_rifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	op("frontier_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(frontier_rifle_verb_scope_op)))
 
 /// The frontier_rifle_verb_scope op: the verb's effect, as the old resolver ran it.

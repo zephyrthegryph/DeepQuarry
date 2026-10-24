@@ -4,7 +4,6 @@
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap0"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 1000)
-	throw_speed = 4
 	throw_range = 20
 	var/colorindex = 0
 	var/mob/living/capsuleowner //taken from Capsule Code
@@ -15,6 +14,7 @@
 		rel_set(src, nameof(capsuleowner), user)
 
 CAPABILITIES(/obj/item/buttonofnormal)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_thrown(force = 00))
 	configure(item_combat(force = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -66,7 +66,6 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap1"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
-	throw_speed = 2
 	throw_range = 20
 	var/luckynumber7 = 0
 	var/colorindex = 1
@@ -88,6 +87,7 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/daredevice)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_thrown(force = 00))
 	configure(item_combat(force = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))

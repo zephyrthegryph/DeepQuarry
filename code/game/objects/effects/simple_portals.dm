@@ -5,7 +5,6 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "portal"
 	density = 1
-	unacidable = TRUE
 	anchored = TRUE
 	var/atom/destination
 	var/teleport_sound = SFX_EFFECTS_PORTAL_EFFECT
@@ -22,6 +21,7 @@ CAPABILITIES(/obj/effect/simple_portal/linked)
 		link_portal()
 
 CAPABILITIES(/obj/effect/simple_portal)
+	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(destination))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("enter", observer(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(simple_portal_observer_use)))
@@ -108,7 +108,7 @@ CAPABILITIES(/obj/effect/simple_portal)
 		else
 			if(!struct.density)
 				continue
-			if(struct.throwpass || struct.flags & ON_BORDER)
+			if(atom_rules_of(struct).throwpass || struct.flags & ON_BORDER)
 				continue
 			else
 				return FALSE

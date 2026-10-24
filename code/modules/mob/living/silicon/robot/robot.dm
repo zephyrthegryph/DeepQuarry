@@ -36,7 +36,6 @@
 	var/list/sprite_extra_customization	// Lazy.
 	var/rest_style = "Default"
 	var/notransform
-	does_spin = FALSE
 
 	var/obj/item/clothing/head/hat // THE hat!
 

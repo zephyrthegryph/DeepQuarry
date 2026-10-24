@@ -109,10 +109,12 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	desc = "Used for seeing walls, floors, and stuff through anything."
 	icon_state = "meson"
 	item_state_slots = list(slot_r_hand_str = "meson", slot_l_hand_str = "meson")
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	toggleable = 1
 	vision_flags = SEE_TURFS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
+
+CAPABILITIES(/obj/item/clothing/glasses/meson)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -124,8 +126,10 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	icon_state = "aviator_eng"
 	off_state = "aviator"
 	item_state_slots = list(slot_r_hand_str = "sunglasses", slot_l_hand_str = "sunglasses")
-	actions_types = list(/datum/action/item_action/toggle_hud)
 	activation_sound = SFX_EFFECTS_POP
+
+CAPABILITIES(/obj/item/clothing/glasses/meson/aviator)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hud)))
 
 /obj/item/clothing/glasses/meson/aviator/prescription
 	name = "prescription engineering aviators"
@@ -137,9 +141,11 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	desc = "Modified aviator glasses with a toggled health HUD."
 	icon_state = "aviator_med"
 	off_state = "aviator"
-	actions_types = list(/datum/action/item_action/toggle_mode)
 	toggleable = 1
 	activation_sound = SFX_EFFECTS_POP
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/health/aviator)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_mode)))
 
 /obj/item/clothing/glasses/hud/health/aviator/prescription
 	name = "prescription medical HUD aviators"
@@ -153,9 +159,9 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	icon_state = "purple"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 
 CAPABILITIES(/obj/item/clothing/glasses/science)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 	configure(item_worn(flags = AIRTIGHT))
 
 /obj/item/clothing/glasses/goggles
@@ -175,10 +181,12 @@ CAPABILITIES(/obj/item/clothing/glasses/goggles)
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	darkness_view = 7
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	off_state = "denight"
 	flash_protection = FLASH_PROTECTION_REDUCED
 	enables_planes = list(VIS_FULLBRIGHT)
+
+CAPABILITIES(/obj/item/clothing/glasses/night)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /obj/item/clothing/glasses/night/vox
 	name = "Alien Optics"
@@ -250,9 +258,11 @@ CAPABILITIES(/obj/item/clothing/glasses/monocle)
 	icon_state = "material"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	vision_flags = SEE_OBJS
 	enables_planes = list(VIS_FULLBRIGHT)
+
+CAPABILITIES(/obj/item/clothing/glasses/material)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
@@ -266,11 +276,13 @@ CAPABILITIES(/obj/item/clothing/glasses/monocle)
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	darkness_view = 5
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	off_state = "denight"
 	vision_flags = SEE_OBJS | SEE_TURFS
 	flash_protection = FLASH_PROTECTION_REDUCED
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
+
+CAPABILITIES(/obj/item/clothing/glasses/graviton)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
@@ -387,13 +399,13 @@ MATERIAL_MIX(/obj/item/clothing/glasses/welding, list(MAT_STEEL = 1500, MAT_GLAS
 	desc = "Protects the eyes from welders, approved by the mad scientist association."
 	icon_state = "welding-g"
 	item_state_slots = list(slot_r_hand_str = "welding-g", slot_l_hand_str = "welding-g")
-	actions_types = list(/datum/action/item_action/flip_welding_goggles)
 	var/up = 0
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
 CAPABILITIES(/obj/item/clothing/glasses/welding)
+	configure(item_rules(actions_types = list(/datum/action/item_action/flip_welding_goggles)))
 	configure(item_worn(flags = AIRTIGHT))
 	op("welding_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_goggles_flip_self)))
 	op("welding_toggle_verb", menu(), label("Adjust welding goggles"), needs(carried()), then(PROC_REF(welding_toggle_verb_op)))
@@ -511,13 +523,13 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical)
 	desc = "Modified aviator glasses that can be switch between HUD and flash protection modes."
 	icon_state = "aviator_sec"
 	off_state = "aviator"
-	actions_types = list(/datum/action/item_action/toggle_mode)
 	var/on = 1
 	toggleable = 1
 	activation_sound = SFX_EFFECTS_POP
 	specialty_goggles = TRUE
 
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_mode)))
 	op("aviator_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(aviator_mode_self)))
 
 
@@ -565,12 +577,12 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
 	icon_state = "thermal"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	vision_flags = SEE_MOBS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_CLOAKED)
 	flash_protection = FLASH_PROTECTION_REDUCED
 
 CAPABILITIES(/obj/item/clothing/glasses/thermal)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(thermal_emp_overload)))
 
 /// A pulse overloads the scanner and blinds whoever wears it.
@@ -592,7 +604,9 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal)
 /obj/item/clothing/glasses/thermal/plain
 	toggleable = 0
 	activation_sound = null
-	actions_types = list()
+
+CAPABILITIES(/obj/item/clothing/glasses/thermal/plain)
+	configure(item_rules(actions_types = list()))
 
 /obj/item/clothing/glasses/thermal/plain/monocle
 	name = "thermonocle"
@@ -600,10 +614,10 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal)
 	icon_state = "thermoncle"
 	item_state_slots = list(slot_r_hand_str = "sunglasses", slot_l_hand_str = "sunglasses")
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_monocle)
 	flags = NONE //doesn't protect eyes because it's a monocle, duh
 
 CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/monocle)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_monocle)))
 	configure(item_worn(covers = 0))
 
 
@@ -613,9 +627,9 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/monocle)
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_eyepatch)
 
 CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/eyepatch)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_eyepatch)))
 	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/thermal/plain/jensen
@@ -629,13 +643,13 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/eyepatch)
 	desc = "Teshari designed lightweight goggles."
 	icon_state = "orange-g"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	actions_types = list(/datum/action/item_action/adjust_orange_goggles)
 	var/up = 0
 	specialty_goggles = TRUE
 
 
 
 CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
+	configure(item_rules(actions_types = list(/datum/action/item_action/adjust_orange_goggles)))
 	fits_as(FIT_TESHARI)
 	configure(item_worn(flags = AIRTIGHT, covers = EYES))
 	op("aerogel_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(aerogel_goggles_flip_self)))
@@ -734,16 +748,17 @@ MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be 
 	desc = "A graviton eyepatch with a medical overlay."
 	icon_state = "medgravpatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	actions_types = list(/datum/action/item_action/toggle_eyepatch)
 	off_state = "eyepatch"
 	enables_planes = list(VIS_CH_STATUS,VIS_CH_HEALTH,VIS_FULLBRIGHT,VIS_MESONS)
+
+CAPABILITIES(/obj/item/clothing/glasses/graviton/medgravpatch)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_eyepatch)))
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis
 	name = "tactical AR visor"
 	desc = "Special AR visor designed for security teams, protects your eyes and provides useful data. The red lights provide extra style and intimidation."
 	icon_state = "tacsecvis1"
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM,VIS_AUGMENTED) // CHOMP EDIT Adding AR to the- well, AR visors. :3	flash_protection = FLASH_PROTECTION_MODERATE
-	actions_types = list(/datum/action/item_action/hands_free/change_scanning_pattern)
 	var/list/tac_sec_vis_anim
 
 /// The tac_sec_vis_anim table, one per type (per_type()).
@@ -756,6 +771,7 @@ MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be 
 		)
 
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
+	configure(item_rules(actions_types = list(/datum/action/item_action/hands_free/change_scanning_pattern)))
 	configure(item_worn(flags = AIRTIGHT, covers = EYES))
 	per_type(nameof(tac_sec_vis_anim), PROC_REF(build_tac_sec_vis_anim))
 	op("tactical_sec_vis_pattern_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Scanning pattern"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(tactical_sec_vis_choices)), "radius" = 36, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "pattern"), then(PROC_REF(tactical_sec_vis_pattern_self)))
@@ -842,10 +858,12 @@ CAPABILITIES(/obj/item/clothing/glasses/material/prescription/tajblind)
 	icon_state = "darksight"
 	item_state = "darksight"
 
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 
 	toggleable = 1
 	see_invisible = INVISIBILITY_SHADEKIN
+
+CAPABILITIES(/obj/item/clothing/glasses/darksight)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 //No hybridizing shadekinsight. Having it as an adminspawn is ok, but it should be specific
 /obj/item/clothing/glasses/meson/darksight
@@ -853,11 +871,13 @@ CAPABILITIES(/obj/item/clothing/glasses/material/prescription/tajblind)
 	desc = "Used for seeing walls, floors, and stuff through anything."
 	icon_state = "meson"
 	item_state_slots = list(slot_r_hand_str = "meson", slot_l_hand_str = "meson")
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	toggleable = 1
 	vision_flags = SEE_TURFS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
 	see_invisible = INVISIBILITY_SHADEKIN
+
+CAPABILITIES(/obj/item/clothing/glasses/meson/darksight)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /// the overlay this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen

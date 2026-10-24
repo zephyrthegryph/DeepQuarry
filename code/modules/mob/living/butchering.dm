@@ -1,22 +1,20 @@
 
 
 /mob/living
-	var/meat_amount = 0					// How much meat to drop from this mob when butchered
 	var/meat_type					// The meat object to drop
 
 
-	var/list/butchery_loot				// Associated list, path = number.
 
 
 // Harvest an animal's delicious byproducts: one cut of meat per lap of the "harvest" op, then the "butcher" op (code/library/mob/living_abilities.dm).
 /mob/living/proc/harvest(mob/user, obj/item/I)
 	if(op_claimed(src))
 		return
-	if(meat_type && meat_amount > 0 && stat == DEAD)
-		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cuts" = meat_amount))
+	if(meat_type && butchery_of(src).meat_amount > 0 && stat == DEAD)
+		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cuts" = butchery_of(src).meat_amount))
 		return
 
-	if(!meat_amount)
+	if(!butchery_of(src).meat_amount)
 		handle_butcher(user, I)
 
 /// A cut takes as long as the animal is big.
@@ -29,7 +27,7 @@
 	if(nature_of(src).name_the_meat)
 		meat.name = "[src.name] [meat.name]"
 	new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-	meat_amount--
+	set_meat_amount(butchery_of(src).meat_amount - 1)
 	LAZYSET(A.args, "cuts", A.arg("cuts") - 1)
 
 /// Another cut while there are cuts left (the op counts them: the meat was counted when it began).
@@ -41,7 +39,7 @@
 	handle_butcher(A.actor, A.held)
 
 /mob/living/proc/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
-	if(((meat_type && meat_amount) || LAZYLEN(butchery_loot)) && stat == DEAD)
+	if(((meat_type && butchery_of(src).meat_amount) || LAZYLEN(butchery_of(src).butchery_loot)) && stat == DEAD)
 		return TRUE
 
 	return FALSE
@@ -63,17 +61,18 @@
 
 /// What a butchered carcass gives: its loot and organs, and the mess.
 /mob/living/proc/butcher_loot(mob/user, obj/item/I)
-	if(LAZYLEN(butchery_loot))
-		if(LAZYLEN(butchery_loot))
-			for(var/path in butchery_loot)
-				while(butchery_loot[path])
-					butchery_loot[path] -= 1
+	// The type's loot table is shared by every mob of the type: count down a copy of it, as the per-mob list was.
+	var/list/loot_left = butchery_of(src).butchery_loot?.Copy()
+	if(LAZYLEN(loot_left))
+		if(LAZYLEN(loot_left))
+			for(var/path in loot_left)
+				while(loot_left[path])
+					loot_left[path] -= 1
 					var/obj/item/loot = new path(get_turf(src))
 					loot.set_pixel_x(rand(-12, 12))
 					loot.set_pixel_y(rand(-12, 12))
 
-			butchery_loot.Cut()
-			butchery_loot = null
+			set_butchery_loot(null)
 
 	// removed() is a ledger move out; the detach hook empties the caches.
 	if(LAZYLEN(organs) && nature_of(src).drops_organs)

@@ -62,7 +62,6 @@
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 	movement_cooldown = 0
 
@@ -490,6 +489,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
 	configure(mob_movement(softfall = TRUE))
 	immune_to_incapacitation()

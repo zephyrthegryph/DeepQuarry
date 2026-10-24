@@ -30,7 +30,6 @@
 	faction = FACTION_CATSLUG
 	endurance = 50
 	movement_cooldown = -1
-	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	holder_type = /obj/item/holder/catslug
 
@@ -105,6 +104,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	configure(butchery_rules(meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	verb_entry(/mob/living/proc/ventcrawl)
@@ -137,7 +137,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
-	if(nutrition_of(src) >= max_nutrition)
+	if(nutrition_of(src) >= living_rules_of(src).max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return

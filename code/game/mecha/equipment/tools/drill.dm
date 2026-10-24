@@ -14,7 +14,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill)
 	if(!action_checks(target)) return
 	if(isobj(target))
 		var/obj/target_obj = target
-		if(!target_obj.vars.Find("unacidable") || target_obj.unacidable)	return
+		if(!target_obj.vars.Find("unacidable") || motion_of(target_obj).unacidable)	return
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
 	chassis.visible_message(span_danger("[chassis] starts to drill [target]"), span_warning("You hear the drill."))
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill)
 	else if(isanimal(target))
 		var/mob/living/simple_mob/S = target
 		if(target.stat == DEAD)
-			if(S.meat_amount > 0)
+			if(butchery_of(S).meat_amount > 0)
 				S.harvest(user)
 				return
 			else
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill/bore)
 	if(!action_checks(target)) return
 	if(isobj(target))
 		var/obj/target_obj = target
-		if(target_obj.unacidable)	return
+		if(motion_of(target_obj).unacidable)	return
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
 	chassis.visible_message(span_danger("[chassis] starts to bore into \the [target]"), span_warning("You hear the bore."))

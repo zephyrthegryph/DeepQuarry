@@ -8,7 +8,6 @@
 // repulse procs are reused.
 
 /mob/living/simple_mob/vore/bigdragon
-	use_modern_ai = TRUE
 
 TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon, get_ai_behaviors, list( \
 	/datum/ai_behavior/dragon_tail_sweep, \

@@ -5,7 +5,6 @@
 	item_state_slots = list(slot_r_hand_str = "breath", slot_l_hand_str = "breath")
 	w_class = ITEMSIZE_SMALL
 	var/hanging = 0
-	actions_types = list(/datum/action/item_action/adjust_breath_mask)
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
@@ -27,6 +26,7 @@
 			to_chat(user, "You pull the mask up to cover your face.")
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
+	configure(item_rules(actions_types = list(/datum/action/item_action/adjust_breath_mask)))
 	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))
 	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))

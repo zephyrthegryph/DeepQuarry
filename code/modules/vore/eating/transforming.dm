@@ -3,9 +3,9 @@
 	var/egg_path = /obj/structure/closet/secure_closet/egg
 	var/egg_name = "odd egg"
 
-	if(O.vore_egg_type in GLOB.tf_vore_egg_types)
-		egg_path = GLOB.tf_vore_egg_types[O.vore_egg_type]
-		egg_name = "[O.vore_egg_type] egg"
+	if(sparse_get_or(O, vore_egg_type, "egg") in GLOB.tf_vore_egg_types)
+		egg_path = GLOB.tf_vore_egg_types[sparse_get_or(O, vore_egg_type, "egg")]
+		egg_name = "[sparse_get_or(O, vore_egg_type, "egg")] egg"
 
 	var/obj/structure/closet/secure_closet/egg/egg = new egg_path(src)
 	M.forceMove(egg)

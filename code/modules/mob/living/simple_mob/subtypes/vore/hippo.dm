@@ -31,13 +31,9 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	meat_amount = 15 //Infinite meat!
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 20
 
 	say_list_type = /datum/say_list/hippo
@@ -60,6 +56,8 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/hippo)
+	configure(butchery_rules(meat_amount = 15))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

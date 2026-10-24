@@ -110,8 +110,8 @@
 	TEST_ASSERT_EQUAL(nutrition_of(H), 100, "set_nutrition sets")
 	H.adjust_nutrition(-500)
 	TEST_ASSERT_EQUAL(nutrition_of(H), 0, "adjust_nutrition never goes below zero")
-	H.set_nutrition(H.max_nutrition + 1000)
-	TEST_ASSERT_EQUAL(nutrition_of(H), H.max_nutrition, "set_nutrition never exceeds max_nutrition")
+	H.set_nutrition(living_rules_of(H).max_nutrition + 1000)
+	TEST_ASSERT_EQUAL(nutrition_of(H), living_rules_of(H).max_nutrition, "set_nutrition never exceeds max_nutrition")
 
 /// P2-S13: the species gate is data on the reagent, applied through effective_dose().
 /datum/unit_test/dq_k_b_s13_species_gate_data

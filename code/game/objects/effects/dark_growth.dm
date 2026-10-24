@@ -82,7 +82,6 @@
 	icon_state = "dark"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 
@@ -96,6 +95,7 @@
 		consume(src)
 
 CAPABILITIES(/obj/effect/dark/floor)
+	configure(movable_motion(unacidable = TRUE))
 	param(nameof(linked_node), pos = 2)
 	keeps_if(PROC_REF(off_space))
 	derives(nameof(check_glow), PROC_REF(off_space))

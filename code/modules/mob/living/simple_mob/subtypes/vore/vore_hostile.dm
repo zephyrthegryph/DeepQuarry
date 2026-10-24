@@ -29,7 +29,6 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 1
 
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/abyss_lurker)
 
@@ -62,7 +61,6 @@
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 /mob/living/simple_mob/vore/vore_hostile/abyss_lurker/load_default_bellies()
 	. = ..()
@@ -78,6 +76,8 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(butchery_rules(meat_amount = 5))
+	configure(movable_motion(unacidable = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
@@ -117,7 +117,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	melee_damage_upper = 1
 
 	movement_cooldown = 1
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leaper)
 
@@ -151,7 +150,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 	special_attack_min_range = 2
 	special_attack_max_range = 6
@@ -161,6 +159,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	configure(butchery_rules(meat_amount = 5))
+	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 
@@ -184,7 +184,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || motion_of(L).unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -244,7 +244,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	melee_damage_upper = 1
 
 	movement_cooldown = 50
-	meat_amount = 0
 	meat_type = null
 	catalogue_data = list(/datum/category_item/catalogue/fauna/gelatinous_cube)
 
@@ -276,7 +275,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/load_default_bellies()
 	. = ..()
@@ -298,6 +296,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(butchery_rules(meat_amount = 0))
+	configure(movable_motion(unacidable = TRUE))
 	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
 

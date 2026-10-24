@@ -406,7 +406,7 @@
 		return
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
-		M.tod = stationtime2text()
+		sparse_set(M, tod, stationtime2text())
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)
@@ -438,7 +438,7 @@
 /datum/reagent/lichpowder/affect_touch(mob/living/carbon/M, alien, removed)
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
-		M.tod = stationtime2text()
+		sparse_set(M, tod, stationtime2text())
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
 	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(STAT_MUTED, 10)

@@ -234,11 +234,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/slime)
 	w_class = ITEMSIZE_TINY
 	on = 1 //Bio-luminesence has one setting, on.
 	power_use = 0
-	light_system = STATIC_LIGHT
 	special_handling = TRUE
 
 // Bioluminescence: always lit, in its own yellow.
 CAPABILITIES(/obj/item/flashlight/slime)
+	configure(atom_rules(light_system = STATIC_LIGHT))
 	look_glow(GLOW(6, 0.8, "#FFF423"))
 
 /obj/item/flashlight/slime/update_brightness()

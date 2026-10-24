@@ -35,3 +35,9 @@ sparse(/obj/item, worn_layer, type = num)
 sparse(/obj/machinery, gas_dependency_wake_count, type = num)
 sparse(/obj/machinery, power_init_complete, type = bool)
 sparse(/obj/machinery, recursive_set, type = bool)
+
+// base_vars wave 3
+sparse(/obj/item, cleaving, type = bool)
+sparse(/obj/item, ckeys_allowed_itemspawn, type = list)
+sparse(/obj/machinery, rebuilding, type = bool)
+sparse(/obj/machinery, heat_output_now, type = num)

@@ -86,7 +86,7 @@ CAPABILITIES(/datum/rig_component_registry)
 		if(protection_of(piece).siemens > protection_of(holder()).siemens)
 			piece.set_siemens_coefficient(protection_of(holder()).siemens)
 		piece.set_permeability_coefficient(protection_of(holder()).permeability)
-		piece.unacidable = holder().unacidable
+		piece.set_unacidable(motion_of(holder()).unacidable)
 		piece.set_armor(holder().get_armor())
 		piece.worn_protection_changed()
 

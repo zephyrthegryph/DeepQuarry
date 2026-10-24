@@ -194,8 +194,8 @@ DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_im
 			restrict_fit(list(target_species))
 
 	//Set icon
-	if (sprite_sheets_obj && (target_species in sprite_sheets_obj))
-		set_icon(sprite_sheets_obj[target_species])
+	if (item_rules_of(src).sprite_sheets_obj && (target_species in item_rules_of(src).sprite_sheets_obj))
+		set_icon(item_rules_of(src).sprite_sheets_obj[target_species])
 	else
 		set_icon(initial(icon))
 
@@ -447,8 +447,6 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	w_class = ITEMSIZE_SMALL
 	blood_sprite_state = "helmetblood"
 
-	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
 
@@ -459,6 +457,8 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
+	configure(movable_motion(cone_y = 11))
 	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
 	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
@@ -485,7 +485,7 @@ CAPABILITIES(/obj/item/clothing/head)
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
 	set_light_on(!light_on)
 
-	if(light_system == STATIC_LIGHT)
+	if(atom_rules_of(src).light_system == STATIC_LIGHT)
 		update_light()
 
 	user.update_mob_action_buttons()
@@ -879,7 +879,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	var/has_hood_sprite = FALSE
 	var/special_hood_handling = FALSE
 	var/toggleicon
-	actions_types = list()
 
 	var/taurized = FALSE
 	w_class = ITEMSIZE_NORMAL
@@ -896,6 +895,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_rules(actions_types = list()))
 	configure(item_handling(preserve = 1))
 	extend(/datum/act/equip, needs(req(PROC_REF(limb_clearance))))
 	suit_storage(list(POCKET_EMERGENCY))
@@ -941,8 +941,8 @@ CAPABILITIES(/obj/item/clothing/suit)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
 	rel_set(src, nameof(hood), H)
-	if(!actions_types.len) //If we don't already have a special action type, let's add it.
-		actions_types |= /datum/action/item_action/toggle_hood
+	if(!item_rules_of(src).actions_types.len) //If we don't already have a special action type, let's add it.
+		set_actions_types(item_rules_of(src).actions_types | (/datum/action/item_action/toggle_hood))
 
 /obj/item/clothing/suit/proc/RemoveHood()
 	set_hood_up(FALSE)

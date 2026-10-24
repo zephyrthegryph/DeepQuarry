@@ -1,4 +1,5 @@
 CAPABILITIES(/obj/item/spellbook)
+	configure(movable_motion(throw_speed = 1))
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("Spellbook", title = "The Book of Spells", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")

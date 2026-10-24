@@ -816,7 +816,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return 0
 	set_dir(ndir)
 	var/obj/buckled = src?.buckled_to()
-	if(buckled && buckled.buckle_movable)
+	if(buckled && buckle_of(buckled).movable)
 		buckled.set_dir(ndir)
 	setMoveCooldown(movement_delay())
 	return 1
@@ -1123,18 +1123,18 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 //Throwing stuff
 
 /mob/proc/toggle_throw_mode()
-	if (in_throw_mode)
+	if (sparse_get_or(src, in_throw_mode, 0))
 		throw_mode_off()
 	else
 		throw_mode_on()
 
 /mob/proc/throw_mode_off()
-	in_throw_mode = 0
+	sparse_set_or(src, in_throw_mode, 0, 0)
 	if(hud_used?.throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_off"
 
 /mob/proc/throw_mode_on()
-	in_throw_mode = 1
+	sparse_set_or(src, in_throw_mode, 1, 0)
 	if(hud_used?.throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
 		hud_used?.throw_icon?.icon_state = "act_throw_on"
 

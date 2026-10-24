@@ -31,6 +31,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	var/tmp/datum/native_watch/heat/burn_cool_watch
 
 CAPABILITIES(/obj)
+	configure(movable_motion(unacidable = FALSE))
 	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
 	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))

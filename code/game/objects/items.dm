@@ -19,7 +19,6 @@
 
 
 	var/tmp/list/actions //list of /datum/action's that this item has.
-	var/list/actions_types //list of paths of action datums to give to the item on New().
 
 	//This flag is used to determine when items in someone's inventory cover others. IE helmets making it so you can't see glasses, etc.
 	//It should be used purely for appearance. For gameplay effects caused by items covering body parts, use body_parts_covered.
@@ -56,7 +55,6 @@
 
 	// Species-specific sprite sheets for inventory sprites
 	// Works similarly to worn sprite_sheets, except the alternate sprites are used when the clothing/refit_for_species() proc is called.
-	var/list/sprite_sheets_obj
 
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
@@ -67,13 +65,11 @@
 
 	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
-	var/list/ckeys_allowed_itemspawn = null
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
 
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
-	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
 	var/tmp/obj/item/organ/internal/augment/my_augment
@@ -92,7 +88,7 @@
 
 /// The actions a type declares (actions_types) are made for the item.
 /obj/item/proc/make_declared_actions()
-	for(var/path in actions_types)
+	for(var/path in item_rules_of(src).actions_types)
 		add_item_action(path)
 
 /// An item left on the default embed chance (-1) takes it from its weight and edge.

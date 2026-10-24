@@ -47,7 +47,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	material_total = SHEET_MATERIAL_AMOUNT
 	level = 1
 	anchored =TRUE
-	unacidable = TRUE
 	/// Set only while a material overlay owns this cable (engineered
 	/// conductors, see power_grid.dm). Everything else asks get_power_region().
 	var/datum/material_power_overlay/material_overlay
@@ -288,6 +287,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //
 
 CAPABILITIES(/obj/structure/cable)
+	configure(movable_motion(unacidable = TRUE))
 	links(/obj/structure/cable::material_overlay, /datum/material_power_overlay::cables, b_many = TRUE)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
@@ -457,7 +457,6 @@ CAPABILITIES(/obj/structure/cable)
 	gender = NEUTER
 	desc = "A coil of power cable."
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 2
 	throw_range = 5
 	item_state = "coil"
 	stacktype = /obj/item/stack/cable_coil
@@ -577,6 +576,7 @@ CAPABILITIES(/obj/structure/cable)
 	return GLOB.possible_cable_coil_colours
 
 CAPABILITIES(/obj/item/stack/cable_coil)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 10))
 	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
@@ -894,7 +894,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 	max_amount = MAXCOIL
 	color = COLOR_SILVER
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 2
 	throw_range = 5
 	stacktype = null
 
@@ -930,6 +929,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	configure(movable_motion(throw_speed = 2))
 	setup(PROC_REF(work_out_embed_chance))
 	configure(item_tooling(speed = 0.25))
 	configure(item_worn(slots = SLOT_BELT))

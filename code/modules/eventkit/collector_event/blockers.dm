@@ -8,7 +8,6 @@
 
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 
 	var/tools_to_fix = FALSE
 
@@ -81,6 +80,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	return "[user] repairs \the [src]!"
 
 CAPABILITIES(/obj/structure/event_collector_blocker)
+	configure(movable_motion(unacidable = TRUE))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// One repair step (interaction_item() checks the tool and starts this): the user keeps the tool and stays two seconds.

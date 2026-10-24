@@ -21,7 +21,6 @@
 	grab_resist = 100
 
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
-	meat_amount = 5
 
 	response_help = "pets"
 	response_disarm = "bops"
@@ -37,13 +36,14 @@
 
 	minbodytemp = 200
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	vore_active = TRUE
 	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/reindeer)
+	configure(butchery_rules(meat_amount = 5))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 
 /mob/living/simple_mob/vore/reindeer/festive
 	desc = "A large reindeer. It is covered in festive decorations."

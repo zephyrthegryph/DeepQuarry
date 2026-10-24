@@ -209,18 +209,18 @@
 				L.status_at_least(STAT_WEAKENED, 5)
 
 			//Thickbelly flag
-			if((mode_flags & DM_FLAG_THICKBELLY) && !L.muffled)
-				L.muffled = TRUE
+			if((mode_flags & DM_FLAG_THICKBELLY) && !sparse_get_or(L, muffled, FALSE))
+				sparse_set_or(L, muffled, TRUE, FALSE)
 			//Fix muffled sometimes being sticky.
-			else if(!(mode_flags & DM_FLAG_THICKBELLY) && L.muffled)
-				L.muffled = FALSE
+			else if(!(mode_flags & DM_FLAG_THICKBELLY) && sparse_get_or(L, muffled, FALSE))
+				sparse_set_or(L, muffled, FALSE, FALSE)
 
 			//Force psay
-			if((mode_flags & DM_FLAG_FORCEPSAY) && !L.forced_psay && L.absorbed)
-				L.forced_psay = TRUE
+			if((mode_flags & DM_FLAG_FORCEPSAY) && !mob_rules_of(L).forced_psay && L.absorbed)
+				L.set_forced_psay(TRUE)
 			//Fix forcepsay sometimes being sticky.
-			else if(!(mode_flags & DM_FLAG_FORCEPSAY) && L.forced_psay)
-				L.forced_psay = FALSE
+			else if(!(mode_flags & DM_FLAG_FORCEPSAY) && mob_rules_of(L).forced_psay)
+				L.set_forced_psay(FALSE)
 
 			// Wet flag
 			if(mode_flags & DM_FLAG_WETTENS)
@@ -396,8 +396,8 @@
 				L.status_set(STAT_TIREDNESS, (L.status_units(STAT_TIREDNESS) + 6 * delta_factor))
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
 			if(L.weight > 70)
-				L.weight -= (0.01 * L.weight_loss * delta_factor)
-				owner.weight += (0.01 * L.weight_loss * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
+				L.weight -= (0.01 * sparse_get_or(L, weight_loss, 0.5) * delta_factor)
+				owner.weight += (0.01 * sparse_get_or(L, weight_loss, 0.5) * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
 	if(nutrition_of(L) >= 100)
 		// Multiplicative drain: prey loses 5% of nutrition per baseline tick. Convert
 		// to a per-tick rate raised to delta_factor so a faster subsystem drains the

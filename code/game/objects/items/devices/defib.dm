@@ -8,12 +8,12 @@
 	icon_state = "defibunit"
 	item_state = "defibunit"
 	w_class = ITEMSIZE_LARGE
-	unacidable = TRUE
 
 	var/paddle_path = /obj/item/shockpaddles/linked
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 6))

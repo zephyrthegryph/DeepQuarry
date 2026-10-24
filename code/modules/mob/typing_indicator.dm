@@ -6,7 +6,7 @@
 		var/atom/movable/AM = bubble_loc
 		var/x_scale = AM.get_icon_scale_x()
 		if(abs(x_scale) < 2) // reset transform on bubbles, except for the Very Large
-			I.pixel_z = (AM.icon_expected_height * (x_scale-1))
+			I.pixel_z = (motion_of(AM).icon_height * (x_scale-1))
 			I.appearance_flags |= RESET_TRANSFORM
 	*/ // Removal Start
 	return I

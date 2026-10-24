@@ -28,7 +28,6 @@
 	response_harm   = "punches"
 
 	has_langs = list(LANGUAGE_MOUSE)
-	universal_understand = 1
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
@@ -60,6 +59,9 @@
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(mob_rules(universal_understand = 1))
 
 /mob/living/simple_mob/vore/alienanimals/dustjumper/load_default_bellies()
 	. = ..()

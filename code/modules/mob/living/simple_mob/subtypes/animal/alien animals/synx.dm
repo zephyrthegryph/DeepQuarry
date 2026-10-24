@@ -13,7 +13,6 @@
 	icon_state = "synx_living"
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
-	parasitic = TRUE //Digestion immunity var
 
 	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
 	var/speak_chance = 0 //MAy have forgotten to readd that.
@@ -727,6 +726,9 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/ai/pet/holo
 	delete_on_death = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
+	configure(butchery_rules(meat_amount = 0))
+
 /mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
@@ -759,7 +761,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	faction = "neutral"//Can be safely bapped with newspaper.
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
-	meat_amount = 0
 	meat_type = null
 	//Vore Section
 	vore_default_mode = DM_HEAL
@@ -980,6 +981,7 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(living_rules(parasitic = TRUE))
 	configure(mob_movement(bump = SIMPLE_ANIMAL))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
 	rolls(nameof(body_style), PROC_REF(roll_look))

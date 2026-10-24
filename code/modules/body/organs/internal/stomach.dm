@@ -4,12 +4,12 @@
 	organ_tag = O_STOMACH
 	parent_organ = BP_GROIN
 
-	unacidable = TRUE	// Don't melt when holding your acid, dangit.
 
 	var/acidtype = REAGENT_ID_STOMACID	// Incase you want some stomach organ with, say, polyacid instead, or sulphuric.
 	var/max_acid_volume = 30
 
 CAPABILITIES(/obj/item/organ/internal/stomach)
+	configure(movable_motion(unacidable = TRUE))
 	configure(reagents(volume = 30))
 
 /obj/item/organ/internal/stomach/handle_organ_proc_special(cycles)

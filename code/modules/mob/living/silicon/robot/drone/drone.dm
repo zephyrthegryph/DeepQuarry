@@ -34,7 +34,6 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	cell_type = /obj/item/cell/high
 	photo_camera_type = /obj/item/camera/siliconcam/drone_camera
 	universal_speak = 0
-	universal_understand = 1
 	gender = NEUTER
 	pass_flags = PASSTABLE
 	braintype = "Drone"
@@ -224,6 +223,7 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	configure(mob_rules(universal_understand = 1))
 	setup(PROC_REF(prepare_drone_languages))
 	configure(mob_kind(can_be_antagged = FALSE))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))

@@ -21,7 +21,6 @@
 // mob untouched; the behaviors call poison_inject / do_infest directly.
 
 /mob/living/simple_mob/animal/sif/leech
-	use_modern_ai = TRUE
 
 /mob/living/simple_mob/animal/sif/leech/initialize_ai_brain()
 	. = ..()

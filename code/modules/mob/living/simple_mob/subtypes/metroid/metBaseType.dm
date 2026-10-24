@@ -49,7 +49,6 @@
 	vore_pounce_chance = 25
 	vore_icons = SA_ICON_LIVING
 
-	max_nutrition = 2200
 	var/evo_point = 0
 	var/evo_limit = 0
 	var/next
@@ -66,6 +65,8 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(butchery_rules(meat_amount = 6))
+	configure(living_rules(max_nutrition = 2200))
 	configure(mob_nature(can_pain_emote = TRUE, pain_1p = list("skree"), pain_3p = list("skrees")))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
 	configure(mob_movement(makes_dirt = FALSE))

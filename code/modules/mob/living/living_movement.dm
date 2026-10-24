@@ -242,7 +242,7 @@ default behaviour is:
 /mob/living/Move(atom/newloc, direct, movetime)
 	var/obj/buckled = src?.buckled_to()
 	if(buckled && !sparse_get_or(src, skip_buckled_move_redirect, FALSE) && buckled.loc != newloc) //not updating position
-		if(!buckled.anchored && buckled.buckle_movable)
+		if(!buckled.anchored && buckle_of(buckled).movable)
 			return buckled.Move(newloc, direct)
 		else
 			return 0

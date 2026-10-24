@@ -110,7 +110,7 @@
 	user = test.allocate(/mob/living/carbon/human, T)
 	// A spawned human rolls its name and its nutrition: the windows show both, so pin them.
 	user.fully_replace_character_name(user.real_name, "Pin Tester")
-	user.set_nutrition(user.max_nutrition)
+	user.set_nutrition(living_rules_of(user).max_nutrition)
 	return user
 
 /// The pin of `host_type`, or null.

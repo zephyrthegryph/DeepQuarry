@@ -30,18 +30,14 @@
 	attacktext = list("slammed")
 	see_in_dark = 8
 	minbodytemp = 0
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	special_attack_min_range = 2
 	special_attack_max_range = 4
 	special_attack_cooldown = 30 SECONDS
 
-	appendage_color = "#000000"
 
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
@@ -73,6 +69,8 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	configure(living_rules(appendage_color = "#000000"))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -153,7 +151,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/scel)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || motion_of(L).unacidable)
 		return FALSE
 
 	ai_busy_begin()

@@ -2,9 +2,11 @@
 	name = "manifest"
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
-	unacidable = TRUE//Just to be sure.
 
 	invisibility = INVISIBILITY_ABSTRACT
+
+CAPABILITIES(/obj/effect/manifest)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/effect/manifest/proc/manifest()
 	var/dat = span_bold("Crew Manifest") + ":<BR>"

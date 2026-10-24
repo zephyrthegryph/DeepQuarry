@@ -327,7 +327,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	desc = "A roll of tobacco and nicotine."
 	icon_state = "cig"
 	item_state = "cig"
-	throw_speed = 0.5
 	w_class = ITEMSIZE_TINY
 	type_butt = /obj/item/trash/cigbutt
 	chem_volume = 15
@@ -341,6 +340,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar)
+	configure(movable_motion(throw_speed = 0.5))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 3))) // 7 total
@@ -350,6 +350,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	configure(movable_motion(throw_speed = 0.5))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(item_combat(attack_verbs = list("burnt", "singed")))
@@ -411,7 +412,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 	cigarette? Perhaps. Was it hand-made with care? No."
 	icon_state = "cigar2"
 	type_butt = /obj/item/trash/cigbutt/cigarbutt
-	throw_speed = 0.5
 	item_state = "cigar"
 	max_smoketime = 1500
 	smoketime = 1500

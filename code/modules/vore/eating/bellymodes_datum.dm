@@ -51,7 +51,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/digest_mode)
 		return
 
 		//Parasitic digestion immunity hook, used to be a synx istype check but this is more optimized.
-	if(L.parasitic)
+	if(living_rules_of(L).parasitic)
 		if(isliving(L))
 			var/paratox = (B.digest_brute+B.digest_burn) * delta_factor
 			B.owner.adjust_nutrition(-paratox)

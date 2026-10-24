@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/storage/bag/circuits/basic)
 	after_init(0, then(PROC_REF(stock_kit)))
 
 /obj/item/storage/bag/circuits/basic/proc/stock_kit(datum/act/timer/A)
-	emp_protection_flags |= EMP_PROTECT_SELF
+	set_emp_protection_flags(atom_rules_of(src).emp_protection | (EMP_PROTECT_SELF))
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
 	new /obj/item/storage/bag/circuits/mini/trig(src)
 	new /obj/item/storage/bag/circuits/mini/input(src)

@@ -621,8 +621,8 @@ sparse(/mob/living, vomiting, type = bool)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					set_pixel_y(V.mob_offset_y - 5)
 			else
-				if(buckled.buckle_lying != -1)
-					set_lying(buckled.buckle_lying)
+				if(buckle_of(buckled).lying != -1)
+					set_lying(buckle_of(buckled).lying)
 				set_canmove(TRUE)
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					set_pixel_y(V.mob_offset_y)
@@ -630,10 +630,10 @@ sparse(/mob/living, vomiting, type = bool)
 			set_anchored(TRUE)
 			set_canmove(TRUE) //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
 			if(istype(buckled))
-				if(buckled.buckle_lying != -1)
-					set_lying(buckled.buckle_lying)
-					set_canmove(buckled.buckle_movable)
-				if(buckled.buckle_movable)
+				if(buckle_of(buckled).lying != -1)
+					set_lying(buckle_of(buckled).lying)
+					set_canmove(buckle_of(buckled).movable)
+				if(buckle_of(buckled).movable)
 					set_anchored(FALSE)
 					set_canmove(TRUE)
 		else
@@ -672,8 +672,8 @@ sparse(/mob/living, vomiting, type = bool)
 			set_canmove(0)
 			break
 
-	if(lying != lying_prev)
-		lying_prev = lying
+	if(lying != sparse_get_or(src, lying_prev, 0))
+		sparse_set_or(src, lying_prev, lying, 0)
 		update_transform()
 		update_mob_action_buttons()
 		if(lying && LAZYLEN(src?.buckled_mob_list()))
@@ -837,7 +837,7 @@ sparse(/mob/living, vomiting, type = bool)
 			if((isspace(src.loc)) || (src.lastarea?.get_gravity() == 0))
 				src.inertia_dir = get_dir(target, src)
 				step(src, inertia_dir)
-			item.throw_at(target, throw_range, item.throw_speed, src)
+			item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
 			return TRUE
 		else
 			return FALSE
@@ -849,7 +849,7 @@ sparse(/mob/living, vomiting, type = bool)
 	if(stance == I_HELP && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
 		var/obj/item/I = item
 		var/mob/living/carbon/human/H = target
-		if(H.in_throw_mode && !H.combat_mode && unEquip(I))
+		if(sparse_get_or(H, in_throw_mode, 0) && !H.combat_mode && unEquip(I))
 			H.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
 			visible_message(span_filter_notice(span_bold("[src]") + " hands \the [H] \a [I]."), span_notice("You give \the [target] \a [I]."))
 		else
@@ -879,7 +879,7 @@ sparse(/mob/living, vomiting, type = bool)
 		step(src, inertia_dir)
 */
 
-	item.throw_at(target, throw_range, item.throw_speed, src)
+	item.throw_at(target, throw_range, motion_of(item).throw_speed, src)
 	return TRUE
 
 /mob/living/get_sound_env(spot, pressure_factor)
@@ -938,7 +938,7 @@ sparse(/mob/living, vomiting, type = bool)
 /mob/living/proc/set_nutrition(value)
 	if(!isnum(value) || !body)
 		return 0
-	value = between(0, value, max_nutrition)
+	value = between(0, value, living_rules_of(src).max_nutrition)
 	var/old = body.food_energy
 	if(old == value)
 		return 0
@@ -976,7 +976,7 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 	PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /mob/living/proc/nutrition_percent()
-	return 100 * nutrition_of(src) / max_nutrition
+	return 100 * nutrition_of(src) / living_rules_of(src).max_nutrition
 
 /mob/living/vv_get_header()
 	. = ..()
@@ -1247,7 +1247,7 @@ CAPABILITIES(/datum/character_setup_button)
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
 
 	//Prime this list if we need it.
-	if(has_huds)
+	if(living_rules_of(src).has_huds)
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
@@ -1506,9 +1506,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
-		voice_freq = choice
+		sparse_set_or(src, voice_freq, choice, 42500)
 		return
-	voice_freq = clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ)
+	sparse_set_or(src, voice_freq, clamp(choice, MIN_VOICE_FREQ, MAX_VOICE_FREQ), 42500)
 
 /mob/living/verb/set_voice_type()
 	set name = "Set Voice Type"
@@ -1577,7 +1577,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/draw(datum/look/look)
 	..()
 	// The backplane blocks HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-	look.overlay(GLOB.backplane, when = has_huds)
+	look.overlay(GLOB.backplane, when = living_rules_of(src).has_huds)
 	for(var/entry in attached_overlays)
 		look.overlay(entry)
 	look.overlay(look_overlay_image('icons/obj/glamour.dmi', "animation", plane = PLANE_LIGHTING_ABOVE), when = glamour_shift)

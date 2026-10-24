@@ -5,11 +5,11 @@
 	desc = "FUCK FUCK FUCK AAAHHH"
 	icon_state = "bhole3"
 	opacity = 1
-	unacidable = TRUE
 	density = FALSE
 	anchored = TRUE
 
 CAPABILITIES(/obj/effect/bhole)
+	configure(movable_motion(unacidable = TRUE))
 	after_init(0.4 SECONDS, then(PROC_REF(controller)))
 
 /obj/effect/bhole/proc/controller(datum/act/A)

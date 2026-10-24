@@ -1,5 +1,4 @@
 /obj/machinery/chemical_dispenser
-	maintenance_flags = MACHINE_MAINT_WRENCH
 	name = "chemical dispenser"
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
@@ -19,7 +18,6 @@
 
 	use_power = USE_POWER_IDLE
 	anchored = TRUE
-	unacidable = TRUE
 
 	/// Records the reagents dispensed by the user if this list is not null
 	var/list/recording_recipe
@@ -28,6 +26,8 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_WRENCH))
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(wrench_time = 2 SECONDS, interface_sound = SFX_SWITCH))
 	setup(PROC_REF(load_starting_cartridges))
 	configure(uses_power(idle = 100))

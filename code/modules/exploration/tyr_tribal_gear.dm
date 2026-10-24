@@ -18,12 +18,14 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/weatherlily)
 	desc = "A boring rocky outcrop."
 	icon = 'icons/obj/tribal_gear.dmi'
 	density = TRUE
-	throwpass = 1
 	anchored = TRUE
 	icon_state = "outcrop"
 	mindrop = 3
 	upperdrop = 8
 	outcropdrop = /obj/item/stack/material/weathered_agate
+
+CAPABILITIES(/obj/structure/outcrop/weathered_gate)
+	configure(atom_rules(throwpass = 1))
 
 /obj/structure/flora/tyr
 	name = "flora"
@@ -260,7 +262,6 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 	active_force = 10
 	active_armourpen = 60
 	active_throwforce = 40
-	throw_speed = 1
 	throw_range = 7
 	slowdown = 2
 	defend_chance = 70
@@ -271,6 +272,9 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
+
+CAPABILITIES(/obj/item/melee/energy/sword/top_shield)
+	configure(movable_motion(throw_speed = 1))
 
 //E sword has 30 damage, 50 AP, and 65% projectile block
 //Axe is 60 damage, 65 AP, no guard

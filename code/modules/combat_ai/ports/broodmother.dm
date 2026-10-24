@@ -20,9 +20,10 @@
 #define BROODMOTHER_SWARM_RANGE 4   // legacy "enemies are close" radius
 
 /mob/living/simple_mob/animal/giant_spider/broodmother
-	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodmother)
+	configure(butchery_rules(meat_amount = 20))
+	configure(living_rules(use_modern_ai = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	configure(mob_kind(death_message = "falls over and makes its last twitches as its birthing sack bursts!"))
 

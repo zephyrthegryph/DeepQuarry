@@ -57,7 +57,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
 	blocks_emissive = NONE
@@ -122,6 +121,7 @@ STAT(/obj/machinery/alarm, shorted, ANY)
 
 
 CAPABILITIES(/obj/machinery/alarm)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 30))
 	rolls(nameof(name), PROC_REF(roll_alarm_name))
 	setup(PROC_REF(register_initial_alarm))

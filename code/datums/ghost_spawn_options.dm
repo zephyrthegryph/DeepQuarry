@@ -50,7 +50,7 @@
 
 	if(host)
 		if(CONFIG_GET(flag/uneducated_mice))
-			host.universal_understand = 0
+			host.set_universal_understand(0)
 		announce_ghost_joinleave(user, 0, "They are now a mouse.")
 		bind_player(host, user.ckey, as_ckey = TRUE)
 		host.add_ventcrawl(vent_found)

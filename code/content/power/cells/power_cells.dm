@@ -124,12 +124,14 @@
  * Infinite
  */
 /obj/item/cell/infinite
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "infinite-capacity power cell!"
 	icon_state = "infinite_b"
 	charge = 30000
 	maxcharge = 30000 //determines how badly mobs get shocked
 	robot_durability = 200
+
+CAPABILITIES(/obj/item/cell/infinite)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 
 /obj/item/cell/infinite/check_charge()
 	return 1

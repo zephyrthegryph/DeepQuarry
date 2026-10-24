@@ -323,22 +323,22 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 /obj/effect/rune/proc/seer(mob/living/user)
 	if(user.loc==src.loc)
-		if(user.seer==1)
+		if(sparse_get_or(user, seer, 0)==1)
 			user.say("Rash'tla sektath mal[pick("'","`")]zua. Zasan therium viortia.")
 			to_chat(user, span_danger("The world beyond fades from your vision."))
 			user.see_invisible = SEE_INVISIBLE_LIVING
-			user.seer = 0
+			sparse_set_or(user, seer, 0, 0)
 			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		else if(user.see_invisible!=SEE_INVISIBLE_LIVING)
 			to_chat(user, span_warning("The world beyond flashes your eyes but disappears quickly, as if something is disrupting your vision."))
 			user.see_invisible = SEE_INVISIBLE_CULT
-			user.seer = 0
+			sparse_set_or(user, seer, 0, 0)
 			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		else
 			user.say("Rash'tla sektath mal[pick("'","`")]zua. Zasan therium vivira. Itonis al'ra matum!")
 			to_chat(user, span_warning("The world beyond opens to your eyes."))
 			user.see_invisible = SEE_INVISIBLE_CULT
-			user.seer = 1
+			sparse_set_or(user, seer, 1, 0)
 			PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 		return
 	return fizzle(user)

@@ -34,7 +34,7 @@
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "a mouse declares the footstep capability itself")
 	walker.enable_footsteps(FOOTSTEP_MOB_CLAW, 1, -6)
 	TEST_ASSERT_EQUAL(walker.footstep_type, FOOTSTEP_MOB_CLAW, "enable_footsteps() sets the kind of sounds")
-	TEST_ASSERT_EQUAL(walker.footstep_e_range, -6, "and their range")
+	TEST_ASSERT_EQUAL(footstep_of(walker).footstep_e_range, -6, "and their range")
 	TEST_ASSERT(granted(walker, /datum/capability/footstep), "the capability is granted")
 	sparse_set(walker, footstep_steps, 0)
 	walker.forceMove(next)

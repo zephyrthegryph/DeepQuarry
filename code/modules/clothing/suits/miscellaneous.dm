@@ -1160,13 +1160,13 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/greengov)
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_worn(covers = CHEST))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))

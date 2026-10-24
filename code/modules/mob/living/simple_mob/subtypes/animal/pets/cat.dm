@@ -37,7 +37,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 	movement_cooldown = -1
 
-	meat_amount = 1
 	see_in_dark = 6 // Not sure if this actually works.
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
@@ -258,6 +257,7 @@ MSG_DEF_SELF(cat/named, "%T% already has a name!")
 
 /// Naming with a pen: asked, then written by cat_name_entered(). The one question is an asks() step of each op (a pen and a penlight).
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
+	configure(butchery_rules(meat_amount = 1))
 	ref_one(nameof(friend), /mob/living)
 	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
 	op("name_with_penlight", item(/obj/item/flashlight/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
@@ -350,10 +350,10 @@ CAPABILITIES(/obj/item/cat_box)
 	gender = MALE
 	holder_type = /obj/item/holder/cat/fluff/tabiranth
 	friend_name = "Ascian"
-	meat_amount = 0
 	endurance = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
+	configure(butchery_rules(meat_amount = 0))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 	configure(mob_kind(death_message = "teleports away!"))
 

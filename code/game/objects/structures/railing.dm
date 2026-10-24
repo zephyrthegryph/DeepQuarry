@@ -9,7 +9,6 @@
 	desc = "A standard steel railing, painted orange.  Play stupid games, win stupid prizes."
 	icon = 'icons/obj/railing.dmi'
 	density = TRUE
-	throwpass = 1
 	layer = WINDOW_LAYER
 	anchored = TRUE
 	flags = ON_BORDER
@@ -35,6 +34,7 @@
 		set_anchored(FALSE)
 
 CAPABILITIES(/obj/structure/railing)
+	configure(atom_rules(throwpass = 1))
 	setup(PROC_REF(start_loose))
 	rotatable(while_anchored = TRUE)
 	extend(CAP_ROTATABLE, needs(req(PROC_REF(physical_contact), silent = TRUE), req(PROC_REF(free_limbs)), req(PROC_REF(awake_upright), silent = TRUE),

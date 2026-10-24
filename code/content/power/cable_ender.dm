@@ -12,7 +12,6 @@
 	plane = PLATING_PLANE
 	layer = PIPES_LAYER - 0.05 //Just below pipes
 	color = null
-	unacidable = TRUE
 	var/id = null
 
 /obj/structure/cable/ender/get_connections(powernetless_only = 0)
@@ -24,6 +23,7 @@
 					. |= target
 
 CAPABILITIES(/obj/structure/cable/ender)
+	configure(movable_motion(unacidable = TRUE))
 	op("ender_interaction_item", item(/obj/item), then(PROC_REF(ender_interaction_item)))
 
 /// Old attackby.

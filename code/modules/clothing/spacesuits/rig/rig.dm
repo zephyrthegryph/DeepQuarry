@@ -17,7 +17,6 @@
 
 	// These values are passed on to all component pieces.
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
-	unacidable = TRUE
 
 	var/default_mob_icon = 'icons/mob/rig_back.dmi'
 
@@ -92,7 +91,6 @@
 	var/datum/rig_component_registry/component_registry
 
 	// Action buttons
-	actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)
 
 	// Protean
 	var/protean = 0
@@ -100,6 +98,8 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	configure(item_rules(actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)))
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	setup(PROC_REF(configure_rig_systems))
 	configure(item_worn(slots = SLOT_BACK, flags = PHORONGUARD))
@@ -473,7 +473,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			if(helmet?.light_system == STATIC_LIGHT)
+			if(atom_rules_of(helmet).light_system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
 	//sealed pieces become airtight, protecting against diseases
@@ -806,7 +806,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
-	if(piece == "helmet" && helmet?.light_system == STATIC_LIGHT)
+	if(piece == "helmet" && atom_rules_of(helmet).light_system == STATIC_LIGHT)
 		helmet.update_light()
 
 /obj/item/rig/proc/deploy(mob/M,destructive)

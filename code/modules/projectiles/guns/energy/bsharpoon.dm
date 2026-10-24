@@ -8,7 +8,6 @@
 
 	w_class = ITEMSIZE_NORMAL
 
-	throw_speed = 4
 	throw_range = 20
 
 
@@ -49,6 +48,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/bluespace_harpoon)
+	configure(movable_motion(throw_speed = 4))
 	setup(PROC_REF(update_fail_chance))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("fire_mode", in_hand(), label("Change fire mode"), then(PROC_REF(interaction_fire_mode)))

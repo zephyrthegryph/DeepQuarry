@@ -24,14 +24,12 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 #define BODY_SCAN_LIGHT_POWER 2
 
 /obj/machinery/bodyscanner
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	locked = null
 	name = "Body Scanner"
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "scanner_open"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/body_scanner
 	use_power = USE_POWER_IDLE
@@ -44,6 +42,8 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(movable_motion(unacidable = TRUE))
 	configure(light_glow(color = "#00FF00"))
 	configure(uses_power(idle = 60, active = 10000))
 	blast_contents() // the patient takes the full blast
@@ -264,7 +264,6 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	dir = 8
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	circuit = /obj/item/circuitboard/scanner_console
 	var/obj/machinery/bodyscanner/scanner
 	/// The reading its scanner last showed (the scanner's scan_ratio, mirrored by scan()).
@@ -272,6 +271,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 
 
 CAPABILITIES(/obj/machinery/body_scanconsole)
+	configure(movable_motion(unacidable = TRUE))
 	machine_basics(repair = NONE)
 	paired_console(/obj/machinery/bodyscanner, nameof(scanner), faces = TRUE)
 	interface("BodyScanner", title = "Body Scanner", forwards = nameof(scanner))

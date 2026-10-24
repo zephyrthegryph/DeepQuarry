@@ -234,9 +234,9 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	meat_amount = 1 // Scrawny little things! It's no wonder they don't want to fight you!
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/cave)
+	configure(butchery_rules(meat_amount = 1))
 	after_init(0, then(PROC_REF(cave_tunneler_rescale)))
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/cave/proc/cave_tunneler_rescale(datum/act/timer/A)

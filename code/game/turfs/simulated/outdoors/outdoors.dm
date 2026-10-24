@@ -232,11 +232,11 @@ CAPABILITIES(/turf/simulated/floor/outdoors/sidewalk)
 	desc = "A stone tile fit for covering a section of floor."
 	icon_state = "tile"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
-	throw_speed = 5
 	throw_range = 20
 	no_variants = FALSE
 
 CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 6.0))
 
@@ -272,11 +272,11 @@ CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
 	desc = "A concrete tile fit for covering a section of floor."
 	icon_state = "tile"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
-	throw_speed = 5
 	throw_range = 20
 	no_variants = TRUE
 
 CAPABILITIES(/obj/item/stack/tile/floor/concrete)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 6.0))
 

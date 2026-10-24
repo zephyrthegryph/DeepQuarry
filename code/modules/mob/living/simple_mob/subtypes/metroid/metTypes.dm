@@ -79,7 +79,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "bullet=-60;laser=60;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -103,6 +102,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	vore_active = 0
 
 	is_juvenile = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
+	configure(living_rules(max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/baby
 	arrival_sound = SFX_METROID_METROIDSEE
@@ -130,7 +132,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "bullet=-50;laser=70;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -166,6 +167,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	is_juvenile = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
+	configure(living_rules(max_nutrition = 2200))
+
 /mob/living/simple_mob/metroid/juvenile/super
 	arrival_sound = SFX_METROID_METROIDSEE
 
@@ -189,7 +193,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "melee=40;bullet=15;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 
 	//Alphas lose their vulnerability to cold.
 	minbodytemp = 0
@@ -206,6 +209,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_point = 1000
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
+	configure(living_rules(max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/alpha
 	arrival_sound = SFX_METROID_METROIDSEE
@@ -250,7 +256,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "melee=55;bullet=15;laser=50;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 	ranged_cooldown_time = 5 SECOND
 	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
@@ -271,6 +276,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	evo_point = 1000
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
+	configure(living_rules(max_nutrition = 2200))
 
 /mob/living/simple_mob/metroid/juvenile/gamma
 	arrival_sound = SFX_METROID_METROIDGAMMA
@@ -330,7 +338,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	armor_spec = "melee=70;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -357,6 +364,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(living_rules(max_nutrition = 2200))
 	configure(mob_movement(makes_dirt = TRUE))
 
 /mob/living/simple_mob/metroid/juvenile/zeta
@@ -416,7 +424,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	armor_spec = "melee=75;bullet=20;laser=55;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
 
@@ -443,6 +450,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(living_rules(max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDOMEGADEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 
@@ -502,7 +510,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	armor_spec = "melee=75;bullet=40;laser=60;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	faction = "metroids"
-	max_nutrition = 2200
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -530,6 +537,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(living_rules(max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDQUEENDEATH))
 	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))

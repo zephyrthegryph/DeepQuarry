@@ -5,7 +5,6 @@
 	density = TRUE							//Dense. To raise the heat.
 	opacity = 1							//Opaque. Menacing.
 	anchored = TRUE						//No pulling around.
-	unacidable = TRUE						//And no deleting hoomans inside
 	layer = MOB_LAYER					//Icon draw layer
 	infra_luminosity = 15				//Byond implementation is bugged.
 	var/initial_icon = null				//Mech type for resetting icon. Only used for reskinning kits (see custom items)
@@ -185,6 +184,7 @@
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(assemble_mecha))
 	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
 	op("climb_in", ai(), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(climb_in_interrupted)), then(PROC_REF(climb_in_done)))
@@ -1274,7 +1274,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		if(!armor_key)
 			continue
 		if(kind == DAMAGE_IONIC)
-			amount *= emp_integrity_factor
+			amount *= atom_rules_of(src).emp_integrity_factor
 			if(amount <= 0)
 				continue
 		var/before = get_integrity()

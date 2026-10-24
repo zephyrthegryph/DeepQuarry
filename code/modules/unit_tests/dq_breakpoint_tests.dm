@@ -143,7 +143,7 @@
 		railing.update_integrity(ratio * railing.max_integrity)
 		dq_rx_flush()
 		dq_rules_settle(railing)
-		TEST_ASSERT_EQUAL(railing.damage_band, band, "at [ratio] integrity the band is [band]")
+		TEST_ASSERT_EQUAL(sparse_get_or(railing, damage_band, DAMAGE_BAND_NONE), band, "at [ratio] integrity the band is [band]")
 		var/text = jointext(railing.examine(viewer), "\n")
 		var/line = railing.damage_flavour_text(band)
 		if(line)
