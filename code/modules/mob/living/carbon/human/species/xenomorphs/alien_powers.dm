@@ -171,7 +171,8 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 			set_spitting(0)
 			return
 		act_message(src, A, MSG_SELF(span_alium("You spit [sparse_get(src, spit_name)] at %T%.")), MSG_OTHERS(span_warning("%U% spits [sparse_get(src, spit_name)] at %T%!")))
-		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
+		var/spit_path = sparse_get(src, spit_projectile)
+		var/obj/item/projectile/P = new spit_path(get_turf(src))
 		rel_set(P, nameof(P.firer), src)
 		P.old_style_target(A)
 		P.fire()
@@ -231,7 +232,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		spit_projectile = /obj/item/projectile/energy/neurotoxin
+		sparse_set(src, spit_projectile, /obj/item/projectile/energy/neurotoxin)
 		sparse_set(src, spit_name, "neurotoxin")
 		to_chat(src, span_alium("You prepare to spit neurotoxin."))
 
@@ -252,7 +253,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	else
 		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		set_spitting(1)
-		spit_projectile = /obj/item/projectile/energy/acid
+		sparse_set(src, spit_projectile, /obj/item/projectile/energy/acid)
 		sparse_set(src, spit_name, "acid")
 		to_chat(src, span_alium("You prepare to spit acid."))
 
