@@ -87,7 +87,7 @@ fn cmp(v: &ByondValue) -> Result<Cmp> {
     match whole(v, "cmp")? {
         0 => Ok(Cmp::Above),
         1 => Ok(Cmp::Below),
-        c => bail!("bad comparison {c} (0 above, 1 below)"),
+        c => Err(eyre!("bad comparison {c} (0 above, 1 below)")),
     }
 }
 
@@ -653,7 +653,7 @@ fn world_rate_set_rate(model: ByondValue, rate: ByondValue) -> Result<ByondValue
             RateModel::Linear { rate, .. } => *rate = r,
             RateModel::Relax { target, .. } => *target = r,
             RateModel::Sum { .. } => {
-                bail!("a sum model's rate is its terms; use vg_world_rate_set_term")
+                bail!("a sum model's rate is its terms; use vg_world_rate_set_term");
             }
         }
         Ok(())

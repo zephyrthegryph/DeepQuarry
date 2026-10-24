@@ -98,11 +98,13 @@ impl Histogram {
         let i = h.bounds.partition_point(|b| *b < v);
         h.buckets[i].fetch_add(1, Ordering::Relaxed);
         h.count.fetch_add(1, Ordering::Relaxed);
+        #[allow(deprecated, reason = "try_update is the new name but needs Rust 1.95; the crate MSRV is 1.85")]
         let _ = h
             .sum
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |s| {
                 Some((f64::from_bits(s) + v).to_bits())
             });
+        #[allow(deprecated, reason = "try_update is the new name but needs Rust 1.95; the crate MSRV is 1.85")]
         let _ = h
             .max
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |m| {

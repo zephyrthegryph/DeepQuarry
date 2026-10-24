@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "85239e99f91421d3"
+#define VERDIGRIS_ABI "cbcb60173bbba35c"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -793,8 +793,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(operations)
 
-/// Flat operation list: source handle, sink handle, requested moles. Returns
-/// one actual mole count per operation after shared-source clamping.
+/// Flat operation list, `BATCH_TRANSFER_STRIDE` (5) values each: source handle,
+/// source generation, sink handle, sink generation, requested moles. Returns one
+/// actual mole count per operation after shared-source clamping; `-1` for an
+/// operation naming a handle that is invalid or stale (nothing moved).
 // /proc/auxmos_batch_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_transfer_hook(operations)
 	var/static/__f
@@ -813,6 +815,17 @@
 		__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
+
+/// The generation this mixture's handle is valid for, to queue next to
+/// [`checked_arena_id`]'s id (a queued batch keeps no datum). Null for a datum
+/// with no handle; a stale handle is refused.
+// /datum/gas_mixture/proc/__arena_generation (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_checked_arena_generation(src_ref)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:checked_arena_generation_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(src_ref)
 
 /// The id other binds take for this mixture (watches, pipe ports, pump
 /// transfers). Null for a datum with no handle; a stale handle is refused.
@@ -1976,16 +1989,13 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(triples)
 
-/// Registers (or replaces) a device edge between a port and a turf (a vent
-/// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
-/// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
 // /proc/vg_pipe_device_set_turf (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_device_set_turf(id, port_a, turf_mixture_handle)
+/proc/vg_pipe_device_set_turf(id, port_a, turf_air)
 	var/static/__f
 	if(!__f)
 		__f = load_ext(VERDIGRIS, "byond:pipe_device_set_turf_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id, port_a, turf_mixture_handle)
+	return call_ext(__f)(id, port_a, turf_air)
 
 // /proc/vg_pipe_disconnect (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_disconnect(port_a, port_b)

@@ -131,6 +131,7 @@ impl AllocCounter for TagCounters {
 
     fn record_free(&self, tag: AllocTag, bytes: usize) {
         // Saturate rather than wrap if frees are ever attributed to the wrong tag.
+        #[allow(deprecated, reason = "try_update is the new name but needs Rust 1.95; the crate MSRV is 1.85")]
         let _ = self.current[tag.index()].fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| {
             Some(v.saturating_sub(bytes as u64))
         });

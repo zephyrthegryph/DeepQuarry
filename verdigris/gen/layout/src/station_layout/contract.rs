@@ -594,7 +594,7 @@ fn parse_archetypes(values: &[String]) -> Result<Vec<MacroArchetype>> {
             "bent" => MacroArchetype::Bent,
             "branch" => MacroArchetype::Branch,
             "courtyard" => MacroArchetype::Courtyard,
-            _ => bail!("unsupported architecture choice {value}"),
+            _ => return Err(eyre::eyre!("unsupported architecture choice {value}")),
         };
         if result.contains(&archetype) {
             bail!("duplicate architecture choice {value}");

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Pipe port, pipe device and batched pump binds take a gas mixture datum (or an id with its generation) and refuse stale handles"
+  - code_imp: "Clippy is clean for vg-ffi and vg-core"
