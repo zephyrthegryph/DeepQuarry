@@ -19,7 +19,7 @@
 	return (value in GLOB.global_vore_egg_types)
 
 /datum/preference/text/human/vore_egg_type/apply_to_human(mob/living/carbon/human/target, value)
-	target.vore_egg_type = value
+	sparse_set_or(target, vore_egg_type, value, "egg")
 
 
 /datum/preference/text/human/autohiss

@@ -3,7 +3,6 @@
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x2"
 	anchored = TRUE
-	unacidable = TRUE
 	simulated = FALSE
 	invisibility = INVISIBILITY_ABSTRACT
 	var/delete_me = FALSE
@@ -15,6 +14,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(simulate_latejoin))
 	setup(PROC_REF(record_named_coordinate))
 	setup(PROC_REF(record_special_coordinates))

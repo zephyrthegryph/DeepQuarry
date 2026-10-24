@@ -5,9 +5,9 @@
 
 /obj/item/clothing/suit/storage/hooded/costume
 	name = DEVELOPER_WARNING_NAME
-	actions_types = list(/datum/action/item_action/toggle_hood)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hood)))
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS))
 
@@ -371,10 +371,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/cloak)
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	hoodtype = /obj/item/clothing/head/hood/galahad
 	armor_spec = "melee=80;bullet=50;laser=10"
-	actions_types = list(/datum/action/item_action/toggle_knight_headgear)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
 	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/suit/storage/hooded/knight/galahad
@@ -408,7 +408,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
 	hoodtype = /obj/item/clothing/head/hood/chain
 	armor_spec = "melee=60;bullet=10;laser=10"
 	slowdown = 0.5
-	actions_types = list(/datum/action/item_action/toggle_knight_headgear)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/chain)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
 
 /obj/item/clothing/suit/storage/hooded/knight/chain/lezzy
 	icon_state = "lezzy"
@@ -426,7 +428,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
 	icon = 'icons/obj/clothing/knights_vr.dmi'
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	hoodtype = /obj/item/clothing/head/hood/galahad_costume
-	actions_types = list(/datum/action/item_action/toggle_knight_headgear)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight_costume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
 
 /obj/item/clothing/suit/storage/hooded/knight_costume/galahad
 	icon_state = "galahad"
@@ -463,9 +467,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/talon/refreshed)
 // Food costumes
 /obj/item/clothing/suit/storage/hooded/foodcostume	//Separate type of costume that does not cover arms and legs. Similar to a cheap mascot costume. <Guy>
 	name = DEVELOPER_WARNING_NAME
-	actions_types = list(/datum/action/item_action/toggle_hood)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/foodcostume)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hood)))
 	configure(item_worn(covers = CHEST, hides = HIDETIE|HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST))
 

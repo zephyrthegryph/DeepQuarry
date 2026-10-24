@@ -525,13 +525,13 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	icon_state = "frontiertrans"
 	beacons_left = 1 //Just one
 	battery_lock = 1
-	unacidable = TRUE
 	failure_chance = 0 //Percent
 
 	var/phase_power = 75
 	var/recharging = 0
 
 CAPABILITIES(/obj/item/perfect_tele/frontier)
+	configure(movable_motion(unacidable = TRUE))
 	op("pump", ai(), wait(1 SECOND, repeats = PROC_REF(pump_more), after_step = PROC_REF(pump_stroke)), on_interrupt(PROC_REF(pump_done)), then(PROC_REF(pump_done)))
 
 /obj/item/perfect_tele/frontier/unload_ammo(mob/user, ignore_inactive_hand_check = 0)

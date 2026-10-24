@@ -21,11 +21,11 @@
 	attacktext = list("mauled")
 
 	meat_type = /obj/item/reagent_containers/food/snacks/bearmeat
-	meat_amount = 8
 
 	say_list_type = /datum/say_list/bear
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
+	configure(butchery_rules(meat_amount = 8))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 

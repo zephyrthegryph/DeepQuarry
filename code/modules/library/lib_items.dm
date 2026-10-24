@@ -182,7 +182,6 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 		slot_r_hand_str = 'icons/mob/items/righthand_books.dmi'
 		)
 	item_state = "book"
-	throw_speed = 1
 	throw_range = 5
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL		 //upped to three because books are, y'know, pretty big. (and you could hide them inside eachother recursively forever)
@@ -233,6 +232,7 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/book)
+	configure(movable_motion(throw_speed = 1))
 	ref_one(nameof(store), /obj/item)
 	configure(item_combat(attack_verbs = list("bashed", "whacked", "educated")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOK, pickup = SFX_ITEMS_PICKUP_BOOK))
@@ -498,7 +498,6 @@ CAPABILITIES(/obj/item/book/bundle)
 	name = "barcode scanner"
 	icon = 'icons/obj/library.dmi'
 	icon_state ="scanner"
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	var/tmp/obj/machinery/librarycomp/computer	// Associated computer - Modes 1 to 3 use this
@@ -506,6 +505,7 @@ CAPABILITIES(/obj/item/book/bundle)
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
 CAPABILITIES(/obj/item/barcodescanner)
+	configure(movable_motion(throw_speed = 1))
 	ref_one(nameof(computer), /obj/machinery/librarycomp)
 	ref_one(nameof(book), /obj/item/book)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

@@ -1,5 +1,4 @@
 /obj/machinery/artifact_harvester
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Exotic Particle Harvester"
 	icon = 'icons/obj/virology.dmi'
 	icon_state = "incubator"	//incubator_on
@@ -12,10 +11,11 @@
 	var/tmp/obj/cur_artifact
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	var/last_process = 0
-	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(atom_rules(bubble_icon = "science"))
 	setup(PROC_REF(find_initial_scanpad))
 	default_parts()
 	configure(uses_power(idle = 50, active = 750))

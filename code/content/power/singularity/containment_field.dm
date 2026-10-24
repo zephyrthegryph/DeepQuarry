@@ -9,7 +9,6 @@
 	icon_state = "Contain_F"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	light_on = TRUE
 	var/tmp/obj/machinery/field_generator/FG1
@@ -21,6 +20,7 @@
 // whoever touches it or stands beside it (at most every 2 s), destroys any dense object that crosses it, and falls when either generator is
 // gone. A singularity cannot step onto it (/obj/singularity/proc/can_move()).
 CAPABILITIES(/obj/machinery/containment_field)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_field_proximity))
 	configure(light_glow(range = 2, power = 0.5, color = "#5BA8FF"))
 	ref_one(nameof(FG1), /obj/machinery/field_generator)

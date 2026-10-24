@@ -24,7 +24,6 @@
 // take_hat() / drop_hat() / the `hat` var still live on the sakimm mob.
 
 /mob/living/simple_mob/animal/sif/sakimm
-	use_modern_ai = TRUE
 
 TYPE_TABLE(/mob/living/simple_mob/animal/sif/sakimm, get_ai_behaviors, list( \
 	/datum/ai_behavior/sakimm_hoard_tick, \

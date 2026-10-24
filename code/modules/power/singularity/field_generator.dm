@@ -17,7 +17,6 @@ MSG_DEF_SELF(fieldgen/online, "You are unable to turn off the field generator on
 MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 
 /obj/machinery/field_generator
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "Field Generator"
 	desc = "A large thermal battery that projects a high amount of energy when powered."
 	icon = 'icons/obj/machines/field_generator.dmi'
@@ -52,6 +51,7 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 
 
 CAPABILITIES(/obj/machinery/field_generator)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	configure(light_glow(color = "#5BA8FF"))
 	climb()
 	floor_weld(busy = nameof(active))

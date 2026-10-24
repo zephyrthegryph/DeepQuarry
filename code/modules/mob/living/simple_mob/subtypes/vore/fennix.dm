@@ -11,7 +11,6 @@
 	faction = FACTION_FENNEC // Will protec other fenfens
 	endurance = 60
 
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
 	response_help = "pats"
@@ -26,6 +25,7 @@
 	say_list_type = /datum/say_list/fennix
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennix)
+	configure(butchery_rules(meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 

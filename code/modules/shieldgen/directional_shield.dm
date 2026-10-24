@@ -9,7 +9,6 @@
 	density = FALSE // People can move pass these shields.
 	opacity = FALSE
 	anchored = TRUE
-	unacidable = TRUE
 	layer = MOB_LAYER + 0.1
 	mouse_opacity = FALSE
 	var/obj/item/shield_projector/projector = null // The thing creating the shield.
@@ -17,6 +16,7 @@
 	var/y_offset = 0 // Ditto.
 
 CAPABILITIES(/obj/effect/directional_shield)
+	configure(movable_motion(unacidable = TRUE))
 	param(nameof(projector), pos = 1, apply = PROC_REF(place_by_projector))
 	ref_one(nameof(projector), /obj/item/shield_projector)
 

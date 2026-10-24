@@ -4,7 +4,6 @@
 	singular_name = "metal rod"
 	icon_state = "rods"
 	w_class = ITEMSIZE_NORMAL
-	throw_speed = 5
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, REAGENTS_PER_ROD)
 	max_amount = 60
@@ -29,6 +28,7 @@
 	return "rods"
 
 CAPABILITIES(/obj/item/stack/rods)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 9.0, attack_verbs = list("hit", "bludgeoned", "whacked")))
 	per_type(nameof(recipes), PROC_REF(rods_recipes))

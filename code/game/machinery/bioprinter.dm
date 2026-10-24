@@ -2,7 +2,6 @@
 // Flesh and robot printers are defined below this object.
 
 /obj/machinery/organ_printer
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "organ printer"
 	desc = "It's a machine that prints organs."
 	icon = 'icons/obj/surgery.dmi'
@@ -94,6 +93,7 @@
 
 
 CAPABILITIES(/obj/machinery/organ_printer)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_usage(wrench_time = 20))
 	configure(uses_power(idle = 40, active = 300))
 	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))

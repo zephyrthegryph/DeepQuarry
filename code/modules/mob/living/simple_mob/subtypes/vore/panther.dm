@@ -16,7 +16,6 @@
 	movement_cooldown = 0.5
 	see_in_dark = 8
 
-	meat_amount = 8
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	melee_damage_lower = 5
@@ -33,10 +32,7 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 12
 
 	say_list_type = /datum/say_list/panther
@@ -50,6 +46,8 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	configure(butchery_rules(meat_amount = 8))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yowl", "growl"), pain_3p = list("yowls", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

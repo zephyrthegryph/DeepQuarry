@@ -51,6 +51,7 @@
 
 //bluenom
 CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
+	configure(living_rules(use_modern_ai = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 

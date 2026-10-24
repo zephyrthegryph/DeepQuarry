@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	var/up = 0
 	armor_spec = "melee=10"
-	actions_types = list(/datum/action/item_action/flip_welding_mask)
 	w_class = ITEMSIZE_NORMAL
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
@@ -30,6 +29,7 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(item_rules(actions_types = list(/datum/action/item_action/flip_welding_mask)))
 	configure(item_worn(hides = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE), covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
@@ -342,12 +342,12 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	armor_spec = "melee=5"
 
 CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_worn(covers = HEAD))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))

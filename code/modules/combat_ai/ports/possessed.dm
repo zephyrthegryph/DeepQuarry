@@ -6,9 +6,9 @@
 // scavenge_weapon for the hands.
 
 /mob/living/simple_mob/humanoid/possessed
-	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 
 TYPE_TABLE(/mob/living/simple_mob/humanoid/possessed, get_ai_behaviors, list( \

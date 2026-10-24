@@ -23,7 +23,6 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 	icon = 'icons/obj/rune.dmi'
 	icon_state = "1"
 	var/visibility = 0
-	unacidable = TRUE
 	layer = TURF_LAYER
 
 	var/word1
@@ -81,6 +80,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
 CAPABILITIES(/obj/effect/rune)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(make_blood_image))
 	after_init(0, then(PROC_REF(show_to_ais))) // the AIs see the blood image once Initialize() returns (relations proposal D11)
 	ref_one(nameof(manifest_user))
@@ -196,7 +196,6 @@ CAPABILITIES(/obj/effect/rune)
 		)
 	icon_state ="tome"
 	item_state = "tome"
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	unique = 1
@@ -327,6 +326,7 @@ CAPABILITIES(/obj/effect/rune)
 
 
 CAPABILITIES(/obj/item/book/tome)
+	configure(movable_motion(throw_speed = 1))
 	setup(PROC_REF(learn_cultwords))
 	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
 	// The five seconds of drawing a rune (begin_drawing).

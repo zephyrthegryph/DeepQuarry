@@ -5,7 +5,6 @@
 	amount = 10
 	max_amount = 10
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 4
 	throw_range = 20
 	var/heal_brute = 0
 	var/heal_burn = 0
@@ -97,6 +96,7 @@
 
 /// One wound is treated per lap of a repeating wait, in the order the limb listed them when the work began; the cursor says where the next lap looks.
 CAPABILITIES(/obj/item/stack/medical)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("treat_wounds", ai(), takes("patient", "limb", "wounds", "cursor"), needs(req(PROC_REF(wound_work_left), silent = TRUE)),
 		wait(PROC_REF(wound_lap_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(wound_more), after_step = PROC_REF(wound_lap_done)),

@@ -32,8 +32,6 @@
 	has_langs = list(LANGUAGE_MOUSE)
 
 	holder_type = /obj/item/holder/mouse
-	meat_amount = 1
-	butchery_loot = list()
 
 	say_list_type = /datum/say_list/mouse
 
@@ -48,6 +46,8 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(butchery_rules(meat_amount = 1, butchery_loot = list()))
+	configure(mob_rules(universal_understand = 1))
 	configure(mob_nature(pain_1p = list("squeak", "squik"), pain_3p = list("squeaks", "squiks"), restrict_vore_ventcrawl = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
@@ -247,7 +247,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"
 
 	movement_cooldown = 5
-	universal_understand = 1
 
 //Jank grabber that uses the 'attack_hand' insead of 'MouseDrop'
 

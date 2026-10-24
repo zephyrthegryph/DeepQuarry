@@ -2,10 +2,10 @@
 /obj/item/surplus_voucher
 	icon = 'icons/obj/items.dmi'
 	icon_state = "pizza_voucher"
-	throw_speed = 5
 	throw_range = 4
 
 CAPABILITIES(/obj/item/surplus_voucher)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	op("redeem", in_hand(), label("Redeem"), then(PROC_REF(interaction_redeem)))

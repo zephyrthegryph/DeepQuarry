@@ -31,7 +31,7 @@
 /datum/spell/targeted/equip_item/horsemask/summon_item(new_type)
 	var/obj/item/new_item = new new_type
 	new_item.set_canremove(FALSE) //curses!
-	new_item.unacidable = TRUE
+	new_item.set_unacidable(TRUE)
 	if(istype(new_item, /obj/item/clothing/mask/horsehead))
 		var/obj/item/clothing/mask/horsehead/magichead = new_item
 		magichead.set_flags_inv(null)//so you can still see their face

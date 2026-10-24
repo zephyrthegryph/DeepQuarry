@@ -20,7 +20,6 @@
 	max_transfer_amount = 5
 	volume = 10
 	flags = OPENCONTAINER | NOBLUDGEON
-	unacidable = FALSE
 
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 
@@ -30,6 +29,7 @@
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
 // below). It keeps the glass handling: a label, a dip, a hot thing over blood.
 CAPABILITIES(/obj/item/reagent_containers/glass/rag)
+	configure(movable_motion(unacidable = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	without(CAP_GLASS_CONTAINER)
 	reagent_container(

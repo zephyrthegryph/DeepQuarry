@@ -39,7 +39,6 @@
 	minbodytemp = 175
 	endurance = 100
 
-	universal_understand = 1
 
 	special_attack_min_range = 0
 	special_attack_max_range = 1
@@ -99,6 +98,8 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	configure(mob_rules(universal_understand = 1))
+	configure(living_rules(use_modern_ai = TRUE))
 	ref_one(nameof(host_bodypart), /obj/item/organ/external)
 	ref_one(nameof(host), /mob/living/carbon)
 	after_init(0, then(PROC_REF(leech_pest_ready)))

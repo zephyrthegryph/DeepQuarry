@@ -46,14 +46,12 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
 	name = "Messaging Server"
 	desc = "Facilitates both PDA messages and request console functions."
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/message_server
 
@@ -73,6 +71,8 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(movable_motion(unacidable = TRUE))
 	rolls(nameof(decryptkey), PROC_REF(roll_decryptkey))
 	setup(PROC_REF(send_startup_message))
 	configure(uses_power(idle = 10, active = 100))
@@ -257,7 +257,6 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	desc = "Records all radio communications, as well as various other information in case of the worst."
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	// ALLOW(instance_list): d: blackbox singleton log
 	var/list/messages = list()		//Stores messages of non-standard frequencies
@@ -281,6 +280,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	//Only one can exist in the world!
 
 CAPABILITIES(/obj/machinery/blackbox_recorder)
+	configure(movable_motion(unacidable = TRUE))
 	keeps_if(PROC_REF(only_blackbox))
 	setup(PROC_REF(machinery_blackbox_recorder_setup))
 	configure(uses_power(idle = 10, active = 100))

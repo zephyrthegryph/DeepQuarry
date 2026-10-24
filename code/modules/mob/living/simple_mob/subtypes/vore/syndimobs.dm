@@ -20,7 +20,6 @@
 	response_harm = "hits"
 	attacktext = list("mauled","chomped","savaged")
 	friendly = list("nuzzles", "slobberlicks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
-	meat_amount = 6
 	movement_cooldown = -2.5
 	melee_attack_delay = 0
 	old_x = -16
@@ -29,10 +28,7 @@
 	pixel_x = -16
 	pixel_y = 0
 	melee_miss_chance = 0
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 10
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
@@ -53,6 +49,10 @@
 	Note that there is a short delay before you leap!<br>\
 	In addition, you will do more damage to incapacitated opponents."
 
+CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
+	configure(butchery_rules(meat_amount = 6))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
+
 /mob/living/simple_mob/vore/otie/syndicate/chubby //Spawn this one only if you're looking for a bad time. Not friendly.
 	name = "chubby commandotie"
 	desc = "The classic bioengineered longdog, now in treacherous anarchist flavor! This one is an absolute unit, too."
@@ -63,7 +63,6 @@
 	icon_dead = "syndcotie_std-dead"
 	icon_rest = "syndcotie_std_rest"
 	endurance = 350
-	meat_amount = 12
 	melee_attack_delay = 0.5
 	movement_cooldown = 0
 	special_attack_min_range = 1
@@ -71,6 +70,9 @@
 	special_attack_cooldown = 30 SECONDS
 
 	armor_spec = "melee=30;bullet=30;laser=30;energy=15;bio=100;rad=100" // Values read by injury_armor()
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
+	configure(butchery_rules(meat_amount = 12))
 
 /mob/living/simple_mob/vore/otie/syndicate/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(isliving(A))
@@ -146,14 +148,14 @@
 	melee_attack_delay = 1
 	minbodytemp = 0
 
-	max_buckled_mobs = 1
 	mount_offset_y = 14
 	mount_offset_x = 2
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 	armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100" // Values read by injury_armor()
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate/black
 	name = "mercenary commandoggo"

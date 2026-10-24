@@ -17,7 +17,6 @@
 
 	status_flags = 0
 	universal_speak = 0
-	universal_understand = 1
 	animate_movement = SYNC_STEPS
 
 	response_help  = "touches"
@@ -31,7 +30,6 @@
 	organ_names = /datum/decl/mob_organ_names
 
 
-	meat_amount = 10
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
 
 	var/mob/living/simple_mob/animal/space/space_worm/previous //next/previous segments, correspondingly
@@ -466,6 +464,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	configure(butchery_rules(meat_amount = 10))
+	configure(mob_rules(universal_understand = 1))
 	ref_one(nameof(previous), /mob/living/simple_mob/animal/space/space_worm)
 	ref_one(nameof(next), /mob/living/simple_mob/animal/space/space_worm)
 	ref_one(nameof(currentlyEating), /atom)

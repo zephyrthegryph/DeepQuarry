@@ -56,14 +56,18 @@ CAPABILITIES(/obj/structure/signpost)
 		anchored = TRUE
 		layer = 99
 		mouse_opacity = 0
-		unacidable = TRUE//Just to be sure.
+
+CAPABILITIES(/obj/effect/mark)
+	configure(movable_motion(unacidable = TRUE)) // just to be sure
 
 /obj/effect/beam
 	name = "beam"
 	density = FALSE
-	unacidable = TRUE//Just to be sure.
 	var/def_zone
 	pass_flags = PASSTABLE
+
+CAPABILITIES(/obj/effect/beam)
+	configure(movable_motion(unacidable = TRUE))
 
 
 /obj/effect/begin
@@ -71,7 +75,9 @@ CAPABILITIES(/obj/structure/signpost)
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "begin"
 	anchored = TRUE
-	unacidable = TRUE
+
+CAPABILITIES(/obj/effect/begin)
+	configure(movable_motion(unacidable = TRUE))
 
 /*
  * This item is completely unused, but removing it will break something in R&D and Radio code causing PDA and Ninja code to fail on compile
@@ -109,7 +115,9 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	desc = "A stand with the empty body of a cyborg bolted to it."
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE//temporary until I decide whether the borg can be removed. -veyveyr
+
+CAPABILITIES(/obj/structure/showcase)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/structure/showcase/monkey
 	desc = "It looks almost lifelike."
@@ -168,17 +176,17 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_LARGE
-	throw_speed = 1
 	throw_range = 20
 
 CAPABILITIES(/obj/item/beach_ball)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 0.0))
 	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/beach_ball/afterattack(atom/target as mob|obj|turf|area, mob/user as mob)
 	user.drop_item()
-	src.throw_at(target, throw_range, throw_speed, user)
+	src.throw_at(target, throw_range, motion_of(src).throw_speed, user)
 
 /obj/item/beach_ball/dodgeball
 	icon = 'icons/obj/balls_vr.dmi'
@@ -188,10 +196,10 @@ CAPABILITIES(/obj/item/beach_ball)
 	name = "dodgeball"
 	desc = "Think fast, chucklenuts!"
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
-	throw_speed = 5
 	throw_range = 15
 
 CAPABILITIES(/obj/item/beach_ball/dodgeball)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_thrown(force = 0.1))
 	configure(item_combat(force = 0.1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))

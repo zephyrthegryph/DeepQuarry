@@ -455,16 +455,18 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
 	desc = "A bubble helmet that maximizes the field of view. A state of the art holographic display provides a stream of information."
 	icon_state = "null_rig"
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM
 	slowdown = 0
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/zero)
+	configure(item_rules(sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM))
 
 /obj/item/clothing/suit/space/rig/zero
 	icon_state = "null_rig"
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
 	slowdown = 0
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
+	configure(item_rules(sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 
 // Medical rig from bay
@@ -504,26 +506,34 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
 	icon_state = "medical_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM
 	camera_networks = list(NETWORK_MEDICAL)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/baymed)
+	configure(item_rules(sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM))
 
 /obj/item/clothing/suit/space/rig/baymed
 	icon_state = "medical_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/baymed)
+	configure(item_rules(sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 
 /obj/item/clothing/shoes/magboots/rig/ce/baymed
 	icon_state = "medical_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ce/baymed)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 
 /obj/item/clothing/gloves/gauntlets/rig/baymed
 	icon_state = "medical_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/baymed)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 
 // Engineering/'Industrial' rig from bay
 /obj/item/rig/bayeng
@@ -562,28 +572,34 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
 	icon_state = "engineering_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM
 	camera_networks = list(NETWORK_ENGINEERING)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/bayeng)
+	configure(item_rules(sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM))
 
 /obj/item/clothing/suit/space/rig/bayeng
 	icon_state = "engineering_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/bayeng)
+	configure(item_rules(sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 
 /obj/item/clothing/shoes/magboots/rig/ce/bayeng
 	icon_state = "engineering_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ce/bayeng)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 
 /obj/item/clothing/gloves/gauntlets/rig/bayeng
 	icon_state = "engineering_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 	configure(item_protection(siemens = 0))
 
 // Pathfinder rig from bay - event/reward stuff here
@@ -621,25 +637,33 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
 	icon_state = "pathfinder_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
-	sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/pathfinder)
+	configure(item_rules(sprite_sheets_obj = ALL_VR_SPRITE_SHEETS_HEAD_ITEM))
 
 /obj/item/clothing/suit/space/rig/pathfinder
 	icon_state = "pathfinder_rig_bay"
 	item_state = null
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
-	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/pathfinder)
+	configure(item_rules(sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 
 /obj/item/clothing/shoes/magboots/rig/pathfinder
 	icon_state = "pathfinder_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/pathfinder)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 
 /obj/item/clothing/gloves/gauntlets/rig/pathfinder
 	icon_state = "pathfinder_rig_bay"
 	item_state = null
 	sprite_sheets = null
-	sprite_sheets_obj = null
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/pathfinder)
+	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 
 /obj/item/rig/industrial/vendor
 	name = "discount industrial suit control module"
@@ -661,20 +685,32 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
 	icon_state = "nanomachine_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
 	icon = 'icons/obj/clothing/spacesuits_ch.dmi'
 
+CAPABILITIES(/obj/item/clothing/suit/space/rig/ch)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_HUMAN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_TAJARAN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_SKRELL = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_UNATHI = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_XENOHYBRID = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_AKULA = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_SERGAL = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_NEVREAN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_VULPKANIN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_ZORREN_HIGH = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_FENNEC = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_PROMETHEAN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_TESHARI = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_VASILISSAN = 'icons/obj/clothing/spacesuits_ch.dmi', SPECIES_VOX = 'icons/obj/clothing/spacesuits_ch.dmi' )))
+
 /obj/item/clothing/head/helmet/space/rig/ch
 	icon_state = "nanomachine_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
 
 	icon = 'icons/obj/clothing/hats_ch.dmi'
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/ch)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_HUMAN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_TAJARAN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_SKRELL = 'icons/obj/clothing/hats_ch.dmi', SPECIES_UNATHI = 'icons/obj/clothing/hats_ch.dmi', SPECIES_XENOHYBRID = 'icons/obj/clothing/hats_ch.dmi', SPECIES_AKULA = 'icons/obj/clothing/hats_ch.dmi', SPECIES_SERGAL = 'icons/obj/clothing/hats_ch.dmi', SPECIES_NEVREAN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_VULPKANIN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_ZORREN_HIGH = 'icons/obj/clothing/hats_ch.dmi', SPECIES_FENNEC = 'icons/obj/clothing/hats_ch.dmi', SPECIES_PROMETHEAN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_TESHARI = 'icons/obj/clothing/hats_ch.dmi', SPECIES_VASILISSAN = 'icons/obj/clothing/hats_ch.dmi', SPECIES_VOX = 'icons/obj/clothing/hats_ch.dmi' )))
 
 /obj/item/clothing/gloves/gauntlets/rig/ch
 	icon_state = "nanomachine_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
 
 	icon = 'icons/obj/clothing/gloves_ch.dmi'
 
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ch)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_HUMAN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_TAJARAN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_SKRELL = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_UNATHI = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_XENOHYBRID = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_AKULA = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_SERGAL = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_NEVREAN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_VULPKANIN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_ZORREN_HIGH = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_FENNEC = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_PROMETHEAN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_TESHARI = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_VASILISSAN = 'icons/obj/clothing/gloves_ch.dmi', SPECIES_VOX = 'icons/obj/clothing/gloves_ch.dmi' )))
+
 /obj/item/clothing/shoes/magboots/rig/ch
 	icon_state = "nanomachine_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
 
 	icon = 'icons/obj/clothing/shoes_ch.dmi'
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ch)
+	configure(item_rules(sprite_sheets_obj = list( SPECIES_HUMAN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_TAJARAN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_SKRELL = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_UNATHI = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_XENOHYBRID = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_AKULA = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_SERGAL = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_NEVREAN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_VULPKANIN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_ZORREN_HIGH = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_FENNEC = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_PROMETHEAN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_TESHARI = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_VASILISSAN = 'icons/obj/clothing/shoes_ch.dmi', SPECIES_VOX = 'icons/obj/clothing/shoes_ch.dmi' )))
 
 
 
@@ -748,23 +784,6 @@ CAPABILITIES(/obj/item/rig/ch/pursuit)
 		SPECIES_VOX				= 'icons/mob/species/vox/head.dmi'
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_HUMAN			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_TAJARAN 		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_SKRELL 			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_UNATHI 			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_XENOHYBRID		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_AKULA 			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_SERGAL			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_NEVREAN			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_VULPKANIN 		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_ZORREN_HIGH 	= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_FENNEC 			= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_PROMETHEAN		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_TESHARI 		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_VASILISSAN		= 'icons/obj/clothing/hats_ch.dmi',
-		SPECIES_VOX				= 'icons/obj/clothing/hats_ch.dmi'
-		)
 
 /obj/item/clothing/suit/space/rig/ch
 	sprite_sheets = list(
@@ -785,23 +804,6 @@ CAPABILITIES(/obj/item/rig/ch/pursuit)
 		SPECIES_VOX				= 'icons/mob/species/vox/suit.dmi'
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_HUMAN			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_TAJARAN 			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_SKRELL 			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_UNATHI 			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_XENOHYBRID		= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_AKULA 			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_SERGAL			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_NEVREAN			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_VULPKANIN 		= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_ZORREN_HIGH 	= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_FENNEC 			= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_PROMETHEAN		= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_TESHARI 		= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_VASILISSAN		= 'icons/obj/clothing/spacesuits_ch.dmi',
-		SPECIES_VOX				= 'icons/obj/clothing/spacesuits_ch.dmi'
-		)
 
 /obj/item/clothing/gloves/gauntlets/rig/ch
 	sprite_sheets = list(
@@ -822,23 +824,6 @@ CAPABILITIES(/obj/item/rig/ch/pursuit)
 		SPECIES_VOX				= 'icons/mob/species/vox/gloves.dmi'
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_HUMAN			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_TAJARAN 			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_SKRELL 			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_UNATHI 			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_XENOHYBRID		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_AKULA 			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_SERGAL			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_NEVREAN			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_VULPKANIN 		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_ZORREN_HIGH		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_FENNEC 			= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_PROMETHEAN		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_TESHARI 		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_VASILISSAN		= 'icons/obj/clothing/gloves_ch.dmi',
-		SPECIES_VOX				= 'icons/obj/clothing/gloves_ch.dmi'
-		)
 
 /obj/item/clothing/shoes/magboots/rig/ch
 	sprite_sheets = list(
@@ -859,23 +844,6 @@ CAPABILITIES(/obj/item/rig/ch/pursuit)
 		SPECIES_VOX				= 'icons/mob/species/vox/shoes.dmi'
 		)
 
-	sprite_sheets_obj = list(
-		SPECIES_HUMAN			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_TAJARAN 			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_SKRELL 			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_UNATHI 			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_XENOHYBRID		= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_AKULA 			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_SERGAL			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_NEVREAN			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_VULPKANIN 		= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_ZORREN_HIGH 	= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_FENNEC 			= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_PROMETHEAN		= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_TESHARI 		= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_VASILISSAN		= 'icons/obj/clothing/shoes_ch.dmi',
-		SPECIES_VOX				= 'icons/obj/clothing/shoes_ch.dmi'
-		)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/focalpoint)
 	fits_as(FIT_STANDARD)

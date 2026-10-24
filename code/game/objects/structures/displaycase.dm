@@ -5,7 +5,6 @@
 	desc = "A display case for prized possessions. It taunts you to kick it."
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE//Dissolving the case would also delete the gun.
 	max_integrity = 30
 	var/occupied = 1
 	var/destroyed = 0
@@ -31,6 +30,7 @@
 
 
 CAPABILITIES(/obj/structure/displaycase)
+	configure(movable_motion(unacidable = TRUE))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 

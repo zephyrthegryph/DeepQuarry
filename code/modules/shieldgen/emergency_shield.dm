@@ -1,5 +1,4 @@
 /obj/machinery/shield
-	emp_integrity_factor = 2 // a heavy pulse (100 ionic) collapses a fresh 200-integrity field
 	name = "emergency energy shield"
 	desc = "An energy shield used to contain hull breaches."
 	icon = 'icons/effects/effects.dmi'
@@ -7,7 +6,6 @@
 	density = TRUE
 	opacity = 0
 	anchored = TRUE
-	unacidable = TRUE
 	can_atmos_pass = ATMOS_PASS_NO
 	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
@@ -48,6 +46,8 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	..()
 
 CAPABILITIES(/obj/machinery/shield)
+	configure(atom_rules(emp_integrity_factor = 2))
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(refresh_initial_atmos))
 	rolls(nameof(dir), pick_one(list(1, 2, 3, 4)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
@@ -89,7 +89,6 @@ CAPABILITIES(/obj/machinery/shield)
 	return HOOK_DECLINE
 
 /obj/machinery/shieldgen
-	emp_integrity_factor = 1
 	name = "Emergency shield projector"
 	desc = "Used to seal minor hull breaches."
 	icon = 'icons/obj/objects.dmi'
@@ -118,6 +117,7 @@ CAPABILITIES(/obj/machinery/shield)
 MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 
 CAPABILITIES(/obj/machinery/shieldgen)
+	configure(atom_rules(emp_integrity_factor = 1))
 	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))

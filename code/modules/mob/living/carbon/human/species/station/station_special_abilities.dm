@@ -449,7 +449,6 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 
 
 //Test to see if we can shred a mob. Some child override needs to pass us a target. We'll return it if you can.
-/mob/living/var/vore_shred_time = 45 SECONDS
 /mob/living/proc/can_shred(mob/living/carbon/human/target)
 	if(isnull(target) && shred_picks_target())
 		shred_pick_target()
@@ -474,7 +473,6 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	return target
 
 //Human test for shreddability, returns the mob if they can be shredded.
-/mob/living/carbon/human/vore_shred_time = 10 SECONDS
 /mob/living/carbon/human/can_shred()
 	//Humans need a grab
 	var/obj/item/grab/G = get_active_hand()
@@ -684,14 +682,14 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-	cooldown_start(src, last_special, vore_shred_time)
+	cooldown_start(src, last_special, living_rules_of(src).vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
 	perform_op(src, src, "shred_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "external" = T_ext, "internal" = T_int, "belly" = B))
 
 /// How long the shredding takes: the preparing mob's own pace.
 /mob/living/proc/shred_limb_time(datum/act/op/A)
-	return vore_shred_time
+	return living_rules_of(src).vore_shred_time
 
 /mob/living/proc/shred_limb_living_done(datum/act/op/A)
 	var/mob/living/carbon/human/T = A.arg("victim")
@@ -769,15 +767,14 @@ CAPABILITIES(/datum/shred_limb_review)
 	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
 
 /mob/living/
-	var/flight_vore = FALSE
 
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
 	set desc = "Allows you to engage in voracious misadventures while flying."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	flight_vore = !flight_vore
-	if(flight_vore)
+	sparse_set_or(src, flight_vore, !sparse_get_or(src, flight_vore, FALSE), FALSE)
+	if(sparse_get_or(src, flight_vore, FALSE))
 		to_chat(src, "You have allowed for flight vore! Bumping into characters while flying will now trigger dropnoms! Unless prefs don't match.. then you will take a tumble!")
 	else
 		to_chat(src, "Flight vore disabled! You will no longer engage dropnoms while in flight.")
@@ -1026,7 +1023,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		return
 	switch(A.answer.value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
-			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = appendage_color, timeout = 0)
+			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = living_rules_of(src).appendage_color, timeout = 0)
 		if("Functionality")
 			open_request(src, /datum/prompt/choice, PROC_REF(appendage_setting_chosen), answerer = src, title = "Functionality Setting", question = "Choose if you want to be pulled to the target or pull them to you!", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE, timeout = 0)
 		if("Use it")
@@ -1044,12 +1041,12 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 /mob/living/proc/appendage_color_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_color = A.answer.value
+	set_appendage_color(A.answer.value)
 
 /mob/living/proc/appendage_setting_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	appendage_alt_setting = (A.answer.value != "Pull target to self")
+	sparse_set_or(src, appendage_alt_setting, (A.answer.value != "Pull target to self"), FALSE)
 
 /mob/living/proc/long_vore_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -1107,7 +1104,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			set_color(originator.appendage_color)
+			set_color(living_rules_of(originator).appendage_color)
 	..()
 
 /obj/item/projectile/beam/appendage/on_hit(atom/target)
@@ -1118,11 +1115,11 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 		var/throw_range = get_dist(firer,M)
 		if(isliving(firer)) //Let's check for any alt settings. Such as: User selected to be thrown at target.
 			var/mob/living/F = firer
-			if(F.appendage_alt_setting == 1)
-				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
+			if(sparse_get_or(F, appendage_alt_setting, FALSE) == 1)
+				F.throw_at(M, throw_range, motion_of(firer).throw_speed, F) //Firer thrown at target.
 				return
 		if(istype(M))
-			M.throw_at(firer, throw_range, M.throw_speed, firer) //Fun fact: living things have a throw_speed of 2.
+			M.throw_at(firer, throw_range, motion_of(M).throw_speed, firer) //Fun fact: living things have a throw_speed of 2.
 			return
 		else //Anything that isn't a /living
 			return
@@ -1137,7 +1134,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
-			hit_object.throw_at(firer, throw_range, hit_object.throw_speed, firer)
+			hit_object.throw_at(firer, throw_range, motion_of(hit_object).throw_speed, firer)
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer

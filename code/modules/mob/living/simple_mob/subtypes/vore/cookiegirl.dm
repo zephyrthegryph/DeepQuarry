@@ -14,7 +14,6 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 5
 
-	meat_amount = 10
 	meat_type = /obj/item/reagent_containers/food/snacks/cookie
 
 	say_list_type = /datum/say_list/cookiegirl
@@ -24,6 +23,7 @@
 	// Activate Noms!
 
 CAPABILITIES(/mob/living/simple_mob/vore/cookiegirl)
+	configure(butchery_rules(meat_amount = 10))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 /mob/living/simple_mob/vore/cookiegirl
 	vore_active = 1

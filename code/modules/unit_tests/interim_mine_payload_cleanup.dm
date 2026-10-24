@@ -47,7 +47,7 @@
 	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	TEST_ASSERT_EQUAL(fire_stacks_of(user), 0, "actual human starts without combustible stacks")
 	TEST_ASSERT(!stat_value(user, STAT_ON_FIRE), "actual human starts without an active fire")
-	TEST_ASSERT_EQUAL(user.fire_reaction, FIRE_REACTION_BURN, "actual human uses the normal burn reaction")
+	TEST_ASSERT_EQUAL(living_rules_of(user).fire_reaction, FIRE_REACTION_BURN, "actual human uses the normal burn reaction")
 	mine.Bumped(mouse)
 	TEST_ASSERT(!QDELETED(mine) && !mine.triggered, "actual tiny crossing preserves the untriggered incendiary mine")
 	TEST_ASSERT(!stat_value(mouse, STAT_ON_FIRE), "actual tiny crossing does not ignite the exempt mouse")

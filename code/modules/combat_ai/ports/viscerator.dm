@@ -5,7 +5,6 @@
 // gets identical texture by combining melee_attack with evasive_juke.
 
 /mob/living/simple_mob/mechanical/viscerator
-	use_modern_ai = TRUE
 
 TYPE_TABLE(/mob/living/simple_mob/mechanical/viscerator, get_ai_behaviors, list( \
 	/datum/ai_behavior/approach_threat, \

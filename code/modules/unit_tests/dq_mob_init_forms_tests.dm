@@ -36,7 +36,7 @@
 
 	var/mob/living/simple_mob/vore/bigdragon/dragon = allocate(/mob/living/simple_mob/vore/bigdragon, T)
 	TEST_ASSERT(dragon.overlay_colors["Body"] != "#FFFFFF" || dragon.under, "a dragon rolls its look")
-	TEST_ASSERT_EQUAL(nutrition_of(dragon), dragon.max_nutrition, "and spawns fed")
+	TEST_ASSERT_EQUAL(nutrition_of(dragon), living_rules_of(dragon).max_nutrition, "and spawns fed")
 
 	var/mob/living/simple_mob/vore/zorgoia/goia = allocate(/mob/living/simple_mob/vore/zorgoia, T)
 	TEST_ASSERT_EQUAL(goia.goia_overlays["main"], "zorgoia_main", "a zorgoia rolls its overlay table")

@@ -174,3 +174,7 @@ sparse(/atom/movable, last_high_pressure_movement_air_cycle, type = num)
 sparse(/atom/movable, swarm_offset_x, type = num)
 sparse(/atom/movable, swarm_offset_y, type = num)
 
+
+// base_vars wave 3
+sparse(/atom/movable, blocks_light, type = bool)
+sparse(/atom/movable, affecting_dynamic_lumi, type = num)

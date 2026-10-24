@@ -1,17 +1,17 @@
 /mob/proc/has_motiontracking() // USE THIS
-	return is_motion_tracking
+	return sparse_get_or(src, is_motion_tracking, FALSE)
 
 // Subscribing and unsubscribingto the motion tracker subsystem
 /mob/proc/motiontracker_subscribe()
-	if(!is_motion_tracking)
-		is_motion_tracking = TRUE
-		wants_to_see_motion_echos = TRUE
+	if(!sparse_get_or(src, is_motion_tracking, FALSE))
+		sparse_set_or(src, is_motion_tracking, TRUE, FALSE)
+		sparse_set_or(src, wants_to_see_motion_echos, TRUE, TRUE)
 		global.observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 		grant(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
-	if(is_motion_tracking)
-		is_motion_tracking = FALSE
+	if(sparse_get_or(src, is_motion_tracking, FALSE))
+		sparse_set_or(src, is_motion_tracking, FALSE, FALSE)
 		unobserve(SSmotiontracker, /datum/notice/movable_motiontracker, src)
 		revoke(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
@@ -30,7 +30,7 @@
 	// The event carries the moving atom itself (emitted synchronously, never stored).
 	var/atom/echo_source = event.source_
 	var/turf/T = event.echo_turf_location
-	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
+	if(!client || !sparse_get_or(src, wants_to_see_motion_echos, TRUE) || stat || is_deaf())
 		return
 	if(!isatom(echo_source) || get_dist(src,echo_source) > motiontracker_max_range() || src.z != echo_source.z)
 		return
@@ -47,5 +47,5 @@
 	set desc = "Toggle the visibility of pings revealed by vibration senses or motion trackers."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	wants_to_see_motion_echos = !wants_to_see_motion_echos
-	to_chat(src,"You will [wants_to_see_motion_echos ? "now" : "no longer"] see echos")
+	sparse_set_or(src, wants_to_see_motion_echos, !sparse_get_or(src, wants_to_see_motion_echos, TRUE), TRUE)
+	to_chat(src,"You will [sparse_get_or(src, wants_to_see_motion_echos, TRUE) ? "now" : "no longer"] see echos")

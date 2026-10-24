@@ -19,7 +19,6 @@
 
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
-	unacidable = TRUE
 	var/list/links // list of machines this machine is linked to
 	var/traffic = 0 // value increases as traffic increases
 	var/netspeed = 5 // how much traffic to lose per tick (50 gigabytes/second * netspeed)
@@ -35,7 +34,6 @@
 	var/produces_heat = 1	//whether the machine will produce heat when on.
 	heat_output = 1 // scaled by current_heat_output()
 	/// Dissipates its idle heat a few kelvin above the room.
-	heat_dissipation = 200
 	var/delay = 10 // how many machine frames between its thermal steps, less one
 	var/long_range_link = 0	// Can you link it across Z levels or on the otherside of the map? (Relay & Hub)
 	var/hide = 0				// Is it a hidden machine?
@@ -58,6 +56,8 @@ STAT(/obj/machinery/telecomms, running, ALL)
 // Links are symmetric membership: linking A to B lists each in the other's links, and a dying machine leaves every partner's list (the
 // framework clears both sides). A pulse knocks it out for a while (emp_disable()).
 CAPABILITIES(/obj/machinery/telecomms)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD, heat_dissipation = 200))
+	configure(movable_motion(unacidable = TRUE))
 	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others

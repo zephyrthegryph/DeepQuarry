@@ -7,13 +7,13 @@
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "red"
 	item_state_slots = list(slot_r_hand_str = "toolbox_red", slot_l_hand_str = "toolbox_red")
-	throw_speed = 1
 	throw_range = 7
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
 
 CAPABILITIES(/obj/item/storage/toolbox)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_handling(center_x = 16, center_y = 11))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("robusted")))

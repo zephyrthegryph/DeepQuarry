@@ -10,7 +10,6 @@
 	darkness_view = 7 //So you can really see those ghosts~
 	see_invisible = SEE_INVISIBLE_CULT
 	toggleable = 1
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	off_state = "denight"
 	flash_protection = FLASH_PROTECTION_VULNERABLE
 	enables_planes = list(VIS_GHOSTS)
@@ -28,4 +27,5 @@
 	static_vision = FALSE
 
 CAPABILITIES(/obj/item/clothing/glasses/ghost)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 	setup(PROC_REF(prepare_static_overlay))

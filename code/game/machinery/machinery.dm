@@ -113,8 +113,6 @@ Class Procs:
 	var/tmp/uid
 	var/global/gl_uid = 1
 	var/obj/item/circuitboard/circuit = null
-	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
-	var/maintenance_flags = NONE
 	/// Inspectable material makeup retained from the frame and installed parts.
 	var/list/material_component_manifest
 	/// Whole-machine EMP rejection supplied by insulating component materials.
@@ -127,6 +125,7 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	machine_rules(maintenance_flags = NONE)
 	machine_usage(click_volume = 40, interact_offline = 0, wrench_time = 0, weld_time = 2 SECONDS) // how it is used and serviced: a type trait (code/game/machinery/machine_usage.dm)
 	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
 	silicon_hand(tier = OP_PRIORITY_DEFAULT - 100) // the AI's Use of a machine is the hand's

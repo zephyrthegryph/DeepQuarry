@@ -17,11 +17,11 @@
 	melee_damage_upper = 14
 	movement_cooldown = 2
 	has_hands = FALSE
-	use_modern_ai = TRUE
 	/// What vitality() answers.
 	var/test_vitality = 1
 
 CAPABILITIES(/mob/living/simple_mob/combat_ai_tactics_subject)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
 

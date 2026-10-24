@@ -3,7 +3,6 @@
 	desc = "A compact, durable gas mask that can be connected to an air supply. This one possesses a security hailer."
 	icon_state = "halfgas"
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
-	actions_types = list(/datum/action/item_action/halt)
 	var/obj/item/hailer/hailer
 	COOLDOWN_DECLARE(hail_cooldown)
 	var/phrase = 1
@@ -57,6 +56,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer/swat)
 
 
 CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
+	configure(item_rules(actions_types = list(/datum/action/item_action/halt)))
 	owns_one(nameof(hailer), /obj/item/hailer)
 	configure(item_worn(covers = FACE))
 	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))

@@ -7,13 +7,13 @@
 	icon_state = "m_st"
 	item_state = "egg6"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 5
 	throw_range = 7
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
 
 CAPABILITIES(/obj/item/cell/device)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_handling(preserve = 1))
 	configure(item_combat(force = 0))
 
@@ -53,10 +53,12 @@ CAPABILITIES(/obj/item/cell/device)
  * EMP Proof Device
  */
 /obj/item/cell/device/empproof
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded device power cell"
 	desc = "A small power cell designed to power handheld devices. Shielded from EMPs."
 	icon_state = "s_st"
+
+CAPABILITIES(/obj/item/cell/device/empproof)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 
 /obj/item/cell/device/empproof/empty
 	charge = 0
@@ -79,10 +81,12 @@ CAPABILITIES(/obj/item/cell/device)
  * EMP Proof Weapon
  */
 /obj/item/cell/device/weapon/empproof
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded weapon power cell"
 	desc = "A small power cell designed to power handheld weaponry. Shielded from EMPs."
 	icon_state = "s_hi"
+
+CAPABILITIES(/obj/item/cell/device/weapon/empproof)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 
 /obj/item/cell/device/weapon/empproof/empty
 	charge = 0

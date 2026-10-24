@@ -6,7 +6,9 @@
 // handles infestation independently of the brain.
 
 /mob/living/simple_mob/hostile/blob/spore
-	use_modern_ai = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/hostile/blob/spore)
+	configure(living_rules(use_modern_ai = TRUE))
 
 TYPE_TABLE(/mob/living/simple_mob/hostile/blob/spore, get_ai_behaviors, list( \
 	/datum/ai_behavior/threaten, \

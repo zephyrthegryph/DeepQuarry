@@ -5,7 +5,6 @@
 	icon_state = "clipboard"
 	item_state = "clipboard"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 3
 	throw_range = 10
 	var/tmp/obj/item/pen/haspen	//The stored pen.
 	var/tmp/obj/item/toppaper	//The topmost piece of paper.
@@ -83,6 +82,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/clipboard)
+	configure(movable_motion(throw_speed = 3))
 	ref_one(nameof(toppaper), /obj/item)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 0))

@@ -27,7 +27,6 @@
 	melee_damage_upper = 12
 
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
-	meat_amount = 5
 
 	minbodytemp = 200
 
@@ -40,6 +39,7 @@
 	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	configure(butchery_rules(meat_amount = 5))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 
@@ -103,15 +103,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 
 	minbodytemp = 0
 
-	max_buckled_mobs = 1
 	mount_offset_y = 14
 	mount_offset_x = 2
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)

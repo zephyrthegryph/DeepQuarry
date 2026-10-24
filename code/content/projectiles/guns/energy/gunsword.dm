@@ -34,7 +34,6 @@
 	maxcharge = 2400
 	charge_amount = 20
 	standard_overlays = FALSE
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 
@@ -88,6 +87,7 @@
 
 
 CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3, sharp = FALSE, edge = FALSE, armor_penetration = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))

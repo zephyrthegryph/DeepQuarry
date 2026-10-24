@@ -15,7 +15,6 @@ FIRE ALARM
 	var/time = 10.0
 	var/lockdownbyai = 0
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	panel_open = FALSE
 	var/seclevel
@@ -36,6 +35,7 @@ FIRE ALARM
 /obj/machinery/firealarm/var/timing = 0
 
 CAPABILITIES(/obj/machinery/firealarm)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(sync_initial_security_level))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))

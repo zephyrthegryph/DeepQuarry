@@ -14,7 +14,6 @@
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	///when this be added to vis_contents of something it inherit something.plane, important for visualisation of mob in openspace.
 	vis_flags = VIS_INHERIT_PLANE
-	unacidable = FALSE
 
 	/// It's like a client, but persists! Persistent clients will stick to a mob until the client in question is logged into a different mob.
 	var/tmp/datum/persistent_client/persistent_client
@@ -55,7 +54,6 @@
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
-	var/lying_prev = 0
 	var/is_shifted = FALSE // Edit; pixel shifting
 	var/canmove = 1
 	//Allows mobs to move through dense areas without restriction. For instance, in space or out of holder objects.
@@ -88,13 +86,11 @@
 	/// object's own Move() -- BUCKLED()/BUCKLED_MOBS() (om.dm) are pure graph
 	/// reads now, with no field left to transiently null for the same effect.
 
-	var/seer = 0 //for cult//Carbon, probably Human
 
 	var/tmp/datum/hud/hud_used = null
 
 	var/tmp/list/mapobjs                    // Lazylist of overview screen objects. Usually empty/null.
 
-	var/in_throw_mode = 0
 
 	var/inertia_dir = 0
 
@@ -117,7 +113,6 @@
 
 	var/voice_name = "unidentifiable voice"
 
-	var/list/ventcraw_item_admin_allow = null // If this is a list, it will be appended to the default list of items the mob is allowed to ventcrawl with
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
@@ -148,7 +143,6 @@
 
 	//Whether or not mobs can understand other mobtypes. These stay in /mob so that ghosts can hear everything.
 	var/universal_speak = 0 // Set to 1 to enable the mob to speak to everyone -- TLE
-	var/universal_understand = 0 // Set to 1 to enable the mob to understand everyone, not necessarily speak
 
 	var/stance_damage = 0 //Whether this mob's ability to stand has been affected
 
@@ -195,12 +189,11 @@
 
 
 	var/custom_footstep = FOOTSTEP_MOB_SHOE
-	var/vent_crawl_time = 4.5 SECONDS // Time to animate entering a vent
-	VAR_PRIVATE/is_motion_tracking = FALSE // Prevent multiple unsubs and resubs, also used to check if the vis layer is enabled, use has_motiontracking() to get externally.
-	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 
 CAPABILITIES(/mob)
+	mob_rules(universal_understand = 0, forced_psay = FALSE, vent_crawl_time = 4.5 SECONDS)
+	configure(movable_motion(unacidable = FALSE))
 	mob_nature(can_pain_emote = TRUE, name_the_meat = TRUE, gib_on_butchery = FALSE, drops_organs = TRUE, no_vore = FALSE, restrict_vore_ventcrawl = FALSE, faction_bump_vore = FALSE, belly_size = 1, vore_eyes = FALSE) // what it is like: a type trait (code/modules/mob/mob_nature.dm)
 	cooldowns(next_emote, next_emote_refresh)
 	ref_one(nameof(lastattacker), /mob, weak = TRUE) // the last mob to hit this one with a weapon (attack logs and death records); a gone attacker reads as none

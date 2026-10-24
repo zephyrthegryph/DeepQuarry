@@ -15,7 +15,6 @@
 	volume = 60
 	w_class = ITEMSIZE_SMALL
 	flags = NOCONDUCT
-	unacidable = TRUE //glass doesn't dissolve in acid
 	resistance_flags = ACID_PROOF
 
 	var/label_text = ""
@@ -59,6 +58,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(remember_base_text))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	glass_handling()
@@ -278,7 +278,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/stopperedbottle)
 	max_transfer_amount = 120
 	volume = 120
 	flags = NONE
-	unacidable = FALSE
 
 /// The lid, while it is on.
 /obj/item/reagent_containers/glass/bucket/draw(datum/look/look)
@@ -287,6 +286,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker/stopperedbottle)
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket)
+	configure(movable_motion(unacidable = FALSE))
 	configure(item_handling(center_x = 16, center_y = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added)))
@@ -346,10 +346,10 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	max_transfer_amount = 120
 	volume = 120
 	flags = NONE
-	unacidable = FALSE
 
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
+	configure(movable_motion(unacidable = FALSE))
 	configure(item_handling(center_x = 16, center_y = 8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))

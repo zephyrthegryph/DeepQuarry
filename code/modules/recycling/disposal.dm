@@ -5,7 +5,6 @@
 	desc = "An underfloor disposal pipe."
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 
 	level = 1			// underfloor only
 	var/dpdir = 0		// bitmask of pipe directions
@@ -175,6 +174,7 @@
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
 CAPABILITIES(/obj/structure/disposalpipe)
+	configure(movable_motion(unacidable = TRUE))
 	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 
 	setup(PROC_REF(structure_disposalpipe_setup))

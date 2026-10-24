@@ -19,12 +19,12 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	icon_state = "randompile"
 	density = FALSE
 	anchored = TRUE
-	unacidable = TRUE
 	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
 MSG_DEF(loot_pile/searching, "You search through %T%.", "%U% searches through %T%.")
 
 CAPABILITIES(/obj/structure/loot_pile)
+	configure(movable_motion(unacidable = TRUE))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 	silicon_hand(adjacent = TRUE)
 	op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), loot_rolls())

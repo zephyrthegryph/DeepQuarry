@@ -6,7 +6,6 @@
 	item_state = "paper"
 	w_class = ITEMSIZE_SMALL
 	throw_range = 2
-	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
@@ -120,6 +119,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	configure(movable_motion(throw_speed = 1))
 	ref_many(nameof(pages), /obj/item)
 	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("bapped")))

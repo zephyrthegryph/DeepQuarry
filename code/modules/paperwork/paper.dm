@@ -11,7 +11,6 @@
 	item_state = "paper"
 	w_class = ITEMSIZE_TINY
 	throw_range = 1
-	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
@@ -65,6 +64,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
+	configure(movable_motion(throw_speed = 1))
 	setup(PROC_REF(encode_text), mapload = TRUE)
 	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
 	configure(item_thrown(force = 0))
@@ -200,7 +200,7 @@ CAPABILITIES(/obj/item/paper/card)
 // handler is unchanged — byond:// hrefs embedded in info_links still
 // route back to it from inside the TGUI window's HTML container.
 /obj/item/paper/proc/show_content(mob/user, forceshow=0)
-	set_can_read_view((forceshow || ui_viewer_fact(user, "paper_readable") || user?.universal_understand))
+	set_can_read_view((forceshow || ui_viewer_fact(user, "paper_readable") || mob_rules_of(user).universal_understand))
 	set_tgui_view("read")
 	tgui_interact(user)
 

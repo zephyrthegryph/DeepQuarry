@@ -47,7 +47,6 @@
 	vore_pounce_chance = 70 // v hongry buggo
 	vore_icons = SA_ICON_LIVING
 
-	meat_amount = 4
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	//Beeg bug don't give a fuck about atmos. Something something, phoron mutation.
@@ -73,16 +72,15 @@
 	pixel_x = -16
 	pixel_y = 0
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 7
 
 	say_list_type = /datum/say_list/sect_drone
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	configure(butchery_rules(meat_amount = 4))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(vore_eyes = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color, login = TRUE)

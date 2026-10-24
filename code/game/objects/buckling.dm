@@ -2,11 +2,6 @@
 
 /atom/movable
 	var/can_buckle = FALSE
-	var/buckle_movable = 0
-	var/buckle_dir = 0
-	var/buckle_lying = -1 //bed-like behavior, forces mob.lying = buckle_lying if != -1
-	var/buckle_require_restraints = 0 //require people to be handcuffed before being able to buckle. eg: pipes
-	var/max_buckled_mobs = 1
 
 
 /// Re-checked on the answer: still next to it, and the pick is still buckled to it.
@@ -83,7 +78,7 @@
 	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
 	M.facing_dir = null
-	M.set_dir(buckle_dir ? buckle_dir : dir)
+	M.set_dir(buckle_of(src).dir ? buckle_of(src).dir : dir)
 	M.update_canmove()
 	M.update_floating(M.Check_Dense_Object())
 	if(riding_datum)
@@ -159,7 +154,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 		return FALSE
 
 	var/list/buckled_here = src?.buckled_mob_list()
-	if(has_buckled_mobs() && buckled_here.len >= max_buckled_mobs)
+	if(has_buckled_mobs() && buckled_here.len >= buckle_of(src).max_mobs)
 		for(var/mob/living/L in buckled_here)
 			if(istype(L) && can_stumble_vore(prey = L, pred = M))
 				unbuckle_mob(L, TRUE)
@@ -221,22 +216,22 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 			L.last_move = last_move
 			L.inertia_dir = last_move
 
-		if(!buckle_dir)
+		if(!buckle_of(src).dir)
 			L.set_dir(dir)
 		else
-			L.set_dir(buckle_dir)
+			L.set_dir(buckle_of(src).dir)
 
 /// Why M can't be buckled here now, or null: a pure check (admission.md D6: buckling's gate is a reason, its message the caller's). A refusal
 /// that says nothing is /datum/msg/req_silent. An authority with SKIP_REQUIREMENTS (GLOB.authority_forced) skips the holder's own consent and the grab rule.
 /atom/movable/proc/buckle_refusal(mob/living/M, authority = null, can_do_spont_vore = FALSE)
 	if(!istype(M))
 		return /datum/msg/req_silent
-	if((!can_buckle && !authority_skips(authority, SKIP_REQUIREMENTS)) || M?.buckled_to() || LAZYLEN(M.pinned) || (max_buckled_mobs == 0) || (buckle_require_restraints && !M.restrained()))
+	if((!can_buckle && !authority_skips(authority, SKIP_REQUIREMENTS)) || M?.buckled_to() || LAZYLEN(M.pinned) || (buckle_of(src).max_mobs == 0) || (buckle_of(src).require_restraints && !M.restrained()))
 		return /datum/msg/req_silent
 	if(LAZYLEN(M?.grabbed_by_list()) && !authority_skips(authority, SKIP_REQUIREMENTS))
 		return msg_reason(span_boldwarning("You can not buckle while grabbed!"))
 	var/list/buckled_here2 = src?.buckled_mob_list()
-	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
+	if(has_buckled_mobs() && buckled_here2.len >= buckle_of(src).max_mobs) //Handles trying to buckle yourself to the chair when someone is on it
 		if(can_do_spont_vore && is_vore_predator(M) && vore_selected_of(M))
 			for(var/mob/living/buckled in buckled_here2)
 				if(can_stumble_vore(prey = buckled, pred = M))

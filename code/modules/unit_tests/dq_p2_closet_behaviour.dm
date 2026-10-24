@@ -852,7 +852,7 @@
 /datum/unit_test/dq_p2_closet/emp_can_toggle_the_lock
 /datum/unit_test/dq_p2_closet/emp_can_toggle_the_lock/run_gate()
 	var/obj/structure/closet/secure_closet/C = make(/obj/structure/closet/secure_closet/p2_test)
-	C.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	C.set_emp_protection_flags(atom_rules_of(C).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(1234)
 	var/flipped = FALSE
 	for(var/i in 1 to 300)
@@ -867,7 +867,7 @@
 /datum/unit_test/dq_p2_closet/emp_can_scramble_the_access
 /datum/unit_test/dq_p2_closet/emp_can_scramble_the_access/run_gate()
 	var/obj/structure/closet/secure_closet/C = make(/obj/structure/closet/secure_closet/p2_test)
-	C.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	C.set_emp_protection_flags(atom_rules_of(C).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(4321)
 	var/scrambled = FALSE
 	for(var/i in 1 to 80)
@@ -1250,7 +1250,7 @@
 /datum/unit_test/dq_p2_closet/secure_crate_emp
 /datum/unit_test/dq_p2_closet/secure_crate_emp/run_gate()
 	var/obj/structure/closet/crate/secure/C = make(/obj/structure/closet/crate/secure/p2_test)
-	C.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	C.set_emp_protection_flags(atom_rules_of(C).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(777)
 	var/unlocked = FALSE
 	for(var/i in 1 to 300)

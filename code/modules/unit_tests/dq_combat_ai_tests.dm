@@ -31,9 +31,9 @@
 	melee_damage_upper = 14
 	movement_cooldown = 2
 	has_hands = FALSE
-	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/combat_ai_test_subject)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
 
@@ -284,7 +284,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 
 /datum/unit_test/dq_combat_ai_rebuild_merges_held_grants/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.use_modern_ai = TRUE
+	H.set_use_modern_ai(TRUE)
 	H.initialize_ai_brain()
 	TEST_ASSERT_NOTNULL(H.ai_brain, "brain wasn't created after opt-in re-init")
 	var/obj/item/grenade/G = allocate(/obj/item/grenade)

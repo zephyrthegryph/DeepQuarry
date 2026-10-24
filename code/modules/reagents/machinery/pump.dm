@@ -1,5 +1,4 @@
 /obj/machinery/pump
-	maintenance_flags = MACHINE_MAINT_WRENCH
 	name = "fluid pump"
 	desc = "A fluid pumping machine."
 
@@ -19,6 +18,7 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_WRENCH))
 	configure(machine_usage(wrench_time = 2 SECONDS))
 	ref_one(nameof(cell), /obj/item/cell)
 	setup(PROC_REF(prepare_pump_cell_and_parts))

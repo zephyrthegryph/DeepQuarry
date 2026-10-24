@@ -5,8 +5,6 @@
 /mob/living/simple_mob
 	// footsteps (footstep() in its CAPABILITIES)
 	footstep_type = FOOTSTEP_MOB_SHOE
-	footstep_volume = 1
-	footstep_e_range = -6
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
@@ -15,7 +13,6 @@
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
 
-	has_huds = TRUE // We do show AI status huds for buildmode players
 
 
 	var/tt_desc = null //Tooltip description
@@ -169,6 +166,9 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
+	configure(living_rules(use_modern_ai = TRUE, has_huds = TRUE))
+	configure(movable_motion(does_spin = FALSE))
 	configure(mob_nature(gib_on_butchery = TRUE, drops_organs = FALSE))
 	ref_one(nameof(movement_target), /obj)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
@@ -307,7 +307,7 @@ CAPABILITIES(/mob/living/simple_mob)
 /mob/living/simple_mob/movement_delay()
 	. = movement_cooldown
 
-	if(force_max_speed)
+	if(living_rules_of(src).force_max_speed)
 		return -3
 
 	if(src.haste)
@@ -519,7 +519,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/mount_offset_y = 8				// Vertical riding offset
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
-	does_spin = FALSE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob

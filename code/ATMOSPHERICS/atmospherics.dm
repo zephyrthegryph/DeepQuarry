@@ -20,7 +20,6 @@ Pipelines + Other Objects -> Pipe network
 	/// is built from, so the push is one coalesced run per frame.
 	var/rust_device_rev = 0
 
-	unacidable = TRUE
 	layer = ATMOS_LAYER
 	plane = PLATING_PLANE
 

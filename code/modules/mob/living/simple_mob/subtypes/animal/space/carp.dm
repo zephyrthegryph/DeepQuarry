@@ -54,7 +54,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/fish
 
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat
 
 
@@ -84,6 +83,7 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	configure(butchery_rules(meat_amount = 5))
 	setup(PROC_REF(prepare_carp_colour))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
@@ -185,9 +185,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	pixel_x = -16
 	default_pixel_x = -16
 	icon_expected_width = 64
-	icon_expected_height = 32
 
-	meat_amount = 7
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/large)
+	configure(butchery_rules(meat_amount = 7))
+	configure(movable_motion(icon_height = 32))
 
 
 /mob/living/simple_mob/animal/space/carp/large/huge
@@ -208,11 +210,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	pixel_y = -16
 	default_pixel_y = -16
 	icon_expected_width = 64
-	icon_expected_height = 64
 
-	meat_amount = 15
 
 	knockdown_chance = 15
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/large/huge)
+	configure(butchery_rules(meat_amount = 15))
+	configure(movable_motion(icon_height = 64))
 
 /mob/living/simple_mob/animal/space/carp/large/huge/vorny
 	name = "great white carp"
@@ -227,11 +231,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	pixel_y = -16
 	default_pixel_y = -16
 	icon_expected_width = 64
-	icon_expected_height = 64
 
-	meat_amount = 15
 
 	knockdown_chance = 50
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/large/huge/vorny)
+	configure(butchery_rules(meat_amount = 15))
+	configure(movable_motion(icon_height = 64))
 
 /mob/living/simple_mob/animal/space/carp/large/huge/vorny/load_default_bellies()
 	. = ..()
@@ -260,11 +266,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	// Hologram lighting, lit from the start (applied when it materializes).
 	light_on = TRUE
 	icon_gib = null
-	meat_amount = 0
 	meat_type = null
 	vore_icons = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(butchery_rules(meat_amount = 0))
 	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
 	configure(light_glow(range = 2))
 

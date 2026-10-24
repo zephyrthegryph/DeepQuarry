@@ -280,10 +280,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesh_hcloak_bo"
 	item_state_slots = list(slot_r_hand_str = "tesh_hcloak_bo", slot_l_hand_str = "tesh_hcloak_bo")
-	actions_types = list(/datum/action/item_action/toggle_hood)
 	hoodtype = /obj/item/clothing/head/tesh_hood
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_hood)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	fits_as(FIT_TESHARI)
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER|HIDETIE))

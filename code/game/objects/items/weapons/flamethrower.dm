@@ -16,7 +16,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi',
 			)
 	item_state = "flamethrower_0"
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 500)
@@ -31,6 +30,7 @@
 
 
 CAPABILITIES(/obj/item/flamethrower)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 3.0))
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)

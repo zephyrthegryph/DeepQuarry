@@ -48,7 +48,6 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "bimplant"
 	item_state = "syringe_0"
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	var/list/obj/item/implant/backup/imps // the implanter's loaded implants (owned, lazy)
@@ -57,6 +56,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	var/db_key // To give to the baby implants
 
 CAPABILITIES(/obj/item/backup_implanter)
+	configure(movable_motion(throw_speed = 1))
 	setup(PROC_REF(load_implants))
 	owns_many(nameof(imps), /obj/item/implant/backup)
 	op("backup_implanter_interaction_eject", in_hand(), label("Eject implant"), then(PROC_REF(backup_implanter_interaction_eject)))
