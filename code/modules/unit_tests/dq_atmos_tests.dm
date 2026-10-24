@@ -7608,6 +7608,33 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// turf of the map it must match the old pairwise rule exactly: doors,
 /// windows, firedoors and directional blockers block the same faces as before.
 /datum/unit_test/dq_rust_adjacency_matches_pairwise_rule
+	tier = TEST_TIER_EXHAUSTIVE
+	/// Open turfs seen so far (the representative samples by it).
+	var/turfs_seen = 0
+
+/// Whether this run checks the faces of `T`: the sweep checks every open turf.
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/proc/checks_turf(turf/open/T)
+	return TRUE
+
+/// Normal tier: every turf with a blocker on it or beside it (doors, windows, firedoors, directional blockers), every open-space turf (the vertical
+/// rule), and one plain turf in 40, through the same comparison.
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/representative
+	tier = TEST_TIER_NORMAL
+
+/datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/representative/checks_turf(turf/open/T)
+	if(!(++turfs_seen % 40) || istype(T, /turf/simulated/open))
+		return TRUE
+	for(var/obj/O in contents_of(T))
+		if(O.can_atmos_pass != ATMOS_PASS_YES)
+			return TRUE
+	for(var/direction in list(NORTH, SOUTH, EAST, WEST))
+		var/turf/beside = get_step(T, direction)
+		if(!beside)
+			continue
+		for(var/obj/O in contents_of(beside))
+			if(O.can_atmos_pass != ATMOS_PASS_YES)
+				return TRUE
+	return FALSE
 
 /datum/unit_test/dq_rust_adjacency_matches_pairwise_rule/Run()
 	dq_atmos_test_restore_walls()
@@ -7616,6 +7643,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/list/mismatches = list()
 	for(var/turf/open/T in world)
 		if(T.blocks_air || isnull(T.air))
+			continue
+		if(!checks_turf(T))
 			continue
 		for(var/direction in GLOB.cardinals_multiz)
 			var/turf/open/N = get_step_multiz(T, direction)

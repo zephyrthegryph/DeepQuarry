@@ -191,8 +191,20 @@
 
 // ---- Every blueprint: one step forward then straight back, down the whole ladder ----
 
+/datum/unit_test/dq_construction_mech_all_blueprints_round_trip
+	tier = TEST_TIER_EXHAUSTIVE
+	is_sweep_test = TRUE
+
+/// Normal tier: two blueprints beside the four that have a test of their own (ripley, gygax, pinnace, polecat), on the same loop.
+/datum/unit_test/dq_construction_mech_all_blueprints_round_trip/representative
+	tier = TEST_TIER_NORMAL
+	is_sweep_test = FALSE
+
+/datum/unit_test/dq_construction_mech_all_blueprints_round_trip/representative/curated_types()
+	return list(/datum/mecha_blueprint/durand, /datum/mecha_blueprint/odysseus)
+
 /datum/unit_test/dq_construction_mech_all_blueprints_round_trip/Run()
-	for(var/datum/mecha_blueprint/path as anything in subtypesof(/datum/mecha_blueprint))
+	for(var/datum/mecha_blueprint/path as anything in sweep_types(subtypesof(/datum/mecha_blueprint)))
 		if(!initial(path.id))
 			continue
 		test_driver_begin()

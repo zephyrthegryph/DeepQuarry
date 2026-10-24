@@ -10,7 +10,7 @@
 //     `light_range`, `light_power`, `light_color`, `use_power`, `anchored`, `loc`).
 //   - A tool is a zero-speed tool, and every input is followed by a settle (tool ops of the converted code carry waits the old code did not).
 //   - Nothing here depends on message text, on an op key or on a click result being non-null.
-//   - A test that reads a deadline that world.time owns on the legacy code (the emergency cell's discharge and recharge) runs live (`live = TRUE`).
+//   - The emergency cell's recharge is a timer on the fixture's own clock (test_time); its discharge is stamped on world.time (the stamp's own-clock reading starts at 0, which the stamp reads as unset), so that test runs live (`live = TRUE`).
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Adapters: today's accessors, wrapped. After the conversion only these bodies change.
@@ -448,7 +448,7 @@
 	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 0, "a deleted fixture draws nothing")
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The emergency cell (live: the discharge and the recharge run on world.time)
+// The emergency cell (the discharge is stamped on world.time, so its test is live; the recharge is a timer on the fixture's own clock)
 // ---------------------------------------------------------------------------------------------------------------------
 
 /// On emergency power the cell drains at 0.1 charge per second, settled in batches: reading it brings it up to now.
@@ -476,18 +476,19 @@
 	set_area_power(FALSE)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BURNED, "the tube burned out")
 
-/// The cell recharges in time once the grid is back (live).
+/// The cell recharges in time once the grid is back.
 /datum/unit_test/dq_p2_lights/emergency_cell_recharges_when_power_returns
-	live = TRUE
 
 /datum/unit_test/dq_p2_lights/emergency_cell_recharges_when_power_returns/run_gate()
 	var/obj/machinery/light/L = light()
 	var/obj/item/cell/C = p2l_cell(L)
 	C.set_charge(C.maxcharge - 0.6) // one recharge step of 0.4 every two seconds: two steps
-	set_area_power(FALSE)
-	set_area_power(TRUE)
+	p2l_area.set_power_light(FALSE)
+	p2l_area_power_change(p2l_area)
+	p2l_area.set_power_light(TRUE)
+	p2l_area_power_change(p2l_area) // no settle: the recharge takes two steps
 	TEST_ASSERT(C.charge < C.maxcharge, "not charged at once")
-	sleep(8 SECONDS)
+	test_time(8 SECONDS)
 	TEST_ASSERT_EQUAL(C.charge, C.maxcharge, "charged to full after a few seconds on the grid")
 
 /// An AI toggles a fixture's emergency lighting; a fixture with it off goes dark on a power loss.
