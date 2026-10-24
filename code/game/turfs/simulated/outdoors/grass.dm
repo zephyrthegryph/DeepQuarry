@@ -59,12 +59,16 @@
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)
 	// catalogue_delay encoded in GLOB.dq_catalogue_delay_by_type
 
-/turf/simulated/floor/outdoors/grass/sif/Initialize(mapload)
+/turf/simulated/floor/outdoors/grass/sif/roll_spawns(datum/act/timer/A)
 	if(tree_chance && prob(tree_chance) && !check_density())
 		new /obj/structure/flora/tree/sif(src)
-	. = ..()
+	..()
 
-/turf/simulated/floor/outdoors/grass/Initialize(mapload)
+CAPABILITIES(/turf/simulated/floor/outdoors/grass)
+	after_init(0, then(PROC_REF(roll_spawns)))
+
+/// Rolls the grass and animal this tile starts with, once made.
+/turf/simulated/floor/outdoors/grass/proc/roll_spawns(datum/act/timer/A)
 	if(grass && grass_chance && prob(grass_chance) && !check_density())
 		var/grass_type = pickweight(GLOB.grass_grass[grass])
 		if(grass_type) // runtime
@@ -74,8 +78,6 @@
 		var/animal_type = pickweight(GLOB.grass_animals[animals])
 		if(animal_type) // runtime
 			new animal_type(src)
-
-	. = ..()
 
 
 /turf/simulated/floor/outdoors/grass/sif/forest
@@ -92,11 +94,13 @@
 /turf/simulated/floor/outdoors/rocks/sif
 	var/animal_chance = 0.3 //Should spawn around... 0-7 per round? Tweak as needed.
 
-/turf/simulated/floor/outdoors/rocks/sif/Initialize(mapload)
+CAPABILITIES(/turf/simulated/floor/outdoors/rocks/sif)
+	after_init(0, then(PROC_REF(roll_slug)))
+
+/// Rolls the slug this tile starts with, once made.
+/turf/simulated/floor/outdoors/rocks/sif/proc/roll_slug(datum/act/timer/A)
 	if(animal_chance && prob(animal_chance) && !check_density())
 		new /mob/living/simple_mob/vore/slug(src)
-
-	. = ..()
 // end
 
 // Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.

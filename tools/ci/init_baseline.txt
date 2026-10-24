@@ -90,53 +90,9 @@ init_lines	code/game/objects/micro_structures.dm	@/obj::Initialize::obj_instance
 init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence::Initialize::update_cut_status
 init_lines	code/game/objects/structures/fence.dm	@/obj/structure/fence/door::Initialize::update_door_status
 init_lines	code/game/objects/structures/watercloset.dm	@/obj/structure/biowaste_tank::Initialize::rel_set
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::switch
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::trees
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animals
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::chill
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::grass_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_chance
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::tree_type
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::expr
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::if
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::animal_type
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::expr
-init_lines	code/game/turfs/flooring/seasonal.dm	@/turf/simulated/floor/outdoors/grass/seasonal::Initialize::season_overlay
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::if
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::name
 init_lines	code/game/turfs/simulated/lava.dm	@/turf/simulated/floor/lava::Initialize::update_light
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass/sif::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::grass_type
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::animal_type
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/grass::Initialize::expr
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::if
-init_lines	code/game/turfs/simulated/outdoors/grass.dm	@/turf/simulated/floor/outdoors/rocks/sif::Initialize::expr
 init_lines	code/game/turfs/space/space.dm	@/turf/space::Initialize::space_appearance
 init_lines	code/game/turfs/turf.dm	@/turf::Initialize::turf_instance_setup
 init_lines	code/modules/asset_cache/transports/asset_transport.dm	@/datum/asset_transport::Initialize::preload
@@ -308,11 +264,6 @@ init_lines	code/modules/vore/eating/belly_obj.dm	@/obj/belly::Initialize::belly_
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::storage_slots
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::for
 init_lines	code/modules/vore/fluffstuff/custom_boxes.dm	@/obj/item/storage/box/fluff::Initialize::expr
-world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)
-world_reads	code/game/turfs/flooring/seasonal.dm	var/tree_type = pickweight(GLOB.grass_trees[trees])
-world_reads	code/game/turfs/flooring/seasonal.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
-world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/grass_type = pickweight(GLOB.grass_grass[grass])
-world_reads	code/game/turfs/simulated/outdoors/grass.dm	var/animal_type = pickweight(GLOB.grass_animals[animals])
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)

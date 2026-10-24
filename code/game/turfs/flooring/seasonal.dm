@@ -38,7 +38,8 @@ GLOBAL_VAR(world_time_day)
 	var/season_overlay
 
 
-/turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
+/// Picks the season's spawn tables, then rolls the tile's tree, animal and (grass) rolls and its season overlay.
+/turf/simulated/floor/outdoors/grass/seasonal/roll_spawns(datum/act/timer/A)
 	switch(GLOB.world_time_season)
 		if("spring")
 			trees = "seasonalspring"
@@ -66,7 +67,7 @@ GLOBAL_VAR(world_time_day)
 			animals = "seasonalwinter"
 			if(prob(snow_chance))
 				chill()
-				. = ..()
+				..()
 				return
 
 			grass = "seasonalwinter"
@@ -85,7 +86,7 @@ GLOBAL_VAR(world_time_day)
 		new animal_type(src)
 
 
-	. = ..()
+	..()
 	set_season_overlay(roll_season_overlay()) // after the tile's other rolls, where the draw used to roll it
 
 /// What the tile is described as in this season.
