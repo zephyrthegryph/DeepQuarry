@@ -27,6 +27,7 @@
 #                       for everyone else, T the arrival time, so the merge worktree jumps the queue and the rest go in
 #                       arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
 #   events.tsv          one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
+#   <worktree>/data/slot-waits.log  the same line for that worktree's own releases, kept to its last 2000 lines.
 # A holder or waiter is dead when its pid is gone (a bash pid is checked with kill -0, a node pid through its Windows
 # pid), or when its heartbeat is older than DQ_SLOTS_STALE_SEC (default 600; this covers pid reuse and a frozen holder
 # and the one case a pid cannot be checked cheaply). A dead slot is removed by the next waiter, so a crashed run never
@@ -389,6 +390,25 @@ _slots_heartbeat() { # owner file: touch it every 15 s while this shell lives
 	disown "$SLOTS_HB_PID" 2>/dev/null || true
 }
 
+# One line per release goes to the machine log (events.tsv) and to the releasing worktree's data/slot-waits.log (time, class, slot,
+# worktree, label = caller, queued seconds, held seconds), the latter cut to its last 2000 lines so it stays bounded.
+_slots_event() { # reads one line on stdin
+	local line wt log
+	IFS= read -r line || return 0
+	printf '%s
+' "$line" >>"$(slots_dir)/events.tsv" 2>/dev/null
+	_slots_worktree_set; wt="$SLOTS_WT"
+	[ -d "$wt" ] || return 0
+	mkdir -p "$wt/data" 2>/dev/null || return 0
+	log="$wt/data/slot-waits.log"
+	printf '%s
+' "$line" >>"$log" 2>/dev/null
+	if [ "$(wc -l <"$log" 2>/dev/null || echo 0)" -gt 2400 ]; then
+		tail -n 2000 "$log" >"$log.tmp.$$" 2>/dev/null && mv -f "$log.tmp.$$" "$log" 2>/dev/null
+	fi
+	return 0
+}
+
 _slots_release() {
 	local now owner worktree label started
 	now="$EPOCHSECONDS"
@@ -397,7 +417,7 @@ _slots_release() {
 		owner="$SLOTS_HELD/owner"
 		worktree="$(_slots_field "$owner" worktree)"
 		label="$(_slots_field "$owner" label)"
-		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_HELD_CLASS" "${SLOTS_HELD##*.}" "$worktree" "$label" "$((SLOTS_T_GOT - SLOTS_T_QUEUED))" "$((now - SLOTS_T_GOT))" >>"$(slots_dir)/events.tsv" 2>/dev/null
+		{ printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_HELD_CLASS" "${SLOTS_HELD##*.}" "$worktree" "$label" "$((SLOTS_T_GOT - SLOTS_T_QUEUED))" "$((now - SLOTS_T_GOT))"; } | _slots_event
 		rm -rf "$SLOTS_HELD"
 		SLOTS_HELD=""
 	fi
@@ -531,7 +551,7 @@ slots_group_release_one() { # hand back one slot of the group; the last one stop
 	done
 	if [ -n "$dir" ]; then
 		owner="$dir/owner"
-		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_GROUP_CLASS" "${dir##*.}" "$(_slots_field "$owner" worktree)" "$(_slots_field "$owner" label)" "$((SLOTS_GROUP_T_GOT - SLOTS_GROUP_T_QUEUED))" "$((now - SLOTS_GROUP_T_GOT))" >>"$(slots_dir)/events.tsv" 2>/dev/null
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$SLOTS_GROUP_CLASS" "${dir##*.}" "$(_slots_field "$owner" worktree)" "$(_slots_field "$owner" label)" "$((SLOTS_GROUP_T_GOT - SLOTS_GROUP_T_QUEUED))" "$((now - SLOTS_GROUP_T_GOT))" | _slots_event
 		rm -rf "$dir"
 	fi
 	if [ "$left" -eq 0 ] && [ -n "$SLOTS_GROUP_HB" ]; then kill "$SLOTS_GROUP_HB" 2>/dev/null; SLOTS_GROUP_HB=""; fi

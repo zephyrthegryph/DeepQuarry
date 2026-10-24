@@ -365,6 +365,48 @@ fn check_replay_features(
         "rejected candidates cannot import earlier accepted edges"
     );
 
+    // A record the dependency index certified for the current world takes its typed answers
+    // as current: it resolves fewer reads than an uncertified one, and a changed answer is
+    // still refused (the typed row must equal the recorded bytes to be trusted).
+    struct Counting<'a>(&'a dyn Resolver, std::sync::atomic::AtomicUsize);
+    impl Resolver for Counting<'_> {
+        fn observes_reads(&self) -> bool {
+            false
+        }
+        fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
+            self.1.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.0.resolve(q)
+        }
+        fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
+            self.0.domain_version(d)
+        }
+    }
+    let resolved = |payload: &Payload<'_>| {
+        let counting = Counting(&quiet, Default::default());
+        let result = payload.transparent_reads(&counting);
+        (
+            result.map(|reads| reads.map(|reads| reads.len())),
+            counting.1.into_inner(),
+        )
+    };
+    let (plain_result, plain_resolved) = resolved(&payload);
+    assert_eq!(plain_result.unwrap(), Some(payload.reads.0.len()));
+    let mut certified = decode(&bytes).unwrap();
+    certified.certify_world();
+    let (certified_result, certified_resolved) = resolved(&certified);
+    assert_eq!(certified_result.unwrap(), Some(payload.reads.0.len()));
+    assert!(
+        certified_resolved < plain_resolved,
+        "certified {certified_resolved} must resolve fewer reads than uncertified {plain_resolved}"
+    );
+    let mut changed = decode(&bytes).unwrap();
+    changed.certify_world();
+    changed.reads.0.last_mut().unwrap().answer = Cow::Borrowed(b"changed last answer");
+    assert!(
+        resolved(&changed).0.is_err(),
+        "a certified record still fails a differing answer"
+    );
+
     for missing in [
         ResolveQuery::Ancestry(payload.identity.owner),
         ResolveQuery::DeclarationChain {
@@ -438,6 +480,7 @@ fn check_replay_features(
                     selections_only: false,
                     verify: false,
                     modified: Some(&issuer),
+                    certificates: None,
                 },
                 &abi.prepared.units()[0].1
             )
@@ -454,6 +497,7 @@ fn check_replay_features(
                     selections_only: false,
                     verify: false,
                     modified: Some(&issuer),
+                    certificates: None,
                 },
                 &abi.prepared.units()[0].1
             )
@@ -487,6 +531,7 @@ fn check_replay_features(
         selections_only: false,
         verify: false,
         modified: Some(&issuer),
+        certificates: None,
     };
     if !modifiers && !helpers {
         use std::sync::atomic::{AtomicUsize, Ordering};
@@ -891,6 +936,7 @@ fn check_replay_features(
                     selections_only: false,
                     verify: false,
                     modified: None,
+                    certificates: None,
                 },
                 shifted_ready,
             )

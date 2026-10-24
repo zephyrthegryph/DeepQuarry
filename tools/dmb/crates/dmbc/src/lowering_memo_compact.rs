@@ -181,6 +181,10 @@ use crate::lowering_memo_wire::read_wire::ReadWire;
 pub(crate) struct Payload<'a> {
     #[serde(skip)]
     verified_answers: typed::VerifiedAnswers,
+    /// Set by the dependency index: an earlier session proved this record's reads under the
+    /// current world, so every read the world determines is current without resolving it.
+    #[serde(skip)]
+    world_certified: bool,
     #[serde(borrow)]
     pub(crate) key: Cow<'a, [u8]>,
     pub(crate) identity: ProcedureIdentity,
@@ -229,6 +233,7 @@ pub(crate) fn encode<'a>(
     );
     let payload = Payload {
         verified_answers: Default::default(),
+        world_certified: false,
         typed_answers,
         key: Cow::Borrowed(key),
         identity: ProcedureIdentity {
@@ -341,6 +346,13 @@ fn valid_plain_instances(instances: &[(SymbolId, SymbolId)], reads: &[ReadWire<'
         })
 }
 impl Payload<'_> {
+    /// The dependency-index id of this record: its key and recorded reads.
+    pub(crate) fn record_id(&self) -> u128 {
+        crate::dep_index::record_id(
+            self.key.as_ref(),
+            self.reads.0.iter().map(|read| (&read.query, read.answer.as_ref())),
+        )
+    }
     pub(crate) fn verification_reads(&self) -> Vec<(ResolveQuery, Vec<u8>)> {
         self.reads
             .0
@@ -348,10 +360,18 @@ impl Payload<'_> {
             .map(|r| (r.query, r.answer.to_vec()))
             .collect()
     }
+    /// The dependency index certified this record's world (see `crate::dep_index`).
+    pub(crate) fn certify_world(&mut self) {
+        self.world_certified = true;
+    }
+    fn covered(&self, matching: &std::collections::BTreeSet<ReadDomain>, domain: ReadDomain) -> bool {
+        matching.contains(&domain)
+            || (self.world_certified && crate::dep_index::world_determines(domain))
+    }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
         let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);
         self.reads.0.iter().find_map(|r| {
-            (!matching.contains(&r.query.domain())
+            (!self.covered(&matching, r.query.domain())
                 && host.resolve(r.query).canonical_bytes() != r.answer.as_ref())
             .then_some(r.query)
         })
@@ -378,7 +398,7 @@ impl Payload<'_> {
                 index,
                 read.query,
                 &read.answer,
-                matching.contains(&read.query.domain()),
+                self.covered(&matching, read.query.domain()),
                 provider,
             );
             if answer.canonical() != read.answer.as_ref() {
