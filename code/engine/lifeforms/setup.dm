@@ -60,13 +60,10 @@ GLOBAL_REAL_VAR(list/setup_pending)
 	else
 		setup_pending -= holder
 	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
-	for(var/datum/centry/C as anything in P.setups)
-		var/datum/entry/E = C.item
-		if(!!E.args["with_params"] != !!with_params)
-			continue
-		var/handler = E.args["handler"]
+	for(var/list/row as anything in (with_params ? P.setup_rows_params : P.setup_rows_plain))
+		var/handler = row[1]
 		if(handler)
-			if(E.args["mapload"])
+			if(row[3])
 				var/hint = call(holder, handler)(mapload)
 				if(hint == INITIALIZE_HINT_QDEL)
 					log_world("setup([handler]) on [holder.type] returned INITIALIZE_HINT_QDEL (mapload=[mapload ? 1 : 0]): the instance is discarded")
@@ -75,9 +72,9 @@ GLOBAL_REAL_VAR(list/setup_pending)
 					stack_trace("setup([handler]) on [holder.type] returned init hint [hint]; only INITIALIZE_HINT_NORMAL and INITIALIZE_HINT_QDEL are supported there")
 			else
 				call(holder, handler)()
-		else if(!isnull(E.args["prefix"]) && isatom(holder))
+		else if(!isnull(row[2]) && isatom(holder))
 			var/atom/A = holder
-			var/prefix = E.args["prefix"]
+			var/prefix = row[2]
 			if(istext(prefix) && hascall(holder, prefix))
 				prefix = call(holder, prefix)()
 			A.name = "[prefix] [A.name]"
