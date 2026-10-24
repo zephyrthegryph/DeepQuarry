@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "b4f1f0de14609b1b"
+#define VERDIGRIS_ABI "44b0965dd6c52f27"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1729,6 +1729,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
+/// Batched solid temperatures. Args: (list of turfs). One float per turf, in order: its solid's temperature in K, -1 for a turf with no node in the heat field
+/// or a value that is not finite. The unit-test guards read every watched floor with one call instead of one `heat_turf_temperature` each.
+// /proc/heat_turf_temperatures (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_turf_temperatures(turfs)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:heat_turf_temperatures_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(turfs)
+
 /// This turf's gas revision (bumped whenever its gas changes).
 // /turf/proc/air_revision (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_hook_air_revision(src_ref)
@@ -2248,6 +2258,17 @@
 		__f = load_ext(VERDIGRIS, "byond:react_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, holder)
+
+/// Batched change counters. Args: (list of gas mixtures). One float per mixture, in order: the mixture's revision (the counter that moves whenever its gas
+/// changes, low 24 bits), 0 for a null or unregistered entry. A stale handle is refused with an error, as in `read_mixtures`, never read as zero. The unit-test
+/// guards compare two of these reads to find the mixtures a test touched, instead of reading every mixture whole.
+// /proc/read_mixture_revisions (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_read_mixture_revisions(mixtures)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:read_mixture_revisions_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixtures)
 
 /// Batched read. Args: (list of gas mixtures). Returns one flat list with, for
 /// each mixture in order, `GAS_READ_HEADER` floats (pressure, temperature,

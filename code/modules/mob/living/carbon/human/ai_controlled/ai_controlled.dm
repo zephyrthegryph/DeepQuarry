@@ -33,6 +33,8 @@
 // Its outfit: each to_wear_* var names what it starts wearing in that slot (null: nothing), so a subtype only changes the vars.
 CAPABILITIES(/mob/living/carbon/human/ai_controlled)
 	configure(living_rules(low_sorting_priority = TRUE))
+	rolls(nameof(gender), PROC_REF(roll_gender), when = nameof(generate_gender))
+	rolls(nameof(identifying_gender), PROC_REF(roll_gender), when = nameof(generate_id_gender))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
 	wears(nameof(to_wear_suit), SLOT_ID_SUIT)
@@ -53,13 +55,9 @@ CAPABILITIES(/mob/living/carbon/human/ai_controlled)
 
 TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
 
-// Its genders are picked before the human init names it after its gender
-/mob/living/carbon/human/ai_controlled/Initialize(mapload)
-	if(generate_gender)
-		gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-	if(generate_id_gender)
-		identifying_gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-	return ..()
+/// Its gender, one of the four at random (rolls(), so it is picked before the human init names it after its gender).
+/mob/living/carbon/human/ai_controlled/proc/roll_gender(datum/roller/R)
+	return R.choose(list(MALE, FEMALE, PLURAL, NEUTER))
 
 /// Its ID card carries its name and its job's access (wears(each =)).
 /mob/living/carbon/human/ai_controlled/proc/fit_id_card(obj/item/card/id/W)

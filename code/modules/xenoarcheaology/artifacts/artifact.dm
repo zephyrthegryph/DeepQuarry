@@ -23,6 +23,7 @@
 /// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (gas_level(), code/domains/atmos/gas_level.dm), and a
 /// move re-points the level at the new tile's air.
 CAPABILITIES(/obj/machinery/artifact)
+	setup(PROC_REF(roll_artifact_look))
 	gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)
 	on_change(nameof(overheated), ENTER, then(PROC_REF(burst_in_heat)))
 
@@ -36,9 +37,8 @@ CAPABILITIES(/obj/machinery/artifact)
 		gas_level_rearm_all(src)
 
 
-// ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect
-/obj/machinery/artifact/Initialize(mapload)
-
+/// It makes its artifact state, then rolls its look and the trigger of its effect.
+/obj/machinery/artifact/proc/roll_artifact_look()
 	if(artifact_master_type)
 		make_artifact_master(src, artifact_master_type)
 
@@ -76,7 +76,7 @@ CAPABILITIES(/obj/machinery/artifact)
 		desc = "A strange statue."
 		my_effect.trigger = pick(TRIGGER_TOUCH, TRIGGER_HEAT, TRIGGER_COLD)
 	artifact_master.do_large_randomization()
-	. = ..()
+
 /obj/machinery/artifact/proc/appearance_active()
 	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 

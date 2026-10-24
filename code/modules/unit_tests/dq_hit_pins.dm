@@ -22,7 +22,16 @@
 /// The trigger every type meets first (the head of the triggers list in Run()).
 #define DQ_HIT_FIRST_TRIGGER "emp 1"
 
+/// The whole-type sweep (68 recorded types, each hit by nine triggers): an exhaustive-tier test; dq_hit_pin/representative is its normal-tier share.
 /datum/unit_test/dq_hit_pin
+	tier = TEST_TIER_EXHAUSTIVE
+	/// Optional subtree selection: only the recorded types under one of these roots are captured (the default captures every recorded type).
+	var/list/capture_roots
+
+/// Normal tier: a cash machine, a mousetrap and a grille through all nine triggers.
+/datum/unit_test/dq_hit_pin/representative
+	tier = TEST_TIER_NORMAL
+	capture_roots = list(/obj/machinery/atm, /obj/item/assembly/mousetrap, /obj/structure/grille)
 
 // Warm the production disguise caches before the runner records globals. Their
 // lazy initialization is persistent framework setup, not a hit's state change.
@@ -197,6 +206,16 @@
 /datum/unit_test/dq_hit_pin/Run()
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(DQ_HIT_PIN_DIR, bad)
+	if(length(capture_roots))
+		for(var/type in expected_by_type.Copy())
+			var/selected = FALSE
+			for(var/root in capture_roots)
+				if(ispath(type, root))
+					selected = TRUE
+					break
+			if(!selected)
+				expected_by_type -= type
+		TEST_ASSERT(length(expected_by_type), "The hit pin selection contains recorded types")
 	if(!length(expected_by_type) && !length(bad))
 		return // no pins recorded
 	var/turf/T = test_floor()

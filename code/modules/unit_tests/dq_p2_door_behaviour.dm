@@ -12,9 +12,9 @@
 //   - A test never asserts message text or a click result's outcome: it asserts the state that results. After every click or
 //     window button the test lets time pass (settle()) before it reads state, because a tool action may wait.
 //
-// Two clocks. Most tests run on the kernel's injected clock (test_time). A door's own deadlines read world.time (the autoclose
-// deadline, the bump cooldown), which test_time does not move, so the tests of those run live: `live = TRUE`, real sleeps, and
-// fast door timing (the timing wire) to keep them short.
+// Two clocks. Most tests run on the kernel's injected clock (test_time), the autoclose among them (it is a timer on the door's own clock): a
+// test of it sets `autocloses = TRUE`, which leaves the door's stock timing on and lets the time it waits for pass on the injected clock.
+// The bump cooldown is a stamp on the bumping mob's world.time, which test_time does not move, so its test runs live: `live = TRUE`, real sleeps.
 //
 // The room a test runs in is 5x5 floor (maps/templates/unit_tests.dmm) with no APC, so a shock from an electrified door never
 // lands (electrocute_mob() finds no power source): electrification is pinned as state, not as damage.
@@ -188,6 +188,8 @@
 	abstract_type = /datum/unit_test/dq_p2_door
 	/// TRUE: real time and the live kernel (a door deadline that reads world.time).
 	var/live = FALSE
+	/// TRUE: the door keeps its stock autoclose (the test waits for it on the injected clock).
+	var/autocloses = FALSE
 
 /datum/unit_test/dq_p2_door/New()
 	..()
@@ -212,11 +214,11 @@
 	return locate(run_loc_floor_bottom_left.x + dx, run_loc_floor_bottom_left.y + dy, run_loc_floor_bottom_left.z)
 
 /// A powered door in the middle of the room, with `access` as its req_access when given. A test on the injected clock gets a door
-/// that does not close itself (its autoclose deadline reads world.time): the live tests keep the stock timing.
+/// that does not close itself unless it sets `autocloses`: the live tests keep the stock timing.
 /datum/unit_test/dq_p2_door/proc/make_door(type = /obj/machinery/door/airlock, list/access)
 	var/obj/machinery/door/D = allocate(type, tile(2, 2))
 	p2_door_set_power(D, TRUE)
-	if(!live)
+	if(!live && !autocloses)
 		p2_door_set_autoclose(D, FALSE)
 	if(access)
 		D.set_req_access(access)
@@ -281,8 +283,17 @@
 /datum/unit_test/dq_p2_door/proc/settle()
 	if(live)
 		sleep(3 SECONDS)
+	else if(autocloses)
+		test_time(3 SECONDS) // short of the autoclose, which the test is waiting for
 	else
 		p2_door_settle()
+
+/// Time passes: real time when live, the injected clock otherwise.
+/datum/unit_test/dq_p2_door/proc/pass_time(t)
+	if(live)
+		sleep(t)
+	else
+		test_time(t)
 
 /// The sum of the sheets of `type` lying on `T`.
 /datum/unit_test/dq_p2_door/proc/sheets_on(turf/T, type)
@@ -399,25 +410,25 @@
 	TEST_ASSERT(!D.density, "a bump after the cooldown opens it")
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Closing itself (live: the deadline reads world.time)
+// Closing itself (the autoclose timer, on the injected clock)
 // ---------------------------------------------------------------------------------------------------------------------
 
 /datum/unit_test/dq_p2_door/airlock_autocloses_after_the_normal_wait
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_autocloses_after_the_normal_wait/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
 	click(H, D, null)
 	TEST_ASSERT(!D.density, "open")
-	sleep(8 SECONDS)
+	pass_time(8 SECONDS)
 	TEST_ASSERT(!D.density, "it waits a good while before it closes")
-	sleep(11 SECONDS)
+	pass_time(11 SECONDS)
 	TEST_ASSERT(D.density, "and then closes itself")
 	TEST_ASSERT(!D.operating, "with the swing done")
 
 /datum/unit_test/dq_p2_door/airlock_fast_timing_autocloses_quickly
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_fast_timing_autocloses_quickly/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -427,7 +438,7 @@
 	TEST_ASSERT(D.density, "with the timing wire pulsed the door closes itself within seconds")
 
 /datum/unit_test/dq_p2_door/airlock_ai_speed_toggle_makes_it_close_fast
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_ai_speed_toggle_makes_it_close_fast/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -438,7 +449,7 @@
 	TEST_ASSERT(D.density, "with the speed toggled by the AI the door closes itself within seconds")
 
 /datum/unit_test/dq_p2_door/airlock_cut_timing_wire_stops_autoclose
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_cut_timing_wire_stops_autoclose/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -446,18 +457,18 @@
 	p2_door_wire_pulse(D, WIRE_SPEED, H) // fast, so the test is short
 	p2_door_wire_cut(D, WIRE_SPEED, H)
 	click(H, D, null)
-	sleep(4 SECONDS)
+	pass_time(4 SECONDS)
 	TEST_ASSERT(!D.density, "with the timing wire cut an open door stays open")
 	p2_door_wire_cut(D, WIRE_SPEED, H) // mend
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(D.density, "mending the wire closes it")
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Closing on someone: safeties and crushing (live)
+// Closing on someone: safeties and crushing
 // ---------------------------------------------------------------------------------------------------------------------
 
 /datum/unit_test/dq_p2_door/airlock_safeties_hold_door_until_clear
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_safeties_hold_door_until_clear/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -467,15 +478,15 @@
 	p2_door_click(H, D, null)
 	H.forceMove(D.loc)
 	var/before = H.vitality()
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(!D.density, "a door with someone in it does not close on them")
 	TEST_ASSERT_EQUAL(H.vitality(), before, "and they are not hurt")
 	H.forceMove(tile(3, 2))
-	sleep(4 SECONDS)
+	pass_time(4 SECONDS)
 	TEST_ASSERT(D.density, "it closes once they step out")
 
 /datum/unit_test/dq_p2_door/airlock_crushes_when_safeties_are_cut
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_crushes_when_safeties_are_cut/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -487,7 +498,7 @@
 	H.forceMove(D.loc)
 	var/before = H.vitality()
 	var/door_before = D.get_integrity()
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(D.density, "with no safeties it closes on them")
 	TEST_ASSERT(H.vitality() < before, "and crushes them")
 	TEST_ASSERT(D.get_integrity() < door_before, "the door takes damage from the crushing too")
@@ -548,7 +559,7 @@
 	TEST_ASSERT(D.density, "with the bolts up it closes")
 
 /datum/unit_test/dq_p2_door/airlock_bolted_open_door_does_not_autoclose
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_bolted_open_door_does_not_autoclose/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -556,10 +567,10 @@
 	p2_door_wire_pulse(D, WIRE_SPEED, H) // fast, so the test is short
 	p2_door_click(H, D, null)
 	p2_door_set_bolts(D, TRUE)
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(!D.density, "a bolted door does not autoclose")
 	p2_door_set_bolts(D, FALSE)
-	sleep(4 SECONDS)
+	pass_time(4 SECONDS)
 	TEST_ASSERT(D.density, "raising the bolts lets it autoclose again")
 
 /datum/unit_test/dq_p2_door/airlock_ai_bolt_toggle
@@ -835,7 +846,7 @@
 	TEST_ASSERT(!D.density, "a welded open door does not close by hand")
 
 /datum/unit_test/dq_p2_door/airlock_welded_open_door_does_not_autoclose
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_welded_open_door_does_not_autoclose/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -843,7 +854,7 @@
 	p2_door_wire_pulse(D, WIRE_SPEED, H) // fast, so the test is short
 	p2_door_click(H, D, null)
 	p2_door_set_welded(D, TRUE)
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(!D.density, "a welded open door does not close itself")
 
 /datum/unit_test/dq_p2_door/airlock_welder_will_not_weld_an_open_door
@@ -941,7 +952,7 @@
 	TEST_ASSERT(D.density, "the crowbar forces it shut again")
 
 /datum/unit_test/dq_p2_door/airlock_unpowered_open_door_does_not_autoclose
-	live = TRUE
+	autocloses = TRUE
 
 /datum/unit_test/dq_p2_door/airlock_unpowered_open_door_does_not_autoclose/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
@@ -949,7 +960,7 @@
 	p2_door_wire_pulse(D, WIRE_SPEED, H) // fast, so the test is short
 	p2_door_click(H, D, null)
 	p2_door_set_power(D, FALSE)
-	sleep(5 SECONDS)
+	pass_time(5 SECONDS)
 	TEST_ASSERT(!D.density, "a door with no power does not close itself")
 
 /datum/unit_test/dq_p2_door/airlock_bolts_and_welds_refuse_a_crowbar

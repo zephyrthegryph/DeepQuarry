@@ -2,8 +2,8 @@
 // severity) and it comes back by itself. Written against the legacy capability (the EMPED bit and an expiry var) before emp_disable() became a
 // timed hold on the holder's operability; the same tests pass after. State is read through the adapters below and plain vars.
 //
-// The users' tests run live (`live = TRUE`): the legacy outage ran on the world clock, which the kernel test clock does not move. A very high
-// severity keeps each outage to a few seconds of real time.
+// The users' tests run on the kernel's injected clock (test_time): the outage is a timed hold on the holder's own clock. A test that needs real
+// time can still set `live = TRUE`, which sleeps instead; none does.
 
 /// The holder is down from a pulse.
 /proc/p2e_emp_down(atom/A)
@@ -40,7 +40,6 @@
 
 /// A pulse switches a PDA multicaster off for 300 s / severity; it comes back on by itself.
 /datum/unit_test/dq_emp_disable/multicaster_goes_down_and_comes_back
-	live = TRUE
 
 /datum/unit_test/dq_emp_disable/multicaster_goes_down_and_comes_back/run_gate()
 	var/obj/machinery/pda_multicaster/M = allocate(/obj/machinery/pda_multicaster, run_loc_floor_bottom_left)
@@ -57,7 +56,6 @@
 
 /// A pulse halts a research server for 60 s / severity.
 /datum/unit_test/dq_emp_disable/research_server_halts_for_a_while
-	live = TRUE
 
 /datum/unit_test/dq_emp_disable/research_server_halts_for_a_while/run_gate()
 	var/obj/machinery/rnd/server/S = allocate(/obj/machinery/rnd/server, run_loc_floor_bottom_left)
@@ -73,7 +71,6 @@
 
 /// A pulsed GPS drops off the other GPS units for 5 minutes / severity; a shielded one is not affected.
 /datum/unit_test/dq_emp_disable/gps_drops_off_the_map_for_a_while
-	live = TRUE
 
 /datum/unit_test/dq_emp_disable/gps_drops_off_the_map_for_a_while/run_gate()
 	var/obj/item/gps/G = allocate(/obj/item/gps, run_loc_floor_bottom_left)

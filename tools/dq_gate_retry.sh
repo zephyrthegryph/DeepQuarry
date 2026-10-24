@@ -50,12 +50,22 @@ gate_cap_minutes() {
 	echo "$cap"
 }
 
+# gate_ensure_result <log> <rc>: a focused run killed before it could print (a cap, a wrapper timeout, a dead shell) leaves no FOCUSED RESULT
+# line, and the evidence check then says only "missing or inconsistent". Print a clear one, so the cause is in the log.
+gate_ensure_result() {
+	grep -q '^FOCUSED RESULT:' "$1" 2>/dev/null && return 0
+	local line="FOCUSED RESULT: CAPPED or killed before a result (exit $2): the focused run printed no result line; see the guard log (data/focused-runs/guard.*.log) and the 'FOCUSED RUN CAPPED' / queued-time lines above. Not a test failure."
+	echo "$line"
+	echo "$line" >>"$1"
+}
+
 gate_tests_with_retry() {
 	local focused="${DQ_FOCUSED_TEST_CMD:-bash tools/dq_focused_test.sh}" log rc json names n first_line res passed failed rlog
 	log="$(mktemp)"
 	# shellcheck disable=SC2086  # the command may be several words
 	DQ_GATE_FOCUSED_MAX_MIN="$(gate_cap_minutes $#)" $focused "$@" 2>&1 | tee "$log"
 	rc=${PIPESTATUS[0]}
+	gate_ensure_result "$log" "$rc"
 	if [ "$rc" -eq 0 ] || [ "${DQ_GATE_RETRY:-1}" = 0 ]; then rm -f "$log"; return "$rc"; fi
 	res="$(grep -h '^FOCUSED RESULT:' "$log" | tail -n 1)"
 	json="$(sed -n 's/.*(json: \([^)]*\)).*/\1/p' <<<"$res")"
