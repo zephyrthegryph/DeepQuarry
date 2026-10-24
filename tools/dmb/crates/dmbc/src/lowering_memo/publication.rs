@@ -108,6 +108,10 @@ impl ProcedureMemo {
         if let Some(stages) = &self.stages {
             stages.publish_successful(self.query_db().and_then(|db| db.answers_version()));
         }
+        if let Some(index) = self.dep_index.get().and_then(Option::as_ref) {
+            let _timer = dm_profile::detail_timer("memo.publish.dep_index");
+            index.flush();
+        }
         let _timer = dm_profile::detail_timer("memo.publish.procedures");
         self.publish_procedures();
     }
