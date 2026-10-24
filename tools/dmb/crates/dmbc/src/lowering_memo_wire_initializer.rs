@@ -4,7 +4,7 @@ use super::{CodeWire, ResolverProc};
 use dm_codegen_byond::initializer::AssignmentFragment;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 use serde::{Deserialize, Serialize};
-const SCHEMA: u32 = 0x0206_0020;
+const SCHEMA: u32 = 0x0206_0021;
 pub(crate) const LIMIT: usize = 8 * 1024 * 1024;
 #[derive(Serialize, Deserialize)]
 struct Payload {
@@ -14,6 +14,9 @@ struct Payload {
     roots: usize,
     mandatory: Vec<ResolveQuery>,
     reads: Vec<(ResolveQuery, Vec<u8>)>,
+    /// Typed form of each read's answer, aligned with `reads`: evidence a certified record
+    /// (`crate::dep_index`) takes as the current answer after checking it against `reads`.
+    typed: Vec<Option<dm_ir::PortableResolvedAnswer>>,
     code: CodeWire,
     modified: Vec<(usize, crate::modified_initializers::ExpressionEvidence)>,
 }
@@ -24,6 +27,7 @@ pub(crate) struct Candidate {
     pub roots: usize,
     pub mandatory: Vec<ResolveQuery>,
     pub reads: Vec<(ResolveQuery, Vec<u8>)>,
+    pub typed: Vec<Option<dm_ir::PortableResolvedAnswer>>,
     pub code: ResolverProc,
     pub modified: Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
 }
@@ -145,6 +149,10 @@ pub(crate) fn encode_current_program(
     if !code.source_neutral_initializer() {
         return None;
     }
+    let typed = reads
+        .iter()
+        .map(|r| dm_ir::PortableResolvedAnswer::capture(&r.answer))
+        .collect::<Vec<_>>();
     let reads = reads
         .iter()
         .map(|r| (r.query, r.answer.canonical_bytes()))
@@ -161,6 +169,7 @@ pub(crate) fn encode_current_program(
             roots,
             mandatory,
             reads,
+            typed,
             code,
             modified,
         },
@@ -173,6 +182,7 @@ pub(crate) fn omit_mandatory(bytes: &[u8]) -> Vec<u8> {
     let mut payload: Payload = dm_wire::decode(SCHEMA, bytes, LIMIT).unwrap();
     payload.mandatory.clear();
     payload.reads.clear();
+    payload.typed.clear();
     dm_wire::encode(SCHEMA, &payload).unwrap()
 }
 #[cfg(test)]
@@ -197,6 +207,7 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
             if (p.modified_only && (!p.assembly || p.roots == 0))
                 || p.recipe.is_empty()
                 || !valid_reads(&p.reads, &p.mandatory)
+                || p.typed.len() != p.reads.len()
                 || !p.code.source_neutral_initializer()
                 || (!p.assembly && p.roots != 1)
             {
@@ -256,6 +267,7 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
                 roots: p.roots,
                 mandatory: p.mandatory,
                 reads: p.reads,
+                typed: p.typed,
                 code,
                 modified,
             })

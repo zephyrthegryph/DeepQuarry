@@ -39,6 +39,7 @@ pub(super) fn one_shot(
             owner.clone(),
             policy,
             publishable,
+            None,
         );
         fragments = fragments.with_disk_transport(Arc::clone(&transport));
         assemblies = assemblies.with_disk_transport(transport);
