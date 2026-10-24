@@ -377,6 +377,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 selections_only,
                 verify: verify_hit,
                 modified: Some(&modified_issuer),
+                certificates: None,
             },
             host,
             &prepared,
