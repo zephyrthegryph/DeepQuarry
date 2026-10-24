@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Static-entry setup groups types by declaring table once, so each trait kind's table build visits tables instead of every type"
