@@ -422,8 +422,9 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
     prepared: &crate::driver_facts::PreparedSourceAbi,
 ) -> Result<crate::retained_output::Patched, String> {
     let started = Instant::now();
-    let answers = memo.and_then(|memo| memo.query_db()?.answers_version());
-    let admitted = crate::retained_output::admit(&retained, frontend, answers)?;
+    let db = memo.and_then(|memo| memo.query_db());
+    let answers = db.and_then(|db| db.answers_version());
+    let admitted = crate::retained_output::admit(&retained, frontend, answers, db.map(|db| &**db))?;
     dm_profile::request_mark("incremental.admitted");
     startup.validate_for(frontend)?;
     let static_resolver = startup.resolver(frontend, resolver)?;
