@@ -338,7 +338,7 @@ emp_act
 
 	if(isitem(source))
 		var/obj/item/thrown_object = source
-		if(in_throw_mode && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
+		if(sparse_get_or(src, in_throw_mode, 0) && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
 			if(canmove && !restrained() && !src.is_incorporeal())
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
 					if(!omen_blocks_catch(source, speed))

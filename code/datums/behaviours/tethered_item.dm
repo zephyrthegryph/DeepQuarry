@@ -106,7 +106,7 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 /obj/item/proc/make_tethered(handheld_path)
 	sparse_set(src, tether_path, handheld_path)
 	grant(src, granted_verb(/obj/item/proc/toggle_tethered_handheld), src)
-	actions_types += list(/datum/action/item_action/swap_tethered_item)
+	set_actions_types(item_rules_of(src).actions_types + (list(/datum/action/item_action/swap_tethered_item)))
 	grant(src, /datum/capability/tether_host, src)
 	tether_make_handheld()
 

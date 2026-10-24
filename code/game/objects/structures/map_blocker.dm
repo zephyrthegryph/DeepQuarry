@@ -7,6 +7,5 @@
 	anchored = TRUE
 	opacity = 0
 	density = TRUE
-	unacidable = TRUE
 	plane = PLANE_BUILDMODE
 

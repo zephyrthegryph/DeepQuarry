@@ -11,7 +11,6 @@
 	opacity = 0
 	density = FALSE
 	anchored = FALSE
-	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
@@ -95,6 +94,7 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 		return 0
 
 CAPABILITIES(/obj/item/spacecash)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))

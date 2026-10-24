@@ -325,8 +325,8 @@
 /datum/unit_test/dq_p2_door/full/emp_pops_windoors_but_not_blast_doors/run_gate()
 	var/obj/machinery/door/window/W = make_door(/obj/machinery/door/window)
 	var/obj/machinery/door/blast/regular/B = allocate(/obj/machinery/door/blast/regular, tile(2, 4))
-	W.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
-	B.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	W.set_emp_protection_flags(atom_rules_of(W).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
+	B.set_emp_protection_flags(atom_rules_of(B).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(1234)
 	var/opened = FALSE
 	for(var/i in 1 to 300)

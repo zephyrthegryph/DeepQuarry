@@ -118,7 +118,7 @@
 	registry_join(REGISTRY_LIVING_MOBS, src)
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
 		EXPIRY_CLEAR(src, timeofdeath)
-		tod = null
+		sparse_set(src, tod, null)
 	failed_last_breath = 0
 
 	// 4. The one stat transition back.

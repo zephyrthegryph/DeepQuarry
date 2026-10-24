@@ -15,7 +15,6 @@
 	charge_cost = 300
 
 	battery_lock = 1
-	unacidable = TRUE
 
 	var/phase_power = 2400
 	firemodes = list(
@@ -26,6 +25,7 @@
 
 // Recharging is one op that waits a cycle at a time, 5 seconds each, until the cell is full; the gun is claimed for as long as it runs.
 CAPABILITIES(/obj/item/gun/energy/clockwork)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_worn(slots = SLOT_BACK))
 	op("recharge", ai(), claims(), starts(PROC_REF(recharge_started)), wait(5 SECONDS, repeats = PROC_REF(recharge_more), after_step = PROC_REF(recharge_cycle)), on_interrupt(PROC_REF(recharge_end)), then(PROC_REF(recharge_end)))
 

@@ -7,7 +7,6 @@
 	icon_state = "hydrotray3"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	flags = OPENCONTAINER
 	volume = 100
 
@@ -138,6 +137,7 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 // A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
 // soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	configure(movable_motion(unacidable = TRUE))
 	passable(pass_flags = PASSTABLE) // movers with PASSTABLE go through (admission.md D7: the old CanPass override)
 	setup(PROC_REF(prepare_tray_scratch_and_connection))
 	reagents(200)

@@ -21,7 +21,6 @@
 
 	has_langs = list(LANGUAGE_GALCOM , LANGUAGE_ANIMAL)
 
-	meat_amount = 100
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 
@@ -73,6 +72,7 @@
 	look.state(state)
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	configure(butchery_rules(meat_amount = 100))
 	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 
 /// Old attackby: feeding.
@@ -86,7 +86,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
 		return OP_DECLINE
 
-	if(nutrition_of(src) >= max_nutrition)
+	if(nutrition_of(src) >= living_rules_of(src).max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return

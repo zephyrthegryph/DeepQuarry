@@ -24,8 +24,6 @@
 		//minimum pressure before check_pressure(...) should be called
 
 	can_buckle = TRUE
-	buckle_require_restraints = 1
-	buckle_lying = -1
 
 	/// The watches a stable leak sleeps on (its pipe's gas and the room's): either changing wakes the leak.
 	var/list/datum/native_watch/gas/leak_watches
@@ -38,6 +36,7 @@ MSG_DEF(pipe/sealed, "You seal the fatigue crack in %T%.", "%U% seals the fatigu
 MSG_DEF_SELF(pipe/not_cracked, "It has no crack to seal.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe)
+	configure(buckle_rules(require_restraints = 1, lying = -1))
 	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
 	owns_many(nameof(leak_watches), /datum/native_watch/gas)

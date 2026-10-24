@@ -8,7 +8,6 @@
 	desc = "Yes hello I'm not supposed to exist, I'm just a weird code artefact thing please contact a developer."
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "asval"
-	icon_expected_height = 32
 	icon_expected_width = 64
 	var/is_picked_up = FALSE
 	var/is_long = TRUE
@@ -203,7 +202,6 @@
 	load_method = MAGAZINE
 	auto_loading_type = CLOSED_BOLT
 	w_class = ITEMSIZE_HUGE
-	actions_types = list(/datum/action/item_action/use_scope)
 	accuracy = -30
 	scoped_accuracy = 50
 	one_handed_penalty = 70
@@ -213,6 +211,7 @@
 	perform_scope_interaction(user, "serdy_hunter_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hunter_verb_scope_op)))
 
 /// The serdy_hunter_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -459,7 +458,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 	name = "Scoped Mosin Nagant"
 	icon_state = "scopedmosin"
 	desc = "A reproduction of some old russian bolt-action rifle from some backwater rimworld. Smells strongly of cosmoline. The inscriptions on it are in pan-slavic. This one has a scope attached to it. Chambered in 7.62mm."
-	actions_types = list(/datum/action/item_action/use_scope)
 	accuracy = -15
 	scoped_accuracy = 50
 	one_handed_penalty = 70
@@ -468,6 +466,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 	perform_scope_interaction(user, "serdy_mosin_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_mosin_verb_scope_op)))
 
 /// The serdy_mosin_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -531,7 +530,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 	icon_state = "awp"
 	projectile_type = /obj/item/projectile/bullet/rifle/a338
 	load_method = MAGAZINE
-	actions_types = list(/datum/action/item_action/use_scope)
 	accuracy = -30
 	scoped_accuracy = 50
 	w_class = ITEMSIZE_HUGE
@@ -545,6 +543,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 	perform_scope_interaction(user, "serdy_awp_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_awp_verb_scope_op)))
 
 /// The serdy_awp_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -577,7 +576,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 	icon_state = "hectate"
 	projectile_type = /obj/item/projectile/bullet/rifle/a145 //the old round type was ass
 	load_method = MAGAZINE
-	actions_types = list(/datum/action/item_action/use_scope)
 	accuracy = -60
 	scoped_accuracy = 15
 	w_class = ITEMSIZE_HUGE
@@ -592,6 +590,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 	perform_scope_interaction(user, "serdy_hectate_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hectate_verb_scope_op)))
 
 /// The serdy_hectate_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -1157,7 +1156,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /obj/item/gun/projectile/automatic/c20r
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "c20r-20"
-	icon_expected_height = 32
 	icon_expected_width = 64
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
@@ -1177,7 +1175,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/c20r, projectile_initial_transform
 /obj/item/gun/projectile/automatic/sts35
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "sts35"
-	icon_expected_height = 32
 	icon_expected_width = 64
 
 /obj/item/gun/projectile/automatic/sts35/draw(datum/look/look)
@@ -1193,7 +1190,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/sts35, projectile_initial_transfor
 /obj/item/gun/projectile/automatic/wt550
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "wt550-20"
-	icon_expected_height = 32
 	icon_expected_width = 64
 
 /* //Dont need it
@@ -1212,7 +1208,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 /obj/item/gun/projectile/automatic/z8
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "carbine-10"
-	icon_expected_height = 32
 	icon_expected_width = 64
 
 /obj/item/gun/projectile/automatic/z8/draw(datum/look/look)
@@ -1234,7 +1229,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 	auto_loading_type = OPEN_BOLT
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "mini-uzi"
-	icon_expected_height = 32
 	icon_expected_width = 64
 
 /// The look (the draw sweep: from its template).
@@ -1256,7 +1250,6 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transfor
 //boltaction.dm
 /obj/item/gun/projectile/shotgun/pump/rifle
 	is64x32 = FALSE
-	icon_expected_height = 32
 	icon_expected_width = 32
 
 //caseless.dm
@@ -1415,13 +1408,13 @@ CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
 	manual_chamber = FALSE
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "winchester"
-	icon_expected_height = 32
 	icon_expected_width = 64
 	pump_animation = "winchester-pump"
 	var/is64x32 = TRUE
 	var/is_picked_up = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
+	configure(movable_motion(icon_height = 32))
 	setup(PROC_REF(shotgun_pump_setup))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
@@ -1470,7 +1463,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
 	manual_chamber = FALSE
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "dshotgunN"
-	icon_expected_height = 32
 	icon_expected_width = 64
 	var/is_picked_up = FALSE
 
@@ -1487,6 +1479,7 @@ MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barr
 MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
+	configure(movable_motion(icon_height = 32))
 	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
@@ -1595,8 +1588,10 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/sawn)
 //shotgun_vr.dm
 /obj/item/gun/projectile/shotgun/pump/USDF
 	is64x32 = FALSE
-	icon_expected_height = 32
 	icon_expected_width = 32
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/USDF)
+	configure(movable_motion(icon_height = 32))
 
 //shotgun_yw.dm
 /obj/item/gun/projectile/revolvershotgun
@@ -1618,8 +1613,10 @@ CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy)
+	configure(movable_motion(icon_height = 32))
 	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/mini_uzi)
+	configure(movable_motion(icon_height = 32))
 	setup(TYPE_PROC_REF(/atom/movable, update_transform))

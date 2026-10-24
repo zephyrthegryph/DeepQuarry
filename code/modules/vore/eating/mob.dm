@@ -28,8 +28,6 @@
 	var/obj/soulgem/soulgem				// Soulcatcher. Needs to be up-ported sometime.
 
 
-	var/voice_freq = 42500	// Preference for character voice frequency
-	var/emote_sound_mode = EMOTE_SOUND_VOICE_FREQ
 	// ALLOW(instance_list): d: per-mob voice_sounds_list, filled at runtime; mobs are few
 	var/list/voice_sounds_list = list()	// The sound list containing our voice sounds!
 	EXPIRY_DECLARE(last_move_time) //For movement smoothing

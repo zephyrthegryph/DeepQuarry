@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	item_state = "analyzer"
 	desc = "A hand-held scanner able to diagnose robotic injuries."
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 5
 	throw_range = 10
 	var/mode = 1;
 
@@ -18,6 +17,7 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/robotanalyzer)
+	configure(movable_motion(throw_speed = 5))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))

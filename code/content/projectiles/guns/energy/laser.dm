@@ -153,7 +153,6 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	formation of the SCG. The LAC produced the first weapons wholly designed and produced outside of Earth. Post-war, the company relocated and rebranded as MarsTech, which survives \
 	to this day as a major subsidiary of Hephaestus Industries."
 	w_class = ITEMSIZE_NORMAL
-	unacidable = TRUE
 	projectile_type = /obj/item/projectile/beam
 	fire_delay = 10		//Old pistol
 	charge_cost = 480	//to compensate a bit for self-recharging
@@ -161,6 +160,7 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	battery_lock = 1
 
 CAPABILITIES(/obj/item/gun/energy/captain)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 5))
 
@@ -226,7 +226,6 @@ CAPABILITIES(/obj/item/gun/energy/lasercannon)
 	item_state_slots = list(slot_r_hand_str = "lsniper", slot_l_hand_str = "lsniper")
 	wielded_item_state = "lsniper-wielded"
 	projectile_type = /obj/item/projectile/beam/sniper
-	actions_types = list(/datum/action/item_action/use_scope)
 	//Begin CHOMPstation Edit for making this thing not trash
 	//battery_lock = 0
 	charge_cost = 360
@@ -241,6 +240,7 @@ CAPABILITIES(/obj/item/gun/energy/lasercannon)
 	perform_scope_interaction(user, "sniperrifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/sniperrifle)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("sniperrifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(sniperrifle_verb_scope_op)))
@@ -346,7 +346,6 @@ CAPABILITIES(/obj/item/gun/energy/laser/old)
 	icon_state = "mono"
 	item_state = "shotgun"
 	projectile_type = /obj/item/projectile/beam/sniper
-	actions_types = list(/datum/action/item_action/aim_down_sights)
 	charge_cost = 2400
 	fire_delay = 20
 	w_class = ITEMSIZE_HUGE //.
@@ -359,6 +358,7 @@ CAPABILITIES(/obj/item/gun/energy/laser/old)
 	perform_scope_interaction(user, "monorifle_verb_sights")
 
 CAPABILITIES(/obj/item/gun/energy/monorifle)
+	configure(item_rules(actions_types = list(/datum/action/item_action/aim_down_sights)))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 8))
 	op("monorifle_verb_sights", menu(), label("Aim Down Sights"), needs(carried()), then(PROC_REF(monorifle_verb_sights_op)))

@@ -23,11 +23,11 @@
 	holder_type = /obj/item/holder/fish
 
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish
-	meat_amount = 3
 
 	var/randomize_location = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
+	configure(butchery_rules(meat_amount = 3))
 	rolls(nameof(default_pixel_x), range_of(-12, 12), when = all_of(nameof(randomize_location), not(nameof(default_pixel_x))))
 	rolls(nameof(default_pixel_y), range_of(-6, 10), when = all_of(nameof(randomize_location), not(nameof(default_pixel_y))))
 
@@ -299,9 +299,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous
 	desc = "A genetic marvel, combining the docility and aesthetics of the koi with some of the resiliency and cunning of the noble space carp."
 	endurance = 50
-	meat_amount = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
+	configure(butchery_rules(meat_amount = 0))
 	reagents(60, starts = list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
 	op("koi_poisonous_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(koi_poisonous_interaction_hand_help)))
 	op("koi_poisonous_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(koi_poisonous_interaction_hand_hurt)))
@@ -387,11 +387,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
 	icon_state = "measelshark"
 	icon_living = "measelshark"
 	icon_dead = "measelshark-dead"
-	meat_amount = 8 //Big fish, tons of meat. Great for feasts.
 	meat_type = /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk
 	vore_active = 1
 	vore_bump_chance = 100
 	vore_default_mode = DM_HOLD //docile shark
 	vore_capacity = 5
 	pixel_x = -50
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/measelshark)
+	configure(butchery_rules(meat_amount = 8))
 

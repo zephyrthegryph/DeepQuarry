@@ -5,7 +5,6 @@
 	icon_state = "pipe_d"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	var/unwrenched = 0
 	COOLDOWN_DECLARE(wait)
 	var/p_layer = PIPING_LAYER_REGULAR
@@ -25,6 +24,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/pipedispenser)
+	configure(movable_motion(unacidable = TRUE))
 	interface("PipeDispenser")
 	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
 	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref", schema_text(32))), then(PROC_REF(ui_act_dispense_pipe)))

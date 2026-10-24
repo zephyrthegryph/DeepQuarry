@@ -32,6 +32,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 	ic_revivable = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal)
+	configure(butchery_rules(butchery_loot = list(/obj/item/stack/animalhide = 3)))
 	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
 /mob/living/simple_mob/vore/otie
 	ic_revivable = TRUE

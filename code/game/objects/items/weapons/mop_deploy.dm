@@ -4,7 +4,6 @@
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
-	throw_speed = 1
 	throw_range = 1
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
 	var/mob/living/creator
@@ -43,6 +42,7 @@ CAPABILITIES(/obj/effect)
 	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
 
 CAPABILITIES(/obj/item/mop_deploy)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 3, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))

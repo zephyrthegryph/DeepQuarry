@@ -15,14 +15,10 @@
 	melee_damage_upper = 12
 	attack_injury_kind = INJURY_CUT
 
-	meat_amount = 7
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_shock
 
 	faction = FACTION_TYR_ANT
 
-	butchery_loot = list(\
-		/obj/item/stack/material/steel = 6\
-		)
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/jellyfishcore = 70
@@ -45,7 +41,6 @@
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/load_default_bellies()
 	. = ..()
@@ -78,14 +73,13 @@
 	name = "copper metal ant"
 	icon_state = "copper_ant"
 	icon_living = "copper_ant"
-	butchery_loot = list(\
-		/obj/item/stack/material/copper = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/copper = 10
 		)
-	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/copper)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/copper = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/copper/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam))
@@ -98,13 +92,9 @@
 	icon_state = "agate_ant"
 	icon_living = "agate_ant"
 	movement_cooldown = -3
-	butchery_loot = list(\
-		/obj/item/stack/material/weathered_agate = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/weathered_agate = 10
 		)
-	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_bonus
 
 	special_attack_min_range = 0
@@ -118,6 +108,9 @@
 	var/exploded = FALSE
 	var/explosion_delay_lower	= 3 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 4 SECONDS	// Upper bound.
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/agate)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/weathered_agate = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/proc/explode()
 	if(src && !exploded)
@@ -141,14 +134,13 @@
 	icon_state = "quartz_ant"
 	icon_living = "quartz_ant"
 	armor_spec = "melee=80;bullet=80;bio=100;rad=100"
-	butchery_loot = list(\
-		/obj/item/stack/material/quartz = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/quartz = 10
 		)
-	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/quartz)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/quartz = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/diamond //slower, tankier, more damage
 	name = "diamond metal ant"
@@ -159,12 +151,12 @@
 	melee_damage_upper = 24
 	movement_cooldown = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
-	butchery_loot = list(\
-		/obj/item/stack/material/diamond = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/diamond = 10
 		)
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/diamond)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/diamond = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/verdantium
 	name = "green metal ant"
@@ -172,21 +164,18 @@
 	icon_state = "verdantium_ant"
 	icon_living = "verdantium_ant"
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
-	butchery_loot = list(\
-		/obj/item/stack/material/verdantium = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/verdantium = 10
 		)
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/verdantium = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/uranium //if it melees, it unleashes rads
 	name = "glowing metal ant"
 	icon_state = "rad_ant"
 	icon_living = "rad_ant"
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
-	butchery_loot = list(\
-		/obj/item/stack/material/uranium = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/uranium = 10
 		)
@@ -198,6 +187,9 @@
 	glow_range = 5
 	glow_intensity = 2
 	glow_toggle = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/uranium)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/uranium = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/uranium/do_special_attack(atom/A, stance)
 	visible_message(span_bolddanger(span_orange("The ant glows bright green!.")))
@@ -214,9 +206,6 @@
 	icon_state = "mhydro_ant"
 	icon_living = "mhydro_ant"
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation
-	butchery_loot = list(\
-		/obj/item/stack/material/mhydrogen = 12\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/mhydrogen = 4
 		)
@@ -228,18 +217,20 @@
 	melee_damage_lower = 6
 	melee_damage_upper = 6
 
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/mhydrogen = 12 )))
+
 /mob/living/simple_mob/animal/tyr/mineral_ants/painite //flames
 	name = "painite metal ant"
 	icon_state = "painite_ant"
 	icon_living = "painite_ant"
-	butchery_loot = list(\
-		/obj/item/stack/material/painite = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/painite = 10
 		)
-	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/painite)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/painite = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/painite/apply_melee_effects(atom/A)
 	..()
@@ -252,17 +243,16 @@
 	name = "bronze metal ant"
 	icon_state = "bronze_ant"
 	icon_living = "bronze_ant"
-	butchery_loot = list(\
-		/obj/item/stack/material/bronze = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/bronze = 10
 		)
-	meat_amount = 3
 
 	special_attack_min_range = 1
 	special_attack_max_range = 7
 	special_attack_cooldown = 10 SECONDS
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/bronze)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/bronze = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/bronze/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7))
@@ -274,24 +264,24 @@
 	icon_state = "graphite_ant"
 	icon_living = "graphite_ant"
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
-	butchery_loot = list(\
-		/obj/item/stack/material/graphite = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/graphite = 10
 		)
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/graphite)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/graphite = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder
 	name = "tritium ant"
 	icon_state = "builder_ant"
 	icon_living = "builder_ant"
-	butchery_loot = list(\
-		/obj/item/stack/material/tritium = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/tritium = 10
 		)
 	var/build_type = /obj/random/ant_building
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/builder)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/tritium = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special(datum/seq_frame/life/F)
 	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
@@ -306,12 +296,12 @@
 	icon_state = "silver_ant"
 	icon_living = "silver_ant"
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_neoburn
-	butchery_loot = list(\
-		/obj/item/stack/material/silver = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/silver = 10
 		)
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/silver)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/silver = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/gold //emp on death
 	name = "gold ant"
@@ -319,15 +309,15 @@
 	icon_living = "gold_ant"
 	desc = "A large ant with a metallic golden rear end. Is crackling with lightning."
 	meat_type = /obj/item/reagent_containers/food/snacks/tyrant_burn
-	butchery_loot = list(\
-		/obj/item/stack/material/gold = 18\
-		)
 	harvest_results = list(
 		/obj/item/stack/material/gold = 10
 		)
 	var/exploded = FALSE
 	var/explosion_delay_lower	= 4 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 5 SECONDS	// Upper bound.
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/gold)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/gold = 18 )))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/gold/proc/explode()
 	if(src && !exploded)
@@ -348,10 +338,10 @@
 	name = "queen ant"
 	icon_state = "queen_ant"
 	endurance = 60 //four hits with agate sword, five with spear, two with hammer, eight with bow
-	butchery_loot = list(\
-		/obj/item/stack/material/valhollide = 4\
-		)
 	var/build_type = /obj/effect/spider/spiderling/antling
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/queen)
+	configure(butchery_rules(butchery_loot = list( /obj/item/stack/material/valhollide = 4 )))
 
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special(datum/seq_frame/life/F)
@@ -560,6 +550,8 @@ TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/
 MSG_DEF(ant/building, null, span_notice("%U% begins to secrete a sticky substance."))
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
+	configure(butchery_rules(meat_amount = 7, butchery_loot = list( /obj/item/stack/material/steel = 6 )))
+	configure(movable_motion(unacidable = TRUE))
 	op("build", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(ant/building)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(build_done)), on_interrupt(PROC_REF(build_interrupted)))
 
 /// The build op, started on `T` when the ant is hungry enough, the turf is free of ant work and the ant is idle.

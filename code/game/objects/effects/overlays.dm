@@ -1,7 +1,9 @@
 /obj/effect/overlay
 	name = "overlay"
-	unacidable = TRUE
 	var/i_attached //Added for possible image attachments to objects. For hallucinations and the like.
+
+CAPABILITIES(/obj/effect/overlay)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/effect/overlay/beam //Not actually a projectile, just an effect.
 	lifecycle_lifetime = 1 SECOND

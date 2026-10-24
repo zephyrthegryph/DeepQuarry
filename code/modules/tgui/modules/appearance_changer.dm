@@ -731,7 +731,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(BR && istype(BR.mydna))
 		if(DC.allowed(user) || BR.ckey == user.ckey)
 			BD.load_record_to_body(BR)
-			owner().resleeve_lock = BR.locked
+			sparse_set(owner(), resleeve_lock, BR.locked)
 			sparse_set(owner(), changeling_locked, BR.changeling_locked)
 			DC.set_selected_record(TRUE)
 	return TRUE
@@ -752,7 +752,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
 		owner().dna.base_species = S.base_species
-		owner().resleeve_lock = FALSE
+		sparse_set(owner(), resleeve_lock, FALSE)
 		owner().custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
 	return TRUE
@@ -781,7 +781,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return FALSE
 	if(sparse_get(owner(), changeling_locked))
 		to_chat(user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
-	else if(owner().resleeve_lock)
+	else if(sparse_get(owner(), resleeve_lock))
 		open_request(src, /datum/prompt/yes_no, PROC_REF(record_permission_answered), valid = PROC_REF(request_usable), answerer = user, question = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", title = "Mind Compatability", timeout = 0)
 		return
 	return write_record(user, DC)
@@ -798,11 +798,11 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		to_chat(user, span_warning("ERROR: This body record is restricted."))
 	else
 		message_admins("[user] wrote an unlocked version of [owner().real_name]'s bodyrecord to a disk. Their preferences do not allow body impersonation, but may be allowed with OOC consent.")
-		owner().resleeve_lock = FALSE // unlock it, even though it's only temp, so you don't get the warning every time
+		sparse_set(owner(), resleeve_lock, FALSE) // unlock it, even though it's only temp, so you don't get the warning every time
 	write_record(user, DC)
 
 /datum/tgui_module/appearance_changer/proc/write_record(mob/user, obj/machinery/computer/transhuman/designer/DC)
-	if(!sparse_get(owner(), changeling_locked) && (!owner().resleeve_lock && can_change(owner(), APPEARANCE_RACE)))
+	if(!sparse_get(owner(), changeling_locked) && (!sparse_get(owner(), resleeve_lock) && can_change(owner(), APPEARANCE_RACE)))
 		// Create it from the mob
 		to_chat(user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 		owner().update_dna()

@@ -535,7 +535,6 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	T.recalculate_directional_opacity()
 
 /obj/machinery/button/windowtint
-	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "window tint control"
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "light0"
@@ -598,6 +597,7 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
 
 CAPABILITIES(/obj/machinery/button/windowtint)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_PANEL))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
 	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("set_id", tool(TOOL_MULTITOOL), wait(0), label("Set ID"), when(not(nameof(id))),

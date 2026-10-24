@@ -75,12 +75,12 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 	if(default_sparks_in)
 		fx_sparks(curturf, 5)
 
-	if(teleatom.buckle_movable) // Specifically office chairs. Fuck you.
-		teleatom.buckle_movable = FALSE
+	if(buckle_of(teleatom).movable) // Specifically office chairs. Fuck you.
+		teleatom.set_buckle_movable(FALSE)
 
 	var/success = teleatom.forceMove(destturf)
 
-	teleatom.buckle_movable = initial(teleatom.buckle_movable) // Double fuck you, office chairs
+	teleatom.set_buckle_movable(buckle_of_type(teleatom.type).movable)// Double fuck you, office chairs
 
 	if(!success)
 		return FALSE

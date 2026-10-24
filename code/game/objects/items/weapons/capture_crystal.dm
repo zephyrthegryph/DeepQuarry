@@ -3,7 +3,6 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	actions_types = list(/datum/action/item_action/command)
 	w_class = ITEMSIZE_SMALL
 
 	/// The sparkle shown where the bound mob appears or disappears, and how long it lasts.
@@ -24,6 +23,7 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
+	configure(item_rules(actions_types = list(/datum/action/item_action/command)))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))

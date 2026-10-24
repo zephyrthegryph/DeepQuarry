@@ -190,7 +190,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 	var/cannot_melt
 	if(isobj(O))
 		var/obj/I = O //Gurgs : Melts pretty much any object that isn't considered unacidable = TRUE
-		if(I.unacidable)
+		if(motion_of(I).unacidable)
 			cannot_melt = 1
 	else
 		if(istype(O, /turf/simulated/wall))

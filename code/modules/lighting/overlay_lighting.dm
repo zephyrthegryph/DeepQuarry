@@ -90,8 +90,8 @@ CAPABILITIES(/datum/overlay_lighting)
 /proc/add_overlay_lighting(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
 	if(!ismovable(new_owner))
 		return null
-	if(new_owner.light_system != MOVABLE_LIGHT && new_owner.light_system != MOVABLE_LIGHT_DIRECTIONAL)
-		stack_trace("/datum/overlay_lighting added to [new_owner], with [new_owner.light_system] value for the light_system var. Use [MOVABLE_LIGHT] or [MOVABLE_LIGHT_DIRECTIONAL] instead.")
+	if(atom_rules_of(new_owner).light_system != MOVABLE_LIGHT && atom_rules_of(new_owner).light_system != MOVABLE_LIGHT_DIRECTIONAL)
+		stack_trace("/datum/overlay_lighting added to [new_owner], with [atom_rules_of(new_owner).light_system] value for the light_system var. Use [MOVABLE_LIGHT] or [MOVABLE_LIGHT_DIRECTIONAL] instead.")
 		return null
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
@@ -110,8 +110,8 @@ CAPABILITIES(/datum/overlay_lighting)
 		directional = TRUE
 		rel_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
 		rel_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
-		cone_hint_x = movable_parent.light_cone_x_offset
-		cone_hint_y = movable_parent.light_cone_y_offset
+		cone_hint_x = motion_of(movable_parent).cone_x
+		cone_hint_y = motion_of(movable_parent).cone_y
 		set_direction(movable_parent.dir)
 	if(!isnull(_range))
 		movable_parent.set_light_range(_range)

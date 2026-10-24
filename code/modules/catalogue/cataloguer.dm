@@ -298,7 +298,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	Alt+click to highlight scannable objects around you."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "compact"
-	actions_types = list(/datum/action/item_action/toggle_cataloguer)
 	var/deployed = TRUE
 	scan_range = 1
 
@@ -360,6 +359,7 @@ CAPABILITIES(/obj/item/cataloguer/compact/pathfinder)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/cataloguer/compact)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_cataloguer)))
 	configure(item_tooling(speed = 1.2))
 	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds))), then(PROC_REF(compact_toggle_effect_op)))
 

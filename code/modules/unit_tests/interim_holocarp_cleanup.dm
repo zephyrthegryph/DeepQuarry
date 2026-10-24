@@ -10,7 +10,7 @@
 	var/mob/living/simple_mob/animal/space/carp/holodeck/hologram = allocate(/mob/living/simple_mob/animal/space/carp/holodeck, T)
 	TEST_ASSERT(!QDELETED(hologram), "actual holographic carp initializes alive")
 	TEST_ASSERT_EQUAL(hologram.stat, CONSCIOUS, "actual holographic carp starts conscious")
-	TEST_ASSERT_EQUAL(hologram.meat_amount, 0, "actual hologram has no physical meat yield")
+	TEST_ASSERT_EQUAL(butchery_of(hologram).meat_amount, 0, "actual hologram has no physical meat yield")
 	TEST_ASSERT_NULL(hologram.icon_gib, "actual hologram has no physical gib icon")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/reagent_containers/food/snacks/meat)), 0, "real hologram destination starts without meat products")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/effect/decal/cleanable/blood/gibs)), 0, "real hologram destination starts without physical gib decals")

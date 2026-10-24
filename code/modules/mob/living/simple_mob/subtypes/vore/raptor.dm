@@ -8,7 +8,6 @@
 	icon_state = "raptorpurple"
 	icon_rest = "raptorpurple"
 	faction = FACTION_RAPTOR
-	meat_amount = 40 //Big dog, lots of meat
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
@@ -28,12 +27,9 @@
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	var/initial_icon = "raptorpurple"
 	var/wg_state = 0
 
@@ -64,6 +60,8 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	configure(butchery_rules(meat_amount = 40))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

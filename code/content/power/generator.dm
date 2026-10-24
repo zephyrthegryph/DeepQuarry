@@ -10,7 +10,6 @@
 	icon_state = "teg-unassembled"
 	density = TRUE
 	anchored = FALSE
-	unacidable = TRUE
 
 	use_power = USE_POWER_IDLE
 
@@ -40,6 +39,7 @@ MSG_DEF(teg/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% 
 MSG_DEF_SELF(teg/not_ready, "It isn't bolted down and working.")
 
 CAPABILITIES(/obj/machinery/power/generator)
+	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 100))
 	rotatable()
 	after_init(0, then(PROC_REF(connect_circulators)))

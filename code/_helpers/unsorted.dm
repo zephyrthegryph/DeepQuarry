@@ -428,7 +428,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		moblist.Add(M)
 	var/list/delaylist = list()
 	for(var/mob/living/carbon/human/M in sortmob)
-		if(M.low_sorting_priority && !M.client)
+		if(living_rules_of(M).low_sorting_priority && !M.client)
 			delaylist.Add(M)
 		else
 			if (!M.client && !sparse_get(M, disconnect_time))
@@ -782,7 +782,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
 					for(var/obj/O in contents_of(T))
 						O.forceMove(X)
-						if(O.light_system == STATIC_LIGHT)
+						if(atom_rules_of(O).light_system == STATIC_LIGHT)
 							O.update_light()
 						else
 							var/datum/overlay_lighting/OL = O.overlay_light

@@ -171,7 +171,6 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 
 /obj/machinery/shipsensors
 	// EMPs burn out the delicate sensor elements (20 integrity from a heavy pulse).
-	emp_integrity_factor = 0.2
 	name = "sensors suite"
 	desc = "Long range gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum BS elements."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -246,6 +245,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 MSG_DEF_SELF(shipsensors/repairing, span_notice("You start repairing the damage to %T%."))
 
 CAPABILITIES(/obj/machinery/shipsensors)
+	configure(atom_rules(emp_integrity_factor = 0.2))
 	configure(uses_power(idle = 5000))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(damaged)), begins(MSG(shipsensors/repairing)), plays(SFX_ITEMS_WELDER, at_start = TRUE), wait(PROC_REF(weld_time)), then(PROC_REF(weld_repair_done)))

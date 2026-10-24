@@ -28,12 +28,9 @@
 	attacktext = list("mauled")
 	see_in_dark = 8
 	minbodytemp = 0
-	max_buckled_mobs = 1
 	mount_offset_y = 32
 	mount_offset_x = -16
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	max_tox = 0 // immune to poison
 
 	special_attack_min_range = 2
@@ -60,6 +57,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -103,7 +101,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || motion_of(L).unacidable)
 		return FALSE
 
 	ai_busy_begin()

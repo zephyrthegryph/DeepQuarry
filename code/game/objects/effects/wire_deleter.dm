@@ -3,11 +3,11 @@
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x2"
 	anchored = TRUE
-	unacidable = TRUE
 	simulated = FALSE
 	invisibility = INVISIBILITY_MAXIMUM
 
 CAPABILITIES(/obj/effect/wire_deleter)
+	configure(movable_motion(unacidable = TRUE))
 	map_resolver(GLOBAL_PROC_REF(resolve_wire_deleter))
 
 /// The map resolver of wire deleters: once the load is in place, a third of the tile's cables go.

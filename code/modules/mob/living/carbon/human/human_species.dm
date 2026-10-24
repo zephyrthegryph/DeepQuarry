@@ -1,7 +1,6 @@
 /mob/living/carbon/human/dummy
 	real_name = "Test Dummy"
 	status_flags = CANPUSH
-	has_huds = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 /mob/living/carbon/human/dummy/proc/dummy_godmode_ready(datum/act/timer/A)
@@ -138,28 +137,36 @@ CAPABILITIES(/mob/living/carbon/human/teshari)
 	species_at_make = SPECIES_ZADDAT
 
 /mob/living/carbon/human/monkey
-	low_sorting_priority = TRUE
+
+CAPABILITIES(/mob/living/carbon/human/monkey)
+	configure(living_rules(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/monkey
 	species_at_make = SPECIES_MONKEY
 TYPE_TABLE(/mob/living/carbon/human/monkey, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/farwa
-	low_sorting_priority = TRUE
+
+CAPABILITIES(/mob/living/carbon/human/farwa)
+	configure(living_rules(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/farwa
 	species_at_make = SPECIES_MONKEY_TAJ
 TYPE_TABLE(/mob/living/carbon/human/farwa, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/neaera
-	low_sorting_priority = TRUE
+
+CAPABILITIES(/mob/living/carbon/human/neaera)
+	configure(living_rules(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/neaera
 	species_at_make = SPECIES_MONKEY_SKRELL
 TYPE_TABLE(/mob/living/carbon/human/neaera, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/stok
-	low_sorting_priority = TRUE
+
+CAPABILITIES(/mob/living/carbon/human/stok)
+	configure(living_rules(low_sorting_priority = TRUE))
 
 /mob/living/carbon/human/stok
 	species_at_make = SPECIES_MONKEY_UNATHI
@@ -210,6 +217,7 @@ CAPABILITIES(/mob/living/carbon/human/sergal)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)
+	configure(living_rules(has_huds = FALSE))
 	configure(mob_nature(no_vore = TRUE))
 	after_init(0, then(PROC_REF(dummy_godmode_ready)))
 	immune_to_incapacitation()

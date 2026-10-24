@@ -62,12 +62,19 @@
 		var/slot = sparse_slot_named(D, name)
 		if(slot)
 			return _sparse_get(D, slot)
+		var/list/trait_field = type_trait_field_named(D, name)
+		if(trait_field)
+			return type_trait_of(D, trait_field[1]).vars[trait_field[2]]
 	return D.vars[name]
 
 /// What Restore to Default sets var `name` of `D` to: a slot is unset (null), a var its compiled default.
 /proc/vv_var_default(datum/D, name)
 	if(!(name in D.vars) && sparse_slot_named(D, name))
 		return null
+	if(!(name in D.vars))
+		var/list/trait_field = type_trait_field_named(D, name)
+		if(trait_field)
+			return type_trait_of_type(D.type, trait_field[1]).vars[trait_field[2]]
 	return initial(D.vars[name])
 
 /// The View Variables editor class a slot of value kind `kind` opens on while it is unset.

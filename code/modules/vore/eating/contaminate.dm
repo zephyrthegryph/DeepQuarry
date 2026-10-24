@@ -37,7 +37,7 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 /obj/item/proc/can_gurgle()
 	if(flags & PHORONGUARD)
 		return FALSE
-	else if(unacidable)
+	else if(motion_of(src).unacidable)
 		return FALSE
 	else
 		return TRUE

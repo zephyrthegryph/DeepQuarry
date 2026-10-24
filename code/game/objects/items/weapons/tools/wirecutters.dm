@@ -7,7 +7,6 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "cutters"
 	item_state = "cutters"
-	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
 	material_total = 80
@@ -16,6 +15,7 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/wirecutters)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_handling(center_x = 18, center_y = 10))
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))

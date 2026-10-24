@@ -8,9 +8,7 @@
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
 	/// The damage flag of the last take_damage(), for the breakpoint rules' effects.
-	var/tmp/last_damage_flag
 	/// DAMAGE_BAND_*, kept by the damage-flavour rules (damage.md §6).
-	var/tmp/damage_band = DAMAGE_BAND_NONE
 
 /// The essential proc to call when an atom must receive damage of any kind.
 /atom/proc/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
@@ -53,7 +51,7 @@
 	// Breakpoints are rules (damage.md §6, declarations.dm). Settling runs every
 	// rule the change triggered now, in declaration order: break, then destroyed.
 	// Objects of those types that never materialized keep the legacy crossings.
-	last_damage_flag = damage_flag
+	sparse_set(src, last_damage_flag, damage_flag)
 	var/datum/rule_binding/binding = dq_rules_binding_replacing(src, RULE_REPLACES_INTEGRITY_BREAK|RULE_REPLACES_INTEGRITY_DESTRUCTION)
 	var/rule_breaks = binding?.replaces(RULE_REPLACES_INTEGRITY_BREAK)
 	var/rule_destroys = binding?.replaces(RULE_REPLACES_INTEGRITY_DESTRUCTION)

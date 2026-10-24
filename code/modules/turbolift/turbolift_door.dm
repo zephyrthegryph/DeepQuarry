@@ -2,7 +2,6 @@
 	name = "Elevator Door"
 	desc = "Ding."
 	req_access = list(ACCESS_MAINT_TUNNELS)
-	unacidable = TRUE
 	opacity = 0
 	autoclose = 0
 	glass = 1
@@ -47,6 +46,7 @@ MSG_DEF_SELF(lift_door/internal, "This door is internally controlled.")
 
 // A lift's door takes no emag: the sequencer is refused with a word and spends nothing.
 CAPABILITIES(/obj/machinery/door/airlock/lift)
+	configure(movable_motion(unacidable = TRUE))
 	links(/obj/machinery/door/airlock/lift::lift, /datum/turbolift::doors, b_many = TRUE)
 	without(CAP_EMAG)
 	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),

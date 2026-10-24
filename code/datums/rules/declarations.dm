@@ -333,20 +333,20 @@
 #undef DAMAGE_FLAVOUR_TYPES
 
 /atom/proc/rule_break(datum/rule/rule)
-	atom_break(last_damage_flag)
+	atom_break(sparse_get(src, last_damage_flag))
 
 /atom/proc/rule_fix(datum/rule/rule)
 	atom_fix()
 
 /atom/proc/rule_destroy(datum/rule/rule)
-	atom_destruction(last_damage_flag)
+	atom_destruction(sparse_get(src, last_damage_flag))
 
 /atom/proc/rule_enter_damage_band(datum/rule/rule)
-	damage_band = max(damage_band, rule.band)
+	sparse_set_or(src, damage_band, max(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE), rule.band), DAMAGE_BAND_NONE)
 
 /atom/proc/rule_leave_damage_band(datum/rule/rule)
-	if(damage_band >= rule.band)
-		damage_band = rule.band - 1
+	if(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE) >= rule.band)
+		sparse_set_or(src, damage_band, rule.band - 1, DAMAGE_BAND_NONE)
 
 // Native simulation condition factories.
 

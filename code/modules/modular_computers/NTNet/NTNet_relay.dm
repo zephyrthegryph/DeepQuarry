@@ -21,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(register_initial_relay))
 	configure(uses_power(active = 20000, idle = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
@@ -125,7 +126,6 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 	..()
 
 /obj/machinery/ntnet_relay
-	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ntnet_relay/step_start_condition()

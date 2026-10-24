@@ -24,7 +24,6 @@
 	response_harm = "hits"
 	attacktext = list("mauled","chomped","savaged")
 	friendly = list("nuzzles", "slobberlicks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
-	meat_amount = 6
 	movement_cooldown = -2.5
 	melee_attack_delay = 0
 	old_x = -16
@@ -33,10 +32,7 @@
 	pixel_x = -16
 	pixel_y = 0
 	melee_miss_chance = 0
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_y = 10
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
@@ -67,7 +63,7 @@
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || motion_of(L).unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -745,6 +741,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	resize(1) // Scale them back down
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	configure(butchery_rules(meat_amount = 6))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)

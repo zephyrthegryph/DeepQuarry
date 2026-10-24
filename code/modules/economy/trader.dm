@@ -5,7 +5,6 @@
 	icon_state = "generic"
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 	var/accepts = "coin"				// "coin" - "money" - "item" - determines the 'kind' of thing the machine will accept
 	var/accepted_itemtype				//only for use with "item" mode - if set to a type path, it will count anything with that type path
 	var/accepted_item_worth = 1			//only for use with "item" mode - when counted, things of the appropriate type will add this much to the banked funds
@@ -43,6 +42,7 @@
 		move_trader()
 
 CAPABILITIES(/obj/trader)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_trader_inventory))
 	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
 	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))

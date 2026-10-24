@@ -62,11 +62,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/merc)
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 	valid_accessory_slots = null
-	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 	var/name_descriptor = "riot helmet" // for visor toggle messages
 
 CAPABILITIES(/obj/item/clothing/head/helmet/riot)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 	configure(item_protection(siemens = 0.7))
 	op("riot_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(riot_visor_self)))
 
@@ -120,9 +120,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat)
 	icon_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 	light_overlay = "helmet_light_dual_green"
-	actions_types = list(/datum/action/item_action/toggle_head_light)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/flexitac)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_head_light)))
 	configure(light_glow(range = 6))
 	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = HEAD))
 

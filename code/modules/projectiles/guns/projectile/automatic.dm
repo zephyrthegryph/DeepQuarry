@@ -83,6 +83,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/advanced_smg)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/sts35)
+	configure(movable_motion(icon_height = 32))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
@@ -136,6 +137,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/pdw)
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
+	configure(movable_motion(icon_height = 32))
 	configure(item_worn(slots = SLOT_BELT))
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
@@ -180,6 +182,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	configure(movable_motion(icon_height = 32))
 	setup(TYPE_PROC_REF(/atom/movable, update_transform))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
@@ -587,6 +590,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/c20r)
+	configure(movable_motion(icon_height = 32))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/gun/projectile/automatic/c20r/rubber

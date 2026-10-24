@@ -23,13 +23,9 @@
 	melee_damage_upper = 5
 	attacktext = list("kicked")
 
-	meat_amount = 6
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
-	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 	mount_offset_x = 0
 
 	say_list_type = /datum/say_list/horse
@@ -48,7 +44,6 @@
 	melee_damage_upper = 15
 	attacktext = list("kicked")
 
-	meat_amount = 10
 
 	old_x = -16
 	old_y = 0
@@ -56,6 +51,9 @@
 	pixel_x = -16
 	pixel_y = 0
 	mount_offset_y = 22
+
+CAPABILITIES(/mob/living/simple_mob/vore/horse/big)
+	configure(butchery_rules(meat_amount = 10))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/horse
@@ -66,6 +64,8 @@
 	vore_capacity = 2
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	configure(butchery_rules(meat_amount = 6))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -118,7 +118,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 
 	vore_capacity = 2
 	endurance = 250
-	meat_amount = 10
 
 	old_x = -16
 	old_y = 0
@@ -132,6 +131,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 	vore_pounce_chance = 75
 	vore_pounce_maxhealth = 200
 	vore_bump_emote	= "chomps down on"
+
+CAPABILITIES(/mob/living/simple_mob/vore/horse/kelpie)
+	configure(butchery_rules(meat_amount = 10))
 
 /mob/living/simple_mob/vore/horse/kelpie/load_default_bellies()
 	. = ..()

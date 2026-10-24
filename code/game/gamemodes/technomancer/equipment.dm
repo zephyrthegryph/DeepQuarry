@@ -159,10 +159,12 @@
 	capabilities.  The lens appear to be multiple optical matrices layered together, allowing the wearer to see almost anything \
 	across physical barriers."
 	icon_state = "uzenwa_sissra_1"
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	toggleable = 1
 	vision_flags = SEE_TURFS|SEE_MOBS|SEE_OBJS
 	prescription = TRUE // So two versions of these aren't needed.
+
+CAPABILITIES(/obj/item/clothing/glasses/omni)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))
 
 /datum/technomancer/equipment/med_hud
 	name = "Medical HUD"
@@ -226,7 +228,9 @@ CAPABILITIES(/obj/item/binoculars/spyglass)
 	name = "The Monocoole"
 	desc = "One heck of a stylish monocle. This one lets you see a little farther..."
 	icon_state = "monocle"
-	actions_types = list(/datum/action/item_action/toggle_goggles)
 	toggleable = 1
 	vision_flags = SEE_TURFS|SEE_MOBS|SEE_OBJS
 	prescription = 1 // So two versions of these aren't needed.
+
+CAPABILITIES(/obj/item/clothing/glasses/monocoole)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_goggles)))

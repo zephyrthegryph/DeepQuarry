@@ -7,7 +7,6 @@
 	// Health lives in the body (/datum/body, code/modules/body/) — there are no
 	// damage pools on the mob. See doc/body_architecture.md.
 
-	var/max_nutrition = MAX_NUTRITION
 
 
 
@@ -15,13 +14,11 @@
 	var/now_pushing = null
 
 
-	var/tod = null // Time of death
 
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 
 	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance. The evasion stat (code/contracts/ids/body_stats.dm): the type's own value here, plus body factors.
-	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
 
 
 	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
@@ -30,7 +27,6 @@
 
 
 	var/list/hud_list		//Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
-	var/has_huds = FALSE	//Whether or not we should bother initializing the above list
 
 
 
@@ -69,9 +65,6 @@
 
 
 /mob
-	var/muffled = FALSE					// Used by muffling belly
-	var/forced_psay = FALSE				// If true will prevent the user from speaking with normal say/emotes, and instead redirect these to a private speech mode with their predator.
-	var/autowhisper = FALSE				// Automatically whisper
 /mob/living
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE

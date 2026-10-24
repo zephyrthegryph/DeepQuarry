@@ -3,8 +3,6 @@
  * (was /datum/element/conflict_checking). Atom state: `conflict_id`, read directly.
  */
 /atom
-	/// CONFLICT_ELEMENT_* id counted by ConflictElementCount(), or null.
-	var/conflict_id
 
 /**
  * Counts number of conflicts on something that have the conflict id `id`.
@@ -13,5 +11,5 @@
 	. = 0
 	for(var/i in GetAllContents())
 		var/atom/movable/AM = i
-		if(AM.conflict_id == id)
+		if(atom_rules_of(AM).conflict_id == id)
 			++.

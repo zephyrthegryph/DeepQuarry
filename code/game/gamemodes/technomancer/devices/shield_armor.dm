@@ -18,7 +18,6 @@
 	blood_overlay_type = "armor"
 	slowdown = 0
 	armor_spec = ""
-	actions_types = list(/datum/action/item_action/toggle_shield_projector)
 	var/active = 0
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost
 	var/block_percentage = 75
@@ -62,6 +61,7 @@
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/shield)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_shield_projector)))
 	op("shield_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(shield_armor_toggle_self)))
 
 /// Old attack_self.

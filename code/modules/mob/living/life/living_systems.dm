@@ -87,7 +87,7 @@
 		else
 			return FALSE // Preserve old behavior: distance 0 leaves the existing light untouched.
 
-	else if(src.glow_toggle && !src.is_ventcrawling) // Hide the light in vents
+	else if(src.glow_toggle && !sparse_get_or(src, is_ventcrawling, FALSE)) // Hide the light in vents
 		want_range = src.glow_range
 		want_intensity = src.glow_intensity
 		want_color = src.glow_color
@@ -114,7 +114,7 @@
 	if(src.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
 		return TRUE
 	var/datum/type_trait/light_glow/now = glow_of(src)
-	if(src.glow_toggle && !src.is_ventcrawling)
+	if(src.glow_toggle && !sparse_get_or(src, is_ventcrawling, FALSE))
 		return !light_on || now.range != src.glow_range || now.power != src.glow_intensity || now.color != src.glow_color
 	return light_on && now.range
 

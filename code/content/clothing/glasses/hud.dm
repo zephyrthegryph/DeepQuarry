@@ -234,9 +234,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	These have been upgraded with medical records access and virus database integration. \
 	They can also read data from active suit sensors using the crew monitoring system."
 	mode = "med"
-	actions_types = list(/datum/action/item_action/ar_console_crew)
 	tgarscreen_path = /datum/tgui_module/crew_monitor/glasses
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_AUGMENTED)
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/med)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_crew)))
 
 /obj/item/clothing/glasses/omnihud/med/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -250,9 +252,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	They also have access to security alerts such as camera and motion sensor alarms."
 	mode = "sec"
 	flash_protection = FLASH_PROTECTION_MODERATE //weld protection is a little too widespread
-	actions_types = list(/datum/action/item_action/ar_console_security_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/security/glasses
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_AUGMENTED)
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/sec)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_security_alerts)))
 
 /obj/item/clothing/glasses/omnihud/sec/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -266,8 +270,10 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	and can also display a list of atmospheric, fire, and power alarms."
 	mode = "eng"
 	flash_protection = FLASH_PROTECTION_MAJOR
-	actions_types = list(/datum/action/item_action/ar_console_station_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/engineering/glasses
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_station_alerts)))
 
 /obj/item/clothing/glasses/omnihud/eng/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -330,8 +336,10 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 	mode = "best"
 	flash_protection = FLASH_PROTECTION_MAJOR
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_CH_WANTED,VIS_AUGMENTED)
-	actions_types = list(/datum/action/item_action/ar_console_all_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/all/glasses
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/all)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_all_alerts)))
 
 /obj/item/clothing/glasses/omnihud/all/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -510,9 +518,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
 	desc = "A full-face, partially-obscuring visor favoured by certain subcultures and those with sensitive eyes. Covers the face and eyes, but it's not enough to actually hide your identity. The interior has a simple augmented-reality display that aids with daily tasks. It can be toggled in and out of corrective vision mode via integrated subroutine. This version includes extra security-related functions."
 	mode = "sec"
 	flash_protection = FLASH_PROTECTION_MODERATE
-	actions_types = list(/datum/action/item_action/ar_console_security_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/security/glasses
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_AUGMENTED)
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle/sec)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_security_alerts)))
 
 /obj/item/clothing/glasses/omnihud/mantle/sec/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -523,9 +533,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
 	name = "medical AR mantle"
 	desc = "A full-face, partially-obscuring visor favoured by certain subcultures and those with sensitive eyes. Covers the face and eyes, but it's not enough to actually hide your identity. The interior has a simple augmented-reality display that aids with daily tasks. It can be toggled in and out of corrective vision mode via integrated subroutine. This version includes extra medical-related functions."
 	mode = "med"
-	actions_types = list(/datum/action/item_action/ar_console_crew)
 	tgarscreen_path = /datum/tgui_module/crew_monitor/glasses
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_AUGMENTED)
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle/med)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_crew)))
 
 /obj/item/clothing/glasses/omnihud/mantle/med/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)
@@ -537,8 +549,10 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
 	desc = "A full-face, partially-obscuring visor favoured by certain subcultures and those with sensitive eyes. Covers the face and eyes, but it's not enough to actually hide your identity. The interior has a simple augmented-reality display that aids with daily tasks. It can be toggled in and out of corrective vision mode via integrated subroutine. This version includes extra engineering-related functions."
 	mode = "eng"
 	flash_protection = FLASH_PROTECTION_MAJOR
-	actions_types = list(/datum/action/item_action/ar_console_station_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/engineering/glasses
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle/eng)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_station_alerts)))
 
 /obj/item/clothing/glasses/omnihud/mantle/cmd
 	name = "command AR mantle"
@@ -546,8 +560,10 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
 	mode = "best"
 	flash_protection = FLASH_PROTECTION_MAJOR
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_STATUS_R,VIS_CH_BACKUP,VIS_CH_WANTED,VIS_AUGMENTED)
-	actions_types = list(/datum/action/item_action/ar_console_all_alerts)
 	tgarscreen_path = /datum/tgui_module/alarm_monitor/all/glasses
+
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle/cmd)
+	configure(item_rules(actions_types = list(/datum/action/item_action/ar_console_all_alerts)))
 
 /obj/item/clothing/glasses/omnihud/mantle/cmd/ar_interact(mob/living/carbon/human/user)
 	if(tgarscreen)

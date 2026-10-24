@@ -21,7 +21,6 @@
 
 	say_list_type = /datum/say_list/bee
 
-	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat
 
 	//Space bees aren't affected by atmos.
@@ -43,6 +42,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	configure(butchery_rules(meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	after_init(0, then(PROC_REF(bee_swarm_ready)))
 

@@ -48,7 +48,6 @@
 // ---------------------------------------------------------------------------
 
 /// TRUE while a windup/swing is in progress; blocks starting another and is read by ClickOn.
-/mob/living/var/is_swinging = FALSE
 /// Monotonic swing id. The stuck-flag safety timer only clears the swing it was armed for,
 /// so a timer left over from a finished swing can never clobber a newer one.
 
@@ -56,10 +55,10 @@
 /// resolved. If the flag is still up for the same swing, something between the set and the
 /// clear runtimed — release it (and the resolving flag) rather than wedging the mob forever.
 /mob/living/proc/clear_stuck_swing(serial)
-	if(!is_swinging || serial != sparse_get_or(src, melee_swing_serial, 0))
+	if(!sparse_get_or(src, is_swinging, FALSE) || serial != sparse_get_or(src, melee_swing_serial, 0))
 		return FALSE
 	log_world("[src] ([type]) melee swing #[serial] was still flagged after its windup expired; force-clearing is_swinging")
-	is_swinging = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)
 	sparse_set(src, melee_swing_resolving, FALSE)
 	return TRUE
 
@@ -88,7 +87,7 @@
 /// Run a full windup -> swing -> recovery against `target` with `weapon`. Returns TRUE if a
 /// swing was committed (whether or not it connected), FALSE if it couldn't start or cancelled.
 /mob/living/proc/begin_melee_swing(mob/living/target, obj/item/weapon)
-	if(is_swinging)
+	if(sparse_get_or(src, is_swinging, FALSE))
 		return FALSE
 	if(QDELETED(target) || QDELETED(weapon))
 		return FALSE
@@ -115,7 +114,7 @@
 	// are async), so a second click can't race in before this line — and every
 	// statement between a TRUE flag and its clear is a potential permanent wedge
 	// if it runtimes.
-	is_swinging = TRUE
+	sparse_set_or(src, is_swinging, TRUE, FALSE)
 	sparse_set(src, melee_swing_resolving, FALSE)
 	var/serial = sparse_get_or(src, melee_swing_serial, 0) + 1
 	sparse_set(src, melee_swing_serial, serial)
@@ -127,7 +126,7 @@
 	// The op (code/library/mob/living_abilities.dm) shows no bar or cog and holds nothing.
 	var/datum/op_result/started = perform_op(src, src, "melee_swing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "weapon" = weapon, "tiles" = swing_tiles, "windup" = windup))
 	if(started?.outcome == ACT_REFUSED)
-		is_swinging = FALSE
+		sparse_set_or(src, is_swinging, FALSE, FALSE)
 		return FALSE
 	return TRUE
 
@@ -142,7 +141,7 @@
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
-		is_swinging = FALSE
+		sparse_set_or(src, is_swinging, FALSE, FALSE)
 		return FALSE
 
 	// The swing is committed: clear the gate and start recovery BEFORE resolving
@@ -152,7 +151,7 @@
 	// cooldown already prevents a double-swing in the gap; clear_stuck_swing is
 	// the last-resort backstop.
 	setClickCooldown(weapon.get_melee_recovery())
-	is_swinging = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)
 
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
@@ -175,4 +174,4 @@
 	return TRUE
 
 /mob/living/proc/begin_melee_swing_living_failed(datum/act/op/A)
-	is_swinging = FALSE
+	sparse_set_or(src, is_swinging, FALSE, FALSE)

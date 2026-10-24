@@ -1,7 +1,9 @@
 /obj/structure/shuttle
 	name = "shuttle"
 	icon = 'icons/turf/shuttle_parts.dmi'
-	unacidable = TRUE
+
+CAPABILITIES(/obj/structure/shuttle)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/structure/shuttle/window
 	name = "shuttle window"

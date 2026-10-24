@@ -14,11 +14,11 @@
 	/// explicitly opted-out simple_mobs).
 	var/datum/ai_brain/ai_brain = null
 
-	/// Set to TRUE on a mob subtype to give it an AI brain. Default TRUE on
-	/// /mob/living/simple_mob, FALSE everywhere else.
-	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	living_rules(use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)
+	butchery_rules(meat_amount = 0)
+	footstep_rules(footstep_volume = 0.1, footstep_e_range = -8)
 	ref_one(nameof(own_identity))
 	ref_one(nameof(tf_mob_holder))
 	ref_one(nameof(identity))
@@ -94,7 +94,6 @@ CAPABILITIES(/mob/living)
 	var/ai_attack_on_sight = TRUE
 
 	// Flip the framework on for every simple_mob by default.
-	use_modern_ai = TRUE
 
 /// Per-subtype type table of /datum/ai_behavior typepaths the mob has innately
 /// (null: use the default factory). Override with TYPE_TABLE().
@@ -114,7 +113,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		return say_list_type
 
 /mob/living/proc/initialize_ai_brain()
-	if(!use_modern_ai)
+	if(!living_rules_of(src).use_modern_ai)
 		return FALSE
 	if(ai_brain)
 		rel_clear(src, nameof(ai_brain))

@@ -10,7 +10,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
 	var/paperamount = 0
@@ -25,6 +24,7 @@
 
 
 CAPABILITIES(/obj/machinery/papershredder)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(uses_power(idle = 10, active = 200, channel = EQUIP))
 	climb()
 	op("empty_into", item(/obj/item/storage), priority(OP_PRIORITY_DEFAULT - 1), label("Empty into"), then(PROC_REF(interaction_empty_into)))
@@ -143,9 +143,9 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 	icon_state = "shredp"
 	w_class = ITEMSIZE_TINY
 	throw_range = 3
-	throw_speed = 1
 
 CAPABILITIES(/obj/item/shreddedp)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 0))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))

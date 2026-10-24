@@ -18,7 +18,7 @@
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/prepare_glass_bottle()
 	if(isGlass)
-		unacidable = TRUE
+		set_unacidable(TRUE)
 		set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
 		set_pickup_sound(SFX_ITEMS_PICKUP_BOTTLE)
 
@@ -213,7 +213,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	desc = "A bottle with a sharp broken bottom."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "broken_bottle"
-	throw_speed = 3
 	throw_range = 5
 	item_state = "beer"
 	flags = NOCONDUCT
@@ -221,6 +220,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 CAPABILITIES(/obj/item/broken_bottle)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 10, attack_verbs = list("stabbed", "slashed", "attacked"), sharp = TRUE, edge = FALSE))
 

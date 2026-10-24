@@ -39,7 +39,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 	if(!removed)
 		add_lightning_overlay(30 SECONDS)
 		play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
-		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
+		owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection | (EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS))
 		observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_gained)))
 		observe(owner, /datum/notice/atom_emp_act, src, then(PROC_REF(on_emp_act)))
 
@@ -47,7 +47,7 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 		clear_lightning_overlay(owner)
 		unobserve(owner, /datum/notice/trait_gained, src)
 		unobserve(owner, /datum/notice/atom_emp_act, src)
-		owner.emp_protection_flags &= ~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)
+		owner.set_emp_protection_flags(atom_rules_of(owner).emp_protection & (~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)))
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
 		expire(0)
 

@@ -21,7 +21,6 @@
 // behavior's applicability — those mobs simply never reposition.
 
 /mob/living/simple_mob/mechanical/mecha/eclipse
-	use_modern_ai = TRUE
 
 TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_behaviors, list( \
 	/datum/ai_behavior/three_phases_special, \
@@ -122,6 +121,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse)
+	configure(living_rules(use_modern_ai = TRUE))
 	ref_one(nameof(volley_target), /atom)
 	every(PROC_REF(volley_interval), then(PROC_REF(volley_step)), when = nameof(volley_shots_left))
 	immune_to_incapacitation()

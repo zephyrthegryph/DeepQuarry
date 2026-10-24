@@ -59,7 +59,6 @@ CAPABILITIES(/obj/machinery/chipmachine)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
@@ -119,6 +118,7 @@ CAPABILITIES(/obj/machinery/chipmachine)
 		return 0
 
 CAPABILITIES(/obj/item/spacecasinocash)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0))
 	rolls(nameof(note_seed), range_of(0, 49))
@@ -212,11 +212,11 @@ CAPABILITIES(/obj/item/spacecasinocash)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/casino_platinum_chip)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0))
 	op("flip", in_hand(), label("Flip chip"), then(PROC_REF(platinum_chip_flip_requested)))
@@ -245,7 +245,6 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
@@ -305,6 +304,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		return 0
 
 CAPABILITIES(/obj/item/spacecasinocash_fake)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0))
 	rolls(nameof(note_seed), range_of(0, 49))

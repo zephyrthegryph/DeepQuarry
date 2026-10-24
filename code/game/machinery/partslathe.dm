@@ -17,7 +17,6 @@
 */
 
 /obj/machinery/partslathe
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "parts lathe"
 	icon = 'icons/obj/partslathe_vr.dmi'
 	icon_state = "partslathe-idle"
@@ -213,6 +212,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(update_recipe_list))
 	configure(uses_power(idle = 30, active = 5000))
 	default_parts()
