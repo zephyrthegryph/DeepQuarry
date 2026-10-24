@@ -22,7 +22,7 @@
 	TEST_ASSERT_EQUAL(paper.loc, board, "allowed clipping physically contains the original paper")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed clipping clears the actual source hand")
 	TEST_ASSERT_NULL(owner_of(paper), "clipping preserves the original relation-only policy")
-	op_ui_act(user, board, "remove", list("ref" = paper))
+	op_ui_act(user, board, "remove", list("ref" = ref_token(paper)))
 	TEST_ASSERT_EQUAL(user.get_active_hand(), paper, "public UI removal returns the exact original paper")
 	TEST_ASSERT_EQUAL(paper.loc, user, "public UI removal restores inventory containment")
 	TEST_ASSERT_NULL(board.toppaper(), "public UI removal clears the top-paper relation")
