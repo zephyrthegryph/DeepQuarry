@@ -26,6 +26,9 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	/// The guard's own cost by section, in tick percent summed over the run (see spend()), and the tests it was spent on.
 	var/list/spent = list()
 	var/tests_judged = 0
+	/// area -> TRUE: rooms whose air moved on its own while no test was judged (between tests, or inside a long one). A thermostat in such a room (an air alarm's
+	/// regulating, a freezer's or heater's pumping) answers the room, which is the world's doing and not a test's, so the machine judge takes its answer as the baseline.
+	var/list/drifted_areas = list()
 
 /// The run's guard session, built on the first test (the only whole-map snapshot of the run).
 /proc/unit_test_guard_session()
@@ -66,8 +69,29 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 
 /// A test starts: whatever the world did since the last one (the rooms drift by the second, a machine answers a pending wake) becomes the baseline, not the test's.
 /datum/unit_test_guard/proc/begin()
+	note_drift()
 	unit_test_air_refresh(air)
 	unit_test_solid_refresh(solids)
+
+/// Records the rooms whose air moved since the air baseline (read only: the baseline is taken by the refresh that follows, or kept for the test's own judging).
+/datum/unit_test_guard/proc/note_drift()
+	var/list/changed = unit_test_air_changed(air)
+	var/list/turfs = air["turfs"]
+	for(var/i in changed)
+		var/turf/T = turfs[i]
+		var/area/A = QDELETED(T) ? null : get_area(T)
+		if(A)
+			drifted_areas[A] = TRUE
+
+/// A thermostat setting that follows the room: an air alarm's use_power/regulating_temperature, a freezer's or heater's use_power/pumping.
+/datum/unit_test_guard/proc/is_thermostat_answer(obj/machinery/M, name)
+	if(!drifted_areas[get_area(M)])
+		return FALSE
+	if(istype(M, /obj/machinery/alarm))
+		return name == "use_power" || name == "regulating_temperature"
+	if(istype(M, /obj/machinery/atmospherics/unary/freezer) || istype(M, /obj/machinery/atmospherics/unary/heater))
+		return name == "use_power" || name == "pumping"
+	return FALSE
 
 /// The full-compare interval: the `dq_guard_full_every` world param, else UNIT_TEST_FULL_COMPARE_EVERY.
 /proc/unit_test_full_compare_every()
@@ -96,6 +120,10 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 			continue
 		for(var/name in was)
 			if(M.vars[name] != was[name])
+				if(is_thermostat_answer(M, name))
+					log_test("MACHINE GUARD: [M] ([M.type]) at ([M.x],[M.y],[M.z]) answered its room's drift: [name] [was[name]] -> [M.vars[name]] (not a leak)")
+					was[name] = M.vars[name]
+					continue
 				var/text = "STATE LEAK: [who] left [M] ([M.type]) at ([M.x],[M.y],[M.z]) with [name] = [M.vars[name]] (was [was[name]]). Every later test sees the changed machine: set it through set_var() or put it back in the test."
 				if(!quiet)
 					log_test(text)
@@ -109,6 +137,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 /datum/unit_test_guard/proc/final_compare()
 	log_cost()
 	var/list/found = list()
+	note_drift() // a room that drifted during the last test is not yet in the list
 	if(length(since_full))
 		judge_machines("the end of the run", null, found, TRUE)
 	if(length(found))
