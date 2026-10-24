@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A unit-test state leak (globals, gravity, watches, air, machines, floors, area power) now fails the test that left it; body-heat, air-alarm and vent tests clean up their own state"
+  - bugfix: "Freezers and heaters decide whether they work when they are made, not at their first gas wake"

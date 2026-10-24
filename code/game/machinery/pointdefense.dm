@@ -38,7 +38,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	setup(PROC_REF(register_controller_identity))
 	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
 	interface("PointDefenseControl")
-	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
+	op("toggle_active", ui_act("toggle_active", arg("target", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	ref_many(nameof(targets))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
@@ -47,8 +47,8 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 
 /obj/machinery/pointdefense_control/proc/ui_act_toggle_active(datum/act/op/A, target)
 	var/mob/user = A.actor
-	var/obj/machinery/pointdefense/PD = ui_ref(target, null, /obj/machinery/pointdefense)
-	if(!istype(PD))
+	var/obj/machinery/pointdefense/PD = ui_member(target, REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_TURRETS), /obj/machinery/pointdefense)
+	if(!PD)
 		return FALSE
 
 	if(PD.id_tag != id_tag)
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 				continue
 			var/list/turret = list()
 			turret["id"] =          "#[i]"
-			turret["ref"] =         "\ref[PD]"
+			turret["ref"] =         ref_token(PD)
 			turret["active"] =       PD.active
 			turret["effective_range"] = PD.active ? "[PD.kill_range] meter\s" : "OFFLINE."
 			turret["reaction_wheel_delay"] = PD.active ? "[(PD.rotation_speed / (1 SECONDS))] second\s" : "OFFLINE."

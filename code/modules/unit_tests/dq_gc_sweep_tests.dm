@@ -35,6 +35,7 @@
 	var/latency_registered = 0
 
 /datum/unit_test/dq_gc_sweep/Run()
+	restore_ambient_after() // wait_ticks() and the collector passes below let world time pass
 	var/turf/T = test_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for the GC sweep")
 	TEST_ASSERT(dq_gc_sweep_controls(), "the reference count is exact")

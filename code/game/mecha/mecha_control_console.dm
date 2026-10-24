@@ -18,12 +18,20 @@
 		data[key] = computed[key]
 	return data
 
+/// The beacons the window lists: every tracking beacon that sits in an exosuit.
+/obj/machinery/computer/mecha/proc/listed_beacons()
+	var/list/listed = list()
+	for(var/obj/item/mecha_parts/mecha_tracking/TR in world)
+		if(TR.in_mecha())
+			listed += TR
+	return listed
+
 /// The computed part of the console's window data (ui_data())
 /obj/machinery/computer/mecha/proc/ui_data_obj_machinery_computer_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/beacons = list()
-	for(var/obj/item/mecha_parts/mecha_tracking/TR in world)
+	for(var/obj/item/mecha_parts/mecha_tracking/TR in listed_beacons())
 		var/list/tr_data = TR.tgui_data(user)
 		if(tr_data)
 			beacons.Add(list(tr_data))
@@ -38,33 +46,40 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 	configure(light_glow(color = "#a97faa"))
 	interface("MechaControlConsole")
 	without("ui_open")
-	op("send_message", ui_act("send_message", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), needs(req(PROC_REF(beacon_named), silent = TRUE)),
+	op("send_message", ui_act("send_message", arg("mt", schema_text(32))), needs(req(PROC_REF(beacon_named), silent = TRUE)),
 		asks(/datum/prompt/text/mecha_tracker_message, step = "message"), then(PROC_REF(ui_act_send_message)))
-	op("shock", ui_act("shock", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_shock)))
-	op("get_log", ui_act("get_log", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_get_log)))
+	op("shock", ui_act("shock", arg("mt", schema_text(32))), then(PROC_REF(ui_act_shock)))
+	op("get_log", ui_act("get_log", arg("mt", schema_text(32))), then(PROC_REF(ui_act_get_log)))
 	op("clear_log", ui_act(), then(PROC_REF(ui_act_clear_log)))
 
 /// A beacon button names a beacon.
 /obj/machinery/computer/mecha/proc/beacon_named(datum/act/op/A)
-	return (!isnull(A.args["mt"])) ? null : MSG(req_failed)
+	return beacon_of(A.args["mt"]) ? null : MSG(req_failed)
 
-/obj/machinery/computer/mecha/proc/ui_act_send_message(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
-	if(!istype(mt))
+/// The beacon a handle names: one the window lists.
+/obj/machinery/computer/mecha/proc/beacon_of(handle)
+	return ui_member(handle, listed_beacons(), /obj/item/mecha_parts/mecha_tracking)
+
+/obj/machinery/computer/mecha/proc/ui_act_send_message(datum/act/op/A, mt)
+	var/obj/item/mecha_parts/mecha_tracking/tracker = beacon_of(mt)
+	if(!tracker)
 		return TRUE
 	var/message = A.step_value("message")
-	var/obj/mecha/M = mt.in_mecha()
+	var/obj/mecha/M = tracker.in_mecha()
 	if(message && M)
 		M.occupant_message(message)
 	return TRUE
 
-/obj/machinery/computer/mecha/proc/ui_act_shock(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
-	if(istype(mt))
-		mt.shock()
+/obj/machinery/computer/mecha/proc/ui_act_shock(datum/act/op/A, mt)
+	var/obj/item/mecha_parts/mecha_tracking/tracker = beacon_of(mt)
+	if(tracker)
+		tracker.shock()
 	return TRUE
 
-/obj/machinery/computer/mecha/proc/ui_act_get_log(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
-	if(istype(mt))
-		set_stored_data(mt.get_mecha_log())
+/obj/machinery/computer/mecha/proc/ui_act_get_log(datum/act/op/A, mt)
+	var/obj/item/mecha_parts/mecha_tracking/tracker = beacon_of(mt)
+	if(tracker)
+		set_stored_data(tracker.get_mecha_log())
 	return TRUE
 
 /obj/machinery/computer/mecha/proc/ui_act_clear_log(datum/act/op/A)
@@ -90,7 +105,7 @@ CAPABILITIES(/obj/machinery/computer/mecha)
 		return FALSE
 
 	var/obj/mecha/M = loc
-	data["ref"] = REF(src)
+	data["ref"] = ref_token(src)
 	data["charge"] = M.get_charge()
 	data["name"] = M.name
 	data["health"] = M.get_integrity()

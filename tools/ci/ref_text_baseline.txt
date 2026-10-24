@@ -15,15 +15,11 @@ stored	code/datums/helper_datums/stack_end_detector.dm	_canary_ref = REF(_canary
 stored	code/domains/atmos/area_air_device.dm	air_uid_text = REF(src)
 stored	code/game/atom/atom_vv.dm	var/refid = REF(src)
 stored	code/game/machinery/air_alarm.dm	"service_id" = REF(src),
-stored	code/game/machinery/bomb_tester.dm	data["tank1ref"] = REF(tank1)
-stored	code/game/machinery/bomb_tester.dm	data["tank2ref"] = REF(tank2)
 stored	code/game/machinery/camera/tracking.dm	var/mob_ref = REF(M)
-stored	code/game/machinery/computer/robot.dm	ref = REF(R),
 stored	code/game/machinery/iv_drip.dm	"container_id" = REF(beaker),
 stored	code/game/machinery/newscaster.dm	"ref" = REF(FC),
 stored	code/game/machinery/newscaster.dm	"ref" = REF(viewing_channel()),
 stored	code/game/machinery/newscaster.dm	"ref" = REF(M),
-stored	code/game/mecha/mecha_control_console.dm	data["ref"] = REF(src)
 stored	code/game/objects/items/devices/scanners/motiontracker_api.dm	var/rfe = REF(At)
 stored	code/game/objects/items/devices/uplink.dm	"ref" = REF(item),
 stored	code/game/objects/items/weapons/mop.dm	"target_id" = REF(T),
@@ -120,17 +116,12 @@ ref_macro	code/game/antagonist/station/traitor.dm	return "<a href='byond://?src=
 ref_macro	code/game/gamemodes/technomancer/catalog.dm	return "<a href='byond://?src=\ref[src];spell_category=[category]'>[category]</a>"
 ref_macro	code/game/machinery/camera/camera.dm	to_chat(O, span_infoplain(span_bold("<a href='byond://?src=\ref[O];track2=\ref[O];track=\ref[U];trackname=[U.name]'>[U]</a>") + " holds \a [itemname] up to one of your cameras ..."))
 ref_macro	code/game/machinery/camera/camera.dm	cam["camera"] = "\ref[src]"
-ref_macro	code/game/machinery/computer/atmos_alert.dm	major_alarms[++major_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
-ref_macro	code/game/machinery/computer/atmos_alert.dm	minor_alarms[++minor_alarms.len] = list("name" = sanitize(alarm.alarm_name()), "ref" = "\ref[alarm]")
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
 ref_macro	code/game/machinery/computer/message.dm	M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
-ref_macro	code/game/machinery/computer/security.dm	"ref" = "\ref[R]",
-ref_macro	code/game/machinery/computer/skills.dm	"ref" = "\ref[R]",
 ref_macro	code/game/machinery/hologram.dm	to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
 ref_macro	code/game/machinery/jukebox.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
-ref_macro	code/game/machinery/pointdefense.dm	turret["ref"] = "\ref[PD]"
 ref_macro	code/game/objects/effects/chem/chemsmoke.dm	more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
 ref_macro	code/game/objects/items.dm	M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
 ref_macro	code/game/objects/items/blueprints.dm	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
@@ -167,7 +158,6 @@ ref_macro	code/game/objects/items/stacks/stack.dm	"ref" = "\ref[R]",
 ref_macro	code/game/objects/items/weapons/capture_crystal.dm	. += span_deptradio("OOC Notes:") + " <a href='byond://?src=\ref[bound_mob];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
 ref_macro	code/game/objects/items/weapons/capture_crystal.dm	. += span_deptradio("<a href='byond://?src=\ref[bound_mob];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>")
 ref_macro	code/game/objects/items/weapons/explosives.dm	message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
-ref_macro	code/game/objects/structures/safe.dm	c += list(list("ref" = "\ref[P]", "name" = P.name))
 ref_macro	code/game/objects/structures/under_wardrobe.dm	"ref" = "\ref[gt]",
 ref_macro	code/modules/admin/admin_investigate.dm	to_file(F, span_filter_adminlog("<small>[time2text(world.timeofday,"hh:mm")] \ref[src] ([x],[y],[z])</small> || [src] [message]<br>"))
 ref_macro	code/modules/admin/antag_panel_data.dm	"ref" = "\ref[M]",
@@ -266,7 +256,6 @@ ref_macro	code/modules/mob/living/silicon/ai/ai.dm	track = "<a href='byond://?sr
 ref_macro	code/modules/mob/living/silicon/ai/ai.dm	track += "<a href='byond://?src=\ref[src];trackname=[html_encode(speaker_name)];open=\ref[speaker]'>\[OPEN\]</a>" // Rykka ports AI opening doors
 ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] = "\ref[general]"
 ref_macro	code/modules/mob/living/silicon/pai/software_modules.dm	record["ref"] = "\ref[general]"
-ref_macro	code/modules/mob/living/silicon/robot/drone/drone_console.dm	"ref" = "\ref[D]",
 ref_macro	code/modules/mob/living/silicon/robot/robot.dm	to_chat(connected_ai, span_filter_notice("<br><br>" + span_notice("NOTICE - New [lowertext(braintype)] connection detected: <a href='byond://?src=\ref[connected_ai];track2=\ref[connected_ai];track=\ref[src]'>[name]</a>") + "<br>"))
 ref_macro	code/modules/mob/living/silicon/silicon.dm	to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
 ref_macro	code/modules/mob/living/silicon/silicon.dm	cameratext += "[(cameratext == "")? "" : "|"]<A HREF='byond://?src=\ref[src];switchcamera=\ref[C]'>[C.c_tag]</A>"
@@ -274,7 +263,6 @@ ref_macro	code/modules/mob/mob.dm	to_chat(src, span_filter_notice(span_warning("
 ref_macro	code/modules/mob/mob.dm	return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=\ref[src];flavor_more=1'>More...</a>")
 ref_macro	code/modules/nifsoft/software/14_commlink.dm	nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>)")
 ref_macro	code/modules/nifsoft/software/14_commlink.dm	nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
-ref_macro	code/modules/overmap/ships/computers/helm.dm	rdata["reference"] = "\ref[R]"
 ref_macro	code/modules/overmap/ships/computers/sensors.dm	contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
 ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];confirm=1'>Send fax</A> "
 ref_macro	code/modules/paperwork/adminpaper.dm	admin_fax_links += "<A href='byond://?src=\ref[src];[HrefToken()];penmode=1'>Pen mode: [isCrayon ? "Crayon" : "Pen"]</A> "
@@ -310,7 +298,6 @@ ref_macro	code/modules/persistence/datum/persistence_datum.dm	. = "<td colspan =
 ref_macro	code/modules/persistence/effects/filth.dm	return "<td colspan = 3>[thing]</td><td>Loc:([CRAY.x],[CRAY.y],[CRAY.z]) P_X: [CRAY.pixel_x] P_Y: [CRAY.pixel_y] Color: [CRAY.art_color] Shading: [CRAY.art_shade] Type: [CRAY.art_type]</td><td><a href='byond://?src=\ref[src];caller=\ref[user];remove_entry=\ref[thing]'>Destroy</a></td>"
 ref_macro	code/modules/persistence/effects/graffiti.dm	. = "<td colspan = 2>[save_graffiti.message]</td><td>[save_graffiti.author]</td><td><a href='byond://?src=\ref[src];[HrefToken()];caller=\ref[user];remove_entry=\ref[thing]'>Destroy</a></td>"
 ref_macro	code/modules/persistence/effects/paper.dm	. = "<td style='background-color:[paper.color]'>[paper.info]</td><td>[paper.name]</td><td>[paper.last_modified_ckey]</td><td><a href='byond://?src=\ref[src];[HrefToken()];caller=\ref[user];remove_entry=\ref[thing]'>Destroy</a></td>"
-ref_macro	code/modules/persistence/noticeboard.dm	"ref" = "\ref[I]",
 ref_macro	code/modules/power/singularity/emitter.dm	message_admins("Emitter turned off by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 ref_macro	code/modules/power/singularity/emitter.dm	message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
 ref_macro	code/modules/projectiles/projectile.dm	var/tempref = "\ref[src]"
@@ -322,15 +309,10 @@ ref_macro	code/modules/tgui/modules/admin/player_notes.dm	dat += "<a href='byond
 ref_macro	code/modules/tgui/modules/admin/player_notes.dm	dat += "<A href='byond://?src=\ref[src];[HrefToken()];remove_player_info_legacy=[key];remove_index=[i]'>Remove</A>"
 ref_macro	code/modules/tgui/modules/admin/player_notes.dm	dat += "<A href='byond://?src=\ref[src];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
 ref_macro	code/modules/tgui/modules/appearance_changer.dm	bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = "\ref[BR]")
-ref_macro	code/modules/tgui/modules/atmos_control.dm	"ref"= "\ref[alarm]",
-ref_macro	code/modules/tgui/modules/gyrotron_control.dm	"ref" = "\ref[G]"
 ref_macro	code/modules/tgui/modules/overmap.dm	rdata["reference"] = "\ref[R]"
 ref_macro	code/modules/tgui/modules/overmap.dm	log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
 ref_macro	code/modules/tgui/modules/overmap.dm	rdata["eng_reference"] = "\ref[E]"
 ref_macro	code/modules/tgui/modules/overmap.dm	contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
-ref_macro	code/modules/tgui/modules/rustcore_monitor.dm	"ref" = "\ref[C]"
-ref_macro	code/modules/tgui/modules/rustfuel_control.dm	"ref" = "\ref[FI]"
-ref_macro	code/modules/tgui/modules/shutoff_monitor.dm	"ref" = "\ref[S]"
 ref_macro	code/modules/tickets/procs.dm	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=\ref[src]'>[src]</a>") + ": [msg]")))
 ref_macro	code/modules/tickets/tickets.dm	dat += span_adminnotice(span_adminhelp("Ticket #[T.id]") + ": <A href='byond://?_src_=holder;ahelp=\ref[T];[HrefToken()];ahelp_action=ticket'>[T.initiator_key_name]: [T.name]</A>") + "<br>"
 ref_macro	code/modules/tickets/tickets.dm	ref_src = "\ref[src]"
@@ -343,7 +325,6 @@ ref_macro	code/modules/tickets/tickets_player_ui.dm	return "Ticket #[T().id] - [
 ref_macro	code/modules/tickets/tickets_ui.dm	return "Ticket #[id] - [LinkedReplyName("\ref[src]")]"
 ref_macro	code/modules/tickets/tickets_ui.dm	var/ref_src = "\ref[src]"
 ref_macro	code/modules/tickets/tickets_ui.dm	var/ref_src = "\ref[src]"
-ref_macro	code/modules/turbolift/turbolift_console.dm	"ref" = "\ref[floor]",
 ref_macro	code/modules/turbolift/turbolift_map.dm	cfloor.set_area_ref("\ref[A]")
 ref_macro	code/modules/vore/eating/belly_obj.dm	log_runtime("[src] (\ref[src]) doesn't have an owner, and dropped someone at a latespawn point!")
 ref_macro	code/modules/vore/eating/living.dm	. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"

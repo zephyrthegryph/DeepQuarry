@@ -269,7 +269,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
 	op("edit_notes", ui_act("edit_notes"), needs(req_adjacent(), req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("record" = computed(PROC_REF(notes_record)), "timeout" = 0), step = "delete_notes", when = PROC_REF(notes_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
-	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
+	op("d_rec", ui_act("d_rec", arg("d_rec", schema_text(32))), then(PROC_REF(ui_act_d_rec)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
 	op("del_c", ui_act("del_c", arg("del_c", num())), then(PROC_REF(ui_act_del_c)))
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
@@ -404,7 +404,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 					data["records"] = records
 					for(var/datum/data/record/R in sortRecord(GLOB.data_core.general))
 						records[++records.len] = list(
-							"ref" = "\ref[R]",
+							"ref" = ref_token(R),
 							"id" = R.fields["id"],
 							"name" = R.fields["name"],
 							"b_dna" = R.fields["b_dna"])
@@ -778,8 +778,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	var/datum/data/record/general_record = ui_ref(d_rec, null, /datum/data/record)
-	if(!(general_record in GLOB.data_core.general))
+	var/datum/data/record/general_record = ui_member(d_rec, GLOB.data_core.general, /datum/data/record)
+	if(!general_record)
 		show_temp("Record not found.", "danger")
 		return
 
