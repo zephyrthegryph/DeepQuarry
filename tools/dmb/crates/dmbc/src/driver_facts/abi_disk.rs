@@ -15,10 +15,10 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::{Arc, OnceLock},
 };
-const SCHEMA: u32 = 0x0204_0013;
+const SCHEMA: u32 = 0x0204_0014;
 const ENGINE_SCHEMA: u32 = 0x0204_0011;
 const LIMIT: usize = 1024 * 1024;
-const VERSION: u32 = 3;
+const VERSION: u32 = 4;
 #[derive(Serialize, Deserialize, PartialEq)]
 struct EngineProof {
     bytes: Vec<u8>,
@@ -72,6 +72,10 @@ struct UnitWire {
     inputs: InputWire,
     abi: AbiWire,
     reads: Vec<(ResolveQuery, Vec<u8>)>,
+    /// The typed form of each read's answer, aligned with `reads` (`None` where the answer has no
+    /// portable form). Evidence only: a certified record (`crate::dep_index`) takes these as the
+    /// current answers of the reads its world fixes, after checking them against `reads`.
+    typed: Vec<Option<dm_ir::PortableResolvedAnswer>>,
 }
 /// Shared exact engine-proof record format used by ABI and initializer transport.
 /// The hash locates a bucket; callers must compare this complete payload before
@@ -124,6 +128,7 @@ pub(super) struct Transport {
     engine_owner: Arc<crate::runner_host::EnginePayload>,
     engine_admitted: OnceLock<(Option<Vec<u8>>, bool)>,
     engine_staged: OnceLock<()>,
+    index: Option<Arc<crate::dep_index::DepIndex>>,
 }
 impl Transport {
     pub(super) fn new(
@@ -137,7 +142,13 @@ impl Transport {
             engine_owner,
             engine_admitted: OnceLock::new(),
             engine_staged: OnceLock::new(),
+            index: None,
         }
+    }
+    /// Certify rows through the request's persisted dependency index.
+    pub(super) fn with_index(mut self, index: Option<Arc<crate::dep_index::DepIndex>>) -> Self {
+        self.index = index;
+        self
     }
     fn key(&self, stage: u32, bytes: &[u8]) -> dm_cache::RecordKey {
         let mut locator = self.policy.to_le_bytes().to_vec();
@@ -226,15 +237,33 @@ impl Transport {
                     continue;
                 }
                 let _replay_timer = REPLAY.time();
-                if !wire.reads.iter().all(|(query, answer)| {
-                    let value = recording.resolve(*query);
-                    portable(&value) && value.canonical_bytes() == *answer
-                }) {
+                // The replay resolves through the request's provider and hands the receipt its
+                // answers afterwards, so a row accepted under a known world records typed answers
+                // and issues no domain version per read (`crate::dep_index::replay_reads`).
+                let observer = recording.transparent_receipt_observer();
+                let provider: &dyn Resolver = match &observer {
+                    Some(observer) => observer.provider(),
+                    None => recording,
+                };
+                let Some(current_reads) = crate::dep_index::replay_reads(
+                    // Without a transparent observer the replay itself must record the reads.
+                    self.index.as_deref().filter(|_| observer.is_some()),
+                    crate::dep_index::Scope::Abi,
+                    provider,
+                    &wire.key,
+                    &wire.reads,
+                    &wire.typed,
+                ) else {
                     continue;
-                }
+                };
                 let Some(unit) = wire.hydrate_current(&current.inputs.metadata) else {
                     continue;
                 };
+                if let Some(observer) = &observer {
+                    for read in &current_reads {
+                        observer.record_answer(read.query, &read.answer, read.domain, None);
+                    }
+                }
                 *accepted.borrow_mut() = Some(unit);
                 return Ok(true);
             }
@@ -280,6 +309,10 @@ impl Transport {
             reads: reads
                 .iter()
                 .map(|read| (read.query, read.answer.canonical_bytes()))
+                .collect(),
+            typed: reads
+                .iter()
+                .map(|read| dm_ir::PortableResolvedAnswer::capture(&read.answer))
                 .collect(),
         };
         if wire.validate().is_err() {
@@ -599,6 +632,7 @@ impl UnitWire {
                 .iter()
                 .any(|(name, ty)| !input.parameters.contains(name) || !path(ty, false))
             || self.reads.len() > 65536
+            || self.typed.len() != self.reads.len()
             || self.reads.windows(2).any(|pair| pair[0].0 >= pair[1].0)
             || self.abi.category > 2
             || (self.abi.category != 2 && !self.abi.text.is_empty())
@@ -729,6 +763,7 @@ mod tests {
             },
             inputs: InputWire::capture(&inputs),
             abi: AbiWire::capture(&abi).unwrap(),
+            typed: vec![None; reads.len()],
             reads,
         };
         let bytes = dm_wire::encode(SCHEMA, &wire).unwrap();
@@ -736,10 +771,12 @@ mod tests {
             |wire| {
                 wire.reads
                     .retain(|(query, _)| !matches!(query, ResolveQuery::Ancestry(_)));
+                wire.typed = vec![None; wire.reads.len()];
             },
             |wire| {
                 wire.reads
                     .retain(|(query, _)| !matches!(query, ResolveQuery::DeclarationChain { .. }));
+                wire.typed = vec![None; wire.reads.len()];
             },
             |wire| {
                 wire.identity.occurrence += 1;

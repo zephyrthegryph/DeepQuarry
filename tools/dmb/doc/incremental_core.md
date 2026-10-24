@@ -422,3 +422,49 @@ unit's receipt and a recorded read needs a `ResolvedMeaning`; (2) with all three
 and tree resolves vanish (about 34 CPU-s, 8 s of wall); (3) a persisted answer table keyed by the declaration delta against the
 stored world, for the worktree switch where the world differs; (4) bulk persistence of directive planning, expansion and
 declaration facts (about 5 s of the frontend); `TreeResolution` (4.7 s) needs the model persistence of the declaration plan.
+
+
+## Persisted dependency index, step 3: ABI rows and initializer receipts (2026-10-24, lane `compiler/dep-index-abi`)
+
+The ABI wire (`driver_facts/abi_disk.rs`, schema and cache version bumped) and the initializer wire
+(`lowering_memo_wire_initializer.rs`, schema and key version bumped) now carry a typed-answer sidecar next to
+their canonical reads: one `Option<PortableResolvedAnswer>` per read, aligned with `reads`. Their replays go through
+`dep_index::replay_reads`. An id is hashed per scope (`Scope::{Lowering, Abi, Initializer}`, so the three stages share one
+set per world without colliding); a record whose id the index holds for the provider's world takes the sidecar answer of
+every world-fixed read (checked against the stored canonical bytes first) and resolves nothing for it. Every other read
+resolves and compares exactly as before, and a record that replays clean is noted for the next session. `DMB_DEP_INDEX_VERIFY=1`
+replays certified ABI and initializer records anyway and counts a differing read as `contradicted`.
+
+Neither replay records its reads into a unit receipt any more. ABI: `BorrowedResolver` forwards `observes_reads()` and the
+transparent receipt observer of the request's resolver, so the unit's `RecordingResolver` is transparent and the replay hands
+it the admitted answers afterwards with `record_answer(.., None)` (no domain version is issued per read; the stored receipt
+is judged by the answer oracle). Initializers: the replay resolves through the host unrecorded and the receipt is the replayed
+answers plus whatever the modified-expression reissue read. One `DepIndex` is created per request in `runner_host.rs` and shared
+by the lowering memo, the ABI transport and the initializer transport.
+
+Measured (production tree, evicted session: own daemon namespace retired, one comment appended to a `.dm` file, shared disk
+memos hot, 4 workers; the machine was loaded by other lanes, so wall times are noisy and the counters are the evidence):
+
+| | step 2 (master 41dd15eb05) | step 3 |
+|---|---|---|
+| domain versions issued | 933k | 344k |
+| tree resolves (tree_calls) | 1.325M | 726k |
+| tree resolve CPU-s / version issue CPU-s | 29-34 / 12-17 | 17-20 / 4-9 |
+| `abi.disk_reads_replay` CPU-s | 4.5 | 2.4 |
+| compile wall, interleaved runs | 64 s, 91 s | 42 s, 61 s, 83 s |
+| lowering stage | 12.8, 19.6 s | 4.6, 6.8, 8.1 s |
+| index off (`DMB_DEP_INDEX=0`) | | 103 s, 933k -> 902k versions, 40 s lowering |
+
+Not reached: the expected ~34 CPU-s. 185,378 of the 186,382 ABI reads (exactly two per unit, so presumably the mandatory `Ancestry` and `DeclarationChain` reads; not broken down by kind) and
+25,937 of 71,204 initializer reads have no portable form (`PortableResolvedAnswer` covers scalars, values and symbols but not
+`Symbols`, `Members`, `Member` or `Declaration`, whose payloads hold `ProcedureMetadata` and symbolic expressions with no
+serde form), so they still resolve. The remaining 726k tree resolves are those reads plus the same reads of the lowering
+records. The next step is a portable form of `DeclarationMeaning` (or a receipt that stores a canonical hash instead of the
+typed answer for a certified read, which needs `Receipt`'s answer type to allow it); `Symbols` alone would not move the
+number, since an owner's ancestry is shared by its units. Records are only noted when a replay passes, so a freshly computed row
+certifies from the second compile after it was written; noting at stage time (its reads were just computed under the current
+world) would shorten that to the first.
+
+Proof: `cargo test -p dmbc` (1088 tests, new: `replay_reads_certifies_the_second_session_and_skips_the_world_fixed_resolves`,
+`indexed_abi_rows_certify_in_a_later_session_and_prepare_identically`); `dmb-equiv --all --ignore-debug` of the indexed
+evicted-session output against a cold `--no-daemon --no-cache` compile: EQUIVALENT; a `DMB_DEP_INDEX_VERIFY=1` run: 0 contradicted.

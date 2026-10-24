@@ -339,6 +339,7 @@ fn initializer_transport_declines_foreign_current_engine_owner() {
         Some(a.abi_engine_owner()),
         1,
         false,
+        None,
     );
     transport.configure(Some(crate::initializer_policy::ParallelEvaluator {
         factory: &evaluator,
