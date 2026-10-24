@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Self-test of tools/dq_lane_pool.sh in a scratch repository (no network, no DM, no daemon).
+# Self-test of tools/dq_lane_pool.sh in a scratch repository (no network, no DM, no daemon). The fixture remote is a local bare repository and the
+# pool runs with DQ_LANE_POOL_NO_FETCH=1 (a fetch per pool call was most of the run time); the test pushes to the remote itself and fetches in the repo.
 #
 #   bash tools/ci/test_lane_pool.sh      # prints PASS/FAIL per case, exit 1 on any failure
 #
@@ -12,7 +13,7 @@ here="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 fail=0
-ok() { echo "PASS: $1"; }
+ok() { echo "PASS: $1 [${SECONDS}s]"; }
 bad() { echo "FAIL: $1"; fail=1; }
 check() { if eval "$2"; then ok "$1"; else bad "$1 [$2]"; fi; }
 
@@ -29,6 +30,7 @@ g fetch -q origin
 
 export DQ_LANE_POOL_DIR="$tmp/pool" DQ_LANE_POOL_STATE="$tmp/state" DQ_LANE_POOL_SIZE=2 DQ_LANE_POOL_REPO="$tmp/repo" DQ_DMBC_DAEMON_DIR="$tmp/none"
 export DQ_LANE_POOL_NO_UPDATE=1
+export DQ_LANE_POOL_NO_FETCH=1   # tests only: no git fetch per pool call, origin is the local bare repository above
 export DQ_LANE_POOL_PROCS_CMD="echo no processes"   # never spawn powershell (seconds per call) in the fixtures
 pool() { bash "$tmp/repo/tools/dq_lane_pool.sh" "$@"; }
 
