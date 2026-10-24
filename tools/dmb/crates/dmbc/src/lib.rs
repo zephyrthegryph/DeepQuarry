@@ -68,6 +68,7 @@ mod initializer_source_order_tests;
 mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
+pub mod dep_index;
 pub mod lowering_memo;
 mod lowering_memo_compact;
 mod lowering_memo_selection;

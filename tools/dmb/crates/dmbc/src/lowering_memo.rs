@@ -117,6 +117,7 @@ pub struct ProcedureMemo {
     /// The initializer stage reused its retained output: its stores keep their published claims.
     pub(crate) initializer_stage_carried: std::sync::atomic::AtomicBool,
     disk: Option<Arc<crate::runner_disk::LazyDisk>>,
+    dep_index: std::sync::OnceLock<Option<Arc<crate::dep_index::DepIndex>>>,
     pending: Arc<Mutex<Pending>>,
     pub counts: Arc<MemoCounts>,
     limits: MemoLimits,
@@ -191,6 +192,16 @@ pub struct MemoExplanation {
 }
 impl ProcedureMemo {
     /// The retained session's query database (absent for one-shot builds and fixtures).
+    /// The persisted dependency index of this request's cache, when it has one.
+    pub(crate) fn dep_index(&self) -> Option<&Arc<crate::dep_index::DepIndex>> {
+        self.dep_index
+            .get_or_init(|| {
+                let disk = self.disk.as_ref()?;
+                crate::dep_index::enabled()
+                    .then(|| Arc::new(crate::dep_index::DepIndex::new(Arc::clone(disk), self.policy)))
+            })
+            .as_ref()
+    }
     pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
         self.symbolic.as_ref()?.query_db()
     }
@@ -283,6 +294,7 @@ impl ProcedureMemo {
             stages: None,
             initializer_stage_carried: Default::default(),
             disk: None,
+            dep_index: Default::default(),
             pending: Arc::new(Mutex::new(Pending::default())),
             counts: Arc::new(MemoCounts::default()),
             limits: MemoLimits::default(),
@@ -342,6 +354,7 @@ impl ProcedureMemo {
             disk: Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
                 snapshot.into(),
             ))),
+            dep_index: Default::default(),
             pending: Arc::new(Mutex::new(Pending::default())),
             counts: Arc::new(MemoCounts::default()),
             limits,
@@ -385,6 +398,7 @@ impl ProcedureMemo {
                 ..Default::default()
             };
         };
+        let certificates = self.dep_index().map(|index| &**index);
         let replay = std::cell::RefCell::new(None);
         let view =
             snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
@@ -411,6 +425,7 @@ impl ProcedureMemo {
                             selections_only: context.selections_only,
                             verify: context.verify,
                             modified: context.modified,
+                            certificates,
                         },
                         host,
                         prepared,

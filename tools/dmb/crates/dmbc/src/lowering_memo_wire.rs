@@ -681,6 +681,8 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub selections_only: bool,
     pub verify: bool,
     pub modified: Option<&'a dyn crate::lowering_memo_compact::ModifiedIssuer>,
+    /// Persisted proofs that stored reads held under the current world (`crate::dep_index`).
+    pub certificates: Option<&'a crate::dep_index::DepIndex>,
 }
 pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
     let mut values = Vec::new();
@@ -801,6 +803,7 @@ impl Candidates<'_> {
                         selections_only: true,
                         verify: context.verify,
                         modified: context.modified,
+                        certificates: context.certificates,
                     },
                     prepared,
                 );
@@ -813,20 +816,50 @@ impl Candidates<'_> {
                 }
                 continue;
             }
-            if let Candidate::Compact(v) = value {
+            if let Candidate::Compact(mut v) = value {
                 if !matches_key(v.key.as_ref()) || v.identity != identity {
                     continue;
                 }
                 let reads_timer = READS.time();
+                // A record whose reads an earlier session proved under this world carries the
+                // world's receipt, so its reads are not replayed (`crate::dep_index`).
+                let adoption = context.certificates.map(|index| {
+                    let id = v.record_id();
+                    let adoption = index.adopt(host, &mut v.versions.0, || id);
+                    if matches!(adoption, crate::dep_index::Adoption::Certified { .. }) {
+                        v.certify_world();
+                    }
+                    adoption
+                });
+                let certified_world = match &adoption {
+                    Some(crate::dep_index::Adoption::Certified { world }) => Some(*world),
+                    _ => None,
+                };
                 let mut promotion = v.promotion();
-                let current_versions = CurrentReads::versions(host, &promotion.queries);
+                // A certified record's receipt names the world, not one version per read
+                // domain: issuing those resolves every domain's query again.
+                let current_versions = if certified_world.is_some() {
+                    Vec::new()
+                } else {
+                    CurrentReads::versions(host, &promotion.queries)
+                };
                 let pending_reads = match v.transparent_reads(host) {
                     Ok(reads) => reads,
                     Err(query) => {
+                        if let (Some(index), Some(crate::dep_index::Adoption::Certified { .. })) =
+                            (context.certificates, &adoption)
+                        {
+                            index.contradicted(&query);
+                        }
                         result.changed_query.get_or_insert(query);
                         continue;
                     }
                 };
+                if let (Some(index), Some(crate::dep_index::Adoption::Pending { world, id })) =
+                    (context.certificates, adoption)
+                {
+                    index.note(world, id);
+                }
                 drop(reads_timer);
                 let verification_reads = context.verify.then(|| v.verification_reads());
                 let _rebind_timer = REBIND.time();
@@ -839,6 +872,7 @@ impl Candidates<'_> {
                         selections_only: context.selections_only,
                         verify: context.verify,
                         modified: context.modified,
+                        certificates: context.certificates,
                     },
                     prepared,
                     backing,
@@ -848,7 +882,10 @@ impl Candidates<'_> {
                             (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
-                                let version = observer.provider().domain_version(read.domain);
+                                let version = match certified_world {
+                                    Some(_) => None,
+                                    None => observer.provider().domain_version(read.domain),
+                                };
                                 observer.record_answer(
                                     read.query,
                                     &read.answer,
@@ -857,8 +894,9 @@ impl Candidates<'_> {
                                 );
                             }
                         }
-                        promotion.current = pending_reads.and_then(|reads| {
-                            CurrentReads::accepted(host, reads, current_versions)
+                        promotion.current = pending_reads.and_then(|reads| match certified_world {
+                            Some(world) => CurrentReads::certified(host, reads, world),
+                            None => CurrentReads::accepted(host, reads, current_versions),
                         });
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
