@@ -585,6 +585,8 @@ pub(super) fn try_append_patch<R: dm_ir::Resolver>(
         archive: request.archive,
         warnings: Arc::new(warnings),
         answers: lowered_answers,
+        answers_context: None,
+        marks: None,
         dmb_hash: 0,
     };
     dm_profile::request_mark("append.linked");

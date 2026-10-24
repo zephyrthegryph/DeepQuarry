@@ -28,6 +28,9 @@ if [ "${DQ_ANALYZE_COLD:-0}" = "1" ]; then
 	echo "check_ratchets: cold mode (private analyze cache, no shared cache, no gen store)"
 fi
 
+# The Verdigris bindings are generated, not committed; the lints read them.
+bash tools/ci/gen_verdigris_bindings.sh >/dev/null || exit 1
+
 bin="$(bash tools/ci/analyze.sh)" || {
 	echo "Ratchet lints failed: the analyze engine could not be built (is cargo installed?)"
 	exit 1

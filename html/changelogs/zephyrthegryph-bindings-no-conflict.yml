@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The Verdigris bindings (_bindings.dm, _bindings_types.dm, abi.rs) are generated build output, no longer committed, so lanes stop conflicting on them"

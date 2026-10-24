@@ -30,6 +30,26 @@ pub(crate) struct PatchRequest<'a, R: dm_ir::Resolver> {
     pub executor: &'a dm_exec::BuildExecutor,
     pub memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
     pub workers: usize,
+    pub project: &'a std::path::Path,
+}
+
+/// Whether numeric default edits skip the special-case patch and take the general path
+/// (`DMB_DEFAULT_PATCH=0`, or a test's `disable_default_patch(project)`).
+fn default_patch_disabled(project: &std::path::Path) -> bool {
+    std::env::var_os("DMB_DEFAULT_PATCH").is_some_and(|value| value == "0")
+        || DISABLED
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .contains(project)
+}
+static DISABLED: std::sync::Mutex<std::collections::BTreeSet<std::path::PathBuf>> =
+    std::sync::Mutex::new(std::collections::BTreeSet::new());
+#[cfg(test)]
+pub(crate) fn disable_default_patch(project: &std::path::Path) {
+    DISABLED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(project.to_path_buf());
 }
 
 /// Try a declaration patch. `Err` carries the reason it declined; the caller logs it and runs
@@ -49,6 +69,9 @@ pub(crate) fn try_patch<R: dm_ir::Resolver>(request: PatchRequest<'_, R>) -> Res
     if tree.appended_callables().is_some() {
         return append::try_append_patch(request, &base, &link, &image)
             .map_err(|reason| format!("append patch: {reason}"));
+    }
+    if default_patch_disabled(request.project) {
+        return Err("default patch disabled (DMB_DEFAULT_PATCH=0): the general path admits the edit".into());
     }
     try_default_patch(request, &base, &image).map_err(|reason| format!("default patch: {reason}"))
 }
@@ -137,6 +160,8 @@ fn try_default_patch<R: dm_ir::Resolver>(
         archive: request.archive,
         warnings: Arc::clone(&base.warnings),
         answers: lowered.answers,
+        answers_context: None,
+        marks: None,
         dmb_hash: 0,
     };
     let dmb = request.generation.patch_variable_values(image, &values, next)?;
@@ -152,7 +177,7 @@ fn try_default_patch<R: dm_ir::Resolver>(
 }
 
 /// Whether `initial(` ... `)` anywhere names `name` as a whole word.
-fn reads_initial(text: &[u8], name: &[u8]) -> bool {
+pub(crate) fn reads_initial(text: &[u8], name: &[u8]) -> bool {
     let needle = b"initial";
     let mut at = 0;
     while let Some(found) = text[at..].windows(needle.len()).position(|window| window == needle) {

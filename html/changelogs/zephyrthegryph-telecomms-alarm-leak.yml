@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Unit-test machine guard takes a thermostat's answer to a drifting room (air alarm regulating, freezer/heater pumping) as the baseline instead of a leak"
