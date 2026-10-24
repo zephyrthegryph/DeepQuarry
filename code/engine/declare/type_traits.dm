@@ -68,25 +68,34 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/type_trait)
 /datum/entry_engine/type_trait/static_built(list/by_type)
 	GLOB.type_trait_tables[kind] = type_trait_table_build(by_type, kind, trait_type)
 
-/// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. A table is looked up once (an assoc lookup, not a
-/// scan of the tables seen so far), so the cost is the types plus the tables, not their product. The equality test (dq_table_cache_tests.dm) compares it with the
-/// scanning original.
+/// type -> the shared trait of `kind` for every type in `by_type` whose table declares one. Each table is visited once (not each type: the grouping
+/// of types by table and the first entry of each kind per table come from static_table_groups(), built once at setup), and one trait is built per
+/// declaring table, shared by the types under it, so the cost is the tables plus the types that get a trait. The equality test
+/// (dq_table_cache_tests.dm) compares it with the scanning original, including which types share a trait object.
 /proc/type_trait_table_build(list/by_type, kind, trait_type)
-	var/list/built_of_table = list() // table -> its trait, or FALSE when the table declares none: one lookup per type
+	var/list/types_by_table
+	var/list/first_by_kind
+	if(by_type == SSstatic_entries.tables_by_type && SSstatic_entries.types_by_table)
+		types_by_table = SSstatic_entries.types_by_table
+		first_by_kind = SSstatic_entries.first_by_kind
+	else
+		var/list/groups = static_table_groups(by_type)
+		types_by_table = groups[1]
+		first_by_kind = groups[2]
 	var/list/table = list()
-	for(var/type in by_type)
-		var/datum/type_table/T = by_type[type]
-		var/datum/type_trait/known = built_of_table[T]
-		if(isnull(known))
-			var/datum/centry/C = static_find(T, kind)
-			var/datum/entry/E = C?.item
-			if(E)
-				known = new trait_type
-				known.kind = kind
-				known.apply_args(E.args)
-			built_of_table[T] = known || FALSE
-		if(known)
-			table[type] = known
+	var/tables_built = 0
+	for(var/datum/type_table/T as anything in types_by_table)
+		var/datum/centry/C = first_by_kind[T][kind]
+		var/datum/entry/E = C?.item
+		if(!E)
+			continue
+		var/datum/type_trait/made = new trait_type
+		made.kind = kind
+		made.apply_args(E.args)
+		tables_built++
+		for(var/type in types_by_table[T])
+			table[type] = made
+	log_world("TYPE_TRAIT_TABLE: [kind] built [tables_built] traits for [length(table)] types")
 	return table
 
 /// kind -> type -> the shared /datum/type_trait (built once at setup by the kinds' engines).
