@@ -841,24 +841,22 @@ slots_holding() { # worktree: one line per live slot that worktree holds in any 
 }
 
 slots_usage_all() { # every fresh holder and waiter, one line each: "<hold|wait> <worktree, lower case, / separators> <class> <seconds> <label>"
-	# Cheap on purpose (the pool's status calls it once): no tasklist or per-field subprocess, a file counts while its heartbeat/poll touch is
-	# younger than DQ_SLOTS_FRESH_SEC (default 90; holders touch every 15 s, waiters every poll).
-	local cls f kind k v wt label t now fresh="${DQ_SLOTS_FRESH_SEC:-90}" mt
-	now="$(date +%s)"
-	for cls in dm_compile test_world cargo; do
-		for f in "$(slots_dir)/$cls"/slot.*/owner "$(slots_dir)/$cls"/queue/*; do
-			[ -f "$f" ] || continue
-			mt="$(stat -c %Y "$f" 2>/dev/null || echo 0)"
-			[ $(( now - mt )) -le "$fresh" ] || continue
-			wt=""; label=""; t=""
-			while IFS='=' read -r k v; do
-				case "$k" in worktree) wt="$v" ;; label) label="$v" ;; started | queued) t="$v" ;; esac
-			done <"$f"
-			case "$f" in */owner) kind=hold ;; *) kind=wait ;; esac
-			wt="${wt//\\//}"; wt="${wt,,}"; wt="${wt%/}"
-			echo "$kind $wt $cls $(( now - ${t:-$now} )) $label"
-		done
-	done
+	# Cheap on purpose (the pool's status calls it once, on a host where a fork costs a few hundred ms): one find lists every fresh file, no stat
+	# or per-field subprocess; a file counts while its heartbeat/poll touch is younger than DQ_SLOTS_FRESH_SEC (default 90; holders touch every
+	# 15 s, waiters every poll).
+	local cls f rest kind k v wt label t now sd fresh="${DQ_SLOTS_FRESH_SEC:-90}"
+	now="$EPOCHSECONDS"; sd="$(slots_dir)"
+	while IFS= read -r f; do
+		[ -n "$f" ] || continue
+		rest="${f#"$sd"/}"; cls="${rest%%/*}"
+		wt=""; label=""; t=""
+		while IFS='=' read -r k v; do
+			case "$k" in worktree) wt="$v" ;; label) label="$v" ;; started | queued) t="$v" ;; esac
+		done <"$f"
+		case "$f" in */owner) kind=hold ;; *) kind=wait ;; esac
+		wt="${wt//\\//}"; wt="${wt,,}"; wt="${wt%/}"
+		echo "$kind $wt $cls $(( now - ${t:-$now} )) $label"
+	done < <(find "$sd/dm_compile" "$sd/test_world" "$sd/cargo" -maxdepth 3 -type f \( -name owner -path '*/slot.*' -o -path '*/queue/*' \) -newermt "@$(( now - fresh ))" 2>/dev/null)
 }
 
 slots_stats() { # [N]

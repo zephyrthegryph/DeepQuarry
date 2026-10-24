@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The shutoff valve, fuel injector, fusion core, gyrotron and air alarm monitors, the atmospherics alert console, bomb tester, turbolift panel, drone, exosuit and robotics consoles, safe, point defense control, security and skills record consoles, ship helm and noticeboard send the things they list by handle instead of by reference text, and take them back only from their own lists"
+  - bugfix: "The fuel injector, fusion core and gyrotron monitors work only the machines on their own ident tag, the exosuit console reaches only beacons that sit in an exosuit, and the noticeboard and safe hand over only what is on or in them"

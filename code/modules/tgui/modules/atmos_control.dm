@@ -15,7 +15,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 	owns_one(nameof(access), /obj)
 	owns_one(nameof(remote_panel), /datum/air_alarm_remote)
 	interface("AtmosControl")
-	op("alarm", ui_act("alarm", arg("alarm", schema_ref(/obj/machinery/alarm))), then(PROC_REF(ui_act_alarm)))
+	op("alarm", ui_act("alarm", arg("alarm", schema_text(32))), then(PROC_REF(ui_act_alarm)))
 	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
 	ref_many(nameof(monitored_alarms))
 
@@ -40,10 +40,11 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 
 /// The alarm button: the alarm's window opens as this console's panel of it (its buttons go to the alarm, past its lock for whoever the console
 /// lets in).
-/datum/tgui_module/atmos_control/proc/ui_act_alarm(datum/act/op/A, obj/machinery/alarm/alarm)
-	if(!(alarm in alarm_sources()))
+/datum/tgui_module/atmos_control/proc/ui_act_alarm(datum/act/op/A, alarm)
+	var/obj/machinery/alarm/panel_alarm = ui_member(alarm, alarm_sources(), /obj/machinery/alarm)
+	if(!panel_alarm)
 		return OP_OK
-	rel_set(src, nameof(remote_panel), new /datum/air_alarm_remote(src, alarm))
+	rel_set(src, nameof(remote_panel), new /datum/air_alarm_remote(src, panel_alarm))
 	remote_panel.tgui_interact(A.actor, parent_ui = ui_ref)
 	return OP_OK
 
@@ -76,7 +77,7 @@ CAPABILITIES(/datum/tgui_module/atmos_control)
 			continue
 		alarms[++alarms.len] = list(
 			"name" = sanitize(alarm.name),
-			"ref"= "\ref[alarm]",
+			"ref"= ref_token(alarm),
 			"danger" = max(alarm.danger_level, alarm.alarm_area?.atmosalm),
 			"x" = alarm.x,
 			"y" = alarm.y,
