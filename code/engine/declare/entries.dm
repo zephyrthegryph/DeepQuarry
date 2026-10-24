@@ -28,8 +28,9 @@
 /// appear among its values or in `children` count by their own signature.
 /proc/entry_make(kind, key, list/args, list/children)
 	RETURN_TYPE(/datum/entry)
+	var/static/list/interned = list()
 	var/sig = entry_signature(kind, key, args, children)
-	var/datum/entry/known = entries_interned()[sig]
+	var/datum/entry/known = interned[sig]
 	if(known)
 		return known
 	var/datum/entry/E = new
@@ -38,15 +39,8 @@
 	E.args = args && length(args) ? args : null
 	E.children = children && length(children) ? children : null
 	E.sig = sig
-	entries_interned()[sig] = E
+	interned[sig] = E
 	return E
-
-/// signature -> the one shared entry with it (the interning table of entry_make; the boot signature test reads it). A proc-static list,
-/// not a GLOB var: these are made before globals initialise, and a GLOB init would drop them.
-/proc/entries_interned()
-	RETURN_TYPE(/list)
-	var/static/list/table = list()
-	return table
 
 /// The text that tells two entries apart: kind, key, every argument and every child, by value.
 /proc/entry_signature(kind, key, list/args, list/children)

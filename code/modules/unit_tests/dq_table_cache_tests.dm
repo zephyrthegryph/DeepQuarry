@@ -226,24 +226,45 @@
 		parts += "(" + dq_ref_value_signature(child) + ")"
 	return jointext(parts, "|")
 
+/// Checks one entry (and its children) against the plain signature build: counts it in seen, and appends a line to bad on a mismatch.
+/proc/dq_check_entry_signature(datum/entry/E, list/seen, list/bad)
+	if(!E || seen[E])
+		return
+	seen[E] = TRUE
+	if(istype(E, /datum/entry/block) || istype(E, /datum/entry/line) || istype(E, /datum/entry/skip_built))
+		return
+	var/expected = dq_ref_entry_signature(E.kind, E.key, E.args, E.children)
+	if(istype(E, /datum/entry/part))
+		expected = "[E.type]|" + dq_ref_entry_signature(ENTRY_OP_PART, null, E.args, E.children)
+	if(E.sig != expected)
+		bad += "[E.sig] != [expected]"
+	for(var/datum/entry/child in E.children)
+		dq_check_entry_signature(child, seen, bad)
+
 /datum/unit_test/dq_interned_entry_signatures_unchanged
 
 /datum/unit_test/dq_interned_entry_signatures_unchanged/Run()
-	var/entries = 0
-	for(var/sig in entries_interned())
-		var/datum/entry/E = entries_interned()[sig]
-		TEST_ASSERT(E.sig == sig, "an interned entry is filed under its own signature ([sig])")
-		TEST_ASSERT_EQUAL(sig, dq_ref_entry_signature(E.kind, E.key, E.args, E.children), "the entry's signature equals the plain build")
-		entries++
-	var/parts = 0
-	for(var/sig in parts_interned())
-		var/datum/entry/part/P = parts_interned()[sig]
-		TEST_ASSERT(P.sig == sig, "an interned part is filed under its own signature ([sig])")
-		TEST_ASSERT_EQUAL(sig, "[P.type]|" + dq_ref_entry_signature(ENTRY_OP_PART, null, P.args, P.children), "the part's signature equals the plain build")
-		parts++
+	var/list/seen = list()
+	var/list/bad = list()
+	var/probes = 0
+	var/list/types = list()
+	for(var/t in typesof(/obj/item) + typesof(/obj/machinery))
+		if(ispath(t, /obj/item/projectile) || findtext("[t]", "/spawner"))
+			continue
+		types += t
+		if(length(types) >= 250)
+			break
+	for(var/t in types)
+		var/atom/movable/probe = new t(null)
+		var/list/chain = list()
+		probe.declared_entries(chain)
+		for(var/datum/entry/E in chain)
+			dq_check_entry_signature(E, seen, bad)
+		probes++
+		qdel(probe) // ALLOW(lifecycle): a probe instance made only to read a type's declarations
 	for(var/sig in GLOB.caps_interned)
 		var/datum/capability/C = GLOB.caps_interned[sig]
 		TEST_ASSERT_EQUAL(sig, dq_ref_datum_signature(C), "an interned capability's signature equals the plain build")
-	TEST_ASSERT(entries > 100, "the world interned entries (got [entries])")
-	TEST_ASSERT(parts > 10, "the world interned parts (got [parts])")
-	log_world("DQ_SIGNATURES interned entries=[entries] parts=[parts] caps=[length(GLOB.caps_interned)]")
+	TEST_ASSERT(!length(bad), "entry signatures differ from the plain build: [length(bad)], first [bad[1]]")
+	TEST_ASSERT(length(seen) > 100, "the probes declared entries (got [length(seen)])")
+	log_world("DQ_SIGNATURES probes=[probes] entries=[length(seen)] caps=[length(GLOB.caps_interned)]")
