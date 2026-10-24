@@ -103,6 +103,7 @@
 /datum/unit_test/dq_heat_body_is_created_on_divergence_and_relaxes
 
 /datum/unit_test/dq_heat_body_is_created_on_divergence_and_relaxes/Run()
+	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/obj/item/I = allocate(/obj/item/tool/wrench, heat_test_turf())
 	var/ambient = I.get_temperature()
 	TEST_ASSERT_NULL(I.heat_body, "an item at ambient temperature already has a heat body")
@@ -119,9 +120,74 @@
 	var/ambient_now = I.get_ambient_temperature()
 	var/floor_temp = min(ambient, ambient_now)
 	TEST_ASSERT(later > floor_temp, "the body passed its surroundings ([later] K < [floor_temp] K; ambient [ambient] K at the start, [ambient_now] K now)")
-	I.release_heat_body()
+	I.drop_heat_body()
 	TEST_ASSERT_NULL(I.heat_body, "release kept the handle")
 	TEST_ASSERT(abs(I.get_temperature() - I.get_ambient_temperature()) < 0.01, "a released item does not read its surroundings")
+
+/// Deleting something drops its heat: a hot item destroyed on a tile deposits nothing in the tile's air or floor (deletion is not a physical
+/// event). The old contract moved the item's excess into the tile, which for a small hot item is the whole of its heat.
+/datum/unit_test/dq_heat_deleting_a_hot_item_leaves_its_tile_unchanged
+
+/datum/unit_test/dq_heat_deleting_a_hot_item_leaves_its_tile_unchanged/Run()
+	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
+	var/turf/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/joules = 2000000
+	I.add_heat(joules)
+	TEST_ASSERT_NOTNULL(I.heat_body, "add_heat did not create a heat body")
+	var/datum/gas_mixture/air = T.return_air()
+	var/air_before = air.heat_capacity() * air.return_temperature()
+	var/floor_before = T.get_temperature()
+	var/floor_capacity = T.thermal_properties()[THERMAL_CAPACITY]
+	qdel(I, TRUE)
+	TEST_ASSERT(QDELETED(I), "the item was not deleted")
+	vg_world_run_steps(20)
+	var/air_gain = air.heat_capacity() * air.return_temperature() - air_before
+	var/floor_gain = (T.get_temperature() - floor_before) * floor_capacity
+	log_test("delete hot item: held [joules] J over its tile; air gained [round(air_gain)] J, floor [round(floor_gain)] J")
+	TEST_ASSERT(abs(air_gain) < joules * 0.05, "deleting a hot item put [air_gain] J into the tile's air (it held [joules] J)")
+	TEST_ASSERT(abs(floor_gain) < joules * 0.05, "deleting a hot item put [floor_gain] J into the tile's floor (it held [joules] J)")
+
+/// A real transformation carries the heat: an item replaced by what it burns to (replace_with) leaves the product at the item's temperature.
+/datum/unit_test/dq_heat_replacement_product_inherits_the_source_temperature
+
+/datum/unit_test/dq_heat_replacement_product_inherits_the_source_temperature/Run()
+	var/turf/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/ambient = I.get_temperature()
+	I.add_heat(I.thermal_properties()[THERMAL_CAPACITY] * 200)
+	var/hot = I.get_temperature()
+	TEST_ASSERT(hot > ambient + 150, "the item is only [hot] K (ambient [ambient] K)")
+	var/obj/effect/decal/cleanable/ash/ash = replace_with(I, /obj/effect/decal/cleanable/ash)
+	TEST_ASSERT_NOTNULL(ash, "replace_with made no ash")
+	TEST_ASSERT(QDELETED(I), "the item was not replaced")
+	var/got = ash.get_temperature()
+	TEST_ASSERT(abs(got - hot) < 1, "the ash is at [got] K, not the burnt item's [hot] K")
+	qdel(ash, TRUE)
+
+/// Dusting a warm body leaves its remains at the body's temperature.
+/datum/unit_test/dq_heat_dust_remains_inherit_the_body_temperature
+
+/datum/unit_test/dq_heat_dust_remains_inherit_the_body_temperature/Run()
+	var/turf/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.set_bodytemperature(T20C + 17)
+	var/body_k = H.body_temperature()
+	var/list/before = list()
+	for(var/obj/effect/decal/old in T)
+		before += old
+	H.dust()
+	var/obj/effect/decal/remains
+	for(var/obj/effect/decal/found in T)
+		if(!(found in before))
+			remains = found
+	TEST_ASSERT_NOTNULL(remains, "dusting left no remains")
+	var/got = remains.get_temperature()
+	TEST_ASSERT(abs(got - body_k) < 1, "the remains ([remains.type]) are at [got] K, not the body's [body_k] K")
+	qdel(remains, TRUE)
 
 /// A body coupled to a reservoir (a planet turf's air, or any air holding
 /// RELAX_CAPACITY_RATIO times its capacity) relaxes on the analytic model, whose
@@ -132,6 +198,7 @@
 /datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature
 
 /datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature/Run()
+	restore_ambient_after() // the steps below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/turf/simulated/floor/T = heat_test_turf()
 	TEST_ASSERT_NOTNULL(T, "no floor to test on")
 	// A planet turf's gas cell is a reservoir (verdigris/ffi/src/gas/mod.rs register_turf()).
@@ -146,7 +213,7 @@
 	var/later = I.get_temperature()
 	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
 	TEST_ASSERT(later > I.get_ambient_temperature() - 1, "the body passed its surroundings ([later] K)")
-	I.release_heat_body()
+	I.drop_heat_body()
 
 /// Makes a heat test turf an ordinary floor cell again.
 /proc/heat_test_unplanet(turf/simulated/floor/T)

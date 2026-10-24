@@ -3622,7 +3622,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		vg_frame_force_devices()
 		native_system().drain()
 	TEST_ASSERT(air.return_temperature() > before + 1, "the coupled body did not heat its pipeline: [before] -> [air.return_temperature()] (body [body_before] -> [vg_heat_body_temperature(body)])")
-	vg_heat_body_release(body)
+	vg_heat_body_drop(body)
 	qdel(P)
 	qdel(Q)
 
