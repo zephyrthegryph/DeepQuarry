@@ -572,6 +572,8 @@ pub(crate) struct Admitted {
     pub image: Arc<crate::composition::PatchImage>,
     pub changed: Vec<usize>,
     pub lines: LineMap,
+    /// Variables-table records `(record, kind, value)` whose numeric default this request edited.
+    pub variable_values: Vec<(u32, u8, u32)>,
 }
 /// The answer table's facts at the point an output is retained (see `OutputBase`).
 #[derive(Clone, Copy, Debug, Default)]
@@ -626,7 +628,21 @@ pub(crate) fn admit(
     let Some(answers) = answers else {
         return Err("answers are not versioned".into());
     };
-    if base.shape.text_key() != shape.text_key() {
+    // A pure numeric default edit (proved by the frontend relative to this very base) moves the
+    // text of the default's own row and nothing else: its Variables record is rewritten and no
+    // text can read the default at compile time.
+    let default_edits = frontend
+        .snapshot
+        .tree
+        .default_edits()
+        .filter(|edits| edits.from_identity == base.shape.tree_identity);
+    let mut variable_values = Vec::new();
+    if let Some(edits) = default_edits.filter(|_| base.shape.text_key() != shape.text_key()) {
+        if base.shape.bodies.len() != shape.bodies.len() {
+            return Err("body roster changed with the defaults".into());
+        }
+        variable_values = default_edit_records(retained, frontend, &image, edits, &base.shape, shape)?;
+    } else if base.shape.text_key() != shape.text_key() {
         return Err("program text outside bodies changed".into());
     }
     if base.shape.bodies.iter().zip(&shape.bodies).any(|(old, new)| old.path != new.path) {
@@ -657,7 +673,15 @@ pub(crate) fn admit(
         return Err("changed body is the first root procedure (its literals register strings)".into());
     }
     let mut answered = Answered { version: Some(answers), context, marks: None };
-    if base.answers != Some(answers) {
+    if !variable_values.is_empty() {
+        // The answer world differs with the declarations by exactly the edited defaults, and no
+        // text can read one (`reads_initial` found no `initial()` naming it), so no answer a
+        // retained unit read has moved.
+        crate::daemon_eprintln!(
+            "native incremental output: {} numeric defaults edited, answers not compared",
+            variable_values.len()
+        );
+    } else if base.answers != Some(answers) {
         let detail = proof.as_ref().map_or_else(String::new, |proof| {
             format!(" ({})", proof.db.answer_diff().summary())
         });
@@ -685,7 +709,136 @@ pub(crate) fn admit(
         image,
         changed,
         lines,
+        variable_values,
     })
+}
+
+/// The Variables records of a pure numeric default edit, after proving the program text outside
+/// bodies differs from the retained build's only in those defaults' own rows and that no text
+/// reads one at compile time.
+fn default_edit_records(
+    retained: &RetainedOutput<'_>,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    image: &crate::composition::PatchImage,
+    edits: &dm_tree::DefaultEdits,
+    old: &SourceShape,
+    new: &SourceShape,
+) -> Result<Vec<(u32, u8, u32)>, String> {
+    let text = frontend.expanded.text.as_str().as_bytes();
+    let symbols = frontend.snapshot.tree.symbols();
+    let mut names: Vec<Vec<u8>> = Vec::with_capacity(edits.edits.len());
+    let mut values = Vec::with_capacity(edits.edits.len());
+    for edit in &edits.edits {
+        let name = symbols.text(edit.name).ok_or("edited var has no spelling")?;
+        if crate::declaration_patch::reads_initial(text, name.as_bytes()) {
+            return Err(format!("initial({name}) is read at compile time"));
+        }
+        let record = retained
+            .generation
+            .field_record(edit.owner, edit.name)
+            .ok_or("edited var has no retained field record")?;
+        let (kind, value, _) = image
+            .rows
+            .variable_record(record)
+            .map_err(|error| format!("variable record: {error}"))?;
+        if kind != 42 || value != edit.old_bits {
+            return Err("retained record does not hold the old numeric default".into());
+        }
+        names.push(name.as_bytes().to_vec());
+        values.push((record, 42u8, edit.value_bits));
+    }
+    let (old_hashes, _) = skeleton_rows(&old.layout, None);
+    let (new_hashes, _) = skeleton_rows(&new.layout, None);
+    if old_hashes.len() != new_hashes.len() {
+        return Err("declaration line count changed with the defaults".into());
+    }
+    let differing: std::collections::HashSet<usize> = old_hashes
+        .iter()
+        .zip(&new_hashes)
+        .enumerate()
+        .filter(|(_, (a, b))| a != b)
+        .map(|(index, _)| index)
+        .collect();
+    if differing.len() > edits.edits.len() {
+        return Err(format!(
+            "{} declaration lines changed for {} default edits",
+            differing.len(),
+            edits.edits.len()
+        ));
+    }
+    let (_, old_text) = skeleton_rows(&old.layout, Some(&differing));
+    let (_, new_text) = skeleton_rows(&new.layout, Some(&differing));
+    for index in &differing {
+        let (Some(before), Some(after)) = (old_text.get(index), new_text.get(index)) else {
+            return Err("changed declaration line is not retained".into());
+        };
+        if !is_default_row_edit(before, after, &names) {
+            return Err("a declaration line changed other than a numeric default".into());
+        }
+    }
+    Ok(values)
+}
+
+/// `var/name = <number>` rows that differ only in the number, naming an edited var.
+fn is_default_row_edit(before: &[u8], after: &[u8], names: &[Vec<u8>]) -> bool {
+    let split = |row: &[u8]| -> Option<(Vec<u8>, Vec<u8>)> {
+        let at = row.iter().position(|&byte| byte == b'=')?;
+        Some((row[..at].trim_ascii().to_vec(), row[at + 1..].trim_ascii().to_vec()))
+    };
+    let (Some((head, old_value)), Some((new_head, new_value))) = (split(before), split(after)) else {
+        return false;
+    };
+    let numeric = |value: &[u8]| {
+        !value.is_empty()
+            && value
+                .iter()
+                .all(|byte| byte.is_ascii_hexdigit() || matches!(byte, b'x' | b'X' | b'.' | b'+' | b'-'))
+    };
+    if head != new_head || !numeric(&old_value) || !numeric(&new_value) {
+        return false;
+    }
+    if head.iter().any(|byte| matches!(byte, b'(' | b')' | b',' | b'=' | b'"')) {
+        return false;
+    }
+    names.iter().any(|name| {
+        head.ends_with(name)
+            && head.len().checked_sub(name.len()).is_some_and(|start| {
+                start == 0 || !(head[start - 1].is_ascii_alphanumeric() || head[start - 1] == b'_')
+            })
+    })
+}
+
+/// The hash of every row with text outside bodies (trailing blanks aside), in order, and the text
+/// of the rows whose ordinal is in `wanted`.
+fn skeleton_rows(
+    layout: &Layout,
+    wanted: Option<&std::collections::HashSet<usize>>,
+) -> (Vec<u128>, HashMap<usize, Vec<u8>>) {
+    let mut hashes = Vec::new();
+    let mut texts = HashMap::new();
+    sweep_rows(layout, |_, row, parts| {
+        if row != Row::Skeleton {
+            return;
+        }
+        let mut hash = Xxh3::new();
+        let mut joined = Vec::new();
+        for part in parts {
+            let part = match part.iter().rposition(|byte| !byte.is_ascii_whitespace()) {
+                Some(last) => &part[..=last],
+                None => &part[..0],
+            };
+            hash.update(&(part.len() as u64).to_le_bytes());
+            hash.update(part);
+            if wanted.is_some() {
+                joined.extend_from_slice(part);
+            }
+        }
+        if wanted.is_some_and(|wanted| wanted.contains(&hashes.len())) {
+            texts.insert(hashes.len(), joined);
+        }
+        hashes.push(hash.digest128());
+    });
+    (hashes, texts)
 }
 
 /// Relink the relowered units against the retained tables and splice their rows (and those of
@@ -708,6 +861,7 @@ pub(crate) fn splice(
         image,
         changed,
         lines,
+        variable_values,
     } = admitted;
     let shape = retained.shape;
     let symbols = frontend.snapshot.tree.symbols();
@@ -866,7 +1020,7 @@ pub(crate) fn splice(
     let local = crate::local_warnings::capture(frontend)
         .map_err(|error| format!("local warnings: {error:?}"))?;
     let output_warnings = warnings.render(local);
-    let patched_rows = rows.len();
+    let patched_rows = rows.len() + variable_values.len();
     let appended_strings = new_strings.len();
     let units = if string_units.is_empty() {
         Arc::clone(&base.units)
@@ -901,6 +1055,15 @@ pub(crate) fn splice(
                         crate::composition::CompositionError::NonContiguous("code row".into())
                     })? = words.as_ref().clone();
                 }
+                for &(record, _, value) in &variable_values {
+                    model
+                        .variables
+                        .get_mut(record as usize)
+                        .ok_or_else(|| {
+                            crate::composition::CompositionError::NonContiguous("variable record".into())
+                        })?
+                        .value = value;
+                }
                 Ok(())
             },
             crate::composition::PatchLink {
@@ -915,7 +1078,7 @@ pub(crate) fn splice(
         // `patch_rows` stamps the new output hash before installing the base.
         retained
             .generation
-            .patch_rows(&image, &rows, next, next_initializers)?
+            .patch_rows(&image, &rows, &variable_values, next, next_initializers)?
     };
     if appended_strings > 0 {
         crate::daemon_eprintln!("native incremental output: {appended_strings} strings appended");
