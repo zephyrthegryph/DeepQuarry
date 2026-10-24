@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The analyzer oracle test parses the tree with proc bodies held encoded, cutting its peak memory by about 30 percent"
