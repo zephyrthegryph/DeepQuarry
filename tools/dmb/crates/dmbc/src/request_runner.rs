@@ -906,6 +906,7 @@ fn run_build_attempt(
                         executor,
                         memo: procedure_memo.as_ref(),
                         workers,
+                        project: &project,
                     })
                 })();
                 match attempt {

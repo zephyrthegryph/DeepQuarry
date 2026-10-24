@@ -363,6 +363,19 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
      that tolerates the default's own row) is what admits them. Hot body edits keep the patch (13 s).
 2. Re-evaluate only initializers whose recorded reads include a changed answer; splice their rows and the Variables
    records through the same `retained_output` splice used for bodies.
+   - **2a (landed 2026-10-24).** `retained_output::admit` admits a pure numeric default edit (`tree.default_edits()`,
+     relative to the retained output's own tree) without the `text_key` and answer-gate checks: `default_edit_records`
+     proves that the rows outside bodies differ only in rows `var/<edited name> = <number>` (per-row hashes of both
+     layouts; at most one changed row per edit, same head text), that no text reads `initial(<name>)`, and that each
+     retained Variables record holds the old value. `splice` writes the new values through `patch_rows`, which patches
+     the fixed-width Variables records after the row splice and drops the retained model (rebuilt from the image on
+     demand); the model path (`patch_model`) sets the values too. Composes with changed bodies in the same request.
+     `DMB_DEFAULT_PATCH=0` (or a test's `disable_default_patch`) makes the default patch decline so the general path
+     takes the edit. Cargo test `numeric_default_edits_on_the_general_path_match_fresh`. Production tree, pool-c2, 4
+     workers, hot daemon, `initial_charges` 25 to 26..29: general path 11.0-12.5 s compile (splice 0.4 s; was 22.4 s
+     declined), default patch 8.0-8.7 s on the same machine state; dmb-equiv against a true cold compile of the same
+     source: EQUIVALENT (identical pair hash). The remaining 3 s is ABI preparation and startup validation that run
+     before `admit`; the patch is therefore kept until `admit` can run before them (step 3 not met).
 3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
    `reads_initial`, `DefaultEdits` in `dm-tree` and the test's patch-count assertion.
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
