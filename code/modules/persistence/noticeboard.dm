@@ -16,10 +16,10 @@ CAPABILITIES(/obj/structure/noticeboard)
 	owns_many(nameof(notices))
 	interface("NoticeBoard")
 	without("ui_open")
-	op("read", ui_act("read", arg("ref", schema_ref(/obj/item/paper))), then(PROC_REF(ui_act_read)))
-	op("look", ui_act("look", arg("ref", schema_ref(/obj/item/photo))), then(PROC_REF(ui_act_look)))
-	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
-	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
+	op("read", ui_act("read", arg("ref", schema_text(32))), then(PROC_REF(ui_act_read)))
+	op("look", ui_act("look", arg("ref", schema_text(32))), then(PROC_REF(ui_act_look)))
+	op("remove", ui_act("remove", arg("ref", schema_text(32))), then(PROC_REF(ui_act_remove)))
+	op("write", ui_act("write", arg("ref", schema_text(32))), then(PROC_REF(ui_act_write)))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
@@ -155,26 +155,26 @@ CAPABILITIES(/obj/structure/noticeboard)
 			"ispaper" = istype(I, /obj/item/paper),
 			"isphoto" = istype(I, /obj/item/photo),
 			"name" = I.name,
-			"ref" = "\ref[I]",
+			"ref" = ref_token(I),
 		)))
 	data["notices"] = tgui_notices
 	return data
 
 /obj/structure/noticeboard/proc/ui_act_read(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(isnull(ref))
+	var/obj/item/paper/P = ui_member(ref, notices, /obj/item/paper)
+	if(!P)
 		return FALSE
-	var/obj/item/paper/P = ref
-	if(P && P.loc == src)
+	if(P.loc == src)
 		P.show_content(user)
 	. = TRUE
 
 /obj/structure/noticeboard/proc/ui_act_look(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(isnull(ref))
+	var/obj/item/photo/P = ui_member(ref, notices, /obj/item/photo)
+	if(!P)
 		return FALSE
-	var/obj/item/photo/P = ref
-	if(P && P.loc == src)
+	if(P.loc == src)
 		P.show(user)
 	. = TRUE
 
@@ -182,21 +182,20 @@ CAPABILITIES(/obj/structure/noticeboard)
 	var/mob/user = A.actor
 	if(!in_range(src, user))
 		return FALSE
-	var/obj/item/I = ref
+	var/obj/item/I = ui_member(ref, notices, /obj/item)
+	if(!I)
+		return FALSE
 	remove_paper(I)
-	if(istype(I))
-		user.put_in_hands(I)
+	user.put_in_hands(I)
 	add_fingerprint(user)
 	. = TRUE
 
 /obj/structure/noticeboard/proc/ui_act_write(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	if(isnull(ref))
-		return FALSE
 	if(!in_range(src, user))
 		return FALSE
-	var/obj/item/P = ref
-	if((P && P.loc == src)) //if the paper's on the board
+	var/obj/item/P = ui_member(ref, notices, /obj/item)
+	if(P && P.loc == src) //if the paper's on the board
 		var/mob/living/M = user
 		if(istype(M))
 			var/obj/item/pen/E = M.get_type_in_hands(/obj/item/pen)

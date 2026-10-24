@@ -5,12 +5,20 @@
 
 CAPABILITIES(/datum/tgui_module/rustfuel_control)
 	interface("RustFuelControl")
-	op("toggle_active", ui_act("toggle_active", arg("fuel", schema_ref(/obj/machinery/fusion_fuel_injector))), then(PROC_REF(ui_act_toggle_active)))
+	op("toggle_active", ui_act("toggle_active", arg("fuel", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
 	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
 
+/// The injectors the window lists: those on this console's tag.
+/datum/tgui_module/rustfuel_control/proc/listed_fuels()
+	var/list/listed = list()
+	for(var/obj/machinery/fusion_fuel_injector/FI in registry_all(REGISTRY_FUEL_INJECTORS, fuel_tag))
+		if(FI.id_tag == fuel_tag)
+			listed += FI
+	return listed
+
 /datum/tgui_module/rustfuel_control/proc/ui_act_toggle_active(datum/act/op/A, fuel)
-	var/obj/machinery/fusion_fuel_injector/FI = fuel
-	if(!istype(FI))
+	var/obj/machinery/fusion_fuel_injector/FI = ui_member(fuel, listed_fuels(), /obj/machinery/fusion_fuel_injector)
+	if(!FI)
 		return FALSE
 
 	if(FI.injecting)
@@ -46,7 +54,7 @@ CAPABILITIES(/datum/tgui_module/rustfuel_control)
 				"x" = FI.x,
 				"y" = FI.y,
 				"z" = FI.z,
-				"ref" = "\ref[FI]"
+				"ref" = ref_token(FI)
 			)))
 
 	data["fuels"] = fuels

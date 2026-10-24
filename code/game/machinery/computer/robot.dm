@@ -51,6 +51,14 @@ MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 MSG_DEF_SELF(robotics/unlinked_control, "AIs can only control cyborgs which are linked to them.")
 MSG_DEF_SELF(robotics/other_cyborg_control, "Cyborgs cannot control other cyborgs.")
 
+/// The cyborg a handle names: one the window lists (the ones this console shows).
+/obj/machinery/computer/robotics/proc/cyborg_of(handle)
+	var/list/listed = list()
+	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(read_once(console_shows(R)))
+			listed += R
+	return ui_member(handle, listed, /mob/living/silicon/robot)
+
 /// Both controls operate only on a live cyborg the console currently shows.
 /obj/machinery/computer/robotics/proc/control_target_available(datum/act/op/A)
 	return read_once(console_shows(hack_target(A))) ? null : MSG(req_silent)
@@ -109,9 +117,9 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	interface("RoboticsControlConsole")
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
-	op("killbot", ui_act("killbot", arg("ref")), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
-	op("stopbot", ui_act("stopbot", arg("ref")), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_stopbot)))
-	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
+	op("killbot", ui_act("killbot", arg("ref", schema_text(32))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_killbot)))
+	op("stopbot", ui_act("stopbot", arg("ref", schema_text(32))), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), needs(req(/mob, of = ON_ACTOR, silent = TRUE), req(PROC_REF(control_target_available), silent = TRUE), any_of(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(robotics/unlinked_control)), req(PROC_REF(control_linked_to_actor))), any_of(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/other_cyborg_control)), req(PROC_REF(control_is_actor)))), then(PROC_REF(ui_act_stopbot)))
+	op("hackbot", ui_act("hackbot", arg("ref", schema_text(32))), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("robotics_console_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
@@ -130,7 +138,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 		var/turf/T = get_turf(R)
 		var/list/cyborg_data = list(
 			name = R.name,
-			ref = REF(R),
+			ref = ref_token(R),
 			locked_down = R.lockcharge,
 			locstring = "[cyborg_area.name] ([T.x], [T.y])",
 			status = R.stat,
@@ -175,7 +183,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	. = TRUE
 
 /obj/machinery/computer/robotics/proc/ui_act_killbot(datum/act/op/A, ref)
-	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	var/mob/living/silicon/robot/R = cyborg_of(ref)
 	if(R.mind && R.mind.special_role && R.emagged)
 		to_chat(R, span_userdanger("Extreme danger!  Termination codes detected.  Scrambling security codes and automatic AI unlink triggered."))
 		R.ResetSecurityCodes()
@@ -191,7 +199,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	. = TRUE
 
 /obj/machinery/computer/robotics/proc/ui_act_stopbot(datum/act/op/A, ref)
-	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	var/mob/living/silicon/robot/R = cyborg_of(ref)
 	message_admins(span_notice("[ADMIN_LOOKUPFLW(A.actor)] [!R.lockcharge ? "locked down" : "released"] [ADMIN_LOOKUPFLW(R)]!"))
 	log_game("[key_name(A.actor)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)]!")
 	R.SetLockdown(!R.lockcharge)
@@ -202,7 +210,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 
 /// The cyborg the window button named, when the console shows it.
 /obj/machinery/computer/robotics/proc/hack_target(datum/act/op/A)
-	return ui_ref(A.args["ref"], null, /mob/living/silicon/robot)
+	return cyborg_of(A.args["ref"])
 
 /obj/machinery/computer/robotics/proc/hack_possible(datum/act/op/A)
 	return (can_hack(A.actor, hack_target(A))) ? null : MSG(robotics/cannot_hack)
@@ -211,7 +219,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	var/datum/prompt/answer = A.answer
 	if(!answer?.value)
 		return OP_OK
-	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
+	var/mob/living/silicon/robot/R = cyborg_of(ref)
 	if(!can_hack(A.actor, R))
 		return OP_REFUSED
 	log_game("[key_name(A.actor)] emagged [key_name(R)] using robotic console!")

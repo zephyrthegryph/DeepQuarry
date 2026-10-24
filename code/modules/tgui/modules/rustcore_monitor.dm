@@ -5,13 +5,21 @@
 
 CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	interface("RustCoreMonitor")
-	op("toggle_active", ui_act("toggle_active", arg("core", schema_ref(/obj/machinery/power/fusion_core))), then(PROC_REF(ui_act_toggle_active)))
-	op("toggle_reactantdump", ui_act("toggle_reactantdump", arg("core", schema_ref(/obj/machinery/power/fusion_core))), then(PROC_REF(ui_act_toggle_reactantdump)))
+	op("toggle_active", ui_act("toggle_active", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_active)))
+	op("toggle_reactantdump", ui_act("toggle_reactantdump", arg("core", schema_text(32))), then(PROC_REF(ui_act_toggle_reactantdump)))
 	op("set_tag", ui_act("set_tag"), then(PROC_REF(ui_act_set_tag)))
-	op("set_fieldstr", ui_act("set_fieldstr", arg("core", schema_ref(/obj/machinery/power/fusion_core)), arg("fieldstr", num())), then(PROC_REF(ui_act_set_fieldstr)))
+	op("set_fieldstr", ui_act("set_fieldstr", arg("core", schema_text(32)), arg("fieldstr", num())), then(PROC_REF(ui_act_set_fieldstr)))
+
+/// The cores the window lists: those on this console's tag.
+/datum/tgui_module/rustcore_monitor/proc/listed_cores()
+	var/list/listed = list()
+	for(var/obj/machinery/power/fusion_core/C in registry_all(REGISTRY_FUSION_CORES, core_tag))
+		if(C.id_tag == core_tag)
+			listed += C
+	return listed
 
 /datum/tgui_module/rustcore_monitor/proc/ui_act_toggle_active(datum/act/op/A, core)
-	var/obj/machinery/power/fusion_core/C = core
+	var/obj/machinery/power/fusion_core/C = ui_member(core, listed_cores(), /obj/machinery/power/fusion_core)
 	if(!C)
 		return TRUE
 	if(!C.Startup()) //Startup() whilst the device is active will return null.
@@ -19,7 +27,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	return TRUE
 
 /datum/tgui_module/rustcore_monitor/proc/ui_act_toggle_reactantdump(datum/act/op/A, core)
-	var/obj/machinery/power/fusion_core/C = core
+	var/obj/machinery/power/fusion_core/C = ui_member(core, listed_cores(), /obj/machinery/power/fusion_core)
 	if(C)
 		C.reactant_dump = !C.reactant_dump
 	return TRUE
@@ -70,7 +78,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 				"x" = C.x,
 				"y" = C.y,
 				"z" = C.z,
-				"ref" = "\ref[C]"
+				"ref" = ref_token(C)
 			)))
 
 	data["cores"] = cores

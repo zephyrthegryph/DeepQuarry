@@ -74,7 +74,7 @@ CAPABILITIES(/obj/structure/safe)
 	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
 	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
 	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
-	op("retrieve", ui_act("retrieve", arg("ref")), then(PROC_REF(ui_act_retrieve)))
+	op("retrieve", ui_act("retrieve", arg("ref", schema_text(32))), then(PROC_REF(ui_act_retrieve)))
 	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(safe/not_human))))
 	rolls(nameof(tumbler_1_pos), range_of(0, 72))
 	rolls(nameof(tumbler_1_open), range_of(0, 72))
@@ -93,7 +93,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	data["open"] = !!open
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
-		c += list(list("ref" = "\ref[P]", "name" = P.name))
+		c += list(list("ref" = ref_token(P), "name" = P.name))
 	data["contents"] = c
 	return data
 
@@ -145,7 +145,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 /// The window hands back one of the things it listed.
 /obj/structure/safe/proc/ui_act_retrieve(datum/act/op/A, ref)
 	var/mob/living/carbon/human/human_user = A.actor
-	var/obj/item/P = ui_ref(ref, contents_of(src), /obj/item)
+	var/obj/item/P = ui_member(ref, contents_of(src), /obj/item)
 	if(open && P && in_range(src, human_user))
 		var/was_stored = P.loc == src
 		human_user.put_in_hands(P)

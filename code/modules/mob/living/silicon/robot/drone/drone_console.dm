@@ -24,8 +24,8 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 	extend("ui_open", needs(req_access()), then(PROC_REF(console_fingerprinted)))
 	op("set_dcall_area", ui_act("set_dcall_area", arg("area")), then(PROC_REF(ui_act_set_dcall_area)))
 	op("ping", ui_act("ping"), then(PROC_REF(ui_act_ping)))
-	op("resync", ui_act("resync", arg("ref", schema_ref(/mob/living/silicon/robot/drone))), then(PROC_REF(ui_act_resync)))
-	op("shutdown", ui_act("shutdown", arg("ref", schema_ref(/mob/living/silicon/robot/drone))), then(PROC_REF(ui_act_shutdown)))
+	op("resync", ui_act("resync", arg("ref", schema_text(32))), then(PROC_REF(ui_act_resync)))
+	op("shutdown", ui_act("shutdown", arg("ref", schema_text(32))), then(PROC_REF(ui_act_shutdown)))
 	op("search_fab", ui_act("search_fab"), then(PROC_REF(ui_act_search_fab)))
 	op("toggle_fab", ui_act("toggle_fab"), then(PROC_REF(ui_act_toggle_fab)))
 
@@ -42,26 +42,31 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
+/// The drones the window lists: those on the levels this console reaches that are not foreign.
+/obj/machinery/computer/drone_control/proc/listed_drones()
+	var/list/listed = list()
+	for(var/mob/living/silicon/robot/drone/D in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		// multiz lol
+		if(!(D.z in using_map.get_map_levels(z, TRUE, 0)))
+			continue
+		if(D.foreign_droid)
+			continue
+		listed += D
+	return listed
+
 /// /obj/machinery/computer/drone_control's window data.
 /obj/machinery/computer/drone_control/proc/ui_data_obj_machinery_computer_drone_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/drones = list()
-	for(var/mob/living/silicon/robot/drone/D in REGISTRY_MEMBERS(REGISTRY_MOBS))
-		// multiz lol
-		if(!(D.z in using_map.get_map_levels(z, TRUE, 0)))
-			continue
-		// multiz lol
-		if(D.foreign_droid)
-			continue
-
+	for(var/mob/living/silicon/robot/drone/D in listed_drones())
 		drones.Add(list(list(
 			"name" = D.real_name,
 			"active" = D.stat != 2,
 			"charge" = D.cell.charge,
 			"maxCharge" = D.cell.maxcharge,
 			"loc" = "[get_area(D)]",
-			"ref" = "\ref[D]",
+			"ref" = ref_token(D),
 		)))
 	data["drones"] = drones
 
@@ -93,17 +98,17 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 
 /obj/machinery/computer/drone_control/proc/ui_act_resync(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	var/mob/living/silicon/robot/drone/D = ref
+	var/mob/living/silicon/robot/drone/D = ui_member(ref, listed_drones(), /mob/living/silicon/robot/drone)
 
-	if(istype(D) && D.stat != 2)
+	if(D && D.stat != 2)
 		to_chat(user, span_danger("You issue a law synchronization directive for the drone."))
 		D.law_resync()
 
 /obj/machinery/computer/drone_control/proc/ui_act_shutdown(datum/act/op/A, ref)
 	var/mob/user = A.actor
-	var/mob/living/silicon/robot/drone/D = ref
+	var/mob/living/silicon/robot/drone/D = ui_member(ref, listed_drones(), /mob/living/silicon/robot/drone)
 
-	if(istype(D) && D.stat != 2)
+	if(D && D.stat != 2)
 		to_chat(user, span_danger("You issue a kill command for the unfortunate drone."))
 		message_admins("[key_name_admin(user)] issued kill order for drone [key_name_admin(D)] from control console.")
 		log_game("[key_name(user)] issued kill order for [key_name(src)] from control console.")
