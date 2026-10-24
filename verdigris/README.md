@@ -336,8 +336,9 @@ must return `eyre::Result<ByondValue>`. Variadic binds use
 directly: the generator only sees `auxmacros` binds.
 
 After adding, removing or changing the arguments of a bind, run
-`tools/build/build.sh verdigris-bindings` and commit `_bindings.dm` and
-`ffi/src/abi.rs`. The two share an ABI hash; `verdigris_init(VERDIGRIS_ABI)`
+nothing to commit: `_bindings.dm`, `_bindings_types.dm` and `ffi/src/abi.rs` are generated
+build output (gitignored; every DM/DLL build writes them, or run
+`bash tools/ci/gen_verdigris_bindings.sh` before a bare `cargo build`/`cargo test`). They share an ABI hash; `verdigris_init(VERDIGRIS_ABI)`
 stops the boot when the DLL and the DM build disagree.
 
 Integer constants DM needs (bit masks, strides, flags) are exported the same

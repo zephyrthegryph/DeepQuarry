@@ -137,6 +137,8 @@ fn try_default_patch<R: dm_ir::Resolver>(
         archive: request.archive,
         warnings: Arc::clone(&base.warnings),
         answers: lowered.answers,
+        answers_context: None,
+        marks: None,
         dmb_hash: 0,
     };
     let dmb = request.generation.patch_variable_values(image, &values, next)?;
