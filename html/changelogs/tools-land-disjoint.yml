@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_land.sh accepts a stamped lane onto a moved master without a re-proof when every landed commit was proved and the files are disjoint"
