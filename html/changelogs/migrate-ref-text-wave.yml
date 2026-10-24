@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Window payload refs (newscaster, loot panel, uplink, appearance changer, admin shuttle controller, experiments, anomaly harvester, robot modifier, circuit assemblies) are ref_token() handles; window refs resolve handles first"
