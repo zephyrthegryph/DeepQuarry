@@ -48,7 +48,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
-		"om_hid", "own_key_text", "shared_cache_uid", "rx", "refresh_pass",
+		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "sparse_slots", "rx", "refresh_pass",
 	)
 	return skip
 
@@ -85,6 +85,13 @@
 			continue
 		var/value = target.vars[name]
 		.[name] = dq_hit_value(value, name)
+	// A sparse slot is a var that is not on the type: each declared slot is a row of its own (null while unset), so a pin names the state a hit
+	// changed instead of counting slots. last_damage_flag is skipped like the var it was: it is bookkeeping of the last hit.
+	for(var/list/slot_row as anything in sparse_slot_rows_of(target))
+		var/slot_name = slot_row[2]
+		if(slot_name in skip)
+			continue
+		.["@slot.[slot_name]"] = dq_hit_value(_sparse_get(target, slot_name), slot_name)
 	// Native subversion lives in capability keys, outside target.vars. Observe
 	// the public state so a missing emag effect cannot become a passing "nothing".
 	.["is_emagged"] = dq_hit_value(is_emagged(target), "is_emagged")

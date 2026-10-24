@@ -13,5 +13,4 @@ explosion 3 | turf: +/obj/effect/effect/smoke x5
 projectile | om_rec: null -> /datum/scheduler_record
 projectile | turf: +/obj/effect/effect/smoke x5
 thrown | atom_integrity: down
-thrown | sparse_slots: null -> list(1)
 
