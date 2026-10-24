@@ -741,7 +741,7 @@ CAPABILITIES(/datum/cap_data/wires)
 /proc/wires_last_user(datum/holder)
 	RETURN_TYPE(/mob)
 	var/datum/cap_data/wires/W = wiring_of(holder)
-	var/mob/user = W?.last_user
+	var/mob/user = W?.last_user()
 	return istype(user) && !QDELETED(user) ? user : null
 
 /// Is `wire` of `holder` cut?

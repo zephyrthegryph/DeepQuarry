@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A lathe's hack-pulse reset refreshes the window of whoever pulsed the wire again, and the shuttle display reads its watched source through its accessor"
+  - code_imp: "weak_raw_read lint bans raw reads of weak relation vars"
