@@ -7,7 +7,7 @@
 	var/initial_blind
 	var/initial_is_shifted
 	var/initial_lying
-	var/initial_lying_prev = 0
+	var/initial_lying_prev as num
 	var/wagging
 	var/flapping
 	max_integrity = 100
