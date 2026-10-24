@@ -8,7 +8,7 @@
 #                                                                   parallel jobs below never write the same file)
 #   3. in parallel, each with its own log under data/merge-gates/<sha>.<job>.log:
 #        tests      tools/dq_focused_test.sh <the test list>       (the test compile, the boot gate and the tests, one world)
-#        dm         tools/build/build.sh dm (production native compile + DreamChecker), then the same compile with DQ_COMPILER=dreammaker (DQ_DREAMMAKER_GATE=0 skips)
+#        dm         tools/build/build.sh dm (production native compile + DreamChecker); no local DreamMaker compile (CI cross-checks with DreamMaker)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
 #        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)
@@ -272,16 +272,6 @@ job_dm() {
 	# Never "up to date": DreamChecker runs inside the dm target and the push script's checks read this log.
 	rm -f deepquarry.dmb
 	DQ_DREAMCHECKER=1 DQ_DREAMCHECKER_AFTER=1 tools/build/build.sh dm || return 1 # the verdict the push requires; local builds skip it
-	dreammaker_crosscheck || return 1
-}
-# The tree must compile with DreamMaker too (about 3 minutes, overlapped with the test world): the native compiler is the default, and
-# a tree only dmbc accepts (a keyword as a named argument, a `proc/` redeclared in a subtype, nameof on a call) is not valid DM.
-dreammaker_crosscheck() {
-	[ "${DQ_DREAMMAKER_GATE:-1}" = "0" ] && { echo "== dreammaker cross-check: SKIPPED (DQ_DREAMMAKER_GATE=0)"; return 0; }
-	rm -f deepquarry.dmb deepquarry.rsc deepquarry.dmb.compiler
-	echo "== dreammaker cross-check: DQ_COMPILER=dreammaker build.sh dm"
-	DQ_COMPILER=dreammaker tools/build/build.sh dm || { echo "dreammaker cross-check: FAILED (DreamMaker rejects a tree the native compiler accepted)"; return 1; }
-	echo "== dreammaker cross-check: passed"
 }
 job_ratchets() {
 	# Cold: a merge verdict must not depend on what a worktree's analyze caches or the shared ones hold (doc: tools/analyze/README.md, "Caches and truth").
@@ -336,13 +326,13 @@ for n in "${names[@]}"; do
 done
 echo "gates-wall $(( $(date +%s) - wall_start ))s" | tee -a "$timings"
 
-# The DreamChecker and DreamMaker verdicts, read the way dq_push_master.sh reads them.
+# The DreamChecker and compiler verdicts, read the way dq_push_master.sh reads them.
 if printf '%s\n' "${names[@]}" | grep -qx dm && [[ " ${failed[*]-} " != *" dm "* ]]; then
 	dm_log="data/merge-gates/$short.dm.log"
-	if grep -q "dream-checker: passed" "$dm_log" && grep -q "Found 0 diagnostics" "$dm_log" && grep -qE "deepquarry\.dmb - 0 errors" "$dm_log" 		&& { [ "${DQ_DREAMMAKER_GATE:-1}" = "0" ] || grep -q "== dreammaker cross-check: passed" "$dm_log"; }; then
+	if grep -q "dream-checker: passed" "$dm_log" && grep -q "Found 0 diagnostics" "$dm_log" && grep -qE "deepquarry\.dmb - 0 errors" "$dm_log"; then
 		dm_ok=1
 	else
-		echo "dq_merge_gates: the production build ran but DreamChecker/DreamMaker did not report a clean result; see $dm_log" >&2
+		echo "dq_merge_gates: the production build ran but DreamChecker/the compiler did not report a clean result; see $dm_log" >&2
 		failed+=(dm)
 	fi
 fi

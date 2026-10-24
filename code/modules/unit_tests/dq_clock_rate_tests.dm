@@ -70,4 +70,14 @@
 	scheduler_advance(2)
 	TEST_ASSERT(abs(clock_now(E, CLOCK_BIO) - after_fast - 10) < 0.01, "rate 0.5: a second of clock time for two of world time")
 
+/datum/unit_test/om/own_clock_starts_at_one
+
+/datum/unit_test/om/own_clock_starts_at_one/run_om(list/made)
+	var/datum/om_test_entity/clock_probe/E = entity(made, /datum/om_test_entity/clock_probe)
+	var/datum/scheduler_record/rec = scheduler_record_of(E)
+	TEST_ASSERT_EQUAL(timer_local(rec), OWN_CLOCK_START, "a fresh own clock reads its start, which is not 0 (0 means never set)")
+	TEST_ASSERT(timer_local(rec) > 0, "a fresh own clock reads above zero")
+	scheduler_advance(1)
+	TEST_ASSERT(abs(timer_local(rec) - OWN_CLOCK_START - 10) < 0.01, "the own clock still advances one second of local time per second")
+
 #endif

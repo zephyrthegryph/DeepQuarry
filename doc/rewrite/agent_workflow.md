@@ -98,7 +98,7 @@ bash tools/dq_push_master.sh
 ```
 
 This is the only way to push to master. It fails closed: it refuses a dirty tree, merges `origin/master`
-(through `dq_merge_master.sh`), runs `build.sh dm` (DreamChecker must run and report 0 diagnostics, DreamMaker
+(through `dq_merge_master.sh`), runs `build.sh dm` (DreamChecker must run and report 0 diagnostics, the compiler
 0 errors), `check_ratchets.sh` and `build.sh analyze` on that exact merged HEAD, checks nothing moved, and only
 then pushes (never forced; if master moved it merges and rechecks). Logs go to `data/push-check/`. A hand-made
 merge-and-push chain once pushed past DreamChecker errors and broke master; don't write your own.
@@ -205,7 +205,7 @@ batch uses the worktree at a time; the unpushed-commits check is the guard. Do n
 **Gates once (`tools/dq_merge_gates.sh`).** `build.sh gen` and the prerequisites every build target shares (icon repack, map
 bounds, DME check, verdigris: done once, so the jobs below never write the same file), then four jobs side by side, each with its
 log in `data/merge-gates/<sha>.<job>.log`: the test world (`dq_focused_test.sh <the list>`: the test compile, the boot gate and the
-tests in one world, which also leaves the compiled `.dmb` in the compile-hash cache), the production `build.sh dm` (DreamMaker
+tests in one world, which also leaves the compiled `.dmb` in the compile-hash cache), the production `build.sh dm` (native compile
 without UNIT_TESTS and DreamChecker beside it), `check_ratchets.sh` followed by `build.sh analyze`, and `tgui-lint` when the batch
 touches `tgui/`. Do not also run `build.sh dm`, `build.sh lint` or `build.sh analyze` by hand before the push. On success the gates
 stamp the exact HEAD (`data/merge-gates/<sha>.{ok,ratchets.ok,dm.ok,analyze.ok}`); `dq_push_master.sh` skips each check the
@@ -546,6 +546,21 @@ test world), `dq_push_master.sh` (which still verifies master did not move and t
 given back at once (the worktree reset to `origin/master`) and the lane is proved again, up to `--rounds` (default 3); the last round
 proves and lands under the lock as before, so a busy master delays a lane but never starves it. `bash tools/ci/test_land.sh` covers the loop.
 
+**Disjoint accept (`tools/dq_land_disjoint.sh`).** A lane that sat in `dq_land.sh` for hours re-proved (15 min of compile and test world) every time master moved.
+Now, before proving, `dq_land.sh` asks `dq_land_disjoint.sh`: the lane has a valid stamp (`dq_lane_check.js --lite` VALID), every master commit since the stamp's
+base was itself landed through a proved gate (a lane-ready / merge-gates / light-batch note, a merge of such a parent, or docs only), the lane's files and master's
+changes are disjoint, neither side touched a path in `tools/ci/land_disjoint_global.txt` (`code/__defines/`, lint config, `tools/analyze`, `tools/build`, `tgui/`, `maps/`,
+...), a shared `deepquarry.dme` edit touches no `__defines` include, `git merge-tree` is clean, and master's tree has a proof of the smoke set. Then the lane is merged
+with master, `analyze gen` + `check_ratchets.sh --changed-only` run (seconds, no compile, no test world), the merged tree gets a proof inheriting master's and a
+lane-ready note, and the push is a fast-forward. Every decision is logged as `== land-disjoint: ACCEPTED ...` or `NOT accepted: <reason>`; a refusal falls back to the
+re-proof above (also on the last round). A move while the lock was queued is no longer a reason to re-prove and does not count as a round (at most
+`DQ_LAND_FREE_ROUNDS`, default 8, uncounted rounds); `DQ_LAND_DISJOINT=0` turns the shortcut off.
+
+**What runs inside the lock.** The lock should cover merge + gates-from-proof + push (about a minute). It grows to 25 minutes when the merge commit has no stamp and no
+`<sha>.dm.ok`: `dq_push_master.sh` then runs `build.sh dm` again on the merge (and `dq_merge_gates.sh` runs the full gates when the merged
+tree has no proof). That happens on the last round, and when the lane's tip carries no lane-ready note so the fast-forward path is not taken. The disjoint accept puts the
+note on the merged tip so the push fast-forwards with nothing re-run; the DreamMaker cross-check has been dropped from the local gates, so the push no longer runs a second compile.
+
 **Lite re-proof (`dq_lane_ready.sh --lite`, `dq_lane_check.js --lite`).** When master moved under a stamped lane but changed none of what the stamp depends
 on (the lane check says VALID), and `origin/master`'s own tree carries a passing proof of the smoke set, the gates run the boot gate, the lane's
 stamped tests, the gameplay scenarios and the tests of the lanes that landed on master since (their stamps), not the rest of the smoke set. The
@@ -649,9 +664,9 @@ proc, and `nameof(call().var)`). Two guards now stop that:
   `inherited_verb_*`, `nameof_call_expression`). In DM an override is written without `proc/` or `verb/`; with the keyword it is a
   `duplicate definition` of the nearest ancestor's declaration. `to` and `in` cannot be argument names; `if`, `set`, `while` and the
   like cannot be formal names; a `nameof` operand is a reference path, not a call or index.
-- `tools/dq_merge_gates.sh` and `tools/dq_push_master.sh` compile the production dme with `DQ_COMPILER=dreammaker` after the native
-  compile (about 3 minutes, overlapped with the test world). `DQ_DREAMMAKER_GATE=0` skips it for a local experiment; the push
-  refuses a tree DreamMaker rejects. Check a new class locally with
+- The local gates (`tools/dq_merge_gates.sh`, `tools/dq_push_master.sh`) no longer compile with DreamMaker (the 3 minute cross-check and the second
+  one in the push lock are gone, 2026-10-24); the CI `dreammaker_cross_check` job (`tools/ci/dm_equiv.sh`) and CI's production compile are the DreamMaker
+  checks. Check a new class locally with
   `python tools/dmb/scripts/diagnostics_corpus.py record --dm <dm.exe> <case>` then `check --dmbc tools/dmb/target/release/dmbc.exe`.
 
 ## 27. Lane classes, the light path and what runs when (17 October 2026, `tools/worktree-lifecycle`)

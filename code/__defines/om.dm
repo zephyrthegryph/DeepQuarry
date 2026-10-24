@@ -57,6 +57,8 @@
 
 // The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"
+/// Where a record's own clock starts. Not 0: a stamp of 0 on this clock means never set, so a real reading is never 0.
+#define OWN_CLOCK_START 1
 
 // ---- Relations (section D). ----
 #define OM_REL_REPLACE 1
