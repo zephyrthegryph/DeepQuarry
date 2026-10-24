@@ -59,17 +59,19 @@
 /// Builds (and interns) one part of `part_type` with the named `args` and the child entries it nests.
 /proc/part_make(part_type, list/args, list/children)
 	RETURN_TYPE(/datum/entry/part)
-	var/static/list/interned = list()
 	var/sig = "[part_type]|" + entry_signature(ENTRY_OP_PART, null, args, children)
-	var/datum/entry/part/known = interned[sig]
+	var/datum/entry/part/known = GLOB.parts_interned[sig]
 	if(known)
 		return known
 	var/datum/entry/part/P = new part_type
 	P.args = args && length(args) ? args : null
 	P.children = children && length(children) ? children : null
 	P.sig = sig
-	interned[sig] = P
+	GLOB.parts_interned[sig] = P
 	return P
+
+/// signature -> the one shared part with it (the interning table of part_make; the boot signature test reads it).
+GLOBAL_LIST_EMPTY(parts_interned)
 
 /// A part's named argument, or null.
 /datum/entry/part/proc/arg_value(name)

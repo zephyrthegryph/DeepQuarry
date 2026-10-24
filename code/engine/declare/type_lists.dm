@@ -69,9 +69,10 @@
 		var/list/parts = list()
 		for(var/i in 1 to length(L))
 			var/k = L[i]
-			var/entry = datum_signature(k, depth + 1)
+			var/entry = isnum(k) ? "n[k]" : datum_signature(k, depth + 1)
 			if(!isnum(k) && !isnull(k) && !isnull(L[k]))
-				entry += "=" + datum_signature(L[k], depth + 1)
+				var/lv = L[k]
+				entry += isnum(lv) ? "=n[lv]" : "=" + datum_signature(lv, depth + 1)
 			parts += entry
 		return "\[[jointext(parts, ",")]]"
 	if(isatom(value))
@@ -84,7 +85,7 @@
 			var/v = D.vars[name]
 			if(v == initial(D.vars[name]))
 				continue
-			parts += "[name]:[datum_signature(v, depth + 1)]"
+			parts += isnum(v) ? "[name]:n[v]" : "[name]:[datum_signature(v, depth + 1)]"
 		return "d[D.type]{[jointext(parts, ";")]}"
 	return "x[value]"
 
