@@ -8,8 +8,8 @@
 #define TECHNOMANCER_INSTABILITY_PRECISION			0.1 	// Instability is rounded to this.
 
 
-/mob/living
-	EXPIRY_DECLARE(last_instability_event) // most recent world.time that something bad happened due to instability.
+/// Most recent world.time that something bad happened due to instability: the sparse slot last_instability_event.
+sparse(/mob/living, last_instability_event, type = num)
 
 // Proc: adjust_instability()
 // Parameters: 0
@@ -63,7 +63,7 @@
 	sparse_set(src, last_instability, src.instability)
 
 	//This should cushon against really bad luck.
-	if(src.instability && ELAPSED(src, last_instability_event, CLOCK_WORLD) > 5 SECONDS && prob(50))
+	if(src.instability && world.time - sparse_get_or(src, last_instability_event, 0) > 5 SECONDS && prob(50))
 		src.instability_effects()
 
 	var/instability_decayed = abs( round(src.instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - src.instability )
@@ -90,7 +90,7 @@
 // Description: Does a variety of bad effects to the entity holding onto the instability, with more severe effects occuring if they have
 // a lot of instability.
 /mob/living/proc/instability_effects()
-	EXPIRY_STAMP(src, last_instability_event, CLOCK_WORLD)
+	sparse_set(src, last_instability_event, world.time)
 	look_flash(src, look_image('icons/obj/spells.dmi', "instability"), 0.4 SECONDS)
 
 /mob/living/silicon/instability_effects()

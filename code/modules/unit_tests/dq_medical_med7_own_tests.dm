@@ -185,9 +185,9 @@
 	H.claim_global_hud(GLOB.global_hud.meson)
 	H.claim_global_hud(GLOB.global_hud.meson)
 	H.claim_global_hud(null)
-	TEST_ASSERT_EQUAL(LAZYLEN(H.global_hud_claims), 1, "claims are a set")
+	TEST_ASSERT_EQUAL(LAZYLEN(sparse_get(H, global_hud_claims)), 1, "claims are a set")
 	H.reconcile_global_huds()
-	TEST_ASSERT_NULL(H.global_hud_claims, "a reconcile consumes the claims")
+	TEST_ASSERT_NULL(sparse_get(H, global_hud_claims), "a reconcile consumes the claims")
 
 /datum/unit_test/dq_organ_preinit_identity
 	abstract_type = /datum/unit_test/dq_organ_preinit_identity

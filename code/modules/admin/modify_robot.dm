@@ -869,7 +869,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/get_mult_belt(obj/item/robotic_multibelt/mult_belt)
 	var/list/multi_belt_list = list()
 	multi_belt_list["name"] = mult_belt.name
-	multi_belt_list["ref"] = REF(mult_belt)
+	multi_belt_list["ref"] = ref_token(mult_belt)
 	var/list/integrated_tools = list()
 	var/list/tools = list()
 	if(istype(mult_belt, /obj/item/robotic_multibelt/materials))

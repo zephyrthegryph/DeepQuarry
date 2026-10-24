@@ -1,4 +1,5 @@
-/mob/living/var/list/icon/pipes_shown = list()
+/// The pipe images this ventcrawler has been shown (sparse slot pipes_shown, a list of /image).
+sparse(/mob/living, pipes_shown, type = list)
 
 /mob/living/proc/can_ventcrawl()
 	if(!client)
@@ -207,12 +208,16 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	var/datum/pipe_network/network = starting_machine.return_network(starting_machine)
 	if(!network)
 		return
+	var/list/shown = sparse_get(src, pipes_shown)
+	if(!shown)
+		shown = list()
+		sparse_set(src, pipes_shown, shown)
 	for(var/datum/pipeline/pipeline in network.line_members)
 		for(var/obj/machinery/atmospherics/A in (pipeline.members || pipeline.edges))
 			if(!A.pipe_image)
 				A.pipe_image = image(A, A.loc, dir = A.dir)
 				A.pipe_image.plane = PLANE_LIGHTING_ABOVE
-			pipes_shown += A.pipe_image
+			shown += A.pipe_image
 			if(client)
 				client_images_add(client, A.pipe_image)
 	if(client)
@@ -221,10 +226,10 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 /mob/living/proc/remove_ventcrawl()
 	sparse_set_or(src, is_ventcrawling, FALSE, FALSE)
 	if(client)
-		for(var/image/current_image in pipes_shown)
+		for(var/image/current_image in sparse_get(src, pipes_shown))
 			client_images_remove(client, current_image)
 		client_screen_remove(client, GLOB.global_hud.centermarker)
 		reset_perspective(src)
 
-	pipes_shown.len = 0
+	sparse_set(src, pipes_shown, null)
 

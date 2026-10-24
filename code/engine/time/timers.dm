@@ -313,7 +313,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/timer_local(datum/scheduler_record/rec)
 	var/list/K = rec.tclock
 	if(!K)
-		rec.tclock = K = list(0, rec.sched.now(), timer_rate(rec))
+		rec.tclock = K = list(OWN_CLOCK_START, rec.sched.now(), timer_rate(rec))
 	return K[1] + (rec.sched.now() - K[2]) * K[3]
 
 /// A clock effect or suspension changed on `rec`: fold elapsed time in at the old rate,

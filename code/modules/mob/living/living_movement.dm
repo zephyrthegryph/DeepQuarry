@@ -280,7 +280,7 @@ default behaviour is:
 	PUBLISH_CHANGE(src, MOB_KEY_LOC)
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
 	// (z-level changes after that come through onTransitZ()).
-	if(low_priority && !life_z)
+	if(low_priority && !sparse_get_or(src, life_z, 0))
 		life_update_relevance()
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)

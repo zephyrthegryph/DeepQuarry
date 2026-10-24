@@ -27,8 +27,9 @@
 /mob/living
 	/// LIFE_SET_* of the Life sequence this mob type runs.
 	var/life_set = LIFE_SET_LIVING
-	/// The z-level whose presence lists this low-priority mob (0: none).
-	var/tmp/life_z = 0
+
+/// The z-level whose presence lists this low-priority mob (sparse slot life_z; unset: none).
+sparse(/mob/living, life_z, type = num)
 
 // --- Relevance: low-priority mobs on z-levels without players -----------------------------------
 // The old frame returned early for a low_priority mob on a z-level with no living player. Now a mob
@@ -85,22 +86,23 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 		return
 	release(src, STAT_RELEVANCE, src)
 	var/new_z = loc ? get_z(src) : 0
-	if(new_z == life_z)
+	if(new_z == sparse_get_or(src, life_z, 0))
 		return
 	life_leave_z()
 	if(!new_z)
 		return
 	var/datum/life_z_presence/P = life_z_presence(new_z)
 	rel_add(P, nameof(P.members), src)
-	life_z = new_z
+	sparse_set(src, life_z, new_z)
 	if(P.occupied)
 		hold(src, STAT_RELEVANCE, RELEVANCE_NEAR, P)
 
 /mob/living/proc/life_leave_z()
-	if(!life_z)
+	var/current_z = sparse_get_or(src, life_z, 0)
+	if(!current_z)
 		return
-	var/datum/life_z_presence/P = GLOB.life_z_presence[life_z]
-	life_z = 0
+	var/datum/life_z_presence/P = GLOB.life_z_presence[current_z]
+	sparse_set(src, life_z, null)
 	if(P)
 		rel_remove(P, nameof(P.members), src)
 		release(src, STAT_RELEVANCE, P)

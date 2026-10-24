@@ -370,13 +370,55 @@ Steps, each landing alone, proven by `dmb-equiv` against a cold compile and the 
      retained Variables record holds the old value. `splice` writes the new values through `patch_rows`, which patches
      the fixed-width Variables records after the row splice and drops the retained model (rebuilt from the image on
      demand); the model path (`patch_model`) sets the values too. Composes with changed bodies in the same request.
-     `DMB_DEFAULT_PATCH=0` (or a test's `disable_default_patch`) makes the default patch decline so the general path
-     takes the edit. Cargo test `numeric_default_edits_on_the_general_path_match_fresh`. Production tree, pool-c2, 4
-     workers, hot daemon, `initial_charges` 25 to 26..29: general path 11.0-12.5 s compile (splice 0.4 s; was 22.4 s
-     declined), default patch 8.0-8.7 s on the same machine state; dmb-equiv against a true cold compile of the same
-     source: EQUIVALENT (identical pair hash). The remaining 3 s is ABI preparation and startup validation that run
-     before `admit`; the patch is therefore kept until `admit` can run before them (step 3 not met).
-3. Measure the default edit on this path; when it is at or below the patch's wall, delete `try_default_patch`,
-   `reads_initial`, `DefaultEdits` in `dm-tree` and the test's patch-count assertion.
+     Cargo test `numeric_default_edits_on_the_general_path_match_fresh`.
+3. **Landed 2026-10-24 (compiler/admit-early).** The 3 s gap attributed to ABI preparation and startup validation running
+   before `admit` was not there: the default patch ran the same startup capture and ABI preparation (`lower_selected`),
+   and the general path's work after them is 0.41-0.45 s (admit 0.24-0.27 s, lowering none, splice the rest; logged as
+   `native incremental output: ... (admit, lower)` with `before admit` for the preparation, 1.6-2.0 s hot). Same
+   production tree, pool-c2, 4 workers, hot daemons (one per namespace, one with `DMB_DEFAULT_PATCH=0`), `initial_charges`
+   edited 27 to 35 on a machine shared with other lanes: general path 10.7-11.4 s, default patch 12.4-13.8 s (8.0-8.7 s
+   in the quiet measurement above, so the earlier gap was machine state). With the general path at or below the patch,
+   `try_default_patch`, `DMB_DEFAULT_PATCH`, `disable_default_patch` and the patch-count test are deleted; `reads_initial`
+   stays in `retained_output` (the admission proof uses it), as does `DefaultEdits` in `dm-tree` (the frontend's proof).
 4. Same for appended callables (new link entries append), then delete `declaration_patch*.rs`.
 5. Frontend queries (`file_decls`, `type_node`) and resources as queries lower the shared 9-11 s floor.
+
+
+## Persisted dependency index, step 2 (2026-10-24, lane `compiler/dep-index`)
+
+Measured first, because the 10-17 figure (345 s) was a loaded machine. A compile after the daemon was retired
+(fresh `DMB_DAEMON_NAMESPACE`, one comment appended to a `.dm` file so the published pair is not current, shared disk
+memos hot, 4 workers, production tree), compile stage times of `native stages` / `native compile`:
+
+| | evicted session, warm OS file cache | evicted session, cold OS file cache | hot session (reference) |
+|---|---|---|---|
+| wall | 40-49 s | 94 s | 42 s (answers changed: full path) |
+| input preparation | 1.3-2.4 s | 5.9 s | 1.3 s |
+| frontend | 10-13 s | 33 s | 4.9 s |
+| compilation | 21-26 s | 28 s | 11.4 s |
+| ABI / lowering / initializers | 3.8 / 6.5 / 6.2 s | 7.3 / 7.7 / 7.5 s | 2.1 / 2.4 / 2.4 s |
+
+The frontend is `DirectivePlanning` 2.2 s, `Expansion` 1.1, `DeclarationParsing` 2.3 and `TreeResolution` 4.7 (whole-program,
+not persisted). Per-unit disk replay, CPU-seconds summed over workers (92.8k units): lowering `disk_reads_check` 9-12,
+`disk_rebind` 4.7-5.8, `disk_decode` 1.2; ABI `disk_reads_replay` 3.0; initializers 10; domain versions issued 933k (12 s) and
+1.3M tree resolves (22 s). The disk records already carry a `(Tree, version)` receipt, but it names the world the record was
+*written* under, so a record admitted under any other world replays all its reads in every new process.
+
+Landed: `dep_index.rs`. One record per (policy, world) in the shared compiler cache (stage 31; the cache's size and age caps
+bound it, `DMB_DEP_INDEX=0` turns it off) holds the ids (hash of key and recorded reads) of lowering records whose reads were
+proven current under that world; the world is the content-derived `Tree` domain version of the request's resolver
+(declarations, scalar answers, procedure statics). A fresh session finds a record's id in the index and treats it as written
+under the current world: its typed answers stand without resolving (domains the world fixes; engine catalogs and resource
+searches are still checked) and its receipt names the world instead of one issued version per read domain. Measured, same
+tree, evicted, index warm against `DMB_DEP_INDEX=0` on the same binary: lowering `disk_reads_check` 10.3 -> 2.5 CPU-s, lowering
+disk lookup 18.3 -> 10.6 CPU-s, resolver memo hits 4.8M -> 1.9M, 89,974 of 92,836 records certified, none contradicted. The
+output is byte-identical (same pair hash) to the index-off run and to a compile with an empty cache directory. Wall time did
+not move (48.5 s against 48.8 s): the ABI replay (`abi.disk_reads_replay`) and the initializer receipts resolve the same 1.0M
+queries and issue the same 933k domain versions, so the work only moved to whichever stage asks first.
+
+Next slices, in order of what they remove: (1) ABI rows (`abi_disk.rs`) and initializer receipts take the same certificate;
+the ABI wire needs a typed-answer sidecar like the compact lowering record, because its replay also records the reads into the
+unit's receipt and a recorded read needs a `ResolvedMeaning`; (2) with all three stages certified the issued domain versions
+and tree resolves vanish (about 34 CPU-s, 8 s of wall); (3) a persisted answer table keyed by the declaration delta against the
+stored world, for the worktree switch where the world differs; (4) bulk persistence of directive planning, expansion and
+declaration facts (about 5 s of the frontend); `TreeResolution` (4.7 s) needs the model persistence of the declaration plan.

@@ -8,7 +8,7 @@
 			"icon" = index.icon,
 			"name" = index.name,
 			"path" = index.path,
-			"ref" = REF(index),
+			"ref" = ref_token(index),
 		))
 
 	return items

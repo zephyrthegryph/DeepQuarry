@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved 14 rarely-held vars off the base mob and item types into sparse slots and cooldown names (base_vars wave 4)"

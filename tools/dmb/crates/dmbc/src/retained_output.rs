@@ -71,6 +71,50 @@ pub struct SourceShape {
     pub(crate) tree_identity: u128,
 }
 
+/// Whether `initial(` ... `)` anywhere names `name` as a whole word.
+fn reads_initial(text: &[u8], name: &[u8]) -> bool {
+    let needle = b"initial";
+    let mut at = 0;
+    while let Some(found) = text[at..].windows(needle.len()).position(|window| window == needle) {
+        let start = at + found;
+        at = start + needle.len();
+        if !word_at(text, start, needle) {
+            continue;
+        }
+        let rest = &text[at..];
+        let Some(open) = rest.iter().position(|byte| !byte.is_ascii_whitespace()) else {
+            break;
+        };
+        if rest[open] != b'(' {
+            continue;
+        }
+        let mut depth = 0usize;
+        let argument_start = at + open + 1;
+        let mut end = argument_start;
+        for (offset, &byte) in text[argument_start..].iter().enumerate().take(4096) {
+            match byte {
+                b'(' => depth += 1,
+                b')' if depth == 0 => {
+                    end = argument_start + offset;
+                    break;
+                }
+                b')' => depth -= 1,
+                _ => {}
+            }
+            end = argument_start + offset + 1;
+        }
+        let argument = &text[argument_start..end];
+        if argument
+            .windows(name.len())
+            .enumerate()
+            .any(|(offset, window)| window == name && word_at(argument, offset, name))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 pub(crate) fn word_at(text: &[u8], at: usize, word: &[u8]) -> bool {
     let before = at == 0 || !(text[at - 1].is_ascii_alphanumeric() || text[at - 1] == b'_');
     let end = at + word.len();
@@ -730,7 +774,7 @@ fn default_edit_records(
     let mut values = Vec::with_capacity(edits.edits.len());
     for edit in &edits.edits {
         let name = symbols.text(edit.name).ok_or("edited var has no spelling")?;
-        if crate::declaration_patch::reads_initial(text, name.as_bytes()) {
+        if reads_initial(text, name.as_bytes()) {
             return Err(format!("initial({name}) is read at compile time"));
         }
         let record = retained

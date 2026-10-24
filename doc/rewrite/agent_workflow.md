@@ -546,6 +546,21 @@ test world), `dq_push_master.sh` (which still verifies master did not move and t
 given back at once (the worktree reset to `origin/master`) and the lane is proved again, up to `--rounds` (default 3); the last round
 proves and lands under the lock as before, so a busy master delays a lane but never starves it. `bash tools/ci/test_land.sh` covers the loop.
 
+**Disjoint accept (`tools/dq_land_disjoint.sh`).** A lane that sat in `dq_land.sh` for hours re-proved (15 min of compile and test world) every time master moved.
+Now, before proving, `dq_land.sh` asks `dq_land_disjoint.sh`: the lane has a valid stamp (`dq_lane_check.js --lite` VALID), every master commit since the stamp's
+base was itself landed through a proved gate (a lane-ready / merge-gates / light-batch note, a merge of such a parent, or docs only), the lane's files and master's
+changes are disjoint, neither side touched a path in `tools/ci/land_disjoint_global.txt` (`code/__defines/`, lint config, `tools/analyze`, `tools/build`, `tgui/`, `maps/`,
+...), a shared `deepquarry.dme` edit touches no `__defines` include, `git merge-tree` is clean, and master's tree has a proof of the smoke set. Then the lane is merged
+with master, `analyze gen` + `check_ratchets.sh --changed-only` run (seconds, no compile, no test world), the merged tree gets a proof inheriting master's and a
+lane-ready note, and the push is a fast-forward. Every decision is logged as `== land-disjoint: ACCEPTED ...` or `NOT accepted: <reason>`; a refusal falls back to the
+re-proof above (also on the last round). A move while the lock was queued is no longer a reason to re-prove and does not count as a round (at most
+`DQ_LAND_FREE_ROUNDS`, default 8, uncounted rounds); `DQ_LAND_DISJOINT=0` turns the shortcut off.
+
+**What runs inside the lock.** The lock should cover merge + gates-from-proof + push (about a minute). It grows to 25 minutes when the merge commit has no stamp and no
+`<sha>.dm.ok`: `dq_push_master.sh` then runs `build.sh dm` and the DreamMaker cross-check again on the merge (and `dq_merge_gates.sh` runs the full gates when the merged
+tree has no proof). That happens on the last round, and when the lane's tip carries no lane-ready note so the fast-forward path is not taken. The disjoint accept puts the
+note on the merged tip so the push fast-forwards with nothing re-run; the DreamMaker cross-check itself is unchanged.
+
 **Lite re-proof (`dq_lane_ready.sh --lite`, `dq_lane_check.js --lite`).** When master moved under a stamped lane but changed none of what the stamp depends
 on (the lane check says VALID), and `origin/master`'s own tree carries a passing proof of the smoke set, the gates run the boot gate, the lane's
 stamped tests, the gameplay scenarios and the tests of the lanes that landed on master since (their stamps), not the rest of the smoke set. The

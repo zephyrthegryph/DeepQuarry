@@ -15,8 +15,6 @@
 
 /mob/living/carbon/human
 	var/heartbeat = 0
-	/// world.time of the next periodic full HUD refresh (hud refresh system).
-	EXPIRY_DECLARE(hud_full_refresh_at)
 
 // Human Life (doc/rewrite/life_sequences.md; declared in life_steps.dm). The living core runs first; the human-only
 // steps that followed ..() in the old Life() run in the LIFE_TAIL band below, in their old order (the HUD and its
@@ -48,7 +46,7 @@
 		return
 	life_hud_full_refresh()
 	if(client)
-		after(src, max(1 SECONDS, hud_full_refresh_at - world.time), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
+		after(src, max(1 SECONDS, cooldown_left(src, hud_full_refresh_at)), PROC_REF(life_hud_full_refresh_rewake), key = LIFE_HUD_FULL_REFRESH_REWAKE, clock = CLOCK_WORLD)
 
 /mob/living/carbon/human/proc/life_hud_full_refresh_rewake()
 	if(QDELETED(src) || !life_hud_wanted())
@@ -58,8 +56,8 @@
 /mob/living/carbon/human/proc/life_hud_full_refresh()
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(!BEFORE(src, hud_full_refresh_at, CLOCK_WORLD))
-		EXPIRY_SET(src, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
+	if(cooldown_ready(src, hud_full_refresh_at))
+		cooldown_start(src, hud_full_refresh_at, 1 MINUTES)
 		set_hud_updateflag((1 << TOTAL_HUDS) - 1)
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 

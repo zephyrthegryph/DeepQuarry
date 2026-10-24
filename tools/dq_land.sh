@@ -20,6 +20,11 @@
 #        run dq_merge_gates.sh (it reuses the proof: no compile, no test world), push with dq_push_master.sh (verifies master did not
 #        move and that the lane's tip landed, frees the lock). If master moved while the lock was queued, the lock is released at
 #        once (the worktree reset to origin/master) and the round starts again at 1.
+#   Disjoint accept (tools/dq_land_disjoint.sh): in step 1, when master moved since the lane's valid stamp, every master commit gained since
+#   was itself landed through a proved gate, and the lane's files are disjoint from master's changes (and neither side touched a global path,
+#   tools/ci/land_disjoint_global.txt), the lane is merged with master and only `analyze gen` + `check_ratchets --changed-only` run: no
+#   compile, no test world. Otherwise (or on the last round) step 1 proves as before. A move while the lock was queued no longer counts as
+#   a round: the lock is given back and step 1 runs again (at most DQ_LAND_FREE_ROUNDS, default 8, uncounted rounds).
 #   The last round does not give the lock back: whatever master did, it proves and lands inside the lock (the old behaviour), so a
 #   busy master can delay a lane by N-1 proofs but never starve it.
 #
@@ -45,7 +50,7 @@ while [ $# -gt 0 ]; do
 		--no-pins) echo "dq_land: --no-pins is deprecated and does nothing: there are no look pins" >&2 ;;
 		--rounds) shift; rounds="${1:?--rounds needs a number}" ;;
 		--dry-run) dry=1 ;;
-		-h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+		-h|--help) sed -n '2,40p' "$0"; exit 0 ;;
 		*) echo "dq_land: unknown argument: $1" >&2; exit 2 ;;
 	esac
 	shift
@@ -73,6 +78,7 @@ run_lock_take "dq_land.sh $(git symbolic-ref -q --short HEAD)" || exit 1
 trap 'release_lock; run_lock_release' EXIT
 
 merge_ref="$branch"
+free_rounds=0
 for ((round = 1; round <= rounds; round++)); do
 	last=0
 	[ "$round" -eq "$rounds" ] && last=1
@@ -80,6 +86,17 @@ for ((round = 1; round <= rounds; round++)); do
 	# 1. Prove outside the lock (skipped when the proof for exactly this merge already exists).
 	if tree="$(proof_covers_merge origin/master "$merge_ref")"; then
 		log "round $round: the merge of $branch into origin/master (${tree:0:10}) is already proved; no gate run needed"
+	elif [ "$last" -eq 0 ] && bash "$here/tools/dq_land_disjoint.sh" "$branch"; then
+		# Master moved, but only through proved landings that touch none of the lane's files: the lane was merged with it and passed the
+		# fast checks (dq_land_disjoint.sh); no compile, no test world. Logged above by the script.
+		git fetch -q origin || exit 1
+		if ! tree="$(proof_covers_merge origin/master "$merge_ref")"; then
+			log "master moved again while the fast check ran; trying again (not counted as a round)"
+			free_rounds=$((free_rounds + 1))
+			if [ "$free_rounds" -le "${DQ_LAND_FREE_ROUNDS:-8}" ]; then round=$((round - 1)); fi
+			continue
+		fi
+		log "round $round: accepted without a re-proof (disjoint from the master commits landed since the stamp)"
 	else
 		log "round $round/$rounds: proving $branch on origin/master outside the merge lock (dq_lane_ready.sh)"
 		tp=$(date +%s)
@@ -101,8 +118,12 @@ for ((round = 1; round <= rounds; round++)); do
 	locked_at=$(date +%s)
 	log "lock held after ${waited}s in the queue; worktree $WT"
 	if [ "$last" -eq 0 ] && ! proof_covers_merge origin/master "$merge_ref" >/dev/null; then
-		log "master moved while the lock was queued; giving the lock back and proving again"
+		log "master moved while the lock was queued; giving the lock back and checking again"
 		release_lock
+		# Waiting for the lock is not a reason to re-prove: the next round tries dq_land_disjoint.sh first, and the round is not counted
+		# against --rounds while the lane keeps qualifying (bounded by DQ_LAND_FREE_ROUNDS so a busy master cannot loop it forever).
+		free_rounds=$((free_rounds + 1))
+		if [ "$free_rounds" -le "${DQ_LAND_FREE_ROUNDS:-8}" ] && [ "$last" -eq 0 ]; then round=$((round - 1)); fi
 		continue
 	fi
 	(

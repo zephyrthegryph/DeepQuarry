@@ -325,7 +325,7 @@ impl RetainedGeneration {
         slot.fields.as_ref()?.0.get(&(owner, name)).copied()
     }
     /// Record the Variables-table records of vars a structural patch added, so
-    /// the next default patch can find them.
+    /// the next numeric-default admission can find them.
     pub(crate) fn extend_field_records(&self, added: &[(dm_ir::SymbolId, dm_ir::SymbolId, u32)]) {
         if added.is_empty() {
             return;
