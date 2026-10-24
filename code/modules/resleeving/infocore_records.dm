@@ -3,7 +3,6 @@
 //// for the resleeving tech
 ////////////////////////////////
 
-/mob/living/carbon/human/var/resleeve_lock
 /mob/living/carbon/human/var/original_player
 
 /////// Mind-backup record ///////
@@ -268,10 +267,10 @@ CAPABILITIES(/datum/transhuman/body_record)
 	PRIVATE_PROC(TRUE)
 	if(locked && !force_unlock)
 		if(ckey)
-			H.resleeve_lock = ckey
+			sparse_set(H, resleeve_lock, ckey)
 		else
 			// Ensure even body scans without an attached ckey respect locking
-			H.resleeve_lock = "@badckey"
+			sparse_set(H, resleeve_lock, "@badckey")
 
 /// Either converts limbs to robotics or prosthetic states, or removes them entirely based off record.
 /datum/transhuman/body_record/proc/internal_producebody_updatelimbandorgans(mob/living/carbon/human/H,is_synthfab)

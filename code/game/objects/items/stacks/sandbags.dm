@@ -5,7 +5,6 @@
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "sandbag"
 	w_class = ITEMSIZE_LARGE
-	throw_speed = 5
 	throw_range = 3
 	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
 	max_amount = 30
@@ -28,6 +27,7 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
+	configure(movable_motion(throw_speed = 5))
 	setup(PROC_REF(prepare_sandbag_recipes))
 	configure(item_thrown(force = 20.0))
 	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))

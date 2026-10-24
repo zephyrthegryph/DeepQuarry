@@ -13,10 +13,10 @@
 	density = 1
 	anchored = 1
 	layer = TABLE_LAYER
-	throwpass = 1
 	var/item_place = 1 //allows items to be placed on the table, but not on benches.
 
 CAPABILITIES(/obj/structure/casino_table)
+	configure(atom_rules(throwpass = 1))
 	climb()
 	op("interaction_place", item(/obj/item), label("Place"), then(PROC_REF(interaction_place)))
 

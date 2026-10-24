@@ -8,7 +8,6 @@
 	var/list/stating_laws = list()// Channels laws are currently being stated on
 	var/obj/item/radio/common_radio
 
-	has_huds = TRUE
 	// ALLOW(instance_list): d: per-mob speech_synthesizer_langs, filled at runtime; mobs are few
 	var/list/speech_synthesizer_langs = list()	//which languages can be vocalized by the speech synthesizer
 
@@ -33,13 +32,13 @@
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
 	footstep_type = FOOTSTEP_MOB_SHOE
-	footstep_volume = 1
-	footstep_e_range = -6
 
 /mob/living/silicon/fire_stack_decay_rate()
 	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
+	configure(footstep_rules(footstep_volume = 1, footstep_e_range = -6))
+	configure(living_rules(has_huds = TRUE))
 	ref_one(nameof(common_radio), /obj/item/radio)
 	immune_to(STAT_DIZZY)
 	immune_to(STAT_JITTERY)

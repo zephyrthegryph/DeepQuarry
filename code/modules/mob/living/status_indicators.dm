@@ -37,7 +37,7 @@
 		return
 
 	var/our_sprite_x = icon_expected_width * get_icon_scale_x()
-	var/our_sprite_y = icon_expected_height * get_icon_scale_y()
+	var/our_sprite_y = motion_of(src).icon_height * get_icon_scale_y()
 
 	var/x_offset = our_sprite_x // Add your own offset here later if you want.
 	var/y_offset = our_sprite_y + STATUS_INDICATOR_Y_OFFSET

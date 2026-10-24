@@ -50,7 +50,7 @@
 
 	add_trait(src, TRAIT_DREAMING, DREAMING_SOURCE)
 	shared_set(src, nameof(current_dream), chosen_dream)
-	dream_wait = 0
+	sparse_set_or(src, dream_wait, 0, 0)
 	set_dream_fragments(chosen_dream.GenerateDream(src))
 
 /// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (its every() in
@@ -64,11 +64,10 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 /proc/registry_dream(datum/D)
 	return (D in GLOB.dreams) ? D : null
 /// Wait before the next dream fragment.
-/mob/living/carbon/var/tmp/dream_wait = 0
 
 /// The every() interval of dream_sequence(): the wait the last fragment set.
 /mob/living/carbon/proc/dream_interval(datum/act/A)
-	return dream_wait
+	return sparse_get_or(src, dream_wait, 0)
 
 /**
  * Displays the next of the sleeper's dream fragments (every dream_wait while dream_fragments is set).
@@ -90,9 +89,9 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 	to_chat(src, span_notice(span_italics("... [next_message] ...")))
 
 	if(LAZYLEN(dream_fragments))
-		dream_wait = rand(10, 30)
+		sparse_set_or(src, dream_wait, rand(10, 30), 0)
 		if(current_dream?.sleep_until_finished)
-			status_adjust(STAT_SLEEPING, dream_wait)
+			status_adjust(STAT_SLEEPING, sparse_get_or(src, dream_wait, 0))
 	else
 		end_dream()
 		return

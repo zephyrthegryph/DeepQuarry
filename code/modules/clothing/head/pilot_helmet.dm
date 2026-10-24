@@ -163,10 +163,10 @@ CAPABILITIES(/obj/item/clothing/head/pilot)
 	name = "pilot helmet"
 	desc = "Standard pilot gear. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot_helmet2"
-	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/pilot/alt)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 	op("pilot_alt_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(pilot_alt_visor_self)))
 
 /// Old attack_self.
@@ -186,11 +186,11 @@ CAPABILITIES(/obj/item/clothing/head/pilot/alt)
 	icon_state = "pilot1"
 	armor_spec = "melee=20;bullet=10;laser=10;energy=5;bomb=10"
 	w_class = ITEMSIZE_NORMAL
-	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/pilot_vr)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 	op("pilot_vr_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(pilot_vr_visor_self)))
@@ -209,7 +209,9 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr)
 	name = "colored pilot helmet"
 	desc = "A colored version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot2"
-	actions_types = list(/datum/action/item_action/toggle_visor)
+
+CAPABILITIES(/obj/item/clothing/head/pilot_vr/alt)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 
 //////////Talon Pilot Headgear//////////
 
@@ -217,7 +219,9 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr)
 	name = "Talon pilot helmet"
 	desc = "An ITV Talon version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot3"
-	actions_types = list(/datum/action/item_action/toggle_visor)
+
+CAPABILITIES(/obj/item/clothing/head/pilot_vr/talon)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 
 //////////Major Bill's Pilot Headgear//////////
 
@@ -226,7 +230,9 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr)
 	desc = "An Major Bill's Transportation version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot3"
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
-	actions_types = list(/datum/action/item_action/toggle_visor)
+
+CAPABILITIES(/obj/item/clothing/head/pilot_vr/mbill)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 
 /// the shuttle_comp this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web

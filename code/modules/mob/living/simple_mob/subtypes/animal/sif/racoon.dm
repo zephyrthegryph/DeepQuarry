@@ -31,14 +31,12 @@
 	minbodytemp = 175
 	pass_flags = PASSTABLE
 
-	universal_understand = 1
 
 	movement_cooldown = -1
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
 	attacktext = list("nipped", "bit", "cut", "clawed")
-	meat_amount = 3
 
 	armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100"
 
@@ -114,6 +112,9 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(butchery_rules(meat_amount = 3))
+	configure(mob_rules(universal_understand = 1))
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(pain_1p = list("chitter"), pain_3p = list("chitters")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

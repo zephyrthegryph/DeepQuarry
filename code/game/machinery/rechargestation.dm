@@ -1,12 +1,10 @@
 /obj/machinery/recharge_station
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cyborg recharging station"
 	desc = "A heavy duty rapid charging system, designed to quickly recharge cyborg power reserves."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "borgcharger0"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/recharge_station
 	use_power = USE_POWER_IDLE
@@ -279,6 +277,8 @@ MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
 MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(bind_buffer_cell))
 	configure(uses_power(idle = 50))
 	default_parts()

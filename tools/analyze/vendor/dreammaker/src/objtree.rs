@@ -1183,7 +1183,7 @@ impl ObjectTreeBuilder {
             location,
             parameters: parameters.into(),
             docs: Default::default(),
-            code: LazyCode::from(code),
+            code: LazyCode::parsed(code),
             body_range,
         };
 
@@ -1573,7 +1573,27 @@ pub struct LazyCode {
     raw: Option<Box<[u8]>>,
 }
 
+/// When set, a parsed proc body is encoded as soon as it is built and decoded again only when something reads it, so a full parse holds
+/// compact bytes instead of every body's syntax tree (several times larger). It costs an encode per body at parse time and a decode per
+/// body read, so it is for a process that parses the whole tree and reads a few bodies (the analyzer's oracle test), not a lint run.
+static COMPACT_PARSE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Turns compact parsing on or off; the code codec (`set_code_codec`) must be installed first.
+pub fn set_compact_parse(on: bool) {
+    COMPACT_PARSE.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
 impl LazyCode {
+    /// A body straight from the parser: held as the block, or encoded at once under `set_compact_parse`.
+    fn parsed(code: Option<Block>) -> LazyCode {
+        if COMPACT_PARSE.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Some(enc) = ENCODER.get() {
+                return LazyCode { cell: std::sync::OnceLock::new(), raw: Some(enc(&code).into_boxed_slice()) };
+            }
+        }
+        LazyCode::from(code)
+    }
+
     /// Whether the body was read back and not decoded yet.
     pub fn is_encoded(&self) -> bool {
         self.cell.get().is_none()

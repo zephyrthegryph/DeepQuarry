@@ -197,10 +197,10 @@ CAPABILITIES(/obj/item/instrument/harmonica)
 	)
 	allowed_instrument_ids = list("bikehorn", "honk")
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 3
 	throw_range = 15
 
 CAPABILITIES(/obj/item/instrument/bikehorn)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_combat(attack_verbs = list("beautifully honked"), force = 0))
 	configure(item_sounds(hit = SFX_ITEMS_BIKEHORN))
 

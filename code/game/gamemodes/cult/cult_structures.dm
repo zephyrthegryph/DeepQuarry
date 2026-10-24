@@ -128,9 +128,11 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	icon = 'icons/obj/cult.dmi'
 	icon_state = "hole"
 	density = TRUE
-	unacidable = TRUE
 	anchored = TRUE
 	var/spawnable = null
+
+CAPABILITIES(/obj/effect/gateway)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/effect/gateway/active
 	spawnable=list(

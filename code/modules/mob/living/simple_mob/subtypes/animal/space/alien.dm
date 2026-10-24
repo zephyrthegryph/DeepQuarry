@@ -28,10 +28,10 @@
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
-	meat_amount = 5
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
+	configure(butchery_rules(meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
@@ -67,8 +67,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
 	pixel_x = -16
 	old_x = -16
 	icon_expected_width = 64
-	icon_expected_height = 64
-	meat_amount = 8
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
+	configure(butchery_rules(meat_amount = 8))
+	configure(movable_motion(icon_height = 64))
 
 /mob/living/simple_mob/animal/space/alien/queen
 	name = "alien queen"
@@ -93,12 +95,14 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
 	icon_dead = "queen_dead"
 	icon_rest = "queen_sleep"
 	endurance = 400
-	meat_amount = 15
 
 	pixel_x = -16
 	old_x = -16
 	icon_expected_width = 64
-	icon_expected_height = 64
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
+	configure(butchery_rules(meat_amount = 15))
+	configure(movable_motion(icon_height = 64))
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/mother
 	name = "alien mother"
@@ -108,14 +112,16 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
 	icon_dead = "empress_dead"
 	icon_rest = "empress_rest"
 	endurance = 600
-	meat_amount = 40
 	melee_damage_lower = 15
 	melee_damage_upper = 25
 
 	pixel_x = -32
 	old_x = -32
 	icon_expected_width = 96
-	icon_expected_height = 96
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
+	configure(butchery_rules(meat_amount = 40))
+	configure(movable_motion(icon_height = 96))
 
 /mob/living/simple_mob/animal/space/alien/on_death(gibbed)
 	..()
@@ -264,13 +270,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/pyro)
 	name = "alien hunterling"
 	attack_armor_pen = 1
 	color = "#1cbdff"
-	force_max_speed = 1
 	endurance = 15
 	melee_damage_lower = 1
 	melee_damage_upper = 3
 	size_multiplier = 0.5
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/hunterling)
+	configure(living_rules(force_max_speed = 1))
 	configure(mob_kind(attack_cooldown = 2))
 
 /mob/living/simple_mob/animal/space/alien/hunterlisk

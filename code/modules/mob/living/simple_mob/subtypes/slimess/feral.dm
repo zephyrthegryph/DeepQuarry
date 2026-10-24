@@ -80,8 +80,6 @@
 	reagent_injected = REAGENT_ID_PHORON
 
 /mob/living/simple_mob/slime/feral/dark_purple
-	fire_reaction = FIRE_REACTION_TRIGGER
-	fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/feral/dark_purple, ignite)
 
 /mob/living/simple_mob/slime/feral/dark_purple/proc/ignite()
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U% erupts in an inferno!")))
@@ -91,6 +89,7 @@
 	destroyed(src, null, BURN)
 
 CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
+	configure(living_rules(fire_reaction = FIRE_REACTION_TRIGGER, fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/feral/dark_purple, ignite)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
 	op("feral_darkpurple_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(feral_darkpurple_interaction_item)))
 

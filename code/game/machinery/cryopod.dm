@@ -157,7 +157,6 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	icon_state = "cryopod_0"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	dir = WEST
 	flags = REMOTEVIEW_ON_ENTER
 
@@ -295,6 +294,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(find_control_computer))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
 	op("cryopod_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), needs(req(PROC_REF(loading_passenger_allowed), silent = TRUE)), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))

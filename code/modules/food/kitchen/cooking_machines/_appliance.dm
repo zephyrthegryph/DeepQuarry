@@ -2,7 +2,6 @@
 
 // Root type for cooking machines. See following files for specific implementations.
 /obj/machinery/appliance
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cooker"
 	desc = "You shouldn't be seeing this!"
 	icon = 'icons/obj/cooking_machines.dmi'
@@ -44,6 +43,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	configure(uses_power(idle = 5, active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
 	owns_many(nameof(cooking_objs))
@@ -830,24 +830,24 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	product.set_filling_color(food_color)
 
 /mob/living/proc/calculate_composition() // moved from devour.dm on aurora's side
-	if (!composition_reagent)//if no reagent has been set, then we'll set one
+	if (!living_rules_of(src).composition_reagent)//if no reagent has been set, then we'll set one
 		if (HAS_SYNTHETIC_BIOLOGY(src))
-			src.composition_reagent = REAGENT_ID_IRON
+			src.set_composition_reagent(REAGENT_ID_IRON)
 		else
 			if(istype(src, /mob/living/carbon/human/diona) || istype(src, /mob/living/carbon/alien/diona))
-				src.composition_reagent = REAGENT_ID_NUTRIMENT // diona are plants, not meat
+				src.set_composition_reagent(REAGENT_ID_NUTRIMENT)// diona are plants, not meat
 			else
-				src.composition_reagent = REAGENT_ID_PROTEIN
+				src.set_composition_reagent(REAGENT_ID_PROTEIN)
 				if(ishuman(src))
 					var/mob/living/carbon/human/H = src
 					if(istype(H.species, /datum/species/diona))
-						src.composition_reagent = REAGENT_ID_NUTRIMENT
+						src.set_composition_reagent(REAGENT_ID_NUTRIMENT)
 
 	//if the mob is a simple animal - MOB NOT ANIMAL - with a defined meat quantity
 	if (isanimal(src))
 		var/mob/living/simple_mob/SA = src
-		if(SA.meat_amount)
-			sparse_set(src, composition_reagent_quantity, SA.meat_amount*2*9)
+		if(butchery_of(SA).meat_amount)
+			sparse_set(src, composition_reagent_quantity, butchery_of(SA).meat_amount*2*9)
 
 		//The quantity of protein is based on the meat_amount, but multiplied by 2
 
@@ -868,7 +868,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container())
 	result.set_w_class(victim.mob_size)
-	result.reagents.add_reagent(victim.composition_reagent, sparse_get(victim, composition_reagent_quantity))
+	result.reagents.add_reagent(living_rules_of(victim).composition_reagent, sparse_get(victim, composition_reagent_quantity))
 
 	if (victim.reagents)
 		victim.reagents.trans_to_holder(result.reagents, victim.reagents.total_volume)

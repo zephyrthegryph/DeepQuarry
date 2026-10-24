@@ -5,7 +5,6 @@
 	icon = 'icons/mob/slimes.dmi'
 	icon_state = "grey slime extract"
 	w_class = ITEMSIZE_TINY
-	throw_speed = 3
 	throw_range = 6
 	var/uses = 1 // uses before it goes inert
 	var/enhanced = FALSE
@@ -13,6 +12,7 @@
 	flags = OPENCONTAINER
 
 CAPABILITIES(/obj/item/slime_extract)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 1))
 	reagents(60)

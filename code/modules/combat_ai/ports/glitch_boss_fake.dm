@@ -5,9 +5,9 @@
 // the list explicitly to drop the legacy ai_holder_type entirely.
 
 /mob/living/simple_mob/glitch_boss_fake
-	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/glitch_boss_fake)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS))
 

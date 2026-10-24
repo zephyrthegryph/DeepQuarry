@@ -5,7 +5,6 @@
 	icon_state = "launcher01"
 	density = TRUE
 	anchored = TRUE
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/tmp/obj/item/firework_star/loaded_star
@@ -28,6 +27,7 @@
 	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 CAPABILITIES(/obj/machinery/firework_launcher)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_usage(wrench_time = 2 SECONDS))
 	setup(PROC_REF(stamp_launch_cooldown))
 	ref_one(nameof(loaded_star), /obj/item/firework_star)

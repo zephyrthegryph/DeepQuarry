@@ -1,12 +1,12 @@
 /obj/effect/calldown_attack
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	mouse_opacity = 0
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "drop_marker"
 
 CAPABILITIES(/obj/effect/calldown_attack)
+	configure(movable_motion(unacidable = TRUE))
 	after_init(PROC_REF(strike_delay), then(PROC_REF(spawn_object)))
 
 /// The strike falls 1.8 to 2.3 seconds after the marker appears (rolled per marker).

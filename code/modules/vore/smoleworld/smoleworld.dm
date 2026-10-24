@@ -96,7 +96,6 @@ CAPABILITIES(/obj/item/stack/material/smolebricks)
 	desc = "You feel the power of imagination."
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "smolestorage"
-	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
@@ -108,6 +107,7 @@ CAPABILITIES(/obj/item/stack/material/smolebricks)
 	)
 
 CAPABILITIES(/obj/item/storage/smolebrickcase)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 

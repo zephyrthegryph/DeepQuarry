@@ -13,7 +13,6 @@
 /obj/belly
 	// Nothing inside a belly is EMPed through it. A type default, not set in
 	// Initialize(), so it matches initial() and stays out of the belly prefs.
-	emp_protection_flags = EMP_PROTECT_ALL
 	name = "belly"							// Name of this location
 	desc = "It's a belly! You're in it!"	// Flavor text description of inside sight/sound/smells/feels.
 	var/display_name = ""					// Optional display name
@@ -281,6 +280,7 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	configure(atom_rules(emp_protection = EMP_PROTECT_ALL))
 	setup(PROC_REF(bind_to_owner))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
@@ -556,12 +556,12 @@ CAPABILITIES(/obj/belly)
 		p.undo_prey_takeover(FALSE)
 		return 0
 	for(var/mob/living/L in contents_of(M))
-		L.muffled = FALSE
-		L.forced_psay = FALSE
+		sparse_set_or(L, muffled, FALSE, FALSE)
+		L.set_forced_psay(FALSE)
 
 	for(var/obj/item/holder/H in contents_of(M))
-		H.held_mob.muffled = FALSE
-		H.held_mob.forced_psay = FALSE
+		sparse_set_or(H.held_mob, muffled, FALSE, FALSE)
+		H.held_mob.set_forced_psay(FALSE)
 
 	if(isliving(M))
 		var/mob/living/slip = M
@@ -576,10 +576,10 @@ CAPABILITIES(/obj/belly)
 		var/mob/living/OW = owner
 		if(ML.client)
 			ML.stop_sound_channel(CHANNEL_PREYLOOP) //Stop the internal loop, it'll restart if the isbelly check on next tick anyway
-		if(ML.muffled)
-			ML.muffled = FALSE
-		if(ML.forced_psay)
-			ML.forced_psay = FALSE
+		if(sparse_get_or(ML, muffled, FALSE))
+			sparse_set_or(ML, muffled, FALSE, FALSE)
+		if(mob_rules_of(ML).forced_psay)
+			ML.set_forced_psay(FALSE)
 		if(ML.absorbed)
 			ML.set_absorbed(FALSE)
 			handle_absorb_langs(ML, owner)

@@ -50,6 +50,8 @@
 		names += V
 	for(var/slot_label in sparse_slots_of(target))
 		names += slot_label
+	for(var/trait_label in type_trait_fields_of(target))
+		names += trait_label
 
 	names = sortList(names)
 

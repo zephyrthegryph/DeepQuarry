@@ -32,12 +32,12 @@ MSG_DEF_SELF(sleeper/needs_beaker, "There is no beaker to drain into.")
 	var/obj/machinery/sleeper/sleeper
 	anchored = TRUE //About time someone fixed this.
 	density = TRUE
-	unacidable = TRUE
 	dir = 8
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/sleeper_console
 
 CAPABILITIES(/obj/machinery/sleep_console)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interact_offline = 1, interface_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
 	configure(uses_power(idle = 40))
 	machine_basics(repair = NONE)
@@ -54,14 +54,12 @@ CAPABILITIES(/obj/machinery/sleep_console)
 	look.state(operable() ? "sleeperconsole" : "sleeperconsole-p")
 
 /obj/machinery/sleeper
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "sleeper"
 	desc = "A stasis pod with built-in injectors, a dialysis machine, and a limited health scanner."
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "sleeper_0"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/sleeper
 	var/list/available_chemicals
@@ -87,6 +85,8 @@ CAPABILITIES(/obj/machinery/sleep_console)
 
 
 CAPABILITIES(/obj/machinery/sleeper)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 15, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_SLEEPER, enter_wait = SLEEPER_ENTER_WAIT, controls_inside = nameof(controls_inside))

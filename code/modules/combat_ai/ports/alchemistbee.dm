@@ -27,7 +27,6 @@
 #define ALCHEMISTBEE_DANGERBOLT_THRESHOLD     1   // net free movables near target for dangerbolt
 
 /mob/living/simple_mob/vr/alchemistbee
-	use_modern_ai = TRUE
 
 /mob/living/simple_mob/vr/alchemistbee/initialize_ai_brain()
 	. = ..()

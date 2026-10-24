@@ -13,7 +13,6 @@
 	density = FALSE
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE
-	unacidable = TRUE
 	circuit = /obj/item/circuitboard/injector_maker
 	var/obj/item/reagent_containers/beaker = null
 	var/list/beaker_reagents_list
@@ -35,6 +34,7 @@ MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
 MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
 CAPABILITIES(/obj/machinery/injector_maker)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_BUTTON, click_volume = 60))
 	configure(uses_power(idle = 5, active = 100))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)

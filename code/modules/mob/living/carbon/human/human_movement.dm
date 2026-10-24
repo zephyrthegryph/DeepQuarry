@@ -4,7 +4,7 @@
 
 	. = 0
 
-	if(force_max_speed)
+	if(living_rules_of(src).force_max_speed)
 		return HUMAN_LOWEST_SLOWDOWN
 
 	// Haste: ignore slowdown and move really fast. Calling ..() here adds slowdown.

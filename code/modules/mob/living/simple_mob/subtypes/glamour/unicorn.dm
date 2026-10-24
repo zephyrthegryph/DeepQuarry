@@ -9,7 +9,6 @@
 
 	vore_capacity = 2
 	endurance = 250
-	meat_amount = 10
 
 	old_x = -16
 	old_y = 0
@@ -32,6 +31,9 @@
 	projectilesound = SFX_WEAPONS_SPARKLE
 	projectile_dispersion = 7
 	projectile_accuracy = -20
+
+CAPABILITIES(/mob/living/simple_mob/vore/horse/unicorn)
+	configure(butchery_rules(meat_amount = 10))
 
 /mob/living/simple_mob/vore/horse/unicorn/load_default_bellies()
 	. = ..()

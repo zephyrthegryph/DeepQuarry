@@ -22,7 +22,6 @@
 // and are reused verbatim.
 
 /mob/living/simple_mob/animal/sif/kururak
-	use_modern_ai = TRUE
 
 TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 	/datum/ai_behavior/kururak_pack_instinct, \

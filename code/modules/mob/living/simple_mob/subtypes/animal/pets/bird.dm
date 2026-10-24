@@ -19,7 +19,6 @@
 
 	movement_cooldown = -1
 
-	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 
 	attacktext = list("clawed", "pecked")
@@ -34,6 +33,7 @@
 	holder_type = /obj/item/holder/bird
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/bird)
+	configure(butchery_rules(meat_amount = 1))
 	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
 
 /datum/say_list/bird

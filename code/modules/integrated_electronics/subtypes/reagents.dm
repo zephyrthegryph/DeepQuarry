@@ -1,7 +1,9 @@
 /obj/item/integrated_circuit/reagent
 	category_text = "Reagent"
 	var/volume = 0
-	unacidable = TRUE
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent)
+	configure(movable_motion(unacidable = TRUE))
 
 
 CAPABILITIES(/obj/item/integrated_circuit/reagent/smoke)

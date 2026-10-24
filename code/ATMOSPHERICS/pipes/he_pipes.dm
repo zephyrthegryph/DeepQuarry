@@ -26,7 +26,6 @@
 	minimum_temperature_difference = 20
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT
 
-	buckle_lying = 1
 
 	// BubbleWrap
 /// A shell's thermal mass per m^2 of its surface (J/K): small beside its gas, so the gas and the surroundings stay coupled.
@@ -40,6 +39,7 @@
 #define HE_PIPE_SKY_TEMPERATURE ((AVERAGE_SOLAR_RADIATION * RADIATOR_EXPOSED_SURFACE_AREA_RATIO / STEFAN_BOLTZMANN_CONSTANT) ** 0.25 + TCMB)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/heat_exchanging)
+	configure(buckle_rules(lying = 1))
 	// In space the pipeline's gas radiates through the pipe's surface (Stefan-Boltzmann, integrated exactly in Rust).
 	when(nameof(in_space), heat_link(HEAT_PORT(1), HEAT_SKY(HE_PIPE_SKY_TEMPERATURE), 0, 1, nameof(surface)))
 	owns_many(nameof(glow_watches), /datum/native_watch/gas)

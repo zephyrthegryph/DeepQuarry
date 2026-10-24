@@ -101,7 +101,9 @@
 // the discipline=0 path so existing checks work.
 
 /mob/living/simple_mob/slime/feral
-	use_modern_ai = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/slime/feral)
+	configure(living_rules(use_modern_ai = TRUE))
 
 // Feral slimes inherit hostile defaults; brain handles combat. No discipline
 // system on them — they always fight. The legacy feral.dm Initialize hooks

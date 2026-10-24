@@ -7,7 +7,6 @@
 	icon_state = "heavysniper"
 	wielded_item_state = "heavysniper-wielded"
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "14.5mm"
 	recoil = 5 //extra kickback
 	handle_casings = HOLD_CASINGS
@@ -67,6 +66,7 @@
 	perform_scope_interaction(user, "heavysniper_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
@@ -94,7 +94,6 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	item_state = "SVD"
 	wielded_item_state = "heavysniper-wielded" //Placeholder
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "7.62mm"
 	load_method = MAGAZINE
 	accuracy = -45 //shooting at the hip
@@ -113,6 +112,7 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	perform_scope_interaction(user, "svd_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/SVD)
+	configure(item_rules(actions_types = list(/datum/action/item_action/use_scope)))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))

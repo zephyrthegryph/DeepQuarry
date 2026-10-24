@@ -143,7 +143,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	set_pixel_y(H.pixel_y)
 	set_dir(H.dir)
 	initial_lying = H.lying
-	initial_lying_prev = H.lying_prev
+	initial_lying_prev = round(sparse_get_or(H, lying_prev, 0)) // a number: lying_prev holds the mob's lying (0 or 1)
 	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
 		set_appearance_flags(appearance_flags | PIXEL_SCALE)
@@ -228,7 +228,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.set_is_shifted(initial_is_shifted)
 		gargoyle.set_dir(dir)
 		gargoyle.set_lying(initial_lying)
-		gargoyle.lying_prev = initial_lying_prev
+		sparse_set_or(gargoyle, lying_prev, initial_lying_prev, 0)
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))
@@ -294,7 +294,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return OP_OK
-		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && sparse_get_or(W, trash_eatable, TRUE) && !is_type_in_list(W, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && sparse_get_or(W, trash_eatable, TRUE) && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
 			vore_selected_of(gargoyle).nom_atom(W)
@@ -326,7 +326,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		return
 	if(isitem(source) && vore_selected_of(gargoyle) && sparse_get_or(gargoyle, trash_catching, FALSE))
 		var/obj/item/I = source
-		if(gargoyle.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && sparse_get_or(I, trash_eatable, TRUE) && !is_type_in_list(I, GLOB.item_vore_blacklist))
+		if(living_rules_of(gargoyle).adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && sparse_get_or(I, trash_eatable, TRUE) && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)
 			return
 	else if(isliving(source))

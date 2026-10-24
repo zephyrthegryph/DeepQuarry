@@ -9,7 +9,7 @@
 /mob/verb/whisper(message as text)
 	set name = "Whisper"
 	set hidden = 1
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		psay(message)
 		return
 
@@ -20,7 +20,7 @@
 	set hidden = 1
 	set instant = TRUE
 
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		psay(message)
 		return
 
@@ -35,13 +35,13 @@
 	set desc = "Emote to nearby people (and your pred/prey)"
 	set hidden = 1
 
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		pme(message)
 		return
 
-	if(muffled)
+	if(sparse_get_or(src, muffled, FALSE))
 		return me_verb_subtle(message)
-	if(autowhisper)
+	if(sparse_get_or(src, autowhisper, FALSE))
 		return me_verb_subtle(message)
 	message = sanitize_or_reflect(message,src) //Reflect too-long messages (within reason)
 
@@ -73,7 +73,7 @@
 		return TRUE
 
 	//Universal speak makes everything understandable, for obvious reasons.
-	else if(universal_speak || universal_understand)
+	else if(universal_speak || mob_rules_of(src).universal_understand)
 		return TRUE
 
 	if(isliving(src))
@@ -297,7 +297,7 @@
 	set desc = "Emote to nearby people (and your pred/prey)"
 	set hidden = TRUE
 
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		pme(message)
 		return
 
@@ -315,7 +315,7 @@
 	set name = "Subtle (Custom)"
 	set desc = "Emote to nearby people, with ability to choose which specific portion of people you wish to target."
 
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		pme(message)
 		return
 
@@ -336,7 +336,7 @@
 		return
 
 	// ition Start
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		pme(message)
 		return
 	// ition End
@@ -345,7 +345,7 @@
 	if(m_type == 2 && muzzled) return
 
 	var/subtle_mode
-	if(autowhisper && sparse_get(src, autowhisper_mode) && !mode_selection)
+	if(sparse_get_or(src, autowhisper, FALSE) && sparse_get(src, autowhisper_mode) && !mode_selection)
 		if(sparse_get(src, autowhisper_mode) != "Psay/Pme")	//This isn't actually a custom subtle mode, so we shouldn't use it!
 			subtle_mode = sparse_get(src, autowhisper_mode)
 	if(picked_mode)
@@ -625,7 +625,7 @@
 	if (stat == DEAD)
 		return say_dead(message)
 	if(!isliving(src))
-		forced_psay = FALSE
+		set_forced_psay(FALSE)
 		return say(message)
 	var/f = FALSE		//did we find someone to send the message to other than ourself?
 	var/mob/living/pb	//predator body
@@ -717,7 +717,7 @@
 					to_chat(G, span_psay("[formatted_name] thinks, \"[message]\""))
 		M.log_talk("(PSAY) [message]", LOG_SAY, color="#d900ff")
 	else		//There wasn't anyone to send the message to, pred or prey, so let's just say it instead and correct our psay just in case.
-		M.forced_psay = FALSE
+		M.set_forced_psay(FALSE)
 		M.say(message)
 
 ///// PME /////
@@ -739,7 +739,7 @@
 	if (stat == DEAD)
 		return say_dead(message)
 	if(!isliving(src))
-		forced_psay = FALSE
+		set_forced_psay(FALSE)
 		return me_verb(message)
 	var/f = FALSE		//did we find someone to send the message to other than ourself?
 	var/mob/living/pb	//predator body
@@ -832,7 +832,7 @@
 					to_chat(G, span_pemote("[formatted_name] [message]"))
 		M.log_talk(message, LOG_SAY, color="#d900ff")
 	else	//There wasn't anyone to send the message to, pred or prey, so let's just emote it instead and correct our psay just in case.
-		M.forced_psay = FALSE
+		M.set_forced_psay(FALSE)
 		M.me_verb(message)
 
 /mob/living/verb/player_narrate(message as message)
@@ -862,8 +862,8 @@
 	if(!T) return
 
 	var/ourfreq = null
-	if(voice_freq > 0 )
-		ourfreq = voice_freq
+	if(sparse_get_or(src, voice_freq, 42500) > 0 )
+		ourfreq = sparse_get_or(src, voice_freq, 42500)
 
 	if(client)
 		playsound(T, SFX_TALKSOUNDS_EMOTE, 25, TRUE, falloff = 1 , is_global = TRUE, frequency = ourfreq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds) // ignore walls

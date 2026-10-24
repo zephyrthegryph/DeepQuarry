@@ -29,7 +29,6 @@
 	light_state = "prot_light"
 	flight_x_offset = 0
 	flight_y_offset = 0
-	actions_types = list(/datum/action/item_action/toggle_gunlight)
 	var/gun_light_on = FALSE
 	var/brightness_on = 5
 
@@ -41,6 +40,9 @@
 		)
 
 	var/emagged = FALSE
+
+CAPABILITIES(/obj/item/gun/energy/gun/protector)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_gunlight)))
 
 /obj/item/gun/energy/gun/protector/special_check(mob/user)
 	if(!emagged && mode_name == "lethal" && get_security_level() == "green")

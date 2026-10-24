@@ -12,7 +12,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	icon_state = "bullet"
 	density = FALSE
 	anchored = TRUE
-	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
 
@@ -159,6 +158,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 CAPABILITIES(/obj/item/projectile)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(item_projectile_setup))
 	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)

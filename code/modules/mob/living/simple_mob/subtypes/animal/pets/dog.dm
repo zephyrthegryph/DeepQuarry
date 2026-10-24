@@ -20,7 +20,6 @@
 
 	say_list_type = /datum/say_list/dog
 
-	meat_amount = 3
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/corgi
 
 	var/obj/item/inventory_head
@@ -28,6 +27,7 @@
 	species_sounds = "Canine"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	configure(butchery_rules(meat_amount = 3))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))
 	op("dog_item", item(/obj/item), then(PROC_REF(dog_interaction_item)))
 	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)

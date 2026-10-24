@@ -4,7 +4,6 @@
 	icon = 'icons/mob/alien.dmi'
 	layer = ABOVE_JUNK_LAYER
 	max_integrity = 50
-	unacidable = TRUE
 	anchored = TRUE
 
 /obj/structure/alien/atom_destruction(damage_flag)
@@ -12,6 +11,7 @@
 	return ..()
 
 CAPABILITIES(/obj/structure/alien)
+	configure(movable_motion(unacidable = TRUE))
 	extend(/datum/act/hit, instead(then(PROC_REF(alien_thrown_at))))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("melt", hand(), stance(I_HURT), label("Melt"), wait(PROC_REF(melt_time)), then(PROC_REF(interaction_melt)))

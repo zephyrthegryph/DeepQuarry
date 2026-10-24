@@ -1680,13 +1680,13 @@
 			src.see_in_dark = 8
 			if(!src.has_status(STAT_DRUGGED))		src.see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		if(src.seer==1)
+		if(sparse_get_or(src, seer, 0)==1)
 			var/obj/effect/rune/R = locate_within(src.loc, /obj/effect/rune)
 			if(R && R.word1 == GLOB.cultwords["see"] && R.word2 == GLOB.cultwords["hell"] && R.word3 == GLOB.cultwords["join"])
 				src.see_invisible = SEE_INVISIBLE_CULT
 			else
 				src.see_invisible = see_invisible_default
-				src.seer = 0
+				sparse_set_or(src, seer, 0, 0)
 
 		if(!src.seedarkness)
 			src.sight = src.species.get_vision_flags(src)
@@ -1729,7 +1729,7 @@
 
 		if(!glasses_processed && (src.species.get_vision_flags(src) > 0))
 			src.sight |= src.species.get_vision_flags(src)
-		if(!src.seer && !glasses_processed && src.seedarkness)
+		if(!sparse_get_or(src, seer, 0) && !glasses_processed && src.seedarkness)
 			src.see_invisible = see_invisible_default
 
 		var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -1750,13 +1750,13 @@
 		if(G.vision_flags)
 			sight |= G.vision_flags
 			. = TRUE
-		if(istype(G,/obj/item/clothing/glasses/night) && !seer)
+		if(istype(G,/obj/item/clothing/glasses/night) && !sparse_get_or(src, seer, 0))
 			see_invisible = SEE_INVISIBLE_MINIMUM
 
 		if(G.see_invisible >= 0)
 			see_invisible = G.see_invisible
 			. = TRUE
-		else if(!has_status(STAT_DRUGGED) && !seer)
+		else if(!has_status(STAT_DRUGGED) && !sparse_get_or(src, seer, 0))
 			see_invisible = see_invisible_default
 
 /mob/living/carbon/human/proc/process_nifsoft_vision(datum/nifsoft/NS)
@@ -2259,8 +2259,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = src.weight_gain && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
-	var/losing = src.weight_loss && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
+	var/gaining = sparse_get_or(src, weight_gain, 1) && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
+	var/losing = sparse_get_or(src, weight_loss, 0.5) && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
@@ -2270,11 +2270,11 @@
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
 	if (nutrition_of(src) >= 0 && src.stat != 2)
-		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && src.weight_gain)
-			src.weight += src.species.metabolism*(0.01*src.weight_gain)
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && sparse_get_or(src, weight_gain, 1))
+			src.weight += src.species.metabolism*(0.01*sparse_get_or(src, weight_gain, 1))
 
-		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && src.weight_loss)
-			src.weight -= src.species.metabolism*(0.01*src.weight_loss) // starvation weight loss
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && sparse_get_or(src, weight_loss, 0.5))
+			src.weight -= src.species.metabolism*(0.01*sparse_get_or(src, weight_loss, 0.5)) // starvation weight loss
 
 //Our call for the NIF to do whatever
 /// MED-6: no NIF, nothing to run.

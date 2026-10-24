@@ -5,7 +5,6 @@
 	desc = "Regulates mech movement."
 	anchored = TRUE
 	density = TRUE
-	throwpass = 1
 	use_power = USE_POWER_IDLE
 	layer = ON_WINDOW_LAYER
 	on = 0
@@ -17,6 +16,7 @@
 	COOLDOWN_DECLARE(feedback_cooldown)
 
 CAPABILITIES(/obj/machinery/mech_sensor)
+	configure(atom_rules(throwpass = 1))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = EQUIP))

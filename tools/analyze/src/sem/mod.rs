@@ -507,6 +507,13 @@ pub(crate) enum Source {
 }
 
 /// [`parse_dme`] with the source spelled out; `history` also returns the parse's macro history (`Parsed::defines`).
+/// Makes the next full parses hold proc bodies encoded (decoded when read) instead of as syntax trees: a much lower peak for a process
+/// that parses the whole tree and reads a few bodies, slower for one that reads them all.
+pub fn set_lean_parse(on: bool) {
+    model_store::ensure_codec();
+    dreammaker::objtree::set_compact_parse(on);
+}
+
 pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Source, history: bool) -> Result<model_store::Parsed, String> {
     const BATCH: usize = 8192;
     let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<dreammaker::lexer::LocatedToken>>(64);

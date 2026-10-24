@@ -4,7 +4,6 @@
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "critteropen"
 	density = TRUE
-	unacidable = TRUE
 
 	var/mob/living/simple_mob/contained
 
@@ -14,6 +13,7 @@
 		contain(A)
 
 CAPABILITIES(/obj/structure/stasis_cage)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(contain_mapped_creature))
 	ref_one(nameof(contained))
 	op("stuff_in", item(/mob/living/simple_mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), needs(req_adjacent()),

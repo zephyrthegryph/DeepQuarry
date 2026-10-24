@@ -18,7 +18,6 @@
 	name = "status display"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
@@ -160,6 +159,7 @@
 		refresh()
 
 CAPABILITIES(/obj/machinery/status_display)
+	configure(movable_motion(unacidable = TRUE))
 	// The schedule source is observed, not owned; a source that died is simply not found (unobserve() of null does nothing).
 	ref_one(nameof(shuttle_key_token), /datum, weak = TRUE)
 	setup(PROC_REF(connect_display_radio))

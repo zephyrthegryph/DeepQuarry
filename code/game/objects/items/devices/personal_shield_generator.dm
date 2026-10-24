@@ -19,8 +19,6 @@
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit" //Placeholder
 	w_class = ITEMSIZE_HUGE //It's a giant shield generator!!!
-	unacidable = TRUE
-	actions_types = list(/datum/action/item_action/toggle_shield)
 	var/obj/item/gun/energy/gun/generator/active_weapon
 	var/obj/item/cell/device/bcell = null
 	var/upgraded = FALSE 									// If the PSG has been upgraded by some method or not. Only used for the mining belt ATM.
@@ -34,6 +32,8 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_shield)))
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	setup(PROC_REF(make_active_weapon))
 	configure(item_worn(slots = SLOT_BACK))

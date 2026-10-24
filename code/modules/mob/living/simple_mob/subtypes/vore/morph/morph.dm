@@ -37,7 +37,6 @@
 	attacktext = "glomped"
 	attack_sound = SFX_EFFECTS_BLOBATTACK
 
-	meat_amount = 0
 
 	vore_active = 1
 	vore_default_mode = DM_HOLD
@@ -59,6 +58,7 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	configure(butchery_rules(meat_amount = 0))
 	ref_one(nameof(form), /atom/movable)
 	ref_one(nameof(original_mind), /datum/mind)
 	configure(mob_movement(bump = SLIME))
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	if(!prey_mind)
 		return
 	prey_body.forceMove(get_turf(parent_morph))
-	prey_body.muffled = FALSE
+	sparse_set_or(prey_body, muffled, FALSE, FALSE)
 	prey_body.absorbed = FALSE
 	set_absorbed(TRUE)
 	// Both keep their own identity while in the other's seat.

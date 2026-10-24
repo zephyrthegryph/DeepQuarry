@@ -5,9 +5,9 @@
 	name = "test heater"
 	use_power = USE_POWER_IDLE
 	heat_output = 1000
-	heat_dissipation = 100
 
 CAPABILITIES(/obj/machinery/dq_h4_heater)
+	configure(machine_rules(heat_dissipation = 100))
 	configure(uses_power(idle = 1000))
 
 /datum/unit_test/dq_h4_machine_heat_regulator
@@ -17,19 +17,19 @@ CAPABILITIES(/obj/machinery/dq_h4_heater)
 	heater.set_grid_power(TRUE)
 	heater.set_broken_condition(FALSE)
 	heater.update_heat_output()
-	TEST_ASSERT_EQUAL(heater.heat_output_now, 1000, "a powered machine emits its declared heat_output")
+	TEST_ASSERT_EQUAL(sparse_get_or(heater, heat_output_now, 0), 1000, "a powered machine emits its declared heat_output")
 	TEST_ASSERT(!isnull(heater.heat_body), "emitting keeps a heat body")
 	var/list/properties = heater.thermal_properties()
 	TEST_ASSERT_EQUAL(properties[THERMAL_CONDUCTANCE], 100, "heat_dissipation sets the body's conductance")
 
 	heater.set_grid_power(FALSE)
 	heater.update_heat_output()
-	TEST_ASSERT_EQUAL(heater.heat_output_now, 0, "an unpowered machine emits nothing")
+	TEST_ASSERT_EQUAL(sparse_get_or(heater, heat_output_now, 0), 0, "an unpowered machine emits nothing")
 
 	heater.set_grid_power(TRUE)
 	heater.set_broken_condition(TRUE)
 	heater.update_heat_output()
-	TEST_ASSERT_EQUAL(heater.heat_output_now, 0, "a broken machine emits nothing")
+	TEST_ASSERT_EQUAL(sparse_get_or(heater, heat_output_now, 0), 0, "a broken machine emits nothing")
 
 	// The RD server declares heat and only emits while working.
 	var/obj/machinery/rnd/server/server = allocate(/obj/machinery/rnd/server, test_floor())
@@ -42,4 +42,4 @@ CAPABILITIES(/obj/machinery/dq_h4_heater)
 	TEST_ASSERT_EQUAL(server.current_heat_output(), server.heat_output, "a working RD server emits its declared heat")
 	server.research_disabled = TRUE
 	server.refresh_working()
-	TEST_ASSERT_EQUAL(server.heat_output_now, 0, "a halted RD server emits nothing")
+	TEST_ASSERT_EQUAL(sparse_get_or(server, heat_output_now, 0), 0, "a halted RD server emits nothing")

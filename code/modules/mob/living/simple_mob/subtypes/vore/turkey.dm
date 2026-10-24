@@ -12,7 +12,6 @@
 	faction = FACTION_TURKEY
 	endurance = 25
 
-	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/rawturkey
 
 	response_help = "pats"
@@ -34,6 +33,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/turkey)
+	configure(butchery_rules(meat_amount = 1))
 	configure(mob_nature(name_the_meat = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 

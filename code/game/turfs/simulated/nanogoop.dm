@@ -209,7 +209,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		return FALSE
 	if(isitem(AM))
 		var/obj/item/targetitem = AM
-		if(targetitem.unacidable || targetitem.throwing || targetitem.is_incorporeal() || !targetitem)
+		if(motion_of(targetitem).unacidable || targetitem.throwing || targetitem.is_incorporeal() || !targetitem)
 			return FALSE
 		var/food = FALSE
 		if(istype(targetitem,/obj/item/reagent_containers/food))
@@ -227,7 +227,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		return TRUE
 	if(isliving(AM))
 		var/mob/living/targetmob = AM
-		if(targetmob.unacidable || !targetmob.vore_prefs.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
+		if(motion_of(targetmob).unacidable || !targetmob.vore_prefs.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
 			return FALSE
 		if(isrobot(targetmob))
 			if(!digest_robot)
@@ -285,14 +285,14 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		if(!targetcarbon)
 			return
 		if(targetcarbon.stat == DEAD)
-			targetcarbon.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
+			targetcarbon.set_unacidable(TRUE)//Don't touch this one again, we're gonna delete it in a second
 			targetcarbon.release_vore_contents()
 			for(var/obj/item/targetitem in targetcarbon)
 				if(istype(targetitem, /obj/item/organ/internal/mmi_holder/posibrain))
 					var/obj/item/organ/internal/mmi_holder/MMI = targetitem
 					MMI.removed()
 				if(istype(targetitem, /obj/item/organ))
-					targetitem.unacidable = TRUE
+					targetitem.set_unacidable(TRUE)
 					continue
 				if(istype(targetitem, /obj/item/implant/backup) || istype(targetitem, /obj/item/nif))
 					continue
@@ -319,7 +319,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		if(!targetmob)
 			return
 		if(targetmob.stat == DEAD)
-			targetmob.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
+			targetmob.set_unacidable(TRUE)//Don't touch this one again, we're gonna delete it in a second
 			targetmob.release_vore_contents()
 			var/how_much = targetmob.mob_size + nutrition_of(targetmob)
 			if(!targetmob.ckey)

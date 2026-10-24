@@ -19,9 +19,11 @@
 	organ_names = /datum/decl/mob_organ_names/crab
 
 	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
-	meat_amount = 3
 
 	say_list_type = /datum/say_list/crab
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/crab)
+	configure(butchery_rules(meat_amount = 3))
 
 //COFFEE! SQUEEEEEEEEE!
 /mob/living/simple_mob/animal/passive/crab/Coffee

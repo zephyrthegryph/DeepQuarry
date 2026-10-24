@@ -807,8 +807,8 @@ CAPABILITIES(/datum/system/job)
 	var/list/item_names = list()
 	var/list/carriers = list()
 	for(var/obj/item/item_spawnpoint in REGISTRY_MEMBERS(REGISTRY_ITEM_TF_SPAWNPOINTS))
-		if(LAZYLEN(item_spawnpoint.ckeys_allowed_itemspawn))
-			if(!(spawn_client.ckey in item_spawnpoint.ckeys_allowed_itemspawn))
+		if(LAZYLEN(sparse_get(item_spawnpoint, ckeys_allowed_itemspawn)))
+			if(!(spawn_client.ckey in sparse_get(item_spawnpoint, ckeys_allowed_itemspawn)))
 				continue
 		var/atom/item_loc = item_spawnpoint.loc
 		var/mob/living/carrier

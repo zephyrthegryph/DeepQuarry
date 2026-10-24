@@ -94,7 +94,7 @@
 	var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
 	consume(ripped, src)
 	var/obj/buckled = src?.buckled_to()
-	if(buckled && buckled.buckle_require_restraints)
+	if(buckled && buckle_of(buckled).require_restraints)
 		buckled.unbuckle_mob()
 
 /mob/living/carbon/human/can_break_cuffs()

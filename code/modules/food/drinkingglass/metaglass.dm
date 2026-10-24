@@ -4,12 +4,12 @@
 	icon_state = "glass_empty"
 	amount_per_transfer_from_this = 5
 	volume = 30
-	unacidable = TRUE //glass
 	material_template = /datum/material_template/container
 	material_total = 500
 	icon = 'icons/obj/drinks.dmi'
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/metaglass)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(center_x = 16, center_y = 10))
 
 /obj/item/reagent_containers/food/drinks/metaglass/metapint

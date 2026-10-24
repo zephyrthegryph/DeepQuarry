@@ -7,7 +7,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "portal"
 	density = TRUE
-	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 5
 	/// Where it leads: a turf, a landmark, a beacon or a belly, not only an item.
 	var/atom/target
@@ -17,6 +16,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	var/event = FALSE
 
 CAPABILITIES(/obj/effect/portal)
+	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(target))
 	ref_one(nameof(creator), /obj/item/hand_tele)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

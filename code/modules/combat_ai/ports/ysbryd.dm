@@ -16,7 +16,6 @@
 //     and the mob's own Life() speed-boost-when-hurt survives untouched.
 
 /mob/living/simple_mob/ysbryd
-	use_modern_ai = TRUE
 	/// world.time before which the brain shouldn't switch victims (legacy
 	/// find_target_cooldown = 1 MINUTE gate).
 	COOLDOWN_DECLARE(ysbryd_reacquire_after)
@@ -75,5 +74,6 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/ysbryd)
+	configure(living_rules(use_modern_ai = TRUE))
 	ref_one(nameof(chosen_target), /mob/living)
 	immune_to_incapacitation()

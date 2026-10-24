@@ -6,7 +6,6 @@
 
 /obj/item/beartrap
 	name = "mechanical trap"
-	throw_speed = 2
 	throw_range = 1
 	gender = PLURAL
 	icon = 'icons/obj/items.dmi'
@@ -31,6 +30,7 @@ MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
 CAPABILITIES(/obj/item/beartrap)
+	configure(movable_motion(throw_speed = 2))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_worn(slots = SLOT_MASK))
 	configure(item_thrown(force = 0))

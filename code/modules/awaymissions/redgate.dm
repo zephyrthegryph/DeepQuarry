@@ -4,7 +4,6 @@
 	icon = 'icons/obj/redgate.dmi'
 	icon_state = "off"
 	density = FALSE
-	unacidable = TRUE
 	anchored = TRUE
 	pixel_x = -16
 
@@ -602,6 +601,7 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 	return target
 
 CAPABILITIES(/obj/structure/redgate)
+	configure(movable_motion(unacidable = TRUE))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("hand", hand(), label("Use"), ungated(), asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = computed(PROC_REF(redgate_restricted_choices)), "timeout" = 0), step = "k121", when = PROC_REF(redgate_asks_who)), then(PROC_REF(interaction_hand)))
 	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))

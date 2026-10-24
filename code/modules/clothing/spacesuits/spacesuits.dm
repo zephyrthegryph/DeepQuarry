@@ -15,10 +15,10 @@
 	var/obj/machinery/camera/camera // owned: helmet camera made on first toggle, kept in the helmet's contents
 	var/list/camera_networks
 
-	actions_types = list(/datum/action/item_action/toggle_helmet_light)
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet_light)))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0, preserve = 1))
 	fits_as(FIT_NO_DIONA)
 	configure(light_glow(range = 4))

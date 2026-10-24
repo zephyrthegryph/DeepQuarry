@@ -5,10 +5,10 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "xenobio"
 	item_state = "xenobio"
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 3
 	throw_range = 7
 
 CAPABILITIES(/obj/item/slime_scanner)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/slime_scanner)
 	for(var/potential_color in S.slime_mutation)
 		var/mob/living/simple_mob/slime/xenobio/slime = potential_color
 		mutations.Add(initial(slime.slime_color))
-	user.show_message("Potental to mutate into [english_list(mutations)] colors.<br>Extract potential: [S.cores]<br>Nutrition: [nutrition_of(S)]/[S.max_nutrition]")
+	user.show_message("Potental to mutate into [english_list(mutations)] colors.<br>Extract potential: [S.cores]<br>Nutrition: [nutrition_of(S)]/[living_rules_of(S).max_nutrition]")
 
 	if (nutrition_of(S) < S.get_starve_nutrition())
 		user.show_message(span_warning("Warning: Subject is starving!"))

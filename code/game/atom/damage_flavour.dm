@@ -50,8 +50,8 @@
 /proc/dq_damage_band_for(atom/A)
 	if(!A.uses_integrity || A.max_integrity <= 0)
 		return DAMAGE_BAND_NONE
-	if(A.damage_band)
-		return A.damage_band
+	if(sparse_get_or(A, damage_band, DAMAGE_BAND_NONE))
+		return sparse_get_or(A, damage_band, DAMAGE_BAND_NONE)
 	return dq_damage_band_at(A.get_integrity() / A.max_integrity)
 
 /// The compiled damage-flavour rules.

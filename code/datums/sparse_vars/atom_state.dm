@@ -9,3 +9,8 @@ sparse(/atom, tf_offset_y, type = num)
 sparse(/atom, tf_rotation, type = num)
 sparse(/atom, tf_scale_x, type = num)
 sparse(/atom, tf_scale_y, type = num)
+
+// base_vars wave 3
+sparse(/atom, map_json_data)
+sparse(/atom, last_damage_flag, type = text)
+sparse(/atom, damage_band, type = num)

@@ -2,7 +2,6 @@
 // This generator is for the supercool big shields intended for ships that do nice stuff with overmaps.
 //
 /obj/machinery/power/shield_generator
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "advanced shield generator"
 	desc = "A heavy-duty shield generator and capacitor, capable of generating energy shields at large distances."
 	icon = 'icons/obj/machines/shielding_vr.dmi'
@@ -49,6 +48,7 @@ STAT(/obj/machinery/power/shield_generator, ai_control_disabled, ANY)
 
 // Segments currently down and regenerating (they leave the list when they die).
 CAPABILITIES(/obj/machinery/power/shield_generator)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_usage(wrench_time = 4 SECONDS))
 	setup(PROC_REF(load_shield_modes))
 	default_parts()

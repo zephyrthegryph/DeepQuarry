@@ -53,6 +53,7 @@
 	return PROJECTILE_FORCE_MISS
 
 CAPABILITIES(/mob/living/simple_mob/illusion)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	ref_one(nameof(copying), /atom/movable)
 	configure(mob_kind(mob_class = MOB_CLASS_ILLUSION))

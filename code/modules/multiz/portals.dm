@@ -4,7 +4,6 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "type-d-portal"
 	density = TRUE
-	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 0
 	anchored = TRUE
 	/// Relation view: the far end (another portal or a ghost-only portal_target).
@@ -21,6 +20,7 @@
 	teleport(AM)
 
 CAPABILITIES(/obj/structure/portal_event)
+	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(target), /obj)
 	op("portal_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
 	op("portal_event_ghost_use", observer(), priority(OP_PRIORITY_NORMAL + 1), label("Portal"), when(req_empty(nameof(target))), needs(req_rights(R_HOLDER)), asks(/datum/prompt/choice, fields = list("question" = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, otherwise click 'Cancel'. Selecting 'Portal Here' will create and link a portal at your location, while 'Target Here' will create an object that is only visible to ghosts which will act as the target, again at your location. Each option will give you the ability to change portal types, but for all options except 'Select Type' you only get one shot at it, so be sure to experiment with 'Select Type' first if you're not familiar with them.", "title" = "Unbound Portal", "choices" = list("Cancel", "Portal Here", "Target Here", "Select Type"), "buttons" = TRUE, "timeout" = 0), step = "k36"), asks(/datum/prompt/choice, fields = list("question" = "Would you like to select a different portal type for these portals?", "title" = "Change portal", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "k41", when = PROC_REF(portal_here)), asks(/datum/prompt/choice, fields = list("question" = "What kind of portal would you like it to be?", "title" = "Type Selection", "choices" = list("Tech (Default)", "Star", "Weird Green", "Pulsing"), "buttons" = TRUE, "timeout" = 0), step = "k64a", when = PROC_REF(types_a)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Blue Pulse", "Blue Unstable", "Red", "Red Unstable"), "buttons" = TRUE, "timeout" = 0), step = "k69a", when = PROC_REF(star_a)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Red", "Blue/Red Mix", "Yellow", "White"), "buttons" = TRUE, "timeout" = 0), step = "k83a", when = PROC_REF(pulsing_a)), asks(/datum/prompt/choice, fields = list("question" = "Would you like to select a different portal type?", "title" = "Change portal", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "k50", when = PROC_REF(target_here)), asks(/datum/prompt/choice, fields = list("question" = "What kind of portal would you like it to be?", "title" = "Type Selection", "choices" = list("Tech (Default)", "Star", "Weird Green", "Pulsing"), "buttons" = TRUE, "timeout" = 0), step = "k64b", when = PROC_REF(types_b)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Blue Pulse", "Blue Unstable", "Red", "Red Unstable"), "buttons" = TRUE, "timeout" = 0), step = "k69b", when = PROC_REF(star_b)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Red", "Blue/Red Mix", "Yellow", "White"), "buttons" = TRUE, "timeout" = 0), step = "k83b", when = PROC_REF(pulsing_b)), asks(/datum/prompt/choice, fields = list("question" = "What kind of portal would you like it to be?", "title" = "Type Selection", "choices" = list("Tech (Default)", "Star", "Weird Green", "Pulsing"), "buttons" = TRUE, "timeout" = 0), step = "k64c", when = PROC_REF(types_c)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Blue Pulse", "Blue Unstable", "Red", "Red Unstable"), "buttons" = TRUE, "timeout" = 0), step = "k69c", when = PROC_REF(star_c)), asks(/datum/prompt/choice, fields = list("question" = "Which subtype would you prefer?", "title" = "Subtype Selection", "choices" = list("Blue", "Red", "Blue/Red Mix", "Yellow", "White"), "buttons" = TRUE, "timeout" = 0), step = "k83c", when = PROC_REF(pulsing_c)), then(PROC_REF(portal_event_ghost_use)))
@@ -214,7 +214,6 @@ CAPABILITIES(/obj/structure/portal_event)
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "portalgateway"
 	density = TRUE
-	unacidable = TRUE//Can't destroy energy portals.
 	anchored = TRUE
 
 /obj/structure/portal_gateway/Bumped(mob/M as mob|obj)
