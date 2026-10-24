@@ -202,6 +202,10 @@ impl ProcedureMemo {
             })
             .as_ref()
     }
+    /// Use the request's dependency index, which the ABI and initializer transports share.
+    pub(crate) fn share_dep_index(&mut self, index: Option<Arc<crate::dep_index::DepIndex>>) {
+        self.dep_index = std::sync::OnceLock::from(index);
+    }
     pub(crate) fn query_db(&self) -> Option<&Arc<crate::query_db::QueryDb>> {
         self.symbolic.as_ref()?.query_db()
     }
