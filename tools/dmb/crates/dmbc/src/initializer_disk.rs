@@ -48,6 +48,7 @@ pub(crate) struct Transport {
     engine: Option<Arc<crate::runner_host::EnginePayload>>,
     memo_policy: u128,
     writable: bool,
+    index: Option<Arc<crate::dep_index::DepIndex>>,
     policy: OnceLock<Option<Policy>>,
     engine_admitted: OnceLock<bool>,
     engine_staged: OnceLock<()>,
@@ -58,12 +59,14 @@ impl Transport {
         engine: Option<Arc<crate::runner_host::EnginePayload>>,
         memo_policy: u128,
         writable: bool,
+        index: Option<Arc<crate::dep_index::DepIndex>>,
     ) -> Arc<Self> {
         Arc::new(Self {
             disk,
             engine,
             memo_policy,
             writable,
+            index,
             policy: OnceLock::new(),
             engine_admitted: OnceLock::new(),
             engine_staged: OnceLock::new(),
@@ -144,7 +147,7 @@ impl Transport {
     fn key(recipe: &disk_recipe::Recipe) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: if recipe.assembly { 12 } else { 11 },
-            version: 4,
+            version: 5,
             content: xxhash_rust::xxh3::xxh3_128(&recipe.bytes),
         }
     }
@@ -211,14 +214,20 @@ impl Transport {
                 if candidate.recipe != recipe.bytes {
                     continue;
                 }
-                let recorder = crate::lowering_memo::RecordingResolver::new(host);
-                if !candidate.reads.iter().all(|(query, expected)| {
-                    let value = recorder.resolve(*query);
-                    crate::lowering_memo_wire::initializer::portable(&value)
-                        && value.canonical_bytes() == *expected
-                }) {
+                // The stored reads resolve through the host unrecorded and join the receipt as
+                // answers, so a record accepted under a known world records typed answers and
+                // issues no domain version per read (`crate::dep_index::replay_reads`).
+                let Some(mut reads) = crate::dep_index::replay_reads(
+                    self.index.as_deref(),
+                    crate::dep_index::Scope::Initializer,
+                    host,
+                    &candidate.recipe,
+                    &candidate.reads,
+                    &candidate.typed,
+                ) else {
                     continue;
-                }
+                };
+                let recorder = crate::lowering_memo::RecordingResolver::new(host);
                 if candidate.modified.iter().any(|(index, recipe)| {
                     roots
                         .get(*index)
@@ -227,8 +236,18 @@ impl Transport {
                 }) {
                     continue;
                 }
-                *accepted.borrow_mut() =
-                    Some((candidate.code, recorder.reads(), candidate.modified));
+                // Reads the modified-expression reissue made join the replayed ones.
+                for read in recorder.reads() {
+                    if !reads.iter().any(|old| {
+                        old.query == read.query
+                            && old.domain == read.domain
+                            && old.answer == read.answer
+                    }) {
+                        reads.push(read);
+                    }
+                }
+                reads.sort_by_key(|read| read.query);
+                *accepted.borrow_mut() = Some((candidate.code, reads, candidate.modified));
                 return Ok(true);
             }
             Ok(false)
