@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Full-suite shards sweep staleness periodically (bounded each test, a full sweep every 200 tests and at the end), balance by a shared duration history, salvage a killed shard's results from its log, and a whole-tier dm-test may hold 4 test worlds"

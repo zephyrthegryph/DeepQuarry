@@ -5,9 +5,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { acquireSlot, acquireSlotGroup, defaultTestWorlds, slotCapacity, slotGroupSize, slotsDir, slotsStatus, usableSlots } from './machine_slots';
+import { acquireSlot, acquireSlotGroup, defaultTestWorlds, focusedTestWorlds, roleCap, slotCapacity, slotGroupSize, slotsDir, slotsStatus, usableSlots } from './machine_slots';
 
-const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE'] as const;
+const ENV_KEYS = ['DQ_SLOTS_DIR', 'DQ_SLOTS', 'DQ_SLOTS_CARGO', 'DQ_SLOTS_DM_COMPILE', 'DQ_SLOTS_TEST_WORLD', 'DQ_SLOT_PRIORITY', 'DQ_SLOT_WORKTREE', 'DQ_SLOTS_POLL_SEC', 'DQ_MERGE_WT', 'DQ_SLOTS_PREHELD', 'DQ_SLOTS_MERGE_RESERVE', 'DQ_SLOTS_SUITE', 'DQ_SLOTS_TEST_WORLD_FOCUSED'] as const;
 const saved: Record<string, string | undefined> = {};
 for (const k of ENV_KEYS) saved[k] = process.env[k];
 let tmp = '';
@@ -51,8 +51,32 @@ describe('capacity', () => {
 });
 
 describe('test_world default', () => {
-  test('is two whatever the CPU count (the machine is also the user desktop)', () => {
+  test('is two whatever the CPU count, and a focused caller holds two of them', () => {
     for (const cpus of [1, 8, 16, 64]) expect(defaultTestWorlds(cpus)).toBe(2);
+    delete process.env.DQ_SLOTS_TEST_WORLD;
+    delete process.env.DQ_SLOTS_TEST_WORLD_FOCUSED;
+    delete process.env.DQ_SLOTS_SUITE;
+    expect(focusedTestWorlds()).toBe(2);
+    process.env.DQ_SLOT_PRIORITY = '1';
+    expect(slotGroupSize('test_world', 9)).toBe(2);
+    expect(slotGroupSize('test_world', 9, { suite: true })).toBe(2);
+    expect(slotGroupSize('test_world', 1, { suite: true })).toBe(1);
+    process.env.DQ_SLOTS_SUITE = '1';
+    expect(slotGroupSize('test_world', 9)).toBe(2);
+    delete process.env.DQ_SLOTS_SUITE;
+    process.env.DQ_SLOTS_TEST_WORLD_FOCUSED = '1';
+    expect(slotGroupSize('test_world', 9)).toBe(1);
+  });
+
+  test('setting DQ_SLOTS_TEST_WORLD is one limit for every caller, and only test_world has roles', () => {
+    process.env.DQ_SLOTS_TEST_WORLD = '3';
+    process.env.DQ_SLOT_PRIORITY = '1';
+    expect(slotGroupSize('test_world', 9, { suite: true })).toBe(2);
+    expect(roleCap('test_world', 2, 3, true)).toBe(2);
+    delete process.env.DQ_SLOTS_TEST_WORLD;
+    expect(roleCap('cargo', 1, 1, true)).toBe(1);
+    expect(roleCap('test_world', 3, 4, false)).toBe(2);
+    expect(roleCap('test_world', 3, 4, true)).toBe(4);
   });
 });
 
