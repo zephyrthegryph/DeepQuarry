@@ -109,6 +109,10 @@
 
 /datum/unit_test/dq_base_vars_wave2_burning/Run()
 	var/turf/T = dq_containment_floor()
+	// The finder returns the first litter-free floor, which earlier tests move around the map (a nitrogen-only room or a vented floor is
+	// one): a fire needs the oxygen of an ordinary room to end by running out of fuel. dq_containment_floor() snapshotted the air, so it
+	// is put back after the test.
+	dq_atmos_test_fill_standard_air(T)
 	var/obj/item/paper/sheet = allocate(/obj/item/paper, T)
 	TEST_ASSERT_EQUAL(sparse_get_or(sheet, burn_fuel, 0), 0, "an object holds no fuel before it burns")
 	TEST_ASSERT(sheet.start_burning(), "paper catches fire")
