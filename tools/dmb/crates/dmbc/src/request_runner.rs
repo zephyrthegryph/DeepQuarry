@@ -1154,6 +1154,12 @@ fn run_build_attempt(
                 memo.counts.local_ns.load(Relaxed) as f64 / 1e9, memo.counts.keyed_ns.load(Relaxed) as f64 / 1e9,
                 dmbc::lowering::local_decline_stats());
             dmbc::daemon_eprintln!("native domain memo: {}", dmbc::engine_host::take_domain_memo_counts());
+            if let Some(db) = memo.query_db() {
+                let started = std::time::Instant::now();
+                let summary = db.answer_diff().summary();
+                let (resolved, carried, _) = db.answer_counts();
+                dmbc::daemon_eprintln!("native answer diff: {summary}, resolved={resolved} carried={carried} ({:.4}s)", started.elapsed().as_secs_f64());
+            }
             dmbc::daemon_eprintln!("native accumulated: {}", dm_profile::take_accumulated());
             for outcome in dm_tree::change_set::take_outcomes() {
                 dmbc::daemon_eprintln!("native change set: {outcome}");

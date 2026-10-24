@@ -566,6 +566,7 @@ pub(crate) fn admit(
     retained: &RetainedOutput<'_>,
     frontend: &dm_tree::frontend::ColdFrontend,
     answers: Option<u128>,
+    db: Option<&crate::query_db::QueryDb>,
 ) -> Result<Admitted, String> {
     let shape = retained.shape;
     // Prefer a retained output of this build's program text (another lane's tree may be current).
@@ -583,7 +584,9 @@ pub(crate) fn admit(
         return Err("retained image differs from its output".into());
     }
     if answers.is_none() || base.answers != answers {
-        return Err("answers changed".into());
+        // Report-only: which answers changed in this request (the table's per-slot diff).
+        let detail = db.map_or_else(String::new, |db| format!(" ({})", db.answer_diff().summary()));
+        return Err(format!("answers changed{detail}"));
     }
     if base.shape.text_key() != shape.text_key() {
         return Err("program text outside bodies changed".into());
