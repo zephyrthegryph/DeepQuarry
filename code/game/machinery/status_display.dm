@@ -121,7 +121,7 @@
 	var/powered = !power_lost()
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
-		if(!isnull(shuttle_key_token))
+		if(shuttle_key_token())
 			unobserve(shuttle_key_token(), /datum/notice/shuttle_schedule_changed, src)
 			rel_clear(src, nameof(shuttle_key_token))
 		shuttle_key_id = want_shuttle
@@ -150,7 +150,7 @@
 		return null
 	if(next_refresh_delay() && !after_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
-	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
+	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token())))
 		return "mode [mode] is not watching its shuttle"
 	return null
 

@@ -160,7 +160,7 @@
 	var/mob/living/carbon/human/doctor = hc_records_user(list(ACCESS_MEDICAL))
 	var/datum/data/record/G = hc_general_record("Patient Zed", "0ZED")
 	hc_records_login(doctor, C)
-	press(doctor, C, "d_rec", list("d_rec" = "[REF(G)]"))
+	press(doctor, C, "d_rec", list("d_rec" = ref_token(G)))
 	press(doctor, C, "new")
 	var/datum/data/record/M = C.active2()
 	LAZYADD(hc_records, M)
