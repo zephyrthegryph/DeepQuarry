@@ -90,11 +90,18 @@ your change runs at boot. `doc/rewrite/boot_gate.md`.
 **Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
 entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
 each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
-flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `dm-test` (the full suite,
-sharded), `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
+flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
 export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces
 it by hand). `tests.log` says which ran: `STALENESS: test-end mode ...` at suite start and, per test, `STALENESS: end of <test>
 mode=... entities_checked=... backlog_remaining=...`.
+
+**Periodic staleness sweep (the full suite).** A whole-tier `dm-test` passes `staleness=periodic`: each test end runs the bounded
+sweep above, a full sweep (everything the checker walks: pending new entities, the whole boot backlog, one pass of the cursor over all
+of it) runs every 200 tests (`DQ_STALENESS_FULL_EVERY=N`, the world param `staleness-full-every`) and after the last test of the shard.
+The full-mode sweep at every test end cost about 0.18 s per test, 10 minutes of a shard. A finding fails the test whose end ran the sweep
+and names the range it can belong to: the tests since the last clean full sweep (first, last and count in the report; every name in
+`tests.log`, `STALENESS: full sweep #N ... found=`). `DQ_STALENESS=full` keeps the old full sweep at every test end for a `dm-test`
+run, `DQ_STALENESS=bounded` the focused mode; a mode named in `DQ_WORLD_PARAMS` wins.
 
 A long list of names (a broad glob) reaches `dm-test` as `--focus=@file`, since a Windows command line stops at
 8191 characters.
@@ -346,10 +353,17 @@ time) and the failures.
   representative when a list is clustered. A test that isn't a sweep gets its
   whole list from `sweep_types()`, wherever it runs.
 - **Every other test** runs in exactly one shard. The runner greedy
-  bin-packs the tests it knows onto shards by duration (heaviest first onto
-  the lightest shard), taken from the newest `data/test-runs/` record that
-  covered most of the suite. Tests without a duration weigh 0.5 s. It only
-  packs tests in the chosen tier. Every shard gets the same assignment file
+  bin-packs the tests it knows onto shards by measured duration (heaviest first onto
+  the lightest shard). The durations are the shared history `E:/dq-cache/test-durations/durations.json`
+  (`tools/build/lib/suite_runner.ts`; `DQ_TEST_DURATIONS_DIR` moves it, `off` disables it): every run that
+  measures a test (a shard, a single world) writes it, every worktree reads it, so a fresh pool worktree
+  balances by time like an old one. It is a rebuildable cache, not a committed file: the numbers move with
+  every machine and test edit, and a committed `test_durations.json` would be rewritten by every full run (a
+  conflict on every lane) and stale between refreshes. Caps: 20,000 names and 45 days since a test was last
+  measured, applied on every write. Tests the history lacks fall back to this worktree's last 30
+  `data/test-runs/` records, then weigh the median of the known ones (0.5 s with no history at all). The
+  run prints how many tests had a duration and the projected load per shard. It only packs tests in the chosen
+  tier. Every shard gets the same assignment file
   (`-params shard-tests=<file>`, one `path<TAB>shard` line per test). A world
   runs what is assigned to it. A test the file doesn't name (added since
   those durations, or missed by the source scan) goes to the shard a hash of
@@ -371,6 +385,23 @@ time) and the failures.
 `GLOB.dq_test_shard_count` defaults to 1, so a world booted without shard
 params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 `sweep_types()` returns its input unchanged.
+
+### Test worlds, slots and a killed shard
+
+- **Slots.** A machine allows 2 test worlds at once (`DQ_SLOTS_TEST_WORLD`, default 2; the machine is also the desktop).
+  Roles apply while that variable is unset: a full-suite run (a whole-tier `dm-test`, `DQ_SLOTS_SUITE=1`) may hold
+  every slot of the capacity, merge reserve included, and any other caller (focused runs, selections) at most
+  `DQ_SLOTS_TEST_WORLD_FOCUSED` (default 2). Raising `DQ_SLOTS_TEST_WORLD_DEFAULT` (or the capacity) therefore gives
+  only the suite more worlds. Measured 2026-10-23 (2 shards, 273 tests, 11 min): peak 1.6 GB private per world, 0.56 core; free RAM on the 64 GB machine
+  bottomed at 8 GB with two such worlds, other lanes' worlds and the dmbc daemons running, already under the 12 GB kept free, so the default stays 2. `dm-test` sizes
+  its shard count to the slots its role may hold.
+- **A killed shard keeps its results.** A world writes its results file only when its suite is done, so the
+  watchdog (`DQ_DD_WATCHDOG_MINUTES`, 60 minutes per shard on 4 shards) used to lose a killed shard whole. The
+  runner now reads the world's `runtime.log` (`::group::(i/N) path`, `PASS path 1.2s`, `::error::FAIL path`)
+  and uses what the shard finished as its results (`salvaged_shards` in the run record), logs the test in
+  flight, and lists every assigned test without a result as NEVER RAN (`never_ran` in the record, the full
+  list in `data/test-shards/<run id>/shardN-never-ran.txt`). The run still exits non-zero. The log has no
+  failure reasons beyond the PASS/FAIL line, so read `tests.log` for those.
 
 ### Look pins (deleted)
 

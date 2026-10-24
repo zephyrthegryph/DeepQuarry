@@ -14,7 +14,9 @@
 #
 # Classes and default counts (an env var overrides each; 0 turns that class off; DQ_SLOTS=0 turns all of it off):
 #   dm_compile      DQ_SLOTS_DM_COMPILE=1       a DreamMaker compile (tools/build/lib/byond.ts DreamMaker())
-#   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld())
+#   test_world      DQ_SLOTS_TEST_WORLD=2       one DreamDaemon unit-test world (tools/build/build.ts runIsolatedTestWorld()). A full-suite dm-test
+#                                               (DQ_SLOTS_SUITE=1) may hold all of the capacity; every other caller holds at most
+#                                               DQ_SLOTS_TEST_WORLD_FOCUSED (2). Setting DQ_SLOTS_TEST_WORLD itself is one limit for everyone.
 #   cargo           DQ_SLOTS_CARGO=1            a cargo build (analyze, verdigris, dmbc)
 # dm_compile and cargo are never held while waiting for another class. A class not listed gets DQ_SLOTS_<CLASS> or 1.
 #
@@ -69,8 +71,17 @@ slots_cpus() { # logical CPUs of this machine (1 when unknown)
 	echo "$n"
 }
 
-slots_default_test_world() { # 2 by default: the machine is also the user's desktop (gaming while lanes run lagged it badly, 2026-10-19)
+slots_default_test_world() { # 2 until peak RAM per world is measured; a full-suite run (DQ_SLOTS_SUITE=1) may hold all of the capacity, everyone else at most slots_role_cap's 2
 	echo "${DQ_SLOTS_TEST_WORLD_DEFAULT:-2}"
+}
+
+slots_role_cap() { # class usable max -> what this caller may hold: test_world, with DQ_SLOTS_TEST_WORLD unset, is all of max for a full-suite run (DQ_SLOTS_SUITE=1, the merge reserve included) and at most DQ_SLOTS_TEST_WORLD_FOCUSED (2) for anyone else (the machine is also the user's desktop, 2026-10-19)
+	local cls="$1" usable="$2" max="$3" focused="${DQ_SLOTS_TEST_WORLD_FOCUSED:-2}"
+	if [ "$cls" != test_world ] || [ -n "${DQ_SLOTS_TEST_WORLD:-}" ]; then echo "$usable"; return; fi
+	if [ "${DQ_SLOTS_SUITE:-}" = 1 ]; then echo "$max"; return; fi
+	case "$focused" in '' | *[!0-9]*) focused=2 ;; esac
+	[ "$focused" -ge 1 ] || focused=2
+	if [ "$usable" -lt "$focused" ]; then echo "$usable"; else echo "$focused"; fi
 }
 
 slots_capacity() { # class -> count (0 = off)
@@ -305,6 +316,7 @@ _slots_acquire() {
 	top="$SLOTS_WT"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
+	usable="$(slots_role_cap "$cls" "$usable" "$max")"
 	usable=$((usable + $(_slots_extra "$cls" "$top")))
 	now="$EPOCHSECONDS"
 	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
@@ -417,7 +429,7 @@ SLOTS_GROUP_HB=""
 slots_group_size() { # class wanted -> how many slots a group of that wish gets (the wish, clamped to the capacity)
 	local max
 	max="$(slots_capacity "$1")"
-	[ "$max" -gt 0 ] && max="$(slots_usable "$1" "$max" "$(_slots_priority "$(_slots_worktree)")")"
+	[ "$max" -gt 0 ] && max="$(slots_role_cap "$1" "$(slots_usable "$1" "$max" "$(_slots_priority "$(_slots_worktree)")")" "$max")"
 	local cap
 	cap="$(slots_suite_cap "$1" "$(_slots_priority "$(_slots_worktree)")")"
 	if [ "$max" -gt 0 ] && [ -n "$cap" ] && [ "$cap" -lt "$max" ]; then max="$cap"; fi
@@ -448,6 +460,7 @@ _slots_group_acquire() {
 	top="$SLOTS_WT"
 	prio="$(_slots_priority "$top")"
 	usable="$(slots_usable "$cls" "$max" "$prio")"
+	usable="$(slots_role_cap "$cls" "$usable" "$max")"
 	usable=$((usable + $(_slots_extra "$cls" "$top")))
 	[ "$want" -le "$usable" ] || want="$usable"
 	now="$EPOCHSECONDS"
@@ -942,7 +955,10 @@ slots_selftest() {
 	wait "$p1" "$p2"
 	grep -q "group of 2" "$tmp/g2.log" && grep -q started "$tmp/g2.log" || { echo "FAIL: group g2 never got its slots"; ok=0; }
 	[ -z "$(ls "$tmp/test_world" | grep '^slot')" ] || { echo "FAIL: a group left slots behind"; ok=0; }
-	unset DQ_SLOTS_TEST_WORLD
+	unset DQ_SLOTS_TEST_WORLD DQ_SLOTS_MERGE_RESERVE
+	# 5b. roles: the default capacity is 2; with DQ_SLOTS_TEST_WORLD_DEFAULT=4 a focused caller holds 2 of them, a full-suite run (DQ_SLOTS_SUITE=1) all 4, merge reserve or not;
+	# setting DQ_SLOTS_TEST_WORLD is one limit for everyone.
+	[ "$(slots_capacity test_world)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 slots_capacity test_world)" = 4 ] && [ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 4 ] && [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD_DEFAULT=4 DQ_SLOTS_TEST_WORLD_FOCUSED=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 3 ] && [ "$(DQ_SLOTS_SUITE=1 slots_group_size cargo 9)" = 1 ] 		&& [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_SUITE=1 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] 		|| { echo "FAIL: test_world roles (focused 2, suite 4)"; ok=0; }
 	# 6. the suite cap: a non-priority group is capped at DQ_SLOTS_SUITE_MAX_WORLDS (default 1 only while another run is queued); priority 0 is exempt.
 	export DQ_SLOTS_MERGE_RESERVE=0 DQ_SLOTS_TEST_WORLD=2
 	[ "$(DQ_SLOT_PRIORITY=1 slots_group_size test_world 2)" = 2 ] || { echo "FAIL: no cap while nobody waits"; ok=0; }
