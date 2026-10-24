@@ -455,6 +455,11 @@ pub struct OutputBase {
     pub(crate) warnings: Arc<OutputWarnings>,
     /// The answer table's version when this build published (see `QueryDb::answers_version`).
     pub(crate) answers: Option<u128>,
+    /// The part of `answers` besides the tree (`QueryDb::answers_context`).
+    pub(crate) answers_context: Option<u128>,
+    /// The marking of the answer table made for this output (`QueryDb::mark_published`); None
+    /// for an output whose answers were not marked (declaration patches).
+    pub(crate) marks: Option<u64>,
     pub(crate) dmb_hash: u128,
 }
 impl OutputBase {
@@ -466,6 +471,8 @@ impl OutputBase {
         archive: crate::publish::ResourceIdentity,
         warnings: OutputWarnings,
         answers: Option<u128>,
+        answers_context: Option<u128>,
+        marks: Option<u64>,
         dmb_hash: u128,
     ) -> Option<Self> {
         let mut units = BTreeMap::new();
@@ -482,6 +489,8 @@ impl OutputBase {
             archive,
             warnings: Arc::new(warnings),
             answers,
+            answers_context,
+            marks,
             dmb_hash,
         })
     }
@@ -556,17 +565,48 @@ pub(crate) fn code_row(
 /// The bodies to relower against the retained output, and how lines moved; `Err` says why the
 /// declaration side differs (the whole program is composed).
 pub(crate) struct Admitted {
+    /// The answer facts the patched output is retained with.
+    pub answered: Answered,
     pub base: Arc<OutputBase>,
     pub link: Arc<crate::composition::PatchLink>,
     pub image: Arc<crate::composition::PatchImage>,
     pub changed: Vec<usize>,
     pub lines: LineMap,
 }
+/// The answer table's facts at the point an output is retained (see `OutputBase`).
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct Answered {
+    pub version: Option<u128>,
+    pub context: Option<u128>,
+    pub marks: Option<u64>,
+}
+
+/// This request's answers: the table, the request's view of it and the worker count its proof
+/// may use.
+pub(crate) struct AnswerProof<'a> {
+    pub db: &'a crate::query_db::QueryDb,
+    pub request: &'a crate::query_db::RequestAnswers<'a>,
+    pub workers: usize,
+}
+
+/// Admit the request to be built on the retained output.
+///
+/// The answers gate is decided on the answers themselves, last (it is the only expensive
+/// check): when the table's version is the one the retained output published with, every
+/// answer is equal. Otherwise the version differs only in the tree identity (the answer world
+/// and the resource searches must be equal), and every answer the retained output was built
+/// from is asked again under this request's tree and compared with the value it had at
+/// publication (`QueryDb::prove_against_base`). That proof asks the whole marked table, not
+/// the answers some stage happened to ask, so it does not depend on what is unasked. A unit
+/// that reads an answer with no published value is a new unit: only bodies whose text or
+/// position changed are lowered here, with this request's answers, and the body roster is the
+/// same as the retained output's, so none is new.
 pub(crate) fn admit(
     retained: &RetainedOutput<'_>,
     frontend: &dm_tree::frontend::ColdFrontend,
     answers: Option<u128>,
-    db: Option<&crate::query_db::QueryDb>,
+    context: Option<u128>,
+    proof: Option<AnswerProof<'_>>,
 ) -> Result<Admitted, String> {
     let shape = retained.shape;
     // Prefer a retained output of this build's program text (another lane's tree may be current).
@@ -583,11 +623,9 @@ pub(crate) fn admit(
     if base.dmb_hash != image.rows.image().content_hash() {
         return Err("retained image differs from its output".into());
     }
-    if answers.is_none() || base.answers != answers {
-        // Report-only: which answers changed in this request (the table's per-slot diff).
-        let detail = db.map_or_else(String::new, |db| format!(" ({})", db.answer_diff().summary()));
-        return Err(format!("answers changed{detail}"));
-    }
+    let Some(answers) = answers else {
+        return Err("answers are not versioned".into());
+    };
     if base.shape.text_key() != shape.text_key() {
         return Err("program text outside bodies changed".into());
     }
@@ -618,7 +656,30 @@ pub(crate) fn admit(
     if first_root_body(frontend).is_some_and(|root| changed.contains(&root)) {
         return Err("changed body is the first root procedure (its literals register strings)".into());
     }
+    let mut answered = Answered { version: Some(answers), context, marks: None };
+    if base.answers != Some(answers) {
+        let detail = proof.as_ref().map_or_else(String::new, |proof| {
+            format!(" ({})", proof.db.answer_diff().summary())
+        });
+        if context.is_none() || base.answers_context != context {
+            return Err(format!("answer world or resource searches changed{detail}"));
+        }
+        let (Some(proof), Some(marks)) = (proof.as_ref(), base.marks) else {
+            return Err(format!("answers changed, none marked for the retained output{detail}"));
+        };
+        let held = proof
+            .db
+            .prove_against_base(proof.request, marks, proof.workers)
+            .map_err(|reason| format!("answers changed: {reason}{detail}"))?;
+        crate::daemon_eprintln!(
+            "native incremental output: {held} published answers asked again, none differ (tree identity only)"
+        );
+    }
+    if let Some(proof) = &proof {
+        answered.marks = Some(proof.db.mark_published());
+    }
     Ok(Admitted {
+        answered,
         base,
         link,
         image,
@@ -641,6 +702,7 @@ pub(crate) fn splice(
     executor: &dm_exec::BuildExecutor,
 ) -> Result<Patched, String> {
     let Admitted {
+        answered,
         base,
         link,
         image,
@@ -821,7 +883,9 @@ pub(crate) fn splice(
         inputs: Arc::new(retained.inputs),
         archive: retained.archive,
         warnings: Arc::new(warnings),
-        answers: base.answers,
+        answers: answered.version,
+        answers_context: answered.context,
+        marks: answered.marks,
         dmb_hash: 0,
     };
     let dmb = if let Some(tables) = extended {
