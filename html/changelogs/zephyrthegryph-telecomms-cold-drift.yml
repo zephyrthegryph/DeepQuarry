@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Pinned the telecomms floor warming and the freezer heat pump's energy books with tests; heat machine tests restore the map's drifting rooms"

@@ -1,5 +1,4 @@
 /obj/machinery/exonet_node
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "exonet node"
 	desc = null // Gets written in New()
 	icon = 'icons/obj/stationobjs.dmi'
@@ -22,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	after_init(0, then(PROC_REF(describe_mapped_node)))
 	setup(PROC_REF(start_node_audio))
 	default_parts()

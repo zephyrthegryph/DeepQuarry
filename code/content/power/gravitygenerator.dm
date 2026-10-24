@@ -21,7 +21,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	icon = 'icons/obj/machines/gravity_generator.dmi'
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	var/sprite_number = 0
 
@@ -36,6 +35,7 @@ MSG_DEF(gravgen/secured, "You secure the plating to the framework.", "%U% secure
 // answers for the main one). Hits barely touch it: a devastating blast or a blob may break it. A broken generator is repaired by a ladder on
 // any of its parts: screwdriver, welder, 10 plasteel, wrench.
 CAPABILITIES(/obj/machinery/gravity_generator)
+	configure(movable_motion(unacidable = TRUE))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(gravgen_blast_break))))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(gravgen_blob_break))))
 	op("repair_screws", tool(TOOL_SCREWDRIVER), label("Secure the screws"), wait(0), when(PROC_REF(needs_screws)), says(MSG(gravgen/screwed)), then(PROC_REF(repair_stepped)))

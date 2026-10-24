@@ -90,6 +90,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	evolvekey = "/obj/item/stack/material/tritium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray)
+	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/wisp = 3 )))
+
 
 /mob/living/simple_mob/vore/spacecritter/solarray/life_type_post_due()
 	return TRUE
@@ -155,6 +158,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 	var/chilltemp = -20
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/livingice)
+	configure(butchery_rules(meat_amount = 18, butchery_loot = list( /obj/item/stack/material/frostscale = 3 )))
+
 /mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.cold_aura()
@@ -194,6 +200,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/radcrab)
+	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/crystalscale = 3 )))
+
 /mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.irradiate()
@@ -232,6 +241,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	evolvekey = "/obj/item/stack/material/phoron"
 	copy = "/mob/living/simple_mob/vore/spacecritter/dreameel"
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
+	configure(butchery_rules(meat_amount = 2, butchery_loot = list( /obj/item/stack/material/dreamscale = 3 )))
+
 /datum/artifact_master/dreameel
 	make_effects = list(
 		/datum/artifact_effect/gas/sleeping
@@ -268,6 +280,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	feed = "/obj/item/stack/material/concrete"
 	evolvekey = "/obj/item/stack/material/tritium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/gravityshell"
+
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
+	configure(butchery_rules(meat_amount = 8, butchery_loot = list( /obj/item/stack/material/shellchitin = 3 )))
 
 /datum/artifact_master/gravity
 	make_effects = list(
@@ -331,15 +346,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 /mob/living/simple_mob/vore/spacecritter/solarray
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/raymeat
-	meat_amount = 8
 
 	tame_items = list(
 	/obj/item/stack/tile/grass = 50
 	)
 
-	butchery_loot = list(\
-		/obj/item/stack/material/wisp = 3\
-		)
 
 	harvest_tool = /obj/item/weldingtool
 	harvest_cooldown = 10 MINUTES
@@ -352,15 +363,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 /mob/living/simple_mob/vore/spacecritter/livingice
 	meat_type = /obj/item/stack/material/snow
-	meat_amount = 18
 
 	tame_items = list(
 	/obj/item/stack/material/snow = 10
 	)
 
-	butchery_loot = list(\
-		/obj/item/stack/material/frostscale = 3\
-		)
 
 	harvest_tool = /obj/item/tool/wirecutters
 	harvest_cooldown = 10 MINUTES
@@ -373,15 +380,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 /mob/living/simple_mob/vore/spacecritter/radcrab
 	meat_type = /obj/item/reagent_containers/food/snacks/crabmeat
-	meat_amount = 8
 
 	tame_items = list(
 	/obj/item/ore/uranium = 50
 	)
 
-	butchery_loot = list(\
-		/obj/item/stack/material/crystalscale = 3\
-		)
 
 	harvest_tool = /obj/item/tool/crowbar
 	harvest_cooldown = 10 MINUTES
@@ -394,15 +397,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 /mob/living/simple_mob/vore/spacecritter/dreameel
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/eelmeat
-	meat_amount = 2
 
 	tame_items = list(
 		/obj/item/reagent_containers/food/snacks/meat/gravityshell = 40
 	)
 
-	butchery_loot = list(\
-		/obj/item/stack/material/dreamscale = 3\
-		)
 
 	harvest_tool = /obj/item/tool/wirecutters
 	harvest_cooldown = 10 MINUTES
@@ -415,15 +414,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 /mob/living/simple_mob/vore/spacecritter/gravityshell
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell
-	meat_amount = 8
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/crabmeat = 50
 	)
 
-	butchery_loot = list(\
-		/obj/item/stack/material/shellchitin = 3\
-		)
 
 	harvest_tool = /obj/item/tool/crowbar
 	harvest_cooldown = 10 MINUTES

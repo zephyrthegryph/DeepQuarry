@@ -29,13 +29,11 @@ MSG_DEF(smes/terminal_built, "You add cables to %T%.", "%U% has added cables to 
 MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.", "%U% cut the cables and dismantled the power terminal.")
 
 /obj/machinery/power/smes
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
 	icon_state = "smes"
 	density = TRUE
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
 	max_integrity = 500
@@ -97,6 +95,8 @@ MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.
 STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))
 	setup(PROC_REF(wire_up), mapload = TRUE)
 	after_init(0, then(PROC_REF(mapped_after_init)))

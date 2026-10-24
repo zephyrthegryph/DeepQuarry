@@ -115,7 +115,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			S.message = stutter(S.message)
 			verb = pick("stammers","stutters")
 			. = 1
-		if(muffled)
+		if(sparse_get_or(src, muffled, FALSE))
 			verb = pick("muffles")
 			whispering = 1
 			. = 1
@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		if(stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE))
 			return say_dead(message)
 		return
-	if(forced_psay)
+	if(mob_rules_of(src).forced_psay)
 		psay(message)
 		return
 	//Maybe they are using say/whisper to do a quick emote, so do those
@@ -174,7 +174,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 /mob/living/direct_say(message, datum/language/speaking = null, whispering = 0)
 	// Handle automatic whispering mode
-	if(autowhisper)
+	if(sparse_get_or(src, autowhisper, FALSE))
 		whispering = 1
 
 	//Parse the radio code and consume it
@@ -446,7 +446,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		extrarange = extrarange,\
 		falloff = 1,\
 		is_global = TRUE,\
-		frequency = voice_freq > 0 ? voice_freq : null,\
+		frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null,\
 		ignore_walls = TRUE,\
 		preference = sound_preference,
 	) // Ignore_walls set to TRUE
@@ -454,7 +454,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/living/proc/blooploop(message, extrarange = 0, volume, sound_preference = /datum/preference/toggle/say_sounds, bloop_preference = /datum/preference/toggle/bloop_sounds)
 	var/bloopers = min(round((LAZYLEN(message) / BLOOPER_SPEED)) + 1, BLOOPER_MAX_BLOOPERS)
 	var/total_delay
-	playsound(src, pick(voice_sounds_list), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = voice_freq > 0 ? voice_freq : null, ignore_walls = FALSE, preference = sound_preference)
+	playsound(src, pick(voice_sounds_list), volume, TRUE, extrarange = extrarange, falloff = 1 , is_global = TRUE, frequency = sparse_get_or(src, voice_freq, 42500) > 0 ? sparse_get_or(src, voice_freq, 42500) : null, ignore_walls = FALSE, preference = sound_preference)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break

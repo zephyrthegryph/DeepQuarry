@@ -6,7 +6,6 @@
 	opacity = 0
 	density = FALSE
 	anchored = TRUE
-	unacidable = TRUE
 	layer = STAIRS_LAYER
 
 // Returns TRUE if the stairs are a complete and connected unit, FALSE if a piece is missing or obstructed
@@ -534,4 +533,5 @@ CAPABILITIES(/obj/structure/stairs/spawner)
 	bound_width = 64
 
 CAPABILITIES(/obj/structure/stairs)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(check_integrity))

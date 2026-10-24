@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Base-type scratch vars of atoms, items, machines and mobs became sparse slots, and per-type constants of movables, atoms, living mobs and machines became type traits; View Variables, mass edit and SDQL still reach them by name"

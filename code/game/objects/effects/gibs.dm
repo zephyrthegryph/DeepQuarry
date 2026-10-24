@@ -1,5 +1,6 @@
-/// Sprays the gibs of pattern `gibber_type` (an /obj/effect/gibspawner type) at `location`.
-/proc/gibs(atom/location, datum/dna/MobDNA, gibber_type = /obj/effect/gibspawner/generic, fleshcolor, bloodcolor)
+/// Sprays the gibs of pattern `gibber_type` (an /obj/effect/gibspawner type) at `location`; `temperature` (K, optional) is what the gibbed body was
+/// at, and every gib starts there.
+/proc/gibs(atom/location, datum/dna/MobDNA, gibber_type = /obj/effect/gibspawner/generic, fleshcolor, bloodcolor, temperature)
 	var/obj/effect/gibspawner/P = gibber_type
 	if(!fleshcolor)
 		fleshcolor = initial(P.fleshcolor)
@@ -21,6 +22,7 @@
 			if(bloodcolor)
 				gib.set_basecolor(bloodcolor)
 			gib.init_forensic_data()
+			gib.inherit_heat(temperature)
 			gib.add_blooddna(MobDNA, null)
 			if(isturf(location) && length(directions))
 				gib.streak(directions)

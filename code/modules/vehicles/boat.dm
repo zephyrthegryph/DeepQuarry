@@ -7,7 +7,6 @@
 	charge_use = 0 // Boats use oars.
 	pixel_x = -2
 	move_delay = 3 // Rather slow, but still faster than swimming, and won't get you wet.
-	max_buckled_mobs = 2
 	anchored = FALSE
 	var/tmp/datum/material/material_static
 	var/riding_datum_type = /datum/riding/boat/small
@@ -21,8 +20,10 @@ TYPE_TABLE(/obj/vehicle/boat/sifwood, boat_forced_material, MAT_SIFWOOD)
 	icon_state = "dragon_boat"
 	max_integrity = 250
 	pixel_x = -16
-	max_buckled_mobs = 5
 	riding_datum_type = /datum/riding/boat/big
+
+CAPABILITIES(/obj/vehicle/boat/dragon)
+	configure(buckle_rules(max_mobs = 5))
 
 /obj/vehicle/boat/dragon/build_of(material_name)
 	..()
@@ -65,6 +66,7 @@ CAPABILITIES(/obj/item/oar)
 	set_color(material().icon_colour)
 
 CAPABILITIES(/obj/vehicle/boat)
+	configure(buckle_rules(max_mobs = 2))
 	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
 	op("boat_board", item(/atom/movable), gesture(GESTURE_DRAG), label("Board"), then(PROC_REF(interaction_boat_board)))
 	param(nameof(boat_material), pos = 1, apply = PROC_REF(build_of))

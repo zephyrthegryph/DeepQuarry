@@ -1240,7 +1240,7 @@
 
 /datum/unit_test/dq_p2_door/airlock_emp_can_pop_it_open/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
-	D.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	D.set_emp_protection_flags(atom_rules_of(D).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(1234)
 	var/opened = FALSE
 	for(var/i in 1 to 300)
@@ -1255,7 +1255,7 @@
 
 /datum/unit_test/dq_p2_door/airlock_emp_can_electrify_it/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
-	D.emp_protection_flags |= EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS
+	D.set_emp_protection_flags(atom_rules_of(D).emp_protection | (EMP_PROTECT_WIRES | EMP_PROTECT_CONTENTS))
 	test_rng(4321)
 	var/electrified = FALSE
 	for(var/i in 1 to 300)

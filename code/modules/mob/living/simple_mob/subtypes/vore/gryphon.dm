@@ -15,7 +15,6 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 30
 
-	meat_amount = 15
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pats"
@@ -33,10 +32,7 @@
 	pixel_y = 0
 	mount_offset_y = 15
 	mount_offset_x = -12
-	max_buckled_mobs = 1
 	can_buckle = TRUE
-	buckle_movable = TRUE
-	buckle_lying = FALSE
 
 	var/random_skin = TRUE
 	var/list/skins = list( // ALLOW(instance_list): d: per-mob skins with starting entries, edited at runtime; mobs are few
@@ -103,7 +99,7 @@
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || motion_of(L).unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -138,6 +134,8 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	configure(butchery_rules(meat_amount = 15))
+	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	ref_one(nameof(dq_maybe_eating), /mob/living)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

@@ -455,7 +455,6 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
 	var/breath_masked = FALSE
 	var/obj/item/clothing/mask/breath/breathmask
-	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 
 /// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
@@ -1420,10 +1419,10 @@ CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
 	desc = "The latest fashion innovations by the Nanotrasen Uniform & Fashion Department have provided the brilliant invention of slicing a regular cloak in half! All the ponce, half the cost!"
 	icon_state = "roughcloak"
 	item_state = "roughcloak"
-	actions_types = list(/datum/action/item_action/adjust_cloak)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
+	configure(item_rules(actions_types = list(/datum/action/item_action/adjust_cloak)))
 	op("half_cloak_flip_self", in_hand(), label("Flip cloak"), then(PROC_REF(half_cloak_flip_self)))
 
 /// Old attack_self.
@@ -1500,10 +1499,10 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	desc = "Aim for the Heart, Ramon."
 	icon_state = "neo_ranger"
 	item_state = "neo_ranger"
-	actions_types = list(/datum/action/item_action/adjust_poncho)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
+	configure(item_rules(actions_types = list(/datum/action/item_action/adjust_poncho)))
 	op("neo_ranger_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(neo_ranger_adjust_self)))
 
 /// Old attack_self.

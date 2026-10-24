@@ -195,7 +195,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		user.RestrainedClickOn(A, user.input_stance())
 		currently_restrained = TRUE
 
-	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A, user.input_stance()))
+	if(!currently_restrained && sparse_get_or(user, in_throw_mode, 0) && (isturf(A) || isturf(A.loc)) && user.throw_item(A, user.input_stance()))
 		user.trigger_aiming(TARGET_CAN_CLICK)
 		user.throw_mode_off()
 		return TRUE

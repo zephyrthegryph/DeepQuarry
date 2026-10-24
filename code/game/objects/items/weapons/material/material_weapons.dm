@@ -3,7 +3,6 @@
 // They are also fragile based on material data and many can break/smash apart.
 /obj/item/material
 	gender = NEUTER
-	throw_speed = 3
 	throw_range = 7
 	w_class = ITEMSIZE_NORMAL
 	item_icons = list(
@@ -93,6 +92,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
+	configure(movable_motion(throw_speed = 3))
 	setup(PROC_REF(make_from_material), mapload = TRUE)
 	configure(item_combat(sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

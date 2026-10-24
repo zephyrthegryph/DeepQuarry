@@ -10,7 +10,6 @@
 	icon_state = "bonfire"
 	density = FALSE
 	anchored = TRUE
-	buckle_lying = FALSE
 	EXPIRY_DECLARE(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
@@ -20,6 +19,7 @@
 
 /obj/structure/bonfire/var/burning = FALSE
 CAPABILITIES(/obj/structure/bonfire)
+	configure(buckle_rules(lying = FALSE))
 	slot(CONTAINER_SLOT_FUEL)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
@@ -97,7 +97,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 		if("Stake")
 			R.use(1)
 			set_can_buckle(TRUE)
-			buckle_require_restraints = TRUE
+			set_buckle_require_restraints(TRUE)
 			to_chat(user, span_notice("You add a rod to \the [src]."))
 			var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")
 			rod_underlay.pixel_y = 16

@@ -4724,9 +4724,8 @@
 /turf/simulated/floor/tiled/techmaint,
 /area/engineering/engine_monitoring)
 "vP" = (
-/obj/machinery/computer/ship/engines{
-	dir = 8;
-	throwpass = 1
+/obj/machinery/computer/ship/engines/throwpass{
+	dir = 8
 	},
 /turf/simulated/shuttle/floor/voidcraft/light,
 /area/shuttle/overmapdemo)
@@ -6104,9 +6103,8 @@
 /turf/simulated/floor,
 /area/engineering/workshop)
 "Lz" = (
-/obj/machinery/computer/power_monitor{
-	dir = 4;
-	throwpass = 1
+/obj/machinery/computer/power_monitor/throwpass{
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloor{
 	dir = 8

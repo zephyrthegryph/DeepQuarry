@@ -29,7 +29,6 @@
 	var/regulator_max_cop = 25
 	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
 	var/pumping = FALSE
-	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater
 
 // The cell comes from cell_type (null: none).
@@ -39,6 +38,7 @@ MSG_DEF_SELF(space_heater/hatch_closed, "the hatch must be open to insert a powe
 MSG_DEF_SELF(space_heater/cell_present, "there is already a power cell inside")
 
 CAPABILITIES(/obj/machinery/space_heater)
+	configure(atom_rules(bubble_icon = "engineering"))
 	configure(machine_usage(interface_sound = SFX_SWITCH, interact_offline = TRUE))
 	default_parts()
 	climb()

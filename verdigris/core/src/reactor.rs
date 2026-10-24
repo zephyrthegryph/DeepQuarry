@@ -415,7 +415,7 @@ impl Reactor {
         };
         slot.alive = false;
         slot.generation = slot.generation.wrapping_add(1);
-        let watches: Vec<RateWatch> = slot.watches.drain(..).collect();
+        let watches: Vec<RateWatch> = std::mem::take(&mut slot.watches);
         for w in watches {
             if let Some(t) = w.timer {
                 self.wheel.cancel(t);
@@ -535,7 +535,7 @@ impl Reactor {
         self.lanes.begin_tick();
         let mut fired = std::mem::take(&mut self.fired);
         self.wheel.advance(now, &mut fired);
-        for (id, due) in fired.drain(..) {
+        for (_, due) in fired.drain(..) {
             match due {
                 Due::Crossing { model, token } => {
                     let i = self

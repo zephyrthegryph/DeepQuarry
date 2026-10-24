@@ -824,7 +824,6 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 	anchored = TRUE
 	pixel_x = -16
 	pixel_y = -10
-	unacidable = TRUE
 
 	var/mob/living/simple_mob/vore/overmap/stardog/host
 	var/mob/living/controller
@@ -845,6 +844,7 @@ MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span
 MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
 CAPABILITIES(/obj/structure/control_pod)
+	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(controller), /mob/living)
 	after_init(0, then(PROC_REF(control_pod_setup)))
 	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
@@ -1269,7 +1269,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		return FALSE
 	if(isitem(digest_target))
 		var/obj/item/I = digest_target
-		if(I.unacidable || I.throwing || I.is_incorporeal())
+		if(motion_of(I).unacidable || I.throwing || I.is_incorporeal())
 			return FALSE
 		var/food = FALSE
 		if(istype(I,/obj/item/reagent_containers/food))
@@ -1287,7 +1287,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		return TRUE
 	if(isliving(digest_target))
 		var/mob/living/L = digest_target
-		if(L.unacidable || !L.vore_prefs.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
+		if(motion_of(L).unacidable || !L.vore_prefs.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
 			return FALSE
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -1322,7 +1322,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			return
 		balloon_alert_visible("*blub...*")
 		if(H.stat == DEAD)
-			H.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
+			H.set_unacidable(TRUE)//Don't touch this one again, we're gonna delete it in a second
 			H.release_vore_contents()
 			for(var/obj/item/W in contents_of(H))
 				if(istype(W, /obj/item/organ/internal/mmi_holder/posibrain))
@@ -1352,7 +1352,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			return
 		balloon_alert_visible("*blub...*")
 		if(L.stat == DEAD)
-			L.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
+			L.set_unacidable(TRUE)//Don't touch this one again, we're gonna delete it in a second
 			L.release_vore_contents()
 			if(linked_mob)
 				var/how_much = L.mob_size + nutrition_of(L)

@@ -3,14 +3,14 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())
-			if(src?.buckled_to() != AM && (((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING) && flight_vore))
+			if(src?.buckled_to() != AM && (((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING) && sparse_get_or(src, flight_vore, FALSE)))
 				AM.stumble_into(src)
 	return ..()
 // Because flips toggle density
 /mob/living/Crossed(atom/movable/AM)
 	if(isliving(AM) && isturf(loc) && AM != src)
 		var/mob/living/AMV = AM
-		if(AMV?.buckled_to() != src && (((AMV.has_status(STAT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || stat_value(AMV, STAT_FLYING) && AMV.flight_vore))
+		if(AMV?.buckled_to() != src && (((AMV.has_status(STAT_CONFUSED) || AMV.is_blind()) && AMV.stat == CONSCIOUS && prob(50) && AMV.m_intent==I_RUN) || stat_value(AMV, STAT_FLYING) && sparse_get_or(AMV, flight_vore, FALSE)))
 			stumble_into(AMV)
 	..()
 

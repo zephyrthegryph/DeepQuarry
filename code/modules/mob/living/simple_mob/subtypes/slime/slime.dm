@@ -88,6 +88,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(living_rules(use_modern_ai = TRUE, composition_reagent = REAGENT_ID_SLIMEJELLY))
 	configure(mob_nature(pain_1p = list("squish", "squelch"), pain_3p = list("squishes", "squelches")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))

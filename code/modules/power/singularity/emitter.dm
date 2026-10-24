@@ -23,7 +23,6 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 	icon_state = "emitter0"
 	anchored = FALSE
 	density = TRUE
-	unacidable = TRUE
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	var/id = null
 
@@ -53,6 +52,7 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 
 
 CAPABILITIES(/obj/machinery/power/emitter)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_initial_emitter_state))
 	configure(uses_power(active = 30000))
 	climb()
@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /// Declared setup: prepare initial emitter state, after the complete parent chain.
 /obj/machinery/power/emitter/proc/prepare_initial_emitter_state()
 	previous_state = state
-	emp_protection_flags |= EMP_PROTECT_SELF
+	set_emp_protection_flags(atom_rules_of(src).emp_protection | (EMP_PROTECT_SELF))
 
 // admins are told an emitter was deleted.
 /obj/machinery/power/emitter/on_destroy(force)

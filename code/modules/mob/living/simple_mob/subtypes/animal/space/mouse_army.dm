@@ -12,7 +12,6 @@
 	faction = FACTION_MOUSE_ARMY
 
 	endurance = 50
-	universal_understand = 1
 
 	taser_kill = 0
 
@@ -53,6 +52,7 @@
 	species_sounds = "Mouse"
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(mob_rules(universal_understand = 1))
 	configure(mob_nature(pain_1p = list("squeaks", "squiks")))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)

@@ -237,6 +237,37 @@ pub fn check_generation(r: MixRef, held: Option<u32>) -> std::result::Result<(),
     }
 }
 
+/// A handle that arrives as two numbers (a queued batch keeps no datum): `id` is
+/// the handle, `held` the generation it was stamped with. Refused when `id` is
+/// not a handle or the owner has moved on since.
+///
+/// # Errors
+/// If `id` is not a handle, or it is stale.
+pub fn checked_ref(id: f32, held: Option<u32>) -> Result<MixRef> {
+    let r = MixRef::from_f32(id).ok_or_else(|| eyre!("invalid gas mixture handle {id}"))?;
+    check_generation(r, held).map_err(|s| {
+        eyre!(
+            "stale gas mixture handle {} ({:?}): queued with generation {:?}, now at {}",
+            r.id(),
+            r,
+            s.held,
+            s.current
+        )
+    })?;
+    Ok(r)
+}
+
+/// [`checked_ref`] for the two numbers DM queued.
+///
+/// # Errors
+/// As [`checked_ref`], or if either is not a number.
+pub fn checked_ref_value(id: &ByondValue, generation: &ByondValue) -> Result<MixRef> {
+    checked_ref(
+        id.get_number()?,
+        Some(generation_from_f32(generation.get_number()?)),
+    )
+}
+
 fn missing(r: MixRef) -> eyre::Report {
     eyre!("no gas mixture behind handle {} ({r:?})", r.id())
 }
@@ -1737,6 +1768,25 @@ mod tests {
         let now = generation(MixRef::Pipe(slot));
         assert_eq!(check_generation(MixRef::Pipe(slot), Some(now)), Ok(()));
         REGION_SLOTS.with(|s| s.borrow_mut().retire(9_000_002));
+    }
+
+    #[test]
+    fn a_queued_id_and_generation_pair_is_refused_once_the_slot_moves_on() {
+        with_world(|_| Ok(())).unwrap();
+        let a = alloc(tank(5.0)).unwrap();
+        let stamped = generation(MixRef::Main(a));
+        #[allow(clippy::cast_precision_loss)]
+        let id = a as f32;
+        assert_eq!(checked_ref(id, Some(stamped)).unwrap(), MixRef::Main(a));
+        assert!(checked_ref(id, None).is_err(), "no generation never passes");
+        assert!(checked_ref(-1.0, Some(stamped)).is_err());
+        assert!(checked_ref(1.5, Some(stamped)).is_err());
+        free(a);
+        let b = alloc(tank(9.0)).unwrap();
+        assert_eq!(a, b);
+        let err = checked_ref(id, Some(stamped)).unwrap_err().to_string();
+        assert!(err.contains("stale"), "{err}");
+        free(b);
     }
 
     #[test]

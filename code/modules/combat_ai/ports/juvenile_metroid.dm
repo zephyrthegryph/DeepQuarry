@@ -24,7 +24,6 @@
 // vars, and apply_attack()'s intent dispatch all still live on the metroid mob.
 
 /mob/living/simple_mob/metroid/juvenile
-	use_modern_ai = TRUE
 	/// When TRUE the metroid always opens with a stun (I_DISARM) attempt rather
 	/// than rolling on power_charge. Lived on the legacy AI holder; kept here so
 	/// admins / events can still force "always permastun" metroids.

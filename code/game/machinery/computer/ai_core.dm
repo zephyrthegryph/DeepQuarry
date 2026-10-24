@@ -8,7 +8,6 @@ MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 /obj/structure/AIcore
 	density = TRUE
 	anchored = FALSE
-	unacidable = TRUE
 	name = "\improper AI core"
 	icon = 'icons/mob/AI.dmi'
 	icon_state = "0"
@@ -18,6 +17,7 @@ MSG_DEF_SELF(ai_core/glass_start, "You start to put in the glass panel.")
 	var/obj/item/mmi/brain = null
 
 CAPABILITIES(/obj/structure/AIcore)
+	configure(movable_motion(unacidable = TRUE))
 	// 0 a loose frame, 1 bolted down (the board goes in), 2 the board screwed in, 3 wired (laws and the brain go in), 4 the glass panel on; the
 	// screwdriver on a paneled core makes the AI
 	stages(nameof(state),

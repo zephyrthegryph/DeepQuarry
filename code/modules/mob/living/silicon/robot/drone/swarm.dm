@@ -8,7 +8,6 @@
 	endurance = 35
 	cell_emp_mult = 0.5
 	universal_speak = 0
-	universal_understand = 1
 	gender = NEUTER
 	pass_flags = PASSTABLE
 	braintype = "Drone"
@@ -50,6 +49,7 @@
 
 // It speaks the swarm's language.
 CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	configure(mob_rules(universal_understand = 1))
 	setup(PROC_REF(prepare_swarm_spells))
 	configure(mob_movement(softfall = TRUE))
 	configure(mob_kind(can_be_antagged = TRUE))

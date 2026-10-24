@@ -22,7 +22,6 @@
 //
 
 /obj/machinery/compressor
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "compressor"
 	desc = "The compressor stage of a gas turbine generator."
 	icon = 'icons/obj/pipes.dmi'
@@ -49,6 +48,7 @@
 // while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
 // (turbine_step(): ((rpm / TURBGENQ) ^ TURBGENG) * TURBGENQ * productivity W for the next power step) and vents the gas behind it.
 CAPABILITIES(/obj/machinery/compressor)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_usage(wrench_time = 2 SECONDS))
 	setup(PROC_REF(prepare_compressor_pair))
 	default_parts()
@@ -64,7 +64,6 @@ CAPABILITIES(/obj/machinery/compressor)
 	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 
 /obj/machinery/power/turbine
-	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "gas turbine generator"
 	desc = "A gas turbine used for backup power generation."
 	icon = 'icons/obj/pipes.dmi'
@@ -260,6 +259,7 @@ CAPABILITIES(/obj/machinery/compressor)
 		look.overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
 CAPABILITIES(/obj/machinery/power/turbine)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(machine_usage(wrench_time = 2 SECONDS))
 	setup(PROC_REF(prepare_turbine_pair))
 	default_parts()

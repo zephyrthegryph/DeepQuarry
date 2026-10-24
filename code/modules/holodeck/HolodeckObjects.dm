@@ -146,20 +146,21 @@ CAPABILITIES(/turf/simulated/floor/holofloor/desert)
 	icon = 'icons/obj/furniture.dmi'
 	icon_state = "stool_padded_preview"
 	anchored = TRUE
-	unacidable = TRUE
 	pressure_resistance = 15
 
 /obj/item/clothing/gloves/boxing/hologlove
 	name = "boxing gloves"
 	desc = "Because you really needed another excuse to punch your crewmates."
 	icon_state = "boxing"
-	unacidable = TRUE
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
 			)
 	item_state = "boxing"
 	special_attack_type = /datum/unarmed_attack/holopugilism
+
+CAPABILITIES(/obj/item/clothing/gloves/boxing/hologlove)
+	configure(movable_motion(unacidable = TRUE))
 
 /datum/unarmed_attack/holopugilism
 	sparring_variant_type = /datum/unarmed_attack/holopugilism
@@ -282,11 +283,9 @@ CAPABILITIES(/obj/item/holo)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
-	unacidable = TRUE
 	var/active = 0
 
 
@@ -306,6 +305,7 @@ CAPABILITIES(/obj/item/holo)
 	return FALSE
 
 CAPABILITIES(/obj/item/holo/esword)
+	configure(movable_motion(throw_speed = 1, unacidable = TRUE))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 3.0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -358,9 +358,9 @@ CAPABILITIES(/obj/item/holo/esword)
 	name = "basketball"
 	desc = "Here's your chance, do your dance at the Space Jam."
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
-	unacidable = TRUE
 
 CAPABILITIES(/obj/item/beach_ball/holoball)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL, pickup = SFX_ITEMS_PICKUP_BASKETBALL))
 
 /obj/structure/holohoop
@@ -370,10 +370,10 @@ CAPABILITIES(/obj/item/beach_ball/holoball)
 	icon_state = "hoop"
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
-	throwpass = 1
 
 CAPABILITIES(/obj/structure/holohoop)
+	configure(atom_rules(throwpass = 1))
+	configure(movable_motion(unacidable = TRUE))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
@@ -420,11 +420,11 @@ CAPABILITIES(/obj/structure/holohoop)
 	var/tmp/area/currentarea
 	var/eventstarted = 0
 
-	unacidable = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 
 CAPABILITIES(/obj/machinery/readybutton)
+	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
 	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
@@ -513,10 +513,10 @@ CAPABILITIES(/obj/machinery/readybutton)
 	icon_dead = "holo4"
 	alpha = 127
 	icon_gib = null
-	meat_amount = 0
 	meat_type = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
+	configure(butchery_rules(meat_amount = 0))
 	after_init(0, then(PROC_REF(init_hologram_light)))
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)

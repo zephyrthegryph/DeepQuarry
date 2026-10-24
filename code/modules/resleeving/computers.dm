@@ -7,7 +7,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
-	bubble_icon = "medical"
 	circuit = /obj/item/circuitboard/resleeving_control
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
 	var/list/pods //Linked grower pods (REL_LIST).
@@ -407,7 +406,7 @@
 				return
 			var/list/subtargets = list()
 			for(var/mob/living/carbon/human/H in sleever.get_occupant())
-				if(H.resleeve_lock && active_mr.ckey != H.resleeve_lock)
+				if(sparse_get(H, resleeve_lock) && active_mr.ckey != sparse_get(H, resleeve_lock))
 					continue
 				subtargets += H
 			if(subtargets.len)
@@ -498,7 +497,7 @@
 	var/mob/living/carbon/human/occupant = sleever.get_occupant()
 	if(!occupant)
 		return "Error: Resleeving pod is not occupied."
-	if(occupant.resleeve_lock && active_mr.ckey != occupant.resleeve_lock) //OOC body lock thing.
+	if(sparse_get(occupant, resleeve_lock) && active_mr.ckey != sparse_get(occupant, resleeve_lock)) //OOC body lock thing.
 		return "Error: Mind incompatible with body."
 	if(sparse_get(occupant, changeling_locked) && !is_changeling(active_mr.mind_ref))
 		return "Error: Mind incompatible with body"
@@ -686,6 +685,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	configure(atom_rules(bubble_icon = "medical"))
 	setup(PROC_REF(updatemodules))
 	configure(light_glow(color = "#315ab4"))
 	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))

@@ -53,7 +53,6 @@
 	layer = ABOVE_MOB_LAYER // So people can walk behind the top part
 	density = TRUE
 	anchored = FALSE
-	unacidable = TRUE
 	// The crystal has its own delamination damage model. Generic obj_integrity
 	// damage (projectiles, hotspots, explosions, machinery fall-apart) must never
 	// destroy it as though it were an ordinary machine.
@@ -125,6 +124,7 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(movable_motion(unacidable = TRUE))
 	configure(light_glow(range = 4, color = "#8A8A00"))
 	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))

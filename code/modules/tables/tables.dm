@@ -17,7 +17,6 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	density = TRUE
 	anchored = TRUE
 	layer = TABLE_LAYER
-	throwpass = 1
 	/// 0: standing; 1: flipped on its side; -1: a kind that is never flipped or stood on (a rack, a bench).
 	var/flipped = 0
 	max_integrity = 10
@@ -71,6 +70,7 @@ MSG_DEF(table/uncarpeted, "You remove the carpet from %T%.", "%U% removes the ca
 MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some damage to %T%.")
 
 CAPABILITIES(/obj/structure/table)
+	configure(atom_rules(throwpass = 1))
 	configure(obj_rules(surgery_cleanliness = 50))
 	setup(PROC_REF(finish_building))
 	smoothing()

@@ -13,7 +13,6 @@
 	volume = CARTRIDGE_VOLUME_LARGE
 	amount_per_transfer_from_this = CARTRIDGE_VOLUME_LARGE
 	max_transfer_amount = null //Can be null as there was only one value set previously anyway
-	unacidable = TRUE
 
 	VAR_PROTECTED/loaded_reagent = null
 	VAR_PRIVATE/label = ""
@@ -21,6 +20,7 @@
 /obj/item/reagent_containers/chem_canister
 
 CAPABILITIES(/obj/item/reagent_containers/chem_canister)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(identify_loaded_reagent))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	configure(reagents(contents_from = PROC_REF(loaded_contents)))

@@ -49,8 +49,6 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	layer = UNDER_JUNK_LAYER
 
 	use_power = USE_POWER_IDLE
-	buckle_lying = FALSE
-	buckle_dir = SOUTH
 
 	var/obj/item/reagent_containers/glass/beaker = null
 	/// Switched on from its window: it holds its occupant under and trades heat with them while it works.
@@ -66,6 +64,7 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	return HEAT_TARGET_NONE
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	configure(buckle_rules(lying = FALSE, dir = SOUTH))
 	configure(machine_usage(interact_offline = 1, interface_sound = SFX_MACHINES_BUTTONBEEP, click_volume = 30))
 	setup(PROC_REF(face_initialize_directions))
 	configure(uses_power(idle = 20, active = 200))

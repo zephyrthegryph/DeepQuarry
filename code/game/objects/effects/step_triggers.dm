@@ -305,10 +305,12 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "no_item1"
 	var/targetid = "Default"
-	unacidable = 1
 	layer = 99
 	anchored = 1
 	invisibility = INVISIBILITY_BADMIN
+
+CAPABILITIES(/obj/effect/autostriptarget)
+	configure(movable_motion(unacidable = 1))
 
 /obj/effect/autostriptarget/mob
 	name = "Autostrip target to send mobs to."
@@ -338,7 +340,7 @@ CAPABILITIES(/obj/effect/step_trigger/teleporter/deathfall)
 	var/mob/living/L
 	if(isliving(A))
 		L = A
-		if(L.is_floating)
+		if(sparse_get_or(L, is_floating, 0))
 			return //Flyers/nograv can ignore it
 
 	A.forceMove(T)

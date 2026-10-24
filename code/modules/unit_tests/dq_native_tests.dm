@@ -24,7 +24,7 @@
 	native_read_invalidate(entity)
 	native_read(entity, key)
 	TEST_ASSERT_EQUAL(N.cache_misses, misses + 3, "invalidating an entity kept its cached value")
-	vg_heat_body_release(entity)
+	vg_heat_body_drop(entity)
 
 /// A frame with nothing to report delivers nothing, and reports what it did.
 /datum/unit_test/dq_native_empty_frame_is_quiet

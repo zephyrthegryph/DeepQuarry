@@ -36,7 +36,6 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	anchored = TRUE
 	density = TRUE
 	opacity = FALSE
-	unacidable = TRUE
 	block_turf_edges = TRUE // Don't want turf edges popping up from the cliff edge.
 	plane = TURF_PLANE
 
@@ -56,6 +55,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	turf_edges_refresh(get_turf(src))
 
 CAPABILITIES(/obj/structure/cliff)
+	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(register_dangerous_to_step))
 	after_init(0, then(PROC_REF(refresh_edges)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

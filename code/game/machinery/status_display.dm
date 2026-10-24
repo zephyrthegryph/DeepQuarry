@@ -18,7 +18,6 @@
 	name = "status display"
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	use_power = USE_POWER_IDLE
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
@@ -121,7 +120,7 @@
 	var/powered = !power_lost()
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
-		if(!isnull(shuttle_key_token))
+		if(shuttle_key_token())
 			unobserve(shuttle_key_token(), /datum/notice/shuttle_schedule_changed, src)
 			rel_clear(src, nameof(shuttle_key_token))
 		shuttle_key_id = want_shuttle
@@ -150,7 +149,7 @@
 		return null
 	if(next_refresh_delay() && !after_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
-	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
+	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token())))
 		return "mode [mode] is not watching its shuttle"
 	return null
 
@@ -160,6 +159,7 @@
 		refresh()
 
 CAPABILITIES(/obj/machinery/status_display)
+	configure(movable_motion(unacidable = TRUE))
 	// The schedule source is observed, not owned; a source that died is simply not found (unobserve() of null does nothing).
 	ref_one(nameof(shuttle_key_token), /datum, weak = TRUE)
 	setup(PROC_REF(connect_display_radio))

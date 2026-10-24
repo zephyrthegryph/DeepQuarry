@@ -6,9 +6,11 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "missile"
 	damage = 30	//Meaty whack. *Chuckles*
-	does_spin = 0
 	hud_state = "rocket_he"
 	hud_state_empty = "rocket_empty"
+
+CAPABILITIES(/obj/item/projectile/bullet/srmrocket)
+	configure(movable_motion(does_spin = 0))
 
 /obj/item/projectile/bullet/srmrocket/on_hit(atom/target, blocked=0)
 	if(!isliving(target)) //if the target isn't alive, so is a wall or something

@@ -14,7 +14,6 @@
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	unacidable = TRUE
 
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
@@ -37,6 +36,9 @@
 		/obj/item/melee/energy/tyr_katar = 30,
 		/obj/item/prop/deconstructable/gigacell = 100,
 		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses)
+	configure(movable_motion(unacidable = TRUE))
 
 //So tyr mobs, Two types, the robots, and the expirments.
 //Expirments will have less health but some defensive mechanic or the like

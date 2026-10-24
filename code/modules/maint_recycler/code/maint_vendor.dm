@@ -6,7 +6,6 @@
 
 	anchored = TRUE
 	density = TRUE
-	unacidable = TRUE
 	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
 
@@ -26,6 +25,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_RECYCLER_TYPING))
 	setup(PROC_REF(init_products))
 	after_init(0, then(PROC_REF(show_vis_parts))) // the parts Initialize() built are shown once it returns (relations proposal D11)

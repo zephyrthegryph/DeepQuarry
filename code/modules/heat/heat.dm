@@ -15,7 +15,7 @@
 // and dispatches watch wakes to subscribers.
 
 /// The vg-heat body handle while this atom diverges from its surroundings, else
-/// null. A dead handle (released at equilibrium) reads as null from Rust and is
+/// null. A dead handle (dropped) reads as null from Rust and is
 /// cleared lazily.
 /atom/var/heat_body
 /// Written only through set_heat_body(): reactive code reads the temperature as a band (watched()), not the handle, so nothing generates it.
@@ -141,20 +141,36 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	if(istype(self) && !isnull(self.heat_fire_turf) && self.heat_fire_turf != loc)
 		self.decouple_from_fire()
 
-/// Logs a release that Rust held at the body's equilibrium with its tile (`report` is its line, null when nothing was held back): the whole
-/// excess of a body is far more than a tile's air or floor can take, so the release keeps to what the air and floor would reach in contact.
-/proc/heat_release_log(report)
+/// Logs bodies dropped on deletion (`report` is Rust's line per body that held heat over its surroundings, null when none did).
+/proc/heat_drop_log(report)
 	if(istext(report) && length(report))
-		log_world("HEAT RELEASE capped at equilibrium: [report]")
+		log_world("HEAT DROPPED on deletion (nothing transferred): [report]")
 
-/// Releases this atom's heat body: its excess heat goes to its surroundings
-/// (in a batched destroy, in the batch's one release call).
-/atom/proc/release_heat_body()
+/// Drops this atom's heat body. DELETION IS NOT A PHYSICAL EVENT: whatever the body holds over its surroundings is discarded, never deposited
+/// into the tile, the floor or a container (only the exchange a relaxing body had already made is booked). A real transformation that leaves
+/// remains (gibs, ash, melt) carries the heat on explicitly with inherit_heat() before the source goes. In a batched destroy the drop is the
+/// batch's one call.
+/atom/proc/drop_heat_body()
 	if(isnull(heat_body))
 		return
 	dq_heat_bind_forget(src)
-	dq_heat_body_release(src, heat_body)
+	dq_heat_body_drop(src, heat_body)
 	set_heat_body(null)
+
+/// This atom starts at `temperature` K: the product of a real transformation (gibs, ash, a melt) inheriting its source's temperature. The
+/// heat it needs comes with the transformation, not from the surroundings. Does nothing for a null temperature or one it is already at.
+/atom/proc/inherit_heat(temperature)
+	if(!isnum(temperature) || QDELETED(src))
+		return
+	var/delta = temperature - get_temperature()
+	if(abs(delta) < 0.05)
+		return
+	var/list/properties = thermal_properties()
+	var/capacity = properties[THERMAL_CAPACITY]
+	if(!(capacity > 0))
+		return
+	add_heat(capacity * delta)
+	log_world("HEAT INHERITED: [type] started at [round(temperature, 0.1)] K ([round(capacity * delta)] J) from its source")
 
 // ------------------------------------------------------------------ turfs
 

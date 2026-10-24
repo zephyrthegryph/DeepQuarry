@@ -101,12 +101,12 @@ CAPABILITIES(/obj/item/surgical/surgicaldrill)
 	icon_state = "scalpel"
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_TINY
-	throw_speed = 3
 	throw_range = 5
 	material_total = 10000 + 5000
 	var/clamp_chance = 0 // chance that the scalpel will perform cautery on its own
 
 CAPABILITIES(/obj/item/surgical/scalpel)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 10.0, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
@@ -174,12 +174,12 @@ CAPABILITIES(/obj/item/surgical/scalpel/ripper)
 	desc = "For heavy duty cutting."
 	icon_state = "saw"
 	w_class = ITEMSIZE_NORMAL
-	throw_speed = 3
 	throw_range = 5
 	material_total = 20000 + 10000
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/surgical/circular_saw)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 15.0, attack_verbs = list("attacked", "slashed", "sawed", "cut"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_CIRCSAWHIT, drop = SFX_ITEMS_DROP_ACCESSORY))
@@ -226,10 +226,10 @@ CAPABILITIES(/obj/item/surgical/FixOVein)
 	name = "bone setter"
 	desc = "Put them in their place."
 	icon_state = "bone_setter"
-	throw_speed = 3
 	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bonesetter)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 8.0, attack_verbs = list("attacked", "hit", "bludgeoned")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SCRAP))
@@ -238,10 +238,10 @@ CAPABILITIES(/obj/item/surgical/bonesetter)
 	name = "bone clamp"
 	desc = "The best way to get a bone fixed fast."
 	icon_state = "bone_clamp"
-	throw_speed = 3
 	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bone_clamp)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 9))
 	configure(item_combat(force = 8, attack_verbs = list("attacked", "hit", "bludgeoned")))
 

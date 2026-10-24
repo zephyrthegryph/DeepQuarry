@@ -13,10 +13,10 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	var/playsleepseconds = 0.0
 	var/obj/item/rectape/mytape = /obj/item/rectape/random
 	COOLDOWN_DECLARE(canprint)
-	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/taperecorder)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 2))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

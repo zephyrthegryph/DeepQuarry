@@ -62,7 +62,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	faction = FACTION_TEPPI
 	endurance = 600
 	movement_cooldown = -1
-	meat_amount = 12
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	response_help = "pets"
@@ -127,11 +126,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	say_list_type = /datum/say_list/teppi
 	player_msg = "Teppi are large omnivorous quadrupeds. You have four toes on each paw, a long, strong tail, and are quite tough and powerful. You're a lot more intimidating than you are actually harmful though. Your kind are ordinarily rather passive, only really rising to violence when someone does violence to you or others like you. You're not stupid though, you can commiunicate with others of your kind, and form bonds with those who are kind to you, be they Teppi or otherwise. <br>- - - - -<br>" + span_notice("While you may have access to galactic common, this is purely meant for making it so you can understand people in an OOC manner, for facilitating roleplay. You almost certainly should not be speaking to people or roleplaying as though you understand everything everyone says perfectly, but it's not unreasonable to be able to intuit intent and such through people's tones when they speak. Teppi are kind of smart, but they are animals, and should be roleplayed as such.") + " " + span_warning("ADDITIONALLY, you have the ability to produce offspring if you're well fed enough every once in a while, and the ability to disable this from happening to you. These verbs exist for to preserve the mechanical functionality of the mob you are playing. You should be aware of your surroundings when you use this verb, and NEVER use it to prefbreak or be disruptive. If in doubt, don't use it.") + " " + span_notice("Also, to note, AI Teppi will never initiate breeding with player Teppi.")
 	loot_list = list(/obj/item/bone/horn = 100)
-
-	butchery_loot = list(\
-		/obj/item/stack/animalhide = 3,\
-		/obj/item/bone/horn = 1\
-		)
 
 /////////////////////////////////////// Vore stuff///////////////////////////////////////////
 
@@ -419,6 +413,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	configure(butchery_rules(meat_amount = 12, butchery_loot = list( /obj/item/stack/animalhide = 3, /obj/item/bone/horn = 1 )))
 	ref_one(nameof(friend_zone), /obj/belly)
 	ref_one(nameof(parent_one), /mob/living/simple_mob/vore/alienanimals/teppi)
 	ref_one(nameof(parent_two), /mob/living/simple_mob/vore/alienanimals/teppi)
@@ -666,7 +661,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 				src.adjust_nutrition(-rand(250,500))
 				src.set_teppi_wool(TRUE)
 				src.breedable = TRUE
-				src.meat_amount += rand(0,2)
+				src.set_meat_amount(butchery_of(src).meat_amount + (rand(0,2)))
 		else if (not_hungy)
 			var/nutrition_cost = 500 + (nutrition_of(src) / 2)
 			src.adjust_nutrition(-nutrition_cost)
@@ -899,11 +894,11 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	vore_bump_chance = 0
 	vore_pounce_chance = 0
 	vis_height = 32
-	meat_amount = 2
 	loot_list = list()
 	say_list_type = /datum/say_list/teppibaby
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
+	configure(butchery_rules(meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/init_vore(force) //shouldn't need all the vore bidness if they aren't using it as babbies. They get their tummies when they grow up.

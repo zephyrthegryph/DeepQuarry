@@ -12,6 +12,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_gaiter, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/gaiter)
+	configure(item_rules(actions_types = list(/datum/action/item_action/pull_on_gaiter)))
 	owns_one(nameof(breathmask), /obj/item/clothing/mask/breath)
 	configure(item_worn(slots = SLOT_MASK | SLOT_TIE, covers = FACE, flags = FLEXIBLEMATERIAL))
 	variants(nameof(variant), PROC_REF(variant_table))

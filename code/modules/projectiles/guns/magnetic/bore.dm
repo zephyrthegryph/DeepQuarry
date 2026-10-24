@@ -178,12 +178,12 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	power_cost = 100
 	ammo_material = MAT_PHORON
 
-	actions_types = list(/datum/action/item_action/toggle_internal_generator)
 
 	var/datum/looping_sound/small_motor/soundloop
 	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_internal_generator)))
 	owns_one(nameof(soundloop), /datum/looping_sound/small_motor, starts = /datum/looping_sound/small_motor)
 	// Pulls the cord (2 seconds a pull) until the motor starts.
 	op("pull_cord", ai(), takes("pulls"), wait(2 SECONDS, repeats = PROC_REF(pull_more), after_step = PROC_REF(pull_lap)), on_interrupt(PROC_REF(pull_abandoned)), then(PROC_REF(start_motor)))

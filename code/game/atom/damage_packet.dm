@@ -84,7 +84,7 @@
 		if(!damage_type)
 			continue
 		if(kind == DAMAGE_IONIC)
-			amount *= emp_integrity_factor
+			amount *= atom_rules_of(src).emp_integrity_factor
 			if(amount <= 0)
 				continue
 		GLOB.incoming_damage_kind = kind
@@ -100,9 +100,6 @@
 		propagate_damage(packet)
 
 /atom
-	/// How much of an incoming ionic (EMP) amount becomes burn integrity damage.
-	/// Zero for almost everything: EMPs disrupt objects, they don't break them.
-	var/emp_integrity_factor = 0
 
 /// For hits whose kinds have no packet kind (asphyxia, cellular...): they
 /// stay internal to the body, so only a living target takes them, directly.

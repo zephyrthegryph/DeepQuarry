@@ -7,7 +7,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/telecomms/pda_multicaster
 	use_power = USE_POWER_IDLE
-	maintenance_flags = MACHINE_MAINT_STANDARD
 	on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
 
@@ -15,6 +14,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
+	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(update_power))
 	// one PDA per department it mirrors messages to
 	initial_contents(/obj/item/pda/multicaster/command)

@@ -9,7 +9,6 @@
 	icon_state = "dnainjector"
 	var/block=0
 	var/datum/dna2/record/buf=null
-	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_TINY
 	var/uses = 1
@@ -25,6 +24,7 @@
 MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
 
 CAPABILITIES(/obj/item/dnainjector)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_worn(slots = SLOT_EARS))
 	rolls(nameof(rolled_gene), PROC_REF(roll_gene))
 	setup(PROC_REF(load_gene))

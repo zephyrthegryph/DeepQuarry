@@ -5,7 +5,6 @@
 	desc = "Someone who has taken a back seat within their own body."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
-	forced_psay = TRUE
 	var/mob/living/prey_body		//The body of the person who dominated the brain
 	/// The prey's mind. It carries the prey's identity wherever it goes.
 	var/datum/mind/prey_mind
@@ -18,6 +17,7 @@
 	var/was_mob
 
 CAPABILITIES(/mob/living/dominated_brain)
+	configure(mob_rules(forced_psay = TRUE))
 	ref_one(nameof(prey_body), /mob/living)
 	ref_one(nameof(pred_body), /mob/living)
 	ref_one(nameof(prey_mind), /datum/mind)

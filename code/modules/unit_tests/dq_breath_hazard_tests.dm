@@ -30,6 +30,8 @@
 
 /// A human sealed on a floor tile with standard air, the steps in `sleepers` asleep in it.
 /datum/unit_test/life_om/breath_hazard/proc/setup_breather(with_internals = FALSE, pair = FALSE, container_type = null)
+	// The human's body warms the tile's floor several kelvin while the Life frames run, and the map's vents move gas in their rooms meanwhile.
+	restore_ambient_after()
 	var/list/run = dq_atmos_test_find_clear_pipe_run(pair ? 2 : 1)
 	if(!run)
 		TEST_FAIL("no clear floor for the hazard test")
@@ -461,11 +463,24 @@
 	F.set_density(FALSE)
 	F.update_nearby_tiles()
 	TEST_ASSERT_EQUAL(life_test_frames(H), steps_before, "no Life frame ran for the door")
-	TEST_ASSERT(findtext(H.body?.air_watch_key, "|[beside.arena_id()]"), "the open door put the neighbour's air in the watch ([H.body?.air_watch_key])")
+	TEST_ASSERT(findtext(H.body?.air_watch_key, "|[beside.arena_id()]"), "the open door put the neighbour's air in the watch ([H.body?.air_watch_key]); [door_watch_report(F)]")
 	TEST_ASSERT(!life_test_asleep(H, "life_environment"), "and the environment step that averaged the old set is awake")
 	F.set_density(TRUE)
 	F.update_nearby_tiles()
 	TEST_ASSERT(!findtext(H.body?.air_watch_key, "|[beside.arena_id()]"), "the closed door takes it out again ([H.body?.air_watch_key])")
+
+/// What a door that did not move the watch needs to be diagnosed from: the door and its tile as the air sees them, and the neighbours Rust lists
+/// for the human's tile (the watch is built from them).
+/datum/unit_test/life_om/breath_hazard/door_beside_sleeper/proc/door_watch_report(obj/machinery/door/F)
+	var/list/out = list()
+	out += "door density [F.density], pass mode [F.can_atmos_pass], on [F.loc] ([N.x],[N.y],[N.z]) [N.type]"
+	out += "its tile blocks [N.blocks_air ? "all air" : "mask [N.air_block_mask()]"], has air [N.heat_has_air()], mixture arena id [N.air?.arena_id()] [N.air ? N.air.type : "none"]"
+	var/list/listed = list()
+	for(var/turf/other as anything in vg_atmos_adjacent_turfs(T))
+		listed += "([other.x],[other.y],[other.z])"
+	out += "Rust lists [length(listed)] neighbour(s) of the human's tile ([T.x],[T.y],[T.z]): [jointext(listed, " ")]; the two tiles share air: [vg_atmos_turfs_share(T, N)]"
+	out += "air_watch=[!!H.body?.air_watch] around=[length(H.air_watch_around())]"
+	return jointext(out, "; ")
 
 #undef LIFE_HAZARD_LIMIT
 

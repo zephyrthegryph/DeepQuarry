@@ -51,7 +51,6 @@
 //This controller goes on the escape pod itself
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod
 	name = "escape pod controller"
-	unacidable = TRUE
 	program = /datum/embedded_program/docking/simple
 	var/tmp/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
@@ -70,6 +69,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod)
+	configure(movable_motion(unacidable = TRUE))
 	op("manual_arm", ui_act("manual_arm"), then(PROC_REF(ui_act_manual_arm)))
 	op("force_launch", ui_act("force_launch"), then(PROC_REF(ui_act_force_launch)))
 	ref_one(nameof(pod))

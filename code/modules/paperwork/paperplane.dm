@@ -5,7 +5,6 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paperplane"
 	throw_range = 7
-	throw_speed = 1
 	w_class = ITEMSIZE_TINY
 
 	var/obj/item/paper/internalPaper
@@ -13,6 +12,7 @@
 	var/list/stamp_marks
 
 CAPABILITIES(/obj/item/paperplane)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 0))
 	owns_one(nameof(internalPaper), /obj/item/paper)
 	param(nameof(internalPaper), pos = 1, apply = PROC_REF(fold_from))

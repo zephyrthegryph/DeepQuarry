@@ -4,7 +4,6 @@
 	icon = 'icons/obj/wheelchair.dmi'
 	icon_state = "wheelchair"
 	anchored = FALSE
-	buckle_movable = 1
 	can_pad = FALSE
 	can_unpad = FALSE
 	can_dismantle = FALSE
@@ -128,6 +127,7 @@
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
 CAPABILITIES(/obj/structure/bed/chair/wheelchair)
+	configure(buckle_rules(movable = 1))
 	click_order(BIND_HAND, "touch", "buckle.unbuckle")
 	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
 	op("touch", hand(), label("Use"), then(PROC_REF(touched)))

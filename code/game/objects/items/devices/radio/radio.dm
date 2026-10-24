@@ -25,7 +25,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/adhoc_fallback = FALSE //Falls back to 'radio' mode if subspace not available
 	var/syndie = FALSE//Holder to see if it's a syndicate encrypted radio
 	var/centComm = FALSE//Holder to see if it's a CentCom encrypted radio
-	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
 
@@ -149,6 +148,7 @@ SETTER(/obj/item/radio, frequency)
 /obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
 CAPABILITIES(/obj/item/radio)
+	configure(movable_motion(throw_speed = 2))
 	configure(obj_rules(show_messages = TRUE))
 	setup(PROC_REF(sanitize_start_frequency))
 	ref_many(nameof(secure_radio_connections), /datum/radio_frequency)
@@ -919,9 +919,9 @@ CAPABILITIES(/obj/item/radio/borg)
 	name = "subspace radio"
 	subspace_transmission = 1
 	throw_range = 7
-	throw_speed = 1
 
 CAPABILITIES(/obj/item/radio/subspace)
+	configure(movable_motion(throw_speed = 1))
 	configure(item_thrown(force = 5))
 
 //* Bluespace Radio *//

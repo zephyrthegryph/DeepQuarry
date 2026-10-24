@@ -39,7 +39,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // === /tg/-specific vars on /obj/machinery and /obj/item ===
 // atmos_processing removed alongside SSair.atmos_machinery.
 /obj/machinery
-	var/tmp/rebuilding = FALSE
 
 
 

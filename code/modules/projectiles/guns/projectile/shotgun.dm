@@ -238,7 +238,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 	projectile_type = /obj/item/projectile/bullet/shotgun
 	one_handed_penalty = 30 //You madman, one-handing a 12g shotgun.
 	recoil = 5 //Unfold the damn stock you fool!
-	actions_types = list(/datum/action/item_action/toggle_stock)
 	var/stock = FALSE
 
 /obj/item/gun/projectile/shotgun/compact/proc/toggle_stock()
@@ -268,6 +267,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 	user.update_mob_action_buttons()
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_stock)))
 	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried(), req_actor_kind(/mob/living/silicon, not = TRUE, because = /datum/msg/req_silent)), then(PROC_REF(compact_shotgun_verb_toggle_stock)))

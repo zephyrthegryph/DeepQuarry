@@ -9,7 +9,6 @@
 	icon_state = "hypo"
 	item_state = "hypo"
 	amount_per_transfer_from_this = 5
-	unacidable = TRUE
 	volume = 30
 	max_transfer_amount = null
 	/// Poured into until it is spent (an autoinjector shuts when it is used).
@@ -26,6 +25,7 @@
 // (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
 // resists in combat mode. Armour does not stop it. The sound, the transfer and the log are do_injection(), which a type may extend.
 CAPABILITIES(/obj/item/reagent_containers/hypospray)
+	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))

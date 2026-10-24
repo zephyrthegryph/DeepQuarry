@@ -7,7 +7,6 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "circ-unassembled"
 	anchored = FALSE
-	unacidable = TRUE
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
 	var/kinetic_efficiency = 0.04 //combined kinetic and kinetic-to-electric efficiency
@@ -32,6 +31,7 @@ MSG_DEF(circulator/secured, "You secure the bolts holding %T% to the floor.", "%
 MSG_DEF(circulator/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
+	configure(movable_motion(unacidable = TRUE))
 	rotatable()
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 

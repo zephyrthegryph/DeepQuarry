@@ -4,7 +4,6 @@
 	icon_state = "pinoff"
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
-	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 500)
 	var/obj/item/disk/nuclear/the_disk
@@ -16,6 +15,7 @@
 
 /obj/item/pinpointer/var/active = FALSE
 CAPABILITIES(/obj/item/pinpointer)
+	configure(movable_motion(throw_speed = 4))
 	configure(item_handling(preserve = 1))
 	ref_one(nameof(the_disk))
 	configure(item_worn(slots = SLOT_BELT))

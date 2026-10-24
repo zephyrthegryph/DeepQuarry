@@ -186,20 +186,27 @@ SYSTEM_DEF(machines)
 		// List union silently removes repeated datum values. Many vents share one
 		// pipenet, so append by index to preserve the fixed source/sink/moles tuples.
 		var/operation_offset = length(operations)
-		operations.len += 3
+		operations.len += 5
 		// Pass stable arena IDs, not DM wrapper datums. Pipenet publication may
 		// replace a member's wrapper while preserving its authoritative Rust mix;
 		// resolving a private wrapper var inside the FFI made otherwise valid
 		// queued transfers silently report zero.
+		// Each id travels with the generation it was queued at, so a mixture freed or replaced
+		// before the commit is refused (-1) instead of moving gas through whatever reused it.
 		operations[operation_offset + 1] = transfer[2]
-		operations[operation_offset + 2] = transfer[3]
-		operations[operation_offset + 3] = transfer[4]
+		operations[operation_offset + 2] = transfer[9]
+		operations[operation_offset + 3] = transfer[3]
+		operations[operation_offset + 4] = transfer[10]
+		operations[operation_offset + 5] = transfer[4]
 	var/list/actual_moles = vg_batch_transfer_hook(operations)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]
 		var/obj/machinery/atmospherics/M = resolve_token(transfer[1])
 		var/actual = (islist(actual_moles) && i <= length(actual_moles)) ? actual_moles[i] : 0
+		if(actual < 0)
+			stack_trace("pump transfer for [M] named a gas mixture that was freed or replaced since it was queued")
+			actual = 0
 		if(!M || QDELETED(M))
 			continue
 		M.pump_transaction_committed(actual)

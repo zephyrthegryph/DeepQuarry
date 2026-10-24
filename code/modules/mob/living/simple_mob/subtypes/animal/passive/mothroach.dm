@@ -20,7 +20,6 @@
 
 	see_in_dark = 10
 
-	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	holder_type = /obj/item/holder/mothroach
 
@@ -44,6 +43,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	configure(butchery_rules(meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	after_init(0, then(PROC_REF(mothroach_name_ready)))

@@ -17,8 +17,6 @@
 
 	max_integrity = 100
 
-	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_cone_y_offset = 5
 	var/power_per_process = 50 // About 6.5 minutes of use on a high-cell (10,000)
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
@@ -42,6 +40,8 @@
 	var/no_masters_time = 0
 
 CAPABILITIES(/obj/item/uav)
+	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
+	configure(movable_motion(cone_y = 5))
 	setup(PROC_REF(prepare_ion_trail))
 	configure(light_glow(range = 4, power = 4))
 	ref_many(nameof(masters), /mob)

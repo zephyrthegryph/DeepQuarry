@@ -4,10 +4,10 @@
 	icon_state = "eftpos"
 	desc = "A hand-held halogen counter, used to detect the level of irradiation of living beings."
 	w_class = ITEMSIZE_SMALL
-	throw_speed = 3
 	throw_range = 7
 
 CAPABILITIES(/obj/item/halogen_counter)
+	configure(movable_motion(throw_speed = 3))
 	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 

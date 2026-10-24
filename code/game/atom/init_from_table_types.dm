@@ -16,6 +16,9 @@
 /obj/effect/blocker
 	init_from_table = TRUE
 
+CAPABILITIES(/obj/effect/blocker)
+	configure(movable_motion(unacidable = TRUE))
+
 /obj/effect/bmode
 	init_from_table = TRUE
 
@@ -117,6 +120,9 @@
 
 /obj/effect/forcefield
 	init_from_table = TRUE
+
+CAPABILITIES(/obj/effect/forcefield)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/effect/fusion_particle_catcher
 	init_from_table = TRUE
@@ -313,6 +319,9 @@ CAPABILITIES(/obj/effect/map_effect/perma_light)
 /obj/structure/dogbed
 	init_from_table = TRUE
 
+CAPABILITIES(/obj/structure/dogbed)
+	configure(buckle_rules(dir = SOUTH, lying = 1))
+
 /obj/structure/dummystairs
 	init_from_table = TRUE
 
@@ -391,6 +400,9 @@ CAPABILITIES(/obj/effect/map_effect/perma_light)
 /obj/structure/holostool
 	init_from_table = TRUE
 
+CAPABILITIES(/obj/structure/holostool)
+	configure(movable_motion(unacidable = TRUE))
+
 /obj/structure/hyperball_goal
 	init_from_table = TRUE
 
@@ -426,6 +438,9 @@ CAPABILITIES(/obj/effect/map_effect/perma_light)
 
 /obj/structure/portal_gateway
 	init_from_table = TRUE
+
+CAPABILITIES(/obj/structure/portal_gateway)
+	configure(movable_motion(unacidable = TRUE))
 
 /obj/structure/portal_target
 	init_from_table = TRUE

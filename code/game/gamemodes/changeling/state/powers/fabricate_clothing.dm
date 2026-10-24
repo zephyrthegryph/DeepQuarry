@@ -44,7 +44,6 @@ CAPABILITIES(/obj/item/clothing/under/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/head/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed head"
 	icon_state = "lingchameleon"
 	desc = "Our head is swelled with a large quanity of rapidly shifting skin cells.  We can reform our head to resemble various hats and \
@@ -53,6 +52,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_head_shred_verb", menu(), label("Shred Helmet"), needs(carried()), then(PROC_REF(changeling_head_shred_verb)))
 
 /// Old verb "Shred Helmet".
@@ -65,7 +65,6 @@ CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/suit/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitinous chest"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -78,6 +77,7 @@ CAPABILITIES(/obj/item/clothing/head/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_suit_shred_verb", menu(), label("Shred Suit"), needs(carried()), then(PROC_REF(changeling_suit_shred_verb)))
 
 /// Old verb "Shred Suit".
@@ -90,7 +90,6 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/shoes/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed feet"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -103,6 +102,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_shoes_shred_verb", menu(), label("Shred Shoes"), needs(carried()), then(PROC_REF(changeling_shoes_shred_verb)))
 
 /// Old verb "Shred Shoes".
@@ -115,7 +115,6 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
 		spent(src)
 
 /obj/item/storage/backpack/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "backpack"
 	icon_state = "backpack"
 	item_icons = list(
@@ -128,6 +127,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_backpack_shred_verb", menu(), label("Shred Backpack"), needs(carried()), then(PROC_REF(changeling_backpack_shred_verb)))
 
 /// Old verb "Shred Backpack".
@@ -143,7 +143,6 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/gloves/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed hands"
 	icon_state = "ling"
 	item_icons = list(
@@ -157,6 +156,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_gloves_shred_verb", menu(), label("Shred Gloves"), needs(carried()), then(PROC_REF(changeling_gloves_shred_verb)))
 
 /// Old verb "Shred Gloves".
@@ -169,7 +169,6 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/mask/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitin visor"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -183,6 +182,7 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_mask_shred_verb", menu(), label("Shred Mask"), needs(carried()), then(PROC_REF(changeling_mask_shred_verb)))
 
 /// Old verb "Shred Mask".
@@ -195,7 +195,6 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
 		spent(src)
 
 /obj/item/clothing/glasses/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitin goggles"
 	icon_state = "lingchameleon"
 	item_state = "glasses"
@@ -204,6 +203,7 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_glasses_shred_verb", menu(), label("Shred Glasses"), needs(carried()), then(PROC_REF(changeling_glasses_shred_verb)))
 
 /// Old verb "Shred Glasses".
@@ -216,7 +216,6 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
 		spent(src)
 
 /obj/item/storage/belt/chameleon/changeling
-	emp_protection_flags = EMP_PROTECT_SELF
 	name = "waist pouch"
 	desc = "We can store objects in this, as well as shift it's appearance, so that it resembles various common belts."
 	icon_state = "lingchameleon"
@@ -229,6 +228,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon/changeling)
 
 
 CAPABILITIES(/obj/item/storage/belt/chameleon/changeling)
+	configure(atom_rules(emp_protection = EMP_PROTECT_SELF))
 	op("changeling_belt_shred_verb", menu(), label("Shred Belt"), needs(carried()), then(PROC_REF(changeling_belt_shred_verb)))
 
 /// Old verb "Shred Belt".

@@ -69,7 +69,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 /obj/item/clothing/mask/chewable/tobacco
 	name = "wad"
 	desc = "A chewy wad of tobacco. Cut in long strands and treated with syrup so it doesn't taste like an ash-tray when you stuff it into your face."
-	throw_speed = 0.5
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitwad
 	w_class = ITEMSIZE_TINY
@@ -78,6 +77,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	brand = "tobacco"
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
+	configure(movable_motion(throw_speed = 0.5))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 
 /obj/item/clothing/mask/chewable/proc/spitout(transfer_color = 1, no_message = 0)
@@ -195,7 +195,6 @@ CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
 /obj/item/clothing/mask/chewable/candy
 	name = "wad"
 	desc = "A chewy wad of wadding material."
-	throw_speed = 0.5
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitgum
 	w_class = ITEMSIZE_TINY
@@ -203,6 +202,7 @@ CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
 	chewtime = 300
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
+	configure(movable_motion(throw_speed = 0.5))
 	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 

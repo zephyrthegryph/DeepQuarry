@@ -287,6 +287,33 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of atom_shielding() (code/game/atom/atom_shielding.dm) and the key its run-time writes publish.
 #define ENTRY_ATOM_SHIELDING "atom_shielding"
 #define ATOM_SHIELDING_KEY "atom_shielding"
+/// The entry kind of buckle_rules() (code/game/objects/buckle_rules.dm) and the key its run-time writes publish.
+#define ENTRY_BUCKLE_RULES "buckle_rules"
+#define BUCKLE_RULES_KEY "buckle_rules"
+/// The entry kind of movable_motion() (code/game/movable_motion.dm) and the key its run-time writes publish.
+#define ENTRY_MOVABLE_MOTION "movable_motion"
+#define MOVABLE_MOTION_KEY "movable_motion"
+/// The entry kind of atom_rules() (code/game/atom/atom_rules.dm) and the key its run-time writes publish.
+#define ENTRY_ATOM_RULES "atom_rules"
+#define ATOM_RULES_KEY "atom_rules"
+/// The entry kind of living_rules() (code/modules/mob/living/living_rules.dm) and the key its run-time writes publish.
+#define ENTRY_LIVING_RULES "living_rules"
+#define LIVING_RULES_KEY "living_rules"
+/// The entry kind of mob_rules() (code/modules/mob/mob_rules.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_RULES "mob_rules"
+#define MOB_RULES_KEY "mob_rules"
+/// The entry kind of butchery_rules() (code/modules/mob/living/butchery_rules.dm) and the key its run-time writes publish.
+#define ENTRY_BUTCHERY_RULES "butchery_rules"
+#define BUTCHERY_RULES_KEY "butchery_rules"
+/// The entry kind of footstep_rules() (code/datums/behaviours/footstep_rules.dm) and the key its run-time writes publish.
+#define ENTRY_FOOTSTEP_RULES "footstep_rules"
+#define FOOTSTEP_RULES_KEY "footstep_rules"
+/// The entry kind of machine_rules() (code/game/machinery/machine_rules.dm) and the key its run-time writes publish.
+#define ENTRY_MACHINE_RULES "machine_rules"
+#define MACHINE_RULES_KEY "machine_rules"
+/// The entry kind of item_rules() (code/game/objects/items/item_rules.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_RULES "item_rules"
+#define ITEM_RULES_KEY "item_rules"
 
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"

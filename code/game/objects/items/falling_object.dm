@@ -5,12 +5,12 @@
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
 	density = FALSE
-	unacidable = TRUE
 	var/falling_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	var/crushing = TRUE
 	var/admin_spawned = FALSE
 
 CAPABILITIES(/obj/effect/falling_effect)
+	configure(movable_motion(unacidable = TRUE))
 	map_resolver(GLOBAL_PROC_REF(resolve_falling_effect), vars = list("admin_spawned", "crushing", "falling_type"))
 
 /// The map resolver of falling effects (mapped, or `new` at runtime): drops its falling_type.

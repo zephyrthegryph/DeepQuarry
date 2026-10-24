@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "44b0965dd6c52f27"
+#define VERDIGRIS_ABI "cbcb60173bbba35c"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -793,8 +793,10 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(operations)
 
-/// Flat operation list: source handle, sink handle, requested moles. Returns
-/// one actual mole count per operation after shared-source clamping.
+/// Flat operation list, `BATCH_TRANSFER_STRIDE` (5) values each: source handle,
+/// source generation, sink handle, sink generation, requested moles. Returns one
+/// actual mole count per operation after shared-source clamping; `-1` for an
+/// operation naming a handle that is invalid or stale (nothing moved).
 // /proc/auxmos_batch_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_transfer_hook(operations)
 	var/static/__f
@@ -813,6 +815,17 @@
 		__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
+
+/// The generation this mixture's handle is valid for, to queue next to
+/// [`checked_arena_id`]'s id (a queued batch keeps no datum). Null for a datum
+/// with no handle; a stale handle is refused.
+// /datum/gas_mixture/proc/__arena_generation (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_checked_arena_generation(src_ref)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:checked_arena_generation_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(src_ref)
 
 /// The id other binds take for this mixture (watches, pipe ports, pump
 /// transfers). Null for a datum with no handle; a stale handle is refused.
@@ -1321,6 +1334,28 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(capacity, temperature, target_kind, target_ref, conductance, keep)
 
+/// Drops a body: settles it (if relaxing), drops its coupling entities and
+/// despawns it at once. What it holds over its environment is discarded, never
+/// deposited (deletion is not a physical event); the returned line says how much.
+// /proc/heat_body_drop (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_drop(h)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:heat_body_drop_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
+/// Batched destroy's one heat drop (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`heat_body_drop`] for every handle in `bodies`.
+/// Zero/null and already-released entries are skipped. Returns a log line for each dropped body that held heat over its surroundings, else null.
+// /proc/heat_body_drop_list (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_drop_list(bodies)
+	var/static/__f
+	if(!__f)
+		__f = load_ext(VERDIGRIS, "byond:heat_body_drop_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(bodies)
+
 // /proc/heat_body_flow (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_flow(h)
 	var/static/__f
@@ -1352,28 +1387,6 @@
 		__f = load_ext(VERDIGRIS, "byond:heat_body_power_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h, watts)
-
-/// Releases a body: settles it (if relaxing) into its environment,
-/// deposits its excess over slot 0's environment there too, drops its
-/// coupling entities and despawns it at once.
-// /proc/heat_body_release (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_body_release(h)
-	var/static/__f
-	if(!__f)
-		__f = load_ext(VERDIGRIS, "byond:heat_body_release_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(h)
-
-/// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
-/// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
-/// Zero/null and already-released entries are skipped. Returns a log line for any release held at equilibrium, else null.
-// /proc/heat_body_release_list (verdigris/ffi/src/heat.rs)
-/proc/vg_heat_body_release_list(bodies)
-	var/static/__f
-	if(!__f)
-		__f = load_ext(VERDIGRIS, "byond:heat_body_release_list_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(bodies)
 
 /// Bulk bind, step 1 (`doc/rewrite/init_and_turfs.md` sec 4.6): `n`
 /// heat-body handles in one call. Each is a live, kept, inert body at once,
@@ -1976,16 +1989,13 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(triples)
 
-/// Registers (or replaces) a device edge between a port and a turf (a vent
-/// pump or scrubber): `turf_mixture_handle` is the turf's gas-mixture
-/// handle, not a port id. See [`pipe_device_set`]'s own docs on flows.
 // /proc/vg_pipe_device_set_turf (verdigris/ffi/src/pipes.rs)
-/proc/vg_pipe_device_set_turf(id, port_a, turf_mixture_handle)
+/proc/vg_pipe_device_set_turf(id, port_a, turf_air)
 	var/static/__f
 	if(!__f)
 		__f = load_ext(VERDIGRIS, "byond:pipe_device_set_turf_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(id, port_a, turf_mixture_handle)
+	return call_ext(__f)(id, port_a, turf_air)
 
 // /proc/vg_pipe_disconnect (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_disconnect(port_a, port_b)

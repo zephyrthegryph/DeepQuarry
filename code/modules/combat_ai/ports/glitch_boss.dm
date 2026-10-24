@@ -12,9 +12,9 @@
 // behaviors are stateless adapters that call them.
 
 /mob/living/simple_mob/glitch_boss
-	use_modern_ai = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/glitch_boss)
+	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly %runtime error in unknown.dm, line 56%"))

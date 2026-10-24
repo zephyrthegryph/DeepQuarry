@@ -10,11 +10,9 @@
 	var/flags = NONE
 	// was_bloodied, blood_color, fluorescent are the forensic_* vars (code/datums/sparse_vars/forensics.dm)
 	var/pass_flags = 0
-	var/throwpass = 0
 	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 	var/simulated = TRUE //filter for actions - used by lighting overlays
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
-	var/bubble_icon = "normal" ///what icon the atom uses for speechbubbles
 	var/datum/forensics_crime/forensic_data
 
 	EXPIRY_TMP_DECLARE(last_bumped)
@@ -57,7 +55,7 @@
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
-	// dematerialize() must run before release_heat_body(): it drops this
+	// dematerialize() must run before drop_heat_body(): it drops this
 	// atom's rule bindings (dq_rules_on_dematerialize()), which cancel their
 	// live heat watches against the still-valid body handle. Releasing the
 	// body first frees/recycles its slot in Rust while those watches are
@@ -69,7 +67,7 @@
 	// ---- end L2 ----
 	caps_destroy(src)
 	if(!isnull(heat_body))
-		release_heat_body()
+		drop_heat_body()
 	if(reagents)
 		rel_clear(src, nameof(reagents))
 	if(light)
@@ -179,8 +177,6 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 
 
 /atom
-	/// EMP_PROTECT_* flags this atom always has (was the empprotection element).
-	var/emp_protection_flags = NONE
 
 /atom/proc/emp_act(severity, recursive)
 	SHOULD_CALL_PARENT(TRUE)
@@ -188,7 +184,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
 	// Listeners add what they shield (adjusts_with writes the act's protection): the flags of every one combine with the atom's own.
-	var/protection = emp_protection_flags & EMP_PROTECT_ALL
+	var/protection = atom_rules_of(src).emp_protection & EMP_PROTECT_ALL
 	var/datum/act/emp/pulse = ACT_ATTEMPT(src, emp, severity, protection)
 	if(ACT_REFUSED_BY(pulse))
 		return protection
@@ -291,8 +287,8 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 	var/list/output = list("[icon2html(src,user.client)] That's [f_name] [suffix] [borg]", get_examine_desc())
 	if(uses_integrity && get_integrity() < max_integrity)
 		dq_rules_settle(src) // a pending integrity wake lands before we read the band
-	if(damage_band)
-		output += damage_flavour_text(damage_band)
+	if(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE))
+		output += damage_flavour_text(sparse_get_or(src, damage_band, DAMAGE_BAND_NONE))
 
 	output += examine_lines(user)
 	PUBLISH_LEGACY(src, /datum/notice/examine, user, output)
@@ -558,7 +554,7 @@ SETTER(/atom, invisibility)
 			speech_bubble_hearers += M.client
 
 	if(length(speech_bubble_hearers))
-		var/image/I = generate_speech_bubble(src, "[bubble_icon][say_test(message)]", FLY_LAYER)
+		var/image/I = generate_speech_bubble(src, "[atom_rules_of(src).bubble_icon][say_test(message)]", FLY_LAYER)
 		I.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
 		flick_overlay(I, speech_bubble_hearers, 30)
 

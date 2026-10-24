@@ -3,7 +3,6 @@
 /mob/living/simple_mob/metroid/juvenile
 	desc = "This metroid should not be spawned. Yell at your local dev or event manager."
 	layer = MOB_LAYER + 1 // Need them on top of other mobs or it looks weird when consuming something.
-	max_nutrition = 1000
 	var/is_queen = FALSE // When the metroid is a queen, it should just be shitting out babies. Found in metAI.dm and in metTypes for the queen.
 	var/endurance_adult = 200
 	var/power_charge = 0 // Disarm attacks can shock someone if high/lucky enough.
@@ -142,6 +141,7 @@
 
 //Code to remove metroid from someone
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile)
+	configure(living_rules(use_modern_ai = TRUE, max_nutrition = 1000))
 	ref_one(nameof(victim), /mob/living)
 	op("metroid_juvenile_hand", hand(), ungated(), then(PROC_REF(metroid_juvenile_interaction_hand)))
 

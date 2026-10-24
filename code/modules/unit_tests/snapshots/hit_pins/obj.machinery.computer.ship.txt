@@ -24,20 +24,24 @@ explosion 2 | atom_integrity: down
 explosion 2 | light_on: 0 -> 1
 explosion 2 | refresh_bits: CHANGE_EXPLICIT -> 0
 explosion 2 | refresh_queued: DEP_ALL -> 0
+explosion 2 | sparse_slots: list(1) -> list(2)
 explosion 2 | type_trait_overrides: null -> list(1)
 explosion 3 | atom_integrity: down
 explosion 3 | light_on: 0 -> 1
 explosion 3 | refresh_bits: CHANGE_EXPLICIT -> 0
 explosion 3 | refresh_queued: DEP_ALL -> 0
+explosion 3 | sparse_slots: list(1) -> list(2)
 explosion 3 | type_trait_overrides: null -> list(1)
 projectile | atom_integrity: down
 projectile | light_on: 0 -> 1
 projectile | refresh_bits: CHANGE_EXPLICIT -> 0
 projectile | refresh_queued: DEP_ALL -> 0
+projectile | sparse_slots: list(1) -> list(2)
 projectile | type_trait_overrides: null -> list(1)
 thrown | atom_integrity: down
 thrown | light_on: 0 -> 1
 thrown | refresh_bits: CHANGE_EXPLICIT -> 0
 thrown | refresh_queued: DEP_ALL -> 0
+thrown | sparse_slots: list(1) -> list(2)
 thrown | type_trait_overrides: null -> list(1)
 

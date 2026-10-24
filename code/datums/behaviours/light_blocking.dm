@@ -6,20 +6,19 @@
  */
 /atom/movable
 	/// TRUE while this movable is an opacity source of its turf.
-	var/blocks_light = FALSE
 
 /atom/movable/proc/start_blocking_light()
-	if(blocks_light)
+	if(sparse_get_or(src, blocks_light, FALSE))
 		return
-	blocks_light = TRUE
+	sparse_set_or(src, blocks_light, TRUE, FALSE)
 	if(isturf(loc))
 		var/turf/turf_loc = loc
 		turf_loc.add_opacity_source(src)
 
 /atom/movable/proc/stop_blocking_light()
-	if(!blocks_light)
+	if(!sparse_get_or(src, blocks_light, FALSE))
 		return
-	blocks_light = FALSE
+	sparse_set_or(src, blocks_light, FALSE, FALSE)
 	if(isturf(loc))
 		var/turf/turf_loc = loc
 		turf_loc.remove_opacity_source(src)

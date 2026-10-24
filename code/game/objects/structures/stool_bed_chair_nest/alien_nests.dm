@@ -6,7 +6,6 @@
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "nest"
 	max_integrity = 100
-	unacidable = TRUE
 	flippable = FALSE
 
 /// Draws none of what the types above draw.
@@ -75,6 +74,7 @@
 // Nest's Use and item overrides fully replace bed's (the original overrides never called
 // ..() into it either), so it declares its own interactions and takes none of the bed's ops.
 CAPABILITIES(/obj/structure/bed/nest)
+	configure(movable_motion(unacidable = TRUE))
 	bed_hands_off()
 	without("drag_buckle")   // the nest replaced every inherited interaction, the default drag buckle too
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_nest_item)))

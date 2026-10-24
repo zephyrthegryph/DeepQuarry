@@ -52,7 +52,6 @@
 	icon_state = "apc0"
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
-	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
@@ -154,6 +153,7 @@ MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.",
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
 CAPABILITIES(/obj/machinery/power/apc)
+	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_SWITCH))
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))

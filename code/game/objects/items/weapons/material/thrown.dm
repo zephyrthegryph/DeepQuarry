@@ -4,11 +4,11 @@
 	icon_state = "star"
 	force_divisor = 0.1 // 6 with hardness 60 (steel)
 	thrown_force_divisor = 0.75 // 15 with weight 20 (steel)
-	throw_speed = 10
 	throw_range = 15
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/material/star)
+	configure(movable_motion(throw_speed = 10))
 	configure(item_combat(sharp = TRUE, edge = TRUE))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(12))
 

@@ -14,7 +14,6 @@
 	var/mag_disable = "You disable the mag-pulse traction system."
 	///If the magboots can be removed when enabled or not.
 	var/unremovable_when_enabled = FALSE
-	actions_types = list(/datum/action/item_action/toggle_magboots)
 	step_volume_mod = 1.3
 	resistance_flags = FIRE_PROOF
 
@@ -28,6 +27,7 @@
 		tracked_changed(src, nameof(slowdown))
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_magboots)))
 	configure(item_handling(center_x = 17, center_y = 12, preserve = 1))
 	fits_anyone()
 	extend(/datum/act/equip, needs(req_overshoe_clearance()))
@@ -125,7 +125,6 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	flags = PHORONGUARD
 	armor_spec = "melee=40;bullet=10;laser=10;energy=20;bomb=20;bio=10;rad=20" // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
 
-	actions_types = list(/datum/action/item_action/toggle_magclaws)
 
 
 
@@ -148,6 +147,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		. += "It would be hard to take these off without relaxing your grip first." // Theoretically this message should only be seen by the wearer when the claws are equipped.
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
+	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_magclaws)))
 	fits_as(FIT_VOX)
 
 /proc/req_overshoe_clearance()

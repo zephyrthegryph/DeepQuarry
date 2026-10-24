@@ -25,7 +25,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	helmet.set_item_state(tmp.item_state)
 	helmet.set_item_state_slots(tmp.item_state_slots?.Copy())
 	helmet.set_sprite_sheets(tmp.sprite_sheets?.Copy())
-	helmet.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
+	helmet.set_sprite_sheets_obj(item_rules_of(tmp).sprite_sheets_obj?.Copy())
 	helmet.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 /datum/suit_cycler_choice/department/proc/can_refit_suit(obj/item/clothing/suit/space/suit)
@@ -40,7 +40,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	suit.set_item_state(tmp.item_state)
 	suit.set_item_state_slots(tmp.item_state_slots?.Copy())
 	suit.set_sprite_sheets(tmp.sprite_sheets?.Copy())
-	suit.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
+	suit.set_sprite_sheets_obj(item_rules_of(tmp).sprite_sheets_obj?.Copy())
 	suit.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 // Ye olde 'noop' choice for refits
@@ -313,8 +313,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 // the presence of the species in the sprite_sheets_obj list on the helmet and suit
 /datum/suit_cycler_choice/species/proc/can_refit_to(...)
 	for(var/obj/item/clothing/C in args)
-		if(LAZYACCESS(C.sprite_sheets_obj, name))
-			if(!icon_exists(C.sprite_sheets_obj[name], C.icon_state))
+		if(LAZYACCESS(item_rules_of(C).sprite_sheets_obj, name))
+			if(!icon_exists(item_rules_of(C).sprite_sheets_obj[name], C.icon_state))
 				return FALSE // Species was in sprite_sheets_obj, but had no sprite for this object in particular
 
 	return TRUE

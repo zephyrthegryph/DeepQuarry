@@ -75,6 +75,6 @@ READS_AS(/proc/glow_of, LIGHT_GLOW_KEY)
 		changed = TRUE
 	if(!isnull(on) && A.set_light_on(on) != null)
 		changed = TRUE
-	if(changed && A.light_system == STATIC_LIGHT)
+	if(changed && atom_rules_of(A).light_system == STATIC_LIGHT)
 		A.update_light()
 	return changed
