@@ -2362,6 +2362,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_vent_pump_pushes_to_turf
 
 /datum/unit_test/dq_vent_pump_pushes_to_turf/Run()
+	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for vent_pump test")
 	var/turf/simulated/floor/T = run[1]
@@ -5581,6 +5582,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_shared_pipenet_vent_and_scrubber_loop
 
 /datum/unit_test/dq_shared_pipenet_vent_and_scrubber_loop/Run()
+	restore_ambient_after() // the frames below advance world time: the map thermostats act on the telecomms floors meanwhile
 	var/turf/simulated/floor/T = null
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
