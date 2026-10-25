@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Admin panel and admin chat-link object ids (jump, PP, ?, SM, PM, tickets, tag menu, jobban, antag rows, modify robot) are ref_token() handles; a deleted target's link is refused instead of resolving a recycled ref"

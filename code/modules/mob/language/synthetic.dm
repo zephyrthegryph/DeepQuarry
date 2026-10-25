@@ -34,7 +34,7 @@
 		if(drone_only && !istype(S,/mob/living/silicon/robot/drone))
 			continue
 		else if(isAI(S))
-			message_start = span_binarysay("[name], <a href='byond://?src=\ref[S];track2=\ref[S];track=\ref[speaker];trackname=[html_encode(speaker.name)]'>" + span_name("[speaker.name]") + "</a>")
+			message_start = span_binarysay("[name], <a href='byond://?src=[REF(S)];track2=[REF(S)];track=[REF(speaker)];trackname=[html_encode(speaker.name)]'>" + span_name("[speaker.name]") + "</a>")
 		else if (!S.binarycheck())
 			continue
 

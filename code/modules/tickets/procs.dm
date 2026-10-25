@@ -472,7 +472,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 		if (src.current_ticket() && src.current_ticket().level == 0)
 			src.current_ticket().AddInteraction(interaction_message)
 
-	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=\ref[src]'>[src]</a>") + ": [msg]")))
+	to_chat(recipient, span_mentor(span_italics("Mentor-PM from-" + span_bold("<a href='byond://?mentorhelp_msg=[url_encode(ref_token(src))]'>[src]</a>") + ": [msg]")))
 	to_chat(src, span_mentor(span_italics("Mentor-PM to-" + span_bold("[recipient]") + ": [msg]")))
 
 	log_admin("[key_name(src)]->[key_name(recipient)]: [msg]")
