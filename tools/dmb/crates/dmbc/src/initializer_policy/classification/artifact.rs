@@ -87,7 +87,7 @@ impl Default for InitializerArtifacts {
         let roster_attempt = roster_publication.begin(Arc::clone(&roster));
         Self {
             values:
-                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
+                crate::initializer_lowering::receipts::publication_store::Store::shared_current_revision("initializer.classification"),
             bounded: false,
             modifiers: Default::default(),
             roster,

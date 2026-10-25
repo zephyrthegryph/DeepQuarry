@@ -441,6 +441,9 @@ impl Shared {
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        if std::env::var_os("DMB_MEM_MARKS").is_some_and(|value| value != "0") {
+            super::emit_stderr(format_args!("{}", self.store.report()));
+        }
         housekeeping::allocations::dump_sites(&format!("after_request private={after:?}"));
         after
     }
@@ -678,11 +681,14 @@ pub(super) fn serve() -> io::Result<()> {
     }
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
+    let store: Arc<crate::shared_store::SharedStore> = Arc::new(Default::default());
+    // Every artifact owner created from here on shares its core with the other sessions (`shared_store.rs`).
+    crate::shared_store::activate(&store);
     let shared = Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
-        store: Arc::new(Default::default()),
+        store,
         compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),

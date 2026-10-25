@@ -39,7 +39,7 @@ impl Default for RequiredTypeArtifacts {
             prefixes: Default::default(),
             allocations: Default::default(),
             parents: Default::default(),
-            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
+            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::shared_current_revision("required_types.ancestry"),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }

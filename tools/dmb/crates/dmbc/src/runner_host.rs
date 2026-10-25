@@ -255,8 +255,10 @@ impl BuildHost {
         let mut host = Self::with_shared_engines(engines);
         host.shared_executors = Some(executors);
         host.shared_procedure_code = Some(procedures);
-        host.memo = Some(memo::ResidentMemo::sharing(&store.records));
-        host.shared_store = Some(store);
+        if crate::shared_store::enabled() {
+            host.memo = Some(memo::ResidentMemo::sharing(&store.records));
+            host.shared_store = Some(store);
+        }
         host
     }
     pub(crate) fn with_shared_engines(shared_engines: Arc<EnginePayloads>) -> Self {
