@@ -40,9 +40,11 @@ pub(super) enum Action {
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Read {
-    name: String,
+    #[serde(deserialize_with = "super::intern_wire::shared_name")]
+    name: Arc<str>,
     present: bool,
     meaning: bool,
+    #[serde(deserialize_with = "super::intern_wire::shared_definition")]
     definition: Option<Arc<Macro>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -67,7 +69,7 @@ impl DirectiveRecord {
             .saturating_add(vector(&self.incoming, |_| 0))
             .saturating_add(vector(&self.outgoing, |_| 0))
             .saturating_add(vector(&self.reads, |read| {
-                read.name.capacity().saturating_add(
+                slice::<u8>(read.name.len()).saturating_add(
                     read.definition
                         .as_ref()
                         .map_or(0, |value| shared_macro(value)),
