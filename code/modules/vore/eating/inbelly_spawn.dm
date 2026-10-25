@@ -5,7 +5,7 @@
 	var/datum/inbelly_spawn_review/review = new
 	rel_set(review, nameof(review.actor), src)
 	review.prey_ckey = potential_prey.ckey
-	review.prey_name = potential_prey.prefs.read_preference(/datum/preference/name/real_name)
+	review.prey_name = text_or_null(potential_prey.prefs.read_preference(/datum/preference/name/real_name))
 	review.start()
 
 /// A ghost asks to spawn in a belly: the pred (actor) accepts, picks the belly, confirms a digest

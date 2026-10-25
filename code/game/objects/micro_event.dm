@@ -24,7 +24,7 @@ CAPABILITIES(/obj/structure/portal_event/resize)
 	if(A.step_value("adjust") != "Yes")
 		return OP_PASS
 	shrinking = (A.step_value("mode") == "Shrink")
-	size_limit = A.step_value("limit")
+	size_limit = num_or_null(A.step_value("limit"))
 	return OP_PASS
 
 /obj/structure/portal_event/resize/teleport(atom/movable/M as mob|obj)

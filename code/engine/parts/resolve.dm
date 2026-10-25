@@ -356,7 +356,7 @@
 	R.intents = isnull(gesture) ? null : op_intents_for(actor, gesture)
 	R.all = list()
 	R.ordered = list()
-	R.gate_reason = actor_gate_reason(actor, origin, authority)
+	R.gate_reason = text_or_null(actor_gate_reason(actor, origin, authority))
 	var/seq = 0
 	if(target && !QDELETED(target))
 		seq = op_collect_side(R, target, CAND_TARGET, key, gesture, keep_dropped, seq)

@@ -71,7 +71,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	armor_form = !!_armor_form
 	tool_form = !!_tool_form
 	EXPIRY_STAMP(src, last_energy_settlement, CLOCK_WORLD)
-	reference_temperature = ambient_temperature()
+	reference_temperature = num_or_null(ambient_temperature())
 	stored_reactive_energy = armor_form ? material.reactive_energy_capacity : 0
 	if(material.reagent_porosity > 0 && (medical_form || tool_form))
 		var/obj/item/item = parent

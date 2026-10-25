@@ -93,7 +93,7 @@ CAPABILITIES(/obj/skeleton)
 /// Old attackby with a pen: relabel the plaque.
 /obj/skeleton/proc/skeleton_plaque(datum/act/op/A)
 	var/mob/user = A.actor
-	plaque_contents = A.step_value("plaque")
+	plaque_contents = text_or_null(A.step_value("plaque"))
 	act_message(user, src, MSG_SELF("You relabel the plaque on the base of [icon2html(src,viewers(src))] %T%."), \
 		MSG_OTHERS("%U% writes something on the base of %T%."))
 	if(src.contents.Find(/obj/item/fossil/skull/horned))

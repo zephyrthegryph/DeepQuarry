@@ -528,7 +528,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		sql_id = player_row[1]
 		player_age = text2num(player_row[2])
 
-	account_join_date = findJoinDate()
+	account_join_date = text_or_null(findJoinDate())
 	if(account_join_date)
 		var/list/datediff_rows = flow_select("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
 		if(isnull(datediff_rows))
