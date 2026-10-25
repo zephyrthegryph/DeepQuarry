@@ -16,3 +16,27 @@ export "GIT_CONFIG_KEY_$_dq_n=merge.dq-baseline.name" "GIT_CONFIG_VALUE_$_dq_n=s
 _dq_n=$((_dq_n + 1))
 export GIT_CONFIG_COUNT="$_dq_n"
 unset _dq_n _dq_k
+
+# dq_clean_tracked <label>: put every tracked file (working tree and index) back to HEAD's content, without checkout, reset, restore or
+# stash. A gate attempt leaves tracked edits behind when it fails (the in-job baseline shrink of dq_merge_gates.sh, a formatter, a
+# half-finished merge); `git switch --detach` then carries them into the next attempt, whose gates refuse a dirty tree, or the switch
+# itself fails ("local changes would be overwritten"). Logs each dirty path to stderr and returns 0; the count is in DQ_CLEANED_N.
+dq_clean_tracked() {
+	local label="${1:-tree}" f n=0
+	DQ_CLEANED_N=0
+	[ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ] && { echo "$label: unfinished merge found; aborting it" >&2; git merge --abort >/dev/null 2>&1; }
+	git update-index -q --refresh >/dev/null 2>&1
+	while IFS= read -r f; do
+		[ -n "$f" ] || continue
+		n=$((n + 1))
+		if git cat-file -e "HEAD:$f" 2>/dev/null; then
+			git show "HEAD:$f" >"$f" && git add -- "$f"
+		else
+			git rm -q -f --cached -- "$f" >/dev/null 2>&1
+			rm -f -- "$f"
+		fi
+		echo "$label: $f restored to HEAD" >&2
+	done < <(git diff --name-only HEAD 2>/dev/null)
+	DQ_CLEANED_N=$n
+	return 0
+}
