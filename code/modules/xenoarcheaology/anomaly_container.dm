@@ -28,6 +28,23 @@ CAPABILITIES(/obj/structure/anomaly_container)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("anomaly_container_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(anomaly_container_robot_release)))
 	ref_one(nameof(contained))
+	op("contain_anomaly", item(/obj), gesture(GESTURE_DRAG), label("Contain"), when(req(PROC_REF(anomaly_dragged))), then(PROC_REF(anomaly_contained)))
+
+/// Only an anomalous thing on the floor within the actor's reach is dragged in (the old MouseDrop's guard).
+/obj/structure/anomaly_container/proc/anomaly_dragged(datum/act/op/A)
+	var/obj/dragged = A.held
+	if(!istype(dragged) || QDELETED(dragged) || !isturf(dragged.loc) || !dragged.is_anomalous())
+		return /datum/msg/req_failed
+	if(!read_once(dragged.Adjacent(src) && dragged.CanMouseDrop(src, A.actor)))
+		return /datum/msg/req_failed
+	return null
+
+/// An anomaly dragged onto the container: it bumps the dragger, then goes in.
+/obj/structure/anomaly_container/proc/anomaly_contained(datum/act/op/A)
+	var/obj/machinery/artifact/dragged = A.held
+	dragged.Bumped(A.actor)
+	contain(dragged)
+	return OP_OK
 
 /// Old attack_hand.
 /obj/structure/anomaly_container/proc/interaction_hand(datum/act/op/A)
@@ -56,14 +73,6 @@ CAPABILITIES(/obj/structure/anomaly_container)
 	rel_clear(src, nameof(contained))
 	underlays.Cut()
 	desc = initial(desc)
-
-/atom/MouseDrop(obj/structure/anomaly_container/over_object)
-	. = ..()
-
-	if(istype(over_object))
-		if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
-			Bumped(usr)
-			over_object.contain(src)
 
 /// Accessor for the contained var.
 /obj/structure/anomaly_container/proc/contained() as /obj/machinery/artifact

@@ -104,32 +104,23 @@
 		return FALSE
 	return TRUE
 
-/client/MouseDown(atom/object, atom/location, control, params)
-	. = ..()
-	var/mob/living/L = mob
-	if(!istype(L))
-		return
-	if(!autofire_is_map_left_click(object, params))
-		return
-	var/obj/item/gun/G = L.get_active_hand()
-	if(istype(G) && G.automatic)
-		L.start_autofire(G, object, params)
-
-/client/MouseUp(atom/object, atom/location, control, params)
-	. = ..()
-	var/mob/living/L = mob
-	if(istype(L))
-		L.stop_autofire()
-
-/client/MouseDrag(src_object, atom/over_object, src_location, over_location, src_control, over_control, params)
-	. = ..()
-	var/mob/living/L = mob
-	if(!istype(L) || !L.autofire_on)
-		return
-	// Sweep fire: keep shooting at whatever the cursor is now over, as long as
-	// it is a point on the map rather than a HUD element.
-	if(isatom(over_object) && !istype(over_object, /atom/movable/screen))
-		L.update_autofire_target(over_object, params)
+/// The client's mouse as this mob (code/engine/kernel/entry.dm): a press on the map with a gun that fires automatically starts the burst, a release
+/// stops it, and a drag with the button down sweeps the fire onto whatever the cursor is over (a point on the map, not a HUD element).
+/mob/living/input_client_mouse(kind, atom/target, atom/over, params)
+	switch(kind)
+		if(INPUT_MOUSE_DOWN)
+			if(!client?.autofire_is_map_left_click(target, params))
+				return
+			var/obj/item/gun/G = get_active_hand()
+			if(istype(G) && G.automatic)
+				start_autofire(G, target, params)
+		if(INPUT_MOUSE_UP)
+			stop_autofire()
+		if(INPUT_MOUSE_DRAG)
+			if(!autofire_on)
+				return
+			if(isatom(over) && !istype(over, /atom/movable/screen))
+				update_autofire_target(over, params)
 
 /// the autofire_gun this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_gun() as /obj/item/gun

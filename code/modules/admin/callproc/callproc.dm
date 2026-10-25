@@ -262,18 +262,18 @@ GLOBAL_PROTECT(LastAdminCalledTarget)
 GLOBAL_VAR(LastAdminCalledProc)
 GLOBAL_PROTECT(LastAdminCalledProc)
 
-/// Wrapper for proccalls where the datum is flagged as vareditted
-/proc/WrapAdminProcCall(datum/target, procname, list/arguments)
+/// Wrapper for proccalls where the datum is flagged as vareditted. `user` is the admin whose call it is.
+/proc/WrapAdminProcCall(datum/target, procname, list/arguments, mob/user)
 	if(target && procname == "Del")
-		to_chat(usr, "Calling Del() is not allowed", confidential = TRUE)
+		to_chat(user, "Calling Del() is not allowed", confidential = TRUE)
 		return
 
 	if(target != GLOBAL_PROC && !target.CanProcCall(procname))
-		to_chat(usr, "Proccall on [target.type]/proc/[procname] is disallowed!", confidential = TRUE)
+		to_chat(user, "Proccall on [target.type]/proc/[procname] is disallowed!", confidential = TRUE)
 		return
 	var/current_caller = GLOB.AdminProcCaller
-	var/user_identifier = usr ? usr.client?.ckey : GLOB.AdminProcCaller
-	var/is_remote_handler = usr == GLOB.AdminProcCallHandler
+	var/user_identifier = user ? user.client?.ckey : GLOB.AdminProcCaller
+	var/is_remote_handler = user == GLOB.AdminProcCallHandler
 	if(is_remote_handler)
 		user_identifier = GLOB.AdminProcCallHandler.name
 
@@ -281,7 +281,7 @@ GLOBAL_PROTECT(LastAdminCalledProc)
 		CRASH("WrapAdminProcCall with no ckey: [target] [procname] [english_list(arguments)]")
 
 	if(!is_remote_handler && current_caller && current_caller != user_identifier)
-		to_chat(usr, span_adminnotice("Another set of admin called procs are still running. Try again later."), confidential = TRUE)
+		to_chat(user, span_adminnotice("Another set of admin called procs are still running. Try again later."), confidential = TRUE)
 		return
 
 	GLOB.LastAdminCalledProc = procname

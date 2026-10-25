@@ -52,25 +52,25 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /datum/tgui_module/law_manager/proc/ui_act_add_zeroth_law(datum/act/op/A)
 	var/mob/user = A.actor
 	if(zeroth_law && is_admin(user) && !owner().laws.zeroth_law)
-		owner().set_zeroth_law(zeroth_law)
+		owner().set_zeroth_law(zeroth_law, actor = user)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_add_ion_law(datum/act/op/A)
 	var/mob/user = A.actor
 	if(ion_law && is_malf(user))
-		owner().add_ion_law(ion_law)
+		owner().add_ion_law(ion_law, actor = user)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_add_inherent_law(datum/act/op/A)
 	var/mob/user = A.actor
 	if(inherent_law && is_malf(user))
-		owner().add_inherent_law(inherent_law)
+		owner().add_inherent_law(inherent_law, actor = user)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_add_supplied_law(datum/act/op/A)
 	var/mob/user = A.actor
 	if(supplied_law && supplied_law_position >= 1 && supplied_law_position <= MAX_SUPPLIED_LAW_NUMBER && is_malf(user))
-		owner().add_supplied_law(supplied_law_position, supplied_law)
+		owner().add_supplied_law(supplied_law_position, supplied_law, actor = user)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_change_zeroth_law(datum/act/op/A, val)
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	var/datum/prompt/P = A.answer
 	var/new_law = P?.value
 	if(AL && new_law && new_law != AL.law && is_malf(A.actor))
-		log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'")
+		log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'", A.actor)
 		AL.set_law(new_law)
 	return TRUE
 
@@ -134,7 +134,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	if(is_malf(user))
 		var/datum/ai_law/AL = ui_member(delete_law, ui_source_owner_laws_all_laws(), /datum/ai_law)
 		if(AL && is_malf(user))
-			owner().delete_law(AL)
+			owner().delete_law(AL, actor = user)
 	return TRUE
 
 /datum/tgui_module/law_manager/proc/ui_act_state_laws(datum/act/op/A)
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	if(is_malf(user))
 		var/datum/ai_laws/ALs = ui_member(transfer_laws, law_sets(), /datum/ai_laws)
 		if(ALs && (is_admin(user) || (ALs in GLOB.player_laws)))
-			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
+			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].", A.actor)
 			ALs.sync(owner(), 0)
 	return TRUE
 
@@ -239,12 +239,12 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /mob/living/silicon/robot/is_slaved()
 	return lawupdate && connected_ai ? sanitize(read_once(connected_ai.name)) : null
 
-/datum/tgui_module/law_manager/proc/sync_laws(mob/living/silicon/ai/AI)
+/datum/tgui_module/law_manager/proc/sync_laws(mob/living/silicon/ai/AI, mob/actor)
 	if(!AI)
 		return
 	for(var/mob/living/silicon/robot/R in AI.connected_robots)
 		R.sync()
-	log_and_message_admins("has syncronized [AI]'s laws with its borgs.")
+	log_and_message_admins("has syncronized [AI]'s laws with its borgs.", actor)
 
 /datum/tgui_module/law_manager/robot
 CAPABILITIES(/datum/tgui_module/law_manager/robot)
