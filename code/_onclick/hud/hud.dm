@@ -583,7 +583,7 @@ CAPABILITIES(/datum/hud)
 	update_action_buttons(TRUE)
 
 /mob/proc/add_click_catcher()
-	client_screen_add(client, client.void)
+	client_screen_add(client, GLOB.click_catcher)
 
 /mob/new_player/add_click_catcher()
 	return
@@ -611,7 +611,7 @@ CAPABILITIES(/datum/hud)
 		client_screen_clear(client)
 
 		client_screen_add(client, hud_elements)
-		client_screen_add(client, client.void)
+		client_screen_add(client, GLOB.click_catcher)
 
 /* TGMC Ammo HUD Port
  * These procs call to screen_objects.dm's respective procs.

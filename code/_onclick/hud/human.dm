@@ -312,7 +312,7 @@
 			client_screen_add(client, HUD.adding)
 		if(length(HUD.hotkeybuttons))
 			client_screen_add(client, HUD.hotkeybuttons)
-		client_screen_add(client, client.void)
+		client_screen_add(client, GLOB.click_catcher)
 
 	HUD.inventory_shown = 0
 
