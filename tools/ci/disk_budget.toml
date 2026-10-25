@@ -1,0 +1,390 @@
+# Disk budget for everything the tooling keeps outside git (AGENTS.md section 4, "Disk hygiene"). Enforced by tools/dq_disk_budget.sh;
+# tools/ci/test_disk_budget.sh proves it. Disk use is bounded by construction: every directory under the cache root (E:/dq-cache) and
+# every per-worktree growth directory is listed here with a size cap and an age cap, and the cache as a whole has a total cap.
+#
+# Anything directly under the cache root that is NOT a `[cache.<name>]` table below is unknown: the script reports it, and removes it once
+# idle only when it is clearly a cache (*.log, *.stamp, dmb-*, dmt-*, ...); train, lane-pool, slots, dmb-bin, flakes.tsv are never removed. Add a table here before creating a new directory there.
+#
+# Format (a TOML subset, one `key = value` per line, parsed by the script):
+#   [settings]                       whole-cache numbers (each env override wins: DQ_CACHE_BUDGET_GB, DQ_DISK_FLOOR_GB)
+#   [cache.<name>]                   a child of the cache root (default E:/dq-cache; DQ_CACHE_ROOT)
+#   [worktree.<name>]                a growth path inside every worktree under E:/projects/dq-wt (DQ_WT_ROOT)
+# Keys of a table:
+#   policy        children-lru  the unit is each immediate child (a directory or file); evict the least recently modified whole unit
+#                 files-lru     the unit is each file (to `depth` levels, only names matching `glob`); evict the least recently modified file
+#                 state         never evicted (small coordination state); only its `*.log`/`*.jsonl` files are tail-truncated past `log_max_mb`
+#   cap_gb|cap_mb size cap of the table's directory (a worktree table: per worktree). The cache-wide total cap is [settings] total_gb.
+#   age_days      a unit untouched this long goes whatever the size (0 = no age cap)
+#   keep          the newest N units are never evicted (the current compiler, the latest analyzer binaries, ...)
+#   min_idle_min  a unit modified within this many minutes is in use right now and is never evicted (default [settings] min_idle_min)
+#   glob          files-lru: `|`-separated find -name patterns to count (default: every file)
+#   protect_glob  files-lru: `|`-separated names never evicted (a final binary, a key file)
+#   depth         files-lru: how deep to look (default 1 for a worktree table, 8 for a cache table)
+#   sub_cap_gb    children-lru: a child over this size is cut down by its least recently modified files (cargo targets of one worktree);
+#                 sub_cap_mb is the same in MB
+#   protect       `,`-separated: leased-slot (a child named after a leased pool slot is never evicted or trimmed),
+#                 analyze-keys (a key a live worktree's analyzer binary was built from), dmb-current (the compiler version in dmb-bin/current)
+#   subdir        children-lru: the units are the children of this subdirectory (dmb-bin/v/<id>)
+#   mtime_file    children-lru: a file inside the unit whose mtime says when it was last used (analyze-cache's .used)
+#   tool          a command run first that does the entry's own eviction (`dmbc-cache-gc`: the compiler's cache and pair-store pass)
+#   log_subdir    state: only this subdirectory's logs are capped
+#   log_max_mb    state: a log over this many MB is truncated to its last MB (a log the daemon holds open is rotated aside instead)
+
+[settings]
+total_gb = 60
+floor_gb = 50
+# Under the floor every cap is scaled to this percentage and min_idle_min drops to 5.
+aggressive_pct = 50
+min_idle_min = 30
+# A directory size walked within this many minutes is reused instead of walked again.
+index_ttl_min = 30
+# Worktrees that are permanent (their cargo targets are never evicted whole, only trimmed inside).
+permanent_worktrees = merge-base train-base
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+# E:/dq-cache: one table per directory the tools create. Caps below add up to more than total_gb on purpose: the total cap evicts the
+# least recently used unit across all of them when the sum is over.
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+[cache.analyze-bin]
+policy = children-lru
+cap_gb = 1
+keep = 12
+protect = analyze-keys
+
+[cache.analyze-cache]
+policy = children-lru
+cap_gb = 4
+keep = 1
+age_days = 14
+mtime_file = .used
+
+[cache.cargo-targets]
+# One directory per worktree, each holding that worktree's cargo targets (tools/dmb, analyze, light checks).
+policy = children-lru
+cap_gb = 18
+sub_cap_gb = 6
+age_days = 10
+protect = leased-slot
+
+[cache.dmb-bin]
+# Published compilers: dmb-bin/v/<id>; `current` and the newest other one are kept.
+policy = children-lru
+subdir = v
+cap_gb = 1
+keep = 2
+protect = dmb-current
+
+[cache.dmbc]
+# Built compilers by source hash (release/dmbc.exe + dmbd.exe, ~30 MB each): the newest few are the working set.
+policy = children-lru
+cap_gb = 1
+keep = 6
+age_days = 14
+
+[cache.dmbd]
+# The compiler's per-file lowering cache (*.seg/*.grp segments of 1-3 GB), pair stores and publication leases.
+policy = files-lru
+tool = dmbc-cache-gc
+glob = *.seg|*.grp
+depth = 3
+cap_gb = 16
+age_days = 14
+keep = 1
+
+[cache.dmb-roots]
+# The compiler's per-checkout output copies (.dmbc/: prepared output, stats, input-session records).
+policy = files-lru
+depth = 6
+cap_gb = 6
+age_days = 14
+protect_glob = *.lock|*.last-run.json|build.lock
+
+[cache.dmb-build]
+policy = children-lru
+cap_gb = 6
+age_days = 7
+
+[cache.dmb-build-integration]
+policy = children-lru
+cap_gb = 2
+age_days = 2
+min_idle_min = 60
+
+[cache.dmb-dev]
+policy = children-lru
+cap_gb = 4
+age_days = 7
+
+[cache.dmb-prewarm]
+policy = children-lru
+cap_gb = 2
+age_days = 3
+
+[cache.dmbb]
+policy = children-lru
+cap_gb = 2
+age_days = 2
+
+[cache.dmb-target]
+policy = children-lru
+cap_gb = 6
+age_days = 7
+
+[cache.verdigris]
+# Built verdigris.dll / libverdigris.so by content key (DQ_VERDIGRIS_CACHE).
+policy = children-lru
+cap_gb = 2
+keep = 4
+age_days = 30
+
+[cache.dmb-daemon]
+policy = state
+log_max_mb = 64
+
+[cache.dmt-build-tests]
+policy = children-lru
+cap_gb = 2
+age_days = 1
+
+[cache.dmt-recovery-roots]
+policy = children-lru
+cap_gb = 2
+age_days = 1
+
+[cache.dmt-test-tmp]
+policy = children-lru
+cap_gb = 2
+age_days = 1
+
+[cache.dm-equivalence-tool-tests]
+policy = children-lru
+cap_gb = 1
+age_days = 1
+
+[cache.dreammaker-resolution-tests]
+policy = children-lru
+cap_gb = 1
+age_days = 1
+
+[cache.test-scratch]
+policy = children-lru
+cap_gb = 4
+age_days = 1
+
+[cache.gen-store]
+policy = children-lru
+cap_gb = 2
+keep = 2
+age_days = 14
+
+[cache.tree-proofs]
+policy = files-lru
+glob = *.proof|*.tests.json
+depth = 1
+cap_mb = 64
+keep = 400
+
+[cache.dqp-cache]
+policy = files-lru
+depth = 6
+cap_gb = 2
+age_days = 7
+
+[cache.ss4]
+policy = children-lru
+cap_gb = 1
+age_days = 3
+
+[cache.undef-probe]
+policy = children-lru
+cap_gb = 1
+age_days = 3
+
+# Coordination state: small, never evicted (a held slot, a lease, the train's queue and logs, the lane pool's queue).
+[cache.slots]
+policy = state
+
+[cache.lane-pool]
+policy = state
+
+[cache.train]
+# queue, bounced, landed, reports are never touched; only the log/ subtree is size-capped.
+policy = state
+log_subdir = log
+log_max_mb = 32
+
+[cache.ports]
+policy = state
+
+# Small ledgers and lists the tools append to.
+[cache.flakes.tsv]
+policy = state
+
+[cache.worktree-keep.txt]
+policy = state
+
+[cache.test-durations]
+policy = state
+
+# The budget's own index and stamps.
+[cache.disk-budget]
+policy = state
+
+# ---------------------------------------------------------------------------------------------------------------------------------
+# Per-worktree growth: what a lane, the train or the merge worktree leaves under its own checkout. Applied to every worktree under
+# E:/projects/dq-wt (the main checkout and DQ_DISK_EXCLUDE_WT names are skipped). Each table caps one path PER WORKTREE.
+# ---------------------------------------------------------------------------------------------------------------------------------
+
+[worktree.test-runs]
+path = data/test-runs
+policy = files-lru
+depth = 6
+cap_mb = 300
+age_days = 3
+
+[worktree.merge-gates]
+path = data/merge-gates
+policy = files-lru
+depth = 6
+cap_mb = 300
+age_days = 3
+
+[worktree.merge-batch]
+path = data/merge-batch
+policy = files-lru
+depth = 6
+cap_mb = 300
+age_days = 3
+
+[worktree.bench]
+path = data/bench
+policy = files-lru
+depth = 6
+cap_mb = 300
+age_days = 7
+
+[worktree.focused-runs]
+path = data/focused-runs
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 3
+
+[worktree.runs]
+path = data/runs
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 3
+
+[worktree.logs]
+path = data/logs
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 3
+
+[worktree.runtime-evidence]
+path = data/runtime-evidence
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 3
+
+[worktree.compiler-attempts]
+path = data/compiler-attempts
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 3
+
+[worktree.push-check]
+path = data/push-check
+policy = files-lru
+depth = 6
+cap_mb = 100
+age_days = 3
+
+[worktree.prebuild-tools]
+path = data/prebuild-tools
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 7
+
+[worktree.test-shards]
+path = data/test-shards
+policy = files-lru
+depth = 6
+cap_mb = 300
+age_days = 3
+
+[worktree.test-snapshots]
+path = data/test-snapshots
+policy = files-lru
+depth = 6
+cap_mb = 200
+age_days = 7
+
+[worktree.dmb-cache]
+path = data/dmb-cache
+policy = files-lru
+depth = 6
+cap_mb = 500
+age_days = 7
+
+[worktree.analyze-cache]
+# The analyzer's per-worktree results; the shared copy under the cache root seeds a fresh one.
+path = data/analyze-cache
+policy = files-lru
+depth = 6
+cap_mb = 500
+age_days = 14
+
+[worktree.loose-data-files]
+# Logs and lists lanes drop directly in data/ (gates34.log, batch22-final.txt, look-types.<pid>.txt, ...).
+path = data
+policy = files-lru
+depth = 1
+glob = *.log|*.txt|*.times|*.err|*.out|*.tsv
+protect_glob = ban_unban_log.txt|slot-waits.log
+cap_mb = 100
+age_days = 3
+
+[worktree.test-world-logs]
+# Test-world output and copies in the checkout root: deepquarry.test.run<N>.p<pid>.log (1.4 GB in merge-base), run copies, lock files.
+path = .
+policy = files-lru
+depth = 1
+glob = deepquarry*.run*.log|deepquarry*.run*.rsc|deepquarry*.run*.dmb|deepquarry*.run*.lk|deepquarry*.run*.dyn.*|*.stackdump|look-types.*.txt
+cap_mb = 200
+age_days = 1
+
+[worktree.analyze-target]
+# The analyzer's cargo target: stale deps (pdb/rlib/rmeta of older sources) are the garbage; the built binary and its key stay.
+path = tools/analyze/target
+policy = files-lru
+depth = 8
+cap_gb = 3
+age_days = 7
+protect_glob = analyze|analyze.exe|*.key
+min_idle_min = 120
+
+[worktree.dmb-target]
+path = tools/dmb/target
+policy = files-lru
+depth = 8
+cap_gb = 3
+age_days = 7
+protect_glob = dmbc|dmbc.exe|dmbd|dmbd.exe
+min_idle_min = 120
+
+[worktree.verdigris-target]
+path = verdigris/target
+policy = files-lru
+depth = 8
+cap_gb = 3
+age_days = 7
+protect_glob = verdigris.dll|libverdigris.so|*.key
+min_idle_min = 120

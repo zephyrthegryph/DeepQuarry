@@ -626,6 +626,8 @@ lease_once() {
 	case "$branch" in master|main|rewrite/integ-current) die "'$branch' is not a lane branch" ;; esac
 	lane_class "$branch" "$class"; class="$LANE_CLASS"
 
+	# the disk floor: below DQ_DISK_FLOOR_GB free (tools/ci/disk_budget.toml) no new lane starts; above it the budget is enforced in the background
+	[ -f "$REPO/tools/dq_disk_budget.sh" ] && { bash "$REPO/tools/dq_disk_budget.sh" gate "a new lane lease" --throttle 10 || return 6; }
 	fetch_origin "$REPO" || say "warning: git fetch failed; using the last fetched origin/master"
 	lock_take
 	br_sha=""
@@ -748,11 +750,10 @@ cmd_release() {
 	release_slot "$found" "$force" "$keep"
 	local rc=$?
 	lock_drop
-	# Cache hygiene, at most every 6 hours, detached: caps the shared caches and removes abandoned test scratch (tools/dq_cache_prune.sh).
-	mtv_of "$STATE_DIR/prune.stamp"
-	if [ $(( EPOCHSECONDS - MTV )) -ge 21600 ] && [ -f "$REPO/tools/dq_cache_prune.sh" ]; then
-		: >"$STATE_DIR/prune.stamp"
-		( nohup bash "$REPO/tools/dq_cache_prune.sh" >"$STATE_DIR/prune.log" 2>&1 & ) >/dev/null 2>&1
+	# Disk budget (tools/dq_disk_budget.sh, tools/ci/disk_budget.toml): the released slot's cargo targets and growth dirs are now unprotected, so
+	# enforce the caps at once, detached, at most once per 10 minutes.
+	if [ -f "$REPO/tools/dq_disk_budget.sh" ]; then
+		( nohup bash "$REPO/tools/dq_disk_budget.sh" enforce --quiet --throttle 1 >"$STATE_DIR/prune.log" 2>&1 & ) >/dev/null 2>&1
 	fi
 	return "$rc"
 }

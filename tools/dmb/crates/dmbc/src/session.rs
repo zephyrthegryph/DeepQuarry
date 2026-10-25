@@ -237,7 +237,34 @@ impl Session {
             let _ = fs::remove_file(&temporary);
         }
         result?;
+        self.trim_directory(RETAINED_RECORDS, id);
         Ok(id)
+    }
+
+    /// Keep only the newest `keep` records of this namespace (never `protect`, the one just written) and drop abandoned
+    /// `.temporary` files. Callers recover at most four records, but nothing ever deleted the rest: 155
+    /// namespaces held 13 GB. Best effort: a record another process holds open simply stays until the next write.
+    fn trim_directory(&self, keep: usize, protect: u128) {
+        let Ok(entries) = fs::read_dir(&self.directory) else { return };
+        let mut records: Vec<(std::time::SystemTime, std::path::PathBuf)> = Vec::new();
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Ok(metadata) = entry.metadata() else { continue };
+            let modified = metadata.modified().unwrap_or(std::time::UNIX_EPOCH);
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else { continue };
+            if name.ends_with(".temporary") {
+                if modified.elapsed().is_ok_and(|age| age > std::time::Duration::from_secs(3600)) {
+                    let _ = fs::remove_file(&path);
+                }
+            } else if name.len() == 36 && name.ends_with(".bin") && name != format!("{protect:032x}.bin") {
+                records.push((modified, path));
+            }
+        }
+        records.sort_by(|a, b| b.0.cmp(&a.0));
+        for (_, path) in records.into_iter().skip(keep.saturating_sub(1)) {
+            let _ = fs::remove_file(path);
+        }
     }
 
     pub fn records(&self) -> Arc<SessionRecords> {
@@ -249,6 +276,9 @@ impl Session {
         self.records
     }
 }
+/// Records kept per input-session namespace (the newest; `latest` recovers at most four of them).
+const RETAINED_RECORDS: usize = 8;
+
 impl SessionRecords {
     pub fn open(configuration: Configuration) -> io::Result<Self> {
         let checked = Configuration::new(
@@ -666,6 +696,50 @@ mod tests {
             .unwrap()
             .is_none());
         drop(session);
+    }
+    #[test]
+    fn a_namespace_keeps_only_its_newest_records_and_never_the_one_just_written() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let temp = Temporary(std::env::temp_dir().join(format!(
+            "dmbc-trim-session-{}-{unique}",
+            std::process::id()
+        )));
+        fs::create_dir_all(&temp.0).unwrap();
+        let manifest = temp.0.join("project.dme");
+        let configuration =
+            Configuration::new(&temp.0, &manifest, BTreeMap::new(), 1, 2, 3).unwrap();
+        let request = Session::acquire(configuration).unwrap();
+        let host = Host {
+            bytes: b"source".to_vec(),
+        };
+        let mut last = 0;
+        for pair in 0..(RETAINED_RECORDS as u128 + 6) {
+            let mut inputs = InputSnapshot::new(10_000_000_000);
+            inputs
+                .record_file(&manifest, host.stamp(&manifest).unwrap(), &host.bytes)
+                .unwrap();
+            last = request
+                .store(Record {
+                    warnings: Vec::new(),
+                    inputs,
+                    pair,
+                    outputs: None,
+                    resource_manifest: None,
+                })
+                .unwrap();
+        }
+        let namespace = request.records();
+        let kept = fs::read_dir(&namespace.directory)
+            .unwrap()
+            .flatten()
+            .filter(|entry| entry.file_name().to_string_lossy().ends_with(".bin"))
+            .count();
+        assert!(kept <= RETAINED_RECORDS, "{kept} records kept");
+        assert!(namespace.directory.join(format!("{last:032x}.bin")).exists());
+        assert_eq!(namespace.latest(4).unwrap().first(), Some(&last));
     }
     #[test]
     fn retained_namespace_releases_request_lock_and_reuses_exact_records() {
