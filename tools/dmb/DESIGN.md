@@ -602,8 +602,8 @@ its RSC is broken. So the unit of publication is the pair.
   IDs. The pair ID is xxh3 of both; the DMB hash comes from memory, and the RSC hash from building
   or reusing it.
 - **One store per drive.** Hardlinks cannot cross drives, so each drive that holds worktrees has its
-  own pair store: `%LOCALAPPDATA%\dmbd\pairs\` on the system drive, `<drive>:\.dmbd\pairs\` on
-  others (configurable). A build publishes into the store on its worktree's drive.
+  own pair store: `%LOCALAPPDATA%\dmbd\pairs\` on the system drive, `<drive>:\dq-cache\dmbd\pairs\` on
+  others (configurable; was `<drive>:\.dmbd\pairs\`, moved there once by the first compile). A build publishes into the store on its worktree's drive.
 - **Publishing.** The pair is written into a temporary directory with a small manifest (sizes,
   hashes), its files are marked read-only, and the directory is renamed into place. Once named, a
   pair directory never changes. RSC files with the same hash are hardlinked between pairs inside the

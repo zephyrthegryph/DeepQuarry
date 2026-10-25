@@ -801,6 +801,7 @@ mod resource_tests {
             symbol,
             &defaults[0].1.descriptor,
             None,
+            true,
         );
         changed_input.inputs = Arc::new(crate::initializer_lowering::receipts::Inputs::Modified {
             canonical: Arc::from(defaults[0].1.descriptor.canonical_bytes()),
@@ -819,6 +820,7 @@ mod resource_tests {
             symbol,
             &defaults[0].1.descriptor,
             None,
+            true,
         );
         assert!(retained
             .modified(&leaf_input, &symbols, &Host { content: 99 }, |_| panic!(

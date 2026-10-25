@@ -274,6 +274,7 @@ struct Shared {
     engines: Arc<crate::runner_host::EnginePayloads>,
     executors: Arc<crate::runner_host::ExecutorPools>,
     procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
+    store: Arc<crate::shared_store::SharedStore>,
     compiler: u128,
     retiring: AtomicBool,
     slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
@@ -440,6 +441,9 @@ impl Shared {
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
             dm_profile::print_allocator_stats();
         }
+        if std::env::var_os("DMB_MEM_MARKS").is_some_and(|value| value != "0") {
+            super::emit_stderr(format_args!("{}", self.store.report()));
+        }
         housekeeping::allocations::dump_sites(&format!("after_request private={after:?}"));
         after
     }
@@ -448,7 +452,10 @@ impl Shared {
             Arc::clone(&self.engines),
             Arc::clone(&self.executors),
             Arc::clone(&self.procedures),
+            Arc::clone(&self.store),
         );
+        // The replacement holds one handle; with no other session the released session's records have no user left.
+        self.store.records.clear_if_held_by_at_most(1);
     }
     /// What the daemon holds for `key` right now: a usable retained session (hot) or the reason there is none.
     fn probe(&self, key: &SessionKey) -> crate::compile_stats::SessionState {
@@ -494,6 +501,7 @@ impl Shared {
                         Arc::clone(&self.engines),
                         Arc::clone(&self.executors),
                         Arc::clone(&self.procedures),
+                        Arc::clone(&self.store),
                     )),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
@@ -698,10 +706,14 @@ pub(super) fn serve() -> io::Result<()> {
     }
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
+    let store: Arc<crate::shared_store::SharedStore> = Arc::new(Default::default());
+    // Every artifact owner created from here on shares its core with the other sessions (`shared_store.rs`).
+    crate::shared_store::activate(&store);
     let shared = Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
+        store,
         compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
@@ -1143,6 +1155,7 @@ mod tests {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
             procedures: Arc::new(Default::default()),
+            store: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),

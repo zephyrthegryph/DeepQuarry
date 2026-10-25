@@ -57,12 +57,16 @@ pub(crate) struct Binding {
     pub inputs: Arc<Inputs>,
 }
 impl Binding {
+    /// `debug_ops` is whether the build emits DbgFile/DbgLine ops (the DEBUG define): the lowered code differs by it, so equal
+    /// placement under the other setting is another artifact (the store is shared by every session and variant).
     pub fn modified(
         reference: dm_ir::SymRef,
         descriptor: &dm_ir::ModifiedInstance,
         policy: Option<u128>,
+        debug_ops: bool,
     ) -> Self {
-        let mut key = b"initializer-modified-placement-v1".to_vec();
+        let mut key = b"initializer-modified-placement-v2".to_vec();
+        key.push(u8::from(debug_ops));
         // Symbolic identity locates only; full canonical input is replayed.
         if let dm_ir::SymRef::Instance(name) = reference {
             symbol(&mut key, name);
@@ -81,7 +85,10 @@ impl Binding {
         )
     }
     pub fn fragment(duplicate: usize, inputs: FragmentInputs) -> Self {
-        let key = fragment_locator(&inputs.write);
+        let mut key = fragment_locator(&inputs.write);
+        // Fragment code depends on the policy's build flags (see `assembly`): equal placement under another flag set is a
+        // different artifact for every session and variant sharing the store.
+        key.extend_from_slice(&inputs.policy.to_le_bytes());
         Self::new(key, duplicate, Inputs::Fragment(inputs))
     }
     pub fn assembly(
@@ -89,13 +96,26 @@ impl Binding {
         duplicate: usize,
         writes: Vec<GroupWrite>,
     ) -> Self {
-        let mut key = b"initializer-assembly-placement-v8".to_vec();
+        let mut key = b"initializer-assembly-placement-v9".to_vec();
         match receiver {
             None => key.push(0),
             Some(receiver) => {
                 key.push(1);
                 symbol(&mut key, receiver);
             }
+        }
+        // The assembled code carries the build flags of its fragments' policy (DEBUG adds line ops). Equal placement under
+        // another policy is another artifact, so the policy is part of the key: sessions and variants that share the store
+        // never claim code built for another flag set.
+        match writes.iter().find_map(|write| match write.fragment.as_ref() {
+            Inputs::Fragment(fragment) => Some(fragment.policy),
+            _ => None,
+        }) {
+            Some(policy) => {
+                key.push(1);
+                key.extend_from_slice(&policy.to_le_bytes());
+            }
+            None => key.push(0),
         }
         Self::new(key, duplicate, Inputs::Assembly { receiver, writes })
     }

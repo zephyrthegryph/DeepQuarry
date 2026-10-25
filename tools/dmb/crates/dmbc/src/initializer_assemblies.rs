@@ -111,7 +111,7 @@ impl Default for InitializerAssemblies {
     fn default() -> Self {
         Self {
             disk: None,
-            values: receipts::Store::current_revision(),
+            values: receipts::Store::shared_current_revision("initializer.assemblies"),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),

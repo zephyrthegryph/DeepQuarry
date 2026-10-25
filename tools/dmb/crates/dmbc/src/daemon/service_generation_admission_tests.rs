@@ -6,6 +6,7 @@ fn shared(compiler: u128) -> Arc<Shared> {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
+        store: Arc::new(Default::default()),
         compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),

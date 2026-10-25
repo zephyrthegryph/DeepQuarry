@@ -26,7 +26,7 @@ pub struct AllocationArtifacts {
 impl Default for AllocationArtifacts {
     fn default() -> Self {
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values: ObservedArtifactStore::shared_current_revision("type_creation_order"),
         }
     }
 }

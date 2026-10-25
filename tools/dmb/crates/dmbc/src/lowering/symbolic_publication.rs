@@ -17,7 +17,7 @@ pub(super) struct Owner {
 }
 impl Default for Owner {
     fn default() -> Self {
-        let values = Store::shared_current_rosters();
+        let values = crate::shared_store::artifact_core("lowering.symbolic_records", None);
         Self {
             values,
             publication: Arc::new(Default::default()),
