@@ -517,6 +517,7 @@ impl Compiler<'_> {
             }
             ExprKind::Member { .. } => {
                 let mut safe_labels = Vec::new();
+                self.validate_member_var(expr, statement)?;
                 let var = match self.variable_expr(expr, statement) {
                     Ok(var) => var,
                     Err(_) => {
