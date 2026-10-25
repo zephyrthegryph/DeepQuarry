@@ -84,7 +84,7 @@
 		L.mend(TREAT_WIRING_REPAIR, 150)
 		L.mend(TREAT_OXYGENATION, 200)
 		L.set_stat(CONSCIOUS)
-		L.failed_last_breath = 0
+		sparse_set_or(L, failed_last_breath, 0, 0)
 		L.end_body_effect(type)
 
 /datum/body_effect/life_cloak_exhaustion

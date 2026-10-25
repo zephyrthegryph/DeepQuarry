@@ -16,7 +16,6 @@
 
 
 
-	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 
 	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance. The evasion stat (code/contracts/ids/body_stats.dm): the type's own value here, plus body factors.
 
@@ -66,13 +65,11 @@
 
 /mob
 /mob/living
-	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 	var/private_notes = null
 
 /mob
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
-	var/eggs = 0
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
 /// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it). A relation view (ref_one in
