@@ -163,6 +163,8 @@ start_detached() { # <script> <log>: a process outside this shell's process grou
 cmd_ensure() {
 	init_state
 	if integrator_alive; then tlog "integrator already running (pid $(integrator_pid)); the enqueued lane joins its next cycle"; return 0; fi
+	# The watchdog callers (dq_lane_pool.sh lease and release) ask on every call: with nothing queued there is nothing to run.
+	[ -n "$(queue_branches)" ] || return 0
 	# The integrator runs from a snapshot (the lane's worktree is released and reset while it works); the helpers are read from its worktree.
 	if [ "$SELF_DIR" != "$STATE/self" ]; then
 		cp -f "$SELF" "$STATE/self/dq_train.sh" && cp -f "$SELF_DIR/dq_train_estimate.js" "$STATE/self/dq_train_estimate.js" || die "cannot snapshot the integrator into $STATE/self"
@@ -223,6 +225,13 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
 }
 bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); sed -i "s/^attempts=.*/attempts=$n/" "$f"; }
+
+bump_push_refusals() { # <branch>: counts non-"master moved" push refusals in the queue file; prints the new count
+	local f n; f="$(qfile "$1")"; [ -f "$f" ] || { echo 0; return 0; }
+	n="$(qget "$f" push_refusals)"; n=$(( ${n:-0} + 1 ))
+	if grep -q '^push_refusals=' "$f"; then sed -i "s/^push_refusals=.*/push_refusals=$n/" "$f"; else echo "push_refusals=$n" >>"$f"; fi
+	echo "$n"
+}
 
 est_secs() { # test names...
 	local dirs=() d runs
@@ -361,6 +370,9 @@ heavy_cycle() {
 		cd "$WT" || exit 99
 		export DQ_MERGE_BRANCH="$TBRANCH" DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_FOCUSED_MAX_MIN="$TEST_MAX_MIN"
 		export DQ_SLOT_PRIORITY=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_BATCH_DEADLINE="$deadline"
+		# DreamChecker is a gate job of its own (parallel to the tests, a failure bisects to the culprit lane): the native compiler accepts
+		# undefined fields DreamChecker rejects, and the push trusts the gate only with the gate's dreamchecker stamp on the exact HEAD.
+		export DQ_GATE_DREAMCHECKER=1
 		# --no-dm: the test build compile already proves the code compiles; a second full native compile run in parallel starved the test
 		# build of the compile slot, memory and CPU, and the test world was killed at the cap. CI keeps the production compile cross-check.
 		bash tools/dq_merge_batch.sh --lanes "${CHOSEN[*]}" --tests "$tests_union" --no-dm
@@ -398,7 +410,25 @@ heavy_cycle() {
 	) >"$pushlog" 2>&1
 	prc=$?
 	if [ "$prc" -ne 0 ]; then
-		tlog "push FAILED (rc=$prc; master moved under the gate, or a stamp/hook refused): the lanes [$good] stay queued for the next cycle; see $pushlog: $(grep -m1 -E 'REFUSED|rejected|moved' "$pushlog" | head -c 200)"
+		local refusal
+		refusal="$(grep -m1 -E 'REFUSED|rejected' "$pushlog" | head -c 300)"
+		[ -n "$refusal" ] || refusal="$(tail -n 1 "$pushlog" | head -c 300)"
+		tlog "push FAILED (rc=$prc): the lanes [$good]; see $pushlog: $refusal"
+		if grep -qE 'origin/master moved|master moved|push rejected|origin/master is not' <<<"$refusal"; then
+			tlog "push refused because master moved: the lanes [$good] stay queued for the next cycle"
+			return 0
+		fi
+		# Any other refusal (a stamp, a hook, a missing check) repeats on the same tree: after 2 attempts the lanes are bounced with the
+		# refusal line as the reason, so a lane never sits queued behind a refusal nobody sees.
+		for b in $good; do
+			local n; n="$(bump_push_refusals "$b")"
+			if [ "${n:-0}" -ge 2 ]; then
+				bounce "$b" "the gate passed but the push was refused $n times for a reason other than master moving: $refusal" "$pushlog"
+				CYCLE_PROGRESS=1
+			else
+				tlog "push refusal $n of 2 for $b; it stays queued for one more attempt"
+			fi
+		done
 		return 0
 	fi
 	if [ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ]; then tlog "DRY RUN: [$good] passed the gate and every push check; nothing pushed, the lanes stay queued"; return 0; fi
@@ -453,7 +483,7 @@ cmd_run() {
 	lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
 	trap 'lock_release; phase "idle"' EXIT
 	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
-	local idle=0 rc
+	local idle=0 rc stalls=0
 	while :; do
 		cycle
 		rc=$?
@@ -467,7 +497,15 @@ cmd_run() {
 		[ "${DQ_TRAIN_ONCE:-0}" = 1 ] && { tlog "DQ_TRAIN_ONCE: stopping after one cycle"; exit 0; }
 		if [ "$CYCLE_PROGRESS" -eq 0 ]; then
 			idle=$((idle + 1))
-			if [ "$idle" -ge "${DQ_TRAIN_STALL_CYCLES:-3}" ]; then tlog "STALLED: $idle cycles without a landing or a bounce (master keeps moving, or the push is refused); lanes stay queued; the next enqueue (or 'dq_train.sh ensure') starts a fresh integrator. See $LOGS/"; exit 1; fi
+			if [ "$idle" -ge "${DQ_TRAIN_STALL_CYCLES:-3}" ]; then
+				# Never exit on a stall (an exited integrator sat idle for 3 hours with lanes queued): back off and keep running.
+				stalls=$((stalls + 1))
+				tlog "STALLED: $idle cycles without a landing or a bounce (master keeps moving, or the push is refused); lanes stay queued; backing off ${DQ_TRAIN_STALL_BACKOFF_SEC:-300}s, the integrator keeps running. See $LOGS/"
+				if [ -n "${DQ_TRAIN_STALL_EXIT_AFTER:-}" ] && [ "$stalls" -ge "$DQ_TRAIN_STALL_EXIT_AFTER" ]; then tlog "DQ_TRAIN_STALL_EXIT_AFTER: stopping after $stalls stall(s)"; exit 1; fi
+				idle=0
+				sleep "${DQ_TRAIN_STALL_BACKOFF_SEC:-300}"
+				continue
+			fi
 			sleep "${DQ_TRAIN_RETRY_SEC:-60}"
 		else
 			idle=0
