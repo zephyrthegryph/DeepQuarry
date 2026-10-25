@@ -144,7 +144,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	run.remaining = isnum(count) ? count : 1
 	run.chosen = chosen_of(A)
 	run.needed = needed_of(D, run.chosen)
-	run.coefficient = coefficient_of(M, D)
+	run.coefficient = num_or_null(coefficient_of(M, D))
 	run.build_time = build_time ? call(M, build_time)(D) : D.construction_time
 	var/charge = 0
 	for(var/datum/material/mat as anything in run.needed)

@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	name = "[seed().seed_name]"
 	set_trash(seed().get_trash_type())
 
-	potency = seed().get_trait(TRAIT_POTENCY)
+	potency = num_or_null(seed().get_trait(TRAIT_POTENCY))
 
 	if(seed().chems)
 		update_desc()
