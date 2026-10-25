@@ -308,7 +308,7 @@
 	P.spont_belly_left = spont_belly_left
 	P.spont_belly_front = spont_belly_front
 	P.spont_belly_right = spont_belly_right
-	P.autotransferable = sparse_get_or(src, autotransferable, TRUE)
+	P.autotransferable = !!sparse_get_or(src, autotransferable, TRUE)
 
 	var/list/serialized = list()
 	for(var/obj/belly/B as anything in src.vore_organs)
