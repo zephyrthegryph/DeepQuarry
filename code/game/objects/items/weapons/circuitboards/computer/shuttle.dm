@@ -18,7 +18,7 @@
 // Try to auto-link the shuttle computer if it is constructed on a shuttle (and not pre-programmed)
 /obj/item/circuitboard/shuttle_console/construct(obj/machinery/computer/shuttle_control/M, mob/user = null)
 	if(!shuttle_tag)
-		shuttle_tag = auto_detect_shuttle(M) // We don't have a preset tag, so lets try to auto-link.
+		shuttle_tag = text_or_null(auto_detect_shuttle(M)) // We don't have a preset tag, so lets try to auto-link.
 	if(shuttle_tag && M.set_shuttle_tag(shuttle_tag))
 		log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", user)
 		M.ping("[M] auto-links with shuttle [shuttle_tag]")

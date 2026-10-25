@@ -739,7 +739,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().set_real_name("Stock [S.name] Body")
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
-		owner().dna.base_species = S.base_species
+		owner().dna.base_species = text_or_null(S.base_species)
 		sparse_set(owner(), resleeve_lock, FALSE)
 		owner().custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)

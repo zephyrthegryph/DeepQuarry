@@ -626,7 +626,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		owner().take_damage((last_stress - 0.9) * 5 * elapsed, BURN, FIRE)
 		active = TRUE
 	updating = FALSE
-	last_environment_temperature = temperature()
+	last_environment_temperature = num_or_null(temperature())
 	active = sample_observation() || active
 	if(active)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
