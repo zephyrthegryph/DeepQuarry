@@ -141,7 +141,6 @@ impl PreparedContribution {
             None,
         )
     }
-    #[inline(never)]
     pub(crate) fn rebind_with_modified_current(
         artifact: &Arc<ReusableProcedureArtifact>,
         frontend: &dm_tree::frontend::ColdFrontend,

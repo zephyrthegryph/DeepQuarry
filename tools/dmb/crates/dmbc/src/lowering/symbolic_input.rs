@@ -662,7 +662,6 @@ impl SessionSymbolicMemo {
         Some(input)
     }
     #[allow(clippy::too_many_arguments)]
-    #[inline(never)]
     fn rebind_record<R: Resolver>(
         &self,
         record: &Arc<Record>,

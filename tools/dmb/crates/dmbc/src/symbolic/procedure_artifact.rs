@@ -142,7 +142,6 @@ impl ReusableProcedureArtifact {
             _ => false,
         }
     }
-    #[inline(never)]
     pub(super) fn helper_origins(
         &self,
         frontend: &dm_tree::frontend::ColdFrontend,

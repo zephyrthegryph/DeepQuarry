@@ -224,7 +224,6 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
     ) -> Option<Arc<T>> {
         self.claim_key(&key, Some(Arc::clone(&key)), receipt)
     }
-    #[inline(never)]
     fn claim_key(
         &self,
         key: &[u8],
