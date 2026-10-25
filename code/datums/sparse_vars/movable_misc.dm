@@ -21,6 +21,8 @@
 
 // The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 sparse(/atom/movable, belly_cycles, type = num)
+// Toggle for autotransfer mechanics (default TRUE; the slot is set only when FALSE).
+sparse(/atom/movable, autotransferable, type = bool)
 sparse(/atom/movable, icon_rotation, type = num)
 sparse(/atom/movable, listening_recursive, type = num)
 sparse(/atom/movable, move_resist, type = num)

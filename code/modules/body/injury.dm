@@ -70,7 +70,7 @@
 		return 0
 	amount = ACT_FINAL(hit, amount, amount)
 	act_done(hit)
-	var/list/explain = (injury_trace || WANTS(src, /datum/notice/living_injury_explained)) ? list() : null
+	var/list/explain = (sparse_get(src, injury_trace) || WANTS(src, /datum/notice/living_injury_explained)) ? list() : null
 	var/incoming_kind = kind
 	var/before = amount
 
@@ -155,19 +155,19 @@
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
 	PUBLISH_LEGACY(src, /datum/notice/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
-	if(!injury_trace)
+	var/list/tracers = sparse_get(src, injury_trace)
+	if(!tracers)
 		return
 	var/list/parts = list()
 	for(var/list/stage as anything in stages)
 		parts += "[stage[1]] [round(stage[2], 0.01)]->[round(stage[3], 0.01)] ([stage[4]])"
 	var/line = "INJURY TRACE [key_name(src)]: [injury_kind_name(incoming_kind)] at [zone || "body"] from [source || "nothing"]: [jointext(parts, "; ")]"
 	log_attack(line)
-	for(var/client/C in injury_trace)
+	for(var/client/C in tracers)
 		to_chat(C, span_notice(line))
 
-/mob/living
-	/// Clients tracing this mob's injury mitigation (admin verb), or null.
-	var/list/injury_trace
+// Clients tracing this mob's injury mitigation (admin verb), or null: sparse slot injury_trace (a list).
+sparse(/mob/living, injury_trace, type = list)
 
 
 // --- Armour --------------------------------------------------------------------
