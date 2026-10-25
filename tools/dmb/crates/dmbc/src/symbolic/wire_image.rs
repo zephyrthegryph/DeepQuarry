@@ -43,6 +43,7 @@ impl WireImage {
             return Ok(hit.final_image.clone());
         }
         let (final_image, answers) = bound.encode_with_answers();
+        let final_image = super::image_pool::intern(final_image);
         let image = final_image.clone();
         *current = Some(Wired {
             base,

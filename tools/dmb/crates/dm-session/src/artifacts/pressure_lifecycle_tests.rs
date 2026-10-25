@@ -63,7 +63,7 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
         assert!(attempt.publish_successful());
         attempts.push(attempt);
     }
-    assert_eq!(store.state.write().unwrap().claims.len(), 7);
+    assert_eq!(store.state.write().unwrap().claimed_variants(), 7);
     let pending = owners[0].begin(store.lease());
     let unpublished = pending
         .with_pending(|lease| {
@@ -87,7 +87,7 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
     assert!(!pending.publish_successful());
     drop(unpublished);
     assert!(unpublished_weak.upgrade().is_none());
-    assert_eq!(store.state.write().unwrap().claims.len(), 7);
+    assert_eq!(store.state.write().unwrap().claimed_variants(), 7);
 
     let pruned = store.prune_for_pressure(usize::MAX, |key, _, _, value| {
         (key == &shared_key).then_some(value.capacity())
@@ -110,16 +110,7 @@ fn six_publication_owners_keep_independent_claims_through_abort_and_pressure() {
         .is_none());
     drop(probe);
     assert_eq!(
-        store
-            .state
-            .write()
-            .unwrap()
-            .claims
-            .values()
-            .next()
-            .unwrap()
-            .1
-            .load(std::sync::atomic::Ordering::Acquire),
+        store.state.write().unwrap().claim_counts()[0],
         6
     );
     drop(pending);
@@ -194,6 +185,6 @@ fn refresh_published_during_pressure_charge_keeps_escaped_values_and_generation(
         .0
         .is_none());
     drop((probe, current, original, owner));
-    assert!(store.state.write().unwrap().claims.is_empty());
+    assert_eq!(store.state.write().unwrap().claimed_variants(), 0);
     assert!(store.state.write().unwrap().buckets.is_empty());
 }

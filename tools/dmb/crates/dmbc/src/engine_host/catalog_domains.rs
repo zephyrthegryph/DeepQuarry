@@ -49,10 +49,8 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
                 if !matches!(self.tree.resolve(Q::Type(path)), M::Symbol(_) | M::Missing) {
                     return None;
                 }
-                let source =
-                    u64::try_from(self.tree.domain_version(ReadDomain::OwnerHierarchy(path))?)
-                        .ok()?;
-                Some((u128::from(issuer) << 64) | u128::from(source))
+                let source = self.tree.domain_version(ReadDomain::OwnerHierarchy(path))?;
+                Some(super::compose_version(source, issuer))
             })()),
             _ => None,
         }

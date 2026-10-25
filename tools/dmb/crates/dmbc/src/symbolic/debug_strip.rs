@@ -75,12 +75,87 @@ pub(super) fn strip_debug_ops(words: &mut Vec<u32>) -> Result<usize, String> {
     Ok(total)
 }
 
+/// Stripped copies of shared images, by the address of the image they were made from: the stripped words are a pure
+/// function of the image, so every session of a daemon that wires the same shared image gets the one stripped copy instead
+/// of making its own. Weak on both sides: the pool keeps nothing alive, and an entry whose image or copy is gone is dead.
+pub(super) struct StrippedPool {
+    shards: Box<[std::sync::Mutex<StrippedShard>]>,
+}
+struct Stripped {
+    image: std::sync::Weak<Vec<u32>>,
+    stripped: std::sync::Weak<Vec<u32>>,
+}
+struct StrippedShard {
+    copies: std::collections::HashMap<usize, Stripped>,
+    prune_at: usize,
+}
+impl StrippedPool {
+    pub(super) fn new() -> Self {
+        const SHARDS: usize = 32;
+        Self {
+            shards: (0..SHARDS)
+                .map(|_| {
+                    std::sync::Mutex::new(StrippedShard {
+                        copies: Default::default(),
+                        prune_at: 4096,
+                    })
+                })
+                .collect(),
+        }
+    }
+}
+fn daemon_pool() -> Option<&'static StrippedPool> {
+    crate::shared_store::active()?;
+    static POOL: std::sync::OnceLock<StrippedPool> = std::sync::OnceLock::new();
+    Some(POOL.get_or_init(StrippedPool::new))
+}
+
 /// Strip a shared image, copying it only when it holds debug instructions. Returns whether any were removed.
 pub(super) fn strip_shared(words: &mut Arc<Vec<u32>>) -> Result<bool, String> {
+    strip_shared_in(daemon_pool(), words)
+}
+pub(super) fn strip_shared_in(pool: Option<&StrippedPool>, words: &mut Arc<Vec<u32>>) -> Result<bool, String> {
     if !has_debug_ops(words) {
         return Ok(false);
     }
+    let Some(pool) = pool.filter(|_| Arc::strong_count(words) > 1) else {
+        // No daemon pool, or nothing else holds this image (no other session can ask for the same copy): strip in place.
+        let removed = strip_debug_ops(Arc::make_mut(words))?;
+        *words = super::image_pool::intern_words(Arc::clone(words));
+        return Ok(removed != 0);
+    };
+    let address = Arc::as_ptr(words) as usize;
+    let shard = &pool.shards[(address >> 4) % pool.shards.len()];
+    {
+        let held = shard.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(entry) = held.copies.get(&address) {
+            if let (Some(image), Some(stripped)) = (entry.image.upgrade(), entry.stripped.upgrade()) {
+                // The address names the image only while that image is alive; the held image says it is this one.
+                if Arc::ptr_eq(&image, words) {
+                    *words = stripped;
+                    return Ok(true);
+                }
+            }
+        }
+    }
+    let image = Arc::downgrade(words);
     let removed = strip_debug_ops(Arc::make_mut(words))?;
+    if removed != 0 {
+        *words = super::image_pool::intern_words(Arc::clone(words));
+        let mut held = shard.lock().unwrap_or_else(|error| error.into_inner());
+        held.copies.insert(
+            address,
+            Stripped {
+                image,
+                stripped: Arc::downgrade(words),
+            },
+        );
+        if held.copies.len() >= held.prune_at {
+            held.copies
+                .retain(|_, entry| entry.image.strong_count() > 0 && entry.stripped.strong_count() > 0);
+            held.prune_at = (held.copies.len() * 2).max(4096);
+        }
+    }
     Ok(removed != 0)
 }
 
@@ -128,6 +203,27 @@ mod tests {
         assert!(!has_debug_ops(&stripped));
     }
 
+    #[test]
+    fn one_shared_image_has_one_stripped_copy_for_every_holder() {
+        let words = encode(&[
+            instruction(opcode::DBG_FILE, &[7]),
+            instruction(opcode::DBG_LINE, &[3]),
+            instruction(opcode::PUSH_INT, &[5]),
+        ]);
+        let image = Arc::new(words.clone());
+        let pool = StrippedPool::new();
+        let (mut first, mut second) = (Arc::clone(&image), Arc::clone(&image));
+        assert!(strip_shared_in(Some(&pool), &mut first).unwrap());
+        assert!(strip_shared_in(Some(&pool), &mut second).unwrap());
+        assert!(Arc::ptr_eq(&first, &second), "a second holder reuses the stripped copy");
+        assert!(!Arc::ptr_eq(&first, &image));
+        assert_eq!(*image, words, "the shared image itself is untouched");
+        assert!(!has_debug_ops(&first));
+        // An image nobody else holds is stripped in place.
+        let mut alone = Arc::new(words);
+        assert!(strip_shared_in(Some(&pool), &mut alone).unwrap());
+        assert!(!has_debug_ops(&alone));
+    }
     #[test]
     fn image_without_debug_instructions_is_untouched() {
         let words = encode(&[instruction(opcode::PUSH_INT, &[1]), instruction(0xf, &[0])]);

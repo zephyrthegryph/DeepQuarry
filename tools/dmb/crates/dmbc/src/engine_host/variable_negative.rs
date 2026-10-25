@@ -4,12 +4,12 @@ use super::*;
 // Positive enriched scalar IDs and structural negative IDs have independent
 // issuers. The provider half explicitly separates those branches, with checked
 // bounds so reserving two branch bits never truncates either issuer.
-pub(super) fn qualified(base: u64, provider: u64, negative: bool) -> Option<u128> {
+pub(super) fn qualified(base: u128, provider: u64, negative: bool) -> Option<u128> {
     qualified_tag(base, provider, u64::from(negative))
 }
-fn qualified_tag(base: u64, provider: u64, tag: u64) -> Option<u128> {
+fn qualified_tag(base: u128, provider: u64, tag: u64) -> Option<u128> {
     let provider = provider.checked_mul(4)?.checked_add(tag)?;
-    Some((u128::from(base) << 64) | u128::from(provider))
+    Some(super::compose_version(base, provider))
 }
 impl<R: Resolver + Send> EngineResolverHost<R> {
     /// The named source receipt covers the authored selection even when the
@@ -70,7 +70,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
         };
         coverage.source.domain_version(presence.domain())?;
         let base = self.current_variable_absence(Q::GlobalVar(name))?;
-        qualified_tag(u64::try_from(base).ok()?, coverage.issuer?, 2)
+        qualified_tag(base, coverage.issuer?, 2)
     }
     pub(super) fn variable_negative_version(&self, query: Q) -> Option<u128> {
         // Resolution uses current_variable_absence without calling this method,
@@ -80,7 +80,7 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
         }
         let base = self.current_variable_absence(query)?;
         let coverage = self.variable_absence.as_ref()?;
-        qualified(u64::try_from(base).ok()?, coverage.issuer?, true)
+        qualified(base, coverage.issuer?, true)
     }
 }
 

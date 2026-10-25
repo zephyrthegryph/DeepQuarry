@@ -139,7 +139,7 @@ fn inconsistent_allocation_sizes_decline_and_zero_budget_removes_every_row() {
 }
 
 #[test]
-fn current_claim_growth_after_footprint_rejects_without_committing_shared_charge() {
+fn claim_after_footprint_keeps_shared_charge() {
     let store = Store::shared_current_rosters();
     let first = store.lease();
     let shared = Arc::new(vec![0; 64]);
@@ -161,8 +161,9 @@ fn current_claim_growth_after_footprint_rejects_without_committing_shared_charge
         assert!(changed.is_none());
         Some(allocation(value))
     });
-    assert_eq!(rejected.retained_entries, 0);
-    assert_eq!(rejected.payload_bytes, 0);
-    assert_eq!(rejected.evicted_entries, 1);
+    // A claim is one bit inside the variant: the second lease's claim leaves the charge unchanged.
+    assert_eq!(rejected.retained_entries, 1);
+    assert_eq!(rejected.charged_bytes, original.charged_bytes);
+    assert_eq!(rejected.evicted_entries, 0);
     assert_eq!(escaped.shared.len(), 64);
 }

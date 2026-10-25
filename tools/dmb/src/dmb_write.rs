@@ -4,6 +4,22 @@ use dm_exec::BuildExecutor;
 use std::ops::Range;
 use xxhash_rust::xxh3::Xxh3;
 
+/// Interner of finished images (set once by a daemon, never by a one-shot compile or a test): an image equal to one
+/// another session still holds becomes that session's allocation, so equal outputs are retained once.
+static IMAGE_INTERNER: std::sync::OnceLock<fn(std::sync::Arc<Vec<u8>>, u128) -> std::sync::Arc<Vec<u8>>> =
+    std::sync::OnceLock::new();
+/// Install the image interner; the first installation wins.
+pub fn set_image_interner(intern: fn(std::sync::Arc<Vec<u8>>, u128) -> std::sync::Arc<Vec<u8>>) {
+    let _ = IMAGE_INTERNER.set(intern);
+}
+fn interned(bytes: Vec<u8>, content_hash: u128) -> std::sync::Arc<Vec<u8>> {
+    let bytes = std::sync::Arc::new(bytes);
+    match IMAGE_INTERNER.get() {
+        Some(intern) => intern(bytes, content_hash),
+        None => bytes,
+    }
+}
+
 /// Immutable canonical bytes paired with the digest computed by serialization.
 /// Consuming the owner into mutable bytes discards the digest certificate.
 #[derive(Clone, Debug)]
@@ -44,14 +60,14 @@ impl EncodedDmb {
             return Err(std::io::Error::other("stored image differs from its digest"));
         }
         Ok(Self {
-            bytes: std::sync::Arc::new(bytes),
+            bytes: interned(bytes, content_hash),
             content_hash,
         })
     }
     pub(super) fn from_spliced(bytes: Vec<u8>) -> Self {
         let content_hash = xxhash_rust::xxh3::xxh3_128(&bytes);
         Self {
-            bytes: std::sync::Arc::new(bytes),
+            bytes: interned(bytes, content_hash),
             content_hash,
         }
     }
@@ -86,9 +102,10 @@ impl CanonicalHash {
     }
     fn finish(mut self, writer: Writer<'static>) -> EncodedDmb {
         self.pending(&writer);
+        let content_hash = self.state.digest128();
         EncodedDmb {
-            bytes: std::sync::Arc::new(writer.bytes.into_owned()),
-            content_hash: self.state.digest128(),
+            bytes: interned(writer.bytes.into_owned(), content_hash),
+            content_hash,
         }
     }
 }

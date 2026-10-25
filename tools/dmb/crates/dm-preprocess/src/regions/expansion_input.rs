@@ -110,18 +110,83 @@ impl ObservationHost<Query, Answer, ()> for Current<'_> {
         }
     }
 }
-/// Caller-owned current-revision input admissions. There is no global cache.
+type Store = ObservedArtifactStore<ExpansionInputReceipt, Query, Answer, ()>;
+type Lease = dm_session::ObservedArtifactLease<ExpansionInputReceipt, Query, Answer, ()>;
+/// The core every `ExpansionInputs` of a daemon leases (see [`share_expansion_inputs`]).
+static SHARED: std::sync::OnceLock<Arc<Store>> = std::sync::OnceLock::new();
+/// Make the expansion input admissions of every `ExpansionInputs` created from now on one shared core, the way a daemon
+/// shares them between its sessions: equal regions of two sessions (a second worktree, the game and the test variant)
+/// are one allocation, and every hit is still validated against the asking plan's own macros, locations and shape. A
+/// process that never calls this (a one-shot compile, a unit test) keeps private admissions.
+pub fn share_expansion_inputs() {
+    SHARED.get_or_init(Store::shared_current_rosters);
+}
+enum Values {
+    Local(Store),
+    Shared(Lease),
+}
+impl Values {
+    fn visit_storage(
+        &self,
+        visit: impl FnMut(dm_session::ObservedArtifactStorageView<'_, ExpansionInputReceipt, Query, Answer, ()>),
+    ) {
+        match self {
+            Self::Local(store) => store.visit_storage(visit),
+            Self::Shared(lease) => lease.visit_storage(visit),
+        }
+    }
+    fn retain_current_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
+        match self {
+            Self::Local(store) => store.retain_current_keys(keys),
+            Self::Shared(lease) => lease.retain_current_keys(keys),
+        }
+    }
+    fn visit_explained(
+        &self,
+        key: &[u8],
+        host: &Current<'_>,
+        accept: &mut dyn FnMut(&Arc<ExpansionInputReceipt>) -> bool,
+    ) -> (Option<Arc<ExpansionInputReceipt>>, Option<Query>) {
+        match self {
+            Self::Local(store) => store.visit_explained(key, host, accept),
+            Self::Shared(lease) => lease.visit_explained(key, host, accept),
+        }
+    }
+    fn insert_with(&self, key: Arc<[u8]>, reads: Reads, create: impl FnOnce() -> ExpansionInputReceipt) {
+        match self {
+            Self::Local(store) => {
+                store.insert_with(key, reads, Vec::new(), 0, create);
+            }
+            Self::Shared(lease) => {
+                lease.insert_with(key, reads, Vec::new(), 0, create);
+            }
+        }
+    }
+}
+/// Caller-owned current-revision input admissions: private to the caller, or its lease on the daemon's shared core.
 /// Keys are locators only; exact source/control shape and recorded observations
 /// certify every hit. Storage weights are deliberately unreported here.
 pub struct ExpansionInputs {
     joined: super::joined_text::JoinedText,
-    values: ObservedArtifactStore<ExpansionInputReceipt, Query, Answer, ()>,
+    values: Values,
 }
 impl Default for ExpansionInputs {
     fn default() -> Self {
+        match SHARED.get() {
+            Some(core) => Self::with_core(core),
+            None => Self {
+                joined: Default::default(),
+                values: Values::Local(ObservedArtifactStore::current_revision()),
+            },
+        }
+    }
+}
+impl ExpansionInputs {
+    /// Admissions leased on `core`, shared with every other owner leasing it.
+    fn with_core(core: &Arc<Store>) -> Self {
         Self {
             joined: Default::default(),
-            values: ObservedArtifactStore::current_revision(),
+            values: Values::Shared(core.lease()),
         }
     }
 }
@@ -227,7 +292,7 @@ impl ExpansionInputs {
         // Actual retained owners must be reported through the census, not a
         // fabricated serialized-size multiplier.
         self.values
-            .insert_with(Arc::from(key.as_slice()), reads, Vec::new(), 0, || receipt);
+            .insert_with(Arc::from(key.as_slice()), reads, || receipt);
     }
 }
 

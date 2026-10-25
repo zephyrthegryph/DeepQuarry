@@ -60,6 +60,7 @@ impl LatestImage {
         let (image, answers) = bound
             .encode_with_answers()
             .map_err(IntegrationError::Link)?;
+        let image = super::image_pool::intern(image);
         *latest = Some(Linked {
             frozen: Arc::clone(frozen),
             bindings,
@@ -108,9 +109,9 @@ impl LatestImage {
             let mut words = image.into_words();
             dm_link::admit_type_path_words(&mut words, code, tables, mobs)
                 .map_err(IntegrationError::WireDomain)?;
-            Ok(ProcedureImage {
+            Ok(super::image_pool::intern(ProcedureImage {
                 words: Arc::new(words),
-            })
+            }))
         }
     }
     pub(crate) fn visit_retained_wire(
