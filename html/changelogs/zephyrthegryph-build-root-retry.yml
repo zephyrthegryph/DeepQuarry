@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Build root probe retries a timed-out rev-parse with backoff instead of failing under load"

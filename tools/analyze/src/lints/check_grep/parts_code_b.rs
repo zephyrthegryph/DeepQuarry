@@ -11,7 +11,7 @@ static D3: &[(&str, &[&str])] = &[
     (r"\bblob_(max_)?health\b", &["code/modules/blob"]),
     (
         r"^[[:space:]]+var/(damage|max_damage|broken_damage|damage_failure)\b|\b(max_damage|broken_damage|damage_failure)\b",
-        &["code/modules/modular_computers"],
+        &["code/modules/modular_computers", "code/content/modular_computers"],
     ),
     (r"\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b", &["code/game/objects/items/weapons/tanks"]),
     (r"\bshield_health\b", &["code"]),

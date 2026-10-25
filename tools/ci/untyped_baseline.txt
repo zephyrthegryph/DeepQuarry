@@ -17,7 +17,6 @@ call	code/controllers/configuration/config_entry.dm	@/datum/config_entry::config
 call	code/controllers/configuration/configuration.dm	@/datum/controller/configuration::motd
 call	code/controllers/configuration/configuration.dm	@/datum/controller/configuration::policy
 call	code/controllers/kernel/host.dm	@/datum/controller/kernel::processing
-call	code/controllers/kernel/system.dm	@/datum/system::wait
 call	code/controllers/subsystems/internal_wiki.dm	@/datum/system/internal_wiki::highest_cached_donator
 call	code/datums/beam.dm	@/datum/beam::target_oldloc
 call	code/datums/beam.dm	@/datum/beam::origin_oldloc
@@ -48,8 +47,6 @@ call	code/engine/state/properties/aggregators.dm	@/datum/property_accumulator::t
 call	code/game/dna/dna2.dm	@/datum/dna::base_species
 call	code/game/dna/dna_modifier.dm	@/datum/dna2/record::name
 call	code/game/gamemodes/cult/narsie.dm	@/datum/controller/global_vars::narsie_behaviour
-call	code/game/jobs/job/job.dm	@/datum/job::total_positions
-call	code/game/jobs/job/job.dm	@/datum/job::spawn_positions
 call	code/game/machinery/atmo_control.dm	@/obj/machinery/air_sensor::id_tag
 call	code/game/machinery/bioprinter.dm	@/obj/machinery/organ_printer::loaded_dna
 call	code/game/machinery/camera/camera.dm	@/obj/machinery/camera::c_tag
@@ -69,7 +66,6 @@ call	code/game/objects/items/devices/communicator/communicator.dm	@/obj/item/com
 call	code/game/objects/items/devices/paicard.dm	@/obj/item/paicard::screen_msg
 call	code/game/objects/items/devices/radio/radio_service.dm	@/datum/signal::frequency
 call	code/game/objects/items/devices/translocator.dm	@/obj/item/perfect_tele_beacon::tele_name
-call	code/game/objects/items/weapons/RCD.dm	@/obj/item/rcd::mode_index
 call	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	@/obj/item/circuitboard/shuttle_console::shuttle_tag
 call	code/game/objects/items/weapons/implants/implant.dm	@/obj/item/implant/explosive::phrase
 call	code/game/objects/items/weapons/material/twohanded.dm	@/obj/item/material/twohanded::force_wielded
@@ -116,7 +112,6 @@ call	code/modules/events/event_container.dm	@/datum/event_container::delay_modif
 call	code/modules/events/ion_storm.dm	@/datum/event/ionstorm::cloud_hueshift
 call	code/modules/examine/examine.dm	@/atom::description_fluff
 call	code/modules/expedition/expedition_mission.dm	@/datum/expedition_mission::faction_type
-call	code/modules/expedition/expedition_site.dm	@/datum/expedition_site::size
 call	code/modules/fireworks/firework_stars.dm	@/obj/item/firework_star/aesthetic/configurable::current_color
 call	code/modules/fireworks/firework_stars.dm	@/obj/item/firework_star/aesthetic/configurable::current_shape
 call	code/modules/fishing/fishing.dm	@/turf/simulated/floor/water::fish_type
@@ -130,7 +125,6 @@ call	code/modules/hydroponics/grown_inedible.dm	@/obj/item/grown::potency
 call	code/modules/hydroponics/seed.dm	@/datum/seed::has_item_product
 call	code/modules/hydroponics/spreading/spreading.dm	@/obj/effect/plant::spread_chance
 call	code/modules/hydroponics/trays/tray.dm	@/obj/machinery/portable_atmospherics/hydroponics::tray_light
-call	code/modules/identification/identification.dm	@/datum/identification::unidentified_name
 call	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/advanced_locator::radius
 call	code/modules/integrated_electronics/subtypes/input.dm	@/obj/item/integrated_circuit/input/signaler::code
 call	code/modules/integrated_electronics/subtypes/output.dm	@/obj/item/integrated_circuit/output/light::light_brightness
@@ -138,8 +132,6 @@ call	code/modules/integrated_electronics/subtypes/output.dm	@/obj/item/integrate
 call	code/modules/integrated_electronics/subtypes/reagents.dm	@/obj/item/integrated_circuit/reagent/injector::transfer_amount
 call	code/modules/integrated_electronics/subtypes/reagents.dm	@/obj/item/integrated_circuit/reagent/pump::transfer_amount
 call	code/modules/integrated_electronics/subtypes/reagents.dm	@/obj/item/integrated_circuit/reagent/filter::transfer_amount
-call	code/modules/logging/log_holder.dm	@/datum/log_holder::human_readable_enabled
-call	code/modules/maps/map_load.dm	@/datum/map_load::cache_key
 call	code/modules/materials/containers/material_container.dm	@/datum/material_container::last_inserted_id
 call	code/modules/materials/engineering/material_batch.dm	@/datum/material_batch::rest_temperature
 call	code/modules/materials/engineering/material_diagnostics.dm	@/datum/material_service::monitor_maximum_temperature
@@ -168,9 +160,7 @@ call	code/modules/modular_computers/NTNet/NTNRC/conversation.dm	@/datum/ntnet_co
 call	code/modules/nifsoft/software/13_soulcatcher.dm	@/mob/living/carbon/brain/caught_soul::identifying_gender
 call	code/modules/pda/cart_apps.dm	@/datum/data/pda/app/status_display::message1
 call	code/modules/pda/cart_apps.dm	@/datum/data/pda/app/status_display::message2
-call	code/modules/pda/nerdle.dm	@/datum/data/pda/app/nerdle::target_word
 call	code/modules/pda/pda.dm	@/obj/item/pda::ttone
-call	code/modules/player_tips/player_tips_controller.dm	@/datum/player_tips::last_tip
 call	code/modules/projectiles/guns/launcher/pneumatic.dm	@/obj/item/gun/launcher/pneumatic::pressure_setting
 call	code/modules/projectiles/projectile.dm	@/obj/item/projectile::def_zone
 call	code/modules/reagents/holder/holder.dm	@/datum/reagents::maximum_volume
@@ -202,6 +192,4 @@ call	code/modules/vore/eating/belly_obj.dm	@/obj/belly::liquid_fullness3_message
 call	code/modules/vore/eating/belly_obj.dm	@/obj/belly::liquid_fullness4_messages
 call	code/modules/vore/eating/belly_obj.dm	@/obj/belly::liquid_fullness5_messages
 call	code/modules/vore/eating/inbelly_spawn.dm	@/datum/inbelly_spawn_review::prey_name
-call	code/modules/vote/transfer_service.dm	@/datum/system/transfer::timerbuffer
-call	code/modules/xenoarcheaology/finds/finds.dm	@/datum/find::find_type
 call	code/modules/xenoarcheaology/finds/fossils.dm	@/obj/skeleton::plaque_contents

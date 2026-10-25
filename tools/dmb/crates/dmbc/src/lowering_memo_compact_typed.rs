@@ -10,7 +10,7 @@ pub(super) fn hydrate(
     provider: &dyn Resolver,
 ) -> ResolvedMeaning {
     match typed {
-        Some(answer) if certified => answer.restore(),
+        Some(answer) if certified => answer.restore().unwrap_or_else(|| provider.resolve(query)),
         _ => provider.resolve(query),
     }
 }
@@ -47,10 +47,22 @@ mod tests {
     }
 }
 
-/// Request-attempt byte evidence only. Never serialized or domain authority.
+/// Whether a typed answer is one `PortableResolvedAnswer::capture` would have produced.
+pub(super) fn is_scalar(answer: &PortableResolvedAnswer) -> bool {
+    use PortableResolvedAnswer as A;
+    !matches!(
+        answer,
+        A::Symbols(_) | A::Members(_) | A::Member { .. } | A::Declaration { .. }
+    )
+}
+
+/// Request-attempt byte evidence only. Never serialized or domain authority. A typed answer is
+/// restored the first time a certified read asks for it, and only trusted when its canonical
+/// bytes equal the stored ones: the compound forms (declaration chains) cost more to restore than
+/// a record that is never certified would ever use.
 #[derive(Default)]
 pub(super) struct VerifiedAnswers {
-    rows: Vec<(ResolveQuery, Option<dm_ir::CanonicalResolvedAnswer>)>,
+    rows: Vec<(ResolveQuery, std::sync::OnceLock<Option<dm_ir::CanonicalResolvedAnswer>>)>,
 }
 impl VerifiedAnswers {
     pub(super) fn preflight(
@@ -60,18 +72,21 @@ impl VerifiedAnswers {
         if typed.len() != reads.len() {
             return Err("malformed compact typed answer sidecar".into());
         }
+        // Scalar answers are cheap to restore and are checked now, so a record whose sidecar
+        // disagrees with its canonical reads never decodes. Compound ones (declaration chains)
+        // wait for the first certified read that uses them.
         let mut rows = Vec::with_capacity(reads.len());
         for (typed, read) in typed.iter().zip(reads) {
-            let answer = typed
-                .as_ref()
-                .map(|typed| dm_ir::CanonicalResolvedAnswer::new(typed.restore()));
-            if answer
-                .as_ref()
-                .is_some_and(|answer| answer.canonical() != read.answer.as_ref())
-            {
-                return Err("malformed compact typed answer sidecar".into());
+            let cell = std::sync::OnceLock::new();
+            if let Some(typed) = typed.as_ref().filter(|typed| is_scalar(typed)) {
+                let answer = typed
+                    .restore()
+                    .map(dm_ir::CanonicalResolvedAnswer::new)
+                    .filter(|answer| answer.canonical() == read.answer.as_ref())
+                    .ok_or("malformed compact typed answer sidecar")?;
+                let _ = cell.set(Some(answer));
             }
-            rows.push((read.query, answer));
+            rows.push((read.query, cell));
         }
         Ok(Self { rows })
     }
@@ -81,12 +96,20 @@ impl VerifiedAnswers {
         query: ResolveQuery,
         original: &[u8],
         certified: bool,
+        typed: &[Option<PortableResolvedAnswer>],
         provider: &dyn Resolver,
     ) -> dm_ir::CanonicalResolvedAnswer {
         if certified {
-            if let Some((issued_query, Some(answer))) = self.rows.get(index) {
-                if *issued_query == query && answer.canonical() == original {
-                    return answer.clone();
+            if let Some((issued_query, cell)) = self.rows.get(index) {
+                if *issued_query == query {
+                    let answer = cell.get_or_init(|| {
+                        let restored = typed.get(index)?.as_ref()?.restore()?;
+                        let answer = dm_ir::CanonicalResolvedAnswer::new(restored);
+                        (answer.canonical() == original).then_some(answer)
+                    });
+                    if let Some(answer) = answer.as_ref().filter(|a| a.canonical() == original) {
+                        return answer.clone();
+                    }
                 }
             }
         }
@@ -118,25 +141,33 @@ mod verified_tests {
         };
         let typed = [Some(PortableResolvedAnswer::Missing)];
         let verified = VerifiedAnswers::preflight(&typed, std::slice::from_ref(&read)).unwrap();
-        let a = verified.hydrate(0, query, &read.answer, true, &provider);
-        let b = verified.hydrate(0, query, &read.answer, true, &provider);
+        let typed = &typed[..];
+        let a = verified.hydrate(0, query, &read.answer, true, typed, &provider);
+        let b = verified.hydrate(0, query, &read.answer, true, typed, &provider);
         assert_eq!(a.canonical().as_ptr(), b.canonical().as_ptr());
         assert_eq!(provider.0.load(Ordering::Relaxed), 0);
-        let _ = verified.hydrate(0, query, &read.answer, false, &provider);
-        let _ = VerifiedAnswers::default().hydrate(0, query, &read.answer, true, &provider);
-        let _ = verified.hydrate(0, query, b"mutated bytes", true, &provider);
+        let _ = verified.hydrate(0, query, &read.answer, false, typed, &provider);
+        let _ = VerifiedAnswers::default().hydrate(0, query, &read.answer, true, typed, &provider);
+        let _ = verified.hydrate(0, query, b"mutated bytes", true, typed, &provider);
         let other = ResolveQuery::GlobalProc(dm_ir::SymbolId::of("other"));
-        let _ = verified.hydrate(0, other, &read.answer, true, &provider);
+        let _ = verified.hydrate(0, other, &read.answer, true, typed, &provider);
         assert_eq!(provider.0.load(Ordering::Relaxed), 4);
         assert!(VerifiedAnswers::preflight(
             &[Some(PortableResolvedAnswer::Presence(true))],
             std::slice::from_ref(&read)
         )
         .is_err());
-        let reissued = VerifiedAnswers::preflight(&typed, std::slice::from_ref(&read)).unwrap();
+        // A compound sidecar that disagrees is only found when a certified read asks for it, and
+        // then the read resolves instead of trusting it.
+        let wrong = [Some(PortableResolvedAnswer::Symbols(vec![dm_ir::SymbolId::of("/x")]))];
+        let before = provider.0.load(Ordering::Relaxed);
+        let fresh = VerifiedAnswers::preflight(&wrong, std::slice::from_ref(&read)).unwrap();
+        let _ = fresh.hydrate(0, query, &read.answer, true, &wrong, &provider);
+        assert_eq!(provider.0.load(Ordering::Relaxed), before + 1);
+        let reissued = VerifiedAnswers::preflight(typed, std::slice::from_ref(&read)).unwrap();
         assert_eq!(
             *reissued
-                .hydrate(0, query, &read.answer, true, &provider)
+                .hydrate(0, query, &read.answer, true, typed, &provider)
                 .answer(),
             ResolvedMeaning::Missing
         );

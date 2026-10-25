@@ -50,7 +50,17 @@ pub const BUILTIN_VALUE_CALLS: &[&str] = &[
     "replacetext", "findtext", "jointext", "get_dist", "nameof", "ckey", "clamp", "isnull", "initial", "md5", "replacetextEx", "turn", "get_dir", "html_decode", "html_encode",
     "text2ascii", "ascii2text", "file2text", "rgb", "istype", "ispath", "islist", "isnum", "istext", "time2text", "addtext", "splittext", "json_encode", "text2path", "trim",
     "ref", "url_encode", "url_decode", "sha1", "findtextEx", "findlasttext", "findlasttextEx", "findtext_char", "length_char", "copytext_char", "sorttext", "sorttextEx", "log", "tan", "arcsin", "arccos", "arctan", "sign", "text",
+    "roll", "cmptext", "cmptextEx", "lentext", "winget", "fexists", "file", "hascall",
 ];
+
+/// Methods of the DM builtin types (`list.Find`, `list.Join`, `regex.Replace`) whose result is a number or text. Used for a method call
+/// on a receiver of unknown type, and only when no proc of the tree has that name (so the call can reach nothing but the builtin).
+pub const BUILTIN_VALUE_METHODS: &[&str] = &["Find", "Join", "Replace"];
+
+/// The config entry classes whose stored value is a number, flag or text (`ValidateAndSet` of the class is the only writer): a
+/// `global.config.Get(/datum/config_entry/number/x)` read is then a value.
+const CONFIG_VALUE_CLASSES: &[&str] = &["/datum/config_entry/number", "/datum/config_entry/flag", "/datum/config_entry/string"];
+const CONFIG_TYPE: &str = "/datum/controller/configuration";
 
 /// Builtin `world` vars that are a number, text or null.
 pub const WORLD_VALUE_VARS: &[&str] = &[
@@ -92,6 +102,8 @@ pub(crate) struct ValueProcs<'a, 'k> {
     params: RefCell<HashMap<String, Vec<bool>>>,
     /// The name of each definition.
     def_names: Vec<String>,
+    /// Names of the procs the tree itself defines with a body or declaration (not the DM builtin types').
+    tree_names: HashSet<String>,
     /// Names of the procs the DM builtin types define.
     builtin_names: HashSet<String>,
 }
@@ -145,6 +157,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         }
         let def_names: Vec<String> = refs.iter().map(|r| r.name().to_string()).collect();
         let params = param_candidates(sem, &refs);
+        let tree_names: HashSet<String> = refs.iter().filter(|r| !r.is_builtin() && !r.get().location.is_builtins()).map(|r| r.name().to_string()).collect();
         let mut builtin_names: HashSet<String> = HashSet::new();
         for ty in sem.objtree.iter_types() {
             for (name, tp) in ty.get().procs.iter() {
@@ -153,7 +166,7 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                 }
             }
         }
-        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), var_keys, vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, builtin_names };
+        let mut me = ValueProcs { sem, w, ids, value: vec![true; refs.len()], parent, finals, targets: RefCell::new(HashMap::new()), touched: RefCell::new(false), vars: RefCell::new(vars), var_keys, vars_changed: RefCell::new(false), params: RefCell::new(params), def_names, tree_names, builtin_names };
         let mut live: Vec<usize> = (0..refs.len()).collect();
         loop {
             let mut changed = false;
@@ -250,10 +263,11 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                             }
                         }
                         Follow::Call(_, name, _) if follow.len() == 1 && matches!(&term.elem, Term::Ident(n) if n == "global") => self.call_value("/", name, true),
+                        Follow::Call(_, name, args) if name == "Get" && self.config_value_get(ctx, term, &follow[..follow.len() - 1], args) => true,
                         Follow::Call(_, name, _) => {
                             let recv = Expression::Base { term: term.clone(), follow: follow[..follow.len() - 1].to_vec().into_boxed_slice() };
                             match self.w.type_of(ctx.sc, &recv) {
-                                Some(t) if !t.is_empty() => self.call_value(&t, name, false),
+                                Some(t) if !t.is_empty() => self.call_value(&t, name, false) || (BUILTIN_VALUE_METHODS.contains(&name.as_str()) && !self.tree_names.contains(name.as_str())),
                                 _ => self.any_receiver_value(name),
                             }
                         }
@@ -264,6 +278,8 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     Term::Null | Term::Int(_) | Term::Float(_) | Term::String(_) | Term::Resource(_) | Term::InterpString(..) | Term::__PROC__ | Term::__TYPE__ => true,
                     Term::Expr(inner) => self.value_expr(ctx, inner),
                     Term::Ident(n) => n == "." || ctx.locals.contains(n.as_str()) || (!ctx.sc.locals.contains_key(n.as_str()) && self.var_value(ctx.sc.owner, n)),
+                    Term::Pick(choices) => choices.iter().all(|(w, v)| w.as_ref().is_none_or(|w| self.value_expr(ctx, w)) && self.value_expr(ctx, v)),
+                    Term::Call(n, args) if (n == "pick" || n == "pickweight") && matches!(self.target(ctx.sc.owner, n), Target::Builtin) => self.pick_value(ctx, args),
                     Term::Call(n, _) => {
                         let owner = if ctx.sc.owner == "/" { "/" } else { ctx.sc.owner };
                         self.call_value(owner, n, true)
@@ -285,6 +301,52 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
                     _ => false,
                 }
             }
+        }
+    }
+
+    /// `pick(a, b, c)` over value arguments, or `pick(list(...))` / `pickweight(list(...))` over a literal list of values (and value keys).
+    fn pick_value(&self, ctx: &Ctx, args: &[Expression]) -> bool {
+        let item = |e: &Expression| match strip_parens(e) {
+            Expression::AssignOp { op: AssignOp::Assign, lhs, rhs } => self.value_expr(ctx, lhs) && self.value_expr(ctx, rhs),
+            other => self.value_expr(ctx, other),
+        };
+        match args {
+            [one] => match strip_parens(one) {
+                Expression::Base { term, follow } if follow.is_empty() => match &term.elem {
+                    Term::List(items) => items.iter().all(item),
+                    _ => false,
+                },
+                _ => false,
+            },
+            _ => !args.is_empty() && args.iter().all(item),
+        }
+    }
+
+    /// `recv.Get(/datum/config_entry/number/x)` where `recv` is the configuration controller and the entry is a number, flag or string
+    /// entry whose class is the only definer of `ValidateAndSet` on the path (no subtype stores anything else).
+    fn config_value_get(&self, ctx: &Ctx, term: &Box<dreammaker::ast::Spanned<Term>>, recv_follow: &[dreammaker::ast::Spanned<Follow>], args: &[Expression]) -> bool {
+        let [arg] = args else { return false };
+        let Expression::Base { term: at, follow: af } = strip_parens(arg) else { return false };
+        let Term::Prefab(p) = &at.elem else { return false };
+        if !af.is_empty() {
+            return false;
+        }
+        let path: String = p.path.iter().map(|(_, n)| format!("/{n}")).collect();
+        let recv = Expression::Base { term: term.clone(), follow: recv_follow.to_vec().into_boxed_slice() };
+        let global_recv = match (&term.elem, recv_follow) {
+            (Term::Ident(g), [f]) if g == "global" => match &f.elem {
+                Follow::Field(_, n) => self.sem.var_decl("/", n).is_some_and(|d| d.declared == CONFIG_TYPE),
+                _ => false,
+            },
+            _ => false,
+        };
+        if !global_recv && self.w.type_of(ctx.sc, &recv).as_deref() != Some(CONFIG_TYPE) {
+            return false;
+        }
+        let Some(class) = CONFIG_VALUE_CLASSES.iter().find(|c| path == **c || path.starts_with(&format!("{c}/"))) else { return false };
+        match self.sem.proc_ref(&path, "ValidateAndSet") {
+            Some(r) => type_key(&r.ty().get().path) == *class,
+            None => false,
         }
     }
 
@@ -349,6 +411,9 @@ impl<'a, 'k> ValueProcs<'a, 'k> {
         *self.touched.borrow_mut() = true;
         if self.builtin_names.contains(name) {
             return false;
+        }
+        if BUILTIN_VALUE_METHODS.contains(&name) && !self.tree_names.contains(name) {
+            return true;
         }
         let mut any = false;
         for (i, n) in self.def_names.iter().enumerate() {

@@ -34,6 +34,7 @@ cat >tools/dq_merge_gates.sh <<'STUB'
 if grep -rq BAD lanes 2>/dev/null; then echo "stub gates: BAD present"; exit 1; fi
 n="$(git diff --name-only origin/master HEAD -- lanes | wc -l)"
 if [ -n "${DQ_STUB_CAP_ABOVE:-}" ] && [ "$n" -gt "$DQ_STUB_CAP_ABOVE" ]; then echo "FOCUSED RUN CAPPED: the 10 minute wall-clock cap was hit"; exit 1; fi
+echo "$*" >>"${DQ_STUB_ARGS_LOG:-/dev/null}"
 echo "stub gates: ok (tests: $*)"
 STUB
 cat >tools/dq_push_master.sh <<'STUB'
@@ -120,6 +121,9 @@ check "a lane whose branch moved after enqueue is bounced" 'grep -q "BOUNCED lan
 check "of two conflicting lanes one lands and one is bounced" '{ in_master lane/e && ! in_master lane/f && grep -q "BOUNCED lane/f" <<<"$out"; } || { in_master lane/f && ! in_master lane/e && grep -q "BOUNCED lane/e" <<<"$out"; }'
 check "the integrator released its lock" '[ ! -d "$DQ_TRAIN_STATE/run.lock" ]'
 
+# ---- heavy cycles skip the duplicate production compile ----------------------------------------------------------------------------------
+export DQ_STUB_ARGS_LOG="$tmp/gate-args.log"; : >"$DQ_STUB_ARGS_LOG"
+
 # ---- a capped test phase halves the batch; every lane still lands ----------------------------------------------------------------------
 mk lane/g lanes/g.txt fine; train enqueue --tests tg >/dev/null 2>&1; back
 mk lane/h lanes/h.txt fine; train enqueue --tests th >/dev/null 2>&1; back
@@ -128,6 +132,7 @@ mk lane/i lanes/i.txt fine; train enqueue --tests ti >/dev/null 2>&1; back
 out="$(DQ_STUB_CAP_ABOVE=1 train run 2>&1)"
 check "a capped test phase halves the batch limit" 'grep -q "hit its 10 min cap with 3 lane" <<<"$out"'
 check "and every lane lands in later, smaller cycles" 'in_master lane/g && in_master lane/h && in_master lane/i && ! grep -q "BOUNCED lane/[ghi]" <<<"$out"'
+check "every heavy cycle passes --no-dm to the gates (no duplicate compile)" '[ -s "$DQ_STUB_ARGS_LOG" ] && ! grep -qv -- "--no-dm" "$DQ_STUB_ARGS_LOG"'
 
 # ---- the size budget defers a lane to the next cycle ------------------------------------------------------------------------------------
 rm -f "$DQ_TRAIN_STATE/batch_limit"

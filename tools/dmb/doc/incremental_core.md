@@ -510,3 +510,56 @@ of each restored-and-patched output (game, test) against a cold `--no-daemon --n
 The stored `generated_outputs` input record names the output location, so a request that writes elsewhere (another
 `--artifact-directory`) is declined by admission and compiles whole. Remaining cost of a restored patch is the frontend
 and startup/ABI preparation (the next lanes: persisted frontend facts, dependency index). `cargo test -p dmbc` 1096 passed.
+## Persisted dependency index, step 4: portable declaration answers and stage-time certification (2026-10-24, lane `compiler/dep-index-3`)
+
+Broken down first (`DMB_DEP_INDEX_KINDS=1` adds the untyped reads by query and answer kind to the `native dependency index` line):
+all 185,380 untyped ABI reads were `Ancestry -> Symbols` (92,690) and `DeclarationChain -> Members` (92,690), and all 25,937
+untyped initializer reads were `Ancestry -> Symbols`. Nothing else.
+
+Landed:
+
+- `dm_ir::PortableMeaning` (`dm-ir/src/portable_meaning.rs`) is the serde form of a `DeclarationMeaning` that the declaration
+  chunk facts already had privately in `dm-tree/src/chunkfacts.rs`; it moved to dm-ir (chunkfacts uses it, wire layout
+  unchanged) and `PortableNames` says whether a decode checks spellings against a symbol table. `PortableResolvedAnswer` gained
+  `Symbols`, `Members`, `Member` and `Declaration` (an opaque inherited base keeps its owner and type knowledge);
+  `capture_declared()` produces them and `capture()` keeps producing the scalar forms. `restore()` is now fallible. A restored
+  answer is only ever used after its canonical bytes equal the stored ones, so the form carries no authority of its own.
+  Not portable (still resolved): procedure statics and retained procs.
+- ABI rows, initializer records and compact lowering records store `capture_declared()` answers (schema numbers bumped, so one
+  recompute). A record too large with them falls back to scalar answers. The compact lowering record restores a compound answer
+  the first time a certified read uses it (`VerifiedAnswers`), not in `preflight`; scalar answers are still checked at decode.
+- Certification at stage time: `dep_index::staged()` notes an ABI row and an initializer record the moment it is computed
+  (its reads were just resolved through the request's provider, so they are current under its world), and the compact lowering
+  record is noted in `DiskWriter::queue_compact` with the id `encode_with_id()` computed. A new row therefore certifies in the very
+  next compile instead of the second one.
+- `CurrentReads::for_host` compared `&dyn Resolver` with `ptr::eq`, which includes the vtable; one provider type has a vtable
+  per codegen unit, so the certified handoff to `disk_admission` failed and every read was re-resolved and re-versioned there
+  (29 of 65 sampled `domain_version` calls). It compares the object address now (`ptr::addr_eq`).
+
+Measured (production tree, evicted session: fresh daemon namespace, one comment appended to a `.dm` file, 4 workers, a cache
+directory warmed by one earlier compile of the same binary; the machine was loaded by other lanes, wall times are noise, the
+counters are the evidence):
+
+| | first compile (cold cache) | evicted session, index on | evicted session, `DMB_DEP_INDEX=0` |
+|---|---|---|---|
+| domain versions issued | 933,280 | 343,663 | 901,733 |
+| tree version issue calls | 1,325,294 | 726,091 | 1,296,873 |
+| ABI reads typed / untyped | 0 / 0 (92,690 rows staged) | 186,384 / 0 | n/a |
+| initializer reads typed / untyped | 0 / 0 (10,091 staged) | 71,201 / 0 | n/a |
+| records certified (lowering / ABI / init) | 0 | 89,976 / 92,690 / 10,091 | n/a |
+| compile wall | 154 s | 109 s | 191 s |
+
+Index-on against index-off on the same cache and binary: issued versions 901,733 -> 343,688 and tree issue calls 1.297M -> 726k
+(the earlier slice's 344k / 726k figure is what the vtable fix restores). `DMB_DEP_INDEX_VERIFY=1` replays every certified ABI and
+initializer record and compares each stored answer: 0 contradicted over 92,690 + 10,091 records, lowering 0. Output: the pair hash
+is identical in every run (also against a cold `DMB_DEP_INDEX=0` compile with an empty cache), the DMB and RSC are byte-identical,
+and `dmb-equiv --all --ignore-debug` reports EQUIVALENT. `cargo test -p dmbc -p dm-ir -p dm-tree`: 1087 + 83 + 327 pass (new:
+`declaration_chains_round_trip_through_the_wire_with_identical_canonical_bytes`; `indexed_abi_rows_certify_in_a_later_session...`
+now expects certification and zero untyped reads in the second session).
+
+What still issues versions (traced by sampling `domain_version` callers on the indexed compile): class projection prefetch and
+initializer classification record their reads through `RecordingResolver::resolve`, which issues one version per read domain
+(about 340k of the remaining calls); neither replays a stored row. Directive planning and input scan (item 2) were not changed:
+the directive and expansion records are already persisted by content (`DiskExpansionMemo`, stage 4/1), and what remains is the
+sequential replay of 5,956 directive lookups on the planning thread (`native directive lookups: disk=` 1.6 s idle machine,
+3.7-6.3 s loaded), not missing persistence; moving it needs a parallel pre-decode keyed by the previous plan's regions.

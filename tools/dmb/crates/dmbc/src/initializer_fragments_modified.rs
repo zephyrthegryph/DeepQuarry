@@ -193,6 +193,7 @@ impl InitializerFragments {
                     code,
                     modified_policy,
                     disk_attempt,
+                    recorder,
                 );
             }
         }
