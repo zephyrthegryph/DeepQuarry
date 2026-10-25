@@ -106,7 +106,6 @@ ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.implant = "\ref[imp]"
 ref_macro	code/game/machinery/computer/cloning.dm	BR.mydna.mind = "\ref[subject.mind]"
 ref_macro	code/game/machinery/computer/message.dm	M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
 ref_macro	code/game/machinery/hologram.dm	to_chat(AI, span_info("Your presence is requested at <a href='byond://?src=\ref[AI];jumptoholopad=\ref[src]'>\the [area]</a>."))
-ref_macro	code/game/machinery/jukebox.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
 ref_macro	code/game/objects/effects/chem/chemsmoke.dm	more = "(<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[M]'>?</a>)"
 ref_macro	code/game/objects/items.dm	M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=\ref[M];lookitem=\ref[src]'>Take a closer look.</a>"),1)
 ref_macro	code/game/objects/items/blueprints.dm	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
@@ -139,42 +138,22 @@ ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += "\[<a
 ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += "<i>[mind.name]: </i> [mind.transient == FALSE ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindrelease=[mind.name]'>Load</a>\]" : span_warning("Incompatible")]<br>"
 ref_macro	code/game/objects/items/devices/scanners/sleevemate.dm	output += span_bold("Store in Soulcatcher: ") + "\[<a href='byond://?src=\ref[src];target=\ref[H];mindput=1'>Perform</a>\]<br>"
 ref_macro	code/game/objects/items/devices/ticket_printer.dm	var/final = "<head><style>body {font-family: Verdana; background-color: #C1BDA3;}</style></head><center><h3>Nanotrasen Security Citation</h3><hr>This security citation has been issued to <br><big>[capitalize(ticket_name)]</big></center><b>Reason</b>:<br><i>[details]</i><hr><center><small>See your local representative at Central Command after the shift is over to resolve this issue.</small><br><img src=\ref['html/images/ntlogo.png']></center>"
-ref_macro	code/game/objects/items/stacks/stack.dm	"ref" = "\ref[R]",
 ref_macro	code/game/objects/items/weapons/capture_crystal.dm	. += span_deptradio("OOC Notes:") + " <a href='byond://?src=\ref[bound_mob];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
 ref_macro	code/game/objects/items/weapons/capture_crystal.dm	. += span_deptradio("<a href='byond://?src=\ref[bound_mob];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>")
 ref_macro	code/game/objects/items/weapons/explosives.dm	message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
-ref_macro	code/game/objects/structures/under_wardrobe.dm	"ref" = "\ref[gt]",
 ref_macro	code/modules/admin/admin_investigate.dm	to_file(F, span_filter_adminlog("<small>[time2text(world.timeofday,"hh:mm")] \ref[src] ([x],[y],[z])</small> || [src] [message]<br>"))
 ref_macro	code/modules/admin/antag_panel_data.dm	"ref" = "\ref[M]",
-ref_macro	code/modules/admin/cataloguer_panel.dm	"ref" = "\ref[displayed_data]",
-ref_macro	code/modules/admin/cataloguer_panel.dm	"ref" = "\ref[item]",
-ref_macro	code/modules/admin/edit_memory_panel.dm	"ref" = "\ref[O]",
-ref_macro	code/modules/admin/event_manager_panel.dm	"ref" = "\ref[EM]",
-ref_macro	code/modules/admin/event_manager_panel.dm	"ref" = "\ref[NE]",
-ref_macro	code/modules/admin/event_manager_panel.dm	data["selected_container_ref"] = "\ref[EC]"
-ref_macro	code/modules/admin/event_manager_panel.dm	"ref" = "\ref[EC]",
-ref_macro	code/modules/admin/event_manager_panel.dm	"ref" = "\ref[EC]",
-ref_macro	code/modules/admin/event_manager_panel.dm	"ref" = "\ref[E]",
 ref_macro	code/modules/admin/magnetic_console_panel.dm	"ref" = "\ref[M]",
 ref_macro	code/modules/admin/misc_admin_panels.dm	data["target_ref"] = "\ref[target()]"
 ref_macro	code/modules/admin/misc_admin_panels.dm	data["user_ref"] = "\ref[user]"
 ref_macro	code/modules/admin/modify_robot.dm	all_robots += list(list("displayText" = "[R]", "value" = "\ref[R]"))
 ref_macro	code/modules/admin/modify_robot.dm	active_ais += list(list("displayText" = "[ai]", "value" = "\ref[ai]"))
-ref_macro	code/modules/admin/modify_robot.dm	target_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
-ref_macro	code/modules/admin/modify_robot.dm	source_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
-ref_macro	code/modules/admin/modify_robot.dm	installed_modkits += list(list("name" = modkit.name, "ref" = "\ref[modkit]", "costs" = modkit.cost))
-ref_macro	code/modules/admin/modify_robot.dm	integrated_tools += list(list("name" = synth.name, "ref" = "\ref[synth]"))
-ref_macro	code/modules/admin/modify_robot.dm	integrated_tools += list(list("name" = tool.name, "ref" = "\ref[tool]"))
-ref_macro	code/modules/admin/modify_robot.dm	components += list(list("name" = C.name, "ref" = "\ref[C]", "brute_damage" = C.get_structural_damage(), "electronics_damage" = C.get_wiring_damage(), "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
-ref_macro	code/modules/admin/modify_robot.dm	packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = target().laws.get_state_law(AL), "ref" = "\ref[AL]")
-ref_macro	code/modules/admin/modify_robot.dm	law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = "\ref[ALs]","laws" = packaged_laws)
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>") // Not sure if these would get used but why not
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "<img src=\ref['html/images/ntlogo.png']>", "\[logo\]") // Not sure if these would get used but why not
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "<img src=\ref['html/images/talonlogo.png']>", "\[talogo\]")
 ref_macro	code/modules/admin/news.dm	text = replacetext(text, "<img src=\ref['html/images/sglogo.png']>", "\[sglogo\]")
-ref_macro	code/modules/admin/player_panel_tgui.dm	"ref" = "\ref[M]",
 ref_macro	code/modules/admin/topic.dm	return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[ghost.mind.current]'>BDY</A>"
 ref_macro	code/modules/admin/topic.dm	return "|<A href='byond://?[source];[HrefToken(TRUE)];adminplayerobservejump=\ref[eyeobj]'>EYE</A>"
 ref_macro	code/modules/admin/topic.dm	source = "src=\ref[source]"
@@ -199,11 +178,7 @@ ref_macro	code/modules/integrated_electronics/subtypes/converters.dm	result = "\
 ref_macro	code/modules/integrated_electronics/subtypes/illegal.dm	exonet.make_address("EPv2_Discovery_circuit-\ref[src]")
 ref_macro	code/modules/integrated_electronics/subtypes/illegal.dm	message_admins("A EPv2 Discovery circuit has been created. \ref[src]")
 ref_macro	code/modules/integrated_electronics/subtypes/input.dm	exonet.make_address("EPv2_circuit-\ref[src]")
-ref_macro	code/modules/library/lib_machines.dm	inv += list(list("ref" = "\ref[b]", "name" = b.name))
-ref_macro	code/modules/library/lib_machines.dm	"ref" = "\ref[b]",
 ref_macro	code/modules/lore_codex/pages.dm	return "<a href='byond://?src=\ref[src];quick_link=[target]'>[word_to_display]</a>"
-ref_macro	code/modules/media/media_tracks.dm	return list("ref" = "\ref[src]", "title" = title, "artist" = artist, "genre" = genre, "duration" = duration)
-ref_macro	code/modules/media/walkpod.dm	data["current_track_ref"] = "\ref[current_track()]" // Convenient shortcut
 ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?src=\ref[ghost];track=\ref[dead.mind.current]'>body</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	return "|<a href='byond://?src=\ref[ghost];track=\ref[eyeobj]'>eye</a>"
 ref_macro	code/modules/mob/dead/observer/observer.dm	. = "<a href='byond://?src=\ref[ghost];track=\ref[target]'>follow</a>"

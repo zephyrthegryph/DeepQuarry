@@ -80,7 +80,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	if(target_mind.objectives)
 		for(var/datum/objective/O in target_mind.objectives)
 			objectives += list(list(
-				"ref" = "\ref[O]",
+				"ref" = ref_token(O),
 				"num" = num,
 				"text" = O.explanation_text,
 				"completed" = !!O.completed,

@@ -757,7 +757,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/list/target_items = list()
 	var/obj/item/robot_module/target_module = target().module
 	for(var/obj/item in target_module.modules)
-		target_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
+		target_items += list(list("name" = item.name, "ref" = ref_token(item), "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
 	return target_items
 
 /datum/eventkit/modify_robot/proc/get_module_source(mob/user, datum/asset/spritesheet_batched/robot_icons/spritesheet)
@@ -775,7 +775,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 				break
 		if(exists)
 			continue
-		source_items += list(list("name" = item.name, "ref" = "\ref[item]", "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
+		source_items += list(list("name" = item.name, "ref" = ref_token(item), "icon" = icon2html(item, user, sourceonly=TRUE), "desc" = item.desc))
 	source_list["modules"] = source_items
 	return source_list
 
@@ -836,7 +836,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	pka["name"] = kin.name
 	var/list/installed_modkits = list()
 	for(var/obj/item/borg/upgrade/modkit/modkit in kin.modkits)
-		installed_modkits += list(list("name" = modkit.name, "ref" = "\ref[modkit]", "costs" = modkit.cost))
+		installed_modkits += list(list("name" = modkit.name, "ref" = ref_token(modkit), "costs" = modkit.cost))
 	pka["installed_modkits"] = installed_modkits
 	var/list/modkits = list()
 	for(var/modkit in typesof(/obj/item/borg/upgrade/modkit))
@@ -874,7 +874,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	var/list/tools = list()
 	if(istype(mult_belt, /obj/item/robotic_multibelt/materials))
 		for(var/datum/matter_synth/synth in target().module.synths)
-			integrated_tools += list(list("name" = synth.name, "ref" = "\ref[synth]"))
+			integrated_tools += list(list("name" = synth.name, "ref" = ref_token(synth)))
 		for(var/tool in GLOB.material_synth_list)
 			var/material_path = GLOB.material_synth_list[tool]
 			if(target().synth_install_refusal(material_path)) //Don't add it to the list if we already have it!
@@ -882,7 +882,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 			tools += list(list("name" = tool, "path" = material_path))
 	else
 		for(var/obj/tool in contents_of(mult_belt))
-			integrated_tools += list(list("name" = tool.name, "ref" = "\ref[tool]"))
+			integrated_tools += list(list("name" = tool.name, "ref" = ref_token(tool)))
 		for(var/tool in GLOB.all_borg_multitool_options)
 			if(tool in mult_belt.cyborg_integrated_tools) //Don't add it to the list if we already have it!
 				continue
@@ -946,13 +946,13 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/get_components()
 	var/list/components = list()
 	for(var/datum/robot_component/C as anything in target().components)
-		components += list(list("name" = C.name, "ref" = "\ref[C]", "brute_damage" = C.get_structural_damage(), "electronics_damage" = C.get_wiring_damage(), "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
+		components += list(list("name" = C.name, "ref" = ref_token(C), "brute_damage" = C.get_structural_damage(), "electronics_damage" = C.get_wiring_damage(), "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
 	return components
 
 /datum/eventkit/modify_robot/proc/package_laws(list/data, field, list/datum/ai_law/laws)
 	var/list/packaged_laws = list()
 	for(var/datum/ai_law/AL in laws)
-		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = target().laws.get_state_law(AL), "ref" = "\ref[AL]")
+		packaged_laws[++packaged_laws.len] = list("law" = AL.law, "index" = AL.get_index(), "state" = target().laws.get_state_law(AL), "ref" = ref_token(AL))
 	data[field] = packaged_laws
 	data["has_[field]"] = packaged_laws.len
 
@@ -964,7 +964,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 		package_laws(packaged_laws, "ion_laws", ALs.ion_laws)
 		package_laws(packaged_laws, "inherent_laws", ALs.inherent_laws)
 		package_laws(packaged_laws, "supplied_laws", ALs.supplied_laws)
-		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = "\ref[ALs]","laws" = packaged_laws)
+		law_sets[++law_sets.len] = list("name" = ALs.name, "header" = ALs.law_header, "ref" = ref_token(ALs),"laws" = packaged_laws)
 	return law_sets
 
 /datum/eventkit/modify_robot/proc/is_malf(mob/user)
