@@ -2,6 +2,7 @@
 //! Proc, verb, and variable names share one demand lifecycle and issuer.
 //! Only queried ancestor paths are retained, never owner times inherited-name rosters.
 use super::*;
+use crate::token_digest::TokenDigest;
 use std::sync::{Mutex, RwLock, Weak};
 
 #[derive(Default, Debug)]
@@ -206,6 +207,26 @@ pub(super) fn inputs(
         hierarchy_certified: tree.inventory.hierarchy_certified,
     }))
 }
+/// The token of one name-demand answer under its artifact key: the digest of exactly the input state the answer
+/// carries (a callable or variable roster with its parent token, a name flag or selector bits). Equal states are the
+/// same token in every session; see `token_digest`.
+fn answer_token(key: &[u8], answer: &MetadataAnswer) -> u128 {
+    match answer {
+        MetadataAnswer::CallableLocal(inputs) => inputs.token(key),
+        MetadataAnswer::VariableLocal(inputs) => inputs.token(key),
+        MetadataAnswer::MemberName(present) => {
+            let mut digest = TokenDigest::new(b"member-name-token-v1");
+            digest.bytes(key).bool(*present);
+            digest.finish()
+        }
+        MetadataAnswer::MemberSelector(flags) => {
+            let mut digest = TokenDigest::new(b"member-selector-token-v1");
+            digest.bytes(key).u8(*flags);
+            digest.finish()
+        }
+        _ => unreachable!("name-specific receipt"),
+    }
+}
 struct Host(MetadataAnswer);
 impl ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Host {
     fn answer(&self, _: &MetadataQuery) -> MetadataAnswer {
@@ -301,9 +322,9 @@ impl RetainedMetadata {
             token
         } else if !self.retains_receipts() {
             // A one-shot compile never reads the receipt again: the token alone is the issued answer.
-            u128::from(callables::issue_token()?)
+            answer_token(&key(selection), &host.0)
         } else {
-            let token = u128::from(callables::issue_token()?);
+            let token = answer_token(&key(selection), &host.0);
             let ledger = ObservationLedger::default();
             ledger.record(query, host.answer(&query), query.domain(), None);
             let owner = self.store.insert_with_owned(
@@ -548,9 +569,9 @@ impl RetainedMetadata {
                     token
                 } else if !self.retains_receipts() {
                     // A one-shot compile never reads the receipt again: the token alone is the issued answer.
-                    u128::from(callables::issue_token()?)
+                    answer_token(&key(selection), &host.0)
                 } else {
-                    let token = u128::from(callables::issue_token()?);
+                    let token = answer_token(&key(selection), &host.0);
                     let ledger = ObservationLedger::default();
                     ledger.record(query, host.answer(&query), query.domain(), None);
                     let owner = self.store.insert_with_owned(

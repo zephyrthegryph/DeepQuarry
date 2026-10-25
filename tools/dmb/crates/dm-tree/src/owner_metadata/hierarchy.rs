@@ -1,6 +1,7 @@
 //! Hierarchy receipts share the effective-owner artifact store. Dense IDs,
 //! unrelated members and source coordinates do not enter these answers.
 use super::*;
+use crate::token_digest::TokenDigest;
 
 pub(super) fn key(owner: SymbolId) -> Arc<[u8]> {
     let mut bytes = b"owner-hierarchy-certificate-v1".to_vec();
@@ -49,18 +50,17 @@ impl RetainedMetadata {
                 let MetadataAnswer::Hierarchy(paths) = &answer else {
                     unreachable!()
                 };
-                // This is a process-local issuer token, not a semantic hash. It
-                // survives only exact observation replay of this retained entry.
-                // Persistent consumers must omit this domain's version receipt.
-                static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-                let Ok(version) = NEXT.fetch_update(
-                    std::sync::atomic::Ordering::Relaxed,
-                    std::sync::atomic::Ordering::Relaxed,
-                    |value| value.checked_add(1),
-                ) else {
-                    return None;
+                // The token is the digest of the owner's ancestry (see `token_digest`): equal ancestry in any session
+                // or restart is the same token, a changed ancestry is a different one.
+                let version = {
+                    let mut digest = TokenDigest::new(b"owner-hierarchy-token-v1");
+                    digest.bytes(&key);
+                    digest.len(paths.len());
+                    for path in paths.iter() {
+                        digest.symbol(*path);
+                    }
+                    digest.finish()
                 };
-                let version = u128::from(version);
                 let ledger = ObservationLedger::default();
                 ledger.record(query, answer.clone(), query.domain(), None);
                 let paths = Arc::clone(paths);

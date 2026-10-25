@@ -49,7 +49,7 @@ pub(crate) struct ResolverInventory {
     // Positive counterexamples remain valid even when other engine rows are
     // uncaptured. Absence and a single shared candidate still need completeness.
     non_unique: HashSet<SymbolId>,
-    pub(crate) unique_certificates: BTreeMap<SymbolId, u64>,
+    pub(crate) unique_certificates: BTreeMap<SymbolId, u128>,
 }
 impl SemanticTree {
     /// Borrow the captured intrinsic roster without cloning a catalog. Positive

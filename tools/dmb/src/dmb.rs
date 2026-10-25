@@ -20,7 +20,7 @@ pub use records::{
     mob_sight, Class, ClassInterface, DmString, GridRun, Header, Instance, MapObject, MobType,
     Proc, ProcSource, ResourceRef, Variable, World, WorldViewEncoding,
 };
-pub use writing::EncodedDmb;
+pub use writing::{set_image_interner, EncodedDmb};
 #[path = "dmb_lists.rs"]
 mod word_lists;
 #[path = "dmb_remap.rs"]
