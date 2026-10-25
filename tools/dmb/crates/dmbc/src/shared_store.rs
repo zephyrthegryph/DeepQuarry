@@ -149,6 +149,9 @@ static ACTIVE: OnceLock<Arc<SharedStore>> = OnceLock::new();
 pub(crate) fn activate(store: &Arc<SharedStore>) {
     if enabled() {
         let _ = ACTIVE.set(Arc::clone(store));
+        if !private("images") {
+            byond_dmb::dmb::set_image_interner(crate::output_pool::intern);
+        }
         if !private("expansion") {
             dm_preprocess::regions::share_expansion_inputs();
         }
