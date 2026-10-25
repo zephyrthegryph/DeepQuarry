@@ -126,6 +126,19 @@ pub enum Target {
     Type(TypeId),
     Member(MemberId),
 }
+/// Whole-owner callable certificates, computed the first time anything asks. With an issuer the
+/// selection certificates are demand driven and a build never reads these; computing them for
+/// every owner on every declaration edit took 0.2 s.
+#[derive(Default)]
+pub(crate) struct OwnerCallables(std::sync::OnceLock<Arc<std::collections::BTreeMap<SymbolId, u128>>>);
+impl std::fmt::Debug for OwnerCallables {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OwnerCallables")
+            .field("computed", &self.0.get().is_some())
+            .finish()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
@@ -135,7 +148,7 @@ pub struct SemanticTree {
     member_callable_names: Arc<std::collections::BTreeMap<SymbolId, u8>>,
     owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
     owner_ancestry: Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>>,
-    owner_callables: Arc<std::collections::BTreeMap<SymbolId, u128>>,
+    owner_callables: Arc<OwnerCallables>,
     owner_callable_demands: Arc<owner_metadata::CallableDemands>,
     owner_callable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>>,
     owner_variable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>>,
@@ -291,7 +304,14 @@ impl SemanticTree {
         &self.owner_callable_selections
     }
     pub fn owner_callable_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
-        &self.owner_callables
+        self.owner_callables.0.get_or_init(|| {
+            Arc::new(
+                self.owner_certificate_issuer
+                    .as_ref()
+                    .map(|issuer| issuer.certify_callables(self))
+                    .unwrap_or_default(),
+            )
+        })
     }
     /// Exact hierarchy payload owners admitted by the existing retained issuer.
     pub fn owner_ancestry_storage(
@@ -935,7 +955,6 @@ pub(crate) fn build_with_intrinsic_members_structural(
         let (versions, paths) = retained.metadata.certify_hierarchy(&tree);
         tree.owner_hierarchy = Arc::new(versions);
         tree.owner_ancestry = Arc::new(paths);
-        tree.owner_callables = Arc::new(retained.metadata.certify_callables(&tree));
         tree.owner_callable_selections = Arc::new(retained.metadata.certify_selections(&tree));
         tree.owner_variable_selections = Arc::new(retained.metadata.certify_variables(&tree));
     }

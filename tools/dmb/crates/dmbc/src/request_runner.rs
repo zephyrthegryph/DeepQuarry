@@ -613,7 +613,14 @@ fn run_build_attempt(
         }
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
         let provider = match &inputs {
-            Some(inputs) => inputs.provider(&inputs_capture),
+            Some(inputs) => {
+                let provider = inputs.provider(&inputs_capture);
+                match &query_db {
+                    // The frontend asks the database which sources changed since its last plan.
+                    Some(db) => provider.with_changes(&**db),
+                    None => provider,
+                }
+            }
             None => dm_preprocess::regions::prepared_source::PreparedSourceProvider::new(
                 &empty,
                 &inputs_capture,
@@ -660,7 +667,7 @@ fn run_build_attempt(
     });
     dm_profile::request_mark("frontend.revision");
     if retains_query_owners {
-        // The next request derives its plan and expansion from this revision (DMB_FRONTEND_REVISION).
+        // The next request adopts this revision's unchanged include subtrees and regions.
         let _timer = dm_profile::detail_timer("frontend.remember");
         semantic_state.remember_frontend(&project, &defines, frontend.clone());
     }

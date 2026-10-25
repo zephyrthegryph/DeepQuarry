@@ -124,6 +124,55 @@ impl ExpandedOriginArena {
            + '_ {
         (0..self.len()).map(|i| self.get(i).expect("issued arena index"))
     }
+    /// The same index as `partition_point`, found by searching outward from `hint` (the last
+    /// answer): a caller that asks about increasing offsets pays a probe or two per answer.
+    pub fn partition_point_near(
+        &self,
+        hint: usize,
+        mut predicate: impl FnMut(ExpandedOriginView<'_>) -> bool,
+    ) -> usize {
+        let len = self.len();
+        let hint = hint.min(len);
+        let mut holds = |index: usize| predicate(self.get(index).expect("issued arena index"));
+        // The answer is the first index where the predicate fails; it holds before it.
+        let (mut left, mut right) = if hint < len && holds(hint) {
+            // The answer is after `hint`: gallop forward.
+            let (mut known, mut step) = (hint, 1usize);
+            loop {
+                let probe = known.saturating_add(step);
+                if probe >= len || !holds(probe) {
+                    break (known + 1, probe.min(len));
+                }
+                known = probe;
+                step *= 2;
+            }
+        } else if hint > 0 && !holds(hint - 1) {
+            // The answer is before `hint`: gallop backward.
+            let (mut known, mut step) = (hint - 1, 1usize);
+            loop {
+                if known < step {
+                    break (0, known);
+                }
+                let probe = known - step;
+                if holds(probe) {
+                    break (probe + 1, known);
+                }
+                known = probe;
+                step *= 2;
+            }
+        } else {
+            return hint;
+        };
+        while left < right {
+            let middle = left + (right - left) / 2;
+            if holds(middle) {
+                left = middle + 1
+            } else {
+                right = middle
+            }
+        }
+        left
+    }
     pub fn partition_point(
         &self,
         mut predicate: impl FnMut(ExpandedOriginView<'_>) -> bool,
@@ -159,89 +208,126 @@ impl ExpandedOriginArena {
         boxed(&self.0.traces, &mut visit);
     }
 }
-/// One region's replacement rows, for `ExpandedOriginArena::spliced`.
-pub(super) struct RowEdit {
-    pub region: usize,
-    /// Where the region's output started before the edit (locates its rows) and where it starts now.
-    pub old_start: usize,
-    pub new_start: usize,
-    /// New output length minus old: later rows move by the sum of the deltas before them.
-    pub delta: isize,
-    pub path: Arc<PathBuf>,
-    pub lines: Vec<super::expansion::output_lines::Line>,
+/// One region's rows of an assembled arena (`ExpandedOriginArena::assembled`).
+pub(super) enum RowPart {
+    /// Rows `rows` of the previous arena, moved `output_shift` bytes along, their region numbers
+    /// moved `region_shift` along.
+    Reuse {
+        rows: std::ops::Range<usize>,
+        output_shift: i64,
+        region_shift: i64,
+    },
+    /// Rows of a region that was expanded again, starting at `new_start` in the joined text.
+    Fresh {
+        region: usize,
+        new_start: usize,
+        path: Arc<PathBuf>,
+        lines: Vec<super::expansion::output_lines::Line>,
+    },
 }
 impl ExpandedOriginArena {
-    /// The arena with some regions' rows replaced and every later row moved by the byte delta. The
-    /// output line of a row is its index, so the rows after an edit renumber by position alone.
-    /// `None` for the wide fallback layout or a field that would not fit the compact one; the
-    /// caller then runs the full expansion.
-    pub(super) fn spliced(&self, edits: Vec<RowEdit>) -> Option<Self> {
+    /// An arena made of reused row ranges of this one and freshly expanded rows, in emission
+    /// order. The output line of a row is its index, so rows renumber by position alone. `None`
+    /// for the wide layout or a field that would not fit the compact one (the caller expands in
+    /// full). Path and trace tables carry over; entries no row names any more are dropped once
+    /// they are a quarter of a table.
+    pub(super) fn assembled(&self, parts: Vec<RowPart>) -> Option<Self> {
         let Records::Compact(old) = &self.0.records else {
             return None;
-        };
-        let moved = |row: &Compact, shift: i64| -> Option<Compact> {
-            Some(Compact {
-                output_start: u32::try_from(i64::from(row.output_start) + shift).ok()?,
-                output_end: u32::try_from(i64::from(row.output_end) + shift).ok()?,
-                ..*row
-            })
         };
         let mut records: Vec<Compact> = Vec::with_capacity(old.len() + 64);
         let mut paths = self.0.paths.to_vec();
         let mut traces = self.0.traces.to_vec();
-        let (mut cursor, mut shift) = (0usize, 0i64);
-        for edit in edits {
-            let mut first = old.partition_point(|row| (row.output_start as usize) < edit.old_start);
-            while first < old.len()
-                && old[first].region as usize != edit.region
-                && old[first].output_start as usize == edit.old_start
-            {
-                first += 1;
-            }
-            let mut last = first;
-            while last < old.len() && old[last].region as usize == edit.region {
-                last += 1;
-            }
-            if first < cursor {
-                return None;
-            }
-            for row in &old[cursor..first] {
-                records.push(moved(row, shift)?);
-            }
-            let path = match paths.iter().position(|known| Arc::ptr_eq(known, &edit.path)) {
-                Some(index) => index,
-                None => {
-                    paths.push(Arc::clone(&edit.path));
-                    paths.len() - 1
-                }
-            };
-            let mut last_trace: Option<(usize, usize)> = None;
-            for (relative, source_line, source_span, trace) in edit.lines {
-                let pointer = Arc::as_ptr(&trace) as usize;
-                let index = match last_trace.filter(|(known, _)| *known == pointer) {
-                    Some((_, index)) => index,
-                    None => {
-                        traces.push(trace);
-                        traces.len() - 1
+        for part in parts {
+            match part {
+                RowPart::Reuse {
+                    rows,
+                    output_shift,
+                    region_shift,
+                } => {
+                    for row in old.get(rows)? {
+                        records.push(Compact {
+                            output_start: u32::try_from(i64::from(row.output_start) + output_shift)
+                                .ok()?,
+                            output_end: u32::try_from(i64::from(row.output_end) + output_shift)
+                                .ok()?,
+                            region: u32::try_from(i64::from(row.region) + region_shift).ok()?,
+                            ..*row
+                        });
                     }
-                };
-                last_trace = Some((pointer, index));
-                records.push(Compact {
-                    output_start: u32::try_from(edit.new_start + relative.start).ok()?,
-                    output_end: u32::try_from(edit.new_start + relative.end).ok()?,
-                    source_start: u32::try_from(source_span.start).ok()?,
-                    source_end: u32::try_from(source_span.end).ok()?,
-                    source_line: u32::try_from(source_line).ok()?,
-                    region: u32::try_from(edit.region).ok()?,
-                    path: u32::try_from(path).ok()?,
-                    traces: u32::try_from(index).ok()?,
-                });
+                }
+                RowPart::Fresh {
+                    region,
+                    new_start,
+                    path,
+                    lines,
+                } => {
+                    let path = match paths.iter().rposition(|known| Arc::ptr_eq(known, &path)) {
+                        Some(index) => index,
+                        None => {
+                            paths.push(path);
+                            paths.len() - 1
+                        }
+                    };
+                    let mut last_trace: Option<(usize, usize)> = None;
+                    for (relative, source_line, source_span, trace) in lines {
+                        let pointer = Arc::as_ptr(&trace) as usize;
+                        let index = match last_trace.filter(|(known, _)| *known == pointer) {
+                            Some((_, index)) => index,
+                            None => {
+                                traces.push(trace);
+                                traces.len() - 1
+                            }
+                        };
+                        last_trace = Some((pointer, index));
+                        records.push(Compact {
+                            output_start: u32::try_from(new_start + relative.start).ok()?,
+                            output_end: u32::try_from(new_start + relative.end).ok()?,
+                            source_start: u32::try_from(source_span.start).ok()?,
+                            source_end: u32::try_from(source_span.end).ok()?,
+                            source_line: u32::try_from(source_line).ok()?,
+                            region: u32::try_from(region).ok()?,
+                            path: u32::try_from(path).ok()?,
+                            traces: u32::try_from(index).ok()?,
+                        });
+                    }
+                }
             }
-            cursor = last;
-            shift += edit.delta as i64;
         }
-        for row in &old[cursor..] {
-            records.push(moved(row, shift)?);
+        // Drop table entries nothing names once they are a quarter of a table.
+        let mut used_paths = vec![false; paths.len()];
+        let mut used_traces = vec![false; traces.len()];
+        for row in &records {
+            used_paths[row.path as usize] = true;
+            used_traces[row.traces as usize] = true;
+        }
+        let waste = |used: &[bool]| used.iter().filter(|used| !**used).count() * 4 > used.len();
+        if waste(&used_paths) || waste(&used_traces) {
+            let remap = |used: &[bool]| {
+                let mut next = 0u32;
+                used.iter()
+                    .map(|used| {
+                        let index = next;
+                        next += u32::from(*used);
+                        index
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let (path_map, trace_map) = (remap(&used_paths), remap(&used_traces));
+            for row in &mut records {
+                row.path = path_map[row.path as usize];
+                row.traces = trace_map[row.traces as usize];
+            }
+            paths = paths
+                .into_iter()
+                .zip(&used_paths)
+                .filter_map(|(value, used)| used.then_some(value))
+                .collect();
+            traces = traces
+                .into_iter()
+                .zip(&used_traces)
+                .filter_map(|(value, used)| used.then_some(value))
+                .collect();
         }
         Some(Self(Arc::new(Inner {
             records: Records::Compact(records.into_boxed_slice()),

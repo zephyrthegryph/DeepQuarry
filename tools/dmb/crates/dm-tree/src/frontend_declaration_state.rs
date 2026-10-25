@@ -338,6 +338,75 @@ fn rebase(
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn symbols_contribution(text: &str) -> Arc<Contribution> {
+        let mut ast = dm_syntax::parse_declaration_skeleton(text);
+        ast.items = compact_declarations(ast.items, 0);
+        let adapted_ast = dm_syntax::AstFile {
+            items: ast.items.clone(),
+            tokens: Vec::new(),
+            diagnostics: ast.diagnostics.clone(),
+        };
+        let mut facts =
+            crate::from_ast(&adapted_ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+        let ledger =
+            crate::allocation_ledger::capture(&ast.items, "/", &mut facts.symbols).unwrap();
+        Arc::new(Contribution::capture(text, 0, &ast.items, &facts, &ledger).unwrap())
+    }
+    #[test]
+    fn a_small_replacement_updates_the_spelling_table_like_a_full_rebuild() {
+        let texts = [
+            "/obj/alpha\n    var/shared = 1\n    var/only_alpha = 2\n",
+            "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 1\n",
+            "/obj/gamma\n    var/shared = 3\n",
+            "/obj/delta\n    var/other = 4\n",
+            // Same spellings as the second, different body: nothing appears or vanishes.
+            "/obj/beta\n    var/shared = 1\n    proc/run()\n        return 2\n",
+            "/obj/epsilon\n    var/fresh_name = 5\n",
+        ];
+        let all: Vec<_> = texts.iter().map(|text| symbols_contribution(text)).collect();
+        let mut active = ActiveSymbols::default();
+        active.update(&all[..4]).unwrap();
+        let ordered = |table: &SymbolTable| {
+            table
+                .ordered()
+                .into_iter()
+                .map(|(id, text)| (id, text.to_owned()))
+                .collect::<Vec<_>>()
+        };
+        let mut roster: Vec<_> = all[..4].to_vec();
+        let steps: Vec<Box<dyn Fn(&mut Vec<Arc<Contribution>>)>> = vec![
+            // Equal spellings: the table is the same allocation.
+            Box::new({
+                let replacement = Arc::clone(&all[4]);
+                move |roster| roster[1] = Arc::clone(&replacement)
+            }),
+            // A spelling vanishes and another appears.
+            Box::new({
+                let replacement = Arc::clone(&all[5]);
+                move |roster| roster[0] = Arc::clone(&replacement)
+            }),
+            // One leaf removed, then added back.
+            Box::new(|roster| {
+                roster.pop();
+            }),
+            Box::new({
+                let leaf = Arc::clone(&all[3]);
+                move |roster| roster.push(Arc::clone(&leaf))
+            }),
+        ];
+        for (index, step) in steps.iter().enumerate() {
+            let before = Arc::clone(&active.symbols);
+            step(&mut roster);
+            let delta = active.update(&roster).unwrap();
+            let mut fresh = ActiveSymbols::default();
+            let expected = fresh.update(&roster).unwrap();
+            assert_eq!(ordered(&delta), ordered(&expected), "step {index}");
+            assert_eq!(active.counts, fresh.counts, "step {index}");
+            if index == 0 {
+                assert!(Arc::ptr_eq(&before, &delta), "equal spellings keep the table");
+            }
+        }
+    }
     #[test]
     fn declaration_capture_shares_checked_region_view_and_rebinds_current_origins() {
         let text = "/obj/probe\n    var/display = \"café\"\n";
@@ -557,6 +626,9 @@ pub(super) struct CurrentContribution {
     pub(super) value: Arc<Contribution>,
     pub(super) syntax: CurrentSyntaxChunk,
     offset: usize,
+    /// The value is the one the store already holds under this chunk's key (a lookup hit, or one
+    /// published since): publishing it again would change nothing.
+    pub(super) stored: bool,
 }
 impl CurrentContribution {
     pub(super) fn shared_source(&self) -> Arc<str> {
@@ -578,6 +650,7 @@ impl CurrentContribution {
             value,
             syntax,
             offset,
+            stored: false,
         })
     }
     pub(super) fn fresh(
@@ -711,6 +784,10 @@ struct ActiveSymbols {
     symbols: Arc<SymbolTable>,
     catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
 }
+/// Contributions added plus removed at most this many are applied to the spelling table as a
+/// delta; a larger change rebuilds the table (a cold request adds every contribution).
+const SMALL_SPELLING_DELTA: usize = 256;
+
 impl ActiveSymbols {
     fn matches(&self, current: &[Arc<Contribution>]) -> bool {
         current.len() == self.contributions.len()
@@ -732,39 +809,129 @@ impl ActiveSymbols {
             // Retained Arcs prevent address reuse: exact immutable leaf roster.
             return Ok(self.symbols.clone());
         }
+        let removed: Vec<Arc<Contribution>> = self
+            .contributions
+            .iter()
+            .filter(|(address, _)| !next.contains_key(*address))
+            .map(|(_, value)| Arc::clone(value))
+            .collect();
+        let added: Vec<Arc<Contribution>> = next
+            .iter()
+            .filter(|(address, _)| !self.contributions.contains_key(*address))
+            .map(|(_, value)| Arc::clone(value))
+            .collect();
+        if removed.len() + added.len() <= SMALL_SPELLING_DELTA {
+            let symbols = self.update_delta(&removed, &added)?;
+            self.contributions = next;
+            return Ok(symbols);
+        }
         // Precheck every added leaf against a shallow transaction before committing.
         let mut symbols = self.symbols.as_ref().clone();
         let mut counts = self.counts.clone();
-        for (address, value) in &self.contributions {
-            if !next.contains_key(address) {
-                for (id, _) in value.facts.symbols.ordered() {
-                    if let Some(count) = counts.get_mut(&id) {
-                        *count -= 1;
-                    }
+        for value in &removed {
+            for (id, _) in value.facts.symbols.ordered() {
+                if let Some(count) = counts.get_mut(&id) {
+                    *count -= 1;
                 }
             }
         }
         counts.retain(|_, count| *count != 0);
         // Historical-only spellings cannot conflict with the new active roster.
         symbols.retain_local(|id| counts.contains_key(&id));
-        for (address, value) in &next {
-            if !self.contributions.contains_key(address) {
-                for (id, _) in value.facts.symbols.ordered() {
-                    *counts.entry(id).or_default() += 1;
-                }
+        for value in &added {
+            for (id, _) in value.facts.symbols.ordered() {
+                *counts.entry(id).or_default() += 1;
             }
         }
         counts.retain(|_, count| *count != 0);
-        for (address, value) in &next {
-            if !self.contributions.contains_key(address) {
-                symbols.merge_from(&value.facts.symbols)?;
-            }
+        for value in &added {
+            symbols.merge_from(&value.facts.symbols)?;
         }
         self.counts = counts;
         if self.symbols.ordered() != symbols.ordered() {
             self.symbols = Arc::new(symbols);
         }
         self.contributions = next;
+        Ok(self.symbols.clone())
+    }
+    /// A few contributions replaced: count their spellings in place and touch the table only for
+    /// spellings that appeared or vanished. A collision restores the counts and changes nothing.
+    fn update_delta(
+        &mut self,
+        removed: &[Arc<Contribution>],
+        added: &[Arc<Contribution>],
+    ) -> Result<Arc<SymbolTable>, dm_ir::SymbolCollision> {
+        let mut vanished = Vec::new();
+        for value in removed {
+            for (id, _) in value.facts.symbols.ordered() {
+                if let Some(count) = self.counts.get_mut(&id) {
+                    *count -= 1;
+                    if *count == 0 {
+                        self.counts.remove(&id);
+                        vanished.push(id);
+                    }
+                }
+            }
+        }
+        let mut appeared = Vec::new();
+        for value in added {
+            for (id, _) in value.facts.symbols.ordered() {
+                let count = self.counts.entry(id).or_default();
+                *count += 1;
+                if *count == 1 {
+                    appeared.push(id);
+                }
+            }
+        }
+        let restore = |this: &mut Self| {
+            for value in added {
+                for (id, _) in value.facts.symbols.ordered() {
+                    if let Some(count) = this.counts.get_mut(&id) {
+                        *count -= 1;
+                        if *count == 0 {
+                            this.counts.remove(&id);
+                        }
+                    }
+                }
+            }
+            for value in removed {
+                for (id, _) in value.facts.symbols.ordered() {
+                    *this.counts.entry(id).or_default() += 1;
+                }
+            }
+        };
+        let gone: Vec<_> = vanished
+            .iter()
+            .copied()
+            .filter(|id| !appeared.contains(id))
+            .collect();
+        let new: Vec<_> = appeared
+            .iter()
+            .copied()
+            .filter(|id| !vanished.contains(id))
+            .collect();
+        if gone.is_empty() && new.is_empty() {
+            // The same spellings stay active; the added leaves still must not contradict them.
+            for value in added {
+                let mut probe = SymbolTable::overlay(Arc::clone(&self.symbols));
+                if let Err(collision) = probe.merge_from(&value.facts.symbols) {
+                    restore(self);
+                    return Err(collision);
+                }
+            }
+            return Ok(self.symbols.clone());
+        }
+        let mut symbols = self.symbols.as_ref().clone();
+        for id in &gone {
+            symbols.remove_local(*id);
+        }
+        for value in added {
+            if let Err(collision) = symbols.merge_from(&value.facts.symbols) {
+                restore(self);
+                return Err(collision);
+            }
+        }
+        self.symbols = Arc::new(symbols);
         Ok(self.symbols.clone())
     }
 }

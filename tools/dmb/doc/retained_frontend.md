@@ -302,6 +302,8 @@ Steps, each landing alone with `verify` proof:
 
 ### F1 results (plan and expansion edited in place)
 
+*Superseded 2026-10-25 (`incremental_core.md`, "Frontend queries, step 3"): the single-file edit path and `DMB_FRONTEND_REVISION` are deleted; the plan is patched from the query database's change log (any changed subtree, directives included) and adopted subtree by subtree, expansion copies the regions the plan copied. What follows is the history.*
+
 Landed behind `DMB_FRONTEND_REVISION` (`0`/unset: off, the default for now; `verify`; `1`).
 `dm_preprocess::regions::{plan_regions_edit, expand_regions_edit}` (`regions/edit.rs`), the origin
 arena splice (`ExpandedOriginArena::spliced`), the previous revision kept in `RetainedSemanticTree`

@@ -189,12 +189,20 @@ impl ExpansionInputs {
                 .to_le_bytes(),
         )
     }
-    pub(super) fn retain_current(&self, plan: &DirectivePlan) {
-        let keys: Vec<_> = (0..plan.regions.len())
-            .filter_map(|i| Self::key(plan, i))
-            .collect();
+    /// Keep only the admissions of this plan's regions, and return each region's key (a region
+    /// whose file text is missing has none) so the next expansion need not hash them again.
+    pub(super) fn retain_current(&self, plan: &DirectivePlan) -> Vec<Option<[u8; 16]>> {
+        let keys: Vec<_> = (0..plan.regions.len()).map(|i| Self::key(plan, i)).collect();
+        self.retain_keys(&keys);
+        keys
+    }
+    pub(super) fn retain_keys(&self, keys: &[Option<[u8; 16]>]) {
         self.values
-            .retain_current_keys(keys.iter().map(|key| key.as_slice()));
+            .retain_current_keys(keys.iter().flatten().map(|key| key.as_slice()));
+    }
+    /// The key of a region of `plan`, for a region that was not copied from an earlier plan.
+    pub(super) fn region_key(plan: &DirectivePlan, index: usize) -> Option<[u8; 16]> {
+        Self::key(plan, index)
     }
     pub(super) fn lookup(
         &self,

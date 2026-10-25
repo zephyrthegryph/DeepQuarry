@@ -64,7 +64,7 @@ fn joined_owner_reuses_only_exact_current_emission_and_rebinds_origins() {
     assert!(first.text.same_view(&second.text));
     let mut shifted = original.clone();
     for region in &mut shifted.regions {
-        for segment in &mut region.segments {
+        for segment in Arc::make_mut(&mut region.segments).iter_mut() {
             for line in &mut segment.lines {
                 line.source_line += 20;
             }

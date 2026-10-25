@@ -17,7 +17,7 @@ pub struct RetainedSemanticTree {
     splice_disabled: bool,
     splices: u64,
     /// The last published frontend with the project and defines it was built for: the base the next
-    /// request's plan and expansion are derived from (`DMB_FRONTEND_REVISION`).
+    /// request's plan and expansion adopt their unchanged include subtrees and regions from.
     previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
 }
 struct Entry {
@@ -296,6 +296,7 @@ impl RetainedSemanticTree {
     pub fn rebuilds(&self) -> u64 {
         self.rebuilds
     }
+    #[allow(unused_assignments)] // the stage timer is re-armed after the last tick of each path
     pub(super) fn resolve(
         &mut self,
         adapted: impl Into<crate::SharedAdaptedDeclarations>,
@@ -304,6 +305,29 @@ impl RetainedSemanticTree {
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut adapted = adapted.into();
+        let resolve_started = std::time::Instant::now();
+        let mut phases: Vec<(&'static str, f64)> = Vec::new();
+        let mut mark = std::time::Instant::now();
+        macro_rules! tick {
+            ($label:expr) => {{
+                phases.push(($label, mark.elapsed().as_secs_f64()));
+                mark = std::time::Instant::now();
+            }};
+        }
+        macro_rules! report {
+            ($path:expr) => {{
+                crate::change_set::record_outcome(format!(
+                    "frontend tree detail ({}): {} total={:.3}s",
+                    $path,
+                    phases
+                        .iter()
+                        .map(|(label, seconds)| format!("{label}={seconds:.3}s"))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                    resolve_started.elapsed().as_secs_f64()
+                ));
+            }};
+        }
         if adapted
             .symbol_catalog
             .as_ref()
@@ -328,6 +352,7 @@ impl RetainedSemanticTree {
                         .is_some_and(|symbols| entry.symbols.ordered() == *symbols))
                 && same_engine(entry.engine.as_ref(), engine)
         });
+        tick!("prepare");
         if let Some(entry) = reusable {
             let tree = Arc::clone(&entry.tree);
             let occurrences = crate::OccurrenceTable::build_with_index(
@@ -346,6 +371,8 @@ impl RetainedSemanticTree {
                 issuer.bind_selection_owner(&tree);
             }
             self.hits += 1;
+            tick!("occurrences");
+            report!("reuse");
             return Ok(TreeSnapshot {
                 tree,
                 occurrences: Arc::new(occurrences),
@@ -372,6 +399,7 @@ impl RetainedSemanticTree {
                 .ok()
                 .map(|(index, _)| index)
             });
+        tick!("index");
         let unchanged_declarations = self.entry.as_ref().is_some_and(|entry| {
             same_engine(entry.engine.as_ref(), engine)
                 && entry.index.skeletons().eq(adapted.skeletons.iter())
@@ -391,6 +419,7 @@ impl RetainedSemanticTree {
             )
         });
         drop(update_timer);
+        tick!("update_attempt");
         // Structural member edits: splice into the retained tree (change set).
         let mut spliced_dependencies = false;
         let mut verify_splice = None;
@@ -442,6 +471,7 @@ impl RetainedSemanticTree {
                 }
             }
         };
+        tick!("splice");
         let _full_timer = updated
             .is_none()
             .then(|| dm_profile::detail_timer("tree.full_resolution_total"));
@@ -460,9 +490,11 @@ impl RetainedSemanticTree {
                     on_error(&error, &adapted.skeletons.to_vec(), &origins);
                     error
                 })?;
+                tick!("identity_rows");
                 tree.refresh_metadata_identity(identity, hierarchy);
             }
             drop(identity_timer);
+            tick!("certify");
             let prior_index = self
                 .entry
                 .as_ref()
@@ -479,6 +511,7 @@ impl RetainedSemanticTree {
                 error
             })?;
             drop(occurrence_timer);
+            tick!("occurrences");
             let _carry_timer = dm_profile::detail_timer("tree.update.carry_and_publish");
             if !unchanged_declarations {
                 carry_demands(
@@ -494,9 +527,11 @@ impl RetainedSemanticTree {
                     set: Default::default(),
                 }));
             }
+            tick!("carry_demands");
             let publish_timer = dm_profile::detail_timer("tree.update.publish_selection_owner");
             tree.publish_selection_owner();
             drop(publish_timer);
+            tick!("publish_selection_owner");
             let tree = Arc::new(tree);
             let entry = self
                 .entry
@@ -513,6 +548,7 @@ impl RetainedSemanticTree {
                 index.expect("updated tree has its exact contribution index"),
             );
             release_in_background((replaced_index, replaced_tree, replaced_contributions));
+            tick!("swap_entry");
             let _capture_timer = dm_profile::detail_timer("tree.update.capture_dependencies");
             if spliced_dependencies {
                 // Dense IDs moved: reissue the stable-key graph for the next edit.
@@ -531,6 +567,8 @@ impl RetainedSemanticTree {
             if unchanged_declarations {
                 self.symbol_only_rebinds += 1;
             }
+            tick!("capture_dependencies");
+            report!(if spliced_dependencies { "splice" } else { "update" });
             return Ok(TreeSnapshot {
                 tree,
                 occurrences: Arc::new(occurrences),
@@ -617,6 +655,8 @@ impl RetainedSemanticTree {
         });
         self.entry = next_entry;
         self.rebuilds += 1;
+        tick!("rebuild");
+        report!("rebuild");
         Ok(snapshot)
     }
 }
