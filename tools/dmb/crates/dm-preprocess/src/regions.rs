@@ -19,7 +19,7 @@ mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod edit;
-pub use edit::{expand_regions_edit, expansions_equal, plan_regions_edit, plans_equal, PlanEdit};
+pub use edit::{expand_regions_edit, expansions_equal, plan_regions_edit, plans_equal, PlanEdit, PlanEditDetail};
 mod expansion;
 mod expansion_input;
 mod joined_text;

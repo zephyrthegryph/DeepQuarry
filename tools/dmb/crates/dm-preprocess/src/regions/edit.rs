@@ -18,6 +18,17 @@ use region_memo::RegionReceipt;
 pub struct PlanEdit {
     pub plan: DirectivePlan,
     pub regions: Vec<usize>,
+    /// Where the edit spent its time: the provider touches that recognise changed files, the clone
+    /// of the previous plan, and the replacement of the changed files' regions.
+    pub detail: PlanEditDetail,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PlanEditDetail {
+    pub touch: std::time::Duration,
+    pub clone: std::time::Duration,
+    pub apply: std::time::Duration,
+    pub changed_files: usize,
 }
 
 /// At most this many files may change for an edit to apply.
@@ -38,6 +49,7 @@ pub fn plan_regions_edit<P: SourceProvider>(
     if !prev.diagnostics.is_empty() || !prev.warnings.is_empty() {
         return None;
     }
+    let touch_started = std::time::Instant::now();
     let mut changed: Vec<(PathBuf, Arc<PreparedSource>)> = Vec::new();
     for (path, old) in &prev.source_texts {
         let prepared = provider.prepared_source(path)?;
@@ -49,7 +61,12 @@ pub fn plan_regions_edit<P: SourceProvider>(
         }
         changed.push((path.clone(), prepared));
     }
+    let touch = touch_started.elapsed();
+    let clone_started = std::time::Instant::now();
     let mut plan = prev.clone();
+    let clone = clone_started.elapsed();
+    let apply_started = std::time::Instant::now();
+    let changed_files = changed.len();
     let mut regions = Vec::new();
     for (path, prepared) in changed {
         let occurrence = {
@@ -121,7 +138,16 @@ pub fn plan_regions_edit<P: SourceProvider>(
         plan.source_texts.insert(path, prepared.original().clone());
         regions.push(region_index);
     }
-    Some(PlanEdit { plan, regions })
+    Some(PlanEdit {
+        plan,
+        regions,
+        detail: PlanEditDetail {
+            touch,
+            clone,
+            apply: apply_started.elapsed(),
+            changed_files,
+        },
+    })
 }
 
 /// The previous expansion with the changed regions re-expanded, the joined text spliced and the

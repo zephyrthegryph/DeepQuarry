@@ -1,5 +1,8 @@
 use super::*;
 
+/// Longest silence between declaration-parsing progress events.
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
+
 pub(super) struct ParsedDeclarations {
     pub(super) syntax: DeclarationSyntax,
     pub(super) diagnostics: Vec<(usize, dm_syntax::Diagnostic)>,
@@ -67,6 +70,7 @@ pub(super) fn parse_declarations_with_state(
         .map_or(fresh_chunks.as_slice(), |roster| roster.spans().as_slice());
     let descriptor_scan = parse_start.elapsed();
     drop(profile_scan);
+    let keys_started = Instant::now();
     let keys_timer = dm_profile::detail_timer("decl.retained_keys");
     let retained_keys = retained.map(|state| {
         let keys: Vec<_> = chunks
@@ -79,11 +83,14 @@ pub(super) fn parse_declarations_with_state(
         keys
     });
     drop(keys_timer);
+    let keys_elapsed = keys_started.elapsed();
+    let workers_started = Instant::now();
     let workers_timer = dm_profile::detail_timer("decl.workers");
     let region_hits = std::sync::atomic::AtomicUsize::new(0);
     let independent_hits = std::sync::atomic::AtomicUsize::new(0);
     let facts_hits = std::sync::atomic::AtomicUsize::new(0);
     let parsed_chunks = std::sync::atomic::AtomicUsize::new(0);
+    let shared_ns = std::sync::atomic::AtomicU64::new(0);
     let lookup_ns = std::sync::atomic::AtomicU64::new(0);
     let facts_ns = std::sync::atomic::AtomicU64::new(0);
     let worker_count = executor.workers().min(chunks.len().max(1));
@@ -107,6 +114,7 @@ pub(super) fn parse_declarations_with_state(
                         parsed_chunks,
                         lookup_ns,
                         facts_ns,
+                        shared_ns,
                     ) = (
                         &region_hits,
                         &independent_hits,
@@ -114,6 +122,7 @@ pub(super) fn parse_declarations_with_state(
                         &parsed_chunks,
                         &lookup_ns,
                         &facts_ns,
+                        &shared_ns,
                     );
                     scope.spawn(move |_| {
                         let _profile_worker = dm_profile::stage("frontend.declaration_parsing");
@@ -123,8 +132,14 @@ pub(super) fn parse_declarations_with_state(
                                 break;
                             };
                             let text = &source[offset..offset + len];
-                            if let Some(current) = retained.zip(retained_keys.as_ref())
-                                .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset)) {
+                            let shared_started = Instant::now();
+                            let shared = retained.zip(retained_keys.as_ref())
+                                .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset));
+                            shared_ns.fetch_add(
+                                shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            if let Some(current) = shared {
                                 facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                                 if sender.send((index, offset, Vec::new(), None, Ok(current))).is_err() { break; }
                                 continue;
@@ -349,9 +364,16 @@ pub(super) fn parse_declarations_with_state(
                 }
         drop(sender);
         let mut ordered = Vec::with_capacity(chunks.len());
+        // The receiver is the only consumer of the workers' bounded channel: a progress line per
+        // few results (1,268 lines over a pipe, about 0.5 s per request) stalls every worker behind
+        // it. Progress is time-driven instead, and the last result always reports.
+        let mut last_progress = parse_start;
         for result in receiver {
             ordered.push(result);
-            if ordered.len() % (worker_count * 2) == 0 || ordered.len() == chunks.len() {
+            if ordered.len() == chunks.len()
+                || last_progress.elapsed() >= PROGRESS_INTERVAL
+            {
+                last_progress = Instant::now();
                 observe(
                     config,
                     FrontendStage::DeclarationParsing,
@@ -369,6 +391,8 @@ pub(super) fn parse_declarations_with_state(
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
     ordered.sort_by_key(|(index, _, _, _, _)| *index);
     drop(workers_timer);
+    let workers_elapsed = workers_started.elapsed();
+    let adopt_started = Instant::now();
     let adopt_timer = dm_profile::detail_timer("decl.adopt_authored");
     if let Some(state) = retained {
         if ordered.iter().all(|(_, _, _, _, current)| current.is_ok()) {
@@ -382,6 +406,7 @@ pub(super) fn parse_declarations_with_state(
         }
     }
     drop(adopt_timer);
+    let adopt_elapsed = adopt_started.elapsed();
     let merge_start = Instant::now();
     let _merge_timer = dm_profile::detail_timer("decl.ordered_merge");
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
@@ -429,6 +454,8 @@ pub(super) fn parse_declarations_with_state(
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }
     adapted.origins = crate::relative_origins::OriginRoster::Bound(origin_leaves);
+    let merge_elapsed = merge_start.elapsed();
+    let catalog_started = Instant::now();
     if let Some(state) = retained {
         let catalog = state
             .current_catalog(
@@ -439,14 +466,33 @@ pub(super) fn parse_declarations_with_state(
         adapted.symbols = SymbolTable::overlay(Arc::clone(&catalog.symbols));
         adapted.symbol_catalog = Some(catalog);
     }
+    let catalog_elapsed = catalog_started.elapsed();
+    let publish_started = Instant::now();
     if let Some(memo) = memo {
         for record in updated.into_values() {
             memo.insert(Arc::new(record));
         }
     }
+    let publish_elapsed = publish_started.elapsed();
+    let roster_started = Instant::now();
+    let declaration_syntax = DeclarationSyntax::new(syntax_chunks)
+        .map_err(|error| vec![internal(&format!("relative syntax roster: {error:?}"))])?;
+    crate::change_set::record_outcome(format!(
+        "frontend parse detail: chunks={} worker_get_shared_sum={:.3}s scan={:.3}s keys={:.3}s workers={:.3}s adopt={:.3}s merge={:.3}s catalog={:.3}s memo_publish={:.3}s syntax_roster={:.3}s total={:.3}s",
+        chunks.len(),
+        Duration::from_nanos(shared_ns.load(std::sync::atomic::Ordering::Relaxed)).as_secs_f64(),
+        descriptor_scan.as_secs_f64(),
+        keys_elapsed.as_secs_f64(),
+        workers_elapsed.as_secs_f64(),
+        adopt_elapsed.as_secs_f64(),
+        merge_elapsed.as_secs_f64(),
+        catalog_elapsed.as_secs_f64(),
+        publish_elapsed.as_secs_f64(),
+        roster_started.elapsed().as_secs_f64(),
+        parse_start.elapsed().as_secs_f64(),
+    ));
     Ok(ParsedDeclarations {
-        syntax: DeclarationSyntax::new(syntax_chunks)
-            .map_err(|error| vec![internal(&format!("relative syntax roster: {error:?}"))])?,
+        syntax: declaration_syntax,
         diagnostics,
         adapted,
         allocation_ledger: crate::allocation_ledger::AllocationLedger {

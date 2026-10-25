@@ -117,9 +117,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     };
     // Changed leaf files edit the previous plan in place (doc/retained_frontend.md, step F1).
     // Every provider read the full planner makes is repeated, so the input capture is the same.
+    let edit_started = Instant::now();
     let mut edited = previous
         .as_ref()
         .and_then(|previous| dm_preprocess::regions::plan_regions_edit(&previous.plan, &captured));
+    let edit_attempt = edit_started.elapsed();
     let full_plan = || match memo {
         Some(memo) => {
             dm_preprocess::regions::plan_regions_with_memo(project, &captured, defines, memo)
@@ -127,9 +129,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         None => plan_regions(project, &captured, defines),
     };
     let mut edit_regions = None;
+    let mut plan_edit_detail = None;
     let plan = match (mode, edited.take()) {
         (RevisionMode::On, Some(edit)) => {
             edit_regions = Some(edit.regions);
+            plan_edit_detail = Some(edit.detail);
             edit.plan
         }
         (RevisionMode::Verify, Some(edit)) => {
@@ -151,6 +155,21 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             if edit_regions.is_some() { "edited" } else { "full" }
         );
     }
+    crate::change_set::record_outcome(match (&edit_regions, plan_edit_detail) {
+        (Some(_), Some(detail)) => format!(
+            "frontend plan edited: files={} touch={:.3}s clone={:.3}s apply={:.3}s total={:.3}s",
+            detail.changed_files,
+            detail.touch.as_secs_f64(),
+            detail.clone.as_secs_f64(),
+            detail.apply.as_secs_f64(),
+            stage_start.elapsed().as_secs_f64()
+        ),
+        _ => format!(
+            "frontend plan full: edit attempt={:.3}s total={:.3}s",
+            edit_attempt.as_secs_f64(),
+            stage_start.elapsed().as_secs_f64()
+        ),
+    });
     dm_profile::request_mark("frontend.plan_done");
     timings.directive_planning = stage_start.elapsed();
     observe(
@@ -180,6 +199,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         }
         _ => None,
     };
+    let expansion_edited = edited_expansion.is_some();
     let expanded = match (mode, edited_expansion) {
         (RevisionMode::On, Some(expansion)) => {
             eprintln!("frontend revision: expansion edited");
@@ -201,6 +221,11 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         }
     };
     timings.expansion = stage_start.elapsed();
+    crate::change_set::record_outcome(format!(
+        "frontend expansion {}: {:.3}s",
+        if expansion_edited { "edited" } else { "full" },
+        timings.expansion.as_secs_f64()
+    ));
     observe(
         config,
         FrontendStage::Expansion,
