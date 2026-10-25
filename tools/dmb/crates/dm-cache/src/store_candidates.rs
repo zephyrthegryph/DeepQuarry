@@ -28,7 +28,11 @@ impl CacheSnapshot {
         loop {
             let superseded = self.current_superseded();
             let mut retry = false;
-            for &ordinal in self.index.get(&key)? {
+            let ordinals = self.index.get(key, &self.segments);
+            if ordinals.is_empty() {
+                return None;
+            }
+            for ordinal in ordinals {
                 let (path, segment) = &self.segments[ordinal];
                 if segment.is_rejected() || superseded.contains(&segment.id()) {
                     continue;

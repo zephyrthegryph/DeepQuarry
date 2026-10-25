@@ -79,7 +79,7 @@ enum FileDirChange {
     Pop,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct Macro {
     pub parameters: Option<Vec<String>>,
     pub variadic: bool,

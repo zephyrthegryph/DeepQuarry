@@ -209,14 +209,18 @@ impl RegionReceipt {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MacroRead {
     pub segment: usize,
+    #[serde(deserialize_with = "super::intern_wire::shared_name")]
     pub name: Arc<str>,
+    #[serde(deserialize_with = "super::intern_wire::shared_definition")]
     pub definition: Option<Arc<Macro>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Trace {
+    #[serde(deserialize_with = "super::intern_wire::shared_name")]
     name: Arc<str>,
     #[serde(with = "span_wire")]
     invocation_span: Span,
+    #[serde(deserialize_with = "super::intern_wire::shared_chain")]
     replacement_chain: Arc<[Arc<str>]>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

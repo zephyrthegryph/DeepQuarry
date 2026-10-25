@@ -11,6 +11,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 mod directive_memo;
+mod intern_wire;
 mod directives;
 mod path_prefix;
 pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
