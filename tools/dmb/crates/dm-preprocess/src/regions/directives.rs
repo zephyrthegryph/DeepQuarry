@@ -692,7 +692,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
                                 context.0,
-                                &context.1,
+                                context.1,
                                 end - cursor,
                                 &self.environment,
                                 &self.conditionals,
