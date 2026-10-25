@@ -116,7 +116,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	var/generated = material.electrogenic_rate * elapsed_seconds
 	// Thermoelectric conversion is applied to real transferred heat by the
 	// assembly thermal service, never to a difference between UI observations.
-	reference_temperature = current_temperature
+	reference_temperature = num_or_null(current_temperature)
 	last_energy_settlement = now
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
 

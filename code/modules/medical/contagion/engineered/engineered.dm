@@ -667,7 +667,7 @@ CAPABILITIES(/datum/admin_virus_creation)
 			else
 				minimum = clamp(A.threat - 1, 1, 7)
 			A.Evolve(minimum, clamp(A.threat + 4, minimum, 9))
-			A.id = GetDiseaseID()
+			A.id = text_or_null(GetDiseaseID())
 			A.keepid = TRUE
 	else
 		A.initial = FALSE

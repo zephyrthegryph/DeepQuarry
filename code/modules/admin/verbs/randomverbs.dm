@@ -815,7 +815,7 @@ CAPABILITIES(/datum/respawn_review)
 		if(charjob)
 			SSjob.equip_rank(new_character, charjob, 1)
 			if(new_character.mind)
-				new_character.mind.assigned_role = charjob
+				new_character.mind.assigned_role = text_or_null(charjob)
 				new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 			equip_custom_items(new_character) // readded to enable custom_item.txt
 

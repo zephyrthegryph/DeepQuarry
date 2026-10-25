@@ -109,7 +109,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 		return FALSE
 	var/new_role = A.step_value("a1")
 	if(new_role)
-		target_mind.assigned_role = new_role
+		target_mind.assigned_role = text_or_null(new_role)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_memory_a2_default(datum/act/op/A)
