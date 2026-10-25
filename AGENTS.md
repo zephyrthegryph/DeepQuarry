@@ -73,6 +73,7 @@ definition before using it.
 | Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | yes (the table procs are hard-banned) | `CAPABILITIES(T)` |
 | Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | yes | `CAPABILITIES`, `section()`; shared capabilities in `code/library/` and `code/datums/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | yes (interactions, the task engine, `DECLARE_INTERACTIONS`, `om_ask` are gone and banned) | `op(...)`; a window button is `op(key, ui_act(key, arg(...)), needs(...), asks(...), then(...))` |
+| Mouse and click input | One path: only `code/engine/kernel/entry.dm` overrides BYOND's `Click`/`DblClick`/`MouseDrop`/`MouseDrag`/`MouseDown`/`MouseUp`/`MouseEntered`/`MouseExited`/`MouseWheel` (it reads `usr` once, builds a typed `/datum/input_event`, calls `input_submit()`); the resolver finds the type's declared entry when the event resolves, on the spot or from the inbox | §2 | yes (the `mouse_override` lint hard-bans any other definition, generated code included) | `click_on(PROC_REF(x))`, `double_click_on()`, `drag_onto(PROC_REF(x), onto =)`, `drag_over()`, `hover()`, `tooltip()` in `CAPABILITIES`, handler `x(datum/act/input/A)` (`A.actor`, `A.over`, `A.entered`, `A.params`); `INPUT_FALLTHROUGH` sends the input on to its default handling; a subtype re-declaring the form replaces its parent's entry, so override the parent's handler proc and call `..()` to extend it |
 | Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | `needs()` yes (the `REQ_*` predicate macros are gone and banned) | `needs(...)` with a native `req_*` part |
 | Typed world events | `/datum/act` contexts from `ACTION()`; refuse, take over or modify with `extend(/datum/act/x, needs(...))`, `instead(...)`, `adjusts(...)` under `ACT_ATTEMPT` (`intercept()` is retired) | §8, §10 | yes (all of them) | `ACTION()`, `ACT_ATTEMPT` with `act_done`/`act_cancel`, hooks in `CAPABILITIES` (`DAMAGE_REACTION`, `OM_EMIT`, `om_hook` are banned) |
 | React after | `on_notice(/datum/notice/x, ...)`, `PUBLISH()` | §10 | yes (notices come from `ACTION()`; master's `NOTICE()` is an unrelated log macro) | `on_notice()`, `PUBLISH()` |
@@ -401,7 +402,10 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   system's `preinit()` runs from `New()`). A new world-level periodic is a system.
 - **Input, requests, jobs.** Every client entry point builds a typed `/datum/input_event` and calls
   `input_submit()` (`code/engine/kernel/inbox.dm`): it resolves on the spot while the tick has room, else
-  queues in the client's bounded inbox and drains in phase K, round-robin. Things that wait for an answer
+  queues in the client's bounded inbox and drains in phase K, round-robin. There is one input path: BYOND's mouse procs are
+  overridden only in `code/engine/kernel/entry.dm`, and an event's `resolve()` (the same code on the spot or from the inbox) runs the
+  type's declared `click_on()`/`drag_onto()`/`hover()`/... entry through `input_dispatch()`, then the default handling. Nothing generates or
+  hand-writes a native mouse override. Things that wait for an answer
   are requests (`open_request()`, `request_answer()`, `requests.dm`); long work that must yield is `job()`
   (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). Tests make time pass with
   `test_driver_begin()` and `test_time()` (doc/testing.md "The kernel clock").

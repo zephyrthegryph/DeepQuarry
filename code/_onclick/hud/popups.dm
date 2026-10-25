@@ -13,14 +13,16 @@
 
 	var/client/holder
 
-/atom/movable/screen/popup/Click(location, control,params)
-	var/list/PL = params2list(params)
+/// The close button closes the popup; anywhere else on it is its own action.
+/atom/movable/screen/popup/proc/popup_clicked(datum/act/input/A)
+	var/list/PL = params2list(A.params)
 	var/icon_x = text2num(PL["icon-x"])
 	var/icon_y = text2num(PL["icon-y"])
 	if(check_click_spot(icon_x, icon_y))
 		close_popup()
 	else
 		popup_action()
+	return TRUE
 
 /atom/movable/screen/popup/proc/popup_action()
 	return
@@ -79,3 +81,4 @@ CAPABILITIES(/atom/movable/screen/popup/default)
 
 CAPABILITIES(/atom/movable/screen/popup)
 	ref_one(nameof(holder))
+	click_on(PROC_REF(popup_clicked))

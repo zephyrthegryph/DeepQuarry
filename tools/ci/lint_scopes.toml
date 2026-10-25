@@ -1750,6 +1750,12 @@ exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/d
 [lint.untyped_member]
 exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
 
+# mouse_override (doc/rewrite/final_api.html section 2): a hard ban with no baseline. BYOND's mouse and click procs are overridden only in the engine's entry file;
+# what a type does with its input is declared (click_on(), drag_onto(), hover(), ...) and found by the resolver.
+[lint.mouse_override]
+exempt_prefixes = ["code/engine/_generated/"]
+exempt_files = ["code/engine/kernel/entry.dm"]
+
 # player_link (doc/rewrite/proposals/relations.md D13): mob.key / mob.ckey are written only by bind_player().
 [lint.player_link]
 exempt_prefixes = ["code/engine/_generated/"]
