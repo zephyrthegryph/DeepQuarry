@@ -15,7 +15,6 @@ base_var	code/datums/behaviours/swarming.dm	@/atom/movable::swarm_members
 base_var	code/datums/character_identity.dm	@/mob/living::own_identity
 base_var	code/datums/character_identity.dm	@/mob/living::identity
 base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime
-base_var	code/datums/lifecycle/verbs.dm	@/atom/movable::lifecycle_lifetime_timer
 base_var	code/datums/lifecycle/verbs.dm	@/mob/living::delete_on_death
 base_var	code/datums/properties/families/temperature_thresholds.dm	@/obj::insulation
 base_var	code/datums/reactive_icon_update.dm	@/obj::reactive_icon
@@ -25,14 +24,12 @@ base_var	code/datums/soul_link.dm	@/mob/living::owned_soul_links
 base_var	code/datums/soul_link.dm	@/mob/living::shared_soul_links
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_owned
 base_var	code/datums/sparse_vars/alt_appearance.dm	@/atom::alt_appearances_viewing
-base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_touched_at
 base_var	code/engine/refs/containment/latency_policy.dm	@/atom/movable::latent_refused_until
 base_var	code/game/atom/_atom.dm	@/atom::flags
 base_var	code/game/atom/_atom.dm	@/atom::pass_flags
 base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::forensic_data
-base_var	code/game/atom/_atom.dm	@/atom::last_bumped
 base_var	code/game/atom/_atom.dm	@/atom::reagents
 base_var	code/game/atom/_atom.dm	@/atom::our_overlays
 base_var	code/game/atom/_atom.dm	@/atom::managed_vis_overlays
@@ -231,7 +228,6 @@ base_var	code/modules/vore/eating/mob.dm	@/mob::vore_icon_bellies
 base_var	code/modules/vore/eating/mob.dm	@/mob::previewing_belly
 base_var	code/modules/vore/eating/mob.dm	@/mob::soulgem
 base_var	code/modules/vore/eating/mob.dm	@/mob::voice_sounds_list
-base_var	code/modules/vore/eating/mob.dm	@/mob::last_move_time
 base_var	code/modules/vore/eating/vorepanel.dm	@/mob::vorePanel
 base_var	code/modules/xenoarcheaology/effect_master.dm	@/atom::artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	@/obj::talking_atom
