@@ -50,6 +50,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/heat_edge_record)
 	/// The declaring side, when an endpoint follows where it is (HEAT_AIR, HEAT_HULL): re-made when it moves.
 	var/atom/movable/follows
 
+CAPABILITIES(/datum/heat_edge_record)
+	ref_one(nameof(activation), /datum/activation)
+	ref_one(nameof(follows), /atom/movable)
+
 /// "activation serial:entry sig" -> /datum/heat_edge_record.
 GLOBAL_LIST_EMPTY(heat_entry_edges)
 
@@ -67,7 +71,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 /// heat_entries_refresh(), which the pipe machines call when their ports bind.
 /datum/entry_engine/heat_edge/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/heat_edge_record/R = new
-	R.activation = A // ALLOW(ownership): an engine record the heat entry engine owns and drops in remove()
+	rel_set(R, nameof(R.activation), A)
 	R.entry = E // ALLOW(ownership): the interned entry this record was made for, a flyweight
 	heat_entry_make(R)
 	GLOB.heat_entry_edges["[A.serial]:[E.sig]"] = R
@@ -148,7 +152,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 			vg_heat_body_keep(end[2], TRUE)
 	if((E.args["a"] in list(HEAT_AIR, HEAT_HULL)) || (E.args["b"] in list(HEAT_AIR, HEAT_HULL)))
 		if(ismovable(declarer))
-			R.follows = declarer // ALLOW(ownership): a weak back-reference the record clears in heat_entry_unmake()
+			rel_set(R, nameof(R.follows), declarer)
 			heat_records_add(GLOB.heat_followers_of, declarer, R)
 	return TRUE
 
@@ -159,7 +163,7 @@ GLOBAL_LIST_EMPTY(heat_entry_edges)
 		R.id = null
 	if(R.follows)
 		heat_records_remove(GLOB.heat_followers_of, R.follows, R)
-		R.follows = null // ALLOW(ownership): clearing the record's weak back-reference
+		rel_set(R, nameof(R.follows), null)
 
 /// Declarer -> the records of the edges whose endpoint follows where it is (HEAT_AIR, HEAT_HULL of a machine that can be moved).
 GLOBAL_LIST_EMPTY(heat_followers_of)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved rare per-instance mob and item state (facing direction, last known IP, custom link, eggs, heartbeat, failed breath, summoned flag, skin commands, worn-item var edits) from base-type vars to sparse slots; removed the unused do_afters var."

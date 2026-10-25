@@ -82,14 +82,14 @@
 
 /datum/unit_test/dq_living_ability/egg_laying_asks_then_waits/exercise()
 	var/mob/living/carbon/human/H = person()
-	H.eggs = 0
+	sparse_set_or(H, eggs, 0, 0)
 	var/datum/op_result/result = use(H, "egg_laying")
 	TEST_ASSERT_NULL(result?.outcome, "the ability waits on its question")
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(H), "it asks what to do")
 	var/datum/op_result/waiting = test_answer(H, "Make a Egg")
 	TEST_ASSERT_NULL(waiting?.outcome, "an answered question starts the wait")
 	test_time(31 SECONDS)
-	TEST_ASSERT_EQUAL(H.eggs, 1, "the egg was made: [waiting?.outcome] [waiting?.reason] pend [!!op_pending_of(H)]")
+	TEST_ASSERT_EQUAL(sparse_get_or(H, eggs, 0), 1, "the egg was made: [waiting?.outcome] [waiting?.reason] pend [!!op_pending_of(H)]")
 
 /// The rainbow ability keeps the one it was asked at: when they walk out of sight the charge ends and nothing fires.
 /datum/unit_test/dq_living_ability/healing_rainbows_keeps_its_target

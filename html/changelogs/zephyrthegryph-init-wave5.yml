@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved pipe fittings, modular computers, codex books, motion trackers, command cartridges, biowaste tanks, debug tech disks and crayons from Initialize() overrides to setup() hooks"

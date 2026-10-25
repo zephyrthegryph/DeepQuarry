@@ -93,6 +93,10 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 		return name == "use_power" || name == "pumping"
 	return FALSE
 
+/// A floor whose room's air drifted on its own (see note_drift()): its solid temperature follows the room, so a change there is not a test's leak.
+/datum/unit_test_guard/proc/is_drifted_floor(turf/T)
+	return !!drifted_areas[get_area(T)]
+
 /// The full-compare interval: the `dq_guard_full_every` world param, else UNIT_TEST_FULL_COMPARE_EVERY.
 /proc/unit_test_full_compare_every()
 	var/param = text2num(world.params["dq_guard_full_every"])

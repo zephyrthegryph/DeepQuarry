@@ -97,8 +97,6 @@
 
 	preload_rsc = PRELOAD_RSC
 
-	var/global/atom/movable/screen/click_catcher/void
-
 	control_freak = 0 // KSC 1/30/20 - This enables all clientside options for Players.
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
 	var/list/sent_assets = list() // ALLOW(instance_list): d: one per connected client; every client is sent assets on login

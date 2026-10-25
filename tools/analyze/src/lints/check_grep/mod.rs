@@ -133,6 +133,21 @@ impl CheckGrep {
 
 // ---- tree-level checks ---------------------------------------------------------------------
 
+/// Whether the root `.gitignore` names `rel` exactly (`/code/__defines/verdigris/_bindings_types.dm`): build output, not source, so the
+/// rules that judge committed code do not count its lines against their ceilings. A tree with no such `.gitignore` (a fixture) has none.
+fn ignored_output(root: &Path, rel: &str) -> bool {
+    static NAMED: std::sync::Mutex<Option<std::collections::HashMap<std::path::PathBuf, std::collections::HashSet<String>>>> = std::sync::Mutex::new(None);
+    let mut guard = NAMED.lock().unwrap_or_else(|e| e.into_inner());
+    guard
+        .get_or_insert_with(Default::default)
+        .entry(root.to_path_buf())
+        .or_insert_with(|| {
+            let text = std::fs::read_to_string(root.join(".gitignore")).unwrap_or_default();
+            text.lines().map(str::trim).filter(|l| l.starts_with('/') && l.ends_with(".dm") && !l.contains(['*', '?', '[', '!'])).map(|l| l[1..].to_string()).collect()
+        })
+        .contains(rel)
+}
+
 /// `*.dme` at the repo root (the shell glob skips dot-files), sorted.
 fn dme_files(root: &Path) -> Vec<String> {
     let mut v: Vec<String> = std::fs::read_dir(root)
@@ -295,6 +310,9 @@ impl Lint for CheckGrep {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
+        if ignored_output(&cx.tree.root, &f.rel) {
+            return;
+        }
         for c in self.compiled() {
             c.scan(cx, f, out);
         }

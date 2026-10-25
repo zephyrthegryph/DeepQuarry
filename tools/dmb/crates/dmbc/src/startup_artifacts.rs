@@ -35,7 +35,7 @@ impl Default for StartupArtifacts {
         Self {
             callables: Default::default(),
             values:
-                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
+                crate::initializer_lowering::receipts::publication_store::Store::shared_current_revision("startup.artifacts"),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),

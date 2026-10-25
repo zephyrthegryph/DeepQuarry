@@ -80,7 +80,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 /mob/living/carbon/human/proc/body_clock_has_work()
 	if(QDELETED(src) || !is_alive())
 		return FALSE
-	if(vessel && should_have_organ(O_HEART) && (pale || vessel.get_reagent_amount(REAGENT_ID_BLOOD) < species.blood_volume))
+	if(vessel && should_have_organ(O_HEART) && (sparse_get_or(src, pale, 0) || vessel.get_reagent_amount(REAGENT_ID_BLOOD) < species.blood_volume))
 		return TRUE
 	for(var/obj/item/organ/external/E as anything in organs)
 		for(var/datum/affliction/wound/W as anything in E.get_wounds())
@@ -168,11 +168,11 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	// its consequence (low perfusion -> oxygen debt). Here: the pale sprite cue, and the fatal collapse below the
 	// survivable volume.
 	if(blood_volume_raw >= species.blood_volume * species.blood_level_safe)
-		if(pale)
-			pale = 0
+		if(sparse_get_or(src, pale, 0))
+			sparse_set_or(src, pale, 0, 0)
 	else
-		if(!pale)
-			pale = 1
+		if(!sparse_get_or(src, pale, 0))
+			sparse_set_or(src, pale, 1, 0)
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
 			status_at_least(STAT_PARALYZED, 3)
 			status_at_least(STAT_SLEEPING, 3)

@@ -16,10 +16,11 @@
 	var/damage_to_energy_multiplier = 60.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 1200 energy cost
 
 CAPABILITIES(/obj/item/spell/reflect)
+	setup(PROC_REF(start_shield_timer))
 	look_glow(GLOW(3, 2, "#006AFF"))
 
-/obj/item/spell/reflect/Initialize(mapload)
-	. = ..()
+/// The caster is told how long the shield lasts, and it expires then.
+/obj/item/spell/reflect/proc/start_shield_timer()
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 

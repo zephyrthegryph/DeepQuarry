@@ -66,12 +66,12 @@
 	var/co2_before = breath.get_moles(/datum/gas/carbon_dioxide)
 	sparse_set(H, photosynthesis_boost, 0)
 	P.skin_exchange(H, breath)
-	TEST_ASSERT(!H.failed_last_breath, "a CO2-rich breath is a good breath for a plant")
+	TEST_ASSERT(!sparse_get_or(H, failed_last_breath, 0), "a CO2-rich breath is a good breath for a plant")
 	TEST_ASSERT(sparse_get_or(H, photosynthesis_boost, 0) > 0, "CO2 in the breath boosts photosynthesis")
 	TEST_ASSERT(breath.get_moles(/datum/gas/carbon_dioxide) < co2_before, "the skin takes CO2 in")
 
 	P.skin_exchange(H, null)
-	TEST_ASSERT(H.failed_last_breath, "no air is a failed breath")
+	TEST_ASSERT(sparse_get_or(H, failed_last_breath, 0), "no air is a failed breath")
 	TEST_ASSERT_EQUAL(sparse_get_or(H, photosynthesis_boost, 0), 0, "no air, no boost")
 
 /// P2-D7: one photosynthesis trait; the alraune data scales gains with the CO2 boost and heals only with it.

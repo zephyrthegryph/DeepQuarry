@@ -7,6 +7,7 @@ fn shared() -> Arc<Shared> {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
+        store: Arc::new(Default::default()),
         compiler: 1,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),

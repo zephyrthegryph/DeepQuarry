@@ -576,7 +576,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		own_species.set_base_species(new_species)
 		own_species.icobase = own_species.get_icobase()
 		own_species.deform = own_species.get_icobase(get_deform = TRUE)
-		own_species.vanity_base_fit = new_species
+		own_species.vanity_base_fit = text_or_null(new_species)
 		if(istype(owner().species, /datum/species/shapeshifter)) //TODO: See if this is still needed.
 			owner().set_wrapped_bodytype(new_species)
 		generate_data(user, owner())
@@ -680,7 +680,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/choice = A.answer.value
 	if(choice && can_change(owner(), APPEARANCE_MISC))
 		var/datum/species/own_species = rel_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
-		own_species.species_sounds = choice
+		own_species.species_sounds = text_or_null(choice)
 		return TRUE
 	return FALSE
 

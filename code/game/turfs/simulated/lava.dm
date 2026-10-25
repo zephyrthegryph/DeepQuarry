@@ -15,6 +15,7 @@
 	var/datum/looping_sound/lava/soundloop
 
 CAPABILITIES(/turf/simulated/floor/lava)
+	setup(PROC_REF(settle_lava))
 	setup(PROC_REF(start_lava_audio))
 	configure(light_glow(range = 2, power = 0.75, color = LIGHT_COLOR_LAVA))
 	owns_one(nameof(soundloop), /datum/looping_sound/lava, starts = /datum/looping_sound/lava)
@@ -23,12 +24,11 @@ CAPABILITIES(/turf/simulated/floor/lava)
 /turf/simulated/floor/lava/outdoors
 	outdoors = OUTDOORS_YES
 
-// For maximum pedantry.
-/turf/simulated/floor/lava/Initialize(mapload)
+/// For maximum pedantry: indoors it is magma, and its light is lit.
+/turf/simulated/floor/lava/proc/settle_lava()
 	if(!is_outdoors())
 		name = "magma"
 	update_light()
-	. = ..()
 
 
 /turf/simulated/floor/lava/make_outdoors()

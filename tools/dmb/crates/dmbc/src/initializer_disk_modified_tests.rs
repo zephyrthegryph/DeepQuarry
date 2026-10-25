@@ -39,6 +39,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         SymRef::Instance(SymbolId::of(&descriptor.alias())),
         &descriptor,
         None,
+        true,
     );
     let evaluator = crate::driver_facts::DriverEvaluator {
         pure_calls: None,
@@ -92,6 +93,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         &code,
         Some(proof),
         &mut attempt,
+        &recorder,
     );
     assert_eq!(
         attempt.captures, 1,
@@ -105,7 +107,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
     assert!(writer
         .lookup_attempt(&key, &refs, &host, &symbols, None, &mut declined)
         .is_none());
-    writer.stage_attempt(&key, &refs, &recorder.reads(), &code, None, &mut declined);
+    writer.stage_attempt(&key, &refs, &recorder.reads(), &code, None, &mut declined, &recorder);
     assert_eq!(
         declined.captures, 1,
         "an uncovered recipe is not serialized twice"
@@ -222,6 +224,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         SymRef::Instance(SymbolId::of(&nested_descriptor.alias())),
         &nested_descriptor,
         None,
+        true,
     );
     let nested_recorder = crate::lowering_memo::RecordingResolver::new(&host);
     nested_recorder.resolve(Q::Ancestry(lexical));

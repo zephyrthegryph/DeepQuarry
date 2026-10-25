@@ -607,7 +607,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/change_sight = answer_of(A, "number")
 	if(change_sight)
 		var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
-		own_species.darksight = change_sight
+		own_species.darksight = num_or_null(change_sight)
 
 /datum/eventkit/player_effects/proc/ui_act_cocoon(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
@@ -651,9 +651,9 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	if(isnull(energy_max) || isnull(energy_new))
 		return
 	var/datum/species/own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species)) // PROTO: private copy
-	own_species.lleill_energy_max = energy_max
+	own_species.lleill_energy_max = num_or_null(energy_max)
 	own_species = rel_private(Tar, nameof(/mob/living/carbon/human::species))
-	own_species.lleill_energy = energy_new
+	own_species.lleill_energy = num_or_null(energy_new)
 
 /datum/eventkit/player_effects/proc/ui_act_lleill_invisibility(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()

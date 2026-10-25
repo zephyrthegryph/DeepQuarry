@@ -36,13 +36,13 @@
 		T.apply_pref(preferences)
 
 	new_S.set_blood_color(preferences.read_preference(/datum/preference/color/human/blood_color))
-	var/blood_reagents = preferences.read_preference(/datum/preference/text/human/blood_reagents)
+	var/blood_reagents = text_or_null(preferences.read_preference(/datum/preference/text/human/blood_reagents))
 	if(blood_reagents != "default")
 		new_S.blood_reagents = blood_reagents
 
-	var/species_sounds_to_copy = preferences.read_preference(/datum/preference/text/human/species_sound)
+	var/species_sounds_to_copy = text_or_null(preferences.read_preference(/datum/preference/text/human/species_sound))
 	if(species_sounds_to_copy == "Unset")
-		species_sounds_to_copy = select_default_species_sound(preferences)
+		species_sounds_to_copy = text_or_null(select_default_species_sound(preferences))
 	new_S.species_sounds = species_sounds_to_copy
 
 	if(preferences.read_preference(/datum/preference/choiced/species) == SPECIES_CUSTOM)

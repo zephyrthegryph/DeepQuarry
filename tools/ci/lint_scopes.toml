@@ -372,6 +372,7 @@ legacy_forms_converted = [
   "code/datums/om_events/",
   "code/datums/operations/",
   "code/datums/outfits/",
+  "code/content/outfits/",
   "code/datums/ownership/",
   "code/datums/prompts/",
   "code/datums/properties/",
@@ -385,6 +386,7 @@ legacy_forms_converted = [
   "code/datums/state/",
   "code/datums/status_effects/",
   "code/datums/supplypacks/",
+  "code/content/supplypacks/",
   "code/datums/topic/",
   "code/datums/underwear/",
   "code/datums/uplink/",
@@ -451,6 +453,7 @@ legacy_forms_converted = [
   "code/modules/benchmarks/",
   "code/modules/blob/",
   "code/modules/blob2/",
+  "code/content/blob2/",
   "code/modules/body/",
   "code/modules/busy_space/",
   "code/modules/casino/",
@@ -477,6 +480,7 @@ legacy_forms_converted = [
   "code/modules/eventkit/",
   "code/modules/events/",
   "code/modules/examine/",
+  "code/content/examine/",
   "code/modules/expedition/",
   "code/modules/exploration/",
   "code/modules/factions/",
@@ -485,7 +489,9 @@ legacy_forms_converted = [
   "code/modules/flight_operations/",
   "code/modules/flufftext/",
   "code/modules/food/",
+  "code/content/food/",
   "code/modules/gamemaster/",
+  "code/content/gamemaster/",
   "code/modules/games/",
   "code/modules/generated_station/",
   "code/modules/genetics/",
@@ -501,6 +507,7 @@ legacy_forms_converted = [
   "code/modules/integrated_electronics/",
   "code/modules/keybindings/",
   "code/modules/library/",
+  "code/content/library/",
   "code/modules/lighting/",
   "code/modules/living/",
   "code/modules/logging/",
@@ -508,6 +515,7 @@ legacy_forms_converted = [
   "code/modules/lootpanel/",
   "code/modules/lore_codex/",
   "code/modules/maint_recycler/",
+  "code/content/maint_recycler/",
   "code/modules/maintenance_panels/",
   "code/modules/makeup/",
   "code/modules/map_stubs/",
@@ -569,6 +577,7 @@ legacy_forms_converted = [
   "code/modules/mob/living/voice/",
   "code/modules/mob/new_player/",
   "code/modules/modular_computers/",
+  "code/content/modular_computers/",
   "code/modules/multi-tile/",
   "code/modules/multiz/",
   "code/modules/news/",
@@ -592,6 +601,7 @@ legacy_forms_converted = [
   "code/modules/reagents/reagents/",
   "code/modules/recycling/",
   "code/modules/refinery/",
+  "code/content/refinery/",
   "code/modules/research/",
   "code/modules/resleeving/",
   "code/modules/rogueminer/",
@@ -690,7 +700,7 @@ objects_ratchet_on_declare_emag = 0
 objects_ratchet_on_periodic = 0
 heat_ratchet_on_fire_act_overrides_h3 = 6
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
-damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
+damage_ratchet_on_atom_break_set_broken_overrides_d4 = 17
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17

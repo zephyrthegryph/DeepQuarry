@@ -12,7 +12,7 @@ pub(crate) struct ParentIndex {
 impl Default for ParentIndex {
     fn default() -> Self {
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values: ObservedArtifactStore::shared_current_revision("required_types.parent_index"),
         }
     }
 }

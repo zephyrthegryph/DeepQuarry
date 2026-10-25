@@ -275,6 +275,50 @@ mod tests {
         assert_eq!(uncertified.lists.len(), before);
     }
     #[test]
+    fn a_stored_row_image_restores_only_when_it_is_exactly_what_was_stored() {
+        let mut model =
+            crate::dmb::Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
+        model.lists.push(vec![1, 2, 3]);
+        model.lists.push(vec![]);
+        model.lists.push(vec![5, 6]);
+        retain(&model);
+        let rows = model.list_row_image().unwrap();
+        let (bytes, hash) = (rows.image().bytes().to_vec(), rows.image().content_hash());
+        let (ranges, width) = (rows.ranges().to_vec(), rows.width());
+        let restored =
+            crate::dmb::ListRowImage::from_stored(bytes.clone(), hash, ranges.clone(), width).unwrap();
+        assert_eq!(restored.image().bytes(), rows.image().bytes());
+        assert_eq!(restored.len(), rows.len());
+        // The restored image splices exactly as the live one does.
+        let last = rows.len() - 1;
+        let patch = [(last, Arc::new(vec![7, 7, 7]))];
+        assert_eq!(
+            restored.splice(&patch).unwrap().image().bytes(),
+            rows.splice(&patch).unwrap().image().bytes()
+        );
+        // A byte that differs from the stored digest, a wrong digest, a width that does not fit, a range that is not a list
+        // record and a range outside the image are each refused.
+        let mut damaged = bytes.clone();
+        let at = ranges[last].start + 3;
+        damaged[at] ^= 1;
+        assert!(crate::dmb::ListRowImage::from_stored(damaged.clone(), hash, ranges.clone(), width).is_err());
+        let rehashed = xxhash_rust::xxh3::xxh3_128(&damaged);
+        assert!(crate::dmb::ListRowImage::from_stored(bytes.clone(), rehashed, ranges.clone(), width).is_err());
+        assert!(crate::dmb::ListRowImage::from_stored(bytes.clone(), hash, ranges.clone(), 3).is_err());
+        let other_width = if width == 2 { 4 } else { 2 };
+        assert!(crate::dmb::ListRowImage::from_stored(bytes.clone(), hash, ranges.clone(), other_width).is_err());
+        let mut shifted = ranges.clone();
+        shifted[last] = ranges[last].start + 1..ranges[last].end + 1;
+        assert!(crate::dmb::ListRowImage::from_stored(bytes.clone(), hash, shifted, width).is_err());
+        let mut outside = ranges.clone();
+        outside.push(bytes.len()..bytes.len() + 4);
+        assert!(crate::dmb::ListRowImage::from_stored(bytes.clone(), hash, outside, width).is_err());
+        let mut overlapping = ranges.clone();
+        overlapping.swap(last, last - 1);
+        assert!(crate::dmb::ListRowImage::from_stored(bytes, hash, overlapping, width).is_err());
+        assert!(crate::dmb::EncodedDmb::from_stored(vec![1, 2, 3], hash).is_err());
+    }
+    #[test]
     fn checked_rows_preserve_exact_words_width_order_and_empty_rows() {
         let mut model =
             crate::dmb::Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();

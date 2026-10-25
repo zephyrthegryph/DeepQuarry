@@ -16,11 +16,11 @@
 	TEST_ASSERT(H.breath_blocked(), "a closed airway should block breathing")
 	TEST_ASSERT(H.airway_obstructed(), "airway_obstructed() should report the obstruction")
 
-	H.failed_last_breath = 0
+	sparse_set_or(H, failed_last_breath, 0, 0)
 	H.losebreath = 0
 	var/debt_before = H.oxygen_debt()
 	H.life_breathing_breathe()
-	TEST_ASSERT(H.failed_last_breath, "breathing through a closed airway should fail")
+	TEST_ASSERT(sparse_get_or(H, failed_last_breath, 0), "breathing through a closed airway should fail")
 	H.body.physiology_tick(2)
 	TEST_ASSERT(H.oxygen_debt() > debt_before, "a closed airway should build oxygen debt")
 	TEST_ASSERT_EQUAL(H.get_respiratory_rate(), 0, "a choking patient should have no respiratory rate")

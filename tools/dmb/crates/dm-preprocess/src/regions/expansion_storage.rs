@@ -62,7 +62,6 @@ impl ExpansionRecord {
             fragments: _,
         } = self;
         visit(ExpansionStorageView::Source(&self.source));
-        visit(slice_storage(&self.control));
         visit(ExpansionStorageView::Source(&self.text));
         visit(arc_storage(&self.reads));
         visit(vector_storage(&self.reads));
@@ -118,7 +117,7 @@ mod tests {
         let record = ExpansionRecord {
             key: 0,
             source: crate::SourceText::from(String::from("input")),
-            control: Arc::from([0u8]),
+            control: 0,
             text: crate::SourceText::from(String::from("output")),
             reads: Arc::new(vec![]),
             locations: Arc::new(vec![(0, false, String::from("location"))]),

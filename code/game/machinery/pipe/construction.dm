@@ -42,8 +42,8 @@ Buildable meters
 /// The device a pipe part is taken from (its constructor param, dropped after init).
 /obj/item/pipe/var/tmp/obj/machinery/atmospherics/make_from
 
-// ALLOW(init/INSTANCE_STATE): a pipe part takes the shape of the device it was taken from, or its blueprint's effects, and turns
-/obj/item/pipe/Initialize(mapload)
+/// Its setup hook (setup() in the pipe's CAPABILITIES): a pipe part takes the shape of the device it was taken from, or its blueprint's effects, and its name and icon.
+/obj/item/pipe/proc/take_shape()
 	if(make_from)
 		make_from_existing(make_from)
 	else
@@ -51,7 +51,6 @@ Buildable meters
 
 	update()
 	warm_init_dirs()
-	. = ..()
 
 /obj/item/pipe/proc/make_from_existing(obj/machinery/atmospherics/make_from)
 	set_dir(make_from.dir)
@@ -147,6 +146,7 @@ MSG_DEF_SELF(pipe_item/cannot_flip, "You can't do that now.")
 MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 
 CAPABILITIES(/obj/item/pipe)
+	setup(PROC_REF(take_shape))
 	configure(item_thrown(force = 7))
 	configure(item_combat(force = 7))
 	rotatable()

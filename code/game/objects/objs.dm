@@ -12,10 +12,10 @@
 
 	var/explosion_resistance
 
-
-	var/obj_flags = CAN_BE_HIT
-
 	uses_integrity = TRUE
+
+/// Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).
+sparse(/obj, obj_flags, type = num)
 
 /obj/proc/set_economic_provenance(department, export_value, producer_account = 0)
 	sparse_set(src, economic_department, department)

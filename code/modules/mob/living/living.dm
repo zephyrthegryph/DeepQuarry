@@ -297,7 +297,7 @@
 	flag_hud_update(STATUS_HUD)
 	flag_hud_update(LIFE_HUD)
 
-	failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
+	sparse_set_or(src, failed_last_breath, 0, 0) //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	reload_fullscreen()
 
 	return
@@ -1461,7 +1461,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 	if(usr != src)
 		return
-	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_len = 100, timeout = 0)
+	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(sparse_get(src, custom_link)), max_len = 100, timeout = 0)
 
 /mob/living/proc/custom_link_entered(datum/act/request/A)
 	if(!A.answer)
@@ -1472,9 +1472,9 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
 			return
 
-		custom_link = new_link
-		to_chat(src, span_notice("Link set: [custom_link]"))
-		log_admin("[src]/[src.ckey] set their custom link to [custom_link]")
+		sparse_set(src, custom_link, new_link)
+		to_chat(src, span_notice("Link set: [sparse_get(src, custom_link)]"))
+		log_admin("[src]/[src.ckey] set their custom link to [sparse_get(src, custom_link)]")
 
 /mob/living/verb/set_voice_freq()
 	set name = "Set Voice Frequency"

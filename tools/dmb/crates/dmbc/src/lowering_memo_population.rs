@@ -8,6 +8,7 @@ pub(crate) struct DiskWriter {
     limits: MemoLimits,
     publisher: Option<Arc<CachePublisher>>,
     staging_errors: Arc<Mutex<Vec<String>>>,
+    index: Option<Arc<crate::dep_index::DepIndex>>,
 }
 impl DiskWriter {
     pub(super) fn from_memo(memo: &ProcedureMemo) -> Self {
@@ -18,8 +19,11 @@ impl DiskWriter {
             limits: memo.limits,
             publisher: memo.publisher.clone(),
             staging_errors: Arc::clone(&memo.staging_errors),
+            index: memo.dep_index().cloned(),
         }
     }
+    /// `world` is the `Tree` domain version of the resolver the record's reads were just computed
+    /// through: the record is current under it, so it is noted for the next session at once.
     pub(crate) fn queue_compact(
         &self,
         key: &[u8],
@@ -27,15 +31,19 @@ impl DiskWriter {
         versions: &[(ReadDomain, u128)],
         value: &crate::symbolic::PreparedContribution,
         debug: &[crate::debug_sources::RelativeDebugAnchor],
+        world: Option<u128>,
     ) {
         let start = std::time::Instant::now();
         let payload =
-            crate::lowering_memo_compact::encode(key, reads.iter(), versions, value, debug);
+            crate::lowering_memo_compact::encode_with_id(key, reads.iter(), versions, value, debug);
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
         );
-        if let Some(payload) = payload {
+        if let Some((payload, id)) = payload {
+            if let (Some(index), Some(world)) = (&self.index, world) {
+                index.note(world, id);
+            }
             self.queue_payload(key, payload);
             self.counts
                 .compact_disk_encoded

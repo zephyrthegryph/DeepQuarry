@@ -68,7 +68,6 @@
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
-	var/facing_dir = null   // Used for the ancient art of moonwalking.
 
 
 	EXPIRY_DECLARE(timeofdeath) //Living
@@ -79,7 +78,6 @@
 
 	var/losebreath = 0.0//Carbon
 	var/m_intent = I_RUN//Living
-	var/lastKnownIP = null
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
 	/// own buckled occupant directly, handle_buckled_mob_movement()) so
 	/// /mob/living/Move() doesn't redirect that step back into the buckled
@@ -172,8 +170,6 @@
 	///List of progress bars this mob is currently seeing for actions
 	var/tmp/list/progressbars = null //for stacking do_after bars
 
-	///For storing what do_after's someone has, key = string, value = amount of interactions of that type happening.
-	var/tmp/list/do_afters
 
 	///Allows a datum to intercept all click calls this mob is the source of
 	var/tmp/datum/click_intercept

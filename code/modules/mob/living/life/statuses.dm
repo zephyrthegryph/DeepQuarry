@@ -4,7 +4,7 @@
 // --- Hooks named by the status policies----------------------------------------------------
 
 /mob/proc/status_clear_facing()
-	facing_dir = null
+	sparse_set(src, facing_dir, null)
 
 /// Stun, sleep and the end of weakness and paralysis: canmove and lying follow at once.
 /mob/proc/status_incapacitation_changed()

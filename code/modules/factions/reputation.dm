@@ -489,7 +489,9 @@ CAPABILITIES(/datum/faction_agent_record)
 
 /mob/living
 	var/datum/faction_reputation_ledger/faction_reputation
-	var/list/faction_affiliations
+
+/// faction id -> affiliation choice (sparse slot faction_affiliations, a list).
+sparse(/mob/living, faction_affiliations, type = list)
 
 /mob/living/proc/ensure_faction_reputation() as /datum/faction_reputation_ledger
 	var/account_number = mind?.initial_account()?.account_number
@@ -512,21 +514,23 @@ CAPABILITIES(/datum/faction_agent_record)
 	return ensure_faction_reputation().adjust_reputation(faction_id, delta)
 
 /mob/living/proc/set_faction_affiliations(list/affiliations)
-	faction_affiliations = list()
+	var/list/affiliated = list()
+	sparse_set(src, faction_affiliations, affiliated)
 	var/datum/faction_reputation_ledger/ledger = ensure_faction_reputation()
 	for(var/faction_id in GLOB.reputation_factions)
 		var/affiliation = affiliations?[faction_id]
 		if(!(affiliation in GLOB.reputation_affiliation_choices))
 			affiliation = AFFILIATION_NEUTRAL
-		faction_affiliations[faction_id] = affiliation
+		affiliated[faction_id] = affiliation
 		if(!ledger.affiliations_initialized)
 			ledger.set_reputation(faction_id, reputation_for_affiliation(affiliation))
 	ledger.affiliations_initialized = TRUE
 
 /mob/living/proc/get_faction_affiliation_summary()
 	var/list/summary = list()
-	for(var/faction_id in faction_affiliations)
-		var/affiliation = faction_affiliations[faction_id]
+	var/list/affiliated = sparse_get(src, faction_affiliations)
+	for(var/faction_id in affiliated)
+		var/affiliation = affiliated[faction_id]
 		if(affiliation == AFFILIATION_NEUTRAL)
 			continue
 		var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]

@@ -468,3 +468,174 @@ world) would shorten that to the first.
 Proof: `cargo test -p dmbc` (1088 tests, new: `replay_reads_certifies_the_second_session_and_skips_the_world_fixed_resolves`,
 `indexed_abi_rows_certify_in_a_later_session_and_prepare_identically`); `dmb-equiv --all --ignore-debug` of the indexed
 evicted-session output against a cold `--no-daemon --no-cache` compile: EQUIVALENT; a `DMB_DEP_INDEX_VERIFY=1` run: 0 contradicted.
+
+
+## Model persistence: a variant's patch base on disk (2026-10-24, lane `compiler/variant-spill`)
+
+A variant (project, defines, compiler policy) keeps its last output as a patch base: the published image with its list rows
+(`PatchImage`), the link answers (`PatchLink`: numbering, string contents, mob bindings, initializer code), the field records and the
+source half (`OutputBase`: body roster, row lines, unit link footprints, inputs, archive, warnings, answer version). It is most of
+what turns an edit into a body patch, and it is gone whenever a variant stash, an idle tier, a retire or a daemon exit drops it.
+`variant_spill.rs` now writes it, one file per variant under `<cache root>/variant-spill/` (checksummed frames, the image raw and
+verified against its digest, written aside and renamed), before each of those drops (`BuildHost::spill_patch_bases`, called by
+`release_stashed_variants`, the compiler-artifacts tier, variant eviction, session release, retire, and a drop guard at daemon exit).
+A base whose image is already stored is not written again. The directory is bounded by `DMB_SPILL_BUDGET_GB` (4) and
+`DMB_SPILL_MAX_AGE_DAYS` (7) on every write and in the daemon's cache pass; `DMB_VARIANT_SPILL=0` turns it off.
+
+The next request of the variant attaches the file (`attach_spill`, header only) and `admit` restores it lazily
+(`restore_patch_base`) when the header's program text matches the request. Nothing is trusted: the admission compares the restored
+source half with the request exactly as it compares a live one. What is not stored and how admission copes:
+- unit symbolic records: a patch compares footprints only, so units are stored as footprint digests (`UnitBase::Digest`);
+- the retained model: recovered from the image when a string patch needs it (`recover_model`);
+- the expanded program text: row source lines are stored (`RowLines`), numeric default edits are not admitted on a restored output;
+- the answer marks: a restored output proves its answers from `AnswerFacts` (declarations identity, answer world, every resource
+  search with its answer hash; `QueryDb::answer_facts`, `prove_facts`). Its version and facts are retaken after the proof, and
+  no marking is made for an output restored or patched from a restored one (the table of this process is not a complete record).
+  A declaration edit therefore compiles whole, as before.
+
+Measured on the production tree (pool-c2, machine shared with other lanes, so only ratios mean something; a body constant edited
+before each compile): with the stash dropped under pressure the master compiler recompiled the dropped variant whole (test 89-96 s,
+game 79-175 s), while the same drop with the spill restored it (restore of a 104 MB image 1.6 s, whole compile 60 s of which startup
+and ABI preparation were 23 s under heavier load); a stash still resident patches in 10-20 s either way. Files were 123 MB (game) and
+164 MB (test), written in 2-3 s.
+
+Proof: `cargo test -p dmbc` (new: `variant_spill_tests` through the real request pipeline, restore after release, moved lines and new
+strings, declaration edit, damaged/truncated/foreign files, retire and idle pass; `facts_prove_a_stored_output_in_a_table_that_starts_empty`),
+`dm-link` and `byond-dmb` unit tests for the restored tables and row image.
+
+Daemon restart (own namespace, retire between steps, same output directory): after game 70 s and test 153 s whole compiles, a
+retired daemon stored 123 MB and 164 MB; the restarted daemon restored them in 0.7 and 0.8 s and compiled the edited game in 28 s and
+the edited test in 33 s (a whole compile after a restart was 70-190 s; 280-310 s on a cold file cache). `dmb-equiv --all --ignore-debug`
+of each restored-and-patched output (game, test) against a cold `--no-daemon --no-cache` compile of the same tree: EQUIVALENT.
+The stored `generated_outputs` input record names the output location, so a request that writes elsewhere (another
+`--artifact-directory`) is declined by admission and compiles whole. Remaining cost of a restored patch is the frontend
+and startup/ABI preparation (the next lanes: persisted frontend facts, dependency index). `cargo test -p dmbc` 1096 passed.
+## Persisted dependency index, step 4: portable declaration answers and stage-time certification (2026-10-24, lane `compiler/dep-index-3`)
+
+Broken down first (`DMB_DEP_INDEX_KINDS=1` adds the untyped reads by query and answer kind to the `native dependency index` line):
+all 185,380 untyped ABI reads were `Ancestry -> Symbols` (92,690) and `DeclarationChain -> Members` (92,690), and all 25,937
+untyped initializer reads were `Ancestry -> Symbols`. Nothing else.
+
+Landed:
+
+- `dm_ir::PortableMeaning` (`dm-ir/src/portable_meaning.rs`) is the serde form of a `DeclarationMeaning` that the declaration
+  chunk facts already had privately in `dm-tree/src/chunkfacts.rs`; it moved to dm-ir (chunkfacts uses it, wire layout
+  unchanged) and `PortableNames` says whether a decode checks spellings against a symbol table. `PortableResolvedAnswer` gained
+  `Symbols`, `Members`, `Member` and `Declaration` (an opaque inherited base keeps its owner and type knowledge);
+  `capture_declared()` produces them and `capture()` keeps producing the scalar forms. `restore()` is now fallible. A restored
+  answer is only ever used after its canonical bytes equal the stored ones, so the form carries no authority of its own.
+  Not portable (still resolved): procedure statics and retained procs.
+- ABI rows, initializer records and compact lowering records store `capture_declared()` answers (schema numbers bumped, so one
+  recompute). A record too large with them falls back to scalar answers. The compact lowering record restores a compound answer
+  the first time a certified read uses it (`VerifiedAnswers`), not in `preflight`; scalar answers are still checked at decode.
+- Certification at stage time: `dep_index::staged()` notes an ABI row and an initializer record the moment it is computed
+  (its reads were just resolved through the request's provider, so they are current under its world), and the compact lowering
+  record is noted in `DiskWriter::queue_compact` with the id `encode_with_id()` computed. A new row therefore certifies in the very
+  next compile instead of the second one.
+- `CurrentReads::for_host` compared `&dyn Resolver` with `ptr::eq`, which includes the vtable; one provider type has a vtable
+  per codegen unit, so the certified handoff to `disk_admission` failed and every read was re-resolved and re-versioned there
+  (29 of 65 sampled `domain_version` calls). It compares the object address now (`ptr::addr_eq`).
+
+Measured (production tree, evicted session: fresh daemon namespace, one comment appended to a `.dm` file, 4 workers, a cache
+directory warmed by one earlier compile of the same binary; the machine was loaded by other lanes, wall times are noise, the
+counters are the evidence):
+
+| | first compile (cold cache) | evicted session, index on | evicted session, `DMB_DEP_INDEX=0` |
+|---|---|---|---|
+| domain versions issued | 933,280 | 343,663 | 901,733 |
+| tree version issue calls | 1,325,294 | 726,091 | 1,296,873 |
+| ABI reads typed / untyped | 0 / 0 (92,690 rows staged) | 186,384 / 0 | n/a |
+| initializer reads typed / untyped | 0 / 0 (10,091 staged) | 71,201 / 0 | n/a |
+| records certified (lowering / ABI / init) | 0 | 89,976 / 92,690 / 10,091 | n/a |
+| compile wall | 154 s | 109 s | 191 s |
+
+Index-on against index-off on the same cache and binary: issued versions 901,733 -> 343,688 and tree issue calls 1.297M -> 726k
+(the earlier slice's 344k / 726k figure is what the vtable fix restores). `DMB_DEP_INDEX_VERIFY=1` replays every certified ABI and
+initializer record and compares each stored answer: 0 contradicted over 92,690 + 10,091 records, lowering 0. Output: the pair hash
+is identical in every run (also against a cold `DMB_DEP_INDEX=0` compile with an empty cache), the DMB and RSC are byte-identical,
+and `dmb-equiv --all --ignore-debug` reports EQUIVALENT. `cargo test -p dmbc -p dm-ir -p dm-tree`: 1087 + 83 + 327 pass (new:
+`declaration_chains_round_trip_through_the_wire_with_identical_canonical_bytes`; `indexed_abi_rows_certify_in_a_later_session...`
+now expects certification and zero untyped reads in the second session).
+
+What still issues versions (traced by sampling `domain_version` callers on the indexed compile): class projection prefetch and
+initializer classification record their reads through `RecordingResolver::resolve`, which issues one version per read domain
+(about 340k of the remaining calls); neither replays a stored row. Directive planning and input scan (item 2) were not changed:
+the directive and expansion records are already persisted by content (`DiskExpansionMemo`, stage 4/1), and what remains is the
+sequential replay of 5,956 directive lookups on the planning thread (`native directive lookups: disk=` 1.6 s idle machine,
+3.7-6.3 s loaded), not missing persistence; moving it needs a parallel pre-decode keyed by the previous plan's regions.
+
+## Frontend queries, step 3 (2026-10-25, lane `compiler/frontend-queries`)
+
+What a hot one-file edit used to cost in the frontend (production tree, resident daemon, quiet machine): directive planning 0.57 s
+(full replay, or 0.11 s for a directive-free leaf file through the single-file edit path), expansion 0.3 s, declaration parsing
+0.7-0.9 s (of which 0.5 s was the client pipe: a progress line per 8 chunk results stalled every parse worker), origins 0.15 s,
+tree resolution 0.04 s for a body edit and 0.7-1.1 s for a declaration edit, body indexing 0.1 s.
+
+**What landed**
+
+- *Source changes are a database query.* `QueryDb::revise` keeps a log of what each revision changed or removed
+  (`RevisionChange`, 64 requests) and implements `dm_preprocess::SourceChanges`: `revision()` is a token naming the database
+  and its revision, `changes_since(token)` is the union of every later request's changed sources, or `None` when the log does
+  not reach back, the token is another database's, or a restart renumbered it. The provider the frontend reads
+  (`PreparedSourceProvider::with_changes`) serves both through `SourceProvider::{revision, changes_since}`, and a plan records the
+  revision it was made at. The O(files) comparison of every source against the previous plan is gone.
+- *The ordered directive pass is memoized by include subtree.* Every include subtree it visits leaves a `SubtreeRecord`
+  (`regions/plan_trace.rs`): the occurrences, regions and ordered items it made (as counts; positions live in the plan's
+  `PlanTrace`), the pass state it started in and ended in (macro environment with an incremental order-independent
+  fingerprint, open conditionals, `FILE_DIR` stack, `#pragma multiple` set), every include-once decision, the files it read
+  and the dependencies it added. Two ways to use the previous plan, one result (`plans_equal`, unit tests and
+  `DMB_FRONTEND_VERIFY=1` check it against a full pass):
+  - *Patch* (`regions/plan_patch.rs`): with the change log, only the outermost changed subtree of each changed file is planned
+    again, from its recorded start state; it replaces the old subtree when it visits the same files, reads the same includes
+    and ends in the same state (early cutoff: nothing after it can differ, so no later position moves). Otherwise `None`.
+  - *Adoption* (`adopt_previous`): the ordered pass itself adopts every subtree whose files (same text), start state, include
+    context and include-once decisions are unchanged, copying its occurrences, regions and items renumbered; the others run.
+    A manifest edit or a `#define` that changes the state every later subtree starts from takes this path.
+- *Expansion copies what the plan copied* (`regions/reuse.rs`): a region that is a verbatim copy (the plan says which, and a
+  post-pass finds the manifest's own regions that equal the previous ones) keeps its text, receipt and origin rows, moved in
+  runs; only the other regions go through the expansion memo. Admission keys travel with the regions.
+- *Smaller passes that no longer visit everything*: the source index is reused for a patched plan; origin and body lookups
+  follow a row hint and a file hint (`partition_point_near`); the symbol table updates by delta when a few leaves changed; a
+  stored declaration is not published again; whole-owner callable certificates (read by nothing in a build) are computed when
+  asked; the progress line per 8 chunks became a time-driven one (250 ms).
+- *Deleted*: `DMB_FRONTEND_REVISION` (`RevisionMode`), `plan_regions_edit`, `expand_regions_edit`, `RowEdit`/`spliced`.
+  `DMB_FRONTEND_VERIFY=1` replaces the verify mode.
+
+**Measured** (pool-c2, interleaved A/B: the published compiler and this branch's, each with its own resident daemon started from
+a real compile, every source state compiled by both in alternating order; stage times of the request log; the machine was shared
+with other lanes, so a round with a loaded machine is dropped from the ranges):
+
+| One-file edit, hot | frontend before | frontend after | request wall before | request wall after |
+|---|---|---|---|---|
+| body edit in a file with directives | 1.7-2.1 s | 0.31-0.36 s | 5.3-6.4 s | 3.9-4.4 s |
+| body edit in a directive-free file | 1.06-1.18 s | 0.29-0.32 s | 4.4-4.9 s | 3.7-4.0 s |
+| declaration edit (added var, then one default) | 1.85-1.98 s | 0.88-0.97 s | 5.6-6.6 s | 4.4-5.0 s |
+| `#define` edit | 4.3-6.8 s | 4.1-4.9 s | 17-20 s | 17-21 s |
+
+A `#define` edit changes the state every later include subtree starts from, so the ordered pass replays them (the same work as
+before, minus the expansion rows it moves); its request is dominated by the full relowering the compile stage does ("program text
+outside bodies changed"), not by the frontend.
+
+Where a hot leaf body edit spends its 0.3 s now: plan 0.01 s, expansion 0.03-0.08 s, source index 0.0, declaration parsing
+0.11 s (leaf claims 0.07 s, one chunk parsed), origins 0.07 s, tree 0.04 s, body indexing 0.07 s.
+
+**Equivalence** (production tree; the same sequence in the production world and the `-DCIBUILDING -DCITESTING` world: cold, body
+edit, body edit adding a reference, added var, changed default, added proc, added type, `#define` edit, then the reverts): the
+incremental output of this branch has the same pair id, `.dmb` hash and size and `.rsc` hash as the incremental output of the
+published compiler at all 22 steps; against a cold `--no-daemon --no-cache` compile of the same source the pair id is identical
+for the body edits and every revert, and `dmb-equiv --all --ignore-debug --ignore-order` says EQUIVALENT at all 22 (the
+declaration, proc, type and define steps differ from a cold compile in table order only, as the append numbering does in the
+published compiler). `DMB_FRONTEND_VERIFY=1` on the production-world sequence logged "incremental plan equals the full plan" and "reusing
+expansion equals the full expansion" on every request that had a previous plan, and no mismatch.
+
+**Not done, and why**
+
+- `file_decls`, `type_node` and `tree_group` as database queries. The tree is dense: member ids follow declaration order, so
+  a spliced declaration renumbers every later member and the splice, the dependency graph capture and the demand-token carry
+  each walk all 342k members (0.13-0.4 s each). A key-based `tree_group` needs the stable-id tables of step 5 first.
+- Deleting the demand-token carry and selection pruning. `issue_domain_version` still issues 109k domain versions per request
+  (`native domain memo: issued=...`) and their consumers compare tokens across requests; without the carry every token changes
+  and everything those versions guard is redone. They go when the remaining domain-version consumers move to answer hashes
+  (step 4's last deletion). The carry itself is 0.13-0.28 s of a declaration edit.
+- Declaration chunk cells (parse 0.11 s, origins 0.07 s and body indexing 0.07 s still visit every chunk or declaration).
+

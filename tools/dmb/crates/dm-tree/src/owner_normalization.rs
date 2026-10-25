@@ -105,6 +105,11 @@ impl RetainedNormalization {
             ..Self::default()
         }
     }
+    /// A request-local owner (one-shot compile) that stores no name-demand receipts.
+    pub(crate) fn without_name_receipts(mut self) -> Self {
+        self.metadata = Arc::new(crate::owner_metadata::RetainedMetadata::default().without_receipts());
+        self
+    }
     pub(crate) fn fresh(&self) -> Self {
         Self {
             values: self.values.fresh(),

@@ -782,17 +782,20 @@ fn indexed_abi_rows_certify_in_a_later_session_and_prepare_identically() {
             store.totals().0,
             abi.certified.load(std::sync::atomic::Ordering::Relaxed),
             abi.replayed.load(std::sync::atomic::Ordering::Relaxed),
+            abi.untyped.load(std::sync::atomic::Ordering::Relaxed),
             expect_certified,
         )
     };
-    // First session computes and stages; the second replays the rows and notes them; the third
-    // finds them in the index and takes their world-fixed reads without resolving.
+    // The first session computes and stages its rows, noting them as current under its world; the
+    // second finds them in the index at once and takes every world-fixed read (ancestry and
+    // declaration chains included) from the typed sidecar without resolving it.
     let first = session(false);
     assert_eq!((first.0, first.1), (0, 0), "nothing to reuse yet");
-    let second = session(false);
-    assert!(second.0 > 0 && second.1 == 0 && second.2 > 0, "{second:?}");
-    let third = session(true);
-    assert!(third.0 > 0 && third.1 > 0 && third.2 == 0, "{third:?}");
+    let second = session(true);
+    assert!(
+        second.0 > 0 && second.1 > 0 && second.2 == 0 && second.3 == 0,
+        "{second:?}"
+    );
 }
 
 #[test]

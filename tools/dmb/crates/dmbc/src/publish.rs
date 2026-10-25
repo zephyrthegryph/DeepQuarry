@@ -70,7 +70,13 @@ pub fn default_store_path(project: &Path) -> io::Result<PathBuf> {
     {
         let local = std::env::var_os("LOCALAPPDATA")
             .ok_or_else(|| io::Error::other("LOCALAPPDATA is absent; specify --output-store"))?;
-        windows_store_path(project, Path::new(&local))
+        let store = windows_store_path(project, Path::new(&local))?;
+        // The store used to sit at the drive root (`E:\.dmbd\pairs`); move it under the cache root once, so existing pairs
+        // and session records stay usable. A busy store (an older daemon holds files open) just stays where it is.
+        if let Some(root) = store.ancestors().last() {
+            let _ = migrate_store(&root.join(".dmbd/pairs"), &store);
+        }
+        Ok(store)
     }
     #[cfg(not(windows))]
     {
@@ -79,6 +85,18 @@ pub fn default_store_path(project: &Path) -> io::Result<PathBuf> {
             .ok_or_else(|| io::Error::other("manifest has no parent"))?
             .join(".dmbc/outputs"))
     }
+}
+
+/// Move a store from its previous location to `new` when `new` does not exist yet. Returns whether it moved.
+pub(crate) fn migrate_store(legacy: &Path, new: &Path) -> io::Result<bool> {
+    if new.exists() || !legacy.is_dir() {
+        return Ok(false);
+    }
+    if let Some(parent) = new.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::rename(legacy, new)?;
+    Ok(true)
 }
 
 #[cfg(windows)]
@@ -98,7 +116,9 @@ fn windows_store_path(project: &Path, local: &Path) -> io::Result<PathBuf> {
     if drive(local) == Some(destination) {
         Ok(local.join("dmbd/pairs"))
     } else {
-        Ok(PathBuf::from(format!("{}:\\", destination as char)).join(".dmbd/pairs"))
+        // A drive other than the local-app-data drive keeps its pairs beside the other disposable compiler caches
+        // (`E:/dq-cache/dmbd/...`), never at the drive root.
+        Ok(PathBuf::from(format!("{}:\\", destination as char)).join("dq-cache/dmbd/pairs"))
     }
 }
 

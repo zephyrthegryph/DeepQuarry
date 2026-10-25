@@ -3588,7 +3588,10 @@ export const DreamCheckerTarget = new Juke.Target({
     }
     return true;
   },
-  executes: () => runDreamChecker(),
+  executes: async () => {
+    await runDreamChecker();
+    Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
+  },
 });
 
 /** SpacemanDMM's DreamChecker over deepquarry.dme; throws on any diagnostic it fails on. */
