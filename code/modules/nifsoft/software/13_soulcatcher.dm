@@ -320,7 +320,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	..()
 	hud_used?.plane_holder?.set_vis(VIS_AUGMENTED, TRUE)
 	hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE)
-	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
+	identifying_gender = text_or_null(client.prefs.read_preference(/datum/preference/choiced/gender/identifying))
 
 // the soulcatcher is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/on_destroy(force)

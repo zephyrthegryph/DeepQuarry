@@ -342,7 +342,7 @@ CAPABILITIES(/datum/prompt/text/explosive_implant_phrase)
 	elevel = ask.level
 	phrase = ask.value
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
-	phrase = replace_characters(phrase, replacechars)
+	phrase = text_or_null(replace_characters(phrase, replacechars))
 	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
 	to_chat(user, "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.")
 

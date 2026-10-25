@@ -46,9 +46,9 @@ CAPABILITIES(/obj/item/material/twohanded)
 /obj/item/material/twohanded/update_force()
 	base_name = name
 	if(combat_of(src).sharp || combat_of(src).edge)
-		force_wielded = material.edge_damage()
+		force_wielded = num_or_null(material.edge_damage())
 	else
-		force_wielded = material.blunt_damage()
+		force_wielded = num_or_null(material.blunt_damage())
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
 	set_force(force_unwielded)

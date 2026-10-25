@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/grown)
 		if(!S || !S.chems)
 			return
 
-		potency = S.get_trait(TRAIT_POTENCY)
+		potency = num_or_null(S.get_trait(TRAIT_POTENCY))
 
 /// The plant's chemicals at its potency (reagents(contents_from =)), or null for a harvest made from no plant.
 /obj/item/grown/proc/seed_contents()
