@@ -58,7 +58,9 @@ if [ "${DQ_LIGHT_CARGO:-1}" = 1 ]; then
 	done
 	for m in "${!manifests[@]}"; do
 		echo "== cargo test --manifest-path $m"
-		bash tools/dq_machine_slots.sh run cargo --label "light-batch $m" -- cargo test --manifest-path "$m" || bad "cargo test $m"
+		# Built outside the worktree (tools/dq_cargo_target.sh): a gate must never leave a debug target in the merge worktree.
+		CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh "light-$(echo "$m" | tr '/' '-')")" \
+			bash tools/dq_machine_slots.sh run cargo --label "light-batch $m" -- cargo test --manifest-path "$m" || bad "cargo test $m"
 	done
 fi
 

@@ -320,7 +320,7 @@ job_ratchets() {
 job_tgui() { tools/build/build.sh tgui-lint; }
 job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
 	# Compiled harnesses are cached by source hash (tools/build/lib/analyze_test_cache.md); every harness still runs.
-	tools/build/build.sh analyze-test
+	CARGO_TARGET_DIR="$(bash tools/dq_cargo_target.sh analyze-test)" tools/build/build.sh analyze-test
 }
 
 [ "$run_tests" -eq 1 ] && names+=(tests)

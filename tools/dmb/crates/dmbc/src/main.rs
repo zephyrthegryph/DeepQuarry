@@ -12,10 +12,12 @@ static ALLOCATOR: dm_profile::CountingAllocator = dm_profile::CountingAllocator;
 static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 fn main() {
+    dmbc::cache_maintenance::install_write_accounting();
     if std::panic::catch_unwind(main_inner).is_err() {
         eprintln!("internal compiler panic");
         std::process::exit(70);
     }
+    dmbc::cache_maintenance::finish_process();
 }
 fn main_inner() {
     // Below normal priority before any worker thread or daemon exists (DMB_PRIORITY=normal opts out).
@@ -205,5 +207,6 @@ fn report_failure(error: &(dyn std::error::Error + 'static)) -> ! {
     if !message.is_empty() {
         eprintln!("{message}");
     }
+    dmbc::cache_maintenance::finish_process();
     std::process::exit(dmbc::request_failure::exit_code(error));
 }
