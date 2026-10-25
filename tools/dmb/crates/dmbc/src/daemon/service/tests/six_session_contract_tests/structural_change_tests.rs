@@ -174,8 +174,8 @@ fn appended_callables_patch_with_stable_numbering_and_revert_to_fresh() {
         ),
         (
             "referenced new var",
-            TREE.replace("    var/own = 2
-", "    var/own = 2
+            TREE.replace("    var/value = 7
+", "    var/value = 7
     var/added_ref = 1
 ").replace("return item.value
 ", "return item.value + item.added_ref
