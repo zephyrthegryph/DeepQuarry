@@ -216,15 +216,16 @@ environment variable, default `all`).
 **A focused run refuses the exhaustive tier.** `bash tools/dq_focused_test.sh
 dq_lifecycle_sandbox` (or any test with an exhaustive subtype) exits 3 without compiling and names the test's
 `/representative`; `--allow-exhaustive` runs the sweep anyway (`dm-test --focus=...` itself still runs whatever it is given).
-Every focused run also has a hard wall-clock cap, `DQ_FOCUSED_MAX_MIN` (default 20; clamped to 30 unless `--allow-exhaustive`):
+Every focused run also has a hard wall-clock cap, `DQ_FOCUSED_MAX_MIN` (default 10; clamped to 10 unless `--allow-exhaustive`; testing never runs past 10 minutes and agent shells have a hard 30-minute limit):
 `tools/dq_run_guard.js` kills the run's DreamDaemon worlds and reaps their machine slots at the cap, and the moment the run's
 shell dies (a stopped task leaves no orphaned world). The cap counts RUN time: its clock starts when the run first holds a
 machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), and a run with no slot after `DQ_FOCUSED_QUEUE_MAX_SEC`
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
-The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (25 minutes plus 1 per test, ceiling 60;
-`gate_cap_minutes`), which replaces the agent cap and its 30 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
+A focused run, and a lane-ready proof (`dq_merge_gates.sh --no-dm`), compile only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
+The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (5 minutes plus 1 per test, ceiling 10;
+`gate_cap_minutes`), which replaces the agent cap and its 10 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
 The exhaustive refusal is unchanged under it. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
 (held by a running DreamDaemon/DreamMaker) and retries a busy (EBUSY) copy for a few seconds before failing with a message. `tools/ci/test_focused_caps.sh` tests all three against a fake world.
 

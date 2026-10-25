@@ -322,7 +322,8 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
   `.../representative`; `dq_focused_test.sh` refuses an exhaustive test (or one with exhaustive subtypes) unless `--allow-exhaustive`,
   and names the `/representative` to run instead.
-- **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 20, clamped to 30 without `--allow-exhaustive`);
+- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well; `dq_lane_ready.sh` runs the gates with `--no-dm`. The production compile + DreamChecker (`build.sh dm`, unchanged for explicit use) runs at integration (`dq_push_master.sh`, the batch train) and in CI.
+- **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 10, clamped to 10 without `--allow-exhaustive`; testing never runs past 10 minutes, and every agent shell has a hard 30-minute limit);
   at the cap, or when the run's shell dies or is killed, `tools/dq_run_guard.js` kills the run's own DreamDaemon worlds and frees
   their test-world slots. The cap counts run time, not time queued for a slot (reported as "queued N min"): never wrap the tool in
   `timeout`. A native compile refused with exit 75 (daemon capacity) queues again up to 30 min instead of failing. Never start a long run; test: `bash tools/ci/test_focused_caps.sh`.
