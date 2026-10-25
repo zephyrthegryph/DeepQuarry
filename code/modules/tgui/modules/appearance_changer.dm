@@ -941,7 +941,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 				var/datum/transhuman/body_record/BR = DC.our_db().body_scans[N]
 				var/datum/species/S = GLOB.all_species[BR.mydna.dna.species]
 				if((S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) != SPECIES_CAN_JOIN || BR.synthetic) continue
-				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = "\ref[BR]")
+				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = ref_token(BR))
 			data["character_records"] = bodyrecords_list_ui
 			// Load all stock records printable
 			var/list/stock_bodyrecords_list_ui = list()

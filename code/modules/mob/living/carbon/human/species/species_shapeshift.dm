@@ -24,7 +24,7 @@ SETTER(/datum/cap_data/wrapped_species_form, bodytype)
 		return FALSE
 	bodytype = value
 	if(holder)
-		GLOB.wrapped_species_by_ref["\ref[holder]"] = value
+		GLOB.wrapped_species_by_ref[ref_token(holder)] = value
 	tracked_changed(src, nameof(bodytype))
 	return TRUE
 /mob/living/carbon/human/proc/wrapped_species_state(create = FALSE)
@@ -290,7 +290,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!new_species)
 		return
 
-	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
+	GLOB.wrapped_species_by_ref[ref_token(src)] = new_species
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 */
 
