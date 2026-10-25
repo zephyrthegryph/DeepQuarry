@@ -888,7 +888,7 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		items += I
-	storage_slots = length(items)
+	set_storage_slots(length(items))
 
 	var/list/types = list()
 	var/max_size = 0

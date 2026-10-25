@@ -312,7 +312,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 		data["scanner_cache"] = null
 	var/list/inv = list()
 	for(var/obj/item/book/b in inventory)
-		inv += list(list("ref" = "\ref[b]", "name" = b.name))
+		inv += list(list("ref" = ref_token(b), "name" = b.name))
 	data["inventory"] = inv
 	var/list/cos = list()
 	for(var/datum/borrowbook/b in checkouts)
@@ -320,7 +320,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
 		var/raw_due = (b.duedate - world.time) / 600
 		var/overdue = (raw_due <= 0)
 		cos += list(list(
-			"ref" = "\ref[b]",
+			"ref" = ref_token(b),
 			"bookname" = b.bookname,
 			"mobname" = b.mobname,
 			"taken_min" = timetaken,

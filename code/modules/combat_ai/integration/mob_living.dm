@@ -7,7 +7,7 @@
 //   3. Initialization hook that creates a brain when the flag is set.
 //   4. A damage-notification proc that fires the brain's signal pipeline.
 //   5. taunt() — promotes the taunter to a personal HOSTILE entry.
-//   6. Initialize() re-open to drive brain creation after the upstream chain.
+//   6. A setup() hook that drives brain creation once the Initialize() chain has returned.
 
 /mob/living
 	/// Slot for the AI brain. null on mobs without AI (humans, silicons,
@@ -16,6 +16,8 @@
 
 
 CAPABILITIES(/mob/living)
+	setup(PROC_REF(prime_hud_list))
+	setup(PROC_REF(start_ai_brain))
 	living_rules(use_modern_ai = FALSE, has_huds = FALSE, max_nutrition = MAX_NUTRITION, fire_reaction = FIRE_REACTION_BURN, fire_trigger_verb = "ignited", fire_heats_body = FALSE, force_max_speed = 0, adminbus_trash = FALSE, parasitic = FALSE, appendage_color = "#e03997", vore_shred_time = 45 SECONDS, low_sorting_priority = FALSE)
 	butchery_rules(meat_amount = 0)
 	footstep_rules(footstep_volume = 0.1, footstep_e_range = -8)
@@ -144,11 +146,8 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		rel_set(ai_brain, nameof(ai_brain.primary_threat), taunter)
 	ai_brain.invalidate_selection()
 
-/// Re-open Initialize to drive brain creation. This is the last of two /mob/living/Initialize definitions (living.dm, this file);
-/// DM keeps them all and each ..() calls the earlier one, so none is dropped (dq_mob_living_init_chain).
-// ALLOW(init/FRAMEWORK): the living base allocates its speech table and AI brain when its type has them
-/mob/living/Initialize(mapload)
-	. = ..()
+/// Its AI brain, made when it has none and its type opts in (a setup() hook of the living capabilities, after the HUD slot table).
+/mob/living/proc/start_ai_brain()
 	// Only allocate a say_list when the mob actually overrides the default
 	// type. Most mobs inherit /datum/say_list (empty bark tables) — those get
 	// no allocation, which matters at world-init when thousands of simple_mobs

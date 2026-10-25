@@ -7,7 +7,7 @@
 	var/obj/item/stock_parts/matter_bin/first = allocate(/obj/item/stock_parts/matter_bin, T)
 	var/obj/item/stock_parts/matter_bin/second = allocate(/obj/item/stock_parts/matter_bin, T)
 	var/obj/item/stock_parts/matter_bin/filler = allocate(/obj/item/stock_parts/matter_bin, T)
-	target.storage_slots = 1
+	target.set_storage_slots(1)
 	TEST_ASSERT(source.insert_item(first) && source.insert_item(second), "the actual source RPED stores two real matching parts")
 	TEST_ASSERT(target.insert_item(filler), "the actual destination RPED fills its one-item limit")
 	source.open(user)

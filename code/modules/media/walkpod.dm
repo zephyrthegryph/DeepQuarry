@@ -198,7 +198,7 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 	data["current_track"] = null
 	data["current_genre"] = null
 	if(current_track())
-		data["current_track_ref"] = "\ref[current_track()]"  // Convenient shortcut
+		data["current_track_ref"] = ref_token(current_track())  // Convenient shortcut
 		data["current_track"] = current_track().toTguiList()
 		data["current_genre"] = current_track().genre
 	data["percent"] = (playing && current_track()) ? min(100, round((world.time - media_start_time) / current_track().duration)) : 0;

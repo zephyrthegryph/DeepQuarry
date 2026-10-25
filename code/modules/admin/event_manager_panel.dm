@@ -56,7 +56,7 @@ CAPABILITIES(/datum/event_manager_panel)
 		var/list/active_with_role = number_active_with_role()
 		for(var/datum/event_meta/EM in EC.available_events)
 			avail += list(list(
-				"ref" = "\ref[EM]",
+				"ref" = ref_token(EM),
 				"name" = EM.name,
 				"weight" = EM.weight,
 				"min_weight" = EM.min_weight,
@@ -68,13 +68,13 @@ CAPABILITIES(/datum/event_manager_panel)
 		data["available_events"] = avail
 		var/datum/event_meta/NE = events_new_event()
 		data["new_event"] = list(
-			"ref" = "\ref[NE]",
+			"ref" = ref_token(NE),
 			"name" = NE.name,
 			"type" = NE.event_type ? "[NE.event_type]" : null,
 			"weight" = NE.weight || 0,
 			"one_shot" = !!NE.one_shot,
 		)
-		data["selected_container_ref"] = "\ref[EC]"
+		data["selected_container_ref"] = ref_token(EC)
 	else
 		data["selected_severity"] = null
 		var/list/severities = list()
@@ -83,7 +83,7 @@ CAPABILITIES(/datum/event_manager_panel)
 			var/datum/event_container/EC = events_event_containers()[severity]
 			var/next_event_at = max(0, EC.next_event_time - world.time)
 			severities += list(list(
-				"ref" = "\ref[EC]",
+				"ref" = ref_token(EC),
 				"severity" = GLOB.severity_to_string[severity],
 				"starts_at" = worldtime2stationtime(max(EC.next_event_time, world.time)),
 				"starts_in_minutes" = round(next_event_at / 600, 0.1),
@@ -91,7 +91,7 @@ CAPABILITIES(/datum/event_manager_panel)
 				"delay_modifier" = EC.delay_modifier,
 			))
 			next_events += list(list(
-				"ref" = "\ref[EC]",
+				"ref" = ref_token(EC),
 				"severity" = GLOB.severity_to_string[severity],
 				"queued_name" = EC.next_event() ? EC.next_event().name : null,
 			))
@@ -105,7 +105,7 @@ CAPABILITIES(/datum/event_manager_panel)
 			var/ends_at = E.startedAt + (E.lastProcessAt() * 20)
 			var/ends_in = max(0, round((ends_at - world.time) / 600, 0.1))
 			running += list(list(
-				"ref" = "\ref[E]",
+				"ref" = ref_token(E),
 				"severity" = GLOB.severity_to_string[EM.severity],
 				"name" = EM.name,
 				"ends_at" = worldtime2stationtime(ends_at),

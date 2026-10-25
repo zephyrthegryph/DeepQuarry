@@ -985,3 +985,4 @@ mod tests;
 mod local_declaration_diagnostics;
 #[path = "simple/member_call_validation.rs"]
 mod member_call_validation;
+mod member_var_validation;
