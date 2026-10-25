@@ -344,7 +344,7 @@ if [ ${#failed[@]} -gt 0 ]; then
 	for n in "${failed[@]}"; do
 		echo "---- $n: last lines of data/merge-gates/$short.$n.log" >&2
 		tail -n 40 "data/merge-gates/$short.$n.log" >&2
-		grep -h '^FOCUSED RESULT:\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
+		grep -h '^FOCUSED RESULT:\|^FOCUSED RUN CAPPED\|^dq_focused_test: REFUSED' "data/merge-gates/$short.$n.log" >&2 || true
 	done
 	echo "dq_merge_gates: FAILED: ${failed[*]} (logs data/merge-gates/$short.<job>.log); fix it, recommit, rerun" >&2
 	exit 1

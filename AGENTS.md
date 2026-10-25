@@ -304,10 +304,15 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **A finished lane runs `bash tools/dq_lane_ready.sh --tests "<its tests>"`** (section 11 of the same document): it merges
   master, proves the lane once and stamps it, so the merge agent tests only the combination.
-- **A lane lands with `bash tools/dq_land.sh --tests "<its tests>"`** (section 25 of that document): it proves the lane on the current
-  master outside the merge lock (a lite re-proof when master moved under a valid stamp), takes the lock only to merge and push (about a
-  minute), and gives the lock back and proves again if master moved while it queued. A gate failure that passes alone is a flake:
-  ledgered (`bash tools/dq_flake_log.sh`), not a failure. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
+- **A lane lands on the batch train: `bash tools/dq_train.sh enqueue --tests "<its tests>"`** (section 29 of that document; `--light` for
+  docs/tooling/Rust-only work). Commit first, with the focused tests green and `bash tools/ci/check_ratchets.sh --changed-only` clean; enqueue
+  records the branch, tip and tests and returns at once; then `bash tools/dq_lane_pool.sh release <branch>` (the branch ref stays in the repo).
+  One detached integrator takes every queued lane, merges them onto origin/master, runs ONE gate on the combination (analyze gen + ratchets, a
+  native production compile with no DreamMaker, a native test compile, the union of the lanes' tests plus the smoke set, test phase capped at 10
+  minutes), bisects a failure to the culprit lane(s) and bounces them, and pushes the rest. `bash tools/dq_train.sh status` shows the queue and
+  any bounced lane with its report (`dq_train.sh report <branch>`); a lane that is neither queued nor bounced has landed. A test that fails and
+  passes alone is a flake: ledgered (`bash tools/dq_flake_log.sh`), nobody is bounced. `tools/dq_land.sh` still works (it prints a notice) but
+  re-proves on every master move. The shared dmbc is immutable per version (`E:/dq-cache/dmb-bin/v/<id>`).
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 
