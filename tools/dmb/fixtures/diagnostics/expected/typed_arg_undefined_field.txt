@@ -1,0 +1,2 @@
+typed_arg_undefined_field.dm:2:error: C.void: undefined var
+typed_arg_undefined_field.dmb - 1 error, 0 warnings
