@@ -729,7 +729,9 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		step = 1
 
 	// The time between each step is the volume required by a step multiplied by the delay_modifier (in ticks/deciseconds).
-	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
+	var/list/recipe = recipes[r_id]
+	var/step_volume = recipe[step + 1]
+	after(src, step_volume * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
 
 // This proc carries out the actual steps in each reaction.
 /obj/machinery/chemical_synthesizer/proc/perform_reaction(r_id, step as num)
