@@ -1,5 +1,3 @@
-sparse(/obj/item, climbing_delay, type = num)
-
 /obj/item
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
