@@ -29,7 +29,7 @@ use std::{
 };
 
 /// Bump with any change to the stored layout or to a stored type: an old file is then ignored (and ages out).
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 const MAGIC: &[u8; 8] = b"DMBSPIL1";
 const EXTENSION: &str = "spill";
 const DEFAULT_BUDGET_GB: u64 = 4;
@@ -90,6 +90,8 @@ struct LinkParts {
     mobs: Vec<(SymbolId, u32)>,
     initializers: crate::symbolic::PositionedList,
     fields: Option<Vec<((SymbolId, SymbolId), u32)>>,
+    /// The build did not define `DEBUG`: patched procedure words are composed without debug instructions.
+    strip_debug_ops: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -158,6 +160,7 @@ fn link_parts(
         strings: link.tables.string_contents().map(|(id, bytes)| (id, bytes.to_vec())).collect(),
         mobs,
         initializers,
+        strip_debug_ops: link.tables.strips_debug_ops(),
         fields: fields.map(|fields| {
             let mut all: Vec<_> = fields.0.iter().map(|(pair, record)| (*pair, *record)).collect();
             all.sort_unstable();
@@ -297,7 +300,8 @@ pub(crate) fn read(dir: &Path, key: u128) -> Result<Restored, String> {
             .strings
             .into_iter()
             .map(|(id, bytes)| (id, std::sync::Arc::<[u8]>::from(bytes))),
-    );
+    )
+    .with_strip_debug_ops(link_parts.strip_debug_ops);
     let link = PatchLink {
         tables,
         mobs: link_parts.mobs.into_iter().collect(),

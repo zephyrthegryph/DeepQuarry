@@ -46,7 +46,7 @@ fn record() -> Arc<super::super::super::Record> {
         reads: Vec::new().into(),
         versions: Arc::from([]),
         value: super::super::super::RecordValue::Executable(contribution.shared_artifact()),
-        relative_debug: vec![crate::debug_sources::RelativeDebugAnchor::AtBodyOffset(0)],
+        relative_debug: vec![crate::debug_sources::RelativeDebugAnchor::AtBodyOffset(0)].into(),
         required_types: Arc::clone(contribution.required_types_owner()),
         modified_recipes: Arc::clone(contribution.modified_recipes_owner().unwrap()),
     })
@@ -96,10 +96,8 @@ fn debug_payload_capacity_is_charged_before_retention() {
     let mut record = record();
     let key = Arc::clone(record.key.owner());
     let before = charge(&key, &record, usize::MAX).unwrap();
-    Arc::get_mut(&mut record)
-        .unwrap()
-        .relative_debug
-        .reserve(10000);
+    Arc::get_mut(&mut record).unwrap().relative_debug =
+        vec![crate::debug_sources::RelativeDebugAnchor::AtBodyOffset(0); 10000].into();
     assert!(charge(&key, &record, usize::MAX).unwrap() > before + 10000);
 }
 

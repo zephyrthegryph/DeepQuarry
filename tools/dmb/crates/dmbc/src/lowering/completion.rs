@@ -322,7 +322,7 @@ pub fn lower_frontend_completed_input_on_execution<
                         let local = store.lookup_unchanged_local(
                             roster,
                             candidates,
-                            memo.policy,
+                            memo.facts_policy,
                             host,
                             frontend,
                             row,

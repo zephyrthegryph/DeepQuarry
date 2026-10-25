@@ -45,6 +45,17 @@ for spec in ${REF_ROOTS:-"A:$A" "B:$B"}; do
   done
 done
 
+# BASE_DIR (optional): outputs of an earlier compiler build of root A (game.dmb/.rsc, test.dmb/.rsc, same run id). A change that
+# must not alter output (this lane's sharing work) requires byte identity with it as well, so the oracle is not this binary itself.
+if [ -n "${BASE_DIR:-}" ]; then
+  for flavour in game test; do
+    for ext in dmb rsc; do
+      if cmp -s "$S/ref-A-$flavour.$ext" "$BASE_DIR/$flavour.$ext"; then echo "ok   ref-A-$flavour.$ext identical to base build"
+      else echo "FAIL ref-A-$flavour.$ext differs from the base build in $BASE_DIR"; fail=1; fi
+    done
+  done
+fi
+
 echo "== shared daemon, sharing on, interleaved"
 mkdir -p "$S/store-shared"; PHASE=shared
 daemon_env "sharedstore-equiv" "${SHARING:-1}"
@@ -57,8 +68,8 @@ for step in "${STEPS[@]}"; do
   ok=1
   [ -s "$S/$tag.dmb" ] || { echo "FAIL $tag: no output"; ok=0; }
   [ "$(pair $tag)" = "$(pair $ref)" ] || { echo "FAIL $tag: pair id $(pair $tag) != reference $(pair $ref)"; ok=0; }
-  cmp -s "$S/$tag.dmb" "$S/$ref.dmb" || { echo "NOTE $tag: .dmb not byte-identical to reference"; }
-  cmp -s "$S/$tag.rsc" "$S/$ref.rsc" || { echo "NOTE $tag: .rsc not byte-identical to reference"; }
+  cmp -s "$S/$tag.dmb" "$S/$ref.dmb" || { echo "FAIL $tag: .dmb not byte-identical to reference"; ok=0; }
+  cmp -s "$S/$tag.rsc" "$S/$ref.rsc" || { echo "FAIL $tag: .rsc not byte-identical to reference"; ok=0; }
   "$EQUIV" "$S/$ref.dmb" "$S/$tag.dmb" --rsc "$S/$ref.rsc" "$S/$tag.rsc" --all --ignore-debug --quiet > "$S/$tag.equiv.txt" 2>&1 \
     || { echo "FAIL $tag: dmb-equiv reports a difference (see $tag.equiv.txt)"; ok=0; }
   "$EQUIV" dump-proc "$S/$tag.dmb" dq_shared_store_marker > "$S/$tag.marker.txt" 2>&1

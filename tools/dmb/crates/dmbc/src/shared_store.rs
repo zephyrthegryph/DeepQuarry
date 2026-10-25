@@ -31,6 +31,8 @@ pub(crate) struct SharedStore {
     pub(crate) records: Arc<SharedRecords>,
     /// Derived per-leaf read lists of the unit proofs (`query_db`), interned with the read leaves they come from.
     pub(crate) leaf_proofs: Arc<crate::query_db::LeafProofs>,
+    /// Answer values (query, answer hash, positivity) of every session's answer table, interned by query id.
+    pub(crate) answer_values: Arc<crate::query_db::AnswerValues>,
     /// Artifact cores by purpose name and exact store type.
     cores: Mutex<HashMap<(&'static str, TypeId), Core>>,
     /// Read-ledger interning pools by purpose name and exact pool type (weak: nothing is kept alive by a pool).
@@ -156,6 +158,13 @@ pub(crate) fn active() -> Option<&'static Arc<SharedStore>> {
 pub(crate) fn leaf_proofs() -> Arc<crate::query_db::LeafProofs> {
     match active().filter(|_| !private("proofs")) {
         Some(store) => Arc::clone(&store.leaf_proofs),
+        None => Arc::default(),
+    }
+}
+/// The answer values a session's answer table shares: the daemon-wide ones, else private.
+pub(crate) fn answer_values() -> Arc<crate::query_db::AnswerValues> {
+    match active().filter(|_| !private("answers")) {
+        Some(store) => Arc::clone(&store.answer_values),
         None => Arc::default(),
     }
 }

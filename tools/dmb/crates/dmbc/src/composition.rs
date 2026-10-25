@@ -725,7 +725,7 @@ fn compose_records_access(
                     index,
                     (
                         std::sync::Arc::clone(&linked_words),
-                        unit.bytecode_features(),
+                        unit.bytecode_features().composed_under(&batch.tables),
                     ),
                 );
                 frame_contribution::emit(
@@ -755,7 +755,7 @@ fn compose_records_access(
                     index,
                     (
                         std::sync::Arc::clone(&words),
-                        batch.helpers[helper_index].bytecode_features(),
+                        batch.helpers[helper_index].bytecode_features().composed_under(&batch.tables),
                     ),
                 );
                 let helper = &batch.helpers[helper_index];
@@ -793,7 +793,7 @@ fn compose_records_access(
                     index,
                     (
                         std::sync::Arc::clone(&words),
-                        batch.initializers[unit_index].bytecode_features(),
+                        batch.initializers[unit_index].bytecode_features().composed_under(&batch.tables),
                     ),
                 );
                 emit_anonymous(

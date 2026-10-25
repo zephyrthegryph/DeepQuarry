@@ -19,7 +19,7 @@ for spec in "$@"; do
   root=${spec%%|*}; defs=""
   if [ "$spec" != "$root" ]; then for d in $(echo "${spec#*|}" | tr ',' ' '); do defs="$defs -D$d"; done; fi
   n=$((n+1))
-  ( cd "$root" && "$EXE" compile deepquarry.dme --progress --workers 4 $defs > "$SCRATCH/probe-$n.log" 2>&1; echo "exit $?" >> "$SCRATCH/probe-$n.log" )
+  ( cd "$root" && "$EXE" compile deepquarry.dme --progress --workers 4 --output-store "$SCRATCH/store" $defs > "$SCRATCH/probe-$n.log" 2>&1; echo "exit $?" >> "$SCRATCH/probe-$n.log" )
   grep -h "native compile: .*session=" "$SCRATCH/probe-$n.log" | cut -c1-300
   # The daemon writes the sites report from housekeeping once idle; wait for this request's block.
   for _ in $(seq 1 60); do [ "$(grep -c '^######## retained.after_request' "$DMB_ALLOC_SITES_PATH")" -ge "$n" ] && break; sleep 2; done

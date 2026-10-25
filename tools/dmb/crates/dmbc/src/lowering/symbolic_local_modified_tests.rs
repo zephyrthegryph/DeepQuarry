@@ -98,7 +98,7 @@ fn prepare<'a, R: Resolver>(
         // domain versions. An empty ledger cannot certify these descriptor reads.
         versions: recorder.domain_receipts().into(),
         value: RecordValue::Executable(value.shared_artifact()),
-        relative_debug: capture.borrow().debug.clone(),
+        relative_debug: capture.borrow().debug.clone().into(),
         required_types: Arc::clone(value.required_types_owner()),
         modified_recipes: recipes,
     };
