@@ -86,6 +86,8 @@ pub struct BuildHost {
 
 /// Everything `BuildHost::engine` used to discard when only the project path or the defines changed.
 const MAX_STASHED_VARIANTS: usize = 3;
+/// Threads a store of a patch base may use for its footprints (the machine is also a desktop).
+const SPILL_WORKERS: usize = 2;
 
 struct VariantState {
     engine: Arc<RetainedEngine>,
@@ -694,7 +696,9 @@ impl BuildHost {
             let Some(victim) = self.variants.keys().find(|key| **key != configuration).cloned() else {
                 break;
             };
-            self.variants.remove(&victim);
+            if let Some(state) = self.variants.remove(&victim) {
+                Self::spill_generation(state.generation.as_ref());
+            }
         }
         let retained = if let Some(state) = self.variants.remove(&configuration) {
             let engine = Arc::clone(&state.engine);
@@ -751,11 +755,30 @@ impl BuildHost {
     pub(crate) fn stashed_variants(&self) -> usize {
         self.variants.len()
     }
-    /// Drop every stashed variant (their state is recomputable). Returns how many were dropped.
+    /// Drop every stashed variant (their state is recomputable, and each one's patch base is stored first so the next
+    /// compile of that variant patches). Returns how many were dropped.
     pub(crate) fn release_stashed_variants(&mut self) -> usize {
+        self.spill_stashed_patch_bases();
         let dropped = self.variants.len();
         self.variants.clear();
         dropped
+    }
+    /// Store one generation's patch base (`variant_spill`), for a state about to be dropped.
+    fn spill_generation(generation: Option<&(u128, Arc<crate::composition::RetainedGeneration>)>) {
+        if let Some((_, generation)) = generation {
+            generation.spill_patch_base(SPILL_WORKERS);
+        }
+    }
+    fn spill_stashed_patch_bases(&self) {
+        for state in self.variants.values() {
+            Self::spill_generation(state.generation.as_ref());
+        }
+    }
+    /// Store the patch base of the active variant and of every stashed one, before the session or its compiler artifacts
+    /// are released. A base already stored is not written again.
+    pub(crate) fn spill_patch_bases(&self) {
+        Self::spill_generation(self.generation.as_ref());
+        self.spill_stashed_patch_bases();
     }
 
     pub(crate) fn engine(

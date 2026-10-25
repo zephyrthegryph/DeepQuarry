@@ -15,6 +15,8 @@ mod query_failure_state;
 mod structural_change;
 #[path = "revert_rebase_tests.rs"]
 mod revert_rebase;
+#[path = "variant_spill_tests.rs"]
+mod variant_spill;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 

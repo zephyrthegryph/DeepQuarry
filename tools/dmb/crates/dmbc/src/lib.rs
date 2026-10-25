@@ -109,6 +109,7 @@ pub mod declaration_patch;
 mod request_lease;
 pub mod required_types;
 pub mod retained_output;
+pub mod variant_spill;
 pub mod skin;
 
 #[cfg(test)]

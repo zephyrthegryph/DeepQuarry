@@ -29,6 +29,10 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use xxhash_rust::xxh3::Xxh3;
 
+#[path = "retained_output_wire.rs"]
+mod wire;
+pub(crate) use wire::BaseParts;
+
 /// At most this many relowered bodies are spliced; more compose the whole program.
 const SPLICE_LIMIT: usize = 4096;
 
@@ -51,12 +55,53 @@ pub(crate) struct BodyShape {
 
 /// What `LineMap` pairs: the expanded rows of one build (one per output line), its body spans in
 /// expanded order and the semantic path of every region.
-struct Layout {
+struct FullLayout {
     origins: dm_preprocess::regions::ExpandedOriginArena,
     text: dm_preprocess::SourceText,
     /// Body spans sorted by start, with the body's index in `SourceShape::bodies`.
     spans: Vec<(usize, usize, usize)>,
     region_paths: Arc<[Arc<str>]>,
+}
+
+/// The source line of every row that line pairing needs, per build: rows with text outside the bodies, in order, and the
+/// rows of each body (by its index in `SourceShape::bodies`).
+#[derive(Clone, Default)]
+pub(crate) struct RowLines {
+    skeleton: Vec<(Arc<str>, usize)>,
+    bodies: HashMap<usize, Vec<(Arc<str>, usize)>>,
+}
+
+/// Where a build's rows come from: the build's own expanded text (a build of this process), or the rows it had when its
+/// output was stored (a retained output restored from disk keeps no text, so numeric default edits cannot be admitted on it).
+enum Layout {
+    Full(FullLayout),
+    Rows(RowLines),
+}
+impl Layout {
+    fn rows(&self) -> std::borrow::Cow<'_, RowLines> {
+        match self {
+            Self::Rows(rows) => std::borrow::Cow::Borrowed(rows),
+            Self::Full(layout) => {
+                let mut rows = RowLines::default();
+                sweep_rows(layout, |index, row, _| {
+                    let Some(origin) = layout.origins.get(index) else {
+                        return;
+                    };
+                    let Some(path) = layout.region_paths.get(origin.region) else {
+                        return;
+                    };
+                    let at = (Arc::clone(path), origin.origin.source_line);
+                    match row {
+                        Row::Skeleton => rows.skeleton.push(at),
+                        Row::Body(which) => rows.bodies.entry(which).or_default().push(at),
+                        // Nothing points at a blank line.
+                        Row::Blank => {}
+                    }
+                });
+                std::borrow::Cow::Owned(rows)
+            }
+        }
+    }
 }
 
 /// The source inputs of one build that the incremental output compares.
@@ -212,7 +257,7 @@ enum Row {
 
 /// Classify every row of `layout`, calling `visit(index, row, outside_text)` in order. A row's
 /// outside text is its bytes outside every body span, without the line break.
-fn sweep_rows(layout: &Layout, mut visit: impl FnMut(usize, Row, &[&[u8]])) {
+fn sweep_rows(layout: &FullLayout, mut visit: impl FnMut(usize, Row, &[&[u8]])) {
     let text = layout.text.as_str().as_bytes();
     let mut body = 0usize;
     let mut parts: Vec<&[u8]> = Vec::with_capacity(2);
@@ -290,7 +335,7 @@ impl SourceShape {
             .iter()
             .map(|region| Arc::clone(&frontend.plan.occurrences[region.occurrence].semantic_path))
             .collect();
-        let layout = Layout {
+        let layout = FullLayout {
             origins: frontend.expanded.origins.clone(),
             text: frontend.expanded.text.clone(),
             spans,
@@ -334,7 +379,7 @@ impl SourceShape {
             text_key: key.digest128(),
             positions: positions.digest128(),
             bodies: shapes,
-            layout,
+            layout: Layout::Full(layout),
             tree_identity: frontend.snapshot.tree.identity(),
         }
     }
@@ -366,30 +411,9 @@ impl LineMap {
             return Ok(Self::identity());
         }
         let _timer = dm_profile::detail_timer("retained_output.line_map");
-        type Rows = (Vec<(Arc<str>, usize)>, HashMap<usize, Vec<(Arc<str>, usize)>>);
-        let collect = |shape: &SourceShape| -> Rows {
-            let layout = &shape.layout;
-            let mut skeleton = Vec::new();
-            let mut bodies: HashMap<usize, Vec<(Arc<str>, usize)>> = HashMap::new();
-            sweep_rows(layout, |index, row, _| {
-                let Some(origin) = layout.origins.get(index) else {
-                    return;
-                };
-                let Some(path) = layout.region_paths.get(origin.region) else {
-                    return;
-                };
-                let at = (Arc::clone(path), origin.origin.source_line);
-                match row {
-                    Row::Skeleton => skeleton.push(at),
-                    Row::Body(which) => bodies.entry(which).or_default().push(at),
-                    // Nothing points at a blank line.
-                    Row::Blank => {}
-                }
-            });
-            (skeleton, bodies)
-        };
-        let (old_skeleton, old_bodies) = collect(old);
-        let (new_skeleton, new_bodies) = collect(new);
+        let (old_rows, new_rows) = (old.layout.rows(), new.layout.rows());
+        let (old_skeleton, old_bodies) = (&old_rows.skeleton, &old_rows.bodies);
+        let (new_skeleton, new_bodies) = (&new_rows.skeleton, &new_rows.bodies);
         if old_skeleton.len() != new_skeleton.len() {
             return Err(format!(
                 "{} declaration lines became {}",
@@ -420,10 +444,10 @@ impl LineMap {
             }
             Ok(())
         };
-        for (old, new) in old_skeleton.iter().zip(&new_skeleton) {
+        for (old, new) in old_skeleton.iter().zip(new_skeleton) {
             pair(&mut map, old, new)?;
         }
-        for (which, rows) in &old_bodies {
+        for (which, rows) in old_bodies {
             let same_text = old.bodies[*which].text == new.bodies[*which].text;
             match new_bodies.get(which) {
                 Some(new_rows) if same_text && new_rows.len() == rows.len() => {
@@ -489,11 +513,38 @@ impl OutputWarnings {
     }
 }
 
+/// What a retained output remembers of one unit: the full record of a build of this process, or only its link footprint
+/// (a restored output has nothing else, and a patch compares nothing else: relinking uses the request's own records).
+#[derive(Clone)]
+pub(crate) enum UnitBase {
+    Record(crate::symbolic::PreparedPatchRecord),
+    Digest(UnitDigest),
+}
+#[derive(Clone)]
+pub(crate) struct UnitDigest {
+    footprint: crate::symbolic::Footprint,
+    modified: bool,
+}
+impl UnitBase {
+    pub(crate) fn footprint(&self) -> crate::symbolic::Footprint {
+        match self {
+            Self::Record(record) => record.footprint(),
+            Self::Digest(digest) => digest.footprint.clone(),
+        }
+    }
+    pub(crate) fn modified(&self) -> bool {
+        match self {
+            Self::Record(record) => record.modified,
+            Self::Digest(digest) => digest.modified,
+        }
+    }
+}
+
 /// Source half of a retained output (the link half and the image are held by the generation
 /// itself; see `composition::RetainedGeneration`).
 pub struct OutputBase {
     pub(crate) shape: Arc<SourceShape>,
-    pub(crate) units: Arc<BTreeMap<UnitIdentity, crate::symbolic::PreparedPatchRecord>>,
+    pub(crate) units: Arc<BTreeMap<UnitIdentity, UnitBase>>,
     pub(crate) inputs: Arc<crate::input_snapshot::InputSnapshot>,
     pub(crate) archive: crate::publish::ResourceIdentity,
     pub(crate) warnings: Arc<OutputWarnings>,
@@ -502,8 +553,15 @@ pub struct OutputBase {
     /// The part of `answers` besides the tree (`QueryDb::answers_context`).
     pub(crate) answers_context: Option<u128>,
     /// The marking of the answer table made for this output (`QueryDb::mark_published`); None
-    /// for an output whose answers were not marked (declaration patches).
+    /// for an output whose answers were not marked (declaration patches, restored outputs).
     pub(crate) marks: Option<u64>,
+    /// What `answers` and `answers_context` hash, kept so the output can prove its answers in a
+    /// process whose table starts empty (`QueryDb::prove_facts`).
+    pub(crate) facts: Option<Arc<crate::query_db::AnswerFacts>>,
+    /// Restored from storage, or patched from an output that was: the answer table of this process
+    /// holds only what this process asked, so its markings are not a complete record of the answers
+    /// the output was built from and none is made for it (a build of the whole program starts afresh).
+    pub(crate) restored: bool,
     pub(crate) dmb_hash: u128,
 }
 impl OutputBase {
@@ -517,12 +575,13 @@ impl OutputBase {
         answers: Option<u128>,
         answers_context: Option<u128>,
         marks: Option<u64>,
+        facts: Option<crate::query_db::AnswerFacts>,
         dmb_hash: u128,
     ) -> Option<Self> {
         let mut units = BTreeMap::new();
         for record in records {
             // Duplicate identities never splice; the linker rejects them anyway.
-            if units.insert(record.record.identity(), record).is_some() {
+            if units.insert(record.record.identity(), UnitBase::Record(record)).is_some() {
                 return None;
             }
         }
@@ -535,6 +594,8 @@ impl OutputBase {
             answers,
             answers_context,
             marks,
+            facts: facts.map(Arc::new),
+            restored: false,
             dmb_hash,
         })
     }
@@ -620,11 +681,13 @@ pub(crate) struct Admitted {
     pub variable_values: Vec<(u32, u8, u32)>,
 }
 /// The answer table's facts at the point an output is retained (see `OutputBase`).
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Answered {
     pub version: Option<u128>,
     pub context: Option<u128>,
     pub marks: Option<u64>,
+    pub facts: Option<Arc<crate::query_db::AnswerFacts>>,
+    pub restored: bool,
 }
 
 /// This request's answers: the table, the request's view of it and the worker count its proof
@@ -655,6 +718,10 @@ pub(crate) fn admit(
     proof: Option<AnswerProof<'_>>,
 ) -> Result<Admitted, String> {
     let shape = retained.shape;
+    // A variant whose base was spilled to disk gets it back here, when the file describes this program text.
+    if retained.generation.restore_patch_base(shape.text_key()) {
+        crate::daemon_eprintln!("native incremental output: restored the stored patch base");
+    }
     // Prefer a retained output of this build's program text (another lane's tree may be current).
     if retained
         .generation
@@ -716,7 +783,13 @@ pub(crate) fn admit(
     if first_root_body(frontend).is_some_and(|root| changed.contains(&root)) {
         return Err("changed body is the first root procedure (its literals register strings)".into());
     }
-    let mut answered = Answered { version: Some(answers), context, marks: None };
+    let mut answered = Answered {
+        version: Some(answers),
+        context,
+        marks: None,
+        facts: proof.as_ref().and_then(|proof| proof.db.answer_facts()).map(Arc::new),
+        restored: base.restored,
+    };
     if !variable_values.is_empty() {
         // The answer world differs with the declarations by exactly the edited defaults, and no
         // text can read one (`reads_initial` found no `initial()` naming it), so no answer a
@@ -725,6 +798,25 @@ pub(crate) fn admit(
             "native incremental output: {} numeric defaults edited, answers not compared",
             variable_values.len()
         );
+    } else if base.answers != Some(answers) && base.restored && base.marks.is_none() {
+        // An output restored from storage has no marked table to ask again; it kept the facts its version
+        // hashes. The declarations and the answer world equal its own prove every answer they determine, and
+        // each resource search it read is asked again.
+        let (Some(proof), Some(stored)) = (proof.as_ref(), base.facts.as_ref()) else {
+            return Err("answers changed, the restored output kept no facts to prove them".into());
+        };
+        let held = proof
+            .db
+            .prove_facts(proof.request, stored)
+            .map_err(|reason| format!("answers changed: {reason}"))?;
+        crate::daemon_eprintln!(
+            "native incremental output: {held} resource searches of the restored output asked again, none differ"
+        );
+        // The table now holds every search the restored output read: its version, context and facts are what
+        // the patched output is retained with.
+        answered.version = proof.db.answers_version();
+        answered.context = proof.db.answers_context();
+        answered.facts = proof.db.answer_facts().map(Arc::new);
     } else if base.answers != Some(answers) {
         let detail = proof.as_ref().map_or_else(String::new, |proof| {
             format!(" ({})", proof.db.answer_diff().summary())
@@ -743,7 +835,7 @@ pub(crate) fn admit(
             "native incremental output: {held} published answers asked again, none differ (tree identity only)"
         );
     }
-    if let Some(proof) = &proof {
+    if let Some(proof) = proof.as_ref().filter(|_| !answered.restored) {
         answered.marks = Some(proof.db.mark_published());
     }
     Ok(Admitted {
@@ -791,8 +883,11 @@ fn default_edit_records(
         names.push(name.as_bytes().to_vec());
         values.push((record, 42u8, edit.value_bits));
     }
-    let (old_hashes, _) = skeleton_rows(&old.layout, None);
-    let (new_hashes, _) = skeleton_rows(&new.layout, None);
+    let (Layout::Full(old_layout), Layout::Full(new_layout)) = (&old.layout, &new.layout) else {
+        return Err("the retained output kept no program text to compare defaults against".into());
+    };
+    let (old_hashes, _) = skeleton_rows(old_layout, None);
+    let (new_hashes, _) = skeleton_rows(new_layout, None);
     if old_hashes.len() != new_hashes.len() {
         return Err("declaration line count changed with the defaults".into());
     }
@@ -810,8 +905,8 @@ fn default_edit_records(
             edits.edits.len()
         ));
     }
-    let (_, old_text) = skeleton_rows(&old.layout, Some(&differing));
-    let (_, new_text) = skeleton_rows(&new.layout, Some(&differing));
+    let (_, old_text) = skeleton_rows(old_layout, Some(&differing));
+    let (_, new_text) = skeleton_rows(new_layout, Some(&differing));
     for index in &differing {
         let (Some(before), Some(after)) = (old_text.get(index), new_text.get(index)) else {
             return Err("changed declaration line is not retained".into());
@@ -855,7 +950,7 @@ fn is_default_row_edit(before: &[u8], after: &[u8], names: &[Vec<u8>]) -> bool {
 /// The hash of every row with text outside bodies (trailing blanks aside), in order, and the text
 /// of the rows whose ordinal is in `wanted`.
 fn skeleton_rows(
-    layout: &Layout,
+    layout: &FullLayout,
     wanted: Option<&std::collections::HashSet<usize>>,
 ) -> (Vec<u128>, HashMap<usize, Vec<u8>>) {
     let mut hashes = Vec::new();
@@ -932,7 +1027,7 @@ pub(crate) fn splice(
         let moved_only = moved.contains(&(Arc::clone(&source.semantic_path), source.line));
         // A moved body's modified-instance descriptors keep their aliases (the footprint
         // compares them); their initializer code is moved with its lines.
-        if (record.modified || old.modified) && !moved_only {
+        if (record.modified || old.modified()) && !moved_only {
             return Err(format!("unit {identity:?} has modified instances"));
         }
         let (new_parts, old_parts) = (record.footprint(), old.footprint());
@@ -1071,7 +1166,7 @@ pub(crate) fn splice(
     } else {
         let mut units = (*base.units).clone();
         for (identity, record) in string_units {
-            units.insert(identity, record);
+            units.insert(identity, UnitBase::Record(record));
         }
         Arc::new(units)
     };
@@ -1084,6 +1179,8 @@ pub(crate) fn splice(
         answers: answered.version,
         answers_context: answered.context,
         marks: answered.marks,
+        facts: answered.facts,
+        restored: answered.restored,
         dmb_hash: 0,
     };
     let dmb = if let Some(tables) = extended {
