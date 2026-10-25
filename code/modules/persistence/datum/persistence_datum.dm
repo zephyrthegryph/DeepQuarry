@@ -22,7 +22,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/persistent)
 	if(!isnull(entries_decay_at) && !isnull(entries_expire_at))
 		entries_decay_at = round(entries_expire_at * entries_decay_at)
 
-/datum/persistent/proc/Initialize()
+/// Reads the saved tokens from the file and applies them to the world (called once by SSpersistence).
+/datum/persistent/proc/load_saved()
 	if(fexists(filename))
 		var/list/tokens = json_decode(file2text(filename))
 		for(var/list/token in tokens)
