@@ -473,7 +473,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /// Publish the complete map topology once, then materialize all compatibility
 /// `/datum/pipe_network` wrappers from Rust's atomic connected-region result.
 /datum/system/air/proc/setup_rust_pipenets()
-	rust_pipe_region_networks = alist()
+	rel_clear(src, nameof(rust_pipe_region_networks))
 	rust_queue_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
 	// The whole map's ports and edges go to Rust in one call each
 	// (init_and_turfs.md §3.3 step 4), not one call per port and edge.
@@ -550,7 +550,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 
 	for(var/prior_region in retired_regions)
 		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_region]
-		rust_pipe_region_networks -= prior_region
+		rel_add(src, nameof(rust_pipe_region_networks), null, prior_region)
 		rust_retire_pipe_network(old_network)
 	// A region Rust kept (membership changed, or the surviving half of a split) comes back
 	// under its own handle with no prior: its old wrapper is replaced here, or it would be
@@ -559,7 +559,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		var/kept_region = transition["region"]
 		var/datum/pipe_network/kept_network = rust_pipe_region_networks[kept_region]
 		if(kept_network)
-			rust_pipe_region_networks -= kept_region
+			rel_add(src, nameof(rust_pipe_region_networks), null, kept_region)
 			rust_retire_pipe_network(kept_network)
 	for(var/list/transition as anything in transitions)
 		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
@@ -601,7 +601,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	network.rust_authoritative = TRUE
 	rel_set(network, nameof(network.air), region_air)
 	network.update = FALSE
-	rust_pipe_region_networks[region] = network
+	rel_add(src, nameof(rust_pipe_region_networks), network, region)
 
 	var/list/obj/machinery/atmospherics/pipe/region_pipes = list()
 	for(var/port_handle in ports)

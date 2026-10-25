@@ -492,7 +492,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		log_game("[key] AM failed due to disconnect.")
 		return
 	client_screen_clear(client)
-	client_screen_add(client, client.void)
+	client_screen_add(client, GLOB.click_catcher)
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
 		return

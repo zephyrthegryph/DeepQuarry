@@ -61,6 +61,8 @@ GLOBAL_VAR_INIT(max_explosion_range, 14)
 
 // Announcer intercom, because too much stuff creates an intercom for one message then hard del()s it.
 GLOBAL_DATUM_INIT(global_announcer, /obj/item/radio/intercom/omni, new /obj/item/radio/intercom/omni(null))
+///The one click catcher screen every client shows under the map.
+GLOBAL_DATUM(click_catcher, /atom/movable/screen/click_catcher)
 
 GLOBAL_LIST_INIT(station_departments, list("Command", "Medical", "Engineering", "Research", "Security", "Cargo", "Exploration", "Civilian", "Synthetic"))
 

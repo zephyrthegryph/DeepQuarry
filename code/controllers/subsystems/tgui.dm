@@ -283,7 +283,7 @@ CAPABILITIES(/datum/system/tgui)
 /datum/system/tgui/proc/request_pooled_window(mob/user)
 	if(!user.client)
 		return null
-	var/list/windows = user.client.tgui_windows
+	var/alist/windows = user.client.session?.tgui_windows || alist()
 	var/window_id
 	var/datum/tgui_window/window
 	var/window_found = FALSE
@@ -328,7 +328,7 @@ CAPABILITIES(/datum/system/tgui)
 	if(!client || QDELETED(client) || pool_index < 1 || pool_index > TGUI_WINDOW_SOFT_LIMIT)
 		return
 	var/window_id = TGUI_WINDOW_ID(pool_index)
-	var/datum/tgui_window/window = client.tgui_windows[window_id]
+	var/datum/tgui_window/window = client.tgui_window_of(window_id)
 	if(!window)
 		window = new(client, window_id, pooled = TRUE)
 	if(window.locked || window.status != TGUI_WINDOW_CLOSED)
@@ -355,7 +355,7 @@ CAPABILITIES(/datum/system/tgui)
 	var/closed_index
 	for(var/index in 1 to TGUI_WINDOW_SOFT_LIMIT)
 		var/window_id = TGUI_WINDOW_ID(index)
-		var/datum/tgui_window/window = client.tgui_windows[window_id]
+		var/datum/tgui_window/window = client.tgui_window_of(window_id)
 		if(!window)
 			if(!closed_index)
 				closed_index = index
@@ -399,7 +399,7 @@ CAPABILITIES(/datum/system/tgui)
 	// this registry and must stay registered, exactly as reconcile_client_windows does.
 	for(var/i in 1 to TGUI_WINDOW_HARD_LIMIT)
 		var/window_id = TGUI_WINDOW_ID(i)
-		var/datum/tgui_window/window = client.tgui_windows[window_id]
+		var/datum/tgui_window/window = client.tgui_window_of(window_id)
 		if(window)
 			// Drop any UI still attached so it does not keep a dead window around.
 			if(window.locked_by())
@@ -407,7 +407,7 @@ CAPABILITIES(/datum/system/tgui)
 			window.release_lock()
 			window.status = TGUI_WINDOW_CLOSED
 			window.message_queue = null
-			client.tgui_windows.Remove(window_id)
+			client.tgui_window_drop(window_id)
 		if(winexists(client, window_id)) // ALLOW(scheduler): tgui window setup/teardown winexists (asset/window setup)
 			winset(client, window_id, "alpha=0")
 			winshow(client, window_id, FALSE)
@@ -424,9 +424,9 @@ CAPABILITIES(/datum/system/tgui)
 		var/window_id = TGUI_WINDOW_ID(index)
 		// Dedicated windows (statbrowser, browseroutput, tgui_say, etc.) share
 		// this registry but do not use TGUI_WINDOW_ID and must remain registered.
-		var/datum/tgui_window/stale_window = client.tgui_windows[window_id]
+		var/datum/tgui_window/stale_window = client.tgui_window_of(window_id)
 		if(stale_window)
-			client.tgui_windows.Remove(window_id)
+			client.tgui_window_drop(window_id)
 		if(winexists(client, window_id)) // ALLOW(scheduler): tgui window setup/teardown winexists (asset/window setup)
 			winset(client, window_id, "alpha=0")
 			winshow(client, window_id, FALSE)

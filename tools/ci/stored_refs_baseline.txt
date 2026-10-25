@@ -1,16 +1,7 @@
 # Stored references outside a declared relation or a weak ref (doc/rewrite/proposals/reference_storage.md). rule<TAB>file<TAB>text.
 # `analyze check --lint stored_refs` fails on a site not listed here. Shrink-only: after a sweep run
 # `analyze baseline --update --lint stored_refs`; it drops fixed sites and never adds one.
-var	code/_global_vars/__unsorted.dm	@/datum/controller/global_vars::global_announcer
-var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::activation
-var	code/domains/heat/heat_entries.dm	@/datum/heat_edge_record::follows
-var	code/modules/client/client defines.dm	@/client::void
-list	code/ATMOSPHERICS/rust_pipenets.dm	@/datum/system/air::rust_pipe_region_networks
 list	code/ATMOSPHERICS/xgm_compat.dm	var/static/list/xgm_id_to_type
-list	code/_helpers/global_lists.dm	@/datum/controller/global_vars::overlay_cache
-list	code/datums/containment/latency_policy.dm	@/datum/controller/global_vars::latency_sweep_holders
 list	code/game/machinery/machinery.dm	var/static/list/probes = list()
 list	code/modules/mob/living/life/living_systems.dm	var/static/list/owned
 list	code/modules/mob/living/silicon/robot/robot_upgrade_detection.dm	var/static/list/prototypes = list()
-list	code/modules/tgs_commands/vorestation.dm	@/datum/controller/global_vars::tgs_flow_senders
-list	code/modules/tgui/external.dm	@/client::tgui_windows

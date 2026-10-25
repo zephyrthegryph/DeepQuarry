@@ -19,10 +19,13 @@
 	var/tmp/last_completed_asset_job = 0
 	/// job id text -> list(target, proc_ref, args): who continues when the ack arrives.
 	var/tmp/list/asset_waiters
+	/// Window id -> the /datum/tgui_window open on this connection (a declared keyed relation: a deleted window leaves it).
+	var/tmp/alist/tgui_windows
 
 // The client's own hrefs (the stat panel, the Discord link, the command bar): ops of its session, so they run as every other link does. Each does
 // what the matching /client/proc/topic_* proc says.
 CAPABILITIES(/datum/client_session)
+	ref_many(nameof(tgui_windows), /datum/tgui_window)
 	op("priv_msg", topic("priv_msg", arg("priv_msg", schema_text(64), optional = TRUE)), then(PROC_REF(topic_priv_msg)))
 	op("mentorhelp_msg", topic("mentorhelp_msg", arg("mentorhelp_msg", schema_text(64), optional = TRUE)), then(PROC_REF(topic_mentorhelp_msg)))
 	op("discord_reg", topic("discord_reg", arg("discord_reg", schema_text(128), optional = TRUE)), then(PROC_REF(topic_discord_reg)))
@@ -65,11 +68,10 @@ CAPABILITIES(/datum/client_session)
 			if(owned)
 				ended_with(owned, src)
 			client.vars[var_name] = null // ALLOW(api): clears a fixed static list of client-owned panel vars on session teardown
-		for(var/window_id in client.tgui_windows)
-			var/datum/tgui_window/window = client.tgui_windows[window_id]
+		for(var/window_id in tgui_windows)
+			var/datum/tgui_window/window = tgui_windows[window_id]
 			if(window)
 				ended_with(window, src)
-		client.tgui_windows = list()
 	asset_waiters = null
 	completed_asset_jobs = null
 	client = null
