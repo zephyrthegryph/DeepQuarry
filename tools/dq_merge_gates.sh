@@ -60,6 +60,7 @@ snapshot_output=0
 tgui=0
 serial=0
 reproof=0
+no_dm=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests) shift; read -r -a more <<<"${1:-}"; tests_arg+=("${more[@]}") ;;
