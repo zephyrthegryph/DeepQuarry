@@ -34,7 +34,7 @@ CAPABILITIES(/datum/repository/crew)
 				if(H.get_equipped_item(SLOT_ID_UNIFORM) != C)
 					continue
 
-				var/list/crewmemberData = list("dead"=0, "area"="", "x"=-1, "y"=-1, "realZ"=-1, "z"="", "ref" = "\ref[H]")
+				var/list/crewmemberData = list("dead"=0, "area"="", "x"=-1, "y"=-1, "realZ"=-1, "z"="", "ref" = ref_token(H))
 
 				crewmemberData["sensor_type"] = C.sensor_mode
 				crewmemberData["name"] = H.get_authentification_name(if_no_id="Unknown")

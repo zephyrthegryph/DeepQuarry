@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/communicator)
 			communicators.Add(list(list(
 				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
-				"ref" = "\ref[O]"
+				"ref" = ref_token(O)
 			)))
 
 	//Lists all the other communicators that we invited.
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/communicator)
 			invites.Add(list(list(
 				"name" = sanitize(comm.name),
 				"address" = comm.exonet.address,
-				"ref" = "\ref[comm]"
+				"ref" = ref_token(comm)
 			)))
 
 	//Ghosts we invited.
@@ -238,7 +238,7 @@ CAPABILITIES(/obj/item/communicator)
 			invites.Add(list(list(
 				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
-				"ref" = "\ref[O]"
+				"ref" = ref_token(O)
 			)))
 
 	//Communicators that want to talk to us.
@@ -247,7 +247,7 @@ CAPABILITIES(/obj/item/communicator)
 			requests.Add(list(list(
 				"name" = sanitize(comm.name),
 				"address" = comm.exonet.address,
-				"ref" = "\ref[comm]"
+				"ref" = ref_token(comm)
 			)))
 
 	//Ghosts that want to talk to us.
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/item/communicator)
 			requests.Add(list(list(
 				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
-				"ref" = "\ref[O]"
+				"ref" = ref_token(O)
 			)))
 
 	//Now for all the voice mobs inside the communicator.
@@ -271,7 +271,7 @@ CAPABILITIES(/obj/item/communicator)
 		connected_communicators.Add(list(list(
 			"name" = sanitize(comm.name),
 			"true_name" = sanitize(comm.name),
-			"ref" = "\ref[comm]",
+			"ref" = ref_token(comm),
 		)))
 
 	//Devices that have been messaged or recieved messages from.
@@ -280,7 +280,7 @@ CAPABILITIES(/obj/item/communicator)
 			im_contacts_ui.Add(list(list(
 				"name" = sanitize(comm.name),
 				"address" = comm.exonet.address,
-				"ref" = "\ref[comm]"
+				"ref" = ref_token(comm)
 			)))
 
 	for(var/mob/observer/dead/ghost in im_contacts)
@@ -288,7 +288,7 @@ CAPABILITIES(/obj/item/communicator)
 			im_contacts_ui.Add(list(list(
 				"name" = sanitize(ghost.name),
 				"address" = ghost.exonet.address,
-				"ref" = "\ref[ghost]"
+				"ref" = ref_token(ghost)
 			)))
 
 	for(var/obj/item/integrated_circuit/input/EPv2/CIRC in im_contacts)
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/communicator)
 			im_contacts_ui.Add(list(list(
 				"name" = sanitize(CIRC.assembly().name),
 				"address" = CIRC.exonet.address,
-				"ref" = "\ref[CIRC]"
+				"ref" = ref_token(CIRC)
 			)))
 
 	//Actual messages.
@@ -327,7 +327,7 @@ CAPABILITIES(/obj/item/communicator)
 	for(var/list/R in modules)
 		modules_ui.Add(list(R))
 
-	data["user"] = "\ref[user]"	// For receiving input() via topic, because input(usr,...) wasn't working on cartridges
+	data["user"] = ref_token(user)	// For receiving input() via topic, because input(usr,...) wasn't working on cartridges
 	data["owner"] = owner ? owner : "Unset"
 	data["occupation"] = occupation ? occupation : "Swipe ID to set."
 	data["connectionStatus"] = get_connection_to_tcomms()
@@ -337,7 +337,7 @@ CAPABILITIES(/obj/item/communicator)
 	data["requestsReceived"] = requests
 	data["voice_mobs"] = voices
 	data["communicating"] = connected_communicators
-	data["video_comm"] = video_source ? "\ref[video_source.loc]" : null
+	data["video_comm"] = video_source ? ref_token(video_source.loc) : null
 	data["imContacts"] = im_contacts_ui
 	data["imList"] = im_list_ui
 	data["time"] = stationtime2text()
