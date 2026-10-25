@@ -774,6 +774,7 @@ trait InventorySink {
     fn slot(&mut self, alias: SlotAlias);
 }
 pub(crate) mod debug_strip;
+mod image_pool;
 mod current_images;
 mod freezing;
 mod initializer_contribution;

@@ -15,8 +15,6 @@
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
 	var/datum/forensics_crime/forensic_data
 
-	EXPIRY_TMP_DECLARE(last_bumped)
-
 	///Chemistry.
 	var/datum/reagents/reagents = null
 

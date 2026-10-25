@@ -44,10 +44,10 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	return list(
 		examine_line(MSG(climb/examine)),
 		op("climb", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Climb"), \
-			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready))), \
+			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready)), req(CAP_PROC(has_landing))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)),
 		op("climb_menu", menu(), label("Climb"), \
-			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready))), \
+			needs(req(CAP_PROC(climber_ready)), req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(climb/no_hands)), req(CAP_PROC(climb_path_ready)), req(CAP_PROC(has_landing))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)))
 
 /// The holder is climbable while it has the capability: the trait the old behaviour added.
@@ -96,6 +96,14 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 			return "You can't climb there, there's \a [occupied] in the way."
 	return null
 
+/// The tile the climber would end on exists (a holder's landing proc or its own tile): the refusal read before the wait and again after it.
+/datum/capability/lib/climb/proc/has_landing(datum/act/op/A)
+	var/atom/movable/holder = A.holder
+	var/mob/living/climber = A.actor
+	if(!istype(holder) || !istype(climber) || landing_of(holder, climber))
+		return null
+	return /datum/msg/climb/blocked
+
 /// A small mob climbs in 60% of the time.
 /datum/capability/lib/climb/proc/climb_time(datum/act/op/A)
 	var/base = delay_by ? call(A.holder, delay_by)() : delay
@@ -120,8 +128,7 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		return OP_FAILED
 	var/turf/destination = landing_of(holder, climber)
 	if(!destination)
-		A.reason = /datum/msg/climb/blocked
-		return OP_REFUSED
+		return OP_FAILED
 	rel_set(GLOB, nameof(GLOB.act_next_actor), climber)
 	var/C = ACT_ATTEMPT(climber, climb, holder)
 	rel_clear(GLOB, nameof(GLOB.act_next_actor))

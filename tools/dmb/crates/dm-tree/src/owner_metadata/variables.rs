@@ -1,5 +1,6 @@
 //! Exact local variable-name receipts. Enriched scalar queries remain separate.
 use super::*;
+use crate::token_digest::{self, TokenDigest};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VariableFact {
     pub owner: SymbolId,
@@ -14,6 +15,33 @@ pub struct VariableInputs {
     pub intrinsic: Arc<[IntrinsicMember]>,
     pub complete: bool,
     pub hierarchy_certified: bool,
+}
+impl VariableInputs {
+    /// The token of this exact input state under the artifact `key` (see `token_digest`).
+    pub(super) fn token(&self, key: &[u8]) -> u128 {
+        let mut digest = TokenDigest::new(b"owner-variable-token-v1");
+        digest.bytes(key);
+        digest.len(self.ancestors.len());
+        for ancestor in self.ancestors.iter() {
+            digest.symbol(*ancestor);
+        }
+        digest.opt_u128(self.parent_certificate);
+        digest.len(self.members.len());
+        for fact in self.members.iter() {
+            digest
+                .symbol(fact.owner)
+                .u8(token_digest::definition_byte(fact.definition))
+                .u128(crate::tree_identity::metadata_fingerprint(&fact.metadata));
+        }
+        digest.len(self.intrinsic.len());
+        for member in self.intrinsic.iter() {
+            token_digest::intrinsic(&mut digest, member);
+        }
+        digest
+            .bool(self.complete)
+            .bool(self.hierarchy_certified)
+            .finish()
+    }
 }
 pub(super) fn local_inputs(
     tree: &SemanticTree,

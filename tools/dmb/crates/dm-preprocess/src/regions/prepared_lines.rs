@@ -146,6 +146,10 @@ impl<'a> PreparedLines<'a> {
             }
         })
     }
+    /// Index of this range's first line in the whole table it slices.
+    pub(crate) fn offset(self) -> usize {
+        self.start
+    }
     pub fn first(self) -> Option<PreparedLineView<'a>> {
         self.get(0)
     }

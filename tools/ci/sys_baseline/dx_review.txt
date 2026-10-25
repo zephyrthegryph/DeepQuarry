@@ -17,13 +17,6 @@ effect_refusal	code/library/reagents/injector.dm	return OP_REFUSED
 effect_refusal	code/library/reagents/needle.dm	return OP_REFUSED
 effect_refusal	code/library/reagents/reagent_container.dm	return OP_REFUSED
 effect_refusal	code/library/structures/buckle.dm	return OP_REFUSED
-effect_refusal	code/library/structures/buckle.dm	return OP_REFUSED
-effect_refusal	code/library/structures/buckle.dm	return OP_REFUSED
-effect_refusal	code/library/structures/buckle.dm	return OP_REFUSED
-effect_refusal	code/library/structures/buckle.dm	return OP_REFUSED
-effect_refusal	code/library/structures/climb.dm	return OP_REFUSED
-effect_refusal	code/library/structures/climb.dm	return OP_REFUSED
-effect_refusal	code/library/structures/climb.dm	return OP_REFUSED
 effect_refusal	code/modules/detectivework/tools/rag.dm	return OP_REFUSED
 effect_refusal	code/modules/detectivework/tools/rag.dm	return OP_REFUSED
 effect_refusal	code/modules/detectivework/tools/rag.dm	return OP_REFUSED

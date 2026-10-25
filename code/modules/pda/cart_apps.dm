@@ -167,7 +167,7 @@ CAPABILITIES(/datum/data/pda/app/power)
 	else
 		for(var/datum/data/record/R as anything in sortRecord(GLOB.data_core.general))
 			if(R)
-				records += list(list(name = R.fields["name"], "ref" = "\ref[R]"))
+				records += list(list(name = R.fields["name"], "ref" = ref_token(R)))
 		data["recordsList"] = records
 		data["records"] = null
 		return null

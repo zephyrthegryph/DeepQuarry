@@ -19,11 +19,13 @@
 //   cooldown_started(M, next_move) / cooldown_reset(M, next_move)
 //
 // COOLDOWN_DECLARE on a base type is banned (base_vars lint); a subtype's own COOLDOWN_DECLARE stays a var.
+//
+// Stamps share that table: stamps(last_bumped) declares, STAMP(M, last_bumped, CLOCK_WORLD) writes, STAMP_ELAPSED(M, last_bumped, CLOCK_WORLD) reads.
 
 /datum
 	/// Sparse slots of this instance (sparse()): slot name -> value. Null while every slot is unset.
 	var/tmp/list/sparse_slots
-	/// Cooldowns of a base type (cooldowns()): name -> world.time it ends. Null while none ever started.
+	/// Cooldowns (cooldowns(): name -> world.time it ends) and stamps (stamps(): name -> a point on a clock) of a base type. Null while none is set.
 	var/tmp/list/cooldown_table
 
 
@@ -62,3 +64,19 @@
 		D.cooldown_table = list()
 	D.cooldown_table[name] = at
 	return at
+
+
+/// Writes stamp `name` (a point on a clock; 0 is a valid point, so it is stored rather than clearing). Returns the point.
+/proc/_stamp_set(datum/D, name, point)
+	if(!D)
+		return point
+	if(!D.cooldown_table)
+		D.cooldown_table = list()
+	D.cooldown_table[name] = point
+	return point
+
+/proc/_stamp_clear(datum/D, name)
+	if(D?.cooldown_table)
+		D.cooldown_table -= name
+		if(!length(D.cooldown_table))
+			D.cooldown_table = null
