@@ -11,7 +11,6 @@
 	icon_state = "default"
 
 	desc = "A long since abandoned recycling kiosk. Now featuring a state of the art, monochrome holographic tube display!"
-	description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "
 
 	anchored = TRUE
 	density = TRUE
@@ -108,6 +107,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(atom_rules(description_fluff = "While the original owners stopped their partnership with NT after a data theft scandal, the machine itself has been adopted by endless hoardes of vintage hardware enthusiasts to \"Keep Maint Clean™️\" and facilitate what has to be the galaxy's most neurodivergent black market "))
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_RECYCLER_TYPING))
 	setup(PROC_REF(init_hatch))

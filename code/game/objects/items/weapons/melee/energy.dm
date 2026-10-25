@@ -223,13 +223,12 @@ CAPABILITIES(/obj/item/melee/energy)
 	active_armourpen = 65
 	active_throwforce = 35
 	active_w_class = ITEMSIZE_HUGE
-	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_CUT
 	active_injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 
 CAPABILITIES(/obj/item/melee/energy/axe)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 20, armor_penetration = 20, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
@@ -269,7 +268,6 @@ CAPABILITIES(/obj/item/melee/energy/axe/charge/loaded)
 	active_armourpen = 50
 	active_throwforce = 20
 	active_w_class = ITEMSIZE_HUGE
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	colorable = TRUE
@@ -277,7 +275,10 @@ CAPABILITIES(/obj/item/melee/energy/axe/charge/loaded)
 	projectile_parry_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword)
-	configure(movable_motion(throw_speed = 1))
+	configure(atom_rules(description_antag = "The energy sword is a very strong melee weapon, capable of severing limbs easily, if they are targeted.  It can also has a chance \
+	to block projectiles and melee attacks while it is on and being held.  The sword can be toggled on or off by using it in your hand.  While it is off, \
+	it can be concealed in your pocket or bag."))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
@@ -416,7 +417,6 @@ CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
 	item_state = "blade"
 	injury_kind = INJURY_CUT
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
-	throw_range = 1
 	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such.
 	flags = NOBLOODY
 	var/mob/living/creator
@@ -430,7 +430,7 @@ CAPABILITIES(/obj/item/melee/energy/sword/charge/loaded)
 	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 CAPABILITIES(/obj/item/melee/energy/blade)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 1, throw_speed = 1))
 	setup(PROC_REF(prepare_blade_glow))
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	configure(item_thrown(force = 1))
@@ -496,7 +496,6 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	desc = "Concentrated energy forming a sharp tip at the end of a long rod."
 	icon_state = "espear"
 	injury_kind = INJURY_CUT
-	throw_range = 11
 	w_class = ITEMSIZE_LARGE
 	active_force = 25
 	active_armourpen = 75
@@ -507,7 +506,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	lcolor = "#800080"
 
 CAPABILITIES(/obj/item/melee/energy/spear)
-	configure(movable_motion(throw_speed = 7))
+	configure(movable_motion(throw_range = 11, throw_speed = 7))
 	configure(item_thrown(force = 10))
 	configure(item_combat(armor_penetration = 0, sharp = TRUE, edge = TRUE, force = 5, reach = 2))
 

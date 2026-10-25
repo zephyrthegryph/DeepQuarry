@@ -36,7 +36,6 @@
 	color = null //color is selected when spawned
 
 	vore_active = 1
-	vore_capacity = 3
 	vore_icons = 0 //The icon system down there handles the vore belly
 	vore_pounce_chance = 35
 	vore_bump_chance = 25
@@ -221,6 +220,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	configure(living_rules(vore_capacity = 3))
 	configure(butchery_rules(meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	configure(mob_nature(pain_1p = list("yelp", "whine", "bark", "growl"), pain_3p = list("yelps", "whines", "barks", "growls")))

@@ -13,7 +13,6 @@
 /// nullspace (it followed ..() in the old carbon Life()).
 /mob/living/carbon
 	// footsteps (footstep() in its CAPABILITIES): a shoe's, the custom_footstep a carbon starts with
-	footstep_type = FOOTSTEP_MOB_SHOE
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 

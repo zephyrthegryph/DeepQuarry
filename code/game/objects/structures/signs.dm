@@ -1620,13 +1620,13 @@ CAPABILITIES(/obj/structure/sign/warning)
 				P2.set_pixel_y(32)
 		P2.name = name
 		P2.desc = desc
-		P2.description_fluff = description_fluff
+		P2.set_description_fluff(atom_rules_of(src).description_fluff)
 		P2.flagtype = type
 	else
 		P.set_icon_state("[flag_path]")
 	P.name = name
 	P.desc = desc
-	P.description_fluff = description_fluff
+	P.set_description_fluff(atom_rules_of(src).description_fluff)
 	P.flagtype = type
 	consume(src, user)
 
@@ -1750,12 +1750,14 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/structure/sign/flag/vir
 	name = "Vir Governmental Authority flag"
 	desc = "The two-tone flag of the Vir Governmental Authority."
-	description_fluff = "Commonly referred to as VirGov, the Vir Governmental Authority was formed in 2412 as a unified system government following \
-	a half century of war between the Sif Planetary Government - or SifGov - and corporate interests in Kara orbit, in order to qualify for full membership \
-	in the Solar Confederate Government. Following the Karan Wars it would be almost a century before Trans-Stellar Corporations were allowed their typical \
-	freedom to operate unobstructed in the Vir system."
 	icon_state = "vir"
 	flagtype = /obj/item/flag/vir
+
+CAPABILITIES(/obj/structure/sign/flag/vir)
+	configure(atom_rules(description_fluff = "Commonly referred to as VirGov, the Vir Governmental Authority was formed in 2412 as a unified system government following \
+	a half century of war between the Sif Planetary Government - or SifGov - and corporate interests in Kara orbit, in order to qualify for full membership \
+	in the Solar Confederate Government. Following the Karan Wars it would be almost a century before Trans-Stellar Corporations were allowed their typical \
+	freedom to operate unobstructed in the Vir system."))
 
 /obj/structure/sign/flag/vir/left
 	icon_state = "vir_l"
@@ -1766,11 +1768,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/item/flag/vir
 	name = "Vir Governmental Authority flag"
 	desc = "The two-tone flag of the Vir Governmental Authority."
-	description_fluff = "Commonly referred to as VirGov, the Vir Governmental Authority was formed in 2412 as a unified system government following \
+	flag_path = "vir"
+
+CAPABILITIES(/obj/item/flag/vir)
+	configure(atom_rules(description_fluff = "Commonly referred to as VirGov, the Vir Governmental Authority was formed in 2412 as a unified system government following \
 	a half century of war between the Sif Planetary Government - or SifGov - and corporate interests in Kara orbit, in order to qualify for full membership \
 	in the Solar Confederate Government. Following the Karan Wars it would be almost a century before Trans-Stellar Corporations were allowed their typical \
-	freedom to operate unobstructed in the Vir system."
-	flag_path = "vir"
+	freedom to operate unobstructed in the Vir system."))
 
 /obj/item/flag/vir/l
 	name = "large Vir Governmental Authority flag"
@@ -1781,12 +1785,14 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/structure/sign/flag/almach_a
 	name = "Almach Association flag"
 	desc = "The black and grey flag of the now-defunct Almach Association."
-	description_fluff = "The Almach Association was a short lived (February 2562 - April 2564) governmental entity formed as an alliance of disparate radical mercurial \
-	states in an effort to secede from the Solar Confederate Government. Though the Association were defeated, and ultimately annexed by the Skrellian Far Kingdoms, \
-	the Association flag remains a popular symbol with mercurials and secessionists alike. To some, the Almach Association is seen as the first step towards the SCG's \
-	\"inevitable\" dissolution."
 	icon_state = "almach_a"
 	flagtype = /obj/item/flag/almach_a
+
+CAPABILITIES(/obj/structure/sign/flag/almach_a)
+	configure(atom_rules(description_fluff = "The Almach Association was a short lived (February 2562 - April 2564) governmental entity formed as an alliance of disparate radical mercurial \
+	states in an effort to secede from the Solar Confederate Government. Though the Association were defeated, and ultimately annexed by the Skrellian Far Kingdoms, \
+	the Association flag remains a popular symbol with mercurials and secessionists alike. To some, the Almach Association is seen as the first step towards the SCG's \
+	\"inevitable\" dissolution."))
 
 /obj/structure/sign/flag/almach_a/left
 	icon_state = "almach_a_l"
@@ -1797,11 +1803,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/item/flag/almach_a
 	name = "Almach Association flag"
 	desc = "The black and grey flag of the now-defunct Almach Association."
-	description_fluff = "The Almach Association was a short lived (February 2562 - April 2564) governmental entity formed as an alliance of disparate radical mercurial \
+	flag_path = "almach_a"
+
+CAPABILITIES(/obj/item/flag/almach_a)
+	configure(atom_rules(description_fluff = "The Almach Association was a short lived (February 2562 - April 2564) governmental entity formed as an alliance of disparate radical mercurial \
 	states in an effort to secede from the Solar Confederate Government. Though the Association were defeated, and ultimately annexed by the Skrellian Far Kingdoms, \
 	the Association flag remains a popular symbol with mercurials and secessionists alike. To some, the Almach Association is seen as the first step towards the SCG's \
-	\"inevitable\" dissolution."
-	flag_path = "almach_a"
+	\"inevitable\" dissolution."))
 
 /obj/item/flag/almach_a/l
 	name = "large Almach Association flag"
@@ -1811,12 +1819,14 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/structure/sign/flag/almach_p
 	name = "Almach Protectorate flag"
 	desc = "The purple flag of the Almach Protectorate."
-	description_fluff = "The Almach Protectorate was formed from the territory of the Almach Association as a condition of the 2564 Treaty of Whythe. \
-	Intended to be closely overseen by the Skrellian Far Kingdom, the Skathari Incursion left the Protectorate functionally independent in many regards, \
-	leading to the proliferation of previously restricted genetic modification technology into SolGov territory. However, the Protectorate was also left \
-	without meaningful military support, and has suffered sorely in the years since as the Relan-led government has struggled to remilitarize."
 	icon_state = "almach_p"
 	flagtype = /obj/item/flag/almach_p
+
+CAPABILITIES(/obj/structure/sign/flag/almach_p)
+	configure(atom_rules(description_fluff = "The Almach Protectorate was formed from the territory of the Almach Association as a condition of the 2564 Treaty of Whythe. \
+	Intended to be closely overseen by the Skrellian Far Kingdom, the Skathari Incursion left the Protectorate functionally independent in many regards, \
+	leading to the proliferation of previously restricted genetic modification technology into SolGov territory. However, the Protectorate was also left \
+	without meaningful military support, and has suffered sorely in the years since as the Relan-led government has struggled to remilitarize."))
 
 /obj/structure/sign/flag/almach_p/left
 	icon_state = "almach_p_l"
@@ -1827,11 +1837,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/item/flag/almach_p
 	name = "Almach Protectorate flag"
 	desc = "The purple flag of the Almach Protectorate."
-	description_fluff = "The Almach Protectorate was formed from the territory of the Almach Association as a condition of the 2564 Treaty of Whythe. \
+	flag_path = "almach_p"
+
+CAPABILITIES(/obj/item/flag/almach_p)
+	configure(atom_rules(description_fluff = "The Almach Protectorate was formed from the territory of the Almach Association as a condition of the 2564 Treaty of Whythe. \
 	Intended to be closely overseen by the Skrellian Far Kingdom, the Skathari Incursion left the Protectorate functionally independent in many regards, \
 	leading to the proliferation of previously restricted genetic modification technology into SolGov territory. However, the Protectorate was also left \
-	without meaningful military support, and has suffered sorely in the years since as the Relan-led government has struggled to remilitarize."
-	flag_path = "almach_p"
+	without meaningful military support, and has suffered sorely in the years since as the Relan-led government has struggled to remilitarize."))
 
 /obj/item/flag/almach_p/l
 	name = "large Almach Protectorate flag"
@@ -1841,12 +1853,14 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/structure/sign/flag/vystholm
 	name = "Vystholm flag"
 	desc = "The black and gold flag of Vystholm."
-	description_fluff = "Vystholm is a faction of xenophobic humans who constructed an ark ship, the VHS Rodnakya, in response to the abolition of the hostile \
-	First Contact Policy in the early 24th century. Thought to have long departed known space, the Vystholm returned to within range of human territory in response \
-	to the Skathari Incursion and has since undertaken a campaign of raiding, terrorism and espionage against established governments, particularly the Tajaran \
-	Pearlshield Coalition."
 	icon_state = "vystholm"
 	flagtype = /obj/item/flag/vystholm
+
+CAPABILITIES(/obj/structure/sign/flag/vystholm)
+	configure(atom_rules(description_fluff = "Vystholm is a faction of xenophobic humans who constructed an ark ship, the VHS Rodnakya, in response to the abolition of the hostile \
+	First Contact Policy in the early 24th century. Thought to have long departed known space, the Vystholm returned to within range of human territory in response \
+	to the Skathari Incursion and has since undertaken a campaign of raiding, terrorism and espionage against established governments, particularly the Tajaran \
+	Pearlshield Coalition."))
 
 /obj/structure/sign/flag/vystholm/left
 	icon_state = "vystholm_l"
@@ -1857,11 +1871,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/item/flag/vystholm
 	name = "Vystholm flag"
 	desc = "The black and gold flag of Vystholm."
-	description_fluff = "Vystholm is a faction of xenophobic humans who constructed an ark ship, the VHS Rodnakya, in response to the abolition of the hostile \
+	flag_path = "vystholm"
+
+CAPABILITIES(/obj/item/flag/vystholm)
+	configure(atom_rules(description_fluff = "Vystholm is a faction of xenophobic humans who constructed an ark ship, the VHS Rodnakya, in response to the abolition of the hostile \
 	First Contact Policy in the early 24th century. Thought to have long departed known space, the Vystholm returned to within range of human territory in response \
 	to the Skathari Incursion and has since undertaken a campaign of raiding, terrorism and espionage against established governments, particularly the Tajaran \
-	Pearlshield Coalition."
-	flag_path = "vystholm"
+	Pearlshield Coalition."))
 
 /obj/item/flag/vystholm/l
 	name = "large Vystholm flag"
@@ -1871,11 +1887,13 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/structure/sign/flag/fivearrows
 	name = "Five Arrows flag"
 	desc = "The red flag of the Five Arrows."
-	description_fluff = "The Five Arrows is an independent government entity that seceded from the Solar Confederate Government in 2570, in response to perceived \
-	failures in aiding the Sagittarius Heights during the Skathari Incursion. The success of the government in achieving effective local defense and prosperity has \
-	since attracted the membership of Kauq'xum, a remote Skrellian colony. The Five Arrows formed the model for SolGov's own semi-autonomous \"Regional Blocs\"."
 	icon_state = "fivearrows"
 	flagtype = /obj/item/flag/fivearrows
+
+CAPABILITIES(/obj/structure/sign/flag/fivearrows)
+	configure(atom_rules(description_fluff = "The Five Arrows is an independent government entity that seceded from the Solar Confederate Government in 2570, in response to perceived \
+	failures in aiding the Sagittarius Heights during the Skathari Incursion. The success of the government in achieving effective local defense and prosperity has \
+	since attracted the membership of Kauq'xum, a remote Skrellian colony. The Five Arrows formed the model for SolGov's own semi-autonomous \"Regional Blocs\"."))
 
 /obj/structure/sign/flag/fivearrows/left
 	icon_state = "fivearrows_l"
@@ -1886,10 +1904,12 @@ CAPABILITIES(/obj/structure/sign/flag)
 /obj/item/flag/fivearrows
 	name = "Five Arrows flag"
 	desc = "The red flag of the Five Arrows."
-	description_fluff = "The Five Arrows is an independent government entity that seceded from the Solar Confederate Government in 2570, in response to perceived \
-	failures in aiding the Sagittarius Heights during the Skathari Incursion. The success of the government in achieving effective local defense and prosperity has \
-	since attracted the membership of Kauq'xum, a remote Skrellian colony. The Five Arrows formed the model for SolGov's own semi-autonomous \"Regional Blocs\"."
 	flag_path = "fivearrows"
+
+CAPABILITIES(/obj/item/flag/fivearrows)
+	configure(atom_rules(description_fluff = "The Five Arrows is an independent government entity that seceded from the Solar Confederate Government in 2570, in response to perceived \
+	failures in aiding the Sagittarius Heights during the Skathari Incursion. The success of the government in achieving effective local defense and prosperity has \
+	since attracted the membership of Kauq'xum, a remote Skrellian colony. The Five Arrows formed the model for SolGov's own semi-autonomous \"Regional Blocs\"."))
 
 /obj/item/flag/fivearrows/l
 	name = "large Five Arrows flag"

@@ -10,7 +10,6 @@
 	icon_state = "health"
 	item_state = "healthanalyzer"
 	w_class = ITEMSIZE_SMALL
-	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 	/// The diagnostic profile this analyzer scans with.
 	var/profile_type = /datum/diagnostic_profile/health_analyzer
@@ -34,7 +33,7 @@
 
 
 CAPABILITIES(/obj/item/healthanalyzer)
-	configure(movable_motion(throw_speed = 5))
+	configure(movable_motion(throw_range = 10, throw_speed = 5))
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 3))

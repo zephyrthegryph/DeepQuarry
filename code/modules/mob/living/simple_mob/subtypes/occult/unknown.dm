@@ -54,7 +54,6 @@ CAPABILITIES(/obj/item/projectile/energy/slow_orb)
 	configure(item_combat(armor_penetration = 40))
 
 /mob/living/simple_mob/glitch_boss
-	delete_on_death = TRUE
 
 /mob/living/simple_mob/glitch_boss/on_death(gibbed)
 	. = ..()

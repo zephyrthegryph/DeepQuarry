@@ -18,10 +18,9 @@
  */
 
 /obj/item/toy
-	throw_range = 20
 
 CAPABILITIES(/obj/item/toy)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES))
@@ -90,13 +89,12 @@ CAPABILITIES(/obj/item/toy/balloon)
 /obj/item/toy/syndicateballoon
 	name = "criminal balloon"
 	desc = "There is a tag on the back that reads \"FUK NT!11!\"."
-	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "syndballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/syndicateballoon)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
@@ -104,13 +102,12 @@ CAPABILITIES(/obj/item/toy/syndicateballoon)
 /obj/item/toy/nanotrasenballoon
 	name = "criminal balloon"
 	desc = "Across the balloon the following is printed: \"Man, I love NanoTrasen soooo much. I use only NT products. You have NO idea.\""
-	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "ntballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/nanotrasenballoon)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
@@ -118,13 +115,12 @@ CAPABILITIES(/obj/item/toy/nanotrasenballoon)
 /obj/item/toy/colorballoon /// To color it, VV the 'color' var with a hex color code with the # included.
 	name = "balloon"
 	desc = "It's a plain little balloon. Comes in many colors!"
-	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "colorballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/colorballoon)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
@@ -2487,7 +2483,6 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi',
 		)
-	throw_range = 5
 	var/bullets_left = 0
 	var/max_shots = 6
 
@@ -2495,7 +2490,7 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	spin_cylinder()
 
 CAPABILITIES(/obj/item/toy/russian_revolver)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 5, throw_speed = 4))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
@@ -2588,11 +2583,10 @@ CAPABILITIES(/obj/item/toy/russian_revolver/trick_revolver)
 	desc = "A toy chainsaw with a rubber edge. Ages 8 and up"
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
-	throw_range = 20
 	var/cooldown = 0
 
 CAPABILITIES(/obj/item/toy/chainsaw)
-	configure(movable_motion(throw_speed = 4))
+	configure(movable_motion(throw_range = 20, throw_speed = 4))
 	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0, attack_verbs = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -2627,7 +2621,6 @@ CAPABILITIES(/obj/random/miniature)
 /obj/item/toy/snake_popper
 	name = "bread tube"
 	desc = "Bread in a tube. Chewy...and surprisingly tasty."
-	description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "tastybread"
 	var/popped = 0
@@ -2638,6 +2631,7 @@ CAPABILITIES(/obj/random/miniature)
 	return R.chance(0.1) ? 1 : real
 
 CAPABILITIES(/obj/item/toy/snake_popper)
+	configure(atom_rules(description_fluff = "This is the product that brought Centauri Provisions into the limelight. A product of the earliest extrasolar colony of Heaven, the Bread Tube, while bland, contains all the nutrients a spacer needs to get through the day and is decidedly edible when compared to some of its competitors. Due to the high-fructose corn syrup content of NanoTrasen's own-brand bread tubes, many jurisdictions classify them as a confectionary."))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -2878,30 +2872,38 @@ CAPABILITIES(/obj/item/toy/desk)
 /obj/item/toy/desk/newtoncradle
 	name = "\improper Newton's cradle"
 	desc = "A ancient 21th century super-weapon model demonstrating that Sir Isaac Newton is the deadliest sonuvabitch in space."
-	description_fluff = "Aside from car radios, Eridanian Dregs are reportedly notorious for stealing these things. It is often \
-	theorized that the very same ball bearings are used in black-market cybernetics."
 	icon_state = "newtoncradle"
+
+CAPABILITIES(/obj/item/toy/desk/newtoncradle)
+	configure(atom_rules(description_fluff = "Aside from car radios, Eridanian Dregs are reportedly notorious for stealing these things. It is often \
+	theorized that the very same ball bearings are used in black-market cybernetics."))
 
 /obj/item/toy/desk/fan
 	name = "office fan"
 	desc = "Your greatest fan."
-	description_fluff = "For weeks, the atmospherics department faced a conundrum on how to lower temperatures in a localized \
-	area through complicated pipe channels and ventilation systems. The problem was promptly solved by ordering several desk fans."
 	icon_state = "fan"
+
+CAPABILITIES(/obj/item/toy/desk/fan)
+	configure(atom_rules(description_fluff = "For weeks, the atmospherics department faced a conundrum on how to lower temperatures in a localized \
+	area through complicated pipe channels and ventilation systems. The problem was promptly solved by ordering several desk fans."))
 
 /obj/item/toy/desk/officetoy
 	name = "office toy"
 	desc = "A generic microfusion powered office desk toy. Only generates magnetism and ennui."
-	description_fluff = "The mechanism inside is a Hephasteus trade secret. No peeking!"
 	icon_state = "desktoy"
+
+CAPABILITIES(/obj/item/toy/desk/officetoy)
+	configure(atom_rules(description_fluff = "The mechanism inside is a Hephasteus trade secret. No peeking!"))
 
 /obj/item/toy/desk/dippingbird
 	name = "dipping bird toy"
 	desc = "Engineers marvel at this scale model of a primitive thermal engine. It's highly debated why the majority of owners \
 	were in low-level bureaucratic jobs."
-	description_fluff = "One of the key essentials for every Eridanian suit - it's practically a rite of passage to own one \
-	of these things."
 	icon_state = "dippybird"
+
+CAPABILITIES(/obj/item/toy/desk/dippingbird)
+	configure(atom_rules(description_fluff = "One of the key essentials for every Eridanian suit - it's practically a rite of passage to own one \
+	of these things."))
 
 /obj/item/toy/desk/stellardelight
 	name = "\improper Stellar Delight model"

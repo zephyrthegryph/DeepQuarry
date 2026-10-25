@@ -376,6 +376,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
 	item_rules()
 	item_handling(center_x = 16, center_y = 16, randpixel = 6, preserve = 0, no_attack_log = 0, no_random_knockdown = FALSE, cavity_implantable = TRUE) // how it is placed and handled: a type trait (code/game/objects/items/item_handling.dm)
 	setup(PROC_REF(share_tool_qualities))

@@ -5,8 +5,8 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	configure(living_rules(vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(butchery_rules(butchery_loot = list(/obj/item/stack/animalhide/human = 1)))
-	configure(living_rules(has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	setup(PROC_REF(finish_human_init))
 	owns_one(nameof(wearing_rig), on_destroy = ON_DESTROY_CONTAINED)
@@ -119,8 +119,8 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
-	configure(living_rules(fire_reaction = FIRE_REACTION_IGNITE))
-	configure(movable_motion(does_spin = FALSE))
+	configure(living_rules(vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE, does_spin = FALSE))
 	setup(PROC_REF(finish_robot_setup))
 	ref_one(nameof(inv1), /atom/movable/screen)
 	ref_one(nameof(inv2), /atom/movable/screen)

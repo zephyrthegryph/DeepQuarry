@@ -101,7 +101,6 @@
 	icon = 'icons/obj/leash.dmi'
 	icon_state = "leash"
 	item_state = "leash"
-	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 
 /// Every 2 s while leashed: the pet and holder must still be there, sentient, not absorbed and collared.
@@ -220,6 +219,7 @@
 //Called when the leash is used in hand
 //Tugs the pet closer
 CAPABILITIES(/obj/item/leash)
+	configure(movable_motion(throw_range = 4))
 	configure(item_worn(slots = SLOT_TIE))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))

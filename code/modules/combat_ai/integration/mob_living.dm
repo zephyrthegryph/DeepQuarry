@@ -111,8 +111,9 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// The starting say list (owns_one(starts =)): only a mob that overrides the default type gets one.
 /// Most mobs inherit /datum/say_list (empty bark tables) and allocate nothing; idle_speak and hear_say handle null.
 /mob/living/proc/make_say_list(current)
-	if(say_list_type && say_list_type != /datum/say_list)
-		return say_list_type
+	var/say_type = living_rules_of(src).say_list_type
+	if(say_type && say_type != /datum/say_list)
+		return say_type
 
 /mob/living/proc/initialize_ai_brain()
 	if(!living_rules_of(src).use_modern_ai)

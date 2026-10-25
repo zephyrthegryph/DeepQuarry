@@ -24,7 +24,6 @@
 /mob/living/simple_mob/animal/sif/glitterfly
 	name = "glitterfly"
 	desc = "A large, shiny butterfly!"
-	description_fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."
 	tt_desc = "S Lepidoptera adamas"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly)
 
@@ -58,9 +57,10 @@
 	/obj/item/reagent_containers/food/snacks/meat = 5
 	)
 
-	say_list_type = /datum/say_list/glitterfly
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(atom_rules(description_fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."))
+	configure(living_rules(say_list_type = /datum/say_list/glitterfly))
 	configure(mob_movement(hovering = TRUE))
 	rolls(nameof(color), PROC_REF(roll_colour))
 	rolls(nameof(default_pixel_y), range_of(5, 12))

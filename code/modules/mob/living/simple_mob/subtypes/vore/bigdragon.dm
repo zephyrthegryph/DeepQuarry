@@ -59,7 +59,6 @@ I think I covered everything.
 	icon_rest = "dragon_maneNone"
 	icon_living = "dragon_maneNone"
 	player_msg = "You can perform a charge attack by disarm intent clicking somewhere. Grab intent clicking will perform a tail sweep and fling any nearby mobs. You can fire breath with harm intent. Your attacks have cooldowns associated with them. You can heal slowly by resting. Check your abilities tab for other functions!"
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	pixel_x = -48
 	default_pixel_x = -48
 	old_x = -48
@@ -88,7 +87,6 @@ I think I covered everything.
 	vore_pounce_chance = 100
 	vore_active = 1
 	vore_icons = 2
-	vore_capacity = 2
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
 	icon_dead = "dragon-dead"
@@ -96,7 +94,6 @@ I think I covered everything.
 	glow_range = 7
 	glow_intensity = 3
 	glow_color = "#ED9200"
-	say_list_type = /datum/say_list/bigdragon
 	max_tox = 0 // for virgo3b survivability
 	max_co2 = 0 // Also needed for 3b Survivability otherwise it chokes to death
 
@@ -927,9 +924,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
-	configure(butchery_rules(meat_amount = 40))
+	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/bigdragon, use_modern_ai = TRUE))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(mob_rules(universal_understand = 1))
-	configure(living_rules(use_modern_ai = TRUE))
 	configure(buckle_rules(max_mobs = 1, movable = 1, lying = 0))
 	ref_one(nameof(gut1), /obj/belly)
 	ref_one(nameof(gut2), /obj/belly)

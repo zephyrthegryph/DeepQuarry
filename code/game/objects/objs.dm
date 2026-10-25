@@ -6,12 +6,6 @@
 	var/w_class // Size of the object.
 	animate_movement = 2
 	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
-	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
-
-	var/show_examine = TRUE	// Does this pop up on a mob when the mob is examined?
-
-	var/explosion_resistance
-
 	uses_integrity = TRUE
 
 /// Behaviour flags of an object (sparse slot obj_flags, default CAN_BE_HIT).

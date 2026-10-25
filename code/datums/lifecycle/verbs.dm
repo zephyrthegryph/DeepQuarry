@@ -103,7 +103,7 @@
 /// timer once, from Initialize(). Named lifecycle_lifetime, not the shorter
 /// `lifetime`, because a couple of existing effect types already declare
 /// their own unrelated `lifetime` var and this must not collide with them.
-/atom/movable/var/lifecycle_lifetime = 0
+// (the type trait movable_motion(lifecycle_lifetime = N), code/game/movable_motion.dm)
 /// The armed self-destruct (an OM timer id on this atom), or null: kept so expire() can re-arm
 /// with a new delay. The timer dies with the atom.
 /atom/movable/var/tmp/lifecycle_lifetime_timer
@@ -128,8 +128,8 @@
 	ending_qdel(src, END_EXPIRED)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
-	if(lifecycle_lifetime > 0)
-		expire(lifecycle_lifetime)
+	if(motion_of(src).lifecycle_lifetime > 0)
+		expire(motion_of(src).lifecycle_lifetime)
 
 // ---- slot_clear() / ledger_empty() ----
 
@@ -197,12 +197,9 @@
 
 // ---- delete_on_death ----
 
-/// This mob deletes itself when it dies (spores, shades), subscribed to the
-/// final hook of DQ Medical's ordered death pipeline (O5) -- never to a stat
-/// change. The destroy transaction never calls death() itself; this is the
-/// one place "dying" and "being destroyed" connect, and only for the types
-/// that opt in.
-/mob/living/var/delete_on_death = FALSE
+// A mob that deletes itself when it dies (spores, shades) declares configure(living_rules(delete_on_death = TRUE)); it is read by the
+// final hook of DQ Medical's ordered death pipeline (O5) -- never a stat change. The destroy transaction never calls death() itself; this is
+// the one place "dying" and "being destroyed" connect, and only for the types that opt in.
 
 /// The sealed death pipeline (/mob/proc/death(), code/modules/mob/death.dm)
 /// calls this as its final hook, after on_death() and every listener, so all
@@ -210,7 +207,7 @@
 /// Â§7). A no-op unless delete_on_death is set; skipped if the mob was revived
 /// or deleted (gibbed) along the way.
 /mob/living/proc/lifecycle_on_death_finalized()
-	if(delete_on_death && stat == DEAD && !QDELETED(src))
+	if(living_rules_of(src).delete_on_death && stat == DEAD && !QDELETED(src))
 		qdel(src)
 
 // ---- destroy_effects (declared, phase 6) ----

@@ -73,7 +73,6 @@
 
 	armor_spec = "melee=10;bullet=15;laser=-10;bomb=10;bio=100;rad=100"
 
-	say_list_type = /datum/say_list/leech
 
 /mob/living/simple_mob/animal/sif/leech/IIsAlly(mob/living/L)
 	. = ..()
@@ -98,8 +97,8 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	configure(living_rules(say_list_type = /datum/say_list/leech, use_modern_ai = TRUE))
 	configure(mob_rules(universal_understand = 1))
-	configure(living_rules(use_modern_ai = TRUE))
 	ref_one(nameof(host_bodypart), /obj/item/organ/external)
 	ref_one(nameof(host), /mob/living/carbon)
 	after_init(0, then(PROC_REF(leech_pest_ready)))

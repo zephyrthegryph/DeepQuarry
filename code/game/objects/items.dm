@@ -4,14 +4,11 @@
 	name = "item"
 	icon = 'icons/obj/weapons.dmi' //'icons/obj/items.dmi' //It was accidentally set to weapons.dmi 11 months ago...leaving it as is until further analysis
 	w_class = ITEMSIZE_NORMAL
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/storage_cost = null
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
@@ -63,7 +60,6 @@
 
 
 
-	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
@@ -594,7 +590,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	set category = VERB_CAT_OBJECT
 
 	var/obj/item/I = get_active_hand()
-	if(I && !I.abstract)
+	if(I && !item_rules_of(I).abstract)
 		I.showoff(src)
 
 /// The shared remote-view gate for optical device interactions.
@@ -837,7 +833,7 @@ DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_ic
 	return standing
 
 /obj/item/proc/apply_overlays(image/standing)
-	if(!blocks_emissive)
+	if(!motion_of(src).blocks_emissive)
 		return standing
 
 	var/mutable_appearance/blocker_overlay = mutable_appearance(standing.icon, standing.icon_state, plane = PLANE_EMISSIVE, appearance_flags = KEEP_APART)

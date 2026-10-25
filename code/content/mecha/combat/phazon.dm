@@ -70,9 +70,6 @@ TYPE_TABLE(/obj/mecha/combat/phazon/equipped, mecha_starting_equipment, list( \
 /obj/mecha/combat/phazon/janus
 	name = "Phazon Prototype Janus Class"
 	desc = "An exosuit which a more crude civilization such as yours might describe as WTF?."
-	description_fluff = "An incredibly high-tech exosuit constructed out of salvaged alien and cutting-edge modern technology.\
-	This machine, theoretically, is capable of travelling through time, however due to the strange nature of its miniaturized \
-	supermatter-fueled bluespace drive, it is uncertain how this ability manifests."
 	icon_state = "janus"
 	initial_icon = "janus"
 	step_in = 1
@@ -95,6 +92,11 @@ TYPE_TABLE(/obj/mecha/combat/phazon/equipped, mecha_starting_equipment, list( \
 	phasing_possible = TRUE
 	switch_dmg_type_possible = TRUE
 	cloak_possible = TRUE // Allows Janus to cloak.
+
+CAPABILITIES(/obj/mecha/combat/phazon/janus)
+	configure(atom_rules(description_fluff = "An incredibly high-tech exosuit constructed out of salvaged alien and cutting-edge modern technology.\
+	This machine, theoretically, is capable of travelling through time, however due to the strange nature of its miniaturized \
+	supermatter-fueled bluespace drive, it is uncertain how this ability manifests."))
 
 TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5))
 

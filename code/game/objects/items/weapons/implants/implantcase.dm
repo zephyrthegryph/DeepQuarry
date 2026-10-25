@@ -6,7 +6,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "implantcase-0"
 	item_state = "implantcase"
-	throw_range = 5
 	w_class = ITEMSIZE_TINY
 	var/obj/item/implant/imp = null
 
@@ -32,7 +31,7 @@
 		name = "Glass Case"
 
 CAPABILITIES(/obj/item/implantcase)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	op("label", item(/obj/item/pen), passes(), label("Label"), then(PROC_REF(label_asked)))
 	op("fill_from_syringe", item(/obj/item/reagent_containers/syringe), passes(), label("Fill"), then(PROC_REF(syringe_used)))
 	op("swap_implant", item(/obj/item/implanter), passes(), label("Swap implant"), then(PROC_REF(implanter_used)))

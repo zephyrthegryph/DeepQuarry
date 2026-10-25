@@ -10,7 +10,6 @@
 	icon_state = "paper"
 	item_state = "paper"
 	w_class = ITEMSIZE_TINY
-	throw_range = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
@@ -64,7 +63,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 1, throw_speed = 1))
 	setup(PROC_REF(encode_text), mapload = TRUE)
 	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
 	configure(item_thrown(force = 0))

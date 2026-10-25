@@ -1134,7 +1134,7 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
-			hit_object.throw_at(firer, throw_range, motion_of(hit_object).throw_speed, firer)
+			hit_object.throw_at(firer, motion_of(src).throw_range, motion_of(hit_object).throw_speed, firer)
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer

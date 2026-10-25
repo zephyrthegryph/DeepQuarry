@@ -52,7 +52,6 @@
 
 	swallowTime = 3 SECONDS
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 10
 	vore_stomach_name = "Stomach"
 	vore_default_item_mode = IM_DIGEST
@@ -489,6 +488,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
 	configure(mob_movement(softfall = TRUE))

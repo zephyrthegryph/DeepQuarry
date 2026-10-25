@@ -813,7 +813,7 @@ sparse(/mob/living, vomiting, type = bool)
 	if(!item || istype(item, /obj/item/tk_grab))
 		return FALSE
 
-	var/throw_range = item.throw_range
+	var/throw_range = motion_of(item).throw_range
 	if (istype(item, /obj/item/grab))
 		var/obj/item/grab/G = item
 		item = G.throw_held() //throw the person instead of the grab
@@ -821,7 +821,7 @@ sparse(/mob/living, vomiting, type = bool)
 			var/mob/M = item
 
 			//limit throw range by relative mob size
-			throw_range = round(M.throw_range * min(src.mob_size/M.mob_size, 1))
+			throw_range = round(motion_of(M).throw_range * min(src.mob_size/M.mob_size, 1))
 
 			var/turf/end_T = get_turf(target)
 			if(end_T)

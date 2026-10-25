@@ -50,7 +50,9 @@
 					/obj/item/ammo_magazine/clip/c762 = 30
 					)
 
-	say_list_type = /datum/say_list/merc/voxpirate
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate)
+	configure(living_rules(say_list_type = /datum/say_list/merc/voxpirate))
 
 /mob/living/simple_mob/humanoid/merc/voxpirate/pirate
 	name = "vox pirate"

@@ -64,7 +64,6 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	desc = "A shield adept for close quarters engagement.  It's also capable of protecting from less powerful projectiles."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "riot"
-	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 
@@ -95,7 +94,7 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	return 0
 
 CAPABILITIES(/obj/item/shield/riot)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))
@@ -119,7 +118,6 @@ CAPABILITIES(/obj/item/shield/riot)
 	icon_state = "eshield"
 	item_state = "eshield"
 	flags = NOCONDUCT
-	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 	var/lrange = 1.5
 	var/lpower = 1.5
@@ -148,7 +146,7 @@ CAPABILITIES(/obj/item/shield/riot)
 
 
 CAPABILITIES(/obj/item/shield/energy)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 4, throw_speed = 1))
 	configure(item_worn(slots = SLOT_EARS))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 3.0, attack_verbs = list("shoved", "bashed")))
@@ -226,7 +224,6 @@ CAPABILITIES(/obj/item/shield/energy)
 	desc = "An advanced riot shield made of lightweight materials that collapses for easy storage."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "teleriot0"
-	throw_range = 4
 	w_class = ITEMSIZE_NORMAL
 	var/active = 0
 /*
@@ -238,7 +235,7 @@ CAPABILITIES(/obj/item/shield/energy)
 */
 
 CAPABILITIES(/obj/item/shield/riot/tele)
-	configure(movable_motion(throw_speed = 3))
+	configure(movable_motion(throw_range = 4, throw_speed = 3))
 	configure(item_worn(slots = TRAIT_NONE))
 	configure(item_thrown(force = 3))
 	configure(item_combat(force = 3))
@@ -282,12 +279,11 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	desc = "A shiny silvery shield with a large red leaf symbol in the center."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "wolfgirlshield"
-	throw_range = 6
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 
 CAPABILITIES(/obj/item/shield/fluff/wolfgirlshield)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 6, throw_speed = 2))
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))

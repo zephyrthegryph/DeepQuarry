@@ -168,10 +168,10 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	return
 
 /mob/living/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))
 		return 1
 
-	if((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )))
+	if((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )))
 		return 1
 	return 0
 

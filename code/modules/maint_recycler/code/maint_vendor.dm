@@ -9,7 +9,6 @@
 	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
 
-	description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."
 
 	//wide sprite
 	pixel_x = -8
@@ -25,6 +24,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(atom_rules(description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."))
 	configure(movable_motion(unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_RECYCLER_TYPING))
 	setup(PROC_REF(init_products))

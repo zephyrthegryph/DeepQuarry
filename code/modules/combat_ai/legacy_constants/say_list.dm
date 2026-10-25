@@ -7,7 +7,6 @@
 
 /mob/living
 	var/datum/say_list/say_list = null
-	var/say_list_type = /datum/say_list	// Type to give us on initialization. Default has empty lists, so the mob will be silent.
 	var/datum/looping_sound/mob/deafened/deaf_loop //NYI
 	var/species_sounds = "None" // By default, we have nothing.
 	var/datum/looping_sound/mob/on_fire/firesoundloop

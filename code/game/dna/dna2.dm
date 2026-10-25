@@ -182,7 +182,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	src.custom_heat = sparse_get(character, custom_heat)
 	src.custom_cold = sparse_get(character, custom_cold)
 	src.digitigrade = character.looks.digitigrade
-	src.custom_footstep = character.custom_footstep
+	src.custom_footstep = footstep_of(character).custom_footstep
 
 	// +1 to account for the none-of-the-above possibility
 	SetUIValueRange(DNA_UI_EAR_STYLE,             ear_style + 1,               GLOB.ear_styles_list.len  + 1,  1)
@@ -368,7 +368,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	H.custom_speech_bubble = custom_speech_bubble
 	sparse_set(H, custom_heat, custom_heat)
 	sparse_set(H, custom_cold, custom_cold)
-	H.custom_footstep = custom_footstep
+	H.set_custom_footstep(custom_footstep)
 	H.looks.set_digitigrade(digitigrade)
 
 	// If synths have character markings

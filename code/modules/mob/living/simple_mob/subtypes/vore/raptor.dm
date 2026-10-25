@@ -8,7 +8,6 @@
 	icon_state = "raptorpurple"
 	icon_rest = "raptorpurple"
 	faction = FACTION_RAPTOR
-	meat_type = /obj/item/reagent_containers/food/snacks/meat
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -52,7 +51,6 @@
 	vore_pounce_chance = 50
 	vore_active = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
@@ -60,7 +58,8 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
-	configure(butchery_rules(meat_amount = 40))
+	configure(living_rules(vore_capacity = 1))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)

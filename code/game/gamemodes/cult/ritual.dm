@@ -196,7 +196,6 @@ CAPABILITIES(/obj/effect/rune)
 		)
 	icon_state ="tome"
 	item_state = "tome"
-	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	unique = 1
 	var/tomedat = ""
@@ -326,7 +325,7 @@ CAPABILITIES(/obj/effect/rune)
 
 
 CAPABILITIES(/obj/item/book/tome)
-	configure(movable_motion(throw_speed = 1))
+	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	setup(PROC_REF(learn_cultwords))
 	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
 	// The five seconds of drawing a rune (begin_drawing).

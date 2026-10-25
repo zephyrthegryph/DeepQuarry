@@ -30,7 +30,6 @@
 	var/force_down //determines if the affecting mob will be pinned to the ground
 	var/dancing //determines if assailant and affecting keep looking at each other. Basically a wrestling position
 
-	abstract = 1
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
@@ -192,6 +191,7 @@
 
 
 CAPABILITIES(/obj/item/grab)
+	configure(item_rules(abstract = TRUE))
 	ref_one(nameof(victim_at_make), /mob)
 	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))

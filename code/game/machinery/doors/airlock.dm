@@ -19,9 +19,7 @@
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
 
-	explosion_resistance = 10
 
-	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
 	/// If 1, will not beep on a failed closing attempt. Resets when the door closes.
 	var/has_beeped = 0
@@ -130,6 +128,8 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC))
+	configure(obj_rules(explosion_resistance = 10))
 	setup(PROC_REF(secure_admin_wires))
 	configure(atom_shielding(rad_material = MAT_STEEL, rad_thickness_mm = RAD_AIRLOCK_THICKNESS_MM))
 	setup(PROC_REF(join_close_group))
@@ -872,15 +872,15 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		return FALSE
 	if(electrified)
 		if(!COOLDOWN_FINISHED(src, bump_zap_cooldown))
-			EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+			sparse_set(user, last_bumped, EXPIRY_NOW(user, CLOCK_WORLD))
 			return TRUE // the shock just fired: the bump does nothing
 		if(shock(user, 100))
-			EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+			sparse_set(user, last_bumped, EXPIRY_NOW(user, CLOCK_WORLD))
 			COOLDOWN_START(src, bump_zap_cooldown, 1 SECOND)
 			return TRUE
 		return FALSE
 	if(user.status_units(STAT_HALLUCINATING) > 50 && prob(10) && operating == 0)
-		EXPIRY_STAMP(user, last_bumped, CLOCK_WORLD)
+		sparse_set(user, last_bumped, EXPIRY_NOW(user, CLOCK_WORLD))
 		to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 		user.playsound_local(get_turf(user), get_sfx(SFX_SPARKS), vol = 75)
 		user.injure(INJURY_PAIN, 10, null, src)

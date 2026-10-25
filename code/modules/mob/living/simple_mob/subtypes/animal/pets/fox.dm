@@ -23,15 +23,14 @@
 	minbodytemp = 223		//Below -50 Degrees Celcius
 	maxbodytemp = 323		//Above 50 Degrees Celcius
 
-	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox
 
-	say_list_type = /datum/say_list/fox
 	holder_type = /obj/item/holder/fox
 
 	var/turns_since_scan = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
-	configure(butchery_rules(meat_amount = 2))
+	configure(living_rules(say_list_type = /datum/say_list/fox))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))
 
 /datum/say_list/fox
 	speak = list("Ack-Ack","Ack-Ack-Ack-Ackawoooo","Awoo","Tchoff")

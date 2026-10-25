@@ -14,8 +14,7 @@
 	var/obj/belly/spont_belly_left = null
 	var/obj/belly/spont_belly_right = null
 
-	var/vore_capacity = 0				// Maximum capacity, -1 for unlimited
-	var/vore_capacity_ex = list("stomach" = 0) //expanded list of capacities
+	// vore_capacity (maximum capacity, -1 for unlimited) and vore_capacity_ex (expanded list of capacities) are the living_rules type trait
 	var/vore_fullness = 0				// How "full" the belly is (controls icons)
 	// ALLOW(instance_list): d: per-mob vore_fullness_ex with starting entries, edited at runtime; mobs are few
 	var/list/vore_fullness_ex = list("stomach" = 0) // Expanded list of fullness

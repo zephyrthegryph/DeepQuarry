@@ -8,9 +8,9 @@
 
 STATIC_ENTRY(movable_motion)
 
-/proc/movable_motion(throw_speed = null, icon_height = null, does_spin = null, unacidable = null, cone_x = null, cone_y = null)
+/proc/movable_motion(throw_speed = null, icon_height = null, does_spin = null, unacidable = null, cone_x = null, cone_y = null, blocks_emissive = null, throw_range = null, lifecycle_lifetime = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MOVABLE_MOTION, null, list("throw_speed" = throw_speed, "icon_height" = icon_height, "does_spin" = does_spin, "unacidable" = unacidable, "cone_x" = cone_x, "cone_y" = cone_y))
+	return entry_make(ENTRY_MOVABLE_MOTION, null, list("throw_speed" = throw_speed, "icon_height" = icon_height, "does_spin" = does_spin, "unacidable" = unacidable, "cone_x" = cone_x, "cone_y" = cone_y, "blocks_emissive" = blocks_emissive, "throw_range" = throw_range, "lifecycle_lifetime" = lifecycle_lifetime))
 
 /datum/type_trait/movable_motion
 	var/throw_speed = 2
@@ -19,6 +19,9 @@ STATIC_ENTRY(movable_motion)
 	var/unacidable = TRUE
 	var/cone_x = null
 	var/cone_y = null
+	var/blocks_emissive = EMISSIVE_BLOCK_NONE
+	var/throw_range = 7
+	var/lifecycle_lifetime = 0
 
 /datum/type_trait/movable_motion/copy_values(datum/type_trait/movable_motion/into)
 	into.throw_speed = throw_speed
@@ -27,13 +30,16 @@ STATIC_ENTRY(movable_motion)
 	into.unacidable = unacidable
 	into.cone_x = cone_x
 	into.cone_y = cone_y
+	into.blocks_emissive = blocks_emissive
+	into.throw_range = throw_range
+	into.lifecycle_lifetime = lifecycle_lifetime
 
 /datum/entry_engine/type_trait/movable_motion
 	kind = ENTRY_MOVABLE_MOTION
 	trait_type = /datum/type_trait/movable_motion
 	publish_key = MOVABLE_MOTION_KEY
 	base_type = /atom/movable
-	var_names = list("throw_speed" = "throw_speed", "icon_expected_height" = "icon_height", "does_spin" = "does_spin", "unacidable" = "unacidable", "light_cone_x_offset" = "cone_x", "light_cone_y_offset" = "cone_y")
+	var_names = list("throw_speed" = "throw_speed", "icon_expected_height" = "icon_height", "does_spin" = "does_spin", "unacidable" = "unacidable", "light_cone_x_offset" = "cone_x", "light_cone_y_offset" = "cone_y", "blocks_emissive" = "blocks_emissive", "throw_range" = "throw_range", "lifecycle_lifetime" = "lifecycle_lifetime")
 
 /// The holder's movable_motion values (its own once one was set at run time). Read only.
 READS_AS(/proc/motion_of, MOVABLE_MOTION_KEY)
@@ -63,3 +69,12 @@ READS_AS(/proc/motion_of, MOVABLE_MOTION_KEY)
 
 /atom/movable/proc/set_light_cone_y_offset(value)
 	return set_trait(src, ENTRY_MOVABLE_MOTION, "cone_y", value)
+
+/atom/movable/proc/set_blocks_emissive(value)
+	return set_trait(src, ENTRY_MOVABLE_MOTION, "blocks_emissive", value)
+
+/atom/movable/proc/set_throw_range(value)
+	return set_trait(src, ENTRY_MOVABLE_MOTION, "throw_range", value)
+
+/atom/movable/proc/set_lifecycle_lifetime(value)
+	return set_trait(src, ENTRY_MOVABLE_MOTION, "lifecycle_lifetime", value)

@@ -6,8 +6,6 @@
 	icon_state = "nothing"
 
 
-	vore_capacity = 3
-	vore_capacity_ex = list("stomach" = 3, "taur belly" = 3)
 	vore_fullness_ex = list("stomach" = 0, "taur belly" = 0)
 	vore_icon_bellies = list("stomach", "taur belly")
 	var/struggle_anim_stomach = FALSE
@@ -810,10 +808,10 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return 0
 
 /mob/living/carbon/human/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK) || get_equipped_item(SLOT_ID_HEAD) || get_equipped_item(SLOT_ID_SHOES) || get_equipped_item(SLOT_ID_UNIFORM) || get_equipped_item(SLOT_ID_SUIT) || get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EAR_L) || get_equipped_item(SLOT_ID_EAR_R) || get_equipped_item(SLOT_ID_GLOVES))))
 		return 1
 
-	if( (get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_L).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !get_equipped_item(SLOT_ID_HAND_R).abstract) )
+	if( (get_equipped_item(SLOT_ID_HAND_L) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_L)).abstract) || (get_equipped_item(SLOT_ID_HAND_R) && !item_rules_of(get_equipped_item(SLOT_ID_HAND_R)).abstract) )
 		return 1
 
 	return 0

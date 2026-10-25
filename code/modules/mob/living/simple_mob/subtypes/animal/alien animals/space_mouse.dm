@@ -47,10 +47,8 @@
 
 	speak_emote = list("squeaks")
 
-	say_list_type = /datum/say_list/mouse
 
 	vore_active = 1
-	vore_capacity = 1
 	vore_bump_chance = 0
 	vore_ignores_undigestable = 0
 	vore_default_mode = DM_DRAIN
@@ -61,6 +59,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/mouse))
 	configure(mob_rules(universal_understand = 1))
 
 /mob/living/simple_mob/vore/alienanimals/dustjumper/load_default_bellies()

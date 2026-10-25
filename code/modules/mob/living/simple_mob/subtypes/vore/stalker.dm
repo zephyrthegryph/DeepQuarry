@@ -26,7 +26,6 @@
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0
-	say_list_type = /datum/say_list/stalker
 
 	vore_bump_chance = 25
 	vore_digest_chance = 50
@@ -35,12 +34,14 @@
 	vore_active = 1
 	vore_icons = 1
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	vore_capacity = 1
 	swallowTime = 50
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 1000
 	vore_bump_emote = "pounces on"
+
+CAPABILITIES(/mob/living/simple_mob/vore/stalker)
+	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/stalker))
 
 /mob/living/simple_mob/vore/stalker/load_default_bellies()
 	. = ..()

@@ -5,7 +5,6 @@
 	icon_state = "fire_extinguisher0"
 	item_state = "fire_extinguisher"
 	w_class = ITEMSIZE_NORMAL
-	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 90)
 
 	var/spray_particles = 3
@@ -67,7 +66,7 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
-	configure(movable_motion(throw_speed = 2))
+	configure(movable_motion(throw_range = 10, throw_speed = 2))
 	rolls(nameof(overlay_choice), PROC_REF(roll_overlay_choice))
 	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")))
