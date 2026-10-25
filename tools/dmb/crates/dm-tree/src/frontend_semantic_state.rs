@@ -17,7 +17,7 @@ pub struct RetainedSemanticTree {
     splice_disabled: bool,
     splices: u64,
     /// The last published frontend with the project and defines it was built for: the base the next
-    /// request's plan and expansion are derived from (`DMB_FRONTEND_REVISION`).
+    /// request's plan and expansion adopt their unchanged include subtrees and regions from.
     previous: Option<(std::path::PathBuf, std::collections::BTreeMap<String, String>, super::FrontendRevision)>,
 }
 struct Entry {
@@ -482,10 +482,11 @@ impl RetainedSemanticTree {
                     on_error(&error, &adapted.skeletons.to_vec(), &origins);
                     error
                 })?;
+                tick!("identity_rows");
                 tree.refresh_metadata_identity(identity, hierarchy);
             }
             drop(identity_timer);
-            tick!("identity");
+            tick!("certify");
             let prior_index = self
                 .entry
                 .as_ref()

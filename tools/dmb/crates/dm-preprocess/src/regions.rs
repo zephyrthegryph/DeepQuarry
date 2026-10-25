@@ -13,13 +13,15 @@ use std::sync::Arc;
 mod directive_memo;
 mod intern_wire;
 mod directives;
+mod plan_trace;
+pub use plan_trace::{PlanReuse, PlanTimings, PlanTrace};
 mod path_prefix;
 pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
-mod edit;
-pub use edit::{expand_regions_edit, expansions_equal, plan_regions_edit, plans_equal, PlanEdit, PlanEditDetail};
+mod reuse;
+pub use reuse::{expand_regions_reusing, expansions_equal, plans_equal, ExpansionReuse};
 mod expansion;
 mod expansion_input;
 mod joined_text;
@@ -33,7 +35,7 @@ pub use region_memo::{
     ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION,
 };
 #[cfg(test)]
-mod edit_tests;
+mod reuse_tests;
 #[cfg(test)]
 mod tests;
 
@@ -147,8 +149,9 @@ pub struct IncludeRegion {
     pub source_span: Span,
     pub encounter_ordinal: usize,
     pub manifest_source: bool,
-    pub segments: Vec<ExpansionSegment>,
-    pub effects: Vec<MacroEffect>,
+    /// Shared, so a region reused by a later plan is a pointer copy, not a copy of its lines.
+    pub segments: Arc<Vec<ExpansionSegment>>,
+    pub effects: Arc<Vec<MacroEffect>>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -185,6 +188,11 @@ pub struct DirectivePlan {
     /// FILE_DIR snapshots (see the unique-name paired fixtures).
     pub file_dirs: Vec<PathBuf>,
     pub project_dir: PathBuf,
+    /// Reuse records of every include subtree this plan visited or reused, so the next request
+    /// can adopt unchanged subtrees whole (`plan_regions_incremental`).
+    pub trace: Option<Arc<plan_trace::PlanTrace>>,
+    /// The provider's input revision this plan was made at (`SourceProvider::revision`).
+    pub input_revision: Option<u64>,
 }
 
 /// Sequentially interpret directives. Actual text expansion is a separate,
@@ -203,7 +211,20 @@ pub fn plan_regions_with_memo<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     memo: &dyn ExpansionMemo,
 ) -> DirectivePlan {
-    directives::plan_with_memo(project, provider, defines, Some(memo))
+    directives::plan_with_memo(project, provider, defines, Some(memo)).0
+}
+
+/// The ordered directive pass, adopting every include subtree of `previous` whose files, incoming
+/// state and include context are unchanged instead of interpreting it again. The result equals a
+/// full pass; `PlanReuse` says which regions are verbatim copies of the previous plan's.
+pub fn plan_regions_incremental<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: Option<&dyn ExpansionMemo>,
+    previous: Option<&DirectivePlan>,
+) -> (DirectivePlan, PlanReuse) {
+    directives::plan_incremental(project, provider, defines, memo, previous)
 }
 
 impl DirectivePlan {

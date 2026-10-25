@@ -6,7 +6,7 @@ impl HeapCensus {
         let owner = "frontend.macro_environments";
         let mut previous = None;
         for region in &frontend.plan.regions {
-            for segment in &region.segments {
+            for segment in region.segments.iter() {
                 let environment = &segment.macros;
                 if previous.is_some_and(|prior| environment.shares_storage_with(prior)) {
                     continue;
@@ -34,7 +34,7 @@ impl HeapCensus {
                 previous = Some(environment);
             }
             // Effects retain owned copies, independently of persistent bindings.
-            for effect in &region.effects {
+            for effect in region.effects.iter() {
                 use dm_preprocess::regions::MacroEffect;
                 match effect {
                     MacroEffect::Define { name, definition } => {

@@ -194,6 +194,8 @@ pub struct RegionReceipt {
     pub(super) region: usize,
     pub(super) output: Span,
     pub(super) record: Arc<ExpansionRecord>,
+    /// How many provenance rows this region owns in the origin arena (they are contiguous).
+    pub(super) rows: usize,
 }
 impl RegionReceipt {
     pub fn region(&self) -> usize {

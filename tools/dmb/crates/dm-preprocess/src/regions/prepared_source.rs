@@ -258,10 +258,20 @@ impl crate::SourceProvider for PreparedSources {
 pub struct PreparedSourceProvider<'a, P> {
     captures: &'a PreparedSources,
     fallback: &'a P,
+    changes: Option<&'a dyn crate::SourceChanges>,
 }
 impl<'a, P> PreparedSourceProvider<'a, P> {
     pub fn new(captures: &'a PreparedSources, fallback: &'a P) -> Self {
-        Self { captures, fallback }
+        Self {
+            captures,
+            fallback,
+            changes: None,
+        }
+    }
+    /// Serve the input revision and change log of a query database alongside the captures.
+    pub fn with_changes(mut self, changes: &'a dyn crate::SourceChanges) -> Self {
+        self.changes = Some(changes);
+        self
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
@@ -275,6 +285,12 @@ impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<
         self.captures
             .get(path)
             .or_else(|| self.fallback.prepared_source(path))
+    }
+    fn revision(&self) -> Option<u64> {
+        self.changes.map(|changes| changes.revision())
+    }
+    fn changes_since(&self, revision: u64) -> Option<Arc<std::collections::BTreeSet<PathBuf>>> {
+        self.changes?.changes_since(revision)
     }
 }
 
@@ -363,7 +379,7 @@ mod tests {
             let before = plan
                 .regions
                 .iter()
-                .flat_map(|region| &region.segments)
+                .flat_map(|region| region.segments.iter())
                 .flat_map(|segment| &segment.lines)
                 .find(|line| line.text.contains("var/before"))
                 .unwrap();
