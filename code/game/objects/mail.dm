@@ -361,12 +361,12 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)
 		rel_add(SSmail, nameof(SSmail.admin_mail), new_mail)
-		log_and_message_admins("spawned [chosen] inside an envelope at the shuttle")
+		log_and_message_admins("spawned [chosen] inside an envelope at the shuttle", A.request.answerer)
 	else
 		var/obj/item/mail/ground_mail = new /obj/item/mail(user_mob.loc)
 		ground_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(ground_mail)
-		log_and_message_admins("spawned [chosen] inside an envelope at ([user_mob.x],[user_mob.y],[user_mob.z])")
+		log_and_message_admins("spawned [chosen] inside an envelope at ([user_mob.x],[user_mob.y],[user_mob.z])", A.request.answerer)
 
 	feedback_add_details("admin_verb","SM")
 

@@ -57,13 +57,21 @@ GLOBAL_LIST_EMPTY(rerun_answers)
 //		return prompt_flow(src, PROC_REF(this_proc), args)
 // and every query below it is answered by a re-run of the entry with the same arguments. Entries reached inside a running flow just run.
 
-/// The running prompt flow: its asker (client or datum), entry proc and arguments. Null outside one.
+/// The running prompt flow: its asker (client or datum), the ckey of the mob it runs as, entry proc and arguments. Null outside one.
 GLOBAL_VAR(prompt_flow)
 
-/proc/prompt_flow(asker, entry_proc, list/entry_args, rights = 0)
+/// Starts a flow of `entry_proc` on `asker`. `actor` is the mob the flow runs as (whose ckey each answer re-finds, and who hears a failed query): the
+/// asker's own mob for a client or a mob asker, else the one the entry names.
+/proc/prompt_flow(asker, entry_proc, list/entry_args, rights = 0, mob/actor = null)
 	if(GLOB.prompt_flow)
 		return call(asker, entry_proc)(arglist(entry_args))
-	GLOB.prompt_flow = list("asker" = asker, "proc" = entry_proc, "args" = entry_args.Copy(), "rights" = rights)
+	if(!actor)
+		if(istype(asker, /client))
+			var/client/asking_client = asker
+			actor = asking_client.mob
+		else if(ismob(asker))
+			actor = asker
+	GLOB.prompt_flow = list("asker" = asker, "ckey" = actor?.ckey, "proc" = entry_proc, "args" = entry_args.Copy(), "rights" = rights)
 	try
 		. = call(asker, entry_proc)(arglist(entry_args))
 	catch(var/e)
@@ -125,20 +133,20 @@ GLOBAL_VAR(prompt_flow)
 	var/asker = flow["asker"]
 	var/asker_w = rerun_wrap(asker)
 	var/list/wrapped = rerun_wrap_list(flow["args"])
-	var/user_ckey = usr?.ckey
+	var/user_ckey = flow["ckey"]
 	var/list/call_args = list(null, backend_type) + request + list(GLOBAL_PROC_REF(prompt_flow_io_done), asker_w, flow["proc"], wrapped, answers ? answers.Copy() : list(), key, user_ckey, flow["rights"])
 	io_job(arglist(call_args))
 	throw PROMPT_FLOW_PENDING
 
 /// The running flow's next query's rows (a list of positional row lists, empty for none), once its answer is stored; else starts it and
-/// unwinds the flow (throws PROMPT_FLOW_PENDING). Null when the query failed (logged; `warn` also tells usr).
+/// unwinds the flow (throws PROMPT_FLOW_PENDING). Null when the query failed (logged; `warn` also tells the flow's actor).
 /proc/flow_select(sql, list/arguments, warn = FALSE)
 	var/list/stored = flow_io_answer(/datum/io_backend/sql, list(sql, arguments))
 	if(stored["error"])
 		GLOB.prompt_flow["sql_error"] = "[stored["error"]]"
 		log_sql("[stored["error"]] | Query used: [sql] | Arguments: [json_encode(arguments)]")
 		if(warn)
-			to_chat(usr, span_danger("A SQL error occurred during this operation, check the server logs.")) // ALLOW(sys_usr_outside_verb): a flow re-runs as its asker did: usr is restored for it (prompt_flow_rerun)
+			to_chat(GLOB.directory[GLOB.prompt_flow["ckey"]]?.mob, span_danger("A SQL error occurred during this operation, check the server logs."))
 		return null
 	return stored["rows"] || list()
 
@@ -160,12 +168,10 @@ GLOBAL_VAR(prompt_flow)
 	var/asker = rerun_unwrap(asker_w)
 	if(!asker)
 		return
-	var/mob/user
 	if(user_ckey)
 		var/client/UC = GLOB.directory[user_ckey]
 		if(!UC)
 			return
-		user = UC.mob
 		if(rights && !check_rights_for(UC, rights))
 			return
 	var/list/proc_args = rerun_unwrap_list(wrapped)
@@ -181,16 +187,16 @@ GLOBAL_VAR(prompt_flow)
 		answers[key] = list("rows" = L["rows"], "affected" = L["affected"], "last_insert_id" = L["last_insert_id"])
 	else // another backend's plain value
 		answers[key] = list("value" = result)
-	prompt_flow_rerun(asker, proc_name, proc_args, answers, user)
+	prompt_flow_rerun(asker, proc_name, proc_args, answers)
 
-/// Runs a flow's entry again with its stored answers (shared by the query callback).
-/proc/prompt_flow_rerun(asker, proc_name, list/proc_args, list/answers, mob/user)
+/// Runs a flow's entry again with its stored answers (shared by the query callback). The entry starts its flow again, naming its actor as before.
+/proc/prompt_flow_rerun(asker, proc_name, list/proc_args, list/answers)
 	if(istype(asker, /client))
 		var/client/C = asker
 		C.rerun_answers = answers
 		C.rerun_answers_proc = proc_name
 		try
-			with_actor(arglist(list(user, C, proc_name) + proc_args))
+			call(C, proc_name)(arglist(proc_args))
 		catch(var/exception/e)
 			stack_trace("flow re-run [proc_name]: [e]")
 		C.rerun_answers = null
@@ -199,7 +205,7 @@ GLOBAL_VAR(prompt_flow)
 	var/id = "[REF(asker)]:[proc_name]"
 	GLOB.rerun_answers[id] = answers
 	try
-		with_actor(arglist(list(user, asker, proc_name) + proc_args))
+		call(asker, proc_name)(arglist(proc_args))
 	catch(var/exception/e)
 		stack_trace("flow re-run [proc_name] on [asker]: [e]")
 	GLOB.rerun_answers -= id

@@ -94,13 +94,13 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
 	op("feral_darkpurple_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(feral_darkpurple_interaction_item)))
 
 /mob/living/simple_mob/slime/feral/dark_purple/proc/blast_ignite(datum/act/A)
-	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")
+	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.", null)
 	ignite()
 	return TRUE
 
 /mob/living/simple_mob/slime/feral/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
-		log_and_message_admins("[src] ignited due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].")
+		log_and_message_admins("[src] ignited due to bring hit by a burning projectile[P.firer ? " by [key_name(P.firer)]" : ""].", null)
 		ignite()
 	else
 		..()
@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
 	var/obj/item/W = A.held
 	. = OP_OK
 	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
-		log_and_message_admins("[src] ignited due to being hit with a burning weapon ([W]) by [key_name(user)].")
+		log_and_message_admins("[src] ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", null)
 		ignite()
 	else
 		return OP_DECLINE

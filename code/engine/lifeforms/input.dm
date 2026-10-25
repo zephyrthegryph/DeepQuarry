@@ -148,6 +148,20 @@ GLOBAL_REAL_VAR(list/input_falling)
 		throw e
 	usr = previous
 
+/// Does this atom declare a tooltip or a hover entry (so a press on it closes one)?
+/proc/input_declares_tooltip(atom/holder)
+	var/datum/type_table/T = type_table_cache()[holder.type] || table_of(holder)
+	if(!(T.hook_flags & ENGINE_HOOK_LIFEFORMS))
+		return FALSE
+	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
+	if(P.tooltip)
+		return TRUE
+	for(var/datum/centry/C as anything in P.inputs)
+		var/datum/entry/E = C.item
+		if(E.args["input"] == INPUT_HOVER)
+			return TRUE
+	return FALSE
+
 /// The acting mob of the native input running now (usr), for the engine's own entry points. Content gets its actor as an argument.
 /proc/input_actor()
 	return usr

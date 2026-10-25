@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/finger_lockpick)
 		else //Probably broken or no power.
 			to_chat(user, span_warning("The door does not respond to the pulse."))
 		door.add_fingerprint(user)
-		log_and_message_admins("finger-lockpicked \an [door].")
+		log_and_message_admins("finger-lockpicked \an [door].", user)
 		ling_datum.chem_charges -= 10
 		return 1
 
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/finger_lockpick)
 		to_chat(user, span_notice("We send an electrical pulse up our finger, and into \the [O]."))
 		O.add_fingerprint(user)
 		emag_target(O, 1,user,src)
-		log_and_message_admins("finger-lockpicked \an [O].")
+		log_and_message_admins("finger-lockpicked \an [O].", user)
 		ling_datum.chem_charges -= 10
 
 		return 1

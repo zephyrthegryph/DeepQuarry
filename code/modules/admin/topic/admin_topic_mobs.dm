@@ -398,7 +398,7 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	M.on_mob_jump()
 	M.forceMove(get_turf(user))
 	var/msg = "[key_name_admin(user)] jumped [key_name_admin(M)] to them"
-	log_and_message_admins(msg)
+	log_and_message_admins(msg, A.actor)
 	admin_ticket_log(M, msg)
 	feedback_add_details("admin_verb","GM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -420,7 +420,7 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	M.on_mob_jump()
 	M.forceMove(pick(get_area_turfs(A)))
 	var/msg = "[key_name_admin(user)] teleported [ADMIN_LOOKUPFLW(M)]"
-	log_and_message_admins(msg)
+	log_and_message_admins(msg, op_act.actor)
 	admin_ticket_log(M, msg)
 	feedback_add_details("admin_verb","SMOB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 

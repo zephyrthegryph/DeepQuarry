@@ -458,7 +458,7 @@ CAPABILITIES(/obj/item/defib_kit/compact)
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
 
-	log_and_message_admins("used \a [src] to revive [key_name(H)].")
+	log_and_message_admins("used \a [src] to revive [key_name(H)].", A.actor)
 
 /obj/item/shockpaddles/proc/do_electrocute(mob/living/carbon/human/H, mob/user, target_zone)
 	var/obj/item/organ/external/affecting = H.get_organ(target_zone)

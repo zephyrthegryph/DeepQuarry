@@ -17,7 +17,7 @@
 	laws_changed()
 	if(notify)
 		notify_of_law_change(law||law_borg ? "NEW ZEROTH LAW: <b>[isrobot(src) && law_borg ? law_borg : law]</b>" : null)
-	log_and_message_admins("has given [src] the zeroth laws: [law]/[law_borg ? law_borg : "N/A"]")
+	log_and_message_admins("has given [src] the zeroth laws: [law]/[law_borg ? law_borg : "N/A"]", null)
 
 /mob/living/silicon/robot/set_zeroth_law(law, law_borg, notify = TRUE)
 	..()
@@ -30,7 +30,7 @@
 	laws_changed()
 	if(notify)
 		notify_of_law_change("NEW \[!ERROR!\] LAW: <b>[law]</b>")
-	log_and_message_admins("has given [src] the ion law: [law]")
+	log_and_message_admins("has given [src] the ion law: [law]", null)
 
 /mob/living/silicon/proc/add_inherent_law(law, notify = TRUE)
 	laws_sanity_check()
@@ -38,7 +38,7 @@
 	laws_changed()
 	if(notify)
 		notify_of_law_change("NEW CORE LAW: <b>[law]</b>")
-	log_and_message_admins("has given [src] the inherent law: [law]")
+	log_and_message_admins("has given [src] the inherent law: [law]", null)
 
 /mob/living/silicon/proc/add_supplied_law(number, law, notify = TRUE)
 	laws_sanity_check()
@@ -47,7 +47,7 @@
 	if(notify)
 		var/th = uppertext("[number]\th")
 		notify_of_law_change("NEW \[[th]\] LAW: <b>[law]</b>")
-	log_and_message_admins("has given [src] the supplied law: [law]")
+	log_and_message_admins("has given [src] the supplied law: [law]", null)
 
 /mob/living/silicon/proc/delete_law(datum/ai_law/law, notify = TRUE)
 	laws_sanity_check()
@@ -55,7 +55,7 @@
 	laws_changed()
 	if(notify)
 		notify_of_law_change("LAW DELETED: <b>[law.law]</b>")
-	log_and_message_admins("has deleted a law belonging to [src]: [law.law]")
+	log_and_message_admins("has deleted a law belonging to [src]: [law.law]", null)
 
 /mob/living/silicon/proc/clear_inherent_laws(silent = 0, notify = TRUE)
 	laws_sanity_check()
@@ -64,7 +64,7 @@
 	if(notify)
 		notify_of_law_change("CORE LAWS WIPED.")
 	if(!silent)
-		log_and_message_admins("cleared the inherent laws of [src]")
+		log_and_message_admins("cleared the inherent laws of [src]", null)
 
 /mob/living/silicon/proc/clear_ion_laws(silent = 0, notify = TRUE)
 	laws_sanity_check()
@@ -73,7 +73,7 @@
 	if(notify)
 		notify_of_law_change("CORRUPTED LAWS WIPED.")
 	if(!silent)
-		log_and_message_admins("cleared the ion laws of [src]")
+		log_and_message_admins("cleared the ion laws of [src]", null)
 
 /mob/living/silicon/proc/clear_supplied_laws(silent = 0, notify = TRUE)
 	laws_sanity_check()
@@ -82,7 +82,7 @@
 	if(notify)
 		notify_of_law_change("NON-CORE LAWS WIPED.")
 	if(!silent)
-		log_and_message_admins("cleared the supplied laws of [src]")
+		log_and_message_admins("cleared the supplied laws of [src]", null)
 
 /// Tell subscribers (slaved cyborgs) that this unit's laws changed.
 /mob/living/silicon/proc/laws_changed()

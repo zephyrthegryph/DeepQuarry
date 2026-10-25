@@ -125,7 +125,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	var/datum/prompt/P = A.answer
 	var/new_law = P?.value
 	if(AL && new_law && new_law != AL.law && is_malf(A.actor))
-		log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'")
+		log_and_message_admins("has changed a law of [owner()] from '[AL.law]' to '[new_law]'", A.actor)
 		AL.set_law(new_law)
 	return TRUE
 
@@ -153,7 +153,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	if(is_malf(user))
 		var/datum/ai_laws/ALs = ui_member(transfer_laws, law_sets(), /datum/ai_laws)
 		if(ALs && (is_admin(user) || (ALs in GLOB.player_laws)))
-			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].")
+			log_and_message_admins("has transfered the [ALs.name] laws to [owner()].", A.actor)
 			ALs.sync(owner(), 0)
 	return TRUE
 
@@ -244,7 +244,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 		return
 	for(var/mob/living/silicon/robot/R in AI.connected_robots)
 		R.sync()
-	log_and_message_admins("has syncronized [AI]'s laws with its borgs.")
+	log_and_message_admins("has syncronized [AI]'s laws with its borgs.", null)
 
 /datum/tgui_module/law_manager/robot
 CAPABILITIES(/datum/tgui_module/law_manager/robot)

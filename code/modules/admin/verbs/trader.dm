@@ -137,7 +137,7 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 	after(null, 300 SECONDS, GLOBAL_PROC_REF(close_trader_visit))
 
 /proc/trader_load_finished(z)
-	log_and_message_admins("Loaded the trade shuttle just now.")
+	log_and_message_admins("Loaded the trade shuttle just now.", null)
 
 /proc/close_trader_visit()
 	GLOB.send_beruang = FALSE // Can no longer join the traders.

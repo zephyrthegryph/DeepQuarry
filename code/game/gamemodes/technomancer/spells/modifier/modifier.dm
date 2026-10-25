@@ -33,7 +33,7 @@ CAPABILITIES(/obj/item/spell/modifier)
 		duration = round(duration * calculate_spell_power(1.0), 1)
 	if(L.apply_body_effect(modifier_type, duration, owner_ref()) && ispath(modifier_type, /datum/body_effect/technomancer) && isnull(L.body_effect_state(modifier_type)))
 		L.set_body_effect_state(modifier_type, calculate_spell_power(1))
-	log_and_message_admins("has casted [src] on [L].")
+	log_and_message_admins("has casted [src] on [L].", owner_ref())
 	consume(src, L)
 	return TRUE
 

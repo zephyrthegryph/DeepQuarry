@@ -33,7 +33,7 @@
 	var/warnings = 0
 	var/success = 0
 
-	log_and_message_admins("## SUPERMATTER SETUP - Setup initiated by [user] using coolant type [response].")
+	log_and_message_admins("## SUPERMATTER SETUP - Setup initiated by [user] using coolant type [response].", A.request.answerer)
 
 	// CONFIGURATION PHASE
 	// Coolant canisters, set types according to response.
@@ -77,7 +77,7 @@
 				continue
 			if(SETUP_ERROR)
 				errors++
-				log_and_message_admins("## SUPERMATTER SETUP - Error encountered! Aborting.")
+				log_and_message_admins("## SUPERMATTER SETUP - Error encountered! Aborting.", A.request.answerer)
 				break
 			if(SETUP_DELAYED)
 				delayed_objects.Add(S)
@@ -95,10 +95,10 @@
 					continue
 				if(SETUP_ERROR)
 					errors++
-					log_and_message_admins("## SUPERMATTER SETUP - Error encountered! Aborting.")
+					log_and_message_admins("## SUPERMATTER SETUP - Error encountered! Aborting.", A.request.answerer)
 					break
 
-	log_and_message_admins("## SUPERMATTER SETUP - Setup completed with [errors] errors, [warnings] warnings and [success] successful steps.")
+	log_and_message_admins("## SUPERMATTER SETUP - Setup completed with [errors] errors, [warnings] warnings and [success] successful steps.", A.request.answerer)
 
 	return
 
@@ -128,7 +128,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/atmospherics/binary/pump/P = locate_within(get_turf(src), /obj/machinery/atmospherics/binary/pump)
 	if(!P)
-		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!", null)
 		return SETUP_WARNING
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
@@ -145,7 +145,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
-		log_and_message_admins("## WARNING: Unable to locate connector port at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: Unable to locate connector port at [x] [y] [z]!", null)
 		return SETUP_WARNING
 	new/obj/machinery/portable_atmospherics/canister(get_turf(src)) // Canisters automatically connect to connectors in New()
 	return SETUP_OK
@@ -163,10 +163,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/atmospherics/portables_connector/P = locate_within(get_turf(src), /obj/machinery/atmospherics/portables_connector)
 	if(!P)
-		log_and_message_admins("## ERROR: Unable to locate coolant connector port at [x] [y] [z]!")
+		log_and_message_admins("## ERROR: Unable to locate coolant connector port at [x] [y] [z]!", null)
 		return SETUP_ERROR
 	if(!canister_type)
-		log_and_message_admins("## ERROR: Canister type unset at [x] [y] [z]!")
+		log_and_message_admins("## ERROR: Canister type unset at [x] [y] [z]!", null)
 		return SETUP_ERROR
 	new canister_type(get_turf(src))
 	return SETUP_OK
@@ -184,10 +184,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/power/supermatter/SM = locate_within(get_turf(src), /obj/machinery/power/supermatter)
 	if(!SM)
-		log_and_message_admins("## ERROR: Unable to locate supermatter core at [x] [y] [z]!")
+		log_and_message_admins("## ERROR: Unable to locate supermatter core at [x] [y] [z]!", null)
 		return SETUP_ERROR
 	if(!energy_setting)
-		log_and_message_admins("## ERROR: Energy setting unset at [x] [y] [z]!")
+		log_and_message_admins("## ERROR: Energy setting unset at [x] [y] [z]!", null)
 		return SETUP_ERROR
 	SM.power = energy_setting
 	return SETUP_OK
@@ -208,7 +208,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/power/smes/S = locate_within(get_turf(src), /obj/machinery/power/smes)
 	if(!S)
-		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!", null)
 		return SETUP_WARNING
 	S.set_input_attempt(1)
 	S.set_output_attempt(1)
@@ -241,10 +241,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	..()
 	var/obj/machinery/atmospherics/omni/atmos_filter/F = locate_within(get_turf(src), /obj/machinery/atmospherics/omni/atmos_filter)
 	if(!F)
-		log_and_message_admins("## WARNING: Unable to locate omni filter at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: Unable to locate omni filter at [x] [y] [z]!", null)
 		return SETUP_WARNING
 	if(!coolant)
-		log_and_message_admins("## WARNING: No coolant type set at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: No coolant type set at [x] [y] [z]!", null)
 		return SETUP_WARNING
 
 	// Non-nitrogen coolant, adjust the filter's config first.
@@ -259,7 +259,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 				P.set_mode(ATM_CO2)
 				break
 			else
-				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!")
+				log_and_message_admins("## WARNING: Inapropriate filter coolant type set at [x] [y] [z]!", null)
 				return SETUP_WARNING
 		F.wake_for_state_change()
 
@@ -273,7 +273,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 
 /obj/effect/engine_setup/shutters/activate()
 	if(!target_button)
-		log_and_message_admins("## WARNING: No button type set at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: No button type set at [x] [y] [z]!", null)
 		return SETUP_WARNING
 
 	var/obj/machinery/button/remote/blast_door/found = null
@@ -284,7 +284,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 			break
 
 	if(!found)
-		log_and_message_admins("## WARNING: Unable to locate button at [x] [y] [z]!")
+		log_and_message_admins("## WARNING: Unable to locate button at [x] [y] [z]!", null)
 		return SETUP_WARNING
 
 	found.trigger()

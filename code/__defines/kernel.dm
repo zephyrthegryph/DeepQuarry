@@ -33,6 +33,10 @@
 #define INPUT_CLICK_THRESHOLD 95
 /// The same for every other input (a verb, a Topic, a tgui action, say).
 #define INPUT_VERB_THRESHOLD 85
+/// The client's mouse buttons and drag (code/engine/kernel/entry.dm): what a /datum/input_event/click/client_mouse reports.
+#define INPUT_MOUSE_DOWN "mouse_down"
+#define INPUT_MOUSE_UP "mouse_up"
+#define INPUT_MOUSE_DRAG "mouse_drag"
 /// Input-latency histogram: bins of one tick each, the last bin holds everything slower.
 #define KERNEL_LATENCY_BINS 32
 /// A waiter with no timeout.

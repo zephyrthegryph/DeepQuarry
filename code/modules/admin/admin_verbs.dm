@@ -75,12 +75,12 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 		if(build_mode)
 			togglebuildmode(body)
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 			if(build_mode == "Yes")
 				togglebuildmode(ghost)
 		else
 			ghost = body.ghostize(1, TRUE)
-			log_and_message_admins("[key_name(user)] admin-ghosted.") // Add logging.
+			log_and_message_admins("[key_name(user)] admin-ghosted.", usr) // Add logging.
 		user.init_verbs()
 		if(body)
 			body.teleop = ghost

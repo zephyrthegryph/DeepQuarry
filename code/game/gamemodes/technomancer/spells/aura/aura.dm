@@ -18,11 +18,11 @@ CAPABILITIES(/obj/item/spell/aura)
 
 /// Admins are told the aura is being cast.
 /obj/item/spell/aura/proc/announce_cast()
-	log_and_message_admins("has started casting [src].")
+	log_and_message_admins("has started casting [src].", owner_ref())
 
 // admins are told the maintained spell stopped.
 /obj/item/spell/aura/on_destroy(force)
-	log_and_message_admins("has stopped maintaining [src].")
+	log_and_message_admins("has stopped maintaining [src].", owner_ref())
 	..()
 
 /obj/item/spell/aura/proc/aura_step(datum/act/timer/A)
