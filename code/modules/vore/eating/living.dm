@@ -308,7 +308,7 @@
 	P.spont_belly_left = spont_belly_left
 	P.spont_belly_front = spont_belly_front
 	P.spont_belly_right = spont_belly_right
-	P.autotransferable = autotransferable
+	P.autotransferable = !!sparse_get_or(src, autotransferable, TRUE)
 
 	var/list/serialized = list()
 	for(var/obj/belly/B as anything in src.vore_organs)
@@ -344,7 +344,7 @@
 	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
 	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
 	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
-	autotransferable = P.autotransferable
+	sparse_set_or(src, autotransferable, P.autotransferable, TRUE)
 
 	if(bellies)
 		if(isliving(src))
@@ -682,7 +682,7 @@
 		var/obj/item/capture_crystal/crystal = loc
 		crystal.unleash()
 		rel_clear(crystal, nameof(crystal.bound_mob))
-		capture_crystal = 0
+		sparse_set_or(src, capture_crystal, FALSE, TRUE)
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -1226,7 +1226,7 @@
 		dat += span_bold("Selective Mode Pref:") + " [src.vore_prefs.selective_preference]<br>"
 		dat += span_bold("Mob Vore:") + " [vore_prefs.allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Affected by temperature:") + " [vore_prefs.allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Autotransferable:") + " [autotransferable ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Autotransferable:") + " [sparse_get_or(src, autotransferable, TRUE) ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Can be stripped:") + " [vore_prefs.strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
 		dat += span_bold("Size Change Strip Mode Pref:") + " [src.vore_prefs.size_strip_preference]<br>"
 		dat += span_bold("Worn items can be contaminated:") + " [vore_prefs.contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"

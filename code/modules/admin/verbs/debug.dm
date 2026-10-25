@@ -89,11 +89,14 @@ ADMIN_VERB(debug_atmospherics, R_DEBUG, "Debug Atmospherics", "Opens the SSair d
 ADMIN_VERB_AND_CONTEXT_MENU(trace_injury_mitigation, R_DEBUG, "Trace Injury Mitigation", "Toggle a per-hit breakdown of a mob's injury mitigation (armour, shields, factors, species) in your chat and the debug log.", ADMIN_CATEGORY_DEBUG_INVESTIGATE, mob/living/target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!istype(target))
 		return
-	if(user in target.injury_trace)
-		LAZYREMOVE(target.injury_trace, user)
+	var/list/tracers = sparse_get(target, injury_trace)
+	if(user in tracers)
+		tracers -= user
+		sparse_set(target, injury_trace, length(tracers) ? tracers : null)
 		to_chat(user, span_notice("No longer tracing injury mitigation on [target]."))
 	else
-		LAZYADD(target.injury_trace, user)
+		LAZYADD(tracers, user)
+		sparse_set(target, injury_trace, tracers)
 		to_chat(user, span_notice("Tracing injury mitigation on [target]: every injure() call reports each stage."))
 	log_admin("[key_name(user)] toggled injury mitigation tracing on [key_name(target)].")
 	feedback_add_details("admin_verb","TRACEINJ") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
