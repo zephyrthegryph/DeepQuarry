@@ -227,5 +227,5 @@ CAPABILITIES(/atom/movable/screen/ghost)
 		client_screen_clear(client)
 		if(length(HUD.adding))
 			client_screen_add(client, HUD.adding)
-		client_screen_add(client, client.void)
+		client_screen_add(client, GLOB.click_catcher)
 
