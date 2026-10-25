@@ -427,7 +427,7 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 
 /obj/item/storage/bag/mail/borg/proc/upgrade()
 	name += " of holding"
-	storage_slots = 45
+	set_storage_slots(45)
 	set_max_storage_space(75)
 
 // Mail Scanner

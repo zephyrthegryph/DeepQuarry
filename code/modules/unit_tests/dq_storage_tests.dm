@@ -52,7 +52,7 @@
 
 	// Count: storage_slots caps the number of things.
 	var/obj/item/storage/box/counted = allocate(/obj/item/storage/box, T)
-	counted.storage_slots = 2
+	counted.set_storage_slots(2)
 	counted.set_max_storage_space(100)
 	TEST_ASSERT(counted.insert_item(dq_storage_item(T, ITEMSIZE_TINY)), "slot one")
 	TEST_ASSERT(counted.insert_item(dq_storage_item(T, ITEMSIZE_TINY)), "slot two")
@@ -139,7 +139,7 @@
 
 	var/obj/item/storage/backpack/pack = allocate(/obj/item/storage/backpack, T)
 	var/obj/item/storage/box/box = allocate(/obj/item/storage/box, T)
-	box.storage_slots = 4
+	box.set_storage_slots(4)
 	TEST_ASSERT_NULL(pack.hud, "no HUD before anyone opens the backpack")
 	TEST_ASSERT_NULL(box.hud, "no HUD before anyone opens the box")
 	TEST_ASSERT_EQUAL(GLOB.storage_hud_count, baseline, "making storage makes no HUD")
