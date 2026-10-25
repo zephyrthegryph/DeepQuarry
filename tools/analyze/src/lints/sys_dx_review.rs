@@ -1,6 +1,6 @@
 //! The machine review's lints (rewrite/machines-full): shapes the machine conversions kept finding, as shrink-only ratchets.
 //!
-//! - `effect_refusal`     an op effect (a proc taking `datum/act/op/A`) that tells the actor why (`to_chat`, `atom_say`, `balloon_alert`,
+//! - `effect_refusal`     an op effect (a proc taking `datum/act/op/A`) that tells the actor why (`to_chat`, `atom_say`, `balloon_alert`, `act_message`,
 //!                        `A.reason =`) and then returns `OP_REFUSED`: the refusal is a requirement (`needs(req(...))`), not a message
 //!                        and a return at the head of the effect.
 //! - `request_in_effect`  `open_request()` inside an op effect: the op asks with `asks()` (a workflow step), so the answer resumes the op.
@@ -128,7 +128,7 @@ fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
             if pat!(r"(?<![\w.])open_request\(").is_match(code) {
                 out.push(("request_in_effect", number));
             }
-            if pat!(r"(?<![\w])(to_chat|atom_say|balloon_alert)\(|\bA\.reason\s*=").is_match(code) {
+            if pat!(r"(?<![\w])(to_chat|atom_say|balloon_alert|act_message)\(|\bA\.reason\s*=").is_match(code) {
                 c.told = true;
             }
             if c.told && pat!(r"\breturn\s+OP_REFUSED\b").is_match(code) {
@@ -184,6 +184,9 @@ fn selftest() -> Result<String, String> {
         "\tholder.update_inv_l_hand()",                         // 22 output_side_effect: another atom
         "\tloc.update_icon()",                                  // 23 output_side_effect
         "\tlook.glow(2, 1)",                                    // 24 fine
+        "/obj/item/x/proc/milk(datum/act/op/A)",               // 25
+        "\tact_message(A.actor, A.target, others = \"x\")",    // 26
+        "\treturn OP_REFUSED",                                 // 27 effect_refusal: told through act_message()
     ];
     let f = SourceFile::from_text("code/x.dm", &fixture.join("\n"));
     let mut v = Vec::new();
@@ -200,6 +203,7 @@ fn selftest() -> Result<String, String> {
         ("undef_then_used", 17),
         ("output_side_effect", 22),
         ("output_side_effect", 23),
+        ("effect_refusal", 27),
     ];
     if got != want {
         return Err(format!("dx_review selftest: got {:?}", got));

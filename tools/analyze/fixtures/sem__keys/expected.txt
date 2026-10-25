@@ -12,4 +12,5 @@ unresolved_id	code/modules/keys/things.dm	14
 unresolved_id	code/modules/keys/things.dm	17
 unresolved_op	code/modules/keys/things.dm	11
 unresolved_op	code/modules/keys/things.dm	28
+unresolved_op	code/modules/keys/things.dm	57
 unresolved_op	code/modules/unit_tests/t.dm	7

@@ -54,8 +54,10 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
 			feed = TRUE, \
 			examine_range = 2),
-		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), needs(req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_available))), \
-			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
+		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), needs(req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_available)), req(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_ready))), \
+			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))),
+		on_op("glass_container.milk", then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_turned_away)), outcome = ACT_REFUSED),
+		on_notice(/datum/notice/venom_milk_resisted, then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_attempt_seen))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
 	configure(movable_motion(unacidable = TRUE))
@@ -65,6 +67,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass)
 	glass_container()
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
+MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
 
 /// The label of a glass container: at most 50 letters once sanitised; a longer answer is refused and the prompt stays open.
@@ -122,6 +125,9 @@ MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open t
 
 // ---- venom ----
 
+/// An attempt to express venom from a creature that gave some too recently was turned away: the container announces it, and onlookers see it.
+ACTION(venom_milk_resisted, mob/living/milker, mob/living/creature, FIXED, notice = /datum/notice/venom_milk_resisted)
+
 /// The reagent and amount one milking of `target` gives (a trait's chosen injection, or a spider's poison): list(reagent, amount), or null when it has none.
 /obj/item/reagent_containers/glass/proc/venom_of(mob/living/target)
 	var/reagent
@@ -141,6 +147,23 @@ MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open t
 /obj/item/reagent_containers/glass/proc/venom_available(datum/act/op/A)
 	return venom_of(A.target) ? null : MSG(glass/no_venom)
 
+/// needs: the creature's venom was not expressed in the last half minute.
+/obj/item/reagent_containers/glass/proc/venom_ready(datum/act/op/A)
+	var/mob/living/target = A.target
+	return cooldown_ready(target, venom_milking_cd) ? null : MSG(glass/venom_recently)
+
+/// A milking was refused: when it was the cooldown, the container announces the attempt (venom_milk_resisted) for whoever is watching.
+/obj/item/reagent_containers/glass/proc/venom_turned_away(datum/act/A)
+	var/datum/notice/op_done/done = A
+	if(done.refusal != /datum/msg/glass/venom_recently)
+		return
+	PUBLISH(src, venom_milk_resisted, milker = done.op_actor, creature = done.op_subject)
+
+/// Onlookers see the attempt the milker was told off for (the milker and the creature have their own lines).
+/obj/item/reagent_containers/glass/proc/venom_attempt_seen(datum/act/A)
+	var/datum/notice/venom_milk_resisted/seen = A
+	act_message(seen.milker, seen.creature, others = span_warning("%U% attempts to express venom from %T%, but nothing happens."))
+
 /// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison.
 /obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
 	var/mob/living/target = A.target
@@ -149,18 +172,12 @@ MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open t
 	if(!venom)
 		log_world("GLASS: [src] milking of [target] by [user] no longer possible after the check")
 		return OP_FAILED
-	if(!cooldown_ready(target, venom_milking_cd))
-		// Onlookers see the failed attempt too, which a requirement's refusal (told to the actor alone) cannot say.
-		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
-			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
-		return OP_REFUSED
 	var/reagent = venom[1]
 	var/amount = venom[2]
 	cooldown_start(target, venom_milking_cd, 30 SECONDS)
 	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
 	reagents.add_reagent(reagent, amount)
 	return OP_OK
-
 
 /// The look of a glass container: the filling (by how full it is, in the colour of what is in it), the lid while it is on, and a label.
 /obj/item/reagent_containers/glass/proc/draw_glass(datum/look/look, base, filled, labelled)

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "effect_refusal now counts act_message() before OP_REFUSED; venom milking's cooldown is a requirement and onlookers hear the attempt through a published notice; the singularity generator consumes its coil before saying it installed it"
+  - code_imp: "keys/unresolved_op resolves the ops a CAPABILITY_DEF writes in its entries()"

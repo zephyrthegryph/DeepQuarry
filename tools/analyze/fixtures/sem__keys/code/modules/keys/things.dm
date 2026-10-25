@@ -44,3 +44,14 @@ CAPABILITIES(/obj/machinery/thing,
 
 /proc/grant(datum/target, what, source = "grant", duration)
 	return TRUE
+
+// A CAPABILITY_DEF writes its ops in the entries() of its datum: they resolve as `capability.op`.
+CAPABILITY_DEF(milker, CAP_MILKER, key = NONE)
+
+/datum/capability/def/milker/entries()
+	return list(
+		op("milk", needs(PROC_REF(ok))))
+
+/obj/machinery/thing/proc/milk_it(mob/user)
+	perform_op(user, src, "milker.milk")
+	perform_op(user, src, "milker.milks")
