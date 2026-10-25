@@ -1006,9 +1006,9 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 		var/specific_quest = answer_of(A, "quest")
 		if(!specific_quest)
 			return
-		quest_from_above(target(), specific_quest)
+		quest_from_above(target(), specific_quest, A.actor)
 	else
-		quest_from_above(target())
+		quest_from_above(target(), actor = A.actor)
 
 ////////FIXES//////////////
 

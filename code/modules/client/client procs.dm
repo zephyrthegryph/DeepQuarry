@@ -50,9 +50,9 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (!asset_cache_job)
 			return
 
-	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
+	var/mob/user = topic_actor() //stops us calling Topic for somebody else's client. Also helps prevent a null actor
+	if(!user)
 		return
-	var/mob/user = mob
 
 	#if defined(TOPIC_DEBUGGING)
 	to_world("[src]'s Topic: [href] destined for [hsrc].")
@@ -466,10 +466,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(CONFIG_GET(flag/paranoia_logging))
 		var/alert = FALSE // start.
 		if(isnum(player_age) && player_age == 0)
-			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.")
+			log_and_message_admins("PARANOIA: [key_name(src)] has connected here for the first time.", null)
 			alert = TRUE
 		if(isnum(account_age) && account_age <= 2)
-			log_and_message_admins("PARANOIA: [key_name(src)] has a very new BYOND account ([account_age] days).")
+			log_and_message_admins("PARANOIA: [key_name(src)] has a very new BYOND account ([account_age] days).", null)
 			alert = TRUE
 		if(alert)
 			for(var/client/X in GLOB.admins)
@@ -932,7 +932,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		interaction_menu.hide()
 	// Clients cannot be hooked: the click event is emitted on the client's mob.
 	if(mob)
-		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, usr)
+		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, mob)
 	. = ..()
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
@@ -1007,7 +1007,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	//429 is rate limit exceeded
 	if(text2num("[http["status"]]") == 429)
-		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.")
+		log_and_message_admins("getipintel.net reports HTTP status 429. IP reputation checking is now disabled. If you see this, let a developer know.", null)
 		CONFIG_SET(flag/ip_reputation, FALSE)
 		return -1
 
@@ -1037,10 +1037,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			if(-6)
 				ipr_error += "Missing contact info"
 
-		log_and_message_admins(ipr_error)
+		log_and_message_admins(ipr_error, null)
 		if(fatal)
 			CONFIG_SET(flag/ip_reputation, FALSE)
-			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.")
+			log_and_message_admins("With this error, IP reputation checking is disabled for this shift. Let a developer know.", null)
 		return -1
 
 	//Went fine

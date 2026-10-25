@@ -8,9 +8,6 @@
 /// world.time before which hover updates are ignored.
 /client/var/tmp/hover_next_update = 0
 
-/atom/MouseEntered(location, control, params)
-	usr?.client?.note_hover(src)
-
 /client/proc/note_hover(atom/hovered)
 	if(!hover_tracking || !COOLDOWN_FINISHED(src, hover_next_update))
 		return

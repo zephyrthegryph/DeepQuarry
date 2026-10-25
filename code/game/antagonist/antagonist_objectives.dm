@@ -66,4 +66,4 @@
 		to_chat(src, span_notice("You've set your goal to be '[new_ambitions]'."))
 	else
 		to_chat(src, span_notice("You leave your ambitions behind."))
-	log_and_message_admins("has set their ambitions to now be: [new_ambitions].")
+	log_and_message_admins("has set their ambitions to now be: [new_ambitions].", A.request.answerer)

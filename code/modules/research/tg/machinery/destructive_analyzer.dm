@@ -273,14 +273,14 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	if(isliving(thing))
 		var/mob/living/mob_thing = thing
 		var/turf/turf_to_dump_to = get_turf(src)
-		log_and_message_admins("made an attempt to kill [mob_thing] in a destructive analyzer was made at [ADMIN_VERBOSEJMP(turf_to_dump_to)]")
+		log_and_message_admins("made an attempt to kill [mob_thing] in a destructive analyzer was made at [ADMIN_VERBOSEJMP(turf_to_dump_to)]", null)
 		visible_message(span_warning("A loud buzz sounds out from \the [src] as it rejects and spits out \the [mob_thing]!"))
 		mob_thing.forceMove(turf_to_dump_to)
 		return
 	//Safety.
 	if(is_type_in_list(thing, GLOB.item_deconstruction_blacklist))
 		var/turf/turf_to_dump_to = get_turf(src)
-		log_and_message_admins("made an attempt to destroy [thing] in a destructive analyzer was made at [ADMIN_VERBOSEJMP(turf_to_dump_to)]")
+		log_and_message_admins("made an attempt to destroy [thing] in a destructive analyzer was made at [ADMIN_VERBOSEJMP(turf_to_dump_to)]", null)
 		visible_message(span_warning("A loud buzz sounds out from \the [src] as it rejects and spits out \the [thing]!"))
 		thing.forceMove(turf_to_dump_to)
 		return

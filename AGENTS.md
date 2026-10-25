@@ -405,6 +405,9 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   are requests (`open_request()`, `request_answer()`, `requests.dm`); long work that must yield is `job()`
   (`jobs.dm`); a call that may fail by design is `safe_call()` (`safe.dm`). Tests make time pass with
   `test_driver_begin()` and `test_time()` (doc/testing.md "The kernel clock").
+  BYOND's own callbacks (`atom/Click`, `DblClick`, `MouseWheel`, `MouseDrop`, `MouseEntered`, `MouseDown`, the client's mouse procs,
+  `/datum/Topic`, `world.Reboot`) are in `code/engine/kernel/entry.dm`: each reads `usr` there once, builds the event with the actor, and
+  handlers read the actor from the event (the hooks in `input_hooks.dm` take it as `src`).
 - **Atmospherics: LINDA on a Rust backend.** `code/ATMOSPHERICS/` is the only engine (ZAS/XGM
   are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with

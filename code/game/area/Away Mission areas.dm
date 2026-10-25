@@ -27,7 +27,7 @@
 	EvalValidSpawnTurfs()
 
 	if(!length(valid_spawn_turfs) && (mobcountmax || floracountmax))
-		log_and_message_admins("Error! [src] does not have any turfs!")
+		log_and_message_admins("Error! [src] does not have any turfs!", null)
 		return TRUE
 
 	//Handles random mob placement for mobcountmax, as defined/randomized in initialize of each individual area.

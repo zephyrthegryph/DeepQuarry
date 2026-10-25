@@ -16,7 +16,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 GLOBAL_DATUM(input_compatibility, /datum/input_adapter)
 
-/mob/proc/input_adapter()
+/mob/proc/input_adapter() as /datum/input_adapter
 	return input_compatibility()
 
 /datum/input_adapter/proc/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
