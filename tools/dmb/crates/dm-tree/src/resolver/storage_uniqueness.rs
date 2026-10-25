@@ -128,19 +128,12 @@ impl RetainedStorage {
             .chain(tree.inventory.non_unique.iter().copied())
             .collect();
         let mut keys = Vec::<Arc<[u8]>>::new();
-        self.store.visit_storage(|view| {
-            if let ObservedArtifactStorageView::Entry { key, .. } = view {
-                if !key.starts_with(UNIQUE_PREFIX) {
-                    keys.push(Arc::clone(key));
-                }
-            }
-        });
         let host = UniqueHost(tree);
         let mut certificates = BTreeMap::new();
         for name in names {
             let key = unique_key(name);
             keys.push(Arc::clone(&key));
-            let owner = self.store.lookup(&key, &host).or_else(|| {
+            let owner = self.unique.lookup(&key, &host).or_else(|| {
                 let token = NEXT
                     .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
                         value.checked_add(1)
@@ -149,7 +142,7 @@ impl RetainedStorage {
                 let ledger = ObservationLedger::default();
                 let query = StorageQuery::Unique(name);
                 ledger.record(query, host.answer(&query), (), None);
-                self.store.insert_with_owned(
+                self.unique.insert_with_owned(
                     key,
                     ledger.reads(),
                     ledger.domain_receipts(),
@@ -164,7 +157,7 @@ impl RetainedStorage {
                 certificates.insert(name, token);
             }
         }
-        self.store
+        self.unique
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         certificates
     }

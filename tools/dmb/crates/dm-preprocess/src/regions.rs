@@ -27,7 +27,7 @@ pub use reuse::{expand_regions_reusing, expansions_equal, plans_equal, Expansion
 mod expansion;
 mod expansion_input;
 mod joined_text;
-pub use expansion_input::ExpansionInputs;
+pub use expansion_input::{share_expansion_inputs, ExpansionInputs};
 mod origin_arena;
 pub mod region_memo;
 pub use region_memo::storage::ExpansionStorageView;

@@ -80,6 +80,31 @@ fn issued_inputs_skip_control_reencoding_but_replay_positive_negative_reads() {
     }
 }
 #[test]
+fn owners_on_one_shared_core_share_admissions_and_still_validate_them() {
+    let core = Store::shared_current_rosters();
+    let first = Memo {
+        inputs: ExpansionInputs::with_core(&core),
+        ..Default::default()
+    };
+    let second = Memo {
+        inputs: ExpansionInputs::with_core(&core),
+        ..Default::default()
+    };
+    let source = "/proc/probe()\n    return USED + ABSENT\n";
+    let original = plan(source, &[("USED", "7")]);
+    expand_regions_text_with_memo(&original, 1, &first);
+    // The second owner has issued nothing, yet finds the first one's admission: one allocation for both.
+    let found = second.inputs.lookup(&original, 0).expect("shared admission");
+    assert!(Arc::ptr_eq(&found, &first.inputs.lookup(&original, 0).unwrap()));
+    // A read that changed is declined by replay against the asking plan, shared or not.
+    let changed = plan(source, &[("USED", "8")]);
+    assert!(second.inputs.lookup(&changed, 0).is_none());
+    drop(first);
+    assert!(second.inputs.lookup(&original, 0).is_some(), "the second owner's claim keeps the admission");
+    drop(second);
+    assert!(Arc::strong_count(&found) >= 1);
+}
+#[test]
 fn current_locations_and_prepared_control_shape_cannot_inherit_admission() {
     let source = "/proc/probe()\n    return __LINE__ + USED\n";
     let memo = Memo::default();
