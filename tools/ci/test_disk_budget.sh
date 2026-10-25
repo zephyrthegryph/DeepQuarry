@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# Proves tools/dq_disk_budget.sh on a temp tree (never the real cache): over-budget eviction oldest first, units in use kept (recently
+# modified, leased slot, newest keep), an unknown directory removed, a file-level table and a per-worktree growth dir capped, the
+# whole-cache total cap, and the disk floor refusing heavy work.
+set -uo pipefail
+cd "$(dirname "$0")/../.."
+fail=0
+check() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; fail=1; fi; }
+T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+export DQ_CACHE_ROOT="$T/cache" DQ_WT_ROOT="$T/wt" DQ_DISK_MANIFEST="$T/m.toml" DQ_DISK_TOOLS=0 DQ_DISK_FREE_GB=500
+mkdir -p "$DQ_CACHE_ROOT/lane-pool" "$DQ_CACHE_ROOT/logs" "$DQ_WT_ROOT"
+cat >"$T/m.toml" <<'TOML'
+[settings]
+total_gb = 60
+floor_gb = 50
+aggressive_pct = 50
+min_idle_min = 30
+index_ttl_min = 0
+[cache.units]
+policy = children-lru
+cap_mb = 3
+protect = leased-slot
+[cache.logs]
+policy = files-lru
+depth = 2
+cap_mb = 2
+keep = 1
+[cache.targets]
+policy = children-lru
+cap_mb = 100
+sub_cap_mb = 2
+protect = leased-slot
+[cache.small]
+policy = children-lru
+cap_mb = 100
+[cache.slots]
+policy = state
+[cache.lane-pool]
+policy = state
+[worktree.growth]
+path = data/test-runs
+policy = files-lru
+cap_mb = 1
+age_days = 3
+TOML
+mk() { head -c "$2" /dev/zero >"$1"; if [ -n "${3:-}" ]; then touch -d "$3" "$1"; fi; }   # mk <file> <bytes> [touch -d date]
+unit() { mkdir -p "$1"; mk "$1/blob" 1048576; touch -d "$2" "$1/blob" "$1"; }
+# children-lru: five 1 MB units against a 3 MB cap; the oldest unprotected goes, the leased one and the fresh one are spared
+unit "$DQ_CACHE_ROOT/units/u1" "5 days ago"
+unit "$DQ_CACHE_ROOT/units/pool-9" "6 days ago"; : >"$DQ_CACHE_ROOT/lane-pool/pool-9.lease"
+unit "$DQ_CACHE_ROOT/units/u2" "4 days ago"
+unit "$DQ_CACHE_ROOT/units/u3" "3 days ago"
+unit "$DQ_CACHE_ROOT/units/fresh" "1 minute ago"
+# sub cap: a child over 2 MB loses its least recently modified files, never the child; a leased child is not trimmed at all
+mkdir -p "$DQ_CACHE_ROOT/targets/lane1" "$DQ_CACHE_ROOT/targets/pool-8"; : >"$DQ_CACHE_ROOT/lane-pool/pool-8.lease"
+for i in 1 2 3 4; do mk "$DQ_CACHE_ROOT/targets/lane1/d$i.rlib" 1048576 "$((i + 1)) days ago"; mk "$DQ_CACHE_ROOT/targets/pool-8/d$i.rlib" 1048576 "$((i + 1)) days ago"; done
+mk "$DQ_CACHE_ROOT/targets/lane1/fresh.rlib" 1048576 "1 minute ago"
+# files-lru with keep: three 1 MB files against 2 MB; the oldest goes and the newest is kept
+for i in 1 2 3; do mk "$DQ_CACHE_ROOT/logs/f$i.dat" 1048576 "$((i + 1)) days ago"; done
+# unknown directory (old), unknown directory (busy), unknown stray file (old), a state dir
+mkdir -p "$DQ_CACHE_ROOT/mystery" "$DQ_CACHE_ROOT/mystery-busy" "$DQ_CACHE_ROOT/slots" "$DQ_CACHE_ROOT/dmb-probe-old" "$DQ_CACHE_ROOT/train/queue" "$DQ_CACHE_ROOT/lane-pool/self"
+mk "$DQ_CACHE_ROOT/dmb-probe-old/x" 2048 "3 days ago"; touch -d "3 days ago" "$DQ_CACHE_ROOT/dmb-probe-old"
+mk "$DQ_CACHE_ROOT/train/queue/q1.q" 10 "30 days ago"; touch -d "30 days ago" "$DQ_CACHE_ROOT/train/queue" "$DQ_CACHE_ROOT/train"
+mk "$DQ_CACHE_ROOT/lane-pool/self/x" 10 "30 days ago"; touch -d "30 days ago" "$DQ_CACHE_ROOT/lane-pool/self"
+mk "$DQ_CACHE_ROOT/mystery/x" 2048 "3 days ago"; touch -d "3 days ago" "$DQ_CACHE_ROOT/mystery"
+mk "$DQ_CACHE_ROOT/mystery-busy/x" 2048
+mk "$DQ_CACHE_ROOT/slots/owner" 10 "9 days ago"
+mk "$DQ_CACHE_ROOT/stray.log" 100 "2 days ago"
+# a worktree growth dir: three 1 MB files, 1 MB cap, one past the 3 day age cap
+mkdir -p "$DQ_WT_ROOT/lane-a/data/test-runs"; git init -q "$DQ_WT_ROOT/lane-a"
+mk "$DQ_WT_ROOT/lane-a/data/test-runs/old.log" 1048576 "10 days ago"
+mk "$DQ_WT_ROOT/lane-a/data/test-runs/mid.log" 1048576 "2 hours ago"
+mk "$DQ_WT_ROOT/lane-a/data/test-runs/new.log" 1048576 "1 minute ago"
+# a COMMITTED file in the growth dir, old and over the cap: git tracks it, so the enforcer must never delete it
+mk "$DQ_WT_ROOT/lane-a/data/test-runs/tracked.log" 1048576 "20 days ago"
+git -C "$DQ_WT_ROOT/lane-a" add -f data/test-runs/tracked.log && git -C "$DQ_WT_ROOT/lane-a" -c user.name=t -c user.email=t@t commit -q -m t
+touch -d "20 days ago" "$DQ_WT_ROOT/lane-a/data/test-runs/tracked.log"
+
+dry="$(bash tools/dq_disk_budget.sh enforce --dry-run 2>&1)"
+check "dry run removes nothing" '[ -d "$DQ_CACHE_ROOT/units/u1" ] && [ -d "$DQ_CACHE_ROOT/mystery" ]'
+check "dry run reports what it would remove" 'grep -q "would remove .*units/u1" <<<"$dry"'
+
+out="$(bash tools/dq_disk_budget.sh enforce 2>&1)"; echo "$out" | sed 's/^/     /'
+check "over-budget: the oldest unprotected unit is evicted" '[ ! -d "$DQ_CACHE_ROOT/units/u1" ]'
+check "over-budget: eviction stops once under the cap" '[ -d "$DQ_CACHE_ROOT/units/u3" ]'
+check "protected: a leased slot is kept although it is the oldest" '[ -d "$DQ_CACHE_ROOT/units/pool-9" ]'
+check "protected: a unit modified minutes ago is kept" '[ -d "$DQ_CACHE_ROOT/units/fresh" ]'
+check "sub cap: the oldest files of an over-cap child go, the child and its newest files stay" '[ -d "$DQ_CACHE_ROOT/targets/lane1" ] && [ ! -f "$DQ_CACHE_ROOT/targets/lane1/d5.rlib" ] && [ ! -f "$DQ_CACHE_ROOT/targets/lane1/d4.rlib" ] && [ -f "$DQ_CACHE_ROOT/targets/lane1/fresh.rlib" ] && [ -f "$DQ_CACHE_ROOT/targets/lane1/d1.rlib" ]'
+check "sub cap: a leased slot's own target is not trimmed" '[ -f "$DQ_CACHE_ROOT/targets/pool-8/d4.rlib" ]'
+check "files-lru: the oldest file goes, the newest is kept" '[ ! -f "$DQ_CACHE_ROOT/logs/f3.dat" ] && [ -f "$DQ_CACHE_ROOT/logs/f1.dat" ]'
+check "unknown directory that is not clearly a cache is reported, not removed" '[ -d "$DQ_CACHE_ROOT/mystery" ] && grep -q "not clearly a cache" <<<"$out"'
+check "unknown directory that is clearly a cache (dmb-*) is removed when idle" '[ ! -d "$DQ_CACHE_ROOT/dmb-probe-old" ]'
+check "coordination state (train queue, lane-pool self) is never touched, even if the manifest does not name it" '[ -f "$DQ_CACHE_ROOT/train/queue/q1.q" ] && [ -f "$DQ_CACHE_ROOT/lane-pool/self/x" ]'
+check "unknown stray file is removed when idle" '[ ! -f "$DQ_CACHE_ROOT/stray.log" ]'
+check "unknown but busy directory is kept" '[ -d "$DQ_CACHE_ROOT/mystery-busy" ]'
+check "state table is never evicted" '[ -f "$DQ_CACHE_ROOT/slots/owner" ]'
+check "worktree growth: the file past the age cap goes" '[ ! -f "$DQ_WT_ROOT/lane-a/data/test-runs/old.log" ]'
+check "worktree growth: capped to 1 MB, the file in use stays" '[ -f "$DQ_WT_ROOT/lane-a/data/test-runs/new.log" ] && [ ! -f "$DQ_WT_ROOT/lane-a/data/test-runs/mid.log" ]'
+check "tracked: a committed file past the age and size caps is never deleted, and git sees no deletion" '[ -f "$DQ_WT_ROOT/lane-a/data/test-runs/tracked.log" ] && [ -z "$(git -C "$DQ_WT_ROOT/lane-a" status --porcelain | grep "^ D")" ]'
+check "the report names the tables and the free space" 'grep -q "units " <<<"$out" && grep -q "free now" <<<"$out"'
+
+# an excluded worktree is never touched
+mkdir -p "$DQ_WT_ROOT/lane-x/data/test-runs"; git init -q "$DQ_WT_ROOT/lane-x"
+mk "$DQ_WT_ROOT/lane-x/data/test-runs/old.log" 1048576 "10 days ago"
+DQ_DISK_EXCLUDE_WT="lane-x" bash tools/dq_disk_budget.sh enforce --force >/dev/null 2>&1
+check "DQ_DISK_EXCLUDE_WT: an excluded worktree is left alone" '[ -f "$DQ_WT_ROOT/lane-x/data/test-runs/old.log" ]'
+
+# whole-cache total cap: with a total of 0 every unit not in use is squeezed out, oldest first
+sed -i 's/^total_gb = 60/total_gb = 0/' "$T/m.toml"
+unit "$DQ_CACHE_ROOT/small/s1" "3 days ago"; unit "$DQ_CACHE_ROOT/small/s2" "2 days ago"
+bash tools/dq_disk_budget.sh enforce --force >/dev/null 2>&1
+check "total cap: the cache is squeezed below its tables' own caps" '[ ! -d "$DQ_CACHE_ROOT/small/s1" ] && [ ! -d "$DQ_CACHE_ROOT/small/s2" ]'
+sed -i 's/^total_gb = 0/total_gb = 60/' "$T/m.toml"
+
+# the disk floor
+DQ_DISK_FREE_GB=10 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >"$T/gate.out" 2>&1; rc=$?
+check "floor: gate refuses (exit 4) below the floor with a clear message" '[ "$rc" = 4 ] && grep -q "REFUSED lease: only 10 GB free" "$T/gate.out"'
+DQ_DISK_FREE_GB=80 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >/dev/null 2>&1; rc=$?
+check "floor: gate passes above the floor" '[ "$rc" = 0 ]'
+DQ_DISK_FREE_GB=10 DQ_DISK_FLOOR_GB=5 bash tools/dq_disk_budget.sh gate lease --sync --throttle 60 >/dev/null 2>&1; rc=$?
+check "floor: DQ_DISK_FLOOR_GB lowers it" '[ "$rc" = 0 ]'
+
+# the real manifest parses
+DQ_DISK_MANIFEST="$PWD/tools/ci/disk_budget.toml" DQ_CACHE_ROOT="$T/empty" bash tools/dq_disk_budget.sh status >/dev/null 2>&1; rc=$?
+check "the real manifest parses" '[ "$rc" = 0 ]'
+if [ "$fail" = 0 ]; then echo "test_disk_budget: ok"; else echo "test_disk_budget: FAILED"; fi
+exit "$fail"

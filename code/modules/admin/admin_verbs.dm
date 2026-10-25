@@ -197,7 +197,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 			return
 		if(length(new_key) >= 26)
 			new_key = copytext(new_key, 1, 26)
-		user.holder.fakekey = new_key
+		user.holder.fakekey = text_or_null(new_key)
 		user.createStealthKey()
 		if(isnewplayer(user.mob))
 			user.mob.name = new_key

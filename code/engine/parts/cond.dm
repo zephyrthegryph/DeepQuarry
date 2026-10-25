@@ -40,14 +40,14 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(isnull(reason))
 		return null
 	if(istext(reason))
-		return reason
+		return "[reason]" // the text itself, said as text so the result is plainly text
 	if(istype(reason, /datum/msg))
 		var/datum/msg/message = reason
-		return message.self
+		return "[message.self]"
 	if(!ispath(reason, /datum/msg))
 		return "[reason]"
 	var/datum/msg/def = msg_def(reason)
-	return def.self
+	return "[def.self]"
 
 // ---- evaluating conditions ----
 

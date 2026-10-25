@@ -160,7 +160,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 			to_chat(src, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
 			return ASK_STOP
 	asked.procname = procname
-	asked.procpath = procpath
+	asked.procpath = text_or_null(procpath)
 	asked.proctype = proctype
 	return null
 
@@ -340,7 +340,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 	if(!hascall(thing, procname))
 		to_chat(src, span_red("Error: callproc_datum(): type [thing.type] has no proc named [procname]."), confidential = TRUE)
 		return ASK_STOP
-	asked.procname = procname
+	asked.procname = text_or_null(procname)
 	return null
 
 /client/proc/callproc_datum_run(datum/ask_sequence/admin/callproc/on_datum/asked)

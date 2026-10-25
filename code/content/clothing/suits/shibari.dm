@@ -38,7 +38,7 @@ GLOBAL_LIST_INIT(shibari_modes, list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, S
 /// Old attack_self: choose which limbs to bind.
 /obj/item/clothing/suit/shibari/proc/shibari_mode_self(datum/act/op/A)
 	var/_answer_a1 = A.step_value("a1")
-	rope_mode = _answer_a1
+	rope_mode = text_or_null(_answer_a1)
 	if(!rope_mode)
 		rope_mode = SHIBARI_NONE
 	if(rope_mode == SHIBARI_BOTH)

@@ -19,7 +19,7 @@ SYSTEM_DEF(persistence)
 		if(initial(P.name))
 			P = new P
 			persistence_datums[P.type] = P
-			P.Initialize()
+			P.load_saved()
 
 /datum/system/persistence/on_shutdown()
 	for(var/thing in persistence_datums)

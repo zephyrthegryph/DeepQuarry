@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Kernel and engine hot paths no longer wrap values in text_or_null()/num_or_null(); producers return provably typed values instead"

@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - code_imp: "untyped ratchet: external-function results, text and number helpers and var identities are judged precisely; 104 untyped rows closed"
+  - refactor: "Untyped vars that hold text or numbers now go through text_or_null()/num_or_null() or declare a list/image type"
