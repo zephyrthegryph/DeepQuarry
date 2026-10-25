@@ -239,8 +239,8 @@
 	own_clear(machine, nameof(machine.component_parts), OWN_DELETE)
 	rel_add(machine, nameof(machine.component_parts), part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
-	TEST_ASSERT(length(machine.material_component_manifest), "Machine material composition must remain inspectable after the frame is consumed")
-	TEST_ASSERT(machine.material_emp_resistance > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
+	TEST_ASSERT(length(sparse_get(machine, material_component_manifest)), "Machine material composition must remain inspectable after the frame is consumed")
+	TEST_ASSERT(sparse_get_or(machine, material_emp_resistance, 0) > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
 	qdel(machine)
 
 /datum/unit_test/dq_material_environment_conserves_heat

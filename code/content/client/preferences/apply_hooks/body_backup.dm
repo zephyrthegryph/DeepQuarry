@@ -43,4 +43,4 @@
 				our_db.m_backup(target.mind, target.nif, one_time = TRUE)
 	if(resleeve_lock_pref)
 		sparse_set(target, resleeve_lock, target.ckey)
-	target.original_player = target.ckey
+	sparse_set(target, original_player, target.ckey)

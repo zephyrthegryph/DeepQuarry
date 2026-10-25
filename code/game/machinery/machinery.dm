@@ -113,10 +113,6 @@ Class Procs:
 	var/tmp/uid
 	var/global/gl_uid = 1
 	var/obj/item/circuitboard/circuit = null
-	/// Inspectable material makeup retained from the frame and installed parts.
-	var/list/material_component_manifest
-	/// Whole-machine EMP rejection supplied by insulating component materials.
-	var/material_emp_resistance = 0
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
@@ -231,11 +227,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// The declared start condition of a machine's started work (started_work(starts = PROC_REF(step_start_condition))): TRUE when it has work
 /// right away at initialization (mapped on, holding fuel, timing). Default FALSE.
+// Inspectable material makeup retained from the frame and installed parts: sparse slot material_component_manifest (a list).
+sparse(/obj/machinery, material_component_manifest, type = list)
+// Whole-machine EMP rejection supplied by insulating component materials: sparse slot material_emp_resistance (default 0).
+sparse(/obj/machinery, material_emp_resistance, type = num)
+
 /obj/machinery/proc/step_start_condition()
 	return FALSE
 
 /obj/machinery/emp_act(severity, recursive)
-	if(material_emp_resistance && prob(material_emp_resistance))
+	var/emp_resistance = sparse_get_or(src, material_emp_resistance, 0)
+	if(emp_resistance && prob(emp_resistance))
 		return EMP_PROTECT_ALL
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
@@ -431,7 +433,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 /// machines still calculate functional ratings in RefreshParts(); this common
 /// pass retains their materials and supplies chassis/EMP behavior.
 /obj/machinery/proc/finalize_material_assembly()
-	material_component_manifest = list()
+	var/list/manifest = list()
 	var/total_integrity = 0
 	var/total_dielectric = 0
 	var/part_count = 0
@@ -442,20 +444,22 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		part_count++
 		total_integrity += material.integrity
 		total_dielectric += material.dielectric_strength
-		material_component_manifest += "[part.name]: [material.display_name]"
+		manifest += "[part.name]: [material.display_name]"
+	sparse_set(src, material_component_manifest, length(manifest) ? manifest : null)
 	if(!part_count)
 		return FALSE
 	var/integrity_factor = clamp((total_integrity / part_count) / 150, 0.5, 2.5)
 	set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
 	if(uses_integrity)
 		update_integrity(max_integrity)
-	material_emp_resistance = clamp(round(total_dielectric / part_count * 0.6), 0, 75)
+	sparse_set_or(src, material_emp_resistance, clamp(round(total_dielectric / part_count * 0.6), 0, 75), 0)
 	return TRUE
 
 /obj/machinery/examine(mob/user)
 	. = ..()
-	if(length(material_component_manifest))
-		. += span_notice("Installed material parts: [jointext(material_component_manifest, "; ")].")
+	var/list/manifest = sparse_get(src, material_component_manifest)
+	if(length(manifest))
+		. += span_notice("Installed material parts: [jointext(manifest, "; ")].")
 
 /obj/machinery/proc/assign_uid()
 	set_uid(gl_uid)

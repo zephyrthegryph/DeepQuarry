@@ -1296,7 +1296,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 	else
-		bloody_hands = 0
+		sparse_set_or(src, bloody_hands, 0, 0)
 		germ_level = 0
 
 	if(get_equipped_item(SLOT_ID_SHOES))
@@ -1519,7 +1519,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if (usr != src)
 		return 0 //something is terribly wrong
 
-	if (!bloody_hands)
+	if (!sparse_get_or(src, bloody_hands, 0))
 		revoke(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 
 	if (get_equipped_item(SLOT_ID_GLOVES))
@@ -1543,7 +1543,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /// The tile `direction` of us to write on, or null (with a message) if we can't.
 /mob/living/carbon/human/proc/bloody_doodle_turf(direction)
 	var/turf/simulated/T = loc
-	if (!istype(T) || get_equipped_item(SLOT_ID_GLOVES) || !bloody_hands)
+	if (!istype(T) || get_equipped_item(SLOT_ID_GLOVES) || !sparse_get_or(src, bloody_hands, 0))
 		to_chat(src, span_warning("You cannot reach the floor."))
 		return null
 	if (direction != "Here")
@@ -1565,7 +1565,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/direction = A.answer.value
 	if(!bloody_doodle_turf(direction))
 		return
-	var/max_length = bloody_hands * 30 //tweeter style
+	var/max_length = sparse_get_or(src, bloody_hands, 0) * 30 //tweeter style
 	open_request(src, /datum/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), answerer = src, question = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
 
 /mob/living/carbon/human/proc/bloody_doodle_written(datum/act/request/A)
@@ -1579,10 +1579,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/turf/simulated/T = bloody_doodle_turf(ask.direction)
 	if(!T)
 		return
-	var/max_length = bloody_hands * 30
+	var/max_length = sparse_get_or(src, bloody_hands, 0) * 30
 	if (message)
 		var/used_blood_amount = round(length(message) / 30, 1)
-		bloody_hands = max(0, bloody_hands - used_blood_amount) //use up some blood
+		sparse_set_or(src, bloody_hands, max(0, sparse_get_or(src, bloody_hands, 0) - used_blood_amount), 0) //use up some blood
 
 		if (length(message) > max_length)
 			message += "-"

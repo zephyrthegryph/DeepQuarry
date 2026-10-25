@@ -34,9 +34,9 @@
 			if(G.transfer_blood)
 				forensic_data.merge_blooddna(G.forensic_data)
 				G.transfer_blood--
-		else if(M.bloody_hands)
+		else if(sparse_get_or(M, bloody_hands, 0))
 			forensic_data.merge_blooddna(M.forensic_data)
-			M.bloody_hands--
+			sparse_set_or(M, bloody_hands, sparse_get_or(M, bloody_hands, 0) - 1, 0)
 
 	//He has no prints!
 	if(M.has_mutation(mFingerprints))
