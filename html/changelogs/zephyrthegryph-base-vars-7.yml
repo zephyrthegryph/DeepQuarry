@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Moved capture_crystal, injury_trace, body_effect_data, climbing_delay and autotransferable to sparse slots"

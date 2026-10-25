@@ -751,7 +751,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().set_real_name("Stock [S.name] Body")
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
-		owner().dna.base_species = S.base_species
+		owner().dna.base_species = text_or_null(S.base_species)
 		sparse_set(owner(), resleeve_lock, FALSE)
 		owner().custom_species = "Custom Sleeve" // Custom name
 		DC.set_selected_record(TRUE)
@@ -941,7 +941,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 				var/datum/transhuman/body_record/BR = DC.our_db().body_scans[N]
 				var/datum/species/S = GLOB.all_species[BR.mydna.dna.species]
 				if((S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) != SPECIES_CAN_JOIN || BR.synthetic) continue
-				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = "\ref[BR]")
+				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = ref_token(BR))
 			data["character_records"] = bodyrecords_list_ui
 			// Load all stock records printable
 			var/list/stock_bodyrecords_list_ui = list()

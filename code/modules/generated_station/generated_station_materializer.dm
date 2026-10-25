@@ -349,7 +349,7 @@ CAPABILITIES(/datum/generated_station_materializer)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
 			department_area.station_id = spec().id
-			department_area.department_id = department.id
+			department_area.department_id = text_or_null(department.id)
 			department_area.name = "[spec().name] [department.definition().name]"
 			rel_add(result, nameof(result.department_areas), department_area, node.id)
 		generation_checkpoint("Allocating station areas", 25)

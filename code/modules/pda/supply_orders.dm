@@ -12,7 +12,7 @@
 			if(!order.personal_order || order.funding_account_number != account.account_number)
 				continue
 			orders.Add(list(list(
-				"ref" = "\ref[order]",
+				"ref" = ref_token(order),
 				"number" = order.ordernum,
 				"name" = order.name,
 				"status" = order.status,

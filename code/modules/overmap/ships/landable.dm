@@ -208,7 +208,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
 		var/datum/flight_destination/physical_host = flight_destinations()[port?.host_destination_id]
-		vessel.orbit_parent_id = physical_host?.orbit_parent_id || (destination.kind == FLIGHT_DEST_SURFACE ? destination.id : destination.orbit_parent_id)
+		vessel.orbit_parent_id = text_or_null(physical_host?.orbit_parent_id || (destination.kind == FLIGHT_DEST_SURFACE ? destination.id : destination.orbit_parent_id))
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_takeoff(obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
 	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)

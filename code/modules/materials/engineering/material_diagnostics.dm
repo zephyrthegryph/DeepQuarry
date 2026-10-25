@@ -278,7 +278,7 @@ CAPABILITIES(/datum/material_service)
 	monitor_minimum_output = INFINITY
 	monitor_minimum_flow = INFINITY
 	monitor_minimum_pressure = INFINITY
-	monitor_maximum_temperature = temperature()
+	monitor_maximum_temperature = num_or_null(temperature())
 	monitor_stored_energy = owner().material_operating_reservoir()
 
 /// Only physical observation records an interval. Opening/refreshing a UI does
@@ -294,12 +294,12 @@ CAPABILITIES(/datum/material_service)
 	if(monitor_configuration != wear.configuration_revision)
 		monitor_configuration = wear.configuration_revision
 		reset_observation()
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature())
+	monitor_maximum_temperature = num_or_null(max(monitor_maximum_temperature, temperature()))
 	// The last delivery's destination, as recorded when the pump delivered (the mixture itself is
 	// owned by its turf or network; the service keeps only the readings).
 	if(last_delivery_pressure)
 		monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
-		monitor_maximum_temperature = max(monitor_maximum_temperature, last_delivery_temperature)
+		monitor_maximum_temperature = num_or_null(max(monitor_maximum_temperature, last_delivery_temperature))
 	var/interval = (world.time - monitor_last_time) / 10
 	if(interval < 10)
 		return TRUE
@@ -314,7 +314,7 @@ CAPABILITIES(/datum/material_service)
 	monitor_minimum_output = min(monitor_minimum_output, output / interval)
 	monitor_minimum_flow = min(monitor_minimum_flow, flow / interval)
 	monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature(), last_delivery_temperature)
+	monitor_maximum_temperature = num_or_null(max(monitor_maximum_temperature, temperature(), last_delivery_temperature))
 	set_last_input_watts(input / interval)
 	set_last_output_watts(output / interval)
 	monitor_last_input = input_joules

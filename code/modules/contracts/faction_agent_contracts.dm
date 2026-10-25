@@ -121,7 +121,7 @@
 	contract.department_reputation_reward = 0
 	contract.personal_reputation_reward = 30
 	contract.deadline_duration = 25 MINUTES
-	contract.standing_score = get_personal_faction_reputation(contract.owner_account_number, faction_id) || REPUTATION_NEUTRAL
+	contract.standing_score = num_or_null(get_personal_faction_reputation(contract.owner_account_number, faction_id) || REPUTATION_NEUTRAL)
 	contract.standing_tier = reputation_rank(contract.standing_score)
 	if(required_agent_tier >= FACTION_AGENT_TIER_ACCREDITED)
 		var/datum/contract_requirement/event_count/approach_requirement = new(CONTRACT_EVENT_AGENT_APPROACH_SIGNED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
